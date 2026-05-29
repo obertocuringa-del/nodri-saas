@@ -604,20 +604,6 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
     </div>
   </div>
 </div>
-                  <div className="flex gap-2">
-                    <select value={notifTipo} onChange={e => setNotifTipo(e.target.value as any)} className="nodri-input w-28 text-[11px] shrink-0">
-                      <option value="info">ℹ️ Info</option>
-                      <option value="success">✅ Sucesso</option>
-                      <option value="warning">⚠️ Aviso</option>
-                      <option value="danger">🚨 Urgente</option>
-                    </select>
-                    <input type="text" value={notifMsg} onChange={e => setNotifMsg(e.target.value)} placeholder="Digite a mensagem..." className="nodri-input flex-1 text-[11px]" onKeyDown={e => e.key === 'Enter' && sendNotification()} />
-                    <button onClick={sendNotification} disabled={sending || !notifMsg.trim()} className="flex items-center gap-1.5 bg-nodri-cyan text-black text-[11px] font-bold px-3 py-1.5 rounded-lg hover:brightness-110 disabled:opacity-50 transition-all shrink-0">
-                      {sending ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />} Enviar
-                    </button>
-                  </div>
-                </div>
-              </div>
 
               {/* TABELA SALÕES */}
               <div>
