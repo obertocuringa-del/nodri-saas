@@ -544,45 +544,66 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
               </div>
 
               {/* NOTIFICAÇÕES */}
-              <div className="nodri-card p-4 mb-5">
-                <div className="flex items-center gap-2 font-syne font-bold text-[12px] mb-3">
-                  <Bell size={14} className="text-nodri-cyan" /> Central de Notificações
-                  {localNotifs.filter(n => !n.lida).length > 0 && <span className="bg-nodri-red text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">{localNotifs.filter(n => !n.lida).length}</span>}
-                </div>
-                <div className="space-y-2 mb-4 max-h-32 overflow-y-auto">
-                  {localNotifs.length === 0 && <p className="text-[11px] text-nodri-t3 text-center py-2">Nenhuma notificação</p>}
-                  {localNotifs.slice(0, 5).map(n => (
-                    <div key={n.id} className="flex items-start gap-2.5 p-2.5 bg-nodri-surface rounded-lg border border-nodri-border">
-                      <span className={`w-2 h-2 rounded-full mt-1 shrink-0 ${TIPO_COLOR[n.tipo]}`} />
-                      <div className="text-[11px] flex-1">{n.mensagem}</div>
-                      <div className="text-[10px] text-nodri-t3 shrink-0">{new Date(n.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
-                    </div>
-                  ))}
-                </div>
-                <div className="border-t border-nodri-border pt-3">
-                  <div className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-2 font-medium">Enviar Notificação</div>
-                  <div className="relative mb-2">
-                    <button onClick={() => setShowDestinatarios(!showDestinatarios)}
-                      className="w-full flex items-center justify-between px-3 py-2 bg-nodri-surface border border-nodri-border rounded-lg text-[11px] hover:border-nodri-cyan/30 transition-all">
-                      <span className={notifDestinatarios.length === 0 ? 'text-nodri-t3' : 'text-nodri-t1'}>{notifDestinatarios.length === 0 ? '📢 Todos os salões' : `✅ ${notifDestinatarios.length} salão(ões) selecionado(s)`}</span>
-                      <ChevronDown size={12} className={`text-nodri-t3 transition-transform ${showDestinatarios ? 'rotate-180' : ''}`} />
-                    </button>
-                    {showDestinatarios && (
-                      <div className="absolute top-full left-0 right-0 mt-1 bg-nodri-card border border-nodri-border rounded-xl shadow-2xl z-50 py-1 max-h-48 overflow-y-auto">
-                        <div onClick={() => { setNotifDestinatarios([]); setShowDestinatarios(false) }}
-                          className={`flex items-center gap-2 px-3 py-2.5 cursor-pointer hover:bg-nodri-surface transition-colors ${notifDestinatarios.length === 0 ? 'text-nodri-cyan' : 'text-nodri-t2'}`}>
-                          <div className={`w-4 h-4 rounded border flex items-center justify-center ${notifDestinatarios.length === 0 ? 'bg-nodri-cyan border-nodri-cyan' : 'border-nodri-border'}`}>{notifDestinatarios.length === 0 && <Check size={10} className="text-black" />}</div>
-                          <span className="text-[11.5px] font-medium">📢 Todos os salões</span>
-                        </div>
-                        {saloes.map(s => (
-                          <div key={s.id} onClick={() => toggleDestinatario(s.id)} className="flex items-center gap-2 px-3 py-2.5 cursor-pointer hover:bg-nodri-surface transition-colors">
-                            <div className={`w-4 h-4 rounded border flex items-center justify-center ${notifDestinatarios.includes(s.id) ? 'bg-nodri-cyan border-nodri-cyan' : 'border-nodri-border'}`}>{notifDestinatarios.includes(s.id) && <Check size={10} className="text-black" />}</div>
-                            <div><div className="text-[11.5px] text-nodri-t1">{s.nome}</div><div className="text-[10px] text-nodri-t3">{s.email}</div></div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+<div className="nodri-card p-4 mb-5 bg-white">
+  <div className="flex items-center gap-2 font-syne font-bold text-[12px] mb-3">
+    <Bell size={14} className="text-nodri-cyan" /> 
+    <span className="text-black">Central de Notificações</span>
+    {localNotifs.filter(n => !n.lida).length > 0 && <span className="bg-nodri-red text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">{localNotifs.filter(n => !n.lida).length}</span>}
+  </div>
+  
+  <div className="space-y-2 mb-4 max-h-48 overflow-y-auto">
+    {localNotifs.length === 0 && <p className="text-[11px] text-gray-500 text-center py-2">Nenhuma notificação</p>}
+    {localNotifs.slice(0, 5).map(n => (
+      <div key={n.id} className="flex items-start gap-2.5 p-2.5 bg-gray-50 rounded-lg border border-gray-200 animate-pulse">
+        <span className={`w-2 h-2 rounded-full mt-1 shrink-0 ${TIPO_COLOR[n.tipo]}`} />
+        <div className="text-[11px] flex-1 text-black font-medium">{n.mensagem}</div>
+        <div className="text-[10px] text-gray-400 shrink-0">{new Date(n.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
+      </div>
+    ))}
+  </div>
+  
+  <div className="border-t border-gray-200 pt-3">
+    <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-2 font-medium">Enviar Notificação</div>
+    <div className="relative mb-2">
+      <button onClick={() => setShowDestinatarios(!showDestinatarios)}
+        className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-[11px] hover:border-nodri-cyan/30 transition-all">
+        <span className={notifDestinatarios.length === 0 ? 'text-gray-500' : 'text-black'}>{notifDestinatarios.length === 0 ? '📢 Todos os salões' : `✅ ${notifDestinatarios.length} salão(ões) selecionado(s)`}</span>
+        <ChevronDown size={12} className={`text-gray-400 transition-transform ${showDestinatarios ? 'rotate-180' : ''}`} />
+      </button>
+      {showDestinatarios && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-2xl z-50 py-1 max-h-48 overflow-y-auto">
+          <div onClick={() => { setNotifDestinatarios([]); setShowDestinatarios(false) }}
+            className={`flex items-center gap-2 px-3 py-2.5 cursor-pointer hover:bg-gray-50 transition-colors ${notifDestinatarios.length === 0 ? 'text-nodri-cyan' : 'text-gray-600'}`}>
+            <div className={`w-4 h-4 rounded border flex items-center justify-center ${notifDestinatarios.length === 0 ? 'bg-nodri-cyan border-nodri-cyan' : 'border-gray-300'}`}>{notifDestinatarios.length === 0 && <Check size={10} className="text-black" />}</div>
+            <span className="text-[11.5px] font-medium">📢 Todos os salões</span>
+          </div>
+          {saloes.map(s => (
+            <div key={s.id} onClick={() => toggleDestinatario(s.id)} className="flex items-center gap-2 px-3 py-2.5 cursor-pointer hover:bg-gray-50 transition-colors">
+              <div className={`w-4 h-4 rounded border flex items-center justify-center ${notifDestinatarios.includes(s.id) ? 'bg-nodri-cyan border-nodri-cyan' : 'border-gray-300'}`}>{notifDestinatarios.includes(s.id) && <Check size={10} className="text-black" />}</div>
+              <div><div className="text-[11.5px] text-black">{s.nome}</div><div className="text-[10px] text-gray-400">{s.email}</div></div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+    <div className="flex gap-2">
+      <select value={notifTipo} onChange={e => setNotifTipo(e.target.value as any)} className="nodri-input w-28 text-[11px] shrink-0 bg-gray-50 border-gray-200 text-black">
+        <option value="info">ℹ️ Info</option>
+        <option value="success">✅ Sucesso</option>
+        <option value="warning">⚠️ Aviso</option>
+        <option value="danger">🚨 Urgente</option>
+      </select>
+      <input type="text" value={notifMsg} onChange={e => setNotifMsg(e.target.value)} 
+        placeholder="Ex: Boa tarde, teve atualização do whats app mudou o código, o novo é esse..." 
+        className="nodri-input flex-1 text-[11px] bg-gray-50 border-gray-200 text-black" 
+        onKeyDown={e => e.key === 'Enter' && sendNotification()} />
+      <button onClick={sendNotification} disabled={sending || !notifMsg.trim()} 
+        className="flex items-center gap-1.5 bg-nodri-cyan text-black text-[11px] font-bold px-3 py-1.5 rounded-lg hover:brightness-110 disabled:opacity-50 transition-all shrink-0">
+        {sending ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />} Enviar
+      </button>
+    </div>
+  </div>
+</div>
                   <div className="flex gap-2">
                     <select value={notifTipo} onChange={e => setNotifTipo(e.target.value as any)} className="nodri-input w-28 text-[11px] shrink-0">
                       <option value="info">ℹ️ Info</option>
