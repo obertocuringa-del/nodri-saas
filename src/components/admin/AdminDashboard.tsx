@@ -42,8 +42,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
   const [savingSalao, setSavingSalao] = useState(false)
 
   function handleLogout() {
-    document.cookie = 'nodri_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
-    window.location.replace('/login')
+    window.location.href = '/logout'
   }
 
   async function openModCtrl(salao: Salao) {
