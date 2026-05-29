@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server'
 
-export async function POST() {
-  const response = NextResponse.redirect(new URL('/login', process.env.NEXT_PUBLIC_APP_URL || 'https://nodri-saas-jsx4.vercel.app'))
+export async function POST(request: Request) {
+  const host = request.headers.get('host') || ''
+  const protocol = host.includes('localhost') ? 'http' : 'https'
+  const response = NextResponse.redirect(`${protocol}://${host}/login`)
   response.cookies.set('nodri_token', '', {
     httpOnly: true,
     secure: true,
