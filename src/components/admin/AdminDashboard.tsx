@@ -42,8 +42,10 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
   const [savingSalao, setSavingSalao] = useState(false)
 
   async function handleLogout() {
-    await fetch('/api/auth/logout', { method: 'POST' })
-    router.push('/login')
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' })
+    } catch {}
+    window.location.href = '/login'
   }
 
   async function openModCtrl(salao: Salao) {
