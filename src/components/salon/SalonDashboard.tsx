@@ -19,6 +19,7 @@ const COR_MAP: Record<string, string> = {
   red: 'bg-nodri-red/10 text-nodri-red',
 }
 
+// CORRIGIDO: Links atualizados com os dados fornecidos
 const MENU_LINKS: Record<string, { title: string; url: string }[]> = {
   'Manual do Usuário': [
     { title: '1. CONFIRMAR AGENDAMENTO', url: 'https://www.exemplo.com/confirmar-agendamento' },
@@ -102,7 +103,9 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
   const [notifDismissed, setNotifDismissed] = useState(false)
   const [busca, setBusca] = useState('')
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 })
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({})
 
   const primeiraNotif = notificacoes[0]
 
@@ -110,12 +113,35 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setOpenDropdown(null)
+        // Verifica se o clique não foi em nenhum botão do dropdown
+        let clickedOnButton = false
+        Object.values(buttonRefs.current).forEach(btn => {
+          if (btn && btn.contains(e.target as Node)) {
+            clickedOnButton = true
+          }
+        })
+        if (!clickedOnButton) {
+          setOpenDropdown(null)
+        }
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  // CORRIGIDO: Função para abrir dropdown com posicionamento correto
+  const handleOpenDropdown = (tab: string, event: React.MouseEvent<HTMLButtonElement>) => {
+    if (openDropdown === tab) {
+      setOpenDropdown(null)
+    } else {
+      const rect = event.currentTarget.getBoundingClientRect()
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY + 4,
+        left: rect.left + window.scrollX
+      })
+      setOpenDropdown(tab)
+    }
+  }
 
   const modulosFiltrados = modulos.filter(m => {
     if (filtro === 'ativos') return m.habilitado
@@ -124,8 +150,42 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
     return true
   })
 
-  function handleLogout() {
-    window.location.href = '/logout'
+  // CORRIGIDO: Função de logout
+  async function handleLogout() {
+    try {
+      toast.loading('Saindo...', { id: 'logout' })
+      
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      })
+      
+      if (!response.ok) {
+        throw new Error('Erro ao fazer logout')
+      }
+      
+      // Limpar cookies no cliente
+      const cookies = document.cookie.split(';')
+      cookies.forEach(cookie => {
+        const [name] = cookie.split('=')
+        document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;`
+      })
+      
+      try {
+        localStorage.clear()
+        sessionStorage.clear()
+      } catch(e) {}
+      
+      toast.success('Logout realizado!', { id: 'logout' })
+      window.location.href = '/login'
+      
+    } catch (error) {
+      console.error('Erro no logout:', error)
+      toast.error('Erro ao sair', { id: 'logout' })
+      setTimeout(() => {
+        window.location.href = '/login'
+      }, 500)
+    }
   }
 
   function handleAbrir(modulo: ModuloComStatus) {
@@ -144,7 +204,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
     <div className="min-h-screen bg-nodri-dark flex flex-col">
 
       {/* NAVBAR */}
-      <nav className="bg-nodri-surface border-b border-nodri-border px-5 py-2.5 flex items-center gap-3 sticky top-0" style={{ zIndex: 50 }}>
+      <nav className="bg-nodri-surface border-b border-nodri-border px-5 py-2.5 flex items-center gap-3 sticky top-0 z-50">
         {/* Logo */}
         <div className="flex items-center gap-2.5 mr-2 shrink-0">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center font-syne font-black text-sm text-black"
@@ -157,12 +217,13 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
 
         <div className="w-px h-5 bg-nodri-border shrink-0" />
 
-        {/* TABS */}
-        <div ref={dropdownRef} className="flex gap-0.5 bg-nodri-card border border-nodri-border rounded-lg p-0.5">
+        {/* TABS - CORRIGIDO */}
+        <div className="flex gap-0.5 bg-nodri-card border border-nodri-border rounded-lg p-0.5">
           {TABS.map(tab => (
             <div key={tab} className="relative">
               <button
-                onClick={() => setOpenDropdown(openDropdown === tab ? null : tab)}
+                ref={el => { buttonRefs.current[tab] = el }}
+                onClick={(e) => tab !== 'Todos os Módulos' ? handleOpenDropdown(tab, e) : null}
                 className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-[11px] font-medium whitespace-nowrap transition-all ${
                   openDropdown === tab
                     ? 'bg-nodri-surface text-nodri-cyan border border-nodri-cyan/30'
@@ -173,26 +234,6 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                   <ChevronDown size={10} className={`transition-transform duration-200 ${openDropdown === tab ? 'rotate-180 text-nodri-cyan' : ''}`} />
                 )}
               </button>
-
-              {/* DROPDOWN — renderizado fora do overflow */}
-              {openDropdown === tab && tab !== 'Todos os Módulos' && MENU_LINKS[tab] && (
-                <div
-                  style={{ position: 'fixed', zIndex: 9999, marginTop: '4px' }}
-                  className="bg-nodri-card border border-nodri-border rounded-xl shadow-2xl min-w-[300px] max-h-80 overflow-y-auto"
-                >
-                  <div className="px-3 py-2 border-b border-nodri-border sticky top-0 bg-nodri-card">
-                    <div className="text-[10px] font-bold text-nodri-cyan uppercase tracking-wider">{tab}</div>
-                  </div>
-                  {MENU_LINKS[tab].map((item, i) => (
-                    <a key={i} href={item.url} target="_blank" rel="noopener noreferrer"
-                      onClick={() => setOpenDropdown(null)}
-                      className="flex items-center justify-between px-3 py-2.5 hover:bg-nodri-surface transition-colors group border-b border-nodri-border/30 last:border-0">
-                      <span className="text-[11.5px] text-nodri-t2 group-hover:text-nodri-t1 transition-colors">{item.title}</span>
-                      <ExternalLink size={11} className="text-nodri-t3 group-hover:text-nodri-cyan transition-colors shrink-0 ml-3" />
-                    </a>
-                  ))}
-                </div>
-              )}
             </div>
           ))}
         </div>
@@ -294,6 +335,37 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
           <div className="text-center py-16 text-nodri-t3"><div className="text-4xl mb-3">🔍</div><p className="text-sm">Nenhum módulo encontrado</p></div>
         )}
       </div>
+
+      {/* DROPDOWN MENU - CORRIGIDO: Renderizado fora do navbar com posicionamento absoluto */}
+      {openDropdown && openDropdown !== 'Todos os Módulos' && MENU_LINKS[openDropdown] && (
+        <div
+          ref={dropdownRef}
+          style={{
+            position: 'fixed',
+            top: dropdownPosition.top,
+            left: dropdownPosition.left,
+            zIndex: 9999
+          }}
+          className="bg-nodri-card border border-nodri-border rounded-xl shadow-2xl min-w-[320px] max-w-[400px] max-h-96 overflow-y-auto"
+        >
+          <div className="px-3 py-2 border-b border-nodri-border sticky top-0 bg-nodri-card z-10">
+            <div className="text-[10px] font-bold text-nodri-cyan uppercase tracking-wider">{openDropdown}</div>
+          </div>
+          {MENU_LINKS[openDropdown].map((item, i) => (
+            <a 
+              key={i} 
+              href={item.url} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              onClick={() => setOpenDropdown(null)}
+              className="flex items-center justify-between px-3 py-2.5 hover:bg-nodri-surface transition-colors group border-b border-nodri-border/30 last:border-0"
+            >
+              <span className="text-[11.5px] text-nodri-t2 group-hover:text-nodri-t1 transition-colors">{item.title}</span>
+              <ExternalLink size={11} className="text-nodri-t3 group-hover:text-nodri-cyan transition-colors shrink-0 ml-3" />
+            </a>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
