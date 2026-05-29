@@ -5,7 +5,18 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const token = request.cookies.get('nodri_token')?.value
 
-  if (pathname.startsWith('/login') || pathname.startsWith('/logout') || pathname.startsWith('/api/auth') || pathname.startsWith('/_next') || pathname.startsWith('/favicon')) {
+  // TRATAMENTO ESPECIAL PARA LOGOUT - sempre limpa o cookie e redireciona
+  if (pathname === '/logout') {
+    const response = NextResponse.redirect(new URL('/login', request.url))
+    response.cookies.set('nodri_token', '', { 
+      maxAge: 0, 
+      path: '/',
+      expires: new Date(0)
+    })
+    return response
+  }
+
+  if (pathname.startsWith('/login') || pathname.startsWith('/api/auth') || pathname.startsWith('/_next') || pathname.startsWith('/favicon')) {
     if (pathname.startsWith('/login') && token) {
       const payload = await verifyJWT(token)
       if (payload) {
@@ -16,7 +27,9 @@ export async function middleware(request: NextRequest) {
   }
 
   if (!token) {
-    return NextResponse.redirect(new URL('/login', request.url))
+    const response = NextResponse.redirect(new URL('/login', request.url))
+    response.cookies.set('nodri_token', '', { maxAge: 0, path: '/' })
+    return response
   }
 
   const payload = await verifyJWT(token)
