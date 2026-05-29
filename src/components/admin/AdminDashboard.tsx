@@ -92,8 +92,9 @@ const DEFAULT_LINKS: Record<string, { title: string; url: string }[]> = {
   ],
 }
 
-export default function AdminDashboard({ saloes: initialSaloes, modulos, notificacoes, planos }: Props) {
+export default function AdminDashboard({ saloes: initialSaloes, modulos, notificacoes, planos: initialPlanos }: Props) {
   const [saloes, setSaloes] = useState(initialSaloes)
+  const [planos, setPlanos] = useState(initialPlanos)
   const [activeSection, setActiveSection] = useState('dashboard')
   const [modCtrlSalao, setModCtrlSalao] = useState<Salao | null>(null)
   const [modulosAtivos, setModulosAtivos] = useState<Set<string>>(new Set())
@@ -121,6 +122,12 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
   const [deleteConfirmText, setDeleteConfirmText] = useState('')
   const [deletingSalao, setDeletingSalao] = useState(false)
   const [editTab, setEditTab] = useState<'dados'|'acesso'|'perigo'>('dados')
+
+  // Estado para gestão de planos
+  const [showNovoPlano, setShowNovoPlano] = useState(false)
+  const [editPlano, setEditPlano] = useState<Plano | null>(null)
+  const [planoForm, setPlanoForm] = useState({ nome: '', slug: '', descricao: '', preco: '', max_usuarios: '' })
+  const [savingPlano, setSavingPlano] = useState(false)
 
   function handleLogout() { window.location.href = '/logout' }
 
@@ -269,18 +276,64 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
     setSavingLinks(false)
   }
 
-  const navItems = [
-    { id: 'dashboard', icon: <Shield size={14} />, label: 'Dashboard' },
-    { id: 'saloes', icon: <Building size={14} />, label: 'Salões', badge: saloes.length },
-    { id: 'licencas', icon: <CreditCard size={14} />, label: 'Licenças' },
-    { id: 'modulos', icon: <Puzzle size={14} />, label: 'Módulos' },
-    { id: 'usuarios', icon: <Users size={14} />, label: 'Usuários' },
-    { id: 'notifs', icon: <Bell size={14} />, label: 'Notificações', badge: localNotifs.filter(n => !n.lida).length, badgeRed: true },
-    { id: 'links', icon: <Link size={14} />, label: 'Links do Menu' },
-    { id: 'updates', icon: <RefreshCw size={14} />, label: 'Atualizações' },
-    { id: 'relatorios', icon: <BarChart3 size={14} />, label: 'Relatórios' },
-    { id: 'config', icon: <Settings size={14} />, label: 'Configurações' },
-  ]
+  // Funções de gestão de planos
+  function openEditPlano(plano: Plano) {
+    setEditPlano(plano)
+    setPlanoForm({
+      nome: plano.nome,
+      slug: plano.slug,
+      descricao: plano.descricao || '',
+      preco: String(plano.preco),
+      max_usuarios: String(plano.max_usuarios || 1),
+    })
+    setShowNovoPlano(true)
+  }
+
+  async function handleSavePlano(e: React.FormEvent) {
+    e.preventDefault()
+    if (!planoForm.nome || !planoForm.slug || !planoForm.preco) {
+      toast.error('Nome, slug e preço são obrigatórios')
+      return
+    }
+    setSavingPlano(true)
+    const url = editPlano ? `/api/plans/${editPlano.id}` : '/api/plans'
+    const method = editPlano ? 'PUT' : 'POST'
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...planoForm,
+        preco: parseFloat(planoForm.preco),
+        max_usuarios: parseInt(planoForm.max_usuarios) || 1,
+      }),
+    })
+    const data = await res.json()
+    setSavingPlano(false)
+    if (res.ok) {
+      toast.success(editPlano ? 'Plano atualizado!' : 'Plano criado!')
+      if (editPlano) {
+        setPlanos(prev => prev.map(p => p.id === editPlano.id ? data : p))
+      } else {
+        setPlanos(prev => [...prev, data])
+      }
+      setShowNovoPlano(false)
+      setEditPlano(null)
+      setPlanoForm({ nome: '', slug: '', descricao: '', preco: '', max_usuarios: '' })
+    } else {
+      toast.error(data.error || 'Erro ao salvar plano')
+    }
+  }
+
+  async function deletePlano(planoId: string) {
+    if (!confirm('Tem certeza que deseja excluir este plano? Salões associados serão afetados.')) return
+    const res = await fetch(`/api/plans/${planoId}`, { method: 'DELETE' })
+    if (res.ok) {
+      toast.success('Plano excluído!')
+      setPlanos(prev => prev.filter(p => p.id !== planoId))
+    } else {
+      toast.error('Erro ao excluir plano')
+    }
+  }
 
   // Função para calcular dias restantes do trial
   function getTrialStatus(criado_em: string | Date) {
@@ -295,6 +348,20 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
     return <span className="text-nodri-green font-semibold">⏳ {dias}d restantes</span>
   }
 
+  const navItems = [
+    { id: 'dashboard', icon: <Shield size={14} />, label: 'Dashboard' },
+    { id: 'saloes', icon: <Building size={14} />, label: 'Salões', badge: saloes.length },
+    { id: 'licencas', icon: <CreditCard size={14} />, label: 'Licenças' },
+    { id: 'planos', icon: <CreditCard size={14} />, label: 'Planos', badge: planos.length },
+    { id: 'modulos', icon: <Puzzle size={14} />, label: 'Módulos' },
+    { id: 'usuarios', icon: <Users size={14} />, label: 'Usuários' },
+    { id: 'notifs', icon: <Bell size={14} />, label: 'Notificações', badge: localNotifs.filter(n => !n.lida).length, badgeRed: true },
+    { id: 'links', icon: <Link size={14} />, label: 'Links do Menu' },
+    { id: 'updates', icon: <RefreshCw size={14} />, label: 'Atualizações' },
+    { id: 'relatorios', icon: <BarChart3 size={14} />, label: 'Relatórios' },
+    { id: 'config', icon: <Settings size={14} />, label: 'Configurações' },
+  ]
+
   return (
     <div className="flex h-screen bg-nodri-dark overflow-hidden">
       {/* SIDEBAR */}
@@ -305,7 +372,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
         </div>
         <nav className="flex-1 p-2 overflow-y-auto space-y-0.5">
           <p className="text-[9px] text-nodri-t3 uppercase tracking-widest px-2.5 py-1.5 font-medium mt-1">Painel</p>
-          {navItems.slice(0, 6).map(item => (
+          {navItems.slice(0, 7).map(item => (
             <button key={item.id} onClick={() => setActiveSection(item.id)}
               className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11.5px] border transition-all ${activeSection === item.id ? 'bg-nodri-cyan/9 text-nodri-cyan border-nodri-cyan/17' : 'text-nodri-t2 border-transparent hover:bg-white/4 hover:text-nodri-t1'}`}>
               {item.icon}<span className="flex-1 text-left">{item.label}</span>
@@ -315,7 +382,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
             </button>
           ))}
           <p className="text-[9px] text-nodri-t3 uppercase tracking-widest px-2.5 py-1.5 font-medium mt-2">Sistema</p>
-          {navItems.slice(6).map(item => (
+          {navItems.slice(7).map(item => (
             <button key={item.id} onClick={() => setActiveSection(item.id)}
               className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11.5px] border transition-all ${activeSection === item.id ? 'bg-nodri-cyan/9 text-nodri-cyan border-nodri-cyan/17' : 'text-nodri-t2 border-transparent hover:bg-white/4 hover:text-nodri-t1'}`}>
               {item.icon}<span className="flex-1 text-left">{item.label}</span>
@@ -335,15 +402,27 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
       <main className="flex-1 overflow-y-auto flex flex-col">
         <div className="px-5 py-3 border-b border-nodri-border bg-nodri-surface flex items-center gap-3 sticky top-0 z-20">
           <div>
-            <div className="font-syne font-bold text-[15px]">{activeSection === 'links' ? 'Links do Menu' : 'Painel Admin Master'}</div>
-            <div className="text-[11px] text-nodri-t2">{activeSection === 'links' ? 'Edite os links de cada categoria do menu' : 'Controle total de salões, licenças e módulos'}</div>
+            <div className="font-syne font-bold text-[15px]">
+              {activeSection === 'links' ? 'Links do Menu' : activeSection === 'planos' ? 'Gestão de Planos' : 'Painel Admin Master'}
+            </div>
+            <div className="text-[11px] text-nodri-t2">
+              {activeSection === 'links' ? 'Edite os links de cada categoria do menu' : 
+                activeSection === 'planos' ? 'Crie, edite e gerencie os planos de assinatura' : 
+                'Controle total de salões, licenças e módulos'}
+            </div>
           </div>
           <div className="ml-auto flex gap-2">
             <button className="relative w-8 h-8 bg-nodri-card border border-nodri-border rounded-lg flex items-center justify-center text-nodri-t2 hover:text-nodri-cyan transition-all">
               <Bell size={14} />
               {localNotifs.filter(n => !n.lida).length > 0 && <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-nodri-red rounded-full" />}
             </button>
-            {activeSection !== 'links' && (
+            {activeSection === 'planos' && (
+              <button onClick={() => { setEditPlano(null); setPlanoForm({ nome: '', slug: '', descricao: '', preco: '', max_usuarios: '' }); setShowNovoPlano(true) }} 
+                className="flex items-center gap-1.5 bg-nodri-cyan text-black text-[11.5px] font-bold px-3 py-1.5 rounded-lg hover:brightness-110 transition-all">
+                <Plus size={13} /> Novo Plano
+              </button>
+            )}
+            {activeSection !== 'links' && activeSection !== 'planos' && (
               <button onClick={() => setShowNovoSalao(true)} className="flex items-center gap-1.5 bg-nodri-cyan text-black text-[11.5px] font-bold px-3 py-1.5 rounded-lg hover:brightness-110 transition-all">
                 <Plus size={13} /> Novo Salão
               </button>
@@ -401,8 +480,52 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
             </div>
           )}
 
+          {/* ── GESTÃO DE PLANOS ── */}
+          {activeSection === 'planos' && (
+            <div>
+              <div className="grid gap-3">
+                {planos.map(plano => (
+                  <div key={plano.id} className="nodri-card p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-[14px] font-bold text-black ${PLANO_CLASS[plano.slug as keyof typeof PLANO_CLASS] || 'bg-nodri-t3/20'}`}>
+                        {plano.nome[0]}
+                      </div>
+                      <div>
+                        <div className="font-syne font-bold text-[13px]">{plano.nome}</div>
+                        <div className="text-[10px] text-nodri-t2">Slug: {plano.slug}</div>
+                        {plano.descricao && <div className="text-[10px] text-nodri-t3 mt-0.5">{plano.descricao}</div>}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-6">
+                      <div className="text-right">
+                        <div className="font-syne font-bold text-[15px]">R${plano.preco}</div>
+                        <div className="text-[9px] text-nodri-t3">/mês</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-[11px] font-medium">👥 {plano.max_usuarios} usuário(s)</div>
+                      </div>
+                      <div className="flex gap-1.5">
+                        <button onClick={() => openEditPlano(plano)} className="p-1.5 rounded-md border border-nodri-purple/40 text-nodri-purple bg-nodri-purple/7 hover:bg-nodri-purple/15 transition-all">
+                          <Edit size={11} />
+                        </button>
+                        <button onClick={() => deletePlano(plano.id)} className="p-1.5 rounded-md border border-nodri-red/35 text-nodri-red bg-nodri-red/7 hover:bg-nodri-red/15 transition-all">
+                          <Trash2 size={11} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {planos.length === 0 && (
+                  <div className="nodri-card p-8 text-center text-nodri-t3 text-sm">
+                    Nenhum plano cadastrado. Clique em "Novo Plano" para começar.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* ── DASHBOARD E DEMAIS SEÇÕES ── */}
-          {activeSection !== 'links' && (
+          {activeSection !== 'links' && activeSection !== 'planos' && (
             <>
               {/* STATS */}
               <div className="grid grid-cols-4 gap-3 mb-5">
@@ -522,6 +645,37 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
           )}
         </div>
       </main>
+
+      {/* MODAL NOVO/EDITAR PLANO */}
+      {showNovoPlano && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="nodri-card w-full max-w-md p-6 animate-slide-up">
+            <div className="flex items-center justify-between mb-5">
+              <div className="font-syne font-bold text-[14px] flex items-center gap-2">
+                <CreditCard size={16} className="text-nodri-cyan" /> {editPlano ? 'Editar Plano' : 'Novo Plano'}
+              </div>
+              <button onClick={() => { setShowNovoPlano(false); setEditPlano(null) }} className="text-nodri-t3 hover:text-nodri-t1"><X size={16} /></button>
+            </div>
+            <form onSubmit={handleSavePlano} className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div><label className="nodri-label block mb-1">Nome *</label><input className="nodri-input" placeholder="Ex: Premium" value={planoForm.nome} onChange={e => setPlanoForm(p => ({...p, nome: e.target.value}))} /></div>
+                <div><label className="nodri-label block mb-1">Slug *</label><input className="nodri-input" placeholder="Ex: premium" value={planoForm.slug} onChange={e => setPlanoForm(p => ({...p, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '')}))} /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><label className="nodri-label block mb-1">Preço (R$) *</label><input type="number" step="0.01" className="nodri-input" placeholder="197.00" value={planoForm.preco} onChange={e => setPlanoForm(p => ({...p, preco: e.target.value}))} /></div>
+                <div><label className="nodri-label block mb-1">Máx. Usuários</label><input type="number" className="nodri-input" placeholder="1" value={planoForm.max_usuarios} onChange={e => setPlanoForm(p => ({...p, max_usuarios: e.target.value}))} /></div>
+              </div>
+              <div><label className="nodri-label block mb-1">Descrição</label><textarea className="nodri-input resize-none h-16" placeholder="Descreva o plano..." value={planoForm.descricao} onChange={e => setPlanoForm(p => ({...p, descricao: e.target.value}))} /></div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={() => { setShowNovoPlano(false); setEditPlano(null) }} className="nodri-btn-ghost text-[12px]">Cancelar</button>
+                <button type="submit" disabled={savingPlano} className="nodri-btn-primary text-[12px] flex items-center gap-2">
+                  {savingPlano ? <><Loader2 size={13} className="animate-spin" /> Salvando...</> : <><Save size={13} /> {editPlano ? 'Salvar Alterações' : 'Criar Plano'}</>}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* MODAL NOVO SALÃO */}
       {showNovoSalao && (
