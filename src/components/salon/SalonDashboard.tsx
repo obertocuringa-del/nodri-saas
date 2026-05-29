@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Bell, Settings, CheckCircle, X, Zap, Play, Search, ChevronDown, ExternalLink, LogOut } from 'lucide-react'
 import toast from 'react-hot-toast'
 import type { ModuloComStatus, Notificacao } from '@/types'
@@ -30,7 +30,7 @@ const MENU_LINKS: Record<string, { title: string; url: string }[]> = {
     { title: '7. RELATÓRIO PROFISSIONAL', url: 'https://www.exemplo.com/relatorio-profissional' },
     { title: '8. FATURAMENTO DIÁRIO', url: 'https://www.exemplo.com/faturamento-diario' },
     { title: '9. BAIXAR MUSICA YOUTUBE', url: 'https://www.exemplo.com/baixar-musica-youtube' },
-    { title: '10. CALCULAR RESERVA FINAN', url: 'https://www.exemplo.com/calcular-reserva-financeira' },
+    { title: '10. CALCULAR RESERVA FINANCEIRA', url: 'https://www.exemplo.com/calcular-reserva-financeira' },
     { title: '11. CALCULAR DEPRECIAÇÃO', url: 'https://www.exemplo.com/calculadora-depreciacao' },
     { title: '12. AVALIAR PROFISSIONAL', url: 'https://www.exemplo.com/avaliar-profissional' },
     { title: '13. ALUGUEL DE CADEIRA', url: 'https://www.exemplo.com/aluguel-cadeira' },
@@ -64,10 +64,10 @@ const MENU_LINKS: Record<string, { title: string; url: string }[]> = {
     { title: '11. ATRASOS PROFISSIONAIS', url: 'https://www.exemplo.com/atrasos-profissionais' },
   ],
   'Gestão Financeira': [
-    { title: '1. AULA 7: COMO DEFINIR A COMISSÃO IDEAL', url: 'https://www.exemplo.com/aula-comissao-ideal' },
-    { title: '2. REFORMA TRIBUTÁRIA: SEU SALÃO ESTÁ PRONTO?', url: 'https://www.exemplo.com/reforma-tributaria' },
-    { title: '3. CAPITAL DE GIRO, RESERVA FINANCEIRA E DEPRECIAÇÃO', url: 'https://www.exemplo.com/capital-giro-reserva-depreciacao' },
-    { title: '4. OS 4 PILARES DO MARKETING PARA SALÕES DE BELEZA', url: 'https://www.exemplo.com/4-pilares-marketing' },
+    { title: '1. COMO DEFINIR A COMISSÃO IDEAL', url: 'https://www.exemplo.com/aula-comissao-ideal' },
+    { title: '2. REFORMA TRIBUTÁRIA', url: 'https://www.exemplo.com/reforma-tributaria' },
+    { title: '3. CAPITAL DE GIRO E RESERVA', url: 'https://www.exemplo.com/capital-giro-reserva-depreciacao' },
+    { title: '4. 4 PILARES DO MARKETING', url: 'https://www.exemplo.com/4-pilares-marketing' },
     { title: '5. RELATÓRIO PROFISSIONAL', url: 'https://www.exemplo.com/relatorio-profissional' },
     { title: '6. CALCULAR RESERVA FINANCEIRA', url: 'https://www.exemplo.com/calcular-reserva-financeira' },
     { title: '7. CALCULADORA DEPRECIAÇÃO', url: 'https://www.exemplo.com/calculadora-depreciacao' },
@@ -101,10 +101,21 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
   const [filtro, setFiltro] = useState<'todos' | 'ativos' | 'bloqueados'>('todos')
   const [notifDismissed, setNotifDismissed] = useState(false)
   const [busca, setBusca] = useState('')
-  const [activeTab, setActiveTab] = useState('Todos os Módulos')
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   const primeiraNotif = notificacoes[0]
+
+  // Fecha dropdown ao clicar fora
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setOpenDropdown(null)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const modulosFiltrados = modulos.filter(m => {
     if (filtro === 'ativos') return m.habilitado
@@ -125,29 +136,16 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
     toast.success(`Abrindo ${modulo.nome}...`)
   }
 
-  function handleTabClick(tab: string) {
-    if (tab === 'Todos os Módulos') {
-      setActiveTab(tab)
-      setOpenDropdown(null)
-      return
-    }
-    if (openDropdown === tab) {
-      setOpenDropdown(null)
-    } else {
-      setOpenDropdown(tab)
-      setActiveTab(tab)
-    }
-  }
-
   const planoLabel = plano === 'premium' ? 'Plano Premium' : plano === 'profissional' ? 'Plano Profissional' : 'Plano Básico'
   const initials = salaoNome.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
   const TABS = ['Todos os Módulos', 'Manual do Usuário', 'Dicas Nodri', 'Gestão de Pessoas', 'Gestão Financeira', 'Marketing']
 
   return (
-    <div className="min-h-screen bg-nodri-dark flex flex-col" onClick={() => setOpenDropdown(null)}>
+    <div className="min-h-screen bg-nodri-dark flex flex-col">
 
       {/* NAVBAR */}
-      <nav className="bg-nodri-surface border-b border-nodri-border px-5 py-2.5 flex items-center gap-3 sticky top-0 z-30">
+      <nav className="bg-nodri-surface border-b border-nodri-border px-5 py-2.5 flex items-center gap-3 sticky top-0" style={{ zIndex: 50 }}>
+        {/* Logo */}
         <div className="flex items-center gap-2.5 mr-2 shrink-0">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center font-syne font-black text-sm text-black"
             style={{ background: 'linear-gradient(135deg, #7c5cfc, #f43f8e)' }}>N</div>
@@ -159,35 +157,38 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
 
         <div className="w-px h-5 bg-nodri-border shrink-0" />
 
-        {/* TABS com dropdown */}
-        <div className="flex gap-0.5 bg-nodri-card border border-nodri-border rounded-lg p-0.5 overflow-x-auto relative" onClick={e => e.stopPropagation()}>
+        {/* TABS */}
+        <div ref={dropdownRef} className="flex gap-0.5 bg-nodri-card border border-nodri-border rounded-lg p-0.5">
           {TABS.map(tab => (
             <div key={tab} className="relative">
               <button
-                onClick={() => handleTabClick(tab)}
+                onClick={() => setOpenDropdown(openDropdown === tab ? null : tab)}
                 className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-[11px] font-medium whitespace-nowrap transition-all ${
-                  activeTab === tab
-                    ? 'bg-nodri-surface text-nodri-t1 border border-nodri-border'
-                    : 'text-nodri-t2 hover:text-nodri-t1'
+                  openDropdown === tab
+                    ? 'bg-nodri-surface text-nodri-cyan border border-nodri-cyan/30'
+                    : 'text-nodri-t2 hover:text-nodri-t1 hover:bg-nodri-surface/50'
                 }`}>
                 {tab}
                 {tab !== 'Todos os Módulos' && (
-                  <ChevronDown size={10} className={`transition-transform ${openDropdown === tab ? 'rotate-180' : ''}`} />
+                  <ChevronDown size={10} className={`transition-transform duration-200 ${openDropdown === tab ? 'rotate-180 text-nodri-cyan' : ''}`} />
                 )}
               </button>
 
-              {/* DROPDOWN */}
-              {openDropdown === tab && MENU_LINKS[tab] && (
-                <div className="absolute top-full left-0 mt-1 bg-nodri-card border border-nodri-border rounded-xl shadow-2xl z-50 min-w-[280px] py-1 max-h-80 overflow-y-auto">
-                  <div className="px-3 py-2 border-b border-nodri-border">
+              {/* DROPDOWN — renderizado fora do overflow */}
+              {openDropdown === tab && tab !== 'Todos os Módulos' && MENU_LINKS[tab] && (
+                <div
+                  style={{ position: 'fixed', zIndex: 9999, marginTop: '4px' }}
+                  className="bg-nodri-card border border-nodri-border rounded-xl shadow-2xl min-w-[300px] max-h-80 overflow-y-auto"
+                >
+                  <div className="px-3 py-2 border-b border-nodri-border sticky top-0 bg-nodri-card">
                     <div className="text-[10px] font-bold text-nodri-cyan uppercase tracking-wider">{tab}</div>
                   </div>
                   {MENU_LINKS[tab].map((item, i) => (
                     <a key={i} href={item.url} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center justify-between px-3 py-2.5 hover:bg-nodri-surface transition-colors group"
-                      onClick={() => setOpenDropdown(null)}>
+                      onClick={() => setOpenDropdown(null)}
+                      className="flex items-center justify-between px-3 py-2.5 hover:bg-nodri-surface transition-colors group border-b border-nodri-border/30 last:border-0">
                       <span className="text-[11.5px] text-nodri-t2 group-hover:text-nodri-t1 transition-colors">{item.title}</span>
-                      <ExternalLink size={11} className="text-nodri-t3 group-hover:text-nodri-cyan transition-colors shrink-0 ml-2" />
+                      <ExternalLink size={11} className="text-nodri-t3 group-hover:text-nodri-cyan transition-colors shrink-0 ml-3" />
                     </a>
                   ))}
                 </div>
