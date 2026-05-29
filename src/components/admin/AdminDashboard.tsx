@@ -604,7 +604,6 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
     </div>
   </div>
 </div>
-
               {/* TABELA SALÕES */}
               <div>
                 <h2 className="font-syne font-bold text-[12.5px] mb-3">Salões Cadastrados</h2>
