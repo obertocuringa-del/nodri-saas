@@ -1,0 +1,58 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --nodri-dark:    #0d0f14;
+  --nodri-surface: #13161e;
+  --nodri-card:    #181c27;
+  --nodri-border:  #232840;
+  --nodri-cyan:    #00e5c8;
+  --nodri-purple:  #7c5cfc;
+  --nodri-pink:    #f43f8e;
+  --nodri-green:   #22c55e;
+  --nodri-amber:   #f59e0b;
+  --nodri-red:     #ef4444;
+  --nodri-blue:    #3b82f6;
+  --nodri-t1:      #f0f2ff;
+  --nodri-t2:      #8891b3;
+  --nodri-t3:      #4a506b;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  background-color: var(--nodri-dark);
+  color: var(--nodri-t1);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar customizada */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--nodri-surface); }
+::-webkit-scrollbar-thumb { background: var(--nodri-border); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--nodri-t3); }
+
+/* Seleção de texto */
+::selection { background: rgba(0, 229, 200, 0.2); color: var(--nodri-t1); }
+
+@layer components {
+  .nodri-card {
+    @apply bg-nodri-card border border-nodri-border rounded-xl;
+  }
+  .nodri-btn-primary {
+    @apply bg-nodri-cyan text-black font-bold text-sm px-4 py-2 rounded-lg hover:brightness-110 transition-all active:scale-95;
+  }
+  .nodri-btn-ghost {
+    @apply border border-nodri-border text-nodri-t2 text-sm px-4 py-2 rounded-lg hover:bg-white/5 hover:text-nodri-t1 transition-all;
+  }
+  .nodri-input {
+    @apply w-full bg-nodri-card border border-nodri-border text-nodri-t1 placeholder-nodri-t3 rounded-lg px-3 py-2 text-sm outline-none focus:border-nodri-cyan/50 transition-colors;
+  }
+  .nodri-label {
+    @apply text-nodri-t3 text-xs uppercase tracking-widest font-medium;
+  }
+}
