@@ -41,11 +41,9 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
   })
   const [savingSalao, setSavingSalao] = useState(false)
 
-  async function handleLogout() {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' })
-    } catch {}
-    window.location.href = '/login'
+  function handleLogout() {
+    document.cookie = 'nodri_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
+    window.location.replace('/login')
   }
 
   async function openModCtrl(salao: Salao) {
