@@ -5,19 +5,16 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const token = request.cookies.get('nodri_token')?.value
 
-  // Rotas públicas
-  if (pathname.startsWith('/login') || pathname.startsWith('/api/auth')) {
-    if (token) {
+  if (pathname.startsWith('/login') || pathname.startsWith('/logout') || pathname.startsWith('/api/auth') || pathname.startsWith('/_next') || pathname.startsWith('/favicon')) {
+    if (pathname.startsWith('/login') && token) {
       const payload = await verifyJWT(token)
       if (payload) {
-        const dest = payload.role === 'master' ? '/admin' : '/salon'
-        return NextResponse.redirect(new URL(dest, request.url))
+        return NextResponse.redirect(new URL(payload.role === 'master' ? '/admin' : '/salon', request.url))
       }
     }
     return NextResponse.next()
   }
 
-  // Rotas protegidas — precisa de token
   if (!token) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
@@ -25,23 +22,21 @@ export async function middleware(request: NextRequest) {
   const payload = await verifyJWT(token)
   if (!payload) {
     const response = NextResponse.redirect(new URL('/login', request.url))
-    response.cookies.delete('nodri_token')
+    response.cookies.set('nodri_token', '', { maxAge: 0, path: '/' })
     return response
   }
 
-  // Admin routes — só master
-  if (pathname.startsWith('/admin') && payload.role !== 'master') {
-    return NextResponse.redirect(new URL('/salon', request.url))
-  }
-
-  // Salon routes — só salon
   if (pathname.startsWith('/salon') && payload.role !== 'salon') {
     return NextResponse.redirect(new URL('/admin', request.url))
+  }
+
+  if (pathname.startsWith('/admin') && payload.role !== 'master') {
+    return NextResponse.redirect(new URL('/salon', request.url))
   }
 
   return NextResponse.next()
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.png$).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.png$|.*\\.jpg$|.*\\.svg$).*)'],
 }
