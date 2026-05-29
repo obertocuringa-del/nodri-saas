@@ -882,40 +882,70 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
       )}
 
       {/* MODAL MÓDULOS */}
-      {modCtrlSalao && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-          <div className="nodri-card w-full max-w-2xl p-5 animate-slide-up">
-            <div className="flex items-center justify-between mb-4">
-              <div><div className="font-syne font-bold text-[13px] flex items-center gap-2"><Puzzle size={14} className="text-nodri-cyan" /> Controle de Módulos</div><div className="text-[10px] text-nodri-cyan mt-0.5">{modCtrlSalao.nome}</div></div>
-              <button onClick={() => setModCtrlSalao(null)} className="text-nodri-t3 hover:text-nodri-t1"><X size={16} /></button>
-            </div>
-            <div className="grid grid-cols-7 gap-2 mb-4">
-              {modulos.map(m => {
-                const on = modulosAtivos.has(m.id)
-                return (
-                  <div key={m.id} onClick={() => toggleModulo(m.id)}
-                    className={`p-2 rounded-lg border text-center cursor-pointer transition-all ${on ? 'border-nodri-cyan/30 bg-nodri-cyan/5' : 'border-nodri-border bg-nodri-surface hover:border-nodri-cyan/20'}`}>
-                    <div className="text-base mb-1">⚙️</div>
-                    <div className="text-[8.5px] font-bold uppercase leading-tight text-nodri-t1 mb-1.5">{m.nome.split(' ').slice(0,2).join(' ')}</div>
-                    <div className={`w-6 h-3 rounded-full mx-auto relative transition-colors ${on ? 'bg-nodri-cyan' : 'bg-nodri-border'}`}>
-                      <div className={`absolute top-0.5 w-2 h-2 bg-white rounded-full transition-all ${on ? 'left-3.5' : 'left-0.5'}`} />
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-[11px] text-nodri-t2">{modulosAtivos.size} módulos selecionados</span>
-              <div className="flex gap-2">
-                <button onClick={() => setModCtrlSalao(null)} className="nodri-btn-ghost text-[11px]">Cancelar</button>
-                <button onClick={saveModulos} disabled={savingMods} className="nodri-btn-primary text-[11px] flex items-center gap-1.5">
-                  {savingMods ? <><Loader2 size={12} className="animate-spin" /> Salvando...</> : 'Salvar Alterações'}
-                </button>
-              </div>
-            </div>
+{modCtrlSalao && (
+  <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+    <div className="w-full max-w-2xl p-5 bg-white rounded-xl shadow-2xl animate-slide-up">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <div className="font-syne font-bold text-[13px] flex items-center gap-2">
+            <Puzzle size={14} className="text-nodri-cyan" /> 
+            <span className="text-black">Controle de Módulos</span>
           </div>
+          <div className="text-[10px] text-nodri-cyan mt-0.5">{modCtrlSalao.nome}</div>
         </div>
-      )}
+        <button onClick={() => setModCtrlSalao(null)} className="text-gray-400 hover:text-gray-600 transition-colors">
+          <X size={16} />
+        </button>
+      </div>
+      
+      <div className="mb-3">
+        <div className="text-[11px] text-gray-500 mb-2">Módulos do Sistema</div>
+        <div className="flex gap-2 mb-3">
+          <button className="text-[10px] px-2 py-1 rounded-full bg-nodri-cyan text-black font-medium">Todos</button>
+          <button className="text-[10px] px-2 py-1 rounded-full bg-gray-100 text-gray-500">Ativos</button>
+          <button className="text-[10px] px-2 py-1 rounded-full bg-gray-100 text-gray-500">Bloqueados</button>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-7 gap-2 mb-4">
+        {modulos.map(m => {
+          const on = modulosAtivos.has(m.id)
+          return (
+            <div key={m.id} onClick={() => toggleModulo(m.id)}
+              className={`p-2 rounded-lg border text-center cursor-pointer transition-all ${
+                on 
+                  ? 'border-nodri-cyan bg-nodri-cyan/10' 
+                  : 'border-gray-200 bg-gray-50 hover:border-nodri-cyan/30'
+              }`}>
+              <div className="text-base mb-1">⚙️</div>
+              <div className="text-[8.5px] font-bold uppercase leading-tight text-black mb-1.5">
+                {m.nome.split(' ').slice(0,2).join(' ')}
+              </div>
+              <div className={`w-6 h-3 rounded-full mx-auto relative transition-colors ${on ? 'bg-nodri-cyan' : 'bg-gray-300'}`}>
+                <div className={`absolute top-0.5 w-2 h-2 bg-white rounded-full transition-all ${on ? 'left-3.5' : 'left-0.5'}`} />
+              </div>
+              {on && (
+                <div className="text-[7px] text-nodri-cyan font-semibold mt-1">✓</div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+      
+      <div className="flex justify-between items-center border-t border-gray-200 pt-3 mt-1">
+        <span className="text-[11px] text-black font-medium">{modulosAtivos.size} de {modulos.length} módulos ativos</span>
+        <div className="flex gap-2">
+          <button onClick={() => setModCtrlSalao(null)} className="px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 text-[11px] hover:bg-gray-50 transition-all">
+            Cancelar
+          </button>
+          <button onClick={saveModulos} disabled={savingMods} 
+            className="px-3 py-1.5 rounded-lg bg-nodri-cyan text-black text-[11px] font-bold hover:brightness-110 disabled:opacity-50 transition-all flex items-center gap-1.5">
+            {savingMods ? <><Loader2 size={12} className="animate-spin" /> Salvando...</> : 'Salvar Alterações'}
+          </button>
+        </div>
+      </div>
     </div>
+  </div>
+)}
   )
 }
