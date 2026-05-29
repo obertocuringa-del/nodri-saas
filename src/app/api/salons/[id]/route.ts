@@ -11,7 +11,6 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   const body = await req.json()
   const { nova_senha, ...dadosSalao } = body
 
-  // Atualiza dados do salão
   const { data, error } = await supabaseAdmin
     .from('saloes')
     .update({
@@ -30,13 +29,9 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Se forneceu nova senha, atualiza o usuário
   if (nova_senha && nova_senha.trim()) {
     const senhaHash = await hashPassword(nova_senha)
-    await supabaseAdmin
-      .from('usuarios')
-      .update({ senha_hash: senhaHash })
-      .eq('salao_id', params.id)
+    await supabaseAdmin.from('usuarios').update({ senha_hash: senhaHash }).eq('salao_id', params.id)
   }
 
   return NextResponse.json(data)
@@ -47,13 +42,9 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   const payload = token ? await verifyJWT(token) : null
   if (!payload || payload.role !== 'master') return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
-  // Deleta usuários do salão primeiro
   await supabaseAdmin.from('usuarios').delete().eq('salao_id', params.id)
-  // Deleta módulos do salão
   await supabaseAdmin.from('salao_modulos').delete().eq('salao_id', params.id)
-  // Deleta notificações do salão
   await supabaseAdmin.from('notificacoes').delete().eq('salao_id', params.id)
-  // Deleta o salão
   const { error } = await supabaseAdmin.from('saloes').delete().eq('id', params.id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
