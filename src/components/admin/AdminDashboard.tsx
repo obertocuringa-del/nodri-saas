@@ -41,8 +41,50 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
   })
   const [savingSalao, setSavingSalao] = useState(false)
 
-  function handleLogout() {
-    window.location.href = '/logout'
+  // FUNÇÃO DE LOGOUT CORRIGIDA
+  async function handleLogout() {
+    try {
+      toast.loading('Saindo...', { id: 'logout' })
+      
+      // Chamar API de logout
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      })
+      
+      if (!response.ok) {
+        throw new Error('Erro ao fazer logout')
+      }
+      
+      // Limpar cookies no cliente (garantia extra)
+      const cookies = document.cookie.split(';')
+      cookies.forEach(cookie => {
+        const [name] = cookie.split('=')
+        document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;`
+      })
+      
+      // Limpar storages
+      try {
+        localStorage.clear()
+        sessionStorage.clear()
+      } catch(e) {
+        // Ignora erros
+      }
+      
+      toast.success('Logout realizado!', { id: 'logout' })
+      
+      // Redirecionar para login
+      window.location.href = '/login'
+      
+    } catch (error) {
+      console.error('Erro no logout:', error)
+      toast.error('Erro ao sair, tente novamente', { id: 'logout' })
+      
+      // Fallback: redirecionar mesmo assim
+      setTimeout(() => {
+        window.location.href = '/login'
+      }, 500)
+    }
   }
 
   async function openModCtrl(salao: Salao) {
