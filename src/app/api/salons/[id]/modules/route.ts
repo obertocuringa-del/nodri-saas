@@ -1,61 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { verifyJWT, hashPassword } from '@/lib/auth'
+import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
+
+export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+  const token = cookies().get('nodri_token')?.value
+  const payload = token ? await verifyJWT(token) : null
+  if (!payload || payload.role !== 'master') return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+
+  const { data } = await supabaseAdmin
+    .from('salao_modulos')
+    .select('modulo_id')
+    .eq('salao_id', params.id)
+    .eq('ativo', true)
+
+  return NextResponse.json({ habilitados: (data || []).map((m: any) => m.modulo_id) })
+}
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   const token = cookies().get('nodri_token')?.value
   const payload = token ? await verifyJWT(token) : null
   if (!payload || payload.role !== 'master') return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
-  const body = await req.json()
-  const { nova_senha, ...dadosSalao } = body
+  const { habilitados } = await req.json()
 
-  // Atualiza dados do salão
-  const { data, error } = await supabaseAdmin
-    .from('saloes')
-    .update({
-      nome: dadosSalao.nome,
-      responsavel: dadosSalao.responsavel,
-      email: dadosSalao.email,
-      telefone: dadosSalao.telefone,
-      plano_id: dadosSalao.plano_id || null,
-      licenca_vencimento: dadosSalao.licenca_vencimento || null,
-      status: dadosSalao.status,
-      observacoes: dadosSalao.observacoes,
-    })
-    .eq('id', params.id)
-    .select('*, plano:planos(*)')
-    .single()
+  await supabaseAdmin.from('salao_modulos').delete().eq('salao_id', params.id)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-
-  // Se forneceu nova senha, atualiza o usuário
-  if (nova_senha && nova_senha.trim()) {
-    const senhaHash = await hashPassword(nova_senha)
-    await supabaseAdmin
-      .from('usuarios')
-      .update({ senha_hash: senhaHash })
-      .eq('salao_id', params.id)
+  if (habilitados.length > 0) {
+    await supabaseAdmin.from('salao_modulos').insert(
+      habilitados.map((moduloId: string) => ({
+        salao_id: params.id,
+        modulo_id: moduloId,
+        ativo: true,
+        habilitado_por: payload.userId,
+      }))
+    )
   }
 
-  return NextResponse.json(data)
-}
-
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
-  const token = cookies().get('nodri_token')?.value
-  const payload = token ? await verifyJWT(token) : null
-  if (!payload || payload.role !== 'master') return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-
-  // Deleta usuários do salão primeiro
-  await supabaseAdmin.from('usuarios').delete().eq('salao_id', params.id)
-  // Deleta módulos do salão
-  await supabaseAdmin.from('salao_modulos').delete().eq('salao_id', params.id)
-  // Deleta notificações do salão
-  await supabaseAdmin.from('notificacoes').delete().eq('salao_id', params.id)
-  // Deleta o salão
-  const { error } = await supabaseAdmin.from('saloes').delete().eq('id', params.id)
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ ok: true })
 }
