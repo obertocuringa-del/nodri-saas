@@ -1,8 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { LogOut, Bell, Plus, Shield, Building, CreditCard, Puzzle, Users, BarChart3, Settings, RefreshCw, X, Send, Edit, Lock, Loader2 } from 'lucide-react'
+import { LogOut, Bell, Plus, Shield, Building, CreditCard, Puzzle, Users, BarChart3, Settings, RefreshCw, X, Send, Edit, Lock, Loader2, ChevronDown, Check } from 'lucide-react'
 import toast from 'react-hot-toast'
 import type { Salao, Modulo, Notificacao, Plano } from '@/types'
 
@@ -25,12 +24,14 @@ const PLANO_CLASS: Record<string, string> = {
 }
 
 export default function AdminDashboard({ saloes: initialSaloes, modulos, notificacoes, planos }: Props) {
-  const router = useRouter()
   const [saloes, setSaloes] = useState(initialSaloes)
   const [activeSection, setActiveSection] = useState('dashboard')
   const [modCtrlSalao, setModCtrlSalao] = useState<Salao | null>(null)
   const [modulosAtivos, setModulosAtivos] = useState<Set<string>>(new Set())
   const [notifMsg, setNotifMsg] = useState('')
+  const [notifTipo, setNotifTipo] = useState<'info'|'success'|'warning'|'danger'>('info')
+  const [notifDestinatarios, setNotifDestinatarios] = useState<string[]>([]) // vazio = todos
+  const [showDestinatarios, setShowDestinatarios] = useState(false)
   const [sending, setSending] = useState(false)
   const [localNotifs, setLocalNotifs] = useState(notificacoes)
   const [showNovoSalao, setShowNovoSalao] = useState(false)
@@ -41,50 +42,8 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
   })
   const [savingSalao, setSavingSalao] = useState(false)
 
-  // FUNÇÃO DE LOGOUT CORRIGIDA
-  async function handleLogout() {
-    try {
-      toast.loading('Saindo...', { id: 'logout' })
-      
-      // Chamar API de logout
-      const response = await fetch('/api/auth/logout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      })
-      
-      if (!response.ok) {
-        throw new Error('Erro ao fazer logout')
-      }
-      
-      // Limpar cookies no cliente (garantia extra)
-      const cookies = document.cookie.split(';')
-      cookies.forEach(cookie => {
-        const [name] = cookie.split('=')
-        document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;`
-      })
-      
-      // Limpar storages
-      try {
-        localStorage.clear()
-        sessionStorage.clear()
-      } catch(e) {
-        // Ignora erros
-      }
-      
-      toast.success('Logout realizado!', { id: 'logout' })
-      
-      // Redirecionar para login
-      window.location.href = '/login'
-      
-    } catch (error) {
-      console.error('Erro no logout:', error)
-      toast.error('Erro ao sair, tente novamente', { id: 'logout' })
-      
-      // Fallback: redirecionar mesmo assim
-      setTimeout(() => {
-        window.location.href = '/login'
-      }, 500)
-    }
+  function handleLogout() {
+    window.location.href = '/logout'
   }
 
   async function openModCtrl(salao: Salao) {
@@ -94,7 +53,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
     setModulosAtivos(new Set(data.habilitados || []))
   }
 
-  async function toggleModulo(moduloId: string) {
+  function toggleModulo(moduloId: string) {
     const newSet = new Set(modulosAtivos)
     if (newSet.has(moduloId)) newSet.delete(moduloId)
     else newSet.add(moduloId)
@@ -114,20 +73,45 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
     else toast.error('Erro ao salvar módulos')
   }
 
+  function toggleDestinatario(salaoId: string) {
+    setNotifDestinatarios(prev =>
+      prev.includes(salaoId) ? prev.filter(id => id !== salaoId) : [...prev, salaoId]
+    )
+  }
+
   async function sendNotification() {
     if (!notifMsg.trim()) return
     setSending(true)
-    const res = await fetch('/api/notifications', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mensagem: notifMsg, para_todos: true, tipo: 'info' }),
-    })
-    if (res.ok) {
-      const nova = await res.json()
-      setLocalNotifs(prev => [nova, ...prev])
-      setNotifMsg('')
-      toast.success('Notificação enviada!')
-    } else toast.error('Erro ao enviar notificação')
+    const paraTodos = notifDestinatarios.length === 0
+
+    if (paraTodos) {
+      // Envia para todos
+      const res = await fetch('/api/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mensagem: notifMsg, para_todos: true, tipo: notifTipo }),
+      })
+      if (res.ok) {
+        const nova = await res.json()
+        setLocalNotifs(prev => [nova, ...prev])
+        toast.success('Notificação enviada para todos!')
+      }
+    } else {
+      // Envia para salões selecionados
+      let successCount = 0
+      for (const salaoId of notifDestinatarios) {
+        const res = await fetch('/api/notifications', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mensagem: notifMsg, salao_id: salaoId, para_todos: false, tipo: notifTipo }),
+        })
+        if (res.ok) successCount++
+      }
+      toast.success(`Notificação enviada para ${successCount} salão(ões)!`)
+    }
+
+    setNotifMsg('')
+    setNotifDestinatarios([])
     setSending(false)
   }
 
@@ -146,7 +130,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
     const data = await res.json()
     setSavingSalao(false)
     if (res.ok) {
-      toast.success('Salão cadastrado com sucesso!')
+      toast.success('Salão cadastrado!')
       setSaloes(prev => [data, ...prev])
       setShowNovoSalao(false)
       setFormSalao({ nome: '', responsavel: '', email: '', telefone: '', plano_id: '', licenca_vencimento: '', senha_acesso: '', observacoes: '' })
@@ -250,7 +234,9 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
                 )}
               </div>
             </div>
-            <div className="space-y-2 mb-3 max-h-32 overflow-y-auto">
+
+            {/* Lista de notificações */}
+            <div className="space-y-2 mb-4 max-h-32 overflow-y-auto">
               {localNotifs.length === 0 && <p className="text-[11px] text-nodri-t3 text-center py-2">Nenhuma notificação</p>}
               {localNotifs.slice(0, 5).map(n => (
                 <div key={n.id} className="flex items-start gap-2.5 p-2.5 bg-nodri-surface rounded-lg border border-nodri-border">
@@ -260,15 +246,68 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
                 </div>
               ))}
             </div>
-            <div className="flex gap-2">
-              <input type="text" value={notifMsg} onChange={e => setNotifMsg(e.target.value)}
-                placeholder="Enviar notificação para todos os salões..."
-                className="nodri-input flex-1 text-[11px]"
-                onKeyDown={e => e.key === 'Enter' && sendNotification()} />
-              <button onClick={sendNotification} disabled={sending}
-                className="flex items-center gap-1.5 bg-nodri-cyan text-black text-[11px] font-bold px-3 py-1.5 rounded-lg hover:brightness-110 disabled:opacity-50 transition-all">
-                {sending ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />} Enviar
-              </button>
+
+            {/* Enviar notificação */}
+            <div className="border-t border-nodri-border pt-3">
+              <div className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-2 font-medium">Enviar Notificação</div>
+
+              {/* Destinatários */}
+              <div className="relative mb-2" onClick={e => e.stopPropagation()}>
+                <button onClick={() => setShowDestinatarios(!showDestinatarios)}
+                  className="w-full flex items-center justify-between px-3 py-2 bg-nodri-surface border border-nodri-border rounded-lg text-[11px] hover:border-nodri-cyan/30 transition-all">
+                  <span className={notifDestinatarios.length === 0 ? 'text-nodri-t3' : 'text-nodri-t1'}>
+                    {notifDestinatarios.length === 0
+                      ? '📢 Todos os salões'
+                      : `✅ ${notifDestinatarios.length} salão(ões) selecionado(s)`}
+                  </span>
+                  <ChevronDown size={12} className={`text-nodri-t3 transition-transform ${showDestinatarios ? 'rotate-180' : ''}`} />
+                </button>
+
+                {showDestinatarios && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-nodri-card border border-nodri-border rounded-xl shadow-2xl z-50 py-1 max-h-48 overflow-y-auto">
+                    <div
+                      onClick={() => { setNotifDestinatarios([]); setShowDestinatarios(false) }}
+                      className={`flex items-center gap-2 px-3 py-2.5 cursor-pointer hover:bg-nodri-surface transition-colors ${notifDestinatarios.length === 0 ? 'text-nodri-cyan' : 'text-nodri-t2'}`}>
+                      <div className={`w-4 h-4 rounded border flex items-center justify-center ${notifDestinatarios.length === 0 ? 'bg-nodri-cyan border-nodri-cyan' : 'border-nodri-border'}`}>
+                        {notifDestinatarios.length === 0 && <Check size={10} className="text-black" />}
+                      </div>
+                      <span className="text-[11.5px] font-medium">📢 Todos os salões</span>
+                    </div>
+                    {saloes.map(s => (
+                      <div key={s.id}
+                        onClick={() => toggleDestinatario(s.id)}
+                        className="flex items-center gap-2 px-3 py-2.5 cursor-pointer hover:bg-nodri-surface transition-colors">
+                        <div className={`w-4 h-4 rounded border flex items-center justify-center ${notifDestinatarios.includes(s.id) ? 'bg-nodri-cyan border-nodri-cyan' : 'border-nodri-border'}`}>
+                          {notifDestinatarios.includes(s.id) && <Check size={10} className="text-black" />}
+                        </div>
+                        <div>
+                          <div className="text-[11.5px] text-nodri-t1">{s.nome}</div>
+                          <div className="text-[10px] text-nodri-t3">{s.email}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Tipo + Mensagem + Botão */}
+              <div className="flex gap-2">
+                <select value={notifTipo} onChange={e => setNotifTipo(e.target.value as any)}
+                  className="nodri-input w-28 text-[11px] shrink-0">
+                  <option value="info">ℹ️ Info</option>
+                  <option value="success">✅ Sucesso</option>
+                  <option value="warning">⚠️ Aviso</option>
+                  <option value="danger">🚨 Urgente</option>
+                </select>
+                <input type="text" value={notifMsg} onChange={e => setNotifMsg(e.target.value)}
+                  placeholder="Digite a mensagem..."
+                  className="nodri-input flex-1 text-[11px]"
+                  onKeyDown={e => e.key === 'Enter' && sendNotification()} />
+                <button onClick={sendNotification} disabled={sending || !notifMsg.trim()}
+                  className="flex items-center gap-1.5 bg-nodri-cyan text-black text-[11px] font-bold px-3 py-1.5 rounded-lg hover:brightness-110 disabled:opacity-50 transition-all shrink-0">
+                  {sending ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />} Enviar
+                </button>
+              </div>
             </div>
           </div>
 
@@ -308,7 +347,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
                   ))}
                 </tbody>
               </table>
-              {saloes.length === 0 && <div className="text-center py-12 text-nodri-t3 text-sm">Nenhum salão cadastrado ainda — clique em "+ Novo Salão"</div>}
+              {saloes.length === 0 && <div className="text-center py-12 text-nodri-t3 text-sm">Nenhum salão cadastrado ainda</div>}
             </div>
           </div>
         </div>
@@ -316,54 +355,32 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
 
       {/* MODAL NOVO SALÃO */}
       {showNovoSalao && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" style={{minHeight:'400px'}}>
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
           <div className="nodri-card w-full max-w-lg p-6 animate-slide-up">
             <div className="flex items-center justify-between mb-5">
               <div className="font-syne font-bold text-[14px] flex items-center gap-2"><Building size={16} className="text-nodri-cyan" /> Cadastrar Novo Salão</div>
-              <button onClick={() => setShowNovoSalao(false)} className="text-nodri-t3 hover:text-nodri-t1 transition-colors"><X size={16} /></button>
+              <button onClick={() => setShowNovoSalao(false)} className="text-nodri-t3 hover:text-nodri-t1"><X size={16} /></button>
             </div>
             <form onSubmit={handleCadastrarSalao} className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="nodri-label block mb-1">Nome do Salão *</label>
-                  <input className="nodri-input" placeholder="Ex: Salão Bella" value={formSalao.nome} onChange={e => setFormSalao(p => ({...p, nome: e.target.value}))} />
-                </div>
-                <div>
-                  <label className="nodri-label block mb-1">Responsável</label>
-                  <input className="nodri-input" placeholder="Nome do dono" value={formSalao.responsavel} onChange={e => setFormSalao(p => ({...p, responsavel: e.target.value}))} />
-                </div>
+                <div><label className="nodri-label block mb-1">Nome do Salão *</label><input className="nodri-input" placeholder="Ex: Salão Bella" value={formSalao.nome} onChange={e => setFormSalao(p => ({...p, nome: e.target.value}))} /></div>
+                <div><label className="nodri-label block mb-1">Responsável</label><input className="nodri-input" placeholder="Nome do dono" value={formSalao.responsavel} onChange={e => setFormSalao(p => ({...p, responsavel: e.target.value}))} /></div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="nodri-label block mb-1">Email *</label>
-                  <input type="email" className="nodri-input" placeholder="email@salao.com" value={formSalao.email} onChange={e => setFormSalao(p => ({...p, email: e.target.value}))} />
-                </div>
-                <div>
-                  <label className="nodri-label block mb-1">Telefone</label>
-                  <input className="nodri-input" placeholder="(11) 99999-9999" value={formSalao.telefone} onChange={e => setFormSalao(p => ({...p, telefone: e.target.value}))} />
-                </div>
+                <div><label className="nodri-label block mb-1">Email *</label><input type="email" className="nodri-input" placeholder="email@salao.com" value={formSalao.email} onChange={e => setFormSalao(p => ({...p, email: e.target.value}))} /></div>
+                <div><label className="nodri-label block mb-1">Telefone</label><input className="nodri-input" placeholder="(11) 99999-9999" value={formSalao.telefone} onChange={e => setFormSalao(p => ({...p, telefone: e.target.value}))} /></div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="nodri-label block mb-1">Plano</label>
+                <div><label className="nodri-label block mb-1">Plano</label>
                   <select className="nodri-input" value={formSalao.plano_id} onChange={e => setFormSalao(p => ({...p, plano_id: e.target.value}))}>
                     <option value="">Selecionar plano</option>
                     {planos.map(p => <option key={p.id} value={p.id}>{p.nome} — R${p.preco}/mês</option>)}
                   </select>
                 </div>
-                <div>
-                  <label className="nodri-label block mb-1">Vencimento da Licença</label>
-                  <input type="date" className="nodri-input" value={formSalao.licenca_vencimento} onChange={e => setFormSalao(p => ({...p, licenca_vencimento: e.target.value}))} />
-                </div>
+                <div><label className="nodri-label block mb-1">Vencimento da Licença</label><input type="date" className="nodri-input" value={formSalao.licenca_vencimento} onChange={e => setFormSalao(p => ({...p, licenca_vencimento: e.target.value}))} /></div>
               </div>
-              <div>
-                <label className="nodri-label block mb-1">Senha de Acesso do Cliente *</label>
-                <input type="password" className="nodri-input" placeholder="Senha que o cliente usará para entrar" value={formSalao.senha_acesso} onChange={e => setFormSalao(p => ({...p, senha_acesso: e.target.value}))} />
-              </div>
-              <div>
-                <label className="nodri-label block mb-1">Observações</label>
-                <textarea className="nodri-input resize-none h-16" placeholder="Notas internas..." value={formSalao.observacoes} onChange={e => setFormSalao(p => ({...p, observacoes: e.target.value}))} />
-              </div>
+              <div><label className="nodri-label block mb-1">Senha de Acesso do Cliente *</label><input type="password" className="nodri-input" placeholder="Senha que o cliente usará para entrar" value={formSalao.senha_acesso} onChange={e => setFormSalao(p => ({...p, senha_acesso: e.target.value}))} /></div>
+              <div><label className="nodri-label block mb-1">Observações</label><textarea className="nodri-input resize-none h-16" placeholder="Notas internas..." value={formSalao.observacoes} onChange={e => setFormSalao(p => ({...p, observacoes: e.target.value}))} /></div>
               <div className="flex justify-end gap-2 pt-2">
                 <button type="button" onClick={() => setShowNovoSalao(false)} className="nodri-btn-ghost text-[12px]">Cancelar</button>
                 <button type="submit" disabled={savingSalao} className="nodri-btn-primary text-[12px] flex items-center gap-2">
@@ -377,11 +394,11 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
 
       {/* MODAL MÓDULOS */}
       {modCtrlSalao && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" style={{minHeight:'400px'}}>
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
           <div className="nodri-card w-full max-w-2xl p-5 animate-slide-up">
             <div className="flex items-center justify-between mb-4">
               <div><div className="font-syne font-bold text-[13px] flex items-center gap-2"><Puzzle size={14} className="text-nodri-cyan" /> Controle de Módulos</div><div className="text-[10px] text-nodri-cyan mt-0.5">{modCtrlSalao.nome}</div></div>
-              <button onClick={() => setModCtrlSalao(null)} className="text-nodri-t3 hover:text-nodri-t1 transition-colors"><X size={16} /></button>
+              <button onClick={() => setModCtrlSalao(null)} className="text-nodri-t3 hover:text-nodri-t1"><X size={16} /></button>
             </div>
             <div className="grid grid-cols-7 gap-2 mb-4">
               {modulos.map(m => {
