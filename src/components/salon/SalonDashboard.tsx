@@ -150,9 +150,8 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
       return
     }
     const slug = MODULO_SLUG[modulo.nome] || modulo.nome.toLowerCase().replace(/ /g, '-')
-fetch(`http://127.0.0.1:47200/launch/${slug}`).catch(() => {
-  toast('Instale o NODRI Desktop para abrir este módulo.', { icon: '💻' })
-})
+const win = window.open(`http://127.0.0.1:47200/launch/${slug}`, '_blank')
+if (win) setTimeout(() => win.close(), 500)
   }
 
   const planoLabel = plano === 'premium' ? 'Plano Premium' : plano === 'profissional' ? 'Plano Profissional' : 'Plano Básico'
