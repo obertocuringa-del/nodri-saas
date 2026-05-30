@@ -5,21 +5,6 @@ import { Bell, Settings, CheckCircle, X, Zap, Play, Search, ChevronDown, Externa
 import toast from 'react-hot-toast'
 import type { ModuloComStatus, Notificacao } from '@/types'
 
-const ICON_MAP: Record<string, string> = {
-  'calendar-check': '', 'lock': '', 'message-circle':  'eye': '',
-  'send': '', 'paperclip': '', 'chart-bar': '', 'coin': '',
-  'music': '', 'piggy-bank': '', 'calculator': '', 'star': '',
-  'armchair': '', 'tag': '',
-}
-
-
-const COR_MAP: Record<string, string> = {
-  cyan: 'bg-nodri-cyan/10 text-nodri-cyan', purple: 'bg-nodri-purple/10 text-nodri-purple',
-  pink: 'bg-nodri-pink/10 text-nodri-pink', blue: 'bg-nodri-blue/10 text-nodri-blue',
-  amber: 'bg-nodri-amber/10 text-nodri-amber', green: 'bg-nodri-green/10 text-nodri-green',
-  red: 'bg-nodri-red/10 text-nodri-red',
-}
-
 const MENU_LINKS: Record<string, { title: string; url: string }[]> = {
   'Manual do Usuário': [
     { title: '1. CONFIRMAR AGENDAMENTO', url: 'https://www.exemplo.com/confirmar-agendamento' },
@@ -98,12 +83,11 @@ interface Props {
   totalModulos: number
 }
 
-// Inject shimmer animation + white bg override
 if (typeof document !== 'undefined') {
   const style = document.createElement('style')
   style.textContent = `
-    @keyframes shimmer { 0% { background-position: 200% 0 } 100% { background-position: -200% 0 } }
-    @keyframes pulseDot { 0%,100% { transform: scale(1); opacity: 1 } 50% { transform: scale(1.3); opacity: 0.7 } }
+    @keyframes shimmer { 0% { background-position: 0% 0 } 100% { background-position: 300% 0 } }
+    @keyframes pulseDot { 0%,100% { transform: scale(1); opacity: 1 } 50% { transform: scale(1.4); opacity: 0.6 } }
     .nodri-salon-bg { background-color: #000000 !important; }
   `
   if (!document.getElementById('nodri-animations')) { style.id = 'nodri-animations'; document.head.appendChild(style) }
@@ -117,16 +101,12 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  // Auto-rotate notifications every 5 seconds
   useEffect(() => {
     if (notificacoes.length <= 1) return
     const timer = setInterval(() => setNotifIndex(i => i + 1), 5000)
     return () => clearInterval(timer)
   }, [notificacoes.length])
 
-  const primeiraNotif = notificacoes[0]
-
-  // Fecha dropdown ao clicar fora
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -144,9 +124,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
     return true
   })
 
-  function handleLogout() {
-    window.location.href = '/logout'
-  }
+  function handleLogout() { window.location.href = '/logout' }
 
   function handleAbrir(modulo: ModuloComStatus) {
     if (!modulo.habilitado) {
@@ -306,34 +284,75 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
       {/* MODULES GRID */}
       <div className="flex-1 px-5 py-3 pb-6">
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-          {modulosFiltrados.map(modulo => {
-            const iconEmoji = ICON_MAP[modulo.icone] || ''
-            const corClass = COR_MAP[modulo.cor_classe] || COR_MAP.cyan
-            return (
-              <div key={modulo.id}
-                className={`nodri-card p-4 flex flex-col cursor-pointer transition-all hover:-translate-y-0.5 relative overflow-hidden ${modulo.habilitado ? 'border-nodri-cyan/35 bg-nodri-cyan/[0.03]' : 'opacity-60'}`}>
-                {modulo.habilitado && <div className="absolute top-0 left-0 right-0 h-0.5 bg-nodri-cyan" />}
-                <div className="flex justify-end mb-2.5">
-                    <span className="text-[9px] text-nodri-t3 bg-nodri-surface px-1.5 py-0.5 rounded-full border border-nodri-border">v{modulo.versao}</span>
-                </div>
-                <div className="font-syne font-bold text-[10.5px] uppercase tracking-wide text-nodri-t1 leading-snug mb-1.5">{modulo.nome}</div>
-                <p className="text-[10px] text-nodri-t2 leading-relaxed mb-3 flex-1">{modulo.descricao}</p>
-                <div className="flex items-center justify-between gap-2 mt-auto">
-                  <div className="flex items-center gap-1.5 text-[9.5px] font-semibold">
-                    <span className={`w-1.5 h-1.5 rounded-full ${modulo.habilitado ? 'bg-nodri-green shadow-[0_0_6px_#22c55e]' : 'bg-nodri-red'}`} />
-                    <span className={modulo.habilitado ? 'text-nodri-green' : 'text-nodri-red'}>{modulo.habilitado ? 'Ativado' : 'Bloqueado'}</span>
-                  </div>
-                  <button onClick={() => handleAbrir(modulo)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10.5px] font-bold transition-all ${modulo.habilitado ? 'bg-nodri-cyan text-black hover:brightness-110' : 'border border-nodri-pink text-nodri-pink hover:bg-nodri-pink/10'}`}>
-                    {modulo.habilitado ? <><Play size={9} fill="black" /> Abrir</> : <><Zap size={9} /> Ativar</>}
-                  </button>
-                </div>
+          {modulosFiltrados.map(modulo => (
+            <div key={modulo.id}
+              className="p-4 flex flex-col cursor-pointer transition-all hover:-translate-y-0.5 relative overflow-hidden rounded-xl border"
+              style={{
+                background: modulo.habilitado ? '#161820' : '#111318',
+                borderColor: modulo.habilitado ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.04)',
+                opacity: modulo.habilitado ? 1 : 0.55,
+              }}>
+              {/* Linha topo sutil quando ativo */}
+              {modulo.habilitado && (
+                <div className="absolute top-0 left-0 right-0 h-px" style={{ background: 'rgba(255,255,255,0.12)' }} />
+              )}
+
+              {/* Versão */}
+              <div className="flex justify-end mb-3">
+                <span className="text-[9px] px-1.5 py-0.5 rounded-full"
+                  style={{ background: 'rgba(255,255,255,0.06)', color: '#475569', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  v{modulo.versao}
+                </span>
               </div>
-            )
-          })}
+
+              {/* Nome */}
+              <div className="font-syne font-bold text-[10.5px] uppercase tracking-wide leading-snug mb-1.5"
+                style={{ color: modulo.habilitado ? '#f1f5f9' : '#64748b' }}>
+                {modulo.nome}
+              </div>
+
+              {/* Descrição */}
+              <p className="text-[10px] leading-relaxed mb-4 flex-1" style={{ color: '#475569' }}>
+                {modulo.descricao}
+              </p>
+
+              {/* Footer */}
+              <div className="flex items-center justify-between gap-2 mt-auto">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full"
+                    style={{
+                      background: modulo.habilitado ? '#6ee7b7' : '#ef4444',
+                      boxShadow: modulo.habilitado ? '0 0 6px rgba(110,231,183,0.5)' : 'none'
+                    }} />
+                  <span className="text-[9.5px] font-medium"
+                    style={{ color: modulo.habilitado ? '#6ee7b7' : '#ef4444' }}>
+                    {modulo.habilitado ? 'Ativado' : 'Bloqueado'}
+                  </span>
+                </div>
+                <button onClick={() => handleAbrir(modulo)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10.5px] font-bold transition-all"
+                  style={modulo.habilitado ? {
+                    background: 'rgba(255,255,255,0.08)',
+                    color: '#f1f5f9',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                  } : {
+                    background: 'transparent',
+                    color: '#8b5cf6',
+                    border: '1px solid rgba(139,92,246,0.3)',
+                  }}>
+                  {modulo.habilitado
+                    ? <><Play size={9} fill="#f1f5f9" /> Abrir</>
+                    : <><Zap size={9} /> Ativar</>}
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
         {modulosFiltrados.length === 0 && (
-          <div className="text-center py-16 text-nodri-t3"><div className="text-4xl mb-3">🔍</div><p className="text-sm">Nenhum módulo encontrado</p></div>
+          <div className="text-center py-16" style={{ color: '#475569' }}>
+            <div className="text-4xl mb-3">🔍</div>
+            <p className="text-sm">Nenhum módulo encontrado</p>
+          </div>
         )}
       </div>
     </div>
