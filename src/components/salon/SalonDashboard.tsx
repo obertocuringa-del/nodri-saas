@@ -128,7 +128,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
 
   // Mapeamento módulo online → protocolo nodri:// (igual ao código de cima)
   const MODULO_SLUG: Record<string, string> = {
-    'Confirmar Agendamento':         'confirmar-agendamento',
+    'Confirmar Agendamento':         'confirmacao_agendamento',
     'Baixar Música YouTube':         'baixar-musica',
     'Bloqueio Sem Preferência':      'bloqueio',
     'Enviar Feedback':               'enviar-feedback',
