@@ -1,6 +1,3 @@
-pyinstaller --onefile --noconsole instalador_nodri.py
-
-
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
