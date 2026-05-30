@@ -150,8 +150,11 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
       return
     }
     const slug = MODULO_SLUG[modulo.nome] || modulo.nome.toLowerCase().replace(/ /g, '-')
-const win = window.open(`http://127.0.0.1:47200/launch/${slug}`, '_blank')
-if (win) setTimeout(() => win.close(), 500)
+const iframe = document.createElement('iframe')
+iframe.style.display = 'none'
+iframe.src = `http://127.0.0.1:47200/launch/${slug}`
+document.body.appendChild(iframe)
+setTimeout(() => document.body.removeChild(iframe), 2000)
   }
 
   const planoLabel = plano === 'premium' ? 'Plano Premium' : plano === 'profissional' ? 'Plano Profissional' : 'Plano Básico'
