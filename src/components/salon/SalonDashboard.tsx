@@ -103,7 +103,7 @@ if (typeof document !== 'undefined') {
   style.textContent = `
     @keyframes shimmer { 0% { background-position: 200% 0 } 100% { background-position: -200% 0 } }
     @keyframes pulseDot { 0%,100% { transform: scale(1); opacity: 1 } 50% { transform: scale(1.3); opacity: 0.7 } }
-    .nodri-salon-bg { background-color: #0a1f1a !important; }
+    .nodri-salon-bg { background-color: #000000 !important; }
   `
   if (!document.getElementById('nodri-animations')) { style.id = 'nodri-animations'; document.head.appendChild(style) }
 }
