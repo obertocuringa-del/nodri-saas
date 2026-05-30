@@ -92,16 +92,6 @@ const DEFAULT_LINKS: Record<string, { title: string; url: string }[]> = {
   ],
 }
 
-// Inject shimmer animation (do segundo código)
-if (typeof document !== 'undefined') {
-  const style = document.createElement('style')
-  style.textContent = `
-    @keyframes shimmer { 0% { background-position: 200% 0 } 100% { background-position: -200% 0 } }
-    @keyframes pulseDot { 0%,100% { transform: scale(1); opacity: 1 } 50% { transform: scale(1.3); opacity: 0.7 } }
-  `
-  if (!document.getElementById('nodri-animations')) { style.id = 'nodri-animations'; document.head.appendChild(style) }
-}
-
 export default function AdminDashboard({ saloes: initialSaloes, modulos, notificacoes, planos: initialPlanos }: Props) {
   const [saloes, setSaloes] = useState(initialSaloes)
   const [planos, setPlanos] = useState(initialPlanos)
@@ -123,7 +113,6 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
   const [savingLinks, setSavingLinks] = useState(false)
   const LINK_TABS = ['Manual do Usuário', 'Dicas Nodri', 'Gestão de Pessoas', 'Gestão Financeira', 'Marketing']
 
-  // Estado do modal de edição de salão
   const [editSalao, setEditSalao] = useState<Salao | null>(null)
   const [editForm, setEditForm] = useState({ nome: '', responsavel: '', email: '', telefone: '', plano_id: '', licenca_vencimento: '', status: '', nova_senha: '', observacoes: '' })
   const [savingEdit, setSavingEdit] = useState(false)
@@ -133,21 +122,23 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
   const [deletingSalao, setDeletingSalao] = useState(false)
   const [editTab, setEditTab] = useState<'dados'|'acesso'|'perigo'>('dados')
 
-  // Estado para gestão de planos
   const [showNovoPlano, setShowNovoPlano] = useState(false)
   const [editPlano, setEditPlano] = useState<Plano | null>(null)
   const [planoForm, setPlanoForm] = useState({ nome: '', slug: '', descricao: '', preco: '', max_usuarios: '' })
   const [savingPlano, setSavingPlano] = useState(false)
 
-  // Dropdown de links (do segundo código)
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null)
+  // Editar notificação
+  const [editNotif, setEditNotif] = useState<Notificacao | null>(null)
+  const [editNotifMsg, setEditNotifMsg] = useState('')
+  const [savingNotif, setSavingNotif] = useState(false)
+  const [deletingNotif, setDeletingNotif] = useState<string | null>(null)
+
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  // Fecha dropdown ao clicar fora (do segundo código)
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setOpenDropdown(null)
+        setShowDestinatarios(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -187,15 +178,10 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
     setEditSalao(salao)
     setEditTab('dados')
     setEditForm({
-      nome: salao.nome,
-      responsavel: salao.responsavel || '',
-      email: salao.email,
-      telefone: salao.telefone || '',
-      plano_id: salao.plano_id || '',
-      licenca_vencimento: salao.licenca_vencimento || '',
-      status: salao.status,
-      nova_senha: '',
-      observacoes: salao.observacoes || '',
+      nome: salao.nome, responsavel: salao.responsavel || '', email: salao.email,
+      telefone: salao.telefone || '', plano_id: salao.plano_id || '',
+      licenca_vencimento: salao.licenca_vencimento || '', status: salao.status,
+      nova_senha: '', observacoes: salao.observacoes || '',
     })
     setShowDeleteConfirm(false)
     setDeleteConfirmText('')
@@ -216,9 +202,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
       toast.success('Salão atualizado!')
       setSaloes(prev => prev.map(s => s.id === editSalao.id ? { ...s, ...data } : s))
       setEditSalao(null)
-    } else {
-      toast.error(data.error || 'Erro ao salvar')
-    }
+    } else toast.error(data.error || 'Erro ao salvar')
   }
 
   async function toggleBloqueio(salao: Salao) {
@@ -232,26 +216,16 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
       setSaloes(prev => prev.map(s => s.id === salao.id ? { ...s, status: novoStatus as any } : s))
       toast.success(novoStatus === 'bloqueado' ? 'Salão bloqueado!' : 'Salão desbloqueado!')
       if (editSalao?.id === salao.id) setEditForm(p => ({ ...p, status: novoStatus }))
-    } else {
-      toast.error('Erro ao alterar status')
-    }
+    } else toast.error('Erro ao alterar status')
   }
 
   async function deleteSalao() {
-    if (!editSalao || deleteConfirmText !== editSalao.nome) {
-      toast.error('Nome incorreto!')
-      return
-    }
+    if (!editSalao || deleteConfirmText !== editSalao.nome) { toast.error('Nome incorreto!'); return }
     setDeletingSalao(true)
     const res = await fetch(`/api/salons/${editSalao.id}`, { method: 'DELETE' })
     setDeletingSalao(false)
-    if (res.ok) {
-      toast.success('Salão excluído!')
-      setSaloes(prev => prev.filter(s => s.id !== editSalao.id))
-      setEditSalao(null)
-    } else {
-      toast.error('Erro ao excluir salão')
-    }
+    if (res.ok) { toast.success('Salão excluído!'); setSaloes(prev => prev.filter(s => s.id !== editSalao.id)); setEditSalao(null) }
+    else toast.error('Erro ao excluir salão')
   }
 
   function toggleDestinatario(salaoId: string) {
@@ -267,11 +241,42 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
       if (res.ok) { const nova = await res.json(); setLocalNotifs(prev => [nova, ...prev]); toast.success('Enviado para todos!') }
     } else {
       for (const salaoId of notifDestinatarios) {
-        await fetch('/api/notifications', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mensagem: notifMsg, salao_id: salaoId, para_todos: false, tipo: notifTipo }) })
+        const res = await fetch('/api/notifications', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mensagem: notifMsg, salao_id: salaoId, para_todos: false, tipo: notifTipo }) })
+        if (res.ok) { const nova = await res.json(); setLocalNotifs(prev => [nova, ...prev]) }
       }
       toast.success(`Enviado para ${notifDestinatarios.length} salão(ões)!`)
     }
     setNotifMsg(''); setNotifDestinatarios([]); setSending(false)
+  }
+
+  async function handleEditNotif(notif: Notificacao) {
+    setEditNotif(notif)
+    setEditNotifMsg(notif.mensagem)
+  }
+
+  async function saveEditNotif() {
+    if (!editNotif || !editNotifMsg.trim()) return
+    setSavingNotif(true)
+    const res = await fetch(`/api/notifications/${editNotif.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mensagem: editNotifMsg }),
+    })
+    setSavingNotif(false)
+    if (res.ok) {
+      toast.success('Notificação atualizada!')
+      setLocalNotifs(prev => prev.map(n => n.id === editNotif.id ? { ...n, mensagem: editNotifMsg } : n))
+      setEditNotif(null)
+    } else toast.error('Erro ao editar notificação')
+  }
+
+  async function deleteNotif(id: string) {
+    if (!confirm('Excluir esta notificação?')) return
+    setDeletingNotif(id)
+    const res = await fetch(`/api/notifications/${id}`, { method: 'DELETE' })
+    setDeletingNotif(null)
+    if (res.ok) { toast.success('Notificação excluída!'); setLocalNotifs(prev => prev.filter(n => n.id !== id)) }
+    else toast.error('Erro ao excluir')
   }
 
   async function handleCadastrarSalao(e: React.FormEvent) {
@@ -301,66 +306,36 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
     setSavingLinks(false)
   }
 
-  // Funções de gestão de planos
   function openEditPlano(plano: Plano) {
     setEditPlano(plano)
-    setPlanoForm({
-      nome: plano.nome,
-      slug: plano.slug,
-      descricao: plano.descricao || '',
-      preco: String(plano.preco),
-      max_usuarios: String(plano.max_usuarios || 1),
-    })
+    setPlanoForm({ nome: plano.nome, slug: plano.slug, descricao: plano.descricao || '', preco: String(plano.preco), max_usuarios: String(plano.max_usuarios || 1) })
     setShowNovoPlano(true)
   }
 
   async function handleSavePlano(e: React.FormEvent) {
     e.preventDefault()
-    if (!planoForm.nome || !planoForm.slug || !planoForm.preco) {
-      toast.error('Nome, slug e preço são obrigatórios')
-      return
-    }
+    if (!planoForm.nome || !planoForm.slug || !planoForm.preco) { toast.error('Nome, slug e preço são obrigatórios'); return }
     setSavingPlano(true)
     const url = editPlano ? `/api/plans/${editPlano.id}` : '/api/plans'
     const method = editPlano ? 'PUT' : 'POST'
-    const res = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...planoForm,
-        preco: parseFloat(planoForm.preco),
-        max_usuarios: parseInt(planoForm.max_usuarios) || 1,
-      }),
-    })
+    const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...planoForm, preco: parseFloat(planoForm.preco), max_usuarios: parseInt(planoForm.max_usuarios) || 1 }) })
     const data = await res.json()
     setSavingPlano(false)
     if (res.ok) {
       toast.success(editPlano ? 'Plano atualizado!' : 'Plano criado!')
-      if (editPlano) {
-        setPlanos(prev => prev.map(p => p.id === editPlano.id ? data : p))
-      } else {
-        setPlanos(prev => [...prev, data])
-      }
-      setShowNovoPlano(false)
-      setEditPlano(null)
-      setPlanoForm({ nome: '', slug: '', descricao: '', preco: '', max_usuarios: '' })
-    } else {
-      toast.error(data.error || 'Erro ao salvar plano')
-    }
+      if (editPlano) setPlanos(prev => prev.map(p => p.id === editPlano.id ? data : p))
+      else setPlanos(prev => [...prev, data])
+      setShowNovoPlano(false); setEditPlano(null); setPlanoForm({ nome: '', slug: '', descricao: '', preco: '', max_usuarios: '' })
+    } else toast.error(data.error || 'Erro ao salvar plano')
   }
 
   async function deletePlano(planoId: string) {
-    if (!confirm('Tem certeza que deseja excluir este plano? Salões associados serão afetados.')) return
+    if (!confirm('Excluir este plano?')) return
     const res = await fetch(`/api/plans/${planoId}`, { method: 'DELETE' })
-    if (res.ok) {
-      toast.success('Plano excluído!')
-      setPlanos(prev => prev.filter(p => p.id !== planoId))
-    } else {
-      toast.error('Erro ao excluir plano')
-    }
+    if (res.ok) { toast.success('Plano excluído!'); setPlanos(prev => prev.filter(p => p.id !== planoId)) }
+    else toast.error('Erro ao excluir plano')
   }
 
-  // Função para calcular dias restantes do trial
   function getTrialStatus(criado_em: string | Date) {
     const criado = new Date(criado_em)
     const expira = new Date(criado)
@@ -389,7 +364,6 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
 
   return (
     <div className="flex h-screen bg-nodri-dark overflow-hidden">
-      {/* SIDEBAR */}
       <aside className="w-[200px] min-w-[200px] bg-nodri-surface border-r border-nodri-border flex flex-col">
         <div className="px-4 py-4 border-b border-nodri-border flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center font-syne font-black text-sm text-black" style={{ background: 'linear-gradient(135deg, #00e5c8, #7c5cfc)' }}>N</div>
@@ -423,7 +397,6 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
         </div>
       </aside>
 
-      {/* MAIN */}
       <main className="flex-1 overflow-y-auto flex flex-col">
         <div className="px-5 py-3 border-b border-nodri-border bg-nodri-surface flex items-center gap-3 sticky top-0 z-20">
           <div>
@@ -431,9 +404,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
               {activeSection === 'links' ? 'Links do Menu' : activeSection === 'planos' ? 'Gestão de Planos' : 'Painel Admin Master'}
             </div>
             <div className="text-[11px] text-nodri-t2">
-              {activeSection === 'links' ? 'Edite os links de cada categoria do menu' : 
-                activeSection === 'planos' ? 'Crie, edite e gerencie os planos de assinatura' : 
-                'Controle total de salões, licenças e módulos'}
+              {activeSection === 'links' ? 'Edite os links de cada categoria do menu' : activeSection === 'planos' ? 'Crie, edite e gerencie os planos de assinatura' : 'Controle total de salões, licenças e módulos'}
             </div>
           </div>
           <div className="ml-auto flex gap-2">
@@ -442,7 +413,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
               {localNotifs.filter(n => !n.lida).length > 0 && <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-nodri-red rounded-full" />}
             </button>
             {activeSection === 'planos' && (
-              <button onClick={() => { setEditPlano(null); setPlanoForm({ nome: '', slug: '', descricao: '', preco: '', max_usuarios: '' }); setShowNovoPlano(true) }} 
+              <button onClick={() => { setEditPlano(null); setPlanoForm({ nome: '', slug: '', descricao: '', preco: '', max_usuarios: '' }); setShowNovoPlano(true) }}
                 className="flex items-center gap-1.5 bg-nodri-cyan text-black text-[11.5px] font-bold px-3 py-1.5 rounded-lg hover:brightness-110 transition-all">
                 <Plus size={13} /> Novo Plano
               </button>
@@ -457,7 +428,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
 
         <div className="p-5 flex-1">
 
-          {/* ── LINKS DO MENU ── */}
+          {/* LINKS DO MENU */}
           {activeSection === 'links' && (
             <div>
               <div className="flex gap-1.5 mb-5 flex-wrap">
@@ -505,16 +476,14 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
             </div>
           )}
 
-          {/* ── GESTÃO DE PLANOS ── */}
+          {/* GESTÃO DE PLANOS */}
           {activeSection === 'planos' && (
             <div>
               <div className="grid gap-3">
                 {planos.map(plano => (
                   <div key={plano.id} className="nodri-card p-4 flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-[14px] font-bold text-black ${PLANO_CLASS[plano.slug as keyof typeof PLANO_CLASS] || 'bg-nodri-t3/20'}`}>
-                        {plano.nome[0]}
-                      </div>
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-[14px] font-bold text-black ${PLANO_CLASS[plano.slug as keyof typeof PLANO_CLASS] || 'bg-nodri-t3/20'}`}>{plano.nome[0]}</div>
                       <div>
                         <div className="font-syne font-bold text-[13px]">{plano.nome}</div>
                         <div className="text-[10px] text-nodri-t2">Slug: {plano.slug}</div>
@@ -522,37 +491,23 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
                       </div>
                     </div>
                     <div className="flex items-center gap-6">
-                      <div className="text-right">
-                        <div className="font-syne font-bold text-[15px]">R${plano.preco}</div>
-                        <div className="text-[9px] text-nodri-t3">/mês</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-[11px] font-medium">👥 {plano.max_usuarios} usuário(s)</div>
-                      </div>
+                      <div className="text-right"><div className="font-syne font-bold text-[15px]">R${plano.preco}</div><div className="text-[9px] text-nodri-t3">/mês</div></div>
+                      <div className="text-right"><div className="text-[11px] font-medium">👥 {plano.max_usuarios} usuário(s)</div></div>
                       <div className="flex gap-1.5">
-                        <button onClick={() => openEditPlano(plano)} className="p-1.5 rounded-md border border-nodri-purple/40 text-nodri-purple bg-nodri-purple/7 hover:bg-nodri-purple/15 transition-all">
-                          <Edit size={11} />
-                        </button>
-                        <button onClick={() => deletePlano(plano.id)} className="p-1.5 rounded-md border border-nodri-red/35 text-nodri-red bg-nodri-red/7 hover:bg-nodri-red/15 transition-all">
-                          <Trash2 size={11} />
-                        </button>
+                        <button onClick={() => openEditPlano(plano)} className="p-1.5 rounded-md border border-nodri-purple/40 text-nodri-purple bg-nodri-purple/7 hover:bg-nodri-purple/15 transition-all"><Edit size={11} /></button>
+                        <button onClick={() => deletePlano(plano.id)} className="p-1.5 rounded-md border border-nodri-red/35 text-nodri-red bg-nodri-red/7 hover:bg-nodri-red/15 transition-all"><Trash2 size={11} /></button>
                       </div>
                     </div>
                   </div>
                 ))}
-                {planos.length === 0 && (
-                  <div className="nodri-card p-8 text-center text-nodri-t3 text-sm">
-                    Nenhum plano cadastrado. Clique em "Novo Plano" para começar.
-                  </div>
-                )}
+                {planos.length === 0 && <div className="nodri-card p-8 text-center text-nodri-t3 text-sm">Nenhum plano cadastrado. Clique em "Novo Plano" para começar.</div>}
               </div>
             </div>
           )}
 
-          {/* ── DASHBOARD E DEMAIS SEÇÕES ── */}
+          {/* DASHBOARD */}
           {activeSection !== 'links' && activeSection !== 'planos' && (
             <>
-              {/* STATS */}
               <div className="grid grid-cols-4 gap-3 mb-5">
                 {[
                   { label: 'Salões cadastrados', value: saloes.length, change: 'total' },
@@ -568,28 +523,53 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
                 ))}
               </div>
 
-              {/* NOTIFICAÇÕES (com estilo melhorado do segundo código) */}
+              {/* NOTIFICAÇÕES */}
               <div className="nodri-card p-4 mb-5">
                 <div className="flex items-center gap-2 font-syne font-bold text-[12px] mb-3">
-                  <Bell size={14} className="text-nodri-cyan" /> 
+                  <Bell size={14} className="text-nodri-cyan" />
                   <span>Central de Notificações</span>
                   {localNotifs.filter(n => !n.lida).length > 0 && <span className="bg-nodri-red text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">{localNotifs.filter(n => !n.lida).length}</span>}
                 </div>
-                
+
                 <div className="space-y-2 mb-4 max-h-48 overflow-y-auto">
                   {localNotifs.length === 0 && <p className="text-[11px] text-nodri-t3 text-center py-2">Nenhuma notificação</p>}
-                  {localNotifs.slice(0, 5).map(n => (
-                    <div key={n.id} className="flex items-start gap-2.5 p-2.5 bg-nodri-surface rounded-lg border border-nodri-border">
+                  {localNotifs.slice(0, 8).map(n => (
+                    <div key={n.id} className="flex items-start gap-2.5 p-2.5 bg-nodri-surface rounded-lg border border-nodri-border group hover:border-nodri-cyan/20 transition-all">
                       <span className={`w-2 h-2 rounded-full mt-1 shrink-0 ${TIPO_COLOR[n.tipo]}`} />
-                      <div className="text-[11px] flex-1 text-nodri-t1 font-medium">{n.mensagem}</div>
-                      <div className="text-[10px] text-nodri-t3 shrink-0">{new Date(n.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
+                      {editNotif?.id === n.id ? (
+                        <div className="flex-1 flex gap-2">
+                          <input
+                            value={editNotifMsg}
+                            onChange={e => setEditNotifMsg(e.target.value)}
+                            className="flex-1 bg-nodri-card border border-nodri-cyan/40 rounded-md px-2 py-1 text-[11px] text-nodri-t1 outline-none"
+                            onKeyDown={e => e.key === 'Enter' && saveEditNotif()}
+                          />
+                          <button onClick={saveEditNotif} disabled={savingNotif} className="flex items-center gap-1 px-2 py-1 bg-nodri-cyan text-black text-[10px] font-bold rounded-md">
+                            {savingNotif ? <Loader2 size={10} className="animate-spin" /> : <Save size={10} />}
+                          </button>
+                          <button onClick={() => setEditNotif(null)} className="px-2 py-1 border border-nodri-border text-nodri-t3 text-[10px] rounded-md hover:text-nodri-t1">
+                            <X size={10} />
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="text-[11px] flex-1 text-nodri-t1">{n.mensagem}</div>
+                          <div className="text-[10px] text-nodri-t3 shrink-0">{new Date(n.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                            <button onClick={() => handleEditNotif(n)} className="w-6 h-6 flex items-center justify-center text-nodri-t3 hover:text-nodri-cyan transition-colors" title="Editar"><Edit size={10} /></button>
+                            <button onClick={() => deleteNotif(n.id)} disabled={deletingNotif === n.id} className="w-6 h-6 flex items-center justify-center text-nodri-t3 hover:text-nodri-red transition-colors" title="Excluir">
+                              {deletingNotif === n.id ? <Loader2 size={10} className="animate-spin" /> : <Trash2 size={10} />}
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </div>
                   ))}
                 </div>
-                
+
                 <div className="border-t border-nodri-border pt-3">
                   <div className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-2 font-medium">Enviar Notificação</div>
-                  <div className="relative mb-2">
+                  <div className="relative mb-2" ref={dropdownRef}>
                     <button onClick={() => setShowDestinatarios(!showDestinatarios)}
                       className="w-full flex items-center justify-between px-3 py-2 bg-nodri-card border border-nodri-border rounded-lg text-[11px] hover:border-nodri-cyan/30 transition-all">
                       <span className={notifDestinatarios.length === 0 ? 'text-nodri-t3' : 'text-nodri-t1'}>{notifDestinatarios.length === 0 ? '📢 Todos os salões' : `✅ ${notifDestinatarios.length} salão(ões) selecionado(s)`}</span>
@@ -618,11 +598,11 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
                       <option value="warning">⚠️ Aviso</option>
                       <option value="danger">🚨 Urgente</option>
                     </select>
-                    <input type="text" value={notifMsg} onChange={e => setNotifMsg(e.target.value)} 
-                      placeholder="Ex: Boa tarde, teve atualização do whats app mudou o código, o novo é esse..." 
-                      className="nodri-input flex-1 text-[11px]" 
+                    <input type="text" value={notifMsg} onChange={e => setNotifMsg(e.target.value)}
+                      placeholder="Ex: Boa tarde, teve atualização do whats app..."
+                      className="nodri-input flex-1 text-[11px]"
                       onKeyDown={e => e.key === 'Enter' && sendNotification()} />
-                    <button onClick={sendNotification} disabled={sending || !notifMsg.trim()} 
+                    <button onClick={sendNotification} disabled={sending || !notifMsg.trim()}
                       className="flex items-center gap-1.5 bg-nodri-cyan text-black text-[11px] font-bold px-3 py-1.5 rounded-lg hover:brightness-110 disabled:opacity-50 transition-all shrink-0">
                       {sending ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />} Enviar
                     </button>
@@ -683,9 +663,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
           <div className="nodri-card w-full max-w-md p-6 animate-slide-up">
             <div className="flex items-center justify-between mb-5">
-              <div className="font-syne font-bold text-[14px] flex items-center gap-2">
-                <CreditCard size={16} className="text-nodri-cyan" /> {editPlano ? 'Editar Plano' : 'Novo Plano'}
-              </div>
+              <div className="font-syne font-bold text-[14px] flex items-center gap-2"><CreditCard size={16} className="text-nodri-cyan" /> {editPlano ? 'Editar Plano' : 'Novo Plano'}</div>
               <button onClick={() => { setShowNovoPlano(false); setEditPlano(null) }} className="text-nodri-t3 hover:text-nodri-t1"><X size={16} /></button>
             </div>
             <form onSubmit={handleSavePlano} className="space-y-3">
@@ -755,27 +733,18 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
             <div className="flex items-center justify-between px-6 py-4 border-b border-nodri-border">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-lg flex items-center justify-center text-[14px] font-bold text-white" style={{ background: 'linear-gradient(135deg, #7c5cfc, #f43f8e)' }}>{editSalao.nome[0]}</div>
-                <div>
-                  <div className="font-syne font-bold text-[13px]">{editSalao.nome}</div>
-                  <div className="text-[10px] text-nodri-t3">{editSalao.email}</div>
-                </div>
+                <div><div className="font-syne font-bold text-[13px]">{editSalao.nome}</div><div className="text-[10px] text-nodri-t3">{editSalao.email}</div></div>
               </div>
               <button onClick={() => setEditSalao(null)} className="text-nodri-t3 hover:text-nodri-t1"><X size={16} /></button>
             </div>
-
             <div className="flex border-b border-nodri-border">
-              {[
-                { id: 'dados', label: '📋 Dados' },
-                { id: 'acesso', label: '🔑 Acesso' },
-                { id: 'perigo', label: '⚠️ Perigo' },
-              ].map(t => (
+              {[{ id: 'dados', label: '📋 Dados' }, { id: 'acesso', label: '🔑 Acesso' }, { id: 'perigo', label: '⚠️ Perigo' }].map(t => (
                 <button key={t.id} onClick={() => setEditTab(t.id as any)}
                   className={`flex-1 py-2.5 text-[11.5px] font-medium border-b-2 transition-all ${editTab === t.id ? 'border-nodri-cyan text-nodri-cyan' : 'border-transparent text-nodri-t2 hover:text-nodri-t1'}`}>
                   {t.label}
                 </button>
               ))}
             </div>
-
             <form onSubmit={saveEditSalao}>
               <div className="p-5 space-y-3 max-h-96 overflow-y-auto">
                 {editTab === 'dados' && (
@@ -808,7 +777,6 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
                     <div><label className="nodri-label block mb-1">Observações</label><textarea className="nodri-input resize-none h-16" value={editForm.observacoes} onChange={e => setEditForm(p => ({...p, observacoes: e.target.value}))} /></div>
                   </>
                 )}
-
                 {editTab === 'acesso' && (
                   <>
                     <div className="nodri-card p-3 bg-nodri-surface mb-2">
@@ -834,7 +802,6 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
                     </div>
                   </>
                 )}
-
                 {editTab === 'perigo' && (
                   <div className="space-y-3">
                     <div className="nodri-card p-4 border-nodri-amber/30">
@@ -842,35 +809,23 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
                         {editSalao.status === 'bloqueado' ? <Unlock size={13} className="text-nodri-green" /> : <Lock size={13} className="text-nodri-amber" />}
                         {editSalao.status === 'bloqueado' ? 'Desbloquear Salão' : 'Bloquear Salão'}
                       </div>
-                      <p className="text-[11px] text-nodri-t2 mb-3">
-                        {editSalao.status === 'bloqueado'
-                          ? 'O salão está bloqueado. Clique para reativar o acesso.'
-                          : 'Bloquear impede o cliente de acessar o sistema. Pode ser desfeito.'}
-                      </p>
+                      <p className="text-[11px] text-nodri-t2 mb-3">{editSalao.status === 'bloqueado' ? 'O salão está bloqueado. Clique para reativar o acesso.' : 'Bloquear impede o cliente de acessar o sistema. Pode ser desfeito.'}</p>
                       <button type="button" onClick={() => toggleBloqueio(editSalao)}
                         className={`px-4 py-2 rounded-lg text-[11.5px] font-bold transition-all ${editSalao.status === 'bloqueado' ? 'bg-nodri-green text-black hover:brightness-110' : 'border border-nodri-amber text-nodri-amber hover:bg-nodri-amber/10'}`}>
                         {editSalao.status === 'bloqueado' ? '✅ Desbloquear Salão' : '🔒 Bloquear Salão'}
                       </button>
                     </div>
-
                     <div className="nodri-card p-4 border-nodri-red/30 bg-nodri-red/3">
-                      <div className="font-syne font-bold text-[12px] mb-1 flex items-center gap-2 text-nodri-red">
-                        <Trash2 size={13} /> Excluir Salão Permanentemente
-                      </div>
+                      <div className="font-syne font-bold text-[12px] mb-1 flex items-center gap-2 text-nodri-red"><Trash2 size={13} /> Excluir Salão Permanentemente</div>
                       <p className="text-[11px] text-nodri-t2 mb-3">Esta ação é irreversível. Todos os dados do salão serão apagados.</p>
                       {!showDeleteConfirm ? (
-                        <button type="button" onClick={() => setShowDeleteConfirm(true)}
-                          className="px-4 py-2 rounded-lg text-[11.5px] font-bold border border-nodri-red text-nodri-red hover:bg-nodri-red/10 transition-all">
-                          🗑️ Excluir este salão
-                        </button>
+                        <button type="button" onClick={() => setShowDeleteConfirm(true)} className="px-4 py-2 rounded-lg text-[11.5px] font-bold border border-nodri-red text-nodri-red hover:bg-nodri-red/10 transition-all">🗑️ Excluir este salão</button>
                       ) : (
                         <div className="space-y-2">
                           <p className="text-[11px] text-nodri-red">Digite o nome do salão para confirmar: <strong>{editSalao.nome}</strong></p>
-                          <input className="nodri-input border-nodri-red/50 text-[11px]" placeholder={`Digite "${editSalao.nome}" para confirmar`}
-                            value={deleteConfirmText} onChange={e => setDeleteConfirmText(e.target.value)} />
+                          <input className="nodri-input border-nodri-red/50 text-[11px]" placeholder={`Digite "${editSalao.nome}" para confirmar`} value={deleteConfirmText} onChange={e => setDeleteConfirmText(e.target.value)} />
                           <div className="flex gap-2">
-                            <button type="button" onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText('') }}
-                              className="nodri-btn-ghost text-[11px]">Cancelar</button>
+                            <button type="button" onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText('') }} className="nodri-btn-ghost text-[11px]">Cancelar</button>
                             <button type="button" onClick={deleteSalao} disabled={deletingSalao || deleteConfirmText !== editSalao.nome}
                               className="flex items-center gap-1.5 bg-nodri-red text-white px-3 py-1.5 rounded-lg text-[11px] font-bold hover:brightness-110 disabled:opacity-40 transition-all">
                               {deletingSalao ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />} Excluir Definitivamente
@@ -882,7 +837,6 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
                   </div>
                 )}
               </div>
-
               {editTab !== 'perigo' && (
                 <div className="flex justify-end gap-2 px-5 py-3 border-t border-nodri-border">
                   <button type="button" onClick={() => setEditSalao(null)} className="nodri-btn-ghost text-[12px]">Cancelar</button>
@@ -902,59 +856,32 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
           <div className="w-full max-w-2xl p-5 bg-nodri-card rounded-xl shadow-2xl animate-slide-up border border-nodri-border">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <div className="font-syne font-bold text-[13px] flex items-center gap-2">
-                  <Puzzle size={14} className="text-nodri-cyan" /> 
-                  <span className="text-nodri-t1">Controle de Módulos</span>
-                </div>
+                <div className="font-syne font-bold text-[13px] flex items-center gap-2"><Puzzle size={14} className="text-nodri-cyan" /><span className="text-nodri-t1">Controle de Módulos</span></div>
                 <div className="text-[10px] text-nodri-cyan mt-0.5">{modCtrlSalao.nome}</div>
               </div>
-              <button onClick={() => setModCtrlSalao(null)} className="text-nodri-t3 hover:text-nodri-t1 transition-colors">
-                <X size={16} />
-              </button>
+              <button onClick={() => setModCtrlSalao(null)} className="text-nodri-t3 hover:text-nodri-t1 transition-colors"><X size={16} /></button>
             </div>
-            
-            <div className="mb-3">
-              <div className="text-[11px] text-nodri-t2 mb-2">Módulos do Sistema</div>
-              <div className="flex gap-2 mb-3">
-                <button className="text-[10px] px-2 py-1 rounded-full bg-nodri-cyan text-black font-medium">Todos</button>
-                <button className="text-[10px] px-2 py-1 rounded-full bg-nodri-surface text-nodri-t2">Ativos</button>
-                <button className="text-[10px] px-2 py-1 rounded-full bg-nodri-surface text-nodri-t2">Bloqueados</button>
-              </div>
-            </div>
-            
             <div className="grid grid-cols-7 gap-2 mb-4">
               {modulos.map(m => {
                 const on = modulosAtivos.has(m.id)
                 return (
                   <div key={m.id} onClick={() => toggleModulo(m.id)}
-                    className={`p-2 rounded-lg border text-center cursor-pointer transition-all ${
-                      on 
-                        ? 'border-nodri-cyan bg-nodri-cyan/10' 
-                        : 'border-nodri-border bg-nodri-surface hover:border-nodri-cyan/30'
-                    }`}>
+                    className={`p-2 rounded-lg border text-center cursor-pointer transition-all ${on ? 'border-nodri-cyan bg-nodri-cyan/10' : 'border-nodri-border bg-nodri-surface hover:border-nodri-cyan/30'}`}>
                     <div className="text-base mb-1">⚙️</div>
-                    <div className="text-[8.5px] font-bold uppercase leading-tight text-nodri-t1 mb-1.5">
-                      {m.nome.split(' ').slice(0,2).join(' ')}
-                    </div>
+                    <div className="text-[8.5px] font-bold uppercase leading-tight text-nodri-t1 mb-1.5">{m.nome.split(' ').slice(0,2).join(' ')}</div>
                     <div className={`w-6 h-3 rounded-full mx-auto relative transition-colors ${on ? 'bg-nodri-cyan' : 'bg-nodri-border'}`}>
                       <div className={`absolute top-0.5 w-2 h-2 bg-white rounded-full transition-all ${on ? 'left-3.5' : 'left-0.5'}`} />
                     </div>
-                    {on && (
-                      <div className="text-[7px] text-nodri-cyan font-semibold mt-1">✓</div>
-                    )}
+                    {on && <div className="text-[7px] text-nodri-cyan font-semibold mt-1">✓</div>}
                   </div>
                 )
               })}
             </div>
-            
-            <div className="flex justify-between items-center border-t border-nodri-border pt-3 mt-1">
+            <div className="flex justify-between items-center border-t border-nodri-border pt-3">
               <span className="text-[11px] text-nodri-t1 font-medium">{modulosAtivos.size} de {modulos.length} módulos ativos</span>
               <div className="flex gap-2">
-                <button onClick={() => setModCtrlSalao(null)} className="px-3 py-1.5 rounded-lg border border-nodri-border text-nodri-t2 text-[11px] hover:bg-nodri-surface transition-all">
-                  Cancelar
-                </button>
-                <button onClick={saveModulos} disabled={savingMods} 
-                  className="px-3 py-1.5 rounded-lg bg-nodri-cyan text-black text-[11px] font-bold hover:brightness-110 disabled:opacity-50 transition-all flex items-center gap-1.5">
+                <button onClick={() => setModCtrlSalao(null)} className="px-3 py-1.5 rounded-lg border border-nodri-border text-nodri-t2 text-[11px] hover:bg-nodri-surface transition-all">Cancelar</button>
+                <button onClick={saveModulos} disabled={savingMods} className="px-3 py-1.5 rounded-lg bg-nodri-cyan text-black text-[11px] font-bold hover:brightness-110 disabled:opacity-50 transition-all flex items-center gap-1.5">
                   {savingMods ? <><Loader2 size={12} className="animate-spin" /> Salvando...</> : 'Salvar Alterações'}
                 </button>
               </div>
