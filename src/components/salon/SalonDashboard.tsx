@@ -313,9 +313,8 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               <div key={modulo.id}
                 className={`nodri-card p-4 flex flex-col cursor-pointer transition-all hover:-translate-y-0.5 relative overflow-hidden ${modulo.habilitado ? 'border-nodri-cyan/35 bg-nodri-cyan/[0.03]' : 'opacity-60'}`}>
                 {modulo.habilitado && <div className="absolute top-0 left-0 right-0 h-0.5 bg-nodri-cyan" />}
-                <div className="flex items-start justify-between mb-2.5">
-                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg ${corClass}`}>{iconEmoji}</div>
-                  <span className="text-[9px] text-nodri-t3 bg-nodri-surface px-1.5 py-0.5 rounded-full border border-nodri-border">v{modulo.versao}</span>
+                <div className="flex justify-end mb-2.5">
+                    <span className="text-[9px] text-nodri-t3 bg-nodri-surface px-1.5 py-0.5 rounded-full border border-nodri-border">v{modulo.versao}</span>
                 </div>
                 <div className="font-syne font-bold text-[10.5px] uppercase tracking-wide text-nodri-t1 leading-snug mb-1.5">{modulo.nome}</div>
                 <p className="text-[10px] text-nodri-t2 leading-relaxed mb-3 flex-1">{modulo.descricao}</p>
