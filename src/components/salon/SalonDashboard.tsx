@@ -5,6 +5,12 @@ import { Bell, Settings, CheckCircle, X, Zap, Play, Search, ChevronDown, Externa
 import toast from 'react-hot-toast'
 import type { ModuloComStatus, Notificacao } from '@/types'
 
+const ICON_MAP: Record<string, string> = {
+  'calendar-check': '', 'lock': '', 'message-circle':  'eye': '',
+  'send': '', 'paperclip': '', 'chart-bar': '', 'coin': '',
+  'music': '', 'piggy-bank': '', 'calculator': '', 'star': '',
+  'armchair': '', 'tag': '',
+}
 
 
 const COR_MAP: Record<string, string> = {
