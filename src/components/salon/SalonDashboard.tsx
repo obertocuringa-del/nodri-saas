@@ -330,7 +330,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                   </span>
                 </div>
                 <button onClick={() => handleAbrir(modulo)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-bold transition-all"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[13px] font-bold transition-all"
                   style={modulo.habilitado ? {
                     background: 'rgba(255,255,255,0.08)',
                     color: '#f1f5f9',
