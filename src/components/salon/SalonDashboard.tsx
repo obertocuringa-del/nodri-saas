@@ -126,12 +126,31 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
 
   function handleLogout() { window.location.href = '/logout' }
 
+  // Mapeamento módulo online → protocolo nodri:// (igual ao código de cima)
+  const MODULO_SLUG: Record<string, string> = {
+    'Confirmar Agendamento':         'confirmar-agendamento',
+    'Baixar Música YouTube':         'baixar-musica',
+    'Bloqueio Sem Preferência':      'bloqueio',
+    'Enviar Feedback':               'enviar-feedback',
+    'Enviar Lista':                  'enviar-lista',
+    'Enviar Lista c/ Arquivo':       'mensagem-foto',
+    'Relatório Profissional':        'relatorio-profissional',
+    'Faturamento Diário':            'faturamento-diario',
+    'Ver Feedback Cliente':          'ver-feedback-cliente',
+    'Calcular Reserva Financeira':   'calcular-reserva',
+    'Calculadora Depreciação':       'calculadora-depreciacao',
+    'Avaliar Profissional':          'avaliar-profissional',
+    'Aluguel de Cadeira':            'aluguel-cadeira',
+    'Precificar Serviços':           'precificar-servicos',
+  }
+
   function handleAbrir(modulo: ModuloComStatus) {
     if (!modulo.habilitado) {
       toast('Entre em contato para ativar este módulo.', { icon: '🔒' })
       return
     }
-    toast.success(`Abrindo ${modulo.nome}...`)
+    const slug = MODULO_SLUG[modulo.nome] || modulo.nome.toLowerCase().replace(/ /g, '-')
+    window.location.href = `nodri://${slug}`
   }
 
   const planoLabel = plano === 'premium' ? 'Plano Premium' : plano === 'profissional' ? 'Plano Profissional' : 'Plano Básico'
