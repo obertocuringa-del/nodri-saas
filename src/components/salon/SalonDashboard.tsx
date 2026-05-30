@@ -150,7 +150,11 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
       return
     }
     const slug = MODULO_SLUG[modulo.nome] || modulo.nome.toLowerCase().replace(/ /g, '-')
-    window.location.href = `nodri://${slug}`
+    const a = document.createElement('a')
+a.href = `nodri://${slug}`
+document.body.appendChild(a)
+a.click()
+document.body.removeChild(a)
   }
 
   const planoLabel = plano === 'premium' ? 'Plano Premium' : plano === 'profissional' ? 'Plano Profissional' : 'Plano Básico'
