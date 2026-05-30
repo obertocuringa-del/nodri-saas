@@ -306,7 +306,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               </div>
 
               {/* Nome */}
-              <div className="font-syne font-bold text-[10.5px] uppercase tracking-wide leading-snug mb-1.5"
+              <div className="font-syne font-bold text-[13px] uppercase tracking-wide leading-snug mb-1.5"
                 style={{ color: modulo.habilitado ? '#f1f5f9' : '#64748b' }}>
                 {modulo.nome}
               </div>
