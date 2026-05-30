@@ -160,7 +160,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
   const TABS = ['Todos os Módulos', 'Manual do Usuário', 'Dicas Nodri', 'Gestão de Pessoas', 'Gestão Financeira', 'Marketing']
 
   return (
-    <div className="min-h-screen bg-nodri-dark flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ background: '#ffffff' }}>
 
       {/* NAVBAR */}
       <nav className="bg-nodri-surface border-b border-nodri-border px-5 py-2.5 flex items-center gap-3 sticky top-0" style={{ zIndex: 50 }}>
