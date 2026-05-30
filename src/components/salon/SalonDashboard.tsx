@@ -19,7 +19,6 @@ const COR_MAP: Record<string, string> = {
   red: 'bg-nodri-red/10 text-nodri-red',
 }
 
-// CORRIGIDO: Links atualizados com os dados fornecidos
 const MENU_LINKS: Record<string, { title: string; url: string }[]> = {
   'Manual do Usuário': [
     { title: '1. CONFIRMAR AGENDAMENTO', url: 'https://www.exemplo.com/confirmar-agendamento' },
@@ -98,14 +97,31 @@ interface Props {
   totalModulos: number
 }
 
+// Inject shimmer animation
+if (typeof document !== 'undefined') {
+  const style = document.createElement('style')
+  style.textContent = `
+    @keyframes shimmer { 0% { background-position: 200% 0 } 100% { background-position: -200% 0 } }
+    @keyframes pulseDot { 0%,100% { transform: scale(1); opacity: 1 } 50% { transform: scale(1.3); opacity: 0.7 } }
+  `
+  if (!document.getElementById('nodri-animations')) { style.id = 'nodri-animations'; document.head.appendChild(style) }
+}
+
 export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes, totalAtivos, totalModulos }: Props) {
   const [filtro, setFiltro] = useState<'todos' | 'ativos' | 'bloqueados'>('todos')
   const [notifDismissed, setNotifDismissed] = useState(false)
+  const [notifIndex, setNotifIndex] = useState(0)
   const [busca, setBusca] = useState('')
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
-  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 })
   const dropdownRef = useRef<HTMLDivElement>(null)
-  const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({})
+
+
+  // Auto-rotate notifications every 5 seconds
+  useEffect(() => {
+    if (notificacoes.length <= 1) return
+    const timer = setInterval(() => setNotifIndex(i => i + 1), 5000)
+    return () => clearInterval(timer)
+  }, [notificacoes.length])
 
   const primeiraNotif = notificacoes[0]
 
@@ -113,35 +129,12 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        // Verifica se o clique não foi em nenhum botão do dropdown
-        let clickedOnButton = false
-        Object.values(buttonRefs.current).forEach(btn => {
-          if (btn && btn.contains(e.target as Node)) {
-            clickedOnButton = true
-          }
-        })
-        if (!clickedOnButton) {
-          setOpenDropdown(null)
-        }
+        setOpenDropdown(null)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
-
-  // CORRIGIDO: Função para abrir dropdown com posicionamento correto
-  const handleOpenDropdown = (tab: string, event: React.MouseEvent<HTMLButtonElement>) => {
-    if (openDropdown === tab) {
-      setOpenDropdown(null)
-    } else {
-      const rect = event.currentTarget.getBoundingClientRect()
-      setDropdownPosition({
-        top: rect.bottom + window.scrollY + 4,
-        left: rect.left + window.scrollX
-      })
-      setOpenDropdown(tab)
-    }
-  }
 
   const modulosFiltrados = modulos.filter(m => {
     if (filtro === 'ativos') return m.habilitado
@@ -150,7 +143,6 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
     return true
   })
 
-  // CORRIGIDO: Função de logout simplificada
   function handleLogout() {
     window.location.href = '/logout'
   }
@@ -171,7 +163,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
     <div className="min-h-screen bg-nodri-dark flex flex-col">
 
       {/* NAVBAR */}
-      <nav className="bg-nodri-surface border-b border-nodri-border px-5 py-2.5 flex items-center gap-3 sticky top-0 z-50">
+      <nav className="bg-nodri-surface border-b border-nodri-border px-5 py-2.5 flex items-center gap-3 sticky top-0" style={{ zIndex: 50 }}>
         {/* Logo */}
         <div className="flex items-center gap-2.5 mr-2 shrink-0">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center font-syne font-black text-sm text-black"
@@ -184,13 +176,12 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
 
         <div className="w-px h-5 bg-nodri-border shrink-0" />
 
-        {/* TABS - CORRIGIDO */}
-        <div className="flex gap-0.5 bg-nodri-card border border-nodri-border rounded-lg p-0.5">
+        {/* TABS */}
+        <div ref={dropdownRef} className="flex gap-0.5 bg-nodri-card border border-nodri-border rounded-lg p-0.5">
           {TABS.map(tab => (
             <div key={tab} className="relative">
               <button
-                ref={el => { buttonRefs.current[tab] = el }}
-                onClick={(e) => tab !== 'Todos os Módulos' ? handleOpenDropdown(tab, e) : null}
+                onClick={() => setOpenDropdown(openDropdown === tab ? null : tab)}
                 className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-[11px] font-medium whitespace-nowrap transition-all ${
                   openDropdown === tab
                     ? 'bg-nodri-surface text-nodri-cyan border border-nodri-cyan/30'
@@ -201,6 +192,26 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                   <ChevronDown size={10} className={`transition-transform duration-200 ${openDropdown === tab ? 'rotate-180 text-nodri-cyan' : ''}`} />
                 )}
               </button>
+
+              {/* DROPDOWN — renderizado fora do overflow */}
+              {openDropdown === tab && tab !== 'Todos os Módulos' && MENU_LINKS[tab] && (
+                <div
+                  style={{ position: 'fixed', zIndex: 9999, marginTop: '4px' }}
+                  className="bg-nodri-card border border-nodri-border rounded-xl shadow-2xl min-w-[300px] max-h-80 overflow-y-auto"
+                >
+                  <div className="px-3 py-2 border-b border-nodri-border sticky top-0 bg-nodri-card">
+                    <div className="text-[10px] font-bold text-nodri-cyan uppercase tracking-wider">{tab}</div>
+                  </div>
+                  {MENU_LINKS[tab].map((item, i) => (
+                    <a key={i} href={item.url} target="_blank" rel="noopener noreferrer"
+                      onClick={() => setOpenDropdown(null)}
+                      className="flex items-center justify-between px-3 py-2.5 hover:bg-nodri-surface transition-colors group border-b border-nodri-border/30 last:border-0">
+                      <span className="text-[11.5px] text-nodri-t2 group-hover:text-nodri-t1 transition-colors">{item.title}</span>
+                      <ExternalLink size={11} className="text-nodri-t3 group-hover:text-nodri-cyan transition-colors shrink-0 ml-3" />
+                    </a>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -237,20 +248,55 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
         </div>
       </nav>
 
-      {/* NOTIFICATION BANNER */}
-      {primeiraNotif && !notifDismissed && (
-        <div className="mx-5 mt-3 bg-nodri-cyan/7 border border-nodri-cyan/22 rounded-xl px-4 py-2.5 flex items-center gap-3">
-          <Bell size={15} className="text-nodri-cyan shrink-0" />
-          <div className="flex-1 min-w-0">
-            <div className="text-[9px] font-bold text-nodri-cyan uppercase tracking-wider mb-0.5">Aviso do Sistema</div>
-            <div className="text-[11px] text-nodri-t1 truncate">{primeiraNotif.mensagem}</div>
+      {/* NOTIFICATION BANNER — rotativo com múltiplas notificações */}
+      {notificacoes.length > 0 && !notifDismissed && (() => {
+        const notif = notificacoes[notifIndex % notificacoes.length]
+        return (
+          <div className="mx-5 mt-3 rounded-xl overflow-hidden" style={{ boxShadow: '0 4px 32px rgba(99,102,241,0.25)' }}>
+            <div className="px-4 py-3 flex items-center gap-3" style={{ background: '#ffffff' }}>
+              {/* Ícone pulsante */}
+              <div className="relative shrink-0">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+                  <Bell size={18} color="#fff" />
+                </div>
+                <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full border-2" style={{ background: '#ef4444', borderColor: '#fff', animation: 'pulseDot 1.5s ease infinite' }} />
+              </div>
+
+              {/* Conteúdo */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span style={{ fontSize: '10px', fontWeight: 800, color: '#6366f1', textTransform: 'uppercase', letterSpacing: '1.5px' }}>Aviso do Sistema</span>
+                  <span style={{ background: '#6366f1', color: '#fff', fontSize: '8px', fontWeight: 700, padding: '2px 7px', borderRadius: '4px', letterSpacing: '0.5px' }}>NOVO</span>
+                  {notificacoes.length > 1 && (
+                    <span style={{ fontSize: '9px', color: '#8b5cf6', marginLeft: '4px', fontWeight: 600 }}>
+                      {(notifIndex % notificacoes.length) + 1}/{notificacoes.length}
+                    </span>
+                  )}
+                  <span style={{ fontSize: '10px', color: '#94a3b8', marginLeft: 'auto' }}>
+                    {new Date(notif.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+                <div style={{ fontSize: '13px', fontWeight: 500, color: '#0f172a', lineHeight: 1.45 }}>{notif.mensagem}</div>
+              </div>
+
+              {/* Navegar + Fechar */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                {notificacoes.length > 1 && (
+                  <button onClick={() => setNotifIndex(i => i + 1)}
+                    style={{ width: '28px', height: '28px', borderRadius: '6px', border: '1px solid #e2e8f0', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '12px', color: '#6366f1' }}
+                    title="Próxima notificação">›</button>
+                )}
+                <button onClick={() => setNotifDismissed(true)}
+                  style={{ width: '28px', height: '28px', borderRadius: '6px', border: '1px solid #e2e8f0', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+                  <X size={13} color="#64748b" />
+                </button>
+              </div>
+            </div>
+            {/* Barra animada */}
+            <div style={{ height: '3px', background: 'linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899, #06b6d4, #6366f1)', backgroundSize: '300% 100%', animation: 'shimmer 3s linear infinite' }} />
           </div>
-          <div className="text-[10px] text-nodri-t3 shrink-0">
-            {new Date(primeiraNotif.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-          </div>
-          <button onClick={() => setNotifDismissed(true)} className="text-nodri-t3 hover:text-nodri-t1 shrink-0"><X size={14} /></button>
-        </div>
-      )}
+        )
+      })()}
 
       {/* FILTERS */}
       <div className="px-5 pt-4 pb-0 flex items-center justify-between">
@@ -302,37 +348,6 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
           <div className="text-center py-16 text-nodri-t3"><div className="text-4xl mb-3">🔍</div><p className="text-sm">Nenhum módulo encontrado</p></div>
         )}
       </div>
-
-      {/* DROPDOWN MENU - CORRIGIDO: Renderizado fora do navbar com posicionamento absoluto */}
-      {openDropdown && openDropdown !== 'Todos os Módulos' && MENU_LINKS[openDropdown] && (
-        <div
-          ref={dropdownRef}
-          style={{
-            position: 'fixed',
-            top: dropdownPosition.top,
-            left: dropdownPosition.left,
-            zIndex: 9999
-          }}
-          className="bg-nodri-card border border-nodri-border rounded-xl shadow-2xl min-w-[320px] max-w-[400px] max-h-96 overflow-y-auto"
-        >
-          <div className="px-3 py-2 border-b border-nodri-border sticky top-0 bg-nodri-card z-10">
-            <div className="text-[10px] font-bold text-nodri-cyan uppercase tracking-wider">{openDropdown}</div>
-          </div>
-          {MENU_LINKS[openDropdown].map((item, i) => (
-            <a 
-              key={i} 
-              href={item.url} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              onClick={() => setOpenDropdown(null)}
-              className="flex items-center justify-between px-3 py-2.5 hover:bg-nodri-surface transition-colors group border-b border-nodri-border/30 last:border-0"
-            >
-              <span className="text-[11.5px] text-nodri-t2 group-hover:text-nodri-t1 transition-colors">{item.title}</span>
-              <ExternalLink size={11} className="text-nodri-t3 group-hover:text-nodri-cyan transition-colors shrink-0 ml-3" />
-            </a>
-          ))}
-        </div>
-      )}
     </div>
   )
 }
