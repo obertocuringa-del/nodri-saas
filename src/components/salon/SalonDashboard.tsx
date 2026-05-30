@@ -1,3 +1,6 @@
+pyinstaller --onefile --noconsole instalador_nodri.py
+
+
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
@@ -126,9 +129,9 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
 
   function handleLogout() { window.location.href = '/logout' }
 
-  // NOVO MAPEAMENTO COM OS COMANDOS ESPECÍFICOS
-  const MODULO_COMMAND: Record<string, string> = {
-    'Confirmar Agendamento':         'CONFIRMACAO_AGENDAMENTO',
+  // Mapeamento módulo online → protocolo nodri:// (igual ao código de cima)
+  const MODULO_SLUG: Record<string, string> = {
+    'Confirmar Agendamento':         'confirmacao_agendamento',
     'Baixar Música YouTube':         'baixar-musica',
     'Bloqueio Sem Preferência':      'bloqueio',
     'Enviar Feedback':               'enviar-feedback',
@@ -144,21 +147,13 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
     'Precificar Serviços':           'precificar-servicos',
   }
 
-  // FUNÇÃO HANDLEABRIR ATUALIZADA (APENAS ISSO FOI ALTERADO)
   function handleAbrir(modulo: ModuloComStatus) {
     if (!modulo.habilitado) {
       toast('Entre em contato para ativar este módulo.', { icon: '🔒' })
       return
     }
-    
-    const command = MODULO_COMMAND[modulo.nome]
-    if (command) {
-      // Abre o programa diretamente com o comando específico
-      window.location.href = `nodri://${command}`
-    } else {
-      // Fallback: tenta abrir pelo nome
-      window.location.href = `nodri://${modulo.nome.toLowerCase().replace(/ /g, '-')}`
-    }
+    const slug = MODULO_SLUG[modulo.nome] || modulo.nome.toLowerCase().replace(/ /g, '-')
+    window.location.href = `nodri://${slug}`
   }
 
   const planoLabel = plano === 'premium' ? 'Plano Premium' : plano === 'profissional' ? 'Plano Profissional' : 'Plano Básico'
