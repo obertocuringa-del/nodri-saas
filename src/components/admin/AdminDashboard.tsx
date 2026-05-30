@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { LogOut, Bell, Plus, Shield, Building, CreditCard, Puzzle, Users, BarChart3, Settings, RefreshCw, X, Send, Edit, Lock, Unlock, Loader2, ChevronDown, Check, Link, Save, Trash2, ExternalLink, Eye, EyeOff, AlertTriangle } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { LogOut, Bell, Plus, Shield, Building, CreditCard, Puzzle, Users, BarChart3, Settings, RefreshCw, X, Send, Edit, Lock, Unlock, Loader2, ChevronDown, Check, Link, Save, Trash2, ExternalLink, Eye, EyeOff, AlertTriangle, Search, Play, Zap } from 'lucide-react'
 import toast from 'react-hot-toast'
 import type { Salao, Modulo, Notificacao, Plano } from '@/types'
 
@@ -92,6 +92,16 @@ const DEFAULT_LINKS: Record<string, { title: string; url: string }[]> = {
   ],
 }
 
+// Inject shimmer animation (do segundo código)
+if (typeof document !== 'undefined') {
+  const style = document.createElement('style')
+  style.textContent = `
+    @keyframes shimmer { 0% { background-position: 200% 0 } 100% { background-position: -200% 0 } }
+    @keyframes pulseDot { 0%,100% { transform: scale(1); opacity: 1 } 50% { transform: scale(1.3); opacity: 0.7 } }
+  `
+  if (!document.getElementById('nodri-animations')) { style.id = 'nodri-animations'; document.head.appendChild(style) }
+}
+
 export default function AdminDashboard({ saloes: initialSaloes, modulos, notificacoes, planos: initialPlanos }: Props) {
   const [saloes, setSaloes] = useState(initialSaloes)
   const [planos, setPlanos] = useState(initialPlanos)
@@ -128,6 +138,21 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
   const [editPlano, setEditPlano] = useState<Plano | null>(null)
   const [planoForm, setPlanoForm] = useState({ nome: '', slug: '', descricao: '', preco: '', max_usuarios: '' })
   const [savingPlano, setSavingPlano] = useState(false)
+
+  // Dropdown de links (do segundo código)
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  // Fecha dropdown ao clicar fora (do segundo código)
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setOpenDropdown(null)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   function handleLogout() { window.location.href = '/logout' }
 
@@ -543,67 +568,68 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
                 ))}
               </div>
 
-              {/* NOTIFICAÇÕES */}
-<div className="nodri-card p-4 mb-5 bg-white">
-  <div className="flex items-center gap-2 font-syne font-bold text-[12px] mb-3">
-    <Bell size={14} className="text-nodri-cyan" /> 
-    <span className="text-black">Central de Notificações</span>
-    {localNotifs.filter(n => !n.lida).length > 0 && <span className="bg-nodri-red text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">{localNotifs.filter(n => !n.lida).length}</span>}
-  </div>
-  
-  <div className="space-y-2 mb-4 max-h-48 overflow-y-auto">
-    {localNotifs.length === 0 && <p className="text-[11px] text-gray-500 text-center py-2">Nenhuma notificação</p>}
-    {localNotifs.slice(0, 5).map(n => (
-      <div key={n.id} className="flex items-start gap-2.5 p-2.5 bg-gray-50 rounded-lg border border-gray-200 animate-pulse">
-        <span className={`w-2 h-2 rounded-full mt-1 shrink-0 ${TIPO_COLOR[n.tipo]}`} />
-        <div className="text-[11px] flex-1 text-black font-medium">{n.mensagem}</div>
-        <div className="text-[10px] text-gray-400 shrink-0">{new Date(n.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
-      </div>
-    ))}
-  </div>
-  
-  <div className="border-t border-gray-200 pt-3">
-    <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-2 font-medium">Enviar Notificação</div>
-    <div className="relative mb-2">
-      <button onClick={() => setShowDestinatarios(!showDestinatarios)}
-        className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-[11px] hover:border-nodri-cyan/30 transition-all">
-        <span className={notifDestinatarios.length === 0 ? 'text-gray-500' : 'text-black'}>{notifDestinatarios.length === 0 ? '📢 Todos os salões' : `✅ ${notifDestinatarios.length} salão(ões) selecionado(s)`}</span>
-        <ChevronDown size={12} className={`text-gray-400 transition-transform ${showDestinatarios ? 'rotate-180' : ''}`} />
-      </button>
-      {showDestinatarios && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-2xl z-50 py-1 max-h-48 overflow-y-auto">
-          <div onClick={() => { setNotifDestinatarios([]); setShowDestinatarios(false) }}
-            className={`flex items-center gap-2 px-3 py-2.5 cursor-pointer hover:bg-gray-50 transition-colors ${notifDestinatarios.length === 0 ? 'text-nodri-cyan' : 'text-gray-600'}`}>
-            <div className={`w-4 h-4 rounded border flex items-center justify-center ${notifDestinatarios.length === 0 ? 'bg-nodri-cyan border-nodri-cyan' : 'border-gray-300'}`}>{notifDestinatarios.length === 0 && <Check size={10} className="text-black" />}</div>
-            <span className="text-[11.5px] font-medium">📢 Todos os salões</span>
-          </div>
-          {saloes.map(s => (
-            <div key={s.id} onClick={() => toggleDestinatario(s.id)} className="flex items-center gap-2 px-3 py-2.5 cursor-pointer hover:bg-gray-50 transition-colors">
-              <div className={`w-4 h-4 rounded border flex items-center justify-center ${notifDestinatarios.includes(s.id) ? 'bg-nodri-cyan border-nodri-cyan' : 'border-gray-300'}`}>{notifDestinatarios.includes(s.id) && <Check size={10} className="text-black" />}</div>
-              <div><div className="text-[11.5px] text-black">{s.nome}</div><div className="text-[10px] text-gray-400">{s.email}</div></div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-    <div className="flex gap-2">
-      <select value={notifTipo} onChange={e => setNotifTipo(e.target.value as any)} className="nodri-input w-28 text-[11px] shrink-0 bg-gray-50 border-gray-200 text-black">
-        <option value="info">ℹ️ Info</option>
-        <option value="success">✅ Sucesso</option>
-        <option value="warning">⚠️ Aviso</option>
-        <option value="danger">🚨 Urgente</option>
-      </select>
-      <input type="text" value={notifMsg} onChange={e => setNotifMsg(e.target.value)} 
-        placeholder="Ex: Boa tarde, teve atualização do whats app mudou o código, o novo é esse..." 
-        className="nodri-input flex-1 text-[11px] bg-gray-50 border-gray-200 text-black" 
-        onKeyDown={e => e.key === 'Enter' && sendNotification()} />
-      <button onClick={sendNotification} disabled={sending || !notifMsg.trim()} 
-        className="flex items-center gap-1.5 bg-nodri-cyan text-black text-[11px] font-bold px-3 py-1.5 rounded-lg hover:brightness-110 disabled:opacity-50 transition-all shrink-0">
-        {sending ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />} Enviar
-      </button>
-    </div>
-  </div>
-</div>
+              {/* NOTIFICAÇÕES (com estilo melhorado do segundo código) */}
+              <div className="nodri-card p-4 mb-5">
+                <div className="flex items-center gap-2 font-syne font-bold text-[12px] mb-3">
+                  <Bell size={14} className="text-nodri-cyan" /> 
+                  <span>Central de Notificações</span>
+                  {localNotifs.filter(n => !n.lida).length > 0 && <span className="bg-nodri-red text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">{localNotifs.filter(n => !n.lida).length}</span>}
+                </div>
+                
+                <div className="space-y-2 mb-4 max-h-48 overflow-y-auto">
+                  {localNotifs.length === 0 && <p className="text-[11px] text-nodri-t3 text-center py-2">Nenhuma notificação</p>}
+                  {localNotifs.slice(0, 5).map(n => (
+                    <div key={n.id} className="flex items-start gap-2.5 p-2.5 bg-nodri-surface rounded-lg border border-nodri-border">
+                      <span className={`w-2 h-2 rounded-full mt-1 shrink-0 ${TIPO_COLOR[n.tipo]}`} />
+                      <div className="text-[11px] flex-1 text-nodri-t1 font-medium">{n.mensagem}</div>
+                      <div className="text-[10px] text-nodri-t3 shrink-0">{new Date(n.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="border-t border-nodri-border pt-3">
+                  <div className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-2 font-medium">Enviar Notificação</div>
+                  <div className="relative mb-2">
+                    <button onClick={() => setShowDestinatarios(!showDestinatarios)}
+                      className="w-full flex items-center justify-between px-3 py-2 bg-nodri-card border border-nodri-border rounded-lg text-[11px] hover:border-nodri-cyan/30 transition-all">
+                      <span className={notifDestinatarios.length === 0 ? 'text-nodri-t3' : 'text-nodri-t1'}>{notifDestinatarios.length === 0 ? '📢 Todos os salões' : `✅ ${notifDestinatarios.length} salão(ões) selecionado(s)`}</span>
+                      <ChevronDown size={12} className={`text-nodri-t3 transition-transform ${showDestinatarios ? 'rotate-180' : ''}`} />
+                    </button>
+                    {showDestinatarios && (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-nodri-card border border-nodri-border rounded-xl shadow-2xl z-50 py-1 max-h-48 overflow-y-auto">
+                        <div onClick={() => { setNotifDestinatarios([]); setShowDestinatarios(false) }}
+                          className={`flex items-center gap-2 px-3 py-2.5 cursor-pointer hover:bg-nodri-surface transition-colors ${notifDestinatarios.length === 0 ? 'text-nodri-cyan' : 'text-nodri-t2'}`}>
+                          <div className={`w-4 h-4 rounded border flex items-center justify-center ${notifDestinatarios.length === 0 ? 'bg-nodri-cyan border-nodri-cyan' : 'border-nodri-border'}`}>{notifDestinatarios.length === 0 && <Check size={10} className="text-black" />}</div>
+                          <span className="text-[11.5px] font-medium">📢 Todos os salões</span>
+                        </div>
+                        {saloes.map(s => (
+                          <div key={s.id} onClick={() => toggleDestinatario(s.id)} className="flex items-center gap-2 px-3 py-2.5 cursor-pointer hover:bg-nodri-surface transition-colors">
+                            <div className={`w-4 h-4 rounded border flex items-center justify-center ${notifDestinatarios.includes(s.id) ? 'bg-nodri-cyan border-nodri-cyan' : 'border-nodri-border'}`}>{notifDestinatarios.includes(s.id) && <Check size={10} className="text-black" />}</div>
+                            <div><div className="text-[11.5px] text-nodri-t1">{s.nome}</div><div className="text-[10px] text-nodri-t3">{s.email}</div></div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <select value={notifTipo} onChange={e => setNotifTipo(e.target.value as any)} className="nodri-input w-28 text-[11px] shrink-0">
+                      <option value="info">ℹ️ Info</option>
+                      <option value="success">✅ Sucesso</option>
+                      <option value="warning">⚠️ Aviso</option>
+                      <option value="danger">🚨 Urgente</option>
+                    </select>
+                    <input type="text" value={notifMsg} onChange={e => setNotifMsg(e.target.value)} 
+                      placeholder="Ex: Boa tarde, teve atualização do whats app mudou o código, o novo é esse..." 
+                      className="nodri-input flex-1 text-[11px]" 
+                      onKeyDown={e => e.key === 'Enter' && sendNotification()} />
+                    <button onClick={sendNotification} disabled={sending || !notifMsg.trim()} 
+                      className="flex items-center gap-1.5 bg-nodri-cyan text-black text-[11px] font-bold px-3 py-1.5 rounded-lg hover:brightness-110 disabled:opacity-50 transition-all shrink-0">
+                      {sending ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />} Enviar
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               {/* TABELA SALÕES */}
               <div>
                 <h2 className="font-syne font-bold text-[12.5px] mb-3">Salões Cadastrados</h2>
@@ -726,7 +752,6 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
       {editSalao && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
           <div className="nodri-card w-full max-w-lg animate-slide-up overflow-hidden">
-            {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-nodri-border">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-lg flex items-center justify-center text-[14px] font-bold text-white" style={{ background: 'linear-gradient(135deg, #7c5cfc, #f43f8e)' }}>{editSalao.nome[0]}</div>
@@ -738,7 +763,6 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
               <button onClick={() => setEditSalao(null)} className="text-nodri-t3 hover:text-nodri-t1"><X size={16} /></button>
             </div>
 
-            {/* Tabs */}
             <div className="flex border-b border-nodri-border">
               {[
                 { id: 'dados', label: '📋 Dados' },
@@ -754,8 +778,6 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
 
             <form onSubmit={saveEditSalao}>
               <div className="p-5 space-y-3 max-h-96 overflow-y-auto">
-
-                {/* ABA DADOS */}
                 {editTab === 'dados' && (
                   <>
                     <div className="grid grid-cols-2 gap-3">
@@ -787,7 +809,6 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
                   </>
                 )}
 
-                {/* ABA ACESSO */}
                 {editTab === 'acesso' && (
                   <>
                     <div className="nodri-card p-3 bg-nodri-surface mb-2">
@@ -814,60 +835,54 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
                   </>
                 )}
 
-                {/* ABA PERIGO */}
                 {editTab === 'perigo' && (
-                  <>
-                    <div className="space-y-3">
-                      {/* Bloquear/Desbloquear */}
-                      <div className="nodri-card p-4 border-nodri-amber/30">
-                        <div className="font-syne font-bold text-[12px] mb-1 flex items-center gap-2">
-                          {editSalao.status === 'bloqueado' ? <Unlock size={13} className="text-nodri-green" /> : <Lock size={13} className="text-nodri-amber" />}
-                          {editSalao.status === 'bloqueado' ? 'Desbloquear Salão' : 'Bloquear Salão'}
-                        </div>
-                        <p className="text-[11px] text-nodri-t2 mb-3">
-                          {editSalao.status === 'bloqueado'
-                            ? 'O salão está bloqueado. Clique para reativar o acesso.'
-                            : 'Bloquear impede o cliente de acessar o sistema. Pode ser desfeito.'}
-                        </p>
-                        <button type="button" onClick={() => toggleBloqueio(editSalao)}
-                          className={`px-4 py-2 rounded-lg text-[11.5px] font-bold transition-all ${editSalao.status === 'bloqueado' ? 'bg-nodri-green text-black hover:brightness-110' : 'border border-nodri-amber text-nodri-amber hover:bg-nodri-amber/10'}`}>
-                          {editSalao.status === 'bloqueado' ? '✅ Desbloquear Salão' : '🔒 Bloquear Salão'}
-                        </button>
+                  <div className="space-y-3">
+                    <div className="nodri-card p-4 border-nodri-amber/30">
+                      <div className="font-syne font-bold text-[12px] mb-1 flex items-center gap-2">
+                        {editSalao.status === 'bloqueado' ? <Unlock size={13} className="text-nodri-green" /> : <Lock size={13} className="text-nodri-amber" />}
+                        {editSalao.status === 'bloqueado' ? 'Desbloquear Salão' : 'Bloquear Salão'}
                       </div>
-
-                      {/* Excluir */}
-                      <div className="nodri-card p-4 border-nodri-red/30 bg-nodri-red/3">
-                        <div className="font-syne font-bold text-[12px] mb-1 flex items-center gap-2 text-nodri-red">
-                          <Trash2 size={13} /> Excluir Salão Permanentemente
-                        </div>
-                        <p className="text-[11px] text-nodri-t2 mb-3">Esta ação é irreversível. Todos os dados do salão serão apagados.</p>
-                        {!showDeleteConfirm ? (
-                          <button type="button" onClick={() => setShowDeleteConfirm(true)}
-                            className="px-4 py-2 rounded-lg text-[11.5px] font-bold border border-nodri-red text-nodri-red hover:bg-nodri-red/10 transition-all">
-                            🗑️ Excluir este salão
-                          </button>
-                        ) : (
-                          <div className="space-y-2">
-                            <p className="text-[11px] text-nodri-red">Digite o nome do salão para confirmar: <strong>{editSalao.nome}</strong></p>
-                            <input className="nodri-input border-nodri-red/50 text-[11px]" placeholder={`Digite "${editSalao.nome}" para confirmar`}
-                              value={deleteConfirmText} onChange={e => setDeleteConfirmText(e.target.value)} />
-                            <div className="flex gap-2">
-                              <button type="button" onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText('') }}
-                                className="nodri-btn-ghost text-[11px]">Cancelar</button>
-                              <button type="button" onClick={deleteSalao} disabled={deletingSalao || deleteConfirmText !== editSalao.nome}
-                                className="flex items-center gap-1.5 bg-nodri-red text-white px-3 py-1.5 rounded-lg text-[11px] font-bold hover:brightness-110 disabled:opacity-40 transition-all">
-                                {deletingSalao ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />} Excluir Definitivamente
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
+                      <p className="text-[11px] text-nodri-t2 mb-3">
+                        {editSalao.status === 'bloqueado'
+                          ? 'O salão está bloqueado. Clique para reativar o acesso.'
+                          : 'Bloquear impede o cliente de acessar o sistema. Pode ser desfeito.'}
+                      </p>
+                      <button type="button" onClick={() => toggleBloqueio(editSalao)}
+                        className={`px-4 py-2 rounded-lg text-[11.5px] font-bold transition-all ${editSalao.status === 'bloqueado' ? 'bg-nodri-green text-black hover:brightness-110' : 'border border-nodri-amber text-nodri-amber hover:bg-nodri-amber/10'}`}>
+                        {editSalao.status === 'bloqueado' ? '✅ Desbloquear Salão' : '🔒 Bloquear Salão'}
+                      </button>
                     </div>
-                  </>
+
+                    <div className="nodri-card p-4 border-nodri-red/30 bg-nodri-red/3">
+                      <div className="font-syne font-bold text-[12px] mb-1 flex items-center gap-2 text-nodri-red">
+                        <Trash2 size={13} /> Excluir Salão Permanentemente
+                      </div>
+                      <p className="text-[11px] text-nodri-t2 mb-3">Esta ação é irreversível. Todos os dados do salão serão apagados.</p>
+                      {!showDeleteConfirm ? (
+                        <button type="button" onClick={() => setShowDeleteConfirm(true)}
+                          className="px-4 py-2 rounded-lg text-[11.5px] font-bold border border-nodri-red text-nodri-red hover:bg-nodri-red/10 transition-all">
+                          🗑️ Excluir este salão
+                        </button>
+                      ) : (
+                        <div className="space-y-2">
+                          <p className="text-[11px] text-nodri-red">Digite o nome do salão para confirmar: <strong>{editSalao.nome}</strong></p>
+                          <input className="nodri-input border-nodri-red/50 text-[11px]" placeholder={`Digite "${editSalao.nome}" para confirmar`}
+                            value={deleteConfirmText} onChange={e => setDeleteConfirmText(e.target.value)} />
+                          <div className="flex gap-2">
+                            <button type="button" onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText('') }}
+                              className="nodri-btn-ghost text-[11px]">Cancelar</button>
+                            <button type="button" onClick={deleteSalao} disabled={deletingSalao || deleteConfirmText !== editSalao.nome}
+                              className="flex items-center gap-1.5 bg-nodri-red text-white px-3 py-1.5 rounded-lg text-[11px] font-bold hover:brightness-110 disabled:opacity-40 transition-all">
+                              {deletingSalao ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />} Excluir Definitivamente
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
 
-              {/* Footer */}
               {editTab !== 'perigo' && (
                 <div className="flex justify-end gap-2 px-5 py-3 border-t border-nodri-border">
                   <button type="button" onClick={() => setEditSalao(null)} className="nodri-btn-ghost text-[12px]">Cancelar</button>
@@ -882,70 +897,71 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
       )}
 
       {/* MODAL MÓDULOS */}
-{modCtrlSalao && (
-  <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-    <div className="w-full max-w-2xl p-5 bg-white rounded-xl shadow-2xl animate-slide-up">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <div className="font-syne font-bold text-[13px] flex items-center gap-2">
-            <Puzzle size={14} className="text-nodri-cyan" /> 
-            <span className="text-black">Controle de Módulos</span>
-          </div>
-          <div className="text-[10px] text-nodri-cyan mt-0.5">{modCtrlSalao.nome}</div>
-        </div>
-        <button onClick={() => setModCtrlSalao(null)} className="text-gray-400 hover:text-gray-600 transition-colors">
-          <X size={16} />
-        </button>
-      </div>
-      
-      <div className="mb-3">
-        <div className="text-[11px] text-gray-500 mb-2">Módulos do Sistema</div>
-        <div className="flex gap-2 mb-3">
-          <button className="text-[10px] px-2 py-1 rounded-full bg-nodri-cyan text-black font-medium">Todos</button>
-          <button className="text-[10px] px-2 py-1 rounded-full bg-gray-100 text-gray-500">Ativos</button>
-          <button className="text-[10px] px-2 py-1 rounded-full bg-gray-100 text-gray-500">Bloqueados</button>
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-7 gap-2 mb-4">
-        {modulos.map(m => {
-          const on = modulosAtivos.has(m.id)
-          return (
-            <div key={m.id} onClick={() => toggleModulo(m.id)}
-              className={`p-2 rounded-lg border text-center cursor-pointer transition-all ${
-                on 
-                  ? 'border-nodri-cyan bg-nodri-cyan/10' 
-                  : 'border-gray-200 bg-gray-50 hover:border-nodri-cyan/30'
-              }`}>
-              <div className="text-base mb-1">⚙️</div>
-              <div className="text-[8.5px] font-bold uppercase leading-tight text-black mb-1.5">
-                {m.nome.split(' ').slice(0,2).join(' ')}
+      {modCtrlSalao && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="w-full max-w-2xl p-5 bg-nodri-card rounded-xl shadow-2xl animate-slide-up border border-nodri-border">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <div className="font-syne font-bold text-[13px] flex items-center gap-2">
+                  <Puzzle size={14} className="text-nodri-cyan" /> 
+                  <span className="text-nodri-t1">Controle de Módulos</span>
+                </div>
+                <div className="text-[10px] text-nodri-cyan mt-0.5">{modCtrlSalao.nome}</div>
               </div>
-              <div className={`w-6 h-3 rounded-full mx-auto relative transition-colors ${on ? 'bg-nodri-cyan' : 'bg-gray-300'}`}>
-                <div className={`absolute top-0.5 w-2 h-2 bg-white rounded-full transition-all ${on ? 'left-3.5' : 'left-0.5'}`} />
-              </div>
-              {on && (
-                <div className="text-[7px] text-nodri-cyan font-semibold mt-1">✓</div>
-              )}
+              <button onClick={() => setModCtrlSalao(null)} className="text-nodri-t3 hover:text-nodri-t1 transition-colors">
+                <X size={16} />
+              </button>
             </div>
-          )
-        })}
-      </div>
-      
-      <div className="flex justify-between items-center border-t border-gray-200 pt-3 mt-1">
-        <span className="text-[11px] text-black font-medium">{modulosAtivos.size} de {modulos.length} módulos ativos</span>
-        <div className="flex gap-2">
-          <button onClick={() => setModCtrlSalao(null)} className="px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 text-[11px] hover:bg-gray-50 transition-all">
-            Cancelar
-          </button>
-          <button onClick={saveModulos} disabled={savingMods} 
-            className="px-3 py-1.5 rounded-lg bg-nodri-cyan text-black text-[11px] font-bold hover:brightness-110 disabled:opacity-50 transition-all flex items-center gap-1.5">
-            {savingMods ? <><Loader2 size={12} className="animate-spin" /> Salvando...</> : 'Salvar Alterações'}
-          </button>
+            
+            <div className="mb-3">
+              <div className="text-[11px] text-nodri-t2 mb-2">Módulos do Sistema</div>
+              <div className="flex gap-2 mb-3">
+                <button className="text-[10px] px-2 py-1 rounded-full bg-nodri-cyan text-black font-medium">Todos</button>
+                <button className="text-[10px] px-2 py-1 rounded-full bg-nodri-surface text-nodri-t2">Ativos</button>
+                <button className="text-[10px] px-2 py-1 rounded-full bg-nodri-surface text-nodri-t2">Bloqueados</button>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-7 gap-2 mb-4">
+              {modulos.map(m => {
+                const on = modulosAtivos.has(m.id)
+                return (
+                  <div key={m.id} onClick={() => toggleModulo(m.id)}
+                    className={`p-2 rounded-lg border text-center cursor-pointer transition-all ${
+                      on 
+                        ? 'border-nodri-cyan bg-nodri-cyan/10' 
+                        : 'border-nodri-border bg-nodri-surface hover:border-nodri-cyan/30'
+                    }`}>
+                    <div className="text-base mb-1">⚙️</div>
+                    <div className="text-[8.5px] font-bold uppercase leading-tight text-nodri-t1 mb-1.5">
+                      {m.nome.split(' ').slice(0,2).join(' ')}
+                    </div>
+                    <div className={`w-6 h-3 rounded-full mx-auto relative transition-colors ${on ? 'bg-nodri-cyan' : 'bg-nodri-border'}`}>
+                      <div className={`absolute top-0.5 w-2 h-2 bg-white rounded-full transition-all ${on ? 'left-3.5' : 'left-0.5'}`} />
+                    </div>
+                    {on && (
+                      <div className="text-[7px] text-nodri-cyan font-semibold mt-1">✓</div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+            
+            <div className="flex justify-between items-center border-t border-nodri-border pt-3 mt-1">
+              <span className="text-[11px] text-nodri-t1 font-medium">{modulosAtivos.size} de {modulos.length} módulos ativos</span>
+              <div className="flex gap-2">
+                <button onClick={() => setModCtrlSalao(null)} className="px-3 py-1.5 rounded-lg border border-nodri-border text-nodri-t2 text-[11px] hover:bg-nodri-surface transition-all">
+                  Cancelar
+                </button>
+                <button onClick={saveModulos} disabled={savingMods} 
+                  className="px-3 py-1.5 rounded-lg bg-nodri-cyan text-black text-[11px] font-bold hover:brightness-110 disabled:opacity-50 transition-all flex items-center gap-1.5">
+                  {savingMods ? <><Loader2 size={12} className="animate-spin" /> Salvando...</> : 'Salvar Alterações'}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
-  </div>
-)}
   )
 }
