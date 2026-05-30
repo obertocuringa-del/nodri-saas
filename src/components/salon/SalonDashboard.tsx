@@ -97,12 +97,13 @@ interface Props {
   totalModulos: number
 }
 
-// Inject shimmer animation
+// Inject shimmer animation + white bg override
 if (typeof document !== 'undefined') {
   const style = document.createElement('style')
   style.textContent = `
     @keyframes shimmer { 0% { background-position: 200% 0 } 100% { background-position: -200% 0 } }
     @keyframes pulseDot { 0%,100% { transform: scale(1); opacity: 1 } 50% { transform: scale(1.3); opacity: 0.7 } }
+    .nodri-salon-bg { background-color: #ffffff !important; }
   `
   if (!document.getElementById('nodri-animations')) { style.id = 'nodri-animations'; document.head.appendChild(style) }
 }
@@ -114,7 +115,6 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
   const [busca, setBusca] = useState('')
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
-
 
   // Auto-rotate notifications every 5 seconds
   useEffect(() => {
@@ -160,11 +160,10 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
   const TABS = ['Todos os Módulos', 'Manual do Usuário', 'Dicas Nodri', 'Gestão de Pessoas', 'Gestão Financeira', 'Marketing']
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: '#ffffff' }}>
+    <div className="nodri-salon-bg min-h-screen flex flex-col">
 
       {/* NAVBAR */}
       <nav className="bg-nodri-surface border-b border-nodri-border px-5 py-2.5 flex items-center gap-3 sticky top-0" style={{ zIndex: 50 }}>
-        {/* Logo */}
         <div className="flex items-center gap-2.5 mr-2 shrink-0">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center font-syne font-black text-sm text-black"
             style={{ background: 'linear-gradient(135deg, #7c5cfc, #f43f8e)' }}>N</div>
@@ -176,7 +175,6 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
 
         <div className="w-px h-5 bg-nodri-border shrink-0" />
 
-        {/* TABS */}
         <div ref={dropdownRef} className="flex gap-0.5 bg-nodri-card border border-nodri-border rounded-lg p-0.5">
           {TABS.map(tab => (
             <div key={tab} className="relative">
@@ -193,12 +191,9 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                 )}
               </button>
 
-              {/* DROPDOWN — renderizado fora do overflow */}
               {openDropdown === tab && tab !== 'Todos os Módulos' && MENU_LINKS[tab] && (
-                <div
-                  style={{ position: 'fixed', zIndex: 9999, marginTop: '4px' }}
-                  className="bg-nodri-card border border-nodri-border rounded-xl shadow-2xl min-w-[300px] max-h-80 overflow-y-auto"
-                >
+                <div style={{ position: 'fixed', zIndex: 9999, marginTop: '4px' }}
+                  className="bg-nodri-card border border-nodri-border rounded-xl shadow-2xl min-w-[300px] max-h-80 overflow-y-auto">
                   <div className="px-3 py-2 border-b border-nodri-border sticky top-0 bg-nodri-card">
                     <div className="text-[10px] font-bold text-nodri-cyan uppercase tracking-wider">{tab}</div>
                   </div>
@@ -216,7 +211,6 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
           ))}
         </div>
 
-        {/* RIGHT */}
         <div className="flex items-center gap-2 ml-auto shrink-0">
           <div className="relative hidden md:block">
             <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-nodri-t3" />
@@ -248,21 +242,18 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
         </div>
       </nav>
 
-      {/* NOTIFICATION BANNER — rotativo com múltiplas notificações */}
+      {/* NOTIFICATION BANNER */}
       {notificacoes.length > 0 && !notifDismissed && (() => {
         const notif = notificacoes[notifIndex % notificacoes.length]
         return (
           <div className="mx-5 mt-3 rounded-xl overflow-hidden" style={{ boxShadow: '0 4px 32px rgba(99,102,241,0.25)' }}>
             <div className="px-4 py-3 flex items-center gap-3" style={{ background: '#ffffff' }}>
-              {/* Ícone pulsante */}
               <div className="relative shrink-0">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
                   <Bell size={18} color="#fff" />
                 </div>
                 <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full border-2" style={{ background: '#ef4444', borderColor: '#fff', animation: 'pulseDot 1.5s ease infinite' }} />
               </div>
-
-              {/* Conteúdo */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <span style={{ fontSize: '10px', fontWeight: 800, color: '#6366f1', textTransform: 'uppercase', letterSpacing: '1.5px' }}>Aviso do Sistema</span>
@@ -278,21 +269,18 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                 </div>
                 <div style={{ fontSize: '13px', fontWeight: 500, color: '#0f172a', lineHeight: 1.45 }}>{notif.mensagem}</div>
               </div>
-
-              {/* Navegar + Fechar */}
               <div className="flex items-center gap-1.5 shrink-0">
                 {notificacoes.length > 1 && (
                   <button onClick={() => setNotifIndex(i => i + 1)}
-                    style={{ width: '28px', height: '28px', borderRadius: '6px', border: '1px solid #e2e8f0', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '12px', color: '#6366f1' }}
+                    style={{ width: '28px', height: '28px', borderRadius: '6px', border: '1px solid #e2e8f0', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '16px', color: '#6366f1' }}
                     title="Próxima notificação">›</button>
                 )}
                 <button onClick={() => setNotifDismissed(true)}
-                  style={{ width: '28px', height: '28px', borderRadius: '6px', border: '1px solid #e2e8f0', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+                  style={{ width: '28px', height: '28px', borderRadius: '6px', border: '1px solid #e2e8f0', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                   <X size={13} color="#64748b" />
                 </button>
               </div>
             </div>
-            {/* Barra animada */}
             <div style={{ height: '3px', background: 'linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899, #06b6d4, #6366f1)', backgroundSize: '300% 100%', animation: 'shimmer 3s linear infinite' }} />
           </div>
         )
