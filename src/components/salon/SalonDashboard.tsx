@@ -301,7 +301,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
       <div className="flex-1 px-5 py-3 pb-6">
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
           {modulosFiltrados.map(modulo => {
-            const iconEmoji = ICON_MAP[modulo.icone] || '⚙️'
+            const iconEmoji = ICON_MAP[modulo.icone] || ''
             const corClass = COR_MAP[modulo.cor_classe] || COR_MAP.cyan
             return (
               <div key={modulo.id}
