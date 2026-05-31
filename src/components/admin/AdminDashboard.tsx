@@ -910,7 +910,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
                             <div className="text-[11px] flex-1 text-nodri-t1">
                               {n.mensagem}
                               {isCompra && (
-                                <button onClick={() => setSelectedCompra(n.metadata)}
+                                <onClick={() => setSelectedCompra(n.metadata ?? null)}
                                   className="ml-2 text-nodri-cyan text-[10px] hover:underline font-semibold">
                                   Ver Dados →
                                 </button>
