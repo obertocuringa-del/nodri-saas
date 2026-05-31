@@ -92,6 +92,25 @@ const DEFAULT_LINKS: Record<string, { title: string; url: string }[]> = {
   ],
 }
 
+const DEFAULT_LANDING = {
+  hero_titulo: 'Sistema de Gestão para Salões de Beleza',
+  hero_subtitulo: 'Automatize confirmações, envio de mensagens, relatórios e muito mais. Tudo integrado diretamente ao seu WhatsApp.',
+  hero_botao: '👉 Ver Planos',
+  beneficios: [
+    { emoji: '⚡', titulo: 'Abre com 1 clique', desc: 'Clique em Abrir no site e o programa abre instantaneamente no seu computador.' },
+    { emoji: '💬', titulo: 'Integrado ao WhatsApp', desc: 'Envie confirmações, feedbacks e listas direto pelo WhatsApp.' },
+    { emoji: '📊', titulo: 'Relatórios completos', desc: 'Acompanhe faturamento, desempenho de profissionais e reservas financeiras.' },
+    { emoji: '🔄', titulo: 'Atualizações automáticas', desc: 'Receba novas versões dos programas sem precisar reinstalar tudo.' },
+  ],
+  landing_planos: [
+    { nome: 'Básico', preco: 100, cor: '#3498db', destaque: false, modulos: ['Confirmar Agendamento', 'Enviar Feedback', 'Enviar Lista c/ Foto', 'Enviar Lista s/ Foto', 'Baixar Música YouTube'] },
+    { nome: 'Profissional', preco: 200, cor: '#9b59b6', destaque: true, modulos: ['Todos do Básico', 'Bloqueio Sem Preferência', 'Ver Feedback Cliente', 'Relatório Profissional', 'Faturamento Diário', 'Calcular Reserva Financeira'] },
+    { nome: 'Premium', preco: 300, cor: '#f39c12', destaque: false, modulos: ['Todos do Profissional', 'Calculadora Depreciação', 'Avaliar Profissional', 'Aluguel de Cadeira', 'Precificar Serviços'] },
+  ],
+  footer_texto: 'Sistema de Gestão para Salões de Beleza',
+  footer_email: 'contato@nodri.com.br',
+}
+
 export default function AdminDashboard({ saloes: initialSaloes, modulos, notificacoes, planos: initialPlanos }: Props) {
   const [saloes, setSaloes] = useState(initialSaloes)
   const [planos, setPlanos] = useState(initialPlanos)
@@ -127,11 +146,15 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
   const [planoForm, setPlanoForm] = useState({ nome: '', slug: '', descricao: '', preco: '', max_usuarios: '' })
   const [savingPlano, setSavingPlano] = useState(false)
 
-  // Editar notificação
   const [editNotif, setEditNotif] = useState<Notificacao | null>(null)
   const [editNotifMsg, setEditNotifMsg] = useState('')
   const [savingNotif, setSavingNotif] = useState(false)
   const [deletingNotif, setDeletingNotif] = useState<string | null>(null)
+
+  // ── LANDING PAGE EDITOR ──
+  const [planosTab, setPlanosTab] = useState<'planos' | 'landing'>('planos')
+  const [landingConfig, setLandingConfig] = useState<typeof DEFAULT_LANDING | null>(null)
+  const [savingLanding, setSavingLanding] = useState(false)
 
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -336,6 +359,48 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
     else toast.error('Erro ao excluir plano')
   }
 
+  // ── LANDING EDITOR FUNCTIONS ──
+  async function loadLandingConfig() {
+    try {
+      const res = await fetch('/api/landing-config')
+      if (res.ok) { const data = await res.json(); setLandingConfig(data) }
+      else setLandingConfig(DEFAULT_LANDING)
+    } catch { setLandingConfig(DEFAULT_LANDING) }
+  }
+
+  async function saveLandingConfig() {
+    if (!landingConfig) return
+    setSavingLanding(true)
+    try {
+      const res = await fetch('/api/landing-config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(landingConfig),
+      })
+      if (res.ok) toast.success('Landing page salva com sucesso!')
+      else toast.error('Erro ao salvar landing page')
+    } catch { toast.error('Erro ao salvar') }
+    setSavingLanding(false)
+  }
+
+  function updateLandingPlanoModulo(pi: number, mi: number, value: string) {
+    if (!landingConfig) return
+    const arr = landingConfig.landing_planos.map((p, i) => i === pi ? { ...p, modulos: p.modulos.map((m, j) => j === mi ? value : m) } : p)
+    setLandingConfig({ ...landingConfig, landing_planos: arr })
+  }
+
+  function removeLandingPlanoModulo(pi: number, mi: number) {
+    if (!landingConfig) return
+    const arr = landingConfig.landing_planos.map((p, i) => i === pi ? { ...p, modulos: p.modulos.filter((_, j) => j !== mi) } : p)
+    setLandingConfig({ ...landingConfig, landing_planos: arr })
+  }
+
+  function addLandingPlanoModulo(pi: number) {
+    if (!landingConfig) return
+    const arr = landingConfig.landing_planos.map((p, i) => i === pi ? { ...p, modulos: [...p.modulos, 'Novo item'] } : p)
+    setLandingConfig({ ...landingConfig, landing_planos: arr })
+  }
+
   function getTrialStatus(criado_em: string | Date) {
     const criado = new Date(criado_em)
     const expira = new Date(criado)
@@ -412,7 +477,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
               <Bell size={14} />
               {localNotifs.filter(n => !n.lida).length > 0 && <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-nodri-red rounded-full" />}
             </button>
-            {activeSection === 'planos' && (
+            {activeSection === 'planos' && planosTab === 'planos' && (
               <button onClick={() => { setEditPlano(null); setPlanoForm({ nome: '', slug: '', descricao: '', preco: '', max_usuarios: '' }); setShowNovoPlano(true) }}
                 className="flex items-center gap-1.5 bg-nodri-cyan text-black text-[11.5px] font-bold px-3 py-1.5 rounded-lg hover:brightness-110 transition-all">
                 <Plus size={13} /> Novo Plano
@@ -479,29 +544,178 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
           {/* GESTÃO DE PLANOS */}
           {activeSection === 'planos' && (
             <div>
-              <div className="grid gap-3">
-                {planos.map(plano => (
-                  <div key={plano.id} className="nodri-card p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-[14px] font-bold text-black ${PLANO_CLASS[plano.slug as keyof typeof PLANO_CLASS] || 'bg-nodri-t3/20'}`}>{plano.nome[0]}</div>
-                      <div>
-                        <div className="font-syne font-bold text-[13px]">{plano.nome}</div>
-                        <div className="text-[10px] text-nodri-t2">Slug: {plano.slug}</div>
-                        {plano.descricao && <div className="text-[10px] text-nodri-t3 mt-0.5">{plano.descricao}</div>}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-6">
-                      <div className="text-right"><div className="font-syne font-bold text-[15px]">R${plano.preco}</div><div className="text-[9px] text-nodri-t3">/mês</div></div>
-                      <div className="text-right"><div className="text-[11px] font-medium">👥 {plano.max_usuarios} usuário(s)</div></div>
-                      <div className="flex gap-1.5">
-                        <button onClick={() => openEditPlano(plano)} className="p-1.5 rounded-md border border-nodri-purple/40 text-nodri-purple bg-nodri-purple/7 hover:bg-nodri-purple/15 transition-all"><Edit size={11} /></button>
-                        <button onClick={() => deletePlano(plano.id)} className="p-1.5 rounded-md border border-nodri-red/35 text-nodri-red bg-nodri-red/7 hover:bg-nodri-red/15 transition-all"><Trash2 size={11} /></button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                {planos.length === 0 && <div className="nodri-card p-8 text-center text-nodri-t3 text-sm">Nenhum plano cadastrado. Clique em "Novo Plano" para começar.</div>}
+              {/* ABAS */}
+              <div className="flex gap-2 mb-5">
+                <button onClick={() => setPlanosTab('planos')}
+                  className={`px-4 py-2 rounded-lg text-[12px] font-bold transition-all ${planosTab === 'planos' ? 'bg-nodri-cyan text-black' : 'bg-nodri-card border border-nodri-border text-nodri-t2 hover:text-nodri-t1'}`}>
+                  📋 Planos
+                </button>
+                <button onClick={() => { setPlanosTab('landing'); if (!landingConfig) loadLandingConfig() }}
+                  className={`px-4 py-2 rounded-lg text-[12px] font-bold transition-all ${planosTab === 'landing' ? 'bg-nodri-cyan text-black' : 'bg-nodri-card border border-nodri-border text-nodri-t2 hover:text-nodri-t1'}`}>
+                  🎨 Editor Landing Page
+                </button>
               </div>
+
+              {/* ABA PLANOS */}
+              {planosTab === 'planos' && (
+                <div className="grid gap-3">
+                  {planos.map(plano => (
+                    <div key={plano.id} className="nodri-card p-4 flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-[14px] font-bold text-black ${PLANO_CLASS[plano.slug as keyof typeof PLANO_CLASS] || 'bg-nodri-t3/20'}`}>{plano.nome[0]}</div>
+                        <div>
+                          <div className="font-syne font-bold text-[13px]">{plano.nome}</div>
+                          <div className="text-[10px] text-nodri-t2">Slug: {plano.slug}</div>
+                          {plano.descricao && <div className="text-[10px] text-nodri-t3 mt-0.5">{plano.descricao}</div>}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-6">
+                        <div className="text-right"><div className="font-syne font-bold text-[15px]">R${plano.preco}</div><div className="text-[9px] text-nodri-t3">/mês</div></div>
+                        <div className="text-right"><div className="text-[11px] font-medium">👥 {plano.max_usuarios} usuário(s)</div></div>
+                        <div className="flex gap-1.5">
+                          <button onClick={() => openEditPlano(plano)} className="p-1.5 rounded-md border border-nodri-purple/40 text-nodri-purple bg-nodri-purple/7 hover:bg-nodri-purple/15 transition-all"><Edit size={11} /></button>
+                          <button onClick={() => deletePlano(plano.id)} className="p-1.5 rounded-md border border-nodri-red/35 text-nodri-red bg-nodri-red/7 hover:bg-nodri-red/15 transition-all"><Trash2 size={11} /></button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {planos.length === 0 && <div className="nodri-card p-8 text-center text-nodri-t3 text-sm">Nenhum plano cadastrado. Clique em "Novo Plano" para começar.</div>}
+                </div>
+              )}
+
+              {/* ABA EDITOR LANDING PAGE */}
+              {planosTab === 'landing' && (
+                <div className="space-y-5">
+                  {!landingConfig ? (
+                    <div className="nodri-card p-10 text-center text-nodri-t3">
+                      <Loader2 size={22} className="animate-spin mx-auto mb-3" />
+                      <div className="text-[12px]">Carregando configurações...</div>
+                    </div>
+                  ) : (
+                    <>
+                      {/* HERO */}
+                      <div className="nodri-card p-4">
+                        <div className="font-syne font-bold text-[12px] mb-3 text-nodri-cyan flex items-center gap-2">🏠 Seção Hero (topo da página)</div>
+                        <div className="grid gap-3">
+                          <div>
+                            <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Título principal</label>
+                            <input value={landingConfig.hero_titulo} onChange={e => setLandingConfig({ ...landingConfig, hero_titulo: e.target.value })}
+                              className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] text-nodri-t1 outline-none focus:border-nodri-cyan transition-colors" />
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Subtítulo</label>
+                            <textarea value={landingConfig.hero_subtitulo} onChange={e => setLandingConfig({ ...landingConfig, hero_subtitulo: e.target.value })}
+                              rows={2} className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] text-nodri-t1 outline-none focus:border-nodri-cyan transition-colors resize-none" />
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Texto do botão</label>
+                            <input value={landingConfig.hero_botao} onChange={e => setLandingConfig({ ...landingConfig, hero_botao: e.target.value })}
+                              className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] text-nodri-t1 outline-none focus:border-nodri-cyan transition-colors" />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* BENEFÍCIOS */}
+                      <div className="nodri-card p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="font-syne font-bold text-[12px] text-nodri-cyan">✨ Benefícios</div>
+                          <button onClick={() => setLandingConfig({ ...landingConfig, beneficios: [...landingConfig.beneficios, { emoji: '⭐', titulo: 'Novo benefício', desc: 'Descrição aqui' }] })}
+                            className="flex items-center gap-1 text-[11px] bg-nodri-cyan text-black px-2.5 py-1 rounded-lg font-bold hover:brightness-110">
+                            <Plus size={11} /> Adicionar
+                          </button>
+                        </div>
+                        <div className="space-y-3">
+                          {landingConfig.beneficios.map((b, i) => (
+                            <div key={i} className="bg-nodri-surface rounded-lg p-3 border border-nodri-border">
+                              <div className="flex gap-2 mb-2">
+                                <input value={b.emoji} onChange={e => { const arr = [...landingConfig.beneficios]; arr[i] = { ...arr[i], emoji: e.target.value }; setLandingConfig({ ...landingConfig, beneficios: arr }) }}
+                                  className="w-14 bg-nodri-card border border-nodri-border rounded-lg px-2 py-1.5 text-[14px] text-center outline-none focus:border-nodri-cyan" placeholder="emoji" />
+                                <input value={b.titulo} onChange={e => { const arr = [...landingConfig.beneficios]; arr[i] = { ...arr[i], titulo: e.target.value }; setLandingConfig({ ...landingConfig, beneficios: arr }) }}
+                                  className="flex-1 bg-nodri-card border border-nodri-border rounded-lg px-2 py-1.5 text-[12px] text-nodri-t1 outline-none focus:border-nodri-cyan" placeholder="Título" />
+                                <button onClick={() => setLandingConfig({ ...landingConfig, beneficios: landingConfig.beneficios.filter((_, j) => j !== i) })}
+                                  className="text-nodri-red hover:bg-nodri-red/10 p-1.5 rounded-lg transition-colors"><Trash2 size={12} /></button>
+                              </div>
+                              <textarea value={b.desc} onChange={e => { const arr = [...landingConfig.beneficios]; arr[i] = { ...arr[i], desc: e.target.value }; setLandingConfig({ ...landingConfig, beneficios: arr }) }}
+                                rows={2} className="w-full bg-nodri-card border border-nodri-border rounded-lg px-2 py-1.5 text-[11px] text-nodri-t1 outline-none focus:border-nodri-cyan resize-none" placeholder="Descrição" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* PLANOS DA LANDING */}
+                      <div className="nodri-card p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="font-syne font-bold text-[12px] text-nodri-cyan">💰 Planos da Landing Page</div>
+                          <button onClick={() => setLandingConfig({ ...landingConfig, landing_planos: [...landingConfig.landing_planos, { nome: 'Novo Plano', preco: 0, cor: '#3498db', destaque: false, modulos: ['Módulo 1'] }] })}
+                            className="flex items-center gap-1 text-[11px] bg-nodri-cyan text-black px-2.5 py-1 rounded-lg font-bold hover:brightness-110">
+                            <Plus size={11} /> Adicionar Plano
+                          </button>
+                        </div>
+                        <div className="space-y-4">
+                          {landingConfig.landing_planos.map((p, pi) => (
+                            <div key={pi} className="bg-nodri-surface rounded-lg p-4 border border-nodri-border">
+                              <div className="flex gap-2 mb-3">
+                                <input value={p.nome} onChange={e => { const arr = [...landingConfig.landing_planos]; arr[pi] = { ...arr[pi], nome: e.target.value }; setLandingConfig({ ...landingConfig, landing_planos: arr }) }}
+                                  className="flex-1 bg-nodri-card border border-nodri-border rounded-lg px-2 py-1.5 text-[12px] font-bold text-nodri-t1 outline-none focus:border-nodri-cyan" placeholder="Nome do plano" />
+                                <div className="flex items-center gap-1">
+                                  <span className="text-[11px] text-nodri-t3">R$</span>
+                                  <input type="number" value={p.preco} onChange={e => { const arr = [...landingConfig.landing_planos]; arr[pi] = { ...arr[pi], preco: Number(e.target.value) }; setLandingConfig({ ...landingConfig, landing_planos: arr }) }}
+                                    className="w-20 bg-nodri-card border border-nodri-border rounded-lg px-2 py-1.5 text-[12px] text-nodri-t1 outline-none focus:border-nodri-cyan" />
+                                </div>
+                                <input type="color" value={p.cor} onChange={e => { const arr = [...landingConfig.landing_planos]; arr[pi] = { ...arr[pi], cor: e.target.value }; setLandingConfig({ ...landingConfig, landing_planos: arr }) }}
+                                  className="w-10 h-9 rounded-lg border border-nodri-border cursor-pointer bg-nodri-card" title="Cor do plano" />
+                                <button onClick={() => setLandingConfig({ ...landingConfig, landing_planos: landingConfig.landing_planos.filter((_, j) => j !== pi) })}
+                                  className="text-nodri-red hover:bg-nodri-red/10 p-1.5 rounded-lg transition-colors"><Trash2 size={12} /></button>
+                              </div>
+                              <label className="flex items-center gap-2 text-[11px] text-nodri-t2 mb-3 cursor-pointer select-none">
+                                <input type="checkbox" checked={p.destaque} onChange={e => { const arr = [...landingConfig.landing_planos]; arr[pi] = { ...arr[pi], destaque: e.target.checked }; setLandingConfig({ ...landingConfig, landing_planos: arr }) }}
+                                  className="rounded" />
+                                ⭐ Destacar como "Mais Popular"
+                              </label>
+                              <div className="space-y-1.5">
+                                <div className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1">Módulos inclusos:</div>
+                                {p.modulos.map((m, mi) => (
+                                  <div key={mi} className="flex gap-2">
+                                    <input value={m} onChange={e => updateLandingPlanoModulo(pi, mi, e.target.value)}
+                                      className="flex-1 bg-nodri-card border border-nodri-border rounded-lg px-2 py-1 text-[11px] text-nodri-t1 outline-none focus:border-nodri-cyan" />
+                                    <button onClick={() => removeLandingPlanoModulo(pi, mi)}
+                                      className="text-nodri-red hover:bg-nodri-red/10 p-1 rounded transition-colors"><Trash2 size={10} /></button>
+                                  </div>
+                                ))}
+                                <button onClick={() => addLandingPlanoModulo(pi)}
+                                  className="text-[10px] text-nodri-cyan hover:underline mt-1">+ Adicionar módulo</button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* RODAPÉ */}
+                      <div className="nodri-card p-4">
+                        <div className="font-syne font-bold text-[12px] mb-3 text-nodri-cyan">🔻 Rodapé</div>
+                        <div className="grid gap-3">
+                          <div>
+                            <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Texto do rodapé</label>
+                            <input value={landingConfig.footer_texto} onChange={e => setLandingConfig({ ...landingConfig, footer_texto: e.target.value })}
+                              className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] text-nodri-t1 outline-none focus:border-nodri-cyan transition-colors" />
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Email de contato</label>
+                            <input value={landingConfig.footer_email} onChange={e => setLandingConfig({ ...landingConfig, footer_email: e.target.value })}
+                              className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] text-nodri-t1 outline-none focus:border-nodri-cyan transition-colors" />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* BOTÃO SALVAR */}
+                      <button onClick={saveLandingConfig} disabled={savingLanding}
+                        className="w-full py-3 bg-nodri-cyan text-black font-bold rounded-xl flex items-center justify-center gap-2 hover:brightness-110 transition-all disabled:opacity-50 text-[13px]">
+                        {savingLanding ? <><Loader2 size={16} className="animate-spin" /> Salvando...</> : <><Save size={16} /> Salvar Landing Page</>}
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -538,12 +752,9 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
                       <span className={`w-2 h-2 rounded-full mt-1 shrink-0 ${TIPO_COLOR[n.tipo]}`} />
                       {editNotif?.id === n.id ? (
                         <div className="flex-1 flex gap-2">
-                          <input
-                            value={editNotifMsg}
-                            onChange={e => setEditNotifMsg(e.target.value)}
+                          <input value={editNotifMsg} onChange={e => setEditNotifMsg(e.target.value)}
                             className="flex-1 bg-nodri-card border border-nodri-cyan/40 rounded-md px-2 py-1 text-[11px] text-nodri-t1 outline-none"
-                            onKeyDown={e => e.key === 'Enter' && saveEditNotif()}
-                          />
+                            onKeyDown={e => e.key === 'Enter' && saveEditNotif()} />
                           <button onClick={saveEditNotif} disabled={savingNotif} className="flex items-center gap-1 px-2 py-1 bg-nodri-cyan text-black text-[10px] font-bold rounded-md">
                             {savingNotif ? <Loader2 size={10} className="animate-spin" /> : <Save size={10} />}
                           </button>
