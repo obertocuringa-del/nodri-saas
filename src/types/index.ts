@@ -64,6 +64,7 @@ export interface Notificacao {
   tipo: 'info' | 'success' | 'warning' | 'danger'
   para_todos: boolean
   lida: boolean
+  metadata?: Record<string, any>
   criado_em: string
 }
 
@@ -79,4 +80,14 @@ export interface Pagamento {
 
 export interface ModuloComStatus extends Modulo {
   habilitado: boolean
+}
+
+export interface Cupom {
+  id: string
+  codigo: string
+  percentual: number
+  ativo: boolean
+  usos_maximos: number | null
+  usos_atual: number
+  criado_em: string
 }
