@@ -1,5 +1,4 @@
 'use client'
-import { useState } from 'react'
 
 const PLANOS = [
   {
@@ -45,25 +44,8 @@ const PLANOS = [
 ]
 
 export default function LandingPage() {
-  const [loadingPlano, setLoadingPlano] = useState<string | null>(null)
-
-  async function handleAssinar(plano: typeof PLANOS[0]) {
-    setLoadingPlano(plano.nome)
-    try {
-      const res = await fetch('/api/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plano: plano.nome, preco: plano.preco }),
-      })
-      const data = await res.json()
-      if (data.init_point) {
-        window.location.href = data.init_point
-      }
-    } catch {
-      alert('Erro ao processar pagamento. Tente novamente.')
-    } finally {
-      setLoadingPlano(null)
-    }
+  function handleAssinar(plano: typeof PLANOS[0]) {
+    window.location.href = `/cadastro?plano=${encodeURIComponent(plano.nome)}`
   }
 
   return (
@@ -108,7 +90,7 @@ export default function LandingPage() {
       {/* PLANOS */}
       <section id="planos" style={{ padding: '60px 20px', maxWidth: 1100, margin: '0 auto' }}>
         <h2 style={{ textAlign: 'center', fontSize: 32, fontWeight: 700, marginBottom: 12 }}>Escolha seu Plano</h2>
-        <p style={{ textAlign: 'center', color: '#aaa', marginBottom: 48 }}>Pagamento único mensal via Pix ou cartão</p>
+        <p style={{ textAlign: 'center', color: '#aaa', marginBottom: 48 }}>Pagamento único mensal via PIX ou cartão</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24 }}>
           {PLANOS.map(plano => (
             <div key={plano.nome} style={{
@@ -138,7 +120,6 @@ export default function LandingPage() {
               </div>
               <button
                 onClick={() => handleAssinar(plano)}
-                disabled={loadingPlano === plano.nome}
                 style={{
                   width: '100%', marginTop: 28, padding: '14px 0',
                   background: plano.destaque ? plano.cor : 'transparent',
@@ -148,7 +129,7 @@ export default function LandingPage() {
                   cursor: 'pointer', transition: 'all 0.2s',
                 }}
               >
-                {loadingPlano === plano.nome ? 'Aguarde...' : `Assinar ${plano.nome}`}
+                Assinar {plano.nome}
               </button>
             </div>
           ))}
