@@ -163,7 +163,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
   const [loadingCupons, setLoadingCupons] = useState(false)
 
   // ── COMPRA DETALHE ──
-  const [selectedCompra, setSelectedCompra] = useState<Record<string, any> | null>(null as Record<string, any> | null)
+  const [selectedCompra, setSelectedCompra] = useState<Record<string, any> | null>(null)
 
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -910,7 +910,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
                             <div className="text-[11px] flex-1 text-nodri-t1">
                               {n.mensagem}
                               {isCompra && (
-                                <onClick={() => setSelectedCompra(n.metadata ?? null)}
+                                <button onClick={() => setSelectedCompra(n.metadata)}
                                   className="ml-2 text-nodri-cyan text-[10px] hover:underline font-semibold">
                                   Ver Dados →
                                 </button>
