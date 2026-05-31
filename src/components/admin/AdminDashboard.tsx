@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { LogOut, Bell, Plus, Shield, Building, CreditCard, Puzzle, Users, BarChart3, Settings, RefreshCw, X, Send, Edit, Lock, Unlock, Loader2, ChevronDown, Check, Link, Save, Trash2, ExternalLink, Eye, EyeOff, AlertTriangle, Search, Play, Zap } from 'lucide-react'
+import { LogOut, Bell, Plus, Shield, Building, CreditCard, Puzzle, Users, BarChart3, Settings, RefreshCw, X, Send, Edit, Lock, Unlock, Loader2, ChevronDown, Check, Link, Save, Trash2, ExternalLink, Eye, EyeOff, AlertTriangle, Search, Play, Zap, Tag } from 'lucide-react'
 import toast from 'react-hot-toast'
-import type { Salao, Modulo, Notificacao, Plano } from '@/types'
+import type { Salao, Modulo, Notificacao, Plano, Cupom } from '@/types'
 
 interface Props {
   saloes: Salao[]
@@ -152,9 +152,18 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
   const [deletingNotif, setDeletingNotif] = useState<string | null>(null)
 
   // ── LANDING PAGE EDITOR ──
-  const [planosTab, setPlanosTab] = useState<'planos' | 'landing'>('planos')
+  const [planosTab, setPlanosTab] = useState<'planos' | 'landing' | 'cupons'>('planos')
   const [landingConfig, setLandingConfig] = useState<typeof DEFAULT_LANDING | null>(null)
   const [savingLanding, setSavingLanding] = useState(false)
+
+  // ── CUPONS ──
+  const [cupons, setCupons] = useState<Cupom[]>([])
+  const [cuponForm, setCuponForm] = useState({ percentual: '', codigo: '' })
+  const [savingCupon, setSavingCupon] = useState(false)
+  const [loadingCupons, setLoadingCupons] = useState(false)
+
+  // ── COMPRA DETALHE ──
+  const [selectedCompra, setSelectedCompra] = useState<Record<string, any> | null>(null)
 
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -359,7 +368,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
     else toast.error('Erro ao excluir plano')
   }
 
-  // ── LANDING EDITOR FUNCTIONS ──
+  // ── LANDING EDITOR ──
   async function loadLandingConfig() {
     try {
       const res = await fetch('/api/landing-config')
@@ -399,6 +408,56 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
     if (!landingConfig) return
     const arr = landingConfig.landing_planos.map((p, i) => i === pi ? { ...p, modulos: [...p.modulos, 'Novo item'] } : p)
     setLandingConfig({ ...landingConfig, landing_planos: arr })
+  }
+
+  // ── CUPONS ──
+  async function loadCupons() {
+    setLoadingCupons(true)
+    try {
+      const res = await fetch('/api/cupons')
+      if (res.ok) { const data = await res.json(); setCupons(data) }
+    } catch { toast.error('Erro ao carregar cupons') }
+    setLoadingCupons(false)
+  }
+
+  async function gerarCupon(e: React.FormEvent) {
+    e.preventDefault()
+    if (!cuponForm.percentual) return
+    setSavingCupon(true)
+    const res = await fetch('/api/cupons', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        percentual: parseInt(cuponForm.percentual),
+        codigo_personalizado: cuponForm.codigo || undefined,
+      }),
+    })
+    const data = await res.json()
+    setSavingCupon(false)
+    if (res.ok) {
+      toast.success(`Cupom ${data.codigo} criado!`)
+      setCupons(prev => [data, ...prev])
+      setCuponForm({ percentual: '', codigo: '' })
+    } else toast.error(data.error || 'Erro ao criar cupom')
+  }
+
+  async function toggleCupon(id: string, ativo: boolean) {
+    const res = await fetch('/api/cupons', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, ativo: !ativo }),
+    })
+    if (res.ok) {
+      setCupons(prev => prev.map(c => c.id === id ? { ...c, ativo: !c.ativo } : c))
+      toast.success(ativo ? 'Cupom desativado' : 'Cupom reativado')
+    } else toast.error('Erro ao alterar cupom')
+  }
+
+  async function deleteCupon(id: string) {
+    if (!confirm('Excluir este cupom permanentemente?')) return
+    const res = await fetch(`/api/cupons?id=${id}`, { method: 'DELETE' })
+    if (res.ok) { setCupons(prev => prev.filter(c => c.id !== id)); toast.success('Cupom excluído') }
+    else toast.error('Erro ao excluir cupom')
   }
 
   function getTrialStatus(criado_em: string | Date) {
@@ -469,7 +528,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
               {activeSection === 'links' ? 'Links do Menu' : activeSection === 'planos' ? 'Gestão de Planos' : 'Painel Admin Master'}
             </div>
             <div className="text-[11px] text-nodri-t2">
-              {activeSection === 'links' ? 'Edite os links de cada categoria do menu' : activeSection === 'planos' ? 'Crie, edite e gerencie os planos de assinatura' : 'Controle total de salões, licenças e módulos'}
+              {activeSection === 'links' ? 'Edite os links de cada categoria do menu' : activeSection === 'planos' ? 'Planos, Landing Page e Cupons de Desconto' : 'Controle total de salões, licenças e módulos'}
             </div>
           </div>
           <div className="ml-auto flex gap-2">
@@ -553,6 +612,10 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
                 <button onClick={() => { setPlanosTab('landing'); if (!landingConfig) loadLandingConfig() }}
                   className={`px-4 py-2 rounded-lg text-[12px] font-bold transition-all ${planosTab === 'landing' ? 'bg-nodri-cyan text-black' : 'bg-nodri-card border border-nodri-border text-nodri-t2 hover:text-nodri-t1'}`}>
                   🎨 Editor Landing Page
+                </button>
+                <button onClick={() => { setPlanosTab('cupons'); if (cupons.length === 0) loadCupons() }}
+                  className={`px-4 py-2 rounded-lg text-[12px] font-bold transition-all ${planosTab === 'cupons' ? 'bg-nodri-cyan text-black' : 'bg-nodri-card border border-nodri-border text-nodri-t2 hover:text-nodri-t1'}`}>
+                  🎫 Cupons de Desconto
                 </button>
               </div>
 
@@ -707,13 +770,91 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
                         </div>
                       </div>
 
-                      {/* BOTÃO SALVAR */}
                       <button onClick={saveLandingConfig} disabled={savingLanding}
                         className="w-full py-3 bg-nodri-cyan text-black font-bold rounded-xl flex items-center justify-center gap-2 hover:brightness-110 transition-all disabled:opacity-50 text-[13px]">
                         {savingLanding ? <><Loader2 size={16} className="animate-spin" /> Salvando...</> : <><Save size={16} /> Salvar Landing Page</>}
                       </button>
                     </>
                   )}
+                </div>
+              )}
+
+              {/* ABA CUPONS DE DESCONTO */}
+              {planosTab === 'cupons' && (
+                <div className="space-y-5">
+                  {/* Gerar novo cupom */}
+                  <div className="nodri-card p-5">
+                    <div className="font-syne font-bold text-[13px] text-nodri-cyan mb-4 flex items-center gap-2">
+                      <Tag size={14} /> Gerar Novo Cupom de Desconto
+                    </div>
+                    <form onSubmit={gerarCupon} className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1.5 block">Percentual de Desconto *</label>
+                          <div className="flex items-center gap-2">
+                            <input type="number" min="1" max="100" className="nodri-input flex-1"
+                              placeholder="Ex: 20" value={cuponForm.percentual}
+                              onChange={e => setCuponForm(p => ({ ...p, percentual: e.target.value }))} />
+                            <span className="text-nodri-t2 font-bold text-[14px]">%</span>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1.5 block">Código personalizado (opcional)</label>
+                          <input className="nodri-input" placeholder="Ex: PROMOCAO30 (ou deixe vazio)"
+                            value={cuponForm.codigo}
+                            onChange={e => setCuponForm(p => ({ ...p, codigo: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '') }))} />
+                        </div>
+                      </div>
+                      {cuponForm.percentual && (
+                        <div className="bg-nodri-cyan/5 border border-nodri-cyan/20 rounded-lg p-3 text-[11px] text-nodri-t2">
+                          Exemplo de código gerado: <span className="font-mono font-bold text-nodri-cyan">{cuponForm.codigo || `NODRI${cuponForm.percentual}XXXX`}</span> — dará <strong className="text-nodri-cyan">{cuponForm.percentual}% de desconto</strong> para o cliente que usar na compra.
+                        </div>
+                      )}
+                      <button type="submit" disabled={savingCupon || !cuponForm.percentual}
+                        className="flex items-center gap-2 bg-nodri-cyan text-black px-5 py-2.5 rounded-lg text-[12px] font-bold hover:brightness-110 disabled:opacity-50 transition-all">
+                        {savingCupon ? <Loader2 size={13} className="animate-spin" /> : <Zap size={13} />}
+                        Gerar Cupom
+                      </button>
+                    </form>
+                  </div>
+
+                  {/* Lista de cupons */}
+                  <div className="nodri-card p-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="font-syne font-bold text-[12px] text-nodri-cyan">📋 Cupons Criados</div>
+                      <button onClick={loadCupons} className="text-[10px] text-nodri-t3 hover:text-nodri-t1 flex items-center gap-1">
+                        <RefreshCw size={10} /> Atualizar
+                      </button>
+                    </div>
+                    {loadingCupons ? (
+                      <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin text-nodri-t3" /></div>
+                    ) : cupons.length === 0 ? (
+                      <div className="text-center py-8 text-nodri-t3 text-[12px]">Nenhum cupom criado ainda. Gere o primeiro acima.</div>
+                    ) : (
+                      <div className="space-y-2">
+                        {cupons.map(c => (
+                          <div key={c.id} className={`flex items-center justify-between p-3 rounded-lg border transition-all ${c.ativo ? 'border-nodri-border bg-nodri-surface' : 'border-nodri-border/30 bg-nodri-card/50 opacity-60'}`}>
+                            <div className="flex items-center gap-3">
+                              <div className="font-mono font-bold text-[14px] text-nodri-cyan tracking-wider">{c.codigo}</div>
+                              <div className="text-[10px] bg-nodri-cyan/10 text-nodri-cyan px-2 py-0.5 rounded-full font-bold">{c.percentual}% OFF</div>
+                              {!c.ativo && <div className="text-[10px] bg-nodri-red/10 text-nodri-red px-2 py-0.5 rounded-full">Inativo</div>}
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <div className="text-[10px] text-nodri-t3">{c.usos_atual} uso(s)</div>
+                              <div className="text-[10px] text-nodri-t3">{new Date(c.criado_em).toLocaleDateString('pt-BR')}</div>
+                              <button onClick={() => toggleCupon(c.id, c.ativo)} title={c.ativo ? 'Desativar' : 'Reativar'}
+                                className={`p-1.5 rounded-md border transition-all ${c.ativo ? 'border-nodri-amber/40 text-nodri-amber bg-nodri-amber/7 hover:bg-nodri-amber/15' : 'border-nodri-green/40 text-nodri-green bg-nodri-green/7 hover:bg-nodri-green/15'}`}>
+                                {c.ativo ? <Lock size={11} /> : <Unlock size={11} />}
+                              </button>
+                              <button onClick={() => deleteCupon(c.id)} className="p-1.5 rounded-md border border-nodri-red/35 text-nodri-red bg-nodri-red/7 hover:bg-nodri-red/15 transition-all">
+                                <Trash2 size={11} />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -747,35 +888,46 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
 
                 <div className="space-y-2 mb-4 max-h-48 overflow-y-auto">
                   {localNotifs.length === 0 && <p className="text-[11px] text-nodri-t3 text-center py-2">Nenhuma notificação</p>}
-                  {localNotifs.slice(0, 8).map(n => (
-                    <div key={n.id} className="flex items-start gap-2.5 p-2.5 bg-nodri-surface rounded-lg border border-nodri-border group hover:border-nodri-cyan/20 transition-all">
-                      <span className={`w-2 h-2 rounded-full mt-1 shrink-0 ${TIPO_COLOR[n.tipo]}`} />
-                      {editNotif?.id === n.id ? (
-                        <div className="flex-1 flex gap-2">
-                          <input value={editNotifMsg} onChange={e => setEditNotifMsg(e.target.value)}
-                            className="flex-1 bg-nodri-card border border-nodri-cyan/40 rounded-md px-2 py-1 text-[11px] text-nodri-t1 outline-none"
-                            onKeyDown={e => e.key === 'Enter' && saveEditNotif()} />
-                          <button onClick={saveEditNotif} disabled={savingNotif} className="flex items-center gap-1 px-2 py-1 bg-nodri-cyan text-black text-[10px] font-bold rounded-md">
-                            {savingNotif ? <Loader2 size={10} className="animate-spin" /> : <Save size={10} />}
-                          </button>
-                          <button onClick={() => setEditNotif(null)} className="px-2 py-1 border border-nodri-border text-nodri-t3 text-[10px] rounded-md hover:text-nodri-t1">
-                            <X size={10} />
-                          </button>
-                        </div>
-                      ) : (
-                        <>
-                          <div className="text-[11px] flex-1 text-nodri-t1">{n.mensagem}</div>
-                          <div className="text-[10px] text-nodri-t3 shrink-0">{new Date(n.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
-                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                            <button onClick={() => handleEditNotif(n)} className="w-6 h-6 flex items-center justify-center text-nodri-t3 hover:text-nodri-cyan transition-colors" title="Editar"><Edit size={10} /></button>
-                            <button onClick={() => deleteNotif(n.id)} disabled={deletingNotif === n.id} className="w-6 h-6 flex items-center justify-center text-nodri-t3 hover:text-nodri-red transition-colors" title="Excluir">
-                              {deletingNotif === n.id ? <Loader2 size={10} className="animate-spin" /> : <Trash2 size={10} />}
+                  {localNotifs.slice(0, 8).map(n => {
+                    const isCompra = n.metadata?.tipo === 'compra'
+                    return (
+                      <div key={n.id} className={`flex items-start gap-2.5 p-2.5 rounded-lg border group hover:border-nodri-cyan/20 transition-all ${isCompra ? 'bg-nodri-green/5 border-nodri-green/20' : 'bg-nodri-surface border-nodri-border'}`}>
+                        <span className={`w-2 h-2 rounded-full mt-1 shrink-0 ${isCompra ? 'bg-nodri-green' : TIPO_COLOR[n.tipo]}`} />
+                        {editNotif?.id === n.id ? (
+                          <div className="flex-1 flex gap-2">
+                            <input value={editNotifMsg} onChange={e => setEditNotifMsg(e.target.value)}
+                              className="flex-1 bg-nodri-card border border-nodri-cyan/40 rounded-md px-2 py-1 text-[11px] text-nodri-t1 outline-none"
+                              onKeyDown={e => e.key === 'Enter' && saveEditNotif()} />
+                            <button onClick={saveEditNotif} disabled={savingNotif} className="flex items-center gap-1 px-2 py-1 bg-nodri-cyan text-black text-[10px] font-bold rounded-md">
+                              {savingNotif ? <Loader2 size={10} className="animate-spin" /> : <Save size={10} />}
+                            </button>
+                            <button onClick={() => setEditNotif(null)} className="px-2 py-1 border border-nodri-border text-nodri-t3 text-[10px] rounded-md hover:text-nodri-t1">
+                              <X size={10} />
                             </button>
                           </div>
-                        </>
-                      )}
-                    </div>
-                  ))}
+                        ) : (
+                          <>
+                            <div className="text-[11px] flex-1 text-nodri-t1">
+                              {n.mensagem}
+                              {isCompra && (
+                                <button onClick={() => setSelectedCompra(n.metadata)}
+                                  className="ml-2 text-nodri-cyan text-[10px] hover:underline font-semibold">
+                                  Ver Dados →
+                                </button>
+                              )}
+                            </div>
+                            <div className="text-[10px] text-nodri-t3 shrink-0">{new Date(n.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
+                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                              <button onClick={() => handleEditNotif(n)} className="w-6 h-6 flex items-center justify-center text-nodri-t3 hover:text-nodri-cyan transition-colors" title="Editar"><Edit size={10} /></button>
+                              <button onClick={() => deleteNotif(n.id)} disabled={deletingNotif === n.id} className="w-6 h-6 flex items-center justify-center text-nodri-t3 hover:text-nodri-red transition-colors" title="Excluir">
+                                {deletingNotif === n.id ? <Loader2 size={10} className="animate-spin" /> : <Trash2 size={10} />}
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
 
                 <div className="border-t border-nodri-border pt-3">
@@ -868,6 +1020,73 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
           )}
         </div>
       </main>
+
+      {/* MODAL COMPRA DETALHE */}
+      {selectedCompra && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+          <div className="nodri-card w-full max-w-md p-6 animate-slide-up">
+            <div className="flex items-center justify-between mb-5">
+              <div className="font-syne font-bold text-[14px] flex items-center gap-2">
+                <span>🛍️</span> Dados da Compra
+              </div>
+              <button onClick={() => setSelectedCompra(null)} className="text-nodri-t3 hover:text-nodri-t1"><X size={16} /></button>
+            </div>
+
+            <div className="bg-nodri-green/8 border border-nodri-green/20 rounded-lg p-3 mb-4">
+              <div className="text-[10px] text-nodri-t3 mb-1 uppercase tracking-wider">Plano comprado</div>
+              <div className="font-bold text-[16px] text-nodri-green">{selectedCompra.plano}</div>
+              <div className="text-[12px] text-nodri-t2 mt-0.5">
+                {selectedCompra.desconto_percentual > 0
+                  ? `R$${selectedCompra.preco_final}/mês (${selectedCompra.desconto_percentual}% desc. — cupom: ${selectedCompra.cupom})`
+                  : `R$${selectedCompra.preco_final}/mês`}
+              </div>
+            </div>
+
+            <div className="space-y-0 divide-y divide-nodri-border/50">
+              {[
+                { label: 'Nome do Salão', value: selectedCompra.nome_salao },
+                { label: 'Responsável', value: selectedCompra.responsavel },
+                { label: 'Cidade', value: selectedCompra.cidade },
+                { label: 'Email', value: selectedCompra.email },
+                { label: 'Telefone', value: selectedCompra.telefone },
+                { label: 'Dia de Vencimento', value: selectedCompra.dia_vencimento ? `Todo dia ${selectedCompra.dia_vencimento}` : '—' },
+              ].map(item => (
+                <div key={item.label} className="flex justify-between items-center py-2.5">
+                  <span className="text-[11px] text-nodri-t3">{item.label}</span>
+                  <span className="text-[12px] font-medium text-nodri-t1">{item.value || '—'}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex gap-2 mt-5">
+              <button
+                onClick={() => {
+                  const txt = `Salão: ${selectedCompra.nome_salao}\nResponsável: ${selectedCompra.responsavel}\nCidade: ${selectedCompra.cidade}\nEmail: ${selectedCompra.email}\nTelefone: ${selectedCompra.telefone}\nVencimento: Todo dia ${selectedCompra.dia_vencimento}\nPlano: ${selectedCompra.plano} — R$${selectedCompra.preco_final}/mês`
+                  navigator.clipboard.writeText(txt)
+                  toast.success('Dados copiados!')
+                }}
+                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 border border-nodri-border text-nodri-t2 rounded-lg text-[12px] hover:text-nodri-t1 hover:border-nodri-cyan/30 transition-all">
+                📋 Copiar Dados
+              </button>
+              <button
+                onClick={() => {
+                  setFormSalao(prev => ({
+                    ...prev,
+                    nome: selectedCompra.nome_salao || '',
+                    responsavel: selectedCompra.responsavel || '',
+                    email: selectedCompra.email || '',
+                    telefone: selectedCompra.telefone || '',
+                  }))
+                  setSelectedCompra(null)
+                  setShowNovoSalao(true)
+                }}
+                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-nodri-cyan text-black rounded-lg text-[12px] font-bold hover:brightness-110 transition-all">
+                <Plus size={13} /> Cadastrar Salão
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL NOVO/EDITAR PLANO */}
       {showNovoPlano && (
