@@ -126,7 +126,6 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
 
   function handleLogout() { window.location.href = '/logout' }
 
-  // Mapeamento módulo online → protocolo nodri:// (igual ao código de cima)
   const MODULO_SLUG: Record<string, string> = {
     'Confirmar Agendamento':         'confirmacao_agendamento',
     'Baixar Música YouTube':         'baixar-musica',
@@ -150,11 +149,8 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
       return
     }
     const slug = MODULO_SLUG[modulo.nome] || modulo.nome.toLowerCase().replace(/ /g, '-')
-const iframe = document.createElement('iframe')
-iframe.style.display = 'none'
-iframe.src = `http://127.0.0.1:47200/launch/${slug}`
-document.body.appendChild(iframe)
-setTimeout(() => document.body.removeChild(iframe), 2000)
+    // Usa fetch silencioso — não abre nenhuma aba no browser
+    fetch(`http://127.0.0.1:47200/launch/${slug}`, { mode: 'no-cors' }).catch(() => {})
   }
 
   const planoLabel = plano === 'premium' ? 'Plano Premium' : plano === 'profissional' ? 'Plano Profissional' : 'Plano Básico'
@@ -315,31 +311,22 @@ setTimeout(() => document.body.removeChild(iframe), 2000)
                 borderColor: modulo.habilitado ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.04)',
                 opacity: modulo.habilitado ? 1 : 0.55,
               }}>
-              {/* Linha topo sutil quando ativo */}
               {modulo.habilitado && (
                 <div className="absolute top-0 left-0 right-0 h-px" style={{ background: 'rgba(255,255,255,0.12)' }} />
               )}
-
-              {/* Versão */}
               <div className="flex justify-end mb-3">
                 <span className="text-[9px] px-1.5 py-0.5 rounded-full"
                   style={{ background: 'rgba(255,255,255,0.06)', color: '#475569', border: '1px solid rgba(255,255,255,0.06)' }}>
                   v{modulo.versao}
                 </span>
               </div>
-
-              {/* Nome */}
               <div className="font-syne font-bold text-[13px] uppercase tracking-wide leading-snug mb-1.5"
                 style={{ color: modulo.habilitado ? '#f1f5f9' : '#64748b' }}>
                 {modulo.nome}
               </div>
-
-              {/* Descrição */}
               <p className="text-[10px] leading-relaxed mb-4 flex-1" style={{ color: '#475569' }}>
                 {modulo.descricao}
               </p>
-
-              {/* Footer */}
               <div className="flex items-center justify-between gap-2 mt-auto">
                 <div className="flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full"
