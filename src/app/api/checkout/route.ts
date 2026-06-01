@@ -11,9 +11,9 @@ const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN!
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://nodri-saas-jsx4.vercel.app'
 
 const PLANOS: Record<string, { nome: string; preco: number }> = {
-  'Básico':       { nome: 'NODRI Básico',       preco: 100 },
-  'Profissional': { nome: 'NODRI Profissional',  preco: 200 },
-  'Premium':      { nome: 'NODRI Premium',        preco: 300 },
+  'Básico':       { nome: 'NODRI Básico',      preco: 100 },
+  'Profissional': { nome: 'NODRI Profissional', preco: 200 },
+  'Premium':      { nome: 'NODRI Premium',      preco: 300 },
 }
 
 export async function POST(req: NextRequest) {
@@ -21,32 +21,57 @@ export async function POST(req: NextRequest) {
   const {
     plano, metodo = 'cartao',
     nome_salao, responsavel, cidade, email, telefone, dia_vencimento,
-    cupom, desconto_percentual, preco_final, renovacao,
+    cupom,
   } = body
 
   const planoInfo = PLANOS[plano]
   if (!planoInfo) return NextResponse.json({ erro: 'Plano inválido' }, { status: 400 })
 
-  const refId = randomUUID()
-  const precoFinal = typeof preco_final === 'number' ? preco_final : planoInfo.preco
+  // FIX: calcula precoFinal SERVER-SIDE validando o cupom no banco (não confia no cliente)
+  let descontoPercentual = 0
+  let codigoCupom: string | null = null
 
-  // Salva compra pendente no banco
-  await supabase.from('compras').insert({
+  if (cupom && typeof cupom === 'string') {
+    const { data: cupomData } = await supabase
+      .from('cupons')
+      .select('percentual, ativo')
+      .eq('codigo', cupom.trim().toUpperCase())
+      .eq('ativo', true)
+      .maybeSingle()
+
+    if (cupomData) {
+      descontoPercentual = cupomData.percentual || 0
+      codigoCupom = cupom.trim().toUpperCase()
+    }
+  }
+
+  // Preço final calculado no servidor — não aceita valor do cliente
+  const precoFinal = Math.round(planoInfo.preco * (1 - descontoPercentual / 100) * 100) / 100
+
+  const refId = randomUUID()
+
+  // FIX: verifica erro do insert antes de continuar
+  const { error: insertError } = await supabase.from('compras').insert({
     ref_id: refId,
     nome_salao: nome_salao || '',
     responsavel: responsavel || '',
     cidade: cidade || '',
-    email: email || '',
+    email: email?.trim().toLowerCase() || '',
     telefone: telefone || '',
     dia_vencimento: dia_vencimento || 5,
     plano,
     preco_original: planoInfo.preco,
     preco_final: precoFinal,
-    cupom: cupom || null,
-    desconto_percentual: desconto_percentual || 0,
+    cupom: codigoCupom,
+    desconto_percentual: descontoPercentual,
     metodo_pagamento: metodo,
     status: 'pendente',
   })
+
+  if (insertError) {
+    console.error('Erro ao salvar compra:', insertError.message)
+    return NextResponse.json({ erro: 'Erro interno ao registrar compra. Tente novamente.' }, { status: 500 })
+  }
 
   // ── PIX ──────────────────────────────────────────────────
   if (metodo === 'pix') {
@@ -64,12 +89,14 @@ export async function POST(req: NextRequest) {
         external_reference: refId,
         payer: { email: email || 'cliente@nodri.com.br' },
         notification_url: `${SITE_URL}/api/webhook/mercadopago`,
-        date_of_expiration: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24h
+        date_of_expiration: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
       }),
     })
     const pixData = await pixRes.json()
     if (!pixData.id) {
       console.error('MP PIX error:', JSON.stringify(pixData))
+      // Remove compra pendente se MP falhou
+      await supabase.from('compras').delete().eq('ref_id', refId)
       return NextResponse.json({ erro: 'Erro ao gerar PIX. Tente novamente.' }, { status: 500 })
     }
     await supabase.from('compras').update({ payment_id: String(pixData.id) }).eq('ref_id', refId)
@@ -77,13 +104,15 @@ export async function POST(req: NextRequest) {
       payment_id: pixData.id,
       qr_code: pixData.point_of_interaction?.transaction_data?.qr_code,
       qr_code_base64: pixData.point_of_interaction?.transaction_data?.qr_code_base64,
+      preco_final: precoFinal,
+      desconto_percentual: descontoPercentual,
     })
   }
 
-  // ── CARTÃO → ASSINATURA RECORRENTE (Preapproval) ─────────
+  // ── CARTÃO → ASSINATURA RECORRENTE ─────────
   if (metodo === 'cartao') {
     const dataInicio = new Date()
-    dataInicio.setDate(dataInicio.getDate() + 1) // começa amanhã
+    dataInicio.setDate(dataInicio.getDate() + 1)
 
     const preapprovalBody = {
       reason: planoInfo.nome,
@@ -102,17 +131,14 @@ export async function POST(req: NextRequest) {
 
     const prefRes = await fetch('https://api.mercadopago.com/preapproval', {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${MP_ACCESS_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Authorization': `Bearer ${MP_ACCESS_TOKEN}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(preapprovalBody),
     })
     const prefData = await prefRes.json()
 
     if (!prefData.init_point) {
-      // Fallback para Checkout Pro (cobrança única se assinatura falhar)
       console.error('Preapproval error:', JSON.stringify(prefData))
+      // Fallback para Checkout Pro (cobrança única)
       const prefFallback = await fetch('https://api.mercadopago.com/checkout/preferences', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${MP_ACCESS_TOKEN}`, 'Content-Type': 'application/json' },
@@ -130,16 +156,20 @@ export async function POST(req: NextRequest) {
         }),
       })
       const fallbackData = await prefFallback.json()
-      return NextResponse.json({ init_point: fallbackData.init_point })
+      // FIX: verifica se fallback também falhou
+      if (!fallbackData.init_point) {
+        await supabase.from('compras').delete().eq('ref_id', refId)
+        return NextResponse.json({ erro: 'Erro ao processar pagamento. Tente novamente.' }, { status: 500 })
+      }
+      return NextResponse.json({ init_point: fallbackData.init_point, preco_final: precoFinal })
     }
 
-    // Salva ID da assinatura
     await supabase.from('compras').update({
       payment_id: prefData.id,
       tipo_cobranca: 'recorrente',
     }).eq('ref_id', refId)
 
-    return NextResponse.json({ init_point: prefData.init_point, id: prefData.id })
+    return NextResponse.json({ init_point: prefData.init_point, id: prefData.id, preco_final: precoFinal })
   }
 
   return NextResponse.json({ erro: 'Método inválido' }, { status: 400 })

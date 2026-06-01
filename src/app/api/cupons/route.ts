@@ -18,11 +18,12 @@ export async function GET() {
   const payload = await autenticar()
   if (!payload) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
-  const { data } = await supabaseAdmin
+  const { data, error } = await supabaseAdmin
     .from('cupons')
     .select('*')
     .order('criado_em', { ascending: false })
 
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data || [])
 }
 
@@ -38,9 +39,20 @@ export async function POST(req: NextRequest) {
 
   const codigo = codigo_personalizado?.trim().toUpperCase() || gerarCodigo(percentual)
 
+  // FIX: verifica se código já existe antes de tentar inserir
+  const { data: existente } = await supabaseAdmin
+    .from('cupons')
+    .select('id')
+    .eq('codigo', codigo)
+    .maybeSingle()
+
+  if (existente) {
+    return NextResponse.json({ error: `Código "${codigo}" já existe. Use outro nome.` }, { status: 409 })
+  }
+
   const { data, error } = await supabaseAdmin
     .from('cupons')
-    .insert({ codigo, percentual })
+    .insert({ codigo, percentual, ativo: true, usos_atual: 0 })
     .select()
     .single()
 

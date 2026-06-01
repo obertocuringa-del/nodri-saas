@@ -32,7 +32,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Atualiza email do usuário também (manter sincronizado)
+  // Sincroniza email do usuário
   if (emailNormalizado) {
     await supabaseAdmin.from('usuarios').update({ email: emailNormalizado }).eq('salao_id', params.id)
   }
@@ -50,11 +50,21 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   const payload = token ? await verifyJWT(token) : null
   if (!payload || payload.role !== 'master') return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
-  await supabaseAdmin.from('usuarios').delete().eq('salao_id', params.id)
-  await supabaseAdmin.from('salao_modulos').delete().eq('salao_id', params.id)
-  await supabaseAdmin.from('notificacoes').delete().eq('salao_id', params.id)
-  const { error } = await supabaseAdmin.from('saloes').delete().eq('id', params.id)
+  // FIX: verifica cada erro de cascade para não deixar dados órfãos
+  const { error: errUsuarios } = await supabaseAdmin
+    .from('usuarios').delete().eq('salao_id', params.id)
+  if (errUsuarios) return NextResponse.json({ error: 'Erro ao remover usuários: ' + errUsuarios.message }, { status: 500 })
 
+  const { error: errModulos } = await supabaseAdmin
+    .from('salao_modulos').delete().eq('salao_id', params.id)
+  if (errModulos) return NextResponse.json({ error: 'Erro ao remover módulos: ' + errModulos.message }, { status: 500 })
+
+  const { error: errNotifs } = await supabaseAdmin
+    .from('notificacoes').delete().eq('salao_id', params.id)
+  if (errNotifs) return NextResponse.json({ error: 'Erro ao remover notificações: ' + errNotifs.message }, { status: 500 })
+
+  const { error } = await supabaseAdmin.from('saloes').delete().eq('id', params.id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
   return NextResponse.json({ ok: true })
 }
