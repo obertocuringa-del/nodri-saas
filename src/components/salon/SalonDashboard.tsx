@@ -118,10 +118,10 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
   }, [])
 
   const modulosFiltrados = modulos.filter(m => {
-    if (filtro === 'ativos') return m.habilitado
-    if (filtro === 'bloqueados') return !m.habilitado
-    if (busca) return m.nome.toLowerCase().includes(busca.toLowerCase())
-    return true
+    // FIX: combinação correta de filtro status + busca por nome
+    const passaFiltro = filtro === 'ativos' ? m.habilitado : filtro === 'bloqueados' ? !m.habilitado : true
+    const passaBusca = !busca || m.nome.toLowerCase().includes(busca.toLowerCase())
+    return passaFiltro && passaBusca
   })
 
   function handleLogout() { window.location.href = '/logout' }
