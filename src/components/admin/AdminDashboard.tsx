@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { LogOut, Bell, Plus, Shield, Building, CreditCard, Puzzle, Users, BarChart3, Settings, RefreshCw, X, Send, Edit, Lock, Unlock, Loader2, ChevronDown, Check, Link, Save, Trash2, ExternalLink, Eye, EyeOff, AlertTriangle, Search, Play, Zap, Tag } from 'lucide-react'
 import toast from 'react-hot-toast'
 import type { Salao, Modulo, Notificacao, Plano, Cupom } from '@/types'
+import EditorSubmenus from './EditorSubmenus'
 
 interface Props {
   saloes: Salao[]
@@ -505,6 +506,40 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
     return <span className="text-nodri-green font-semibold">⏳ {dias}d restantes</span>
   }
 
+  function LogsSection() {
+    const [logs, setLogs] = useState<any[]>([])
+    const [loadingLogs, setLoadingLogs] = useState(false)
+    useEffect(() => {
+      setLoadingLogs(true)
+      fetch('/api/logs').then(r => r.json()).then(d => { setLogs(Array.isArray(d) ? d : []); setLoadingLogs(false) })
+    }, [])
+    return (
+      <div className="nodri-card p-4">
+        <div className="font-syne font-bold text-[13px] text-nodri-cyan mb-4 flex items-center gap-2">
+          <BarChart3 size={14} /> Logs de Auditoria
+          <span className="text-[10px] text-nodri-t3 font-normal">({logs.length} registros)</span>
+        </div>
+        {loadingLogs ? (
+          <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin text-nodri-t3" /></div>
+        ) : logs.length === 0 ? (
+          <div className="text-center py-8 text-nodri-t3 text-[12px]">Nenhum log registrado ainda.</div>
+        ) : (
+          <div className="space-y-2 max-h-[600px] overflow-y-auto">
+            {logs.map((log: any) => (
+              <div key={log.id} className="flex items-start gap-3 p-2.5 bg-nodri-surface rounded-lg border border-nodri-border text-[11px]">
+                <span className="text-nodri-t3 shrink-0 font-mono text-[10px]">{new Date(log.criado_em).toLocaleString('pt-BR')}</span>
+                <span className="text-nodri-cyan font-bold shrink-0">{log.acao}</span>
+                <span className="text-nodri-t2">{log.usuario?.nome || 'Sistema'}</span>
+                {log.salao?.nome && <span className="text-nodri-t3">→ {log.salao.nome}</span>}
+                {log.ip && <span className="text-nodri-t3 ml-auto font-mono">{log.ip}</span>}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
   const navItems = [
     { id: 'dashboard', icon: <Shield size={14} />, label: 'Dashboard' },
     { id: 'saloes', icon: <Building size={14} />, label: 'Salões', badge: saloes.length },
@@ -514,6 +549,8 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
     { id: 'usuarios', icon: <Users size={14} />, label: 'Usuários' },
     { id: 'notifs', icon: <Bell size={14} />, label: 'Notificações', badge: localNotifs.filter(n => !n.lida).length, badgeRed: true },
     { id: 'links', icon: <Link size={14} />, label: 'Links do Menu' },
+    { id: 'conteudo', icon: <Play size={14} />, label: 'Editor de Páginas' },
+    { id: 'logs', icon: <BarChart3 size={14} />, label: 'Logs do Sistema' },
     { id: 'updates', icon: <RefreshCw size={14} />, label: 'Atualizações' },
     { id: 'relatorios', icon: <BarChart3 size={14} />, label: 'Relatórios' },
     { id: 'config', icon: <Settings size={14} />, label: 'Configurações' },
@@ -584,6 +621,14 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
         </div>
 
         <div className="p-5 flex-1">
+
+          {/* EDITOR DE PÁGINAS */}
+          {activeSection === 'conteudo' && (
+            <EditorSubmenus />
+          )}
+
+          {/* LOGS DO SISTEMA */}
+          {activeSection === 'logs' && <LogsSection />}
 
           {/* LINKS DO MENU */}
           {activeSection === 'links' && (
