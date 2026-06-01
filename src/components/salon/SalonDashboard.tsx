@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Bell, Settings, CheckCircle, X, Zap, Play, Search, ChevronDown, ExternalLink, LogOut } from 'lucide-react'
+import { Bell, Settings, CheckCircle, X, Zap, Play, Search, ChevronDown, ArrowRight, LogOut } from 'lucide-react'
 import toast from 'react-hot-toast'
 import type { ModuloComStatus, Notificacao } from '@/types'
 
@@ -195,14 +195,22 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                   <div className="px-3 py-2 border-b border-nodri-border sticky top-0 bg-nodri-card">
                     <div className="text-[10px] font-bold text-nodri-cyan uppercase tracking-wider">{tab}</div>
                   </div>
-                  {MENU_LINKS[tab].map((item, i) => (
-                    <a key={i} href={item.url} target="_blank" rel="noopener noreferrer"
-                      onClick={() => setOpenDropdown(null)}
-                      className="flex items-center justify-between px-3 py-2.5 hover:bg-nodri-surface transition-colors group border-b border-nodri-border/30 last:border-0">
-                      <span className="text-[11.5px] text-nodri-t2 group-hover:text-nodri-t1 transition-colors">{item.title}</span>
-                      <ExternalLink size={11} className="text-nodri-t3 group-hover:text-nodri-cyan transition-colors shrink-0 ml-3" />
-                    </a>
-                  ))}
+                  {MENU_LINKS[tab].map((item, i) => {
+                    // Gera slug a partir do título para abrir página interna
+                    const slug = item.title.toLowerCase()
+                      .replace(/^\d+\.\s*/, '')
+                      .normalize('NFD').replace(/[̀-ͯ]/g, '')
+                      .replace(/[^a-z0-9\s-]/g, '')
+                      .trim().replace(/\s+/g, '-')
+                    return (
+                      <a key={i} href={`/conteudo/${slug}`}
+                        onClick={() => setOpenDropdown(null)}
+                        className="flex items-center justify-between px-3 py-2.5 hover:bg-nodri-surface transition-colors group border-b border-nodri-border/30 last:border-0">
+                        <span className="text-[11.5px] text-nodri-t2 group-hover:text-nodri-t1 transition-colors">{item.title}</span>
+                        <ArrowRight size={11} className="text-nodri-t3 group-hover:text-nodri-cyan transition-colors shrink-0 ml-3" />
+                      </a>
+                    )
+                  })}
                 </div>
               )}
             </div>
