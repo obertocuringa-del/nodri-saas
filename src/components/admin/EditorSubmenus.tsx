@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { Plus, Save, Trash2, Loader2, Youtube, FileText, CheckSquare, HelpCircle, Download, ChevronDown, ChevronUp, Eye, EyeOff, Edit3, FolderPlus, X } from 'lucide-react'
 import toast from 'react-hot-toast'
+import EditorBlocos, { type Bloco } from './EditorBlocos'
 
 interface SubItem { titulo: string; slug: string; oculto?: boolean }
 interface MenuCategoria { categoria: string; itens: SubItem[] }
@@ -15,6 +16,8 @@ interface Submenu {
     checklist?: string[]
     faq?: { pergunta: string; resposta: string }[]
     downloads?: { nome: string; url: string }[]
+    blocos?: Bloco[]
+    oculto?: boolean
   }
   oculto?: boolean
 }
@@ -407,91 +410,19 @@ export default function EditorSubmenus() {
               })()}
             </div>
 
-            {/* Texto */}
+            {/* EDITOR DE BLOCOS AVANÇADO */}
             <div className="nodri-card p-4">
-              <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center gap-2 mb-4">
                 <FileText size={14} className="text-nodri-cyan" />
-                <label className="text-[11px] font-bold uppercase tracking-wider">Texto de Orientação</label>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-nodri-cyan">
+                  Editor de Conteúdo por Blocos
+                </label>
+                <span className="text-[10px] text-nodri-t3">— arraste para reordenar, ajuste a largura de cada bloco</span>
               </div>
-              <textarea value={dados.conteudo.texto || ''} rows={8}
-                onChange={e => setDados({ ...dados, conteudo: { ...dados.conteudo, texto: e.target.value } })}
-                placeholder="Escreva as orientações... (suporta HTML: <b>negrito</b>, <i>itálico</i>, <br> para quebra de linha)"
-                className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] outline-none focus:border-nodri-cyan transition-colors resize-none leading-relaxed" />
-            </div>
-
-            {/* Checklist */}
-            <div className="nodri-card p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <CheckSquare size={14} className="text-nodri-green" />
-                  <label className="text-[11px] font-bold uppercase tracking-wider">Checklist</label>
-                </div>
-                <button onClick={addCheck} className="flex items-center gap-1 text-[10px] bg-nodri-green/10 text-nodri-green border border-nodri-green/30 px-2 py-1 rounded hover:bg-nodri-green/20">
-                  <Plus size={10} /> Adicionar
-                </button>
-              </div>
-              <div className="space-y-2">
-                {(dados.conteudo.checklist || []).map((item, i) => (
-                  <div key={i} className="flex gap-2">
-                    <input value={item} onChange={e => updCheck(i, e.target.value)} placeholder={`Item ${i + 1}`}
-                      className="flex-1 bg-nodri-surface border border-nodri-border rounded px-2.5 py-1.5 text-[12px] outline-none focus:border-nodri-cyan" />
-                    <button onClick={() => delCheck(i)} className="p-1.5 text-nodri-red hover:bg-nodri-red/10 rounded"><Trash2 size={12} /></button>
-                  </div>
-                ))}
-                {!(dados.conteudo.checklist?.length) && <p className="text-nodri-t3 text-[11px] text-center py-1">Nenhum item.</p>}
-              </div>
-            </div>
-
-            {/* FAQ */}
-            <div className="nodri-card p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <HelpCircle size={14} className="text-nodri-amber" />
-                  <label className="text-[11px] font-bold uppercase tracking-wider">FAQ</label>
-                </div>
-                <button onClick={addFaq} className="flex items-center gap-1 text-[10px] bg-nodri-amber/10 text-nodri-amber border border-nodri-amber/30 px-2 py-1 rounded hover:bg-nodri-amber/20">
-                  <Plus size={10} /> Adicionar
-                </button>
-              </div>
-              <div className="space-y-3">
-                {(dados.conteudo.faq || []).map((item, i) => (
-                  <div key={i} className="bg-nodri-surface rounded-lg p-3 border border-nodri-border space-y-2">
-                    <div className="flex gap-2">
-                      <input value={item.pergunta} onChange={e => updFaq(i, 'pergunta', e.target.value)} placeholder="Pergunta"
-                        className="flex-1 bg-nodri-card border border-nodri-border rounded px-2.5 py-1.5 text-[12px] font-medium outline-none focus:border-nodri-cyan" />
-                      <button onClick={() => delFaq(i)} className="p-1.5 text-nodri-red hover:bg-nodri-red/10 rounded"><Trash2 size={12} /></button>
-                    </div>
-                    <textarea value={item.resposta} onChange={e => updFaq(i, 'resposta', e.target.value)} placeholder="Resposta" rows={2}
-                      className="w-full bg-nodri-card border border-nodri-border rounded px-2.5 py-1.5 text-[11px] outline-none focus:border-nodri-cyan resize-none" />
-                  </div>
-                ))}
-                {!(dados.conteudo.faq?.length) && <p className="text-nodri-t3 text-[11px] text-center py-1">Nenhuma pergunta.</p>}
-              </div>
-            </div>
-
-            {/* Downloads */}
-            <div className="nodri-card p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Download size={14} className="text-nodri-blue" />
-                  <label className="text-[11px] font-bold uppercase tracking-wider">Downloads</label>
-                </div>
-                <button onClick={addDl} className="flex items-center gap-1 text-[10px] bg-nodri-blue/10 text-nodri-blue border border-nodri-blue/30 px-2 py-1 rounded hover:bg-nodri-blue/20">
-                  <Plus size={10} /> Adicionar
-                </button>
-              </div>
-              <div className="space-y-2">
-                {(dados.conteudo.downloads || []).map((item, i) => (
-                  <div key={i} className="flex gap-2">
-                    <input value={item.nome} onChange={e => updDl(i, 'nome', e.target.value)} placeholder="Nome do arquivo"
-                      className="w-36 bg-nodri-surface border border-nodri-border rounded px-2.5 py-1.5 text-[12px] outline-none focus:border-nodri-cyan" />
-                    <input value={item.url} onChange={e => updDl(i, 'url', e.target.value)} placeholder="https://..."
-                      className="flex-1 bg-nodri-surface border border-nodri-border rounded px-2.5 py-1.5 text-[12px] font-mono outline-none focus:border-nodri-cyan" />
-                    <button onClick={() => delDl(i)} className="p-1.5 text-nodri-red hover:bg-nodri-red/10 rounded"><Trash2 size={12} /></button>
-                  </div>
-                ))}
-                {!(dados.conteudo.downloads?.length) && <p className="text-nodri-t3 text-[11px] text-center py-1">Nenhum download.</p>}
-              </div>
+              <EditorBlocos
+                blocos={dados.conteudo.blocos || []}
+                onChange={blocos => setDados({ ...dados, conteudo: { ...dados.conteudo, blocos } })}
+              />
             </div>
 
             <button onClick={salvar} disabled={saving}
