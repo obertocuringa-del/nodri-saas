@@ -523,17 +523,27 @@ export default function EditorSubmenus() {
     }
 
     function updateCol(id: string, html: string) {
-      updC({ colunas: colunas.map(c => c.id === id ? { ...c, conteudo: html } : c) })
+      setDados(prev => {
+        const cols = prev?.conteudo?.colunas
+        if (!prev || !cols) return prev
+        return { ...prev, conteudo: { ...prev.conteudo, colunas: cols.map(c => c.id === id ? { ...c, conteudo: html } : c) } }
+      })
     }
 
     function addCol() {
-      if (colunas.length >= 4) return
-      updC({ colunas: [...colunas, { id: uid(), conteudo: `Coluna ${colunas.length + 1}` }] })
+      setDados(prev => {
+        const cols = prev?.conteudo?.colunas
+        if (!prev || !cols || cols.length >= 4) return prev
+        return { ...prev, conteudo: { ...prev.conteudo, colunas: [...cols, { id: uid(), conteudo: `Coluna ${cols.length + 1}` }] } }
+      })
     }
 
     function removeCol(id: string) {
-      if (colunas.length <= 1) return
-      updC({ colunas: colunas.filter(c => c.id !== id) })
+      setDados(prev => {
+        const cols = prev?.conteudo?.colunas
+        if (!prev || !cols || cols.length <= 1) return prev
+        return { ...prev, conteudo: { ...prev.conteudo, colunas: cols.filter(c => c.id !== id) } }
+      })
     }
 
     return (
