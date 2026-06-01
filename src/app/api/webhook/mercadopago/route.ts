@@ -68,16 +68,19 @@ export async function POST(req: NextRequest) {
       .update({ status: 'aprovado', payment_id: String(payment.id) })
       .eq('ref_id', refId)
 
-    // FIX: incremento atômico do cupom (evita race condition)
+    // FIX: incremento do cupom com try/catch (supabase.rpc não tem .catch() nos tipos TS)
     if (compra.cupom) {
-      await supabase.rpc('incrementar_uso_cupom', { p_codigo: compra.cupom })
-        .catch(async () => {
-          // Fallback se RPC não existir
-          const { data: cupom } = await supabase.from('cupons').select('usos_atual').eq('codigo', compra!.cupom).maybeSingle()
-          if (cupom) {
-            await supabase.from('cupons').update({ usos_atual: (cupom.usos_atual || 0) + 1 }).eq('codigo', compra!.cupom)
-          }
-        })
+      const codigoCupom = compra.cupom as string
+      try {
+        const { error: rpcError } = await supabase.rpc('incrementar_uso_cupom', { p_codigo: codigoCupom })
+        if (rpcError) throw rpcError
+      } catch {
+        // Fallback: incremento manual se a RPC não existir
+        const { data: cupomAtual } = await supabase.from('cupons').select('usos_atual').eq('codigo', codigoCupom).maybeSingle()
+        if (cupomAtual) {
+          await supabase.from('cupons').update({ usos_atual: (cupomAtual.usos_atual || 0) + 1 }).eq('codigo', codigoCupom)
+        }
+      }
     }
   }
 
