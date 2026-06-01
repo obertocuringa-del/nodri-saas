@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { LogOut, Bell, Plus, Shield, Building, CreditCard, Puzzle, Users, BarChart3, Settings, RefreshCw, X, Send, Edit, Lock, Unlock, Loader2, ChevronDown, Check, Link, Save, Trash2, ExternalLink, Eye, EyeOff, AlertTriangle, Search, Play, Zap, Tag } from 'lucide-react'
+import { LogOut, Bell, Plus, Shield, Building, CreditCard, Puzzle, Users, BarChart3, Settings, RefreshCw, X, Send, Edit, Lock, Unlock, Loader2, ChevronDown, Check, Link, Save, Trash2, ExternalLink, Eye, EyeOff, AlertTriangle, Search, Play, Zap, Tag, FolderOpen } from 'lucide-react'
 import toast from 'react-hot-toast'
 import type { Salao, Modulo, Notificacao, Plano, Cupom } from '@/types'
 import EditorSubmenus from './EditorSubmenus'
@@ -94,22 +94,38 @@ const DEFAULT_LINKS: Record<string, { title: string; url: string }[]> = {
 }
 
 const DEFAULT_LANDING = {
+  hero_logo: 'NODRI',
   hero_titulo: 'Sistema de Gestão para Salões de Beleza',
   hero_subtitulo: 'Automatize confirmações, envio de mensagens, relatórios e muito mais. Tudo integrado diretamente ao seu WhatsApp.',
-  hero_botao: '👉 Ver Planos',
+  hero_botao: 'Ver Planos',
+  hero_cor_botao: '#7c5cfc',
+  beneficios_titulo: 'Por que escolher o NODRI?',
   beneficios: [
     { emoji: '⚡', titulo: 'Abre com 1 clique', desc: 'Clique em Abrir no site e o programa abre instantaneamente no seu computador.' },
     { emoji: '💬', titulo: 'Integrado ao WhatsApp', desc: 'Envie confirmações, feedbacks e listas direto pelo WhatsApp.' },
     { emoji: '📊', titulo: 'Relatórios completos', desc: 'Acompanhe faturamento, desempenho de profissionais e reservas financeiras.' },
     { emoji: '🔄', titulo: 'Atualizações automáticas', desc: 'Receba novas versões dos programas sem precisar reinstalar tudo.' },
   ],
+  planos_titulo: 'Escolha seu Plano',
+  planos_subtitulo: 'Pagamento único mensal via PIX ou cartão',
   landing_planos: [
     { nome: 'Básico', preco: 100, cor: '#3498db', destaque: false, modulos: ['Confirmar Agendamento', 'Enviar Feedback', 'Enviar Lista c/ Foto', 'Enviar Lista s/ Foto', 'Baixar Música YouTube'] },
     { nome: 'Profissional', preco: 200, cor: '#9b59b6', destaque: true, modulos: ['Todos do Básico', 'Bloqueio Sem Preferência', 'Ver Feedback Cliente', 'Relatório Profissional', 'Faturamento Diário', 'Calcular Reserva Financeira'] },
     { nome: 'Premium', preco: 300, cor: '#f39c12', destaque: false, modulos: ['Todos do Profissional', 'Calculadora Depreciação', 'Avaliar Profissional', 'Aluguel de Cadeira', 'Precificar Serviços'] },
   ],
+  afiliados_titulo: 'Trabalhe Conosco',
+  afiliados_subtitulo: 'Indique o NODRI e ganhe 40% de comissão em cada venda com seu cupom exclusivo.',
+  afiliados_botao: 'Quero ser Afiliado →',
+  afiliados_chips: [
+    { emoji: '🎫', texto: 'Cupom exclusivo' },
+    { emoji: '🔗', texto: 'Link personalizado' },
+    { emoji: '💰', texto: '40% por venda' },
+    { emoji: '📱', texto: 'Pix direto' },
+  ],
+  footer_logo: 'NODRI',
   footer_texto: 'Sistema de Gestão para Salões de Beleza',
   footer_email: 'contato@nodri.com.br',
+  footer_whatsapp: '5561982195214',
 }
 
 export default function AdminDashboard({ saloes: initialSaloes, modulos, notificacoes, planos: initialPlanos }: Props) {
@@ -967,22 +983,38 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
                     <>
                       {/* HERO */}
                       <div className="nodri-card p-4">
-                        <div className="font-syne font-bold text-[12px] mb-3 text-nodri-cyan flex items-center gap-2">🏠 Seção Hero (topo da página)</div>
+                        <div className="font-syne font-bold text-[12px] mb-3 text-nodri-cyan">🏠 Seção Hero (topo)</div>
                         <div className="grid gap-3">
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Logo / Nome do sistema</label>
+                              <input value={(landingConfig as any).hero_logo || 'NODRI'} onChange={e => setLandingConfig({ ...landingConfig, hero_logo: e.target.value } as any)}
+                                className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] outline-none focus:border-nodri-cyan" />
+                            </div>
+                            <div>
+                              <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Cor do botão</label>
+                              <div className="flex gap-2 items-center">
+                                <input type="color" value={(landingConfig as any).hero_cor_botao || '#7c5cfc'} onChange={e => setLandingConfig({ ...landingConfig, hero_cor_botao: e.target.value } as any)}
+                                  className="w-12 h-9 rounded-lg border border-nodri-border cursor-pointer bg-nodri-card" />
+                                <input value={(landingConfig as any).hero_cor_botao || '#7c5cfc'} onChange={e => setLandingConfig({ ...landingConfig, hero_cor_botao: e.target.value } as any)}
+                                  className="flex-1 bg-nodri-surface border border-nodri-border rounded-lg px-2 py-2 text-[12px] font-mono outline-none focus:border-nodri-cyan" />
+                              </div>
+                            </div>
+                          </div>
                           <div>
                             <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Título principal</label>
                             <input value={landingConfig.hero_titulo} onChange={e => setLandingConfig({ ...landingConfig, hero_titulo: e.target.value })}
-                              className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] text-nodri-t1 outline-none focus:border-nodri-cyan transition-colors" />
+                              className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] outline-none focus:border-nodri-cyan" />
                           </div>
                           <div>
                             <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Subtítulo</label>
                             <textarea value={landingConfig.hero_subtitulo} onChange={e => setLandingConfig({ ...landingConfig, hero_subtitulo: e.target.value })}
-                              rows={2} className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] text-nodri-t1 outline-none focus:border-nodri-cyan transition-colors resize-none" />
+                              rows={2} className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] outline-none focus:border-nodri-cyan resize-none" />
                           </div>
                           <div>
-                            <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Texto do botão</label>
+                            <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Texto do botão principal</label>
                             <input value={landingConfig.hero_botao} onChange={e => setLandingConfig({ ...landingConfig, hero_botao: e.target.value })}
-                              className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] text-nodri-t1 outline-none focus:border-nodri-cyan transition-colors" />
+                              className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] outline-none focus:border-nodri-cyan" />
                           </div>
                         </div>
                       </div>
@@ -990,11 +1022,16 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
                       {/* BENEFÍCIOS */}
                       <div className="nodri-card p-4">
                         <div className="flex items-center justify-between mb-3">
-                          <div className="font-syne font-bold text-[12px] text-nodri-cyan">✨ Benefícios</div>
-                          <button onClick={() => setLandingConfig({ ...landingConfig, beneficios: [...landingConfig.beneficios, { emoji: '⭐', titulo: 'Novo benefício', desc: 'Descrição aqui' }] })}
+                          <div className="font-syne font-bold text-[12px] text-nodri-cyan">✨ Seção Benefícios</div>
+                          <button onClick={() => setLandingConfig({ ...landingConfig, beneficios: [...landingConfig.beneficios, { emoji: '⭐', titulo: 'Novo benefício', desc: 'Descrição' }] })}
                             className="flex items-center gap-1 text-[11px] bg-nodri-cyan text-black px-2.5 py-1 rounded-lg font-bold hover:brightness-110">
                             <Plus size={11} /> Adicionar
                           </button>
+                        </div>
+                        <div className="mb-3">
+                          <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Título da seção</label>
+                          <input value={(landingConfig as any).beneficios_titulo || 'Por que escolher o NODRI?'} onChange={e => setLandingConfig({ ...landingConfig, beneficios_titulo: e.target.value } as any)}
+                            className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] outline-none focus:border-nodri-cyan" />
                         </div>
                         <div className="space-y-3">
                           {landingConfig.beneficios.map((b, i) => (
@@ -1003,45 +1040,56 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
                                 <input value={b.emoji} onChange={e => { const arr = [...landingConfig.beneficios]; arr[i] = { ...arr[i], emoji: e.target.value }; setLandingConfig({ ...landingConfig, beneficios: arr }) }}
                                   className="w-14 bg-nodri-card border border-nodri-border rounded-lg px-2 py-1.5 text-[14px] text-center outline-none focus:border-nodri-cyan" placeholder="emoji" />
                                 <input value={b.titulo} onChange={e => { const arr = [...landingConfig.beneficios]; arr[i] = { ...arr[i], titulo: e.target.value }; setLandingConfig({ ...landingConfig, beneficios: arr }) }}
-                                  className="flex-1 bg-nodri-card border border-nodri-border rounded-lg px-2 py-1.5 text-[12px] text-nodri-t1 outline-none focus:border-nodri-cyan" placeholder="Título" />
+                                  className="flex-1 bg-nodri-card border border-nodri-border rounded-lg px-2 py-1.5 text-[12px] outline-none focus:border-nodri-cyan" placeholder="Título" />
                                 <button onClick={() => setLandingConfig({ ...landingConfig, beneficios: landingConfig.beneficios.filter((_, j) => j !== i) })}
-                                  className="text-nodri-red hover:bg-nodri-red/10 p-1.5 rounded-lg transition-colors"><Trash2 size={12} /></button>
+                                  className="text-nodri-red hover:bg-nodri-red/10 p-1.5 rounded-lg"><Trash2 size={12} /></button>
                               </div>
                               <textarea value={b.desc} onChange={e => { const arr = [...landingConfig.beneficios]; arr[i] = { ...arr[i], desc: e.target.value }; setLandingConfig({ ...landingConfig, beneficios: arr }) }}
-                                rows={2} className="w-full bg-nodri-card border border-nodri-border rounded-lg px-2 py-1.5 text-[11px] text-nodri-t1 outline-none focus:border-nodri-cyan resize-none" placeholder="Descrição" />
+                                rows={2} className="w-full bg-nodri-card border border-nodri-border rounded-lg px-2 py-1.5 text-[11px] outline-none focus:border-nodri-cyan resize-none" placeholder="Descrição" />
                             </div>
                           ))}
                         </div>
                       </div>
 
-                      {/* PLANOS DA LANDING */}
+                      {/* PLANOS */}
                       <div className="nodri-card p-4">
                         <div className="flex items-center justify-between mb-3">
-                          <div className="font-syne font-bold text-[12px] text-nodri-cyan">💰 Planos da Landing Page</div>
+                          <div className="font-syne font-bold text-[12px] text-nodri-cyan">💰 Seção Planos</div>
                           <button onClick={() => setLandingConfig({ ...landingConfig, landing_planos: [...landingConfig.landing_planos, { nome: 'Novo Plano', preco: 0, cor: '#3498db', destaque: false, modulos: ['Módulo 1'] }] })}
                             className="flex items-center gap-1 text-[11px] bg-nodri-cyan text-black px-2.5 py-1 rounded-lg font-bold hover:brightness-110">
-                            <Plus size={11} /> Adicionar Plano
+                            <Plus size={11} /> Adicionar
                           </button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 mb-4">
+                          <div>
+                            <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Título da seção</label>
+                            <input value={(landingConfig as any).planos_titulo || 'Escolha seu Plano'} onChange={e => setLandingConfig({ ...landingConfig, planos_titulo: e.target.value } as any)}
+                              className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] outline-none focus:border-nodri-cyan" />
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Subtítulo da seção</label>
+                            <input value={(landingConfig as any).planos_subtitulo || 'Pagamento mensal via PIX ou cartão'} onChange={e => setLandingConfig({ ...landingConfig, planos_subtitulo: e.target.value } as any)}
+                              className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] outline-none focus:border-nodri-cyan" />
+                          </div>
                         </div>
                         <div className="space-y-4">
                           {landingConfig.landing_planos.map((p, pi) => (
                             <div key={pi} className="bg-nodri-surface rounded-lg p-4 border border-nodri-border">
                               <div className="flex gap-2 mb-3">
                                 <input value={p.nome} onChange={e => { const arr = [...landingConfig.landing_planos]; arr[pi] = { ...arr[pi], nome: e.target.value }; setLandingConfig({ ...landingConfig, landing_planos: arr }) }}
-                                  className="flex-1 bg-nodri-card border border-nodri-border rounded-lg px-2 py-1.5 text-[12px] font-bold text-nodri-t1 outline-none focus:border-nodri-cyan" placeholder="Nome do plano" />
+                                  className="flex-1 bg-nodri-card border border-nodri-border rounded-lg px-2 py-1.5 text-[12px] font-bold outline-none focus:border-nodri-cyan" placeholder="Nome" />
                                 <div className="flex items-center gap-1">
                                   <span className="text-[11px] text-nodri-t3">R$</span>
                                   <input type="number" value={p.preco} onChange={e => { const arr = [...landingConfig.landing_planos]; arr[pi] = { ...arr[pi], preco: Number(e.target.value) }; setLandingConfig({ ...landingConfig, landing_planos: arr }) }}
-                                    className="w-20 bg-nodri-card border border-nodri-border rounded-lg px-2 py-1.5 text-[12px] text-nodri-t1 outline-none focus:border-nodri-cyan" />
+                                    className="w-20 bg-nodri-card border border-nodri-border rounded-lg px-2 py-1.5 text-[12px] outline-none focus:border-nodri-cyan" />
                                 </div>
                                 <input type="color" value={p.cor} onChange={e => { const arr = [...landingConfig.landing_planos]; arr[pi] = { ...arr[pi], cor: e.target.value }; setLandingConfig({ ...landingConfig, landing_planos: arr }) }}
-                                  className="w-10 h-9 rounded-lg border border-nodri-border cursor-pointer bg-nodri-card" title="Cor do plano" />
+                                  className="w-10 h-9 rounded-lg border border-nodri-border cursor-pointer" title="Cor" />
                                 <button onClick={() => setLandingConfig({ ...landingConfig, landing_planos: landingConfig.landing_planos.filter((_, j) => j !== pi) })}
-                                  className="text-nodri-red hover:bg-nodri-red/10 p-1.5 rounded-lg transition-colors"><Trash2 size={12} /></button>
+                                  className="text-nodri-red hover:bg-nodri-red/10 p-1.5 rounded-lg"><Trash2 size={12} /></button>
                               </div>
-                              <label className="flex items-center gap-2 text-[11px] text-nodri-t2 mb-3 cursor-pointer select-none">
-                                <input type="checkbox" checked={p.destaque} onChange={e => { const arr = [...landingConfig.landing_planos]; arr[pi] = { ...arr[pi], destaque: e.target.checked }; setLandingConfig({ ...landingConfig, landing_planos: arr }) }}
-                                  className="rounded" />
+                              <label className="flex items-center gap-2 text-[11px] text-nodri-t2 mb-3 cursor-pointer">
+                                <input type="checkbox" checked={p.destaque} onChange={e => { const arr = [...landingConfig.landing_planos]; arr[pi] = { ...arr[pi], destaque: e.target.checked }; setLandingConfig({ ...landingConfig, landing_planos: arr }) }} />
                                 ⭐ Destacar como "Mais Popular"
                               </label>
                               <div className="space-y-1.5">
@@ -1049,40 +1097,95 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
                                 {p.modulos.map((m, mi) => (
                                   <div key={mi} className="flex gap-2">
                                     <input value={m} onChange={e => updateLandingPlanoModulo(pi, mi, e.target.value)}
-                                      className="flex-1 bg-nodri-card border border-nodri-border rounded-lg px-2 py-1 text-[11px] text-nodri-t1 outline-none focus:border-nodri-cyan" />
-                                    <button onClick={() => removeLandingPlanoModulo(pi, mi)}
-                                      className="text-nodri-red hover:bg-nodri-red/10 p-1 rounded transition-colors"><Trash2 size={10} /></button>
+                                      className="flex-1 bg-nodri-card border border-nodri-border rounded-lg px-2 py-1 text-[11px] outline-none focus:border-nodri-cyan" />
+                                    <button onClick={() => removeLandingPlanoModulo(pi, mi)} className="text-nodri-red p-1 rounded"><Trash2 size={10} /></button>
                                   </div>
                                 ))}
-                                <button onClick={() => addLandingPlanoModulo(pi)}
-                                  className="text-[10px] text-nodri-cyan hover:underline mt-1">+ Adicionar módulo</button>
+                                <button onClick={() => addLandingPlanoModulo(pi)} className="text-[10px] text-nodri-cyan hover:underline mt-1">+ Adicionar módulo</button>
                               </div>
                             </div>
                           ))}
                         </div>
                       </div>
 
-                      {/* RODAPÉ */}
+                      {/* TRABALHE CONOSCO */}
                       <div className="nodri-card p-4">
-                        <div className="font-syne font-bold text-[12px] mb-3 text-nodri-cyan">🔻 Rodapé</div>
+                        <div className="font-syne font-bold text-[12px] mb-3 text-nodri-cyan">🤝 Seção Trabalhe Conosco (Afiliados)</div>
                         <div className="grid gap-3">
                           <div>
-                            <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Texto do rodapé</label>
-                            <input value={landingConfig.footer_texto} onChange={e => setLandingConfig({ ...landingConfig, footer_texto: e.target.value })}
-                              className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] text-nodri-t1 outline-none focus:border-nodri-cyan transition-colors" />
+                            <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Título</label>
+                            <input value={(landingConfig as any).afiliados_titulo || 'Trabalhe Conosco'} onChange={e => setLandingConfig({ ...landingConfig, afiliados_titulo: e.target.value } as any)}
+                              className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] outline-none focus:border-nodri-cyan" />
                           </div>
                           <div>
-                            <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Email de contato</label>
-                            <input value={landingConfig.footer_email} onChange={e => setLandingConfig({ ...landingConfig, footer_email: e.target.value })}
-                              className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] text-nodri-t1 outline-none focus:border-nodri-cyan transition-colors" />
+                            <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Subtítulo</label>
+                            <textarea value={(landingConfig as any).afiliados_subtitulo || ''} onChange={e => setLandingConfig({ ...landingConfig, afiliados_subtitulo: e.target.value } as any)}
+                              rows={2} className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] outline-none focus:border-nodri-cyan resize-none" />
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Texto do botão</label>
+                            <input value={(landingConfig as any).afiliados_botao || 'Quero ser Afiliado →'} onChange={e => setLandingConfig({ ...landingConfig, afiliados_botao: e.target.value } as any)}
+                              className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] outline-none focus:border-nodri-cyan" />
+                          </div>
+                          <div>
+                            <div className="flex items-center justify-between mb-2">
+                              <label className="text-[10px] text-nodri-t3 uppercase tracking-wider">Chips de destaque</label>
+                              <button onClick={() => setLandingConfig({ ...landingConfig, afiliados_chips: [...((landingConfig as any).afiliados_chips || []), { emoji: '✅', texto: 'Novo item' }] } as any)}
+                                className="text-[10px] bg-nodri-cyan text-black px-2 py-0.5 rounded font-bold">+ Adicionar</button>
+                            </div>
+                            <div className="space-y-2">
+                              {((landingConfig as any).afiliados_chips || []).map((chip: any, i: number) => (
+                                <div key={i} className="flex gap-2">
+                                  <input value={chip.emoji} onChange={e => { const arr = [...((landingConfig as any).afiliados_chips || [])]; arr[i] = { ...arr[i], emoji: e.target.value }; setLandingConfig({ ...landingConfig, afiliados_chips: arr } as any) }}
+                                    className="w-14 text-center bg-nodri-surface border border-nodri-border rounded px-2 py-1.5 text-[14px] outline-none focus:border-nodri-cyan" />
+                                  <input value={chip.texto} onChange={e => { const arr = [...((landingConfig as any).afiliados_chips || [])]; arr[i] = { ...arr[i], texto: e.target.value }; setLandingConfig({ ...landingConfig, afiliados_chips: arr } as any) }}
+                                    className="flex-1 bg-nodri-surface border border-nodri-border rounded px-2 py-1.5 text-[12px] outline-none focus:border-nodri-cyan" />
+                                  <button onClick={() => setLandingConfig({ ...landingConfig, afiliados_chips: ((landingConfig as any).afiliados_chips || []).filter((_: any, j: number) => j !== i) } as any)}
+                                    className="text-nodri-red p-1.5 rounded"><Trash2 size={11} /></button>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         </div>
                       </div>
 
-                      <button onClick={saveLandingConfig} disabled={savingLanding}
-                        className="w-full py-3 bg-nodri-cyan text-black font-bold rounded-xl flex items-center justify-center gap-2 hover:brightness-110 transition-all disabled:opacity-50 text-[13px]">
-                        {savingLanding ? <><Loader2 size={16} className="animate-spin" /> Salvando...</> : <><Save size={16} /> Salvar Landing Page</>}
-                      </button>
+                      {/* RODAPÉ */}
+                      <div className="nodri-card p-4">
+                        <div className="font-syne font-bold text-[12px] mb-3 text-nodri-cyan">🔻 Rodapé</div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Nome/Logo</label>
+                            <input value={(landingConfig as any).footer_logo || 'NODRI'} onChange={e => setLandingConfig({ ...landingConfig, footer_logo: e.target.value } as any)}
+                              className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] outline-none focus:border-nodri-cyan" />
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">WhatsApp</label>
+                            <input value={(landingConfig as any).footer_whatsapp || '5561982195214'} onChange={e => setLandingConfig({ ...landingConfig, footer_whatsapp: e.target.value } as any)}
+                              className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] outline-none focus:border-nodri-cyan" placeholder="55DDD99999999" />
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Texto do rodapé</label>
+                            <input value={landingConfig.footer_texto} onChange={e => setLandingConfig({ ...landingConfig, footer_texto: e.target.value })}
+                              className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] outline-none focus:border-nodri-cyan" />
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Email de contato</label>
+                            <input value={landingConfig.footer_email} onChange={e => setLandingConfig({ ...landingConfig, footer_email: e.target.value })}
+                              className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] outline-none focus:border-nodri-cyan" />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-3">
+                        <a href="/landing" target="_blank"
+                          className="flex items-center gap-2 px-4 py-2.5 border border-nodri-border text-nodri-t2 hover:text-nodri-cyan rounded-xl text-[12px] transition-all">
+                          <ExternalLink size={13} /> Visualizar Landing
+                        </a>
+                        <button onClick={saveLandingConfig} disabled={savingLanding}
+                          className="flex-1 py-3 bg-nodri-cyan text-black font-bold rounded-xl flex items-center justify-center gap-2 hover:brightness-110 disabled:opacity-50 text-[13px]">
+                          {savingLanding ? <><Loader2 size={16} className="animate-spin" /> Salvando...</> : <><Save size={16} /> Salvar Landing Page</>}
+                        </button>
+                      </div>
                     </>
                   )}
                 </div>
