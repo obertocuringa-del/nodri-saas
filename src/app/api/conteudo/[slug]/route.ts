@@ -17,6 +17,16 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
   return NextResponse.json({ ...data, existe: true })
 }
 
+export async function DELETE(req: NextRequest, { params }: { params: { slug: string } }) {
+  const token = cookies().get('nodri_token')?.value
+  const payload = token ? await verifyJWT(token) : null
+  if (!payload || payload.role !== 'master') {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  }
+  await supabaseAdmin.from('conteudo_submenus').delete().eq('slug', params.slug)
+  return NextResponse.json({ ok: true })
+}
+
 export async function PUT(req: NextRequest, { params }: { params: { slug: string } }) {
   const token = cookies().get('nodri_token')?.value
   const payload = token ? await verifyJWT(token) : null

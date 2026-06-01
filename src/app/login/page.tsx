@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import toast from 'react-hot-toast'
 import { Eye, EyeOff, LogIn, Loader2 } from 'lucide-react'
 
@@ -14,10 +15,7 @@ export default function LoginPage() {
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
-    if (!email || !password) {
-      toast.error('Preencha email e senha')
-      return
-    }
+    if (!email || !password) { toast.error('Preencha email e senha'); return }
     setLoading(true)
     try {
       const res = await fetch('/api/auth/login', {
@@ -39,18 +37,15 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-nodri-dark px-4">
-      {/* Background subtle grid */}
       <div className="absolute inset-0 opacity-[0.03]"
         style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, #00e5c8 1px, transparent 0)', backgroundSize: '40px 40px' }} />
 
-      <div className="w-full max-w-sm relative z-10 animate-fade-in">
+      <div className="w-full max-w-sm relative z-10">
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-3 mb-4">
             <div className="w-12 h-12 rounded-2xl flex items-center justify-center font-syne font-black text-2xl text-black"
-              style={{ background: 'linear-gradient(135deg, #00e5c8, #7c5cfc)' }}>
-              N
-            </div>
+              style={{ background: 'linear-gradient(135deg, #00e5c8, #7c5cfc)' }}>N</div>
             <div className="text-left">
               <div className="font-syne font-bold text-xl text-nodri-t1">NODRI</div>
               <div className="text-[10px] text-nodri-cyan tracking-[2px] uppercase">Estilo & Beleza</div>
@@ -64,65 +59,47 @@ export default function LoginPage() {
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="nodri-label block mb-1.5">Email</label>
-              <input
-                type="email"
-                placeholder="seu@email.com"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                className="nodri-input"
-                autoComplete="email"
-                disabled={loading}
-              />
+              <input type="email" placeholder="seu@email.com" value={email}
+                onChange={e => setEmail(e.target.value)} className="nodri-input"
+                autoComplete="email" disabled={loading} />
             </div>
 
             <div>
               <label className="nodri-label block mb-1.5">Senha</label>
               <div className="relative">
-                <input
-                  type={showPass ? 'text' : 'password'}
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  className="nodri-input pr-10"
-                  autoComplete="current-password"
-                  disabled={loading}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPass(!showPass)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-nodri-t3 hover:text-nodri-t2 transition-colors"
-                >
+                <input type={showPass ? 'text' : 'password'} placeholder="••••••••"
+                  value={password} onChange={e => setPassword(e.target.value)}
+                  className="nodri-input pr-10" autoComplete="current-password" disabled={loading} />
+                <button type="button" onClick={() => setShowPass(!showPass)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-nodri-t3 hover:text-nodri-t2 transition-colors">
                   {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
-              <a href="/recuperar-senha"
-                className="text-nodri-cyan text-xs hover:underline flex items-center gap-1 font-medium">
-                🔐 Esqueci minha senha
-              </a>
-              <a href="https://wa.me/5561982195214" target="_blank" rel="noopener noreferrer"
-                className="text-nodri-t3 text-xs hover:text-nodri-cyan transition-colors flex items-center gap-1">
-                💬 Suporte
-              </a>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="nodri-btn-primary w-full flex items-center justify-center gap-2 mt-2"
-            >
+            <button type="submit" disabled={loading}
+              className="nodri-btn-primary w-full flex items-center justify-center gap-2">
               {loading
                 ? <><Loader2 size={16} className="animate-spin" /> Entrando...</>
-                : <><LogIn size={16} /> Entrar no Sistema</>
-              }
+                : <><LogIn size={16} /> Entrar no Sistema</>}
             </button>
           </form>
+
+          {/* Fora do form para não interferir no submit */}
+          <div className="mt-4 pt-4 border-t border-nodri-border flex items-center justify-between">
+            <Link href="/recuperar-senha"
+              className="text-nodri-cyan text-xs hover:underline font-semibold flex items-center gap-1">
+              🔐 Esqueci minha senha
+            </Link>
+            <a href="https://wa.me/5561982195214" target="_blank" rel="noopener noreferrer"
+              className="text-nodri-t3 text-xs hover:text-nodri-cyan transition-colors">
+              💬 Suporte
+            </a>
+          </div>
         </div>
 
         <p className="text-center text-nodri-t3 text-xs mt-6">
-          © 2024 NODRI — Todos os direitos reservados
+          © 2025 NODRI — Todos os direitos reservados
         </p>
       </div>
     </div>

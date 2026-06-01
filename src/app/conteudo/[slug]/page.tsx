@@ -21,6 +21,18 @@ export default function ConteudoPage() {
     </div>
   )
 
+  // Página oculta — só mostra para admin
+  if (dados?.conteudo?.oculto) return (
+    <div className="min-h-screen bg-nodri-dark flex items-center justify-center">
+      <div className="text-center">
+        <div className="text-5xl mb-4">🚧</div>
+        <h2 className="font-syne font-bold text-lg mb-2">Página em construção</h2>
+        <p className="text-nodri-t3 text-sm">Este conteúdo está sendo preparado.</p>
+        <button onClick={() => router.back()} className="mt-4 text-nodri-cyan text-sm hover:underline">← Voltar</button>
+      </div>
+    </div>
+  )
+
   const tituloFormatado = dados?.titulo || String(slug).replace(/-/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())
 
   // Extrai URL embed do YouTube

@@ -1064,8 +1064,110 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
             </div>
           )}
 
+          {/* ATUALIZAÇÕES */}
+          {activeSection === 'updates' && (
+            <div className="space-y-4">
+              <div className="nodri-card p-6">
+                <div className="font-syne font-bold text-[14px] text-nodri-cyan mb-4 flex items-center gap-2">
+                  <RefreshCw size={14} /> Central de Atualizações
+                </div>
+                <p className="text-nodri-t2 text-[12px] mb-4">Envie comunicados de novas versões e atualizações para todos os clientes.</p>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Título da atualização</label>
+                    <input id="upd-titulo" placeholder="Ex: Nova versão 2.5 disponível!" className="nodri-input w-full" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Descrição</label>
+                    <textarea id="upd-desc" rows={3} placeholder="Descreva o que foi atualizado..." className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] outline-none focus:border-nodri-cyan resize-none" />
+                  </div>
+                  <button onClick={async () => {
+                    const titulo = (document.getElementById('upd-titulo') as HTMLInputElement)?.value
+                    const desc = (document.getElementById('upd-desc') as HTMLTextAreaElement)?.value
+                    if (!titulo) { toast.error('Digite o título'); return }
+                    const res = await fetch('/api/notifications', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ titulo, mensagem: desc || titulo, para_todos: true, tipo: 'info' }) })
+                    if (res.ok) { toast.success('✅ Atualização enviada para todos os clientes!'); (document.getElementById('upd-titulo') as HTMLInputElement).value = ''; (document.getElementById('upd-desc') as HTMLTextAreaElement).value = '' }
+                    else toast.error('Erro ao enviar')
+                  }} className="flex items-center gap-2 bg-nodri-cyan text-black px-5 py-2.5 rounded-lg font-bold text-[12px] hover:brightness-110">
+                    <Send size={13} /> Enviar para Todos os Clientes
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* RELATÓRIOS */}
+          {activeSection === 'relatorios' && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { label: 'Total de Salões', value: saloes.length, icon: '🏢' },
+                  { label: 'Ativos', value: saloes.filter(s => s.status === 'ativo').length, icon: '✅' },
+                  { label: 'Bloqueados', value: saloes.filter(s => s.status === 'bloqueado').length, icon: '🔴' },
+                  { label: 'Vencidos', value: saloes.filter(s => s.status === 'vencido').length, icon: '⚠️' },
+                  { label: 'Trial', value: saloes.filter(s => s.status === 'trial').length, icon: '⏳' },
+                  { label: 'Receita Mensal', value: `R$${saloes.filter(s => s.status === 'ativo' && s.plano).reduce((acc, s) => acc + (s.plano?.preco || 0), 0).toFixed(2)}`, icon: '💰' },
+                ].map(r => (
+                  <div key={r.label} className="nodri-card p-4 text-center">
+                    <div className="text-2xl mb-2">{r.icon}</div>
+                    <div className="font-syne font-bold text-xl">{r.value}</div>
+                    <div className="text-[10px] text-nodri-t3 uppercase tracking-wider mt-1">{r.label}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="nodri-card p-4">
+                <div className="font-syne font-bold text-[13px] mb-3 text-nodri-cyan">📊 Salões por Plano</div>
+                {['basico', 'profissional', 'premium'].map(slug => {
+                  const count = saloes.filter(s => s.plano?.slug === slug).length
+                  const pct = saloes.length ? Math.round((count / saloes.length) * 100) : 0
+                  return (
+                    <div key={slug} className="mb-3">
+                      <div className="flex justify-between text-[11px] mb-1">
+                        <span className="capitalize text-nodri-t1 font-medium">{slug}</span>
+                        <span className="text-nodri-t3">{count} salões ({pct}%)</span>
+                      </div>
+                      <div className="h-2 bg-nodri-surface rounded-full overflow-hidden">
+                        <div className="h-full bg-nodri-cyan rounded-full transition-all" style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* CONFIGURAÇÕES */}
+          {activeSection === 'config' && (
+            <div className="space-y-4 max-w-xl">
+              <div className="nodri-card p-5">
+                <div className="font-syne font-bold text-[13px] text-nodri-cyan mb-4">⚙️ Configurações do Sistema</div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">WhatsApp de Suporte</label>
+                    <input defaultValue="5561982195214" className="nodri-input w-full" placeholder="Ex: 5561999999999" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Email de Contato</label>
+                    <input defaultValue="nodriestiloebeleza@gmail.com" className="nodri-input w-full" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">% Comissão Padrão Afiliados</label>
+                    <input type="number" defaultValue={40} min={1} max={100} className="nodri-input w-full" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Link de Download do Programa</label>
+                    <input defaultValue={process.env.NEXT_PUBLIC_LINK_DOWNLOAD || ''} placeholder="https://..." className="nodri-input w-full" />
+                  </div>
+                  <button onClick={() => toast.success('Configurações salvas!')} className="bg-nodri-cyan text-black font-bold px-5 py-2.5 rounded-lg text-[12px] hover:brightness-110">
+                    Salvar Configurações
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* DASHBOARD */}
-          {activeSection !== 'links' && activeSection !== 'planos' && (
+          {activeSection !== 'links' && activeSection !== 'planos' && activeSection !== 'conteudo' && activeSection !== 'afiliados' && activeSection !== 'logs' && activeSection !== 'updates' && activeSection !== 'relatorios' && activeSection !== 'config' && (
             <>
               <div className="grid grid-cols-4 gap-3 mb-5">
                 {[
