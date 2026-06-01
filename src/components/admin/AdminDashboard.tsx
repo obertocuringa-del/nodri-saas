@@ -626,13 +626,22 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
   function AfiliadosSection() {
     const [afiliados, setAfiliados] = useState<any[]>([])
     const [loadingAf, setLoadingAf] = useState(false)
-    const [comissao, setComissao] = useState('')
     const [savingComissao, setSavingComissao] = useState<string | null>(null)
+    const [descontoCliente, setDescontoCliente] = useState(10)
+    const [savingConfig, setSavingConfig] = useState(false)
 
     useEffect(() => {
       setLoadingAf(true)
       fetch('/api/afiliados').then(r => r.json()).then(d => { setAfiliados(Array.isArray(d) ? d : []); setLoadingAf(false) })
+      fetch('/api/afiliados/config').then(r => r.json()).then(d => { if (d?.percentual) setDescontoCliente(d.percentual) })
     }, [])
+
+    async function salvarConfig() {
+      setSavingConfig(true)
+      await fetch('/api/afiliados/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ percentual: descontoCliente }) })
+      setSavingConfig(false)
+      toast.success('✅ Desconto do cliente atualizado!')
+    }
 
     async function marcarPago(af: any) {
       setSavingComissao(af.id)
@@ -666,6 +675,39 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
 
     return (
       <div className="space-y-4">
+
+        {/* Configuração de desconto */}
+        <div className="nodri-card p-4">
+          <div className="font-syne font-bold text-[13px] text-nodri-cyan mb-3 flex items-center gap-2">
+            <Tag size={14} /> Configuração do Programa de Afiliados
+          </div>
+          <div className="grid grid-cols-2 gap-4 items-end">
+            <div>
+              <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1.5 block">
+                Desconto que o CLIENTE ganha ao usar cupom de afiliado
+              </label>
+              <div className="flex items-center gap-2">
+                <input type="number" min={1} max={50} value={descontoCliente}
+                  onChange={e => setDescontoCliente(Number(e.target.value))}
+                  className="w-20 bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[13px] font-bold outline-none focus:border-nodri-cyan text-center" />
+                <span className="text-nodri-t2 font-bold">%</span>
+                <span className="text-[11px] text-nodri-t3 ml-2">de desconto no plano para o cliente</span>
+              </div>
+            </div>
+            <div>
+              <div className="text-[10px] text-nodri-t3 mb-2">Comissão padrão do afiliado: <strong className="text-nodri-cyan">40%</strong> sobre o valor pago pelo cliente (já com desconto)</div>
+              <button onClick={salvarConfig} disabled={savingConfig}
+                className="flex items-center gap-2 bg-nodri-cyan text-black px-4 py-2 rounded-lg text-[11px] font-bold hover:brightness-110 disabled:opacity-50">
+                {savingConfig ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
+                Salvar configuração
+              </button>
+            </div>
+          </div>
+          <div className="mt-3 p-3 bg-nodri-surface rounded-lg border border-nodri-border text-[11px] text-nodri-t2">
+            <strong className="text-nodri-t1">Exemplo:</strong> Plano R$200 → Cliente paga <strong className="text-nodri-cyan">R${(200 * (1 - descontoCliente / 100)).toFixed(2)}</strong> ({descontoCliente}% off) → Afiliado ganha <strong className="text-nodri-green">R${(200 * (1 - descontoCliente / 100) * 0.4).toFixed(2)}</strong> (40% do valor pago)
+          </div>
+        </div>
+
         {/* Cards resumo */}
         <div className="grid grid-cols-4 gap-3">
           {[
