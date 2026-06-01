@@ -1,18 +1,14 @@
-// v2 - editor completo com todas secoes
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 
-export const DEFAULT_CONFIG = {
-  // HERO
+const DEFAULT_CONFIG = {
   hero_logo: 'NODRI',
   hero_titulo: 'Sistema de Gestão para Salões de Beleza',
   hero_subtitulo: 'Automatize confirmações, envio de mensagens, relatórios e muito mais. Tudo integrado diretamente ao seu WhatsApp.',
   hero_botao: 'Ver Planos',
   hero_cor_botao: '#7c5cfc',
-
-  // BENEFÍCIOS
   beneficios_titulo: 'Por que escolher o NODRI?',
   beneficios: [
     { emoji: '⚡', titulo: 'Abre com 1 clique', desc: 'Clique em Abrir no site e o programa abre instantaneamente no seu computador.' },
@@ -20,8 +16,6 @@ export const DEFAULT_CONFIG = {
     { emoji: '📊', titulo: 'Relatórios completos', desc: 'Acompanhe faturamento, desempenho de profissionais e reservas financeiras.' },
     { emoji: '🔄', titulo: 'Atualizações automáticas', desc: 'Receba novas versões dos programas sem precisar reinstalar tudo.' },
   ],
-
-  // PLANOS
   planos_titulo: 'Escolha seu Plano',
   planos_subtitulo: 'Pagamento único mensal via PIX ou cartão',
   landing_planos: [
@@ -29,11 +23,8 @@ export const DEFAULT_CONFIG = {
     { nome: 'Profissional', preco: 200, cor: '#9b59b6', destaque: true, modulos: ['Todos do Básico', 'Bloqueio Sem Preferência', 'Ver Feedback Cliente', 'Relatório Profissional', 'Faturamento Diário', 'Calcular Reserva Financeira'] },
     { nome: 'Premium', preco: 300, cor: '#f39c12', destaque: false, modulos: ['Todos do Profissional', 'Calculadora Depreciação', 'Avaliar Profissional', 'Aluguel de Cadeira', 'Precificar Serviços'] },
   ],
-
-  // TRABALHE CONOSCO
   afiliados_titulo: 'Trabalhe Conosco',
   afiliados_subtitulo: 'Indique o NODRI para outros salões e ganhe 40% de comissão em cada venda realizada com seu cupom exclusivo.',
-  afiliados_comissao: 40,
   afiliados_botao: 'Quero ser Afiliado →',
   afiliados_chips: [
     { emoji: '🎫', texto: 'Cupom exclusivo' },
@@ -41,8 +32,6 @@ export const DEFAULT_CONFIG = {
     { emoji: '💰', texto: '40% por venda' },
     { emoji: '📱', texto: 'Pix direto' },
   ],
-
-  // FOOTER
   footer_logo: 'NODRI',
   footer_texto: 'Sistema de Gestão para Salões de Beleza',
   footer_email: 'contato@nodri.com.br',
@@ -56,7 +45,8 @@ export async function GET() {
     .eq('chave', 'landing_config')
     .single()
 
-  return NextResponse.json(data?.valor || DEFAULT_CONFIG)
+  const saved = data?.valor || {}
+  return NextResponse.json({ ...DEFAULT_CONFIG, ...saved })
 }
 
 export async function POST(req: NextRequest) {
