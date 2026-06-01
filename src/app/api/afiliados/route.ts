@@ -40,23 +40,26 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Preencha todos os campos obrigatórios' }, { status: 400 })
   }
 
-  // Verifica duplicado
-  const { data: existente } = await supabaseAdmin
+  // FIX: usa maybeSingle() em vez de single() para lookup opcional (evita erro PGRST116)
+  const { data: existente, error: errExistente } = await supabaseAdmin
     .from('afiliados')
     .select('id')
     .or(`email.eq.${email},cpf.eq.${cpf}`)
-    .single()
+    .maybeSingle()
+
+  if (errExistente) return NextResponse.json({ error: errExistente.message }, { status: 500 })
 
   if (existente) {
     return NextResponse.json({ error: 'Este email ou CPF já está cadastrado como afiliado.' }, { status: 409 })
   }
 
-  // Gera cupom único
+  // FIX: gera cupom único com maybeSingle() (evita swallow de erros reais)
   let cupom = gerarCupom(nome)
   let tentativas = 0
-  while (tentativas < 5) {
-    const { data: cupomExistente } = await supabaseAdmin
-      .from('afiliados').select('id').eq('cupom', cupom).single()
+  while (tentativas < 10) {
+    const { data: cupomExistente, error: errCupom } = await supabaseAdmin
+      .from('afiliados').select('id').eq('cupom', cupom).maybeSingle()
+    if (errCupom) return NextResponse.json({ error: errCupom.message }, { status: 500 })
     if (!cupomExistente) break
     cupom = gerarCupom(nome)
     tentativas++
@@ -64,28 +67,26 @@ export async function POST(req: NextRequest) {
 
   const link = `${SITE_URL}/?ref=${cupom}`
 
-  // Cria afiliado
   const { data: afiliado, error } = await supabaseAdmin
     .from('afiliados')
-    .insert({ nome, cpf, email, telefone, chave_pix, cupom, link })
+    .insert({ nome, cpf, email: email.toLowerCase(), telefone, chave_pix, cupom, link })
     .select()
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Envia email para o afiliado
   try {
     await sendEmailAfiliado({ nome, email, cupom, link })
   } catch (e) {
     console.error('Erro ao enviar email afiliado:', e)
   }
 
-  // Notifica Admin
   await supabaseAdmin.from('notificacoes').insert({
     titulo: '🤝 Novo Afiliado Cadastrado',
     mensagem: `${nome} (${email}) se cadastrou como afiliado. Cupom: ${cupom}`,
     tipo: 'info',
     para_todos: false,
+    lida: false,
     salao_id: null,
     metadata: { tipo: 'afiliado', nome, email, cpf, telefone, chave_pix, cupom, link },
   })
@@ -93,7 +94,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ ok: true, cupom, link }, { status: 201 })
 }
 
-// PATCH — atualizar comissão, status, bloquear/desbloquear (Admin)
+// PATCH — atualizar afiliado (Admin)
 export async function PATCH(req: NextRequest) {
   const token = cookies().get('nodri_token')?.value
   const payload = token ? await verifyJWT(token) : null
@@ -102,7 +103,19 @@ export async function PATCH(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { id, ...updates } = body
+  const { id, comissao_percentual, ativo, observacoes } = body
+
+  if (!id) return NextResponse.json({ error: 'ID obrigatório' }, { status: 400 })
+
+  // FIX: allowlist explícita — evita mass assignment (campos financeiros não podem ser alterados diretamente)
+  const updates: Record<string, any> = {}
+  if (comissao_percentual !== undefined) updates.comissao_percentual = Number(comissao_percentual)
+  if (ativo !== undefined) updates.ativo = Boolean(ativo)
+  if (observacoes !== undefined) updates.observacoes = observacoes
+
+  if (Object.keys(updates).length === 0) {
+    return NextResponse.json({ error: 'Nenhum campo para atualizar' }, { status: 400 })
+  }
 
   const { data, error } = await supabaseAdmin
     .from('afiliados').update(updates).eq('id', id).select().single()

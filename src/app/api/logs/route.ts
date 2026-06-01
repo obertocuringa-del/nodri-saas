@@ -11,7 +11,9 @@ export async function GET(req: NextRequest) {
   }
 
   const { searchParams } = new URL(req.url)
-  const limit = parseInt(searchParams.get('limit') || '50')
+  // FIX: clamp do limit — aceita apenas entre 1 e 500 (evita NaN e dumps gigantes)
+  const rawLimit = parseInt(searchParams.get('limit') || '50')
+  const limit = isNaN(rawLimit) ? 50 : Math.min(Math.max(rawLimit, 1), 500)
 
   const { data, error } = await supabaseAdmin
     .from('logs')

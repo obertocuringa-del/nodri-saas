@@ -6,19 +6,30 @@ import { supabaseAdmin } from '@/lib/supabase'
 export async function PUT(req: NextRequest) {
   const token = cookies().get('nodri_token')?.value
   const payload = token ? await verifyJWT(token) : null
-  if (!payload || !payload.salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  // FIX: verifica role 'salon' E salaoId (antes só verificava salaoId)
+  if (!payload || payload.role !== 'salon' || !payload.salaoId) {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  }
 
   const { nome, responsavel, telefone, nova_senha } = await req.json()
 
-  const { error } = await supabaseAdmin
-    .from('saloes')
-    .update({ nome, responsavel, telefone })
-    .eq('id', payload.salaoId)
+  // FIX: só atualiza campos que foram enviados (evita sobrescrever com undefined/null)
+  const updates: Record<string, any> = {}
+  if (nome !== undefined) updates.nome = nome
+  if (responsavel !== undefined) updates.responsavel = responsavel
+  if (telefone !== undefined) updates.telefone = telefone
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (Object.keys(updates).length > 0) {
+    const { error } = await supabaseAdmin
+      .from('saloes')
+      .update(updates)
+      .eq('id', payload.salaoId)
 
-  if (nova_senha) {
-    const senhaHash = await hashPassword(nova_senha)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  if (nova_senha && nova_senha.trim()) {
+    const senhaHash = await hashPassword(nova_senha.trim())
     await supabaseAdmin.from('usuarios').update({ senha_hash: senhaHash }).eq('salao_id', payload.salaoId)
   }
 

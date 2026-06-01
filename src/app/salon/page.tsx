@@ -12,14 +12,20 @@ export default async function SalonPage() {
   const payload = await verifyJWT(token)
   if (!payload || payload.role !== 'salon') redirect('/login')
 
-  // Verifica se licença está vencida ou bloqueada
+  // FIX: salaoId explicitamente validado antes de usar
+  if (!payload.salaoId) redirect('/login')
+
+  // Verifica status do salão
   const { data: salaoStatus } = await supabaseAdmin
     .from('saloes')
     .select('status, licenca_vencimento, nome')
-    .eq('id', payload.salaoId!)
-    .single()
+    .eq('id', payload.salaoId)
+    .maybeSingle()
 
-  if (salaoStatus && (salaoStatus.status === 'vencido' || salaoStatus.status === 'bloqueado')) {
+  // FIX: se salão não existe no DB, redireciona
+  if (!salaoStatus) redirect('/login')
+
+  if (salaoStatus.status === 'vencido' || salaoStatus.status === 'bloqueado') {
     redirect('/renovar-licenca')
   }
 
@@ -33,7 +39,7 @@ export default async function SalonPage() {
   const { data: modulosHabilitados } = await supabaseAdmin
     .from('salao_modulos')
     .select('modulo_id')
-    .eq('salao_id', payload.salaoId!)
+    .eq('salao_id', payload.salaoId)
     .eq('ativo', true)
 
   const habilitadosSet = new Set((modulosHabilitados || []).map((m: any) => m.modulo_id))
@@ -56,7 +62,7 @@ export default async function SalonPage() {
 
   return (
     <SalonDashboard
-      salaoNome={payload.salaoNome || 'Meu Salão'}
+      salaoNome={payload.salaoNome || salaoStatus.nome || 'Meu Salão'}
       plano={payload.plano || 'basico'}
       modulos={modulosComStatus}
       notificacoes={notificacoes || []}

@@ -1,9 +1,15 @@
 import { SignJWT, jwtVerify } from 'jose'
 import bcrypt from 'bcryptjs'
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'nodri_secret_fallback'
-)
+// FIX: JWT_SECRET sem fallback — se não configurado, lança erro na inicialização
+const jwtSecret = process.env.JWT_SECRET
+if (!jwtSecret) {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET não configurado. Adicione nas variáveis de ambiente do Vercel.')
+  }
+  console.warn('[AUTH] JWT_SECRET não configurado — usando valor padrão apenas em desenvolvimento')
+}
+const JWT_SECRET = new TextEncoder().encode(jwtSecret || 'nodri_dev_secret_only')
 
 export interface JWTPayload {
   userId: string

@@ -8,13 +8,15 @@ export async function GET() {
   const payload = token ? await verifyJWT(token) : null
   if (!payload || payload.role !== 'master') return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
-  const { data } = await supabaseAdmin
+  const { data, error } = await supabaseAdmin
     .from('notificacoes')
     .select('*')
     .order('criado_em', { ascending: false })
     .limit(50)
 
-  return NextResponse.json(data)
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  // FIX: nunca retorna null — usa array vazio como fallback
+  return NextResponse.json(data || [])
 }
 
 export async function POST(req: NextRequest) {
@@ -33,6 +35,7 @@ export async function POST(req: NextRequest) {
       salao_id: para_todos ? null : salao_id,
       para_todos: !!para_todos,
       tipo: tipo || 'info',
+      lida: false,  // FIX: define lida=false explicitamente para o filtro funcionar
       criado_por: payload.userId,
     })
     .select()
