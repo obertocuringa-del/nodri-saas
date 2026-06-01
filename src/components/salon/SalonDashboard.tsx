@@ -126,6 +126,23 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
 
   function handleLogout() { window.location.href = '/logout' }
 
+  // Detecta se admin está impersonando
+  const [impersonandoNome, setImpersonandoNome] = useState<string | null>(null)
+  useEffect(() => {
+    const nome = localStorage.getItem('nodri_impersonando')
+    if (nome) setImpersonandoNome(nome)
+  }, [])
+
+  function voltarAoAdmin() {
+    const adminToken = localStorage.getItem('nodri_admin_token')
+    if (adminToken) {
+      document.cookie = `nodri_token=${adminToken}; path=/; max-age=604800`
+    }
+    localStorage.removeItem('nodri_admin_token')
+    localStorage.removeItem('nodri_impersonando')
+    window.location.href = '/admin'
+  }
+
   const MODULO_SLUG: Record<string, string> = {
     'Confirmar Agendamento':         'confirmacao_agendamento',
     'Baixar Música YouTube':         'baixar-musica',
@@ -167,6 +184,25 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
 
   return (
     <div className="nodri-salon-bg min-h-screen flex flex-col">
+
+      {/* FAIXA DE IMPERSONAÇÃO */}
+      {impersonandoNome && (
+        <div className="sticky top-0 z-[60] flex items-center justify-between px-4 py-2 text-[12px] font-bold"
+          style={{ background: '#854d0e', color: '#fef3c7', borderBottom: '2px solid #ca8a04' }}>
+          <div className="flex items-center gap-2">
+            <span>👁️ Você está acessando como cliente:</span>
+            <span className="px-2 py-0.5 rounded font-black" style={{ background: '#ca8a04', color: '#1c1917' }}>
+              {impersonandoNome}
+            </span>
+            <span style={{ color: '#fde68a', fontWeight: 'normal' }}>— Sessão temporária (2h)</span>
+          </div>
+          <button onClick={voltarAoAdmin}
+            className="flex items-center gap-1.5 px-3 py-1 rounded-lg font-black text-[11px] transition-all hover:brightness-110"
+            style={{ background: '#1c1917', color: '#fbbf24', border: '1px solid #ca8a04' }}>
+            ← Voltar ao Admin
+          </button>
+        </div>
+      )}
 
       {/* NAVBAR */}
       <nav className="bg-nodri-surface border-b border-nodri-border px-5 py-2.5 flex items-center gap-3 sticky top-0" style={{ zIndex: 50 }}>

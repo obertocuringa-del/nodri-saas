@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { LogOut, Bell, Plus, Shield, Building, CreditCard, Puzzle, Users, BarChart3, Settings, RefreshCw, X, Send, Edit, Lock, Unlock, Loader2, ChevronDown, Check, Link, Save, Trash2, ExternalLink, Eye, EyeOff, AlertTriangle, Search, Play, Zap, Tag, FolderOpen, Wrench } from 'lucide-react'
+import { LogOut, Bell, Plus, Shield, Building, CreditCard, Puzzle, Users, BarChart3, Settings, RefreshCw, X, Send, Edit, Lock, Unlock, Loader2, ChevronDown, Check, Link, Save, Trash2, ExternalLink, Eye, EyeOff, AlertTriangle, Search, Play, Zap, Tag, FolderOpen, Wrench, LogIn } from 'lucide-react'
 import toast from 'react-hot-toast'
 import type { Salao, Modulo, Notificacao, Plano, Cupom } from '@/types'
 import EditorSubmenus from './EditorSubmenus'
@@ -401,6 +401,20 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
       }).catch(() => setLocalModulos(modulos))
     }
   }, [activeSection])
+
+  async function acessarComoCliente(salao: Salao) {
+    const res = await fetch(`/api/admin/impersonate/${salao.id}`, { method: 'POST' })
+    const data = await res.json()
+    if (!res.ok) { toast.error(data.error || 'Erro ao acessar salão'); return }
+    // Salva token do admin para voltar depois
+    const adminToken = document.cookie.match(/nodri_token=([^;]+)/)?.[1] || ''
+    localStorage.setItem('nodri_admin_token', adminToken)
+    localStorage.setItem('nodri_impersonando', salao.nome)
+    // Define token do salão no cookie e redireciona
+    document.cookie = `nodri_token=${data.token}; path=/; max-age=7200`
+    toast.success(`Acessando como "${salao.nome}"...`)
+    setTimeout(() => { window.location.href = '/salon' }, 800)
+  }
 
   async function toggleManutencao(modulo: Modulo) {
     setTogglingManutencao(modulo.id)
@@ -1684,6 +1698,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
                             <div className="flex gap-1.5">
                               <button onClick={() => openEditSalao(salao)} className="p-1.5 rounded-md border border-nodri-purple/40 text-nodri-purple bg-nodri-purple/7 hover:bg-nodri-purple/15 transition-all" title="Editar"><Edit size={11} /></button>
                               <button onClick={() => openModCtrl(salao)} className="flex items-center gap-1 px-2 py-1 rounded-md border border-nodri-cyan/35 text-nodri-cyan bg-nodri-cyan/7 text-[10px] font-semibold hover:bg-nodri-cyan/15 transition-all"><Puzzle size={10} /> Módulos</button>
+                              <button onClick={() => acessarComoCliente(salao)} className="flex items-center gap-1 px-2 py-1 rounded-md border border-nodri-amber/35 text-nodri-amber bg-nodri-amber/7 text-[10px] font-semibold hover:bg-nodri-amber/15 transition-all" title="Acessar como este cliente"><LogIn size={10} /> Acessar</button>
                               <button onClick={() => toggleBloqueio(salao)}
                                 className={`p-1.5 rounded-md border transition-all ${salao.status === 'bloqueado' ? 'border-nodri-green/35 text-nodri-green bg-nodri-green/7 hover:bg-nodri-green/15' : 'border-nodri-red/35 text-nodri-red bg-nodri-red/7 hover:bg-nodri-red/15'}`}
                                 title={salao.status === 'bloqueado' ? 'Desbloquear' : 'Bloquear'}>
