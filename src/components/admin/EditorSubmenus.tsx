@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { useState, useRef } from 'react'
 import {
   Plus, Save, Trash2, Loader2, Youtube, FileText, CheckSquare, HelpCircle,
@@ -146,8 +146,13 @@ export default function EditorSubmenus() {
   const dragSecaoOver = useRef<SecaoTipo | null>(null)
   const [dragHighlight, setDragHighlight] = useState<SecaoTipo | null>(null)
 
-  /* ── Helpers de ordem ── */
+  /* ── Helpers globais ── */
   function getOrdem(): SecaoTipo[] { return dados?.conteudo?.ordem_secoes || ORDEM_PADRAO }
+
+  // Helper: atualiza campos do conteudo sem depender de `dados` no closure (evita erro TS em async)
+  function updC(updates: Partial<ConteudoSubmenu>) {
+    setDados(prev => prev ? { ...prev, conteudo: { ...prev.conteudo, ...updates } } : null)
+  }
 
   function reordenarSecao() {
     if (!dragSecaoId.current || !dragSecaoOver.current || dragSecaoId.current === dragSecaoOver.current) {
@@ -232,7 +237,7 @@ export default function EditorSubmenus() {
   async function toggleOculto() {
     if (!dados) return
     const novoOculto = !dados.oculto
-    setDados({ ...dados, oculto: novoOculto })
+    setDados(prev => prev ? { ...prev, oculto: novoOculto } : null)
     await fetch(`/api/conteudo/${dados.slug}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -270,7 +275,7 @@ export default function EditorSubmenus() {
     const m = dados.video_url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{11})/)
     return (
       <div className="space-y-3">
-        <input value={dados.video_url} onChange={e => setDados({ ...dados, video_url: e.target.value })}
+        <input value={dados.video_url} onChange={e => setDados(prev => prev ? { ...prev, video_url: e.target.value } : null)}
           placeholder="https://youtube.com/watch?v=..."
           className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] font-mono outline-none focus:border-nodri-cyan transition-colors" />
         {m ? (
@@ -340,7 +345,7 @@ export default function EditorSubmenus() {
         {/* Editor */}
         <div
           contentEditable suppressContentEditableWarning
-          onBlur={e => setDados({ ...dados, conteudo: { ...dados.conteudo, texto: e.currentTarget.innerHTML } })}
+          onBlur={e => updC({ texto: e.currentTarget.innerHTML })}
           dangerouslySetInnerHTML={{ __html: dados.conteudo.texto || '' }}
           className="min-h-[140px] max-h-[400px] overflow-y-auto bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2.5 text-[13px] text-nodri-t1 outline-none focus:border-nodri-cyan transition-colors leading-relaxed"
           style={{ whiteSpace: 'pre-wrap' }}
@@ -359,16 +364,16 @@ export default function EditorSubmenus() {
       const url = await handleUpload('imagem', file)
       if (!url) return
       const novas = [...imagens, { id: uid(), url, largura: '100%' }]
-      setDados({ ...dados, conteudo: { ...dados.conteudo, imagens: novas } })
+      updC({ imagens: novas })
       toast.success('Imagem adicionada!')
     }
 
     function removeImagem(id: string) {
-      setDados({ ...dados, conteudo: { ...dados.conteudo, imagens: imagens.filter(i => i.id !== id) } })
+      updC({ imagens: imagens.filter(i => i.id !== id) })
     }
 
     function updateLargura(id: string, largura: string) {
-      setDados({ ...dados, conteudo: { ...dados.conteudo, imagens: imagens.map(i => i.id === id ? { ...i, largura } : i) } })
+      updC({ imagens: imagens.map(i => i.id === id ? { ...i, largura } : i) })
     }
 
     return (
@@ -414,7 +419,7 @@ export default function EditorSubmenus() {
     const tabela = dados.conteudo.tabela || { linhas: 3, cols: 3, data: Array(3).fill(null).map(() => Array(3).fill('')) }
 
     function save(t: typeof tabela) {
-      setDados({ ...dados, conteudo: { ...dados.conteudo, tabela: t } })
+      updC({ tabela: t })
     }
 
     function setCell(li: number, ci: number, val: string) {
@@ -441,7 +446,7 @@ export default function EditorSubmenus() {
     }
 
     function initTabela() {
-      setDados({ ...dados, conteudo: { ...dados.conteudo, tabela: { linhas: 3, cols: 3, data: Array(3).fill(null).map(() => Array(3).fill('')) } } })
+      updC({ tabela: { linhas: 3, cols: 3, data: Array(3).fill(null).map(() => Array(3).fill('')) } })
     }
 
     if (!dados.conteudo.tabela) {
@@ -460,7 +465,7 @@ export default function EditorSubmenus() {
         <div className="flex gap-1.5 flex-wrap">
           <button onClick={addRow} className="flex items-center gap-1 text-[10px] px-2 py-1 bg-nodri-card border border-nodri-border rounded text-nodri-t2 hover:text-nodri-cyan hover:border-nodri-cyan/30 transition-all"><Plus size={9} /> Linha</button>
           <button onClick={addCol} className="flex items-center gap-1 text-[10px] px-2 py-1 bg-nodri-card border border-nodri-border rounded text-nodri-t2 hover:text-nodri-cyan hover:border-nodri-cyan/30 transition-all"><Plus size={9} /> Coluna</button>
-          <button onClick={() => setDados({ ...dados, conteudo: { ...dados.conteudo, tabela: null } })}
+          <button onClick={() => updC({ tabela: null })}
             className="flex items-center gap-1 text-[10px] px-2 py-1 bg-nodri-card border border-nodri-red/30 rounded text-nodri-red hover:bg-nodri-red/10 transition-all ml-auto"><Trash2 size={9} /> Remover Tabela</button>
         </div>
         <div className="overflow-x-auto">
@@ -503,7 +508,7 @@ export default function EditorSubmenus() {
     const colunas = dados.conteudo.colunas || null
 
     function initColunas() {
-      setDados({ ...dados, conteudo: { ...dados.conteudo, colunas: [{ id: uid(), conteudo: 'Coluna 1' }, { id: uid(), conteudo: 'Coluna 2' }] } })
+      updC({ colunas: [{ id: uid(), conteudo: 'Coluna 1' }, { id: uid(), conteudo: 'Coluna 2' }] })
     }
 
     if (!colunas) {
@@ -518,17 +523,17 @@ export default function EditorSubmenus() {
     }
 
     function updateCol(id: string, html: string) {
-      setDados({ ...dados, conteudo: { ...dados.conteudo, colunas: colunas.map(c => c.id === id ? { ...c, conteudo: html } : c) } })
+      updC({ colunas: colunas.map(c => c.id === id ? { ...c, conteudo: html } : c) })
     }
 
     function addCol() {
       if (colunas.length >= 4) return
-      setDados({ ...dados, conteudo: { ...dados.conteudo, colunas: [...colunas, { id: uid(), conteudo: `Coluna ${colunas.length + 1}` }] } })
+      updC({ colunas: [...colunas, { id: uid(), conteudo: `Coluna ${colunas.length + 1}` }] })
     }
 
     function removeCol(id: string) {
       if (colunas.length <= 1) return
-      setDados({ ...dados, conteudo: { ...dados.conteudo, colunas: colunas.filter(c => c.id !== id) } })
+      updC({ colunas: colunas.filter(c => c.id !== id) })
     }
 
     return (
@@ -538,7 +543,7 @@ export default function EditorSubmenus() {
             className="flex items-center gap-1 text-[10px] px-2 py-1 bg-nodri-card border border-nodri-border rounded text-nodri-t2 hover:text-nodri-amber hover:border-nodri-amber/30 transition-all disabled:opacity-30">
             <Plus size={9} /> Coluna ({colunas.length}/4)
           </button>
-          <button onClick={() => setDados({ ...dados, conteudo: { ...dados.conteudo, colunas: null } })}
+          <button onClick={() => updC({ colunas: null })}
             className="flex items-center gap-1 text-[10px] px-2 py-1 bg-nodri-card border border-nodri-red/30 rounded text-nodri-red hover:bg-nodri-red/10 transition-all ml-auto">
             <Trash2 size={9} /> Remover
           </button>
@@ -570,7 +575,7 @@ export default function EditorSubmenus() {
   function renderChecklist() {
     if (!dados) return null
     const list = dados.conteudo.checklist || []
-    const upd = (a: string[]) => setDados({ ...dados, conteudo: { ...dados.conteudo, checklist: a } })
+    const upd = (a: string[]) => updC({ checklist: a })
     return (
       <div className="space-y-2">
         <button onClick={() => upd([...list, ''])}
@@ -594,7 +599,7 @@ export default function EditorSubmenus() {
   function renderFaq() {
     if (!dados) return null
     const list = dados.conteudo.faq || []
-    const upd = (a: typeof list) => setDados({ ...dados, conteudo: { ...dados.conteudo, faq: a } })
+    const upd = (a: typeof list) => updC({ faq: a })
     return (
       <div className="space-y-3">
         <button onClick={() => upd([...list, { pergunta: '', resposta: '' }])}
@@ -626,12 +631,12 @@ export default function EditorSubmenus() {
       const url = await handleUpload('pdf', file)
       if (!url) return
       const nome = file.name.replace(/\.[^.]+$/, '')
-      setDados({ ...dados, conteudo: { ...dados.conteudo, arquivos_pdf: [...pdfs, { id: uid(), nome, url }] } })
+      updC({ arquivos_pdf: [...pdfs, { id: uid(), nome, url }] })
       toast.success('PDF adicionado!')
     }
 
     function removePdf(id: string) {
-      setDados({ ...dados, conteudo: { ...dados.conteudo, arquivos_pdf: pdfs.filter(p => p.id !== id) } })
+      updC({ arquivos_pdf: pdfs.filter(p => p.id !== id) })
     }
 
     return (
@@ -668,12 +673,12 @@ export default function EditorSubmenus() {
       const url = await handleUpload('excel', file)
       if (!url) return
       const nome = file.name.replace(/\.[^.]+$/, '')
-      setDados({ ...dados, conteudo: { ...dados.conteudo, arquivos_excel: [...excels, { id: uid(), nome, url }] } })
+      updC({ arquivos_excel: [...excels, { id: uid(), nome, url }] })
       toast.success('Planilha adicionada!')
     }
 
     function removeExcel(id: string) {
-      setDados({ ...dados, conteudo: { ...dados.conteudo, arquivos_excel: excels.filter(e => e.id !== id) } })
+      updC({ arquivos_excel: excels.filter(e => e.id !== id) })
     }
 
     return (
@@ -705,7 +710,7 @@ export default function EditorSubmenus() {
   function renderDownloads() {
     if (!dados) return null
     const list = dados.conteudo.downloads || []
-    const upd = (a: typeof list) => setDados({ ...dados, conteudo: { ...dados.conteudo, downloads: a } })
+    const upd = (a: typeof list) => updC({ downloads: a })
     return (
       <div className="space-y-2">
         <button onClick={() => upd([...list, { nome: '', url: '' }])}
@@ -882,7 +887,7 @@ export default function EditorSubmenus() {
             {/* Título da página */}
             <div className="nodri-card p-4">
               <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1.5 block">Título da Página</label>
-              <input value={dados.titulo} onChange={e => setDados({ ...dados, titulo: e.target.value })}
+              <input value={dados.titulo} onChange={e => setDados(prev => prev ? { ...prev, titulo: e.target.value } : null)}
                 className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[13px] font-syne font-bold outline-none focus:border-nodri-cyan transition-colors" />
             </div>
 
@@ -944,3 +949,4 @@ export default function EditorSubmenus() {
     </div>
   )
 }
+
