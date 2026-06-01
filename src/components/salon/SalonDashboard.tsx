@@ -325,17 +325,18 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
             <div key={modulo.id}
               className="p-4 flex flex-col cursor-pointer transition-all hover:-translate-y-0.5 relative overflow-hidden rounded-xl border"
               style={{
-                background: emManutencao ? '#1a0a0a' : modulo.habilitado ? '#161820' : '#111318',
-                borderColor: emManutencao ? 'rgba(239,68,68,0.35)' : modulo.habilitado ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.04)',
-                opacity: emManutencao ? 0.9 : modulo.habilitado ? 1 : 0.55,
+                background: emManutencao ? '#1a0a0a' : modulo.habilitado ? '#0a1f14' : '#111318',
+                borderColor: emManutencao ? 'rgba(239,68,68,0.35)' : modulo.habilitado ? 'rgba(34,197,94,0.2)' : 'rgba(255,255,255,0.04)',
+                opacity: emManutencao ? 0.9 : modulo.habilitado ? 1 : 0.5,
+                boxShadow: modulo.habilitado && !emManutencao ? 'inset 0 0 30px rgba(34,197,94,0.04)' : undefined,
               }}>
 
-              {/* Faixa vermelha de manutenção no topo */}
+              {/* Faixa de manutenção ou ativo no topo */}
               {emManutencao && (
                 <div className="absolute top-0 left-0 right-0 h-0.5" style={{ background: '#ef4444' }} />
               )}
               {modulo.habilitado && !emManutencao && (
-                <div className="absolute top-0 left-0 right-0 h-px" style={{ background: 'rgba(255,255,255,0.12)' }} />
+                <div className="absolute top-0 left-0 right-0 h-px" style={{ background: 'rgba(34,197,94,0.4)' }} />
               )}
 
               <div className="flex justify-end mb-3">
@@ -346,7 +347,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               </div>
 
               <div className="font-syne font-bold text-[13px] uppercase tracking-wide leading-snug mb-1.5"
-                style={{ color: emManutencao ? '#f87171' : modulo.habilitado ? '#f1f5f9' : '#64748b' }}>
+                style={{ color: emManutencao ? '#f87171' : modulo.habilitado ? '#d1fae5' : '#475569' }}>
                 {modulo.nome}
               </div>
               <p className="text-[10px] leading-relaxed mb-4 flex-1" style={{ color: '#475569' }}>
