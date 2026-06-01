@@ -506,6 +506,107 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
     return <span className="text-nodri-green font-semibold">⏳ {dias}d restantes</span>
   }
 
+  function PagamentosSection() {
+    const [pags, setPags] = useState<any[]>([])
+    const [loading, setLoading] = useState(false)
+    const [filtro, setFiltro] = useState<'todos'|'pago'|'pendente'|'vencido'|'cancelado'>('todos')
+    const [updatingId, setUpdatingId] = useState<string|null>(null)
+
+    useEffect(() => {
+      setLoading(true)
+      const url = filtro === 'todos' ? '/api/pagamentos' : `/api/pagamentos?status=${filtro}`
+      fetch(url).then(r => r.json()).then(d => { setPags(Array.isArray(d) ? d : []); setLoading(false) })
+    }, [filtro])
+
+    async function atualizarStatus(id: string, status: string, salaoId: string) {
+      setUpdatingId(id)
+      const res = await fetch('/api/pagamentos', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status, salao_id: salaoId }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setPags(prev => prev.map(p => p.id === id ? { ...p, ...data } : p))
+        toast.success(status === 'pago' ? '✅ Pago! Acesso liberado automaticamente.' : `Status atualizado para ${status}`)
+      } else toast.error('Erro ao atualizar')
+      setUpdatingId(null)
+    }
+
+    const STATUS_COR: Record<string, string> = { pago: 'text-nodri-green bg-nodri-green/10 border-nodri-green/20', pendente: 'text-nodri-amber bg-nodri-amber/10 border-nodri-amber/20', vencido: 'text-nodri-red bg-nodri-red/10 border-nodri-red/20', cancelado: 'text-nodri-t3 bg-nodri-t3/10 border-nodri-t3/20' }
+
+    const totalPago = pags.filter(p => p.status === 'pago').reduce((a, p) => a + (p.valor || 0), 0)
+    const totalPendente = pags.filter(p => p.status === 'pendente').reduce((a, p) => a + (p.valor || 0), 0)
+
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-4 gap-3">
+          {[
+            { label: 'Total de pagamentos', value: pags.length, icon: '💳' },
+            { label: 'Pagos', value: pags.filter(p => p.status === 'pago').length, icon: '✅' },
+            { label: 'Pendentes', value: pags.filter(p => p.status === 'pendente').length, icon: '⏳' },
+            { label: 'Receita confirmada', value: `R$${totalPago.toFixed(2)}`, icon: '💰' },
+          ].map(s => (
+            <div key={s.label} className="nodri-card p-3">
+              <div className="text-[9px] text-nodri-t3 uppercase tracking-widest mb-1">{s.label}</div>
+              <div className="font-syne font-bold text-lg">{s.icon} {s.value}</div>
+            </div>
+          ))}
+        </div>
+
+        <div className="nodri-card p-4">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+            <div className="font-syne font-bold text-[13px] text-nodri-cyan flex items-center gap-2">
+              <CreditCard size={14} /> Histórico de Pagamentos
+            </div>
+            <div className="flex gap-1.5 flex-wrap">
+              {(['todos','pago','pendente','vencido','cancelado'] as const).map(f => (
+                <button key={f} onClick={() => setFiltro(f)}
+                  className={`px-3 py-1 rounded-lg text-[10px] font-bold capitalize border transition-all ${filtro === f ? 'bg-nodri-cyan text-black border-nodri-cyan' : 'border-nodri-border text-nodri-t2 hover:text-nodri-t1'}`}>
+                  {f}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin text-nodri-t3" /></div>
+          ) : pags.length === 0 ? (
+            <div className="text-center py-8 text-nodri-t3 text-[12px]">Nenhum pagamento encontrado.</div>
+          ) : (
+            <div className="space-y-2 max-h-[500px] overflow-y-auto">
+              {pags.map(p => (
+                <div key={p.id} className="flex items-center gap-3 p-3 bg-nodri-surface rounded-xl border border-nodri-border hover:border-nodri-cyan/20 transition-all flex-wrap">
+                  <div className="flex-1 min-w-[180px]">
+                    <div className="font-medium text-[12px]">{p.salao?.nome || 'Salão'}</div>
+                    <div className="text-[10px] text-nodri-t3">{p.salao?.email} · {p.plano?.nome}</div>
+                  </div>
+                  <div className="font-syne font-bold text-[14px]">R${Number(p.valor).toFixed(2)}</div>
+                  <div className="text-[10px] text-nodri-t3">{new Date(p.data_vencimento).toLocaleDateString('pt-BR')}</div>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border capitalize ${STATUS_COR[p.status] || ''}`}>{p.status}</span>
+                  <div className="flex gap-1.5">
+                    {p.status !== 'pago' && (
+                      <button onClick={() => atualizarStatus(p.id, 'pago', p.salao_id)} disabled={updatingId === p.id}
+                        className="px-2 py-1 bg-nodri-green/10 border border-nodri-green/30 text-nodri-green text-[10px] font-bold rounded hover:bg-nodri-green/20 disabled:opacity-50">
+                        {updatingId === p.id ? <Loader2 size={10} className="animate-spin" /> : '✅ Pago'}
+                      </button>
+                    )}
+                    {p.status === 'pendente' && (
+                      <button onClick={() => atualizarStatus(p.id, 'cancelado', p.salao_id)} disabled={updatingId === p.id}
+                        className="px-2 py-1 bg-nodri-red/10 border border-nodri-red/30 text-nodri-red text-[10px] font-bold rounded hover:bg-nodri-red/20 disabled:opacity-50">
+                        Cancelar
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   function AfiliadosSection() {
     const [afiliados, setAfiliados] = useState<any[]>([])
     const [loadingAf, setLoadingAf] = useState(false)
@@ -672,6 +773,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
     { id: 'notifs', icon: <Bell size={14} />, label: 'Notificações', badge: localNotifs.filter(n => !n.lida).length, badgeRed: true },
     { id: 'links', icon: <Link size={14} />, label: 'Links do Menu' },
     { id: 'conteudo', icon: <Play size={14} />, label: 'Editor de Páginas' },
+    { id: 'pagamentos', icon: <CreditCard size={14} />, label: 'Pagamentos' },
     { id: 'afiliados', icon: <Users size={14} />, label: 'Afiliados' },
     { id: 'logs', icon: <BarChart3 size={14} />, label: 'Logs do Sistema' },
     { id: 'updates', icon: <RefreshCw size={14} />, label: 'Atualizações' },
@@ -749,6 +851,9 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
           {activeSection === 'conteudo' && (
             <EditorSubmenus />
           )}
+
+          {/* PAGAMENTOS */}
+          {activeSection === 'pagamentos' && <PagamentosSection />}
 
           {/* AFILIADOS */}
           {activeSection === 'afiliados' && <AfiliadosSection />}

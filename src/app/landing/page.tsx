@@ -172,6 +172,7 @@ export default function LandingPage() {
         <p style={{ marginTop: 8 }}>contato@nodri.com.br</p>
         <div style={{ marginTop: 16, display: 'flex', gap: 20, justifyContent: 'center', flexWrap: 'wrap' }}>
           <a href="/trabalhe-conosco" style={{ color: '#00e5c8', fontSize: 12, textDecoration: 'none' }}>Trabalhe Conosco</a>
+          <a href="/afiliado" style={{ color: '#00e5c8', fontSize: 12, textDecoration: 'none' }}>Painel do Afiliado</a>
           <a href="https://wa.me/5561982195214" target="_blank" rel="noopener noreferrer" style={{ color: '#25D366', fontSize: 12, textDecoration: 'none' }}>💬 WhatsApp</a>
           <a href="/login" style={{ color: '#7c5cfc', fontSize: 12, textDecoration: 'none' }}>Área do Cliente</a>
         </div>

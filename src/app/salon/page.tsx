@@ -12,6 +12,17 @@ export default async function SalonPage() {
   const payload = await verifyJWT(token)
   if (!payload || payload.role !== 'salon') redirect('/login')
 
+  // Verifica se licença está vencida ou bloqueada
+  const { data: salaoStatus } = await supabaseAdmin
+    .from('saloes')
+    .select('status, licenca_vencimento, nome')
+    .eq('id', payload.salaoId!)
+    .single()
+
+  if (salaoStatus && (salaoStatus.status === 'vencido' || salaoStatus.status === 'bloqueado')) {
+    redirect('/renovar-licenca')
+  }
+
   // Busca módulos do salão com status
   const { data: todosModulos } = await supabaseAdmin
     .from('modulos')
