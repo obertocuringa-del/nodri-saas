@@ -4,6 +4,7 @@ import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 
 export async function POST(req: NextRequest) {
+  // Autenticação: apenas admin master
   const token = cookies().get('nodri_token')?.value
   const payload = token ? await verifyJWT(token) : null
   if (!payload || payload.role !== 'master') {
@@ -11,37 +12,28 @@ export async function POST(req: NextRequest) {
   }
 
   const formData = await req.formData()
-  const file = formData.get('file') as File
-  const tipo = formData.get('tipo') as string || 'imagem'
+  const file = formData.get('file') as File | null
+  const bucket = (formData.get('bucket') as string) || 'paginas'
 
-  if (!file) return NextResponse.json({ error: 'Arquivo obrigatório' }, { status: 400 })
+  if (!file) return NextResponse.json({ error: 'Nenhum arquivo enviado' }, { status: 400 })
+
+  // Limita tamanho: 50MB
+  if (file.size > 50 * 1024 * 1024) {
+    return NextResponse.json({ error: 'Arquivo muito grande (máx 50MB)' }, { status: 400 })
+  }
 
   const ext = file.name.split('.').pop()?.toLowerCase() || 'bin'
-  const nome = `${tipo}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+  const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}.${ext}`
   const bytes = await file.arrayBuffer()
   const buffer = Buffer.from(bytes)
 
-  const { data, error } = await supabaseAdmin.storage
-    .from('nodri-conteudo')
-    .upload(nome, buffer, {
-      contentType: file.type,
-      upsert: false,
-    })
+  const { error } = await supabaseAdmin.storage
+    .from(bucket)
+    .upload(filename, buffer, { contentType: file.type, upsert: false })
 
-  if (error) {
-    // Bucket pode não existir — tenta criar
-    if (error.message?.includes('not found') || error.message?.includes('Bucket')) {
-      await supabaseAdmin.storage.createBucket('nodri-conteudo', { public: true })
-      const { data: data2, error: error2 } = await supabaseAdmin.storage
-        .from('nodri-conteudo')
-        .upload(nome, buffer, { contentType: file.type, upsert: false })
-      if (error2) return NextResponse.json({ error: error2.message }, { status: 500 })
-      const { data: url2 } = supabaseAdmin.storage.from('nodri-conteudo').getPublicUrl(data2.path)
-      return NextResponse.json({ url: url2.publicUrl, nome: file.name })
-    }
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  const { data: urlData } = supabaseAdmin.storage.from('nodri-conteudo').getPublicUrl(data.path)
-  return NextResponse.json({ url: urlData.publicUrl, nome: file.name })
+  const { data: { publicUrl } } = supabaseAdmin.storage.from(bucket).getPublicUrl(filename)
+
+  return NextResponse.json({ url: publicUrl, filename })
 }
