@@ -1,0 +1,16 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/check-licencas",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/check-trials",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/lembretes-pix",
+      "schedule": "0 10 * * *"
+    }
+  ]
+}

@@ -87,21 +87,67 @@ export async function POST(req: NextRequest) {
       .from('afiliados').select('*').eq('cupom', compra.cupom).single()
     if (afiliado) {
       const valorCompra = payment.transaction_amount || 0
-      const comissao = (valorCompra * afiliado.comissao_percentual) / 100
+      const comissao = Math.round(valorCompra * (afiliado.comissao_percentual || 40)) / 100
+
+      // Tenta enviar Pix automático para o afiliado via Mercado Pago
+      let pixEnviado = false
+      try {
+        const pixTransfer = await fetch('https://api.mercadopago.com/v1/payments', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${MP_ACCESS_TOKEN}`,
+            'Content-Type': 'application/json',
+            'X-Idempotency-Key': `afil-${payment.id}-${afiliado.id}`,
+          },
+          body: JSON.stringify({
+            transaction_amount: comissao,
+            payment_method_id: 'pix',
+            description: `Comissão NODRI — Cupom ${compra.cupom}`,
+            payer: { email: afiliado.email },
+            receiver: { identification: { type: 'CPF', number: afiliado.cpf?.replace(/\D/g, '') } },
+          }),
+        })
+        const pixResult = await pixTransfer.json()
+        if (pixResult.id) pixEnviado = true
+      } catch {}
+
+      // Atualiza acumulado do afiliado
       await supabase.from('afiliados').update({
         total_vendas: (afiliado.total_vendas || 0) + 1,
-        valor_acumulado: (afiliado.valor_acumulado || 0) + comissao,
+        valor_acumulado: pixEnviado ? afiliado.valor_acumulado || 0 : (afiliado.valor_acumulado || 0) + comissao,
+        valor_pago: pixEnviado ? (afiliado.valor_pago || 0) + comissao : afiliado.valor_pago || 0,
       }).eq('id', afiliado.id)
-      // Notifica admin com valor a pagar
+
+      // Notifica Admin
       await supabase.from('notificacoes').insert({
-        titulo: '💰 Comissão de Afiliado',
-        mensagem: `Venda via cupom ${compra.cupom} — Afiliado: ${afiliado.nome} | Valor: R$${valorCompra.toFixed(2)} | Comissão a pagar: R$${comissao.toFixed(2)} (Pix: ${afiliado.chave_pix})`,
+        titulo: pixEnviado ? '✅ Comissão enviada via Pix' : '💰 Comissão de Afiliado — Pagar Manualmente',
+        mensagem: pixEnviado
+          ? `Pix de R$${comissao.toFixed(2)} enviado automaticamente para ${afiliado.nome} (${afiliado.chave_pix}) — Cupom: ${compra.cupom}`
+          : `Venda via cupom ${compra.cupom}\nAfiliado: ${afiliado.nome}\nValor da venda: R$${valorCompra.toFixed(2)}\n💰 PAGAR: R$${comissao.toFixed(2)} via Pix → ${afiliado.chave_pix}`,
         tipo: 'success', para_todos: false, salao_id: null,
-        metadata: { tipo: 'comissao_afiliado', afiliado_id: afiliado.id, afiliado_nome: afiliado.nome, afiliado_email: afiliado.email, chave_pix: afiliado.chave_pix, cupom: compra.cupom, valor_compra: valorCompra, valor_comissao: comissao },
+        metadata: {
+          tipo: 'comissao_afiliado',
+          afiliado_id: afiliado.id,
+          afiliado_nome: afiliado.nome,
+          afiliado_email: afiliado.email,
+          chave_pix: afiliado.chave_pix,
+          cupom: compra.cupom,
+          valor_compra: valorCompra,
+          valor_comissao: comissao,
+          pix_enviado: pixEnviado,
+        },
       })
+
       // Email para o afiliado
       try {
-        await sendEmailComissao({ nome: afiliado.nome, email: afiliado.email, cupom: compra.cupom, valorCompra, valorComissao: comissao, plano })
+        await sendEmailComissao({
+          nome: afiliado.nome,
+          email: afiliado.email,
+          cupom: compra.cupom,
+          valorCompra,
+          valorComissao: comissao,
+          plano,
+        })
       } catch {}
     }
   }
