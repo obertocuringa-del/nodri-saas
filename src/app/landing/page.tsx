@@ -136,11 +136,45 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* TRABALHE CONOSCO */}
+      <section style={{ background: 'linear-gradient(135deg,#0d1117,#161820)', padding: '60px 20px', textAlign: 'center', borderTop: '1px solid #232840' }}>
+        <div style={{ maxWidth: 600, margin: '0 auto' }}>
+          <div style={{ fontSize: 40, marginBottom: 16 }}>🤝</div>
+          <h2 style={{ fontSize: 28, fontWeight: 900, color: '#00e5c8', marginBottom: 12 }}>Trabalhe Conosco</h2>
+          <p style={{ color: '#94a3b8', fontSize: 15, lineHeight: 1.7, marginBottom: 8 }}>
+            Indique o NODRI para outros salões e ganhe <strong style={{ color: '#00e5c8' }}>40% de comissão</strong> em cada venda realizada com seu cupom exclusivo.
+          </p>
+          <p style={{ color: '#64748b', fontSize: 13, marginBottom: 28 }}>
+            Sem custo para se cadastrar. Você indica, vende e recebe via Pix.
+          </p>
+          <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+            {[
+              { emoji: '🎫', texto: 'Cupom exclusivo' },
+              { emoji: '🔗', texto: 'Link personalizado' },
+              { emoji: '💰', texto: '40% por venda' },
+              { emoji: '📱', texto: 'Pix direto' },
+            ].map(b => (
+              <div key={b.texto} style={{ background: '#0d1117', border: '1px solid #232840', borderRadius: 10, padding: '12px 20px', color: '#f0f2ff', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span>{b.emoji}</span> {b.texto}
+              </div>
+            ))}
+          </div>
+          <a href="/trabalhe-conosco" style={{ display: 'inline-block', marginTop: 32, background: 'linear-gradient(135deg,#00e5c8,#7c5cfc)', color: '#000', fontWeight: 900, fontSize: 15, padding: '14px 40px', borderRadius: 12, textDecoration: 'none' }}>
+            Quero ser Afiliado →
+          </a>
+        </div>
+      </section>
+
       {/* FOOTER */}
-      <footer style={{ textAlign: 'center', padding: '40px 20px', color: '#555', borderTop: '1px solid #222', marginTop: 60 }}>
+      <footer style={{ textAlign: 'center', padding: '40px 20px', color: '#555', borderTop: '1px solid #222', marginTop: 0 }}>
         <div style={{ fontSize: 20, fontWeight: 700, color: '#f39c12', marginBottom: 8 }}>NODRI</div>
         <p>Sistema de Gestão para Salões de Beleza</p>
         <p style={{ marginTop: 8 }}>contato@nodri.com.br</p>
+        <div style={{ marginTop: 16, display: 'flex', gap: 20, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <a href="/trabalhe-conosco" style={{ color: '#00e5c8', fontSize: 12, textDecoration: 'none' }}>Trabalhe Conosco</a>
+          <a href="https://wa.me/5561982195214" target="_blank" rel="noopener noreferrer" style={{ color: '#25D366', fontSize: 12, textDecoration: 'none' }}>💬 WhatsApp</a>
+          <a href="/login" style={{ color: '#7c5cfc', fontSize: 12, textDecoration: 'none' }}>Área do Cliente</a>
+        </div>
       </footer>
     </div>
   )

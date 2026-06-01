@@ -506,6 +506,128 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
     return <span className="text-nodri-green font-semibold">⏳ {dias}d restantes</span>
   }
 
+  function AfiliadosSection() {
+    const [afiliados, setAfiliados] = useState<any[]>([])
+    const [loadingAf, setLoadingAf] = useState(false)
+    const [comissao, setComissao] = useState('')
+    const [savingComissao, setSavingComissao] = useState<string | null>(null)
+
+    useEffect(() => {
+      setLoadingAf(true)
+      fetch('/api/afiliados').then(r => r.json()).then(d => { setAfiliados(Array.isArray(d) ? d : []); setLoadingAf(false) })
+    }, [])
+
+    async function marcarPago(af: any) {
+      setSavingComissao(af.id)
+      const res = await fetch('/api/afiliados', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: af.id, valor_pago: (af.valor_pago || 0) + (af.valor_acumulado || 0), valor_acumulado: 0 }),
+      })
+      if (res.ok) {
+        setAfiliados(prev => prev.map(a => a.id === af.id ? { ...a, valor_pago: (a.valor_pago || 0) + (a.valor_acumulado || 0), valor_acumulado: 0 } : a))
+        toast.success('✅ Pagamento registrado!')
+      }
+      setSavingComissao(null)
+    }
+
+    async function alterarComissao(af: any, novaComissao: number) {
+      const res = await fetch('/api/afiliados', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: af.id, comissao_percentual: novaComissao }),
+      })
+      if (res.ok) {
+        setAfiliados(prev => prev.map(a => a.id === af.id ? { ...a, comissao_percentual: novaComissao } : a))
+        toast.success('Comissão atualizada!')
+      }
+    }
+
+    const totalAcumulado = afiliados.reduce((acc, a) => acc + (a.valor_acumulado || 0), 0)
+    const totalPago = afiliados.reduce((acc, a) => acc + (a.valor_pago || 0), 0)
+    const totalVendas = afiliados.reduce((acc, a) => acc + (a.total_vendas || 0), 0)
+
+    return (
+      <div className="space-y-4">
+        {/* Cards resumo */}
+        <div className="grid grid-cols-4 gap-3">
+          {[
+            { label: 'Afiliados cadastrados', value: afiliados.length },
+            { label: 'Total de vendas', value: totalVendas },
+            { label: 'A pagar (pendente)', value: `R$${totalAcumulado.toFixed(2)}`, red: totalAcumulado > 0 },
+            { label: 'Total já pago', value: `R$${totalPago.toFixed(2)}` },
+          ].map(s => (
+            <div key={s.label} className="nodri-card p-3">
+              <div className="text-[9px] text-nodri-t3 uppercase tracking-widest mb-1">{s.label}</div>
+              <div className={`font-syne font-bold text-lg ${s.red ? 'text-nodri-amber' : ''}`}>{s.value}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Lista de afiliados */}
+        <div className="nodri-card p-4">
+          <div className="font-syne font-bold text-[13px] text-nodri-cyan mb-4 flex items-center gap-2">
+            <Users size={14} /> Relatório de Afiliados
+          </div>
+          {loadingAf ? (
+            <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin text-nodri-t3" /></div>
+          ) : afiliados.length === 0 ? (
+            <div className="text-center py-8 text-nodri-t3 text-[12px]">Nenhum afiliado cadastrado ainda.</div>
+          ) : (
+            <div className="space-y-3">
+              {afiliados.map(af => (
+                <div key={af.id} className="bg-nodri-surface border border-nodri-border rounded-xl p-4">
+                  <div className="flex items-start justify-between gap-4 flex-wrap">
+                    <div>
+                      <div className="font-syne font-bold text-[13px]">{af.nome}</div>
+                      <div className="text-[11px] text-nodri-t3 mt-0.5">{af.email} · {af.telefone}</div>
+                      <div className="text-[10px] text-nodri-t3 mt-0.5">CPF: {af.cpf} · Pix: <span className="text-nodri-cyan font-mono">{af.chave_pix}</span></div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="font-mono text-[12px] bg-nodri-cyan/10 border border-nodri-cyan/30 text-nodri-cyan px-3 py-1 rounded-lg font-bold">{af.cupom}</div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-4 gap-3 mt-3">
+                    <div className="bg-nodri-card rounded-lg p-2.5 text-center">
+                      <div className="text-[9px] text-nodri-t3 uppercase">Vendas</div>
+                      <div className="font-bold text-[15px]">{af.total_vendas || 0}</div>
+                    </div>
+                    <div className="bg-nodri-card rounded-lg p-2.5 text-center">
+                      <div className="text-[9px] text-nodri-t3 uppercase">A Pagar</div>
+                      <div className={`font-bold text-[15px] ${(af.valor_acumulado || 0) > 0 ? 'text-nodri-amber' : ''}`}>R${(af.valor_acumulado || 0).toFixed(2)}</div>
+                    </div>
+                    <div className="bg-nodri-card rounded-lg p-2.5 text-center">
+                      <div className="text-[9px] text-nodri-t3 uppercase">Total Pago</div>
+                      <div className="font-bold text-[15px] text-nodri-green">R${(af.valor_pago || 0).toFixed(2)}</div>
+                    </div>
+                    <div className="bg-nodri-card rounded-lg p-2.5 text-center">
+                      <div className="text-[9px] text-nodri-t3 uppercase">Comissão</div>
+                      <div className="flex items-center justify-center gap-1">
+                        <input type="number" defaultValue={af.comissao_percentual || 40} min={1} max={100}
+                          onBlur={e => alterarComissao(af, parseInt(e.target.value))}
+                          className="w-12 bg-transparent text-center font-bold text-[14px] outline-none border-b border-nodri-border focus:border-nodri-cyan" />
+                        <span className="text-[11px] text-nodri-t3">%</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {(af.valor_acumulado || 0) > 0 && (
+                    <button onClick={() => marcarPago(af)} disabled={savingComissao === af.id}
+                      className="mt-3 w-full py-2 bg-nodri-green/10 border border-nodri-green/30 text-nodri-green text-[12px] font-bold rounded-lg hover:bg-nodri-green/20 transition-all flex items-center justify-center gap-2">
+                      {savingComissao === af.id ? <Loader2 size={12} className="animate-spin" /> : '✅'}
+                      Marcar R${(af.valor_acumulado || 0).toFixed(2)} como pago (Pix: {af.chave_pix})
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   function LogsSection() {
     const [logs, setLogs] = useState<any[]>([])
     const [loadingLogs, setLoadingLogs] = useState(false)
@@ -550,6 +672,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
     { id: 'notifs', icon: <Bell size={14} />, label: 'Notificações', badge: localNotifs.filter(n => !n.lida).length, badgeRed: true },
     { id: 'links', icon: <Link size={14} />, label: 'Links do Menu' },
     { id: 'conteudo', icon: <Play size={14} />, label: 'Editor de Páginas' },
+    { id: 'afiliados', icon: <Users size={14} />, label: 'Afiliados' },
     { id: 'logs', icon: <BarChart3 size={14} />, label: 'Logs do Sistema' },
     { id: 'updates', icon: <RefreshCw size={14} />, label: 'Atualizações' },
     { id: 'relatorios', icon: <BarChart3 size={14} />, label: 'Relatórios' },
@@ -626,6 +749,9 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
           {activeSection === 'conteudo' && (
             <EditorSubmenus />
           )}
+
+          {/* AFILIADOS */}
+          {activeSection === 'afiliados' && <AfiliadosSection />}
 
           {/* LOGS DO SISTEMA */}
           {activeSection === 'logs' && <LogsSection />}

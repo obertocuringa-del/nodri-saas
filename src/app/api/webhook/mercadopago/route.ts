@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { enviarEmailBoasVindas, enviarEmailPagamento } from '@/lib/email'
+import { enviarEmailBoasVindas, enviarEmailPagamento, sendEmailComissao } from '@/lib/email'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -79,6 +79,31 @@ export async function POST(req: NextRequest) {
       plano_ativo: true,
       plano_validade: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     }).eq('id', salao.id)
+  }
+
+  // Processar comissão do afiliado se cupom usado
+  if (compra?.cupom && compra.cupom.startsWith('AFIL-')) {
+    const { data: afiliado } = await supabase
+      .from('afiliados').select('*').eq('cupom', compra.cupom).single()
+    if (afiliado) {
+      const valorCompra = payment.transaction_amount || 0
+      const comissao = (valorCompra * afiliado.comissao_percentual) / 100
+      await supabase.from('afiliados').update({
+        total_vendas: (afiliado.total_vendas || 0) + 1,
+        valor_acumulado: (afiliado.valor_acumulado || 0) + comissao,
+      }).eq('id', afiliado.id)
+      // Notifica admin com valor a pagar
+      await supabase.from('notificacoes').insert({
+        titulo: '💰 Comissão de Afiliado',
+        mensagem: `Venda via cupom ${compra.cupom} — Afiliado: ${afiliado.nome} | Valor: R$${valorCompra.toFixed(2)} | Comissão a pagar: R$${comissao.toFixed(2)} (Pix: ${afiliado.chave_pix})`,
+        tipo: 'success', para_todos: false, salao_id: null,
+        metadata: { tipo: 'comissao_afiliado', afiliado_id: afiliado.id, afiliado_nome: afiliado.nome, afiliado_email: afiliado.email, chave_pix: afiliado.chave_pix, cupom: compra.cupom, valor_compra: valorCompra, valor_comissao: comissao },
+      })
+      // Email para o afiliado
+      try {
+        await sendEmailComissao({ nome: afiliado.nome, email: afiliado.email, cupom: compra.cupom, valorCompra, valorComissao: comissao, plano })
+      } catch {}
+    }
   }
 
   // Enviar email de boas-vindas com links

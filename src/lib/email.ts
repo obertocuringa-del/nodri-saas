@@ -148,3 +148,73 @@ export async function enviarEmailPagamento({
     `,
   })
 }
+
+// ── EMAIL AFILIADO ──
+export async function sendEmailAfiliado({ nome, email, cupom, link }: {
+  nome: string; email: string; cupom: string; link: string
+}) {
+  await sendEmail({
+    to: email,
+    subject: '🤝 Bem-vindo ao Programa de Afiliados NODRI!',
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;background:#0d1117;color:#f0f2ff;border-radius:12px;overflow:hidden">
+        <div style="background:linear-gradient(135deg,#00e5c8,#7c5cfc);padding:32px;text-align:center">
+          <h1 style="margin:0;font-size:28px;color:#000;font-weight:900">NODRI</h1>
+          <p style="margin:8px 0 0;color:#000;font-size:13px">Programa de Afiliados</p>
+        </div>
+        <div style="padding:32px">
+          <h2 style="color:#00e5c8;margin-top:0">Parabéns, ${nome}!</h2>
+          <p style="color:#94a3b8;line-height:1.6">Você foi cadastrado no <strong style="color:#f0f2ff">Programa de Afiliados NODRI</strong>. Agora você pode indicar nosso sistema e ganhar comissão em cada venda!</p>
+          <div style="background:#161820;border:1px solid #232840;border-radius:10px;padding:20px;margin:24px 0">
+            <h3 style="color:#00e5c8;margin-top:0;font-size:14px">🎫 SEU CUPOM EXCLUSIVO:</h3>
+            <div style="background:#0d1117;border:2px dashed #00e5c8;border-radius:8px;padding:16px;text-align:center;margin:12px 0">
+              <span style="font-family:monospace;font-size:22px;font-weight:900;color:#00e5c8;letter-spacing:3px">${cupom}</span>
+            </div>
+            <h3 style="color:#00e5c8;margin-top:16px;font-size:14px">🔗 SEU LINK DE DIVULGAÇÃO:</h3>
+            <div style="background:#0d1117;border:1px solid #232840;border-radius:8px;padding:12px">
+              <a href="${link}" style="color:#7c5cfc;font-size:12px;font-family:monospace;word-break:break-all">${link}</a>
+            </div>
+          </div>
+          <div style="background:#161820;border:1px solid #232840;border-radius:10px;padding:20px;margin:24px 0">
+            <h3 style="color:#f0f2ff;margin-top:0;font-size:13px">💰 COMO FUNCIONA:</h3>
+            <ol style="color:#94a3b8;line-height:1.8;padding-left:20px;font-size:13px">
+              <li>Compartilhe seu cupom ou link com seus contatos</li>
+              <li>Quando alguém comprar usando seu cupom, você ganha <strong style="color:#00e5c8">40% do valor</strong></li>
+              <li>O pagamento é feito via Pix diretamente para você</li>
+            </ol>
+          </div>
+          <div style="text-align:center">
+            <a href="https://wa.me/${WHATSAPP}" style="color:#00e5c8;font-size:13px">💬 Dúvidas? Fale conosco no WhatsApp</a>
+          </div>
+        </div>
+      </div>
+    `,
+  })
+}
+
+// ── EMAIL COMISSÃO GERADA ──
+export async function sendEmailComissao({ nome, email, cupom, valorCompra, valorComissao, plano }: {
+  nome: string; email: string; cupom: string; valorCompra: number; valorComissao: number; plano: string
+}) {
+  await sendEmail({
+    to: email,
+    subject: '💰 Nova comissão gerada — NODRI',
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;background:#0d1117;color:#f0f2ff;border-radius:12px;overflow:hidden">
+        <div style="background:linear-gradient(135deg,#22c55e,#16a34a);padding:24px;text-align:center">
+          <h2 style="margin:0;color:#fff;font-size:20px">💰 Nova Comissão Gerada!</h2>
+        </div>
+        <div style="padding:32px">
+          <p style="color:#94a3b8">Oi, <strong style="color:#f0f2ff">${nome}</strong>!</p>
+          <p style="color:#94a3b8">Alguém usou seu cupom <strong style="color:#00e5c8">${cupom}</strong> e comprou o plano <strong style="color:#f0f2ff">${plano}</strong>!</p>
+          <div style="background:#161820;border:1px solid #22c55e;border-radius:10px;padding:20px;margin:20px 0;text-align:center">
+            <p style="color:#94a3b8;margin:0;font-size:12px">Sua comissão</p>
+            <p style="color:#22c55e;font-size:32px;font-weight:900;margin:8px 0">R$ ${valorComissao.toFixed(2)}</p>
+            <p style="color:#64748b;font-size:11px;margin:0">sobre R$ ${valorCompra.toFixed(2)} da venda</p>
+          </div>
+          <p style="color:#64748b;font-size:12px;text-align:center">O pagamento será processado pelo administrador via Pix.</p>
+        </div>
+      </div>
+    `,
+  })
+}
