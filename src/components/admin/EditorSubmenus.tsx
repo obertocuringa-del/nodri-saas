@@ -137,7 +137,7 @@ export default function EditorSubmenus() {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
 
   // Seções
-  const [secoesColapsadas, setSecoesColapsadas] = useState<Set<SecaoTipo>>(new Set(['pdf', 'excel', 'downloads']))
+  const [secoesColapsadas, setSecoesColapsadas] = useState<Set<SecaoTipo>>(new Set<SecaoTipo>(['pdf', 'excel', 'downloads']))
   const dragSecaoId = useRef<SecaoTipo | null>(null)
   const dragSecaoOver = useRef<SecaoTipo | null>(null)
   const [dragHighlight, setDragHighlight] = useState<SecaoTipo | null>(null)
