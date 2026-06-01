@@ -144,12 +144,20 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
   }
 
   function handleAbrir(modulo: ModuloComStatus) {
+    // Em manutenção — bloqueia mesmo que habilitado
+    if (modulo.em_manutencao) {
+      toast(modulo.msg_manutencao || '🔧 Módulo em manutenção. Voltaremos em breve!', {
+        icon: '🔧',
+        style: { background: '#1a0000', color: '#ff4444', border: '1px solid #ff4444', fontWeight: 'bold' },
+        duration: 4000,
+      })
+      return
+    }
     if (!modulo.habilitado) {
       toast('Entre em contato para ativar este módulo.', { icon: '🔒' })
       return
     }
     const slug = MODULO_SLUG[modulo.nome] || modulo.nome.toLowerCase().replace(/ /g, '-')
-    // Usa fetch silencioso — não abre nenhuma aba no browser
     fetch(`http://127.0.0.1:47200/launch/${slug}`, { mode: 'no-cors' }).catch(() => {})
   }
 
@@ -311,45 +319,71 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
       {/* MODULES GRID */}
       <div className="flex-1 px-5 py-3 pb-6">
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-          {modulosFiltrados.map(modulo => (
+          {modulosFiltrados.map(modulo => {
+            const emManutencao = !!modulo.em_manutencao
+            return (
             <div key={modulo.id}
               className="p-4 flex flex-col cursor-pointer transition-all hover:-translate-y-0.5 relative overflow-hidden rounded-xl border"
               style={{
-                background: modulo.habilitado ? '#161820' : '#111318',
-                borderColor: modulo.habilitado ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.04)',
-                opacity: modulo.habilitado ? 1 : 0.55,
+                background: emManutencao ? '#1a0a0a' : modulo.habilitado ? '#161820' : '#111318',
+                borderColor: emManutencao ? 'rgba(239,68,68,0.35)' : modulo.habilitado ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.04)',
+                opacity: emManutencao ? 0.9 : modulo.habilitado ? 1 : 0.55,
               }}>
-              {modulo.habilitado && (
+
+              {/* Faixa vermelha de manutenção no topo */}
+              {emManutencao && (
+                <div className="absolute top-0 left-0 right-0 h-0.5" style={{ background: '#ef4444' }} />
+              )}
+              {modulo.habilitado && !emManutencao && (
                 <div className="absolute top-0 left-0 right-0 h-px" style={{ background: 'rgba(255,255,255,0.12)' }} />
               )}
+
               <div className="flex justify-end mb-3">
                 <span className="text-[9px] px-1.5 py-0.5 rounded-full"
                   style={{ background: 'rgba(255,255,255,0.06)', color: '#475569', border: '1px solid rgba(255,255,255,0.06)' }}>
                   v{modulo.versao}
                 </span>
               </div>
+
               <div className="font-syne font-bold text-[13px] uppercase tracking-wide leading-snug mb-1.5"
-                style={{ color: modulo.habilitado ? '#f1f5f9' : '#64748b' }}>
+                style={{ color: emManutencao ? '#f87171' : modulo.habilitado ? '#f1f5f9' : '#64748b' }}>
                 {modulo.nome}
               </div>
               <p className="text-[10px] leading-relaxed mb-4 flex-1" style={{ color: '#475569' }}>
                 {modulo.descricao}
               </p>
+
               <div className="flex items-center justify-between gap-2 mt-auto">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full"
-                    style={{
-                      background: modulo.habilitado ? '#6ee7b7' : '#ef4444',
-                      boxShadow: modulo.habilitado ? '0 0 6px rgba(110,231,183,0.5)' : 'none'
-                    }} />
-                  <span className="text-[9.5px] font-medium"
-                    style={{ color: modulo.habilitado ? '#6ee7b7' : '#ef4444' }}>
-                    {modulo.habilitado ? 'Ativado' : 'Bloqueado'}
-                  </span>
-                </div>
+                {/* Badge de status */}
+                {emManutencao ? (
+                  <div className="flex items-center gap-1">
+                    <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded"
+                      style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.4)' }}>
+                      🔧 MANUTENÇÃO
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full"
+                      style={{
+                        background: modulo.habilitado ? '#6ee7b7' : '#ef4444',
+                        boxShadow: modulo.habilitado ? '0 0 6px rgba(110,231,183,0.5)' : 'none'
+                      }} />
+                    <span className="text-[9.5px] font-medium"
+                      style={{ color: modulo.habilitado ? '#6ee7b7' : '#ef4444' }}>
+                      {modulo.habilitado ? 'Ativado' : 'Bloqueado'}
+                    </span>
+                  </div>
+                )}
+
+                {/* Botão */}
                 <button onClick={() => handleAbrir(modulo)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[15px] font-bold transition-all"
-                  style={modulo.habilitado ? {
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-bold transition-all"
+                  style={emManutencao ? {
+                    background: 'rgba(239,68,68,0.1)',
+                    color: '#ef4444',
+                    border: '1px solid rgba(239,68,68,0.3)',
+                  } : modulo.habilitado ? {
                     background: 'rgba(255,255,255,0.08)',
                     color: '#f1f5f9',
                     border: '1px solid rgba(255,255,255,0.1)',
@@ -358,13 +392,16 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                     color: '#8b5cf6',
                     border: '1px solid rgba(139,92,246,0.3)',
                   }}>
-                  {modulo.habilitado
-                    ? <><Play size={9} fill="#f1f5f9" /> Abrir</>
-                    : <><Zap size={9} /> Ativar</>}
+                  {emManutencao
+                    ? <>🔧 Indisponível</>
+                    : modulo.habilitado
+                      ? <><Play size={9} fill="#f1f5f9" /> Abrir</>
+                      : <><Zap size={9} /> Ativar</>}
                 </button>
               </div>
             </div>
-          ))}
+            )
+          })}
         </div>
         {modulosFiltrados.length === 0 && (
           <div className="text-center py-16" style={{ color: '#475569' }}>

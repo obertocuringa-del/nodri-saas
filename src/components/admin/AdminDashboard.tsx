@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { LogOut, Bell, Plus, Shield, Building, CreditCard, Puzzle, Users, BarChart3, Settings, RefreshCw, X, Send, Edit, Lock, Unlock, Loader2, ChevronDown, Check, Link, Save, Trash2, ExternalLink, Eye, EyeOff, AlertTriangle, Search, Play, Zap, Tag, FolderOpen } from 'lucide-react'
+import { LogOut, Bell, Plus, Shield, Building, CreditCard, Puzzle, Users, BarChart3, Settings, RefreshCw, X, Send, Edit, Lock, Unlock, Loader2, ChevronDown, Check, Link, Save, Trash2, ExternalLink, Eye, EyeOff, AlertTriangle, Search, Play, Zap, Tag, FolderOpen, Wrench } from 'lucide-react'
 import toast from 'react-hot-toast'
 import type { Salao, Modulo, Notificacao, Plano, Cupom } from '@/types'
 import EditorSubmenus from './EditorSubmenus'
@@ -148,6 +148,10 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
   const [activeLinkTab, setActiveLinkTab] = useState('Manual do Usuário')
   const [savingLinks, setSavingLinks] = useState(false)
   const LINK_TABS = ['Manual do Usuário', 'Dicas Nodri', 'Gestão de Pessoas', 'Gestão Financeira', 'Marketing']
+
+  // ── MANUTENÇÃO DE MÓDULOS ──
+  const [togglingManutencao, setTogglingManutencao] = useState<string | null>(null)
+  const [localModulos, setLocalModulos] = useState<Modulo[]>([])
 
   const [editSalao, setEditSalao] = useState<Salao | null>(null)
   const [editForm, setEditForm] = useState({ nome: '', responsavel: '', email: '', telefone: '', plano_id: '', licenca_vencimento: '', status: '', nova_senha: '', observacoes: '' })
@@ -386,6 +390,33 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
         if (data) setMenuLinks(data)
       }
     } catch {}
+  }
+
+  // Carrega módulos quando entra na seção
+  useEffect(() => {
+    if (activeSection === 'modulos' && localModulos.length === 0) {
+      fetch('/api/modulos').then(r => r.json()).then(data => {
+        if (Array.isArray(data)) setLocalModulos(data)
+        else setLocalModulos(modulos) // fallback para props
+      }).catch(() => setLocalModulos(modulos))
+    }
+  }, [activeSection])
+
+  async function toggleManutencao(modulo: Modulo) {
+    setTogglingManutencao(modulo.id)
+    const novoEstado = !modulo.em_manutencao
+    const res = await fetch(`/api/modulos/${modulo.id}/manutencao`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ em_manutencao: novoEstado }),
+    })
+    setTogglingManutencao(null)
+    if (res.ok) {
+      setLocalModulos(prev => prev.map(m => m.id === modulo.id ? { ...m, em_manutencao: novoEstado } : m))
+      toast.success(novoEstado ? `🔧 "${modulo.nome}" em manutenção` : `✅ "${modulo.nome}" voltou ao normal`)
+    } else {
+      toast.error('Erro ao alterar manutenção')
+    }
   }
 
   function openEditPlano(plano: Plano) {
@@ -954,6 +985,65 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
 
           {/* LOGS DO SISTEMA */}
           {activeSection === 'logs' && <LogsSection />}
+
+          {/* MANUTENÇÃO DE MÓDULOS */}
+          {activeSection === 'modulos' && (
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <Wrench size={16} className="text-nodri-red" />
+                <div>
+                  <div className="font-syne font-bold text-[14px]">Manutenção de Módulos</div>
+                  <div className="text-[11px] text-nodri-t3">Ative o modo manutenção para bloquear temporariamente um módulo para todos os salões</div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                {(localModulos.length > 0 ? localModulos : modulos).map(m => {
+                  const emManut = !!m.em_manutencao
+                  const toggling = togglingManutencao === m.id
+                  return (
+                    <div key={m.id} className={`nodri-card p-4 flex flex-col gap-3 border transition-all ${emManut ? 'border-nodri-red/40 bg-nodri-red/5' : 'border-nodri-border'}`}>
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <div className={`font-syne font-bold text-[12px] uppercase leading-tight ${emManut ? 'text-nodri-red' : 'text-nodri-t1'}`}>
+                            {m.nome}
+                          </div>
+                          <div className="text-[9px] text-nodri-t3 mt-0.5">v{m.versao}</div>
+                        </div>
+                        {emManut && (
+                          <span className="text-[8px] font-black px-1.5 py-0.5 rounded bg-nodri-red/15 text-nodri-red border border-nodri-red/30 shrink-0">
+                            🔧 MANUTENÇÃO
+                          </span>
+                        )}
+                      </div>
+
+                      <button
+                        onClick={() => toggleManutencao(m)}
+                        disabled={toggling}
+                        className={`w-full flex items-center justify-center gap-2 py-2 rounded-lg text-[11px] font-bold transition-all ${
+                          emManut
+                            ? 'bg-nodri-green/10 border border-nodri-green/30 text-nodri-green hover:bg-nodri-green/20'
+                            : 'bg-nodri-red/10 border border-nodri-red/30 text-nodri-red hover:bg-nodri-red/20'
+                        } disabled:opacity-50`}>
+                        {toggling
+                          ? <><Loader2 size={11} className="animate-spin" /> Alterando...</>
+                          : emManut
+                            ? <><Wrench size={11} /> Encerrar Manutenção</>
+                            : <><Wrench size={11} /> Colocar em Manutenção</>
+                        }
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {(localModulos.length === 0 && modulos.length === 0) && (
+                <div className="nodri-card p-8 text-center text-nodri-t3 text-sm">
+                  Nenhum módulo encontrado.
+                </div>
+              )}
+            </div>
+          )}
 
           {/* LINKS DO MENU */}
           {activeSection === 'links' && (

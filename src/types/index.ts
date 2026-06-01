@@ -45,6 +45,8 @@ export interface Modulo {
   categoria: string
   ordem: number
   ativo: boolean
+  em_manutencao?: boolean
+  msg_manutencao?: string
 }
 
 export interface SalaoModulo {
