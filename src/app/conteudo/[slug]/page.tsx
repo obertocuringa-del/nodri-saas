@@ -1,13 +1,24 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Loader2 } from 'lucide-react'
+import { ArrowLeft, Loader2, Download, ExternalLink, CheckSquare, HelpCircle } from 'lucide-react'
+
+function getYoutubeEmbed(url: string) {
+  if (!url) return ''
+  const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{11})/)
+  return m ? `https://www.youtube.com/embed/${m[1]}` : ''
+}
+
+type SecaoTipo = 'video' | 'texto' | 'imagens' | 'tabela' | 'colunas' | 'checklist' | 'faq' | 'pdf' | 'excel' | 'downloads'
+const ORDEM_PADRAO: SecaoTipo[] = ['video', 'texto', 'imagens', 'tabela', 'colunas', 'checklist', 'faq', 'pdf', 'excel', 'downloads']
 
 export default function ConteudoPage() {
   const { slug } = useParams()
   const router = useRouter()
   const [dados, setDados] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [checks, setChecks] = useState<boolean[]>([])
+  const [faqAberto, setFaqAberto] = useState<number | null>(null)
 
   useEffect(() => {
     fetch(`/api/conteudo/${slug}`)
@@ -21,7 +32,6 @@ export default function ConteudoPage() {
     </div>
   )
 
-  // Página oculta — só mostra para admin
   if (dados?.conteudo?.oculto) return (
     <div className="min-h-screen bg-nodri-dark flex items-center justify-center">
       <div className="text-center">
@@ -33,121 +43,227 @@ export default function ConteudoPage() {
     </div>
   )
 
-  const tituloFormatado = dados?.titulo || String(slug).replace(/-/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())
+  const titulo = dados?.titulo || String(slug).replace(/-/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())
+  const c = dados?.conteudo || {}
+  const ordem: SecaoTipo[] = c.ordem_secoes || ORDEM_PADRAO
 
-  // Extrai URL embed do YouTube
-  function getYoutubeEmbed(url: string) {
-    if (!url) return ''
-    const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{11})/)
-    return match ? `https://www.youtube.com/embed/${match[1]}` : ''
+  function renderVideo() {
+    const embedUrl = getYoutubeEmbed(dados?.video_url || '')
+    if (!embedUrl) return null
+    return (
+      <div className="nodri-card overflow-hidden">
+        <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+          <iframe src={embedUrl} allowFullScreen className="absolute inset-0 w-full h-full" style={{ border: 'none' }} />
+        </div>
+      </div>
+    )
   }
 
-  const embedUrl = getYoutubeEmbed(dados?.video_url || '')
-  const conteudo = dados?.conteudo || {}
+  function renderTexto() {
+    if (!c.texto) return null
+    return (
+      <div className="nodri-card p-6">
+        <div className="prose prose-invert max-w-none text-nodri-t1 text-[13px] leading-relaxed
+          [&_b]:font-bold [&_strong]:font-bold [&_i]:italic [&_em]:italic [&_u]:underline
+          [&_table]:border-collapse [&_table]:w-full [&_td]:border [&_td]:border-nodri-border [&_td]:p-2
+          [&_th]:border [&_th]:border-nodri-border [&_th]:p-2 [&_th]:bg-nodri-surface [&_th]:font-bold
+          [&_h1]:text-xl [&_h1]:font-bold [&_h1]:text-nodri-cyan [&_h1]:mb-3
+          [&_h2]:text-lg [&_h2]:font-bold [&_h2]:mb-2
+          [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
+          dangerouslySetInnerHTML={{ __html: c.texto }} />
+      </div>
+    )
+  }
+
+  function renderImagens() {
+    const imagens: { id: string; url: string; largura: string }[] = c.imagens || []
+    if (!imagens.length) return null
+    return (
+      <div className="space-y-4">
+        {imagens.map(img => (
+          <div key={img.id} className="nodri-card p-3 flex justify-center">
+            <img src={img.url} alt="Imagem da página" className="rounded-lg object-contain"
+              style={{ width: img.largura || '100%', maxHeight: 500 }} />
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  function renderTabela() {
+    const tabela = c.tabela
+    if (!tabela?.data?.length) return null
+    return (
+      <div className="nodri-card p-4 overflow-x-auto">
+        <table className="border-collapse w-full text-[13px]">
+          <tbody>
+            {tabela.data.map((row: string[], li: number) => (
+              <tr key={li} className={li === 0 ? 'bg-nodri-surface' : 'hover:bg-nodri-surface/30 transition-colors'}>
+                {row.map((cell: string, ci: number) => (
+                  <td key={ci} className={`border border-nodri-border px-3 py-2 ${li === 0 ? 'font-bold text-nodri-cyan' : 'text-nodri-t1'}`}>
+                    {cell}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )
+  }
+
+  function renderColunas() {
+    const colunas: { id: string; conteudo: string }[] = c.colunas || []
+    if (!colunas.length) return null
+    return (
+      <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${colunas.length}, 1fr)` }}>
+        {colunas.map(col => (
+          <div key={col.id} className="nodri-card p-4 text-[13px] text-nodri-t1 leading-relaxed"
+            dangerouslySetInnerHTML={{ __html: col.conteudo }} />
+        ))}
+      </div>
+    )
+  }
+
+  function renderChecklist() {
+    const list: string[] = c.checklist || []
+    if (!list.length) return null
+    return (
+      <div className="nodri-card p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <CheckSquare size={14} className="text-nodri-green" />
+          <h3 className="font-syne font-bold text-[12px] text-nodri-green uppercase tracking-wider">Checklist</h3>
+        </div>
+        <div className="space-y-2">
+          {list.map((item, i) => (
+            <label key={i} className="flex items-center gap-3 cursor-pointer group">
+              <input type="checkbox" checked={checks[i] || false}
+                onChange={() => { const a = [...checks]; a[i] = !a[i]; setChecks(a) }}
+                className="w-4 h-4 rounded accent-nodri-cyan" />
+              <span className={`text-[13px] transition-colors ${checks[i] ? 'line-through text-nodri-t3' : 'text-nodri-t1 group-hover:text-nodri-cyan'}`}>
+                {item}
+              </span>
+            </label>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  function renderFaq() {
+    const list: { pergunta: string; resposta: string }[] = c.faq || []
+    if (!list.length) return null
+    return (
+      <div className="nodri-card p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <HelpCircle size={14} className="text-nodri-amber" />
+          <h3 className="font-syne font-bold text-[12px] text-nodri-amber uppercase tracking-wider">Perguntas Frequentes</h3>
+        </div>
+        <div className="space-y-2">
+          {list.map((item, i) => (
+            <div key={i} className="border border-nodri-border rounded-lg overflow-hidden">
+              <button onClick={() => setFaqAberto(faqAberto === i ? null : i)}
+                className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-nodri-surface transition-colors">
+                <span className="text-[13px] font-medium text-nodri-t1">{item.pergunta}</span>
+                <span className="text-nodri-t3 text-lg">{faqAberto === i ? '−' : '+'}</span>
+              </button>
+              {faqAberto === i && (
+                <div className="px-4 pb-4 text-[12px] text-nodri-t2 leading-relaxed border-t border-nodri-border bg-nodri-surface/50 pt-3">
+                  {item.resposta}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  function renderPdf() {
+    const pdfs: { id: string; nome: string; url: string }[] = c.arquivos_pdf || []
+    if (!pdfs.length) return null
+    return (
+      <div className="space-y-3">
+        {pdfs.map(pdf => (
+          <a key={pdf.id} href={pdf.url} target="_blank" rel="noopener noreferrer"
+            className="flex items-center gap-3 p-4 nodri-card border border-nodri-border hover:border-nodri-red/40 transition-all group">
+            <span className="text-3xl">📄</span>
+            <div className="flex-1">
+              <div className="text-[13px] font-medium text-nodri-t1 group-hover:text-nodri-cyan transition-colors">{pdf.nome}</div>
+              <div className="text-[10px] text-nodri-t3">Clique para abrir o PDF</div>
+            </div>
+            <ExternalLink size={14} className="text-nodri-t3 group-hover:text-nodri-cyan" />
+          </a>
+        ))}
+      </div>
+    )
+  }
+
+  function renderExcel() {
+    const excels: { id: string; nome: string; url: string }[] = c.arquivos_excel || []
+    if (!excels.length) return null
+    return (
+      <div className="space-y-3">
+        {excels.map(ex => (
+          <a key={ex.id} href={ex.url} download
+            className="flex items-center gap-3 p-4 nodri-card border border-nodri-border hover:border-nodri-green/40 transition-all group">
+            <span className="text-3xl">📊</span>
+            <div className="flex-1">
+              <div className="text-[13px] font-medium text-nodri-t1 group-hover:text-nodri-green transition-colors">{ex.nome}</div>
+              <div className="text-[10px] text-nodri-t3">Clique para baixar a planilha</div>
+            </div>
+            <Download size={14} className="text-nodri-t3 group-hover:text-nodri-green" />
+          </a>
+        ))}
+      </div>
+    )
+  }
+
+  function renderDownloads() {
+    const list: { nome: string; url: string }[] = c.downloads || []
+    if (!list.length) return null
+    return (
+      <div className="nodri-card p-4 space-y-2">
+        <h3 className="font-syne font-bold text-[12px] text-nodri-blue uppercase tracking-wider mb-3">⬇️ Downloads</h3>
+        {list.map((item, i) => (
+          <a key={i} href={item.url} target="_blank" rel="noopener noreferrer"
+            className="flex items-center gap-2 text-[13px] text-nodri-cyan hover:underline py-1">
+            <Download size={13} /> {item.nome}
+          </a>
+        ))}
+      </div>
+    )
+  }
+
+  const renderers: Record<SecaoTipo, () => React.ReactNode> = {
+    video: renderVideo, texto: renderTexto, imagens: renderImagens,
+    tabela: renderTabela, colunas: renderColunas, checklist: renderChecklist,
+    faq: renderFaq, pdf: renderPdf, excel: renderExcel, downloads: renderDownloads,
+  }
 
   return (
     <div className="min-h-screen bg-nodri-dark text-nodri-t1">
-      {/* Header */}
       <div className="sticky top-0 z-20 bg-nodri-surface border-b border-nodri-border px-5 py-3 flex items-center gap-3">
         <button onClick={() => router.back()}
           className="flex items-center gap-2 text-nodri-t2 hover:text-nodri-cyan transition-colors text-sm font-medium">
           <ArrowLeft size={16} /> Voltar
         </button>
         <div className="w-px h-5 bg-nodri-border" />
-        <h1 className="font-syne font-bold text-[15px] text-nodri-t1 uppercase tracking-wide">{tituloFormatado}</h1>
+        <h1 className="font-syne font-bold text-[15px] uppercase tracking-wide">{titulo}</h1>
       </div>
 
-      <div className="max-w-4xl mx-auto px-5 py-8 space-y-8">
-
-        {/* Vídeo YouTube */}
-        {embedUrl && (
-          <div className="nodri-card overflow-hidden">
-            <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
-              <iframe
-                src={embedUrl}
-                title={tituloFormatado}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                className="absolute inset-0 w-full h-full"
-                style={{ border: 'none' }}
-              />
-            </div>
-          </div>
-        )}
-
-        {!embedUrl && !dados?.existe && (
+      <div className="max-w-4xl mx-auto px-5 py-8 space-y-5">
+        {ordem.map(tipo => {
+          const render = renderers[tipo]
+          if (!render) return null
+          const content = render()
+          if (!content) return null
+          return <div key={tipo}>{content}</div>
+        })}
+        {!dados?.existe && !c.texto && !dados?.video_url && (
           <div className="nodri-card p-10 text-center">
             <div className="text-4xl mb-3">🎬</div>
             <p className="text-nodri-t2 text-sm">Conteúdo sendo preparado pelo administrador.</p>
-          </div>
-        )}
-
-        {/* Texto / Descrição */}
-        {conteudo?.texto && (
-          <div className="nodri-card p-6">
-            <div
-              className="prose prose-invert max-w-none text-nodri-t1 text-sm leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: conteudo.texto }}
-            />
-          </div>
-        )}
-
-        {/* Checklist */}
-        {conteudo?.checklist?.length > 0 && (
-          <div className="nodri-card p-6">
-            <h2 className="font-syne font-bold text-[13px] text-nodri-cyan mb-4 uppercase tracking-wider">✅ Checklist</h2>
-            <div className="space-y-2">
-              {conteudo.checklist.map((item: string, i: number) => (
-                <label key={i} className="flex items-center gap-3 cursor-pointer group">
-                  <input type="checkbox" className="w-4 h-4 rounded accent-nodri-cyan" />
-                  <span className="text-[13px] text-nodri-t1 group-hover:text-nodri-cyan transition-colors">{item}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* FAQ */}
-        {conteudo?.faq?.length > 0 && (
-          <div className="nodri-card p-6">
-            <h2 className="font-syne font-bold text-[13px] text-nodri-cyan mb-4 uppercase tracking-wider">❓ Perguntas Frequentes</h2>
-            <div className="space-y-4">
-              {conteudo.faq.map((item: any, i: number) => (
-                <div key={i} className="border-b border-nodri-border pb-4 last:border-0 last:pb-0">
-                  <p className="font-semibold text-[13px] text-nodri-t1 mb-1">{item.pergunta}</p>
-                  <p className="text-[12px] text-nodri-t2 leading-relaxed">{item.resposta}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Downloads */}
-        {conteudo?.downloads?.length > 0 && (
-          <div className="nodri-card p-6">
-            <h2 className="font-syne font-bold text-[13px] text-nodri-cyan mb-4 uppercase tracking-wider">📥 Downloads</h2>
-            <div className="space-y-2">
-              {conteudo.downloads.map((item: any, i: number) => (
-                <a key={i} href={item.url} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-3 p-3 bg-nodri-surface border border-nodri-border rounded-lg hover:border-nodri-cyan/40 transition-all group">
-                  <span className="text-xl">📄</span>
-                  <span className="text-[13px] text-nodri-t1 group-hover:text-nodri-cyan transition-colors flex-1">{item.nome}</span>
-                  <ArrowLeft size={12} className="rotate-[135deg] text-nodri-t3 group-hover:text-nodri-cyan" />
-                </a>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Imagens */}
-        {conteudo?.imagens?.length > 0 && (
-          <div className="nodri-card p-6">
-            <h2 className="font-syne font-bold text-[13px] text-nodri-cyan mb-4 uppercase tracking-wider">🖼️ Imagens</h2>
-            <div className="grid grid-cols-2 gap-3">
-              {conteudo.imagens.map((src: string, i: number) => (
-                <img key={i} src={src} alt={`Imagem ${i + 1}`} className="rounded-lg w-full object-cover" />
-              ))}
-            </div>
           </div>
         )}
       </div>
