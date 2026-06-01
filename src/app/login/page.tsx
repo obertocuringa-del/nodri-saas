@@ -109,9 +109,12 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-4 pt-4 border-t border-nodri-border text-center">
+          <div className="mt-4 pt-4 border-t border-nodri-border text-center space-y-2">
+            <a href="/recuperar-senha" className="text-nodri-cyan text-xs hover:underline block">
+              Esqueci minha senha
+            </a>
             <p className="text-nodri-t3 text-xs">
-              Problemas para acessar? Entre em contato com o administrador.
+              Problemas para acessar? <a href="https://wa.me/5561982195214" target="_blank" rel="noopener noreferrer" className="text-nodri-cyan hover:underline">Fale no WhatsApp</a>
             </p>
           </div>
         </div>

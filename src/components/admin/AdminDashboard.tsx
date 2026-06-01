@@ -177,6 +177,8 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  useEffect(() => { loadMenuLinks() }, [])
+
   function handleLogout() { window.location.href = '/logout' }
 
   async function openModCtrl(salao: Salao) {
@@ -238,17 +240,31 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
   }
 
   async function toggleBloqueio(salao: Salao) {
-    const novoStatus = salao.status === 'ativo' ? 'bloqueado' : 'ativo'
-    const res = await fetch(`/api/salons/${salao.id}`, {
-      method: 'PUT',
+    const acao = salao.status === 'ativo' ? 'bloquear' : 'liberar'
+    const res = await fetch(`/api/salons/${salao.id}/status`, {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: novoStatus }),
+      body: JSON.stringify({ acao }),
     })
+    const data = await res.json()
     if (res.ok) {
-      setSaloes(prev => prev.map(s => s.id === salao.id ? { ...s, status: novoStatus as any } : s))
-      toast.success(novoStatus === 'bloqueado' ? 'Salão bloqueado!' : 'Salão desbloqueado!')
-      if (editSalao?.id === salao.id) setEditForm(p => ({ ...p, status: novoStatus }))
+      setSaloes(prev => prev.map(s => s.id === salao.id ? { ...s, ...data } : s))
+      toast.success(acao === 'bloquear' ? '🔴 Salão bloqueado!' : '✅ Salão liberado!')
+      if (editSalao?.id === salao.id) setEditForm(p => ({ ...p, status: data.status }))
     } else toast.error('Erro ao alterar status')
+  }
+
+  async function liberarComNovaLicenca(salaoId: string, licenca_vencimento: string) {
+    const res = await fetch(`/api/salons/${salaoId}/status`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ acao: 'liberar', licenca_vencimento }),
+    })
+    const data = await res.json()
+    if (res.ok) {
+      setSaloes(prev => prev.map(s => s.id === salaoId ? { ...s, ...data } : s))
+      toast.success('✅ Acesso liberado com nova data de vencimento!')
+    } else toast.error('Erro ao liberar acesso')
   }
 
   async function deleteSalao() {
@@ -333,9 +349,26 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
   }
   async function saveLinks() {
     setSavingLinks(true)
-    try { localStorage.setItem('nodri_menu_links', JSON.stringify(menuLinks)); toast.success('Links salvos!') }
-    catch { toast.error('Erro ao salvar links') }
+    try {
+      const res = await fetch('/api/menu-links', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(menuLinks),
+      })
+      if (res.ok) toast.success('Links salvos no banco!')
+      else toast.error('Erro ao salvar links')
+    } catch { toast.error('Erro ao salvar links') }
     setSavingLinks(false)
+  }
+
+  async function loadMenuLinks() {
+    try {
+      const res = await fetch('/api/menu-links')
+      if (res.ok) {
+        const data = await res.json()
+        if (data) setMenuLinks(data)
+      }
+    } catch {}
   }
 
   function openEditPlano(plano: Plano) {
@@ -867,7 +900,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
                 {[
                   { label: 'Salões cadastrados', value: saloes.length, change: 'total' },
                   { label: 'Licenças ativas', value: saloes.filter(s => s.status === 'ativo').length, change: 'ativas agora' },
-                  { label: 'Receita mensal', value: `R$${(saloes.length * 197).toLocaleString('pt-BR')}`, change: 'estimado' },
+                  { label: 'Receita mensal', value: `R$${saloes.filter(s => s.status === 'ativo' && s.plano).reduce((acc, s) => acc + (s.plano?.preco || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, change: 'planos ativos' },
                   { label: 'Total de módulos', value: modulos.length, change: 'disponíveis' },
                 ].map(s => (
                   <div key={s.label} className="nodri-card p-3">

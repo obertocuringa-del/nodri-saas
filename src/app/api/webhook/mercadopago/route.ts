@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { enviarEmailBoasVindas, enviarEmailPagamento } from '@/lib/email'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -78,6 +79,30 @@ export async function POST(req: NextRequest) {
       plano_ativo: true,
       plano_validade: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     }).eq('id', salao.id)
+  }
+
+  // Enviar email de boas-vindas com links
+  if (email) {
+    try {
+      const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://nodri-saas-jsx4.vercel.app'
+      const LINK_DOWNLOAD = process.env.LINK_DOWNLOAD_PROGRAMA || ''
+      await enviarEmailBoasVindas({
+        email,
+        nome: compra?.responsavel || compra?.nome_salao || 'Cliente',
+        plano,
+        linkAcesso: `${SITE_URL}/login`,
+        linkDownload: LINK_DOWNLOAD || undefined,
+      })
+      await enviarEmailPagamento({
+        email,
+        nome: compra?.responsavel || compra?.nome_salao || 'Cliente',
+        status: 'aprovado',
+        valor: payment.transaction_amount,
+        plano,
+      })
+    } catch (e) {
+      console.error('Erro ao enviar email pós-compra:', e)
+    }
   }
 
   // Criar notificação de compra para o admin com todos os dados
