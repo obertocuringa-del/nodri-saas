@@ -422,8 +422,11 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
   async function loadLandingConfig() {
     try {
       const res = await fetch('/api/landing-config')
-      if (res.ok) { const data = await res.json(); setLandingConfig(data) }
-      else setLandingConfig(DEFAULT_LANDING)
+      if (res.ok) {
+        const data = await res.json()
+        // Merge com DEFAULT para garantir que campos novos apareçam
+        setLandingConfig({ ...DEFAULT_LANDING, ...data })
+      } else setLandingConfig(DEFAULT_LANDING)
     } catch { setLandingConfig(DEFAULT_LANDING) }
   }
 
