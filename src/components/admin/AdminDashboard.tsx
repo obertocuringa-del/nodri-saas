@@ -646,6 +646,27 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
       toast.success('✅ Desconto do cliente atualizado!')
     }
 
+    async function toggleAtivo(af: any) {
+      const res = await fetch('/api/afiliados', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: af.id, ativo: !af.ativo }),
+      })
+      if (res.ok) {
+        setAfiliados(prev => prev.map(a => a.id === af.id ? { ...a, ativo: !a.ativo } : a))
+        toast.success(af.ativo ? '🔴 Afiliado bloqueado!' : '✅ Afiliado desbloqueado!')
+      } else toast.error('Erro ao alterar status')
+    }
+
+    async function excluirAfiliado(af: any) {
+      if (!confirm(`Excluir o afiliado "${af.nome}" permanentemente?\nO cupom ${af.cupom} será desativado.`)) return
+      const res = await fetch(`/api/afiliados?id=${af.id}`, { method: 'DELETE' })
+      if (res.ok) {
+        setAfiliados(prev => prev.filter(a => a.id !== af.id))
+        toast.success('🗑️ Afiliado excluído!')
+      } else toast.error('Erro ao excluir')
+    }
+
     async function marcarPago(af: any) {
       setSavingComissao(af.id)
       const res = await fetch('/api/afiliados', {
@@ -781,6 +802,18 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
                       Marcar R${(af.valor_acumulado || 0).toFixed(2)} como pago (Pix: {af.chave_pix})
                     </button>
                   )}
+
+                  {/* Ações: bloquear/desbloquear e excluir */}
+                  <div className="mt-2 flex gap-2">
+                    <button onClick={() => toggleAtivo(af)}
+                      className={`flex-1 py-1.5 text-[11px] font-bold rounded-lg border transition-all flex items-center justify-center gap-1.5 ${af.ativo !== false ? 'bg-nodri-amber/10 border-nodri-amber/30 text-nodri-amber hover:bg-nodri-amber/20' : 'bg-nodri-green/10 border-nodri-green/30 text-nodri-green hover:bg-nodri-green/20'}`}>
+                      {af.ativo !== false ? <><Lock size={11} /> Bloquear cupom</> : <><Unlock size={11} /> Desbloquear cupom</>}
+                    </button>
+                    <button onClick={() => excluirAfiliado(af)}
+                      className="px-3 py-1.5 text-[11px] font-bold rounded-lg border border-nodri-red/30 bg-nodri-red/5 text-nodri-red hover:bg-nodri-red/15 transition-all flex items-center gap-1.5">
+                      <Trash2 size={11} /> Excluir
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

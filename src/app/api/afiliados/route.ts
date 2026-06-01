@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ ok: true, cupom, link }, { status: 201 })
 }
 
-// PATCH — atualizar comissão ou status (Admin)
+// PATCH — atualizar comissão, status, bloquear/desbloquear (Admin)
 export async function PATCH(req: NextRequest) {
   const token = cookies().get('nodri_token')?.value
   const payload = token ? await verifyJWT(token) : null
@@ -109,4 +109,21 @@ export async function PATCH(req: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data)
+}
+
+// DELETE — excluir afiliado (Admin)
+export async function DELETE(req: NextRequest) {
+  const token = cookies().get('nodri_token')?.value
+  const payload = token ? await verifyJWT(token) : null
+  if (!payload || payload.role !== 'master') {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  }
+
+  const { searchParams } = new URL(req.url)
+  const id = searchParams.get('id')
+  if (!id) return NextResponse.json({ error: 'ID obrigatório' }, { status: 400 })
+
+  const { error } = await supabaseAdmin.from('afiliados').delete().eq('id', id)
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ ok: true })
 }
