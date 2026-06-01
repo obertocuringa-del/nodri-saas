@@ -1,3 +1,4 @@
+// v2 - editor completo com todas secoes
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
