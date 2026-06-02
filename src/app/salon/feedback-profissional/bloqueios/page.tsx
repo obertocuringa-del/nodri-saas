@@ -45,12 +45,13 @@ export default function BloqueiosPage() {
     if (!confirm('Varrer todo o histórico de feedbacks e gerar bloqueios automaticamente?\n\nIsso pode levar alguns segundos.')) return
     setReprocessando(true)
     const res = await fetch('/api/feedback-prof/bloqueios/reprocessar', { method: 'POST' })
+    const d = await res.json()
     if (res.ok) {
-      const d = await res.json()
-      toast.success(`Concluído! ${d.bloqueios_gerados} bloqueio(s) gerado(s) a partir do histórico.`)
-      await fetchData()
+      const msg = `Concluído!\n\nBloqueios gerados: ${d.bloqueios_gerados}\nRegistros encontrados: ${d.debug?.total_respostas ?? '?'}\nFormulários: ${d.debug?.formIds?.length ?? 0}\n\nDetalhes:\n${(d.detalhes || []).join('\n') || 'Nenhum bloqueio ativo no período.'}\n\nAmostra do banco:\n${JSON.stringify(d.debug?.amostra, null, 2)}`
+      alert(msg)
+      if (d.bloqueios_gerados > 0) await fetchData()
     } else {
-      toast.error('Erro ao reprocessar histórico')
+      alert('Erro: ' + JSON.stringify(d))
     }
     setReprocessando(false)
   }

@@ -61,7 +61,19 @@ export async function POST() {
   if (errResp) return NextResponse.json({ error: errResp.message }, { status: 500 })
 
   if (!respostas || respostas.length === 0)
-    return NextResponse.json({ ok: true, bloqueios_gerados: 0, mensagem: 'Nenhum atraso/falta encontrado.' })
+    return NextResponse.json({
+      ok: true, bloqueios_gerados: 0,
+      mensagem: 'Nenhum atraso/falta encontrado.',
+      debug: { formIds, total_respostas: 0 }
+    })
+
+  // Mostra amostra para debug
+  const amostra = respostas.slice(0, 5).map(r => ({
+    nome: r.profissional_nome,
+    ocorrencia: r.ocorrido_descricao,
+    tipo: r.tipo,
+    data: r.criado_em,
+  }))
 
   // Agrupa por profissional → semana (ATRASO) e mês (FALTA)
   // Cada entrada guarda as datas dos eventos
@@ -171,5 +183,6 @@ export async function POST() {
     bloqueios_gerados: upserts.length,
     data_referencia: todayStr,
     detalhes: log,
+    debug: { formIds, total_respostas: respostas.length, amostra },
   })
 }
