@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
-import { CheckCircle, ChevronRight, Star } from 'lucide-react'
+import { CheckCircle, ChevronRight, MessageSquare } from 'lucide-react'
 
 type TipoPergunta = 'escala' | 'multipla_escolha' | 'texto' | 'sim_nao' | 'grid'
 
@@ -23,6 +23,8 @@ interface FormData {
   salao_nome: string
   perguntas: Pergunta[]
 }
+
+const COMENTARIO_KEY = '__comentario__'
 
 export default function FeedbackPublicoPage() {
   const params = useParams()
@@ -68,16 +70,12 @@ export default function FeedbackPublicoPage() {
 
   async function enviar() {
     if (!form) return
-    // Valida obrigatórias
     for (const p of form.perguntas) {
       if (!p.obrigatoria) continue
       const r = respostas[p.id]
       if (r === undefined || r === null || r === '') {
         setErroEnvio(`Por favor responda: "${p.titulo}"`)
         return
-      }
-      if (p.tipo === 'grid' && typeof r === 'object') {
-        // grid não é obrigatório por item, só verifica que algum foi respondido
       }
     }
     setErroEnvio('')
@@ -88,9 +86,8 @@ export default function FeedbackPublicoPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ dados: respostas }),
       })
-      if (res.ok) {
-        setEnviado(true)
-      } else {
+      if (res.ok) setEnviado(true)
+      else {
         const data = await res.json()
         setErroEnvio(data.error || 'Erro ao enviar respostas.')
       }
@@ -100,45 +97,71 @@ export default function FeedbackPublicoPage() {
     setEnviando(false)
   }
 
-  const cor = form?.cor_primaria || '#e11d48'
+  const cor = form?.cor_primaria || '#be185d'
 
+  // ── LOADING ──────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#fdf2f4' }}>
-        <div className="w-8 h-8 rounded-full border-4 border-t-transparent animate-spin" style={{ borderColor: `${cor} transparent ${cor} ${cor}` }} />
+      <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #fff1f5 0%, #fdf4ff 50%, #f0f9ff 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{
+            width: 48, height: 48, borderRadius: '50%',
+            border: `3px solid ${cor}30`,
+            borderTop: `3px solid ${cor}`,
+            animation: 'spin 0.8s linear infinite',
+            margin: '0 auto 16px',
+          }} />
+          <p style={{ color: '#9ca3af', fontSize: 14 }}>Carregando avaliação...</p>
+        </div>
+        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
       </div>
     )
   }
 
+  // ── ERRO ──────────────────────────────────────────────────
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#fdf2f4' }}>
-        <div className="text-center p-8 max-w-sm">
-          <div className="text-5xl mb-4">😕</div>
-          <h1 className="text-gray-800 font-bold text-xl mb-2">Formulário indisponível</h1>
-          <p className="text-gray-500 text-sm">{error}</p>
+      <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #fff1f5 0%, #fdf4ff 50%, #f0f9ff 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+        <div style={{ textAlign: 'center', maxWidth: 360 }}>
+          <div style={{ fontSize: 56, marginBottom: 16 }}>🔒</div>
+          <h1 style={{ color: '#111827', fontWeight: 700, fontSize: 22, marginBottom: 8 }}>Formulário indisponível</h1>
+          <p style={{ color: '#6b7280', fontSize: 15 }}>{error}</p>
         </div>
       </div>
     )
   }
 
+  // ── ENVIADO ───────────────────────────────────────────────
   if (enviado) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#fdf2f4' }}>
-        <div className="text-center p-8 max-w-sm">
-          <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-5" style={{ background: cor }}>
-            <CheckCircle size={40} color="white" />
+      <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #fff1f5 0%, #fdf4ff 50%, #f0f9ff 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+        <div style={{ textAlign: 'center', maxWidth: 400 }}>
+          <div style={{
+            width: 88, height: 88, borderRadius: '50%',
+            background: `linear-gradient(135deg, ${cor}, ${cor}99)`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 28px',
+            boxShadow: `0 20px 60px ${cor}40`,
+          }}>
+            <CheckCircle size={44} color="white" />
           </div>
-          <h1 className="text-gray-800 font-bold text-2xl mb-3">Obrigado!</h1>
-          <p className="text-gray-600 text-sm leading-relaxed">
+          <h1 style={{ color: '#111827', fontWeight: 800, fontSize: 28, marginBottom: 12, letterSpacing: '-0.5px' }}>
+            Muito obrigado!
+          </h1>
+          <p style={{ color: '#6b7280', fontSize: 15, lineHeight: 1.7 }}>
             Sua avaliação foi enviada com sucesso.<br />
-            Sua opinião é muito importante para nós continuarmos melhorando!
+            Sua opinião nos ajuda a oferecer uma<br />experiência ainda melhor para você.
           </p>
-          <div className="flex justify-center gap-1 mt-6">
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 28 }}>
             {[1,2,3,4,5].map(i => (
-              <Star key={i} size={24} fill={cor} color={cor} />
+              <span key={i} style={{ fontSize: 28 }}>⭐</span>
             ))}
           </div>
+          {form?.salao_nome && (
+            <p style={{ marginTop: 24, color: '#9ca3af', fontSize: 13 }}>
+              — {form.salao_nome}
+            </p>
+          )}
         </div>
       </div>
     )
@@ -146,202 +169,343 @@ export default function FeedbackPublicoPage() {
 
   if (!form) return null
 
-  return (
-    <div className="min-h-screen pb-10" style={{ background: '#fdf2f4' }}>
-      {/* HEADER COLORIDO */}
-      <div className="h-3 w-full" style={{ background: cor }} />
+  const nomeIniciais = form.salao_nome
+    ? form.salao_nome.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)
+    : 'S'
 
-      <div className="max-w-[640px] mx-auto px-4 pt-6">
-        {/* CARD TÍTULO */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-4">
-          <div className="h-2" style={{ background: cor }} />
-          <div className="p-6">
-            <h1 className="text-gray-900 font-bold text-2xl mb-2">{form.titulo}</h1>
-            {form.salao_nome && (
-              <p className="text-xs font-semibold mb-2" style={{ color: cor }}>{form.salao_nome}</p>
-            )}
-            {form.descricao && (
-              <p className="text-gray-500 text-sm leading-relaxed">{form.descricao}</p>
-            )}
-            <p className="text-xs text-red-500 mt-3">* Indica pergunta obrigatória</p>
+  // ── FORMULÁRIO ────────────────────────────────────────────
+  return (
+    <>
+      <style>{`
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+        @keyframes spin { to { transform: rotate(360deg) } }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(16px) } to { opacity: 1; transform: translateY(0) } }
+        .card-pergunta { animation: fadeUp 0.4s ease both; }
+        .opcao-btn:hover { transform: translateX(4px); }
+        .opcao-btn { transition: all 0.18s ease; }
+        .radio-circle { transition: all 0.15s ease; }
+        textarea:focus { outline: none; }
+        input:focus { outline: none; }
+        .enviar-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 40px var(--cor-shadow) !important; }
+        .enviar-btn { transition: all 0.2s ease; }
+      `}</style>
+
+      <div style={{ minHeight: '100vh', background: 'linear-gradient(160deg, #fff1f5 0%, #fdf4ff 40%, #f5f3ff 70%, #eff6ff 100%)' }}>
+
+        {/* FAIXA TOPO */}
+        <div style={{ height: 4, background: `linear-gradient(90deg, ${cor}, ${cor}80, #a855f7, #60a5fa)` }} />
+
+        {/* HEADER DO SALÃO */}
+        <div style={{ background: 'white', borderBottom: '1px solid #f3e8ff', padding: '24px 20px', textAlign: 'center', boxShadow: '0 1px 20px rgba(0,0,0,0.04)' }}>
+          <div style={{
+            width: 56, height: 56, borderRadius: 16,
+            background: `linear-gradient(135deg, ${cor}, ${cor}80)`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 12px',
+            fontWeight: 800, fontSize: 20, color: 'white',
+            boxShadow: `0 8px 24px ${cor}40`,
+            letterSpacing: 1,
+          }}>
+            {nomeIniciais}
           </div>
+          {form.salao_nome && (
+            <p style={{ fontSize: 13, fontWeight: 600, color: cor, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>
+              {form.salao_nome}
+            </p>
+          )}
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: '#111827', letterSpacing: '-0.3px', marginBottom: 6 }}>
+            {form.titulo}
+          </h1>
+          {form.descricao && (
+            <p style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.6, maxWidth: 480, margin: '0 auto' }}>
+              {form.descricao}
+            </p>
+          )}
+          <p style={{ fontSize: 12, color: '#ef4444', marginTop: 10 }}>
+            * Campos obrigatórios
+          </p>
         </div>
 
         {/* PERGUNTAS */}
-        {form.perguntas.map((pergunta, idx) => (
-          <div key={pergunta.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-4">
-            <div className="mb-4">
-              <span className="text-gray-900 font-medium text-[15px] leading-snug">
-                {pergunta.titulo}
-                {pergunta.obrigatoria && <span className="text-red-500 ml-1">*</span>}
-              </span>
-            </div>
-
-            {/* ESCALA 0-10 */}
-            {pergunta.tipo === 'escala' && (
-              <div>
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {Array.from({ length: 11 }, (_, i) => i).map(n => (
-                    <button key={n} onClick={() => setResposta(pergunta.id, String(n))}
-                      className="w-10 h-10 rounded-full text-sm font-semibold transition-all border-2"
-                      style={{
-                        background: respostas[pergunta.id] === String(n) ? cor : 'transparent',
-                        color: respostas[pergunta.id] === String(n) ? 'white' : '#374151',
-                        borderColor: respostas[pergunta.id] === String(n) ? cor : '#e5e7eb',
-                      }}>
-                      {n}
-                    </button>
-                  ))}
-                </div>
-                <div className="flex justify-between text-[11px] text-gray-400 mt-1">
-                  <span>0 = Não voltaria</span>
-                  <span>10 = Com certeza voltaria</span>
-                </div>
+        <div style={{ maxWidth: 640, margin: '0 auto', padding: '24px 16px 0' }}>
+          {form.perguntas.map((pergunta, idx) => (
+            <div key={pergunta.id} className="card-pergunta" style={{
+              background: 'white',
+              borderRadius: 20,
+              padding: '28px 28px',
+              marginBottom: 16,
+              boxShadow: '0 2px 20px rgba(0,0,0,0.06)',
+              border: '1px solid rgba(255,255,255,0.8)',
+              animationDelay: `${idx * 0.07}s`,
+            }}>
+              {/* Título da pergunta */}
+              <div style={{ marginBottom: 20 }}>
+                <p style={{ fontSize: 15, fontWeight: 600, color: '#111827', lineHeight: 1.5 }}>
+                  {pergunta.titulo}
+                  {pergunta.obrigatoria && <span style={{ color: '#ef4444', marginLeft: 4 }}>*</span>}
+                </p>
               </div>
-            )}
 
-            {/* MÚLTIPLA ESCOLHA */}
-            {pergunta.tipo === 'multipla_escolha' && (
-              <div className="space-y-2">
-                {pergunta.opcoes.map(opcao => (
-                  <button key={opcao} onClick={() => setResposta(pergunta.id, opcao)}
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all border-2"
-                    style={{
-                      background: respostas[pergunta.id] === opcao ? `${cor}12` : 'transparent',
-                      borderColor: respostas[pergunta.id] === opcao ? cor : '#e5e7eb',
-                      color: '#374151',
-                    }}>
-                    <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0"
-                      style={{ borderColor: respostas[pergunta.id] === opcao ? cor : '#d1d5db' }}>
-                      {respostas[pergunta.id] === opcao && (
-                        <div className="w-2 h-2 rounded-full" style={{ background: cor }} />
-                      )}
-                    </div>
-                    <span className="text-sm">{opcao}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* TEXTO LIVRE */}
-            {pergunta.tipo === 'texto' && (
-              <textarea
-                value={(respostas[pergunta.id] as string) || ''}
-                onChange={e => setResposta(pergunta.id, e.target.value)}
-                placeholder="Digite sua resposta..."
-                rows={4}
-                className="w-full border-b-2 border-gray-200 bg-transparent px-0 py-2 text-sm text-gray-700 placeholder-gray-400 outline-none resize-none transition-colors focus:border-gray-500"
-                style={{ borderBottomColor: (respostas[pergunta.id] as string) ? cor : undefined }}
-              />
-            )}
-
-            {/* SIM / NÃO */}
-            {pergunta.tipo === 'sim_nao' && (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr>
-                      <th className="text-left text-xs font-medium text-gray-400 pb-2 pr-4 w-full"></th>
-                      <th className="text-center text-xs font-semibold pb-2 px-4 whitespace-nowrap" style={{ color: cor }}>SIM</th>
-                      <th className="text-center text-xs font-semibold pb-2 px-4 whitespace-nowrap text-gray-400">NÃO</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {pergunta.opcoes.map(item => {
-                      const resp = (respostas[pergunta.id] as Record<string, string>)?.[item]
+              {/* ESCALA 0-10 */}
+              {pergunta.tipo === 'escala' && (
+                <div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
+                    {Array.from({ length: 11 }, (_, i) => i).map(n => {
+                      const selected = respostas[pergunta.id] === String(n)
+                      const isPromotor = n >= 9
+                      const isNeutro = n === 7 || n === 8
+                      const bgSel = isPromotor ? '#16a34a' : isNeutro ? '#ca8a04' : n === 0 ? '#dc2626' : cor
                       return (
-                        <tr key={item}>
-                          <td className="py-2.5 pr-4 text-gray-700 text-sm">{item}</td>
-                          <td className="py-2.5 px-4 text-center">
-                            <button onClick={() => setRespostaSimNao(pergunta.id, item, 'sim')}
-                              className="w-5 h-5 rounded-full border-2 mx-auto flex items-center justify-center transition-all"
-                              style={{ borderColor: resp === 'sim' ? cor : '#d1d5db', background: resp === 'sim' ? cor : 'transparent' }}>
-                              {resp === 'sim' && <div className="w-2 h-2 rounded-full bg-white" />}
-                            </button>
-                          </td>
-                          <td className="py-2.5 px-4 text-center">
-                            <button onClick={() => setRespostaSimNao(pergunta.id, item, 'nao')}
-                              className="w-5 h-5 rounded-full border-2 mx-auto flex items-center justify-center transition-all"
-                              style={{ borderColor: resp === 'nao' ? '#64748b' : '#d1d5db', background: resp === 'nao' ? '#64748b' : 'transparent' }}>
-                              {resp === 'nao' && <div className="w-2 h-2 rounded-full bg-white" />}
-                            </button>
-                          </td>
-                        </tr>
+                        <button key={n} onClick={() => setResposta(pergunta.id, String(n))}
+                          style={{
+                            width: 44, height: 44, borderRadius: 12,
+                            fontWeight: 700, fontSize: 15, cursor: 'pointer', border: 'none',
+                            background: selected ? bgSel : '#f9fafb',
+                            color: selected ? 'white' : '#6b7280',
+                            boxShadow: selected ? `0 4px 16px ${bgSel}50` : '0 1px 4px rgba(0,0,0,0.08)',
+                            transform: selected ? 'scale(1.12)' : 'scale(1)',
+                            transition: 'all 0.18s ease',
+                          }}>
+                          {n}
+                        </button>
                       )
                     })}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+                    <span style={{ fontSize: 11, color: '#9ca3af' }}>😞 Não voltaria</span>
+                    <span style={{ fontSize: 11, color: '#9ca3af' }}>😍 Com certeza voltaria</span>
+                  </div>
+                </div>
+              )}
 
-            {/* GRID 1-5 */}
-            {pergunta.tipo === 'grid' && (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr>
-                      <th className="text-left text-xs font-medium text-gray-400 pb-2 pr-4"></th>
-                      {[1, 2, 3, 4, 5].map(n => (
-                        <th key={n} className="text-center text-xs font-semibold pb-2 px-2 whitespace-nowrap text-gray-500">
-                          {n}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {pergunta.opcoes.map(item => {
-                      const gridResp = (respostas[pergunta.id] as Record<string, string>) || {}
-                      return (
-                        <tr key={item}>
-                          <td className="py-2.5 pr-4 text-gray-700 text-sm">{item}</td>
-                          {[1, 2, 3, 4, 5].map(n => (
-                            <td key={n} className="py-2.5 px-2 text-center">
-                              <button onClick={() => setRespostaGrid(pergunta.id, item, String(n))}
-                                className="w-5 h-5 rounded-full border-2 mx-auto flex items-center justify-center transition-all"
-                                style={{
-                                  borderColor: gridResp[item] === String(n) ? cor : '#d1d5db',
-                                  background: gridResp[item] === String(n) ? cor : 'transparent',
-                                }}>
-                                {gridResp[item] === String(n) && <div className="w-2 h-2 rounded-full bg-white" />}
+              {/* MÚLTIPLA ESCOLHA */}
+              {pergunta.tipo === 'multipla_escolha' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {pergunta.opcoes.map(opcao => {
+                    const selected = respostas[pergunta.id] === opcao
+                    return (
+                      <button key={opcao} onClick={() => setResposta(pergunta.id, opcao)}
+                        className="opcao-btn"
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 14,
+                          padding: '14px 18px', borderRadius: 14, cursor: 'pointer',
+                          background: selected ? `${cor}10` : '#f9fafb',
+                          border: `2px solid ${selected ? cor : '#f3f4f6'}`,
+                          textAlign: 'left', width: '100%',
+                          boxShadow: selected ? `0 4px 20px ${cor}20` : 'none',
+                        }}>
+                        <div style={{
+                          width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+                          border: `2px solid ${selected ? cor : '#d1d5db'}`,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          background: selected ? cor : 'white',
+                          transition: 'all 0.15s',
+                        }}>
+                          {selected && <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'white' }} />}
+                        </div>
+                        <span style={{ fontSize: 14, fontWeight: selected ? 600 : 400, color: selected ? '#111827' : '#374151' }}>
+                          {opcao}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* TEXTO LIVRE */}
+              {pergunta.tipo === 'texto' && (
+                <textarea
+                  value={(respostas[pergunta.id] as string) || ''}
+                  onChange={e => setResposta(pergunta.id, e.target.value)}
+                  placeholder="Escreva sua resposta aqui..."
+                  rows={4}
+                  style={{
+                    width: '100%', border: '2px solid #f3f4f6', borderRadius: 14,
+                    padding: '14px 16px', fontSize: 14, color: '#111827',
+                    background: '#f9fafb', resize: 'none', fontFamily: 'inherit',
+                    lineHeight: 1.6, transition: 'border-color 0.2s',
+                  }}
+                  onFocus={e => e.target.style.borderColor = cor}
+                  onBlur={e => e.target.style.borderColor = '#f3f4f6'}
+                />
+              )}
+
+              {/* SIM / NÃO */}
+              {pergunta.tipo === 'sim_nao' && (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px' }}>
+                    <thead>
+                      <tr>
+                        <th style={{ textAlign: 'left', paddingBottom: 8, fontSize: 12, fontWeight: 600, color: '#9ca3af', paddingRight: 16 }}></th>
+                        <th style={{ textAlign: 'center', paddingBottom: 8, fontSize: 12, fontWeight: 700, color: '#16a34a', width: 60 }}>SIM</th>
+                        <th style={{ textAlign: 'center', paddingBottom: 8, fontSize: 12, fontWeight: 700, color: '#dc2626', width: 60 }}>NÃO</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pergunta.opcoes.map((item, i) => {
+                        const resp = (respostas[pergunta.id] as Record<string, string>)?.[item]
+                        return (
+                          <tr key={item} style={{ background: i % 2 === 0 ? '#fafafa' : 'white', borderRadius: 10 }}>
+                            <td style={{ padding: '12px 16px 12px 0', fontSize: 14, color: '#374151', fontWeight: 450 }}>{item}</td>
+                            <td style={{ padding: '12px 0', textAlign: 'center' }}>
+                              <button onClick={() => setRespostaSimNao(pergunta.id, item, 'sim')} style={{
+                                width: 28, height: 28, borderRadius: '50%', border: 'none', cursor: 'pointer',
+                                background: resp === 'sim' ? '#16a34a' : '#f3f4f6',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto',
+                                boxShadow: resp === 'sim' ? '0 4px 12px #16a34a40' : 'none',
+                                transition: 'all 0.15s',
+                              }}>
+                                {resp === 'sim' && <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'white' }} />}
                               </button>
                             </td>
-                          ))}
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-                <div className="flex justify-between text-[10px] text-gray-400 mt-1 px-[calc(50%_-_80px)]">
-                  <span>1 = Ruim</span>
-                  <span>5 = Excelente</span>
+                            <td style={{ padding: '12px 0', textAlign: 'center' }}>
+                              <button onClick={() => setRespostaSimNao(pergunta.id, item, 'nao')} style={{
+                                width: 28, height: 28, borderRadius: '50%', border: 'none', cursor: 'pointer',
+                                background: resp === 'nao' ? '#dc2626' : '#f3f4f6',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto',
+                                boxShadow: resp === 'nao' ? '0 4px 12px #dc262640' : 'none',
+                                transition: 'all 0.15s',
+                              }}>
+                                {resp === 'nao' && <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'white' }} />}
+                              </button>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
                 </div>
+              )}
+
+              {/* GRID 1-5 */}
+              {pergunta.tipo === 'grid' && (
+                <div style={{ overflowX: 'auto' }}>
+                  <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginBottom: 6, paddingRight: 4 }}>
+                    {[1,2,3,4,5].map(n => (
+                      <div key={n} style={{ width: 36, textAlign: 'center', fontSize: 11, fontWeight: 600, color: '#9ca3af' }}>{n}</div>
+                    ))}
+                  </div>
+                  {pergunta.opcoes.map((item, i) => {
+                    const gridResp = (respostas[pergunta.id] as Record<string, string>) || {}
+                    return (
+                      <div key={item} style={{
+                        display: 'flex', alignItems: 'center',
+                        padding: '10px 0', borderBottom: i < pergunta.opcoes.length - 1 ? '1px solid #f3f4f6' : 'none',
+                      }}>
+                        <span style={{ flex: 1, fontSize: 13, color: '#374151', paddingRight: 12, lineHeight: 1.4 }}>{item}</span>
+                        <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                          {[1,2,3,4,5].map(n => {
+                            const sel = gridResp[item] === String(n)
+                            const selColor = n >= 4 ? '#16a34a' : n >= 3 ? '#ca8a04' : '#dc2626'
+                            return (
+                              <button key={n} onClick={() => setRespostaGrid(pergunta.id, item, String(n))}
+                                style={{
+                                  width: 36, height: 36, borderRadius: 10, border: 'none', cursor: 'pointer',
+                                  background: sel ? selColor : '#f3f4f6',
+                                  boxShadow: sel ? `0 4px 12px ${selColor}40` : 'none',
+                                  transform: sel ? 'scale(1.15)' : 'scale(1)',
+                                  transition: 'all 0.15s',
+                                }} />
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )
+                  })}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
+                    <span style={{ fontSize: 11, color: '#9ca3af' }}>1 = Ruim</span>
+                    <span style={{ fontSize: 11, color: '#9ca3af' }}>5 = Excelente</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+
+          {/* CARD COMENTÁRIO FINAL */}
+          <div className="card-pergunta" style={{
+            background: 'white',
+            borderRadius: 20,
+            padding: '28px 28px',
+            marginBottom: 16,
+            boxShadow: '0 2px 20px rgba(0,0,0,0.06)',
+            border: `2px solid ${cor}20`,
+            animationDelay: `${form.perguntas.length * 0.07}s`,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+              <div style={{
+                width: 36, height: 36, borderRadius: 10,
+                background: `${cor}15`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0,
+              }}>
+                <MessageSquare size={18} color={cor} />
               </div>
-            )}
+              <p style={{ fontSize: 15, fontWeight: 600, color: '#111827' }}>
+                Deixe um comentário <span style={{ fontWeight: 400, color: '#9ca3af', fontSize: 13 }}>(opcional)</span>
+              </p>
+            </div>
+            <textarea
+              value={(respostas[COMENTARIO_KEY] as string) || ''}
+              onChange={e => setResposta(COMENTARIO_KEY, e.target.value)}
+              placeholder="Conte-nos mais sobre sua experiência. Sugestões, elogios ou qualquer observação são muito bem-vindos..."
+              rows={5}
+              style={{
+                width: '100%', border: `2px solid ${cor}20`, borderRadius: 14,
+                padding: '16px 18px', fontSize: 14, color: '#111827',
+                background: `${cor}05`, resize: 'none', fontFamily: 'inherit',
+                lineHeight: 1.7, transition: 'border-color 0.2s',
+              }}
+              onFocus={e => e.target.style.borderColor = cor}
+              onBlur={e => e.target.style.borderColor = `${cor}20`}
+            />
           </div>
-        ))}
 
-        {/* ERRO */}
-        {erroEnvio && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-4 text-sm text-red-600">
-            {erroEnvio}
+          {/* ERRO */}
+          {erroEnvio && (
+            <div style={{
+              background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 14,
+              padding: '14px 18px', marginBottom: 16, fontSize: 14, color: '#dc2626',
+              display: 'flex', alignItems: 'center', gap: 8,
+            }}>
+              ⚠️ {erroEnvio}
+            </div>
+          )}
+
+          {/* BOTÃO ENVIAR */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', paddingBottom: 40 }}>
+            <button onClick={enviar} disabled={enviando} className="enviar-btn"
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '16px 36px', borderRadius: 16, border: 'none', cursor: 'pointer',
+                background: `linear-gradient(135deg, ${cor}, ${cor}cc)`,
+                color: 'white', fontWeight: 700, fontSize: 15,
+                boxShadow: `0 8px 30px ${cor}40`,
+                opacity: enviando ? 0.7 : 1,
+                '--cor-shadow': `${cor}60`,
+              } as React.CSSProperties}>
+              {enviando ? (
+                <>
+                  <div style={{ width: 18, height: 18, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.4)', borderTop: '2px solid white', animation: 'spin 0.7s linear infinite' }} />
+                  Enviando...
+                </>
+              ) : (
+                <>
+                  Enviar avaliação
+                  <ChevronRight size={18} />
+                </>
+              )}
+            </button>
           </div>
-        )}
 
-        {/* BOTÃO ENVIAR */}
-        <div className="flex justify-end pb-8">
-          <button onClick={enviar} disabled={enviando}
-            className="flex items-center gap-2 px-8 py-3 rounded-xl font-bold text-sm text-white transition-all disabled:opacity-70 shadow-lg"
-            style={{ background: cor, boxShadow: `0 4px 20px ${cor}50` }}>
-            {enviando ? 'Enviando...' : 'Enviar respostas'}
-            {!enviando && <ChevronRight size={16} />}
-          </button>
-        </div>
-
-        {/* FOOTER */}
-        <div className="text-center text-[10px] text-gray-400 pb-6">
-          Formulário criado com <span className="font-bold">NODRI</span> · Gestão de Salões de Beleza
+          {/* RODAPÉ */}
+          <div style={{ textAlign: 'center', paddingBottom: 32 }}>
+            <p style={{ fontSize: 12, color: '#d1d5db' }}>
+              Formulário criado com <span style={{ fontWeight: 700, color: '#9ca3af' }}>NODRI</span> · Gestão de Salões de Beleza
+            </p>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }

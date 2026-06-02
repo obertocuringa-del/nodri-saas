@@ -104,9 +104,15 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     }
   }
 
+  // Coleta comentários livres
+  const comentarios = (respostas || [])
+    .map(r => r.dados['__comentario__'])
+    .filter((v): v is string => typeof v === 'string' && v.trim().length > 0)
+
   return NextResponse.json({
     formulario: { id: form.id, titulo: form.titulo, descricao: form.descricao },
     total_respostas: respostas?.length || 0,
+    comentarios,
     perguntas: perguntas || [],
     stats,
     respostas_recentes: (respostas || []).slice(0, 5).map(r => ({ id: r.id, criado_em: r.criado_em })),

@@ -91,6 +91,7 @@ export default function ResultadosPage() {
     total_respostas: number
     perguntas: Pergunta[]
     stats: Record<string, unknown>
+    comentarios: string[]
   } | null>(null)
   const [loading, setLoading] = useState(true)
   const [inicio, setInicio] = useState('')
@@ -502,6 +503,25 @@ export default function ResultadosPage() {
                 )
               })}
             </div>
+
+            {/* COMENTÁRIOS */}
+            {data.comentarios && data.comentarios.length > 0 && (
+              <div className="rounded-2xl border overflow-hidden" style={{ background: '#0d1117', borderColor: 'rgba(255,255,255,0.07)' }}>
+                <div className="px-5 py-3 border-b flex items-center gap-2" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+                  <span className="text-lg">💬</span>
+                  <span className="text-[13px] font-medium text-nodri-t1">Comentários dos Clientes</span>
+                  <span className="ml-auto text-[10px] text-nodri-t3">{data.comentarios.length} comentário{data.comentarios.length !== 1 ? 's' : ''}</span>
+                </div>
+                <div className="p-5 space-y-3 max-h-80 overflow-y-auto">
+                  {data.comentarios.map((c, i) => (
+                    <div key={i} className="p-3 rounded-xl text-[12px] text-nodri-t1 italic leading-relaxed"
+                      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderLeft: '3px solid rgba(139,92,246,0.5)' }}>
+                      "{c}"
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {data.total_respostas === 0 && (
               <div className="text-center py-20">
