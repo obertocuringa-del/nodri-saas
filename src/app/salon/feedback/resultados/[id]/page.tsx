@@ -51,6 +51,9 @@ interface IAAnalise {
   areas_melhoria: { titulo: string; descricao: string; prioridade: 'alta' | 'media' | 'baixa' }[]
   acoes_prioritarias: { acao: string; impacto: string; prazo: string; dificuldade: string }[]
   insight_nps: string
+  insight_retencao: string
+  insight_ticket: string
+  insight_horario: string
   oportunidades_receita: string[]
 }
 
@@ -240,7 +243,7 @@ export default function ResultadosPage() {
                         <div className="text-[10px] font-bold text-purple-400 uppercase tracking-wider mb-2">Resumo Executivo</div>
                         <p className="text-nodri-t1 text-sm leading-relaxed">{iaAnalise.resumo_executivo}</p>
                         {iaAnalise.insight_nps && (
-                          <p className="text-nodri-t2 text-[11px] mt-2 pt-2 border-t border-nodri-border">{iaAnalise.insight_nps}</p>
+                          <p className="text-nodri-t2 text-[11px] mt-2 pt-2 border-t border-nodri-border">📊 {iaAnalise.insight_nps}</p>
                         )}
                       </div>
                       <div className="flex flex-col items-center p-4 rounded-xl shrink-0" style={{ background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.2)', minWidth: '110px' }}>
@@ -313,6 +316,35 @@ export default function ResultadosPage() {
                               </div>
                             </div>
                           ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* INSIGHTS ESTRATÉGICOS */}
+                    {(iaAnalise.insight_retencao || iaAnalise.insight_ticket || iaAnalise.insight_horario) && (
+                      <div>
+                        <div className="text-[11px] font-bold text-cyan-400 mb-2 flex items-center gap-1.5">
+                          <BarChart2 size={13} /> Insights Estratégicos
+                        </div>
+                        <div className="grid sm:grid-cols-3 gap-2">
+                          {iaAnalise.insight_retencao && (
+                            <div className="p-3 rounded-xl" style={{ background: 'rgba(6,182,212,0.05)', border: '1px solid rgba(6,182,212,0.15)' }}>
+                              <div className="text-[10px] font-bold text-cyan-400 mb-1.5">🔄 Retenção</div>
+                              <p className="text-[11px] text-nodri-t2 leading-relaxed">{iaAnalise.insight_retencao}</p>
+                            </div>
+                          )}
+                          {iaAnalise.insight_ticket && (
+                            <div className="p-3 rounded-xl" style={{ background: 'rgba(250,204,21,0.05)', border: '1px solid rgba(250,204,21,0.15)' }}>
+                              <div className="text-[10px] font-bold text-yellow-400 mb-1.5">💰 Ticket Médio</div>
+                              <p className="text-[11px] text-nodri-t2 leading-relaxed">{iaAnalise.insight_ticket}</p>
+                            </div>
+                          )}
+                          {iaAnalise.insight_horario && (
+                            <div className="p-3 rounded-xl" style={{ background: 'rgba(34,197,94,0.05)', border: '1px solid rgba(34,197,94,0.15)' }}>
+                              <div className="text-[10px] font-bold text-green-400 mb-1.5">🕐 Horários</div>
+                              <p className="text-[11px] text-nodri-t2 leading-relaxed">{iaAnalise.insight_horario}</p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}

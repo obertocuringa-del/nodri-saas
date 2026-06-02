@@ -112,29 +112,42 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     resumo.push('')
   }
 
-  const prompt = `Você é um consultor especializado em gestão de salões de beleza e experiência do cliente.
+  const prompt = `Você é um consultor especializado em gestão de salões de beleza e experiência do cliente no Brasil.
 
-Analise os seguintes dados de feedback dos clientes do salão "${payload.salaoNome}" e forneça uma análise estratégica completa e acionável para ajudar o dono do salão a tomar decisões de melhoria.
+Analise os seguintes dados de feedback dos clientes do salão "${payload.salaoNome}" e forneça uma análise estratégica completa, prática e acionável para o dono do salão tomar decisões de melhoria imediata.
+
+Considere especialmente:
+- NPS (promotores/neutros/detratores) como indicador de lealdade
+- Taxa de retorno declarada pelos clientes
+- Horários de pico e queda de qualidade
+- Ticket médio e oportunidades de upsell
+- Serviços com nota baixa que precisam de ação urgente
+- Perfil de clientes novos vs recorrentes
+- Gargalos operacionais (tempo de espera)
+- Canais de captação mais eficazes
 
 DADOS DO FEEDBACK:
 ${resumo.join('\n')}
 
 Forneça sua análise no seguinte formato JSON (responda APENAS com JSON válido, sem markdown):
 {
-  "resumo_executivo": "2-3 frases resumindo a situação geral do salão",
+  "resumo_executivo": "2-3 frases resumindo a situação geral do salão com dados concretos",
   "nota_geral": número de 1-10 representando a saúde geral baseada nos dados,
   "pontos_fortes": [
-    {"titulo": "...", "descricao": "..."}
+    {"titulo": "...", "descricao": "cite dados específicos do feedback"}
   ],
   "areas_melhoria": [
-    {"titulo": "...", "descricao": "...", "prioridade": "alta|media|baixa"}
+    {"titulo": "...", "descricao": "cite o problema com dados e impacto no negócio", "prioridade": "alta|media|baixa"}
   ],
   "acoes_prioritarias": [
-    {"acao": "...", "impacto": "...", "prazo": "imediato|curto prazo|médio prazo", "dificuldade": "fácil|media|difícil"}
+    {"acao": "ação específica e executável", "impacto": "impacto esperado no negócio", "prazo": "imediato|curto prazo|médio prazo", "dificuldade": "fácil|media|difícil"}
   ],
-  "insight_nps": "análise específica do NPS se disponível",
+  "insight_nps": "análise do NPS e índice de indicação com comparativo do mercado de beleza (NPS acima de 50 é excelente, 25-50 é bom, 0-25 é neutro, negativo é crítico)",
+  "insight_retencao": "análise da taxa de retorno declarada e estratégias para aumentá-la",
+  "insight_ticket": "análise do ticket médio declarado e oportunidades de aumento via upsell ou novos serviços",
+  "insight_horario": "análise dos horários de visita e recomendações operacionais",
   "oportunidades_receita": [
-    "..."
+    "oportunidade concreta baseada nos dados coletados"
   ]
 }`
 
