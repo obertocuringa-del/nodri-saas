@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, RefreshCw, Lock, Unlock, AlertTriangle, ShieldOff, History, Settings, RotateCcw, Save } from 'lucide-react'
+import { ArrowLeft, RefreshCw, Lock, Unlock, AlertTriangle, ShieldOff, History, Settings, RotateCcw, Save, Plus, Trash2, Edit2, Check, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 interface ProfBloqueio {
@@ -31,7 +31,18 @@ interface Regras {
   dias_bloqueio_falta: number
 }
 
+interface RegraCustom {
+  id: string
+  nome: string
+  ocorrencia: string
+  quantidade: number
+  periodo: 'semana' | 'mes'
+  dias_bloqueio: number
+  ativo: boolean
+}
+
 const PADRAO: Regras = { atrasos_por_semana: 3, dias_bloqueio_atraso: 7, faltas_por_mes: 2, dias_bloqueio_falta: 15 }
+const NOVA_REGRA_CUSTOM = { nome: '', ocorrencia: '', quantidade: 3, periodo: 'semana' as const, dias_bloqueio: 7 }
 
 export default function BloqueiosPage() {
   const router = useRouter()
@@ -43,6 +54,11 @@ export default function BloqueiosPage() {
   const [editRegras, setEditRegras] = useState<Regras>(PADRAO)
   const [editandoRegras, setEditandoRegras] = useState(false)
   const [salvandoRegras, setSalvandoRegras] = useState(false)
+  const [regrasCustom, setRegrasCustom] = useState<RegraCustom[]>([])
+  const [novaRegra, setNovaRegra] = useState(NOVA_REGRA_CUSTOM)
+  const [adicionandoRegra, setAdicionandoRegra] = useState(false)
+  const [editandoRegraId, setEditandoRegraId] = useState<string | null>(null)
+  const [editandoRegraData, setEditandoRegraData] = useState<Partial<RegraCustom>>({})
 
   async function fetchData() {
     setLoading(true)
@@ -62,7 +78,12 @@ export default function BloqueiosPage() {
     }
   }
 
-  useEffect(() => { fetchData(); fetchRegras() }, [])
+  async function fetchRegrasCustom() {
+    const res = await fetch('/api/feedback-prof/regras-custom')
+    if (res.ok) setRegrasCustom(await res.json())
+  }
+
+  useEffect(() => { fetchData(); fetchRegras(); fetchRegrasCustom() }, [])
 
   async function reprocessarHistorico() {
     setReprocessando(true)
@@ -111,6 +132,43 @@ export default function BloqueiosPage() {
   function setEditAndoRegras(v: boolean) {
     setEditandoRegras(v)
     if (!v) setEditRegras(regras)
+  }
+
+  async function adicionarRegraCustom() {
+    if (!novaRegra.nome.trim() || !novaRegra.ocorrencia.trim()) {
+      toast.error('Preencha nome e ocorrência'); return
+    }
+    const res = await fetch('/api/feedback-prof/regras-custom', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(novaRegra),
+    })
+    if (res.ok) {
+      toast.success('Regra adicionada!')
+      setNovaRegra(NOVA_REGRA_CUSTOM)
+      setAdicionandoRegra(false)
+      fetchRegrasCustom()
+    } else toast.error('Erro ao adicionar')
+  }
+
+  async function salvarEdicaoRegra(id: string) {
+    const res = await fetch('/api/feedback-prof/regras-custom', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, ...editandoRegraData }),
+    })
+    if (res.ok) {
+      toast.success('Regra atualizada!')
+      setEditandoRegraId(null)
+      fetchRegrasCustom()
+    } else toast.error('Erro ao salvar')
+  }
+
+  async function excluirRegraCustom(id: string) {
+    const res = await fetch('/api/feedback-prof/regras-custom', {
+      method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    })
+    if (res.ok) { toast.success('Regra excluída!'); fetchRegrasCustom() }
+    else toast.error('Erro ao excluir')
   }
 
   async function restaurarPadrao() {
@@ -358,6 +416,135 @@ export default function BloqueiosPage() {
                     </div>
                   </div>
                 )}
+              </div>
+            </div>
+            {/* Regras Customizadas */}
+            <div className="pcard rounded-2xl border overflow-hidden" style={{ background: '#0d1117', borderColor: 'rgba(34,211,238,.2)' }}>
+              <div className="px-5 py-3 border-b flex items-center gap-2"
+                style={{ borderColor: 'rgba(34,211,238,.12)', background: 'rgba(34,211,238,.05)' }}>
+                <Plus size={14} className="text-nodri-cyan" />
+                <span className="text-[13px] font-bold text-nodri-cyan">Regras Adicionais</span>
+                <span className="text-[10px] text-nodri-t3 ml-1">— crie regras para qualquer ocorrência</span>
+                <button onClick={() => { setAdicionandoRegra(true); setEditandoRegraId(null) }}
+                  className="ml-auto flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold"
+                  style={{ background: 'rgba(34,211,238,.1)', color: '#22d3ee', border: '1px solid rgba(34,211,238,.25)' }}>
+                  <Plus size={11} /> Nova Regra
+                </button>
+              </div>
+              <div className="p-4 space-y-2">
+
+                {/* Formulário nova regra */}
+                {adicionandoRegra && (
+                  <div className="rounded-xl p-4 space-y-3" style={{ background: 'rgba(34,211,238,.05)', border: '1px solid rgba(34,211,238,.2)' }}>
+                    <div className="text-[11px] font-bold text-nodri-cyan mb-2">Nova Regra</div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[10px] text-nodri-t3 block mb-1">Nome da regra</label>
+                        <input value={novaRegra.nome} onChange={e => setNovaRegra(r => ({ ...r, nome: e.target.value }))}
+                          placeholder="Ex: Saída Mais Cedo"
+                          className="w-full bg-nodri-card border border-nodri-border rounded-lg px-3 py-2 text-[12px] text-nodri-t1 outline-none" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-nodri-t3 block mb-1">Ocorrência (exata)</label>
+                        <input value={novaRegra.ocorrencia} onChange={e => setNovaRegra(r => ({ ...r, ocorrencia: e.target.value }))}
+                          placeholder="Ex: SAÍDA MAIS CEDO"
+                          className="w-full bg-nodri-card border border-nodri-border rounded-lg px-3 py-2 text-[12px] text-nodri-t1 outline-none" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-nodri-t3 block mb-1">Quantidade para bloquear</label>
+                        <input type="number" min={1} value={novaRegra.quantidade} onChange={e => setNovaRegra(r => ({ ...r, quantidade: Number(e.target.value) }))}
+                          className="w-full bg-nodri-card border border-nodri-border rounded-lg px-3 py-2 text-[12px] text-nodri-t1 outline-none" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-nodri-t3 block mb-1">Período</label>
+                        <select value={novaRegra.periodo} onChange={e => setNovaRegra(r => ({ ...r, periodo: e.target.value as 'semana' | 'mes' }))}
+                          className="w-full bg-nodri-card border border-nodri-border rounded-lg px-3 py-2 text-[12px] text-nodri-t1 outline-none">
+                          <option value="semana">Por semana</option>
+                          <option value="mes">Por mês</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-nodri-t3 block mb-1">Dias de bloqueio</label>
+                        <input type="number" min={1} value={novaRegra.dias_bloqueio} onChange={e => setNovaRegra(r => ({ ...r, dias_bloqueio: Number(e.target.value) }))}
+                          className="w-full bg-nodri-card border border-nodri-border rounded-lg px-3 py-2 text-[12px] text-nodri-t1 outline-none" />
+                      </div>
+                    </div>
+                    <div className="flex gap-2 pt-1">
+                      <button onClick={adicionarRegraCustom}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold"
+                        style={{ background: 'rgba(34,197,94,.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,.3)' }}>
+                        <Check size={12} /> Salvar
+                      </button>
+                      <button onClick={() => setAdicionandoRegra(false)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px]"
+                        style={{ background: 'rgba(255,255,255,.05)', color: '#94a3b8', border: '1px solid rgba(255,255,255,.1)' }}>
+                        <X size={12} /> Cancelar
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Lista de regras custom */}
+                {regrasCustom.length === 0 && !adicionandoRegra && (
+                  <p className="text-[11px] text-nodri-t3 text-center py-4">Nenhuma regra adicional. Clique em &quot;Nova Regra&quot; para criar.</p>
+                )}
+
+                {regrasCustom.map(rc => (
+                  <div key={rc.id} className="rounded-xl p-3 flex items-start gap-3"
+                    style={{ background: 'rgba(255,255,255,.02)', border: `1px solid ${rc.ativo ? 'rgba(34,211,238,.15)' : 'rgba(255,255,255,.06)'}` }}>
+                    {editandoRegraId === rc.id ? (
+                      <div className="flex-1 grid grid-cols-2 gap-2">
+                        <input defaultValue={rc.nome} onChange={e => setEditandoRegraData(d => ({ ...d, nome: e.target.value }))}
+                          className="bg-nodri-card border border-nodri-border rounded px-2 py-1 text-[11px] text-nodri-t1 outline-none" placeholder="Nome" />
+                        <input defaultValue={rc.ocorrencia} onChange={e => setEditandoRegraData(d => ({ ...d, ocorrencia: e.target.value }))}
+                          className="bg-nodri-card border border-nodri-border rounded px-2 py-1 text-[11px] text-nodri-t1 outline-none" placeholder="Ocorrência" />
+                        <input type="number" defaultValue={rc.quantidade} onChange={e => setEditandoRegraData(d => ({ ...d, quantidade: Number(e.target.value) }))}
+                          className="bg-nodri-card border border-nodri-border rounded px-2 py-1 text-[11px] text-nodri-t1 outline-none" placeholder="Qtd" />
+                        <select defaultValue={rc.periodo} onChange={e => setEditandoRegraData(d => ({ ...d, periodo: e.target.value as 'semana' | 'mes' }))}
+                          className="bg-nodri-card border border-nodri-border rounded px-2 py-1 text-[11px] text-nodri-t1 outline-none">
+                          <option value="semana">Por semana</option>
+                          <option value="mes">Por mês</option>
+                        </select>
+                        <input type="number" defaultValue={rc.dias_bloqueio} onChange={e => setEditandoRegraData(d => ({ ...d, dias_bloqueio: Number(e.target.value) }))}
+                          className="bg-nodri-card border border-nodri-border rounded px-2 py-1 text-[11px] text-nodri-t1 outline-none" placeholder="Dias bloqueio" />
+                        <div className="flex gap-1 items-center">
+                          <button onClick={() => salvarEdicaoRegra(rc.id)}
+                            className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold"
+                            style={{ background: 'rgba(34,197,94,.15)', color: '#4ade80' }}>
+                            <Check size={10} /> Salvar
+                          </button>
+                          <button onClick={() => setEditandoRegraId(null)}
+                            className="flex items-center gap-1 px-2 py-1 rounded text-[10px]"
+                            style={{ background: 'rgba(255,255,255,.05)', color: '#94a3b8' }}>
+                            <X size={10} /> Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-semibold text-[12px] text-nodri-t1">{rc.nome}</span>
+                            {!rc.ativo && <span className="text-[9px] text-nodri-t3 border border-nodri-border px-1.5 py-0.5 rounded">Inativa</span>}
+                          </div>
+                          <div className="text-[11px] text-nodri-t3 mt-0.5">
+                            {rc.quantidade}x <span className="text-nodri-cyan font-semibold">{rc.ocorrencia}</span> {rc.periodo === 'semana' ? 'na semana' : 'no mês'} → bloqueio de <span className="text-nodri-t2 font-semibold">{rc.dias_bloqueio} dias</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button onClick={() => { setEditandoRegraId(rc.id); setEditandoRegraData({}); setAdicionandoRegra(false) }}
+                            className="p-1.5 rounded-lg" style={{ background: 'rgba(250,204,21,.1)', color: '#facc15' }}>
+                            <Edit2 size={11} />
+                          </button>
+                          <button onClick={() => excluirRegraCustom(rc.id)}
+                            className="p-1.5 rounded-lg" style={{ background: 'rgba(239,68,68,.1)', color: '#f87171' }}>
+                            <Trash2 size={11} />
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           </>

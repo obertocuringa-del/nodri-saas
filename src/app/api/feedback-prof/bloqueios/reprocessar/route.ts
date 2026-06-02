@@ -52,6 +52,14 @@ export async function POST() {
     dias_bloqueio_falta: regrasDb?.dias_bloqueio_falta ?? 15,
   }
 
+  // Busca regras customizadas ativas
+  const { data: regrasCustomDb } = await supabaseAdmin
+    .from('feedback_prof_regras_custom')
+    .select('*')
+    .eq('salao_id', salaoId)
+    .eq('ativo', true)
+  const regrasCustom = regrasCustomDb || []
+
   // Busca formulários do salão para garantir escopo correto
   const { data: forms } = await supabaseAdmin
     .from('feedback_prof_formularios')
@@ -72,7 +80,7 @@ export async function POST() {
       .select('profissional_nome, ocorrido_descricao, criado_em')
       .in('formulario_id', formIds)
       .eq('tipo', 'negativo')
-      .in('ocorrido_descricao', ['ATRASO', 'FALTA'])
+      .in('ocorrido_descricao', ['ATRASO', 'FALTA', ...regrasCustom.map(r => r.ocorrencia)])
       .order('criado_em', { ascending: true })
       .range(from, from + PAGE - 1)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -107,6 +115,8 @@ export async function POST() {
 
   const atrasosPorProfSemana: Record<string, Record<string, Ocorrencia[]>> = {}
   const faltasPorProfMes: Record<string, Record<string, Ocorrencia[]>> = {}
+  // customPorProf[profNome][regraId][periodoKey] = ocorrencias[]
+  const customPorProf: Record<string, Record<string, Record<string, Ocorrencia[]>>> = {}
 
   for (const r of respostas) {
     const nome = r.profissional_nome
@@ -125,11 +135,22 @@ export async function POST() {
       if (!faltasPorProfMes[nome][mes]) faltasPorProfMes[nome][mes] = []
       faltasPorProfMes[nome][mes].push({ dataBR, dateStr })
     }
+    // Regras custom: agrupa por ocorrência → semana ou mês
+    for (const rc of regrasCustom) {
+      if (r.ocorrido_descricao === rc.ocorrencia) {
+        if (!customPorProf[nome]) customPorProf[nome] = {}
+        if (!customPorProf[nome][rc.id]) customPorProf[nome][rc.id] = {}
+        const chave = rc.periodo === 'semana' ? getISOWeekKey(data) : getMonthKey(data)
+        if (!customPorProf[nome][rc.id][chave]) customPorProf[nome][rc.id][chave] = []
+        customPorProf[nome][rc.id][chave].push({ dataBR, dateStr })
+      }
+    }
   }
 
   const todosProfs = Array.from(new Set([
     ...Object.keys(atrasosPorProfSemana),
     ...Object.keys(faltasPorProfMes),
+    ...Object.keys(customPorProf),
   ]))
 
   const upserts: object[] = []
@@ -174,6 +195,26 @@ export async function POST() {
             melhorDias = regras.dias_bloqueio_falta
             melhorMotivo = melhorDatasAtrasos.length > 0 ? melhorMotivo + ' | ' + motivoFaltas : motivoFaltas
             melhorDatasFaltas = ocorrs.map(o => o.dataBR)
+          }
+        }
+      }
+    }
+
+    // Regras custom
+    const customDoProf = customPorProf[nome] || {}
+    for (const rc of regrasCustom) {
+      const periodos = customDoProf[rc.id] || {}
+      for (const [periodoKey, ocorrs] of Object.entries(periodos)) {
+        if (ocorrs.length >= rc.quantidade) {
+          const dataGatilho = ocorrs[rc.quantidade - 1].dateStr
+          const fimStr = addDays(dataGatilho, rc.dias_bloqueio)
+          if (fimStr >= todayStr && (!melhorFimStr || fimStr > melhorFimStr)) {
+            const motivo = `${ocorrs.length}x "${rc.ocorrencia}" em ${periodoKey} (${ocorrs.map(o => o.dataBR).join(', ')})`
+            melhorFimStr = fimStr
+            melhorDias = rc.dias_bloqueio
+            melhorMotivo = melhorMotivo ? melhorMotivo + ' | ' + motivo : motivo
+            if (rc.ocorrencia === 'ATRASO') melhorDatasAtrasos = ocorrs.map(o => o.dataBR)
+            else melhorDatasFaltas = ocorrs.map(o => o.dataBR)
           }
         }
       }
