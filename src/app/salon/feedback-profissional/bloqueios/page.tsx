@@ -55,6 +55,7 @@ export default function BloqueiosPage() {
   const [editandoRegras, setEditandoRegras] = useState(false)
   const [salvandoRegras, setSalvandoRegras] = useState(false)
   const [regrasCustom, setRegrasCustom] = useState<RegraCustom[]>([])
+  const [ocorridos, setOcorridos] = useState<string[]>([])
   const [novaRegra, setNovaRegra] = useState(NOVA_REGRA_CUSTOM)
   const [adicionandoRegra, setAdicionandoRegra] = useState(false)
   const [editandoRegraId, setEditandoRegraId] = useState<string | null>(null)
@@ -83,7 +84,15 @@ export default function BloqueiosPage() {
     if (res.ok) setRegrasCustom(await res.json())
   }
 
-  useEffect(() => { fetchData(); fetchRegras(); fetchRegrasCustom() }, [])
+  async function fetchOcorridos() {
+    const res = await fetch('/api/feedback-prof/ocorridos')
+    if (res.ok) {
+      const d = await res.json()
+      setOcorridos(d.map((o: { descricao: string }) => o.descricao))
+    }
+  }
+
+  useEffect(() => { fetchData(); fetchRegras(); fetchRegrasCustom(); fetchOcorridos() }, [])
 
   async function reprocessarHistorico() {
     setReprocessando(true)
@@ -438,16 +447,26 @@ export default function BloqueiosPage() {
                   <div className="rounded-xl p-4 space-y-3" style={{ background: 'rgba(34,211,238,.05)', border: '1px solid rgba(34,211,238,.2)' }}>
                     <div className="text-[11px] font-bold text-nodri-cyan mb-2">Nova Regra</div>
                     <div className="grid grid-cols-2 gap-3">
-                      <div>
+                      <div className="col-span-2">
+                        <label className="text-[10px] text-nodri-t3 block mb-1">Ocorrência</label>
+                        {ocorridos.length > 0 ? (
+                          <select value={novaRegra.ocorrencia}
+                            onChange={e => setNovaRegra(r => ({ ...r, ocorrencia: e.target.value, nome: e.target.value }))}
+                            className="w-full bg-nodri-card border border-nodri-border rounded-lg px-3 py-2 text-[12px] text-nodri-t1 outline-none">
+                            <option value="">Selecione uma ocorrência...</option>
+                            {ocorridos.map(o => <option key={o} value={o}>{o}</option>)}
+                          </select>
+                        ) : (
+                          <div className="p-3 rounded-lg text-[11px] text-yellow-400 flex items-center gap-2"
+                            style={{ background: 'rgba(250,204,21,.08)', border: '1px solid rgba(250,204,21,.2)' }}>
+                            ⚠️ Nenhuma ocorrência cadastrada. Cadastre primeiro em <strong>Feedback Profissional → Ocorrências</strong>.
+                          </div>
+                        )}
+                      </div>
+                      <div className="col-span-2">
                         <label className="text-[10px] text-nodri-t3 block mb-1">Nome da regra</label>
                         <input value={novaRegra.nome} onChange={e => setNovaRegra(r => ({ ...r, nome: e.target.value }))}
                           placeholder="Ex: Saída Mais Cedo"
-                          className="w-full bg-nodri-card border border-nodri-border rounded-lg px-3 py-2 text-[12px] text-nodri-t1 outline-none" />
-                      </div>
-                      <div>
-                        <label className="text-[10px] text-nodri-t3 block mb-1">Ocorrência (exata)</label>
-                        <input value={novaRegra.ocorrencia} onChange={e => setNovaRegra(r => ({ ...r, ocorrencia: e.target.value }))}
-                          placeholder="Ex: SAÍDA MAIS CEDO"
                           className="w-full bg-nodri-card border border-nodri-border rounded-lg px-3 py-2 text-[12px] text-nodri-t1 outline-none" />
                       </div>
                       <div>
@@ -496,8 +515,10 @@ export default function BloqueiosPage() {
                       <div className="flex-1 grid grid-cols-2 gap-2">
                         <input defaultValue={rc.nome} onChange={e => setEditandoRegraData(d => ({ ...d, nome: e.target.value }))}
                           className="bg-nodri-card border border-nodri-border rounded px-2 py-1 text-[11px] text-nodri-t1 outline-none" placeholder="Nome" />
-                        <input defaultValue={rc.ocorrencia} onChange={e => setEditandoRegraData(d => ({ ...d, ocorrencia: e.target.value }))}
-                          className="bg-nodri-card border border-nodri-border rounded px-2 py-1 text-[11px] text-nodri-t1 outline-none" placeholder="Ocorrência" />
+                        <select defaultValue={rc.ocorrencia} onChange={e => setEditandoRegraData(d => ({ ...d, ocorrencia: e.target.value }))}
+                          className="bg-nodri-card border border-nodri-border rounded px-2 py-1 text-[11px] text-nodri-t1 outline-none">
+                          {ocorridos.map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
                         <input type="number" defaultValue={rc.quantidade} onChange={e => setEditandoRegraData(d => ({ ...d, quantidade: Number(e.target.value) }))}
                           className="bg-nodri-card border border-nodri-border rounded px-2 py-1 text-[11px] text-nodri-t1 outline-none" placeholder="Qtd" />
                         <select defaultValue={rc.periodo} onChange={e => setEditandoRegraData(d => ({ ...d, periodo: e.target.value as 'semana' | 'mes' }))}
