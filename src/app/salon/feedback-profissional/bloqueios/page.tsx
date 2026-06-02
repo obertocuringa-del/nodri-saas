@@ -13,6 +13,8 @@ interface ProfBloqueio {
   datas_faltas: string[]
   bloqueado: boolean
   dias_bloqueio: number
+  dias_restantes: number
+  bloqueado_ate: string | null
   motivo: string
 }
 
@@ -118,7 +120,15 @@ export default function BloqueiosPage() {
                             style={{ background: p.dias_bloqueio === 15 ? 'rgba(239,68,68,.2)' : 'rgba(250,204,21,.15)', color: p.dias_bloqueio === 15 ? '#f87171' : '#facc15', border: `1px solid ${p.dias_bloqueio === 15 ? 'rgba(239,68,68,.4)' : 'rgba(250,204,21,.4)'}` }}>
                             BLOQUEIO {p.dias_bloqueio} DIAS
                           </span>
+                          <span className="text-[9px] font-bold text-nodri-t3">
+                            {p.dias_restantes} dia{p.dias_restantes !== 1 ? 's' : ''} restante{p.dias_restantes !== 1 ? 's' : ''}
+                          </span>
                         </div>
+                        {p.bloqueado_ate && (
+                          <div className="text-[10px] text-nodri-t3 mt-0.5">
+                            Liberado em: <span className="text-nodri-t2 font-semibold">{new Date(p.bloqueado_ate + 'T12:00:00').toLocaleDateString('pt-BR')}</span>
+                          </div>
+                        )}
                         <div className="flex flex-wrap gap-3 mt-2 text-[11px]">
                           {p.atrasos_semana > 0 && (
                             <span className="flex items-center gap-1">
