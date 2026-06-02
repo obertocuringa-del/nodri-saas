@@ -39,11 +39,12 @@ interface RegraCustom {
   periodo: 'semana' | 'mes'
   dias_bloqueio: number
   ativo: boolean
+  profissional_nome: string | null
 }
 
 const PADRAO: Regras = { atrasos_por_semana: 3, dias_bloqueio_atraso: 7, faltas_por_mes: 2, dias_bloqueio_falta: 15 }
-interface NovaRegraCustom { nome: string; ocorrencia: string; quantidade: number; periodo: 'semana' | 'mes'; dias_bloqueio: number }
-const NOVA_REGRA_CUSTOM: NovaRegraCustom = { nome: '', ocorrencia: '', quantidade: 3, periodo: 'semana', dias_bloqueio: 7 }
+interface NovaRegraCustom { nome: string; ocorrencia: string; quantidade: number; periodo: 'semana' | 'mes'; dias_bloqueio: number; profissional_nome: string }
+const NOVA_REGRA_CUSTOM: NovaRegraCustom = { nome: '', ocorrencia: '', quantidade: 3, periodo: 'semana', dias_bloqueio: 7, profissional_nome: '' }
 
 export default function BloqueiosPage() {
   const router = useRouter()
@@ -488,6 +489,14 @@ export default function BloqueiosPage() {
                         <input type="number" min={1} value={novaRegra.dias_bloqueio} onChange={e => setNovaRegra(r => ({ ...r, dias_bloqueio: Number(e.target.value) }))}
                           className="w-full bg-nodri-card border border-nodri-border rounded-lg px-3 py-2 text-[12px] text-nodri-t1 outline-none" />
                       </div>
+                      <div className="col-span-2">
+                        <label className="text-[10px] text-nodri-t3 block mb-1">Aplicar para</label>
+                        <select value={novaRegra.profissional_nome} onChange={e => setNovaRegra(r => ({ ...r, profissional_nome: e.target.value }))}
+                          className="w-full bg-nodri-card border border-nodri-border rounded-lg px-3 py-2 text-[12px] text-nodri-t1 outline-none">
+                          <option value="">Todos os profissionais</option>
+                          {(data?.profissionais || []).map(p => <option key={p.nome} value={p.nome}>{p.nome}</option>)}
+                        </select>
+                      </div>
                     </div>
                     <div className="flex gap-2 pt-1">
                       <button onClick={adicionarRegraCustom}
@@ -529,6 +538,11 @@ export default function BloqueiosPage() {
                         </select>
                         <input type="number" defaultValue={rc.dias_bloqueio} onChange={e => setEditandoRegraData(d => ({ ...d, dias_bloqueio: Number(e.target.value) }))}
                           className="bg-nodri-card border border-nodri-border rounded px-2 py-1 text-[11px] text-nodri-t1 outline-none" placeholder="Dias bloqueio" />
+                        <select defaultValue={rc.profissional_nome || ''} onChange={e => setEditandoRegraData(d => ({ ...d, profissional_nome: e.target.value || null }))}
+                          className="bg-nodri-card border border-nodri-border rounded px-2 py-1 text-[11px] text-nodri-t1 outline-none col-span-2">
+                          <option value="">Todos os profissionais</option>
+                          {(data?.profissionais || []).map(p => <option key={p.nome} value={p.nome}>{p.nome}</option>)}
+                        </select>
                         <div className="flex gap-1 items-center">
                           <button onClick={() => salvarEdicaoRegra(rc.id)}
                             className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold"
@@ -551,6 +565,11 @@ export default function BloqueiosPage() {
                           </div>
                           <div className="text-[11px] text-nodri-t3 mt-0.5">
                             {rc.quantidade}x <span className="text-nodri-cyan font-semibold">{rc.ocorrencia}</span> {rc.periodo === 'semana' ? 'na semana' : 'no mês'} → bloqueio de <span className="text-nodri-t2 font-semibold">{rc.dias_bloqueio} dias</span>
+                          </div>
+                          <div className="text-[10px] mt-0.5">
+                            {rc.profissional_nome
+                              ? <span className="text-purple-400">👤 Somente: <strong>{rc.profissional_nome}</strong></span>
+                              : <span className="text-nodri-t3">👥 Todos os profissionais</span>}
                           </div>
                         </div>
                         <div className="flex items-center gap-1 shrink-0">

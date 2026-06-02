@@ -137,6 +137,8 @@ export async function POST() {
     }
     // Regras custom: agrupa por ocorrência → semana ou mês
     for (const rc of regrasCustom) {
+      // se a regra é para um profissional específico, ignora os demais
+      if (rc.profissional_nome && rc.profissional_nome !== nome) continue
       if (r.ocorrido_descricao === rc.ocorrencia) {
         if (!customPorProf[nome]) customPorProf[nome] = {}
         if (!customPorProf[nome][rc.id]) customPorProf[nome][rc.id] = {}

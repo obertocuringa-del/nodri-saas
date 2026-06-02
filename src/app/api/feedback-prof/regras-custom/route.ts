@@ -36,6 +36,7 @@ export async function POST(req: NextRequest) {
       quantidade: Number(body.quantidade) || 3,
       periodo: body.periodo === 'mes' ? 'mes' : 'semana',
       dias_bloqueio: Number(body.dias_bloqueio) || 7,
+      profissional_nome: body.profissional_nome?.trim() || null,
       ativo: true,
     })
     .select()
@@ -55,6 +56,7 @@ export async function PUT(req: NextRequest) {
   if (body.periodo !== undefined) updates.periodo = body.periodo
   if (body.dias_bloqueio !== undefined) updates.dias_bloqueio = Number(body.dias_bloqueio)
   if (body.ativo !== undefined) updates.ativo = body.ativo
+  if (body.profissional_nome !== undefined) updates.profissional_nome = body.profissional_nome || null
   const { data, error } = await supabaseAdmin
     .from('feedback_prof_regras_custom')
     .update(updates)
