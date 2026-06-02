@@ -170,17 +170,17 @@ export default function BloqueiosPage() {
                             Libera em: <span className="text-nodri-t2 font-semibold">{new Date(p.bloqueado_ate + 'T12:00:00').toLocaleDateString('pt-BR')}</span>
                           </div>
                         )}
-                        <div className="flex flex-wrap gap-3 mt-2 text-[11px]">
-                          {p.atrasos_semana > 0 && (
+                        <div className="flex flex-col gap-1 mt-2 text-[11px]">
+                          {p.datas_atrasos.length > 0 && (
                             <span>
-                              <span className="text-yellow-400 font-bold">⏰ {p.atrasos_semana} atraso{p.atrasos_semana > 1 ? 's' : ''}</span>
-                              {p.datas_atrasos.length > 0 && <span className="text-nodri-t3 ml-1">({p.datas_atrasos.join(', ')})</span>}
+                              <span className="text-yellow-400 font-bold">⏰ {p.datas_atrasos.length} atraso{p.datas_atrasos.length > 1 ? 's' : ''}: </span>
+                              <span className="text-nodri-t3">{p.datas_atrasos.join(', ')}</span>
                             </span>
                           )}
-                          {p.faltas_mes > 0 && (
+                          {p.datas_faltas.length > 0 && (
                             <span>
-                              <span className="text-red-400 font-bold">❌ {p.faltas_mes} falta{p.faltas_mes > 1 ? 's' : ''}</span>
-                              {p.datas_faltas.length > 0 && <span className="text-nodri-t3 ml-1">({p.datas_faltas.join(', ')})</span>}
+                              <span className="text-red-400 font-bold">❌ {p.datas_faltas.length} falta{p.datas_faltas.length > 1 ? 's' : ''}: </span>
+                              <span className="text-nodri-t3">{p.datas_faltas.join(', ')}</span>
                             </span>
                           )}
                         </div>
