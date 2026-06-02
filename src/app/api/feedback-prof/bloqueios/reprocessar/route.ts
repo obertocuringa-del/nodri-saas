@@ -96,10 +96,10 @@ export async function POST() {
   }
 
   // Para cada profissional, calcula o maior bloqueio ainda ativo
-  const todosProfs = new Set([
+  const todosProfs = Array.from(new Set([
     ...Object.keys(atrasosPorProfSemana),
     ...Object.keys(faltasPorProfMes),
-  ])
+  ]))
 
   const upserts: object[] = []
   const log: string[] = []
