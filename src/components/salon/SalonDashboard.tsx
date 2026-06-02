@@ -180,7 +180,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
 
   const planoLabel = plano === 'premium' ? 'Plano Premium' : plano === 'profissional' ? 'Plano Profissional' : 'Plano Básico'
   const initials = salaoNome.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
-  const TABS = ['Todos os Módulos', 'Manual do Usuário', 'Dicas Nodri', 'Gestão de Pessoas', 'Gestão Financeira', 'Marketing']
+  const TABS = ['Todos os Módulos', 'Feedback de Cliente', 'Manual do Usuário', 'Dicas Nodri', 'Gestão de Pessoas', 'Gestão Financeira', 'Marketing']
 
   return (
     <div className="nodri-salon-bg min-h-screen flex flex-col">
@@ -221,19 +221,24 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
           {TABS.map(tab => (
             <div key={tab} className="relative">
               <button
-                onClick={() => setOpenDropdown(openDropdown === tab ? null : tab)}
+                onClick={() => {
+                  if (tab === 'Feedback de Cliente') { window.location.href = '/salon/feedback'; return }
+                  setOpenDropdown(openDropdown === tab ? null : tab)
+                }}
                 className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-[11px] font-medium whitespace-nowrap transition-all ${
                   openDropdown === tab
                     ? 'bg-nodri-surface text-nodri-cyan border border-nodri-cyan/30'
-                    : 'text-nodri-t2 hover:text-nodri-t1 hover:bg-nodri-surface/50'
+                    : tab === 'Feedback de Cliente'
+                      ? 'text-nodri-pink hover:bg-nodri-pink/10 border border-nodri-pink/20'
+                      : 'text-nodri-t2 hover:text-nodri-t1 hover:bg-nodri-surface/50'
                 }`}>
-                {tab}
-                {tab !== 'Todos os Módulos' && (
+                {tab === 'Feedback de Cliente' ? '⭐ ' : ''}{tab}
+                {tab !== 'Todos os Módulos' && tab !== 'Feedback de Cliente' && (
                   <ChevronDown size={10} className={`transition-transform duration-200 ${openDropdown === tab ? 'rotate-180 text-nodri-cyan' : ''}`} />
                 )}
               </button>
 
-              {openDropdown === tab && tab !== 'Todos os Módulos' && MENU_LINKS[tab] && (
+              {openDropdown === tab && tab !== 'Todos os Módulos' && tab !== 'Feedback de Cliente' && MENU_LINKS[tab] && (
                 <div style={{ position: 'fixed', zIndex: 9999, marginTop: '4px' }}
                   className="bg-nodri-card border border-nodri-border rounded-xl shadow-2xl min-w-[300px] max-h-80 overflow-y-auto">
                   <div className="px-3 py-2 border-b border-nodri-border sticky top-0 bg-nodri-card">

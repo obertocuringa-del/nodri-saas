@@ -28,6 +28,9 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/api/webhook') ||
     pathname.startsWith('/api/cupons/validar') ||
     pathname.startsWith('/api/afiliados') ||
+    // Feedback público (form do cliente)
+    pathname.startsWith('/feedback') ||
+    pathname.startsWith('/api/feedback/public') ||
     pathname.startsWith('/_next') ||
     pathname.startsWith('/favicon') ||
     pathname === '/'
