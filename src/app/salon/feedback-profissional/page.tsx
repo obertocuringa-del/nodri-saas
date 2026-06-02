@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Plus, Trash2, Edit2, Check, X, Copy, Eye, BarChart2, Users, ClipboardList, Upload } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Edit2, Check, X, Copy, Eye, BarChart2, Users, ClipboardList, Upload, Lock } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 interface Formulario { id: string; titulo: string; token: string; ativo: boolean; criado_em: string }
@@ -200,6 +200,13 @@ export default function FeedbackProfissionalPage() {
               <BarChart2 size={13} /> Ver Resultados
             </button>
           )}
+          <button
+            onClick={() => router.push('/salon/feedback-profissional/bloqueios')}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold"
+            style={{ background: 'rgba(239,68,68,.12)', color: '#f87171', border: '1px solid rgba(239,68,68,.25)' }}
+          >
+            <Lock size={13} /> Bloqueios
+          </button>
           <button
             onClick={() => router.push('/salon/feedback-profissional/importar')}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold"
