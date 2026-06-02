@@ -52,7 +52,7 @@ export async function POST() {
   // Busca TODOS os feedbacks negativos de ATRASO e FALTA via formulario_id
   const { data: respostas, error: errResp } = await supabaseAdmin
     .from('feedback_prof_respostas')
-    .select('profissional_nome, ocorrido_descricao, criado_em, tipo')
+    .select('profissional_nome, ocorrido_descricao, criado_em')
     .in('formulario_id', formIds)
     .eq('tipo', 'negativo')
     .in('ocorrido_descricao', ['ATRASO', 'FALTA'])
@@ -71,7 +71,6 @@ export async function POST() {
   const amostra = respostas.slice(0, 5).map(r => ({
     nome: r.profissional_nome,
     ocorrencia: r.ocorrido_descricao,
-    tipo: r.tipo,
     data: r.criado_em,
   }))
 
