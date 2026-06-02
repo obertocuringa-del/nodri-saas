@@ -3,19 +3,15 @@ import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 
-// Converte URL do Google Sheets para URL de exportação CSV
 function toCSVUrl(url: string): string {
-  // https://docs.google.com/spreadsheets/d/{ID}/edit#gid=0
-  // https://docs.google.com/spreadsheets/d/{ID}/pub?...
   const match = url.match(/spreadsheets\/d\/([a-zA-Z0-9_-]+)/)
   if (!match) return url
   const id = match[1]
-  const gidMatch = url.match(/[?&]gid=(\d+)/)
+  const gidMatch = url.match(/[?&#]gid=(\d+)/)
   const gid = gidMatch ? gidMatch[1] : '0'
   return `https://docs.google.com/spreadsheets/d/${id}/export?format=csv&gid=${gid}`
 }
 
-// Normaliza tipo positivo/negativo
 function normalizaTipo(val: string): 'positivo' | 'negativo' | null {
   const v = val.toLowerCase().trim()
   if (v.includes('positivo') || v === 'pos' || v === 'p') return 'positivo'
@@ -23,14 +19,12 @@ function normalizaTipo(val: string): 'positivo' | 'negativo' | null {
   return null
 }
 
-// Parse CSV simples (suporta campos com aspas e quebras de linha)
 function parseCSV(text: string): string[][] {
   const rows: string[][] = []
   let row: string[] = []
   let cell = ''
   let inQuotes = false
   let i = 0
-
   while (i < text.length) {
     const ch = text[i]
     if (ch === '"') {
@@ -52,6 +46,12 @@ function parseCSV(text: string): string[][] {
   return rows
 }
 
+function parseDataHora(val: string): string | undefined {
+  const m = val.match(/(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})(?::(\d{2}))?/)
+  if (m) return `${m[3]}-${m[2]}-${m[1]}T${m[4]}:${m[5]}:${m[6] || '00'}`
+  return undefined
+}
+
 export async function POST(req: NextRequest) {
   const token = cookies().get('nodri_token')?.value
   const payload = token ? await verifyJWT(token) : null
@@ -61,7 +61,6 @@ export async function POST(req: NextRequest) {
   const body = await req.json()
   const { formulario_id, sheet_url, csv_texto } = body
 
-  // Verifica que o formulário pertence ao salão
   const { data: form } = await supabaseAdmin
     .from('feedback_prof_formularios')
     .select('id')
@@ -72,27 +71,22 @@ export async function POST(req: NextRequest) {
 
   let csvText = csv_texto || ''
 
-  // Busca CSV do Google Sheets se URL fornecida
   if (!csvText && sheet_url) {
     const csvUrl = toCSVUrl(sheet_url)
     try {
-      const res = await fetch(csvUrl, {
-        headers: { 'User-Agent': 'Mozilla/5.0' },
-        redirect: 'follow',
-      })
-      if (!res.ok) return NextResponse.json({ error: `Não foi possível acessar a planilha. Verifique se ela está pública (Compartilhar → Qualquer pessoa com o link → Leitor). Status: ${res.status}` }, { status: 400 })
+      const res = await fetch(csvUrl, { headers: { 'User-Agent': 'Mozilla/5.0' }, redirect: 'follow' })
+      if (!res.ok) return NextResponse.json({ error: `Planilha inacessível (${res.status}). Verifique se está pública.` }, { status: 400 })
       csvText = await res.text()
-    } catch (e) {
-      return NextResponse.json({ error: 'Erro ao acessar a planilha. Verifique se o link está correto e se está pública.' }, { status: 400 })
+    } catch {
+      return NextResponse.json({ error: 'Erro ao acessar a planilha.' }, { status: 400 })
     }
   }
 
-  if (!csvText) return NextResponse.json({ error: 'Forneça a URL da planilha ou cole o CSV.' }, { status: 400 })
+  if (!csvText) return NextResponse.json({ error: 'Forneça a URL ou o CSV.' }, { status: 400 })
 
   const rows = parseCSV(csvText)
-  if (rows.length < 2) return NextResponse.json({ error: 'Planilha vazia ou sem dados.' }, { status: 400 })
+  if (rows.length < 2) return NextResponse.json({ error: 'Planilha vazia.' }, { status: 400 })
 
-  // Detecta colunas pelo cabeçalho
   const header = rows[0].map(h => h.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim())
   const dataRows = rows.slice(1)
 
@@ -105,29 +99,21 @@ export async function POST(req: NextRequest) {
   }
 
   const colProf = findCol('profissional', 'prof', 'nome')
-  const colTipo = findCol('positivo', 'tipo', 'classificac', 'pos', 'neg')
-  const colOcorr = findCol('houve', 'ocorr', 'ocorrencia', 'o que')
-  const colDesc = findCol('descreva', 'descri', 'observ', 'detalhe', 'relato')
+  const colTipo = findCol('positivo', 'tipo', 'classificac')
+  const colOcorr = findCol('houve', 'ocorr', 'o que')
+  const colDesc = findCol('descreva', 'descri', 'observ', 'detalhe')
   const colData = findCol('data', 'carimbo', 'timestamp', 'hora')
 
-  if (colProf < 0) return NextResponse.json({ error: 'Coluna PROFISSIONAL não encontrada. Verifique o cabeçalho da planilha.' }, { status: 400 })
+  if (colProf < 0) return NextResponse.json({ error: 'Coluna PROFISSIONAL não encontrada.' }, { status: 400 })
   if (colTipo < 0) return NextResponse.json({ error: 'Coluna POSITIVO/NEGATIVO não encontrada.' }, { status: 400 })
-  if (colOcorr < 0) return NextResponse.json({ error: 'Coluna de ocorrência (O QUE HOUVE) não encontrada.' }, { status: 400 })
+  if (colOcorr < 0) return NextResponse.json({ error: 'Coluna O QUE HOUVE não encontrada.' }, { status: 400 })
 
-  // Busca profissionais e ocorridos já existentes
-  const { data: profsExist } = await supabaseAdmin.from('feedback_prof_profissionais').select('id, nome').eq('salao_id', payload.salaoId)
-  const { data: ocorrExist } = await supabaseAdmin.from('feedback_prof_ocorridos').select('id, descricao').eq('salao_id', payload.salaoId)
-
-  const profMap: Record<string, string> = {}
-  const ocorrMap: Record<string, string> = {}
-  ;(profsExist || []).forEach(p => { profMap[p.nome.toUpperCase()] = p.id })
-  ;(ocorrExist || []).forEach(o => { ocorrMap[o.descricao.toUpperCase()] = o.id })
-
-  let importados = 0
-  let ignorados = 0
+  // ── PASSO 1: Coleta nomes únicos de profissionais e ocorridos ──
+  const nomesProf = new Set<string>()
+  const nomesOcorr = new Set<string>()
+  const linhasValidas: { profNome: string; tipo: 'positivo' | 'negativo'; ocorrDesc: string; descricao: string; dataHora?: string }[] = []
   const erros: string[] = []
-  const novosProfissionais: string[] = []
-  const novosOcorridos: string[] = []
+  let ignorados = 0
 
   for (let i = 0; i < dataRows.length; i++) {
     const row = dataRows[i]
@@ -139,53 +125,80 @@ export async function POST(req: NextRequest) {
 
     if (!profNome || !ocorrDesc) { ignorados++; continue }
     const tipo = normalizaTipo(tipoRaw)
-    if (!tipo) { erros.push(`Linha ${i + 2}: tipo "${tipoRaw}" inválido (use POSITIVO ou NEGATIVO)`); ignorados++; continue }
-
-    // Cria profissional se não existe
-    if (!profMap[profNome]) {
-      const { data: newProf } = await supabaseAdmin.from('feedback_prof_profissionais')
-        .insert({ salao_id: payload.salaoId, nome: profNome }).select('id').single()
-      if (newProf) { profMap[profNome] = newProf.id; novosProfissionais.push(profNome) }
+    if (!tipo) {
+      if (erros.length < 10) erros.push(`Linha ${i + 2}: tipo "${tipoRaw}" inválido`)
+      ignorados++; continue
     }
 
-    // Cria ocorrido se não existe
-    if (!ocorrMap[ocorrDesc]) {
-      const { data: newOcorr } = await supabaseAdmin.from('feedback_prof_ocorridos')
-        .insert({ salao_id: payload.salaoId, descricao: ocorrDesc }).select('id').single()
-      if (newOcorr) { ocorrMap[ocorrDesc] = newOcorr.id; novosOcorridos.push(ocorrDesc) }
-    }
+    nomesProf.add(profNome)
+    nomesOcorr.add(ocorrDesc)
+    linhasValidas.push({ profNome, tipo, ocorrDesc, descricao, dataHora: parseDataHora(dataHora) })
+  }
 
-    // Parse da data (formato brasileiro: DD/MM/YYYY HH:MM:SS)
-    let criadoEm: string | undefined
-    if (dataHora) {
-      const m = dataHora.match(/(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})(?::(\d{2}))?/)
-      if (m) {
-        criadoEm = `${m[3]}-${m[2]}-${m[1]}T${m[4]}:${m[5]}:${m[6] || '00'}`
-      }
-    }
+  // ── PASSO 2: Busca existentes e cria novos em lote ──
+  const { data: profsExist } = await supabaseAdmin.from('feedback_prof_profissionais').select('id, nome').eq('salao_id', payload.salaoId)
+  const { data: ocorrExist } = await supabaseAdmin.from('feedback_prof_ocorridos').select('id, descricao').eq('salao_id', payload.salaoId)
 
-    const insert: Record<string, unknown> = {
+  const profMap: Record<string, string> = {}
+  const ocorrMap: Record<string, string> = {}
+  ;(profsExist || []).forEach(p => { profMap[p.nome.toUpperCase()] = p.id })
+  ;(ocorrExist || []).forEach(o => { ocorrMap[o.descricao.toUpperCase()] = o.id })
+
+  // Cria profissionais novos em lote
+  const novosProfNomes = Array.from(nomesProf).filter(n => !profMap[n])
+  const novosOcorrNomes = Array.from(nomesOcorr).filter(n => !ocorrMap[n])
+  const novosProfissionais: string[] = []
+  const novosOcorridos: string[] = []
+
+  if (novosProfNomes.length > 0) {
+    const { data: criados } = await supabaseAdmin
+      .from('feedback_prof_profissionais')
+      .insert(novosProfNomes.map(nome => ({ salao_id: payload.salaoId, nome })))
+      .select('id, nome')
+    ;(criados || []).forEach(p => { profMap[p.nome.toUpperCase()] = p.id; novosProfissionais.push(p.nome) })
+  }
+
+  if (novosOcorrNomes.length > 0) {
+    const { data: criados } = await supabaseAdmin
+      .from('feedback_prof_ocorridos')
+      .insert(novosOcorrNomes.map(descricao => ({ salao_id: payload.salaoId, descricao })))
+      .select('id, descricao')
+    ;(criados || []).forEach(o => { ocorrMap[o.descricao.toUpperCase()] = o.id; novosOcorridos.push(o.descricao) })
+  }
+
+  // ── PASSO 3: Monta e insere todos os registros em lotes de 500 ──
+  const inserts = linhasValidas.map(linha => {
+    const obj: Record<string, unknown> = {
       formulario_id: form.id,
       salao_id: payload.salaoId,
-      profissional_id: profMap[profNome] || null,
-      profissional_nome: profNome,
-      tipo,
-      ocorrido_id: ocorrMap[ocorrDesc] || null,
-      ocorrido_descricao: ocorrDesc,
-      descricao: descricao || null,
+      profissional_id: profMap[linha.profNome] || null,
+      profissional_nome: linha.profNome,
+      tipo: linha.tipo,
+      ocorrido_id: ocorrMap[linha.ocorrDesc] || null,
+      ocorrido_descricao: linha.ocorrDesc,
+      descricao: linha.descricao || null,
     }
-    if (criadoEm) insert.criado_em = criadoEm
+    if (linha.dataHora) obj.criado_em = linha.dataHora
+    return obj
+  })
 
-    const { error } = await supabaseAdmin.from('feedback_prof_respostas').insert(insert)
-    if (error) { erros.push(`Linha ${i + 2}: ${error.message}`); ignorados++ }
-    else importados++
+  let importados = 0
+  const BATCH = 500
+  for (let i = 0; i < inserts.length; i += BATCH) {
+    const batch = inserts.slice(i, i + BATCH)
+    const { error } = await supabaseAdmin.from('feedback_prof_respostas').insert(batch)
+    if (error) {
+      if (erros.length < 10) erros.push(`Lote ${Math.floor(i / BATCH) + 1}: ${error.message}`)
+    } else {
+      importados += batch.length
+    }
   }
 
   return NextResponse.json({
     ok: true,
     importados,
     ignorados,
-    erros: erros.slice(0, 10),
+    erros,
     novosProfissionais,
     novosOcorridos,
     total_linhas: dataRows.length,
