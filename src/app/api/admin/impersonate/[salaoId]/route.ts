@@ -45,14 +45,16 @@ export async function POST(req: NextRequest, { params }: { params: { salaoId: st
     plano:     salao.plano?.slug || 'basico',
   })
 
-  // Registra no log
-  await supabaseAdmin.from('logs').insert({
-    acao: 'impersonacao',
-    descricao: `Admin acessou como salão "${salao.nome}" (${salao.email})`,
-    usuario_id: payload.userId,
-    salao_id: salaoId,
-    metadata: { admin_email: payload.email, salao_nome: salao.nome },
-  }).catch(() => {}) // silencioso se tabela logs não tiver essas colunas
+  // Registra no log (silencioso se tabela não tiver essas colunas)
+  try {
+    await supabaseAdmin.from('logs').insert({
+      acao: 'impersonacao',
+      descricao: `Admin acessou como salão "${salao.nome}" (${salao.email})`,
+      usuario_id: payload.userId,
+      salao_id: salaoId,
+      metadata: { admin_email: payload.email, salao_nome: salao.nome },
+    })
+  } catch { /* ignora */ }
 
   // Retorna o token do salão — o admin_token fica salvo no front para voltar
   return NextResponse.json({
