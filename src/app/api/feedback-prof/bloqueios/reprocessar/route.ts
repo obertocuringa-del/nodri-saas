@@ -39,11 +39,21 @@ export async function POST() {
   const salaoId = payload.salaoId
   const todayStr = toDateStr(new Date())
 
-  // Busca TODOS os feedbacks negativos de ATRASO e FALTA do salão
+  // Busca formulários do salão para garantir escopo correto
+  const { data: forms } = await supabaseAdmin
+    .from('feedback_prof_formularios')
+    .select('id')
+    .eq('salao_id', salaoId)
+
+  const formIds = (forms || []).map(f => f.id)
+  if (formIds.length === 0)
+    return NextResponse.json({ ok: true, bloqueios_gerados: 0, mensagem: 'Nenhum formulário encontrado.' })
+
+  // Busca TODOS os feedbacks negativos de ATRASO e FALTA via formulario_id
   const { data: respostas, error: errResp } = await supabaseAdmin
     .from('feedback_prof_respostas')
     .select('profissional_nome, ocorrido_descricao, criado_em')
-    .eq('salao_id', salaoId)
+    .in('formulario_id', formIds)
     .eq('tipo', 'negativo')
     .in('ocorrido_descricao', ['ATRASO', 'FALTA'])
     .order('criado_em', { ascending: true })
