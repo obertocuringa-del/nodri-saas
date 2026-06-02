@@ -45,7 +45,6 @@ export default function BloqueiosPage() {
   useEffect(() => { fetchData() }, [])
 
   async function reprocessarHistorico() {
-    if (!confirm('Varrer todo o histórico de feedbacks e gerar bloqueios automaticamente?\n\nIsso pode levar alguns segundos.')) return
     setReprocessando(true)
     const res = await fetch('/api/feedback-prof/bloqueios/reprocessar', { method: 'POST' })
     const d = await res.json()
