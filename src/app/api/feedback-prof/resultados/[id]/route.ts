@@ -94,7 +94,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const profCritico = ranking.filter(p => p.total >= 2).sort((a, b) => a.score - b.score)[0] || null
 
   // ── LISTA DE PROFISSIONAIS (para filtro) ──────────────────
-  const nomeProfissionais = [...new Set(lista.map(r => r.profissional_nome))].sort()
+  const nomeProfissionais = Array.from(new Set(lista.map(r => r.profissional_nome))).sort()
 
   return NextResponse.json({
     formulario: { id: form.id, titulo: form.titulo },
