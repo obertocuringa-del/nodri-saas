@@ -180,7 +180,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
 
   const planoLabel = plano === 'premium' ? 'Plano Premium' : plano === 'profissional' ? 'Plano Profissional' : 'Plano Básico'
   const initials = salaoNome.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
-  const TABS = ['Todos os Módulos', 'Feedback de Cliente', 'Manual do Usuário', 'Dicas Nodri', 'Gestão de Pessoas', 'Gestão Financeira', 'Marketing']
+  const TABS = ['Todos os Módulos', 'Feedback de Cliente', 'Feedback Profissional', 'Manual do Usuário', 'Dicas Nodri', 'Gestão de Pessoas', 'Gestão Financeira', 'Marketing']
 
   return (
     <div className="nodri-salon-bg min-h-screen flex flex-col">
@@ -223,6 +223,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               <button
                 onClick={() => {
                   if (tab === 'Feedback de Cliente') { window.location.href = '/salon/feedback'; return }
+                  if (tab === 'Feedback Profissional') { window.location.href = '/salon/feedback-profissional'; return }
                   setOpenDropdown(openDropdown === tab ? null : tab)
                 }}
                 className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-[11px] font-medium whitespace-nowrap transition-all ${
@@ -230,10 +231,12 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                     ? 'bg-nodri-surface text-nodri-cyan border border-nodri-cyan/30'
                     : tab === 'Feedback de Cliente'
                       ? 'text-nodri-pink hover:bg-nodri-pink/10 border border-nodri-pink/20'
-                      : 'text-nodri-t2 hover:text-nodri-t1 hover:bg-nodri-surface/50'
+                      : tab === 'Feedback Profissional'
+                        ? 'text-nodri-purple hover:bg-nodri-purple/10 border border-nodri-purple/20'
+                        : 'text-nodri-t2 hover:text-nodri-t1 hover:bg-nodri-surface/50'
                 }`}>
-                {tab === 'Feedback de Cliente' ? '⭐ ' : ''}{tab}
-                {tab !== 'Todos os Módulos' && tab !== 'Feedback de Cliente' && (
+                {tab === 'Feedback de Cliente' ? '⭐ ' : tab === 'Feedback Profissional' ? '👥 ' : ''}{tab}
+                {tab !== 'Todos os Módulos' && tab !== 'Feedback de Cliente' && tab !== 'Feedback Profissional' && (
                   <ChevronDown size={10} className={`transition-transform duration-200 ${openDropdown === tab ? 'rotate-180 text-nodri-cyan' : ''}`} />
                 )}
               </button>
