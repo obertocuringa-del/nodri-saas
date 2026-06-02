@@ -34,6 +34,8 @@ export default function BloqueiosPage() {
 
   async function fetchData() {
     setLoading(true)
+    // reprocessa histórico automaticamente antes de carregar
+    await fetch('/api/feedback-prof/bloqueios/reprocessar', { method: 'POST' })
     const res = await fetch('/api/feedback-prof/bloqueios')
     if (res.ok) setData(await res.json())
     else toast.error('Erro ao carregar')
