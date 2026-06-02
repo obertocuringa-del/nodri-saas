@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, RefreshCw, Lock, Unlock, AlertTriangle, Users } from 'lucide-react'
+import { ArrowLeft, RefreshCw, Lock, Unlock, AlertTriangle, Users, ShieldOff } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 interface ProfBloqueio {
@@ -28,6 +28,7 @@ export default function BloqueiosPage() {
   const router = useRouter()
   const [data, setData] = useState<Data | null>(null)
   const [loading, setLoading] = useState(true)
+  const [desbloqueando, setDesbloqueando] = useState<string | null>(null)
 
   async function fetchData() {
     setLoading(true)
@@ -39,12 +40,28 @@ export default function BloqueiosPage() {
 
   useEffect(() => { fetchData() }, [])
 
+  async function desbloquear(nome: string) {
+    if (!confirm(`Desbloquear ${nome} manualmente?`)) return
+    setDesbloqueando(nome)
+    const res = await fetch('/api/feedback-prof/bloqueios', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ profissional_nome: nome }),
+    })
+    if (res.ok) {
+      toast.success(`${nome} desbloqueado!`)
+      await fetchData()
+    } else {
+      toast.error('Erro ao desbloquear')
+    }
+    setDesbloqueando(null)
+  }
+
   const disponiveis = data?.profissionais.filter(p => !p.bloqueado) ?? []
   const bloqueados  = data?.profissionais.filter(p => p.bloqueado)  ?? []
 
   return (
     <div className="nodri-salon-bg min-h-screen">
-      {/* NAV */}
       <nav className="bg-nodri-surface border-b border-nodri-border px-5 py-3 flex items-center gap-3 sticky top-0 z-50">
         <button onClick={() => router.push('/salon/feedback-profissional')}
           className="flex items-center gap-1.5 text-nodri-t2 hover:text-nodri-t1 text-sm">
@@ -80,20 +97,18 @@ export default function BloqueiosPage() {
               </div>
             </div>
 
-            {/* Cards de resumo */}
+            {/* Resumo */}
             <div className="grid grid-cols-3 gap-3">
-              <div className="pcard p-4 rounded-xl border text-center" style={{ background: '#0d1117', borderColor: 'rgba(255,255,255,.07)' }}>
-                <div className="text-[10px] text-nodri-t3 uppercase mb-1">Total</div>
-                <div className="text-2xl font-black text-nodri-t1">{data.profissionais.length}</div>
-              </div>
-              <div className="pcard p-4 rounded-xl border text-center" style={{ background: '#0d1117', borderColor: 'rgba(34,197,94,.2)' }}>
-                <div className="text-[10px] text-nodri-t3 uppercase mb-1">Disponíveis</div>
-                <div className="text-2xl font-black text-green-400">{disponiveis.length}</div>
-              </div>
-              <div className="pcard p-4 rounded-xl border text-center" style={{ background: '#0d1117', borderColor: 'rgba(239,68,68,.2)' }}>
-                <div className="text-[10px] text-nodri-t3 uppercase mb-1">Bloqueados</div>
-                <div className="text-2xl font-black text-red-400">{bloqueados.length}</div>
-              </div>
+              {[
+                { label: 'Total', val: data.profissionais.length, cor: '#94a3b8' },
+                { label: 'Disponíveis', val: disponiveis.length, cor: '#4ade80' },
+                { label: 'Bloqueados', val: bloqueados.length, cor: '#f87171' },
+              ].map(({ label, val, cor }) => (
+                <div key={label} className="pcard p-4 rounded-xl border text-center" style={{ background: '#0d1117', borderColor: `${cor}30` }}>
+                  <div className="text-[10px] text-nodri-t3 uppercase mb-1">{label}</div>
+                  <div className="text-2xl font-black" style={{ color: cor }}>{val}</div>
+                </div>
+              ))}
             </div>
 
             {/* Bloqueados */}
@@ -103,7 +118,7 @@ export default function BloqueiosPage() {
                   style={{ borderColor: 'rgba(239,68,68,.15)', background: 'rgba(239,68,68,.06)' }}>
                   <Lock size={14} className="text-red-400" />
                   <span className="text-[13px] font-bold text-red-300">Bloqueados — Sem Clientes Não Preferência</span>
-                  <span className="ml-auto text-[11px] font-bold text-red-400">{bloqueados.length} profissional(is)</span>
+                  <span className="ml-auto text-[11px] font-bold text-red-400">{bloqueados.length}</span>
                 </div>
                 <div className="p-4 space-y-2">
                   {bloqueados.map(p => (
@@ -118,36 +133,38 @@ export default function BloqueiosPage() {
                           <span className="font-bold text-nodri-t1 text-[13px]">{p.nome}</span>
                           <span className="text-[9px] font-black px-2 py-0.5 rounded-full"
                             style={{ background: p.dias_bloqueio === 15 ? 'rgba(239,68,68,.2)' : 'rgba(250,204,21,.15)', color: p.dias_bloqueio === 15 ? '#f87171' : '#facc15', border: `1px solid ${p.dias_bloqueio === 15 ? 'rgba(239,68,68,.4)' : 'rgba(250,204,21,.4)'}` }}>
-                            BLOQUEIO {p.dias_bloqueio} DIAS
+                            {p.dias_bloqueio} DIAS
                           </span>
-                          <span className="text-[9px] font-bold text-nodri-t3">
-                            {p.dias_restantes} dia{p.dias_restantes !== 1 ? 's' : ''} restante{p.dias_restantes !== 1 ? 's' : ''}
-                          </span>
+                          <span className="text-[10px] text-nodri-t3">{p.dias_restantes} dia{p.dias_restantes !== 1 ? 's' : ''} restante{p.dias_restantes !== 1 ? 's' : ''}</span>
                         </div>
                         {p.bloqueado_ate && (
                           <div className="text-[10px] text-nodri-t3 mt-0.5">
-                            Liberado em: <span className="text-nodri-t2 font-semibold">{new Date(p.bloqueado_ate + 'T12:00:00').toLocaleDateString('pt-BR')}</span>
+                            Libera em: <span className="text-nodri-t2 font-semibold">{new Date(p.bloqueado_ate + 'T12:00:00').toLocaleDateString('pt-BR')}</span>
                           </div>
                         )}
                         <div className="flex flex-wrap gap-3 mt-2 text-[11px]">
                           {p.atrasos_semana > 0 && (
-                            <span className="flex items-center gap-1">
+                            <span>
                               <span className="text-yellow-400 font-bold">⏰ {p.atrasos_semana} atraso{p.atrasos_semana > 1 ? 's' : ''}</span>
-                              {p.datas_atrasos.length > 0 && (
-                                <span className="text-nodri-t3">({p.datas_atrasos.join(', ')})</span>
-                              )}
+                              {p.datas_atrasos.length > 0 && <span className="text-nodri-t3 ml-1">({p.datas_atrasos.join(', ')})</span>}
                             </span>
                           )}
                           {p.faltas_mes > 0 && (
-                            <span className="flex items-center gap-1">
+                            <span>
                               <span className="text-red-400 font-bold">❌ {p.faltas_mes} falta{p.faltas_mes > 1 ? 's' : ''}</span>
-                              {p.datas_faltas.length > 0 && (
-                                <span className="text-nodri-t3">({p.datas_faltas.join(', ')})</span>
-                              )}
+                              {p.datas_faltas.length > 0 && <span className="text-nodri-t3 ml-1">({p.datas_faltas.join(', ')})</span>}
                             </span>
                           )}
                         </div>
                       </div>
+                      <button
+                        onClick={() => desbloquear(p.nome)}
+                        disabled={desbloqueando === p.nome}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold shrink-0 disabled:opacity-50"
+                        style={{ background: 'rgba(34,197,94,.1)', color: '#4ade80', border: '1px solid rgba(34,197,94,.3)' }}>
+                        <ShieldOff size={12} />
+                        {desbloqueando === p.nome ? 'Aguarde...' : 'Desbloquear'}
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -160,7 +177,7 @@ export default function BloqueiosPage() {
                 style={{ borderColor: 'rgba(34,197,94,.12)', background: 'rgba(34,197,94,.05)' }}>
                 <Unlock size={14} className="text-green-400" />
                 <span className="text-[13px] font-bold text-green-300">Disponíveis para Agendamento</span>
-                <span className="ml-auto text-[11px] font-bold text-green-400">{disponiveis.length} profissional(is)</span>
+                <span className="ml-auto text-[11px] font-bold text-green-400">{disponiveis.length}</span>
               </div>
               <div className="p-4">
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -174,13 +191,13 @@ export default function BloqueiosPage() {
                       <div className="flex-1 min-w-0">
                         <div className="text-[12px] font-semibold text-nodri-t1 truncate">{p.nome}</div>
                         {(p.atrasos_semana > 0 || p.faltas_mes > 0) && (
-                          <div className="text-[9px] text-nodri-t3 mt-0.5">
+                          <div className="text-[9px] mt-0.5">
                             {p.atrasos_semana > 0 && <span className="text-yellow-400">⏰{p.atrasos_semana} </span>}
                             {p.faltas_mes > 0 && <span className="text-red-400">❌{p.faltas_mes}</span>}
                           </div>
                         )}
                       </div>
-                      <span className="text-green-400 shrink-0">✓</span>
+                      <span className="text-green-400 shrink-0 text-sm">✓</span>
                     </div>
                   ))}
                 </div>
@@ -207,6 +224,7 @@ export default function BloqueiosPage() {
                       <th className="text-center px-4 py-3 text-nodri-t3 font-semibold uppercase tracking-wider">Atrasos<br/><span className="normal-case font-normal text-[9px]">{data.periodo_semana}</span></th>
                       <th className="text-center px-4 py-3 text-nodri-t3 font-semibold uppercase tracking-wider">Faltas<br/><span className="normal-case font-normal text-[9px]">{data.periodo_mes}</span></th>
                       <th className="text-center px-4 py-3 text-nodri-t3 font-semibold uppercase tracking-wider">Status</th>
+                      <th className="text-center px-4 py-3 text-nodri-t3 font-semibold uppercase tracking-wider">Ação</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-nodri-border/20">
@@ -235,15 +253,29 @@ export default function BloqueiosPage() {
                         </td>
                         <td className="text-center px-4 py-3">
                           {p.bloqueado ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold"
-                              style={{ background: p.dias_bloqueio === 15 ? 'rgba(239,68,68,.15)' : 'rgba(250,204,21,.1)', color: p.dias_bloqueio === 15 ? '#f87171' : '#facc15', border: `1px solid ${p.dias_bloqueio === 15 ? 'rgba(239,68,68,.3)' : 'rgba(250,204,21,.3)'}` }}>
-                              <Lock size={9} /> BLOQUEADO {p.dias_bloqueio}d
-                            </span>
+                            <div>
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold"
+                                style={{ background: p.dias_bloqueio === 15 ? 'rgba(239,68,68,.15)' : 'rgba(250,204,21,.1)', color: p.dias_bloqueio === 15 ? '#f87171' : '#facc15', border: `1px solid ${p.dias_bloqueio === 15 ? 'rgba(239,68,68,.3)' : 'rgba(250,204,21,.3)'}` }}>
+                                <Lock size={9} /> BLOQUEADO
+                              </span>
+                              <div className="text-[9px] text-nodri-t3 mt-0.5">{p.dias_restantes}d restantes</div>
+                            </div>
                           ) : (
                             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold"
                               style={{ background: 'rgba(34,197,94,.1)', color: '#4ade80', border: '1px solid rgba(34,197,94,.25)' }}>
                               <Unlock size={9} /> LIBERADO
                             </span>
+                          )}
+                        </td>
+                        <td className="text-center px-4 py-3">
+                          {p.bloqueado && (
+                            <button
+                              onClick={() => desbloquear(p.nome)}
+                              disabled={desbloqueando === p.nome}
+                              className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold mx-auto disabled:opacity-50"
+                              style={{ background: 'rgba(34,197,94,.1)', color: '#4ade80', border: '1px solid rgba(34,197,94,.25)' }}>
+                              <ShieldOff size={10} /> Desbloquear
+                            </button>
                           )}
                         </td>
                       </tr>
@@ -257,18 +289,9 @@ export default function BloqueiosPage() {
             <div className="pcard rounded-2xl border p-4" style={{ background: '#0d1117', borderColor: 'rgba(255,255,255,.05)' }}>
               <div className="text-[11px] font-bold text-nodri-t3 uppercase tracking-wider mb-3">Regras de Bloqueio</div>
               <div className="space-y-2 text-[11px] text-nodri-t2">
-                <div className="flex items-start gap-2">
-                  <span className="text-yellow-400 shrink-0">⏰</span>
-                  <span><strong className="text-yellow-400">3 ou mais atrasos</strong> na mesma semana (seg–dom) → bloqueio de <strong>7 dias</strong></span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="text-red-400 shrink-0">❌</span>
-                  <span><strong className="text-red-400">2 ou mais faltas</strong> no mesmo mês → bloqueio de <strong>15 dias</strong></span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="text-nodri-t3 shrink-0">ℹ️</span>
-                  <span>Bloqueados ficam sem atendimento de <strong>clientes não preferência</strong>. Os dados são calculados automaticamente dos feedbacks registrados.</span>
-                </div>
+                <div className="flex items-start gap-2"><span className="text-yellow-400 shrink-0">⏰</span><span><strong className="text-yellow-400">3+ atrasos</strong> na mesma semana → bloqueio de <strong>7 dias</strong></span></div>
+                <div className="flex items-start gap-2"><span className="text-red-400 shrink-0">❌</span><span><strong className="text-red-400">2+ faltas</strong> no mesmo mês → bloqueio de <strong>15 dias</strong></span></div>
+                <div className="flex items-start gap-2"><span className="text-nodri-t3 shrink-0">🔓</span><span>O desbloqueio manual remove o bloqueio imediatamente, independente da data de expiração.</span></div>
               </div>
             </div>
           </>

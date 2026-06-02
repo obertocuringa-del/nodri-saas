@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Plus, Trash2, Edit2, Check, X, Copy, Eye, BarChart2, Users, ClipboardList, Upload, Lock } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Edit2, Check, X, Copy, Eye, BarChart2, Users, ClipboardList, Upload, Lock, Settings2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 interface Formulario { id: string; titulo: string; token: string; ativo: boolean; criado_em: string }
@@ -192,13 +192,22 @@ export default function FeedbackProfissionalPage() {
         </div>
         <div className="ml-auto flex items-center gap-2">
           {selected && (
-            <button
-              onClick={() => router.push(`/salon/feedback-profissional/resultados/${selected.id}`)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold"
-              style={{ background: 'rgba(139,92,246,.15)', color: '#a78bfa', border: '1px solid rgba(139,92,246,.3)' }}
-            >
-              <BarChart2 size={13} /> Ver Resultados
-            </button>
+            <>
+              <button
+                onClick={() => router.push(`/salon/feedback-profissional/resultados/${selected.id}`)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold"
+                style={{ background: 'rgba(139,92,246,.15)', color: '#a78bfa', border: '1px solid rgba(139,92,246,.3)' }}
+              >
+                <BarChart2 size={13} /> Ver Resultados
+              </button>
+              <button
+                onClick={() => router.push(`/salon/feedback-profissional/gerenciar/${selected.id}`)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold"
+                style={{ background: 'rgba(250,204,21,.1)', color: '#facc15', border: '1px solid rgba(250,204,21,.25)' }}
+              >
+                <Settings2 size={13} /> Gerenciar Feedbacks
+              </button>
+            </>
           )}
           <button
             onClick={() => router.push('/salon/feedback-profissional/bloqueios')}

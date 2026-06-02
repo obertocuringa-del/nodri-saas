@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
@@ -182,4 +182,20 @@ export async function GET() {
   const periodoMes = `${formatDate(mesInicio)} a ${formatDate(mesFim)}`
 
   return NextResponse.json({ profissionais: resultado, periodo_semana: periodoSemana, periodo_mes: periodoMes })
+}
+
+export async function DELETE(req: NextRequest) {
+  const token = cookies().get('nodri_token')?.value
+  const payload = token ? await verifyJWT(token) : null
+  if (!payload || payload.role !== 'salon' || !payload.salaoId)
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+
+  const { profissional_nome } = await req.json()
+  await supabaseAdmin
+    .from('feedback_prof_bloqueios')
+    .delete()
+    .eq('salao_id', payload.salaoId)
+    .eq('profissional_nome', profissional_nome)
+
+  return NextResponse.json({ ok: true })
 }
