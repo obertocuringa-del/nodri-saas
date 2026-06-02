@@ -42,7 +42,8 @@ interface RegraCustom {
 }
 
 const PADRAO: Regras = { atrasos_por_semana: 3, dias_bloqueio_atraso: 7, faltas_por_mes: 2, dias_bloqueio_falta: 15 }
-const NOVA_REGRA_CUSTOM = { nome: '', ocorrencia: '', quantidade: 3, periodo: 'semana' as const, dias_bloqueio: 7 }
+interface NovaRegraCustom { nome: string; ocorrencia: string; quantidade: number; periodo: 'semana' | 'mes'; dias_bloqueio: number }
+const NOVA_REGRA_CUSTOM: NovaRegraCustom = { nome: '', ocorrencia: '', quantidade: 3, periodo: 'semana', dias_bloqueio: 7 }
 
 export default function BloqueiosPage() {
   const router = useRouter()
@@ -56,7 +57,7 @@ export default function BloqueiosPage() {
   const [salvandoRegras, setSalvandoRegras] = useState(false)
   const [regrasCustom, setRegrasCustom] = useState<RegraCustom[]>([])
   const [ocorridos, setOcorridos] = useState<string[]>([])
-  const [novaRegra, setNovaRegra] = useState(NOVA_REGRA_CUSTOM)
+  const [novaRegra, setNovaRegra] = useState<NovaRegraCustom>(NOVA_REGRA_CUSTOM)
   const [adicionandoRegra, setAdicionandoRegra] = useState(false)
   const [editandoRegraId, setEditandoRegraId] = useState<string | null>(null)
   const [editandoRegraData, setEditandoRegraData] = useState<Partial<RegraCustom>>({})
