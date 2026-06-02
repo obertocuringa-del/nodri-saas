@@ -49,17 +49,25 @@ export async function POST() {
   if (formIds.length === 0)
     return NextResponse.json({ ok: true, bloqueios_gerados: 0, mensagem: 'Nenhum formulário encontrado.' })
 
-  // Busca TODOS os feedbacks negativos de ATRASO e FALTA via formulario_id
-  const { data: respostas, error: errResp } = await supabaseAdmin
-    .from('feedback_prof_respostas')
-    .select('profissional_nome, ocorrido_descricao, criado_em')
-    .in('formulario_id', formIds)
-    .eq('tipo', 'negativo')
-    .in('ocorrido_descricao', ['ATRASO', 'FALTA'])
-    .order('criado_em', { ascending: true })
-    .limit(50000)
-
-  if (errResp) return NextResponse.json({ error: errResp.message }, { status: 500 })
+  // Busca TODOS os registros via paginação (Supabase limita 1000 por request)
+  const respostas: { profissional_nome: string; ocorrido_descricao: string; criado_em: string }[] = []
+  const PAGE = 1000
+  let from = 0
+  while (true) {
+    const { data, error } = await supabaseAdmin
+      .from('feedback_prof_respostas')
+      .select('profissional_nome, ocorrido_descricao, criado_em')
+      .in('formulario_id', formIds)
+      .eq('tipo', 'negativo')
+      .in('ocorrido_descricao', ['ATRASO', 'FALTA'])
+      .order('criado_em', { ascending: true })
+      .range(from, from + PAGE - 1)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (!data || data.length === 0) break
+    respostas.push(...data)
+    if (data.length < PAGE) break
+    from += PAGE
+  }
 
   if (!respostas || respostas.length === 0)
     return NextResponse.json({
