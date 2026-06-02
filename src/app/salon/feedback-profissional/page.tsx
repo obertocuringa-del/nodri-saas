@@ -84,7 +84,7 @@ export default function FeedbackProfissionalPage() {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ nome: novoProf }),
     })
-    if (res.ok) { setProfissionais(prev => [...prev, await res.json()].sort((a, b) => a.nome.localeCompare(b.nome))); setNovoProf(''); toast.success('Profissional adicionado!') }
+    if (res.ok) { const novo = await res.json(); setProfissionais(prev => [...prev, novo].sort((a, b) => a.nome.localeCompare(b.nome))); setNovoProf(''); toast.success('Profissional adicionado!') }
     setSaving(false)
   }
 
@@ -112,7 +112,7 @@ export default function FeedbackProfissionalPage() {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ descricao: novoOcorr }),
     })
-    if (res.ok) { setOcorridos(prev => [...prev, await res.json()].sort((a, b) => a.descricao.localeCompare(b.descricao))); setNovoOcorr(''); toast.success('Ocorrido adicionado!') }
+    if (res.ok) { const novo = await res.json(); setOcorridos(prev => [...prev, novo].sort((a, b) => a.descricao.localeCompare(b.descricao))); setNovoOcorr(''); toast.success('Ocorrido adicionado!') }
     setSaving(false)
   }
 
