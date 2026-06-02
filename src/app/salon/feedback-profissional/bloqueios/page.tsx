@@ -46,27 +46,17 @@ export default function BloqueiosPage() {
 
   async function reprocessarHistorico() {
     setReprocessando(true)
-    const res = await fetch('/api/feedback-prof/bloqueios/reprocessar', { method: 'POST' })
-    const d = await res.json()
-    if (res.ok) {
-      const info = [
-        `✅ Bloqueios gerados: ${d.bloqueios_gerados}`,
-        `📋 Registros ATRASO/FALTA encontrados: ${d.debug?.total_respostas ?? '?'}`,
-        `📁 Formulários do salão: ${d.debug?.formIds?.length ?? 0}`,
-        ``,
-        `Detalhes:`,
-        ...((d.detalhes as string[]) || ['Nenhum bloqueio ativo no período.']),
-        ``,
-        `Registros da SUELEN encontrados (${d.debug?.debugSuelen?.length ?? 0}):`,
-        JSON.stringify(d.debug?.debugSuelen, null, 2),
-        ``,
-        `Amostra geral (primeiros 5):`,
-        JSON.stringify(d.debug?.amostra, null, 2),
-      ].join('\n')
-      setDebugInfo(info)
-      if (d.bloqueios_gerados > 0) await fetchData()
-    } else {
-      setDebugInfo('❌ Erro: ' + JSON.stringify(d))
+    setDebugInfo('⏳ Processando...')
+    try {
+      const res = await fetch('/api/feedback-prof/bloqueios/reprocessar', { method: 'POST' })
+      const text = await res.text()
+      setDebugInfo(text)
+      if (res.ok) {
+        const d = JSON.parse(text)
+        if (d.bloqueios_gerados > 0) await fetchData()
+      }
+    } catch (e) {
+      setDebugInfo('❌ Erro: ' + String(e))
     }
     setReprocessando(false)
   }
