@@ -57,6 +57,7 @@ export async function POST() {
     .eq('tipo', 'negativo')
     .in('ocorrido_descricao', ['ATRASO', 'FALTA'])
     .order('criado_em', { ascending: true })
+    .limit(50000)
 
   if (errResp) return NextResponse.json({ error: errResp.message }, { status: 500 })
 
