@@ -27,11 +27,21 @@ interface IAAnalise {
   riscos_retencao: string
   recomendacoes_treinamento: string[]
 }
+interface AcaoCorretiva {
+  ocorrencia: string; categoria: string; count: number
+  stage: number; stage_label: string; stage_cor: string
+  acao_corretiva: string; urgente: boolean
+}
+interface PlanoAcaoItem {
+  profissional: string; score: number; total_negativos: number
+  max_stage: number; max_stage_cor: string; acoes: AcaoCorretiva[]
+}
 interface Data {
   formulario: { titulo: string }
   total: number; totalPositivo: number; totalNegativo: number
   ranking: Ranking[]; ocorrencias: Ocorrencia[]; tendencia: Tendencia[]
   alertaDesempenho: boolean; profCritico: Ranking | null; nomeProfissionais: string[]
+  planoAcao: PlanoAcaoItem[]
   reincidencia: Reincidencia[]; categorias: Categoria[]; matriz: MatrizItem[]
   topOcorrencias: string[]; diasSemana: DiaSemana[]; evolucaoIndividual: EvolucaoItem[]
   placardMensal: PlacardMes[]; correlacaoCliente: CorrelacaoItem[]
@@ -211,6 +221,94 @@ export default function ResultadosProfPage() {
                   </div>
                 ))}
               </div>
+
+              {/* ── PLANO DE AÇÃO CORRETIVA ── */}
+              {data.planoAcao && data.planoAcao.length > 0 && (
+                <div className="pcard rounded-2xl border overflow-hidden" style={{ background: '#0d1117', borderColor: 'rgba(139,92,246,.25)' }}>
+                  <div className="px-5 py-3 border-b" style={{ borderColor: 'rgba(139,92,246,.15)', background: 'rgba(139,92,246,.07)' }}>
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">🎯</span>
+                      <span className="font-syne font-bold text-sm text-purple-300">Plano de Ação Corretiva</span>
+                      <span className="text-[10px] text-nodri-t3 ml-1">— o que fazer para cada problema</span>
+                    </div>
+                    <p className="text-[10px] text-nodri-t3 mt-1">
+                      Ações baseadas na quantidade de ocorrências: quanto maior a reincidência, mais formal a medida.
+                    </p>
+                  </div>
+                  <div className="p-5 space-y-4">
+                    {data.planoAcao.map(prof => (
+                      <div key={prof.profissional} className="rounded-xl border overflow-hidden"
+                        style={{ borderColor: `${prof.max_stage_cor}30`, background: `${prof.max_stage_cor}06` }}>
+                        {/* Header do profissional */}
+                        <div className="px-4 py-2.5 flex items-center gap-3 border-b" style={{ borderColor: `${prof.max_stage_cor}20` }}>
+                          <div className="w-8 h-8 rounded-full flex items-center justify-center font-black text-sm shrink-0"
+                            style={{ background: `${prof.max_stage_cor}20`, color: prof.max_stage_cor, border: `1.5px solid ${prof.max_stage_cor}50` }}>
+                            {prof.profissional.charAt(0)}
+                          </div>
+                          <div className="flex-1">
+                            <span className="font-bold text-nodri-t1 text-[13px]">{prof.profissional}</span>
+                            <span className="text-[10px] text-nodri-t3 ml-2">{prof.total_negativos} negativo{prof.total_negativos !== 1 ? 's' : ''} · score {prof.score}%</span>
+                          </div>
+                          <span className="text-[9px] font-black px-2 py-1 rounded-full"
+                            style={{ background: `${prof.max_stage_cor}20`, color: prof.max_stage_cor, border: `1px solid ${prof.max_stage_cor}40` }}>
+                            ESTÁGIO {prof.max_stage}
+                          </span>
+                        </div>
+                        {/* Ações por ocorrência */}
+                        <div className="divide-y" style={{ borderColor: `${prof.max_stage_cor}10` }}>
+                          {prof.acoes.map((acao, i) => (
+                            <div key={i} className="px-4 py-3">
+                              <div className="flex items-start gap-3">
+                                <div className="shrink-0 mt-0.5">
+                                  <div className="flex items-center gap-1.5 mb-1">
+                                    <span className="text-[9px] font-black px-1.5 py-0.5 rounded"
+                                      style={{ background: `${acao.stage_cor}20`, color: acao.stage_cor, border: `1px solid ${acao.stage_cor}40` }}>
+                                      {acao.count}x
+                                    </span>
+                                    {acao.urgente && (
+                                      <span className="text-[8px] font-black text-red-400 uppercase">⚠ Urgente</span>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className="text-[12px] font-semibold text-nodri-t1">{acao.ocorrencia}</span>
+                                    <span className="text-[9px] text-nodri-t3">{acao.categoria}</span>
+                                  </div>
+                                  <div className="text-[10px] font-semibold mb-1" style={{ color: acao.stage_cor }}>
+                                    {acao.stage_label}
+                                  </div>
+                                  <p className="text-[11px] text-nodri-t2 leading-relaxed">{acao.acao_corretiva}</p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Legenda dos estágios */}
+                  <div className="px-5 pb-4">
+                    <div className="p-3 rounded-xl" style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)' }}>
+                      <div className="text-[10px] font-bold text-nodri-t3 mb-2">Escala de medidas (baseada na quantidade de ocorrências):</div>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {[
+                          { stage: 1, label: '1-2x', desc: 'Conversa Informal', cor: '#facc15' },
+                          { stage: 2, label: '3-4x', desc: 'Advertência Verbal', cor: '#fb923c' },
+                          { stage: 3, label: '5-6x', desc: 'Advertência Escrita', cor: '#f87171' },
+                          { stage: 4, label: '7x+', desc: 'Reunião Formal', cor: '#dc2626' },
+                        ].map(s => (
+                          <div key={s.stage} className="flex items-center gap-2">
+                            <div className="w-5 h-5 rounded flex items-center justify-center text-[9px] font-black shrink-0"
+                              style={{ background: `${s.cor}20`, color: s.cor }}>{s.label}</div>
+                            <span className="text-[9px] text-nodri-t2">{s.desc}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* ── AGRUPAMENTO POR CATEGORIA ── */}
               {data.categorias.length > 0 && (

@@ -57,6 +57,68 @@ const CATEGORIA_CORES: Record<string, string> = {
   'Outros': '#94a3b8',
 }
 
+// Ações corretivas por categoria e estágio
+type Stage = 1 | 2 | 3 | 4
+const ACOES_CORRETIVAS: Record<string, Record<Stage, string>> = {
+  'Pontualidade': {
+    1: 'Conversa individual informal. Identificar causa (transporte, saúde, pessoal). Estabelecer acordo de horário por escrito.',
+    2: 'Advertência verbal com registro em ficha. Definir prazo de 15 dias para melhora. Monitorar diariamente.',
+    3: 'Advertência escrita formal. Avaliar compensação de horas. Comunicar que próxima ocorrência terá consequências maiores.',
+    4: 'Reunião formal com coordenação/gerência. Avaliar suspensão ou desconto. Rever vínculo de trabalho.',
+  },
+  'Atendimento ao Cliente': {
+    1: 'Feedback individual. Rever protocolo de atendimento. Simular situação e treinar resposta correta.',
+    2: 'Treinamento prático supervisionado. Acompanhar atendimentos por 1 semana. Estabelecer metas de qualidade.',
+    3: 'Reunião formal com coordenação. Avaliação de desempenho documentada. Plano de melhoria com prazo.',
+    4: 'Revisão de função. Considerar reposicionamento no time ou desligamento.',
+  },
+  'Conduta e Apresentação': {
+    1: 'Lembrete amigável sobre manual de conduta. Reforçar padrão de apresentação pessoal exigido.',
+    2: 'Advertência com registro. Verificação diária de apresentação por 2 semanas. Fornecer kit reserva se uniforme.',
+    3: 'Advertência escrita formal. Definir prazo claro de adequação com data limite.',
+    4: 'Reunião formal. Avaliar comprometimento com as normas do salão.',
+  },
+  'Capacitação': {
+    1: 'Conversa sobre a importância do desenvolvimento. Reagendar participação obrigatoriamente.',
+    2: 'Registrar ausência em ficha. Incluir na avaliação de desempenho mensal. Cobrar reposição.',
+    3: 'Notificar impacto na bonificação/avaliação. Exigir comprometimento por escrito.',
+    4: 'Plano de desenvolvimento obrigatório. Avaliar continuidade no time.',
+  },
+  'Gestão e Operação': {
+    1: 'Alinhamento de processos e responsabilidades. Verificar se há falta de clareza nas regras.',
+    2: 'Treinamento de processo operacional específico. Supervisão direta temporária.',
+    3: 'Revisão formal de atribuições. Documentar e cobrar cumprimento.',
+    4: 'Avaliação de competências para a função. Considerar redistribuição de tarefas.',
+  },
+  'Outros': {
+    1: 'Conversa individual para entender o contexto e alinhar expectativas.',
+    2: 'Registro formal do problema. Definir ação corretiva específica com prazo.',
+    3: 'Reunião com coordenação. Plano de ação documentado.',
+    4: 'Avaliação de desempenho formal. Decisão sobre continuidade.',
+  },
+}
+
+function getStage(count: number): Stage {
+  if (count >= 7) return 4
+  if (count >= 5) return 3
+  if (count >= 3) return 2
+  return 1
+}
+
+const STAGE_LABELS: Record<Stage, string> = {
+  1: '1ª Medida — Conversa Informal',
+  2: '2ª Medida — Advertência Verbal',
+  3: '3ª Medida — Advertência Escrita',
+  4: '4ª Medida — Reunião Formal / Revisão de Vínculo',
+}
+
+const STAGE_CORES: Record<Stage, string> = {
+  1: '#facc15',
+  2: '#fb923c',
+  3: '#f87171',
+  4: '#dc2626',
+}
+
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   const token = cookies().get('nodri_token')?.value
   const payload = token ? await verifyJWT(token) : null
@@ -77,6 +139,13 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     .single()
   if (!form) return NextResponse.json({ error: 'Não encontrado' }, { status: 404 })
 
+  // busca apenas profissionais ainda cadastrados para filtrar os resultados
+  const { data: profsAtivos } = await supabaseAdmin
+    .from('feedback_prof_profissionais')
+    .select('nome')
+    .eq('salao_id', payload.salaoId)
+  const nomesAtivos = new Set((profsAtivos || []).map(p => p.nome))
+
   let query = supabaseAdmin
     .from('feedback_prof_respostas')
     .select('*')
@@ -89,7 +158,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   if (filtroTipo) query = query.eq('tipo', filtroTipo)
 
   const { data: respostas } = await query
-  const lista = respostas || []
+  const lista = (respostas || []).filter(r => nomesAtivos.has(r.profissional_nome))
 
   // ── RANKING ───────────────────────────────────────────────
   const rankingMap: Record<string, { nome: string; positivo: number; negativo: number; total: number; score: number }> = {}
@@ -150,6 +219,50 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       return { profissional, ocorrencia, count: v.count, ultima_vez: v.ultima, dias_desde: dias }
     })
     .sort((a, b) => b.count - a.count)
+
+  // ── PLANO DE AÇÃO CORRETIVA ───────────────────────────────
+  // Para cada profissional com negativos, agrupa por categoria/ocorrência e define a ação corretiva
+  const planoAcaoMap: Record<string, Record<string, number>> = {} // profissional → ocorrencia → count
+  listaNegativos.forEach(r => {
+    if (!planoAcaoMap[r.profissional_nome]) planoAcaoMap[r.profissional_nome] = {}
+    planoAcaoMap[r.profissional_nome][r.ocorrido_descricao] = (planoAcaoMap[r.profissional_nome][r.ocorrido_descricao] || 0) + 1
+  })
+
+  const planoAcao = Object.entries(planoAcaoMap)
+    .map(([profissional, ocorrs]) => {
+      const profRank = rankingMap[profissional]
+      const acoes = Object.entries(ocorrs)
+        .sort((a, b) => b[1] - a[1])
+        .map(([ocorrencia, count]) => {
+          const categoria = CATEGORIAS_MAP[ocorrencia] || 'Outros'
+          const stage = getStage(count)
+          return {
+            ocorrencia,
+            categoria,
+            count,
+            stage,
+            stage_label: STAGE_LABELS[stage],
+            stage_cor: STAGE_CORES[stage],
+            acao_corretiva: ACOES_CORRETIVAS[categoria][stage],
+            urgente: stage >= 3,
+          }
+        })
+        .filter(a => a.count >= 1)
+
+      // Prioridade máxima do profissional = maior stage entre suas ocorrências
+      const maxStage = acoes.reduce((max, a) => a.stage > max ? a.stage : max, 1 as Stage)
+
+      return {
+        profissional,
+        score: profRank?.score ?? 0,
+        total_negativos: profRank?.negativo ?? 0,
+        max_stage: maxStage,
+        max_stage_cor: STAGE_CORES[maxStage as Stage],
+        acoes: acoes.slice(0, 6), // máximo 6 ocorrências por profissional
+      }
+    })
+    .filter(p => p.total_negativos >= 1)
+    .sort((a, b) => b.max_stage - a.max_stage || b.total_negativos - a.total_negativos)
 
   // ── 2. AGRUPAMENTO POR CATEGORIA ──────────────────────────
   const catMap: Record<string, { total: number; positivo: number; negativo: number }> = {}
@@ -320,7 +433,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     alertaDesempenho,
     profCritico,
     nomeProfissionais,
-    // Novos
+    // Análise avançada
+    planoAcao,
     reincidencia,
     categorias,
     matriz,

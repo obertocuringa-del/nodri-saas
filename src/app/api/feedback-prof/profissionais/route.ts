@@ -43,6 +43,15 @@ export async function DELETE(req: NextRequest) {
   const p = await getPayload()
   if (!p) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   const { id } = await req.json()
+
+  // busca o nome antes de deletar para limpar as respostas associadas
+  const { data: prof } = await supabaseAdmin
+    .from('feedback_prof_profissionais')
+    .select('nome')
+    .eq('id', id)
+    .eq('salao_id', p.salaoId)
+    .single()
+
   await supabaseAdmin.from('feedback_prof_profissionais').delete().eq('id', id).eq('salao_id', p.salaoId)
   return NextResponse.json({ ok: true })
 }
