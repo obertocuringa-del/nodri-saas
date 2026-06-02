@@ -39,6 +39,19 @@ export async function POST() {
   const salaoId = payload.salaoId
   const todayStr = toDateStr(new Date())
 
+  // Busca regras do salão (ou usa padrão)
+  const { data: regrasDb } = await supabaseAdmin
+    .from('feedback_prof_regras')
+    .select('*')
+    .eq('salao_id', salaoId)
+    .single()
+  const regras = {
+    atrasos_por_semana: regrasDb?.atrasos_por_semana ?? 3,
+    dias_bloqueio_atraso: regrasDb?.dias_bloqueio_atraso ?? 7,
+    faltas_por_mes: regrasDb?.faltas_por_mes ?? 2,
+    dias_bloqueio_falta: regrasDb?.dias_bloqueio_falta ?? 15,
+  }
+
   // Busca formulários do salão para garantir escopo correto
   const { data: forms } = await supabaseAdmin
     .from('feedback_prof_formularios')
@@ -132,15 +145,14 @@ export async function POST() {
     // Analisa cada semana com atrasos
     const semanas = atrasosPorProfSemana[nome] || {}
     for (const [semanaKey, ocorrs] of Object.entries(semanas)) {
-      if (ocorrs.length >= 3) {
-        // Fim do bloqueio = data do 3º atraso + 7 dias
-        const dataGatilho = ocorrs[2].dateStr // 3º atraso (índice 2)
-        const fimStr = addDays(dataGatilho, 7)
+      if (ocorrs.length >= regras.atrasos_por_semana) {
+        const dataGatilho = ocorrs[regras.atrasos_por_semana - 1].dateStr
+        const fimStr = addDays(dataGatilho, regras.dias_bloqueio_atraso)
 
         if (fimStr >= todayStr) {
           if (!melhorFimStr || fimStr > melhorFimStr) {
             melhorFimStr = fimStr
-            melhorDias = 7
+            melhorDias = regras.dias_bloqueio_atraso
             melhorMotivo = `${ocorrs.length} atrasos na semana ${semanaKey} (${ocorrs.map(o => o.dataBR).join(', ')})`
             melhorDatasAtrasos = ocorrs.map(o => o.dataBR)
           }
@@ -151,17 +163,15 @@ export async function POST() {
     // Analisa cada mês com faltas
     const meses = faltasPorProfMes[nome] || {}
     for (const [mesKey, ocorrs] of Object.entries(meses)) {
-      if (ocorrs.length >= 2) {
-        // Fim do bloqueio = data da 2ª falta + 15 dias
-        const dataGatilho = ocorrs[1].dateStr // 2ª falta (índice 1)
-        const fimStr = addDays(dataGatilho, 15)
+      if (ocorrs.length >= regras.faltas_por_mes) {
+        const dataGatilho = ocorrs[regras.faltas_por_mes - 1].dateStr
+        const fimStr = addDays(dataGatilho, regras.dias_bloqueio_falta)
 
         if (fimStr >= todayStr) {
           if (!melhorFimStr || fimStr > melhorFimStr) {
-            // bloqueio de falta é maior, sobrescreve
             const motivoFaltas = `${ocorrs.length} faltas no mês ${mesKey} (${ocorrs.map(o => o.dataBR).join(', ')})`
             melhorFimStr = fimStr
-            melhorDias = 15
+            melhorDias = regras.dias_bloqueio_falta
             melhorMotivo = melhorDatasAtrasos.length > 0 ? melhorMotivo + ' | ' + motivoFaltas : motivoFaltas
             melhorDatasFaltas = ocorrs.map(o => o.dataBR)
           }
