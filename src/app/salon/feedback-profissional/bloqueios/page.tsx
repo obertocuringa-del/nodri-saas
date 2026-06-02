@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, RefreshCw, Lock, Unlock, AlertTriangle, Users, ShieldOff } from 'lucide-react'
+import { ArrowLeft, RefreshCw, Lock, Unlock, AlertTriangle, Users, ShieldOff, History } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 interface ProfBloqueio {
@@ -29,6 +29,7 @@ export default function BloqueiosPage() {
   const [data, setData] = useState<Data | null>(null)
   const [loading, setLoading] = useState(true)
   const [desbloqueando, setDesbloqueando] = useState<string | null>(null)
+  const [reprocessando, setReprocessando] = useState(false)
 
   async function fetchData() {
     setLoading(true)
@@ -39,6 +40,20 @@ export default function BloqueiosPage() {
   }
 
   useEffect(() => { fetchData() }, [])
+
+  async function reprocessarHistorico() {
+    if (!confirm('Varrer todo o histórico de feedbacks e gerar bloqueios automaticamente?\n\nIsso pode levar alguns segundos.')) return
+    setReprocessando(true)
+    const res = await fetch('/api/feedback-prof/bloqueios/reprocessar', { method: 'POST' })
+    if (res.ok) {
+      const d = await res.json()
+      toast.success(`Concluído! ${d.bloqueios_gerados} bloqueio(s) gerado(s) a partir do histórico.`)
+      await fetchData()
+    } else {
+      toast.error('Erro ao reprocessar histórico')
+    }
+    setReprocessando(false)
+  }
 
   async function desbloquear(nome: string) {
     if (!confirm(`Desbloquear ${nome} manualmente?`)) return
@@ -70,10 +85,17 @@ export default function BloqueiosPage() {
         <div className="w-px h-4 bg-nodri-border" />
         <Lock size={14} className="text-red-400" />
         <span className="font-syne font-bold text-sm text-nodri-t1">Controle de Bloqueios</span>
-        <button onClick={fetchData} className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold"
-          style={{ background: 'rgba(34,211,238,.1)', color: '#22d3ee', border: '1px solid rgba(34,211,238,.25)' }}>
-          <RefreshCw size={11} /> Atualizar
-        </button>
+        <div className="ml-auto flex items-center gap-2">
+          <button onClick={reprocessarHistorico} disabled={reprocessando}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold disabled:opacity-50"
+            style={{ background: 'rgba(250,204,21,.1)', color: '#facc15', border: '1px solid rgba(250,204,21,.25)' }}>
+            <History size={11} /> {reprocessando ? 'Processando...' : 'Reprocessar Histórico'}
+          </button>
+          <button onClick={fetchData} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold"
+            style={{ background: 'rgba(34,211,238,.1)', color: '#22d3ee', border: '1px solid rgba(34,211,238,.25)' }}>
+            <RefreshCw size={11} /> Atualizar
+          </button>
+        </div>
       </nav>
 
       <div className="p-4 max-w-4xl mx-auto space-y-4">
