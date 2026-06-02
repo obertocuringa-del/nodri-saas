@@ -67,6 +67,11 @@ export async function POST() {
       debug: { formIds, total_respostas: 0 }
     })
 
+  // Debug específico: mostra registros de SUELEN
+  const debugSuelen = respostas
+    .filter(r => r.profissional_nome.toUpperCase().includes('SUEL'))
+    .map(r => ({ nome: r.profissional_nome, ocorrencia: r.ocorrido_descricao, data: r.criado_em }))
+
   // Mostra amostra para debug
   const amostra = respostas.slice(0, 5).map(r => ({
     nome: r.profissional_nome,
@@ -182,6 +187,6 @@ export async function POST() {
     bloqueios_gerados: upserts.length,
     data_referencia: todayStr,
     detalhes: log,
-    debug: { formIds, total_respostas: respostas.length, amostra },
+    debug: { formIds, total_respostas: respostas.length, amostra, debugSuelen },
   })
 }

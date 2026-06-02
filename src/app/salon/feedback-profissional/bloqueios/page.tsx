@@ -58,7 +58,10 @@ export default function BloqueiosPage() {
         `Detalhes:`,
         ...((d.detalhes as string[]) || ['Nenhum bloqueio ativo no período.']),
         ``,
-        `Amostra do banco (primeiros 5):`,
+        `Registros da SUELEN encontrados (${d.debug?.debugSuelen?.length ?? 0}):`,
+        JSON.stringify(d.debug?.debugSuelen, null, 2),
+        ``,
+        `Amostra geral (primeiros 5):`,
         JSON.stringify(d.debug?.amostra, null, 2),
       ].join('\n')
       setDebugInfo(info)
