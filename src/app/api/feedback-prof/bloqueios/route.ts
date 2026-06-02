@@ -26,6 +26,12 @@ function formatDate(d: Date) {
   return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
+function addDays(d: Date, days: number) {
+  const r = new Date(d)
+  r.setDate(r.getDate() + days)
+  return r
+}
+
 function toDateStr(d: Date) {
   return d.toISOString().slice(0, 10)
 }
@@ -39,7 +45,6 @@ export async function GET() {
   const salaoId = payload.salaoId
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  const todayStr = toDateStr(today)
 
   const { monday, sunday } = getISOWeekRange()
   const { start: mesInicio, end: mesFim } = getMonthRange()
@@ -54,7 +59,7 @@ export async function GET() {
   if (!profissionais || profissionais.length === 0)
     return NextResponse.json({ profissionais: [], periodo_semana: '', periodo_mes: '' })
 
-  // 2. Busca bloqueios salvos no banco (apenas leitura, sem gravar)
+  // 2. Busca bloqueios persistidos (ativos e expirados)
   const { data: bloqueiosSalvos } = await supabaseAdmin
     .from('feedback_prof_bloqueios')
     .select('*')
@@ -65,7 +70,7 @@ export async function GET() {
     bloqueioMap[b.profissional_nome] = b
   }
 
-  // 3. Conta atrasos da semana e faltas do mês (apenas para exibição — não gera bloqueio)
+  // 3. Busca respostas negativas de ATRASO/FALTA no mês atual (inclui semana)
   const { data: respostas } = await supabaseAdmin
     .from('feedback_prof_respostas')
     .select('profissional_nome, ocorrido_descricao, criado_em')
@@ -75,6 +80,7 @@ export async function GET() {
     .gte('criado_em', mesInicio.toISOString())
     .lte('criado_em', mesFim.toISOString())
 
+  // 4. Conta atrasos da semana e faltas do mês por profissional
   const contagem: Record<string, { atrasos: string[]; faltas: string[] }> = {}
   for (const prof of profissionais) {
     contagem[prof.nome] = { atrasos: [], faltas: [] }
@@ -89,16 +95,72 @@ export async function GET() {
     }
   }
 
-  // 4. Monta resultado: bloqueio vem SOMENTE do banco (sem auto-geração)
+  // 5. Para cada profissional: detecta novos bloqueios e persiste se necessário
+  const upserts: object[] = []
+
+  for (const prof of profissionais) {
+    const c = contagem[prof.nome]
+    const novoBloqueioDias = c.faltas.length >= 2 ? 15 : c.atrasos.length >= 3 ? 7 : 0
+
+    if (novoBloqueioDias > 0) {
+      const existente = bloqueioMap[prof.nome]
+      const novaDataFim = toDateStr(addDays(today, novoBloqueioDias))
+
+      // só atualiza se o novo bloqueio for maior ou não existir ainda
+      const deveAtualizar = !existente ||
+        new Date(existente.bloqueado_ate) < today || // expirado
+        novoBloqueioDias > existente.dias_bloqueio   // bloqueio maior
+
+      if (deveAtualizar) {
+        let motivo = ''
+        if (c.atrasos.length >= 3) motivo += `${c.atrasos.length} atrasos na semana (${c.atrasos.join(', ')})`
+        if (c.faltas.length >= 2) {
+          if (motivo) motivo += ' | '
+          motivo += `${c.faltas.length} faltas no mês (${c.faltas.join(', ')})`
+        }
+
+        upserts.push({
+          salao_id: salaoId,
+          profissional_nome: prof.nome,
+          bloqueado_ate: novaDataFim,
+          dias_bloqueio: novoBloqueioDias,
+          motivo,
+          datas_atrasos: c.atrasos,
+          datas_faltas: c.faltas,
+          updated_at: new Date().toISOString(),
+        })
+
+        // atualiza mapa local para retorno correto
+        bloqueioMap[prof.nome] = {
+          bloqueado_ate: novaDataFim,
+          dias_bloqueio: novoBloqueioDias,
+          motivo,
+          datas_atrasos: c.atrasos,
+          datas_faltas: c.faltas,
+        }
+      }
+    }
+  }
+
+  // Persiste novos/atualizados bloqueios
+  if (upserts.length > 0) {
+    await supabaseAdmin
+      .from('feedback_prof_bloqueios')
+      .upsert(upserts, { onConflict: 'salao_id,profissional_nome' })
+  }
+
+  // 6. Monta resultado final
+  const todayStr = toDateStr(today)
   const resultado = profissionais.map(prof => {
     const c = contagem[prof.nome]
     const b = bloqueioMap[prof.nome]
     const bloqueadoAtivo = b && b.bloqueado_ate >= todayStr
 
+    // Dias restantes
     let dias_restantes = 0
     if (bloqueadoAtivo) {
-      const fim = new Date(b.bloqueado_ate + 'T12:00:00')
-      dias_restantes = Math.max(0, Math.ceil((fim.getTime() - today.getTime()) / 86400000))
+      const fim = new Date(b.bloqueado_ate)
+      dias_restantes = Math.ceil((fim.getTime() - today.getTime()) / 86400000)
     }
 
     return {
