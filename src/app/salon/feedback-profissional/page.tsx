@@ -12,7 +12,7 @@ export default function FeedbackProfissionalPage() {
   const router = useRouter()
   const [formularios, setFormularios] = useState<Formulario[]>([])
   const [selected, setSelected] = useState<Formulario | null>(null)
-  const [tab, setTab] = useState<'profissionais' | 'ocorridos' | 'link'>('profissionais')
+  const [tab, setTab] = useState<'registrar' | 'profissionais' | 'ocorridos' | 'link'>('registrar')
   const [profissionais, setProfissionais] = useState<Profissional[]>([])
   const [ocorridos, setOcorridos] = useState<Ocorrido[]>([])
   const [loading, setLoading] = useState(true)
@@ -22,6 +22,11 @@ export default function FeedbackProfissionalPage() {
   const [novoOcorr, setNovoOcorr] = useState('')
   const [editingProf, setEditingProf] = useState<{ id: string; nome: string } | null>(null)
   const [editingOcorr, setEditingOcorr] = useState<{ id: string; descricao: string } | null>(null)
+  const [formProf, setFormProf] = useState('')
+  const [formTipo, setFormTipo] = useState<'positivo' | 'negativo'>('negativo')
+  const [formOcorr, setFormOcorr] = useState('')
+  const [formDesc, setFormDesc] = useState('')
+  const [formLoading, setFormLoading] = useState(false)
 
   useEffect(() => {
     setSalaoUrl(window.location.origin)
@@ -166,6 +171,35 @@ export default function FeedbackProfissionalPage() {
     toast.success('Excluído!')
   }
 
+  async function registrarFeedback() {
+    if (!selected || !formProf || !formOcorr) { toast.error('Preencha profissional e ocorrência'); return }
+    setFormLoading(true)
+    const ocorridoObj = ocorridos.find(o => o.descricao === formOcorr)
+    const profObj = profissionais.find(p => p.nome === formProf)
+    const res = await fetch(`/api/feedback-prof/public/${selected.token}/responder`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        profissional_id: profObj?.id || null,
+        profissional_nome: formProf,
+        tipo: formTipo,
+        ocorrido_id: ocorridoObj?.id || null,
+        ocorrido_descricao: formOcorr,
+        descricao: formDesc || null,
+      }),
+    })
+    if (res.ok) {
+      toast.success('Feedback registrado!')
+      setFormProf('')
+      setFormOcorr('')
+      setFormDesc('')
+      setFormTipo('negativo')
+    } else {
+      toast.error('Erro ao registrar')
+    }
+    setFormLoading(false)
+  }
+
   const linkForm = selected ? `${salaoUrl}/feedback-profissional/${selected.token}` : ''
 
   if (loading) {
@@ -300,24 +334,113 @@ export default function FeedbackProfissionalPage() {
                   </button>
                 </div>
               </div>
-              <div className="flex gap-0">
-                {(['profissionais', 'ocorridos', 'link'] as const).map(t => (
+              <div className="flex gap-0 overflow-x-auto">
+                {([
+                  { id: 'registrar', label: '✏️ Registrar Feedback' },
+                  { id: 'profissionais', label: `👥 Profissionais (${profissionais.length})` },
+                  { id: 'ocorridos', label: `📋 Ocorridos (${ocorridos.length})` },
+                  { id: 'link', label: '🔗 Link' },
+                ] as const).map(t => (
                   <button
-                    key={t}
-                    onClick={() => setTab(t)}
-                    className={`px-4 py-2 text-[11px] font-medium border-b-2 transition-all ${tab === t ? 'border-nodri-cyan text-nodri-cyan' : 'border-transparent text-nodri-t3 hover:text-nodri-t1'}`}
+                    key={t.id}
+                    onClick={() => setTab(t.id)}
+                    className={`px-4 py-2 text-[11px] font-medium border-b-2 transition-all whitespace-nowrap ${tab === t.id ? 'border-nodri-cyan text-nodri-cyan' : 'border-transparent text-nodri-t3 hover:text-nodri-t1'}`}
                   >
-                    {t === 'profissionais' ? (
-                      <span className="flex items-center gap-1"><Users size={11} />Profissionais ({profissionais.length})</span>
-                    ) : t === 'ocorridos' ? (
-                      <span className="flex items-center gap-1"><ClipboardList size={11} />Ocorridos ({ocorridos.length})</span>
-                    ) : '🔗 Link do Formulário'}
+                    {t.label}
                   </button>
                 ))}
               </div>
             </div>
 
             <div className="flex-1 overflow-y-auto p-5">
+
+              {tab === 'registrar' && (
+                <div className="max-w-lg mx-auto">
+                  <div className="rounded-2xl border overflow-hidden" style={{ background: '#0d1117', borderColor: 'rgba(255,255,255,.08)' }}>
+                    {/* Header */}
+                    <div className="px-6 py-5 border-b" style={{ borderColor: 'rgba(255,255,255,.06)', background: 'linear-gradient(135deg,rgba(124,92,252,.08),rgba(244,63,142,.05))' }}>
+                      <div className="text-[13px] font-bold text-nodri-t1 mb-0.5">Registrar Ocorrência</div>
+                      <div className="text-[11px] text-nodri-t3">Preencha os dados abaixo para registrar um feedback</div>
+                    </div>
+                    <div className="p-6 space-y-5">
+
+                      {/* Tipo */}
+                      <div>
+                        <label className="text-[11px] font-semibold text-nodri-t3 uppercase tracking-wider block mb-2">Tipo de Registro</label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            onClick={() => setFormTipo('positivo')}
+                            className="py-3 rounded-xl text-[12px] font-bold transition-all"
+                            style={formTipo === 'positivo'
+                              ? { background: 'rgba(34,197,94,.15)', color: '#4ade80', border: '2px solid rgba(34,197,94,.4)' }
+                              : { background: 'rgba(255,255,255,.03)', color: '#64748b', border: '1px solid rgba(255,255,255,.08)' }}>
+                            ✅ Positivo
+                          </button>
+                          <button
+                            onClick={() => setFormTipo('negativo')}
+                            className="py-3 rounded-xl text-[12px] font-bold transition-all"
+                            style={formTipo === 'negativo'
+                              ? { background: 'rgba(239,68,68,.12)', color: '#f87171', border: '2px solid rgba(239,68,68,.35)' }
+                              : { background: 'rgba(255,255,255,.03)', color: '#64748b', border: '1px solid rgba(255,255,255,.08)' }}>
+                            ❌ Negativo
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Profissional */}
+                      <div>
+                        <label className="text-[11px] font-semibold text-nodri-t3 uppercase tracking-wider block mb-2">Profissional</label>
+                        <select
+                          value={formProf}
+                          onChange={e => setFormProf(e.target.value)}
+                          className="w-full bg-nodri-card border border-nodri-border rounded-xl px-4 py-3 text-[13px] text-nodri-t1 outline-none focus:border-nodri-cyan/40 transition-colors"
+                          style={{ appearance: 'auto' }}>
+                          <option value="">Selecione o profissional...</option>
+                          {profissionais.filter(p => p.ativo).map(p => (
+                            <option key={p.id} value={p.nome}>{p.nome}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Ocorrência */}
+                      <div>
+                        <label className="text-[11px] font-semibold text-nodri-t3 uppercase tracking-wider block mb-2">Ocorrência</label>
+                        <select
+                          value={formOcorr}
+                          onChange={e => setFormOcorr(e.target.value)}
+                          className="w-full bg-nodri-card border border-nodri-border rounded-xl px-4 py-3 text-[13px] text-nodri-t1 outline-none focus:border-nodri-cyan/40 transition-colors"
+                          style={{ appearance: 'auto' }}>
+                          <option value="">Selecione a ocorrência...</option>
+                          {ocorridos.filter(o => o.ativo).map(o => (
+                            <option key={o.id} value={o.descricao}>{o.descricao}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Descrição */}
+                      <div>
+                        <label className="text-[11px] font-semibold text-nodri-t3 uppercase tracking-wider block mb-2">Descrição <span className="text-nodri-t3 font-normal normal-case">(opcional)</span></label>
+                        <textarea
+                          value={formDesc}
+                          onChange={e => setFormDesc(e.target.value)}
+                          placeholder="Descreva o ocorrido com mais detalhes..."
+                          rows={3}
+                          className="w-full bg-nodri-card border border-nodri-border rounded-xl px-4 py-3 text-[12px] text-nodri-t1 placeholder-nodri-t3 outline-none focus:border-nodri-cyan/40 transition-colors resize-none"
+                        />
+                      </div>
+
+                      {/* Botão */}
+                      <button
+                        onClick={registrarFeedback}
+                        disabled={formLoading || !formProf || !formOcorr}
+                        className="w-full py-3 rounded-xl text-[13px] font-bold transition-all disabled:opacity-40"
+                        style={{ background: 'linear-gradient(135deg,rgba(124,92,252,.3),rgba(244,63,142,.2))', color: '#c084fc', border: '1px solid rgba(139,92,246,.4)' }}>
+                        {formLoading ? '⏳ Registrando...' : '✓ Registrar Feedback'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {tab === 'profissionais' && (
                 <div className="max-w-xl space-y-3">
