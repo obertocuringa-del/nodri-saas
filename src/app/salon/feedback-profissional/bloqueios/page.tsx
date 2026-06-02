@@ -30,6 +30,7 @@ export default function BloqueiosPage() {
   const [loading, setLoading] = useState(true)
   const [desbloqueando, setDesbloqueando] = useState<string | null>(null)
   const [reprocessando, setReprocessando] = useState(false)
+  const [debugInfo, setDebugInfo] = useState<string | null>(null)
 
   async function fetchData() {
     setLoading(true)
@@ -47,11 +48,21 @@ export default function BloqueiosPage() {
     const res = await fetch('/api/feedback-prof/bloqueios/reprocessar', { method: 'POST' })
     const d = await res.json()
     if (res.ok) {
-      const msg = `Concluído!\n\nBloqueios gerados: ${d.bloqueios_gerados}\nRegistros encontrados: ${d.debug?.total_respostas ?? '?'}\nFormulários: ${d.debug?.formIds?.length ?? 0}\n\nDetalhes:\n${(d.detalhes || []).join('\n') || 'Nenhum bloqueio ativo no período.'}\n\nAmostra do banco:\n${JSON.stringify(d.debug?.amostra, null, 2)}`
-      alert(msg)
+      const info = [
+        `✅ Bloqueios gerados: ${d.bloqueios_gerados}`,
+        `📋 Registros ATRASO/FALTA encontrados: ${d.debug?.total_respostas ?? '?'}`,
+        `📁 Formulários do salão: ${d.debug?.formIds?.length ?? 0}`,
+        ``,
+        `Detalhes:`,
+        ...((d.detalhes as string[]) || ['Nenhum bloqueio ativo no período.']),
+        ``,
+        `Amostra do banco (primeiros 5):`,
+        JSON.stringify(d.debug?.amostra, null, 2),
+      ].join('\n')
+      setDebugInfo(info)
       if (d.bloqueios_gerados > 0) await fetchData()
     } else {
-      alert('Erro: ' + JSON.stringify(d))
+      setDebugInfo('❌ Erro: ' + JSON.stringify(d))
     }
     setReprocessando(false)
   }
@@ -307,6 +318,17 @@ export default function BloqueiosPage() {
                 </table>
               </div>
             </div>
+
+            {/* Debug */}
+            {debugInfo && (
+              <div className="pcard rounded-2xl border p-4" style={{ background: '#0a0f1a', borderColor: 'rgba(34,211,238,.2)' }}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] font-bold text-nodri-cyan uppercase tracking-wider">Resultado do Reprocessamento</span>
+                  <button onClick={() => setDebugInfo(null)} className="text-nodri-t3 hover:text-nodri-t1 text-xs">✕ Fechar</button>
+                </div>
+                <pre className="text-[10px] text-nodri-t2 whitespace-pre-wrap leading-relaxed">{debugInfo}</pre>
+              </div>
+            )}
 
             {/* Regras */}
             <div className="pcard rounded-2xl border p-4" style={{ background: '#0d1117', borderColor: 'rgba(255,255,255,.05)' }}>
