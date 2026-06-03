@@ -1,16 +1,38 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 
+type Oc = { dataBR: string; dateStr: string }
+
+function getISOWeekKey(date: Date): string {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
+  const day = d.getUTCDay() || 7
+  d.setUTCDate(d.getUTCDate() + 4 - day)
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
+  const week = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7)
+  return `${d.getUTCFullYear()}-W${String(week).padStart(2, '0')}`
+}
+
+function getMonthKey(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+}
+
+function addDays(dateStr: string, days: number): string {
+  const d = new Date(dateStr + 'T12:00:00')
+  d.setDate(d.getDate() + days)
+  return d.toISOString().slice(0, 10)
+}
+
+function formatBR(date: Date): string {
+  return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+}
+
 // Roda diariamente às 03:00 — reprocessa bloqueios de todos os salões
 export async function GET() {
   try {
     const todayStr = new Date().toISOString().slice(0, 10)
 
-    // Busca todos os salões ativos
     const { data: saloes, error: errSaloes } = await supabaseAdmin
-      .from('saloes')
-      .select('id')
-      .eq('status', 'ativo')
+      .from('saloes').select('id').eq('status', 'ativo')
     if (errSaloes) return NextResponse.json({ error: errSaloes.message }, { status: 500 })
 
     let totalBloqueios = 0
@@ -20,7 +42,6 @@ export async function GET() {
       try {
         const salaoId = salao.id
 
-        // Regras do salão
         const { data: regrasDb } = await supabaseAdmin
           .from('feedback_prof_regras').select('*').eq('salao_id', salaoId).single()
         const regras = {
@@ -30,17 +51,14 @@ export async function GET() {
           dias_bloqueio_falta: regrasDb?.dias_bloqueio_falta ?? 15,
         }
 
-        // Regras custom
         const { data: regrasCustom } = await supabaseAdmin
           .from('feedback_prof_regras_custom').select('*').eq('salao_id', salaoId).eq('ativo', true)
 
-        // Formulários
         const { data: forms } = await supabaseAdmin
           .from('feedback_prof_formularios').select('id').eq('salao_id', salaoId)
         const formIds = (forms || []).map((f: { id: string }) => f.id)
         if (formIds.length === 0) continue
 
-        // Respostas negativas
         const { data: respostas } = await supabaseAdmin
           .from('feedback_prof_respostas')
           .select('profissional_nome, ocorrido_descricao, criado_em')
@@ -51,28 +69,6 @@ export async function GET() {
 
         if (!respostas || respostas.length === 0) continue
 
-        // Agrupa por profissional
-        function getISOWeekKey(date: Date) {
-          const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
-          const day = d.getUTCDay() || 7
-          d.setUTCDate(d.getUTCDate() + 4 - day)
-          const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
-          const week = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7)
-          return `${d.getUTCFullYear()}-W${String(week).padStart(2, '0')}`
-        }
-        function getMonthKey(date: Date) {
-          return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
-        }
-        function addDays(dateStr: string, days: number) {
-          const d = new Date(dateStr + 'T12:00:00')
-          d.setDate(d.getDate() + days)
-          return d.toISOString().slice(0, 10)
-        }
-        function formatBR(date: Date) {
-          return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
-        }
-
-        type Oc = { dataBR: string; dateStr: string }
         const atrasosSemana: Record<string, Record<string, Oc[]>> = {}
         const faltasMes: Record<string, Record<string, Oc[]>> = {}
         const customProf: Record<string, Record<string, Record<string, Oc[]>>> = {}
@@ -131,6 +127,7 @@ export async function GET() {
               }
             }
           }
+
           for (const [mesKey, ocorrs] of Object.entries(faltasMes[nome] || {})) {
             if (ocorrs.length >= regras.faltas_por_mes) {
               const fimStr = addDays(ocorrs[ocorrs.length - 1].dateStr, regras.dias_bloqueio_falta)
@@ -143,6 +140,7 @@ export async function GET() {
               }
             }
           }
+
           for (const rc of regrasCustom || []) {
             for (const [periodoKey, ocorrs] of Object.entries((customProf[nome]?.[rc.id]) || {})) {
               if (ocorrs.length >= rc.quantidade) {
