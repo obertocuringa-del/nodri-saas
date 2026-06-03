@@ -409,19 +409,21 @@ export default function ResultadosProfPage() {
                                       <span className="text-[11px] text-nodri-t3">❌ {ant.negativo} | ✅ {ant.positivo}</span>
                                     ) : <span className="text-[10px] text-nodri-t3/40">—</span>}
                                   </div>
-                                  {/* Mês atual resumo + delta */}
-                                  <div className="text-center flex items-center justify-center gap-2">
-                                    {atual ? (
-                                      <>
+                                  {/* Mês atual resumo + mensagem */}
+                                  <div className="flex flex-col items-center gap-0.5">
+                                    <div className="flex items-center gap-2">
+                                      {atual ? (
                                         <span className="text-[11px] text-nodri-t1">❌ {atual.negativo} | ✅ {atual.positivo}</span>
-                                        {deltaNeg != null && deltaNeg !== 0 && (
-                                          <span className="text-[10px] font-black" style={{ color: corDelta }}>
-                                            {deltaNeg > 0 ? `+${deltaNeg}` : deltaNeg}
-                                          </span>
-                                        )}
-                                      </>
-                                    ) : <span className="text-[10px] text-nodri-t3/40">—</span>}
-                                    <span className="text-nodri-t3 text-[9px] ml-1">{aberto ? '▲' : '▼'}</span>
+                                      ) : <span className="text-[10px] text-nodri-t3/40">—</span>}
+                                      <span className="text-nodri-t3 text-[9px]">{aberto ? '▲' : '▼'}</span>
+                                    </div>
+                                    {deltaNeg != null && deltaNeg !== 0 && mesAnteriorKey && (
+                                      <span className="text-[9px] font-semibold text-center leading-tight" style={{ color: corDelta }}>
+                                        {deltaNeg < 0
+                                          ? `🎉 ${Math.abs(deltaNeg)}x menos que ${formatMes(mesAnteriorKey)}`
+                                          : `⚠️ ${deltaNeg}x mais que ${formatMes(mesAnteriorKey)}`}
+                                      </span>
+                                    )}
                                   </div>
                                 </button>
 
@@ -439,24 +441,31 @@ export default function ResultadosProfPage() {
                                       const diff = qtdAtual - qtdAnt
                                       const corDiff = diff > 0 ? '#f87171' : diff < 0 ? '#4ade80' : '#94a3b8'
                                       const corAtual = qtdAtual >= 5 ? '#ef4444' : qtdAtual >= 3 ? '#f97316' : qtdAtual >= 2 ? '#facc15' : '#94a3b8'
+                                      const msgDiff = diff < 0
+                                        ? `Parabéns! ${Math.abs(diff)}x menos que o mês anterior`
+                                        : diff > 0
+                                        ? `Atenção! ${diff}x mais que o mês anterior`
+                                        : ''
                                       return (
-                                        <div key={desc} className="grid grid-cols-[160px_1fr_1fr] gap-3 py-1 px-1 rounded-lg hover:bg-white/[0.02]">
-                                          <span className="text-[11px] text-nodri-t2 truncate" title={desc}>{desc}</span>
-                                          <div className="text-center">
-                                            {qtdAnt > 0
-                                              ? <span className="text-[12px] font-bold text-nodri-t3">{qtdAnt}</span>
-                                              : <span className="text-nodri-t3/30 text-[11px]">—</span>}
+                                        <div key={desc} className="py-1.5 px-1 rounded-lg hover:bg-white/[0.02]">
+                                          <div className="grid grid-cols-[160px_1fr_1fr] gap-3 items-center">
+                                            <span className="text-[11px] text-nodri-t2 truncate" title={desc}>{desc}</span>
+                                            <div className="text-center">
+                                              {qtdAnt > 0
+                                                ? <span className="text-[12px] font-bold text-nodri-t3">{qtdAnt}</span>
+                                                : <span className="text-nodri-t3/30 text-[11px]">—</span>}
+                                            </div>
+                                            <div className="text-center">
+                                              {qtdAtual > 0
+                                                ? <span className="text-[12px] font-bold" style={{ color: corAtual }}>{qtdAtual}</span>
+                                                : <span className="text-nodri-t3/30 text-[11px]">—</span>}
+                                            </div>
                                           </div>
-                                          <div className="flex items-center justify-center gap-1.5">
-                                            {qtdAtual > 0
-                                              ? <span className="text-[12px] font-bold" style={{ color: corAtual }}>{qtdAtual}</span>
-                                              : <span className="text-nodri-t3/30 text-[11px]">—</span>}
-                                            {diff !== 0 && (
-                                              <span className="text-[9px] font-black" style={{ color: corDiff }}>
-                                                {diff > 0 ? `+${diff}` : diff}
-                                              </span>
-                                            )}
-                                          </div>
+                                          {diff !== 0 && msgDiff && (
+                                            <div className="mt-0.5 pl-0 text-[9.5px] font-semibold" style={{ color: corDiff }}>
+                                              {msgDiff}
+                                            </div>
+                                          )}
                                         </div>
                                       )
                                     })}
