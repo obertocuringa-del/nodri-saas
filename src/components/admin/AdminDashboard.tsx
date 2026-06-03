@@ -1506,7 +1506,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                         const novoEstado = !configPrograma.atualizacao_ativa
                         setSavingPrograma(true)
                         const nova = { ...configPrograma, atualizacao_ativa: novoEstado }
-                        await fetch('/api/config/programa', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(nova) })
+                        await fetch('/api/config/programa', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(nova) })
                         setConfigPrograma(nova)
                         setSavingPrograma(false)
                         toast.success(novoEstado ? '⚡ Atualização disponibilizada para todos os salões!' : '✅ Botão voltou ao modo normal')
@@ -1519,7 +1519,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                       onClick={async () => {
                         setSavingPrograma(true)
                         try {
-                          const res = await fetch('/api/config/programa', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(configPrograma) })
+                          const res = await fetch('/api/config/programa', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(configPrograma) })
                           const text = await res.text()
                           const data = text ? JSON.parse(text) : {}
                           if (!res.ok) { toast.error('Erro ao salvar: ' + (data.error || res.status)) }

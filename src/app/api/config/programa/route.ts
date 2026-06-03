@@ -22,7 +22,15 @@ export async function GET() {
   return NextResponse.json(config || { link: '', link_atualizacao: '', atualizacao_ativa: false })
 }
 
+export async function POST(req: NextRequest) {
+  return PUT_handler(req)
+}
+
 export async function PUT(req: NextRequest) {
+  return PUT_handler(req)
+}
+
+async function PUT_handler(req: NextRequest) {
   try {
     const token = cookies().get('nodri_token')?.value
     const payload = token ? await verifyJWT(token) : null
