@@ -290,13 +290,12 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
   }
 
 
-  // Carrega módulos quando entra na seção
+  // Sempre re-carrega módulos do banco ao entrar na seção
   useEffect(() => {
-    if (activeSection === 'modulos' && localModulos.length === 0) {
+    if (activeSection === 'modulos') {
       fetch('/api/modulos').then(r => r.json()).then(data => {
         if (Array.isArray(data)) setLocalModulos(data)
-        else setLocalModulos(initialModulos) // fallback para props
-      }).catch(() => setLocalModulos(initialModulos))
+      }).catch(() => {})
     }
   }, [activeSection])
 
@@ -950,18 +949,18 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                 <p className="text-[11px] text-nodri-t3 mb-4">Ative o modo manutenção para bloquear temporariamente um módulo para todos os salões</p>
                 <div className="grid grid-cols-4 gap-3">
                   {localModulos.map(m => (
-                    <div key={m.id} className={`p-3 border rounded-xl transition-all ${(m as any).em_manutencao ? 'border-nodri-red/40 bg-nodri-red/5' : 'border-nodri-border bg-nodri-surface'}`}>
+                    <div key={m.id} className={`p-3 border rounded-xl transition-all ${m.em_manutencao ? 'border-nodri-red/40 bg-nodri-red/5' : 'border-nodri-border bg-nodri-surface'}`}>
                       <div className="flex items-start justify-between mb-2 gap-1">
                         <div className="min-w-0">
                           <div className="font-bold text-[10px] uppercase leading-tight truncate">{m.nome}</div>
                           <div className="text-[9px] text-nodri-t3">v{m.versao}</div>
                         </div>
-                        {(m as any).em_manutencao && <span className="text-[8px] bg-nodri-red text-white px-1.5 py-0.5 rounded font-bold shrink-0">MANUTENÇÃO</span>}
+                        {m.em_manutencao && <span className="text-[8px] bg-nodri-red text-white px-1.5 py-0.5 rounded font-bold shrink-0">MANUTENÇÃO</span>}
                       </div>
                       <div className="flex gap-1 mt-2">
                         <button onClick={() => toggleManutencao(m)}
-                          className={`flex-1 py-1 text-[9px] font-bold rounded border transition-all ${!(m as any).em_manutencao ? 'border-nodri-red/30 text-nodri-red bg-nodri-red/5 hover:bg-nodri-red/15' : 'border-nodri-green/30 text-nodri-green bg-nodri-green/5 hover:bg-nodri-green/15'}`}>
-                          {!(m as any).em_manutencao ? '🔧 Manutenção' : '✅ Encerrar'}
+                          className={`flex-1 py-1 text-[9px] font-bold rounded border transition-all ${!m.em_manutencao ? 'border-nodri-red/30 text-nodri-red bg-nodri-red/5 hover:bg-nodri-red/15' : 'border-nodri-green/30 text-nodri-green bg-nodri-green/5 hover:bg-nodri-green/15'}`}>
+                          {!m.em_manutencao ? '🔧 Manutenção' : '✅ Encerrar'}
                         </button>
                         <button onClick={() => openEditModulo(m)} title="Editar" className="p-1 border border-nodri-border rounded text-nodri-t3 hover:text-nodri-cyan hover:border-nodri-cyan/30 transition-all"><Edit size={10} /></button>
                         <button onClick={() => deleteModulo(m.id)} title="Excluir" className="p-1 border border-nodri-red/30 rounded text-nodri-red hover:bg-nodri-red/10 transition-all"><Trash2 size={10} /></button>
@@ -978,8 +977,8 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
               <div className="grid grid-cols-3 gap-3">
                 {[
                   { label: 'Total de Módulos', value: localModulos.length, icon: '⚙️' },
-                  { label: 'Ativos', value: localModulos.filter(m => !(m as any).em_manutencao).length, icon: '✅' },
-                  { label: 'Em Manutenção', value: localModulos.filter(m => !!(m as any).em_manutencao).length, icon: '🔧' },
+                  { label: 'Ativos', value: localModulos.filter(m => !m.em_manutencao).length, icon: '✅' },
+                  { label: 'Em Manutenção', value: localModulos.filter(m => !!m.em_manutencao).length, icon: '🔧' },
                 ].map(s => (
                   <div key={s.label} className="nodri-card p-4 text-center">
                     <div className="text-2xl mb-1">{s.icon}</div>
