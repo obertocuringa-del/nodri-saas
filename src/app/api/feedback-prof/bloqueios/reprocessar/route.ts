@@ -169,7 +169,7 @@ export async function POST() {
     const semanas = atrasosPorProfSemana[nome] || {}
     for (const [semanaKey, ocorrs] of Object.entries(semanas)) {
       if (ocorrs.length >= regras.atrasos_por_semana) {
-        const dataGatilho = ocorrs[regras.atrasos_por_semana - 1].dateStr
+        const dataGatilho = ocorrs[ocorrs.length - 1].dateStr  // último atraso
         const fimStr = addDays(dataGatilho, regras.dias_bloqueio_atraso)
 
         if (fimStr >= todayStr) {
@@ -187,7 +187,7 @@ export async function POST() {
     const meses = faltasPorProfMes[nome] || {}
     for (const [mesKey, ocorrs] of Object.entries(meses)) {
       if (ocorrs.length >= regras.faltas_por_mes) {
-        const dataGatilho = ocorrs[regras.faltas_por_mes - 1].dateStr
+        const dataGatilho = ocorrs[ocorrs.length - 1].dateStr  // última falta
         const fimStr = addDays(dataGatilho, regras.dias_bloqueio_falta)
 
         if (fimStr >= todayStr) {
@@ -208,7 +208,7 @@ export async function POST() {
       const periodos = customDoProf[rc.id] || {}
       for (const [periodoKey, ocorrs] of Object.entries(periodos)) {
         if (ocorrs.length >= rc.quantidade) {
-          const dataGatilho = ocorrs[rc.quantidade - 1].dateStr
+          const dataGatilho = ocorrs[ocorrs.length - 1].dateStr  // último ocorrido
           const fimStr = addDays(dataGatilho, rc.dias_bloqueio)
           if (fimStr >= todayStr && (!melhorFimStr || fimStr > melhorFimStr)) {
             const motivo = `${ocorrs.length}x "${rc.ocorrencia}" em ${periodoKey} (${ocorrs.map(o => o.dataBR).join(', ')})`
