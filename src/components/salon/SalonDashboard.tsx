@@ -205,8 +205,8 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
       )}
 
       {/* NAVBAR */}
-      <nav className="bg-nodri-surface border-b border-nodri-border px-5 py-2.5 flex items-center gap-3 sticky top-0" style={{ zIndex: 50 }}>
-        <div className="flex items-center gap-2.5 mr-2 shrink-0">
+      <nav className="bg-nodri-surface border-b border-nodri-border px-3 py-2.5 flex items-center gap-2 sticky top-0" style={{ zIndex: 50 }}>
+        <div className="flex items-center gap-2.5 shrink-0">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center font-syne font-black text-sm text-black"
             style={{ background: 'linear-gradient(135deg, #7c5cfc, #f43f8e)' }}>N</div>
           <div>
@@ -217,7 +217,8 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
 
         <div className="w-px h-5 bg-nodri-border shrink-0" />
 
-        <div ref={dropdownRef} className="flex gap-0.5 bg-nodri-card border border-nodri-border rounded-lg p-0.5">
+        <div ref={dropdownRef} className="flex-1 min-w-0 overflow-x-auto">
+          <div className="flex gap-0.5 bg-nodri-card border border-nodri-border rounded-lg p-0.5 w-max">
           {TABS.map(tab => (
             <div key={tab} className="relative">
               <button
@@ -267,9 +268,10 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               )}
             </div>
           ))}
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 ml-auto shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           <div className="relative hidden md:block">
             <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-nodri-t3" />
             <input type="text" placeholder="Buscar módulo..." value={busca} onChange={e => setBusca(e.target.value)}
