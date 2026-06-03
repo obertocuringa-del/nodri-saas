@@ -36,6 +36,9 @@ html, body {
 ::-webkit-scrollbar-thumb { background: var(--nodri-border); border-radius: 2px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--nodri-t3); }
 
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
 /* Seleção de texto */
 ::selection { background: rgba(0, 229, 200, 0.2); color: var(--nodri-t1); }
 
