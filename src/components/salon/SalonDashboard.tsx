@@ -99,7 +99,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
   const [notifIndex, setNotifIndex] = useState(0)
   const [busca, setBusca] = useState('')
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
-  const TABS_FIXAS = ['Todos os Módulos', 'Feedback de Cliente', 'Feedback Profissional', 'Manual do Usuário', 'Dicas Nodri', 'Gestão de Pessoas', 'Gestão Financeira', 'Marketing']
+  const TABS_FIXAS = ['Todos os Módulos', 'Manual do Usuário', 'Dicas Nodri', 'Gestão de Pessoas', 'Gestão Financeira', 'Marketing', 'Feedback de Cliente', 'Feedback Profissional']
   const [menuDinamico, setMenuDinamico] = useState<Record<string, { title: string; url: string }[]>>(MENU_LINKS)
   const [tabsExtras, setTabsExtras] = useState<string[]>([])
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -219,7 +219,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
 
   const planoLabel = plano === 'premium' ? 'Plano Premium' : plano === 'profissional' ? 'Plano Profissional' : 'Plano Básico'
   const initials = salaoNome.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
-  const TABS = [...TABS_FIXAS, ...tabsExtras]
+  const TABS = TABS_FIXAS
 
   return (
     <div className="nodri-salon-bg min-h-screen flex flex-col">
@@ -307,6 +307,41 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               )}
             </div>
           ))}
+          {/* Dropdown "Mais" para categorias extras criadas no admin */}
+          {tabsExtras.length > 0 && (
+            <div className="relative">
+              <button
+                onClick={() => setOpenDropdown(openDropdown === '__extras__' ? null : '__extras__')}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-[11px] font-medium whitespace-nowrap transition-all ${openDropdown === '__extras__' ? 'bg-nodri-surface text-nodri-cyan border border-nodri-cyan/30' : 'text-nodri-t2 hover:text-nodri-t1 hover:bg-nodri-surface/50'}`}>
+                Mais
+                <ChevronDown size={10} className={`transition-transform duration-200 ${openDropdown === '__extras__' ? 'rotate-180 text-nodri-cyan' : ''}`} />
+              </button>
+              {openDropdown === '__extras__' && (
+                <div style={{ position: 'fixed', zIndex: 9999, marginTop: '4px' }}
+                  className="bg-nodri-card border border-nodri-border rounded-xl shadow-2xl min-w-[220px] overflow-y-auto">
+                  {tabsExtras.map(tab => (
+                    <button key={tab} onClick={() => setOpenDropdown(tab === openDropdown ? null : tab)}
+                      className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-nodri-surface transition-colors group border-b border-nodri-border/30 last:border-0 text-left">
+                      <span className="text-[11.5px] text-nodri-t2 group-hover:text-nodri-t1 font-medium">{tab}</span>
+                      <ChevronDown size={10} className="text-nodri-t3 group-hover:text-nodri-cyan shrink-0 ml-3" />
+                    </button>
+                  ))}
+                  {/* Sub-itens da aba extra selecionada */}
+                  {tabsExtras.includes(openDropdown || '') && menuDinamico[openDropdown!]?.map((item, i) => {
+                    const slug = item.url?.startsWith('/conteudo/') ? item.url.replace('/conteudo/', '') :
+                      item.title.toLowerCase().replace(/^\d+\.\s*/, '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-')
+                    return (
+                      <a key={i} href={`/conteudo/${slug}`} onClick={() => setOpenDropdown(null)}
+                        className="flex items-center justify-between px-5 py-2 hover:bg-nodri-surface/50 transition-colors group border-b border-nodri-border/20 last:border-0">
+                        <span className="text-[11px] text-nodri-t3 group-hover:text-nodri-t1">{item.title}</span>
+                        <ArrowRight size={10} className="text-nodri-t3 group-hover:text-nodri-cyan shrink-0 ml-2" />
+                      </a>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
           </div>
         </div>
 
