@@ -99,26 +99,35 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
   const [notifIndex, setNotifIndex] = useState(0)
   const [busca, setBusca] = useState('')
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
+  const TABS_FIXAS = ['Todos os Módulos', 'Feedback de Cliente', 'Feedback Profissional', 'Manual do Usuário', 'Dicas Nodri', 'Gestão de Pessoas', 'Gestão Financeira', 'Marketing']
   const [menuDinamico, setMenuDinamico] = useState<Record<string, { title: string; url: string }[]>>(MENU_LINKS)
+  const [tabsExtras, setTabsExtras] = useState<string[]>([])
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  // Carrega páginas criadas no Editor de Páginas do admin
+  // Carrega páginas e categorias criadas no Editor de Páginas do admin
   useEffect(() => {
     fetch('/api/menu-estrutura')
       .then(r => r.json())
       .then((estrutura: any[] | null) => {
         if (!estrutura || !Array.isArray(estrutura) || estrutura.length === 0) return
         const links: Record<string, { title: string; url: string }[]> = { ...MENU_LINKS }
+        const novasAbas: string[] = []
 
-        // normaliza nome para comparar (remove acentos, minúsculas)
         function norm(s: string) {
           return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
         }
 
         for (const cat of estrutura) {
           if (!cat.itens?.length) continue
-          // tenta encontrar a chave correspondente em MENU_LINKS por nome normalizado
-          const chave = Object.keys(MENU_LINKS).find(k => norm(k) === norm(cat.categoria)) || cat.categoria
+          // verifica se é categoria já existente (por nome normalizado)
+          const chaveExistente = Object.keys(MENU_LINKS).find(k => norm(k) === norm(cat.categoria))
+          const chave = chaveExistente || cat.categoria
+
+          // se for categoria nova, adiciona como aba extra
+          if (!chaveExistente && !TABS_FIXAS.some(t => norm(t) === norm(cat.categoria))) {
+            if (!novasAbas.includes(chave)) novasAbas.push(chave)
+          }
+
           const existentes = new Set((links[chave] || []).map((l: any) => norm(l.title)))
           const novos = cat.itens
             .filter((item: any) => !existentes.has(norm(item.titulo)))
@@ -126,6 +135,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
           links[chave] = [...(links[chave] || []), ...novos]
         }
         setMenuDinamico(links)
+        setTabsExtras(novasAbas)
       })
       .catch(() => {})
   }, [])
@@ -209,7 +219,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
 
   const planoLabel = plano === 'premium' ? 'Plano Premium' : plano === 'profissional' ? 'Plano Profissional' : 'Plano Básico'
   const initials = salaoNome.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
-  const TABS = ['Todos os Módulos', 'Feedback de Cliente', 'Feedback Profissional', 'Manual do Usuário', 'Dicas Nodri', 'Gestão de Pessoas', 'Gestão Financeira', 'Marketing']
+  const TABS = [...TABS_FIXAS, ...tabsExtras]
 
   return (
     <div className="nodri-salon-bg min-h-screen flex flex-col">
