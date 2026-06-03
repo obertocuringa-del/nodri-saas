@@ -359,7 +359,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
           const total = d.pos + d.neg
           const score = total > 0 ? Math.round((d.pos / total) * 100) : 0
           const topProblema = Object.entries(d.ocorr).sort((a, b) => b[1] - a[1])[0]?.[0] || '—'
-          return { nome, positivo: d.pos, negativo: d.neg, total, score, top_problema: topProblema }
+          const ocorrencias = Object.entries(d.ocorr).sort((a, b) => b[1] - a[1]).map(([desc, qtd]) => ({ desc, qtd }))
+          return { nome, positivo: d.pos, negativo: d.neg, total, score, top_problema: topProblema, ocorrencias }
         })
         .sort((a, b) => b.score - a.score),
     }))

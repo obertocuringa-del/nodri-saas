@@ -17,7 +17,7 @@ interface Categoria { nome: string; total: number; positivo: number; negativo: n
 interface MatrizItem { profissional: string; ocorrencias: Record<string, number>; total: number }
 interface DiaSemana { dia: string; positivo: number; negativo: number; total: number }
 interface EvolucaoItem { profissional: string; semanas: { semana: string; score: number; total: number }[] }
-interface PlacardMes { mes: string; profissionais: { nome: string; positivo: number; negativo: number; total: number; score: number; top_problema: string }[] }
+interface PlacardMes { mes: string; profissionais: { nome: string; positivo: number; negativo: number; total: number; score: number; top_problema: string; ocorrencias: { desc: string; qtd: number }[] }[] }
 interface CorrelacaoItem { semana: string; negProf: number; mediaCliente: number | null }
 interface IAAnalise {
   resumo_executivo: string; clima_equipe: number
@@ -356,105 +356,118 @@ export default function ResultadosProfPage() {
                           ))}
                         </div>
                       </div>
-                      {mesAtualData && (
-                        <div className="p-4 space-y-2">
-                          {mesAtualData.profissionais.map(p => {
-                            const anterior = mesAnteriorData?.profissionais.find(x => x.nome === p.nome)
-                            const deltaNeg = anterior != null ? p.negativo - anterior.negativo : null
-                            const deltaPos = anterior != null ? p.positivo - anterior.positivo : null
-                            const corDeltaNeg = deltaNeg == null ? '#94a3b8' : deltaNeg > 0 ? '#f87171' : deltaNeg < 0 ? '#4ade80' : '#94a3b8'
-                            const corDeltaPos = deltaPos == null ? '#94a3b8' : deltaPos > 0 ? '#4ade80' : deltaPos < 0 ? '#f87171' : '#94a3b8'
-                            const corScore = p.score >= 70 ? '#4ade80' : p.score >= 40 ? '#facc15' : '#f87171'
-                            const aberto = expandidoHistorico === `placar-${p.nome}`
+                      {mesAtualData && (() => {
+                        // Junta todos os profissionais dos dois meses
+                        const todosNomes = Array.from(new Set([
+                          ...mesAtualData.profissionais.map(p => p.nome),
+                          ...(mesAnteriorData?.profissionais.map(p => p.nome) || [])
+                        ])).sort()
+
+                        return (
+                        <div className="p-4 space-y-3">
+                          {/* Cabeçalho das colunas */}
+                          <div className="grid grid-cols-[160px_1fr_1fr] gap-3 px-2">
+                            <div />
+                            <div className="text-center text-[10px] font-bold text-nodri-t3 uppercase tracking-wider pb-1 border-b border-nodri-border">
+                              {mesAnteriorKey ? formatMes(mesAnteriorKey) : '—'}
+                            </div>
+                            <div className="text-center text-[10px] font-bold text-nodri-cyan uppercase tracking-wider pb-1 border-b border-nodri-cyan/30">
+                              {formatMes(mesAtualKey)} ← atual
+                            </div>
+                          </div>
+
+                          {todosNomes.map(nome => {
+                            const atual = mesAtualData.profissionais.find(p => p.nome === nome)
+                            const ant = mesAnteriorData?.profissionais.find(p => p.nome === nome)
+
+                            // Une todas as ocorrências dos dois meses
+                            const todasOcorrs = Array.from(new Set([
+                              ...(atual?.ocorrencias?.map(o => o.desc) || []),
+                              ...(ant?.ocorrencias?.map(o => o.desc) || [])
+                            ])).sort()
+
+                            const deltaNeg = atual && ant ? atual.negativo - ant.negativo : null
+                            const corDelta = deltaNeg == null ? '#94a3b8' : deltaNeg > 0 ? '#f87171' : deltaNeg < 0 ? '#4ade80' : '#94a3b8'
+                            const aberto = expandidoHistorico === `placar-${nome}`
+
                             return (
-                              <div key={p.nome} className="rounded-xl overflow-hidden"
+                              <div key={nome} className="rounded-xl overflow-hidden"
                                 style={{ background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.06)' }}>
-                                {/* Linha resumo */}
-                                <button className="w-full flex items-center gap-3 px-4 py-3 text-left"
-                                  onClick={() => setExpandidoHistorico(aberto ? null : `placar-${p.nome}`)}>
-                                  <div className="w-7 h-7 rounded-full flex items-center justify-center font-black text-xs shrink-0"
-                                    style={{ background: `${corScore}20`, color: corScore, border: `1.5px solid ${corScore}40` }}>
-                                    {p.nome.charAt(0)}
-                                  </div>
-                                  <span className="font-semibold text-[12px] text-nodri-t1 flex-1">{p.nome}</span>
-                                  {/* Score */}
-                                  <span className="font-black text-[13px] shrink-0" style={{ color: corScore }}>{p.score}%</span>
-                                  {/* Negativos + delta */}
-                                  <div className="flex items-center gap-1 shrink-0">
-                                    <span className="text-red-400 font-semibold text-[11px]">❌ {p.negativo}</span>
-                                    {deltaNeg != null && deltaNeg !== 0 && (
-                                      <span className="text-[9px] font-bold" style={{ color: corDeltaNeg }}>
-                                        {deltaNeg > 0 ? `+${deltaNeg}` : deltaNeg}
-                                      </span>
-                                    )}
-                                  </div>
-                                  {/* Positivos + delta */}
-                                  <div className="flex items-center gap-1 shrink-0">
-                                    <span className="text-green-400 font-semibold text-[11px]">✅ {p.positivo}</span>
-                                    {deltaPos != null && deltaPos !== 0 && (
-                                      <span className="text-[9px] font-bold" style={{ color: corDeltaPos }}>
-                                        {deltaPos > 0 ? `+${deltaPos}` : deltaPos}
-                                      </span>
-                                    )}
-                                  </div>
-                                  <span className="text-nodri-t3 text-[10px] ml-1">{aberto ? '▲' : '▼'}</span>
-                                </button>
-                                {/* Detalhes expandidos — ocorrências */}
-                                {aberto && (
-                                  <div className="px-4 pb-3 border-t border-nodri-border/30">
-                                    <div className="mt-2 text-[10px] text-nodri-t3 font-semibold uppercase tracking-wider mb-2">
-                                      Ocorrências em {formatMes(mesAtualKey)}
+                                {/* Cabeçalho do profissional */}
+                                <button className="w-full grid grid-cols-[160px_1fr_1fr] gap-3 px-3 py-2.5 text-left items-center"
+                                  onClick={() => setExpandidoHistorico(aberto ? null : `placar-${nome}`)}>
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-6 h-6 rounded-full flex items-center justify-center font-black text-[10px] shrink-0"
+                                      style={{ background: 'rgba(255,255,255,.08)', color: '#94a3b8' }}>
+                                      {nome.charAt(0)}
                                     </div>
-                                    {/* Usa dados da matriz para mostrar ocorrências deste profissional */}
-                                    {(() => {
-                                      const matrizProf = data.matriz.find(m => m.profissional === p.nome)
-                                      const ocorrsProf = matrizProf
-                                        ? Object.entries(matrizProf.ocorrencias).filter(([,v]) => v > 0).sort((a,b) => b[1]-a[1])
-                                        : []
-                                      return ocorrsProf.length > 0 ? (
-                                        <div className="space-y-1">
-                                          {ocorrsProf.map(([ocorr, qtd]) => {
-                                            const antProf = mesAnteriorData?.profissionais.find(x => x.nome === p.nome)
-                                            // Não temos detalhe de ocorrência do mês anterior no placard, então mostramos só atual
-                                            const corOcorr = qtd >= 5 ? '#ef4444' : qtd >= 3 ? '#f97316' : qtd >= 2 ? '#facc15' : '#94a3b8'
-                                            return (
-                                              <div key={ocorr} className="flex items-center gap-2 py-1">
-                                                <div className="w-6 h-6 rounded flex items-center justify-center text-[10px] font-black shrink-0"
-                                                  style={{ background: `${corOcorr}20`, color: corOcorr }}>
-                                                  {qtd}
-                                                </div>
-                                                <span className="text-[11px] text-nodri-t1 flex-1">{ocorr}</span>
-                                                <div className="w-20 h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,.06)' }}>
-                                                  <div className="h-1.5 rounded-full" style={{ width: `${Math.min((qtd/10)*100,100)}%`, background: corOcorr }} />
-                                                </div>
-                                              </div>
-                                            )
-                                          })}
-                                        </div>
-                                      ) : (
-                                        <div className="text-[11px] text-nodri-t3 italic">
-                                          {p.top_problema !== '—' ? `Principal: ${p.top_problema}` : 'Sem ocorrências negativas detalhadas.'}
+                                    <span className="font-bold text-[12px] text-nodri-t1 truncate">{nome}</span>
+                                  </div>
+                                  {/* Mês anterior resumo */}
+                                  <div className="text-center">
+                                    {ant ? (
+                                      <span className="text-[11px] text-nodri-t3">❌ {ant.negativo} | ✅ {ant.positivo}</span>
+                                    ) : <span className="text-[10px] text-nodri-t3/40">—</span>}
+                                  </div>
+                                  {/* Mês atual resumo + delta */}
+                                  <div className="text-center flex items-center justify-center gap-2">
+                                    {atual ? (
+                                      <>
+                                        <span className="text-[11px] text-nodri-t1">❌ {atual.negativo} | ✅ {atual.positivo}</span>
+                                        {deltaNeg != null && deltaNeg !== 0 && (
+                                          <span className="text-[10px] font-black" style={{ color: corDelta }}>
+                                            {deltaNeg > 0 ? `+${deltaNeg}` : deltaNeg}
+                                          </span>
+                                        )}
+                                      </>
+                                    ) : <span className="text-[10px] text-nodri-t3/40">—</span>}
+                                    <span className="text-nodri-t3 text-[9px] ml-1">{aberto ? '▲' : '▼'}</span>
+                                  </div>
+                                </button>
+
+                                {/* Ocorrências lado a lado */}
+                                {aberto && todasOcorrs.length > 0 && (
+                                  <div className="border-t border-nodri-border/30 px-3 pb-3">
+                                    <div className="grid grid-cols-[160px_1fr_1fr] gap-3 mt-2 mb-1 px-1">
+                                      <div className="text-[9px] text-nodri-t3 uppercase tracking-wider">Ocorrência</div>
+                                      <div className="text-[9px] text-nodri-t3 uppercase tracking-wider text-center">{mesAnteriorKey ? formatMes(mesAnteriorKey) : '—'}</div>
+                                      <div className="text-[9px] text-nodri-cyan uppercase tracking-wider text-center">{formatMes(mesAtualKey)}</div>
+                                    </div>
+                                    {todasOcorrs.map(desc => {
+                                      const qtdAnt = ant?.ocorrencias?.find(o => o.desc === desc)?.qtd || 0
+                                      const qtdAtual = atual?.ocorrencias?.find(o => o.desc === desc)?.qtd || 0
+                                      const diff = qtdAtual - qtdAnt
+                                      const corDiff = diff > 0 ? '#f87171' : diff < 0 ? '#4ade80' : '#94a3b8'
+                                      const corAtual = qtdAtual >= 5 ? '#ef4444' : qtdAtual >= 3 ? '#f97316' : qtdAtual >= 2 ? '#facc15' : '#94a3b8'
+                                      return (
+                                        <div key={desc} className="grid grid-cols-[160px_1fr_1fr] gap-3 py-1 px-1 rounded-lg hover:bg-white/[0.02]">
+                                          <span className="text-[11px] text-nodri-t2 truncate" title={desc}>{desc}</span>
+                                          <div className="text-center">
+                                            {qtdAnt > 0
+                                              ? <span className="text-[12px] font-bold text-nodri-t3">{qtdAnt}</span>
+                                              : <span className="text-nodri-t3/30 text-[11px]">—</span>}
+                                          </div>
+                                          <div className="flex items-center justify-center gap-1.5">
+                                            {qtdAtual > 0
+                                              ? <span className="text-[12px] font-bold" style={{ color: corAtual }}>{qtdAtual}</span>
+                                              : <span className="text-nodri-t3/30 text-[11px]">—</span>}
+                                            {diff !== 0 && (
+                                              <span className="text-[9px] font-black" style={{ color: corDiff }}>
+                                                {diff > 0 ? `+${diff}` : diff}
+                                              </span>
+                                            )}
+                                          </div>
                                         </div>
                                       )
-                                    })()}
-                                    {/* Comparativo resumido com mês anterior */}
-                                    {anterior && (
-                                      <div className="mt-3 pt-2 border-t border-nodri-border/30 flex items-center gap-3 text-[10px]">
-                                        <span className="text-nodri-t3">vs {formatMes(mesAnteriorKey!)}:</span>
-                                        <span style={{ color: corDeltaNeg }}>
-                                          Negativos: {anterior.negativo} → {p.negativo} ({deltaNeg! > 0 ? '+' : ''}{deltaNeg})
-                                        </span>
-                                        <span style={{ color: corDeltaPos }}>
-                                          Positivos: {anterior.positivo} → {p.positivo} ({deltaPos! > 0 ? '+' : ''}{deltaPos})
-                                        </span>
-                                      </div>
-                                    )}
+                                    })}
                                   </div>
                                 )}
                               </div>
                             )
                           })}
                         </div>
+                        )
+                      })()}
                       )}
                     </div>
                     )
