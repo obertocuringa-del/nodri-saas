@@ -1518,9 +1518,15 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                     <button
                       onClick={async () => {
                         setSavingPrograma(true)
-                        await fetch('/api/config/programa', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(configPrograma) })
+                        try {
+                          const res = await fetch('/api/config/programa', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(configPrograma) })
+                          const data = await res.json()
+                          if (!res.ok) { toast.error('Erro ao salvar: ' + (data.error || res.status)); }
+                          else { toast.success('💾 Links salvos!') }
+                        } catch (e: any) {
+                          toast.error('Erro de conexão: ' + e.message)
+                        }
                         setSavingPrograma(false)
-                        toast.success('💾 Links salvos!')
                       }}
                       disabled={savingPrograma}
                       className="bg-nodri-cyan text-black font-bold px-4 py-2 rounded-lg text-[11px] hover:brightness-110 disabled:opacity-50">
