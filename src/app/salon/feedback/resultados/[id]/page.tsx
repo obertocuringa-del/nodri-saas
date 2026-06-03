@@ -184,9 +184,9 @@ export default function ResultadosPage() {
             {/* FILTROS DATA */}
             <div className="flex items-center gap-1.5 px-2 py-1.5 bg-nodri-card border border-nodri-border rounded-lg">
               <Calendar size={11} className="text-nodri-t3" />
-              <input type="date" value={inicio} onChange={e => setInicio(e.target.value)} className="bg-transparent text-[11px] text-nodri-t1 outline-none w-24" />
+              <input type="date" value={inicio} onChange={e => setInicio(e.target.value)} className="bg-nodri-card text-[11px] text-nodri-t1 outline-none cursor-pointer border-0 rounded" style={{ colorScheme: 'dark' }} />
               <span className="text-nodri-t3 text-[10px]">→</span>
-              <input type="date" value={fim} onChange={e => setFim(e.target.value)} className="bg-transparent text-[11px] text-nodri-t1 outline-none w-24" />
+              <input type="date" value={fim} onChange={e => setFim(e.target.value)} className="bg-nodri-card text-[11px] text-nodri-t1 outline-none cursor-pointer border-0 rounded" style={{ colorScheme: 'dark' }} />
               <button onClick={fetchResultados} className="p-0.5 hover:text-nodri-cyan text-nodri-t3 transition-colors"><RefreshCw size={11} /></button>
             </div>
             {/* EXPORTAR */}

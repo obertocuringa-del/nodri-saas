@@ -230,9 +230,9 @@ export default function ResultadosProfPage() {
                   </select>
                   <div className="flex items-center gap-1 px-2 py-1.5 bg-nodri-card border border-nodri-border rounded-lg">
                     <Calendar size={11} className="text-nodri-t3" />
-                    <input type="date" value={inicio} onChange={e => setInicio(e.target.value)} className="bg-transparent text-[11px] text-nodri-t1 outline-none w-24" />
+                    <input type="date" value={inicio} onChange={e => setInicio(e.target.value)} className="bg-nodri-card text-[11px] text-nodri-t1 outline-none cursor-pointer border-0 rounded" style={{ colorScheme: 'dark' }} />
                     <span className="text-[10px] text-nodri-t3">→</span>
-                    <input type="date" value={fim} onChange={e => setFim(e.target.value)} className="bg-transparent text-[11px] text-nodri-t1 outline-none w-24" />
+                    <input type="date" value={fim} onChange={e => setFim(e.target.value)} className="bg-nodri-card text-[11px] text-nodri-t1 outline-none cursor-pointer border-0 rounded" style={{ colorScheme: 'dark' }} />
                   </div>
                   <button onClick={fetchData} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold" style={{ background: 'rgba(34,211,238,.1)', color: '#22d3ee', border: '1px solid rgba(34,211,238,.25)' }}>
                     <RefreshCw size={11} /> Aplicar
