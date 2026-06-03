@@ -32,8 +32,8 @@ export async function PUT(req: NextRequest) {
 
   // FIX: só atualiza campos que foram enviados (evita sobrescrever com undefined/null)
   const updates: Record<string, any> = {}
-  if (nome !== undefined) updates.nome = nome
-  if (responsavel !== undefined) updates.responsavel = responsavel
+  if (nome && nome.trim()) updates.nome = nome.trim()
+  if (responsavel && responsavel.trim()) updates.responsavel = responsavel.trim()
   if (telefone !== undefined) updates.telefone = telefone
 
   if (Object.keys(updates).length > 0) {
