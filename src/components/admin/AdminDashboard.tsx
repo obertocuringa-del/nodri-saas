@@ -292,16 +292,18 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
   }
 
 
+  // Carrega config do programa na inicialização
+  useEffect(() => {
+    fetch('/api/config/programa').then(r => r.json()).then(d => {
+      if (d) setConfigPrograma({ link: d.link || '', link_atualizacao: d.link_atualizacao || '', atualizacao_ativa: !!d.atualizacao_ativa })
+    }).catch(() => {})
+  }, [])
+
   // Sempre re-carrega módulos do banco ao entrar na seção
   useEffect(() => {
     if (activeSection === 'modulos') {
       fetch('/api/modulos').then(r => r.json()).then(data => {
         if (Array.isArray(data)) setLocalModulos(data)
-      }).catch(() => {})
-    }
-    if (activeSection === 'config') {
-      fetch('/api/config/programa').then(r => r.json()).then(d => {
-        if (d) setConfigPrograma({ link: d.link || '', link_atualizacao: d.link_atualizacao || '', atualizacao_ativa: !!d.atualizacao_ativa })
       }).catch(() => {})
     }
   }, [activeSection])
