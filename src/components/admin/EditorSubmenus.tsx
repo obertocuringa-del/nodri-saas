@@ -148,6 +148,12 @@ export default function EditorSubmenus() {
   const [novaCategoria, setNovaCategoria] = useState('')
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
 
+  // Edição inline de nomes
+  const [editandoCategoria, setEditandoCategoria] = useState<string | null>(null)
+  const [nomeCategoria, setNomeCategoria] = useState('')
+  const [editandoItem, setEditandoItem] = useState<string | null>(null) // slug
+  const [nomePagina, setNomePagina] = useState('')
+
   // Seções
   const [secoesColapsadas, setSecoesColapsadas] = useState(() => {
     const s = new Set<SecaoTipo>()
@@ -298,6 +304,26 @@ export default function EditorSubmenus() {
     saveEstrutura(novosMenus)
     if (categoriaAtiva === cat) setCategoriaAtiva(menus[0]?.categoria || '')
     toast.success('Categoria excluída!')
+  }
+
+  function salvarNomeCategoria(catAntiga: string) {
+    if (!nomeCategoria.trim()) { setEditandoCategoria(null); return }
+    const novosMenus = menus.map(m => m.categoria === catAntiga ? { ...m, categoria: nomeCategoria.trim() } : m)
+    setMenus(novosMenus)
+    saveEstrutura(novosMenus)
+    if (categoriaAtiva === catAntiga) setCategoriaAtiva(nomeCategoria.trim())
+    setEditandoCategoria(null)
+    toast.success('Categoria renomeada!')
+  }
+
+  function salvarNomePagina(slug: string) {
+    if (!nomePagina.trim()) { setEditandoItem(null); return }
+    const novosMenus = menus.map(m => ({ ...m, itens: m.itens.map(i => i.slug === slug ? { ...i, titulo: nomePagina.trim() } : i) }))
+    setMenus(novosMenus)
+    saveEstrutura(novosMenus)
+    if (dados?.slug === slug) setDados(prev => prev ? { ...prev, titulo: nomePagina.trim() } : null)
+    setEditandoItem(null)
+    toast.success('Página renomeada!')
   }
 
   /* ── Seção: VÍDEO ── */
@@ -826,27 +852,55 @@ export default function EditorSubmenus() {
         {menus.map(menu => (
           <div key={menu.categoria}>
             <div className="flex items-center gap-1">
-              <button onClick={() => setCategoriaAtiva(menu.categoria)}
-                className={`flex-1 flex items-center justify-between px-2.5 py-2 rounded-lg text-[11px] font-bold transition-all ${categoriaAtiva === menu.categoria ? 'bg-nodri-cyan/10 text-nodri-cyan border border-nodri-cyan/20' : 'text-nodri-t2 hover:text-nodri-t1 hover:bg-white/3'}`}>
-                <span className="truncate">{menu.categoria}</span>
-                <span className="text-[9px] opacity-60 ml-1">{menu.itens.length}</span>
-                {categoriaAtiva === menu.categoria ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
-              </button>
-              {categoriaAtiva === menu.categoria && (
-                <button onClick={() => excluirCategoria(menu.categoria)} title="Excluir categoria"
-                  className="p-1 text-nodri-t3 hover:text-nodri-red transition-colors rounded"><Trash2 size={10} /></button>
+              {editandoCategoria === menu.categoria ? (
+                <div className="flex-1 flex gap-1">
+                  <input autoFocus value={nomeCategoria} onChange={e => setNomeCategoria(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') salvarNomeCategoria(menu.categoria); if (e.key === 'Escape') setEditandoCategoria(null) }}
+                    className="flex-1 bg-nodri-surface border border-nodri-cyan/50 rounded px-2 py-1 text-[11px] text-nodri-t1 outline-none" />
+                  <button onClick={() => salvarNomeCategoria(menu.categoria)} className="p-1 text-nodri-cyan hover:bg-nodri-cyan/10 rounded"><Save size={10} /></button>
+                  <button onClick={() => setEditandoCategoria(null)} className="p-1 text-nodri-t3 hover:text-nodri-t1 rounded"><X size={10} /></button>
+                </div>
+              ) : (
+                <button onClick={() => setCategoriaAtiva(menu.categoria)}
+                  className={`flex-1 flex items-center justify-between px-2.5 py-2 rounded-lg text-[11px] font-bold transition-all ${categoriaAtiva === menu.categoria ? 'bg-nodri-cyan/10 text-nodri-cyan border border-nodri-cyan/20' : 'text-nodri-t2 hover:text-nodri-t1 hover:bg-white/3'}`}>
+                  <span className="truncate">{menu.categoria}</span>
+                  <span className="text-[9px] opacity-60 ml-1">{menu.itens.length}</span>
+                  {categoriaAtiva === menu.categoria ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
+                </button>
+              )}
+              {categoriaAtiva === menu.categoria && editandoCategoria !== menu.categoria && (
+                <>
+                  <button onClick={() => { setEditandoCategoria(menu.categoria); setNomeCategoria(menu.categoria) }} title="Renomear"
+                    className="p-1 text-nodri-t3 hover:text-nodri-cyan transition-colors rounded"><Edit3 size={10} /></button>
+                  <button onClick={() => excluirCategoria(menu.categoria)} title="Excluir categoria"
+                    className="p-1 text-nodri-t3 hover:text-nodri-red transition-colors rounded"><Trash2 size={10} /></button>
+                </>
               )}
             </div>
             {categoriaAtiva === menu.categoria && (
               <div className="ml-2 mt-1 space-y-0.5">
                 {menu.itens.map(item => (
                   <div key={item.slug} className="flex items-center gap-1 group">
-                    <button onClick={() => abrirEditor(item.slug, item.titulo)}
-                      className={`flex-1 text-left px-2.5 py-1.5 rounded text-[10.5px] transition-all truncate ${slugAtivo === item.slug ? 'bg-nodri-purple/10 text-nodri-purple border border-nodri-purple/20' : 'text-nodri-t3 hover:text-nodri-t1 hover:bg-white/2'} ${item.oculto ? 'opacity-40 italic' : ''}`}>
-                      {item.oculto && '🙈 '}{item.titulo}
-                    </button>
-                    <button onClick={() => setConfirmDelete(item.slug)} title="Excluir página"
-                      className="opacity-0 group-hover:opacity-100 p-1 text-nodri-t3 hover:text-nodri-red transition-all rounded shrink-0"><Trash2 size={10} /></button>
+                    {editandoItem === item.slug ? (
+                      <div className="flex-1 flex gap-1">
+                        <input autoFocus value={nomePagina} onChange={e => setNomePagina(e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter') salvarNomePagina(item.slug); if (e.key === 'Escape') setEditandoItem(null) }}
+                          className="flex-1 bg-nodri-surface border border-nodri-purple/50 rounded px-2 py-1 text-[10.5px] outline-none" />
+                        <button onClick={() => salvarNomePagina(item.slug)} className="p-1 text-nodri-cyan hover:bg-nodri-cyan/10 rounded"><Save size={10} /></button>
+                        <button onClick={() => setEditandoItem(null)} className="p-1 text-nodri-t3 rounded"><X size={10} /></button>
+                      </div>
+                    ) : (
+                      <>
+                        <button onClick={() => abrirEditor(item.slug, item.titulo)}
+                          className={`flex-1 text-left px-2.5 py-1.5 rounded text-[10.5px] transition-all truncate ${slugAtivo === item.slug ? 'bg-nodri-purple/10 text-nodri-purple border border-nodri-purple/20' : 'text-nodri-t3 hover:text-nodri-t1 hover:bg-white/2'} ${item.oculto ? 'opacity-40 italic' : ''}`}>
+                          {item.oculto && '🙈 '}{item.titulo}
+                        </button>
+                        <button onClick={() => { setEditandoItem(item.slug); setNomePagina(item.titulo) }} title="Renomear"
+                          className="opacity-0 group-hover:opacity-100 p-1 text-nodri-t3 hover:text-nodri-cyan transition-all rounded shrink-0"><Edit3 size={10} /></button>
+                        <button onClick={() => setConfirmDelete(item.slug)} title="Excluir página"
+                          className="opacity-0 group-hover:opacity-100 p-1 text-nodri-t3 hover:text-nodri-red transition-all rounded shrink-0"><Trash2 size={10} /></button>
+                      </>
+                    )}
                   </div>
                 ))}
                 {menu.itens.length === 0 && <p className="text-[10px] text-nodri-t3 px-2.5 py-1 italic">Nenhuma página. Clique em + para criar.</p>}
