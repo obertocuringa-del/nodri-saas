@@ -126,13 +126,19 @@ export default function ResultadosProfPage() {
     if (res.ok) setPlacardData(await res.json())
   }, [id, placardInicio, placardFim])
 
+  // Valores "aplicados" — só mudam ao clicar Aplicar
+  const [inicioAplicado, setInicioAplicado] = useState(inicio)
+  const [fimAplicado, setFimAplicado] = useState(fim)
+  const [filtroProfAplicado, setFiltroProfAplicado] = useState(filtroProfissional)
+  const [filtroTipoAplicado, setFiltroTipoAplicado] = useState(filtroTipo)
+
   const fetchData = useCallback(async () => {
     setLoading(true)
     const qs = new URLSearchParams()
-    if (inicio) qs.set('inicio', inicio)
-    if (fim) qs.set('fim', fim)
-    if (filtroProfissional) qs.set('profissional', filtroProfissional)
-    if (filtroTipo) qs.set('tipo', filtroTipo)
+    if (inicioAplicado) qs.set('inicio', inicioAplicado)
+    if (fimAplicado) qs.set('fim', fimAplicado)
+    if (filtroProfAplicado) qs.set('profissional', filtroProfAplicado)
+    if (filtroTipoAplicado) qs.set('tipo', filtroTipoAplicado)
     const res = await fetch(`/api/feedback-prof/resultados/${id}?${qs}`)
     if (res.ok) {
       const d = await res.json()
@@ -140,7 +146,7 @@ export default function ResultadosProfPage() {
       if (!profEvol && d.nomeProfissionais?.length) setProfEvol(d.nomeProfissionais[0])
     } else toast.error('Erro ao carregar')
     setLoading(false)
-  }, [id, inicio, fim, filtroProfissional, filtroTipo])
+  }, [id, inicioAplicado, fimAplicado, filtroProfAplicado, filtroTipoAplicado])
 
   useEffect(() => { fetchData() }, [fetchData])
   useEffect(() => { fetchPlacard() }, [fetchPlacard])
@@ -270,7 +276,8 @@ export default function ResultadosProfPage() {
                     <span className="text-[10px] text-nodri-t3">→</span>
                     <input type="date" value={fim} onChange={e => setFim(e.target.value)} className="bg-nodri-card text-[11px] text-nodri-t1 outline-none cursor-pointer border-0 rounded" style={{ colorScheme: 'dark' }} />
                   </div>
-                  <button onClick={fetchData} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold" style={{ background: 'rgba(34,211,238,.1)', color: '#22d3ee', border: '1px solid rgba(34,211,238,.25)' }}>
+                  <button onClick={() => { setInicioAplicado(inicio); setFimAplicado(fim); setFiltroProfAplicado(filtroProfissional); setFiltroTipoAplicado(filtroTipo) }}
+                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold" style={{ background: 'rgba(34,211,238,.1)', color: '#22d3ee', border: '1px solid rgba(34,211,238,.25)' }}>
                     <RefreshCw size={11} /> Aplicar
                   </button>
                 </div>

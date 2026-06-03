@@ -76,16 +76,19 @@ export default function ResultadosPage() {
   const [iaErro, setIaErro] = useState('')
   const [showIa, setShowIa] = useState(false)
 
+  const [inicioAplicado, setInicioAplicado] = useState(inicio)
+  const [fimAplicado, setFimAplicado] = useState(fim)
+
   const fetchResultados = useCallback(async () => {
     setLoading(true)
     const qs = new URLSearchParams()
-    if (inicio) qs.set('inicio', inicio)
-    if (fim) qs.set('fim', fim)
+    if (inicioAplicado) qs.set('inicio', inicioAplicado)
+    if (fimAplicado) qs.set('fim', fimAplicado)
     const res = await fetch(`/api/feedback/resultados/${id}?${qs}`)
     if (res.ok) setData(await res.json())
     else toast.error('Erro ao carregar resultados')
     setLoading(false)
-  }, [id, inicio, fim])
+  }, [id, inicioAplicado, fimAplicado])
 
   useEffect(() => { fetchResultados() }, [fetchResultados])
 
@@ -187,7 +190,7 @@ export default function ResultadosPage() {
               <input type="date" value={inicio} onChange={e => setInicio(e.target.value)} className="bg-nodri-card text-[11px] text-nodri-t1 outline-none cursor-pointer border-0 rounded" style={{ colorScheme: 'dark' }} />
               <span className="text-nodri-t3 text-[10px]">→</span>
               <input type="date" value={fim} onChange={e => setFim(e.target.value)} className="bg-nodri-card text-[11px] text-nodri-t1 outline-none cursor-pointer border-0 rounded" style={{ colorScheme: 'dark' }} />
-              <button onClick={fetchResultados} className="p-0.5 hover:text-nodri-cyan text-nodri-t3 transition-colors"><RefreshCw size={11} /></button>
+              <button onClick={() => { setInicioAplicado(inicio); setFimAplicado(fim) }} className="p-0.5 hover:text-nodri-cyan text-nodri-t3 transition-colors"><RefreshCw size={11} /></button>
             </div>
             {/* EXPORTAR */}
             <button onClick={exportarCSV} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all"
