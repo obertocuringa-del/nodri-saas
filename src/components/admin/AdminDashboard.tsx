@@ -128,9 +128,16 @@ const DEFAULT_LANDING = {
   footer_whatsapp: '5561982195214',
 }
 
-export default function AdminDashboard({ saloes: initialSaloes, modulos, notificacoes, planos: initialPlanos }: Props) {
+export default function AdminDashboard({ saloes: initialSaloes, modulos: initialModulos, notificacoes, planos: initialPlanos }: Props) {
   const [saloes, setSaloes] = useState(initialSaloes)
   const [planos, setPlanos] = useState(initialPlanos)
+  const [localModulos, setLocalModulos] = useState(initialModulos)
+
+  // ── MÓDULOS CRUD ──
+  const [showNovoModulo, setShowNovoModulo] = useState(false)
+  const [editModulo, setEditModulo] = useState<Modulo | null>(null)
+  const [moduloForm, setModuloForm] = useState({ nome: '', slug: '', descricao: '', versao: '1.0.0', icone: '⚙️', cor_classe: '', categoria: '', ordem: '0' })
+  const [savingModulo, setSavingModulo] = useState(false)
   const [activeSection, setActiveSection] = useState('dashboard')
   const [modCtrlSalao, setModCtrlSalao] = useState<Salao | null>(null)
   const [modulosAtivos, setModulosAtivos] = useState<Set<string>>(new Set())
@@ -558,6 +565,56 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
     else toast.error('Erro ao excluir cupom')
   }
 
+  // ── MÓDULOS ──
+  function resetModuloForm() {
+    setModuloForm({ nome: '', slug: '', descricao: '', versao: '1.0.0', icone: '⚙️', cor_classe: '', categoria: '', ordem: '0' })
+  }
+
+  function openEditModulo(m: Modulo) {
+    setEditModulo(m)
+    setModuloForm({ nome: m.nome, slug: m.slug, descricao: m.descricao || '', versao: m.versao || '1.0.0', icone: m.icone || '⚙️', cor_classe: m.cor_classe || '', categoria: m.categoria || '', ordem: String(m.ordem || 0) })
+    setShowNovoModulo(true)
+  }
+
+  async function handleSaveModulo(e: React.FormEvent) {
+    e.preventDefault()
+    if (!moduloForm.nome || !moduloForm.slug) { toast.error('Nome e slug são obrigatórios'); return }
+    setSavingModulo(true)
+    const method = editModulo ? 'PUT' : 'POST'
+    const body = editModulo
+      ? { ...moduloForm, id: editModulo.id, ordem: parseInt(moduloForm.ordem) || 0 }
+      : { ...moduloForm, ordem: parseInt(moduloForm.ordem) || 0, ativo: true }
+    const res = await fetch('/api/modulos', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    const data = await res.json()
+    setSavingModulo(false)
+    if (res.ok) {
+      toast.success(editModulo ? 'Módulo atualizado!' : 'Módulo criado!')
+      if (editModulo) setLocalModulos(prev => prev.map(m => m.id === editModulo.id ? data : m))
+      else setLocalModulos(prev => [...prev, data])
+      setShowNovoModulo(false); setEditModulo(null); resetModuloForm()
+    } else toast.error(data.error || 'Erro ao salvar módulo')
+  }
+
+  async function toggleManutencaoModulo(m: Modulo) {
+    const res = await fetch('/api/modulos', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: m.id, ativo: !m.ativo }),
+    })
+    const data = await res.json()
+    if (res.ok) {
+      setLocalModulos(prev => prev.map(mod => mod.id === m.id ? { ...mod, ativo: data.ativo } : mod))
+      toast.success(m.ativo ? '🔧 Módulo em manutenção!' : '✅ Manutenção encerrada!')
+    } else toast.error('Erro ao alterar módulo')
+  }
+
+  async function deleteModulo(id: string) {
+    if (!confirm('Excluir este módulo permanentemente? Esta ação não pode ser desfeita.')) return
+    const res = await fetch(`/api/modulos?id=${id}`, { method: 'DELETE' })
+    if (res.ok) { toast.success('Módulo excluído!'); setLocalModulos(prev => prev.filter(m => m.id !== id)) }
+    else toast.error('Erro ao excluir módulo')
+  }
+
   function getTrialStatus(criado_em: string | Date) {
     const criado = new Date(criado_em)
     const expira = new Date(criado)
@@ -959,10 +1016,10 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
         <div className="px-5 py-3 border-b border-nodri-border bg-nodri-surface flex items-center gap-3 sticky top-0 z-20">
           <div>
             <div className="font-syne font-bold text-[15px]">
-              {activeSection === 'links' ? 'Links do Menu' : activeSection === 'planos' ? 'Gestão de Planos' : 'Painel Admin Master'}
+              {activeSection === 'links' ? 'Links do Menu' : activeSection === 'planos' ? 'Gestão de Planos' : activeSection === 'modulos' ? 'Gestão de Módulos' : 'Painel Admin Master'}
             </div>
             <div className="text-[11px] text-nodri-t2">
-              {activeSection === 'links' ? 'Edite os links de cada categoria do menu' : activeSection === 'planos' ? 'Planos, Landing Page e Cupons de Desconto' : 'Controle total de salões, licenças e módulos'}
+              {activeSection === 'links' ? 'Edite os links de cada categoria do menu' : activeSection === 'planos' ? 'Planos, Landing Page e Cupons de Desconto' : activeSection === 'modulos' ? 'Criar, editar e gerenciar módulos do sistema' : 'Controle total de salões, licenças e módulos'}
             </div>
           </div>
           <div className="ml-auto flex gap-2">
@@ -976,7 +1033,13 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
                 <Plus size={13} /> Novo Plano
               </button>
             )}
-            {activeSection !== 'links' && activeSection !== 'planos' && (
+            {activeSection === 'modulos' && (
+              <button onClick={() => { resetModuloForm(); setEditModulo(null); setShowNovoModulo(true) }}
+                className="flex items-center gap-1.5 bg-nodri-cyan text-black text-[11.5px] font-bold px-3 py-1.5 rounded-lg hover:brightness-110 transition-all">
+                <Plus size={13} /> Novo Módulo
+              </button>
+            )}
+            {activeSection !== 'links' && activeSection !== 'planos' && activeSection !== 'modulos' && (
               <button onClick={() => setShowNovoSalao(true)} className="flex items-center gap-1.5 bg-nodri-cyan text-black text-[11.5px] font-bold px-3 py-1.5 rounded-lg hover:brightness-110 transition-all">
                 <Plus size={13} /> Novo Salão
               </button>
@@ -985,6 +1048,58 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
         </div>
 
         <div className="p-5 flex-1">
+
+          {/* MÓDULOS */}
+          {activeSection === 'modulos' && (
+            <div className="space-y-4">
+              {/* Manutenção de Módulos */}
+              <div className="nodri-card p-4">
+                <div className="font-syne font-bold text-[13px] text-nodri-cyan mb-1 flex items-center gap-2">
+                  <Puzzle size={14} /> 🔧 Manutenção de Módulos
+                </div>
+                <p className="text-[11px] text-nodri-t3 mb-4">Ative o modo manutenção para bloquear temporariamente um módulo para todos os salões</p>
+                <div className="grid grid-cols-4 gap-3">
+                  {localModulos.map(m => (
+                    <div key={m.id} className={`p-3 border rounded-xl transition-all ${!m.ativo ? 'border-nodri-red/40 bg-nodri-red/5' : 'border-nodri-border bg-nodri-surface'}`}>
+                      <div className="flex items-start justify-between mb-2 gap-1">
+                        <div className="min-w-0">
+                          <div className="font-bold text-[10px] uppercase leading-tight truncate">{m.nome}</div>
+                          <div className="text-[9px] text-nodri-t3">v{m.versao}</div>
+                        </div>
+                        {!m.ativo && <span className="text-[8px] bg-nodri-red text-white px-1.5 py-0.5 rounded font-bold shrink-0">MANUTENÇÃO</span>}
+                      </div>
+                      <div className="flex gap-1 mt-2">
+                        <button onClick={() => toggleManutencaoModulo(m)}
+                          className={`flex-1 py-1 text-[9px] font-bold rounded border transition-all ${m.ativo ? 'border-nodri-red/30 text-nodri-red bg-nodri-red/5 hover:bg-nodri-red/15' : 'border-nodri-green/30 text-nodri-green bg-nodri-green/5 hover:bg-nodri-green/15'}`}>
+                          {m.ativo ? '🔧 Manutenção' : '✅ Encerrar'}
+                        </button>
+                        <button onClick={() => openEditModulo(m)} title="Editar" className="p-1 border border-nodri-border rounded text-nodri-t3 hover:text-nodri-cyan hover:border-nodri-cyan/30 transition-all"><Edit size={10} /></button>
+                        <button onClick={() => deleteModulo(m.id)} title="Excluir" className="p-1 border border-nodri-red/30 rounded text-nodri-red hover:bg-nodri-red/10 transition-all"><Trash2 size={10} /></button>
+                      </div>
+                    </div>
+                  ))}
+                  {localModulos.length === 0 && (
+                    <div className="col-span-4 text-center py-8 text-nodri-t3 text-[12px]">Nenhum módulo cadastrado. Clique em "Novo Módulo" para começar.</div>
+                  )}
+                </div>
+              </div>
+
+              {/* Stats */}
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { label: 'Total de Módulos', value: localModulos.length, icon: '⚙️' },
+                  { label: 'Ativos', value: localModulos.filter(m => m.ativo).length, icon: '✅' },
+                  { label: 'Em Manutenção', value: localModulos.filter(m => !m.ativo).length, icon: '🔧' },
+                ].map(s => (
+                  <div key={s.label} className="nodri-card p-4 text-center">
+                    <div className="text-2xl mb-1">{s.icon}</div>
+                    <div className="font-syne font-bold text-xl">{s.value}</div>
+                    <div className="text-[10px] text-nodri-t3 uppercase tracking-wider mt-1">{s.label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* EDITOR DE PÁGINAS */}
           {activeSection === 'conteudo' && (
@@ -1557,14 +1672,14 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
           )}
 
           {/* DASHBOARD */}
-          {activeSection !== 'links' && activeSection !== 'planos' && activeSection !== 'conteudo' && activeSection !== 'afiliados' && activeSection !== 'logs' && activeSection !== 'updates' && activeSection !== 'relatorios' && activeSection !== 'config' && (
+          {activeSection !== 'links' && activeSection !== 'planos' && activeSection !== 'conteudo' && activeSection !== 'afiliados' && activeSection !== 'logs' && activeSection !== 'updates' && activeSection !== 'relatorios' && activeSection !== 'config' && activeSection !== 'modulos' && activeSection !== 'pagamentos' && (
             <>
               <div className="grid grid-cols-4 gap-3 mb-5">
                 {[
                   { label: 'Salões cadastrados', value: saloes.length, change: 'total' },
                   { label: 'Licenças ativas', value: saloes.filter(s => s.status === 'ativo').length, change: 'ativas agora' },
                   { label: 'Receita mensal', value: `R$${saloes.filter(s => s.status === 'ativo' && s.plano).reduce((acc, s) => acc + (s.plano?.preco || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, change: 'planos ativos' },
-                  { label: 'Total de módulos', value: modulos.length, change: 'disponíveis' },
+                  { label: 'Total de módulos', value: localModulos.length, change: 'disponíveis' },
                 ].map(s => (
                   <div key={s.label} className="nodri-card p-3">
                     <div className="text-[9.5px] text-nodri-t3 uppercase tracking-widest mb-1">{s.label}</div>
@@ -1693,7 +1808,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
                           <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${PLANO_CLASS[(salao as any).plano?.slug || 'basico']}`}>{(salao as any).plano?.nome || 'Básico'}</span></td>
                           <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold capitalize ${STATUS_CLASS[salao.status]}`}>{salao.status}</span></td>
                           <td className="px-4 py-3 text-[11px]">{salao.status === 'trial' ? getTrialStatus(salao.criado_em) : <span className="text-nodri-t2">{salao.licenca_vencimento ? new Date(salao.licenca_vencimento).toLocaleDateString('pt-BR') : '—'}</span>}</td>
-                          <td className="px-4 py-3 text-nodri-t2">—/{modulos.length}</td>
+                          <td className="px-4 py-3 text-nodri-t2">—/{localModulos.length}</td>
                           <td className="px-4 py-3">
                             <div className="flex gap-1.5">
                               <button onClick={() => openEditSalao(salao)} className="p-1.5 rounded-md border border-nodri-purple/40 text-nodri-purple bg-nodri-purple/7 hover:bg-nodri-purple/15 transition-all" title="Editar"><Edit size={11} /></button>
@@ -1977,6 +2092,40 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
         </div>
       )}
 
+      {/* MODAL NOVO/EDITAR MÓDULO */}
+      {showNovoModulo && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="nodri-card w-full max-w-lg p-6 animate-slide-up">
+            <div className="flex items-center justify-between mb-5">
+              <div className="font-syne font-bold text-[14px] flex items-center gap-2"><Puzzle size={16} className="text-nodri-cyan" /> {editModulo ? 'Editar Módulo' : 'Novo Módulo'}</div>
+              <button onClick={() => { setShowNovoModulo(false); setEditModulo(null) }} className="text-nodri-t3 hover:text-nodri-t1"><X size={16} /></button>
+            </div>
+            <form onSubmit={handleSaveModulo} className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div><label className="nodri-label block mb-1">Nome *</label><input className="nodri-input" placeholder="Ex: Confirmar Agendamento" value={moduloForm.nome} onChange={e => setModuloForm(p => ({...p, nome: e.target.value}))} /></div>
+                <div><label className="nodri-label block mb-1">Slug *</label><input className="nodri-input" placeholder="Ex: confirmacao_agendamento" value={moduloForm.slug} onChange={e => setModuloForm(p => ({...p, slug: e.target.value.toLowerCase().replace(/\s+/g, '_')}))} /></div>
+              </div>
+              <div><label className="nodri-label block mb-1">Descrição</label><textarea className="nodri-input resize-none h-16" placeholder="Descreva o que o módulo faz..." value={moduloForm.descricao} onChange={e => setModuloForm(p => ({...p, descricao: e.target.value}))} /></div>
+              <div className="grid grid-cols-3 gap-3">
+                <div><label className="nodri-label block mb-1">Versão</label><input className="nodri-input" placeholder="1.0.0" value={moduloForm.versao} onChange={e => setModuloForm(p => ({...p, versao: e.target.value}))} /></div>
+                <div><label className="nodri-label block mb-1">Ícone (emoji)</label><input className="nodri-input text-center text-[18px]" placeholder="⚙️" value={moduloForm.icone} onChange={e => setModuloForm(p => ({...p, icone: e.target.value}))} /></div>
+                <div><label className="nodri-label block mb-1">Ordem</label><input type="number" min="0" className="nodri-input" placeholder="0" value={moduloForm.ordem} onChange={e => setModuloForm(p => ({...p, ordem: e.target.value}))} /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><label className="nodri-label block mb-1">Categoria</label><input className="nodri-input" placeholder="Ex: Comunicação" value={moduloForm.categoria} onChange={e => setModuloForm(p => ({...p, categoria: e.target.value}))} /></div>
+                <div><label className="nodri-label block mb-1">Classe de Cor</label><input className="nodri-input" placeholder="Ex: text-nodri-cyan" value={moduloForm.cor_classe} onChange={e => setModuloForm(p => ({...p, cor_classe: e.target.value}))} /></div>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={() => { setShowNovoModulo(false); setEditModulo(null) }} className="nodri-btn-ghost text-[12px]">Cancelar</button>
+                <button type="submit" disabled={savingModulo} className="nodri-btn-primary text-[12px] flex items-center gap-2">
+                  {savingModulo ? <><Loader2 size={13} className="animate-spin" /> Salvando...</> : <><Save size={13} /> {editModulo ? 'Salvar Alterações' : 'Criar Módulo'}</>}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* MODAL MÓDULOS */}
       {modCtrlSalao && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
@@ -1989,7 +2138,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
               <button onClick={() => setModCtrlSalao(null)} className="text-nodri-t3 hover:text-nodri-t1 transition-colors"><X size={16} /></button>
             </div>
             <div className="grid grid-cols-7 gap-2 mb-4">
-              {modulos.map(m => {
+              {localModulos.map(m => {
                 const on = modulosAtivos.has(m.id)
                 return (
                   <div key={m.id} onClick={() => toggleModulo(m.id)}
@@ -2005,7 +2154,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos, notific
               })}
             </div>
             <div className="flex justify-between items-center border-t border-nodri-border pt-3">
-              <span className="text-[11px] text-nodri-t1 font-medium">{modulosAtivos.size} de {modulos.length} módulos ativos</span>
+              <span className="text-[11px] text-nodri-t1 font-medium">{modulosAtivos.size} de {localModulos.length} módulos ativos</span>
               <div className="flex gap-2">
                 <button onClick={() => setModCtrlSalao(null)} className="px-3 py-1.5 rounded-lg border border-nodri-border text-nodri-t2 text-[11px] hover:bg-nodri-surface transition-all">Cancelar</button>
                 <button onClick={saveModulos} disabled={savingMods} className="px-3 py-1.5 rounded-lg bg-nodri-cyan text-black text-[11px] font-bold hover:brightness-110 disabled:opacity-50 transition-all flex items-center gap-1.5">

@@ -1,5 +1,5 @@
 ﻿'use client'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import {
   Plus, Save, Trash2, Loader2, Youtube, FileText, CheckSquare, HelpCircle,
   Download, ChevronDown, ChevronUp, Eye, EyeOff, Edit3, FolderPlus, X,
@@ -123,6 +123,18 @@ const MENUS_INICIAIS: MenuCategoria[] = [
 export default function EditorSubmenus() {
   const [menus, setMenus] = useState<MenuCategoria[]>(MENUS_INICIAIS)
   const [categoriaAtiva, setCategoriaAtiva] = useState(MENUS_INICIAIS[0].categoria)
+
+  useEffect(() => {
+    fetch('/api/menu-estrutura')
+      .then(r => r.json())
+      .then((d: MenuCategoria[] | null) => {
+        if (d && Array.isArray(d) && d.length > 0) {
+          setMenus(d)
+          setCategoriaAtiva(d[0].categoria)
+        }
+      })
+      .catch(() => {})
+  }, [])
   const [slugAtivo, setSlugAtivo] = useState<string | null>(null)
   const [dados, setDados] = useState<Submenu | null>(null)
   const [saving, setSaving] = useState(false)
@@ -145,6 +157,17 @@ export default function EditorSubmenus() {
   const dragSecaoId = useRef<SecaoTipo | null>(null)
   const dragSecaoOver = useRef<SecaoTipo | null>(null)
   const [dragHighlight, setDragHighlight] = useState<SecaoTipo | null>(null)
+
+  /* ── Persistência da estrutura do menu ── */
+  async function saveEstrutura(novosMenus: MenuCategoria[]) {
+    try {
+      await fetch('/api/menu-estrutura', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(novosMenus),
+      })
+    } catch {}
+  }
 
   /* ── Helpers globais ── */
   function getOrdem(): SecaoTipo[] { return dados?.conteudo?.ordem_secoes || ORDEM_PADRAO }
@@ -228,7 +251,9 @@ export default function EditorSubmenus() {
 
   async function excluirPagina(slug: string) {
     await fetch(`/api/conteudo/${slug}`, { method: 'DELETE' })
-    setMenus(prev => prev.map(m => ({ ...m, itens: m.itens.filter(i => i.slug !== slug) })))
+    const novosMenus = menus.map(m => ({ ...m, itens: m.itens.filter(i => i.slug !== slug) }))
+    setMenus(novosMenus)
+    saveEstrutura(novosMenus)
     if (slugAtivo === slug) { setSlugAtivo(null); setDados(null) }
     setConfirmDelete(null)
     toast.success('Página excluída!')
@@ -249,7 +274,9 @@ export default function EditorSubmenus() {
   function adicionarItem() {
     if (!novoItem.titulo) { toast.error('Digite o título'); return }
     const slug = novoItem.slug || gerarSlug(novoItem.titulo)
-    setMenus(prev => prev.map(m => m.categoria === categoriaAtiva ? { ...m, itens: [...m.itens, { titulo: novoItem.titulo, slug }] } : m))
+    const novosMenus = menus.map(m => m.categoria === categoriaAtiva ? { ...m, itens: [...m.itens, { titulo: novoItem.titulo, slug }] } : m)
+    setMenus(novosMenus)
+    saveEstrutura(novosMenus)
     setNovoItem({ titulo: '', slug: '' }); setShowNovoItem(false)
     toast.success(`Página "${novoItem.titulo}" criada!`)
   }
@@ -257,14 +284,18 @@ export default function EditorSubmenus() {
   function adicionarCategoria() {
     if (!novaCategoria.trim()) { toast.error('Digite o nome'); return }
     if (menus.find(m => m.categoria === novaCategoria)) { toast.error('Já existe'); return }
-    setMenus(prev => [...prev, { categoria: novaCategoria, itens: [] }])
+    const novosMenus = [...menus, { categoria: novaCategoria, itens: [] }]
+    setMenus(novosMenus)
+    saveEstrutura(novosMenus)
     setCategoriaAtiva(novaCategoria); setNovaCategoria(''); setShowNovaCategoria(false)
     toast.success(`Categoria "${novaCategoria}" criada!`)
   }
 
   function excluirCategoria(cat: string) {
     if (!confirm(`Excluir a categoria "${cat}" e todas as suas páginas?`)) return
-    setMenus(prev => prev.filter(m => m.categoria !== cat))
+    const novosMenus = menus.filter(m => m.categoria !== cat)
+    setMenus(novosMenus)
+    saveEstrutura(novosMenus)
     if (categoriaAtiva === cat) setCategoriaAtiva(menus[0]?.categoria || '')
     toast.success('Categoria excluída!')
   }
