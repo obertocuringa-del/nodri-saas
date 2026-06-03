@@ -99,7 +99,28 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
   const [notifIndex, setNotifIndex] = useState(0)
   const [busca, setBusca] = useState('')
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
+  const [menuDinamico, setMenuDinamico] = useState<Record<string, { title: string; url: string }[]>>(MENU_LINKS)
   const dropdownRef = useRef<HTMLDivElement>(null)
+
+  // Carrega páginas criadas no Editor de Páginas do admin
+  useEffect(() => {
+    fetch('/api/menu-estrutura')
+      .then(r => r.json())
+      .then((estrutura: any[] | null) => {
+        if (!estrutura || !Array.isArray(estrutura) || estrutura.length === 0) return
+        const links: Record<string, { title: string; url: string }[]> = { ...MENU_LINKS }
+        for (const cat of estrutura) {
+          if (!cat.itens?.length) continue
+          const existentes = new Set((links[cat.categoria] || []).map((l: any) => l.title.toLowerCase()))
+          const novos = cat.itens
+            .filter((item: any) => !existentes.has(item.titulo.toLowerCase()))
+            .map((item: any) => ({ title: item.titulo, url: `/conteudo/${item.slug}` }))
+          links[cat.categoria] = [...(links[cat.categoria] || []), ...novos]
+        }
+        setMenuDinamico(links)
+      })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     if (notificacoes.length <= 1) return
@@ -242,13 +263,13 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                 )}
               </button>
 
-              {openDropdown === tab && tab !== 'Todos os Módulos' && tab !== 'Feedback de Cliente' && MENU_LINKS[tab] && (
+              {openDropdown === tab && tab !== 'Todos os Módulos' && tab !== 'Feedback de Cliente' && menuDinamico[tab] && (
                 <div style={{ position: 'fixed', zIndex: 9999, marginTop: '4px' }}
                   className="bg-nodri-card border border-nodri-border rounded-xl shadow-2xl min-w-[300px] max-h-80 overflow-y-auto">
                   <div className="px-3 py-2 border-b border-nodri-border sticky top-0 bg-nodri-card">
                     <div className="text-[10px] font-bold text-nodri-cyan uppercase tracking-wider">{tab}</div>
                   </div>
-                  {MENU_LINKS[tab].map((item, i) => {
+                  {menuDinamico[tab].map((item, i) => {
                     // Gera slug a partir do título para abrir página interna
                     const slug = item.title.toLowerCase()
                       .replace(/^\d+\.\s*/, '')
