@@ -12,14 +12,10 @@ export default function PerfilSalaoPage() {
   const [form, setForm] = useState({ nome: '', responsavel: '', email: '', telefone: '', nova_senha: '', confirmar_senha: '' })
 
   useEffect(() => {
-    fetch('/api/auth/me').then(r => r.json()).then(d => {
-      if (d.salaoId) {
-        fetch(`/api/salons/${d.salaoId}/perfil`).then(r => r.json()).then(salao => {
-          setForm(p => ({ ...p, nome: salao.nome || '', responsavel: salao.responsavel || '', email: salao.email || '', telefone: salao.telefone || '' }))
-        })
-      }
+    fetch('/api/salon/perfil').then(r => r.json()).then(salao => {
+      setForm(p => ({ ...p, nome: salao.nome || '', responsavel: salao.responsavel || '', email: salao.email || '', telefone: salao.telefone || '' }))
       setLoading(false)
-    })
+    }).catch(() => setLoading(false))
   }, [])
 
   async function handleSalvar(e: React.FormEvent) {
