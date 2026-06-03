@@ -109,13 +109,21 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
       .then((estrutura: any[] | null) => {
         if (!estrutura || !Array.isArray(estrutura) || estrutura.length === 0) return
         const links: Record<string, { title: string; url: string }[]> = { ...MENU_LINKS }
+
+        // normaliza nome para comparar (remove acentos, minúsculas)
+        function norm(s: string) {
+          return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+        }
+
         for (const cat of estrutura) {
           if (!cat.itens?.length) continue
-          const existentes = new Set((links[cat.categoria] || []).map((l: any) => l.title.toLowerCase()))
+          // tenta encontrar a chave correspondente em MENU_LINKS por nome normalizado
+          const chave = Object.keys(MENU_LINKS).find(k => norm(k) === norm(cat.categoria)) || cat.categoria
+          const existentes = new Set((links[chave] || []).map((l: any) => norm(l.title)))
           const novos = cat.itens
-            .filter((item: any) => !existentes.has(item.titulo.toLowerCase()))
+            .filter((item: any) => !existentes.has(norm(item.titulo)))
             .map((item: any) => ({ title: item.titulo, url: `/conteudo/${item.slug}` }))
-          links[cat.categoria] = [...(links[cat.categoria] || []), ...novos]
+          links[chave] = [...(links[chave] || []), ...novos]
         }
         setMenuDinamico(links)
       })

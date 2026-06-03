@@ -90,7 +90,7 @@ const MENUS_INICIAIS: MenuCategoria[] = [
     { titulo: 'Scripts Personalizadas', slug: 'scripts-personalizadas' },
     { titulo: 'Listas Promocionais', slug: 'listas-promocionais' },
   ]},
-  { categoria: 'Gestao de Pessoas', itens: [
+  { categoria: 'Gestão de Pessoas', itens: [
     { titulo: 'Manual Integracao Profissional', slug: 'manual-integracao-profissional' },
     { titulo: 'Processo Atendimento Profissionais', slug: 'processo-atendimento-profissionais' },
     { titulo: 'Processo Atendimento Recepcao', slug: 'processo-atendimento-recepcao' },
@@ -100,7 +100,7 @@ const MENUS_INICIAIS: MenuCategoria[] = [
     { titulo: 'Guia para Entrevista', slug: 'guia-entrevista' },
     { titulo: 'Atrasos Profissionais', slug: 'atrasos-profissionais' },
   ]},
-  { categoria: 'Gestao Financeira', itens: [
+  { categoria: 'Gestão Financeira', itens: [
     { titulo: 'Comissao Ideal', slug: 'comissao-ideal' },
     { titulo: 'Reforma Tributaria', slug: 'reforma-tributaria' },
     { titulo: 'Capital de Giro e Reserva', slug: 'capital-giro-reserva' },
