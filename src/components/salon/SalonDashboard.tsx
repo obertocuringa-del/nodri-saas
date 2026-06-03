@@ -88,7 +88,7 @@ if (typeof document !== 'undefined') {
   style.textContent = `
     @keyframes shimmer { 0% { background-position: 0% 0 } 100% { background-position: 300% 0 } }
     @keyframes pulseDot { 0%,100% { transform: scale(1); opacity: 1 } 50% { transform: scale(1.4); opacity: 0.6 } }
-    @keyframes nodriPulseBtn { 0%,100% { box-shadow: 0 0 0 0 rgba(74,222,128,0); opacity:1 } 50% { box-shadow: 0 0 0 5px rgba(74,222,128,0.18); opacity:0.85 } }
+    @keyframes nodriPulseBtn { 0%,100% { box-shadow: 0 0 0 0 rgba(234,179,8,0); opacity:1 } 50% { box-shadow: 0 0 0 5px rgba(234,179,8,0.25); opacity:0.85 } }
     .nodri-salon-bg { background-color: #000000 !important; }
   `
   if (!document.getElementById('nodri-animations')) { style.id = 'nodri-animations'; document.head.appendChild(style) }
@@ -384,17 +384,17 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
             </div>
             </div>
             {configPrograma?.link && (
-              <div className="px-5 pb-2.5 flex items-center gap-2">
+              <div className="px-5 pb-2.5 flex items-center justify-center gap-2">
                 <a href={configPrograma.link} target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10.5px] font-bold transition-all hover:brightness-110"
                   style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.35)', color: '#a5b4fc' }}>
-                  💾 Baixar Programa Complementar
+                  Baixar Programa Complementar
                 </a>
                 {configPrograma.atualizacao_ativa && configPrograma.link_atualizacao && (
                   <a href={configPrograma.link_atualizacao} target="_blank" rel="noopener noreferrer"
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10.5px] font-bold"
-                    style={{ background: 'rgba(34,197,94,0.10)', border: '1px solid rgba(34,197,94,0.45)', color: '#4ade80', animation: 'nodriPulseBtn 1.8s ease-in-out infinite' }}>
-                    ⚡ Baixar Atualização Agora
+                    style={{ background: 'rgba(234,179,8,0.10)', border: '1px solid rgba(234,179,8,0.45)', color: '#facc15', animation: 'nodriPulseBtn 1.8s ease-in-out infinite' }}>
+                    Baixar Atualização Agora
                   </a>
                 )}
               </div>
