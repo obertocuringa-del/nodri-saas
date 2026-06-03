@@ -23,15 +23,28 @@ export async function GET() {
 }
 
 export async function PUT(req: NextRequest) {
-  const token = cookies().get('nodri_token')?.value
-  const payload = token ? await verifyJWT(token) : null
-  if (!payload || payload.role !== 'master') return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  try {
+    const token = cookies().get('nodri_token')?.value
+    const payload = token ? await verifyJWT(token) : null
+    if (!payload || payload.role !== 'master') return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
-  const body = await req.json()
-  const { error } = await supabaseAdmin
-    .from('configuracoes')
-    .upsert({ chave: CHAVE, valor: body }, { onConflict: 'chave' })
+    const body = await req.json()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ ok: true })
+    // Tenta update primeiro, depois insert
+    const { error: updateError } = await supabaseAdmin
+      .from('configuracoes')
+      .update({ valor: body })
+      .eq('chave', CHAVE)
+
+    if (updateError) {
+      const { error: insertError } = await supabaseAdmin
+        .from('configuracoes')
+        .insert({ chave: CHAVE, valor: body })
+      if (insertError) return NextResponse.json({ error: insertError.message }, { status: 500 })
+    }
+
+    return NextResponse.json({ ok: true })
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message || 'Erro interno' }, { status: 500 })
+  }
 }

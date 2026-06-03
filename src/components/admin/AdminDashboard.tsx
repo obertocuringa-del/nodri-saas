@@ -1520,11 +1520,12 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                         setSavingPrograma(true)
                         try {
                           const res = await fetch('/api/config/programa', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(configPrograma) })
-                          const data = await res.json()
-                          if (!res.ok) { toast.error('Erro ao salvar: ' + (data.error || res.status)); }
+                          const text = await res.text()
+                          const data = text ? JSON.parse(text) : {}
+                          if (!res.ok) { toast.error('Erro ao salvar: ' + (data.error || res.status)) }
                           else { toast.success('💾 Links salvos!') }
                         } catch (e: any) {
-                          toast.error('Erro de conexão: ' + e.message)
+                          toast.error('Erro: ' + e.message)
                         }
                         setSavingPrograma(false)
                       }}
