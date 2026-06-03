@@ -295,8 +295,8 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
     if (activeSection === 'modulos' && localModulos.length === 0) {
       fetch('/api/modulos').then(r => r.json()).then(data => {
         if (Array.isArray(data)) setLocalModulos(data)
-        else setLocalModulos(modulos) // fallback para props
-      }).catch(() => setLocalModulos(modulos))
+        else setLocalModulos(initialModulos) // fallback para props
+      }).catch(() => setLocalModulos(initialModulos))
     }
   }, [activeSection])
 
