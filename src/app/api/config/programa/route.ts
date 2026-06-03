@@ -30,18 +30,11 @@ export async function PUT(req: NextRequest) {
 
     const body = await req.json()
 
-    // Tenta update primeiro, depois insert
-    const { error: updateError } = await supabaseAdmin
+    const { error } = await supabaseAdmin
       .from('configuracoes')
-      .update({ valor: body })
-      .eq('chave', CHAVE)
+      .upsert({ chave: CHAVE, valor: body }, { onConflict: 'chave' })
 
-    if (updateError) {
-      const { error: insertError } = await supabaseAdmin
-        .from('configuracoes')
-        .insert({ chave: CHAVE, valor: body })
-      if (insertError) return NextResponse.json({ error: insertError.message }, { status: 500 })
-    }
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
     return NextResponse.json({ ok: true })
   } catch (e: any) {
