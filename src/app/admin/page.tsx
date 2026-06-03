@@ -14,7 +14,7 @@ export default async function AdminPage() {
 
   const [{ data: saloes }, { data: modulos }, { data: notificacoes }, { data: planos }] = await Promise.all([
     supabaseAdmin.from('saloes').select('*, plano:planos(*)').order('criado_em', { ascending: false }),
-    supabaseAdmin.from('modulos').select('*').eq('ativo', true).order('ordem'),
+    supabaseAdmin.from('modulos').select('*').order('ordem'),
     supabaseAdmin.from('notificacoes').select('*').order('criado_em', { ascending: false }).limit(20),
     supabaseAdmin.from('planos').select('*').eq('ativo', true),
   ])
