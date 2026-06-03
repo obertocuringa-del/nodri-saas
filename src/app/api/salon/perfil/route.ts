@@ -47,7 +47,12 @@ export async function PUT(req: NextRequest) {
 
   if (nova_senha && nova_senha.trim()) {
     const senhaHash = await hashPassword(nova_senha.trim())
-    await supabaseAdmin.from('usuarios').update({ senha_hash: senhaHash }).eq('salao_id', payload.salaoId)
+    const { error: senhaError } = await supabaseAdmin
+      .from('usuarios')
+      .update({ senha_hash: senhaHash })
+      .eq('salao_id', payload.salaoId)
+      .eq('role', 'salon')
+    if (senhaError) return NextResponse.json({ error: senhaError.message }, { status: 500 })
   }
 
   return NextResponse.json({ ok: true })
