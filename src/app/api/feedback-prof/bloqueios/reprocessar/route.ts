@@ -244,9 +244,28 @@ export async function POST() {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
+  // Remove bloqueios de profissionais que não se qualificam mais com as regras atuais
+  const nomesQueDevemFicarBloqueados = new Set(upserts.map((u: any) => u.profissional_nome))
+  const { data: bloqueiosAtuais } = await supabaseAdmin
+    .from('feedback_prof_bloqueios')
+    .select('profissional_nome')
+    .eq('salao_id', salaoId)
+  const nomesParaRemover = (bloqueiosAtuais || [])
+    .map(b => b.profissional_nome)
+    .filter(nome => !nomesQueDevemFicarBloqueados.has(nome))
+  if (nomesParaRemover.length > 0) {
+    await supabaseAdmin
+      .from('feedback_prof_bloqueios')
+      .delete()
+      .eq('salao_id', salaoId)
+      .in('profissional_nome', nomesParaRemover)
+    log.push(`Desbloqueados por nova regra: ${nomesParaRemover.join(', ')}`)
+  }
+
   return NextResponse.json({
     ok: true,
     bloqueios_gerados: upserts.length,
+    bloqueios_removidos: nomesParaRemover.length,
     data_referencia: todayStr,
     detalhes: log,
     debug: { formIds, total_respostas: respostas.length, amostra, debugSuelen },
