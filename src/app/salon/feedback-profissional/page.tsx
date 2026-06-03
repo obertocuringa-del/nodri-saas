@@ -224,48 +224,6 @@ export default function FeedbackProfissionalPage() {
             <div className="text-[10px] text-nodri-t3">Avalie o desempenho da sua equipe</div>
           </div>
         </div>
-        <div className="ml-auto flex items-center gap-2">
-          {selected && (
-            <>
-              <button
-                onClick={() => router.push(`/salon/feedback-profissional/resultados/${selected.id}`)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold"
-                style={{ background: 'rgba(139,92,246,.15)', color: '#a78bfa', border: '1px solid rgba(139,92,246,.3)' }}
-              >
-                <BarChart2 size={13} /> Ver Resultados
-              </button>
-              <button
-                onClick={() => router.push(`/salon/feedback-profissional/gerenciar/${selected.id}`)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold"
-                style={{ background: 'rgba(250,204,21,.1)', color: '#facc15', border: '1px solid rgba(250,204,21,.25)' }}
-              >
-                <Settings2 size={13} /> Gerenciar Feedbacks
-              </button>
-            </>
-          )}
-          <button
-            onClick={() => router.push('/salon/feedback-profissional/bloqueios')}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold"
-            style={{ background: 'rgba(239,68,68,.12)', color: '#f87171', border: '1px solid rgba(239,68,68,.25)' }}
-          >
-            <Lock size={13} /> Bloqueios
-          </button>
-          <button
-            onClick={() => router.push('/salon/feedback-profissional/importar')}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold"
-            style={{ background: 'rgba(6,182,212,.12)', color: '#22d3ee', border: '1px solid rgba(6,182,212,.25)' }}
-          >
-            <Upload size={13} /> Importar Histórico
-          </button>
-          <button
-            onClick={criarFormulario}
-            disabled={saving}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold"
-            style={{ background: 'rgba(34,197,94,.12)', color: '#4ade80', border: '1px solid rgba(34,197,94,.25)' }}
-          >
-            <Plus size={13} /> Novo Formulário
-          </button>
-        </div>
       </nav>
 
       <div className="flex h-[calc(100vh-57px)]">
@@ -297,6 +255,50 @@ export default function FeedbackProfissionalPage() {
               </button>
             ))
           )}
+
+          {/* Botões de ação na lateral */}
+          <div className="p-3 border-t border-nodri-border mt-auto space-y-1.5">
+            <button
+              onClick={criarFormulario}
+              disabled={saving}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-semibold transition-all"
+              style={{ background: 'rgba(34,197,94,.12)', color: '#4ade80', border: '1px solid rgba(34,197,94,.25)' }}
+            >
+              <Plus size={12} /> Novo Formulário
+            </button>
+            {selected && (
+              <>
+                <button
+                  onClick={() => router.push(`/salon/feedback-profissional/resultados/${selected.id}`)}
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-semibold transition-all"
+                  style={{ background: 'rgba(139,92,246,.15)', color: '#a78bfa', border: '1px solid rgba(139,92,246,.3)' }}
+                >
+                  <BarChart2 size={12} /> Ver Resultados
+                </button>
+                <button
+                  onClick={() => router.push(`/salon/feedback-profissional/gerenciar/${selected.id}`)}
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-semibold transition-all"
+                  style={{ background: 'rgba(250,204,21,.1)', color: '#facc15', border: '1px solid rgba(250,204,21,.25)' }}
+                >
+                  <Settings2 size={12} /> Gerenciar Feedbacks
+                </button>
+              </>
+            )}
+            <button
+              onClick={() => router.push('/salon/feedback-profissional/bloqueios')}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-semibold transition-all"
+              style={{ background: 'rgba(239,68,68,.12)', color: '#f87171', border: '1px solid rgba(239,68,68,.25)' }}
+            >
+              <Lock size={12} /> Bloqueios
+            </button>
+            <button
+              onClick={() => router.push('/salon/feedback-profissional/importar')}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-semibold transition-all"
+              style={{ background: 'rgba(6,182,212,.12)', color: '#22d3ee', border: '1px solid rgba(6,182,212,.25)' }}
+            >
+              <Upload size={12} /> Importar Histórico
+            </button>
+          </div>
         </div>
 
         {/* CONTEÚDO */}
