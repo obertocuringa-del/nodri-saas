@@ -48,7 +48,7 @@ export default function FeedbackPage() {
   const [selected, setSelected] = useState<Formulario | null>(null)
   const [perguntas, setPerguntas] = useState<Pergunta[]>([])
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState<'perguntas' | 'link' | 'config'>('perguntas')
+  const [tab, setTab] = useState<'perguntas' | 'link' | 'config'>('link')
   const [editando, setEditando] = useState<Pergunta | null>(null)
   const [showNova, setShowNova] = useState(false)
   const [novaPerg, setNovaPerg] = useState<{ titulo: string; tipo: TipoPergunta; opcoes: string; obrigatoria: boolean }>({
@@ -226,20 +226,6 @@ export default function FeedbackPage() {
             <div className="text-[10px] text-nodri-t3">Colete e analise avaliações dos seus clientes</div>
           </div>
         </div>
-        <div className="ml-auto flex items-center gap-2">
-          {selected && (
-            <button onClick={() => router.push(`/salon/feedback/resultados/${selected.id}`)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all"
-              style={{ background: 'rgba(139,92,246,0.15)', color: '#a78bfa', border: '1px solid rgba(139,92,246,0.3)' }}>
-              <BarChart2 size={13} /> Ver Resultados
-            </button>
-          )}
-          <button onClick={criarFormulario} disabled={saving}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all"
-            style={{ background: 'rgba(34,197,94,0.12)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.25)' }}>
-            <Plus size={13} /> Novo Formulário
-          </button>
-        </div>
       </nav>
 
       <div className="flex h-[calc(100vh-57px)]">
@@ -271,6 +257,22 @@ export default function FeedbackPage() {
               </button>
             ))
           )}
+
+          {/* Botões na lateral */}
+          <div className="p-3 border-t border-nodri-border mt-auto space-y-1.5">
+            <button onClick={criarFormulario} disabled={saving}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-semibold transition-all"
+              style={{ background: 'rgba(34,197,94,0.12)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.25)' }}>
+              <Plus size={12} /> Novo Formulário
+            </button>
+            {selected && (
+              <button onClick={() => router.push(`/salon/feedback/resultados/${selected.id}`)}
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-semibold transition-all"
+                style={{ background: 'rgba(139,92,246,0.15)', color: '#a78bfa', border: '1px solid rgba(139,92,246,0.3)' }}>
+                <BarChart2 size={12} /> Ver Resultados
+              </button>
+            )}
+          </div>
         </div>
 
         {/* CONTEÚDO PRINCIPAL */}
