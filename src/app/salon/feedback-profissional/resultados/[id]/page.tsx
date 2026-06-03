@@ -86,8 +86,8 @@ export default function ResultadosProfPage() {
 
   const [data, setData] = useState<Data | null>(null)
   const [loading, setLoading] = useState(true)
-  const [inicio, setInicio] = useState('')
-  const [fim, setFim] = useState('')
+  const [inicio, setInicio] = useState(() => { const h = new Date(); return `${h.getFullYear()}-${String(h.getMonth()+1).padStart(2,'0')}-01` })
+  const [fim, setFim] = useState(() => { const h = new Date(); return new Date(h.getFullYear(), h.getMonth()+1, 0).toISOString().slice(0,10) })
   const [filtroProfissional, setFiltroProfissional] = useState('')
   const [filtroTipo, setFiltroTipo] = useState('')
   const [ia, setIa] = useState<IAAnalise | null>(null)
@@ -272,9 +272,9 @@ export default function ResultadosProfPage() {
               {/* ══ ABA: PROFISSIONAIS ══ */}
               {abaAtiva === 'profissionais' && (
                 <div className="space-y-4">
-                  {/* Placar Mensal */}
+                  {/* Placar Mensal — Ocorrências por Profissional */}
                   {data.placardMensal.length > 0 && (() => {
-                    // gera lista Jan-Dez baseada nos meses que existem no dado
+                    // Gera lista ordenada de meses com dados (Jan→Dez)
                     const mesesComDados = new Set(data.placardMensal.map(p => p.mes))
                     const todosOsMeses: string[] = []
                     const anosPresentes = Array.from(new Set(data.placardMensal.map(p => p.mes.split('-')[0]))).sort()
@@ -284,23 +284,38 @@ export default function ResultadosProfPage() {
                         if (mesesComDados.has(key)) todosOsMeses.push(key)
                       }
                     }
-                    const idxAtual = todosOsMeses.findIndex(m => m === data.placardMensal[mesSelecionado]?.mes) >= 0
-                      ? todosOsMeses.findIndex(m => m === data.placardMensal[mesSelecionado]?.mes)
-                      : 0
-                    const mesAtualKey = todosOsMeses[idxAtual]
-                    const mesAnteriorKey = idxAtual > 0 ? todosOsMeses[idxAtual - 1] : null
+
+                    // Mês selecionado e anterior (se Janeiro → Dezembro do ano anterior)
+                    const mesAtualKey = todosOsMeses[mesSelecionado] ?? todosOsMeses[todosOsMeses.length - 1]
+                    const idxAtual = todosOsMeses.indexOf(mesAtualKey)
+                    let mesAnteriorKey: string | null = null
+                    if (idxAtual > 0) {
+                      mesAnteriorKey = todosOsMeses[idxAtual - 1]
+                    } else {
+                      // Janeiro → busca Dezembro do ano anterior
+                      const [anoAtual, mesN] = mesAtualKey.split('-').map(Number)
+                      if (mesN === 1) {
+                        const dezAnterior = `${anoAtual - 1}-12`
+                        if (mesesComDados.has(dezAnterior)) mesAnteriorKey = dezAnterior
+                      }
+                    }
+
                     const mesAtualData = data.placardMensal.find(p => p.mes === mesAtualKey)
                     const mesAnteriorData = mesAnteriorKey ? data.placardMensal.find(p => p.mes === mesAnteriorKey) : null
+
+                    // Monta mapa de ocorrências por profissional do mes anterior (para comparativo)
+                    // Precisamos de detalhes de ocorrências — usamos data.respostas_recentes não é suficiente
+                    // Usamos o top_problema e negativos do placard como proxy
 
                     return (
                     <div className="pcard rounded-2xl border overflow-hidden" style={{ background: '#0d1117', borderColor: 'rgba(255,255,255,.07)' }}>
                       <div className="px-5 py-3 border-b flex items-center gap-2 flex-wrap" style={{ borderColor: 'rgba(255,255,255,.06)' }}>
                         <span className="text-sm">📊</span>
                         <span className="text-[13px] font-semibold text-nodri-t1">Placar Mensal</span>
-                        {mesAnteriorKey && <span className="text-[10px] text-nodri-t3 ml-1">— comparando com {formatMes(mesAnteriorKey)}</span>}
+                        {mesAnteriorKey && <span className="text-[10px] text-nodri-t3 ml-1">— vs {formatMes(mesAnteriorKey)}</span>}
                         <div className="ml-auto flex gap-1 flex-wrap">
                           {todosOsMeses.map((mes, i) => (
-                            <button key={mes} onClick={() => setMesSelecionado(data.placardMensal.findIndex(p => p.mes === mes))}
+                            <button key={mes} onClick={() => setMesSelecionado(i)}
                               className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all ${mesAtualKey === mes ? 'bg-nodri-cyan/15 text-nodri-cyan border border-nodri-cyan/30' : 'text-nodri-t3 hover:text-nodri-t1 border border-nodri-border'}`}>
                               {formatMes(mes)}
                             </button>
@@ -308,55 +323,103 @@ export default function ResultadosProfPage() {
                         </div>
                       </div>
                       {mesAtualData && (
-                        <div className="p-5 overflow-x-auto">
-                          <table className="w-full text-[11px]">
-                            <thead>
-                              <tr className="text-nodri-t3 font-medium">
-                                <th className="text-left pb-3">Profissional</th>
-                                <th className="text-center pb-3">Score</th>
-                                {mesAnteriorData && <th className="text-center pb-3">vs anterior</th>}
-                                <th className="text-center pb-3">✅</th>
-                                <th className="text-center pb-3">❌</th>
-                                <th className="text-center pb-3">Total</th>
-                                <th className="text-left pb-3 pl-3">Principal Problema</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-nodri-border/30">
-                              {mesAtualData.profissionais.map((p, i) => {
-                                const cor = p.score >= 70 ? '#4ade80' : p.score >= 40 ? '#facc15' : '#f87171'
-                                const anterior = mesAnteriorData?.profissionais.find(x => x.nome === p.nome)
-                                const delta = anterior != null ? p.score - anterior.score : null
-                                const deltaCor = delta == null ? '#94a3b8' : delta > 0 ? '#4ade80' : delta < 0 ? '#f87171' : '#94a3b8'
-                                const deltaStr = delta == null ? '—' : delta > 0 ? `+${delta}%` : `${delta}%`
-                                return (
-                                  <tr key={p.nome} className="hover:bg-nodri-surface/30 transition-colors">
-                                    <td className="py-2.5 pr-3">
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-[10px] text-nodri-t3">#{i + 1}</span>
-                                        <span className="font-semibold text-nodri-t1">{p.nome}</span>
-                                      </div>
-                                    </td>
-                                    <td className="py-2.5 text-center"><span className="font-black text-[13px]" style={{ color: cor }}>{p.score}%</span></td>
-                                    {mesAnteriorData && (
-                                      <td className="py-2.5 text-center">
-                                        <span className="font-bold text-[11px]" style={{ color: deltaCor }}>{deltaStr}</span>
-                                      </td>
+                        <div className="p-4 space-y-2">
+                          {mesAtualData.profissionais.map(p => {
+                            const anterior = mesAnteriorData?.profissionais.find(x => x.nome === p.nome)
+                            const deltaNeg = anterior != null ? p.negativo - anterior.negativo : null
+                            const deltaPos = anterior != null ? p.positivo - anterior.positivo : null
+                            const corDeltaNeg = deltaNeg == null ? '#94a3b8' : deltaNeg > 0 ? '#f87171' : deltaNeg < 0 ? '#4ade80' : '#94a3b8'
+                            const corDeltaPos = deltaPos == null ? '#94a3b8' : deltaPos > 0 ? '#4ade80' : deltaPos < 0 ? '#f87171' : '#94a3b8'
+                            const corScore = p.score >= 70 ? '#4ade80' : p.score >= 40 ? '#facc15' : '#f87171'
+                            const aberto = expandidoHistorico === `placar-${p.nome}`
+                            return (
+                              <div key={p.nome} className="rounded-xl overflow-hidden"
+                                style={{ background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.06)' }}>
+                                {/* Linha resumo */}
+                                <button className="w-full flex items-center gap-3 px-4 py-3 text-left"
+                                  onClick={() => setExpandidoHistorico(aberto ? null : `placar-${p.nome}`)}>
+                                  <div className="w-7 h-7 rounded-full flex items-center justify-center font-black text-xs shrink-0"
+                                    style={{ background: `${corScore}20`, color: corScore, border: `1.5px solid ${corScore}40` }}>
+                                    {p.nome.charAt(0)}
+                                  </div>
+                                  <span className="font-semibold text-[12px] text-nodri-t1 flex-1">{p.nome}</span>
+                                  {/* Score */}
+                                  <span className="font-black text-[13px] shrink-0" style={{ color: corScore }}>{p.score}%</span>
+                                  {/* Negativos + delta */}
+                                  <div className="flex items-center gap-1 shrink-0">
+                                    <span className="text-red-400 font-semibold text-[11px]">❌ {p.negativo}</span>
+                                    {deltaNeg != null && deltaNeg !== 0 && (
+                                      <span className="text-[9px] font-bold" style={{ color: corDeltaNeg }}>
+                                        {deltaNeg > 0 ? `+${deltaNeg}` : deltaNeg}
+                                      </span>
                                     )}
-                                    <td className="py-2.5 text-center text-green-400 font-semibold">{p.positivo}</td>
-                                    <td className="py-2.5 text-center text-red-400 font-semibold">{p.negativo}</td>
-                                    <td className="py-2.5 text-center text-nodri-t2">{p.total}</td>
-                                    <td className="py-2.5 pl-3">
-                                      {p.top_problema !== '—' ? (
-                                        <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'rgba(239,68,68,.1)', color: '#f87171', border: '1px solid rgba(239,68,68,.2)' }}>
-                                          {p.top_problema.length > 25 ? p.top_problema.slice(0, 25) + '…' : p.top_problema}
+                                  </div>
+                                  {/* Positivos + delta */}
+                                  <div className="flex items-center gap-1 shrink-0">
+                                    <span className="text-green-400 font-semibold text-[11px]">✅ {p.positivo}</span>
+                                    {deltaPos != null && deltaPos !== 0 && (
+                                      <span className="text-[9px] font-bold" style={{ color: corDeltaPos }}>
+                                        {deltaPos > 0 ? `+${deltaPos}` : deltaPos}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <span className="text-nodri-t3 text-[10px] ml-1">{aberto ? '▲' : '▼'}</span>
+                                </button>
+                                {/* Detalhes expandidos — ocorrências */}
+                                {aberto && (
+                                  <div className="px-4 pb-3 border-t border-nodri-border/30">
+                                    <div className="mt-2 text-[10px] text-nodri-t3 font-semibold uppercase tracking-wider mb-2">
+                                      Ocorrências em {formatMes(mesAtualKey)}
+                                    </div>
+                                    {/* Usa dados da matriz para mostrar ocorrências deste profissional */}
+                                    {(() => {
+                                      const matrizProf = data.matriz.find(m => m.profissional === p.nome)
+                                      const ocorrsProf = matrizProf
+                                        ? Object.entries(matrizProf.ocorrencias).filter(([,v]) => v > 0).sort((a,b) => b[1]-a[1])
+                                        : []
+                                      return ocorrsProf.length > 0 ? (
+                                        <div className="space-y-1">
+                                          {ocorrsProf.map(([ocorr, qtd]) => {
+                                            const antProf = mesAnteriorData?.profissionais.find(x => x.nome === p.nome)
+                                            // Não temos detalhe de ocorrência do mês anterior no placard, então mostramos só atual
+                                            const corOcorr = qtd >= 5 ? '#ef4444' : qtd >= 3 ? '#f97316' : qtd >= 2 ? '#facc15' : '#94a3b8'
+                                            return (
+                                              <div key={ocorr} className="flex items-center gap-2 py-1">
+                                                <div className="w-6 h-6 rounded flex items-center justify-center text-[10px] font-black shrink-0"
+                                                  style={{ background: `${corOcorr}20`, color: corOcorr }}>
+                                                  {qtd}
+                                                </div>
+                                                <span className="text-[11px] text-nodri-t1 flex-1">{ocorr}</span>
+                                                <div className="w-20 h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,.06)' }}>
+                                                  <div className="h-1.5 rounded-full" style={{ width: `${Math.min((qtd/10)*100,100)}%`, background: corOcorr }} />
+                                                </div>
+                                              </div>
+                                            )
+                                          })}
+                                        </div>
+                                      ) : (
+                                        <div className="text-[11px] text-nodri-t3 italic">
+                                          {p.top_problema !== '—' ? `Principal: ${p.top_problema}` : 'Sem ocorrências negativas detalhadas.'}
+                                        </div>
+                                      )
+                                    })()}
+                                    {/* Comparativo resumido com mês anterior */}
+                                    {anterior && (
+                                      <div className="mt-3 pt-2 border-t border-nodri-border/30 flex items-center gap-3 text-[10px]">
+                                        <span className="text-nodri-t3">vs {formatMes(mesAnteriorKey!)}:</span>
+                                        <span style={{ color: corDeltaNeg }}>
+                                          Negativos: {anterior.negativo} → {p.negativo} ({deltaNeg! > 0 ? '+' : ''}{deltaNeg})
                                         </span>
-                                      ) : <span className="text-nodri-t3">—</span>}
-                                    </td>
-                                  </tr>
-                                )
-                              })}
-                            </tbody>
-                          </table>
+                                        <span style={{ color: corDeltaPos }}>
+                                          Positivos: {anterior.positivo} → {p.positivo} ({deltaPos! > 0 ? '+' : ''}{deltaPos})
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })}
                         </div>
                       )}
                     </div>

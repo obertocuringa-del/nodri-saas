@@ -69,8 +69,8 @@ export default function ResultadosPage() {
 
   const [data, setData] = useState<ResultadosData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [inicio, setInicio] = useState('')
-  const [fim, setFim] = useState('')
+  const [inicio, setInicio] = useState(() => { const h = new Date(); return `${h.getFullYear()}-${String(h.getMonth()+1).padStart(2,'0')}-01` })
+  const [fim, setFim] = useState(() => { const h = new Date(); return new Date(h.getFullYear(), h.getMonth()+1, 0).toISOString().slice(0,10) })
   const [iaAnalise, setIaAnalise] = useState<IAAnalise | null>(null)
   const [iaLoading, setIaLoading] = useState(false)
   const [iaErro, setIaErro] = useState('')
