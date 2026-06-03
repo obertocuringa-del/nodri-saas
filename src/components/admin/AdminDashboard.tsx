@@ -24,74 +24,6 @@ const PLANO_CLASS: Record<string, string> = {
   basico: 'bg-nodri-t3/20 text-nodri-t2', profissional: 'bg-nodri-blue/10 text-nodri-blue', premium: 'bg-nodri-cyan/10 text-nodri-cyan',
 }
 
-const DEFAULT_LINKS: Record<string, { title: string; url: string }[]> = {
-  'Manual do Usuário': [
-    { title: '1. CONFIRMAR AGENDAMENTO', url: 'https://www.exemplo.com/confirmar-agendamento' },
-    { title: '2. BLOQUEIO SEM PREFERENCIA', url: 'https://www.exemplo.com/bloqueio-sem-preferencia' },
-    { title: '3. ENVIAR FEEDBACK', url: 'https://www.exemplo.com/enviar-feedback' },
-    { title: '4. VER FEEDBACK CLIENTE', url: 'https://www.exemplo.com/ver-feedback-cliente' },
-    { title: '5. ENVIAR LISTA', url: 'https://www.exemplo.com/enviar-lista' },
-    { title: '6. ENVIAR LISTA C/ ARQUIVO', url: 'https://www.exemplo.com/enviar-lista-arquivo' },
-    { title: '7. RELATÓRIO PROFISSIONAL', url: 'https://www.exemplo.com/relatorio-profissional' },
-    { title: '8. FATURAMENTO DIÁRIO', url: 'https://www.exemplo.com/faturamento-diario' },
-    { title: '9. BAIXAR MUSICA YOUTUBE', url: 'https://www.exemplo.com/baixar-musica-youtube' },
-    { title: '10. CALCULAR RESERVA FINANCEIRA', url: 'https://www.exemplo.com/calcular-reserva-financeira' },
-    { title: '11. CALCULAR DEPRECIAÇÃO', url: 'https://www.exemplo.com/calculadora-depreciacao' },
-    { title: '12. AVALIAR PROFISSIONAL', url: 'https://www.exemplo.com/avaliar-profissional' },
-    { title: '13. ALUGUEL DE CADEIRA', url: 'https://www.exemplo.com/aluguel-cadeira' },
-    { title: '14. PRECIFICAR SERVIÇOS', url: 'https://www.exemplo.com/precificar-servicos' },
-    { title: '15. SOLUÇÃO DE PROBLEMAS', url: 'https://www.exemplo.com/solucao' },
-    { title: '16. SUPORTE TÉCNICO', url: 'https://www.exemplo.com/suporte' },
-  ],
-  'Dicas Nodri': [
-    { title: '1. PLANEJAR A META', url: 'https://www.exemplo.com/planejar-meta' },
-    { title: '2. AÇÕES COMERCIAIS', url: 'https://www.exemplo.com/acoes-comerciais' },
-    { title: '3. COMO VENDER MAIS', url: 'https://www.exemplo.com/como-vender-mais' },
-    { title: '4. ANIVERSÁRIOS CLIENTES', url: 'https://www.exemplo.com/aniversarios-clientes' },
-    { title: '5. AÇÕES SAZONAIS', url: 'https://www.exemplo.com/acoes-sazonais' },
-    { title: '6. SCRIPTS PERSONALIZADAS', url: 'https://www.exemplo.com/scripts-personalizadas' },
-    { title: '7. CONFIRMAR AGENDAMENTO', url: 'https://www.exemplo.com/confirmar-agendamento' },
-    { title: '8. FEEDBACK CLIENTE', url: 'https://www.exemplo.com/feedback-cliente' },
-    { title: '9. LISTAS PROMOCIONAIS', url: 'https://www.exemplo.com/listas-promocionais' },
-    { title: '10. FATURAMENTO DIÁRIO', url: 'https://www.exemplo.com/faturamento-diario' },
-  ],
-  'Gestão de Pessoas': [
-    { title: '1. MANUAL DE INTEGRAÇÃO DO PROFISSIONAL', url: 'https://www.exemplo.com/manual-integracao-profissional' },
-    { title: '2. PROCESSO DE ATENDIMENTO PROFISSIONAIS', url: 'https://www.exemplo.com/processo-atendimento-profissionais' },
-    { title: '3. PROCESSO DE ATENDIMENTO RECEPÇÃO', url: 'https://www.exemplo.com/processo-atendimento-recepcao' },
-    { title: '4. DESCRIÇÃO DE CARGOS', url: 'https://www.exemplo.com/descricao-cargos' },
-    { title: '5. AVALIAÇÃO 360 PROFISSIONAIS', url: 'https://www.exemplo.com/avaliacao-360-profissionais' },
-    { title: '6. METAS INDIVIDUAIS', url: 'https://www.exemplo.com/metas-individuais' },
-    { title: '7. GUIA PARA ENTREVISTA', url: 'https://www.exemplo.com/guia-entrevista' },
-    { title: '8. BANCO DE CURRÍCULOS', url: 'https://www.exemplo.com/banco-curriculos' },
-    { title: '9. AVALIAÇÃO 360 RECEPÇÃO', url: 'https://www.exemplo.com/avaliacao-360-recepcao' },
-    { title: '10. FEEDBACK PROFISSIONAL', url: 'https://www.exemplo.com/feedback-profissional' },
-    { title: '11. ATRASOS PROFISSIONAIS', url: 'https://www.exemplo.com/atrasos-profissionais' },
-  ],
-  'Gestão Financeira': [
-    { title: '1. COMO DEFINIR A COMISSÃO IDEAL', url: 'https://www.exemplo.com/aula-comissao-ideal' },
-    { title: '2. REFORMA TRIBUTÁRIA', url: 'https://www.exemplo.com/reforma-tributaria' },
-    { title: '3. CAPITAL DE GIRO E RESERVA', url: 'https://www.exemplo.com/capital-giro-reserva-depreciacao' },
-    { title: '4. 4 PILARES DO MARKETING', url: 'https://www.exemplo.com/4-pilares-marketing' },
-    { title: '5. RELATÓRIO PROFISSIONAL', url: 'https://www.exemplo.com/relatorio-profissional' },
-    { title: '6. CALCULAR RESERVA FINANCEIRA', url: 'https://www.exemplo.com/calcular-reserva-financeira' },
-    { title: '7. CALCULADORA DEPRECIAÇÃO', url: 'https://www.exemplo.com/calculadora-depreciacao' },
-    { title: '8. ALUGUEL DE CADEIRA', url: 'https://www.exemplo.com/aluguel-cadeira' },
-    { title: '9. PRECIFICAR SERVIÇOS', url: 'https://www.exemplo.com/precificar-servicos' },
-  ],
-  'Marketing': [
-    { title: '1. PLANEJAR A META', url: 'https://www.exemplo.com/planejar-meta' },
-    { title: '2. AÇÕES COMERCIAIS', url: 'https://www.exemplo.com/acoes-comerciais' },
-    { title: '3. COMO VENDER MAIS', url: 'https://www.exemplo.com/como-vender-mais' },
-    { title: '4. ANIVERSÁRIOS CLIENTES', url: 'https://www.exemplo.com/aniversarios-clientes' },
-    { title: '5. AÇÕES SAZONAIS', url: 'https://www.exemplo.com/acoes-sazonais' },
-    { title: '6. SCRIPTS PERSONALIZADAS', url: 'https://www.exemplo.com/scripts-personalizadas' },
-    { title: '7. CONFIRMAR AGENDAMENTO', url: 'https://www.exemplo.com/confirmar-agendamento' },
-    { title: '8. FEEDBACK CLIENTE', url: 'https://www.exemplo.com/feedback-cliente' },
-    { title: '9. LISTAS PROMOCIONAIS', url: 'https://www.exemplo.com/listas-promocionais' },
-    { title: '10. FATURAMENTO DIÁRIO', url: 'https://www.exemplo.com/faturamento-diario' },
-  ],
-}
 
 const DEFAULT_LANDING = {
   hero_logo: 'NODRI',
@@ -138,6 +70,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
   const [editModulo, setEditModulo] = useState<Modulo | null>(null)
   const [moduloForm, setModuloForm] = useState({ nome: '', slug: '', descricao: '', versao: '1.0.0', icone: '⚙️', cor_classe: '', categoria: '', ordem: '0' })
   const [savingModulo, setSavingModulo] = useState(false)
+  const [togglingManutencao, setTogglingManutencao] = useState<string | null>(null)
   const [activeSection, setActiveSection] = useState('dashboard')
   const [modCtrlSalao, setModCtrlSalao] = useState<Salao | null>(null)
   const [modulosAtivos, setModulosAtivos] = useState<Set<string>>(new Set())
@@ -151,14 +84,6 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
   const [savingMods, setSavingMods] = useState(false)
   const [formSalao, setFormSalao] = useState({ nome: '', responsavel: '', email: '', telefone: '', plano_id: '', licenca_vencimento: '', senha_acesso: '', observacoes: '' })
   const [savingSalao, setSavingSalao] = useState(false)
-  const [menuLinks, setMenuLinks] = useState(DEFAULT_LINKS)
-  const [activeLinkTab, setActiveLinkTab] = useState('Manual do Usuário')
-  const [savingLinks, setSavingLinks] = useState(false)
-  const LINK_TABS = ['Manual do Usuário', 'Dicas Nodri', 'Gestão de Pessoas', 'Gestão Financeira', 'Marketing']
-
-  // ── MANUTENÇÃO DE MÓDULOS ──
-  const [togglingManutencao, setTogglingManutencao] = useState<string | null>(null)
-  const [localModulos, setLocalModulos] = useState<Modulo[]>([])
 
   const [editSalao, setEditSalao] = useState<Salao | null>(null)
   const [editForm, setEditForm] = useState({ nome: '', responsavel: '', email: '', telefone: '', plano_id: '', licenca_vencimento: '', status: '', nova_senha: '', observacoes: '' })
@@ -204,8 +129,6 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
-
-  useEffect(() => { loadMenuLinks() }, [])
 
   function handleLogout() { window.location.href = '/logout' }
 
@@ -366,38 +289,6 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
     else toast.error(data.error || 'Erro ao cadastrar')
   }
 
-  function updateLink(tab: string, index: number, field: 'title' | 'url', value: string) {
-    setMenuLinks(prev => ({ ...prev, [tab]: prev[tab].map((item, i) => i === index ? { ...item, [field]: value } : item) }))
-  }
-  function addLink(tab: string) {
-    setMenuLinks(prev => ({ ...prev, [tab]: [...prev[tab], { title: `${prev[tab].length + 1}. NOVO LINK`, url: 'https://' }] }))
-  }
-  function removeLink(tab: string, index: number) {
-    setMenuLinks(prev => ({ ...prev, [tab]: prev[tab].filter((_, i) => i !== index) }))
-  }
-  async function saveLinks() {
-    setSavingLinks(true)
-    try {
-      const res = await fetch('/api/menu-links', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(menuLinks),
-      })
-      if (res.ok) toast.success('Links salvos no banco!')
-      else toast.error('Erro ao salvar links')
-    } catch { toast.error('Erro ao salvar links') }
-    setSavingLinks(false)
-  }
-
-  async function loadMenuLinks() {
-    try {
-      const res = await fetch('/api/menu-links')
-      if (res.ok) {
-        const data = await res.json()
-        if (data) setMenuLinks(data)
-      }
-    } catch {}
-  }
 
   // Carrega módulos quando entra na seção
   useEffect(() => {
@@ -967,7 +858,6 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
     { id: 'modulos', icon: <Puzzle size={14} />, label: 'Módulos' },
     { id: 'usuarios', icon: <Users size={14} />, label: 'Usuários' },
     { id: 'notifs', icon: <Bell size={14} />, label: 'Notificações', badge: localNotifs.filter(n => !n.lida).length, badgeRed: true },
-    { id: 'links', icon: <Link size={14} />, label: 'Links do Menu' },
     { id: 'conteudo', icon: <Play size={14} />, label: 'Editor de Páginas' },
     { id: 'pagamentos', icon: <CreditCard size={14} />, label: 'Pagamentos' },
     { id: 'afiliados', icon: <Users size={14} />, label: 'Afiliados' },
@@ -1016,10 +906,10 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
         <div className="px-5 py-3 border-b border-nodri-border bg-nodri-surface flex items-center gap-3 sticky top-0 z-20">
           <div>
             <div className="font-syne font-bold text-[15px]">
-              {activeSection === 'links' ? 'Links do Menu' : activeSection === 'planos' ? 'Gestão de Planos' : activeSection === 'modulos' ? 'Gestão de Módulos' : 'Painel Admin Master'}
+              {activeSection === 'planos' ? 'Gestão de Planos' : activeSection === 'modulos' ? 'Gestão de Módulos' : 'Painel Admin Master'}
             </div>
             <div className="text-[11px] text-nodri-t2">
-              {activeSection === 'links' ? 'Edite os links de cada categoria do menu' : activeSection === 'planos' ? 'Planos, Landing Page e Cupons de Desconto' : activeSection === 'modulos' ? 'Criar, editar e gerenciar módulos do sistema' : 'Controle total de salões, licenças e módulos'}
+              {activeSection === 'planos' ? 'Planos, Landing Page e Cupons de Desconto' : activeSection === 'modulos' ? 'Criar, editar e gerenciar módulos do sistema' : 'Controle total de salões, licenças e módulos'}
             </div>
           </div>
           <div className="ml-auto flex gap-2">
@@ -1039,7 +929,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                 <Plus size={13} /> Novo Módulo
               </button>
             )}
-            {activeSection !== 'links' && activeSection !== 'planos' && activeSection !== 'modulos' && (
+            {activeSection !== 'planos' && activeSection !== 'modulos' && (
               <button onClick={() => setShowNovoSalao(true)} className="flex items-center gap-1.5 bg-nodri-cyan text-black text-[11.5px] font-bold px-3 py-1.5 rounded-lg hover:brightness-110 transition-all">
                 <Plus size={13} /> Novo Salão
               </button>
@@ -1114,113 +1004,6 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
 
           {/* LOGS DO SISTEMA */}
           {activeSection === 'logs' && <LogsSection />}
-
-          {/* MANUTENÇÃO DE MÓDULOS */}
-          {activeSection === 'modulos' && (
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <Wrench size={16} className="text-nodri-red" />
-                <div>
-                  <div className="font-syne font-bold text-[14px]">Manutenção de Módulos</div>
-                  <div className="text-[11px] text-nodri-t3">Ative o modo manutenção para bloquear temporariamente um módulo para todos os salões</div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                {(localModulos.length > 0 ? localModulos : modulos).map(m => {
-                  const emManut = !!m.em_manutencao
-                  const toggling = togglingManutencao === m.id
-                  return (
-                    <div key={m.id} className={`nodri-card p-4 flex flex-col gap-3 border transition-all ${emManut ? 'border-nodri-red/40 bg-nodri-red/5' : 'border-nodri-border'}`}>
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <div className={`font-syne font-bold text-[12px] uppercase leading-tight ${emManut ? 'text-nodri-red' : 'text-nodri-t1'}`}>
-                            {m.nome}
-                          </div>
-                          <div className="text-[9px] text-nodri-t3 mt-0.5">v{m.versao}</div>
-                        </div>
-                        {emManut && (
-                          <span className="text-[8px] font-black px-1.5 py-0.5 rounded bg-nodri-red/15 text-nodri-red border border-nodri-red/30 shrink-0">
-                            🔧 MANUTENÇÃO
-                          </span>
-                        )}
-                      </div>
-
-                      <button
-                        onClick={() => toggleManutencao(m)}
-                        disabled={toggling}
-                        className={`w-full flex items-center justify-center gap-2 py-2 rounded-lg text-[11px] font-bold transition-all ${
-                          emManut
-                            ? 'bg-nodri-green/10 border border-nodri-green/30 text-nodri-green hover:bg-nodri-green/20'
-                            : 'bg-nodri-red/10 border border-nodri-red/30 text-nodri-red hover:bg-nodri-red/20'
-                        } disabled:opacity-50`}>
-                        {toggling
-                          ? <><Loader2 size={11} className="animate-spin" /> Alterando...</>
-                          : emManut
-                            ? <><Wrench size={11} /> Encerrar Manutenção</>
-                            : <><Wrench size={11} /> Colocar em Manutenção</>
-                        }
-                      </button>
-                    </div>
-                  )
-                })}
-              </div>
-
-              {(localModulos.length === 0 && modulos.length === 0) && (
-                <div className="nodri-card p-8 text-center text-nodri-t3 text-sm">
-                  Nenhum módulo encontrado.
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* LINKS DO MENU */}
-          {activeSection === 'links' && (
-            <div>
-              <div className="flex gap-1.5 mb-5 flex-wrap">
-                {LINK_TABS.map(tab => (
-                  <button key={tab} onClick={() => setActiveLinkTab(tab)}
-                    className={`px-3 py-2 rounded-lg text-[11px] font-medium border transition-all ${activeLinkTab === tab ? 'bg-nodri-cyan/9 border-nodri-cyan/25 text-nodri-cyan' : 'border-nodri-border text-nodri-t2 hover:text-nodri-t1'}`}>
-                    {tab}
-                  </button>
-                ))}
-              </div>
-              <div className="nodri-card p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="font-syne font-bold text-[13px] flex items-center gap-2">
-                    <Link size={14} className="text-nodri-cyan" /> {activeLinkTab}
-                    <span className="text-[10px] text-nodri-t3 font-normal">({menuLinks[activeLinkTab]?.length || 0} links)</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => addLink(activeLinkTab)} className="flex items-center gap-1.5 px-3 py-1.5 border border-nodri-border text-nodri-t2 hover:text-nodri-t1 rounded-lg text-[11px] transition-all">
-                      <Plus size={12} /> Adicionar Link
-                    </button>
-                    <button onClick={saveLinks} disabled={savingLinks} className="flex items-center gap-1.5 bg-nodri-cyan text-black px-3 py-1.5 rounded-lg text-[11px] font-bold hover:brightness-110 disabled:opacity-50 transition-all">
-                      {savingLinks ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />} Salvar
-                    </button>
-                  </div>
-                </div>
-                <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
-                  {menuLinks[activeLinkTab]?.map((item, i) => (
-                    <div key={i} className="flex items-center gap-2 p-2.5 bg-nodri-surface rounded-lg border border-nodri-border hover:border-nodri-cyan/20 transition-all">
-                      <span className="text-[10px] text-nodri-t3 w-6 text-center font-bold shrink-0">{i + 1}</span>
-                      <input type="text" value={item.title} onChange={e => updateLink(activeLinkTab, i, 'title', e.target.value)}
-                        className="flex-1 bg-nodri-card border border-nodri-border rounded-md px-2.5 py-1.5 text-[11px] text-nodri-t1 outline-none focus:border-nodri-cyan/50 min-w-0" placeholder="Nome do link" />
-                      <input type="text" value={item.url} onChange={e => updateLink(activeLinkTab, i, 'url', e.target.value)}
-                        className="flex-[2] bg-nodri-card border border-nodri-border rounded-md px-2.5 py-1.5 text-[11px] text-nodri-t2 outline-none focus:border-nodri-cyan/50 min-w-0 font-mono" placeholder="https://..." />
-                      <a href={item.url} target="_blank" rel="noopener noreferrer" className="w-7 h-7 flex items-center justify-center text-nodri-t3 hover:text-nodri-cyan transition-colors shrink-0"><ExternalLink size={12} /></a>
-                      <button onClick={() => removeLink(activeLinkTab, i)} className="w-7 h-7 flex items-center justify-center text-nodri-t3 hover:text-nodri-red transition-colors shrink-0"><Trash2 size={12} /></button>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-4 pt-3 border-t border-nodri-border flex justify-end">
-                  <button onClick={saveLinks} disabled={savingLinks} className="flex items-center gap-1.5 bg-nodri-cyan text-black px-4 py-2 rounded-lg text-[11.5px] font-bold hover:brightness-110 disabled:opacity-50 transition-all">
-                    {savingLinks ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />} Salvar Alterações
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* GESTÃO DE PLANOS */}
           {activeSection === 'planos' && (
@@ -1672,7 +1455,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
           )}
 
           {/* DASHBOARD */}
-          {activeSection !== 'links' && activeSection !== 'planos' && activeSection !== 'conteudo' && activeSection !== 'afiliados' && activeSection !== 'logs' && activeSection !== 'updates' && activeSection !== 'relatorios' && activeSection !== 'config' && activeSection !== 'modulos' && activeSection !== 'pagamentos' && (
+          {activeSection !== 'planos' && activeSection !== 'conteudo' && activeSection !== 'afiliados' && activeSection !== 'logs' && activeSection !== 'updates' && activeSection !== 'relatorios' && activeSection !== 'config' && activeSection !== 'modulos' && activeSection !== 'pagamentos' && (
             <>
               <div className="grid grid-cols-4 gap-3 mb-5">
                 {[
