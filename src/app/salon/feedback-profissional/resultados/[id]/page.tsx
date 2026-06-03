@@ -468,7 +468,6 @@ export default function ResultadosProfPage() {
                         </div>
                         )
                       })()}
-                      )}
                     </div>
                     )
                   })()}
