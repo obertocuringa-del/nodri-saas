@@ -383,30 +383,19 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               <CheckCircle size={12} />{totalAtivos}/{totalModulos} ativos
             </div>
             </div>
-            {(configPrograma?.link || (configPrograma?.atualizacao_ativa && configPrograma?.link_atualizacao)) && (
+            {configPrograma?.link && (
               <div className="px-5 pb-2.5 flex items-center gap-2">
-                {configPrograma?.link && !configPrograma.atualizacao_ativa && (
-                  <a href={configPrograma.link} target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10.5px] font-bold transition-all hover:brightness-110"
-                    style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.35)', color: '#a5b4fc' }}>
-                    💾 Baixar Programa Complementar
+                <a href={configPrograma.link} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10.5px] font-bold transition-all hover:brightness-110"
+                  style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.35)', color: '#a5b4fc' }}>
+                  💾 Baixar Programa Complementar
+                </a>
+                {configPrograma.atualizacao_ativa && configPrograma.link_atualizacao && (
+                  <a href={configPrograma.link_atualizacao} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10.5px] font-bold"
+                    style={{ background: 'rgba(34,197,94,0.10)', border: '1px solid rgba(34,197,94,0.45)', color: '#4ade80', animation: 'nodriPulseBtn 1.8s ease-in-out infinite' }}>
+                    ⚡ Baixar Atualização Agora
                   </a>
-                )}
-                {configPrograma?.atualizacao_ativa && configPrograma?.link_atualizacao && (
-                  <>
-                    {configPrograma?.link && (
-                      <a href={configPrograma.link} target="_blank" rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10.5px] font-bold transition-all hover:brightness-110"
-                        style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.35)', color: '#a5b4fc' }}>
-                        💾 Baixar Programa Complementar
-                      </a>
-                    )}
-                    <a href={configPrograma.link_atualizacao} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10.5px] font-bold"
-                      style={{ background: 'rgba(34,197,94,0.10)', border: '1px solid rgba(34,197,94,0.45)', color: '#4ade80', animation: 'nodriPulseBtn 1.8s ease-in-out infinite' }}>
-                      ⚡ Baixar Atualização Agora
-                    </a>
-                  </>
                 )}
               </div>
             )}
