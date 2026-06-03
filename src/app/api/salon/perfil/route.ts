@@ -12,7 +12,7 @@ export async function GET() {
 
   const { data, error } = await supabaseAdmin
     .from('saloes')
-    .select('nome, responsavel, email, telefone')
+    .select('*')
     .eq('id', payload.salaoId)
     .single()
 
