@@ -34,7 +34,7 @@ export async function PUT(req: NextRequest) {
   const updates: Record<string, any> = {}
   if (nome && nome.trim()) updates.nome = nome.trim()
   if (responsavel && responsavel.trim()) updates.responsavel = responsavel.trim()
-  if (telefone !== undefined) updates.telefone = telefone
+  if (telefone !== undefined) updates.telefone = telefone || null
 
   if (Object.keys(updates).length > 0) {
     const { error } = await supabaseAdmin
