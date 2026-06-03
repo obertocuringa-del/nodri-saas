@@ -4,6 +4,8 @@ import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 import AdminDashboard from '@/components/admin/AdminDashboard'
 
+export const dynamic = 'force-dynamic'
+
 export default async function AdminPage() {
   const cookieStore = cookies()
   const token = cookieStore.get('nodri_token')?.value
