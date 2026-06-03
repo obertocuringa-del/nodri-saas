@@ -12,7 +12,7 @@ import toast from 'react-hot-toast'
 type SecaoTipo = 'video' | 'texto' | 'imagens' | 'tabela' | 'colunas' | 'checklist' | 'faq' | 'pdf' | 'excel' | 'downloads'
 
 interface SubItem { titulo: string; slug: string; oculto?: boolean }
-interface MenuCategoria { categoria: string; itens: SubItem[] }
+interface MenuCategoria { categoria: string; itens: SubItem[]; oculto?: boolean }
 
 interface ConteudoSubmenu {
   texto?: string
@@ -863,7 +863,7 @@ export default function EditorSubmenus() {
               ) : (
                 <button onClick={() => setCategoriaAtiva(menu.categoria)}
                   className={`flex-1 flex items-center justify-between px-2.5 py-2 rounded-lg text-[11px] font-bold transition-all ${categoriaAtiva === menu.categoria ? 'bg-nodri-cyan/10 text-nodri-cyan border border-nodri-cyan/20' : 'text-nodri-t2 hover:text-nodri-t1 hover:bg-white/3'}`}>
-                  <span className="truncate">{menu.categoria}</span>
+                  <span className={`truncate ${menu.oculto ? 'opacity-40 italic' : ''}`}>{menu.oculto && '🙈 '}{menu.categoria}</span>
                   <span className="text-[9px] opacity-60 ml-1">{menu.itens.length}</span>
                   {categoriaAtiva === menu.categoria ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
                 </button>
@@ -872,6 +872,15 @@ export default function EditorSubmenus() {
                 <>
                   <button onClick={() => { setEditandoCategoria(menu.categoria); setNomeCategoria(menu.categoria) }} title="Renomear"
                     className="p-1 text-nodri-t3 hover:text-nodri-cyan transition-colors rounded"><Edit3 size={10} /></button>
+                  <button onClick={() => {
+                    const novos = menus.map(m => m.categoria === menu.categoria ? { ...m, oculto: !m.oculto } : m)
+                    setMenus(novos)
+                    saveEstrutura(novos)
+                    toast.success(menu.oculto ? '👁 Categoria visível' : '🙈 Categoria ocultada')
+                  }} title={menu.oculto ? 'Mostrar categoria' : 'Ocultar categoria'}
+                    className={`p-1 transition-colors rounded ${menu.oculto ? 'text-nodri-amber hover:text-nodri-t1' : 'text-nodri-t3 hover:text-nodri-amber'}`}>
+                    {menu.oculto ? <Eye size={10} /> : <EyeOff size={10} />}
+                  </button>
                   <button onClick={() => excluirCategoria(menu.categoria)} title="Excluir categoria"
                     className="p-1 text-nodri-t3 hover:text-nodri-red transition-colors rounded"><Trash2 size={10} /></button>
                 </>

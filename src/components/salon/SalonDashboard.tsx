@@ -117,11 +117,22 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
           return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
         }
 
+        // Categorias ocultas — usadas para remover itens de menus fixos também
+        const categoriasOcultas = new Set(
+          estrutura.filter((c: any) => c.oculto).map((c: any) => norm(c.categoria))
+        )
+
         for (const cat of estrutura) {
           if (!cat.itens?.length) continue
           // verifica se é categoria já existente (por nome normalizado)
           const chaveExistente = Object.keys(MENU_LINKS).find(k => norm(k) === norm(cat.categoria))
           const chave = chaveExistente || cat.categoria
+
+          // categoria oculta: remove do menu fixo e não adiciona nova aba
+          if (cat.oculto) {
+            delete links[chave]
+            continue
+          }
 
           // se for categoria nova, adiciona como aba extra
           if (!chaveExistente && !TABS_FIXAS.some(t => norm(t) === norm(cat.categoria))) {
@@ -130,6 +141,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
 
           const existentes = new Set((links[chave] || []).map((l: any) => norm(l.title)))
           const novos = cat.itens
+            .filter((item: any) => !item.oculto)
             .filter((item: any) => !existentes.has(norm(item.titulo)))
             .map((item: any) => ({ title: item.titulo, url: `/conteudo/${item.slug}` }))
           links[chave] = [...(links[chave] || []), ...novos]
