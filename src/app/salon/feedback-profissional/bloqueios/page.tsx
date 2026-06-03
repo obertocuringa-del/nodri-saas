@@ -362,7 +362,7 @@ export default function BloqueiosPage() {
                           {ocorRegrasCriadas.map(o => (
                             <span key={o.descricao} className="text-[10px] font-bold px-1.5 py-0.5 rounded-full w-fit"
                               style={{ background: 'rgba(139,92,246,.12)', color: '#c4b5fd', border: '1px solid rgba(139,92,246,.25)' }}>
-                              ⚠️ {o.quantidade}x {o.descricao}: {o.datas.join(', ')}
+                              ⚠️ {o.quantidade} {o.descricao}{o.quantidade > 1 ? 's' : ''}: {o.datas.join(', ')}
                             </span>
                           ))}
                         </div>
