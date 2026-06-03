@@ -325,17 +325,40 @@ export default function BloqueiosPage() {
               </div>
               <div className="p-4">
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {disponiveis.map(p => (
-                    <div key={p.nome} className="rounded-xl p-3 flex items-center gap-2"
-                      style={{ background: 'rgba(34,197,94,.05)', border: '1px solid rgba(34,197,94,.15)' }}>
-                      <div className="w-7 h-7 rounded-full flex items-center justify-center font-black text-xs shrink-0"
-                        style={{ background: 'rgba(34,197,94,.2)', color: '#4ade80' }}>
-                        {p.nome.charAt(0)}
+                  {disponiveis.map(p => {
+                    const temOcorrencia = p.atrasos_semana > 0 || p.faltas_mes > 0
+                    return (
+                    <div key={p.nome} className="rounded-xl p-3 flex flex-col gap-1.5"
+                      style={{ background: temOcorrencia ? 'rgba(250,204,21,.04)' : 'rgba(34,197,94,.05)', border: `1px solid ${temOcorrencia ? 'rgba(250,204,21,.2)' : 'rgba(34,197,94,.15)'}` }}>
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-full flex items-center justify-center font-black text-xs shrink-0"
+                          style={{ background: temOcorrencia ? 'rgba(250,204,21,.2)' : 'rgba(34,197,94,.2)', color: temOcorrencia ? '#facc15' : '#4ade80' }}>
+                          {p.nome.charAt(0)}
+                        </div>
+                        <span className="flex-1 text-[12px] font-semibold text-nodri-t1 truncate">{p.nome}</span>
+                        {temOcorrencia
+                          ? <span className="text-yellow-400 shrink-0 text-sm">⏰</span>
+                          : <span className="text-green-400 shrink-0 text-sm">✓</span>}
                       </div>
-                      <span className="flex-1 text-[12px] font-semibold text-nodri-t1 truncate">{p.nome}</span>
-                      <span className="text-green-400 shrink-0 text-sm">✓</span>
+                      {temOcorrencia && (
+                        <div className="flex flex-wrap gap-1.5 pl-9">
+                          {p.atrasos_semana > 0 && (
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                              style={{ background: 'rgba(250,204,21,.12)', color: '#facc15', border: '1px solid rgba(250,204,21,.25)' }}>
+                              ⏰ {p.atrasos_semana} atraso{p.atrasos_semana > 1 ? 's' : ''}
+                            </span>
+                          )}
+                          {p.faltas_mes > 0 && (
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                              style={{ background: 'rgba(239,68,68,.12)', color: '#f87171', border: '1px solid rgba(239,68,68,.25)' }}>
+                              ❌ {p.faltas_mes} falta{p.faltas_mes > 1 ? 's' : ''}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
-                  ))}
+                    )
+                  })}
                 </div>
                 {disponiveis.length === 0 && (
                   <div className="text-center py-8">
