@@ -75,7 +75,6 @@ function formatMes(mes: string) {
 const ABAS = [
   { id: 'profissionais', label: 'Profissionais', icon: Users },
   { id: 'ocorrencias',   label: 'Ocorrências',  icon: ClipboardList },
-  { id: 'plano',         label: 'Plano de Ação', icon: Target },
   { id: 'tendencias',    label: 'Tendências',    icon: Activity },
   { id: 'ia',            label: 'IA Claude',     icon: Brain },
 ] as const
@@ -257,39 +256,6 @@ export default function ResultadosProfPage() {
               {/* ══ ABA: PROFISSIONAIS ══ */}
               {abaAtiva === 'profissionais' && (
                 <div className="space-y-4">
-                  {/* Ranking */}
-                  <div className="pcard rounded-2xl border overflow-hidden" style={{ background: '#0d1117', borderColor: 'rgba(255,255,255,.07)' }}>
-                    <div className="px-5 py-3 border-b flex items-center gap-2" style={{ borderColor: 'rgba(255,255,255,.06)' }}>
-                      <span className="text-sm">🏆</span>
-                      <span className="text-[13px] font-semibold text-nodri-t1">Ranking de Desempenho</span>
-                      <span className="text-[10px] text-nodri-t3 ml-1">— do melhor ao pior score</span>
-                    </div>
-                    <div className="p-5 space-y-3">
-                      {data.ranking.map((r, i) => {
-                        const cor = r.score >= 70 ? '#4ade80' : r.score >= 40 ? '#facc15' : '#f87171'
-                        const isPior = data.profCritico?.nome === r.nome && r.total >= 2
-                        return (
-                          <div key={r.nome} className={isPior ? 'rounded-xl p-1' : ''} style={isPior ? { border: '1px solid rgba(239,68,68,.3)', background: 'rgba(239,68,68,.05)' } : {}}>
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2">
-                                <span className="text-[10px] font-black text-nodri-t3 w-5">#{i + 1}</span>
-                                <span className="text-[13px] font-semibold text-nodri-t1">{r.nome}</span>
-                                {isPior && <span className="text-[9px] font-black text-red-400 border border-red-400/40 px-1.5 py-0.5 rounded">ATENÇÃO</span>}
-                              </div>
-                              <div className="flex items-center gap-3 text-[11px]">
-                                <span className="text-green-400">+{r.positivo}</span>
-                                <span className="text-red-400">-{r.negativo}</span>
-                                <span className="font-black text-[14px]" style={{ color: cor }}>{r.score}%</span>
-                              </div>
-                            </div>
-                            <Barra valor={r.score} max={100} cor={cor} height={8} />
-                          </div>
-                        )
-                      })}
-                      {data.ranking.length === 0 && <p className="text-nodri-t3 text-sm text-center">Nenhum dado ainda.</p>}
-                    </div>
-                  </div>
-
                   {/* Evolução Individual */}
                   {data.evolucaoIndividual.length > 0 && (
                     <div className="pcard rounded-2xl border p-5" style={{ background: '#0d1117', borderColor: 'rgba(255,255,255,.07)' }}>
@@ -408,43 +374,6 @@ export default function ResultadosProfPage() {
               {/* ══ ABA: OCORRÊNCIAS ══ */}
               {abaAtiva === 'ocorrencias' && (
                 <div className="space-y-4">
-                  {/* Reincidências */}
-                  {data.reincidencia.length > 0 && (
-                    <div className="pcard rounded-2xl border overflow-hidden" style={{ background: '#0d1117', borderColor: 'rgba(239,68,68,.2)' }}>
-                      <div className="px-5 py-3 border-b flex items-center gap-2" style={{ borderColor: 'rgba(239,68,68,.15)', background: 'rgba(239,68,68,.05)' }}>
-                        <AlertTriangle size={14} className="text-red-400" />
-                        <span className="text-[13px] font-semibold text-red-300">Reincidências Críticas</span>
-                        <span className="text-[10px] text-nodri-t3 ml-1">— mesmo problema ≥ 2x</span>
-                        <span className="ml-auto text-[10px] text-red-400 font-bold">{data.reincidencia.length} casos</span>
-                      </div>
-                      <div className="p-5 space-y-2">
-                        {data.reincidencia.slice(0, 12).map((r, i) => {
-                          const urgencia = r.count >= 5 ? '#ef4444' : r.count >= 3 ? '#f97316' : '#facc15'
-                          const diasLabel = r.dias_desde === 0 ? 'hoje' : r.dias_desde === 1 ? 'ontem' : `há ${r.dias_desde} dias`
-                          return (
-                            <div key={i} className="flex items-center gap-3 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.05)' }}>
-                              <div className="flex items-center justify-center w-8 h-8 rounded-full font-black text-sm shrink-0"
-                                style={{ background: `${urgencia}20`, color: urgencia, border: `1px solid ${urgencia}40` }}>
-                                {r.count}x
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-0.5">
-                                  <span className="text-[12px] font-bold text-nodri-t1">{r.profissional}</span>
-                                  <span className="text-nodri-t3 text-[10px]">·</span>
-                                  <span className="text-[11px] text-nodri-t2 truncate">{r.ocorrencia}</span>
-                                </div>
-                                <span className="text-[10px] text-nodri-t3">Última: {diasLabel}</span>
-                              </div>
-                              <div className="text-[9px] font-black px-2 py-0.5 rounded-full shrink-0" style={{ background: `${urgencia}15`, color: urgencia }}>
-                                {r.count >= 5 ? 'URGENTE' : r.count >= 3 ? 'ATENÇÃO' : 'OBSERVAR'}
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  )}
-
                   {/* Ocorrências mais frequentes */}
                   <div className="pcard rounded-2xl border overflow-hidden" style={{ background: '#0d1117', borderColor: 'rgba(255,255,255,.07)' }}>
                     <div className="px-5 py-3 border-b flex items-center gap-2" style={{ borderColor: 'rgba(255,255,255,.06)' }}>
@@ -534,33 +463,6 @@ export default function ResultadosProfPage() {
                     </div>
                   )}
 
-                  {/* Categorias */}
-                  {data.categorias.length > 0 && (
-                    <div className="pcard rounded-2xl border p-5" style={{ background: '#0d1117', borderColor: 'rgba(255,255,255,.07)' }}>
-                      <div className="flex items-center gap-2 mb-4">
-                        <span className="text-sm">🏷️</span>
-                        <span className="text-[13px] font-semibold text-nodri-t1">Problemas por Categoria</span>
-                      </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
-                        {data.categorias.map(cat => (
-                          <div key={cat.nome} className="p-3 rounded-xl border" style={{ borderColor: `${cat.cor}30`, background: `${cat.cor}08` }}>
-                            <div className="text-[10px] font-bold mb-1" style={{ color: cat.cor }}>{cat.nome}</div>
-                            <div className="text-2xl font-black mb-1" style={{ color: cat.cor }}>{cat.negativo}</div>
-                            <div className="text-[10px] text-nodri-t3">negativos · {cat.percentual_negativo}%</div>
-                            <div className="mt-2 h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,.06)' }}>
-                              <div className="h-1.5 rounded-full" style={{ width: `${cat.percentual_negativo}%`, background: cat.cor }} />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="flex h-4 rounded-full overflow-hidden gap-px">
-                        {data.categorias.filter(c => c.negativo > 0).map(cat => {
-                          const pct = data.totalNegativo > 0 ? (cat.negativo / data.totalNegativo) * 100 : 0
-                          return <div key={cat.nome} title={`${cat.nome}: ${cat.negativo} (${Math.round(pct)}%)`} style={{ width: `${pct}%`, background: cat.cor, minWidth: pct > 0 ? 4 : 0 }} />
-                        })}
-                      </div>
-                    </div>
-                  )}
                 </div>
               )}
 
@@ -676,67 +578,6 @@ export default function ResultadosProfPage() {
                       <div className="flex gap-4 mt-2 text-[10px]">
                         <span className="flex items-center gap-1"><div className="w-3 h-2 rounded bg-green-400" /> Positivo</span>
                         <span className="flex items-center gap-1"><div className="w-3 h-2 rounded bg-red-400" /> Negativo</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {data.diasSemana.some(d => d.total > 0) && (
-                    <div className="pcard rounded-2xl border p-5" style={{ background: '#0d1117', borderColor: 'rgba(255,255,255,.07)' }}>
-                      <div className="flex items-center gap-2 mb-4">
-                        <span className="text-sm">📅</span>
-                        <span className="text-[13px] font-semibold text-nodri-t1">Dias da Semana com Mais Ocorrências</span>
-                      </div>
-                      <div className="flex items-end gap-2 h-28">
-                        {data.diasSemana.map(d => {
-                          const maxTotal = Math.max(...data.diasSemana.map(x => x.total), 1)
-                          const pct = (d.total / maxTotal) * 100
-                          const pctNeg = d.total > 0 ? (d.negativo / d.total) * 100 : 0
-                          return (
-                            <div key={d.dia} className="flex-1 flex flex-col items-center gap-1">
-                              <div className="text-[10px] text-nodri-t3 font-medium">{d.total > 0 ? d.total : ''}</div>
-                              <div className="w-full rounded-t flex flex-col overflow-hidden" style={{ height: `${Math.max(pct, 5)}%` }}>
-                                <div style={{ flex: pctNeg, background: '#f87171', minHeight: d.negativo > 0 ? 2 : 0 }} />
-                                <div style={{ flex: 100 - pctNeg, background: '#4ade80', minHeight: d.positivo > 0 ? 2 : 0 }} />
-                              </div>
-                              <span className="text-[9px] text-nodri-t2 font-medium">{d.dia.slice(0, 3)}</span>
-                            </div>
-                          )
-                        })}
-                      </div>
-                      {(() => {
-                        const piorDia = data.diasSemana.filter(d => d.total > 0).sort((a, b) => b.negativo - a.negativo)[0]
-                        return piorDia ? <p className="text-[10px] text-nodri-t3 mt-3">⚠️ Pior dia: <strong className="text-red-400">{piorDia.dia}</strong> ({piorDia.negativo} negativos)</p> : null
-                      })()}
-                    </div>
-                  )}
-
-                  {data.correlacaoCliente.length > 0 && (
-                    <div className="pcard rounded-2xl border p-5" style={{ background: '#0d1117', borderColor: 'rgba(255,255,255,.07)' }}>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm">🔗</span>
-                        <span className="text-[13px] font-semibold text-nodri-t1">Correlação: Equipe × Satisfação do Cliente</span>
-                      </div>
-                      <p className="text-[11px] text-nodri-t3 mb-4">Quando os problemas aumentam, a nota do cliente cai?</p>
-                      <div className="flex items-end gap-2 h-24">
-                        {data.correlacaoCliente.map(item => {
-                          const maxNeg = Math.max(...data.correlacaoCliente.map(c => c.negProf), 1)
-                          const pctNeg = (item.negProf / maxNeg) * 100
-                          return (
-                            <div key={item.semana} className="flex-1 flex flex-col items-center gap-1">
-                              <div className="w-full flex gap-0.5 items-end" style={{ height: 80 }}>
-                                <div className="flex-1 rounded-t" style={{ height: `${Math.max(pctNeg, 3)}%`, background: '#f87171' }} />
-                                {item.mediaCliente !== null && (
-                                  <div className="flex-1 rounded-t" style={{ height: `${Math.max((item.mediaCliente / 10) * 100, 3)}%`, background: '#60a5fa' }} />
-                                )}
-                              </div>
-                              <span className="text-[8px] text-nodri-t3">{item.semana.split('-W')[1] ? `S${item.semana.split('-W')[1]}` : item.semana}</span>
-                            </div>
-                          )
-                        })}
-                      </div>
-                      <div className="flex gap-6 mt-2 text-[10px]">
-                        <span className="flex items-center gap-1.5"><div className="w-3 h-2 rounded bg-red-400" /> Negativos da equipe</span>
-                        <span className="flex items-center gap-1.5"><div className="w-3 h-2 rounded bg-blue-400" /> Nota do cliente (0-10)</span>
                       </div>
                     </div>
                   )}
