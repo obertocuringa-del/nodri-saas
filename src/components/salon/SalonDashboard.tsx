@@ -374,17 +374,8 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               <h1 className="font-syne font-bold text-[13px] text-nodri-t1">Módulos do Sistema</h1>
               <span className="text-[11px] text-nodri-t2"><span className="text-nodri-cyan font-semibold">{totalAtivos}</span>/{totalModulos} ativados</span>
             </div>
-            <div className="relative">
-              <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-nodri-t3" />
-              <input type="text" placeholder="Buscar módulo..." value={busca} onChange={e => setBusca(e.target.value)}
-                className="bg-nodri-card border border-nodri-border rounded-lg pl-7 pr-3 py-1.5 text-[11px] outline-none focus:border-nodri-cyan/40 w-40" />
-            </div>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-nodri-cyan/7 border border-nodri-cyan/17 rounded-lg text-[10.5px] text-nodri-cyan font-semibold">
-              <CheckCircle size={12} />{totalAtivos}/{totalModulos} ativos
-            </div>
-            </div>
             {configPrograma?.link && (
-              <div className="px-5 pb-2.5 flex items-center justify-center gap-2">
+              <div className="flex items-center gap-2">
                 <a href={configPrograma.link} target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10.5px] font-bold transition-all hover:brightness-110"
                   style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.35)', color: '#a5b4fc' }}>
@@ -399,6 +390,15 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                 )}
               </div>
             )}
+            <div className="relative">
+              <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-nodri-t3" />
+              <input type="text" placeholder="Buscar módulo..." value={busca} onChange={e => setBusca(e.target.value)}
+                className="bg-nodri-card border border-nodri-border rounded-lg pl-7 pr-3 py-1.5 text-[11px] outline-none focus:border-nodri-cyan/40 w-40" />
+            </div>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-nodri-cyan/7 border border-nodri-cyan/17 rounded-lg text-[10.5px] text-nodri-cyan font-semibold">
+              <CheckCircle size={12} />{totalAtivos}/{totalModulos} ativos
+            </div>
+            </div>
           </div>
 
           {/* NOTIFICATION BANNER */}
