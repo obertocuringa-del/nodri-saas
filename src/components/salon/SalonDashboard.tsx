@@ -94,7 +94,7 @@ if (typeof document !== 'undefined') {
 }
 
 export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes, totalAtivos, totalModulos }: Props) {
-  const [filtro, setFiltro] = useState<'todos' | 'ativos' | 'bloqueados'>('todos')
+  const [filtro, setFiltro] = useState<'todos' | 'ativos' | 'bloqueados'>('ativos')
   const [notifDismissed, setNotifDismissed] = useState(false)
   const [notifIndex, setNotifIndex] = useState(0)
   const [busca, setBusca] = useState('')
