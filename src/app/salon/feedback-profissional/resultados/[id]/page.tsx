@@ -256,81 +256,49 @@ export default function ResultadosProfPage() {
               {/* ══ ABA: PROFISSIONAIS ══ */}
               {abaAtiva === 'profissionais' && (
                 <div className="space-y-4">
-                  {/* Evolução Individual */}
-                  {data.evolucaoIndividual.length > 0 && (
-                    <div className="pcard rounded-2xl border p-5" style={{ background: '#0d1117', borderColor: 'rgba(255,255,255,.07)' }}>
-                      <div className="flex items-center gap-3 mb-4 flex-wrap">
-                        <span className="text-sm">📈</span>
-                        <span className="text-[13px] font-semibold text-nodri-t1">Evolução Individual</span>
-                        <span className="text-[10px] text-nodri-t3">— melhorando ou piorando?</span>
-                        <div className="ml-auto">
-                          <select value={profEvol} onChange={e => setProfEvol(e.target.value)}
-                            className="bg-nodri-card border border-nodri-border rounded-lg px-2 py-1 text-[11px] text-nodri-t1 outline-none">
-                            {data.nomeProfissionais.map(n => <option key={n} value={n}>{n}</option>)}
-                          </select>
-                        </div>
-                      </div>
-                      {evolucaoProfissional && evolucaoProfissional.semanas.length > 0 ? (
-                        <>
-                          <div className="flex items-end gap-2 h-24 mb-2">
-                            {evolucaoProfissional.semanas.map((s, i) => {
-                              const cor = s.score >= 70 ? '#4ade80' : s.score >= 40 ? '#facc15' : '#f87171'
-                              const prev = i > 0 ? evolucaoProfissional.semanas[i - 1].score : s.score
-                              const trend = s.score > prev ? '↑' : s.score < prev ? '↓' : '→'
-                              const trendCor = s.score > prev ? '#4ade80' : s.score < prev ? '#f87171' : '#94a3b8'
-                              return (
-                                <div key={s.semana} className="flex-1 flex flex-col items-center gap-1 group">
-                                  <span className="text-[9px] font-bold opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: cor }}>{s.score}%</span>
-                                  <div className="w-full rounded-t" style={{ height: `${Math.max(s.score, 5)}%`, background: cor, position: 'relative' }}>
-                                    <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-[10px] font-bold" style={{ color: trendCor }}>{trend}</span>
-                                  </div>
-                                  <span className="text-[8px] text-nodri-t3">{s.semana.split('-W')[1] ? `S${s.semana.split('-W')[1]}` : s.semana}</span>
-                                  <span className="text-[8px] text-nodri-t3">{s.total}x</span>
-                                </div>
-                              )
-                            })}
-                          </div>
-                          {(() => {
-                            const semanas = evolucaoProfissional.semanas
-                            const diff = semanas.length >= 2 ? semanas[semanas.length - 1].score - semanas[0].score : 0
-                            const cor = diff > 0 ? '#4ade80' : diff < 0 ? '#f87171' : '#94a3b8'
-                            const Icon = diff > 0 ? TrendingUp : TrendingDown
-                            return semanas.length >= 2 ? (
-                              <div className="flex items-center gap-1.5 text-[11px]" style={{ color: cor }}>
-                                <Icon size={12} />
-                                {diff > 0 ? `Melhorou ${diff}% desde a primeira semana` : diff < 0 ? `Piorou ${Math.abs(diff)}% desde a primeira semana` : 'Score estável'}
-                              </div>
-                            ) : null
-                          })()}
-                        </>
-                      ) : (
-                        <p className="text-nodri-t3 text-sm">Dados insuficientes para este profissional.</p>
-                      )}
-                    </div>
-                  )}
-
                   {/* Placar Mensal */}
-                  {data.placardMensal.length > 0 && (
+                  {data.placardMensal.length > 0 && (() => {
+                    // gera lista Jan-Dez baseada nos meses que existem no dado
+                    const mesesComDados = new Set(data.placardMensal.map(p => p.mes))
+                    const todosOsMeses: string[] = []
+                    const anosPresentes = Array.from(new Set(data.placardMensal.map(p => p.mes.split('-')[0]))).sort()
+                    for (const ano of anosPresentes) {
+                      for (let m = 1; m <= 12; m++) {
+                        const key = `${ano}-${String(m).padStart(2, '0')}`
+                        if (mesesComDados.has(key)) todosOsMeses.push(key)
+                      }
+                    }
+                    const idxAtual = todosOsMeses.findIndex(m => m === data.placardMensal[mesSelecionado]?.mes) >= 0
+                      ? todosOsMeses.findIndex(m => m === data.placardMensal[mesSelecionado]?.mes)
+                      : 0
+                    const mesAtualKey = todosOsMeses[idxAtual]
+                    const mesAnteriorKey = idxAtual > 0 ? todosOsMeses[idxAtual - 1] : null
+                    const mesAtualData = data.placardMensal.find(p => p.mes === mesAtualKey)
+                    const mesAnteriorData = mesAnteriorKey ? data.placardMensal.find(p => p.mes === mesAnteriorKey) : null
+
+                    return (
                     <div className="pcard rounded-2xl border overflow-hidden" style={{ background: '#0d1117', borderColor: 'rgba(255,255,255,.07)' }}>
                       <div className="px-5 py-3 border-b flex items-center gap-2 flex-wrap" style={{ borderColor: 'rgba(255,255,255,.06)' }}>
                         <span className="text-sm">📊</span>
                         <span className="text-[13px] font-semibold text-nodri-t1">Placar Mensal</span>
+                        {mesAnteriorKey && <span className="text-[10px] text-nodri-t3 ml-1">— comparando com {formatMes(mesAnteriorKey)}</span>}
                         <div className="ml-auto flex gap-1 flex-wrap">
-                          {data.placardMensal.map((p, i) => (
-                            <button key={p.mes} onClick={() => setMesSelecionado(i)}
-                              className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all ${mesSelecionado === i ? 'bg-nodri-cyan/15 text-nodri-cyan border border-nodri-cyan/30' : 'text-nodri-t3 hover:text-nodri-t1 border border-nodri-border'}`}>
-                              {formatMes(p.mes)}
+                          {todosOsMeses.map((mes, i) => (
+                            <button key={mes} onClick={() => setMesSelecionado(data.placardMensal.findIndex(p => p.mes === mes))}
+                              className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all ${mesAtualKey === mes ? 'bg-nodri-cyan/15 text-nodri-cyan border border-nodri-cyan/30' : 'text-nodri-t3 hover:text-nodri-t1 border border-nodri-border'}`}>
+                              {formatMes(mes)}
                             </button>
                           ))}
                         </div>
                       </div>
-                      {placardMes && (
+                      {mesAtualData && (
                         <div className="p-5 overflow-x-auto">
                           <table className="w-full text-[11px]">
                             <thead>
                               <tr className="text-nodri-t3 font-medium">
                                 <th className="text-left pb-3">Profissional</th>
                                 <th className="text-center pb-3">Score</th>
+                                {mesAnteriorData && <th className="text-center pb-3">vs anterior</th>}
                                 <th className="text-center pb-3">✅</th>
                                 <th className="text-center pb-3">❌</th>
                                 <th className="text-center pb-3">Total</th>
@@ -338,8 +306,12 @@ export default function ResultadosProfPage() {
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-nodri-border/30">
-                              {placardMes.profissionais.map((p, i) => {
+                              {mesAtualData.profissionais.map((p, i) => {
                                 const cor = p.score >= 70 ? '#4ade80' : p.score >= 40 ? '#facc15' : '#f87171'
+                                const anterior = mesAnteriorData?.profissionais.find(x => x.nome === p.nome)
+                                const delta = anterior != null ? p.score - anterior.score : null
+                                const deltaCor = delta == null ? '#94a3b8' : delta > 0 ? '#4ade80' : delta < 0 ? '#f87171' : '#94a3b8'
+                                const deltaStr = delta == null ? '—' : delta > 0 ? `+${delta}%` : `${delta}%`
                                 return (
                                   <tr key={p.nome} className="hover:bg-nodri-surface/30 transition-colors">
                                     <td className="py-2.5 pr-3">
@@ -349,6 +321,11 @@ export default function ResultadosProfPage() {
                                       </div>
                                     </td>
                                     <td className="py-2.5 text-center"><span className="font-black text-[13px]" style={{ color: cor }}>{p.score}%</span></td>
+                                    {mesAnteriorData && (
+                                      <td className="py-2.5 text-center">
+                                        <span className="font-bold text-[11px]" style={{ color: deltaCor }}>{deltaStr}</span>
+                                      </td>
+                                    )}
                                     <td className="py-2.5 text-center text-green-400 font-semibold">{p.positivo}</td>
                                     <td className="py-2.5 text-center text-red-400 font-semibold">{p.negativo}</td>
                                     <td className="py-2.5 text-center text-nodri-t2">{p.total}</td>
@@ -367,7 +344,8 @@ export default function ResultadosProfPage() {
                         </div>
                       )}
                     </div>
-                  )}
+                    )
+                  })()}
                 </div>
               )}
 
@@ -554,31 +532,35 @@ export default function ResultadosProfPage() {
               {/* ══ ABA: TENDÊNCIAS ══ */}
               {abaAtiva === 'tendencias' && (
                 <div className="space-y-4">
-                  {data.tendencia.length >= 2 && (
+
+                  {/* Dias da Semana com Mais Ocorrências */}
+                  {data.diasSemana.some(d => d.total > 0) && (
                     <div className="pcard rounded-2xl border p-5" style={{ background: '#0d1117', borderColor: 'rgba(255,255,255,.07)' }}>
                       <div className="flex items-center gap-2 mb-4">
-                        <TrendingUp size={14} className="text-nodri-cyan" />
-                        <span className="text-[13px] font-semibold text-nodri-t1">Tendência Semanal Geral</span>
+                        <span className="text-sm">📅</span>
+                        <span className="text-[13px] font-semibold text-nodri-t1">Dias da Semana com Mais Ocorrências</span>
                       </div>
-                      <div className="flex items-end gap-2 h-24">
-                        {data.tendencia.map(t => {
-                          const maxTotal = Math.max(...data.tendencia.map(x => x.total), 1)
-                          const pctPos = t.total > 0 ? (t.positivo / t.total) * 100 : 0
+                      <div className="flex items-end gap-2 h-28">
+                        {data.diasSemana.map(d => {
+                          const maxTotal = Math.max(...data.diasSemana.map(x => x.total), 1)
+                          const pct = (d.total / maxTotal) * 100
+                          const pctNeg = d.total > 0 ? (d.negativo / d.total) * 100 : 0
                           return (
-                            <div key={t.semana} className="flex-1 flex flex-col items-center gap-1">
-                              <div className="w-full rounded-t flex flex-col overflow-hidden" style={{ height: `${Math.max((t.total / maxTotal) * 100, 8)}%` }}>
-                                <div style={{ flex: pctPos, background: '#4ade80', minHeight: 2 }} />
-                                <div style={{ flex: 100 - pctPos, background: '#f87171', minHeight: 2 }} />
+                            <div key={d.dia} className="flex-1 flex flex-col items-center gap-1">
+                              <div className="text-[10px] text-nodri-t3 font-medium">{d.total > 0 ? d.total : ''}</div>
+                              <div className="w-full rounded-t flex flex-col overflow-hidden" style={{ height: `${Math.max(pct, 5)}%` }}>
+                                <div style={{ flex: pctNeg, background: '#f87171', minHeight: d.negativo > 0 ? 2 : 0 }} />
+                                <div style={{ flex: 100 - pctNeg, background: '#4ade80', minHeight: d.positivo > 0 ? 2 : 0 }} />
                               </div>
-                              <span className="text-[8px] text-nodri-t3">{t.semana.includes('-W') ? `S${t.semana.split('-W')[1]}` : t.semana}</span>
+                              <span className="text-[9px] text-nodri-t2 font-medium">{d.dia.slice(0, 3)}</span>
                             </div>
                           )
                         })}
                       </div>
-                      <div className="flex gap-4 mt-2 text-[10px]">
-                        <span className="flex items-center gap-1"><div className="w-3 h-2 rounded bg-green-400" /> Positivo</span>
-                        <span className="flex items-center gap-1"><div className="w-3 h-2 rounded bg-red-400" /> Negativo</span>
-                      </div>
+                      {(() => {
+                        const piorDia = data.diasSemana.filter(d => d.total > 0).sort((a, b) => b.negativo - a.negativo)[0]
+                        return piorDia ? <p className="text-[10px] text-nodri-t3 mt-3">⚠️ Pior dia: <strong className="text-red-400">{piorDia.dia}</strong> ({piorDia.negativo} negativos)</p> : null
+                      })()}
                     </div>
                   )}
 
