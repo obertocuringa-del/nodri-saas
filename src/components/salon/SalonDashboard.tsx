@@ -217,8 +217,8 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
 
         <div className="w-px h-5 bg-nodri-border shrink-0" />
 
-        <div ref={dropdownRef} className="flex-1 min-w-0 overflow-x-auto">
-          <div className="flex gap-0.5 bg-nodri-card border border-nodri-border rounded-lg p-0.5 w-max">
+        <div ref={dropdownRef} className="flex-1 min-w-0">
+          <div className="flex flex-wrap gap-0.5 bg-nodri-card border border-nodri-border rounded-lg p-0.5">
           {TABS.map(tab => (
             <div key={tab} className="relative">
               <button
