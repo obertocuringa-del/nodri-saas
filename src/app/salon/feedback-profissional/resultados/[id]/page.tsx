@@ -106,6 +106,26 @@ export default function ResultadosProfPage() {
   } | null>(null)
   const [expandidoHistorico, setExpandidoHistorico] = useState<string | null>(null)
 
+  // Datas exclusivas do Placar Mensal (mês atual + mês anterior por padrão)
+  const [placardInicio, setPlacardInicio] = useState(() => {
+    const h = new Date()
+    h.setMonth(h.getMonth() - 1)
+    return `${h.getFullYear()}-${String(h.getMonth()+1).padStart(2,'0')}-01`
+  })
+  const [placardFim, setPlacardFim] = useState(() => {
+    const h = new Date()
+    return new Date(h.getFullYear(), h.getMonth()+1, 0).toISOString().slice(0,10)
+  })
+  const [placardData, setPlacardData] = useState<Data | null>(null)
+
+  const fetchPlacard = useCallback(async () => {
+    const qs = new URLSearchParams()
+    qs.set('inicio', placardInicio)
+    qs.set('fim', placardFim)
+    const res = await fetch(`/api/feedback-prof/resultados/${id}?${qs}`)
+    if (res.ok) setPlacardData(await res.json())
+  }, [id, placardInicio, placardFim])
+
   const fetchData = useCallback(async () => {
     setLoading(true)
     const qs = new URLSearchParams()
@@ -123,6 +143,7 @@ export default function ResultadosProfPage() {
   }, [id, inicio, fim, filtroProfissional, filtroTipo])
 
   useEffect(() => { fetchData() }, [fetchData])
+  useEffect(() => { fetchPlacard() }, [fetchPlacard])
 
   useEffect(() => {
     fetch('/api/feedback-prof/bloqueios/historico')
@@ -273,11 +294,13 @@ export default function ResultadosProfPage() {
               {abaAtiva === 'profissionais' && (
                 <div className="space-y-4">
                   {/* Placar Mensal — Ocorrências por Profissional */}
-                  {data.placardMensal.length > 0 && (() => {
+                  {(() => {
+                    const placardSource = placardData ?? data
+                    if (!placardSource.placardMensal.length) return null
                     // Gera lista ordenada de meses com dados (Jan→Dez)
-                    const mesesComDados = new Set(data.placardMensal.map(p => p.mes))
+                    const mesesComDados = new Set(placardSource.placardMensal.map(p => p.mes))
                     const todosOsMeses: string[] = []
-                    const anosPresentes = Array.from(new Set(data.placardMensal.map(p => p.mes.split('-')[0]))).sort()
+                    const anosPresentes = Array.from(new Set(placardSource.placardMensal.map(p => p.mes.split('-')[0]))).sort()
                     for (const ano of anosPresentes) {
                       for (let m = 1; m <= 12; m++) {
                         const key = `${ano}-${String(m).padStart(2, '0')}`
@@ -300,8 +323,8 @@ export default function ResultadosProfPage() {
                       }
                     }
 
-                    const mesAtualData = data.placardMensal.find(p => p.mes === mesAtualKey)
-                    const mesAnteriorData = mesAnteriorKey ? data.placardMensal.find(p => p.mes === mesAnteriorKey) : null
+                    const mesAtualData = placardSource.placardMensal.find(p => p.mes === mesAtualKey)
+                    const mesAnteriorData = mesAnteriorKey ? placardSource.placardMensal.find(p => p.mes === mesAnteriorKey) : null
 
                     // Monta mapa de ocorrências por profissional do mes anterior (para comparativo)
                     // Precisamos de detalhes de ocorrências — usamos data.respostas_recentes não é suficiente
@@ -313,7 +336,18 @@ export default function ResultadosProfPage() {
                         <span className="text-sm">📊</span>
                         <span className="text-[13px] font-semibold text-nodri-t1">Placar Mensal</span>
                         {mesAnteriorKey && <span className="text-[10px] text-nodri-t3 ml-1">— vs {formatMes(mesAnteriorKey)}</span>}
-                        <div className="ml-auto flex gap-1 flex-wrap">
+                        <div className="ml-auto flex items-center gap-2 flex-wrap">
+                          <div className="flex items-center gap-1 px-2 py-1 bg-nodri-card border border-nodri-border rounded-lg">
+                            <Calendar size={10} className="text-nodri-t3" />
+                            <input type="date" value={placardInicio} onChange={e => setPlacardInicio(e.target.value)}
+                              className="bg-nodri-card text-[10px] text-nodri-t1 outline-none cursor-pointer border-0 rounded" style={{ colorScheme: 'dark' }} />
+                            <span className="text-nodri-t3 text-[9px]">→</span>
+                            <input type="date" value={placardFim} onChange={e => setPlacardFim(e.target.value)}
+                              className="bg-nodri-card text-[10px] text-nodri-t1 outline-none cursor-pointer border-0 rounded" style={{ colorScheme: 'dark' }} />
+                            <button onClick={fetchPlacard} className="text-nodri-t3 hover:text-nodri-cyan transition-colors ml-1"><RefreshCw size={10} /></button>
+                          </div>
+                        </div>
+                        <div className="w-full flex gap-1 flex-wrap mt-1">
                           {todosOsMeses.map((mes, i) => (
                             <button key={mes} onClick={() => setMesSelecionado(i)}
                               className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all ${mesAtualKey === mes ? 'bg-nodri-cyan/15 text-nodri-cyan border border-nodri-cyan/30' : 'text-nodri-t3 hover:text-nodri-t1 border border-nodri-border'}`}>
