@@ -127,3 +127,4 @@ Admin acessa URL → Login → Painel Master
                         Gerencia salões, módulos, notificações
 ```
 
+ 
