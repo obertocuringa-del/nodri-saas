@@ -35,7 +35,6 @@ export default async function SalonPage() {
   const { data: todosModulos } = await supabaseAdmin
     .from('modulos')
     .select('*')
-    .eq('ativo', true)
     .order('ordem')
 
   const { data: modulosHabilitados } = await supabaseAdmin
