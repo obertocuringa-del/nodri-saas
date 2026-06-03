@@ -88,6 +88,7 @@ if (typeof document !== 'undefined') {
   style.textContent = `
     @keyframes shimmer { 0% { background-position: 0% 0 } 100% { background-position: 300% 0 } }
     @keyframes pulseDot { 0%,100% { transform: scale(1); opacity: 1 } 50% { transform: scale(1.4); opacity: 0.6 } }
+    @keyframes nodriPulseBtn { 0%,100% { box-shadow: 0 0 0 0 rgba(74,222,128,0); opacity:1 } 50% { box-shadow: 0 0 0 5px rgba(74,222,128,0.18); opacity:0.85 } }
     .nodri-salon-bg { background-color: #000000 !important; }
   `
   if (!document.getElementById('nodri-animations')) { style.id = 'nodri-animations'; document.head.appendChild(style) }
@@ -99,6 +100,11 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
   const [notifIndex, setNotifIndex] = useState(0)
   const [busca, setBusca] = useState('')
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
+  const [configPrograma, setConfigPrograma] = useState<{ link: string; link_atualizacao: string; atualizacao_ativa: boolean } | null>(null)
+
+  useEffect(() => {
+    fetch('/api/config/programa').then(r => r.json()).then(setConfigPrograma).catch(() => {})
+  }, [])
   const TABS_FIXAS = ['Todos os Módulos', 'Manual do Usuário', 'Dicas Nodri', 'Gestão de Pessoas', 'Gestão Financeira', 'Marketing', 'Feedback de Cliente', 'Feedback Profissional']
   const [menuDinamico, setMenuDinamico] = useState<Record<string, { title: string; url: string }[]>>(MENU_LINKS)
   const [tabsExtras, setTabsExtras] = useState<string[]>([])
@@ -358,9 +364,23 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
 
           {/* Barra superior fina */}
           <div className="px-5 py-2.5 border-b border-nodri-border bg-nodri-surface/50 flex items-center gap-3 sticky top-0 z-10">
-            <div className="flex items-center gap-2 flex-1">
+            <div className="flex items-center gap-2 flex-1 flex-wrap">
               <h1 className="font-syne font-bold text-[13px] text-nodri-t1">Módulos do Sistema</h1>
               <span className="text-[11px] text-nodri-t2"><span className="text-nodri-cyan font-semibold">{totalAtivos}</span>/{totalModulos} ativados</span>
+              {configPrograma?.link && !configPrograma.atualizacao_ativa && (
+                <a href={configPrograma.link} download
+                  className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-[10.5px] font-bold transition-all hover:brightness-110"
+                  style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.35)', color: '#a5b4fc' }}>
+                  💾 Baixar Programa Complementar
+                </a>
+              )}
+              {configPrograma?.atualizacao_ativa && configPrograma?.link_atualizacao && (
+                <a href={configPrograma.link_atualizacao} download
+                  className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-[10.5px] font-bold"
+                  style={{ background: 'rgba(34,197,94,0.10)', border: '1px solid rgba(34,197,94,0.45)', color: '#4ade80', animation: 'nodriPulseBtn 1.8s ease-in-out infinite' }}>
+                  ⚡ Baixar Atualização Agora
+                </a>
+              )}
             </div>
             <div className="relative">
               <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-nodri-t3" />

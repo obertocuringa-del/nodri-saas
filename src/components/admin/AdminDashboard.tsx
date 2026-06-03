@@ -77,6 +77,8 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
   const [notifMsg, setNotifMsg] = useState('')
   const [notifTipo, setNotifTipo] = useState<'info'|'success'|'warning'|'danger'>('info')
   const [notifDestinatarios, setNotifDestinatarios] = useState<string[]>([])
+  const [configPrograma, setConfigPrograma] = useState({ link: '', link_atualizacao: '', atualizacao_ativa: false })
+  const [savingPrograma, setSavingPrograma] = useState(false)
   const [showDestinatarios, setShowDestinatarios] = useState(false)
   const [sending, setSending] = useState(false)
   const [localNotifs, setLocalNotifs] = useState(notificacoes)
@@ -295,6 +297,11 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
     if (activeSection === 'modulos') {
       fetch('/api/modulos').then(r => r.json()).then(data => {
         if (Array.isArray(data)) setLocalModulos(data)
+      }).catch(() => {})
+    }
+    if (activeSection === 'config') {
+      fetch('/api/config/programa').then(r => r.json()).then(d => {
+        if (d) setConfigPrograma({ link: d.link || '', link_atualizacao: d.link_atualizacao || '', atualizacao_ativa: !!d.atualizacao_ativa })
       }).catch(() => {})
     }
   }, [activeSection])
@@ -1475,6 +1482,52 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                   </button>
                 </div>
               </div>
+
+              {/* PROGRAMA COMPLEMENTAR */}
+              <div className="nodri-card p-5">
+                <div className="font-syne font-bold text-[13px] text-nodri-cyan mb-1">💾 Programa Complementar</div>
+                <p className="text-[10px] text-nodri-t3 mb-4">Configure o botão de download exibido para todos os salões na tela principal.</p>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Link — Baixar Programa Complementar</label>
+                    <input value={configPrograma.link} onChange={e => setConfigPrograma(p => ({ ...p, link: e.target.value }))}
+                      placeholder="https://..." className="nodri-input w-full" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Link — Baixar Atualização (quando disponibilizada)</label>
+                    <input value={configPrograma.link_atualizacao} onChange={e => setConfigPrograma(p => ({ ...p, link_atualizacao: e.target.value }))}
+                      placeholder="https://..." className="nodri-input w-full" />
+                  </div>
+                  <div className="flex items-center gap-3 pt-1">
+                    <button
+                      onClick={async () => {
+                        const novoEstado = !configPrograma.atualizacao_ativa
+                        setSavingPrograma(true)
+                        const nova = { ...configPrograma, atualizacao_ativa: novoEstado }
+                        await fetch('/api/config/programa', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(nova) })
+                        setConfigPrograma(nova)
+                        setSavingPrograma(false)
+                        toast.success(novoEstado ? '⚡ Atualização disponibilizada para todos os salões!' : '✅ Botão voltou ao modo normal')
+                      }}
+                      disabled={savingPrograma}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[11px] font-bold transition-all ${configPrograma.atualizacao_ativa ? 'bg-green-500/15 border border-green-500/40 text-green-400 hover:bg-green-500/25' : 'bg-nodri-surface border border-nodri-border text-nodri-t2 hover:border-nodri-cyan/40 hover:text-nodri-cyan'}`}>
+                      {configPrograma.atualizacao_ativa ? '⚡ Atualização ATIVA — Clique para desativar' : '🚀 Disponibilizar Atualização do Sistema'}
+                    </button>
+                    <button
+                      onClick={async () => {
+                        setSavingPrograma(true)
+                        await fetch('/api/config/programa', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(configPrograma) })
+                        setSavingPrograma(false)
+                        toast.success('💾 Links salvos!')
+                      }}
+                      disabled={savingPrograma}
+                      className="bg-nodri-cyan text-black font-bold px-4 py-2 rounded-lg text-[11px] hover:brightness-110 disabled:opacity-50">
+                      {savingPrograma ? 'Salvando...' : 'Salvar Links'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
             </div>
           )}
 
