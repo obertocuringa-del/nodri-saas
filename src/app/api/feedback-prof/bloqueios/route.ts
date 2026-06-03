@@ -199,11 +199,32 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   const { profissional_nome } = await req.json()
+
+  // Busca bloqueio atual antes de deletar para gravar no histórico
+  const { data: bloqueioAtual } = await supabaseAdmin
+    .from('feedback_prof_bloqueios')
+    .select('motivo, dias_bloqueio, bloqueado_ate')
+    .eq('salao_id', payload.salaoId)
+    .eq('profissional_nome', profissional_nome)
+    .maybeSingle()
+
   await supabaseAdmin
     .from('feedback_prof_bloqueios')
     .delete()
     .eq('salao_id', payload.salaoId)
     .eq('profissional_nome', profissional_nome)
+
+  // Atualiza histórico com data de desbloqueio manual
+  if (bloqueioAtual) {
+    await supabaseAdmin
+      .from('feedback_prof_bloqueios_historico')
+      .update({ desbloqueado_em: new Date().toISOString().slice(0, 10), tipo_desbloqueio: 'manual' })
+      .eq('salao_id', payload.salaoId)
+      .eq('profissional_nome', profissional_nome)
+      .is('desbloqueado_em', null)
+      .order('created_at', { ascending: false })
+      .limit(1)
+  }
 
   return NextResponse.json({ ok: true })
 }

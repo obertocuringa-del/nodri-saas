@@ -238,10 +238,33 @@ export async function POST() {
   }
 
   if (upserts.length > 0) {
+    // Busca bloqueios existentes para saber quais são novos
+    const { data: bloqueiosExistentes } = await supabaseAdmin
+      .from('feedback_prof_bloqueios')
+      .select('profissional_nome, bloqueado_ate')
+      .eq('salao_id', salaoId)
+    const existentesMap: Record<string, string> = {}
+    for (const b of bloqueiosExistentes || []) existentesMap[b.profissional_nome] = b.bloqueado_ate
+
     const { error } = await supabaseAdmin
       .from('feedback_prof_bloqueios')
       .upsert(upserts, { onConflict: 'salao_id,profissional_nome' })
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    // Grava histórico apenas para bloqueios novos ou com data diferente
+    const historicos = (upserts as any[]).filter(u =>
+      !existentesMap[u.profissional_nome] || existentesMap[u.profissional_nome] !== u.bloqueado_ate
+    ).map(u => ({
+      salao_id: salaoId,
+      profissional_nome: u.profissional_nome,
+      motivo: u.motivo,
+      dias_bloqueio: u.dias_bloqueio,
+      bloqueado_em: todayStr,
+      bloqueado_ate: u.bloqueado_ate,
+    }))
+    if (historicos.length > 0) {
+      await supabaseAdmin.from('feedback_prof_bloqueios_historico').insert(historicos)
+    }
   }
 
   // Remove bloqueios de profissionais que não se qualificam mais com as regras atuais

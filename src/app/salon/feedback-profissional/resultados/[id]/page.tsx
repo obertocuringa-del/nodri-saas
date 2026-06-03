@@ -96,6 +96,15 @@ export default function ResultadosProfPage() {
   const [profEvol, setProfEvol] = useState('')
   const [mesSelecionado, setMesSelecionado] = useState(0)
   const [abaAtiva, setAbaAtiva] = useState<Aba>('profissionais')
+  const [historicoBloqueios, setHistoricoBloqueios] = useState<{
+    ano: number
+    profissionais: {
+      nome: string; total: number; ultimo: string | null
+      meses: Record<string, number>
+      registros: { bloqueado_em: string; bloqueado_ate: string; motivo: string; dias_bloqueio: number; desbloqueado_em: string | null; tipo_desbloqueio: string | null }[]
+    }[]
+  } | null>(null)
+  const [expandidoHistorico, setExpandidoHistorico] = useState<string | null>(null)
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -114,6 +123,13 @@ export default function ResultadosProfPage() {
   }, [id, inicio, fim, filtroProfissional, filtroTipo])
 
   useEffect(() => { fetchData() }, [fetchData])
+
+  useEffect(() => {
+    fetch('/api/feedback-prof/bloqueios/historico')
+      .then(r => r.json())
+      .then(d => { if (d?.profissionais) setHistoricoBloqueios(d) })
+      .catch(() => {})
+  }, [])
 
   async function acionarIA() {
     setIaLoading(true); setIaErro(''); setAbaAtiva('ia')
@@ -346,6 +362,76 @@ export default function ResultadosProfPage() {
                     </div>
                     )
                   })()}
+
+                  {/* Histórico de Bloqueios */}
+                  {historicoBloqueios && historicoBloqueios.profissionais.length > 0 && (
+                    <div className="pcard rounded-2xl border overflow-hidden" style={{ background: '#0d1117', borderColor: 'rgba(239,68,68,.2)' }}>
+                      <div className="px-5 py-3 border-b flex items-center gap-2" style={{ borderColor: 'rgba(239,68,68,.12)', background: 'rgba(239,68,68,.05)' }}>
+                        <span className="text-sm">🔒</span>
+                        <span className="text-[13px] font-semibold text-red-300">Histórico de Bloqueios {historicoBloqueios.ano}</span>
+                        <span className="text-[10px] text-nodri-t3 ml-1">— reincidentes em bloqueio</span>
+                        <span className="ml-auto text-[11px] font-bold text-red-400">{historicoBloqueios.profissionais.length} prof.</span>
+                      </div>
+                      <div className="p-4 space-y-2">
+                        {historicoBloqueios.profissionais.map(p => {
+                          const cor = p.total >= 5 ? '#ef4444' : p.total >= 3 ? '#f97316' : '#facc15'
+                          const aberto = expandidoHistorico === p.nome
+                          return (
+                            <div key={p.nome} className="rounded-xl overflow-hidden" style={{ border: `1px solid ${cor}25`, background: `${cor}06` }}>
+                              <button onClick={() => setExpandidoHistorico(aberto ? null : p.nome)}
+                                className="w-full flex items-center gap-3 p-3 text-left">
+                                <div className="w-8 h-8 rounded-full flex items-center justify-center font-black text-sm shrink-0"
+                                  style={{ background: `${cor}20`, color: cor, border: `1.5px solid ${cor}40` }}>
+                                  {p.nome.charAt(0)}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-bold text-[13px] text-nodri-t1">{p.nome}</span>
+                                    <span className="text-[9px] font-black px-2 py-0.5 rounded-full"
+                                      style={{ background: `${cor}20`, color: cor, border: `1px solid ${cor}40` }}>
+                                      {p.total}x bloqueado{p.total > 1 ? 's' : ''}
+                                    </span>
+                                    {p.total >= 3 && <span className="text-[9px] font-black text-red-400">⚠ REINCIDENTE</span>}
+                                  </div>
+                                  {p.ultimo && (
+                                    <span className="text-[10px] text-nodri-t3">
+                                      Último: {new Date(p.ultimo + 'T12:00:00').toLocaleDateString('pt-BR')}
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="text-nodri-t3 text-[11px] shrink-0">{aberto ? '▲' : '▼'}</span>
+                              </button>
+                              {aberto && (
+                                <div className="px-4 pb-3 space-y-1.5">
+                                  <div className="text-[10px] text-nodri-t3 font-semibold uppercase tracking-wider mb-2">Registros do ano:</div>
+                                  {p.registros.map((r, i) => (
+                                    <div key={i} className="flex items-start gap-3 p-2.5 rounded-lg"
+                                      style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)' }}>
+                                      <div className="shrink-0 text-center">
+                                        <div className="text-[10px] font-bold text-red-400">
+                                          {new Date(r.bloqueado_em + 'T12:00:00').toLocaleDateString('pt-BR')}
+                                        </div>
+                                        <div className="text-[9px] text-nodri-t3">{r.dias_bloqueio}d</div>
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="text-[10px] text-nodri-t2 truncate">{r.motivo || '—'}</div>
+                                        {r.desbloqueado_em && (
+                                          <div className="text-[9px] text-nodri-t3 mt-0.5">
+                                            Liberado: {new Date(r.desbloqueado_em + 'T12:00:00').toLocaleDateString('pt-BR')}
+                                            {r.tipo_desbloqueio === 'manual' ? ' (manual)' : ' (automático)'}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
