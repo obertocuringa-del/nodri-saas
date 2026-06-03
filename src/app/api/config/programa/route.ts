@@ -6,12 +6,20 @@ import { supabaseAdmin } from '@/lib/supabase'
 const CHAVE = 'programa_download'
 
 export async function GET() {
-  const { data } = await supabaseAdmin
+  const { data, error } = await supabaseAdmin
     .from('configuracoes')
     .select('valor')
     .eq('chave', CHAVE)
-    .single()
-  return NextResponse.json(data?.valor || { link: '', link_atualizacao: '', atualizacao_ativa: false })
+    .maybeSingle()
+
+  if (error || !data) {
+    return NextResponse.json({ link: '', link_atualizacao: '', atualizacao_ativa: false })
+  }
+
+  // valor pode ser objeto (jsonb) ou string (text) dependendo da coluna
+  const valor = data.valor
+  const config = typeof valor === 'string' ? JSON.parse(valor) : valor
+  return NextResponse.json(config || { link: '', link_atualizacao: '', atualizacao_ativa: false })
 }
 
 export async function PUT(req: NextRequest) {

@@ -103,7 +103,12 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
   const [configPrograma, setConfigPrograma] = useState<{ link: string; link_atualizacao: string; atualizacao_ativa: boolean } | null>(null)
 
   useEffect(() => {
-    fetch('/api/config/programa').then(r => r.json()).then(setConfigPrograma).catch(() => {})
+    fetch('/api/config/programa')
+      .then(r => r.json())
+      .then(d => {
+        if (d && typeof d === 'object' && !Array.isArray(d)) setConfigPrograma(d)
+      })
+      .catch(() => {})
   }, [])
   const TABS_FIXAS = ['Todos os Módulos', 'Manual do Usuário', 'Dicas Nodri', 'Gestão de Pessoas', 'Gestão Financeira', 'Marketing', 'Feedback de Cliente', 'Feedback Profissional']
   const [menuDinamico, setMenuDinamico] = useState<Record<string, { title: string; url: string }[]>>(MENU_LINKS)
