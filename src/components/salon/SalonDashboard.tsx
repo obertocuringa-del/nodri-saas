@@ -244,7 +244,9 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
       )}
 
       {/* NAVBAR */}
-      <nav className="bg-nodri-surface border-b border-nodri-border px-3 py-2.5 flex items-center gap-2 sticky top-0" style={{ zIndex: 50 }}>
+      <nav className="bg-nodri-surface border-b border-nodri-border px-3 py-2 sticky top-0" style={{ zIndex: 50 }}>
+        {/* Linha 1: logo + menus + perfil */}
+        <div className="flex items-center gap-2">
         <div className="flex items-center gap-2.5 shrink-0">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center font-syne font-black text-sm text-black"
             style={{ background: 'linear-gradient(135deg, #7c5cfc, #f43f8e)' }}>N</div>
@@ -256,8 +258,8 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
 
         <div className="w-px h-5 bg-nodri-border shrink-0" />
 
-        <div ref={dropdownRef} className="flex-1 min-w-0 overflow-x-auto scrollbar-hide">
-          <div className="flex gap-1 w-max">
+        <div ref={dropdownRef} className="flex-1 min-w-0">
+          <div className="flex flex-wrap gap-0.5">
           {TABS.map(tab => (
             <div key={tab} className="relative">
               <button
@@ -338,6 +340,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
             className="w-8 h-8 bg-nodri-card border border-nodri-border rounded-lg flex items-center justify-center text-nodri-t3 hover:text-nodri-red hover:border-nodri-red/30 transition-all" title="Sair">
             <LogOut size={14} />
           </button>
+        </div>
         </div>
       </nav>
 
