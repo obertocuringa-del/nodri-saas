@@ -316,17 +316,25 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
   async function toggleManutencao(modulo: Modulo) {
     setTogglingManutencao(modulo.id)
     const novoEstado = !modulo.em_manutencao
-    const res = await fetch(`/api/modulos/${modulo.id}/manutencao`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ em_manutencao: novoEstado }),
-    })
-    setTogglingManutencao(null)
-    if (res.ok) {
-      setLocalModulos(prev => prev.map(m => m.id === modulo.id ? { ...m, em_manutencao: novoEstado } : m))
-      toast.success(novoEstado ? `🔧 "${modulo.nome}" em manutenção` : `✅ "${modulo.nome}" voltou ao normal`)
-    } else {
-      toast.error('Erro ao alterar manutenção')
+    try {
+      const res = await fetch(`/api/modulos/${modulo.id}/manutencao`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ em_manutencao: novoEstado }),
+      })
+      const data = await res.json()
+      setTogglingManutencao(null)
+      if (res.ok) {
+        // usa o valor real retornado pelo banco
+        const estadoReal = !!data.em_manutencao
+        setLocalModulos(prev => prev.map(m => m.id === modulo.id ? { ...m, em_manutencao: estadoReal } : m))
+        toast.success(!estadoReal ? `✅ "${modulo.nome}" liberado!` : `🔧 "${modulo.nome}" em manutenção`)
+      } else {
+        toast.error(`Erro: ${data.error || 'Falha ao alterar'}`)
+      }
+    } catch (e) {
+      setTogglingManutencao(null)
+      toast.error('Erro de conexão ao alterar manutenção')
     }
   }
 
