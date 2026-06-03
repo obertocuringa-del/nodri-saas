@@ -275,7 +275,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
 
           {/* Logo */}
           <div className="px-4 py-4 border-b border-nodri-border flex items-center gap-2.5">
-            <img src="/logo.ico" alt="NODRI" className="w-8 h-8 rounded-lg object-contain" />
+            <img src="/logo.png" alt="NODRI" className="w-8 h-8 rounded-lg object-contain" />
             <div>
               <div className="font-syne font-bold text-[13px]">NODRI</div>
               <div className="text-[8px] text-nodri-pink tracking-[1.5px] uppercase">Estilo & Beleza</div>
