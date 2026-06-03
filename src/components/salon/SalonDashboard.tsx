@@ -221,18 +221,19 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
   const initials = salaoNome.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
   const TABS = [...TABS_FIXAS, ...tabsExtras]
 
+  const CATEGORIAS_CONTEUDO = TABS_FIXAS.filter(t => t !== 'Todos os Módulos' && t !== 'Feedback de Cliente' && t !== 'Feedback Profissional')
+  const TODAS_CATEGORIAS = [...CATEGORIAS_CONTEUDO, ...tabsExtras]
+
   return (
     <div className="nodri-salon-bg min-h-screen flex flex-col">
 
       {/* FAIXA DE IMPERSONAÇÃO */}
       {impersonandoNome && (
-        <div className="sticky top-0 z-[60] flex items-center justify-between px-4 py-2 text-[12px] font-bold"
+        <div className="flex items-center justify-between px-4 py-2 text-[12px] font-bold z-[60] sticky top-0"
           style={{ background: '#854d0e', color: '#fef3c7', borderBottom: '2px solid #ca8a04' }}>
           <div className="flex items-center gap-2">
             <span>👁️ Você está acessando como cliente:</span>
-            <span className="px-2 py-0.5 rounded font-black" style={{ background: '#ca8a04', color: '#1c1917' }}>
-              {impersonandoNome}
-            </span>
+            <span className="px-2 py-0.5 rounded font-black" style={{ background: '#ca8a04', color: '#1c1917' }}>{impersonandoNome}</span>
             <span style={{ color: '#fde68a', fontWeight: 'normal' }}>— Sessão temporária (2h)</span>
           </div>
           <button onClick={voltarAoAdmin}
@@ -243,169 +244,161 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
         </div>
       )}
 
-      {/* NAVBAR */}
-      <nav className="bg-nodri-surface border-b border-nodri-border px-3 py-2 sticky top-0" style={{ zIndex: 50 }}>
-        {/* Linha 1: logo + menus + perfil */}
-        <div className="flex items-center gap-2">
-        <div className="flex items-center gap-2.5 shrink-0">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center font-syne font-black text-sm text-black"
-            style={{ background: 'linear-gradient(135deg, #7c5cfc, #f43f8e)' }}>N</div>
-          <div>
-            <div className="font-syne font-bold text-sm text-nodri-t1 leading-none">NODRI</div>
-            <div className="text-[8px] text-nodri-pink tracking-[1.5px] uppercase leading-none mt-0.5">Estilo & Beleza</div>
-          </div>
-        </div>
+      {/* LAYOUT PRINCIPAL: SIDEBAR + CONTEÚDO */}
+      <div className="flex flex-1 overflow-hidden">
 
-        <div className="w-px h-5 bg-nodri-border shrink-0" />
+        {/* ── SIDEBAR ── */}
+        <aside ref={dropdownRef} className="w-[210px] min-w-[210px] bg-nodri-surface border-r border-nodri-border flex flex-col overflow-y-auto">
 
-        <div ref={dropdownRef} className="flex-1 min-w-0">
-          <div className="flex flex-wrap gap-0.5">
-          {TABS.map(tab => (
-            <div key={tab} className="relative">
-              <button
-                onClick={() => {
-                  if (tab === 'Feedback de Cliente') { window.location.href = '/salon/feedback'; return }
-                  if (tab === 'Feedback Profissional') { window.location.href = '/salon/feedback-profissional'; return }
-                  setOpenDropdown(openDropdown === tab ? null : tab)
-                }}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-[11px] font-medium whitespace-nowrap transition-all ${
-                  openDropdown === tab
-                    ? 'bg-nodri-surface text-nodri-cyan border border-nodri-cyan/30'
-                    : tab === 'Feedback de Cliente'
-                      ? 'text-nodri-pink hover:bg-nodri-pink/10 border border-nodri-pink/20'
-                      : tab === 'Feedback Profissional'
-                        ? 'text-nodri-purple hover:bg-nodri-purple/10 border border-nodri-purple/20'
-                        : 'text-nodri-t2 hover:text-nodri-t1 hover:bg-nodri-surface/50'
-                }`}>
-                {tab === 'Feedback de Cliente' ? '⭐ ' : tab === 'Feedback Profissional' ? '👥 ' : ''}{tab}
-                {tab !== 'Todos os Módulos' && tab !== 'Feedback de Cliente' && tab !== 'Feedback Profissional' && (
-                  <ChevronDown size={10} className={`transition-transform duration-200 ${openDropdown === tab ? 'rotate-180 text-nodri-cyan' : ''}`} />
-                )}
-              </button>
-
-              {openDropdown === tab && tab !== 'Todos os Módulos' && tab !== 'Feedback de Cliente' && menuDinamico[tab] && (
-                <div style={{ position: 'fixed', zIndex: 9999, marginTop: '4px' }}
-                  className="bg-nodri-card border border-nodri-border rounded-xl shadow-2xl min-w-[300px] max-h-80 overflow-y-auto">
-                  <div className="px-3 py-2 border-b border-nodri-border sticky top-0 bg-nodri-card">
-                    <div className="text-[10px] font-bold text-nodri-cyan uppercase tracking-wider">{tab}</div>
-                  </div>
-                  {menuDinamico[tab].map((item, i) => {
-                    // Gera slug a partir do título para abrir página interna
-                    const slug = item.title.toLowerCase()
-                      .replace(/^\d+\.\s*/, '')
-                      .normalize('NFD').replace(/[̀-ͯ]/g, '')
-                      .replace(/[^a-z0-9\s-]/g, '')
-                      .trim().replace(/\s+/g, '-')
-                    return (
-                      <a key={i} href={`/conteudo/${slug}`}
-                        onClick={() => setOpenDropdown(null)}
-                        className="flex items-center justify-between px-3 py-2.5 hover:bg-nodri-surface transition-colors group border-b border-nodri-border/30 last:border-0">
-                        <span className="text-[11.5px] text-nodri-t2 group-hover:text-nodri-t1 transition-colors">{item.title}</span>
-                        <ArrowRight size={11} className="text-nodri-t3 group-hover:text-nodri-cyan transition-colors shrink-0 ml-3" />
-                      </a>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-          ))}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          <div className="relative hidden md:block">
-            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-nodri-t3" />
-            <input type="text" placeholder="Buscar módulo..." value={busca} onChange={e => setBusca(e.target.value)}
-              className="bg-nodri-card border border-nodri-border rounded-lg pl-7 pr-3 py-1.5 text-[11px] text-nodri-t1 placeholder-nodri-t3 outline-none focus:border-nodri-cyan/40 w-36" />
-          </div>
-          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-nodri-cyan/7 border border-nodri-cyan/17 rounded-lg text-[10.5px] text-nodri-cyan font-semibold">
-            <CheckCircle size={12} />{totalAtivos}/{totalModulos} ativos
-          </div>
-          <button className="relative w-8 h-8 bg-nodri-card border border-nodri-border rounded-lg flex items-center justify-center text-nodri-t2 hover:text-nodri-cyan transition-all">
-            <Bell size={14} />
-            {notificacoes.length > 0 && <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-nodri-red rounded-full" />}
-          </button>
-          <a href="/salon/perfil" className="w-8 h-8 bg-nodri-card border border-nodri-border rounded-lg flex items-center justify-center text-nodri-t2 hover:text-nodri-cyan transition-all" title="Meu Perfil">
-            <Settings size={14} />
-          </a>
-          <div className="flex items-center gap-2 px-2.5 py-1.5 bg-nodri-purple/8 border border-nodri-purple/20 rounded-lg">
-            <div className="w-6 h-6 rounded-md flex items-center justify-center text-[9px] font-bold text-white shrink-0"
-              style={{ background: 'linear-gradient(135deg, #7c5cfc, #f43f8e)' }}>{initials}</div>
-            <div className="hidden sm:block">
-              <div className="text-[11px] font-medium text-nodri-t1 leading-none">{salaoNome}</div>
-              <div className="text-[9px] text-nodri-purple leading-none mt-0.5">{planoLabel}</div>
+          {/* Logo */}
+          <div className="px-4 py-4 border-b border-nodri-border flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center font-syne font-black text-sm text-black"
+              style={{ background: 'linear-gradient(135deg, #7c5cfc, #f43f8e)' }}>N</div>
+            <div>
+              <div className="font-syne font-bold text-[13px]">NODRI</div>
+              <div className="text-[8px] text-nodri-pink tracking-[1.5px] uppercase">Estilo & Beleza</div>
             </div>
           </div>
-          <button onClick={handleLogout}
-            className="w-8 h-8 bg-nodri-card border border-nodri-border rounded-lg flex items-center justify-center text-nodri-t3 hover:text-nodri-red hover:border-nodri-red/30 transition-all" title="Sair">
-            <LogOut size={14} />
-          </button>
-        </div>
-        </div>
-      </nav>
 
-      {/* NOTIFICATION BANNER */}
-      {notificacoes.length > 0 && !notifDismissed && (() => {
-        const notif = notificacoes[notifIndex % notificacoes.length]
-        return (
-          <div className="mx-5 mt-3 rounded-xl overflow-hidden" style={{ boxShadow: '0 4px 32px rgba(99,102,241,0.25)' }}>
-            <div className="px-4 py-3 flex items-center gap-3" style={{ background: '#ffffff' }}>
-              <div className="relative shrink-0">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
-                  <Bell size={18} color="#fff" />
-                </div>
-                <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full border-2" style={{ background: '#ef4444', borderColor: '#fff', animation: 'pulseDot 1.5s ease infinite' }} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span style={{ fontSize: '10px', fontWeight: 800, color: '#6366f1', textTransform: 'uppercase', letterSpacing: '1.5px' }}>Aviso do Sistema</span>
-                  <span style={{ background: '#6366f1', color: '#fff', fontSize: '8px', fontWeight: 700, padding: '2px 7px', borderRadius: '4px', letterSpacing: '0.5px' }}>NOVO</span>
-                  {notificacoes.length > 1 && (
-                    <span style={{ fontSize: '9px', color: '#8b5cf6', marginLeft: '4px', fontWeight: 600 }}>
-                      {(notifIndex % notificacoes.length) + 1}/{notificacoes.length}
-                    </span>
-                  )}
-                  <span style={{ fontSize: '10px', color: '#94a3b8', marginLeft: 'auto' }}>
-                    {new Date(notif.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                </div>
-                <div style={{ fontSize: '13px', fontWeight: 500, color: '#0f172a', lineHeight: 1.45 }}>{notif.mensagem}</div>
-              </div>
-              <div className="flex items-center gap-1.5 shrink-0">
-                {notificacoes.length > 1 && (
-                  <button onClick={() => setNotifIndex(i => i + 1)}
-                    style={{ width: '28px', height: '28px', borderRadius: '6px', border: '1px solid #e2e8f0', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '16px', color: '#6366f1' }}
-                    title="Próxima notificação">›</button>
-                )}
-                <button onClick={() => setNotifDismissed(true)}
-                  style={{ width: '28px', height: '28px', borderRadius: '6px', border: '1px solid #e2e8f0', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                  <X size={13} color="#64748b" />
-                </button>
-              </div>
-            </div>
-            <div style={{ height: '3px', background: 'linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899, #06b6d4, #6366f1)', backgroundSize: '300% 100%', animation: 'shimmer 3s linear infinite' }} />
-          </div>
-        )
-      })()}
+          <nav className="flex-1 p-2 space-y-0.5">
 
-      {/* FILTERS */}
-      <div className="px-5 pt-4 pb-0 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <h1 className="font-syne font-bold text-[13px] text-nodri-t1">Módulos do Sistema</h1>
-          <span className="text-[11px] text-nodri-t2"><span className="text-nodri-cyan font-semibold">{totalAtivos}</span>/{totalModulos} módulos ativados</span>
-        </div>
-        <div className="flex gap-1.5">
-          {(['todos', 'ativos', 'bloqueados'] as const).map(f => (
-            <button key={f} onClick={() => setFiltro(f)}
-              className={`px-3 py-1.5 rounded-md text-[10.5px] capitalize border transition-all ${filtro === f ? 'bg-nodri-cyan/9 border-nodri-cyan/25 text-nodri-cyan' : 'border-nodri-border text-nodri-t2 hover:text-nodri-t1'}`}>
-              {f.charAt(0).toUpperCase() + f.slice(1)}
+            {/* MÓDULOS */}
+            <p className="text-[9px] text-nodri-t3 uppercase tracking-widest px-2.5 py-1.5 font-medium mt-1">Módulos</p>
+            <button onClick={() => setFiltro('todos')}
+              className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11.5px] border transition-all ${filtro === 'todos' && busca === '' ? 'bg-nodri-cyan/9 text-nodri-cyan border-nodri-cyan/17' : 'text-nodri-t2 border-transparent hover:bg-white/4 hover:text-nodri-t1'}`}>
+              ⚡ Todos os Módulos
             </button>
-          ))}
-        </div>
-      </div>
+            <button onClick={() => setFiltro('ativos')}
+              className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11.5px] border transition-all ${filtro === 'ativos' ? 'bg-nodri-cyan/9 text-nodri-cyan border-nodri-cyan/17' : 'text-nodri-t2 border-transparent hover:bg-white/4 hover:text-nodri-t1'}`}>
+              ✅ Ativos
+            </button>
+            <button onClick={() => setFiltro('bloqueados')}
+              className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11.5px] border transition-all ${filtro === 'bloqueados' ? 'bg-nodri-cyan/9 text-nodri-cyan border-nodri-cyan/17' : 'text-nodri-t2 border-transparent hover:bg-white/4 hover:text-nodri-t1'}`}>
+              🔒 Bloqueados
+            </button>
 
-      {/* MODULES GRID */}
-      <div className="flex-1 px-5 py-3 pb-6">
+            {/* CONTEÚDO */}
+            <p className="text-[9px] text-nodri-t3 uppercase tracking-widest px-2.5 py-1.5 font-medium mt-3">Conteúdo</p>
+            {TODAS_CATEGORIAS.map(cat => (
+              <div key={cat}>
+                <button onClick={() => setOpenDropdown(openDropdown === cat ? null : cat)}
+                  className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-[11.5px] border transition-all ${openDropdown === cat ? 'bg-nodri-cyan/9 text-nodri-cyan border-nodri-cyan/17' : 'text-nodri-t2 border-transparent hover:bg-white/4 hover:text-nodri-t1'}`}>
+                  <span className="truncate">{cat}</span>
+                  <ChevronDown size={11} className={`shrink-0 transition-transform ${openDropdown === cat ? 'rotate-180 text-nodri-cyan' : ''}`} />
+                </button>
+                {openDropdown === cat && menuDinamico[cat] && (
+                  <div className="ml-3 mt-0.5 mb-1 space-y-0.5 border-l border-nodri-border pl-2">
+                    {menuDinamico[cat].map((item, i) => {
+                      const slug = item.url?.startsWith('/conteudo/') ? item.url.replace('/conteudo/', '') :
+                        item.title.toLowerCase().replace(/^\d+\.\s*/, '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-')
+                      return (
+                        <a key={i} href={`/conteudo/${slug}`}
+                          className="flex items-center gap-1.5 px-2 py-1.5 rounded text-[10.5px] text-nodri-t3 hover:text-nodri-cyan hover:bg-white/3 transition-all truncate">
+                          <ArrowRight size={9} className="shrink-0" />{item.title.replace(/^\d+\.\s*/, '')}
+                        </a>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {/* FERRAMENTAS */}
+            <p className="text-[9px] text-nodri-t3 uppercase tracking-widest px-2.5 py-1.5 font-medium mt-3">Ferramentas</p>
+            <a href="/salon/feedback"
+              className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11.5px] border border-transparent text-nodri-pink hover:bg-nodri-pink/8 hover:border-nodri-pink/20 transition-all">
+              ⭐ Feedback de Cliente
+            </a>
+            <a href="/salon/feedback-profissional"
+              className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11.5px] border border-transparent text-nodri-purple hover:bg-nodri-purple/8 hover:border-nodri-purple/20 transition-all">
+              👥 Feedback Profissional
+            </a>
+          </nav>
+
+          {/* Rodapé da sidebar */}
+          <div className="p-2 border-t border-nodri-border space-y-1">
+            <div className="flex items-center gap-2 px-2 py-1.5 bg-white/3 rounded-lg border border-nodri-border">
+              <div className="w-6 h-6 rounded-md flex items-center justify-center text-[9px] font-bold text-white shrink-0"
+                style={{ background: 'linear-gradient(135deg, #7c5cfc, #f43f8e)' }}>{initials}</div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[10px] font-medium truncate">{salaoNome}</div>
+                <div className="text-[9px] text-nodri-purple">{planoLabel}</div>
+              </div>
+            </div>
+            <div className="flex gap-1">
+              <button className="relative flex-1 h-7 bg-nodri-card border border-nodri-border rounded-lg flex items-center justify-center text-nodri-t2 hover:text-nodri-cyan transition-all">
+                <Bell size={13} />
+                {notificacoes.length > 0 && <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-nodri-red rounded-full" />}
+              </button>
+              <a href="/salon/perfil" className="flex-1 h-7 bg-nodri-card border border-nodri-border rounded-lg flex items-center justify-center text-nodri-t2 hover:text-nodri-cyan transition-all">
+                <Settings size={13} />
+              </a>
+              <button onClick={handleLogout} title="Sair"
+                className="flex-1 h-7 bg-nodri-card border border-nodri-border rounded-lg flex items-center justify-center text-nodri-t3 hover:text-nodri-red hover:border-nodri-red/30 transition-all">
+                <LogOut size={13} />
+              </button>
+            </div>
+          </div>
+        </aside>
+
+        {/* ── CONTEÚDO PRINCIPAL ── */}
+        <main className="flex-1 overflow-y-auto flex flex-col">
+
+          {/* Barra superior fina */}
+          <div className="px-5 py-2.5 border-b border-nodri-border bg-nodri-surface/50 flex items-center gap-3 sticky top-0 z-10">
+            <div className="flex items-center gap-2 flex-1">
+              <h1 className="font-syne font-bold text-[13px] text-nodri-t1">Módulos do Sistema</h1>
+              <span className="text-[11px] text-nodri-t2"><span className="text-nodri-cyan font-semibold">{totalAtivos}</span>/{totalModulos} ativados</span>
+            </div>
+            <div className="relative">
+              <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-nodri-t3" />
+              <input type="text" placeholder="Buscar módulo..." value={busca} onChange={e => setBusca(e.target.value)}
+                className="bg-nodri-card border border-nodri-border rounded-lg pl-7 pr-3 py-1.5 text-[11px] outline-none focus:border-nodri-cyan/40 w-40" />
+            </div>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-nodri-cyan/7 border border-nodri-cyan/17 rounded-lg text-[10.5px] text-nodri-cyan font-semibold">
+              <CheckCircle size={12} />{totalAtivos}/{totalModulos} ativos
+            </div>
+          </div>
+
+          {/* NOTIFICATION BANNER */}
+          {notificacoes.length > 0 && !notifDismissed && (() => {
+            const notif = notificacoes[notifIndex % notificacoes.length]
+            return (
+              <div className="mx-5 mt-3 rounded-xl overflow-hidden" style={{ boxShadow: '0 4px 32px rgba(99,102,241,0.25)' }}>
+                <div className="px-4 py-3 flex items-center gap-3" style={{ background: '#ffffff' }}>
+                  <div className="relative shrink-0">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+                      <Bell size={18} color="#fff" />
+                    </div>
+                    <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full border-2" style={{ background: '#ef4444', borderColor: '#fff', animation: 'pulseDot 1.5s ease infinite' }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span style={{ fontSize: '10px', fontWeight: 800, color: '#6366f1', textTransform: 'uppercase', letterSpacing: '1.5px' }}>Aviso do Sistema</span>
+                      <span style={{ background: '#6366f1', color: '#fff', fontSize: '8px', fontWeight: 700, padding: '2px 7px', borderRadius: '4px' }}>NOVO</span>
+                      {notificacoes.length > 1 && <span style={{ fontSize: '9px', color: '#8b5cf6', fontWeight: 600 }}>{(notifIndex % notificacoes.length) + 1}/{notificacoes.length}</span>}
+                      <span style={{ fontSize: '10px', color: '#94a3b8', marginLeft: 'auto' }}>{new Date(notif.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                    <div style={{ fontSize: '13px', fontWeight: 500, color: '#0f172a', lineHeight: 1.45 }}>{notif.mensagem}</div>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {notificacoes.length > 1 && (
+                      <button onClick={() => setNotifIndex(i => i + 1)}
+                        style={{ width: '28px', height: '28px', borderRadius: '6px', border: '1px solid #e2e8f0', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '16px', color: '#6366f1' }}>›</button>
+                    )}
+                    <button onClick={() => setNotifDismissed(true)}
+                      style={{ width: '28px', height: '28px', borderRadius: '6px', border: '1px solid #e2e8f0', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                      <X size={13} color="#64748b" />
+                    </button>
+                  </div>
+                </div>
+                <div style={{ height: '3px', background: 'linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899, #06b6d4, #6366f1)', backgroundSize: '300% 100%', animation: 'shimmer 3s linear infinite' }} />
+              </div>
+            )
+          })()}
+
+          {/* MODULES GRID */}
+          <div className="flex-1 px-5 py-4 pb-6">
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
           {modulosFiltrados.map(modulo => {
             const emManutencao = !!modulo.em_manutencao
@@ -492,12 +485,14 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
             )
           })}
         </div>
-        {modulosFiltrados.length === 0 && (
-          <div className="text-center py-16" style={{ color: '#475569' }}>
-            <div className="text-4xl mb-3">🔍</div>
-            <p className="text-sm">Nenhum módulo encontrado</p>
+          {modulosFiltrados.length === 0 && (
+            <div className="text-center py-16" style={{ color: '#475569' }}>
+              <div className="text-4xl mb-3">🔍</div>
+              <p className="text-sm">Nenhum módulo encontrado</p>
+            </div>
+          )}
           </div>
-        )}
+        </main>
       </div>
     </div>
   )
