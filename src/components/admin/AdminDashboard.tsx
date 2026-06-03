@@ -943,8 +943,25 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
             <div className="space-y-4">
               {/* Manutenção de Módulos */}
               <div className="nodri-card p-4">
-                <div className="font-syne font-bold text-[13px] text-nodri-cyan mb-1 flex items-center gap-2">
-                  <Puzzle size={14} /> 🔧 Manutenção de Módulos
+                <div className="flex items-center justify-between mb-1">
+                  <div className="font-syne font-bold text-[13px] text-nodri-cyan flex items-center gap-2">
+                    <Puzzle size={14} /> 🔧 Manutenção de Módulos
+                  </div>
+                  {localModulos.some(m => m.em_manutencao) && (
+                    <button onClick={async () => {
+                      for (const m of localModulos.filter(x => x.em_manutencao)) {
+                        await fetch(`/api/modulos/${m.id}/manutencao`, {
+                          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ em_manutencao: false }),
+                        })
+                      }
+                      setLocalModulos(prev => prev.map(m => ({ ...m, em_manutencao: false })))
+                      toast.success('✅ Manutenção encerrada em todos os módulos!')
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-nodri-green/10 border border-nodri-green/30 text-nodri-green text-[11px] font-bold rounded-lg hover:bg-nodri-green/20 transition-all">
+                      ✅ Encerrar Todos
+                    </button>
+                  )}
                 </div>
                 <p className="text-[11px] text-nodri-t3 mb-4">Ative o modo manutenção para bloquear temporariamente um módulo para todos os salões</p>
                 <div className="grid grid-cols-4 gap-3">

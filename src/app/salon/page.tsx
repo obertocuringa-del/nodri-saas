@@ -4,6 +4,8 @@ import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 import SalonDashboard from '@/components/salon/SalonDashboard'
 
+export const dynamic = 'force-dynamic'
+
 export default async function SalonPage() {
   const cookieStore = cookies()
   const token = cookieStore.get('nodri_token')?.value
