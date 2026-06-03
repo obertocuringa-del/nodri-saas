@@ -3,6 +3,23 @@ import { cookies } from 'next/headers'
 import { verifyJWT, hashPassword } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 
+export async function GET() {
+  const token = cookies().get('nodri_token')?.value
+  const payload = token ? await verifyJWT(token) : null
+  if (!payload || payload.role !== 'salon' || !payload.salaoId) {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from('saloes')
+    .select('nome, responsavel, email, telefone')
+    .eq('id', payload.salaoId)
+    .single()
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json(data)
+}
+
 export async function PUT(req: NextRequest) {
   const token = cookies().get('nodri_token')?.value
   const payload = token ? await verifyJWT(token) : null
