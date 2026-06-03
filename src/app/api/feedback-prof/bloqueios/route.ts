@@ -70,28 +70,33 @@ export async function GET() {
     bloqueioMap[b.profissional_nome] = b
   }
 
-  // 3. Busca respostas negativas de ATRASO/FALTA no mês atual (inclui semana)
+  // 3. Busca TODAS as respostas negativas do mês atual (inclui semana)
   const { data: respostas } = await supabaseAdmin
     .from('feedback_prof_respostas')
     .select('profissional_nome, ocorrido_descricao, criado_em')
     .eq('salao_id', salaoId)
     .eq('tipo', 'negativo')
-    .in('ocorrido_descricao', ['ATRASO', 'FALTA'])
     .gte('criado_em', mesInicio.toISOString())
     .lte('criado_em', mesFim.toISOString())
 
-  // 4. Conta atrasos da semana e faltas do mês por profissional
-  const contagem: Record<string, { atrasos: string[]; faltas: string[] }> = {}
+  // 4. Conta atrasos da semana, faltas do mês e outras ocorrências do mês
+  const contagem: Record<string, { atrasos: string[]; faltas: string[]; outras: Record<string, string[]> }> = {}
   for (const prof of profissionais) {
-    contagem[prof.nome] = { atrasos: [], faltas: [] }
+    contagem[prof.nome] = { atrasos: [], faltas: [], outras: {} }
   }
   for (const r of respostas || []) {
     if (!contagem[r.profissional_nome]) continue
     const data = new Date(r.criado_em)
-    if (r.ocorrido_descricao === 'ATRASO' && data >= monday && data <= sunday) {
+    const desc = (r.ocorrido_descricao || '').toUpperCase()
+    if (desc === 'ATRASO' && data >= monday && data <= sunday) {
       contagem[r.profissional_nome].atrasos.push(formatDate(data))
-    } else if (r.ocorrido_descricao === 'FALTA') {
+    } else if (desc === 'FALTA') {
       contagem[r.profissional_nome].faltas.push(formatDate(data))
+    } else if (desc) {
+      if (!contagem[r.profissional_nome].outras[r.ocorrido_descricao]) {
+        contagem[r.profissional_nome].outras[r.ocorrido_descricao] = []
+      }
+      contagem[r.profissional_nome].outras[r.ocorrido_descricao].push(formatDate(data))
     }
   }
 
@@ -163,6 +168,8 @@ export async function GET() {
       dias_restantes = Math.ceil((fim.getTime() - today.getTime()) / 86400000)
     }
 
+    const outras_ocorrencias = Object.entries(c.outras).map(([descricao, datas]) => ({ descricao, quantidade: datas.length, datas }))
+
     return {
       nome: prof.nome,
       ativo: prof.ativo,
@@ -170,6 +177,7 @@ export async function GET() {
       faltas_mes: c.faltas.length,
       datas_atrasos: bloqueadoAtivo ? b.datas_atrasos : c.atrasos,
       datas_faltas: bloqueadoAtivo ? b.datas_faltas : c.faltas,
+      outras_ocorrencias,
       bloqueado: !!bloqueadoAtivo,
       dias_bloqueio: bloqueadoAtivo ? b.dias_bloqueio : 0,
       dias_restantes,

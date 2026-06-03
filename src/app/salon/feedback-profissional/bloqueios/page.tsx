@@ -11,6 +11,7 @@ interface ProfBloqueio {
   faltas_mes: number
   datas_atrasos: string[]
   datas_faltas: string[]
+  outras_ocorrencias: { descricao: string; quantidade: number; datas: string[] }[]
   bloqueado: boolean
   dias_bloqueio: number
   dias_restantes: number
@@ -326,7 +327,7 @@ export default function BloqueiosPage() {
               <div className="p-4">
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {disponiveis.map(p => {
-                    const temOcorrencia = p.atrasos_semana > 0 || p.faltas_mes > 0
+                    const temOcorrencia = p.atrasos_semana > 0 || p.faltas_mes > 0 || (p.outras_ocorrencias?.length > 0)
                     return (
                     <div key={p.nome} className="rounded-xl p-3 flex flex-col gap-1.5"
                       style={{ background: temOcorrencia ? 'rgba(250,204,21,.04)' : 'rgba(34,197,94,.05)', border: `1px solid ${temOcorrencia ? 'rgba(250,204,21,.2)' : 'rgba(34,197,94,.15)'}` }}>
@@ -354,6 +355,12 @@ export default function BloqueiosPage() {
                               ❌ {p.faltas_mes} falta{p.faltas_mes > 1 ? 's' : ''}
                             </span>
                           )}
+                          {p.outras_ocorrencias?.map(o => (
+                            <span key={o.descricao} className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                              style={{ background: 'rgba(139,92,246,.12)', color: '#c4b5fd', border: '1px solid rgba(139,92,246,.25)' }}>
+                              ⚠️ {o.quantidade}x {o.descricao}
+                            </span>
+                          ))}
                         </div>
                       )}
                     </div>
