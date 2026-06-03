@@ -327,7 +327,11 @@ export default function BloqueiosPage() {
               <div className="p-4">
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {disponiveis.map(p => {
-                    const temOcorrencia = p.atrasos_semana > 0 || p.faltas_mes > 0 || (p.outras_ocorrencias?.length > 0)
+                    // só mostra ocorrências custom se tiver regra criada para aquele tipo
+                    const ocorRegrasCriadas = (p.outras_ocorrencias || []).filter(o =>
+                      regrasCustom.some(rc => rc.ativo && rc.ocorrencia.toUpperCase() === o.descricao.toUpperCase())
+                    )
+                    const temOcorrencia = p.atrasos_semana > 0 || p.faltas_mes > 0 || ocorRegrasCriadas.length > 0
                     return (
                     <div key={p.nome} className="rounded-xl p-3 flex flex-col gap-1.5"
                       style={{ background: temOcorrencia ? 'rgba(250,204,21,.04)' : 'rgba(34,197,94,.05)', border: `1px solid ${temOcorrencia ? 'rgba(250,204,21,.2)' : 'rgba(34,197,94,.15)'}` }}>
@@ -342,23 +346,23 @@ export default function BloqueiosPage() {
                           : <span className="text-green-400 shrink-0 text-sm">✓</span>}
                       </div>
                       {temOcorrencia && (
-                        <div className="flex flex-wrap gap-1.5 pl-9">
+                        <div className="flex flex-col gap-1 pl-9">
                           {p.atrasos_semana > 0 && (
-                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full w-fit"
                               style={{ background: 'rgba(250,204,21,.12)', color: '#facc15', border: '1px solid rgba(250,204,21,.25)' }}>
-                              ⏰ {p.atrasos_semana} atraso{p.atrasos_semana > 1 ? 's' : ''}
+                              ⏰ {p.atrasos_semana} atraso{p.atrasos_semana > 1 ? 's' : ''}: {p.datas_atrasos.join(', ')}
                             </span>
                           )}
                           {p.faltas_mes > 0 && (
-                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full w-fit"
                               style={{ background: 'rgba(239,68,68,.12)', color: '#f87171', border: '1px solid rgba(239,68,68,.25)' }}>
-                              ❌ {p.faltas_mes} falta{p.faltas_mes > 1 ? 's' : ''}
+                              ❌ {p.faltas_mes} falta{p.faltas_mes > 1 ? 's' : ''}: {p.datas_faltas.join(', ')}
                             </span>
                           )}
-                          {p.outras_ocorrencias?.map(o => (
-                            <span key={o.descricao} className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                          {ocorRegrasCriadas.map(o => (
+                            <span key={o.descricao} className="text-[10px] font-bold px-1.5 py-0.5 rounded-full w-fit"
                               style={{ background: 'rgba(139,92,246,.12)', color: '#c4b5fd', border: '1px solid rgba(139,92,246,.25)' }}>
-                              ⚠️ {o.quantidade}x {o.descricao}
+                              ⚠️ {o.quantidade}x {o.descricao}: {o.datas.join(', ')}
                             </span>
                           ))}
                         </div>
