@@ -297,7 +297,7 @@ export default function ProfissionaisPage() {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
                   {profFiltrados.map(p => (
                     <div key={p.id} style={{ background: '#0d1117', border: '1px solid #1e293b', borderRadius: '12px', padding: '16px', transition: 'border-color 0.2s, box-shadow 0.2s', cursor: 'pointer' }}
-                      onClick={() => router.push(`/salon/profissionais/${p.id}`)}
+                      onClick={() => { try { sessionStorage.setItem('nodri_prof_' + p.id, JSON.stringify(p)) } catch(_){} router.push(`/salon/profissionais/${p.id}`) }}
                       onMouseEnter={e => { e.currentTarget.style.borderColor = '#7c5cfc80'; e.currentTarget.style.boxShadow = '0 0 0 2px #7c5cfc20' }}
                       onMouseLeave={e => { e.currentTarget.style.borderColor = '#1e293b'; e.currentTarget.style.boxShadow = 'none' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>

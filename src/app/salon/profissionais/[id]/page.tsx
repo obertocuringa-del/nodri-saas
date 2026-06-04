@@ -110,9 +110,22 @@ export default function PerfilProfissionalPage() {
   const [loadMet, setLoadMet] = useState(false)
 
   useEffect(() => {
+    // Tenta usar cache do sessionStorage primeiro (evita depender do GET da API)
+    try {
+      const cached = sessionStorage.getItem('nodri_prof_' + id)
+      if (cached) {
+        const d = JSON.parse(cached)
+        setProf(d); setForm(d); setLoading(false)
+        return
+      }
+    } catch(_) {}
+    // Fallback: chama API
     fetch(`/api/profissionais/${id}`)
       .then(r => r.json())
-      .then(d => { setProf(d); setForm(d); setLoading(false) })
+      .then(d => {
+        if (d && d.id) { setProf(d); setForm(d) }
+        setLoading(false)
+      })
       .catch(() => setLoading(false))
   }, [id])
 
