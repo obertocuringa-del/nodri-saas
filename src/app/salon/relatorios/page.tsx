@@ -12,6 +12,37 @@ interface ItemProduto { ano: number; mes: number; produto: string; quantidade: n
 interface ProfPag { ano: number; mes: number; profissional: string; categoria: string; valor_a_pagar: number }
 interface MetaRow { ano: number; mes: number; meta_faturamento: number; meta_clientes: number; meta_ticket: number; alcancado_faturamento: number; alcancado_clientes: number; alcancado_ticket: number }
 interface Feedback { ano: number; mes: number; profissional: string; tipo: string; oque_houve: string; comentario: string; data: string }
+interface ProfCadastrado { id: string; nome_completo: string; apelido?: string; cargo?: string }
+
+// ─── RESOLVER NOME/APELIDO ──────────────────────────────────────────────────
+// Normaliza string: maiúsculo, sem acento, sem espaço extra
+function norm(s: string): string {
+  return (s || '').toUpperCase().trim()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/\s+/g, ' ')
+}
+
+// Resolve qualquer variação de nome/apelido para o nome_completo oficial
+// Ex: "VERA" → "Vera Oliveira" | "VERA OLIVEIRA" → "Vera Oliveira" | "BELA" → "Kimberly Rodrigues Silva"
+function resolverNome(nome: string, profs: ProfCadastrado[]): string {
+  if (!nome || !profs.length) return nome
+  const n = norm(nome)
+  for (const p of profs) {
+    const nomeN = norm(p.nome_completo)
+    const apelidoN = norm(p.apelido || '')
+    // Correspondência exata com nome completo ou apelido
+    if (n === nomeN || (apelidoN && n === apelidoN)) return p.nome_completo
+    // Nome do Excel contém o apelido (ex: "VERA OLIVEIRA" contém "VERA")
+    if (apelidoN && n.includes(apelidoN) && apelidoN.length >= 3) return p.nome_completo
+    // Apelido contém o nome do Excel
+    if (apelidoN && apelidoN.includes(n) && n.length >= 3) return p.nome_completo
+    // Nome completo começa com o que veio do Excel
+    if (nomeN.startsWith(n) && n.length >= 4) return p.nome_completo
+    // O que veio do Excel começa com o nome completo
+    if (n.startsWith(nomeN) && nomeN.length >= 4) return p.nome_completo
+  }
+  return nome // sem correspondência — retorna original
+}
 
 interface DadosBase {
   resumo_mensal: ResumoMensal[]
@@ -199,6 +230,7 @@ function TabelaComp({ title, items, label1, label2 }: { title: string; items: It
 // ─── COMPONENTE PRINCIPAL ────────────────────────────────────────────────────
 export default function RelatoriosPage() {
   const [dados, setDados] = useState<DadosBase | null>(null)
+  const [profsCadastrados, setProfsCadastrados] = useState<ProfCadastrado[]>([])
   const [aba, setAba] = useState<'geral' | 'metas' | 'profissionais' | 'feedbacks'>('geral')
   const [loading, setLoading] = useState(false)
   const [showImport, setShowImport] = useState(false)
@@ -235,10 +267,19 @@ export default function RelatoriosPage() {
           aplicarPeriodoMaisRecente(d)
         }
 
-        // 2. Busca do Supabase (fonte de verdade)
-        const res = await fetch('/api/relatorios')
-        if (res.ok) {
-          const d = await res.json() as DadosBase
+        // 2. Busca do Supabase (fonte de verdade) — paralelo
+        const [resRel, resProfs] = await Promise.all([
+          fetch('/api/relatorios'),
+          fetch('/api/profissionais'),
+        ])
+
+        if (resProfs.ok) {
+          const profs = await resProfs.json()
+          if (Array.isArray(profs)) setProfsCadastrados(profs)
+        }
+
+        if (resRel.ok) {
+          const d = await resRel.json() as DadosBase
           if (d.resumo_mensal?.length) {
             setDados(d)
             localStorage.setItem(STORAGE_KEY, JSON.stringify(d))
@@ -874,31 +915,45 @@ export default function RelatoriosPage() {
             )}
 
             {/* ════════ ABA PROFISSIONAIS ════════ */}
-            {aba === 'profissionais' && (
-              <div>
-                {dados.prof_pagamentos.filter(p => p.ano * 100 + p.mes >= +de1.slice(0, 4) * 100 + +de1.slice(5, 7) && p.ano * 100 + p.mes <= +ate1.slice(0, 4) * 100 + +ate1.slice(5, 7))
-                  .sort((a, b) => b.valor_a_pagar - a.valor_a_pagar)
-                  .map((p, i) => (
+            {aba === 'profissionais' && (() => {
+              // Agrupa por nome oficial (resolve nome/apelido → mesmo profissional)
+              const profMap = new Map<string, { nome: string; categoria: string; valor: number }>()
+              dados.prof_pagamentos
+                .filter(p => { const v = p.ano * 100 + p.mes; return v >= +de1.slice(0,4)*100 + +de1.slice(5,7) && v <= +ate1.slice(0,4)*100 + +ate1.slice(5,7) })
+                .forEach(p => {
+                  const nomeOficial = resolverNome(p.profissional, profsCadastrados)
+                  const ex = profMap.get(nomeOficial)
+                  if (ex) ex.valor += p.valor_a_pagar
+                  else profMap.set(nomeOficial, { nome: nomeOficial, categoria: p.categoria, valor: p.valor_a_pagar })
+                })
+              const lista = Array.from(profMap.values()).sort((a, b) => b.valor - a.valor)
+              return (
+                <div>
+                  {lista.map((p, i) => (
                     <div key={i} style={{ background: '#0a0f1a', border: '1px solid #1e293b', borderRadius: 10, padding: '12px 16px', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'linear-gradient(135deg, #7c5cfc, #f43f8e)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 13, flexShrink: 0 }}>{(p.profissional[0] || '?').toUpperCase()}</div>
+                      <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'linear-gradient(135deg, #7c5cfc, #f43f8e)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 13, flexShrink: 0 }}>{(p.nome[0] || '?').toUpperCase()}</div>
                       <div style={{ flex: 1 }}>
-                        <div style={{ color: '#e2e8f0', fontWeight: 600, fontSize: 13 }}>{p.profissional}</div>
+                        <div style={{ color: '#e2e8f0', fontWeight: 600, fontSize: 13 }}>{p.nome}</div>
                         <div style={{ color: '#475569', fontSize: 11 }}>{p.categoria}</div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <div style={{ color: '#10b981', fontWeight: 800, fontSize: 15 }}>{moeda(p.valor_a_pagar)}</div>
+                        <div style={{ color: '#10b981', fontWeight: 800, fontSize: 15 }}>{moeda(p.valor)}</div>
                         <div style={{ color: '#475569', fontSize: 10 }}>a pagar</div>
                       </div>
                     </div>
                   ))}
-              </div>
-            )}
+                </div>
+              )
+            })()}
 
             {/* ════════ ABA FEEDBACKS ════════ */}
             {aba === 'feedbacks' && (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 {[['POSITIVO', '#10b981'], ['NEGATIVO', '#ef4444']].map(([tipo, cor]) => {
-                  const items = dados.feedbacks.filter(f => f.tipo?.toUpperCase() === tipo)
+                  // Resolve nome/apelido nos feedbacks
+                  const items = dados.feedbacks
+                    .filter(f => f.tipo?.toUpperCase() === tipo)
+                    .map(f => ({ ...f, profissional: resolverNome(f.profissional, profsCadastrados) }))
                   return (
                     <div key={tipo}>
                       <h3 style={{ color: cor, fontSize: 14, fontWeight: 700, marginBottom: 12 }}>{tipo === 'POSITIVO' ? '✅' : '❌'} {tipo} ({items.length})</h3>
