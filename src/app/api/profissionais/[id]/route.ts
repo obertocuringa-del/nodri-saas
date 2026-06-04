@@ -11,6 +11,21 @@ async function getSalaoId() {
   return payload.salaoId
 }
 
+export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+  const salaoId = await getSalaoId()
+  if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+
+  const { data, error } = await supabaseAdmin
+    .from('profissionais')
+    .select('*')
+    .eq('id', params.id)
+    .eq('salao_id', salaoId)
+    .single()
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 404 })
+  return NextResponse.json(data)
+}
+
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   const salaoId = await getSalaoId()
   if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
