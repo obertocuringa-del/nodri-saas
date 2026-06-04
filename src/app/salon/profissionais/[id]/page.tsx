@@ -803,7 +803,7 @@ export default function PerfilProfissionalPage() {
                     <MetCard label="💰 Faturamento"      atual={p2?.faturamento||0}              anterior={p1?.faturamento||0}              fmt="m"/>
                     <MetCard label="🎟️ Ticket Médio"     atual={p2?.ticket_medio||0}             anterior={p1?.ticket_medio||0}             fmt="m"/>
                     <MetCard label="⭐ Preferência"      atual={p2?.clientes_preferencia||0}     anterior={p1?.clientes_preferencia||0}/>
-                    <MetCard label="🚫 Sem Pref."        atual={p2?.clientes_sem_preferencia||0} anterior={p1?.clientes_sem_preferencia||0} inverso/>
+                    <MetCard label="🚫 Sem Pref."        atual={p2?.clientes_sem_preferencia||0} anterior={p1?.clientes_sem_preferencia||0}/>
                     <MetCard label="📆 Dias Trabalhados" atual={p2?.dias_trabalhados||0}         anterior={p1?.dias_trabalhados||0}/>
                     <MetCard label="⏳ Ocupação"         atual={p2?.taxa_ocupacao||0}            anterior={p1?.taxa_ocupacao||0}            fmt="p"/>
                     <MetCard label="✂️ Serviços"         atual={p2?.total_servicos||0}           anterior={p1?.total_servicos||0}/>
