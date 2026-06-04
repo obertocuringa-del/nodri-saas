@@ -39,9 +39,14 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json()
 
+  // Converte campos vazios para null (evita erro de tipo no banco)
+  const cleaned = Object.fromEntries(
+    Object.entries(body).map(([k, v]) => [k, v === '' ? null : v])
+  )
+
   const { data, error } = await supabaseAdmin
     .from('profissionais')
-    .insert({ ...body, salao_id: salaoId })
+    .insert({ ...cleaned, salao_id: salaoId })
     .select()
     .single()
 

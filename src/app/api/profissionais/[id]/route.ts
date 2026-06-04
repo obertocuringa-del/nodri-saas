@@ -16,9 +16,13 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   const body = await req.json()
+  // Converte campos vazios para null
+  const cleaned = Object.fromEntries(
+    Object.entries(body).map(([k, v]) => [k, v === '' ? null : v])
+  )
   const { data, error } = await supabaseAdmin
     .from('profissionais')
-    .update({ ...body, atualizado_em: new Date().toISOString() })
+    .update({ ...cleaned, atualizado_em: new Date().toISOString() })
     .eq('id', params.id)
     .eq('salao_id', salaoId)
     .select()
