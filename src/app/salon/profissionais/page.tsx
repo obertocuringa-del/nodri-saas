@@ -1,0 +1,414 @@
+'use client'
+
+import { useState, useEffect, useRef } from 'react'
+import { ArrowLeft, Plus, Search, UserCheck, UserX, Edit2, Trash2, Upload, X, ChevronRight, Users, FileText, Briefcase, Clock, Award, BookOpen, FileSignature, AlertCircle, TrendingUp, Building2 } from 'lucide-react'
+import toast from 'react-hot-toast'
+
+interface Profissional {
+  id: string
+  nome_completo: string
+  apelido?: string
+  email?: string
+  cpf?: string
+  rg?: string
+  cnpj?: string
+  cargo?: string
+  habilidades?: string
+  endereco?: string
+  data_aniversario?: string
+  foto_url?: string
+  cor_favorita?: string
+  comida_favorita?: string
+  animal_favorito?: string
+  hobbies?: string
+  um_sonho?: string
+  contato_responsavel?: string
+  certificados?: string
+  ativo: boolean
+  criado_em: string
+}
+
+const SIDEBAR_ITEMS = [
+  { id: 'cadastrar',    label: 'Cadastrar Profissional',          icon: Plus,           cor: '#7c5cfc', destaque: true },
+  { id: 'lista',        label: 'Lista de Profissionais',          icon: Users,          cor: '#06b6d4' },
+  { id: 'abertura',     label: 'Abertura de Conta Bancária',      icon: Building2,      cor: '#10b981' },
+  { id: 'cnpj',         label: 'CNPJ',                            icon: FileText,       cor: '#f59e0b' },
+  { id: 'entrevista',   label: 'Ficha para Entrevista',           icon: Briefcase,      cor: '#3b82f6' },
+  { id: 'contratacao',  label: 'Processo de Contratação',         icon: FileSignature,  cor: '#8b5cf6' },
+  { id: 'materiais',    label: 'Materiais para Trabalho',         icon: BookOpen,       cor: '#ec4899' },
+  { id: 'perfil',       label: 'Perfil Ideal de Profissional',    icon: UserCheck,      cor: '#14b8a6' },
+  { id: 'horarios',     label: 'Horários e Folgas',               icon: Clock,          cor: '#f97316' },
+  { id: 'distrato',     label: 'Distrato',                        icon: AlertCircle,    cor: '#ef4444' },
+  { id: 'contrato',     label: 'Contrato de Trabalho',            icon: FileText,       cor: '#6366f1' },
+  { id: 'certificados', label: 'Certificados',                    icon: Award,          cor: '#d946ef' },
+  { id: 'carreira',     label: 'Plano de Carreira',               icon: TrendingUp,     cor: '#22c55e' },
+]
+
+const CONTEUDO_INFO: Record<string, { titulo: string; texto: string }> = {
+  abertura:     { titulo: 'Abertura de Conta Bancária', texto: 'Oriente o profissional a abrir uma conta PJ no banco de sua preferência. Documentos necessários: RG, CPF, comprovante de residência e CNPJ (se MEI). Bancos recomendados: Nubank PJ, Inter PJ, Caixa, Bradesco.' },
+  cnpj:         { titulo: 'CNPJ — Microempreendedor Individual', texto: 'Para trabalhar como MEI no salão, o profissional deve ter CNPJ ativo. Acesse gov.br/mei para abrir gratuitamente. O CNPJ MEI permite faturar até R$ 81.000/ano com menos impostos. Guarde o certificado e alvará de funcionamento.' },
+  entrevista:   { titulo: 'Ficha para Entrevista', texto: 'Utilize o cadastro de profissional abaixo como guia de entrevista. Avalie: habilidades técnicas, apresentação pessoal, disponibilidade de horários, experiência anterior e referências. Faça perguntas sobre metas e sonhos profissionais.' },
+  contratacao:  { titulo: 'Processo de Contratação', texto: 'Etapas: 1. Entrevista inicial → 2. Período de teste (7 dias) → 3. Avaliação técnica → 4. Negociação de comissão → 5. Assinatura de contrato → 6. Cadastro no sistema → 7. Integração com a equipe.' },
+  materiais:    { titulo: 'Materiais para Trabalho', texto: 'Lista de materiais que o salão fornece e o que é responsabilidade do profissional. Geralmente o salão fornece: espaço, lavatório, secador base. O profissional traz: tesouras, pentes, produtos específicos de sua linha.' },
+  perfil:       { titulo: 'Perfil Ideal de Profissional', texto: 'Buscamos profissionais: ✅ Pontuais e comprometidos ✅ Com cartela de clientes ✅ Que valorizam higiene e organização ✅ Comunicativos e empáticos ✅ Com CNPJ ativo ✅ Abertos a feedback e treinamento contínuo.' },
+  horarios:     { titulo: 'Horários e Folgas', texto: 'Defina junto ao profissional: dias de trabalho por semana, horário de entrada e saída, dias fixos de folga, política de ausências e como comunicar faltas. Tudo deve estar no contrato assinado.' },
+  distrato:     { titulo: 'Distrato', texto: 'O distrato é o documento que encerra a parceria de forma amigável. Deve conter: data de encerramento, acerto de comissões pendentes, devolução de materiais, cláusula de não-concorrência se aplicável, e assinatura de ambas as partes.' },
+  contrato:     { titulo: 'Contrato de Trabalho', texto: 'O contrato de locação de espaço ou parceria deve conter: identificação das partes (salão e profissional), CNPJ de ambos, percentual de comissão, dias e horários de trabalho, responsabilidades, vigência e cláusulas de rescisão.' },
+  certificados: { titulo: 'Certificados', texto: 'Solicite cópias dos certificados de cursos concluídos: colorimetria, corte, escova, tratamentos capilares, manicure, podologia, etc. Guarde digitalmente na ficha do profissional. Incentive atualização constante.' },
+  carreira:     { titulo: 'Plano de Carreira', texto: 'Estruture crescimento por etapas: 🥉 Júnior (0-1 ano) → 🥈 Pleno (1-3 anos) → 🥇 Sênior (3+ anos) → 🏆 Referência. Defina metas de faturamento, satisfação de clientes e horas de capacitação para evolução em cada nível.' },
+}
+
+const FORM_INITIAL = {
+  nome_completo: '', apelido: '', email: '', cpf: '', rg: '', cnpj: '', cargo: '',
+  habilidades: '', endereco: '', data_aniversario: '', cor_favorita: '', comida_favorita: '',
+  animal_favorito: '', hobbies: '', um_sonho: '', contato_responsavel: '', certificados: '', foto_url: '',
+}
+
+export default function ProfissionaisPage() {
+  const [secao, setSecao] = useState('lista')
+  const [profissionais, setProfissionais] = useState<Profissional[]>([])
+  const [loading, setLoading] = useState(true)
+  const [busca, setBusca] = useState('')
+  const [form, setForm] = useState({ ...FORM_INITIAL })
+  const [editando, setEditando] = useState<Profissional | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [fotoPreview, setFotoPreview] = useState<string>('')
+  const [uploadingFoto, setUploadingFoto] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => { carregarProfissionais() }, [])
+
+  async function carregarProfissionais() {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/profissionais')
+      if (res.ok) setProfissionais(await res.json())
+    } catch { } finally { setLoading(false) }
+  }
+
+  async function handleUploadFoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setFotoPreview(URL.createObjectURL(file))
+    setUploadingFoto(true)
+    try {
+      const fd = new FormData()
+      fd.append('foto', file)
+      const res = await fetch('/api/profissionais/upload-foto', { method: 'POST', body: fd })
+      if (res.ok) {
+        const { url } = await res.json()
+        setForm(f => ({ ...f, foto_url: url }))
+        toast.success('Foto enviada!')
+      } else toast.error('Erro ao enviar foto')
+    } finally { setUploadingFoto(false) }
+  }
+
+  async function salvar(e: React.FormEvent) {
+    e.preventDefault()
+    if (!form.nome_completo.trim()) { toast.error('Nome completo é obrigatório'); return }
+    setSaving(true)
+    try {
+      const url = editando ? `/api/profissionais/${editando.id}` : '/api/profissionais'
+      const method = editando ? 'PUT' : 'POST'
+      const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
+      if (res.ok) {
+        toast.success(editando ? 'Profissional atualizado!' : 'Profissional cadastrado!')
+        setForm({ ...FORM_INITIAL })
+        setEditando(null)
+        setFotoPreview('')
+        setSecao('lista')
+        carregarProfissionais()
+      } else {
+        const err = await res.json()
+        toast.error(err.error || 'Erro ao salvar')
+      }
+    } finally { setSaving(false) }
+  }
+
+  async function excluir(id: string, nome: string) {
+    if (!confirm(`Excluir ${nome}?`)) return
+    const res = await fetch(`/api/profissionais/${id}`, { method: 'DELETE' })
+    if (res.ok) { toast.success('Excluído!'); carregarProfissionais() }
+    else toast.error('Erro ao excluir')
+  }
+
+  function iniciarEdicao(p: Profissional) {
+    setEditando(p)
+    setForm({
+      nome_completo: p.nome_completo || '', apelido: p.apelido || '', email: p.email || '',
+      cpf: p.cpf || '', rg: p.rg || '', cnpj: p.cnpj || '', cargo: p.cargo || '',
+      habilidades: p.habilidades || '', endereco: p.endereco || '',
+      data_aniversario: p.data_aniversario?.split('T')[0] || '',
+      cor_favorita: p.cor_favorita || '', comida_favorita: p.comida_favorita || '',
+      animal_favorito: p.animal_favorito || '', hobbies: p.hobbies || '',
+      um_sonho: p.um_sonho || '', contato_responsavel: p.contato_responsavel || '',
+      certificados: p.certificados || '', foto_url: p.foto_url || '',
+    })
+    setFotoPreview(p.foto_url || '')
+    setSecao('cadastrar')
+  }
+
+  const profFiltrados = profissionais.filter(p =>
+    p.nome_completo.toLowerCase().includes(busca.toLowerCase()) ||
+    (p.cargo || '').toLowerCase().includes(busca.toLowerCase())
+  )
+
+  const F = (label: string, key: keyof typeof FORM_INITIAL, opts?: { type?: string; placeholder?: string; full?: boolean }) => (
+    <div className={opts?.full ? 'col-span-2' : ''}>
+      <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '4px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</label>
+      <input
+        type={opts?.type || 'text'}
+        placeholder={opts?.placeholder || label}
+        value={form[key]}
+        onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+        style={{ width: '100%', background: '#0d1117', border: '1px solid #1e293b', borderRadius: '8px', padding: '9px 12px', fontSize: '13px', color: '#e2e8f0', outline: 'none' }}
+        onFocus={e => e.target.style.borderColor = '#7c5cfc'}
+        onBlur={e => e.target.style.borderColor = '#1e293b'}
+      />
+    </div>
+  )
+
+  const TA = (label: string, key: keyof typeof FORM_INITIAL, rows = 3) => (
+    <div className="col-span-2">
+      <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '4px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</label>
+      <textarea
+        rows={rows}
+        placeholder={label}
+        value={form[key]}
+        onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+        style={{ width: '100%', background: '#0d1117', border: '1px solid #1e293b', borderRadius: '8px', padding: '9px 12px', fontSize: '13px', color: '#e2e8f0', outline: 'none', resize: 'vertical' }}
+        onFocus={e => e.target.style.borderColor = '#7c5cfc'}
+        onBlur={e => e.target.style.borderColor = '#1e293b'}
+      />
+    </div>
+  )
+
+  return (
+    <div style={{ minHeight: '100vh', background: '#000', display: 'flex', flexDirection: 'column' }}>
+
+      {/* TOP BAR */}
+      <div style={{ background: '#0d1117', borderBottom: '1px solid #1e293b', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: '12px', position: 'sticky', top: 0, zIndex: 10 }}>
+        <a href="/salon" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', textDecoration: 'none', fontSize: '13px' }}>
+          <ArrowLeft size={15} /> Voltar
+        </a>
+        <span style={{ color: '#1e293b' }}>|</span>
+        <span style={{ color: '#e2e8f0', fontWeight: 700, fontSize: '14px' }}>👥 Profissionais</span>
+      </div>
+
+      <div style={{ display: 'flex', flex: 1 }}>
+
+        {/* SIDEBAR */}
+        <aside style={{ width: '230px', minWidth: '230px', background: '#0d1117', borderRight: '1px solid #1e293b', padding: '12px 8px', overflowY: 'auto' }}>
+          {SIDEBAR_ITEMS.map(item => {
+            const Icon = item.icon
+            const ativo = secao === item.id
+            return (
+              <button key={item.id} onClick={() => { setSecao(item.id); if (item.id === 'cadastrar') { setEditando(null); setForm({ ...FORM_INITIAL }); setFotoPreview('') } }}
+                style={{
+                  width: '100%', display: 'flex', alignItems: 'center', gap: '9px',
+                  padding: '9px 10px', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                  marginBottom: '2px', textAlign: 'left', transition: 'all 0.15s',
+                  background: ativo ? `${item.cor}18` : item.destaque ? `${item.cor}10` : 'transparent',
+                  borderLeft: ativo ? `3px solid ${item.cor}` : item.destaque ? `3px solid ${item.cor}60` : '3px solid transparent',
+                  color: ativo ? item.cor : item.destaque ? item.cor + 'cc' : '#64748b',
+                  fontWeight: item.destaque ? 700 : ativo ? 600 : 400,
+                  fontSize: '12px',
+                }}>
+                <Icon size={14} style={{ flexShrink: 0 }} />
+                <span style={{ flex: 1, lineHeight: 1.3 }}>{item.label}</span>
+                {ativo && <ChevronRight size={12} />}
+              </button>
+            )
+          })}
+        </aside>
+
+        {/* CONTEÚDO PRINCIPAL */}
+        <main style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
+
+          {/* ── LISTA ── */}
+          {secao === 'lista' && (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+                <div>
+                  <h2 style={{ color: '#e2e8f0', fontSize: '20px', fontWeight: 700, margin: 0 }}>Lista de Profissionais</h2>
+                  <p style={{ color: '#64748b', fontSize: '13px', margin: '4px 0 0' }}>{profissionais.filter(p => p.ativo).length} ativos</p>
+                </div>
+                <button onClick={() => { setSecao('cadastrar'); setEditando(null); setForm({ ...FORM_INITIAL }) }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'linear-gradient(135deg, #7c5cfc, #f43f8e)', color: 'white', border: 'none', borderRadius: '8px', padding: '9px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
+                  <Plus size={15} /> Cadastrar
+                </button>
+              </div>
+
+              <div style={{ position: 'relative', marginBottom: '16px' }}>
+                <Search size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#475569' }} />
+                <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar profissional..."
+                  style={{ width: '100%', background: '#0d1117', border: '1px solid #1e293b', borderRadius: '8px', padding: '9px 12px 9px 36px', fontSize: '13px', color: '#e2e8f0', outline: 'none' }} />
+              </div>
+
+              {loading ? (
+                <div style={{ textAlign: 'center', color: '#475569', padding: '60px' }}>Carregando...</div>
+              ) : profFiltrados.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '60px', color: '#475569' }}>
+                  <Users size={40} style={{ margin: '0 auto 12px', opacity: 0.3, display: 'block' }} />
+                  <p style={{ margin: 0 }}>Nenhum profissional encontrado.</p>
+                  <button onClick={() => setSecao('cadastrar')}
+                    style={{ marginTop: '12px', background: 'linear-gradient(135deg, #7c5cfc, #f43f8e)', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: '13px', cursor: 'pointer' }}>
+                    Cadastrar primeiro
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
+                  {profFiltrados.map(p => (
+                    <div key={p.id} style={{ background: '#0d1117', border: '1px solid #1e293b', borderRadius: '12px', padding: '16px', transition: 'border-color 0.2s' }}
+                      onMouseEnter={e => (e.currentTarget.style.borderColor = '#7c5cfc40')}
+                      onMouseLeave={e => (e.currentTarget.style.borderColor = '#1e293b')}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                        {p.foto_url ? (
+                          <img src={p.foto_url} alt={p.nome_completo} style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #7c5cfc40' }} />
+                        ) : (
+                          <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'linear-gradient(135deg, #7c5cfc, #f43f8e)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: '16px' }}>
+                            {p.nome_completo[0].toUpperCase()}
+                          </div>
+                        )}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ color: '#e2e8f0', fontWeight: 600, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.nome_completo}</div>
+                          <div style={{ color: '#7c5cfc', fontSize: '11px', marginTop: '2px' }}>{p.cargo || 'Profissional'}</div>
+                        </div>
+                        <span style={{ fontSize: '9px', padding: '3px 7px', borderRadius: '20px', background: p.ativo ? '#10b98120' : '#ef444420', color: p.ativo ? '#10b981' : '#ef4444', fontWeight: 700, border: `1px solid ${p.ativo ? '#10b98140' : '#ef444440'}` }}>
+                          {p.ativo ? 'ATIVO' : 'INATIVO'}
+                        </span>
+                      </div>
+                      {p.habilidades && <p style={{ color: '#475569', fontSize: '11px', margin: '0 0 12px', lineHeight: 1.5 }}>{p.habilidades.slice(0, 80)}{p.habilidades.length > 80 ? '...' : ''}</p>}
+                      {p.email && <p style={{ color: '#475569', fontSize: '11px', margin: '0 0 12px' }}>📧 {p.email}</p>}
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <button onClick={() => iniciarEdicao(p)}
+                          style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', background: '#1e293b', border: '1px solid #334155', borderRadius: '6px', padding: '6px', color: '#94a3b8', fontSize: '11px', cursor: 'pointer' }}>
+                          <Edit2 size={12} /> Editar
+                        </button>
+                        <button onClick={() => excluir(p.id, p.nome_completo)}
+                          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1e293b', border: '1px solid #334155', borderRadius: '6px', padding: '6px 8px', color: '#ef4444', cursor: 'pointer' }}>
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── FORMULÁRIO DE CADASTRO ── */}
+          {secao === 'cadastrar' && (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+                <button onClick={() => { setSecao('lista'); setEditando(null); setForm({ ...FORM_INITIAL }); setFotoPreview('') }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '13px' }}>
+                  <ArrowLeft size={14} /> Voltar
+                </button>
+                <h2 style={{ color: '#e2e8f0', fontSize: '18px', fontWeight: 700, margin: 0 }}>
+                  {editando ? `✏️ Editando: ${editando.nome_completo}` : '➕ Cadastrar Profissional'}
+                </h2>
+              </div>
+
+              <form onSubmit={salvar}>
+                {/* FOTO */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '24px', padding: '20px', background: '#0d1117', borderRadius: '12px', border: '1px solid #1e293b' }}>
+                  <div onClick={() => fileRef.current?.click()} style={{ width: '80px', height: '80px', borderRadius: '50%', border: '2px dashed #7c5cfc60', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', flexShrink: 0, position: 'relative' }}>
+                    {fotoPreview ? <img src={fotoPreview} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="preview" /> : <Upload size={24} color="#7c5cfc80" />}
+                    {uploadingFoto && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '10px' }}>...</div>}
+                  </div>
+                  <div>
+                    <p style={{ color: '#e2e8f0', fontWeight: 600, fontSize: '14px', margin: '0 0 4px' }}>Foto de Rosto</p>
+                    <p style={{ color: '#64748b', fontSize: '12px', margin: '0 0 8px' }}>JPG ou PNG, máximo 2MB</p>
+                    <button type="button" onClick={() => fileRef.current?.click()}
+                      style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '6px', padding: '6px 12px', color: '#94a3b8', fontSize: '12px', cursor: 'pointer' }}>
+                      {fotoPreview ? 'Trocar foto' : 'Selecionar foto'}
+                    </button>
+                  </div>
+                  <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleUploadFoto} />
+                </div>
+
+                {/* DADOS PESSOAIS */}
+                <div style={{ background: '#0d1117', borderRadius: '12px', border: '1px solid #1e293b', padding: '20px', marginBottom: '16px' }}>
+                  <h3 style={{ color: '#7c5cfc', fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>👤 Dados Pessoais</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    {F('Nome Completo *', 'nome_completo', { full: true })}
+                    {F('Apelido', 'apelido')}
+                    {F('E-mail', 'email', { type: 'email' })}
+                    {F('Data de Aniversário', 'data_aniversario', { type: 'date' })}
+                    {F('CPF', 'cpf', { placeholder: '000.000.000-00' })}
+                    {F('RG', 'rg')}
+                    {F('CNPJ (MEI)', 'cnpj', { placeholder: '00.000.000/0001-00' })}
+                    {F('Cargo', 'cargo', { placeholder: 'Ex: Cabeleireiro, Manicure...' })}
+                    {F('Endereço', 'endereco', { full: true })}
+                  </div>
+                </div>
+
+                {/* DADOS PROFISSIONAIS */}
+                <div style={{ background: '#0d1117', borderRadius: '12px', border: '1px solid #1e293b', padding: '20px', marginBottom: '16px' }}>
+                  <h3 style={{ color: '#06b6d4', fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 16px' }}>💼 Dados Profissionais</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    {TA('Habilidades (serviços que consegue fazer)', 'habilidades', 3)}
+                    {TA('Certificados de Curso', 'certificados', 3)}
+                    <div style={{ padding: '12px', background: '#060a12', borderRadius: '8px', border: '1px solid #1e293b' }}>
+                      <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '4px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Nome e Telefone do Responsável / Parente</label>
+                      <input value={form.contato_responsavel} onChange={e => setForm(f => ({ ...f, contato_responsavel: e.target.value }))}
+                        placeholder="Nome, (00) 00000-0000"
+                        style={{ width: '100%', background: '#0d1117', border: '1px solid #1e293b', borderRadius: '6px', padding: '8px 10px', fontSize: '13px', color: '#e2e8f0', outline: 'none' }} />
+                    </div>
+                    <div />
+                  </div>
+                </div>
+
+                {/* PERSONALIDADE */}
+                <div style={{ background: '#0d1117', borderRadius: '12px', border: '1px solid #1e293b', padding: '20px', marginBottom: '24px' }}>
+                  <h3 style={{ color: '#f43f8e', fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 16px' }}>✨ Personalidade</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    {F('Cor Favorita', 'cor_favorita')}
+                    {F('Comida Favorita', 'comida_favorita')}
+                    {F('Animal Favorito', 'animal_favorito')}
+                    <div />
+                    {TA('Hobbies e Paixões', 'hobbies', 2)}
+                    {TA('Um Sonho', 'um_sonho', 2)}
+                  </div>
+                </div>
+
+                {/* BOTÕES */}
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button type="submit" disabled={saving}
+                    style={{ flex: 1, background: 'linear-gradient(135deg, #7c5cfc, #f43f8e)', color: 'white', border: 'none', borderRadius: '10px', padding: '13px', fontSize: '14px', fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1 }}>
+                    {saving ? 'Salvando...' : editando ? '💾 Atualizar Profissional' : '✅ Cadastrar Profissional'}
+                  </button>
+                  <button type="button" onClick={() => { setSecao('lista'); setEditando(null); setForm({ ...FORM_INITIAL }); setFotoPreview('') }}
+                    style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '10px', padding: '13px 20px', color: '#94a3b8', fontSize: '14px', cursor: 'pointer' }}>
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* ── SEÇÕES DE CONTEÚDO INFORMATIVO ── */}
+          {CONTEUDO_INFO[secao] && (
+            <div>
+              <div style={{ background: '#0d1117', border: '1px solid #1e293b', borderRadius: '16px', padding: '32px', maxWidth: '700px' }}>
+                <h2 style={{ color: '#e2e8f0', fontSize: '22px', fontWeight: 700, margin: '0 0 20px' }}>
+                  {SIDEBAR_ITEMS.find(s => s.id === secao)?.label}
+                </h2>
+                <p style={{ color: '#94a3b8', fontSize: '15px', lineHeight: '1.8', whiteSpace: 'pre-line', margin: 0 }}>
+                  {CONTEUDO_INFO[secao].texto}
+                </p>
+                <div style={{ marginTop: '24px', padding: '16px', background: '#060a12', borderRadius: '10px', border: '1px solid #1e293b' }}>
+                  <p style={{ color: '#64748b', fontSize: '12px', margin: 0 }}>
+                    💡 <strong style={{ color: '#94a3b8' }}>Dica:</strong> Para personalizar este conteúdo com as informações do seu salão, entre em contato com o suporte Nodri.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+        </main>
+      </div>
+    </div>
+  )
+}
