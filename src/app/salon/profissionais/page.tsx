@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { ArrowLeft, Plus, Search, UserCheck, UserX, Edit2, Trash2, Upload, X, ChevronRight, Users, FileText, Briefcase, Clock, Award, BookOpen, FileSignature, AlertCircle, TrendingUp, Building2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -66,6 +67,7 @@ const FORM_INITIAL = {
 }
 
 export default function ProfissionaisPage() {
+  const router = useRouter()
   const [secao, setSecao] = useState('lista')
   const [profissionais, setProfissionais] = useState<Profissional[]>([])
   const [loading, setLoading] = useState(true)
@@ -294,9 +296,10 @@ export default function ProfissionaisPage() {
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
                   {profFiltrados.map(p => (
-                    <div key={p.id} style={{ background: '#0d1117', border: '1px solid #1e293b', borderRadius: '12px', padding: '16px', transition: 'border-color 0.2s' }}
-                      onMouseEnter={e => (e.currentTarget.style.borderColor = '#7c5cfc40')}
-                      onMouseLeave={e => (e.currentTarget.style.borderColor = '#1e293b')}>
+                    <div key={p.id} style={{ background: '#0d1117', border: '1px solid #1e293b', borderRadius: '12px', padding: '16px', transition: 'border-color 0.2s, box-shadow 0.2s', cursor: 'pointer' }}
+                      onClick={() => router.push(`/salon/profissionais/${p.id}`)}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = '#7c5cfc80'; e.currentTarget.style.boxShadow = '0 0 0 2px #7c5cfc20' }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = '#1e293b'; e.currentTarget.style.boxShadow = 'none' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
                         {p.foto_url ? (
                           <img src={p.foto_url} alt={p.nome_completo} style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #7c5cfc40' }} />
@@ -315,8 +318,8 @@ export default function ProfissionaisPage() {
                       </div>
                       {p.habilidades && <p style={{ color: '#475569', fontSize: '11px', margin: '0 0 12px', lineHeight: 1.5 }}>{p.habilidades.slice(0, 80)}{p.habilidades.length > 80 ? '...' : ''}</p>}
                       {p.email && <p style={{ color: '#475569', fontSize: '11px', margin: '0 0 12px' }}>📧 {p.email}</p>}
-                      <div style={{ display: 'flex', gap: '6px' }}>
-                        <button onClick={() => iniciarEdicao(p)}
+                      <div style={{ display: 'flex', gap: '6px' }} onClick={e => e.stopPropagation()}>
+                        <button onClick={() => router.push(`/salon/profissionais/${p.id}`)}
                           style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', background: '#1e293b', border: '1px solid #334155', borderRadius: '6px', padding: '6px', color: '#94a3b8', fontSize: '11px', cursor: 'pointer' }}>
                           <Edit2 size={12} /> Editar
                         </button>
