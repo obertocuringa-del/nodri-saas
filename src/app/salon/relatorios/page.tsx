@@ -269,11 +269,14 @@ export default function RelatoriosPage() {
   const top10Cresc = [...compSrv, ...compPrd].filter(i => i.p2 > 0).sort((a, b) => b.pct - a.pct).slice(0, 10)
   const top10Queda = [...compSrv, ...compPrd].filter(i => i.p2 > 0).sort((a, b) => a.pct - b.pct).slice(0, 10)
 
-  // Metas
+  // ── METAS — usa p2 (período anterior) como base ──
   const fatDiario = dados ? dados.faturamento_diario.filter(r => {
-    const ym = `${r.ano}-${String(r.mes).padStart(2, '0')}`
-    return ym === periodoAuto1
+    const v = r.ano * 100 + r.mes
+    const [dY, dM] = (de2 || '2000-01').split('-').map(Number)
+    const [aY, aM] = (ate2 || '2000-01').split('-').map(Number)
+    return v >= dY * 100 + dM && v <= aY * 100 + aM
   }) : []
+
   const realizado = r1.fat_total
   const metaTotal = (() => {
     if (metaSalva > 0) return metaSalva
@@ -284,8 +287,65 @@ export default function RelatoriosPage() {
   const superMeta = metaTotal * 1.05
   const restante = Math.max(metaTotal - realizado, 0)
 
-  const diasUnicosOrdenados = Array.from(new Set(fatDiario.map(d => d.data))).sort()
-  const diasTotais = diasUnicosOrdenados.length
+  // Gera TODOS os dias do período p2 (incluindo fechados)
+  const DIAS_PT = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado']
+  const todosDiasP2 = (() => {
+    if (!de2 || !ate2) return [] as Array<{ data: string; diaSemana: string; valor: number; existeNaDados: boolean }>
+    // Monta map pelo campo data (pode vir como dd/mm/yyyy ou yyyy-mm-dd)
+    const dataMap = new Map<string, number>()
+    fatDiario.forEach(d => {
+      let key = d.data
+      if (key && key.includes('-') && key.length === 10) {
+        const [y, m, dd] = key.split('-')
+        key = `${dd}/${m}/${y}`
+      }
+      if (key) dataMap.set(key, d.valor)
+    })
+    const result: Array<{ data: string; diaSemana: string; valor: number; existeNaDados: boolean }> = []
+    const start = new Date(de2 + 'T12:00:00')
+    const end   = new Date(ate2 + 'T12:00:00')
+    const cur   = new Date(start)
+    while (cur <= end) {
+      const dd   = String(cur.getDate()).padStart(2, '0')
+      const mm   = String(cur.getMonth() + 1).padStart(2, '0')
+      const yyyy = String(cur.getFullYear())
+      const key  = `${dd}/${mm}/${yyyy}`
+      const diaSemana = DIAS_PT[cur.getDay()]
+      const valor = dataMap.get(key) ?? 0
+      result.push({ data: key, diaSemana, valor, existeNaDados: dataMap.has(key) })
+      cur.setDate(cur.getDate() + 1)
+    }
+    return result
+  })()
+
+  // Pesos por dia da semana (baseado no histórico p2)
+  const totalFatP2 = fatDiario.reduce((s, d) => s + d.valor, 0)
+  const pesoDiaSemana = new Map<string, number>()
+  fatDiario.forEach(d => {
+    let key = d.data
+    if (key && key.includes('-') && key.length === 10) {
+      const [y, m, dd] = key.split('-')
+      key = `${dd}/${m}/${y}`
+    }
+    if (!key) return
+    const [dd, mm, yyyy] = key.split('/')
+    const dt = new Date(`${yyyy}-${mm}-${dd}T12:00:00`)
+    const ds = DIAS_PT[dt.getDay()]
+    pesoDiaSemana.set(ds, (pesoDiaSemana.get(ds) || 0) + d.valor)
+  })
+
+  // META por dia = peso_dia/total_peso * metaTotal (apenas para dias futuros; passados = 0)
+  const hoje = new Date()
+  const getMetaDia = (dataStr: string, diaSemana: string, valor: number) => {
+    if (!metaTotal || !totalFatP2) return 0
+    const [dd, mm, yyyy] = dataStr.split('/')
+    const dt = new Date(`${yyyy}-${mm}-${dd}T12:00:00`)
+    if (dt <= hoje || valor > 0) return 0 // dia passado ou já realizado
+    const peso = pesoDiaSemana.get(diaSemana) || 0
+    return (peso / totalFatP2) * metaTotal
+  }
+
+  const diasTotais = todosDiasP2.length
 
   // Labels dos períodos
   const label1 = modo === 'auto'
@@ -617,34 +677,53 @@ export default function RelatoriosPage() {
                       </table>
                     </div>
 
-                    {/* Calendário de faturamento diário */}
-                    {fatDiario.length > 0 && (
+                    {/* Calendário completo — período anterior (p2) com todas as colunas */}
+                    {todosDiasP2.length > 0 && (
                       <div style={{ background: '#0a0f1a', border: '1px solid #1e293b', borderRadius: 12, padding: 20 }}>
-                        <h3 style={{ color: '#e2e8f0', fontSize: 14, fontWeight: 700, margin: '0 0 16px' }}>📅 Faturamento Diário</h3>
+                        <h3 style={{ color: '#e2e8f0', fontSize: 14, fontWeight: 700, margin: '0 0 4px' }}>📅 FATURAMENTO DIÁRIO E METAS — {label2.toUpperCase()}</h3>
+                        <p style={{ color: '#475569', fontSize: 11, margin: '0 0 16px' }}>Período anterior completo. META e SUPER META calculadas por peso do dia da semana.</p>
                         <div style={{ overflowX: 'auto' }}>
-                          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 700 }}>
                             <thead>
                               <tr style={{ background: '#060d18' }}>
-                                {['Data', 'Dia', 'Realizado', 'Status'].map(h => (
-                                  <th key={h} style={{ padding: '8px 12px', textAlign: h === 'Realizado' ? 'right' : 'left', color: '#64748b', fontWeight: 600, fontSize: 11, borderBottom: '1px solid #1e293b' }}>{h}</th>
+                                {[
+                                  { lbl: 'Data',             align: 'left'  },
+                                  { lbl: 'Dia da Semana',    align: 'left'  },
+                                  { lbl: 'Necessidade Base', align: 'right' },
+                                  { lbl: 'Status',           align: 'center'},
+                                  { lbl: 'Realizado',        align: 'right' },
+                                  { lbl: 'META',             align: 'right' },
+                                  { lbl: 'SUPER META',       align: 'right' },
+                                ].map(h => (
+                                  <th key={h.lbl} style={{ padding: '9px 12px', textAlign: h.align as any, color: '#64748b', fontWeight: 700, fontSize: 11, borderBottom: '2px solid #1e293b', whiteSpace: 'nowrap' }}>{h.lbl}</th>
                                 ))}
                               </tr>
                             </thead>
                             <tbody>
-                              {fatDiario.sort((a, b) => a.data.localeCompare(b.data)).map((d, i) => {
-                                const status = d.valor > 0 ? (d.valor >= metaTotal / diasTotais ? '🟢' : '🟡') : '🔴'
+                              {todosDiasP2.map((d, i) => {
+                                const metaDia    = getMetaDia(d.data, d.diaSemana, d.valor)
+                                const superMetaDia = metaDia * 1.05
+                                const realiz     = d.valor > 0
+                                const status     = realiz ? '💰 REALIZADO' : '❌ NÃO REALIZADO'
+                                const statusCor  = realiz ? '#10b981'     : '#ef4444'
                                 return (
-                                  <tr key={i} style={{ borderBottom: '1px solid #0d1520', background: i % 2 === 0 ? 'transparent' : '#060d1810' }}>
-                                    <td style={{ padding: '8px 12px', color: '#94a3b8' }}>{d.data}</td>
-                                    <td style={{ padding: '8px 12px', color: '#64748b' }}>{d.dia_semana}</td>
-                                    <td style={{ padding: '8px 12px', textAlign: 'right', color: d.valor > 0 ? '#10b981' : '#334155', fontWeight: 700 }}>{d.valor > 0 ? moeda(d.valor) : '—'}</td>
-                                    <td style={{ padding: '8px 12px' }}>{status}</td>
+                                  <tr key={i} style={{ borderBottom: '1px solid #0d1520', background: i % 2 === 0 ? 'transparent' : '#060d1808' }}>
+                                    <td style={{ padding: '8px 12px', color: '#94a3b8', whiteSpace: 'nowrap' }}>{d.data}</td>
+                                    <td style={{ padding: '8px 12px', color: '#64748b',  whiteSpace: 'nowrap' }}>{d.diaSemana}</td>
+                                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#334155' }}>{moeda(0)}</td>
+                                    <td style={{ padding: '8px 12px', textAlign: 'center', color: statusCor, fontWeight: 600, fontSize: 11, whiteSpace: 'nowrap' }}>{status}</td>
+                                    <td style={{ padding: '8px 12px', textAlign: 'right', color: realiz ? '#10b981' : '#334155', fontWeight: 700 }}>{realiz ? moeda(d.valor) : moeda(0)}</td>
+                                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#475569' }}>{moeda(metaDia)}</td>
+                                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#475569' }}>{moeda(superMetaDia)}</td>
                                   </tr>
                                 )
                               })}
                             </tbody>
                           </table>
                         </div>
+                        <p style={{ color: '#334155', fontSize: 11, marginTop: 12, padding: '10px 0 0', borderTop: '1px solid #1e293b' }}>
+                          📝 <strong style={{ color: '#475569' }}>Nota:</strong> As metas diárias são calculadas respeitando o peso de cada dia da semana com base no histórico do período anterior. A SUPER META é calculada automaticamente como 5% acima da META.
+                        </p>
                       </div>
                     )}
                   </>
