@@ -83,14 +83,22 @@ function filtrarProdutos(dados: ItemProduto[], de: string, ate: string): ItemPro
 }
 
 function somarResumo(rows: ResumoMensal[]): ResumoPeriodo {
-  return rows.reduce((acc, r) => ({
+  const base = rows.reduce((acc, r) => ({
     fat_total: acc.fat_total + r.faturamento_total,
-    ticket: rows.length > 0 ? rows.reduce((s, x) => s + x.ticket_medio, 0) / rows.length : 0,
+    ticket: acc.ticket + r.ticket_medio,
     clientes: acc.clientes + r.clientes_atendidos,
     novos: acc.novos + r.clientes_novos,
     fat_srv: acc.fat_srv + r.faturamento_servicos,
     fat_prd: acc.fat_prd + r.faturamento_produtos,
   }), { fat_total: 0, ticket: 0, clientes: 0, novos: 0, fat_srv: 0, fat_prd: 0 })
+  // CORREÇÃO 4: Faturamento Serviços = Total − Produtos (igual ao Python: fat_servicos = fat_geral - fat_produtos)
+  const fat_prd_final = base.fat_prd
+  const fat_srv_final = base.fat_srv > 0 ? base.fat_srv : base.fat_total - fat_prd_final
+  return {
+    ...base,
+    ticket: rows.length > 0 ? base.ticket / rows.length : 0,
+    fat_srv: fat_srv_final,
+  }
 }
 
 function agruparItens(rows: { nome: string; qtd: number }[]): Map<string, number> {
@@ -284,21 +292,28 @@ export default function RelatoriosPage() {
     return parseFloat(metaValor.replace(',', '.')) || 0
   })()
   const progresso = metaTotal > 0 ? Math.min((realizado / metaTotal) * 100, 100) : 0
-  const superMeta = metaTotal * 1.05
+  // CORREÇÃO 1: Python usa × 1.3 (30% acima da meta), não 1.05
+  const superMeta = metaTotal * 1.3
   const restante = Math.max(metaTotal - realizado, 0)
 
   // Gera TODOS os dias do período p2 (incluindo fechados)
   const DIAS_PT = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado']
+
+  // Helper: normaliza data para dd/mm/yyyy
+  const normalizarData = (data: string): string => {
+    if (!data) return ''
+    if (data.includes('-') && data.length === 10) {
+      const [y, m, d] = data.split('-')
+      return `${d}/${m}/${y}`
+    }
+    return data
+  }
+
   const todosDiasP2 = (() => {
     if (!de2 || !ate2) return [] as Array<{ data: string; diaSemana: string; valor: number; existeNaDados: boolean }>
-    // Monta map pelo campo data (pode vir como dd/mm/yyyy ou yyyy-mm-dd)
     const dataMap = new Map<string, number>()
     fatDiario.forEach(d => {
-      let key = d.data
-      if (key && key.includes('-') && key.length === 10) {
-        const [y, m, dd] = key.split('-')
-        key = `${dd}/${m}/${y}`
-      }
+      const key = normalizarData(d.data)
       if (key) dataMap.set(key, d.valor)
     })
     const result: Array<{ data: string; diaSemana: string; valor: number; existeNaDados: boolean }> = []
@@ -318,31 +333,59 @@ export default function RelatoriosPage() {
     return result
   })()
 
-  // Pesos por dia da semana (baseado no histórico p2)
-  const totalFatP2 = fatDiario.reduce((s, d) => s + d.valor, 0)
-  const pesoDiaSemana = new Map<string, number>()
+  // CORREÇÃO 2: Peso por dia da semana usa MÉDIA (igual ao Python: np.mean(valores) / total)
+  // Agrupa valores por dia da semana
+  const valoresPorDiaSemana = new Map<string, number[]>()
   fatDiario.forEach(d => {
-    let key = d.data
-    if (key && key.includes('-') && key.length === 10) {
-      const [y, m, dd] = key.split('-')
-      key = `${dd}/${m}/${y}`
-    }
+    const key = normalizarData(d.data)
     if (!key) return
     const [dd, mm, yyyy] = key.split('/')
     const dt = new Date(`${yyyy}-${mm}-${dd}T12:00:00`)
     const ds = DIAS_PT[dt.getDay()]
-    pesoDiaSemana.set(ds, (pesoDiaSemana.get(ds) || 0) + d.valor)
+    const lista = valoresPorDiaSemana.get(ds) || []
+    lista.push(d.valor)
+    valoresPorDiaSemana.set(ds, lista)
   })
 
-  // META por dia = peso_dia/total_peso * metaTotal (apenas para dias futuros; passados = 0)
+  const totalFatP2 = fatDiario.reduce((s, d) => s + d.valor, 0)
+
+  // média do dia da semana / total_geral  (exatamente como Python)
+  const pesoPorDiaSemana = new Map<string, number>()
+  valoresPorDiaSemana.forEach((valores, ds) => {
+    const media = valores.reduce((s, v) => s + v, 0) / valores.length
+    pesoPorDiaSemana.set(ds, totalFatP2 > 0 ? media / totalFatP2 : 1 / 7)
+  })
+
+  // Calcula META para dias FUTUROS distribuindo o valor restante proporcionalmente
+  // (mesmo algoritmo do Python calcular_metas_periodo_atual)
   const hoje = new Date()
-  const getMetaDia = (dataStr: string, diaSemana: string, valor: number) => {
+  hoje.setHours(23, 59, 59, 0)
+
+  const getMetaDia = (dataStr: string, diaSemana: string, valor: number): number => {
     if (!metaTotal || !totalFatP2) return 0
     const [dd, mm, yyyy] = dataStr.split('/')
     const dt = new Date(`${yyyy}-${mm}-${dd}T12:00:00`)
-    if (dt <= hoje || valor > 0) return 0 // dia passado ou já realizado
-    const peso = pesoDiaSemana.get(diaSemana) || 0
-    return (peso / totalFatP2) * metaTotal
+    if (dt <= hoje) return 0  // dia passado — sem necessidade
+    // dia futuro: distribui o valor restante pelos dias futuros com peso
+    const diasFuturos = todosDiasP2.filter(d => {
+      const [dd2, mm2, yyyy2] = d.data.split('/')
+      return new Date(`${yyyy2}-${mm2}-${dd2}T12:00:00`) > hoje
+    })
+    // Agrupa dias futuros por dia da semana
+    const contagemFuturo = new Map<string, number>()
+    diasFuturos.forEach(d => {
+      contagemFuturo.set(d.diaSemana, (contagemFuturo.get(d.diaSemana) || 0) + 1)
+    })
+    // Peso total dos dias restantes
+    let pesoTotalRestante = 0
+    contagemFuturo.forEach((count, ds) => {
+      pesoTotalRestante += (pesoPorDiaSemana.get(ds) || 1 / 7)
+    })
+    if (pesoTotalRestante === 0) return 0
+    const pesoDia = pesoPorDiaSemana.get(diaSemana) || 1 / 7
+    const countDiaSemana = contagemFuturo.get(diaSemana) || 1
+    const valorParaEsteDiaSemana = restante * (pesoDia / pesoTotalRestante)
+    return valorParaEsteDiaSemana / countDiaSemana
   }
 
   const diasTotais = todosDiasP2.length
@@ -630,7 +673,7 @@ export default function RelatoriosPage() {
                         { lbl: '✅ Realizado', val: moeda(realizado), cor: '#10b981' },
                         { lbl: '⏳ Restante', val: moeda(restante), cor: restante > 0 ? '#f59e0b' : '#10b981' },
                         { lbl: '📈 Progresso', val: `${progresso.toFixed(1)}%`, cor: progresso >= 100 ? '#10b981' : progresso >= 80 ? '#06b6d4' : '#f59e0b' },
-                        { lbl: '🚀 Super Meta (+5%)', val: moeda(superMeta), cor: '#f43f8e' },
+                        { lbl: '🚀 Super Meta (+30%)', val: moeda(superMeta), cor: '#f43f8e' },
                         { lbl: '📊 vs Ano Anterior', val: `${calcPct(realizado, r2.fat_total) > 0 ? '+' : ''}${calcPct(realizado, r2.fat_total).toFixed(1)}%`, cor: calcPct(realizado, r2.fat_total) >= 0 ? '#10b981' : '#ef4444' },
                       ].map(card => (
                         <div key={card.lbl} style={{ background: '#0a0f1a', border: `1px solid ${card.cor}30`, borderLeft: `3px solid ${card.cor}`, borderRadius: 10, padding: '14px 16px' }}>
@@ -701,20 +744,33 @@ export default function RelatoriosPage() {
                             </thead>
                             <tbody>
                               {todosDiasP2.map((d, i) => {
-                                const metaDia    = getMetaDia(d.data, d.diaSemana, d.valor)
-                                const superMetaDia = metaDia * 1.05
-                                const realiz     = d.valor > 0
-                                const status     = realiz ? '💰 REALIZADO' : '❌ NÃO REALIZADO'
-                                const statusCor  = realiz ? '#10b981'     : '#ef4444'
+                                const metaDia      = getMetaDia(d.data, d.diaSemana, d.valor)
+                                // CORREÇÃO 1: SUPER META = × 1.3 (igual ao Python linha 3407)
+                                const superMetaDia = metaDia > 0 ? metaDia * 1.3 : 0
+                                // CORREÇÃO 3: Status com 🔄 HOJE e ⏳ FUTURO (igual ao Python)
+                                const [dd2, mm2, yyyy2] = d.data.split('/')
+                                const dataDia = new Date(`${yyyy2}-${mm2}-${dd2}T12:00:00`)
+                                const isHoje  = dataDia.toDateString() === new Date().toDateString()
+                                const isFuturo = dataDia > hoje
+                                let status: string; let statusCor: string; let statusBg: string
+                                if (d.valor > 0) {
+                                  status = '💰 REALIZADO'; statusCor = '#10b981'; statusBg = '#10b98115'
+                                } else if (isHoje) {
+                                  status = '🔄 HOJE'; statusCor = '#3b82f6'; statusBg = '#3b82f615'
+                                } else if (isFuturo) {
+                                  status = '⏳ FUTURO'; statusCor = '#94a3b8'; statusBg = '#94a3b810'
+                                } else {
+                                  status = '❌ NÃO REALIZADO'; statusCor = '#ef4444'; statusBg = '#ef444415'
+                                }
                                 return (
                                   <tr key={i} style={{ borderBottom: '1px solid #0d1520', background: i % 2 === 0 ? 'transparent' : '#060d1808' }}>
                                     <td style={{ padding: '8px 12px', color: '#94a3b8', whiteSpace: 'nowrap' }}>{d.data}</td>
                                     <td style={{ padding: '8px 12px', color: '#64748b',  whiteSpace: 'nowrap' }}>{d.diaSemana}</td>
-                                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#334155' }}>{moeda(0)}</td>
-                                    <td style={{ padding: '8px 12px', textAlign: 'center', color: statusCor, fontWeight: 600, fontSize: 11, whiteSpace: 'nowrap' }}>{status}</td>
-                                    <td style={{ padding: '8px 12px', textAlign: 'right', color: realiz ? '#10b981' : '#334155', fontWeight: 700 }}>{realiz ? moeda(d.valor) : moeda(0)}</td>
-                                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#475569' }}>{moeda(metaDia)}</td>
-                                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#475569' }}>{moeda(superMetaDia)}</td>
+                                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#334155' }}>{moeda(metaDia > 0 ? metaDia : 0)}</td>
+                                    <td style={{ padding: '8px 12px', textAlign: 'center', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap', background: statusBg, color: statusCor }}>{status}</td>
+                                    <td style={{ padding: '8px 12px', textAlign: 'right', color: d.valor > 0 ? '#10b981' : '#334155', fontWeight: 700 }}>{moeda(d.valor)}</td>
+                                    <td style={{ padding: '8px 12px', textAlign: 'right', color: metaDia > 0 ? '#3b82f6' : '#334155', fontWeight: metaDia > 0 ? 700 : 400 }}>{moeda(metaDia)}</td>
+                                    <td style={{ padding: '8px 12px', textAlign: 'right', color: superMetaDia > 0 ? '#ef4444' : '#334155', fontWeight: superMetaDia > 0 ? 700 : 400 }}>{moeda(superMetaDia)}</td>
                                   </tr>
                                 )
                               })}
