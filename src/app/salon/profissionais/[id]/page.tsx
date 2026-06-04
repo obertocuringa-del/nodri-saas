@@ -120,43 +120,148 @@ function BlocoFidelizacao({ f }: { f: Fidelizacao }) {
   )
 }
 
-function TabelaServicos({ p1, p2 }: { p1: MetricaBloco | null; p2: MetricaBloco | null }) {
+function TabelaServicos({ p1, p2, nomeProfissional }: { p1: MetricaBloco | null; p2: MetricaBloco | null; nomeProfissional?: string }) {
   if (!p1?.servicos?.length && !p2?.servicos?.length) return null
+
   const todos = new Set([...(p1?.servicos||[]).map(s=>s.servico),...(p2?.servicos||[]).map(s=>s.servico)])
   const m1 = Object.fromEntries((p1?.servicos||[]).map(s=>[s.servico,s]))
   const m2 = Object.fromEntries((p2?.servicos||[]).map(s=>[s.servico,s]))
+  const sorted = Array.from(todos).sort((a,b)=>(m2[b]?.quantidade||0)-(m2[a]?.quantidade||0))
+
+  // Contadores de crescimento/queda
+  let subiu = 0, caiu = 0, igual = 0, novo = 0
+  for (const s of sorted) {
+    const q1 = m1[s]?.quantidade||0; const q2 = m2[s]?.quantidade||0
+    if (q1===0 && q2>0) novo++
+    else if (q2===0 && q1>0) caiu++
+    else if (q2>q1) subiu++
+    else if (q2<q1) caiu++
+    else igual++
+  }
+
+  // Top 3
+  const top3 = sorted.filter(s=>(m2[s]?.quantidade||0)>0).slice(0,3).map(s=>({ servico: s, quantidade: m2[s]?.quantidade||0 }))
+
+  // Variedade (tipos diferentes realizados)
+  const varAtual = (p2?.servicos||[]).filter(s=>s.quantidade>0).length
+  const varAnt   = (p1?.servicos||[]).filter(s=>s.quantidade>0).length
+  const varDelta = varAtual - varAnt
+
+  // Totais
+  const totalAtual = p2?.total_servicos || sorted.reduce((s,k)=>s+(m2[k]?.quantidade||0),0)
+  const totalAnt   = p1?.total_servicos || sorted.reduce((s,k)=>s+(m1[k]?.quantidade||0),0)
+  const pctTotal   = totalAnt > 0 ? ((totalAtual-totalAnt)/totalAnt)*100 : null
+
   return (
-    <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
-      <h3 className="font-syne font-bold text-[13px] mb-4">✂️ Serviços Realizados — P1 vs P2</h3>
-      <div className="overflow-x-auto">
-        <table className="w-full text-[11px]">
-          <thead>
-            <tr className="border-b border-nodri-border">
-              {['Serviço','P1 Qtd','P2 Qtd','Variação','Valor P2'].map((h,i)=>(
-                <th key={h} className={`py-2 text-nodri-t3 font-semibold ${i===0?'text-left':i===4?'text-right':'text-center'}`}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {Array.from(todos).sort((a,b)=>(m2[b]?.quantidade||0)-(m2[a]?.quantidade||0)).map(s=>{
-              const q1=m1[s]?.quantidade||0; const q2=m2[s]?.quantidade||0
-              const d = q1>0 ? ((q2-q1)/q1)*100 : null
-              return (
-                <tr key={s} className="border-b border-nodri-border/40 hover:bg-nodri-card/30">
-                  <td className="py-2 text-nodri-t1 font-medium">{s}</td>
-                  <td className="py-2 text-center text-nodri-t3">{q1||'–'}</td>
-                  <td className="py-2 text-center text-nodri-t1 font-semibold">{q2||'–'}</td>
-                  <td className="py-2 text-center">
-                    {d!==null && <span className={`font-semibold ${d>=0?'text-nodri-green':'text-nodri-red'}`}>{d>=0?'▲':'▼'}{Math.abs(d).toFixed(1)}%</span>}
-                    {q1===0&&q2>0&&<span className="text-nodri-green font-semibold">NOVO</span>}
-                    {q2===0&&q1>0&&<span className="text-nodri-red font-semibold">▼100%</span>}
-                  </td>
-                  <td className="py-2 text-right">{m2[s] ? fmt$(m2[s].valor) : '–'}</td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+    <div className="space-y-4">
+      {/* Tabela de serviços */}
+      <div className="bg-nodri-surface border border-nodri-border rounded-2xl overflow-hidden">
+        <div className="px-5 py-3 flex items-center justify-between" style={{background:'#0f3460'}}>
+          <h3 className="font-syne font-bold text-[13px] text-white">
+            📋 SERVIÇOS REALIZADOS{nomeProfissional ? ` POR ${nomeProfissional.toUpperCase()}` : ''}
+          </h3>
+          <span className="text-[11px] text-white/70">{sorted.length} serviços</span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-[11px]">
+            <thead>
+              <tr style={{background:'#1e2d3d'}}>
+                <th className="py-2.5 px-4 text-left text-white font-semibold text-[11px] uppercase tracking-wide">SERVIÇO</th>
+                <th className="py-2.5 px-4 text-center text-white font-semibold text-[11px] uppercase tracking-wide">QTD ATUAL</th>
+                <th className="py-2.5 px-4 text-center text-white font-semibold text-[11px] uppercase tracking-wide">QTD ANT.</th>
+                <th className="py-2.5 px-4 text-center text-white font-semibold text-[11px] uppercase tracking-wide">CRESC.</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sorted.map(s=>{
+                const q1=m1[s]?.quantidade||0; const q2=m2[s]?.quantidade||0
+                const d = q1>0 ? ((q2-q1)/q1)*100 : null
+                const isNovo = q1===0 && q2>0
+                const isCaiu100 = q2===0 && q1>0
+                const rowBg = q2 > q1 ? 'rgba(34,197,94,0.03)' : q2 < q1 ? 'rgba(239,68,68,0.03)' : undefined
+                return (
+                  <tr key={s} className="border-b border-nodri-border/30 hover:bg-nodri-card/40 transition-colors" style={{background:rowBg}}>
+                    <td className="py-2.5 px-4 text-nodri-t1 font-medium">{s}</td>
+                    <td className="py-2.5 px-4 text-center font-bold" style={{color: q2>0?'#e2e8f0':'#64748b'}}>{q2||'–'}</td>
+                    <td className="py-2.5 px-4 text-center text-nodri-t3">{q1||'–'}</td>
+                    <td className="py-2.5 px-4 text-center">
+                      {isNovo    && <span className="text-nodri-green font-bold">▲ 100%</span>}
+                      {isCaiu100 && <span className="text-nodri-red font-bold">▼ 100%</span>}
+                      {!isNovo && !isCaiu100 && d!==null && (
+                        <span className={`font-bold ${d>0?'text-nodri-green':d<0?'text-nodri-red':'text-nodri-t3'}`}>
+                          {d>0?'▲':d<0?'▼':'•'} {d===0?'0':Math.abs(d).toFixed(1)}%
+                        </span>
+                      )}
+                      {!isNovo && !isCaiu100 && d===null && <span className="text-nodri-t3">• 0%</span>}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+        {/* Legenda de contadores */}
+        <div className="px-5 py-2.5 border-t border-nodri-border flex gap-5 text-[10px] flex-wrap">
+          <span className="text-nodri-green font-bold">↑: {subiu}</span>
+          <span className="text-nodri-red font-bold">↓: {caiu}</span>
+          <span className="text-nodri-t3 font-bold">=: {igual}</span>
+          <span className="text-nodri-cyan font-bold">+: {novo}</span>
+        </div>
+      </div>
+
+      {/* Cards de resumo */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {/* Total Serviços */}
+        <div className="bg-nodri-card border border-nodri-border rounded-2xl p-4">
+          <div className="text-[9px] text-nodri-t3 uppercase tracking-widest mb-2 font-semibold">TOTAL SERVIÇOS</div>
+          <div className="flex items-end gap-3 mb-2">
+            <div>
+              <div className="text-[9px] text-nodri-t3 mb-0.5">ATUAL</div>
+              <div className="font-syne font-black text-[28px] text-nodri-t1 leading-none">{totalAtual}</div>
+            </div>
+            <div className="pb-1">
+              <div className="text-[9px] text-nodri-t3 mb-0.5">ANT.</div>
+              <div className="font-syne font-semibold text-[16px] text-nodri-t3 leading-none">{totalAnt}</div>
+            </div>
+          </div>
+          {pctTotal !== null && (
+            <span className={`text-[11px] font-bold flex items-center gap-0.5 ${pctTotal>=0?'text-nodri-green':'text-nodri-red'}`}>
+              {pctTotal>=0?<TrendingUp size={11}/>:<TrendingDown size={11}/>}
+              {pctTotal>=0?'+':''}{pctTotal.toFixed(1)}%
+            </span>
+          )}
+        </div>
+
+        {/* Variedade */}
+        <div className="bg-nodri-card border border-nodri-border rounded-2xl p-4">
+          <div className="text-[9px] text-nodri-t3 uppercase tracking-widest mb-2 font-semibold">VARIEDADE</div>
+          <div className="flex items-end gap-3 mb-2">
+            <div>
+              <div className="text-[9px] text-nodri-t3 mb-0.5">ATUAL</div>
+              <div className="font-syne font-black text-[28px] text-nodri-t1 leading-none">{varAtual}</div>
+            </div>
+            <div className="pb-1">
+              <div className="text-[9px] text-nodri-t3 mb-0.5">ANT.</div>
+              <div className="font-syne font-semibold text-[16px] text-nodri-t3 leading-none">{varAnt}</div>
+            </div>
+          </div>
+          <span className={`text-[11px] font-bold flex items-center gap-0.5 ${varDelta>0?'text-nodri-green':varDelta<0?'text-nodri-red':'text-nodri-amber'}`}>
+            {varDelta>0?<TrendingUp size={11}/>:varDelta<0?<TrendingDown size={11}/>:null}
+            {varDelta===0?'• 0':varDelta>0?`+${varDelta}`:varDelta}
+          </span>
+        </div>
+
+        {/* Top 3 Serviços */}
+        <div className="bg-nodri-card border border-nodri-border rounded-2xl p-4">
+          <div className="text-[9px] text-nodri-t3 uppercase tracking-widest mb-3 font-semibold">TOP 3 SERVIÇOS</div>
+          {top3.length === 0 && <span className="text-[10px] text-nodri-t3">Sem dados</span>}
+          {top3.map((item,i)=>(
+            <div key={item.servico} className="mb-2 last:mb-0">
+              <div className="font-bold text-[11px] text-nodri-cyan">{item.servico}</div>
+              <div className="text-[9px] text-nodri-t3">{item.quantidade} unidades</div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   )
@@ -474,7 +579,7 @@ export default function PerfilProfissionalPage() {
                     </div>
                   </div>
                 )}
-                <TabelaServicos p1={p1||null} p2={p2||null}/>
+                <TabelaServicos p1={p1||null} p2={p2||null} nomeProfissional={prof?.apelido||prof?.nome_completo}/>
               </> : (
                 <div className="text-center py-16 text-nodri-t3">
                   <BarChart2 size={40} className="mx-auto mb-3 opacity-30"/>
