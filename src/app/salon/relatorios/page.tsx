@@ -69,8 +69,8 @@ export default function RelatoriosPage() {
   async function importarExcel(file: File) {
     setLoading(true)
     try {
-      // Carregar SheetJS dinamicamente
-      const XLSX = await import('https://cdn.sheetjs.com/xlsx-0.20.3/package/xlsx.mjs' as any)
+      // Carregar SheetJS dinamicamente (pacote npm)
+      const XLSX = await import('xlsx')
       const buffer = await file.arrayBuffer()
       const wb = XLSX.read(buffer, { type: 'buffer' })
 
