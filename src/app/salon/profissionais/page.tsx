@@ -31,6 +31,7 @@ interface Profissional {
 const SIDEBAR_ITEMS = [
   { id: 'cadastrar',    label: 'Cadastrar Profissional',          icon: Plus,           cor: '#7c5cfc', destaque: true },
   { id: 'lista',        label: 'Lista de Profissionais',          icon: Users,          cor: '#06b6d4' },
+  { id: 'categorias',   label: 'Gerenciar Categorias',            icon: Award,          cor: '#f59e0b' },
   { id: 'abertura',     label: 'Abertura de Conta Bancária',      icon: Building2,      cor: '#10b981' },
   { id: 'cnpj',         label: 'CNPJ',                            icon: FileText,       cor: '#f59e0b' },
   { id: 'entrevista',   label: 'Ficha para Entrevista',           icon: Briefcase,      cor: '#3b82f6' },
@@ -75,15 +76,39 @@ export default function ProfissionaisPage() {
   const [fotoPreview, setFotoPreview] = useState<string>('')
   const [uploadingFoto, setUploadingFoto] = useState(false)
   const [novaCategoria, setNovaCategoria] = useState(false)
+  const [editandoCategoria, setEditandoCategoria] = useState<string | null>(null)
+  const [editandoCategoriaValor, setEditandoCategoriaValor] = useState('')
+  const [novaCatTexto, setNovaCatTexto] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
   const CATEGORIAS_PADRAO = ['Cabeleireiro', 'Manicure', 'Pedicure', 'Assistente', 'Massoterapeuta', 'Maquiador(a)', 'Colorista', 'Recepcionista', 'Auxiliar']
 
-  // Categorias existentes dos profissionais cadastrados + padrão
+  // Categorias existentes dos profissionais cadastrados + padrão (sem duplicatas)
   const categorias = Array.from(new Set([
     ...CATEGORIAS_PADRAO,
     ...profissionais.map(p => p.cargo || '').filter(Boolean)
   ])).sort()
+
+  async function editarCategoria(antiga: string, nova: string) {
+    if (!nova.trim() || antiga === nova.trim()) { setEditandoCategoria(null); return }
+    const afetados = profissionais.filter(p => p.cargo === antiga)
+    await Promise.all(afetados.map(p =>
+      fetch(`/api/profissionais/${p.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cargo: nova.trim() }) })
+    ))
+    toast.success(`Categoria "${antiga}" renomeada para "${nova.trim()}"`)
+    setEditandoCategoria(null)
+    carregarProfissionais()
+  }
+
+  async function excluirCategoria(cat: string) {
+    const afetados = profissionais.filter(p => p.cargo === cat)
+    if (!confirm(`Remover a categoria "${cat}" de ${afetados.length} profissional(is)?`)) return
+    await Promise.all(afetados.map(p =>
+      fetch(`/api/profissionais/${p.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cargo: '' }) })
+    ))
+    toast.success(`Categoria "${cat}" removida`)
+    carregarProfissionais()
+  }
 
   useEffect(() => { carregarProfissionais() }, [])
 
@@ -114,7 +139,8 @@ export default function ProfissionaisPage() {
 
   async function salvar(e: React.FormEvent) {
     e.preventDefault()
-    if (!form.nome_completo.trim()) { toast.error('Nome completo é obrigatório'); return }
+    // Apenas nome_completo é obrigatório — todos os outros campos são opcionais
+    if (!form.nome_completo.trim()) { toast.error('Informe pelo menos o nome completo'); return }
     setSaving(true)
     try {
       const url = editando ? `/api/profissionais/${editando.id}` : '/api/profissionais'
@@ -431,6 +457,75 @@ export default function ProfissionaisPage() {
                   </button>
                 </div>
               </form>
+            </div>
+          )}
+
+          {/* ── GERENCIAR CATEGORIAS ── */}
+          {secao === 'categorias' && (
+            <div style={{ maxWidth: 600 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                <h2 style={{ color: '#e2e8f0', fontSize: '20px', fontWeight: 700, margin: 0 }}>🏷️ Gerenciar Categorias</h2>
+              </div>
+
+              {/* Criar nova categoria */}
+              <div style={{ background: '#0d1117', border: '1px solid #f59e0b40', borderRadius: 12, padding: 16, marginBottom: 20 }}>
+                <p style={{ color: '#94a3b8', fontSize: 12, margin: '0 0 10px', fontWeight: 600 }}>➕ CRIAR NOVA CATEGORIA</p>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input value={novaCatTexto} onChange={e => setNovaCatTexto(e.target.value)}
+                    placeholder="Ex: Depiladora, Esteticista..."
+                    onKeyDown={e => { if (e.key === 'Enter' && novaCatTexto.trim()) { toast.success(`Categoria "${novaCatTexto.trim()}" criada! Atribua a um profissional para salvar.`); setNovaCatTexto('') } }}
+                    style={{ flex: 1, background: '#060a12', border: '1px solid #1e293b', borderRadius: 8, padding: '9px 12px', fontSize: 13, color: '#e2e8f0', outline: 'none' }} />
+                  <button onClick={() => { if (novaCatTexto.trim()) { toast.success(`Categoria "${novaCatTexto.trim()}" disponível no formulário de cadastro!`); setNovaCatTexto('') } }}
+                    style={{ background: '#f59e0b', border: 'none', borderRadius: 8, padding: '9px 16px', color: 'white', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                    Criar
+                  </button>
+                </div>
+              </div>
+
+              {/* Lista de categorias existentes */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {categorias.map(cat => {
+                  const qtd = profissionais.filter(p => p.cargo === cat).length
+                  return (
+                    <div key={cat} style={{ background: '#0d1117', border: '1px solid #1e293b', borderRadius: 10, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                      {editandoCategoria === cat ? (
+                        <>
+                          <input value={editandoCategoriaValor} onChange={e => setEditandoCategoriaValor(e.target.value)} autoFocus
+                            onKeyDown={e => { if (e.key === 'Enter') editarCategoria(cat, editandoCategoriaValor); if (e.key === 'Escape') setEditandoCategoria(null) }}
+                            style={{ flex: 1, background: '#060a12', border: '1px solid #7c5cfc', borderRadius: 6, padding: '6px 10px', fontSize: 13, color: '#e2e8f0', outline: 'none' }} />
+                          <button onClick={() => editarCategoria(cat, editandoCategoriaValor)}
+                            style={{ background: '#10b981', border: 'none', borderRadius: 6, padding: '6px 12px', color: 'white', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Salvar</button>
+                          <button onClick={() => setEditandoCategoria(null)}
+                            style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 6, padding: '6px 10px', color: '#94a3b8', fontSize: 12, cursor: 'pointer' }}>✕</button>
+                        </>
+                      ) : (
+                        <>
+                          <div style={{ flex: 1 }}>
+                            <span style={{ color: '#e2e8f0', fontWeight: 600, fontSize: 14 }}>{cat}</span>
+                            <span style={{ color: '#475569', fontSize: 11, marginLeft: 10 }}>{qtd} profissional{qtd !== 1 ? 'is' : ''}</span>
+                          </div>
+                          <button onClick={() => { setEditandoCategoria(cat); setEditandoCategoriaValor(cat) }}
+                            style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 6, padding: '5px 10px', color: '#94a3b8', fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+                            ✏️ Editar
+                          </button>
+                          {qtd === 0 && (
+                            <button onClick={() => excluirCategoria(cat)}
+                              style={{ background: '#1e293b', border: '1px solid #ef444440', borderRadius: 6, padding: '5px 10px', color: '#ef4444', fontSize: 11, cursor: 'pointer' }}>
+                              🗑️ Excluir
+                            </button>
+                          )}
+                          {qtd > 0 && (
+                            <button onClick={() => excluirCategoria(cat)}
+                              style={{ background: '#1e293b', border: '1px solid #ef444440', borderRadius: 6, padding: '5px 10px', color: '#ef4444', fontSize: 11, cursor: 'pointer' }}>
+                              🗑️ Remover
+                            </button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           )}
 
