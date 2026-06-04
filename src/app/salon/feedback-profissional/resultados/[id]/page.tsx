@@ -179,7 +179,7 @@ export default function ResultadosProfPage() {
       [],
       ['REINCIDÊNCIAS CRÍTICAS'],
       ['Profissional', 'Ocorrência', 'Vezes', 'Última ocorrência', 'Dias atrás'],
-      ...data.reincidencia.map(r => [r.profissional, r.ocorrencia, String(r.count), new Date(r.ultima_vez).toLocaleDateString('pt-BR'), String(r.dias_desde)]),
+      ...data.reincidencia.map(r => [r.profissional, r.ocorrencia, String(r.count), new Date(r.ultima_vez).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }), String(r.dias_desde)]),
       [],
       ['OCORRÊNCIAS'],
       ['Ocorrência', 'Total', 'Negativos', 'Positivos'],
@@ -520,7 +520,7 @@ export default function ResultadosProfPage() {
                                   </div>
                                   {p.ultimo && (
                                     <span className="text-[10px] text-nodri-t3">
-                                      Último: {new Date(p.ultimo + 'T12:00:00').toLocaleDateString('pt-BR')}
+                                      Último: {new Date(p.ultimo + 'T12:00:00').toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
                                     </span>
                                   )}
                                 </div>
@@ -534,7 +534,7 @@ export default function ResultadosProfPage() {
                                       style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)' }}>
                                       <div className="shrink-0 text-center">
                                         <div className="text-[10px] font-bold text-red-400">
-                                          {new Date(r.bloqueado_em + 'T12:00:00').toLocaleDateString('pt-BR')}
+                                          {new Date(r.bloqueado_em + 'T12:00:00').toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
                                         </div>
                                         <div className="text-[9px] text-nodri-t3">{r.dias_bloqueio}d</div>
                                       </div>
@@ -542,7 +542,7 @@ export default function ResultadosProfPage() {
                                         <div className="text-[10px] text-nodri-t2 truncate">{r.motivo || '—'}</div>
                                         {r.desbloqueado_em && (
                                           <div className="text-[9px] text-nodri-t3 mt-0.5">
-                                            Liberado: {new Date(r.desbloqueado_em + 'T12:00:00').toLocaleDateString('pt-BR')}
+                                            Liberado: {new Date(r.desbloqueado_em + 'T12:00:00').toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
                                             {r.tipo_desbloqueio === 'manual' ? ' (manual)' : ' (automático)'}
                                           </div>
                                         )}
@@ -795,7 +795,7 @@ export default function ResultadosProfPage() {
                               </div>
                               {r.descricao && <p className="text-[11px] text-nodri-t3 italic truncate">&quot;{r.descricao}&quot;</p>}
                             </div>
-                            <span className="text-[9px] text-nodri-t3 shrink-0">{new Date(r.criado_em).toLocaleDateString('pt-BR')}</span>
+                            <span className="text-[9px] text-nodri-t3 shrink-0">{new Date(r.criado_em).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}</span>
                           </div>
                         ))}
                       </div>

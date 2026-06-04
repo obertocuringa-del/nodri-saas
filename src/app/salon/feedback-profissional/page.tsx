@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Plus, Trash2, Edit2, Check, X, Copy, Eye, BarChart2, Users, ClipboardList, Upload, Lock, Settings2 } from 'lucide-react'
@@ -251,7 +251,7 @@ export default function FeedbackProfissionalPage() {
                   <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${f.ativo ? 'bg-green-400' : 'bg-red-400'}`} />
                   <span className="text-[11.5px] font-medium text-nodri-t1 truncate flex-1">{f.titulo}</span>
                 </div>
-                <div className="text-[10px] text-nodri-t3 ml-3.5">{new Date(f.criado_em).toLocaleDateString('pt-BR')}</div>
+                <div className="text-[10px] text-nodri-t3 ml-3.5">{new Date(f.criado_em).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}</div>
               </button>
             ))
           )}
@@ -581,3 +581,4 @@ export default function FeedbackProfissionalPage() {
     </div>
   )
 }
+

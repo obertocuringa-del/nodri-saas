@@ -179,7 +179,7 @@ export default function GerenciarFeedbacksPage() {
                       {editando?.id === r.id ? (
                         <>
                           <td className="px-4 py-3 text-nodri-t3 text-[10px] whitespace-nowrap">
-                            {new Date(r.criado_em).toLocaleDateString('pt-BR')}
+                            {new Date(r.criado_em).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
                           </td>
                           <td className="px-4 py-3">
                             <select value={editando.profissional_nome}
@@ -227,8 +227,8 @@ export default function GerenciarFeedbacksPage() {
                       ) : (
                         <>
                           <td className="px-4 py-3 text-nodri-t3 text-[10px] whitespace-nowrap">
-                            {new Date(r.criado_em).toLocaleDateString('pt-BR')}
-                            <div className="text-[9px]">{new Date(r.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
+                            {new Date(r.criado_em).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
+                            <div className="text-[9px]">{new Date(r.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })}</div>
                           </td>
                           <td className="px-4 py-3 font-semibold text-nodri-t1">{r.profissional_nome}</td>
                           <td className="px-4 py-3 text-center">

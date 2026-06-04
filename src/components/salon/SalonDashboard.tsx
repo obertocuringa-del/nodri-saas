@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useRef, useEffect } from 'react'
 import { Bell, Settings, CheckCircle, X, Zap, Play, Search, ChevronDown, ArrowRight, LogOut } from 'lucide-react'
@@ -427,7 +427,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                       <span style={{ fontSize: '10px', fontWeight: 800, color: '#6366f1', textTransform: 'uppercase', letterSpacing: '1.5px' }}>Aviso do Sistema</span>
                       <span style={{ background: '#6366f1', color: '#fff', fontSize: '8px', fontWeight: 700, padding: '2px 7px', borderRadius: '4px' }}>NOVO</span>
                       {notificacoes.length > 1 && <span style={{ fontSize: '9px', color: '#8b5cf6', fontWeight: 600 }}>{(notifIndex % notificacoes.length) + 1}/{notificacoes.length}</span>}
-                      <span style={{ fontSize: '10px', color: '#94a3b8', marginLeft: 'auto' }}>{new Date(notif.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                      <span style={{ fontSize: '10px', color: '#94a3b8', marginLeft: 'auto' }}>{new Date(notif.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })}</span>
                     </div>
                     <div style={{ fontSize: '13px', fontWeight: 500, color: '#0f172a', lineHeight: 1.45 }}>{notif.mensagem}</div>
                   </div>
@@ -547,3 +547,4 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
     </div>
   )
 }
+

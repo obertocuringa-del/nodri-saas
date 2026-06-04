@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
@@ -252,7 +252,7 @@ export default function FeedbackPage() {
                   <span className="text-[11.5px] font-medium text-nodri-t1 truncate flex-1">{f.titulo}</span>
                 </div>
                 <div className="text-[10px] text-nodri-t3 ml-3.5">
-                  {new Date(f.criado_em).toLocaleDateString('pt-BR')}
+                  {new Date(f.criado_em).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
                 </div>
               </button>
             ))
@@ -547,3 +547,4 @@ export default function FeedbackPage() {
     </div>
   )
 }
+

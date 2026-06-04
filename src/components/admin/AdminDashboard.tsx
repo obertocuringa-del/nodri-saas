@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useRef, useEffect } from 'react'
 import { LogOut, Bell, Plus, Shield, Building, CreditCard, Puzzle, Users, BarChart3, Settings, RefreshCw, X, Send, Edit, Lock, Unlock, Loader2, ChevronDown, Check, Link, Save, Trash2, ExternalLink, Eye, EyeOff, AlertTriangle, Search, Play, Zap, Tag, FolderOpen, Wrench, LogIn } from 'lucide-react'
@@ -610,7 +610,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                     <div className="text-[10px] text-nodri-t3">{p.salao?.email} · {p.plano?.nome}</div>
                   </div>
                   <div className="font-syne font-bold text-[14px]">R${Number(p.valor).toFixed(2)}</div>
-                  <div className="text-[10px] text-nodri-t3">{new Date(p.data_vencimento).toLocaleDateString('pt-BR')}</div>
+                  <div className="text-[10px] text-nodri-t3">{new Date(p.data_vencimento).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}</div>
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border capitalize ${STATUS_COR[p.status] || ''}`}>{p.status}</span>
                   <div className="flex gap-1.5">
                     {p.status !== 'pago' && (
@@ -1366,7 +1366,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                             </div>
                             <div className="flex items-center gap-3">
                               <div className="text-[10px] text-nodri-t3">{c.usos_atual} uso(s)</div>
-                              <div className="text-[10px] text-nodri-t3">{new Date(c.criado_em).toLocaleDateString('pt-BR')}</div>
+                              <div className="text-[10px] text-nodri-t3">{new Date(c.criado_em).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}</div>
                               <button onClick={() => toggleCupon(c.id, c.ativo)} title={c.ativo ? 'Desativar' : 'Reativar'}
                                 className={`p-1.5 rounded-md border transition-all ${c.ativo ? 'border-nodri-amber/40 text-nodri-amber bg-nodri-amber/7 hover:bg-nodri-amber/15' : 'border-nodri-green/40 text-nodri-green bg-nodri-green/7 hover:bg-nodri-green/15'}`}>
                                 {c.ativo ? <Lock size={11} /> : <Unlock size={11} />}
@@ -1596,7 +1596,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                                 </button>
                               )}
                             </div>
-                            <div className="text-[10px] text-nodri-t3 shrink-0">{new Date(n.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
+                            <div className="text-[10px] text-nodri-t3 shrink-0">{new Date(n.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })}</div>
                             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                               <button onClick={() => handleEditNotif(n)} className="w-6 h-6 flex items-center justify-center text-nodri-t3 hover:text-nodri-cyan transition-colors" title="Editar"><Edit size={10} /></button>
                               <button onClick={() => deleteNotif(n.id)} disabled={deletingNotif === n.id} className="w-6 h-6 flex items-center justify-center text-nodri-t3 hover:text-nodri-red transition-colors" title="Excluir">
@@ -1676,7 +1676,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                           </td>
                           <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${PLANO_CLASS[(salao as any).plano?.slug || 'basico']}`}>{(salao as any).plano?.nome || 'Básico'}</span></td>
                           <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold capitalize ${STATUS_CLASS[salao.status]}`}>{salao.status}</span></td>
-                          <td className="px-4 py-3 text-[11px]">{salao.status === 'trial' ? getTrialStatus(salao.criado_em) : <span className="text-nodri-t2">{salao.licenca_vencimento ? new Date(salao.licenca_vencimento).toLocaleDateString('pt-BR') : '—'}</span>}</td>
+                          <td className="px-4 py-3 text-[11px]">{salao.status === 'trial' ? getTrialStatus(salao.criado_em) : <span className="text-nodri-t2">{salao.licenca_vencimento ? new Date(salao.licenca_vencimento).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '—'}</span>}</td>
                           <td className="px-4 py-3 text-nodri-t2">—/{localModulos.length}</td>
                           <td className="px-4 py-3">
                             <div className="flex gap-1.5">
@@ -2037,3 +2037,4 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
     </div>
   )
 }
+
