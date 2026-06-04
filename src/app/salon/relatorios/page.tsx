@@ -1,75 +1,304 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { ArrowLeft, Upload, BarChart2, Users, TrendingUp, TrendingDown, Minus, Star, MessageSquare, Calendar, ChevronDown, FileSpreadsheet, CheckCircle, AlertCircle } from 'lucide-react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { ArrowLeft, Upload, TrendingUp, TrendingDown, Minus, Calendar, FileSpreadsheet, ChevronUp, ChevronDown, ChevronsUpDown, Target, BarChart2, Settings } from 'lucide-react'
 import toast from 'react-hot-toast'
 
-// ─── tipos ─────────────────────────────────────────────────────────────────
-interface ResumoMensal {
-  ano: number; mes: number; periodo: string
-  faturamento_total: number; ticket_medio: number
-  clientes_atendidos: number; clientes_novos: number
-  faturamento_servicos: number; faturamento_produtos: number
-}
-interface ItemComparativo { nome: string; atual: number; anterior: number }
-interface Feedback { profissional: string; tipo: string; oque_houve: string; comentario: string; data: string }
-interface ProfPagamento { profissional: string; categoria: string; valor_a_pagar: number }
-interface TaxaRetorno { total_clientes: number; clientes_retornaram: number; taxa_retorno: number }
+// ─── TIPOS ──────────────────────────────────────────────────────────────────
+interface ResumoMensal { ano: number; mes: number; periodo: string; faturamento_total: number; ticket_medio: number; clientes_atendidos: number; clientes_novos: number; faturamento_servicos: number; faturamento_produtos: number }
+interface FatDiario { ano: number; mes: number; data: string; dia_semana: string; valor: number }
+interface ItemServico { ano: number; mes: number; servico: string; quantidade: number }
+interface ItemProduto { ano: number; mes: number; produto: string; quantidade: number }
+interface ProfPag { ano: number; mes: number; profissional: string; categoria: string; valor_a_pagar: number }
+interface MetaRow { ano: number; mes: number; meta_faturamento: number; meta_clientes: number; meta_ticket: number; alcancado_faturamento: number; alcancado_clientes: number; alcancado_ticket: number }
+interface Feedback { ano: number; mes: number; profissional: string; tipo: string; oque_houve: string; comentario: string; data: string }
 
-interface DadosImportados {
+interface DadosBase {
   resumo_mensal: ResumoMensal[]
-  servicos: ItemComparativo[]
-  produtos: ItemComparativo[]
+  faturamento_diario: FatDiario[]
+  servicos: ItemServico[]
+  produtos: ItemProduto[]
+  prof_pagamentos: ProfPag[]
+  metas: MetaRow[]
   feedbacks: Feedback[]
-  prof_pagamentos: ProfPagamento[]
-  taxa_retorno_salao: TaxaRetorno[]
   periodos: { ano: number; mes: number; data_inicio: string; data_fim: string }[]
 }
 
-// ─── helpers ───────────────────────────────────────────────────────────────
-const moeda = (v: number) => `R$ ${(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-const pct = (atual: number, ant: number) => ant === 0 ? (atual > 0 ? 100 : 0) : ((atual - ant) / ant) * 100
-const MESES = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
-const STORAGE_KEY = 'nodri_relatorios_data'
+interface ItemComp { nome: string; p1: number; p2: number; diff: number; pct: number }
+interface ResumoPeriodo { fat_total: number; ticket: number; clientes: number; novos: number; fat_srv: number; fat_prd: number }
 
-function crescClass(p: number) {
-  if (p >= 15) return { bg: '#10b98115', border: '#10b98140', text: '#10b981', icon: <TrendingUp size={14} /> }
-  if (p >= 5) return { bg: '#06b6d415', border: '#06b6d440', text: '#06b6d4', icon: <TrendingUp size={14} /> }
-  if (p >= -5) return { bg: '#f59e0b15', border: '#f59e0b40', text: '#f59e0b', icon: <Minus size={14} /> }
-  if (p >= -15) return { bg: '#f9731615', border: '#f9731640', text: '#f97316', icon: <TrendingDown size={14} /> }
-  return { bg: '#ef444415', border: '#ef444440', text: '#ef4444', icon: <TrendingDown size={14} /> }
+// ─── HELPERS ────────────────────────────────────────────────────────────────
+const moeda = (v: number) => `R$ ${(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+const MESES = ['', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+const MESES_FULL = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+const STORAGE_KEY = 'nodri_relatorios_v2'
+const META_KEY = 'nodri_metas_config'
+
+function calcPct(p1: number, p2: number) { return p2 === 0 ? (p1 > 0 ? 100 : 0) : ((p1 - p2) / p2) * 100 }
+
+function corPct(p: number): { bg: string; text: string; border: string; Icon: any } {
+  if (p >= 15) return { bg: '#10b98112', text: '#10b981', border: '#10b98130', Icon: TrendingUp }
+  if (p >= 5)  return { bg: '#06b6d412', text: '#06b6d4', border: '#06b6d430', Icon: TrendingUp }
+  if (p >= -5) return { bg: '#f59e0b12', text: '#f59e0b', border: '#f59e0b30', Icon: Minus }
+  if (p >= -15)return { bg: '#f9731612', text: '#f97316', border: '#f9731630', Icon: TrendingDown }
+  return { bg: '#ef444412', text: '#ef4444', border: '#ef444430', Icon: TrendingDown }
 }
 
-// ─── componente ────────────────────────────────────────────────────────────
+function Badge({ pct, p1, p2 }: { pct: number; p1: number; p2: number }) {
+  const { text, bg, Icon } = corPct(pct)
+  const isNovo = p2 === 0 && p1 > 0
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, fontWeight: 700, color: text, background: bg, padding: '2px 7px', borderRadius: 20, whiteSpace: 'nowrap' }}>
+      {isNovo ? '✨ NOVO' : <><Icon size={10} />{pct > 0 ? '+' : ''}{pct.toFixed(1)}%</>}
+    </span>
+  )
+}
+
+// Filtra resumo_mensal por período de datas (inclusive)
+function filtrarResumo(dados: ResumoMensal[], de: string, ate: string): ResumoMensal[] {
+  const [dY, dM] = de.split('-').map(Number)
+  const [aY, aM] = ate.split('-').map(Number)
+  return dados.filter(r => {
+    const rVal = r.ano * 100 + r.mes
+    return rVal >= dY * 100 + dM && rVal <= aY * 100 + aM
+  })
+}
+
+function filtrarServicos(dados: ItemServico[], de: string, ate: string): ItemServico[] {
+  const [dY, dM] = de.split('-').map(Number)
+  const [aY, aM] = ate.split('-').map(Number)
+  return dados.filter(r => {
+    const v = r.ano * 100 + r.mes
+    return v >= dY * 100 + dM && v <= aY * 100 + aM
+  })
+}
+
+function filtrarProdutos(dados: ItemProduto[], de: string, ate: string): ItemProduto[] {
+  const [dY, dM] = de.split('-').map(Number)
+  const [aY, aM] = ate.split('-').map(Number)
+  return dados.filter(r => {
+    const v = r.ano * 100 + r.mes
+    return v >= dY * 100 + dM && v <= aY * 100 + aM
+  })
+}
+
+function somarResumo(rows: ResumoMensal[]): ResumoPeriodo {
+  return rows.reduce((acc, r) => ({
+    fat_total: acc.fat_total + r.faturamento_total,
+    ticket: rows.length > 0 ? rows.reduce((s, x) => s + x.ticket_medio, 0) / rows.length : 0,
+    clientes: acc.clientes + r.clientes_atendidos,
+    novos: acc.novos + r.clientes_novos,
+    fat_srv: acc.fat_srv + r.faturamento_servicos,
+    fat_prd: acc.fat_prd + r.faturamento_produtos,
+  }), { fat_total: 0, ticket: 0, clientes: 0, novos: 0, fat_srv: 0, fat_prd: 0 })
+}
+
+function agruparItens(rows: { nome: string; qtd: number }[]): Map<string, number> {
+  const map = new Map<string, number>()
+  rows.forEach(r => { map.set(r.nome, (map.get(r.nome) || 0) + r.qtd) })
+  return map
+}
+
+function buildComparativo(p1Map: Map<string, number>, p2Map: Map<string, number>): ItemComp[] {
+  const nomes = new Set<string>([...Array.from(p1Map.keys()), ...Array.from(p2Map.keys())])
+  const result: ItemComp[] = []
+  nomes.forEach(nome => {
+    const v1 = p1Map.get(nome) || 0
+    const v2 = p2Map.get(nome) || 0
+    const diff = v1 - v2
+    const pct = calcPct(v1, v2)
+    result.push({ nome, p1: v1, p2: v2, diff, pct })
+  })
+  return result
+}
+
+// ─── COMPONENTE TABELA COMPARATIVA ──────────────────────────────────────────
+type SortKey = 'nome' | 'p1' | 'p2' | 'diff' | 'pct'
+
+function TabelaComp({ title, items, label1, label2 }: { title: string; items: ItemComp[]; label1: string; label2: string }) {
+  const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: 'p1', dir: -1 })
+  const [busca, setBusca] = useState('')
+  const [limite, setLimite] = useState(30)
+
+  const sorted = [...items]
+    .filter(i => !busca || i.nome.toLowerCase().includes(busca.toLowerCase()))
+    .sort((a, b) => {
+      const va = sort.key === 'nome' ? a.nome : a[sort.key]
+      const vb = sort.key === 'nome' ? b.nome : b[sort.key]
+      return sort.dir * (va < vb ? -1 : va > vb ? 1 : 0)
+    })
+
+  const exibidos = sorted.slice(0, limite)
+
+  const Th = ({ k, children }: { k: SortKey; children: React.ReactNode }) => (
+    <th onClick={() => setSort(s => ({ key: k, dir: s.key === k ? (-s.dir as 1 | -1) : -1 }))}
+      style={{ padding: '10px 12px', fontSize: 11, color: '#64748b', fontWeight: 600, textAlign: k === 'nome' ? 'left' : 'right', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap', background: '#060d18', borderBottom: '1px solid #1e293b' }}>
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+        {children}
+        {sort.key === k ? (sort.dir === -1 ? <ChevronDown size={11} /> : <ChevronUp size={11} />) : <ChevronsUpDown size={11} style={{ opacity: 0.3 }} />}
+      </span>
+    </th>
+  )
+
+  return (
+    <div style={{ background: '#0a0f1a', border: '1px solid #1e293b', borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
+      <div style={{ padding: '16px 16px 12px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid #1e293b' }}>
+        <h3 style={{ color: '#e2e8f0', fontSize: 14, fontWeight: 700, margin: 0, flex: 1 }}>{title}</h3>
+        <span style={{ fontSize: 11, color: '#475569' }}>{sorted.length} itens</span>
+        <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="🔍 filtrar..."
+          style={{ background: '#111827', border: '1px solid #1e293b', borderRadius: 6, padding: '4px 10px', fontSize: 12, color: '#e2e8f0', outline: 'none', width: 140 }} />
+      </div>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+          <thead>
+            <tr>
+              <Th k="nome">Item</Th>
+              <Th k="p1">{label1}</Th>
+              <Th k="p2">{label2}</Th>
+              <Th k="diff">Diferença</Th>
+              <Th k="pct">Variação</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {exibidos.map((item, i) => {
+              const { bg, text, border } = corPct(item.pct)
+              return (
+                <tr key={i} style={{ borderBottom: '1px solid #0d1520', background: i % 2 === 0 ? 'transparent' : '#060d1810' }}>
+                  <td style={{ padding: '9px 12px', color: '#cbd5e1', fontWeight: 500, maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.nome}>{item.nome}</td>
+                  <td style={{ padding: '9px 12px', textAlign: 'right', color: '#e2e8f0', fontWeight: 700 }}>{item.p1}</td>
+                  <td style={{ padding: '9px 12px', textAlign: 'right', color: '#64748b' }}>{item.p2}</td>
+                  <td style={{ padding: '9px 12px', textAlign: 'right', color: item.diff >= 0 ? '#10b981' : '#ef4444', fontWeight: 600 }}>{item.diff > 0 ? '+' : ''}{item.diff}</td>
+                  <td style={{ padding: '9px 12px', textAlign: 'right' }}><Badge pct={item.pct} p1={item.p1} p2={item.p2} /></td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+      {sorted.length > limite && (
+        <div style={{ padding: '10px 16px', textAlign: 'center' }}>
+          <button onClick={() => setLimite(l => l + 30)} style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 6, padding: '6px 16px', color: '#94a3b8', fontSize: 12, cursor: 'pointer' }}>
+            Ver mais ({sorted.length - limite} restantes)
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── COMPONENTE PRINCIPAL ────────────────────────────────────────────────────
 export default function RelatoriosPage() {
-  const [dados, setDados] = useState<DadosImportados | null>(null)
-  const [periodoAtual, setPeriodoAtual] = useState<{ ano: number; mes: number } | null>(null)
-  const [aba, setAba] = useState<'geral' | 'profissionais' | 'feedbacks'>('geral')
+  const [dados, setDados] = useState<DadosBase | null>(null)
+  const [aba, setAba] = useState<'geral' | 'metas' | 'profissionais' | 'feedbacks'>('geral')
   const [loading, setLoading] = useState(false)
   const [showImport, setShowImport] = useState(false)
-  const [buscaProf, setBuscaProf] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
-  // Carregar dados do localStorage ao montar
+  // Modo de comparação: 'auto' = mesmo mês ano anterior | 'custom' = datas manuais
+  const [modo, setModo] = useState<'auto' | 'custom'>('auto')
+
+  // Período 1 (atual) — selecionado por mês/ano
+  const [p1Mes, setP1Mes] = useState(new Date().getMonth() + 1)
+  const [p1Ano, setP1Ano] = useState(new Date().getFullYear())
+
+  // Período custom
+  const [p1De, setP1De] = useState('')
+  const [p1Ate, setP1Ate] = useState('')
+  const [p2De, setP2De] = useState('')
+  const [p2Ate, setP2Ate] = useState('')
+
+  // Metas
+  const [metaValor, setMetaValor] = useState('')
+  const [metaTipo, setMetaTipo] = useState<'valor' | 'pct'>('valor')
+  const [metaPct, setMetaPct] = useState('5')
+  const [metaSalva, setMetaSalva] = useState(0)
+
+  // Carregar dados
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY)
-      if (saved) {
-        const parsed = JSON.parse(saved) as DadosImportados
-        setDados(parsed)
-        // selecionar período mais recente
-        if (parsed.resumo_mensal?.length) {
-          const ultimo = parsed.resumo_mensal[parsed.resumo_mensal.length - 1]
-          setPeriodoAtual({ ano: ultimo.ano, mes: ultimo.mes })
+      const s = localStorage.getItem(STORAGE_KEY)
+      if (s) {
+        const d = JSON.parse(s) as DadosBase
+        setDados(d)
+        // Detectar período mais recente
+        if (d.resumo_mensal?.length) {
+          const ult = d.resumo_mensal.reduce((a, b) => (a.ano * 100 + a.mes > b.ano * 100 + b.mes ? a : b))
+          setP1Mes(ult.mes); setP1Ano(ult.ano)
+          const anoUlt = ult.ano; const mesUlt = ult.mes
+          const ym = `${anoUlt}-${String(mesUlt).padStart(2, '0')}`
+          setP1De(ym + '-01'); setP1Ate(ym + '-28')
+          const ymAnt = `${anoUlt - 1}-${String(mesUlt).padStart(2, '0')}`
+          setP2De(ymAnt + '-01'); setP2Ate(ymAnt + '-28')
         }
       }
+      const m = localStorage.getItem(META_KEY)
+      if (m) { const md = JSON.parse(m); setMetaSalva(md.valor || 0) }
     } catch { }
   }, [])
 
+  // Períodos derivados
+  const periodoAuto1 = `${p1Ano}-${String(p1Mes).padStart(2, '0')}`
+  const periodoAuto2 = `${p1Ano - 1}-${String(p1Mes).padStart(2, '0')}`
+
+  const [de1, ate1] = modo === 'auto'
+    ? [`${periodoAuto1}-01`, `${periodoAuto1}-31`]
+    : [p1De, p1Ate]
+  const [de2, ate2] = modo === 'auto'
+    ? [`${periodoAuto2}-01`, `${periodoAuto2}-31`]
+    : [p2De, p2Ate]
+
+  // Dados calculados
+  const resumo1 = dados ? filtrarResumo(dados.resumo_mensal, de1, ate1) : []
+  const resumo2 = dados ? filtrarResumo(dados.resumo_mensal, de2, ate2) : []
+  const r1 = somarResumo(resumo1)
+  const r2 = somarResumo(resumo2)
+
+  const srv1 = dados ? filtrarServicos(dados.servicos, de1, ate1) : []
+  const srv2 = dados ? filtrarServicos(dados.servicos, de2, ate2) : []
+  const prd1 = dados ? filtrarProdutos(dados.produtos, de1, ate1) : []
+  const prd2 = dados ? filtrarProdutos(dados.produtos, de2, ate2) : []
+
+  const mapSrv1 = agruparItens(srv1.map(s => ({ nome: s.servico, qtd: s.quantidade })))
+  const mapSrv2 = agruparItens(srv2.map(s => ({ nome: s.servico, qtd: s.quantidade })))
+  const mapPrd1 = agruparItens(prd1.map(s => ({ nome: s.produto, qtd: s.quantidade })))
+  const mapPrd2 = agruparItens(prd2.map(s => ({ nome: s.produto, qtd: s.quantidade })))
+
+  const compSrv = buildComparativo(mapSrv1, mapSrv2)
+  const compPrd = buildComparativo(mapPrd1, mapPrd2)
+
+  const top10Cresc = [...compSrv, ...compPrd].filter(i => i.p2 > 0).sort((a, b) => b.pct - a.pct).slice(0, 10)
+  const top10Queda = [...compSrv, ...compPrd].filter(i => i.p2 > 0).sort((a, b) => a.pct - b.pct).slice(0, 10)
+
+  // Metas
+  const fatDiario = dados ? dados.faturamento_diario.filter(r => {
+    const ym = `${r.ano}-${String(r.mes).padStart(2, '0')}`
+    return ym === periodoAuto1
+  }) : []
+  const realizado = r1.fat_total
+  const metaTotal = (() => {
+    if (metaSalva > 0) return metaSalva
+    if (metaTipo === 'pct' && r2.fat_total > 0) return r2.fat_total * (1 + parseFloat(metaPct || '0') / 100)
+    return parseFloat(metaValor.replace(',', '.')) || 0
+  })()
+  const progresso = metaTotal > 0 ? Math.min((realizado / metaTotal) * 100, 100) : 0
+  const superMeta = metaTotal * 1.05
+  const restante = Math.max(metaTotal - realizado, 0)
+
+  const diasUnicosOrdenados = Array.from(new Set(fatDiario.map(d => d.data))).sort()
+  const diasTotais = diasUnicosOrdenados.length
+
+  // Labels dos períodos
+  const label1 = modo === 'auto'
+    ? `${MESES_FULL[p1Mes]}/${p1Ano}`
+    : (p1De ? `${p1De.split('-').reverse().join('/')} a ${p1Ate.split('-').reverse().join('/')}` : 'Período 1')
+  const label2 = modo === 'auto'
+    ? `${MESES_FULL[p1Mes]}/${p1Ano - 1}`
+    : (p2De ? `${p2De.split('-').reverse().join('/')} a ${p2Ate.split('-').reverse().join('/')}` : 'Período 2')
+
+  // ── IMPORTAR EXCEL ──
   async function importarExcel(file: File) {
     setLoading(true)
     try {
-      // Carregar SheetJS dinamicamente (pacote npm)
       const XLSX = await import('xlsx')
       const buffer = await file.arrayBuffer()
       const wb = XLSX.read(buffer, { type: 'buffer' })
@@ -80,363 +309,425 @@ export default function RelatoriosPage() {
         return XLSX.utils.sheet_to_json(ws, { defval: '' }) as any[]
       }
 
-      const rmRaw = parseSheet('RESUMO_MENSAL') as any[]
-      const srvRaw = parseSheet('SERVICOS') as any[]
-      const prdRaw = parseSheet('PRODUTOS') as any[]
-      const fbRaw = parseSheet('FEEDBACK') as any[]
-      const ppRaw = parseSheet('PROF_PAGAMENTOS') as any[]
-      const trRaw = parseSheet('TAXA_RETORNO_SALAO') as any[]
-      const perRaw = parseSheet('PERIODOS') as any[]
+      const rmRaw = parseSheet('RESUMO_MENSAL')
+      const fdRaw = parseSheet('FATURAMENTO_DIARIO')
+      const srvRaw = parseSheet('SERVICOS')
+      const prdRaw = parseSheet('PRODUTOS')
+      const ppRaw = parseSheet('PROF_PAGAMENTOS')
+      const mtRaw = parseSheet('METAS')
+      const fbRaw = parseSheet('FEEDBACK')
+      const perRaw = parseSheet('PERIODOS')
 
-      // Mapear RESUMO_MENSAL — pode ter 2+ períodos (atual + anterior)
-      const resumo: ResumoMensal[] = rmRaw.map((r: any) => ({
-        ano: Number(r.ano || 0), mes: Number(r.mes || 0),
-        periodo: String(r.periodo || ''),
-        faturamento_total: Number(r.faturamento_total || 0),
-        ticket_medio: Number(r.ticket_medio || 0),
-        clientes_atendidos: Number(r.clientes_atendidos || 0),
-        clientes_novos: Number(r.clientes_novos || 0),
-        faturamento_servicos: Number(r.faturamento_servicos || 0),
-        faturamento_produtos: Number(r.faturamento_produtos || 0),
-      }))
+      // Detectar período do arquivo para merge inteligente
+      const novosPeriodos = Array.from(new Set(rmRaw.map((r: any) => `${r.ano}-${r.mes}`))).map((p: any) => {
+        const [a, m] = p.split('-')
+        return { ano: Number(a), mes: Number(m) }
+      })
 
-      // Agrupar serviços por período (atual = último, anterior = penúltimo período)
-      const anosOrd = Array.from(new Set(rmRaw.map((r: any) => `${r.ano}-${r.mes}`))).sort()
-      const periAtual = anosOrd[anosOrd.length - 1]
-      const periAnt = anosOrd[anosOrd.length - 2] || ''
+      // Carregar dados existentes
+      let base: DadosBase = { resumo_mensal: [], faturamento_diario: [], servicos: [], produtos: [], prof_pagamentos: [], metas: [], feedbacks: [], periodos: [] }
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY)
+        if (saved) base = JSON.parse(saved)
+      } catch { }
 
-      const buildComparativo = (raw: any[], nomeKey: string, qtdKey: string): ItemComparativo[] => {
-        const map = new Map<string, { atual: number; anterior: number }>()
-        raw.forEach((r: any) => {
-          const chave = `${r.ano}-${r.mes}`
-          const nome = String(r[nomeKey] || '').toUpperCase().trim()
-          if (!nome) return
-          const qtd = Number(r[qtdKey] || 0)
-          if (!map.has(nome)) map.set(nome, { atual: 0, anterior: 0 })
-          const entry = map.get(nome)!
-          if (chave === periAtual) entry.atual += qtd
-          else if (chave === periAnt) entry.anterior += qtd
-        })
-        return Array.from(map.entries())
-          .map(([nome, v]) => ({ nome, ...v }))
-          .sort((a, b) => b.atual - a.atual)
+      // Remover registros dos períodos que serão sobrescritos
+      const filtrarFora = (arr: any[]) => arr.filter((r: any) => !novosPeriodos.some(p => p.ano === Number(r.ano) && p.mes === Number(r.mes)))
+
+      const novo: DadosBase = {
+        resumo_mensal: [...filtrarFora(base.resumo_mensal), ...rmRaw.map((r: any) => ({ ano: +r.ano, mes: +r.mes, periodo: r.periodo || '', faturamento_total: +r.faturamento_total || 0, ticket_medio: +r.ticket_medio || 0, clientes_atendidos: +r.clientes_atendidos || 0, clientes_novos: +r.clientes_novos || 0, faturamento_servicos: +r.faturamento_servicos || 0, faturamento_produtos: +r.faturamento_produtos || 0 }))],
+        faturamento_diario: [...filtrarFora(base.faturamento_diario), ...fdRaw.map((r: any) => ({ ano: +r.ano, mes: +r.mes, data: String(r.data || ''), dia_semana: String(r.dia_semana || ''), valor: +r.valor || 0 }))],
+        servicos: [...filtrarFora(base.servicos), ...srvRaw.map((r: any) => ({ ano: +r.ano, mes: +r.mes, servico: String(r.servico || '').toUpperCase().trim(), quantidade: +r.quantidade || 0 }))],
+        produtos: [...filtrarFora(base.produtos), ...prdRaw.map((r: any) => ({ ano: +r.ano, mes: +r.mes, produto: String(r.produto || '').toUpperCase().trim(), quantidade: +r.quantidade || 0 }))],
+        prof_pagamentos: [...filtrarFora(base.prof_pagamentos), ...ppRaw.map((r: any) => ({ ano: +r.ano, mes: +r.mes, profissional: String(r.profissional || ''), categoria: String(r.categoria || ''), valor_a_pagar: +r.valor_a_pagar || 0 }))],
+        metas: [...filtrarFora(base.metas), ...mtRaw.map((r: any) => ({ ano: +r.ano, mes: +r.mes, meta_faturamento: +r.meta_faturamento || 0, meta_clientes: +r.meta_clientes || 0, meta_ticket: +r.meta_ticket || 0, alcancado_faturamento: +r.alcancado_faturamento || 0, alcancado_clientes: +r.alcancado_clientes || 0, alcancado_ticket: +r.alcancado_ticket || 0 }))],
+        feedbacks: [...base.feedbacks.filter((f: any) => !fbRaw.some((nr: any) => nr.data === f.data && nr.profissional === f.profissional)), ...fbRaw.map((r: any) => ({ ano: +r.ano || 0, mes: +r.mes || 0, profissional: String(r.profissional || ''), tipo: String(r.tipo || ''), oque_houve: String(r.oque_houve || ''), comentario: String(r.comentario || ''), data: String(r.data || '') }))],
+        periodos: [...base.periodos.filter((p: any) => !novosPeriodos.some(n => n.ano === p.ano && n.mes === p.mes)), ...perRaw.map((r: any) => ({ ano: +r.ano, mes: +r.mes, data_inicio: String(r.data_inicio || ''), data_fim: String(r.data_fim || '') }))],
       }
 
-      const servicos = buildComparativo(srvRaw, 'servico', 'quantidade')
-      const produtos = buildComparativo(prdRaw, 'produto', 'quantidade')
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(novo))
+      setDados(novo)
 
-      const feedbacks: Feedback[] = fbRaw.map((r: any) => ({
-        profissional: String(r.profissional || ''),
-        tipo: String(r.tipo || ''),
-        oque_houve: String(r.oque_houve || ''),
-        comentario: String(r.comentario || ''),
-        data: String(r.data || ''),
-      }))
-
-      const profPagamentos: ProfPagamento[] = ppRaw.map((r: any) => ({
-        profissional: String(r.profissional || ''),
-        categoria: String(r.categoria || ''),
-        valor_a_pagar: Number(r.valor_a_pagar || 0),
-      }))
-
-      const taxaRetorno: TaxaRetorno[] = trRaw.map((r: any) => ({
-        total_clientes: Number(r.total_clientes || 0),
-        clientes_retornaram: Number(r.clientes_retornaram || 0),
-        taxa_retorno: Number(r.taxa_retorno || 0),
-      }))
-
-      const periodos = perRaw.map((r: any) => ({
-        ano: Number(r.ano || 0), mes: Number(r.mes || 0),
-        data_inicio: String(r.data_inicio || ''), data_fim: String(r.data_fim || ''),
-      }))
-
-      const importados: DadosImportados = { resumo_mensal: resumo, servicos, produtos, feedbacks, prof_pagamentos: profPagamentos, taxa_retorno_salao: taxaRetorno, periodos }
-
-      // Salvar no localStorage
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(importados))
-      setDados(importados)
-
-      if (resumo.length) {
-        const ult = resumo[resumo.length - 1]
-        setPeriodoAtual({ ano: ult.ano, mes: ult.mes })
-      }
+      const ult = novo.resumo_mensal.length ? novo.resumo_mensal.reduce((a, b) => (a.ano * 100 + a.mes > b.ano * 100 + b.mes ? a : b)) : null
+      if (ult) { setP1Mes(ult.mes); setP1Ano(ult.ano) }
 
       setShowImport(false)
-      toast.success(`✅ Dados importados! ${resumo.length} período(s), ${servicos.length} serviços, ${feedbacks.length} feedbacks.`)
+      toast.success(`✅ ${novosPeriodos.map(p => `${MESES_FULL[p.mes]}/${p.ano}`).join(', ')} importado! ${srvRaw.length} serviços, ${prdRaw.length} produtos.`)
     } catch (e: any) {
       console.error(e)
-      toast.error('Erro ao importar planilha. Verifique se é o arquivo base_dados_nodri.xlsx correto.')
+      toast.error('Erro ao importar. Verifique se é o base_dados_nodri.xlsx correto.')
     } finally { setLoading(false) }
   }
 
-  // ─── dados derivados ────────────────────────────────────────────────────
-  const resumoAtual = dados?.resumo_mensal?.find(r => r.ano === periodoAtual?.ano && r.mes === periodoAtual?.mes)
-  const todos = dados?.resumo_mensal || []
-  const idxAtual = todos.findIndex(r => r.ano === periodoAtual?.ano && r.mes === periodoAtual?.mes)
-  const resumoAnt = idxAtual > 0 ? todos[idxAtual - 1] : null
+  function salvarMeta() {
+    const val = metaTipo === 'pct' ? r2.fat_total * (1 + parseFloat(metaPct || '0') / 100) : parseFloat(metaValor.replace(',', '.')) || 0
+    localStorage.setItem(META_KEY, JSON.stringify({ valor: val, tipo: metaTipo }))
+    setMetaSalva(val)
+    toast.success(`Meta salva: ${moeda(val)}`)
+  }
 
-  const taxa = dados?.taxa_retorno_salao?.[0]
+  // Anos disponíveis para o seletor
+  const anosDisp = dados ? Array.from(new Set(dados.resumo_mensal.map(r => r.ano))).sort((a, b) => b - a) : [new Date().getFullYear()]
+  const mesesDisp = dados ? Array.from(new Set(dados.resumo_mensal.filter(r => r.ano === p1Ano).map(r => r.mes))).sort((a, b) => a - b) : []
 
-  const profAtual = dados?.prof_pagamentos?.filter(p => {
-    // filtra pelo período atual aproximado — como não temos ano/mes na tabela simplificada, usa todos
-    return true
-  }).sort((a, b) => b.valor_a_pagar - a.valor_a_pagar) || []
+  // ── RENDER ──
+  const semDados = !dados
 
-  const feedsPositivos = (dados?.feedbacks || []).filter(f => f.tipo?.toUpperCase() === 'POSITIVO')
-  const feedsNegativos = (dados?.feedbacks || []).filter(f => f.tipo?.toUpperCase() === 'NEGATIVO')
-
-  const profFiltrados = profAtual.filter(p => p.profissional.toLowerCase().includes(buscaProf.toLowerCase()))
-
-  // ─── render ──────────────────────────────────────────────────────────────
   return (
-    <div style={{ minHeight: '100vh', background: '#000', display: 'flex', flexDirection: 'column', fontFamily: 'Segoe UI, sans-serif' }}>
+    <div style={{ minHeight: '100vh', background: '#020817', display: 'flex', flexDirection: 'column', fontFamily: "'Inter', 'Segoe UI', sans-serif", color: '#e2e8f0' }}>
 
-      {/* TOP BAR */}
-      <div style={{ background: '#0d1117', borderBottom: '1px solid #1e293b', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: '16px', position: 'sticky', top: 0, zIndex: 10 }}>
-        <a href="/salon" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', textDecoration: 'none', fontSize: '13px' }}>
+      {/* ── TOP BAR ── */}
+      <div style={{ background: '#0a0f1a', borderBottom: '1px solid #1e293b', padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 20 }}>
+        <a href="/salon" style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#475569', textDecoration: 'none', fontSize: 13 }}>
           <ArrowLeft size={15} /> Voltar
         </a>
         <span style={{ color: '#1e293b' }}>|</span>
-        <span style={{ color: '#e2e8f0', fontWeight: 700, fontSize: '14px' }}>📊 Relatórios</span>
+        <BarChart2 size={16} color="#7c5cfc" />
+        <span style={{ color: '#e2e8f0', fontWeight: 700, fontSize: 14 }}>Relatórios Gerenciais</span>
 
-        {/* Seletor de período */}
         {dados && (
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Calendar size={14} color="#7c5cfc" />
-            <select value={`${periodoAtual?.ano}-${periodoAtual?.mes}`}
-              onChange={e => { const [a, m] = e.target.value.split('-'); setPeriodoAtual({ ano: +a, mes: +m }) }}
-              style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '6px', color: '#e2e8f0', padding: '5px 10px', fontSize: '12px', outline: 'none' }}>
-              {todos.map(r => <option key={`${r.ano}-${r.mes}`} value={`${r.ano}-${r.mes}`}>{MESES[r.mes]}/{r.ano}</option>)}
-            </select>
-            <button onClick={() => setShowImport(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#1e293b', border: '1px solid #334155', borderRadius: '6px', padding: '5px 12px', color: '#7c5cfc', fontSize: '12px', cursor: 'pointer', fontWeight: 600 }}>
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+
+            {/* Modo de comparação */}
+            <div style={{ display: 'flex', background: '#111827', borderRadius: 7, border: '1px solid #1e293b', padding: 2, gap: 2 }}>
+              {(['auto', 'custom'] as const).map(m => (
+                <button key={m} onClick={() => setModo(m)} style={{ padding: '4px 12px', borderRadius: 5, border: 'none', fontSize: 11, fontWeight: 600, cursor: 'pointer', background: modo === m ? '#7c5cfc' : 'transparent', color: modo === m ? 'white' : '#64748b' }}>
+                  {m === 'auto' ? '📅 Automático' : '⚙️ Personalizado'}
+                </button>
+              ))}
+            </div>
+
+            {modo === 'auto' ? (
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <select value={p1Mes} onChange={e => setP1Mes(+e.target.value)} style={{ background: '#111827', border: '1px solid #1e293b', borderRadius: 6, color: '#e2e8f0', padding: '5px 8px', fontSize: 12, outline: 'none' }}>
+                  {(mesesDisp.length ? mesesDisp : Array.from({ length: 12 }, (_, i) => i + 1)).map(m => <option key={m} value={m}>{MESES_FULL[m]}</option>)}
+                </select>
+                <select value={p1Ano} onChange={e => setP1Ano(+e.target.value)} style={{ background: '#111827', border: '1px solid #1e293b', borderRadius: 6, color: '#e2e8f0', padding: '5px 8px', fontSize: 12, outline: 'none' }}>
+                  {anosDisp.map(a => <option key={a} value={a}>{a}</option>)}
+                </select>
+                <span style={{ fontSize: 11, color: '#475569' }}>vs {MESES[p1Mes]}/{p1Ano - 1}</span>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ fontSize: 10, color: '#7c5cfc', fontWeight: 700 }}>P1</span>
+                  <input type="date" value={p1De} onChange={e => setP1De(e.target.value)} style={{ background: '#111827', border: '1px solid #1e293b', borderRadius: 6, color: '#e2e8f0', padding: '4px 6px', fontSize: 11, outline: 'none' }} />
+                  <span style={{ fontSize: 10, color: '#475569' }}>a</span>
+                  <input type="date" value={p1Ate} onChange={e => setP1Ate(e.target.value)} style={{ background: '#111827', border: '1px solid #1e293b', borderRadius: 6, color: '#e2e8f0', padding: '4px 6px', fontSize: 11, outline: 'none' }} />
+                </div>
+                <span style={{ fontSize: 11, color: '#334155' }}>vs</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ fontSize: 10, color: '#06b6d4', fontWeight: 700 }}>P2</span>
+                  <input type="date" value={p2De} onChange={e => setP2De(e.target.value)} style={{ background: '#111827', border: '1px solid #1e293b', borderRadius: 6, color: '#e2e8f0', padding: '4px 6px', fontSize: 11, outline: 'none' }} />
+                  <span style={{ fontSize: 10, color: '#475569' }}>a</span>
+                  <input type="date" value={p2Ate} onChange={e => setP2Ate(e.target.value)} style={{ background: '#111827', border: '1px solid #1e293b', borderRadius: 6, color: '#e2e8f0', padding: '4px 6px', fontSize: 11, outline: 'none' }} />
+                </div>
+              </div>
+            )}
+
+            <button onClick={() => setShowImport(true)} style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#1e293b', border: '1px solid #334155', borderRadius: 6, padding: '5px 12px', color: '#7c5cfc', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>
               <Upload size={13} /> Importar
             </button>
           </div>
         )}
       </div>
 
-      {/* SEM DADOS — TELA DE BOAS VINDAS */}
-      {!dados && (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
-          <div style={{ maxWidth: '480px', textAlign: 'center' }}>
-            <FileSpreadsheet size={64} style={{ margin: '0 auto 20px', display: 'block' }} color="#7c5cfc" />
-            <h2 style={{ color: '#e2e8f0', fontSize: '22px', fontWeight: 700, margin: '0 0 12px' }}>Importe sua Planilha de Dados</h2>
-            <p style={{ color: '#64748b', fontSize: '14px', lineHeight: 1.7, margin: '0 0 24px' }}>
-              Faça o upload do arquivo <strong style={{ color: '#94a3b8' }}>base_dados_nodri.xlsx</strong> gerado pelo sistema Nodri para visualizar os relatórios completos do seu salão.
+      {/* SEM DADOS */}
+      {semDados && (
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40 }}>
+          <div style={{ maxWidth: 440, textAlign: 'center' }}>
+            <FileSpreadsheet size={56} style={{ margin: '0 auto 16px', display: 'block', color: '#7c5cfc' }} />
+            <h2 style={{ fontSize: 20, fontWeight: 700, margin: '0 0 10px' }}>Importe seus Dados</h2>
+            <p style={{ color: '#64748b', fontSize: 14, lineHeight: 1.7, margin: '0 0 20px' }}>
+              Faça upload do <strong style={{ color: '#94a3b8' }}>base_dados_nodri.xlsx</strong> gerado pelo sistema Nodri para visualizar os relatórios completos.
             </p>
-            <button onClick={() => setShowImport(true)}
-              style={{ background: 'linear-gradient(135deg, #7c5cfc, #f43f8e)', color: 'white', border: 'none', borderRadius: '10px', padding: '14px 32px', fontSize: '15px', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-              <Upload size={18} /> Importar Planilha
+            <button onClick={() => setShowImport(true)} style={{ background: 'linear-gradient(135deg, #7c5cfc, #f43f8e)', color: 'white', border: 'none', borderRadius: 10, padding: '12px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+              <Upload size={16} /> Importar Planilha
             </button>
-            <p style={{ color: '#475569', fontSize: '11px', marginTop: '12px' }}>Os dados ficam salvos localmente no seu navegador.</p>
+            <p style={{ color: '#334155', fontSize: 11, marginTop: 10 }}>Dados salvos localmente no navegador. A importação é por período — não apaga outros meses.</p>
           </div>
         </div>
       )}
 
       {/* CONTEÚDO PRINCIPAL */}
-      {dados && resumoAtual && (
-        <div style={{ flex: 1, padding: '20px', overflowY: 'auto' }}>
-
-          {/* HEADER PERÍODO */}
-          <div style={{ background: 'linear-gradient(135deg, #1a2980 0%, #26d0ce 100%)', borderRadius: '12px', padding: '20px', marginBottom: '20px', position: 'relative', overflow: 'hidden' }}>
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: 'linear-gradient(90deg, #ff9a00, #ff5e00, #ff0066)' }} />
-            <h1 style={{ color: 'white', fontSize: '20px', fontWeight: 700, margin: '0 0 6px' }}>SISTEMA NODRI</h1>
-            <p style={{ color: '#e6e6fa', fontSize: '13px', margin: 0 }}>
-              📊 Período: <strong>{MESES[resumoAtual.mes]}/{resumoAtual.ano}</strong>
-              {resumoAnt && <> &nbsp;|&nbsp; Comparado com: <strong>{MESES[resumoAnt.mes]}/{resumoAnt.ano}</strong></>}
-            </p>
-          </div>
+      {dados && (
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
 
           {/* ABAS */}
-          <div style={{ display: 'flex', gap: '4px', marginBottom: '20px', background: '#0d1117', borderRadius: '10px', padding: '4px', width: 'fit-content', border: '1px solid #1e293b' }}>
-            {(['geral', 'profissionais', 'feedbacks'] as const).map(a => (
-              <button key={a} onClick={() => setAba(a)}
-                style={{ padding: '8px 20px', borderRadius: '7px', border: 'none', fontSize: '13px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s', background: aba === a ? 'linear-gradient(135deg, #7c5cfc, #f43f8e)' : 'transparent', color: aba === a ? 'white' : '#64748b' }}>
-                {a === 'geral' ? '📈 Geral' : a === 'profissionais' ? '👥 Profissionais' : '⭐ Feedbacks'}
+          <div style={{ padding: '12px 20px 0', display: 'flex', gap: 4, borderBottom: '1px solid #1e293b' }}>
+            {([['geral', '📈 Geral'], ['metas', '🎯 Metas'], ['profissionais', '👥 Profissionais'], ['feedbacks', '⭐ Feedbacks']] as const).map(([id, lbl]) => (
+              <button key={id} onClick={() => setAba(id as any)}
+                style={{ padding: '8px 18px', border: 'none', borderRadius: '8px 8px 0 0', fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s', background: aba === id ? '#0a0f1a' : 'transparent', color: aba === id ? '#e2e8f0' : '#475569', borderBottom: aba === id ? '2px solid #7c5cfc' : '2px solid transparent', marginBottom: -1 }}>
+                {lbl}
               </button>
             ))}
+            <div style={{ marginLeft: 'auto', padding: '6px 0', fontSize: 11, color: '#334155', alignSelf: 'center' }}>
+              <span style={{ color: '#7c5cfc', fontWeight: 600 }}>{label1}</span>
+              <span style={{ margin: '0 6px' }}>vs</span>
+              <span style={{ color: '#06b6d4', fontWeight: 600 }}>{label2}</span>
+            </div>
           </div>
 
-          {/* ── ABA GERAL ── */}
-          {aba === 'geral' && (
-            <div>
-              {/* CARDS COMPARATIVO */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '12px', marginBottom: '20px' }}>
-                {[
-                  { label: 'Faturamento Total', atual: resumoAtual.faturamento_total, ant: resumoAnt?.faturamento_total || 0, fmt: moeda, icon: '💰' },
-                  { label: 'Ticket Médio', atual: resumoAtual.ticket_medio, ant: resumoAnt?.ticket_medio || 0, fmt: moeda, icon: '🎟️' },
-                  { label: 'Clientes Atendidos', atual: resumoAtual.clientes_atendidos, ant: resumoAnt?.clientes_atendidos || 0, fmt: (v: number) => v.toString(), icon: '👥' },
-                  { label: 'Clientes Novos', atual: resumoAtual.clientes_novos, ant: resumoAnt?.clientes_novos || 0, fmt: (v: number) => v.toString(), icon: '🆕' },
-                  { label: 'Fat. Serviços', atual: resumoAtual.faturamento_servicos, ant: resumoAnt?.faturamento_servicos || 0, fmt: moeda, icon: '✂️' },
-                  { label: 'Fat. Produtos', atual: resumoAtual.faturamento_produtos, ant: resumoAnt?.faturamento_produtos || 0, fmt: moeda, icon: '📦' },
-                ].map(card => {
-                  const p = resumoAnt ? pct(card.atual, card.ant) : 0
-                  const c = crescClass(p)
-                  return (
-                    <div key={card.label} style={{ background: '#0d1117', border: `1px solid ${c.border}`, borderLeft: `4px solid ${c.text}`, borderRadius: '10px', padding: '16px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                        <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>{card.icon} {card.label}</span>
-                        {resumoAnt && <span style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '12px', fontWeight: 700, color: c.text, background: c.bg, padding: '2px 8px', borderRadius: '20px' }}>{c.icon} {p > 0 ? '+' : ''}{p.toFixed(1)}%</span>}
+          <div style={{ flex: 1, padding: '20px', overflowY: 'auto' }}>
+
+            {/* ════════ ABA GERAL ════════ */}
+            {aba === 'geral' && (
+              <div>
+                {/* KPIs */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 10, marginBottom: 20 }}>
+                  {[
+                    { lbl: 'Faturamento Total', v1: r1.fat_total, v2: r2.fat_total, fmt: moeda, ico: '💰' },
+                    { lbl: 'Ticket Médio', v1: r1.ticket, v2: r2.ticket, fmt: moeda, ico: '🎟️' },
+                    { lbl: 'Clientes Atendidos', v1: r1.clientes, v2: r2.clientes, fmt: (v: number) => v.toLocaleString('pt-BR'), ico: '👥' },
+                    { lbl: 'Clientes Novos', v1: r1.novos, v2: r2.novos, fmt: (v: number) => v.toLocaleString('pt-BR'), ico: '🆕' },
+                    { lbl: 'Fat. Serviços', v1: r1.fat_srv, v2: r2.fat_srv, fmt: moeda, ico: '✂️' },
+                    { lbl: 'Fat. Produtos', v1: r1.fat_prd, v2: r2.fat_prd, fmt: moeda, ico: '📦' },
+                  ].map(card => {
+                    const p = calcPct(card.v1, card.v2)
+                    const { bg, text, border, Icon } = corPct(p)
+                    return (
+                      <div key={card.lbl} style={{ background: '#0a0f1a', border: `1px solid ${border}`, borderLeft: `3px solid ${text}`, borderRadius: 10, padding: '14px 16px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                          <span style={{ fontSize: 11, color: '#475569', fontWeight: 600 }}>{card.ico} {card.lbl}</span>
+                          {r2.fat_total > 0 && <span style={{ display: 'flex', alignItems: 'center', gap: 2, fontSize: 11, fontWeight: 700, color: text, background: bg, padding: '1px 6px', borderRadius: 20 }}><Icon size={10} />{p > 0 ? '+' : ''}{p.toFixed(1)}%</span>}
+                        </div>
+                        <div style={{ fontSize: 20, fontWeight: 800, color: '#f1f5f9', marginBottom: 2 }}>{card.fmt(card.v1)}</div>
+                        {r2.fat_total > 0 && <div style={{ fontSize: 11, color: '#334155' }}>Ant: {card.fmt(card.v2)}</div>}
                       </div>
-                      <div style={{ color: '#e2e8f0', fontSize: '20px', fontWeight: 800 }}>{card.fmt(card.atual)}</div>
-                      {resumoAnt && <div style={{ color: '#475569', fontSize: '11px', marginTop: '4px' }}>Ant: {card.fmt(card.ant)}</div>}
+                    )
+                  })}
+                </div>
+
+                {/* TOP 10 crescimento e queda lado a lado */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+                  <div style={{ background: '#0a0f1a', border: '1px solid #10b98130', borderRadius: 12, padding: 16 }}>
+                    <h3 style={{ color: '#10b981', fontSize: 13, fontWeight: 700, margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: 6 }}><TrendingUp size={14} /> Top 10 Maiores Crescimentos</h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {top10Cresc.map((item, i) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontSize: 10, color: '#334155', width: 16, flexShrink: 0 }}>#{i + 1}</span>
+                          <span style={{ flex: 1, fontSize: 11, color: '#94a3b8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.nome}>{item.nome}</span>
+                          <span style={{ fontSize: 11, color: '#e2e8f0', fontWeight: 700, flexShrink: 0 }}>{item.p1}</span>
+                          <Badge pct={item.pct} p1={item.p1} p2={item.p2} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{ background: '#0a0f1a', border: '1px solid #ef444430', borderRadius: 12, padding: 16 }}>
+                    <h3 style={{ color: '#ef4444', fontSize: 13, fontWeight: 700, margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: 6 }}><TrendingDown size={14} /> Top 10 Maiores Quedas</h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {top10Queda.map((item, i) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontSize: 10, color: '#334155', width: 16, flexShrink: 0 }}>#{i + 1}</span>
+                          <span style={{ flex: 1, fontSize: 11, color: '#94a3b8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.nome}>{item.nome}</span>
+                          <span style={{ fontSize: 11, color: '#e2e8f0', fontWeight: 700, flexShrink: 0 }}>{item.p1}</span>
+                          <Badge pct={item.pct} p1={item.p1} p2={item.p2} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tabelas completas */}
+                <TabelaComp title="✂️ Serviços Vendidos" items={compSrv} label1={label1} label2={label2} />
+                <TabelaComp title="📦 Produtos Vendidos" items={compPrd} label1={label1} label2={label2} />
+              </div>
+            )}
+
+            {/* ════════ ABA METAS ════════ */}
+            {aba === 'metas' && (
+              <div>
+                {/* Configuração da meta */}
+                <div style={{ background: '#0a0f1a', border: '1px solid #1e293b', borderRadius: 12, padding: 20, marginBottom: 16 }}>
+                  <h3 style={{ color: '#7c5cfc', fontSize: 14, fontWeight: 700, margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: 8 }}><Settings size={15} /> Configurar Meta</h3>
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', background: '#111827', borderRadius: 7, border: '1px solid #1e293b', padding: 2, gap: 2 }}>
+                      <button onClick={() => setMetaTipo('valor')} style={{ padding: '5px 14px', borderRadius: 5, border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer', background: metaTipo === 'valor' ? '#7c5cfc' : 'transparent', color: metaTipo === 'valor' ? 'white' : '#64748b' }}>Valor fixo</button>
+                      <button onClick={() => setMetaTipo('pct')} style={{ padding: '5px 14px', borderRadius: 5, border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer', background: metaTipo === 'pct' ? '#7c5cfc' : 'transparent', color: metaTipo === 'pct' ? 'white' : '#64748b' }}>% sobre ano anterior</button>
+                    </div>
+                    {metaTipo === 'valor' ? (
+                      <input value={metaValor} onChange={e => setMetaValor(e.target.value)} placeholder="Ex: 250000"
+                        style={{ background: '#111827', border: '1px solid #1e293b', borderRadius: 6, padding: '6px 12px', fontSize: 13, color: '#e2e8f0', outline: 'none', width: 160 }} />
+                    ) : (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <input value={metaPct} onChange={e => setMetaPct(e.target.value)} placeholder="5"
+                          style={{ background: '#111827', border: '1px solid #1e293b', borderRadius: 6, padding: '6px 12px', fontSize: 13, color: '#e2e8f0', outline: 'none', width: 80 }} />
+                        <span style={{ color: '#64748b', fontSize: 13 }}>% acima de {moeda(r2.fat_total)} = <strong style={{ color: '#7c5cfc' }}>{moeda(r2.fat_total * (1 + parseFloat(metaPct || '0') / 100))}</strong></span>
+                      </div>
+                    )}
+                    <button onClick={salvarMeta} style={{ background: 'linear-gradient(135deg, #7c5cfc, #f43f8e)', color: 'white', border: 'none', borderRadius: 8, padding: '7px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                      Salvar Meta
+                    </button>
+                  </div>
+                </div>
+
+                {/* KPIs de metas */}
+                {metaTotal > 0 ? (
+                  <>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 10, marginBottom: 20 }}>
+                      {[
+                        { lbl: '🎯 Meta Total', val: moeda(metaTotal), cor: '#7c5cfc' },
+                        { lbl: '✅ Realizado', val: moeda(realizado), cor: '#10b981' },
+                        { lbl: '⏳ Restante', val: moeda(restante), cor: restante > 0 ? '#f59e0b' : '#10b981' },
+                        { lbl: '📈 Progresso', val: `${progresso.toFixed(1)}%`, cor: progresso >= 100 ? '#10b981' : progresso >= 80 ? '#06b6d4' : '#f59e0b' },
+                        { lbl: '🚀 Super Meta (+5%)', val: moeda(superMeta), cor: '#f43f8e' },
+                        { lbl: '📊 vs Ano Anterior', val: `${calcPct(realizado, r2.fat_total) > 0 ? '+' : ''}${calcPct(realizado, r2.fat_total).toFixed(1)}%`, cor: calcPct(realizado, r2.fat_total) >= 0 ? '#10b981' : '#ef4444' },
+                      ].map(card => (
+                        <div key={card.lbl} style={{ background: '#0a0f1a', border: `1px solid ${card.cor}30`, borderLeft: `3px solid ${card.cor}`, borderRadius: 10, padding: '14px 16px' }}>
+                          <div style={{ fontSize: 11, color: '#475569', marginBottom: 6, fontWeight: 600 }}>{card.lbl}</div>
+                          <div style={{ fontSize: 20, fontWeight: 800, color: card.cor }}>{card.val}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Barra de progresso */}
+                    <div style={{ background: '#0a0f1a', border: '1px solid #1e293b', borderRadius: 12, padding: 20, marginBottom: 16 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: '#e2e8f0' }}>Progresso da Meta</span>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: progresso >= 100 ? '#10b981' : '#7c5cfc' }}>{progresso.toFixed(1)}%</span>
+                      </div>
+                      <div style={{ height: 12, background: '#1e293b', borderRadius: 20, overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${progresso}%`, background: progresso >= 100 ? 'linear-gradient(90deg, #10b981, #059669)' : 'linear-gradient(90deg, #7c5cfc, #f43f8e)', borderRadius: 20, transition: 'width 0.5s ease' }} />
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontSize: 11, color: '#475569' }}>
+                        <span>{moeda(realizado)} realizado</span>
+                        <span>Meta: {moeda(metaTotal)}</span>
+                      </div>
+                    </div>
+
+                    {/* Tabela comparativo histórico */}
+                    <div style={{ background: '#0a0f1a', border: '1px solid #1e293b', borderRadius: 12, padding: 20, marginBottom: 16 }}>
+                      <h3 style={{ color: '#e2e8f0', fontSize: 14, fontWeight: 700, margin: '0 0 16px' }}>📊 Comparativo Histórico</h3>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                        <tbody>
+                          {[
+                            { lbl: 'Ano anterior', val: moeda(r2.fat_total), cor: '#64748b' },
+                            { lbl: 'Atual', val: moeda(realizado), cor: '#e2e8f0' },
+                            { lbl: 'Diferença', val: `${realizado - r2.fat_total >= 0 ? '+' : ''}${moeda(realizado - r2.fat_total)}`, cor: realizado >= r2.fat_total ? '#10b981' : '#ef4444' },
+                            { lbl: 'Variação', val: `${calcPct(realizado, r2.fat_total) > 0 ? '+' : ''}${calcPct(realizado, r2.fat_total).toFixed(2)}%`, cor: calcPct(realizado, r2.fat_total) >= 0 ? '#10b981' : '#ef4444' },
+                            { lbl: 'Meta definida', val: moeda(metaTotal), cor: '#7c5cfc' },
+                            { lbl: 'Super Meta (+5%)', val: moeda(superMeta), cor: '#f43f8e' },
+                          ].map((row, i) => (
+                            <tr key={i} style={{ borderBottom: '1px solid #1e293b' }}>
+                              <td style={{ padding: '10px 0', color: '#475569', fontWeight: 500 }}>{row.lbl}</td>
+                              <td style={{ padding: '10px 0', textAlign: 'right', fontWeight: 700, color: row.cor, fontSize: 15 }}>{row.val}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Calendário de faturamento diário */}
+                    {fatDiario.length > 0 && (
+                      <div style={{ background: '#0a0f1a', border: '1px solid #1e293b', borderRadius: 12, padding: 20 }}>
+                        <h3 style={{ color: '#e2e8f0', fontSize: 14, fontWeight: 700, margin: '0 0 16px' }}>📅 Faturamento Diário</h3>
+                        <div style={{ overflowX: 'auto' }}>
+                          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                            <thead>
+                              <tr style={{ background: '#060d18' }}>
+                                {['Data', 'Dia', 'Realizado', 'Status'].map(h => (
+                                  <th key={h} style={{ padding: '8px 12px', textAlign: h === 'Realizado' ? 'right' : 'left', color: '#64748b', fontWeight: 600, fontSize: 11, borderBottom: '1px solid #1e293b' }}>{h}</th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {fatDiario.sort((a, b) => a.data.localeCompare(b.data)).map((d, i) => {
+                                const status = d.valor > 0 ? (d.valor >= metaTotal / diasTotais ? '🟢' : '🟡') : '🔴'
+                                return (
+                                  <tr key={i} style={{ borderBottom: '1px solid #0d1520', background: i % 2 === 0 ? 'transparent' : '#060d1810' }}>
+                                    <td style={{ padding: '8px 12px', color: '#94a3b8' }}>{d.data}</td>
+                                    <td style={{ padding: '8px 12px', color: '#64748b' }}>{d.dia_semana}</td>
+                                    <td style={{ padding: '8px 12px', textAlign: 'right', color: d.valor > 0 ? '#10b981' : '#334155', fontWeight: 700 }}>{d.valor > 0 ? moeda(d.valor) : '—'}</td>
+                                    <td style={{ padding: '8px 12px' }}>{status}</td>
+                                  </tr>
+                                )
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div style={{ textAlign: 'center', padding: 60, color: '#475569' }}>
+                    <Target size={40} style={{ margin: '0 auto 12px', display: 'block', opacity: 0.4 }} />
+                    <p style={{ margin: 0, fontSize: 14 }}>Configure uma meta acima para ver o painel completo.</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ════════ ABA PROFISSIONAIS ════════ */}
+            {aba === 'profissionais' && (
+              <div>
+                {dados.prof_pagamentos.filter(p => p.ano * 100 + p.mes >= +de1.slice(0, 4) * 100 + +de1.slice(5, 7) && p.ano * 100 + p.mes <= +ate1.slice(0, 4) * 100 + +ate1.slice(5, 7))
+                  .sort((a, b) => b.valor_a_pagar - a.valor_a_pagar)
+                  .map((p, i) => (
+                    <div key={i} style={{ background: '#0a0f1a', border: '1px solid #1e293b', borderRadius: 10, padding: '12px 16px', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'linear-gradient(135deg, #7c5cfc, #f43f8e)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 13, flexShrink: 0 }}>{(p.profissional[0] || '?').toUpperCase()}</div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ color: '#e2e8f0', fontWeight: 600, fontSize: 13 }}>{p.profissional}</div>
+                        <div style={{ color: '#475569', fontSize: 11 }}>{p.categoria}</div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ color: '#10b981', fontWeight: 800, fontSize: 15 }}>{moeda(p.valor_a_pagar)}</div>
+                        <div style={{ color: '#475569', fontSize: 10 }}>a pagar</div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
+
+            {/* ════════ ABA FEEDBACKS ════════ */}
+            {aba === 'feedbacks' && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                {[['POSITIVO', '#10b981'], ['NEGATIVO', '#ef4444']].map(([tipo, cor]) => {
+                  const items = dados.feedbacks.filter(f => f.tipo?.toUpperCase() === tipo)
+                  return (
+                    <div key={tipo}>
+                      <h3 style={{ color: cor, fontSize: 14, fontWeight: 700, marginBottom: 12 }}>{tipo === 'POSITIVO' ? '✅' : '❌'} {tipo} ({items.length})</h3>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 600, overflowY: 'auto' }}>
+                        {items.slice(0, 60).map((f, i) => (
+                          <div key={i} style={{ background: '#0a0f1a', border: `1px solid ${cor}25`, borderLeft: `3px solid ${cor}`, borderRadius: 8, padding: 12 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                              <span style={{ color: cor, fontSize: 12, fontWeight: 600 }}>{f.profissional}</span>
+                              <span style={{ color: '#334155', fontSize: 10 }}>{f.data}</span>
+                            </div>
+                            <div style={{ color: '#e2e8f0', fontSize: 11, fontWeight: 600, marginBottom: 3 }}>{f.oque_houve}</div>
+                            {f.comentario && <div style={{ color: '#64748b', fontSize: 11, lineHeight: 1.5, fontStyle: 'italic' }}>"{f.comentario}"</div>}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )
                 })}
               </div>
+            )}
 
-              {/* TAXA DE RETORNO */}
-              {taxa && (
-                <div style={{ background: '#0d1117', border: '1px solid #1e293b', borderRadius: '10px', padding: '16px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '20px' }}>
-                  <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: `conic-gradient(#7c5cfc ${taxa.taxa_retorno * 3.6}deg, #1e293b 0deg)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#0d1117', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#7c5cfc', fontSize: '12px', fontWeight: 800 }}>{taxa.taxa_retorno.toFixed(0)}%</div>
-                  </div>
-                  <div>
-                    <div style={{ color: '#e2e8f0', fontWeight: 700, fontSize: '15px' }}>Taxa de Retorno de Clientes</div>
-                    <div style={{ color: '#64748b', fontSize: '12px', marginTop: '4px' }}>{taxa.clientes_retornaram} de {taxa.total_clientes} clientes retornaram</div>
-                  </div>
-                </div>
-              )}
-
-              {/* SERVIÇOS */}
-              <div style={{ background: '#0d1117', border: '1px solid #1e293b', borderRadius: '10px', padding: '16px', marginBottom: '16px' }}>
-                <h3 style={{ color: '#e2e8f0', fontSize: '15px', fontWeight: 700, margin: '0 0 16px', paddingBottom: '10px', borderBottom: '2px solid #26d0ce' }}>✂️ Serviços Vendidos</h3>
-                <div style={{ maxHeight: '400px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {dados.servicos.slice(0, 30).map((s, i) => {
-                    const p = pct(s.atual, s.anterior); const c = crescClass(p)
-                    return (
-                      <div key={i} style={{ display: 'flex', alignItems: 'center', padding: '10px 12px', background: c.bg, border: `1px solid ${c.border}`, borderLeft: `4px solid ${c.text}`, borderRadius: '8px', gap: '12px' }}>
-                        <span style={{ color: '#475569', fontSize: '11px', width: '20px', flexShrink: 0 }}>#{i + 1}</span>
-                        <span style={{ flex: 1, color: '#e2e8f0', fontSize: '13px', fontWeight: 600 }}>{s.nome}</span>
-                        <span style={{ color: '#e2e8f0', fontWeight: 700, fontSize: '14px' }}>{s.atual}</span>
-                        {s.anterior > 0 && <span style={{ color: '#475569', fontSize: '11px' }}>ant: {s.anterior}</span>}
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', fontWeight: 700, color: c.text, background: '#00000040', padding: '2px 6px', borderRadius: '4px', flexShrink: 0 }}>
-                          {c.icon} {s.anterior === 0 && s.atual > 0 ? 'NOVO' : `${p > 0 ? '+' : ''}${p.toFixed(1)}%`}
-                        </span>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* PRODUTOS */}
-              <div style={{ background: '#0d1117', border: '1px solid #1e293b', borderRadius: '10px', padding: '16px' }}>
-                <h3 style={{ color: '#e2e8f0', fontSize: '15px', fontWeight: 700, margin: '0 0 16px', paddingBottom: '10px', borderBottom: '2px solid #26d0ce' }}>📦 Produtos Vendidos</h3>
-                <div style={{ maxHeight: '350px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {dados.produtos.slice(0, 20).map((p, i) => {
-                    const pc = pct(p.atual, p.anterior); const c = crescClass(pc)
-                    return (
-                      <div key={i} style={{ display: 'flex', alignItems: 'center', padding: '10px 12px', background: c.bg, border: `1px solid ${c.border}`, borderLeft: `4px solid ${c.text}`, borderRadius: '8px', gap: '12px' }}>
-                        <span style={{ color: '#475569', fontSize: '11px', width: '20px', flexShrink: 0 }}>#{i + 1}</span>
-                        <span style={{ flex: 1, color: '#e2e8f0', fontSize: '13px', fontWeight: 600 }}>{p.nome}</span>
-                        <span style={{ color: '#e2e8f0', fontWeight: 700, fontSize: '14px' }}>{p.atual}</span>
-                        {p.anterior > 0 && <span style={{ color: '#475569', fontSize: '11px' }}>ant: {p.anterior}</span>}
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', fontWeight: 700, color: c.text, background: '#00000040', padding: '2px 6px', borderRadius: '4px', flexShrink: 0 }}>
-                          {c.icon} {p.anterior === 0 && p.atual > 0 ? 'NOVO' : `${pc > 0 ? '+' : ''}${pc.toFixed(1)}%`}
-                        </span>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ── ABA PROFISSIONAIS ── */}
-          {aba === 'profissionais' && (
-            <div>
-              <div style={{ marginBottom: '16px', position: 'relative' }}>
-                <input value={buscaProf} onChange={e => setBuscaProf(e.target.value)} placeholder="🔍 Buscar profissional..."
-                  style={{ width: '100%', background: '#0d1117', border: '1px solid #1e293b', borderRadius: '8px', padding: '9px 12px', fontSize: '13px', color: '#e2e8f0', outline: 'none' }} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {profFiltrados.map((p, i) => (
-                  <div key={i} style={{ background: '#0d1117', border: '1px solid #1e293b', borderRadius: '10px', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '14px' }}>
-                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'linear-gradient(135deg, #7c5cfc, #f43f8e)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: '14px', flexShrink: 0 }}>
-                      {(p.profissional[0] || '?').toUpperCase()}
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ color: '#e2e8f0', fontWeight: 600, fontSize: '14px' }}>{p.profissional}</div>
-                      <div style={{ color: '#7c5cfc', fontSize: '11px', marginTop: '2px' }}>{p.categoria || 'Profissional'}</div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ color: '#10b981', fontWeight: 800, fontSize: '16px' }}>{moeda(p.valor_a_pagar)}</div>
-                      <div style={{ color: '#475569', fontSize: '10px' }}>a pagar</div>
-                    </div>
-                  </div>
-                ))}
-                {profFiltrados.length === 0 && <p style={{ color: '#475569', textAlign: 'center', padding: '40px' }}>Nenhum profissional encontrado</p>}
-              </div>
-            </div>
-          )}
-
-          {/* ── ABA FEEDBACKS ── */}
-          {aba === 'feedbacks' && (
-            <div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                {/* POSITIVOS */}
-                <div>
-                  <h3 style={{ color: '#10b981', fontSize: '14px', fontWeight: 700, margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <CheckCircle size={16} /> Positivos ({feedsPositivos.length})
-                  </h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '600px', overflowY: 'auto' }}>
-                    {feedsPositivos.slice(0, 50).map((f, i) => (
-                      <div key={i} style={{ background: '#10b98110', border: '1px solid #10b98130', borderRadius: '8px', padding: '12px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                          <span style={{ color: '#10b981', fontSize: '12px', fontWeight: 600 }}>{f.profissional}</span>
-                          <span style={{ color: '#475569', fontSize: '10px' }}>{f.data}</span>
-                        </div>
-                        <div style={{ color: '#e2e8f0', fontSize: '11px', fontWeight: 600, marginBottom: '4px' }}>{f.oque_houve}</div>
-                        {f.comentario && <div style={{ color: '#94a3b8', fontSize: '11px', lineHeight: 1.5, fontStyle: 'italic' }}>"{f.comentario}"</div>}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                {/* NEGATIVOS */}
-                <div>
-                  <h3 style={{ color: '#ef4444', fontSize: '14px', fontWeight: 700, margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <AlertCircle size={16} /> Negativos ({feedsNegativos.length})
-                  </h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '600px', overflowY: 'auto' }}>
-                    {feedsNegativos.slice(0, 50).map((f, i) => (
-                      <div key={i} style={{ background: '#ef444410', border: '1px solid #ef444430', borderRadius: '8px', padding: '12px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                          <span style={{ color: '#ef4444', fontSize: '12px', fontWeight: 600 }}>{f.profissional}</span>
-                          <span style={{ color: '#475569', fontSize: '10px' }}>{f.data}</span>
-                        </div>
-                        <div style={{ color: '#e2e8f0', fontSize: '11px', fontWeight: 600, marginBottom: '4px' }}>{f.oque_houve}</div>
-                        {f.comentario && <div style={{ color: '#94a3b8', fontSize: '11px', lineHeight: 1.5, fontStyle: 'italic' }}>"{f.comentario}"</div>}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+          </div>
         </div>
       )}
 
-      {/* MODAL IMPORTAR */}
+      {/* ── MODAL IMPORTAR ── */}
       {showImport && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '20px' }}>
-          <div style={{ background: '#0d1117', border: '1px solid #1e293b', borderRadius: '16px', padding: '32px', maxWidth: '480px', width: '100%' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-              <h2 style={{ color: '#e2e8f0', fontSize: '18px', fontWeight: 700, margin: 0 }}>📥 Importar Planilha</h2>
-              <button onClick={() => setShowImport(false)} style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer' }}>✕</button>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: 20 }}>
+          <div style={{ background: '#0a0f1a', border: '1px solid #1e293b', borderRadius: 16, padding: 32, maxWidth: 480, width: '100%' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+              <h2 style={{ color: '#e2e8f0', fontSize: 18, fontWeight: 700, margin: 0 }}>📥 Importar Planilha</h2>
+              <button onClick={() => setShowImport(false)} style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: 18 }}>✕</button>
             </div>
-            <p style={{ color: '#64748b', fontSize: '13px', marginBottom: '20px', lineHeight: 1.6 }}>
-              Selecione o arquivo <strong style={{ color: '#94a3b8' }}>base_dados_nodri.xlsx</strong>. Os dados do período serão importados e sobreporão apenas aquele período.
+            <p style={{ color: '#64748b', fontSize: 13, marginBottom: 20, lineHeight: 1.7 }}>
+              Selecione o <strong style={{ color: '#94a3b8' }}>base_dados_nodri.xlsx</strong>. Os dados do período importado <strong style={{ color: '#7c5cfc' }}>substituirão apenas aquele período</strong> — outros meses não são afetados.
             </p>
-            <div onClick={() => fileRef.current?.click()} style={{ border: '2px dashed #334155', borderRadius: '10px', padding: '32px', textAlign: 'center', cursor: 'pointer', transition: 'border-color 0.2s' }}
+            <div onClick={() => fileRef.current?.click()} style={{ border: '2px dashed #1e293b', borderRadius: 10, padding: 32, textAlign: 'center', cursor: 'pointer' }}
               onMouseEnter={e => (e.currentTarget.style.borderColor = '#7c5cfc')}
-              onMouseLeave={e => (e.currentTarget.style.borderColor = '#334155')}>
+              onMouseLeave={e => (e.currentTarget.style.borderColor = '#1e293b')}>
               <Upload size={32} style={{ margin: '0 auto 10px', display: 'block', color: '#7c5cfc' }} />
-              <p style={{ color: '#94a3b8', fontSize: '14px', fontWeight: 600, margin: '0 0 4px' }}>Clique para selecionar</p>
-              <p style={{ color: '#475569', fontSize: '12px', margin: 0 }}>base_dados_nodri.xlsx</p>
+              <p style={{ color: '#94a3b8', fontSize: 14, fontWeight: 600, margin: '0 0 4px' }}>Clique para selecionar</p>
+              <p style={{ color: '#475569', fontSize: 12, margin: 0 }}>base_dados_nodri.xlsx</p>
             </div>
             <input ref={fileRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) importarExcel(f) }} />
-            {loading && <p style={{ color: '#7c5cfc', textAlign: 'center', marginTop: '16px', fontSize: '13px' }}>⏳ Processando planilha...</p>}
+            {loading && <p style={{ color: '#7c5cfc', textAlign: 'center', marginTop: 16, fontSize: 13 }}>⏳ Processando planilha...</p>}
           </div>
         </div>
       )}
