@@ -1,0 +1,64 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
+import { verifyJWT } from '@/lib/auth'
+import { supabaseAdmin } from '@/lib/supabase'
+
+async function getSalaoId() {
+  const token = cookies().get('nodri_token')?.value
+  if (!token) return null
+  const payload = await verifyJWT(token)
+  return payload?.salaoId || null
+}
+
+// GET — carrega todos os períodos do salão
+export async function GET() {
+  const salaoId = await getSalaoId()
+  if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+
+  const { data: periodos, error: e1 } = await supabaseAdmin
+    .from('relatorio_periodos')
+    .select('*')
+    .eq('salao_id', salaoId)
+    .order('ano').order('mes')
+
+  const { data: feedbacks, error: e2 } = await supabaseAdmin
+    .from('relatorio_feedbacks')
+    .select('*')
+    .eq('salao_id', salaoId)
+    .order('data_feedback')
+
+  if (e1 || e2) return NextResponse.json({ error: 'Erro ao buscar dados' }, { status: 500 })
+
+  // Montar estrutura DadosBase
+  const base: any = {
+    resumo_mensal: [],
+    faturamento_diario: [],
+    servicos: [],
+    produtos: [],
+    prof_pagamentos: [],
+    metas: [],
+    feedbacks: [],
+    periodos: [],
+  }
+
+  for (const p of (periodos || [])) {
+    base.resumo_mensal.push(...(p.resumo_mensal || []))
+    base.faturamento_diario.push(...(p.faturamento_diario || []))
+    base.servicos.push(...(p.servicos || []))
+    base.produtos.push(...(p.produtos || []))
+    base.prof_pagamentos.push(...(p.prof_pagamentos || []))
+    base.metas.push(...(p.metas || []))
+    base.periodos.push({ ano: p.ano, mes: p.mes, data_inicio: p.data_inicio, data_fim: p.data_fim })
+  }
+
+  base.feedbacks = (feedbacks || []).map((f: any) => ({
+    ano: f.ano, mes: f.mes,
+    profissional: f.profissional,
+    tipo: f.tipo,
+    oque_houve: f.oque_houve,
+    comentario: f.comentario,
+    data: f.data_feedback,
+  }))
+
+  return NextResponse.json(base)
+}

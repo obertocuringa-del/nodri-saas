@@ -223,27 +223,48 @@ export default function RelatoriosPage() {
   const [metaPct, setMetaPct] = useState('5')
   const [metaSalva, setMetaSalva] = useState(0)
 
-  // Carregar dados
+  // Carregar dados — Supabase primeiro, localStorage como fallback
   useEffect(() => {
-    try {
-      const s = localStorage.getItem(STORAGE_KEY)
-      if (s) {
-        const d = JSON.parse(s) as DadosBase
-        setDados(d)
-        // Detectar período mais recente
-        if (d.resumo_mensal?.length) {
-          const ult = d.resumo_mensal.reduce((a, b) => (a.ano * 100 + a.mes > b.ano * 100 + b.mes ? a : b))
-          setP1Mes(ult.mes); setP1Ano(ult.ano)
-          const anoUlt = ult.ano; const mesUlt = ult.mes
-          const ym = `${anoUlt}-${String(mesUlt).padStart(2, '0')}`
-          setP1De(ym + '-01'); setP1Ate(ym + '-28')
-          const ymAnt = `${anoUlt - 1}-${String(mesUlt).padStart(2, '0')}`
-          setP2De(ymAnt + '-01'); setP2Ate(ymAnt + '-28')
+    async function carregarDados() {
+      try {
+        // 1. Tenta carregar do localStorage imediatamente (para resposta rápida)
+        const cached = localStorage.getItem(STORAGE_KEY)
+        if (cached) {
+          const d = JSON.parse(cached) as DadosBase
+          setDados(d)
+          aplicarPeriodoMaisRecente(d)
         }
+
+        // 2. Busca do Supabase (fonte de verdade)
+        const res = await fetch('/api/relatorios')
+        if (res.ok) {
+          const d = await res.json() as DadosBase
+          if (d.resumo_mensal?.length) {
+            setDados(d)
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(d))
+            aplicarPeriodoMaisRecente(d)
+          }
+        }
+      } catch { }
+
+      try {
+        const m = localStorage.getItem(META_KEY)
+        if (m) { const md = JSON.parse(m); setMetaSalva(md.valor || 0) }
+      } catch { }
+    }
+
+    function aplicarPeriodoMaisRecente(d: DadosBase) {
+      if (d.resumo_mensal?.length) {
+        const ult = d.resumo_mensal.reduce((a, b) => (a.ano * 100 + a.mes > b.ano * 100 + b.mes ? a : b))
+        setP1Mes(ult.mes); setP1Ano(ult.ano)
+        const ym    = `${ult.ano}-${String(ult.mes).padStart(2, '0')}`
+        const ymAnt = `${ult.ano - 1}-${String(ult.mes).padStart(2, '0')}`
+        setP1De(ym + '-01');    setP1Ate(ym + '-31')
+        setP2De(ymAnt + '-01'); setP2Ate(ymAnt + '-31')
       }
-      const m = localStorage.getItem(META_KEY)
-      if (m) { const md = JSON.parse(m); setMetaSalva(md.valor || 0) }
-    } catch { }
+    }
+
+    carregarDados()
   }, [])
 
   // ── Calcula último dia real do mês (sem 31 fixo) ──
@@ -479,6 +500,34 @@ export default function RelatoriosPage() {
         periodos: [...base.periodos.filter((p: any) => !novosPeriodos.some(n => n.ano === p.ano && n.mes === p.mes)), ...perRaw.map((r: any) => ({ ano: +r.ano, mes: +r.mes, data_inicio: String(r.data_inicio || ''), data_fim: String(r.data_fim || '') }))],
       }
 
+      // ── Salvar no Supabase (fonte de verdade) ──
+      // Monta array de períodos para enviar à API
+      const periodos_dados = novosPeriodos.map(p => ({
+        ano:  p.ano,
+        mes:  p.mes,
+        data_inicio: perRaw.find((r: any) => +r.ano === p.ano && +r.mes === p.mes)?.data_inicio || '',
+        data_fim:    perRaw.find((r: any) => +r.ano === p.ano && +r.mes === p.mes)?.data_fim    || '',
+        resumo_mensal:      novo.resumo_mensal.filter(r => r.ano === p.ano && r.mes === p.mes),
+        faturamento_diario: novo.faturamento_diario.filter(r => r.ano === p.ano && r.mes === p.mes),
+        servicos:           novo.servicos.filter(r => r.ano === p.ano && r.mes === p.mes),
+        produtos:           novo.produtos.filter(r => r.ano === p.ano && r.mes === p.mes),
+        prof_pagamentos:    novo.prof_pagamentos.filter(r => r.ano === p.ano && r.mes === p.mes),
+        metas:              novo.metas.filter(r => r.ano === p.ano && r.mes === p.mes),
+      }))
+
+      const apiRes = await fetch('/api/relatorios/importar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ periodos_dados, feedbacks: novo.feedbacks }),
+      })
+
+      if (!apiRes.ok) {
+        const err = await apiRes.json()
+        console.error('Erro ao salvar no Supabase:', err)
+        toast.error('Dados importados localmente, mas erro ao salvar no servidor.')
+      }
+
+      // ── Atualizar localStorage como cache ──
       localStorage.setItem(STORAGE_KEY, JSON.stringify(novo))
       setDados(novo)
 
@@ -486,7 +535,7 @@ export default function RelatoriosPage() {
       if (ult) { setP1Mes(ult.mes); setP1Ano(ult.ano) }
 
       setShowImport(false)
-      toast.success(`✅ ${novosPeriodos.map(p => `${MESES_FULL[p.mes]}/${p.ano}`).join(', ')} importado! ${srvRaw.length} serviços, ${prdRaw.length} produtos.`)
+      toast.success(`✅ ${novosPeriodos.map(p => `${MESES_FULL[p.mes]}/${p.ano}`).join(', ')} importado e salvo no banco! ${srvRaw.length} serviços, ${prdRaw.length} produtos.`)
     } catch (e: any) {
       console.error(e)
       toast.error('Erro ao importar. Verifique se é o base_dados_nodri.xlsx correto.')
