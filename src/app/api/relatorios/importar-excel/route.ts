@@ -11,19 +11,10 @@ async function getSalaoId() {
   return payload?.salaoId || null
 }
 
-function safeNum(v: any): number {
-  const n = Number(v)
-  return isNaN(n) ? 0 : n
-}
-
-function safeStr(v: any): string {
-  if (v === null || v === undefined) return ''
-  return String(v).trim()
-}
-
+function safeNum(v: any): number { const n = Number(v); return isNaN(n) ? 0 : n }
+function safeStr(v: any): string { if (v === null || v === undefined) return ''; return String(v).trim() }
 function sheetToArray(wb: XLSX.WorkBook, name: string): any[] {
-  const ws = wb.Sheets[name]
-  if (!ws) return []
+  const ws = wb.Sheets[name]; if (!ws) return []
   return XLSX.utils.sheet_to_json(ws, { defval: null })
 }
 
@@ -39,7 +30,6 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(await file.arrayBuffer())
     const wb = XLSX.read(buffer, { type: 'buffer' })
 
-    // ── Ler todas as abas ──
     const periodos      = sheetToArray(wb, 'PERIODOS')
     const resumo        = sheetToArray(wb, 'RESUMO_MENSAL')
     const fatDiario     = sheetToArray(wb, 'FATURAMENTO_DIARIO')
@@ -54,7 +44,6 @@ export async function POST(req: NextRequest) {
     const metas         = sheetToArray(wb, 'METAS')
     const feedbacks     = sheetToArray(wb, 'FEEDBACK')
 
-    // ── Agrupar por período ──
     function agrupar(rows: any[], cols: string[], profCol = 'profissional') {
       const m: Record<string, any[]> = {}
       for (const r of rows) {
@@ -62,7 +51,7 @@ export async function POST(req: NextRequest) {
         if (!m[k]) m[k] = []
         const item: any = {}
         if (profCol && r[profCol] !== undefined) item[profCol] = safeStr(r[profCol])
-        for (const c of cols) item[c] = r[c] !== null ? r[c] : undefined
+        for (const c of cols) if (r[c] !== undefined) item[c] = r[c]
         m[k].push(item)
       }
       return m
@@ -80,39 +69,52 @@ export async function POST(req: NextRequest) {
     const grpProd2 = agrupar(produtos,     ['produto','quantidade'], '')
     const grpMeta  = agrupar(metas,        ['meta_faturamento','meta_clientes'], '')
 
-    // ── Processar cada período ──
-    const erros: string[] = []
     let salvos = 0
+    let salvosExtras = 0
+    const erros: string[] = []
 
     for (const per of periodos) {
       const chave = `${per.ano}-${per.mes}`
-      const { error } = await supabaseAdmin
+
+      // FASE 1: Upsert com campos que SEMPRE existem (compatível mesmo sem migration 008)
+      const { error: e1 } = await supabaseAdmin
         .from('relatorio_periodos')
         .upsert({
-          salao_id:          salaoId,
-          ano:               safeNum(per.ano),
-          mes:               safeNum(per.mes),
-          data_inicio:       safeStr(per.data_inicio),
-          data_fim:          safeStr(per.data_fim),
-          resumo_mensal:     grpRes[chave]   || [],
-          faturamento_diario: grpFatD[chave] || [],
-          servicos:          grpSvc[chave]   || [],
-          produtos:          grpProd2[chave] || [],
-          prof_pagamentos:   grpPag[chave]   || [],
+          salao_id:           salaoId,
+          ano:                safeNum(per.ano),
+          mes:                safeNum(per.mes),
+          data_inicio:        safeStr(per.data_inicio),
+          data_fim:           safeStr(per.data_fim),
+          resumo_mensal:      grpRes[chave]   || [],
+          faturamento_diario: grpFatD[chave]  || [],
+          servicos:           grpSvc[chave]   || [],
+          produtos:           grpProd2[chave] || [],
+          prof_pagamentos:    grpPag[chave]   || [],
+          metas:              grpMeta[chave]  || [],
+          atualizado_em:      new Date().toISOString(),
+        }, { onConflict: 'salao_id,ano,mes' })
+
+      if (e1) { erros.push(`${per.ano}/${per.mes}: ${e1.message}`); continue }
+      salvos++
+
+      // FASE 2: Update com campos EXTRAS (só funciona depois da migration 008)
+      const { error: e2 } = await supabaseAdmin
+        .from('relatorio_periodos')
+        .update({
           prof_ticket:       grpTick[chave]  || [],
           prof_preferencia:  grpPref[chave]  || [],
           prof_ocupacao:     grpOcup[chave]  || [],
           prof_servicos:     grpServ[chave]  || [],
           prof_produtos:     grpProd[chave]  || [],
-          metas:             grpMeta[chave]  || [],
-          atualizado_em:     new Date().toISOString(),
-        }, { onConflict: 'salao_id,ano,mes' })
+        })
+        .eq('salao_id', salaoId)
+        .eq('ano', safeNum(per.ano))
+        .eq('mes', safeNum(per.mes))
 
-      if (error) erros.push(`${per.ano}/${per.mes}: ${error.message}`)
-      else salvos++
+      if (!e2) salvosExtras++
     }
 
-    // ── Feedbacks ──
+    // Feedbacks
     let feedbacksSalvos = 0
     if (feedbacks.length) {
       const rows = feedbacks.map((f: any) => ({
@@ -125,22 +127,22 @@ export async function POST(req: NextRequest) {
         comentario:    safeStr(f.comentario),
         data_feedback: safeStr(f.data),
       }))
-      const { error } = await supabaseAdmin
+      const { error: ef } = await supabaseAdmin
         .from('relatorio_feedbacks')
         .upsert(rows, { onConflict: 'salao_id,profissional,data_feedback,tipo,oque_houve', ignoreDuplicates: true })
-      if (error) erros.push(`feedbacks: ${error.message}`)
-      else feedbacksSalvos = rows.length
+      if (!ef) feedbacksSalvos = rows.length
     }
 
     return NextResponse.json({
       ok: true,
       periodos_salvos: salvos,
+      periodos_com_metricas_extras: salvosExtras,
       feedbacks_salvos: feedbacksSalvos,
       total_periodos: periodos.length,
-      erros: erros.length ? erros : undefined,
+      erros: erros.length ? erros.slice(0, 5) : undefined,
     })
 
   } catch (err: any) {
-    return NextResponse.json({ error: String(err.message || err) }, { status: 500 })
+    return NextResponse.json({ error: String(err?.message || err) }, { status: 500 })
   }
 }
