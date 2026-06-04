@@ -74,7 +74,16 @@ export default function ProfissionaisPage() {
   const [saving, setSaving] = useState(false)
   const [fotoPreview, setFotoPreview] = useState<string>('')
   const [uploadingFoto, setUploadingFoto] = useState(false)
+  const [novaCategoria, setNovaCategoria] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+
+  const CATEGORIAS_PADRAO = ['Cabeleireiro', 'Manicure', 'Pedicure', 'Assistente', 'Massoterapeuta', 'Maquiador(a)', 'Colorista', 'Recepcionista', 'Auxiliar']
+
+  // Categorias existentes dos profissionais cadastrados + padrão
+  const categorias = Array.from(new Set([
+    ...CATEGORIAS_PADRAO,
+    ...profissionais.map(p => p.cargo || '').filter(Boolean)
+  ])).sort()
 
   useEffect(() => { carregarProfissionais() }, [])
 
@@ -339,7 +348,44 @@ export default function ProfissionaisPage() {
                     {F('CPF', 'cpf', { placeholder: '000.000.000-00' })}
                     {F('RG', 'rg')}
                     {F('CNPJ (MEI)', 'cnpj', { placeholder: '00.000.000/0001-00' })}
-                    {F('Cargo', 'cargo', { placeholder: 'Ex: Cabeleireiro, Manicure...' })}
+                    {/* Seletor de categoria inteligente */}
+                    <div>
+                      <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '4px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Categoria / Cargo</label>
+                      {novaCategoria ? (
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <input
+                            type="text"
+                            placeholder="Digite a nova categoria..."
+                            value={form.cargo}
+                            onChange={e => setForm(f => ({ ...f, cargo: e.target.value }))}
+                            style={{ flex: 1, background: '#0d1117', border: '1px solid #7c5cfc', borderRadius: '8px', padding: '9px 12px', fontSize: '13px', color: '#e2e8f0', outline: 'none' }}
+                            autoFocus
+                          />
+                          <button type="button" onClick={() => setNovaCategoria(false)}
+                            style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '8px', padding: '9px 12px', color: '#94a3b8', cursor: 'pointer', fontSize: '12px' }}>
+                            ← Voltar
+                          </button>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <select
+                            value={form.cargo}
+                            onChange={e => setForm(f => ({ ...f, cargo: e.target.value }))}
+                            style={{ flex: 1, background: '#0d1117', border: '1px solid #1e293b', borderRadius: '8px', padding: '9px 12px', fontSize: '13px', color: form.cargo ? '#e2e8f0' : '#64748b', outline: 'none' }}>
+                            <option value="">Selecione a categoria...</option>
+                            {categorias.map(c => <option key={c} value={c}>{c}</option>)}
+                          </select>
+                          <button type="button" onClick={() => { setNovaCategoria(true); setForm(f => ({ ...f, cargo: '' })) }}
+                            title="Criar nova categoria"
+                            style={{ background: '#7c5cfc20', border: '1px solid #7c5cfc40', borderRadius: '8px', padding: '9px 12px', color: '#7c5cfc', cursor: 'pointer', fontSize: '18px', fontWeight: 700 }}>
+                            +
+                          </button>
+                        </div>
+                      )}
+                      <p style={{ color: '#334155', fontSize: '10px', margin: '4px 0 0' }}>
+                        Selecione uma categoria existente ou clique em <strong style={{ color: '#7c5cfc' }}>+</strong> para criar nova
+                      </p>
+                    </div>
                     {F('Endereço', 'endereco', { full: true })}
                   </div>
                 </div>
