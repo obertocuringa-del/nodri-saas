@@ -277,6 +277,112 @@ function TabelaServicos({ p1, p2, nomeProfissional }: { p1: MetricaBloco | null;
   )
 }
 
+// ── Gerador de narrativa personalizada ──
+function gerarNarrativa(
+  nome: string, p1: MetricaBloco|null, p2: MetricaBloco|null,
+  fidel: Fidelizacao|null, mix: MixItem[], form: Partial<Profissional>,
+  projecao: ProjecaoData|null, ocNeg: number, ocPos: number
+): string {
+  if (!p1 || !p2) return ''
+  const fn = nome.split(' ')[0]
+  const fmtR = (v:number) => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v)
+  const pctFat   = p1.faturamento>0   ? ((p2.faturamento-p1.faturamento)/p1.faturamento)*100   : null
+  const pctServ  = p1.total_servicos>0? ((p2.total_servicos-p1.total_servicos)/p1.total_servicos)*100 : null
+  const pctTick  = p1.ticket_medio>0  ? ((p2.ticket_medio-p1.ticket_medio)/p1.ticket_medio)*100 : null
+  const diffTick = p2.ticket_medio - p1.ticket_medio
+  const top3     = mix.slice(0,3).map(s=>s.servico)
+  const altoValor= mix.filter(s=>s.quantidade>0&&(s.valor/s.quantidade)>(p2.ticket_medio||0)*1.2).slice(0,2).map(s=>s.servico)
+  const checkObrig = [
+    {key:'ficha_entrevista',label:'Ficha para Entrevista',obrig:false},
+    {key:'processo_contratacao',label:'Processo de Contratação',obrig:false},
+    {key:'materiais_trabalho',label:'Materiais para Trabalho',obrig:false},
+    {key:'perfil_ideal',label:'Perfil Ideal',obrig:false},
+    {key:'horarios_folgas',label:'Horários e Folgas',obrig:false},
+    {key:'distrato',label:'Distrato',obrig:false},
+    {key:'contrato_trabalho',label:'Contrato de Trabalho',obrig:true},
+    {key:'tem_certificados',label:'Certificados',obrig:false},
+    {key:'plano_carreira',label:'Plano de Carreira',obrig:false},
+  ].filter(c=>c.obrig&&!(form as any)[c.key])
+
+  const partes: string[] = []
+
+  // 1. Abertura — performance geral
+  if (pctFat!==null && pctServ!==null) {
+    if (pctServ>5 && pctFat>5)
+      partes.push(`${fn}, você teve um ótimo período: atendeu ${pctServ.toFixed(1)}% mais clientes e seu faturamento cresceu ${pctFat.toFixed(1)}%.`)
+    else if (pctServ>5 && pctFat<=0)
+      partes.push(`${fn}, você atendeu mais clientes (+${pctServ.toFixed(1)}% serviços) — mas seu faturamento caiu ${Math.abs(pctFat).toFixed(1)}%.`)
+    else if (pctServ>5 && pctFat>0 && pctFat<=5)
+      partes.push(`${fn}, você atendeu mais clientes (+${pctServ.toFixed(1)}% serviços) — ótimo! — e seu faturamento cresceu ${pctFat.toFixed(1)}%.`)
+    else if (pctServ<=0 && pctFat>5)
+      partes.push(`${fn}, você atendeu menos clientes (${pctServ.toFixed(1)}%), mas seu faturamento cresceu ${pctFat.toFixed(1)}% — sinal de que está cobrando melhor.`)
+    else if (pctServ<0 && pctFat<0)
+      partes.push(`${fn}, este período foi desafiador: menos clientes (${pctServ.toFixed(1)}%) e faturamento menor (${pctFat.toFixed(1)}%).`)
+    else
+      partes.push(`${fn}, seu faturamento ${pctFat>=0?'cresceu':'caiu'} ${Math.abs(pctFat).toFixed(1)}% em relação ao período anterior.`)
+  } else if (pctFat!==null) {
+    partes.push(`${fn}, seu faturamento ${pctFat>=0?'cresceu':'caiu'} ${Math.abs(pctFat).toFixed(1)}% neste período.`)
+  }
+
+  // 2. Ticket médio
+  if (pctTick!==null && Math.abs(pctTick)>3) {
+    if (diffTick<0 && pctServ!==null && pctServ>0)
+      partes.push(`Porém está cobrando menos por atendimento (ticket caiu ${fmtR(Math.abs(diffTick))}). Isso significa que você trabalhou mais para ganhar proporcionalmente menos.`)
+    else if (diffTick<0)
+      partes.push(`Seu ticket médio caiu ${fmtR(Math.abs(diffTick))} — você está cobrando menos por atendimento.`)
+    else
+      partes.push(`Seu ticket médio subiu ${fmtR(diffTick)} — você está cobrando mais por atendimento, o que é excelente!`)
+    if (diffTick<0) {
+      if (altoValor.length>0) partes.push(`Reveja seus preços ou foque em serviços de maior valor como ${altoValor.join(' e ')}.`)
+      else if (top3.length>0) partes.push(`Considere oferecer serviços complementares aos seus principais: ${top3.slice(0,2).join(' e ')}.`)
+    }
+  }
+
+  // 3. Ocupação
+  if (p2.taxa_ocupacao<30)
+    partes.push(`Sua ocupação de ${p2.taxa_ocupacao.toFixed(1)}% está baixa — há muito espaço para crescer. Confirme agendamentos com antecedência e reduza os horários vazios.`)
+  else if (p2.taxa_ocupacao<50)
+    partes.push(`Sua ocupação é de ${p2.taxa_ocupacao.toFixed(1)}% — ainda há espaço para preencher mais horários.`)
+  else if (p2.taxa_ocupacao>=75)
+    partes.push(`Sua agenda está muito bem preenchida (${p2.taxa_ocupacao.toFixed(1)}% de ocupação) — parabéns!`)
+
+  // 4. Fidelização
+  if (fidel) {
+    if (fidel.perdidos>3)
+      partes.push(`${fidel.perdidos} clientes novos não voltaram (perda estimada de ${fmtR(fidel.valor_perdido)}). Uma mensagem personalizada pode reconquistar parte deles.`)
+    else if (fidel.taxa_fidelizacao>=70)
+      partes.push(`Sua taxa de fidelização está excelente: ${fidel.taxa_fidelizacao}% dos novos clientes voltaram!`)
+    else if (fidel.taxa_fidelizacao>=50)
+      partes.push(`${fidel.taxa_fidelizacao}% dos novos clientes voltaram — bom, mas ainda dá para melhorar o pós-atendimento.`)
+  }
+
+  // 5. Serviços destaque
+  if (top3.length>0 && (pctServ===null || pctServ>=0))
+    partes.push(`Seus serviços mais realizados foram: ${top3.join(', ')}.`)
+
+  // 6. Ocorrências
+  if (ocNeg>=3)
+    partes.push(`Atenção: ${ocNeg} ocorrências negativas registradas no período — isso precisa ser endereçado com urgência.`)
+  else if (ocNeg>0)
+    partes.push(`Houve ${ocNeg} ocorrência(s) negativa(s) no período — fique atento.`)
+  else if (ocPos>2)
+    partes.push(`Ótimo: ${ocPos} feedbacks positivos registrados — seu trabalho está sendo reconhecido!`)
+
+  // 7. Checklist
+  if (checkObrig.length>0)
+    partes.push(`⚠️ Atenção: há item obrigatório pendente no checklist (${checkObrig.map((c:any)=>c.label).join(', ')}) — regularize o quanto antes.`)
+
+  // 8. Projeção
+  if (projecao) {
+    if (projecao.tendencia==='alta')
+      partes.push(`Com base na tendência dos últimos meses, a projeção para ${['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][projecao.proximo_mes-1]} é positiva: ${fmtR(projecao.valor_projetado)} estimados.`)
+    else if (projecao.tendencia==='baixa')
+      partes.push(`A tendência dos últimos meses indica queda para o próximo período — planeje ações de recuperação.`)
+  }
+
+  return partes.join(' ')
+}
+
 // ── Diagnóstico Automático ──
 function BlocoDiagnostico({ prof, form, metricas, p1, p2, fidel }: {
   prof: Profissional; form: Partial<Profissional>
@@ -407,10 +513,28 @@ function BlocoDiagnostico({ prof, form, metricas, p1, p2, fidel }: {
         </div>
       </div>
 
-      {/* Análise textual */}
+      {/* Narrativa personalizada */}
+      {(() => {
+        const narrativa = gerarNarrativa(
+          prof.apelido||prof.nome_completo, p1, p2, fidel,
+          metricas?.mix_receita||[], form, metricas?.projecao||null, ocNeg, ocPos
+        )
+        if (!narrativa) return null
+        return (
+          <div className="rounded-2xl p-5 border" style={{background:'rgba(99,102,241,0.04)', borderColor:'rgba(99,102,241,0.25)'}}>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-[18px]">💬</span>
+              <h3 className="font-syne font-bold text-[13px]">Análise Personalizada</h3>
+            </div>
+            <p className="text-[13px] text-nodri-t1 leading-[1.8] font-medium">{narrativa}</p>
+          </div>
+        )
+      })()}
+
+      {/* Bullets de apoio */}
       {textos.length > 0 && (
         <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
-          <h3 className="font-syne font-bold text-[13px] mb-4">💬 Análise Detalhada</h3>
+          <h3 className="font-syne font-bold text-[13px] mb-4">📌 Pontos de Atenção</h3>
           <div className="space-y-2">
             {textos.map((t,i)=>(
               <p key={i} className="text-[12px] text-nodri-t2 leading-relaxed p-3 bg-nodri-card rounded-xl border border-nodri-border/50">{t}</p>
