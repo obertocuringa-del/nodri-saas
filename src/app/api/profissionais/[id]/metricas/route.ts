@@ -198,7 +198,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     if (apelido && (n === apelido || n.includes(apelido) || apelido.includes(n))) return true
     // Match pelos primeiros 2 tokens do nome
     const nTokens = n.split(/\s+/).filter(Boolean)
-    const matchCount = tokens.filter(t => nTokens.some(nt => nt.startsWith(t) || t.startsWith(nt))).length
+    const matchCount = tokens.filter((t: string) => nTokens.some((nt: string) => nt.startsWith(t) || t.startsWith(nt))).length
     return matchCount >= Math.min(tokens.length, 2)
   }
 
