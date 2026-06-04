@@ -74,10 +74,10 @@ export default function RelatoriosPage() {
       const buffer = await file.arrayBuffer()
       const wb = XLSX.read(buffer, { type: 'buffer' })
 
-      function parseSheet(name: string) {
+      const parseSheet = (name: string): any[] => {
         const ws = wb.Sheets[name]
         if (!ws) return []
-        return XLSX.utils.sheet_to_json(ws, { defval: '' })
+        return XLSX.utils.sheet_to_json(ws, { defval: '' }) as any[]
       }
 
       const rmRaw = parseSheet('RESUMO_MENSAL') as any[]
