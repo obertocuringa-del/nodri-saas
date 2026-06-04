@@ -39,8 +39,13 @@ export async function POST(req: NextRequest) {
         faturamento_diario: p.faturamento_diario || [],
         servicos:          p.servicos || [],
         produtos:          p.produtos || [],
-        prof_pagamentos:   p.prof_pagamentos || [],
-        metas:             p.metas || [],
+        prof_pagamentos:   p.prof_pagamentos   || [],
+        prof_ticket:       p.prof_ticket       || [],
+        prof_preferencia:  p.prof_preferencia  || [],
+        prof_ocupacao:     p.prof_ocupacao      || [],
+        prof_servicos:     p.prof_servicos     || [],
+        prof_produtos:     p.prof_produtos     || [],
+        metas:             p.metas             || [],
         atualizado_em:     new Date().toISOString(),
       }, { onConflict: 'salao_id,ano,mes' })
 
