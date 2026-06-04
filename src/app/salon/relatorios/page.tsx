@@ -105,7 +105,7 @@ export default function RelatoriosPage() {
       const periAtual = anosOrd[anosOrd.length - 1]
       const periAnt = anosOrd[anosOrd.length - 2] || ''
 
-      function buildComparativo(raw: any[], nomeKey: string, qtdKey: string): ItemComparativo[] {
+      const buildComparativo = (raw: any[], nomeKey: string, qtdKey: string): ItemComparativo[] => {
         const map = new Map<string, { atual: number; anterior: number }>()
         raw.forEach((r: any) => {
           const chave = `${r.ano}-${r.mes}`
