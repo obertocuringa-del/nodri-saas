@@ -213,10 +213,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     const servMap: Record<string, {quantidade:number;valor:number}> = {}
 
     for (const row of rows) {
-      // Faturamento
+      // Faturamento (valor_a_pagar + desconto, independente do sinal)
       for (const item of (row.prof_pagamentos||[])) {
         if (matchProf(item)) {
-          faturamento += Number(item.valor_a_pagar||0)
+          faturamento += Number(item.valor_a_pagar||0) + Number(item.desconto||0)
           encontrouDados = true
         }
       }
@@ -299,18 +299,92 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     }
   }
 
-  // Histórico mensal faturamento (dos relatorios)
-  const historicoFat = (periodos||[])
+  // Histórico completo (faturamento + preferência + ocupação + serviços por mês)
+  const historicoCompleto = (periodos||[])
     .sort((a, b) => a.ano!==b.ano ? a.ano-b.ano : a.mes-b.mes)
     .map(row => {
-      let fat = 0
+      let fat = 0, pref = 0, semPref = 0, dias = 0, servTotal = 0
       for (const item of (row.prof_pagamentos||[])) {
-        if (matchProf(item)) fat += Number(item.valor_a_pagar||0)
+        if (matchProf(item)) fat += Number(item.valor_a_pagar||0) + Number(item.desconto||0)
       }
-      return { ano: row.ano, mes: row.mes, faturamento: fat }
+      for (const item of (row.prof_preferencia||[])) {
+        if (matchProf(item)) { pref += Number(item.clientes_preferencia||0); semPref += Number(item.clientes_sem_preferencia||0) }
+      }
+      for (const item of (row.prof_ocupacao||[])) {
+        if (matchProf(item)) dias += Number(item.dias_trabalhados||0)
+      }
+      for (const item of (row.prof_servicos||[])) {
+        if (matchProf(item)) servTotal += Number(item.quantidade||0)
+      }
+      return { ano: row.ano, mes: row.mes, faturamento: fat, clientes_preferencia: pref, clientes_sem_preferencia: semPref, dias_trabalhados: dias, total_servicos: servTotal }
     })
+    .filter(r => r.faturamento > 0 || r.total_servicos > 0)
+
+  // Histórico mensal faturamento (dos relatorios) - últimos 12 meses com dados
+  const historicoFat = historicoCompleto
     .filter(r => r.faturamento > 0)
     .slice(-12)
+
+  // Mix de receita — top 10 serviços por valor total (histórico completo)
+  const mixMap: Record<string, {quantidade:number;valor:number}> = {}
+  for (const row of (periodos||[])) {
+    for (const item of (row.prof_servicos||[])) {
+      if (matchProf(item)) {
+        const s = item.servico||''
+        if (!mixMap[s]) mixMap[s] = {quantidade:0, valor:0}
+        mixMap[s].quantidade += Number(item.quantidade||0)
+        mixMap[s].valor += Number(item.valor||0)
+      }
+    }
+  }
+  const totalValorMix = Object.values(mixMap).reduce((s, v) => s + v.valor, 0)
+  const mixReceita = Object.entries(mixMap)
+    .map(([servico, v]) => ({servico, ...v, pct: totalValorMix > 0 ? Number(((v.valor/totalValorMix)*100).toFixed(1)) : 0}))
+    .sort((a, b) => b.valor - a.valor)
+    .slice(0, 10)
+
+  // Sazonalidade — média de faturamento por número do mês (todos os anos)
+  const porMesNum: Record<number, number[]> = {}
+  for (const h of historicoCompleto) {
+    if (h.faturamento > 0) {
+      if (!porMesNum[h.mes]) porMesNum[h.mes] = []
+      porMesNum[h.mes].push(h.faturamento)
+    }
+  }
+  const sazonalidade = Array.from({length:12}, (_,i) => {
+    const vals = porMesNum[i+1] || []
+    return {
+      mes: i+1,
+      media: vals.length ? Math.round(vals.reduce((s,v)=>s+v,0)/vals.length) : 0,
+      max: vals.length ? Math.max(...vals) : 0,
+      min: vals.length ? Math.min(...vals) : 0,
+      count: vals.length,
+    }
+  })
+
+  // Projeção — tendência dos últimos 3 meses
+  const ultimos4 = historicoCompleto.filter(r => r.faturamento > 0).slice(-4)
+  let projecao = null
+  if (ultimos4.length >= 2) {
+    const taxas: number[] = []
+    for (let i = 1; i < ultimos4.length; i++) {
+      const prev = ultimos4[i-1].faturamento
+      const curr = ultimos4[i].faturamento
+      if (prev > 0) taxas.push((curr - prev) / prev)
+    }
+    if (taxas.length > 0) {
+      const mediaTaxa = taxas.reduce((s,v)=>s+v,0) / taxas.length
+      const ultimo = ultimos4[ultimos4.length-1]
+      projecao = {
+        taxa_media: Number((mediaTaxa*100).toFixed(1)),
+        valor_projetado: Math.round(ultimo.faturamento * (1 + mediaTaxa)),
+        baseado_em: taxas.length,
+        proximo_mes: ultimo.mes===12 ? 1 : ultimo.mes+1,
+        proximo_ano: ultimo.mes===12 ? ultimo.ano+1 : ultimo.ano,
+        tendencia: mediaTaxa > 0.05 ? 'alta' : mediaTaxa < -0.05 ? 'baixa' : 'estavel',
+      }
+    }
+  }
 
   // Histórico métricas (de prof_metricas_mensais)
   const historico = (metricas||[])
@@ -331,6 +405,11 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     ocorrencias,
     ocorrencias_comparativo,
     historico,
+    // Novas análises gerenciais
+    historico_completo: historicoCompleto,
+    mix_receita: mixReceita,
+    sazonalidade,
+    projecao,
   })
 }
 

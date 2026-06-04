@@ -29,6 +29,11 @@ interface Fidelizacao {
   novos_p1: number; novos_p2: number; ticket_medio: number; valor_perdido: number
 }
 
+interface HistoricoItem { ano: number; mes: number; faturamento: number; clientes_preferencia: number; clientes_sem_preferencia: number; dias_trabalhados: number; total_servicos: number }
+interface MixItem { servico: string; quantidade: number; valor: number; pct: number }
+interface SazonalidadeItem { mes: number; media: number; max: number; min: number; count: number }
+interface ProjecaoData { taxa_media: number; valor_projetado: number; baseado_em: number; proximo_mes: number; proximo_ano: number; tendencia: 'alta'|'baixa'|'estavel' }
+
 interface DadosMetricas {
   p1: MetricaBloco | null; p2: MetricaBloco | null; fidelizacao: Fidelizacao | null
   fat_p1: MetricaBloco | null; fat_p2: MetricaBloco | null; fidelizacao_fat: Fidelizacao | null
@@ -38,6 +43,10 @@ interface DadosMetricas {
   ocorrencias: Array<{ tipo: string; total: number }>
   ocorrencias_comparativo: Array<{ tipo: string; p1: number; p2: number; variacao: number | null }>
   historico: Array<{ ano: number; mes: number; faturamento: number; total_servicos: number; ticket_medio: number; taxa_ocupacao: number }>
+  historico_completo: HistoricoItem[]
+  mix_receita: MixItem[]
+  sazonalidade: SazonalidadeItem[]
+  projecao: ProjecaoData | null
 }
 
 const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
@@ -48,8 +57,9 @@ function DeltaBadge({ atual, anterior, inverso = false }: { atual: number; anter
   const d = pct(atual, anterior)
   if (d === null) return null
   const up = inverso ? d <= 0 : d >= 0
+  const color = up ? '#22c55e' : '#ef4444'
   return (
-    <span className={`text-[10px] font-bold flex items-center gap-0.5 ${up ? 'text-nodri-green' : 'text-nodri-red'}`}>
+    <span style={{color}} className="text-[10px] font-bold flex items-center gap-0.5">
       {d >= 0 ? <TrendingUp size={10}/> : <TrendingDown size={10}/>}
       {(d >= 0 ? '+' : '') + d.toFixed(1) + '%'}
     </span>
@@ -284,6 +294,11 @@ const labelCls = "text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block"
 
 // ── Filtros compartilhados ──
 function FiltroComparacao({ modoFiltro, setModoFiltro, p1i, setP1i, p1f, setP1f, p2i, setP2i, p2f, setP2f, onAplicar, loading }: any) {
+  // Fix: ao trocar para "Mês a Mês", reseta as datas fim para igualar ao início
+  function handleModo(m: 'simples'|'range') {
+    setModoFiltro(m)
+    if (m === 'simples') { setP1f(p1i); setP2f(p2i) }
+  }
   return (
     <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
       <div className="flex items-center gap-3 mb-4">
@@ -291,7 +306,7 @@ function FiltroComparacao({ modoFiltro, setModoFiltro, p1i, setP1i, p1f, setP1f,
         <h2 className="font-syne font-bold text-[13px]">Filtro de Comparação</h2>
         <div className="ml-auto flex gap-1">
           {(['simples','range'] as const).map(m=>(
-            <button key={m} onClick={()=>setModoFiltro(m)}
+            <button key={m} onClick={()=>handleModo(m)}
               className={`px-3 py-1 rounded-lg text-[11px] font-semibold border transition-all
                 ${modoFiltro===m ? 'bg-nodri-cyan/10 text-nodri-cyan border-nodri-cyan/30' : 'text-nodri-t3 border-nodri-border'}`}>
               {m==='simples' ? 'Mês a Mês' : 'Intervalo'}
@@ -320,6 +335,243 @@ function FiltroComparacao({ modoFiltro, setModoFiltro, p1i, setP1i, p1f, setP1f,
         className="mt-4 flex items-center gap-2 px-4 py-2 rounded-lg bg-nodri-cyan text-nodri-dark text-[12px] font-bold hover:brightness-110 disabled:opacity-50">
         {loading ? <Loader2 size={13} className="animate-spin"/> : <BarChart2 size={13}/>} Aplicar
       </button>
+    </div>
+  )
+}
+
+// ── Gráfico de barras verticais com comparativo ano anterior ──
+function GraficoFaturamento({ historico }: { historico: HistoricoItem[] }) {
+  if (!historico.length) return null
+  const recente = historico.slice(-12)
+  // mapa de todos os dados para buscar ano anterior
+  const hMap: Record<string, number> = {}
+  historico.forEach(h => { hMap[`${h.ano}-${h.mes}`] = h.faturamento })
+  const max = Math.max(...recente.map(h => {
+    const prev = hMap[`${h.ano-1}-${h.mes}`]||0
+    return Math.max(h.faturamento, prev)
+  }), 1)
+
+  return (
+    <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
+      <h3 className="font-syne font-bold text-[13px] mb-1">📈 Faturamento Mensal</h3>
+      <div className="flex gap-4 mb-4 text-[9px] text-nodri-t3">
+        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm" style={{background:'linear-gradient(to top,#00e5c8,#7c5cfc)'}}/> Atual</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm opacity-40 bg-purple-400"/> Ano ant.</span>
+      </div>
+      <div className="overflow-x-auto">
+        <div className="flex items-end gap-1.5 pb-1" style={{minWidth: `${recente.length * 60}px`, height:'180px'}}>
+          {recente.map(h => {
+            const prevFat = hMap[`${h.ano-1}-${h.mes}`]||0
+            const pctGrowth = prevFat > 0 ? ((h.faturamento-prevFat)/prevFat)*100 : null
+            const barH = Math.max((h.faturamento/max)*100, h.faturamento>0?3:0)
+            const prevH = Math.max((prevFat/max)*100, prevFat>0?3:0)
+            const diff = h.faturamento - prevFat
+            return (
+              <div key={`${h.ano}-${h.mes}`} className="flex flex-col items-center gap-0.5 flex-1 min-w-[50px]">
+                {/* % e diferença */}
+                <div className="flex flex-col items-center" style={{height:'32px',justifyContent:'flex-end'}}>
+                  {pctGrowth !== null && (
+                    <span style={{color: pctGrowth>=0?'#22c55e':'#ef4444', fontSize:'9px', fontWeight:700, lineHeight:1.2}}>
+                      {pctGrowth>=0?'+':''}{pctGrowth.toFixed(0)}%
+                    </span>
+                  )}
+                  {diff !== 0 && prevFat > 0 && (
+                    <span style={{color:'#94a3b8', fontSize:'8px', lineHeight:1.2}}>
+                      {diff>0?'+':''}{(diff/1000).toFixed(1)}k
+                    </span>
+                  )}
+                </div>
+                {/* Barras */}
+                <div className="flex items-end gap-0.5 flex-1 w-full">
+                  {prevFat > 0 && (
+                    <div className="flex-1 rounded-t-sm opacity-40" style={{height:`${prevH}%`, background:'#7c5cfc', minHeight:'3px'}}
+                      title={`Ano ant: R$ ${prevFat.toLocaleString('pt-BR',{minimumFractionDigits:2})}`}/>
+                  )}
+                  <div className="flex-1 rounded-t-sm" style={{height:`${barH}%`, background:'linear-gradient(to top,#00e5c8,#7c5cfc)', minHeight: h.faturamento>0?'3px':'0'}}
+                    title={`R$ ${h.faturamento.toLocaleString('pt-BR',{minimumFractionDigits:2})}`}/>
+                </div>
+                {/* Valor */}
+                <span style={{fontSize:'8px', color:'#e2e8f0', fontWeight:600, textAlign:'center', lineHeight:1.2}}>
+                  {(h.faturamento/1000).toFixed(1)}k
+                </span>
+                {/* Mês */}
+                <span style={{fontSize:'8px', color:'#64748b'}}>{MESES[h.mes-1]}/{String(h.ano).slice(2)}</span>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Eficiência ──
+function BlocoEficiencia({ p1, p2 }: { p1: MetricaBloco; p2: MetricaBloco }) {
+  const fmt$ = (v: number) => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0)
+  const f = (v:number) => v.toLocaleString('pt-BR',{maximumFractionDigits:1})
+  const fatDia1 = p1.dias_trabalhados>0 ? p1.faturamento/p1.dias_trabalhados : 0
+  const fatDia2 = p2.dias_trabalhados>0 ? p2.faturamento/p2.dias_trabalhados : 0
+  const sDia1   = p1.dias_trabalhados>0 ? p1.total_servicos/p1.dias_trabalhados : 0
+  const sDia2   = p2.dias_trabalhados>0 ? p2.total_servicos/p2.dias_trabalhados : 0
+  const ticketS1 = p1.total_servicos>0 ? p1.faturamento/p1.total_servicos : 0
+  const ticketS2 = p2.total_servicos>0 ? p2.faturamento/p2.total_servicos : 0
+  return (
+    <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
+      <h3 className="font-syne font-bold text-[13px] mb-4">⚡ Eficiência por Dia Trabalhado</h3>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {[
+          {l:'💰 Faturamento / Dia', a:fatDia2, b:fatDia1, f:(v:number)=>fmt$(v)},
+          {l:'✂️ Serviços / Dia',    a:sDia2,   b:sDia1,   f:(v:number)=>f(v)},
+          {l:'🎟️ Ticket / Serviço',  a:ticketS2, b:ticketS1, f:(v:number)=>fmt$(v)},
+        ].map(item=>(
+          <div key={item.l} className="bg-nodri-card border border-nodri-border rounded-xl p-3">
+            <div className="text-[9px] text-nodri-t3 uppercase tracking-wider mb-1">{item.l}</div>
+            <div className="font-syne font-bold text-[18px] text-nodri-t1">{item.f(item.a)}</div>
+            <div className="flex items-center gap-1.5 mt-1">
+              <span className="text-[9px] text-nodri-t3">Ant: {item.f(item.b)}</span>
+              <DeltaBadge atual={item.a} anterior={item.b}/>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Mix de Receita ──
+function BlocoMixReceita({ mix }: { mix: MixItem[] }) {
+  const fmt$ = (v: number) => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0)
+  if (!mix.length) return null
+  const cores = ['#00e5c8','#7c5cfc','#f43f8e','#f59e0b','#22c55e','#06b6d4','#a855f7','#ef4444','#84cc16','#fb923c']
+  const maxPct = Math.max(...mix.map(m=>m.pct), 1)
+  return (
+    <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
+      <h3 className="font-syne font-bold text-[13px] mb-4">🎯 Mix de Receita — Top Serviços (histórico completo)</h3>
+      <div className="space-y-2">
+        {mix.map((item,i)=>(
+          <div key={item.servico} className="flex items-center gap-3">
+            <span className="text-[10px] text-nodri-t1 shrink-0" style={{width:'140px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}} title={item.servico}>{item.servico}</span>
+            <div className="flex-1 h-4 bg-nodri-border rounded-full overflow-hidden">
+              <div className="h-4 rounded-full" style={{width:`${(item.pct/maxPct)*100}%`, background: cores[i%cores.length]}}/>
+            </div>
+            <span className="text-[10px] font-bold text-nodri-t1 w-10 text-right shrink-0">{item.pct.toFixed(1)}%</span>
+            <span className="text-[9px] text-nodri-t3 w-20 text-right shrink-0">{fmt$(item.valor)}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Clientes Novos vs Fiéis ──
+function BlocoClientesFidelizacao({ historico }: { historico: HistoricoItem[] }) {
+  const recent = historico.filter(h=>h.clientes_preferencia>0||h.clientes_sem_preferencia>0).slice(-12)
+  if (!recent.length) return null
+  const max = Math.max(...recent.map(h=>h.clientes_preferencia+h.clientes_sem_preferencia), 1)
+  return (
+    <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
+      <h3 className="font-syne font-bold text-[13px] mb-4">👥 Clientes Fiéis vs Novos — Evolução Mensal</h3>
+      <div className="flex gap-4 mb-3 text-[9px] text-nodri-t3">
+        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm" style={{background:'#22c55e'}}/> Fiéis (preferência)</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm" style={{background:'#06b6d4'}}/> Novos (sem pref.)</span>
+      </div>
+      <div className="overflow-x-auto">
+        <div className="flex items-end gap-2 pb-1" style={{minWidth:`${recent.length*50}px`, height:'130px'}}>
+          {recent.map(h=>{
+            const prefH = max>0?(h.clientes_preferencia/max)*100:0
+            const novH  = max>0?(h.clientes_sem_preferencia/max)*100:0
+            return (
+              <div key={`${h.ano}-${h.mes}`} className="flex flex-col items-center gap-0.5 flex-1 min-w-[40px]">
+                <div className="flex items-end gap-0.5 flex-1 w-full">
+                  <div className="flex-1 rounded-t-sm" style={{height:`${Math.max(prefH,prefH>0?3:0)}%`, background:'#22c55e'}} title={`Fiéis: ${h.clientes_preferencia}`}/>
+                  <div className="flex-1 rounded-t-sm" style={{height:`${Math.max(novH,novH>0?3:0)}%`, background:'#06b6d4'}} title={`Novos: ${h.clientes_sem_preferencia}`}/>
+                </div>
+                <span style={{fontSize:'8px',color:'#64748b'}}>{MESES[h.mes-1]}/{String(h.ano).slice(2)}</span>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Projeção ──
+function BlocoProjecao({ p }: { p: ProjecaoData }) {
+  const fmt$ = (v: number) => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0)
+  const MESES_NOMES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
+  const cor = p.tendencia==='alta'?'#22c55e':p.tendencia==='baixa'?'#ef4444':'#a5b4fc'
+  const bg  = p.tendencia==='alta'?'rgba(34,197,94,0.05)':p.tendencia==='baixa'?'rgba(239,68,68,0.05)':'rgba(99,102,241,0.05)'
+  const bd  = p.tendencia==='alta'?'rgba(34,197,94,0.25)':p.tendencia==='baixa'?'rgba(239,68,68,0.25)':'rgba(99,102,241,0.25)'
+  return (
+    <div className="rounded-2xl p-5 border" style={{background:bg,borderColor:bd}}>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-syne font-bold text-[13px]">🔮 Projeção de Faturamento</h3>
+        <span className="text-[10px] px-3 py-1 rounded-full font-bold border" style={{color:cor,borderColor:bd,background:bg}}>
+          {p.tendencia==='alta'?'📈 CRESCENDO':p.tendencia==='baixa'?'📉 QUEDA':'➡️ ESTÁVEL'}
+        </span>
+      </div>
+      <div className="grid grid-cols-3 gap-3">
+        <div className="bg-nodri-card border border-nodri-border rounded-xl p-3">
+          <div className="text-[9px] text-nodri-t3 uppercase mb-1">Próximo Mês</div>
+          <div className="font-syne font-bold text-[13px] text-nodri-t1">{MESES_NOMES[p.proximo_mes-1]} {p.proximo_ano}</div>
+        </div>
+        <div className="bg-nodri-card border border-nodri-border rounded-xl p-3">
+          <div className="text-[9px] text-nodri-t3 uppercase mb-1">Valor Projetado</div>
+          <div className="font-syne font-bold text-[16px]" style={{color:cor}}>{fmt$(p.valor_projetado)}</div>
+        </div>
+        <div className="bg-nodri-card border border-nodri-border rounded-xl p-3">
+          <div className="text-[9px] text-nodri-t3 uppercase mb-1">Taxa Média</div>
+          <div className="font-syne font-bold text-[16px]" style={{color:cor}}>
+            {p.taxa_media>=0?'+':''}{p.taxa_media}%
+          </div>
+        </div>
+      </div>
+      <p className="text-[10px] text-nodri-t3 mt-3">📊 Baseado na tendência dos últimos {p.baseado_em} meses registrados</p>
+    </div>
+  )
+}
+
+// ── Sazonalidade ──
+function BlocoSazonalidade({ s }: { s: SazonalidadeItem[] }) {
+  const fmt$ = (v: number) => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0)
+  const comDados = s.filter(m=>m.count>0)
+  if (!comDados.length) return null
+  const max = Math.max(...comDados.map(m=>m.media), 1)
+  const melhor = comDados.reduce((a,b)=>a.media>b.media?a:b)
+  const pior   = comDados.reduce((a,b)=>a.media<b.media?a:b)
+  return (
+    <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <h3 className="font-syne font-bold text-[13px]">🌊 Sazonalidade — Médias Históricas por Mês</h3>
+        <div className="flex gap-3 text-[10px]">
+          <span style={{color:'#22c55e',fontWeight:700}}>🔝 {MESES[melhor.mes-1]} ({fmt$(melhor.media)})</span>
+          <span style={{color:'#ef4444',fontWeight:700}}>⬇️ {MESES[pior.mes-1]} ({fmt$(pior.media)})</span>
+        </div>
+      </div>
+      <div className="grid grid-cols-6 md:grid-cols-12 gap-1.5">
+        {s.map(item=>{
+          const h = item.count>0?(item.media/max)*100:0
+          const isMelhor = item.mes===melhor.mes
+          const isPior   = item.mes===pior.mes
+          const cor = isMelhor?'#22c55e':isPior?'#ef4444':'linear-gradient(to top,#00e5c8,#7c5cfc)'
+          return (
+            <div key={item.mes} className="flex flex-col items-center gap-1" title={item.count>0?`Média: ${fmt$(item.media)}\nMáx: ${fmt$(item.max)}\nMín: ${fmt$(item.min)}\n${item.count} anos`:'Sem dados'}>
+              <div className="w-full flex items-end justify-center" style={{height:'64px'}}>
+                <div className="w-full rounded-t" style={{
+                  height:`${Math.max(h, item.count>0?4:0)}%`,
+                  background: cor,
+                  opacity: item.count===0?0.15:1,
+                  transition:'height 0.3s'
+                }}/>
+              </div>
+              <span style={{fontSize:'8px',color:'#64748b',fontWeight:600}}>{MESES[item.mes-1]}</span>
+              {item.count>0&&<span style={{fontSize:'7px',color:'#475569'}}>{item.count}x</span>}
+            </div>
+          )
+        })}
+      </div>
+      <p className="text-[9px] text-nodri-t3 mt-3">🟢 Melhor mês · 🔴 Pior mês · Número = quantidade de anos com dados</p>
     </div>
   )
 }
@@ -559,27 +811,31 @@ export default function PerfilProfissionalPage() {
                   </div>
                 </div>
                 {fidel && <BlocoFidelizacao f={fidel}/>}
-                {/* Histograma */}
-                {metricas.historico_fat.length > 0 && (
-                  <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
-                    <h3 className="font-syne font-bold text-[13px] mb-4">📈 Faturamento Mensal</h3>
-                    <div className="space-y-2">
-                      {(() => {
-                        const max = Math.max(...metricas.historico_fat.map(h=>h.faturamento),1)
-                        return metricas.historico_fat.map(h=>(
-                          <div key={`${h.ano}-${h.mes}`} className="flex items-center gap-3">
-                            <span className="text-[10px] text-nodri-t3 w-12 shrink-0">{MESES[h.mes-1]}/{String(h.ano).slice(2)}</span>
-                            <div className="flex-1 bg-nodri-border rounded-full h-5 relative overflow-hidden">
-                              <div className="h-5 rounded-full" style={{width:`${(h.faturamento/max)*100}%`,background:'linear-gradient(90deg,#00e5c8,#7c5cfc)'}}/>
-                            </div>
-                            <span className="text-[10px] font-semibold text-nodri-t1 w-24 text-right shrink-0">{fmt$(h.faturamento)}</span>
-                          </div>
-                        ))
-                      })()}
-                    </div>
-                  </div>
+                {/* Gráfico vertical com comparativo */}
+                {metricas.historico_completo?.length > 0 && (
+                  <GraficoFaturamento historico={metricas.historico_completo}/>
                 )}
                 <TabelaServicos p1={p1||null} p2={p2||null} nomeProfissional={prof?.apelido||prof?.nome_completo}/>
+                {/* Eficiência */}
+                {p1 && p2 && p2.dias_trabalhados > 0 && (
+                  <BlocoEficiencia p1={p1} p2={p2}/>
+                )}
+                {/* Mix de Receita */}
+                {metricas.mix_receita?.length > 0 && (
+                  <BlocoMixReceita mix={metricas.mix_receita}/>
+                )}
+                {/* Clientes Novos vs Fiéis */}
+                {metricas.historico_completo?.length > 0 && (
+                  <BlocoClientesFidelizacao historico={metricas.historico_completo}/>
+                )}
+                {/* Projeção */}
+                {metricas.projecao && (
+                  <BlocoProjecao p={metricas.projecao}/>
+                )}
+                {/* Sazonalidade */}
+                {metricas.sazonalidade?.length > 0 && (
+                  <BlocoSazonalidade s={metricas.sazonalidade}/>
+                )}
               </> : (
                 <div className="text-center py-16 text-nodri-t3">
                   <BarChart2 size={40} className="mx-auto mb-3 opacity-30"/>
