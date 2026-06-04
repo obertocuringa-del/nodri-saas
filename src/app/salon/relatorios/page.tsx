@@ -113,9 +113,8 @@ function buildComparativo(p1Map: Map<string, number>, p2Map: Map<string, number>
   nomes.forEach(nome => {
     const v1 = p1Map.get(nome) || 0
     const v2 = p2Map.get(nome) || 0
-    // Invertido: P2 − P1 (quando P2 > P1 = positivo; quando P1 > P2 = negativo)
-    const diff = v2 - v1
-    const pct  = calcPct(v2, v1)
+    const diff = v1 - v2
+    const pct  = calcPct(v1, v2)
     result.push({ nome, p1: v1, p2: v2, diff, pct })
   })
   return result
@@ -282,9 +281,8 @@ export default function RelatoriosPage() {
   const compSrv = buildComparativo(mapSrv1, mapSrv2)
   const compPrd = buildComparativo(mapPrd1, mapPrd2)
 
-  // Top 10: pct já invertido (positivo = P2 > P1)
-  const top10Cresc = [...compSrv, ...compPrd].filter(i => i.p1 > 0).sort((a, b) => b.pct - a.pct).slice(0, 10)
-  const top10Queda = [...compSrv, ...compPrd].filter(i => i.p1 > 0).sort((a, b) => a.pct - b.pct).slice(0, 10)
+  const top10Cresc = [...compSrv, ...compPrd].filter(i => i.p2 > 0).sort((a, b) => b.pct - a.pct).slice(0, 10)
+  const top10Queda = [...compSrv, ...compPrd].filter(i => i.p2 > 0).sort((a, b) => a.pct - b.pct).slice(0, 10)
 
   // ── METAS ──
   // P2 → dados do período ANTERIOR (usado para calcular pesos por dia da semana)
@@ -614,8 +612,7 @@ export default function RelatoriosPage() {
                     { lbl: 'Fat. Serviços', v1: r1.fat_srv, v2: r2.fat_srv, fmt: moeda, ico: '✂️' },
                     { lbl: 'Fat. Produtos', v1: r1.fat_prd, v2: r2.fat_prd, fmt: moeda, ico: '📦' },
                   ].map(card => {
-                    // Invertido: P2 vs P1 (positivo quando P2 > P1)
-                    const p = calcPct(card.v2, card.v1)
+                    const p = calcPct(card.v1, card.v2)
                     const { bg, text, border, Icon } = corPct(p)
                     return (
                       <div key={card.lbl} style={{ background: '#0a0f1a', border: `1px solid ${border}`, borderLeft: `3px solid ${text}`, borderRadius: 10, padding: '14px 16px' }}>
