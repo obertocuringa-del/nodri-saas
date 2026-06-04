@@ -101,7 +101,7 @@ export default function RelatoriosPage() {
       }))
 
       // Agrupar serviços por período (atual = último, anterior = penúltimo período)
-      const anosOrd = [...new Set(rmRaw.map((r: any) => `${r.ano}-${r.mes}`))].sort()
+      const anosOrd = Array.from(new Set(rmRaw.map((r: any) => `${r.ano}-${r.mes}`))).sort()
       const periAtual = anosOrd[anosOrd.length - 1]
       const periAnt = anosOrd[anosOrd.length - 2] || ''
 
