@@ -176,84 +176,60 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     .sort((a, b) => b.total - a.total)
 
   // ── Faturamento de relatorio_periodos ──
-  const todosMeses = [...mesesP1, ...mesesP2]
-  const anosSet = [...new Set(todosMeses.map(m => m.ano))]
-
+  // Busca TODOS os períodos disponíveis do salão (para histórico completo)
   const { data: periodos } = await supabaseAdmin
     .from('relatorio_periodos')
-    .select('ano, mes, resumo_mensal, prof_pagamentos, prof_ticket, prof_preferencia, prof_ocupacao, prof_servicos, prof_produtos')
+    .select('ano, mes, prof_pagamentos')
     .eq('salao_id', salaoId)
-    .in('ano', anosSet)
+    .order('ano').order('mes')
 
-  // Função para encontrar dados do profissional em um array por nome
-  const nomeCompleto = prof?.nome_completo || ''
-  const apelido = prof?.apelido || ''
-  function matchProf(item: any) {
-    const n = (item.profissional || item.profissional_original || '').toLowerCase()
-    const nc = nomeCompleto.toLowerCase()
-    const ap = apelido.toLowerCase()
-    return nc.includes(n) || n.includes(nc.split(' ')[0]) || (ap && n.includes(ap))
+  // Match de nome: compara primeiros tokens do nome do profissional
+  const nomeCompleto = (prof?.nome_completo || '').toLowerCase().trim()
+  const apelido = (prof?.apelido || '').toLowerCase().trim()
+  // Pega os 2 primeiros tokens do nome para matching robusto
+  const tokens = nomeCompleto.split(/\s+/).filter(Boolean).slice(0, 2)
+
+  function matchProf(item: any): boolean {
+    const n = (item.profissional || item.profissional_original || '').toLowerCase().trim()
+    if (!n) return false
+    // Match exato
+    if (n === nomeCompleto) return true
+    // Match por apelido
+    if (apelido && (n === apelido || n.includes(apelido) || apelido.includes(n))) return true
+    // Match pelos primeiros 2 tokens do nome
+    const nTokens = n.split(/\s+/).filter(Boolean)
+    const matchCount = tokens.filter(t => nTokens.some(nt => nt.startsWith(t) || t.startsWith(nt))).length
+    return matchCount >= Math.min(tokens.length, 2)
   }
 
   function getMetricasPeriodo(meses: Array<{ano:number;mes:number}>) {
     const rows = (periodos||[]).filter(p => meses.some(m => m.ano===p.ano && m.mes===p.mes))
     if (!rows.length) return null
 
-    let faturamento = 0, ticket = 0, ticketCount = 0
-    let pref = 0, semPref = 0, dias = 0, ocupacaoSum = 0, ocupacaoCount = 0
-    let servicos_total = 0, produtos_total = 0
-    const servMap: Record<string, { quantidade: number; valor: number }> = {}
+    let faturamento = 0
+    let encontrouDados = false
 
     for (const row of rows) {
-      // Prof pagamentos → faturamento
       for (const item of (row.prof_pagamentos||[])) {
-        if (matchProf(item)) faturamento += Number(item.valor_a_pagar||0)
-      }
-      // Prof ticket
-      for (const item of (row.prof_ticket||[])) {
-        if (matchProf(item)) { ticket += Number(item.ticket_medio||0); ticketCount++ }
-      }
-      // Prof preferência
-      for (const item of (row.prof_preferencia||[])) {
         if (matchProf(item)) {
-          pref += Number(item.clientes_preferencia||0)
-          semPref += Number(item.clientes_sem_preferencia||0)
+          faturamento += Number(item.valor_a_pagar||0)
+          encontrouDados = true
         }
-      }
-      // Prof ocupação
-      for (const item of (row.prof_ocupacao||[])) {
-        if (matchProf(item)) {
-          dias += Number(item.dias_trabalhados||0)
-          ocupacaoSum += Number(item.taxa_ocupacao||0)
-          ocupacaoCount++
-        }
-      }
-      // Prof serviços
-      for (const item of (row.prof_servicos||[])) {
-        if (matchProf(item)) {
-          servicos_total += Number(item.quantidade||0)
-          const s = item.servico||''
-          if (!servMap[s]) servMap[s] = { quantidade: 0, valor: 0 }
-          servMap[s].quantidade += Number(item.quantidade||0)
-          servMap[s].valor += Number(item.valor||0)
-        }
-      }
-      // Prof produtos
-      for (const item of (row.prof_produtos||[])) {
-        if (matchProf(item)) produtos_total += Number(item.quantidade||0)
       }
     }
 
-    const servicos = Object.entries(servMap)
-      .map(([servico, v]) => ({ servico, ...v }))
-      .sort((a, b) => b.quantidade - a.quantidade)
+    if (!encontrouDados) return null
 
-    const ticketFinal = ticketCount > 0 ? ticket/ticketCount : (servicos_total>0 ? faturamento/servicos_total : 0)
     return {
-      faturamento, ticket_medio: ticketFinal, clientes_preferencia: pref,
-      clientes_sem_preferencia: semPref, dias_trabalhados: dias,
-      taxa_ocupacao: ocupacaoCount > 0 ? ocupacaoSum/ocupacaoCount : 0,
-      total_servicos: servicos_total, total_produtos: produtos_total, servicos
+      faturamento,
+      ticket_medio: 0,
+      clientes_preferencia: 0,
+      clientes_sem_preferencia: 0,
+      dias_trabalhados: 0,
+      taxa_ocupacao: 0,
+      total_servicos: 0,
+      total_produtos: 0,
+      servicos: [],
     }
   }
 
