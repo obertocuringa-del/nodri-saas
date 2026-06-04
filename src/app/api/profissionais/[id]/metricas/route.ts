@@ -179,7 +179,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   // Busca TODOS os períodos disponíveis do salão (para histórico completo)
   const { data: periodos } = await supabaseAdmin
     .from('relatorio_periodos')
-    .select('ano, mes, prof_pagamentos')
+    .select('ano, mes, prof_pagamentos, prof_ticket, prof_preferencia, prof_ocupacao, prof_servicos, prof_produtos')
     .eq('salao_id', salaoId)
     .order('ano').order('mes')
 
@@ -206,30 +206,74 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     const rows = (periodos||[]).filter(p => meses.some(m => m.ano===p.ano && m.mes===p.mes))
     if (!rows.length) return null
 
-    let faturamento = 0
+    let faturamento = 0, ticket = 0, ticketCount = 0
+    let pref = 0, semPref = 0, dias = 0, ocupSum = 0, ocupCount = 0
+    let servTotal = 0, prodTotal = 0
     let encontrouDados = false
+    const servMap: Record<string, {quantidade:number;valor:number}> = {}
 
     for (const row of rows) {
+      // Faturamento
       for (const item of (row.prof_pagamentos||[])) {
         if (matchProf(item)) {
           faturamento += Number(item.valor_a_pagar||0)
           encontrouDados = true
         }
       }
+      // Ticket
+      for (const item of (row.prof_ticket||[])) {
+        if (matchProf(item)) { ticket += Number(item.ticket_medio||0); ticketCount++; encontrouDados = true }
+      }
+      // Preferência
+      for (const item of (row.prof_preferencia||[])) {
+        if (matchProf(item)) {
+          pref += Number(item.clientes_preferencia||0)
+          semPref += Number(item.clientes_sem_preferencia||0)
+          encontrouDados = true
+        }
+      }
+      // Ocupação
+      for (const item of (row.prof_ocupacao||[])) {
+        if (matchProf(item)) {
+          dias += Number(item.dias_trabalhados||0)
+          ocupSum += Number(item.taxa_ocupacao||0)
+          ocupCount++; encontrouDados = true
+        }
+      }
+      // Serviços
+      for (const item of (row.prof_servicos||[])) {
+        if (matchProf(item)) {
+          const s = item.servico||''; servTotal += Number(item.quantidade||0)
+          if (!servMap[s]) servMap[s] = {quantidade:0, valor:0}
+          servMap[s].quantidade += Number(item.quantidade||0)
+          servMap[s].valor += Number(item.valor||0)
+          encontrouDados = true
+        }
+      }
+      // Produtos
+      for (const item of (row.prof_produtos||[])) {
+        if (matchProf(item)) { prodTotal += Number(item.quantidade||0); encontrouDados = true }
+      }
     }
 
     if (!encontrouDados) return null
 
+    const servicos = Object.entries(servMap)
+      .map(([servico, v]) => ({servico, ...v}))
+      .sort((a, b) => b.quantidade - a.quantidade)
+
+    const ticketFinal = ticketCount > 0 ? ticket/ticketCount : (servTotal > 0 ? faturamento/servTotal : 0)
+
     return {
       faturamento,
-      ticket_medio: 0,
-      clientes_preferencia: 0,
-      clientes_sem_preferencia: 0,
-      dias_trabalhados: 0,
-      taxa_ocupacao: 0,
-      total_servicos: 0,
-      total_produtos: 0,
-      servicos: [],
+      ticket_medio: ticketFinal,
+      clientes_preferencia: pref,
+      clientes_sem_preferencia: semPref,
+      dias_trabalhados: dias,
+      taxa_ocupacao: ocupCount > 0 ? ocupSum/ocupCount : 0,
+      total_servicos: servTotal,
+      total_produtos: prodTotal,
+      servicos,
     }
   }
 
