@@ -244,15 +244,22 @@ export default function RelatoriosPage() {
     } catch { }
   }, [])
 
+  // ── Calcula último dia real do mês (sem 31 fixo) ──
+  const ultimoDiaMes = (ano: number, mes: number): string => {
+    // new Date(ano, mes, 0) = último dia do mês anterior = último dia de 'mes'
+    const ultimo = new Date(ano, mes, 0).getDate()
+    return String(ultimo).padStart(2, '0')
+  }
+
   // Períodos derivados
   const periodoAuto1 = `${p1Ano}-${String(p1Mes).padStart(2, '0')}`
   const periodoAuto2 = `${p1Ano - 1}-${String(p1Mes).padStart(2, '0')}`
 
   const [de1, ate1] = modo === 'auto'
-    ? [`${periodoAuto1}-01`, `${periodoAuto1}-31`]
+    ? [`${periodoAuto1}-01`, `${periodoAuto1}-${ultimoDiaMes(p1Ano, p1Mes)}`]
     : [p1De, p1Ate]
   const [de2, ate2] = modo === 'auto'
-    ? [`${periodoAuto2}-01`, `${periodoAuto2}-31`]
+    ? [`${periodoAuto2}-01`, `${periodoAuto2}-${ultimoDiaMes(p1Ano - 1, p1Mes)}`]
     : [p2De, p2Ate]
 
   // Dados calculados
@@ -277,11 +284,20 @@ export default function RelatoriosPage() {
   const top10Cresc = [...compSrv, ...compPrd].filter(i => i.p2 > 0).sort((a, b) => b.pct - a.pct).slice(0, 10)
   const top10Queda = [...compSrv, ...compPrd].filter(i => i.p2 > 0).sort((a, b) => a.pct - b.pct).slice(0, 10)
 
-  // ── METAS — usa p2 (período anterior) como base ──
-  const fatDiario = dados ? dados.faturamento_diario.filter(r => {
+  // ── METAS ──
+  // P2 → dados do período ANTERIOR (usado para calcular pesos por dia da semana)
+  const fatDiarioP2 = dados ? dados.faturamento_diario.filter(r => {
     const v = r.ano * 100 + r.mes
     const [dY, dM] = (de2 || '2000-01').split('-').map(Number)
     const [aY, aM] = (ate2 || '2000-01').split('-').map(Number)
+    return v >= dY * 100 + dM && v <= aY * 100 + aM
+  }) : []
+
+  // P1 → dados do período ATUAL (usado para mostrar REALIZADO no calendário)
+  const fatDiarioP1 = dados ? dados.faturamento_diario.filter(r => {
+    const v = r.ano * 100 + r.mes
+    const [dY, dM] = (de1 || '2000-01').split('-').map(Number)
+    const [aY, aM] = (ate1 || '2000-01').split('-').map(Number)
     return v >= dY * 100 + dM && v <= aY * 100 + aM
   }) : []
 
@@ -296,7 +312,6 @@ export default function RelatoriosPage() {
   const superMeta = metaTotal * 1.3
   const restante = Math.max(metaTotal - realizado, 0)
 
-  // Gera TODOS os dias do período p2 (incluindo fechados)
   const DIAS_PT = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado']
 
   // Helper: normaliza data para dd/mm/yyyy
@@ -309,34 +324,9 @@ export default function RelatoriosPage() {
     return data
   }
 
-  const todosDiasP2 = (() => {
-    if (!de2 || !ate2) return [] as Array<{ data: string; diaSemana: string; valor: number; existeNaDados: boolean }>
-    const dataMap = new Map<string, number>()
-    fatDiario.forEach(d => {
-      const key = normalizarData(d.data)
-      if (key) dataMap.set(key, d.valor)
-    })
-    const result: Array<{ data: string; diaSemana: string; valor: number; existeNaDados: boolean }> = []
-    const start = new Date(de2 + 'T12:00:00')
-    const end   = new Date(ate2 + 'T12:00:00')
-    const cur   = new Date(start)
-    while (cur <= end) {
-      const dd   = String(cur.getDate()).padStart(2, '0')
-      const mm   = String(cur.getMonth() + 1).padStart(2, '0')
-      const yyyy = String(cur.getFullYear())
-      const key  = `${dd}/${mm}/${yyyy}`
-      const diaSemana = DIAS_PT[cur.getDay()]
-      const valor = dataMap.get(key) ?? 0
-      result.push({ data: key, diaSemana, valor, existeNaDados: dataMap.has(key) })
-      cur.setDate(cur.getDate() + 1)
-    }
-    return result
-  })()
-
-  // CORREÇÃO 2: Peso por dia da semana usa MÉDIA (igual ao Python: np.mean(valores) / total)
-  // Agrupa valores por dia da semana
+  // ── PESOS: calculados a partir do P2 (período anterior) ──
   const valoresPorDiaSemana = new Map<string, number[]>()
-  fatDiario.forEach(d => {
+  fatDiarioP2.forEach(d => {
     const key = normalizarData(d.data)
     if (!key) return
     const [dd, mm, yyyy] = key.split('/')
@@ -347,48 +337,84 @@ export default function RelatoriosPage() {
     valoresPorDiaSemana.set(ds, lista)
   })
 
-  const totalFatP2 = fatDiario.reduce((s, d) => s + d.valor, 0)
+  const totalFatP2 = fatDiarioP2.reduce((s, d) => s + d.valor, 0)
 
-  // média do dia da semana / total_geral  (exatamente como Python)
+  // média do dia da semana / total (exatamente como Python: np.mean(valores) / total_anterior)
   const pesoPorDiaSemana = new Map<string, number>()
   valoresPorDiaSemana.forEach((valores, ds) => {
     const media = valores.reduce((s, v) => s + v, 0) / valores.length
     pesoPorDiaSemana.set(ds, totalFatP2 > 0 ? media / totalFatP2 : 1 / 7)
   })
 
-  // Calcula META para dias FUTUROS distribuindo o valor restante proporcionalmente
-  // (mesmo algoritmo do Python calcular_metas_periodo_atual)
+  // ── CALENDÁRIO: gerado com datas de P1 (período atual) ──
+  // Realizado vem de P1
+  const realizadoMapP1 = new Map<string, number>()
+  fatDiarioP1.forEach(d => {
+    const key = normalizarData(d.data)
+    if (key) realizadoMapP1.set(key, d.valor)
+  })
+
+  // Gera TODOS os dias do período P1, do dia 1 ao último dia do mês (sem overflow)
+  const todosDiasCalendario = (() => {
+    if (!de1 || !ate1) return [] as Array<{ data: string; diaSemana: string; valor: number }>
+    const result: Array<{ data: string; diaSemana: string; valor: number }> = []
+    const start = new Date(de1 + 'T12:00:00')
+    const end   = new Date(ate1 + 'T12:00:00')
+    const cur   = new Date(start)
+    // Limitar ao mesmo mês de início (evita overflow)
+    const mesInicio = start.getMonth()
+    const anoInicio = start.getFullYear()
+    while (cur <= end && (cur.getMonth() === mesInicio || cur.getFullYear() === anoInicio)) {
+      if (cur.getMonth() !== mesInicio) break  // sai ao mudar de mês
+      const dd   = String(cur.getDate()).padStart(2, '0')
+      const mm   = String(cur.getMonth() + 1).padStart(2, '0')
+      const yyyy = String(cur.getFullYear())
+      const key  = `${dd}/${mm}/${yyyy}`
+      const diaSemana = DIAS_PT[cur.getDay()]
+      const valor = realizadoMapP1.get(key) ?? 0
+      result.push({ data: key, diaSemana, valor })
+      cur.setDate(cur.getDate() + 1)
+    }
+    return result
+  })()
+
   const hoje = new Date()
   hoje.setHours(23, 59, 59, 0)
 
-  const getMetaDia = (dataStr: string, diaSemana: string, valor: number): number => {
+  // ── META por dia: distribui restante pelos dias futuros com peso ──
+  // (mesmo algoritmo do Python calcular_metas_periodo_atual)
+  const getMetaDia = (dataStr: string, diaSemana: string): number => {
     if (!metaTotal || !totalFatP2) return 0
     const [dd, mm, yyyy] = dataStr.split('/')
     const dt = new Date(`${yyyy}-${mm}-${dd}T12:00:00`)
-    if (dt <= hoje) return 0  // dia passado — sem necessidade
-    // dia futuro: distribui o valor restante pelos dias futuros com peso
-    const diasFuturos = todosDiasP2.filter(d => {
+    if (dt <= hoje) return 0  // dia passado ou realizado — sem necessidade
+
+    // Dias futuros do calendário P1
+    const diasFuturos = todosDiasCalendario.filter(d => {
       const [dd2, mm2, yyyy2] = d.data.split('/')
       return new Date(`${yyyy2}-${mm2}-${dd2}T12:00:00`) > hoje
     })
-    // Agrupa dias futuros por dia da semana
+
+    // Agrupa dias futuros por dia da semana e conta ocorrências
     const contagemFuturo = new Map<string, number>()
     diasFuturos.forEach(d => {
       contagemFuturo.set(d.diaSemana, (contagemFuturo.get(d.diaSemana) || 0) + 1)
     })
+
     // Peso total dos dias restantes
     let pesoTotalRestante = 0
-    contagemFuturo.forEach((count, ds) => {
+    contagemFuturo.forEach((_, ds) => {
       pesoTotalRestante += (pesoPorDiaSemana.get(ds) || 1 / 7)
     })
     if (pesoTotalRestante === 0) return 0
+
     const pesoDia = pesoPorDiaSemana.get(diaSemana) || 1 / 7
     const countDiaSemana = contagemFuturo.get(diaSemana) || 1
     const valorParaEsteDiaSemana = restante * (pesoDia / pesoTotalRestante)
     return valorParaEsteDiaSemana / countDiaSemana
   }
 
-  const diasTotais = todosDiasP2.length
+  const diasTotais = todosDiasCalendario.length
 
   // Labels dos períodos
   const label1 = modo === 'auto'
@@ -720,11 +746,11 @@ export default function RelatoriosPage() {
                       </table>
                     </div>
 
-                    {/* Calendário completo — período anterior (p2) com todas as colunas */}
-                    {todosDiasP2.length > 0 && (
+                    {/* Calendário — período ATUAL (P1) com REALIZADO; META calculada por pesos do P2 */}
+                    {todosDiasCalendario.length > 0 && (
                       <div style={{ background: '#0a0f1a', border: '1px solid #1e293b', borderRadius: 12, padding: 20 }}>
-                        <h3 style={{ color: '#e2e8f0', fontSize: 14, fontWeight: 700, margin: '0 0 4px' }}>📅 FATURAMENTO DIÁRIO E METAS — {label2.toUpperCase()}</h3>
-                        <p style={{ color: '#475569', fontSize: 11, margin: '0 0 16px' }}>Período anterior completo. META e SUPER META calculadas por peso do dia da semana.</p>
+                        <h3 style={{ color: '#e2e8f0', fontSize: 14, fontWeight: 700, margin: '0 0 4px' }}>📅 FATURAMENTO DIÁRIO E METAS — {label1.toUpperCase()}</h3>
+                        <p style={{ color: '#475569', fontSize: 11, margin: '0 0 16px' }}>Período atual. META e SUPER META calculadas por peso do dia da semana com base em {label2}.</p>
                         <div style={{ overflowX: 'auto' }}>
                           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 700 }}>
                             <thead>
@@ -743,22 +769,23 @@ export default function RelatoriosPage() {
                               </tr>
                             </thead>
                             <tbody>
-                              {todosDiasP2.map((d, i) => {
-                                const metaDia      = getMetaDia(d.data, d.diaSemana, d.valor)
-                                // CORREÇÃO 1: SUPER META = × 1.3 (igual ao Python linha 3407)
+                              {todosDiasCalendario.map((d, i) => {
+                                // META: calculada pelos pesos do P2, aplicada nos dias FUTUROS do P1
+                                const metaDia      = getMetaDia(d.data, d.diaSemana)
+                                // SUPER META = × 1.3 (igual ao Python linha 3407)
                                 const superMetaDia = metaDia > 0 ? metaDia * 1.3 : 0
-                                // CORREÇÃO 3: Status com 🔄 HOJE e ⏳ FUTURO (igual ao Python)
+                                // Status com todos os 4 estados do Python
                                 const [dd2, mm2, yyyy2] = d.data.split('/')
-                                const dataDia = new Date(`${yyyy2}-${mm2}-${dd2}T12:00:00`)
-                                const isHoje  = dataDia.toDateString() === new Date().toDateString()
+                                const dataDia  = new Date(`${yyyy2}-${mm2}-${dd2}T12:00:00`)
+                                const isHoje   = dataDia.toDateString() === new Date().toDateString()
                                 const isFuturo = dataDia > hoje
                                 let status: string; let statusCor: string; let statusBg: string
                                 if (d.valor > 0) {
-                                  status = '💰 REALIZADO'; statusCor = '#10b981'; statusBg = '#10b98115'
+                                  status = '💰 REALIZADO';     statusCor = '#10b981'; statusBg = '#10b98115'
                                 } else if (isHoje) {
-                                  status = '🔄 HOJE'; statusCor = '#3b82f6'; statusBg = '#3b82f615'
+                                  status = '🔄 HOJE';          statusCor = '#3b82f6'; statusBg = '#3b82f615'
                                 } else if (isFuturo) {
-                                  status = '⏳ FUTURO'; statusCor = '#94a3b8'; statusBg = '#94a3b810'
+                                  status = '⏳ FUTURO';        statusCor = '#94a3b8'; statusBg = '#94a3b810'
                                 } else {
                                   status = '❌ NÃO REALIZADO'; statusCor = '#ef4444'; statusBg = '#ef444415'
                                 }
@@ -766,7 +793,7 @@ export default function RelatoriosPage() {
                                   <tr key={i} style={{ borderBottom: '1px solid #0d1520', background: i % 2 === 0 ? 'transparent' : '#060d1808' }}>
                                     <td style={{ padding: '8px 12px', color: '#94a3b8', whiteSpace: 'nowrap' }}>{d.data}</td>
                                     <td style={{ padding: '8px 12px', color: '#64748b',  whiteSpace: 'nowrap' }}>{d.diaSemana}</td>
-                                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#334155' }}>{moeda(metaDia > 0 ? metaDia : 0)}</td>
+                                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#334155' }}>{moeda(metaDia)}</td>
                                     <td style={{ padding: '8px 12px', textAlign: 'center', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap', background: statusBg, color: statusCor }}>{status}</td>
                                     <td style={{ padding: '8px 12px', textAlign: 'right', color: d.valor > 0 ? '#10b981' : '#334155', fontWeight: 700 }}>{moeda(d.valor)}</td>
                                     <td style={{ padding: '8px 12px', textAlign: 'right', color: metaDia > 0 ? '#3b82f6' : '#334155', fontWeight: metaDia > 0 ? 700 : 400 }}>{moeda(metaDia)}</td>
