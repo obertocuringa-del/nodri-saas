@@ -117,7 +117,7 @@ export default function RelatoriosPage() {
           if (chave === periAtual) entry.atual += qtd
           else if (chave === periAnt) entry.anterior += qtd
         })
-        return [...map.entries()]
+        return Array.from(map.entries())
           .map(([nome, v]) => ({ nome, ...v }))
           .sort((a, b) => b.atual - a.atual)
       }
