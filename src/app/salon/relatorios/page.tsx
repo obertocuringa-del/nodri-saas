@@ -107,14 +107,16 @@ function agruparItens(rows: { nome: string; qtd: number }[]): Map<string, number
   return map
 }
 
-function buildComparativo(p1Map: Map<string, number>, p2Map: Map<string, number>): ItemComp[] {
+function buildComparativo(p1Map: Map<string, number>, p2Map: Map<string, number>, invertido = false): ItemComp[] {
   const nomes = new Set<string>([...Array.from(p1Map.keys()), ...Array.from(p2Map.keys())])
   const result: ItemComp[] = []
   nomes.forEach(nome => {
     const v1 = p1Map.get(nome) || 0
     const v2 = p2Map.get(nome) || 0
-    const diff = v1 - v2
-    const pct  = calcPct(v1, v2)
+    // Modo personalizado: P2 − P1 (P2 é o período que queremos avaliar)
+    // Modo automático:    P1 − P2 (P1 é o período atual vs P2 ano anterior)
+    const diff = invertido ? v2 - v1 : v1 - v2
+    const pct  = invertido ? calcPct(v2, v1) : calcPct(v1, v2)
     result.push({ nome, p1: v1, p2: v2, diff, pct })
   })
   return result
@@ -278,8 +280,11 @@ export default function RelatoriosPage() {
   const mapPrd1 = agruparItens(prd1.map(s => ({ nome: s.produto, qtd: s.quantidade })))
   const mapPrd2 = agruparItens(prd2.map(s => ({ nome: s.produto, qtd: s.quantidade })))
 
-  const compSrv = buildComparativo(mapSrv1, mapSrv2)
-  const compPrd = buildComparativo(mapPrd1, mapPrd2)
+  // Modo personalizado inverte: P2−P1 (P2 é o período a avaliar)
+  // Modo automático mantém: P1−P2 (P1 = atual, P2 = mesmo mês ano anterior)
+  const invertirTabelas = modo === 'custom'
+  const compSrv = buildComparativo(mapSrv1, mapSrv2, invertirTabelas)
+  const compPrd = buildComparativo(mapPrd1, mapPrd2, invertirTabelas)
 
   const top10Cresc = [...compSrv, ...compPrd].filter(i => i.p2 > 0).sort((a, b) => b.pct - a.pct).slice(0, 10)
   const top10Queda = [...compSrv, ...compPrd].filter(i => i.p2 > 0).sort((a, b) => a.pct - b.pct).slice(0, 10)
