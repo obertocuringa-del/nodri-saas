@@ -6,7 +6,7 @@ import { cookies } from 'next/headers'
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const token = cookies().get('nodri_token')?.value
-    const payload = await verifyJWT(token)
+    const payload = token ? await verifyJWT(token) : null
     const salaoId = payload?.salaoId
     if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
@@ -42,7 +42,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const token = cookies().get('nodri_token')?.value
-    const payload = await verifyJWT(token)
+    const payload = token ? await verifyJWT(token) : null
     const salaoId = payload?.salaoId
     if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 

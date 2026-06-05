@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { verifyJWT } from '@/lib/auth'
 import { cookies } from 'next/headers'
@@ -6,9 +6,9 @@ import { cookies } from 'next/headers'
 export async function GET(req: NextRequest) {
   try {
     const token = cookies().get('nodri_token')?.value
-    const payload = await verifyJWT(token)
+    const payload = token ? await verifyJWT(token) : null
     const salaoId = payload?.salaoId
-    if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    if (!salaoId) return NextResponse.json({ error: 'NÃ£o autorizado' }, { status: 401 })
 
     const { searchParams } = new URL(req.url)
     const profissionalId = searchParams.get('profissional_id')
@@ -35,15 +35,15 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const token = cookies().get('nodri_token')?.value
-    const payload = await verifyJWT(token)
+    const payload = token ? await verifyJWT(token) : null
     const salaoId = payload?.salaoId
-    if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    if (!salaoId) return NextResponse.json({ error: 'NÃ£o autorizado' }, { status: 401 })
 
     const body = await req.json()
     const { profissional_id, mensagem, data_limite } = body
 
     if (!profissional_id || !mensagem) {
-      return NextResponse.json({ error: 'profissional_id e mensagem são obrigatórios' }, { status: 400 })
+      return NextResponse.json({ error: 'profissional_id e mensagem sÃ£o obrigatÃ³rios' }, { status: 400 })
     }
 
     const { data, error } = await supabaseAdmin
@@ -65,3 +65,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }
+

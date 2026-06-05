@@ -5,7 +5,7 @@ import { cookies } from 'next/headers'
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   const token = cookies().get('nodri_token')?.value
-  const payload = await verifyJWT(token)
+  const payload = token ? await verifyJWT(token) : null
   if (payload?.role !== 'master') {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 403 })
   }
@@ -23,7 +23,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const token = cookies().get('nodri_token')?.value
-  const payload = await verifyJWT(token)
+  const payload = token ? await verifyJWT(token) : null
   if (payload?.role !== 'master') {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 403 })
   }

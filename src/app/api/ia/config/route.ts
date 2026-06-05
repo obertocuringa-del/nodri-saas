@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { verifyJWT } from '@/lib/auth'
 import { cookies } from 'next/headers'
@@ -6,9 +6,9 @@ import { cookies } from 'next/headers'
 export async function GET() {
   try {
     const token = cookies().get('nodri_token')?.value
-    const payload = await verifyJWT(token)
+    const payload = token ? await verifyJWT(token) : null
     const salaoId = payload?.salaoId
-    if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    if (!salaoId) return NextResponse.json({ error: 'NÃ£o autorizado' }, { status: 401 })
 
     const { data } = await supabaseAdmin
       .from('ia_configuracao')
@@ -27,9 +27,9 @@ export async function GET() {
 export async function PUT(req: NextRequest) {
   try {
     const token = cookies().get('nodri_token')?.value
-    const payload = await verifyJWT(token)
+    const payload = token ? await verifyJWT(token) : null
     const salaoId = payload?.salaoId
-    if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    if (!salaoId) return NextResponse.json({ error: 'NÃ£o autorizado' }, { status: 401 })
 
     const body = await req.json()
     const { contexto_adicional } = body
@@ -45,3 +45,4 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }
+

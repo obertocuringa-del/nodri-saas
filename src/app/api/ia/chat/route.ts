@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { verifyJWT } from '@/lib/auth'
 import { cookies } from 'next/headers'
@@ -9,16 +9,16 @@ function formatarDadosSalao(dados: any, profissionalId?: string): string {
 
   // Profissionais
   if (dados.profissionais?.length) {
-    linhas.push('## PROFISSIONAIS DO SALÃO')
+    linhas.push('## PROFISSIONAIS DO SALÃƒO')
     dados.profissionais.forEach((p: any) => {
-      linhas.push(`- ${p.nome_completo} (${p.cargo}) — ${p.ativo ? 'Ativo' : 'Inativo'}`)
+      linhas.push(`- ${p.nome_completo} (${p.cargo}) â€” ${p.ativo ? 'Ativo' : 'Inativo'}`)
     })
     linhas.push('')
   }
 
-  // Relatório de períodos (últimos meses)
+  // RelatÃ³rio de perÃ­odos (Ãºltimos meses)
   if (dados.relatorio_periodos?.length) {
-    linhas.push('## DADOS FINANCEIROS (últimos períodos)')
+    linhas.push('## DADOS FINANCEIROS (Ãºltimos perÃ­odos)')
     const porProf: Record<string, any[]> = {}
     dados.relatorio_periodos.forEach((r: any) => {
       if (!porProf[r.profissional_id]) porProf[r.profissional_id] = []
@@ -29,7 +29,7 @@ function formatarDadosSalao(dados: any, profissionalId?: string): string {
       const nome = prof?.nome_completo || profId
       linhas.push(`### ${nome}`)
       porProf[profId].slice(-6).forEach((r: any) => {
-        linhas.push(`  - ${r.ano}/${String(r.mes).padStart(2,'0')}: Fat R$${(r.faturamento||0).toFixed(2)}, Serviços: ${r.total_servicos||0}, Ticket: R$${(r.ticket_medio||0).toFixed(2)}`)
+        linhas.push(`  - ${r.ano}/${String(r.mes).padStart(2,'0')}: Fat R$${(r.faturamento||0).toFixed(2)}, ServiÃ§os: ${r.total_servicos||0}, Ticket: R$${(r.ticket_medio||0).toFixed(2)}`)
       })
     }
     linhas.push('')
@@ -48,14 +48,14 @@ function formatarDadosSalao(dados: any, profissionalId?: string): string {
   if (dados.feedbacks_clientes?.length) {
     linhas.push('## FEEDBACKS DE CLIENTES')
     dados.feedbacks_clientes.slice(-10).forEach((f: any) => {
-      linhas.push(`- Nota: ${f.nota_geral || '?'} — ${f.comentario || ''}`)
+      linhas.push(`- Nota: ${f.nota_geral || '?'} â€” ${f.comentario || ''}`)
     })
     linhas.push('')
   }
 
-  // Pendências em aberto
+  // PendÃªncias em aberto
   if (dados.pendencias?.length) {
-    linhas.push('## PENDÊNCIAS EM ABERTO')
+    linhas.push('## PENDÃŠNCIAS EM ABERTO')
     dados.pendencias.forEach((p: any) => {
       const prof = dados.profissionais?.find((pr: any) => pr.id === p.profissional_id)
       const nome = prof?.nome_completo || 'Desconhecido'
@@ -65,16 +65,16 @@ function formatarDadosSalao(dados: any, profissionalId?: string): string {
     linhas.push('')
   }
 
-  // Dados específicos do profissional
+  // Dados especÃ­ficos do profissional
   if (profissionalId && dados.prof_especifico) {
     const pe = dados.prof_especifico
     linhas.push('## PROFISSIONAL EM FOCO')
     if (pe.dados) {
       const d = pe.dados
-      linhas.push(`Nome: ${d.nome_completo}, Cargo: ${d.cargo}, CNPJ: ${d.cnpj || 'não cadastrado'}`)
+      linhas.push(`Nome: ${d.nome_completo}, Cargo: ${d.cargo}, CNPJ: ${d.cnpj || 'nÃ£o cadastrado'}`)
     }
     if (pe.periodos?.length) {
-      linhas.push('Últimos períodos:')
+      linhas.push('Ãšltimos perÃ­odos:')
       pe.periodos.slice(-6).forEach((r: any) => {
         linhas.push(`  - ${r.ano}/${String(r.mes).padStart(2,'0')}: Fat R$${(r.faturamento||0).toFixed(2)}`)
       })
@@ -88,18 +88,18 @@ function formatarDadosSalao(dados: any, profissionalId?: string): string {
 export async function POST(req: NextRequest) {
   try {
     const token = cookies().get('nodri_token')?.value
-    const payload = await verifyJWT(token)
+    const payload = token ? await verifyJWT(token) : null
     const salaoId = payload?.salaoId
-    if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    if (!salaoId) return NextResponse.json({ error: 'NÃ£o autorizado' }, { status: 401 })
 
     const body = await req.json()
     const { mensagens, profissional_id, conversa_id } = body
 
     if (!mensagens?.length) {
-      return NextResponse.json({ error: 'mensagens são obrigatórias' }, { status: 400 })
+      return NextResponse.json({ error: 'mensagens sÃ£o obrigatÃ³rias' }, { status: 400 })
     }
 
-    // 1. Verificar se IA está ativa para o salão
+    // 1. Verificar se IA estÃ¡ ativa para o salÃ£o
     const { data: salaoData } = await supabaseAdmin
       .from('saloes')
       .select('ia_ativa')
@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
       .maybeSingle()
 
     if (!salaoData?.ia_ativa) {
-      return NextResponse.json({ error: 'IA não ativada para este salão' }, { status: 403 })
+      return NextResponse.json({ error: 'IA nÃ£o ativada para este salÃ£o' }, { status: 403 })
     }
 
     // 2. Buscar config global da IA
@@ -118,14 +118,14 @@ export async function POST(req: NextRequest) {
       .maybeSingle()
 
     if (!configGlobal?.api_key) {
-      return NextResponse.json({ error: 'API key não configurada pelo administrador.' }, { status: 422 })
+      return NextResponse.json({ error: 'API key nÃ£o configurada pelo administrador.' }, { status: 422 })
     }
 
     if (!configGlobal.ativo) {
       return NextResponse.json({ error: 'IA desativada pelo administrador.' }, { status: 403 })
     }
 
-    // 3. Buscar config adicional do salão (contexto específico)
+    // 3. Buscar config adicional do salÃ£o (contexto especÃ­fico)
     const { data: configSalao } = await supabaseAdmin
       .from('ia_configuracao')
       .select('contexto_adicional')
@@ -140,10 +140,10 @@ export async function POST(req: NextRequest) {
     }
 
     if (!config?.api_key) {
-      return NextResponse.json({ error: 'API key não configurada pelo administrador.' }, { status: 422 })
+      return NextResponse.json({ error: 'API key nÃ£o configurada pelo administrador.' }, { status: 422 })
     }
 
-    // 4. Buscar dados do salão
+    // 4. Buscar dados do salÃ£o
     const dataInicio = new Date()
     dataInicio.setMonth(dataInicio.getMonth() - 24)
     const dataInicioStr = dataInicio.toISOString().slice(0, 7)
@@ -170,7 +170,7 @@ export async function POST(req: NextRequest) {
       pendencias: pendencias || [],
     }
 
-    // 5. Dados específicos do profissional
+    // 5. Dados especÃ­ficos do profissional
     if (profissional_id) {
       const [{ data: dadosProf }, { data: periodosProf }] = await Promise.all([
         supabaseAdmin.from('profissionais').select('*').eq('id', profissional_id).maybeSingle(),
@@ -185,28 +185,28 @@ export async function POST(req: NextRequest) {
     const dadosFormatados = formatarDadosSalao(dadosSalao, profissional_id)
 
     // 6. Montar system prompt
-    const systemPrompt = `Você é a IA NODRI, assistente especialista em gestão de salão de beleza.
+    const systemPrompt = `VocÃª Ã© a IA NODRI, assistente especialista em gestÃ£o de salÃ£o de beleza.
 
 ESPECIALIDADES:
-- Análise de dados e KPIs do setor de beleza
-- Gestão de equipes e profissionais
-- Fidelização de clientes e estratégias de crescimento
-- Criação e acompanhamento de metas realistas
+- AnÃ¡lise de dados e KPIs do setor de beleza
+- GestÃ£o de equipes e profissionais
+- FidelizaÃ§Ã£o de clientes e estratÃ©gias de crescimento
+- CriaÃ§Ã£o e acompanhamento de metas realistas
 - Coaching de desempenho para profissionais
-- Identificação de problemas e oportunidades nos dados
+- IdentificaÃ§Ã£o de problemas e oportunidades nos dados
 
-INSTRUÇÕES:
-- Responda SEMPRE em português brasileiro informal mas profissional
-- Use os dados reais do salão quando disponíveis
-- Seja direto, prático e acionável
+INSTRUÃ‡Ã•ES:
+- Responda SEMPRE em portuguÃªs brasileiro informal mas profissional
+- Use os dados reais do salÃ£o quando disponÃ­veis
+- Seja direto, prÃ¡tico e acionÃ¡vel
 - Gere insights que gerem resultado real
-- Faça perguntas de follow-up quando necessário
+- FaÃ§a perguntas de follow-up quando necessÃ¡rio
 - Memorize o contexto da conversa
 
-DADOS DO SALÃO:
+DADOS DO SALÃƒO:
 ${dadosFormatados}
 
-${config.instrucoes_base ? `INSTRUÇÕES CUSTOMIZADAS:\n${config.instrucoes_base}\n` : ''}
+${config.instrucoes_base ? `INSTRUÃ‡Ã•ES CUSTOMIZADAS:\n${config.instrucoes_base}\n` : ''}
 ${config.contexto_adicional ? `CONTEXTO ADICIONAL:\n${config.contexto_adicional}` : ''}`
 
     // 7. Chamar Anthropic
@@ -253,3 +253,4 @@ ${config.contexto_adicional ? `CONTEXTO ADICIONAL:\n${config.contexto_adicional}
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }
+
