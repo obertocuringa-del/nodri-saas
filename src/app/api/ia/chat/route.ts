@@ -7,30 +7,68 @@ import Anthropic from '@anthropic-ai/sdk'
 
 function formatarDadosSalao(dados: any, profissionalId?: string): string {
   const linhas: string[] = []
+  const fmtR = (v: number) => `R$${(v||0).toFixed(2)}`
+  const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 
   // Profissionais
   if (dados.profissionais?.length) {
-    linhas.push('## PROFISSIONAIS DO SALÃƒO')
+    linhas.push('## PROFISSIONAIS DO SALÃO')
     dados.profissionais.forEach((p: any) => {
-      linhas.push(`- ${p.nome_completo} (${p.cargo}) â€” ${p.ativo ? 'Ativo' : 'Inativo'}`)
+      linhas.push(`- ${p.nome_completo} (${p.cargo}) — ${p.ativo ? 'Ativo' : 'Inativo'}`)
     })
     linhas.push('')
   }
 
-  // RelatÃ³rio de perÃ­odos (Ãºltimos meses)
-  if (dados.relatorio_periodos?.length) {
-    linhas.push('## DADOS FINANCEIROS (Ãºltimos perÃ­odos)')
-    const porProf: Record<string, any[]> = {}
-    dados.relatorio_periodos.forEach((r: any) => {
-      if (!porProf[r.profissional_id]) porProf[r.profissional_id] = []
-      porProf[r.profissional_id].push(r)
-    })
-    for (const profId of Object.keys(porProf)) {
-      const prof = dados.profissionais?.find((p: any) => p.id === profId)
-      const nome = prof?.nome_completo || profId
+  // Dados financeiros de relatorio_periodos (JSONB)
+  if (dados.periodos_raw?.length) {
+    linhas.push('## DADOS FINANCEIROS POR PROFISSIONAL')
+    // Agrega faturamento por profissional/mês
+    const fatMap: Record<string, Record<string, number>> = {}
+    const servMap: Record<string, Record<string, number>> = {}
+    const tickMap: Record<string, Record<string, number>> = {}
+    for (const per of dados.periodos_raw) {
+      const chave = `${MESES[per.mes-1]}/${String(per.ano).slice(2)}`
+      for (const item of (per.prof_pagamentos || [])) {
+        const nome = item.profissional || ''; if (!nome) continue
+        if (!fatMap[nome]) fatMap[nome] = {}
+        fatMap[nome][chave] = (fatMap[nome][chave]||0) + Number(item.valor_a_pagar||0) + Number(item.desconto||0)
+      }
+      for (const item of (per.prof_servicos || [])) {
+        const nome = item.profissional || ''; if (!nome) continue
+        if (!servMap[nome]) servMap[nome] = {}
+        servMap[nome][chave] = (servMap[nome][chave]||0) + Number(item.quantidade||0)
+      }
+      for (const item of (per.prof_ticket || [])) {
+        const nome = item.profissional || ''; if (!nome) continue
+        if (!tickMap[nome]) tickMap[nome] = {}
+        tickMap[nome][chave] = Number(item.ticket_medio||0)
+      }
+    }
+    // Total geral do salão por mês
+    const totaisMes: Record<string, number> = {}
+    for (const per of dados.periodos_raw) {
+      const chave = `${MESES[per.mes-1]}/${String(per.ano).slice(2)}`
+      for (const item of (per.resumo_mensal || [])) {
+        totaisMes[chave] = (totaisMes[chave]||0) + Number(item.faturamento_total||0)
+      }
+    }
+    if (Object.keys(totaisMes).length) {
+      linhas.push('### FATURAMENTO TOTAL DO SALÃO')
+      Object.entries(totaisMes).slice(-12).forEach(([mes, fat]) => {
+        linhas.push(`  ${mes}: ${fmtR(fat)}`)
+      })
+      linhas.push('')
+    }
+    // Por profissional
+    const profs = Object.keys(fatMap).sort()
+    for (const nome of profs) {
+      const meses = Object.keys(fatMap[nome])
       linhas.push(`### ${nome}`)
-      porProf[profId].slice(-6).forEach((r: any) => {
-        linhas.push(`  - ${r.ano}/${String(r.mes).padStart(2,'0')}: Fat R$${(r.faturamento||0).toFixed(2)}, ServiÃ§os: ${r.total_servicos||0}, Ticket: R$${(r.ticket_medio||0).toFixed(2)}`)
+      meses.slice(-12).forEach(mes => {
+        const fat = fatMap[nome][mes]||0
+        const serv = servMap[nome]?.[mes]||0
+        const tick = tickMap[nome]?.[mes]||0
+        linhas.push(`  ${mes}: Fat ${fmtR(fat)}, ${serv} serviços, Ticket ${fmtR(tick)}`)
       })
     }
     linhas.push('')
