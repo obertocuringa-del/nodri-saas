@@ -210,7 +210,7 @@ ${config.instrucoes_base ? `INSTRUÃ‡Ã•ES CUSTOMIZADAS:\n${config.instrucoe
 ${config.contexto_adicional ? `CONTEXTO ADICIONAL:\n${config.contexto_adicional}` : ''}`
 
     // 7. Chamar Google Gemini API
-    const modelo = 'gemini-1.5-flash'
+    const modelo = 'gemini-2.0-flash-lite'
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${config.api_key}`
 
     const geminiBody = {
