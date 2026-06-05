@@ -2,7 +2,8 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { verifyJWT } from '@/lib/auth'
 import { cookies } from 'next/headers'
-// Gemini via fetch — sem SDK
+import Anthropic from '@anthropic-ai/sdk'
+// Gemini via fetch como fallback
 
 function formatarDadosSalao(dados: any, profissionalId?: string): string {
   const linhas: string[] = []
@@ -210,31 +211,44 @@ ${config.instrucoes_base ? `INSTRUÃ‡Ã•ES CUSTOMIZADAS:\n${config.instrucoe
 ${config.contexto_adicional ? `CONTEXTO ADICIONAL:\n${config.contexto_adicional}` : ''}`
 
     // 7. Chamar Google Gemini API
-    const modelo = 'gemini-2.0-flash-lite'
+    // Usa claude-haiku-4-5 por padrão — melhor custo-benefício
+    const modelo = config.modelo || 'claude-haiku-4-5'
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${config.api_key}`
 
-    const geminiBody = {
-      system_instruction: { parts: [{ text: systemPrompt }] },
-      contents: mensagens.map((m: any) => ({
-        role: m.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: m.content }]
-      })),
-      generationConfig: { maxOutputTokens: 2048, temperature: 0.7 }
+    let resposta = ''
+
+    if (modelo.startsWith('claude')) {
+      // ── Anthropic Claude ──
+      const anthropic = new Anthropic({ apiKey: config.api_key })
+      const response = await anthropic.messages.create({
+        model: modelo,
+        max_tokens: 2048,
+        system: systemPrompt,
+        messages: mensagens.map((m: any) => ({ role: m.role, content: m.content })),
+      })
+      resposta = response.content[0].type === 'text' ? response.content[0].text : ''
+    } else {
+      // ── Google Gemini ──
+      const geminiBody = {
+        system_instruction: { parts: [{ text: systemPrompt }] },
+        contents: mensagens.map((m: any) => ({
+          role: m.role === 'assistant' ? 'model' : 'user',
+          parts: [{ text: m.content }]
+        })),
+        generationConfig: { maxOutputTokens: 2048, temperature: 0.7 }
+      }
+      const geminiRes = await fetch(geminiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(geminiBody)
+      })
+      if (!geminiRes.ok) {
+        const errBody = await geminiRes.text()
+        return NextResponse.json({ error: `Gemini API erro ${geminiRes.status}: ${errBody}` }, { status: 500 })
+      }
+      const geminiData = await geminiRes.json()
+      resposta = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || 'Sem resposta da IA.'
     }
-
-    const geminiRes = await fetch(geminiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(geminiBody)
-    })
-
-    if (!geminiRes.ok) {
-      const errBody = await geminiRes.text()
-      return NextResponse.json({ error: `Gemini API erro ${geminiRes.status}: ${errBody}` }, { status: 500 })
-    }
-
-    const geminiData = await geminiRes.json()
-    const resposta = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || 'Sem resposta da IA.'
 
     // 8. Salvar/atualizar conversa
     let conversaIdFinal = conversa_id

@@ -121,7 +121,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
   const [selectedCompra, setSelectedCompra] = useState<Record<string, any> | null>(null as Record<string, any> | null)
 
   // ── IA CONFIG ──
-  const [iaConfig, setIaConfig] = useState({ api_key: '', modelo: 'gemini-1.5-flash', instrucoes_base: '', api_key_salva: false })
+  const [iaConfig, setIaConfig] = useState({ api_key: '', modelo: 'claude-haiku-4-5', instrucoes_base: '', api_key_salva: false })
   const [iaConfigLoading, setIaConfigLoading] = useState(false)
   const [showIaKey, setShowIaKey] = useState(false)
 
@@ -1524,9 +1524,11 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                     <div>
                       <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Modelo</label>
                       <select className="nodri-input w-full" value={iaConfig.modelo} onChange={e => setIaConfig(p => ({ ...p, modelo: e.target.value }))}>
-                        <option value="gemini-1.5-flash">gemini-1.5-flash — Rápido e Grátis</option>
-                        <option value="gemini-1.5-pro">gemini-1.5-pro — Poderoso</option>
-                        <option value="claude-haiku-4-5">claude-haiku-4-5 — Claude Haiku</option>
+                        <option value="claude-haiku-4-5">🏆 Claude Haiku — Recomendado (R$0,25/mi tokens)</option>
+                        <option value="claude-sonnet-4-5">Claude Sonnet — Alta qualidade (R$1,50/mi tokens)</option>
+                        <option value="claude-opus-4-5">Claude Opus — Máxima qualidade (R$7,50/mi tokens)</option>
+                        <option value="gemini-1.5-flash">Gemini 1.5 Flash — Opção Google</option>
+                        <option value="gemini-2.0-flash">Gemini 2.0 Flash — Google pago</option>
                       </select>
                     </div>
                     <div>
