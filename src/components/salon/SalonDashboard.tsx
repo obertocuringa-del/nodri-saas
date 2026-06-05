@@ -345,6 +345,11 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11.5px] border border-transparent text-nodri-purple hover:bg-nodri-purple/8 hover:border-nodri-purple/20 transition-all">
               👥 Feedback Profissional
             </a>
+            <a href="/salon/pendencias"
+              className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11.5px] border border-transparent hover:bg-white/4 hover:text-nodri-t1 transition-all"
+              style={{ color: '#f97316' }}>
+              📋 Pendências
+            </a>
           </nav>
 
           {/* Rodapé da sidebar */}
