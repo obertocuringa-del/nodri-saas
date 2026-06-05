@@ -2,7 +2,7 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { verifyJWT } from '@/lib/auth'
 import { cookies } from 'next/headers'
-import Anthropic from '@anthropic-ai/sdk'
+// Gemini via fetch — sem SDK
 
 function formatarDadosSalao(dados: any, profissionalId?: string): string {
   const linhas: string[] = []
@@ -209,17 +209,32 @@ ${dadosFormatados}
 ${config.instrucoes_base ? `INSTRUÃ‡Ã•ES CUSTOMIZADAS:\n${config.instrucoes_base}\n` : ''}
 ${config.contexto_adicional ? `CONTEXTO ADICIONAL:\n${config.contexto_adicional}` : ''}`
 
-    // 7. Chamar Anthropic
-    const anthropic = new Anthropic({ apiKey: config.api_key })
+    // 7. Chamar Google Gemini API
+    const modelo = config.modelo || 'gemini-1.5-flash'
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${config.api_key}`
 
-    const response = await anthropic.messages.create({
-      model: config.modelo || 'claude-haiku-4-5',
-      max_tokens: 2048,
-      system: systemPrompt,
-      messages: mensagens.map((m: any) => ({ role: m.role, content: m.content })),
+    const geminiBody = {
+      system_instruction: { parts: [{ text: systemPrompt }] },
+      contents: mensagens.map((m: any) => ({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: m.content }]
+      })),
+      generationConfig: { maxOutputTokens: 2048, temperature: 0.7 }
+    }
+
+    const geminiRes = await fetch(geminiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(geminiBody)
     })
 
-    const resposta = response.content[0].type === 'text' ? response.content[0].text : ''
+    if (!geminiRes.ok) {
+      const errBody = await geminiRes.text()
+      return NextResponse.json({ error: `Gemini API erro ${geminiRes.status}: ${errBody}` }, { status: 500 })
+    }
+
+    const geminiData = await geminiRes.json()
+    const resposta = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || 'Sem resposta da IA.'
 
     // 8. Salvar/atualizar conversa
     let conversaIdFinal = conversa_id
