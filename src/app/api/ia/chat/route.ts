@@ -210,11 +210,8 @@ ${config.instrucoes_base ? `INSTRUÃ‡Ã•ES CUSTOMIZADAS:\n${config.instrucoe
 ${config.contexto_adicional ? `CONTEXTO ADICIONAL:\n${config.contexto_adicional}` : ''}`
 
     // 7. Chamar Google Gemini API
-    // Normaliza nome do modelo para garantir compatibilidade com a API do Gemini
-    const modeloRaw = config.modelo || 'gemini-1.5-flash-latest'
-    const modelo = modeloRaw === 'gemini-1.5-flash' ? 'gemini-1.5-flash-latest'
-                 : modeloRaw === 'gemini-1.5-pro' ? 'gemini-1.5-pro-latest'
-                 : modeloRaw
+    // Usa gemini-2.0-flash por padrão (modelo atual e gratuito)
+    const modelo = 'gemini-2.0-flash'
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${config.api_key}`
 
     const geminiBody = {
