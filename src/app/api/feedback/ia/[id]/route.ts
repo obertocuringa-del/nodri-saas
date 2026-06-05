@@ -112,42 +112,92 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     resumo.push('')
   }
 
-  const prompt = `Você é um consultor especializado em gestão de salões de beleza e experiência do cliente no Brasil.
+  const prompt = `Você é o diretor estratégico, financeiro, operacional e comercial de uma consultoria premium especializada em salões de beleza no Brasil. Você trabalha 24 horas por dia para o dono do salão e NUNCA responde apenas o que foi perguntado — você sempre entrega uma análise completa de consultoria empresarial.
 
-Analise os seguintes dados de feedback dos clientes do salão "${payload.salaoNome}" e forneça uma análise estratégica completa, prática e acionável para o dono do salão tomar decisões de melhoria imediata.
+REGRAS OBRIGATÓRIAS:
+1. NUNCA responda apenas o dado solicitado. Sempre analise dados relacionados e apresente oportunidades, riscos e recomendações adicionais.
+2. Toda resposta deve fazer o dono do salão sentir que possui um diretor estratégico trabalhando para ele.
+3. Sempre inclua números, percentuais, estimativas de receita e comparativos.
+4. Sempre encontre algo que o usuário NÃO perguntou mas que é relevante (insight exclusivo).
+5. Nunca seja genérico — cite dados específicos do feedback recebido.
 
-Considere especialmente:
-- NPS (promotores/neutros/detratores) como indicador de lealdade
-- Taxa de retorno declarada pelos clientes
-- Horários de pico e queda de qualidade
-- Ticket médio e oportunidades de upsell
-- Serviços com nota baixa que precisam de ação urgente
-- Perfil de clientes novos vs recorrentes
-- Gargalos operacionais (tempo de espera)
-- Canais de captação mais eficazes
+Analise os dados de feedback do salão "${payload.salaoNome}" e entregue uma análise completa de consultoria premium.
 
 DADOS DO FEEDBACK:
 ${resumo.join('\n')}
 
 Forneça sua análise no seguinte formato JSON (responda APENAS com JSON válido, sem markdown):
 {
-  "resumo_executivo": "2-3 frases resumindo a situação geral do salão com dados concretos",
-  "nota_geral": número de 1-10 representando a saúde geral baseada nos dados,
+  "resumo_executivo": {
+    "situacao_atual": "frase descrevendo a situação atual com dados concretos do feedback",
+    "resultado_encontrado": "principal achado quantificado (ex: NPS X, média Y/10, Z% de promotores)",
+    "principal_problema": "o gargalo mais crítico identificado nos dados",
+    "principal_oportunidade": "a maior oportunidade de crescimento identificada"
+  },
+  "nota_geral": 0,
+  "diagnostico": {
+    "nps": {"valor": 0, "promotores_pct": 0, "neutros_pct": 0, "detratores_pct": 0, "classificacao": "excelente|bom|neutro|critico", "benchmark": "comparativo com mercado de beleza"},
+    "media_geral": 0,
+    "tendencia": "crescendo|estavel|caindo"
+  },
+  "gargalos": [
+    {"emoji": "🚨", "titulo": "...", "descricao": "problema com dados específicos e impacto financeiro estimado"}
+  ],
+  "oportunidades_escondidas": [
+    {"emoji": "✅", "titulo": "...", "descricao": "oportunidade com potencial de receita estimado em R$"}
+  ],
   "pontos_fortes": [
     {"titulo": "...", "descricao": "cite dados específicos do feedback"}
   ],
   "areas_melhoria": [
     {"titulo": "...", "descricao": "cite o problema com dados e impacto no negócio", "prioridade": "alta|media|baixa"}
   ],
+  "analise_clientes": {
+    "perfil_dominante": "descrição do perfil mais frequente",
+    "clientes_em_risco": "estimativa de clientes que podem não voltar com base nos detratores",
+    "potencial_reativacao": "estimativa de receita recuperável"
+  },
+  "analise_servicos": {
+    "mais_elogiados": ["serviço 1", "serviço 2"],
+    "mais_criticados": ["serviço 1", "serviço 2"],
+    "oportunidade_upsell": "serviço ou pacote que pode aumentar o ticket médio"
+  },
+  "analise_agenda": {
+    "horarios_pico": "horários mais mencionados pelos clientes",
+    "horarios_problema": "horários com mais reclamações",
+    "recomendacao_operacional": "ação concreta para otimizar a agenda"
+  },
+  "analise_financeira": {
+    "ticket_medio_estimado": "estimativa baseada nos dados de feedback",
+    "receita_em_risco": "valor estimado em risco pelos detratores",
+    "receita_potencial": "valor estimado de oportunidade identificada"
+  },
+  "plano_acao": {
+    "proximos_7_dias": [
+      {"acao": "ação específica e executável", "impacto": "resultado esperado", "dificuldade": "fácil|media|difícil"}
+    ],
+    "proximos_30_dias": [
+      {"acao": "ação de médio prazo", "impacto": "resultado esperado", "dificuldade": "fácil|media|difícil"}
+    ],
+    "proximos_90_dias": [
+      {"acao": "ação estratégica", "impacto": "resultado esperado", "dificuldade": "fácil|media|difícil"}
+    ]
+  },
+  "previsao": {
+    "cenario_conservador": {"descricao": "mantendo operação atual", "probabilidade_pct": 70},
+    "cenario_realista": {"descricao": "aplicando ações de curto prazo", "probabilidade_pct": 55},
+    "cenario_otimista": {"descricao": "aplicando plano completo", "probabilidade_pct": 35}
+  },
+  "insight_exclusivo": "algo importante que o dono do salão NÃO perguntou mas que os dados revelam — deve ser surpreendente e acionável",
+  "insight_nps": "análise do NPS com comparativo: acima de 50 é excelente, 25-50 é bom, 0-25 é neutro, negativo é crítico",
+  "insight_retencao": "análise da taxa de retorno e estratégias concretas para aumentá-la",
+  "insight_ticket": "oportunidades de upsell ou novos serviços baseadas nos dados",
+  "insight_horario": "recomendações operacionais baseadas nos horários mencionados",
+  "oportunidades_receita": [
+    "oportunidade concreta com valor estimado em R$"
+  ],
   "acoes_prioritarias": [
     {"acao": "ação específica e executável", "impacto": "impacto esperado no negócio", "prazo": "imediato|curto prazo|médio prazo", "dificuldade": "fácil|media|difícil"}
-  ],
-  "insight_nps": "análise do NPS e índice de indicação com comparativo do mercado de beleza (NPS acima de 50 é excelente, 25-50 é bom, 0-25 é neutro, negativo é crítico)",
-  "insight_retencao": "análise da taxa de retorno declarada e estratégias para aumentá-la",
-  "insight_ticket": "análise do ticket médio declarado e oportunidades de aumento via upsell ou novos serviços",
-  "insight_horario": "análise dos horários de visita e recomendações operacionais",
-  "oportunidades_receita": [
-    "oportunidade concreta baseada nos dados coletados"
   ]
 }`
 
@@ -160,8 +210,8 @@ Forneça sua análise no seguinte formato JSON (responda APENAS com JSON válido
         'content-type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 2000,
+        model: 'claude-sonnet-4-6',
+        max_tokens: 4000,
         messages: [{ role: 'user', content: prompt }],
       }),
     })

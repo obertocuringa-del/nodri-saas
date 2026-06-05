@@ -17,9 +17,20 @@ interface TextoStat { respostas: string[]; total: number }
 interface SimNaoStat { contagem: Record<string, { sim: number; nao: number }>; total: number }
 interface GridStat { contagem: Record<string, { soma: number; count: number; media: number }>; total: number }
 interface IAAnalise {
-  resumo_executivo: string; nota_geral: number
+  resumo_executivo: string | { situacao_atual: string; resultado_encontrado: string; principal_problema: string; principal_oportunidade: string }
+  nota_geral: number
+  diagnostico?: { nps: { valor: number; promotores_pct: number; neutros_pct: number; detratores_pct: number; classificacao: string; benchmark: string }; media_geral: number; tendencia: string }
+  gargalos?: { emoji: string; titulo: string; descricao: string }[]
+  oportunidades_escondidas?: { emoji: string; titulo: string; descricao: string }[]
   pontos_fortes: { titulo: string; descricao: string }[]
   areas_melhoria: { titulo: string; descricao: string; prioridade: 'alta' | 'media' | 'baixa' }[]
+  analise_clientes?: { perfil_dominante: string; clientes_em_risco: string; potencial_reativacao: string }
+  analise_servicos?: { mais_elogiados: string[]; mais_criticados: string[]; oportunidade_upsell: string }
+  analise_agenda?: { horarios_pico: string; horarios_problema: string; recomendacao_operacional: string }
+  analise_financeira?: { ticket_medio_estimado: string; receita_em_risco: string; receita_potencial: string }
+  plano_acao?: { proximos_7_dias: { acao: string; impacto: string; dificuldade: string }[]; proximos_30_dias: { acao: string; impacto: string; dificuldade: string }[]; proximos_90_dias: { acao: string; impacto: string; dificuldade: string }[] }
+  previsao?: { cenario_conservador: { descricao: string; probabilidade_pct: number }; cenario_realista: { descricao: string; probabilidade_pct: number }; cenario_otimista: { descricao: string; probabilidade_pct: number } }
+  insight_exclusivo?: string
   acoes_prioritarias: { acao: string; impacto: string; prazo: string; dificuldade: string }[]
   insight_nps: string; insight_retencao: string; insight_ticket: string; insight_horario: string
   oportunidades_receita: string[]
@@ -403,18 +414,177 @@ export default function ResultadosPage() {
                   {iaErro && <div className="p-5 flex items-center gap-2 text-red-400 text-sm"><AlertTriangle size={16} /> {iaErro}</div>}
                   {iaAnalise && !iaLoading && (
                     <div className="p-5 space-y-5">
+                      {/* RESUMO EXECUTIVO */}
                       <div className="flex gap-4">
                         <div className="flex-1 p-4 rounded-xl" style={{ background: 'rgba(139,92,246,.08)', border: '1px solid rgba(139,92,246,.2)' }}>
-                          <div className="text-[10px] font-bold text-purple-400 uppercase tracking-wider mb-2">Resumo Executivo</div>
-                          <p className="text-nodri-t1 text-sm leading-relaxed">{iaAnalise.resumo_executivo}</p>
+                          <div className="text-[10px] font-bold text-purple-400 uppercase tracking-wider mb-2">📊 Resumo Executivo</div>
+                          {typeof iaAnalise.resumo_executivo === 'string' ? (
+                            <p className="text-nodri-t1 text-sm leading-relaxed">{iaAnalise.resumo_executivo}</p>
+                          ) : (
+                            <div className="space-y-2">
+                              <div className="grid grid-cols-2 gap-2">
+                                <div className="p-2 rounded-lg" style={{ background: 'rgba(255,255,255,.04)' }}>
+                                  <div className="text-[9px] text-nodri-t3 uppercase mb-0.5">Situação Atual</div>
+                                  <p className="text-[11px] text-nodri-t1">{iaAnalise.resumo_executivo.situacao_atual}</p>
+                                </div>
+                                <div className="p-2 rounded-lg" style={{ background: 'rgba(255,255,255,.04)' }}>
+                                  <div className="text-[9px] text-nodri-t3 uppercase mb-0.5">Resultado</div>
+                                  <p className="text-[11px] text-nodri-t1">{iaAnalise.resumo_executivo.resultado_encontrado}</p>
+                                </div>
+                                <div className="p-2 rounded-lg" style={{ background: 'rgba(239,68,68,.06)' }}>
+                                  <div className="text-[9px] text-red-400 uppercase mb-0.5">Principal Gargalo</div>
+                                  <p className="text-[11px] text-nodri-t1">{iaAnalise.resumo_executivo.principal_problema}</p>
+                                </div>
+                                <div className="p-2 rounded-lg" style={{ background: 'rgba(34,197,94,.06)' }}>
+                                  <div className="text-[9px] text-green-400 uppercase mb-0.5">Principal Oportunidade</div>
+                                  <p className="text-[11px] text-nodri-t1">{iaAnalise.resumo_executivo.principal_oportunidade}</p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                           {iaAnalise.insight_nps && <p className="text-nodri-t2 text-[11px] mt-2 pt-2 border-t border-nodri-border">📊 {iaAnalise.insight_nps}</p>}
                         </div>
                         <div className="flex flex-col items-center p-4 rounded-xl shrink-0" style={{ background: 'rgba(139,92,246,.08)', border: '1px solid rgba(139,92,246,.2)', minWidth: '100px' }}>
                           <div className="text-[10px] font-bold text-purple-400 uppercase tracking-wider mb-2">Saúde</div>
                           <div className="text-5xl font-black text-purple-300">{iaAnalise.nota_geral}</div>
                           <div className="text-[10px] text-nodri-t3">/10</div>
+                          {iaAnalise.diagnostico && (
+                            <div className="mt-2 text-[10px] text-center" style={{ color: iaAnalise.diagnostico.tendencia === 'crescendo' ? '#4ade80' : iaAnalise.diagnostico.tendencia === 'caindo' ? '#f87171' : '#facc15' }}>
+                              {iaAnalise.diagnostico.tendencia === 'crescendo' ? '↑' : iaAnalise.diagnostico.tendencia === 'caindo' ? '↓' : '→'} {iaAnalise.diagnostico.tendencia}
+                            </div>
+                          )}
                         </div>
                       </div>
+
+                      {/* INSIGHT EXCLUSIVO */}
+                      {iaAnalise.insight_exclusivo && (
+                        <div className="p-4 rounded-xl" style={{ background: 'linear-gradient(135deg,rgba(124,92,252,.12),rgba(244,63,142,.12))', border: '1px solid rgba(139,92,246,.35)' }}>
+                          <div className="text-[10px] font-bold text-purple-300 uppercase tracking-wider mb-1.5">🤖 Insight Exclusivo da IA</div>
+                          <p className="text-nodri-t1 text-[12px] leading-relaxed font-medium">{iaAnalise.insight_exclusivo}</p>
+                        </div>
+                      )}
+
+                      {/* GARGALOS */}
+                      {iaAnalise.gargalos && iaAnalise.gargalos.length > 0 && (
+                        <div>
+                          <div className="text-[11px] font-bold text-red-400 mb-2 flex items-center gap-1.5"><AlertTriangle size={13} /> 🚨 Gargalos Identificados</div>
+                          <div className="space-y-2">
+                            {iaAnalise.gargalos.map((g, i) => (
+                              <div key={i} className="p-3 rounded-xl flex items-start gap-3" style={{ background: 'rgba(239,68,68,.06)', border: '1px solid rgba(239,68,68,.2)' }}>
+                                <span className="text-base shrink-0">{g.emoji || '🚨'}</span>
+                                <div>
+                                  <div className="text-[11px] font-semibold text-red-300 mb-0.5">{g.titulo}</div>
+                                  <p className="text-[11px] text-nodri-t2">{g.descricao}</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* OPORTUNIDADES ESCONDIDAS */}
+                      {iaAnalise.oportunidades_escondidas && iaAnalise.oportunidades_escondidas.length > 0 && (
+                        <div>
+                          <div className="text-[11px] font-bold text-green-400 mb-2 flex items-center gap-1.5"><TrendingUp size={13} /> 💰 Oportunidades Escondidas</div>
+                          <div className="space-y-2">
+                            {iaAnalise.oportunidades_escondidas.map((o, i) => (
+                              <div key={i} className="p-3 rounded-xl flex items-start gap-3" style={{ background: 'rgba(34,197,94,.06)', border: '1px solid rgba(34,197,94,.2)' }}>
+                                <span className="text-base shrink-0">{o.emoji || '✅'}</span>
+                                <div>
+                                  <div className="text-[11px] font-semibold text-green-300 mb-0.5">{o.titulo}</div>
+                                  <p className="text-[11px] text-nodri-t2">{o.descricao}</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* ANÁLISE FINANCEIRA */}
+                      {iaAnalise.analise_financeira && (
+                        <div>
+                          <div className="text-[11px] font-bold text-yellow-400 mb-2 flex items-center gap-1.5"><BarChart2 size={13} /> 💵 Análise Financeira</div>
+                          <div className="grid grid-cols-3 gap-2">
+                            <div className="p-3 rounded-xl text-center" style={{ background: 'rgba(250,204,21,.06)', border: '1px solid rgba(250,204,21,.2)' }}>
+                              <div className="text-[9px] text-yellow-400 uppercase mb-1">Ticket Médio</div>
+                              <div className="text-[13px] font-bold text-nodri-t1">{iaAnalise.analise_financeira.ticket_medio_estimado}</div>
+                            </div>
+                            <div className="p-3 rounded-xl text-center" style={{ background: 'rgba(239,68,68,.06)', border: '1px solid rgba(239,68,68,.2)' }}>
+                              <div className="text-[9px] text-red-400 uppercase mb-1">Receita em Risco</div>
+                              <div className="text-[13px] font-bold text-nodri-t1">{iaAnalise.analise_financeira.receita_em_risco}</div>
+                            </div>
+                            <div className="p-3 rounded-xl text-center" style={{ background: 'rgba(34,197,94,.06)', border: '1px solid rgba(34,197,94,.2)' }}>
+                              <div className="text-[9px] text-green-400 uppercase mb-1">Receita Potencial</div>
+                              <div className="text-[13px] font-bold text-nodri-t1">{iaAnalise.analise_financeira.receita_potencial}</div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* ANÁLISE DE CLIENTES */}
+                      {iaAnalise.analise_clientes && (
+                        <div>
+                          <div className="text-[11px] font-bold text-cyan-400 mb-2 flex items-center gap-1.5"><Users size={13} /> 👥 Análise de Clientes</div>
+                          <div className="grid grid-cols-3 gap-2">
+                            <div className="p-3 rounded-xl" style={{ background: 'rgba(6,182,212,.05)', border: '1px solid rgba(6,182,212,.15)' }}>
+                              <div className="text-[9px] text-cyan-400 uppercase mb-1">Perfil Dominante</div>
+                              <p className="text-[11px] text-nodri-t2">{iaAnalise.analise_clientes.perfil_dominante}</p>
+                            </div>
+                            <div className="p-3 rounded-xl" style={{ background: 'rgba(239,68,68,.05)', border: '1px solid rgba(239,68,68,.15)' }}>
+                              <div className="text-[9px] text-red-400 uppercase mb-1">Em Risco</div>
+                              <p className="text-[11px] text-nodri-t2">{iaAnalise.analise_clientes.clientes_em_risco}</p>
+                            </div>
+                            <div className="p-3 rounded-xl" style={{ background: 'rgba(34,197,94,.05)', border: '1px solid rgba(34,197,94,.15)' }}>
+                              <div className="text-[9px] text-green-400 uppercase mb-1">Potencial Reativação</div>
+                              <p className="text-[11px] text-nodri-t2">{iaAnalise.analise_clientes.potencial_reativacao}</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* ANÁLISE DE SERVIÇOS */}
+                      {iaAnalise.analise_servicos && (
+                        <div>
+                          <div className="text-[11px] font-bold text-purple-400 mb-2 flex items-center gap-1.5"><Zap size={13} /> 📊 Análise dos Serviços</div>
+                          <div className="grid grid-cols-3 gap-2">
+                            <div className="p-3 rounded-xl" style={{ background: 'rgba(34,197,94,.05)', border: '1px solid rgba(34,197,94,.15)' }}>
+                              <div className="text-[9px] text-green-400 uppercase mb-1">Mais Elogiados</div>
+                              <ul className="space-y-0.5">{iaAnalise.analise_servicos.mais_elogiados.map((s, i) => <li key={i} className="text-[11px] text-nodri-t2">✅ {s}</li>)}</ul>
+                            </div>
+                            <div className="p-3 rounded-xl" style={{ background: 'rgba(239,68,68,.05)', border: '1px solid rgba(239,68,68,.15)' }}>
+                              <div className="text-[9px] text-red-400 uppercase mb-1">Mais Criticados</div>
+                              <ul className="space-y-0.5">{iaAnalise.analise_servicos.mais_criticados.map((s, i) => <li key={i} className="text-[11px] text-nodri-t2">⚠️ {s}</li>)}</ul>
+                            </div>
+                            <div className="p-3 rounded-xl" style={{ background: 'rgba(250,204,21,.05)', border: '1px solid rgba(250,204,21,.15)' }}>
+                              <div className="text-[9px] text-yellow-400 uppercase mb-1">Upsell</div>
+                              <p className="text-[11px] text-nodri-t2">{iaAnalise.analise_servicos.oportunidade_upsell}</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* ANÁLISE DE AGENDA */}
+                      {iaAnalise.analise_agenda && (
+                        <div>
+                          <div className="text-[11px] font-bold text-cyan-400 mb-2 flex items-center gap-1.5"><Clock size={13} /> 📅 Análise da Agenda</div>
+                          <div className="grid grid-cols-3 gap-2">
+                            <div className="p-3 rounded-xl" style={{ background: 'rgba(34,197,94,.05)', border: '1px solid rgba(34,197,94,.15)' }}>
+                              <div className="text-[9px] text-green-400 uppercase mb-1">Horários de Pico</div>
+                              <p className="text-[11px] text-nodri-t2">{iaAnalise.analise_agenda.horarios_pico}</p>
+                            </div>
+                            <div className="p-3 rounded-xl" style={{ background: 'rgba(239,68,68,.05)', border: '1px solid rgba(239,68,68,.15)' }}>
+                              <div className="text-[9px] text-red-400 uppercase mb-1">Horários com Problema</div>
+                              <p className="text-[11px] text-nodri-t2">{iaAnalise.analise_agenda.horarios_problema}</p>
+                            </div>
+                            <div className="p-3 rounded-xl" style={{ background: 'rgba(6,182,212,.05)', border: '1px solid rgba(6,182,212,.15)' }}>
+                              <div className="text-[9px] text-cyan-400 uppercase mb-1">Recomendação</div>
+                              <p className="text-[11px] text-nodri-t2">{iaAnalise.analise_agenda.recomendacao_operacional}</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* INSIGHTS ESTRATÉGICOS */}
                       {(iaAnalise.insight_retencao || iaAnalise.insight_ticket || iaAnalise.insight_horario) && (
                         <div>
                           <div className="text-[11px] font-bold text-cyan-400 mb-2 flex items-center gap-1.5"><BarChart2 size={13} /> Insights Estratégicos</div>
@@ -440,6 +610,8 @@ export default function ResultadosPage() {
                           </div>
                         </div>
                       )}
+
+                      {/* PONTOS FORTES */}
                       {iaAnalise.pontos_fortes?.length > 0 && (
                         <div>
                           <div className="text-[11px] font-bold text-green-400 mb-2 flex items-center gap-1.5"><CheckCircle size={13} /> Pontos Fortes</div>
@@ -453,6 +625,8 @@ export default function ResultadosPage() {
                           </div>
                         </div>
                       )}
+
+                      {/* ÁREAS DE MELHORIA */}
                       {iaAnalise.areas_melhoria?.length > 0 && (
                         <div>
                           <div className="text-[11px] font-bold text-yellow-400 mb-2 flex items-center gap-1.5"><AlertTriangle size={13} /> Áreas de Melhoria</div>
@@ -472,6 +646,34 @@ export default function ResultadosPage() {
                           </div>
                         </div>
                       )}
+
+                      {/* PLANO DE AÇÃO */}
+                      {iaAnalise.plano_acao && (
+                        <div>
+                          <div className="text-[11px] font-bold text-cyan-400 mb-2 flex items-center gap-1.5"><Zap size={13} /> 📈 Plano de Ação</div>
+                          <div className="grid sm:grid-cols-3 gap-3">
+                            {[
+                              { label: '🔥 Próximos 7 dias', items: iaAnalise.plano_acao.proximos_7_dias, cor: '#f97316' },
+                              { label: '📅 Próximos 30 dias', items: iaAnalise.plano_acao.proximos_30_dias, cor: '#facc15' },
+                              { label: '🗓️ Próximos 90 dias', items: iaAnalise.plano_acao.proximos_90_dias, cor: '#a78bfa' },
+                            ].map(({ label, items, cor }) => (
+                              <div key={label} className="p-3 rounded-xl" style={{ background: `${cor}08`, border: `1px solid ${cor}25` }}>
+                                <div className="text-[10px] font-bold uppercase mb-2" style={{ color: cor }}>{label}</div>
+                                <div className="space-y-2">
+                                  {items?.map((item, i) => (
+                                    <div key={i} className="text-[11px]">
+                                      <div className="text-nodri-t1 font-medium">{item.acao}</div>
+                                      <div className="text-nodri-t3 text-[10px]">{item.impacto}</div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* AÇÕES PRIORITÁRIAS */}
                       {iaAnalise.acoes_prioritarias?.length > 0 && (
                         <div>
                           <div className="text-[11px] font-bold text-cyan-400 mb-2 flex items-center gap-1.5"><Zap size={13} /> Ações Prioritárias</div>
@@ -495,6 +697,28 @@ export default function ResultadosPage() {
                           </div>
                         </div>
                       )}
+
+                      {/* PREVISÃO */}
+                      {iaAnalise.previsao && (
+                        <div>
+                          <div className="text-[11px] font-bold text-purple-400 mb-2 flex items-center gap-1.5"><TrendingUp size={13} /> 🔮 Previsão Inteligente</div>
+                          <div className="grid grid-cols-3 gap-2">
+                            {[
+                              { label: 'Conservador', data: iaAnalise.previsao.cenario_conservador, cor: '#f87171' },
+                              { label: 'Realista', data: iaAnalise.previsao.cenario_realista, cor: '#facc15' },
+                              { label: 'Otimista', data: iaAnalise.previsao.cenario_otimista, cor: '#4ade80' },
+                            ].map(({ label, data: c, cor }) => (
+                              <div key={label} className="p-3 rounded-xl text-center" style={{ background: `${cor}08`, border: `1px solid ${cor}25` }}>
+                                <div className="text-[9px] font-bold uppercase mb-1" style={{ color: cor }}>{label}</div>
+                                <div className="text-[11px] text-nodri-t1 mb-1">{c.descricao}</div>
+                                <div className="text-[10px] font-bold" style={{ color: cor }}>{c.probabilidade_pct}% probabilidade</div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* OPORTUNIDADES DE RECEITA */}
                       {iaAnalise.oportunidades_receita?.length > 0 && (
                         <div>
                           <div className="text-[11px] font-bold text-orange-400 mb-2 flex items-center gap-1.5"><TrendingUp size={13} /> Oportunidades de Receita</div>
