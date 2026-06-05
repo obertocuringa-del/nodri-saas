@@ -210,16 +210,21 @@ ${config.instrucoes_base ? `INSTRUÃ‡Ã•ES CUSTOMIZADAS:\n${config.instrucoe
 ${config.contexto_adicional ? `CONTEXTO ADICIONAL:\n${config.contexto_adicional}` : ''}`
 
     // 7. Chamar Google Gemini API
-    // Usa gemini-2.0-flash por padrão (modelo atual e gratuito)
-    const modelo = 'gemini-2.0-flash'
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${config.api_key}`
+    // gemini-1.5-flash — 1500 req/dia grátis no free tier
+    const modelo = 'gemini-1.5-flash'
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1/models/${modelo}:generateContent?key=${config.api_key}`
 
+    // v1 não suporta system_instruction — inclui como primeira mensagem
+    const conteudoMensagens = mensagens.map((m: any) => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: m.content }]
+    }))
+    // Injeta o system prompt na primeira mensagem do usuário
+    if (conteudoMensagens.length > 0 && conteudoMensagens[0].role === 'user') {
+      conteudoMensagens[0].parts[0].text = `[CONTEXTO DO SISTEMA]\n${systemPrompt}\n\n[PERGUNTA]\n${conteudoMensagens[0].parts[0].text}`
+    }
     const geminiBody = {
-      system_instruction: { parts: [{ text: systemPrompt }] },
-      contents: mensagens.map((m: any) => ({
-        role: m.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: m.content }]
-      })),
+      contents: conteudoMensagens,
       generationConfig: { maxOutputTokens: 2048, temperature: 0.7 }
     }
 
