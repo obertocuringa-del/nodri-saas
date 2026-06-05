@@ -1,0 +1,222 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { supabaseAdmin } from '@/lib/supabase'
+import { verifyJWT } from '@/lib/auth'
+import { cookies } from 'next/headers'
+import Anthropic from '@anthropic-ai/sdk'
+
+function formatarDadosSalao(dados: any, profissionalId?: string): string {
+  const linhas: string[] = []
+
+  // Profissionais
+  if (dados.profissionais?.length) {
+    linhas.push('## PROFISSIONAIS DO SALÃO')
+    dados.profissionais.forEach((p: any) => {
+      linhas.push(`- ${p.nome_completo} (${p.cargo}) — ${p.ativo ? 'Ativo' : 'Inativo'}`)
+    })
+    linhas.push('')
+  }
+
+  // Relatório de períodos (últimos meses)
+  if (dados.relatorio_periodos?.length) {
+    linhas.push('## DADOS FINANCEIROS (últimos períodos)')
+    const porProf: Record<string, any[]> = {}
+    dados.relatorio_periodos.forEach((r: any) => {
+      if (!porProf[r.profissional_id]) porProf[r.profissional_id] = []
+      porProf[r.profissional_id].push(r)
+    })
+    for (const profId of Object.keys(porProf)) {
+      const prof = dados.profissionais?.find((p: any) => p.id === profId)
+      const nome = prof?.nome_completo || profId
+      linhas.push(`### ${nome}`)
+      porProf[profId].slice(-6).forEach((r: any) => {
+        linhas.push(`  - ${r.ano}/${String(r.mes).padStart(2,'0')}: Fat R$${(r.faturamento||0).toFixed(2)}, Serviços: ${r.total_servicos||0}, Ticket: R$${(r.ticket_medio||0).toFixed(2)}`)
+      })
+    }
+    linhas.push('')
+  }
+
+  // Feedbacks internos
+  if (dados.feedbacks_prof?.length) {
+    linhas.push('## FEEDBACKS DE PROFISSIONAIS')
+    dados.feedbacks_prof.slice(-20).forEach((f: any) => {
+      linhas.push(`- [${f.tipo?.toUpperCase()}] ${f.ocorrido_descricao || ''}${f.descricao ? ': ' + f.descricao : ''}`)
+    })
+    linhas.push('')
+  }
+
+  // Feedbacks de clientes
+  if (dados.feedbacks_clientes?.length) {
+    linhas.push('## FEEDBACKS DE CLIENTES')
+    dados.feedbacks_clientes.slice(-10).forEach((f: any) => {
+      linhas.push(`- Nota: ${f.nota_geral || '?'} — ${f.comentario || ''}`)
+    })
+    linhas.push('')
+  }
+
+  // Pendências em aberto
+  if (dados.pendencias?.length) {
+    linhas.push('## PENDÊNCIAS EM ABERTO')
+    dados.pendencias.forEach((p: any) => {
+      const prof = dados.profissionais?.find((pr: any) => pr.id === p.profissional_id)
+      const nome = prof?.nome_completo || 'Desconhecido'
+      const venc = p.data_limite ? ` [Vence: ${p.data_limite}]` : ''
+      linhas.push(`- ${nome}: ${p.mensagem}${venc}`)
+    })
+    linhas.push('')
+  }
+
+  // Dados específicos do profissional
+  if (profissionalId && dados.prof_especifico) {
+    const pe = dados.prof_especifico
+    linhas.push('## PROFISSIONAL EM FOCO')
+    if (pe.dados) {
+      const d = pe.dados
+      linhas.push(`Nome: ${d.nome_completo}, Cargo: ${d.cargo}, CNPJ: ${d.cnpj || 'não cadastrado'}`)
+    }
+    if (pe.periodos?.length) {
+      linhas.push('Últimos períodos:')
+      pe.periodos.slice(-6).forEach((r: any) => {
+        linhas.push(`  - ${r.ano}/${String(r.mes).padStart(2,'0')}: Fat R$${(r.faturamento||0).toFixed(2)}`)
+      })
+    }
+    linhas.push('')
+  }
+
+  return linhas.join('\n')
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const token = cookies().get('nodri_token')?.value
+    const payload = await verifyJWT(token)
+    const salaoId = payload?.salaoId
+    if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+
+    const body = await req.json()
+    const { mensagens, profissional_id, conversa_id } = body
+
+    if (!mensagens?.length) {
+      return NextResponse.json({ error: 'mensagens são obrigatórias' }, { status: 400 })
+    }
+
+    // 1. Buscar config IA
+    const { data: config } = await supabaseAdmin
+      .from('ia_config')
+      .select('api_key, modelo, instrucoes_base, contexto_adicional')
+      .eq('salao_id', salaoId)
+      .maybeSingle()
+
+    if (!config?.api_key) {
+      return NextResponse.json({ error: 'API key não configurada. Acesse /salon/ia-config para configurar.' }, { status: 422 })
+    }
+
+    // 2. Buscar dados do salão
+    const dataInicio = new Date()
+    dataInicio.setMonth(dataInicio.getMonth() - 24)
+    const dataInicioStr = dataInicio.toISOString().slice(0, 7)
+
+    const [
+      { data: profissionais },
+      { data: relatorioPeriodos },
+      { data: feedbacksProf },
+      { data: feedbacksClientes },
+      { data: pendencias },
+    ] = await Promise.all([
+      supabaseAdmin.from('profissionais').select('id, nome_completo, cargo, ativo').eq('salao_id', salaoId),
+      supabaseAdmin.from('prof_pagamentos').select('profissional_id, ano, mes, faturamento, total_servicos, ticket_medio').eq('salao_id', salaoId).gte('ano', parseInt(dataInicioStr.slice(0,4)) - 1),
+      supabaseAdmin.from('feedback_prof_respostas').select('profissional_id, tipo, ocorrido_descricao, descricao, criado_em').eq('salao_id', salaoId).order('criado_em', { ascending: false }).limit(100),
+      supabaseAdmin.from('feedback_respostas').select('nota_geral, comentario, criado_em').eq('salao_id', salaoId).order('criado_em', { ascending: false }).limit(20),
+      supabaseAdmin.from('pendencias_profissionais').select('profissional_id, mensagem, data_limite').eq('salao_id', salaoId).eq('resolvido', false),
+    ])
+
+    const dadosSalao: any = {
+      profissionais: profissionais || [],
+      relatorio_periodos: relatorioPeriodos || [],
+      feedbacks_prof: feedbacksProf || [],
+      feedbacks_clientes: feedbacksClientes || [],
+      pendencias: pendencias || [],
+    }
+
+    // 3. Dados específicos do profissional
+    if (profissional_id) {
+      const [{ data: dadosProf }, { data: periodosProf }] = await Promise.all([
+        supabaseAdmin.from('profissionais').select('*').eq('id', profissional_id).maybeSingle(),
+        supabaseAdmin.from('prof_pagamentos').select('*').eq('profissional_id', profissional_id).order('ano').order('mes'),
+      ])
+      dadosSalao.prof_especifico = {
+        dados: dadosProf,
+        periodos: periodosProf || [],
+      }
+    }
+
+    const dadosFormatados = formatarDadosSalao(dadosSalao, profissional_id)
+
+    // 4. Montar system prompt
+    const systemPrompt = `Você é a IA NODRI, assistente especialista em gestão de salão de beleza.
+
+ESPECIALIDADES:
+- Análise de dados e KPIs do setor de beleza
+- Gestão de equipes e profissionais
+- Fidelização de clientes e estratégias de crescimento
+- Criação e acompanhamento de metas realistas
+- Coaching de desempenho para profissionais
+- Identificação de problemas e oportunidades nos dados
+
+INSTRUÇÕES:
+- Responda SEMPRE em português brasileiro informal mas profissional
+- Use os dados reais do salão quando disponíveis
+- Seja direto, prático e acionável
+- Gere insights que gerem resultado real
+- Faça perguntas de follow-up quando necessário
+- Memorize o contexto da conversa
+
+DADOS DO SALÃO:
+${dadosFormatados}
+
+${config.instrucoes_base ? `INSTRUÇÕES CUSTOMIZADAS:\n${config.instrucoes_base}\n` : ''}
+${config.contexto_adicional ? `CONTEXTO ADICIONAL:\n${config.contexto_adicional}` : ''}`
+
+    // 5. Chamar Anthropic
+    const anthropic = new Anthropic({ apiKey: config.api_key })
+
+    const response = await anthropic.messages.create({
+      model: config.modelo || 'claude-haiku-4-5',
+      max_tokens: 2048,
+      system: systemPrompt,
+      messages: mensagens.map((m: any) => ({ role: m.role, content: m.content })),
+    })
+
+    const resposta = response.content[0].type === 'text' ? response.content[0].text : ''
+
+    // 6. Salvar/atualizar conversa
+    let conversaIdFinal = conversa_id
+    const todasMensagens = [
+      ...mensagens,
+      { role: 'assistant', content: resposta },
+    ]
+
+    if (conversaIdFinal) {
+      await supabaseAdmin
+        .from('ia_conversas')
+        .update({ mensagens: todasMensagens, atualizado_em: new Date().toISOString() })
+        .eq('id', conversaIdFinal)
+        .eq('salao_id', salaoId)
+    } else {
+      const { data: novaConversa } = await supabaseAdmin
+        .from('ia_conversas')
+        .insert({
+          salao_id: salaoId,
+          profissional_id: profissional_id || null,
+          mensagens: todasMensagens,
+        })
+        .select('id')
+        .single()
+      conversaIdFinal = novaConversa?.id
+    }
+
+    return NextResponse.json({ resposta, conversa_id: conversaIdFinal })
+  } catch (err: any) {
+    console.error('IA chat error:', err)
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
+}

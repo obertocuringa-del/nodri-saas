@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { ArrowLeft, Save, Loader2, TrendingUp, TrendingDown, BarChart2,
   MessageSquare, CheckSquare, Square, AlertTriangle } from 'lucide-react'
@@ -914,6 +914,366 @@ function BlocoSazonalidade({ s }: { s: SazonalidadeItem[] }) {
   )
 }
 
+// ── BlocoDiagnosticoResumido — Score + Semáforo + Narrativa + Plano de Ação (sem checklist/ocorrências) ──
+function BlocoDiagnosticoResumido({ prof, form, metricas, p1, p2, fidel }: {
+  prof: Profissional; form: Partial<Profissional>
+  metricas: DadosMetricas | null; p1: MetricaBloco | null; p2: MetricaBloco | null; fidel: Fidelizacao | null
+}) {
+  const fmt$ = (v: number) => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0)
+
+  function semaforo(v: number, [bom, ok, ruim]: [number,number,number]) {
+    if (v >= bom) return {cor:'#22c55e', label:'BOM', score:10}
+    if (v >= ok)  return {cor:'#f59e0b', label:'ATENÇÃO', score:6}
+    if (v >= ruim)return {cor:'#ef4444', label:'CRÍTICO', score:3}
+    return {cor:'#ef4444', label:'CRÍTICO', score:1}
+  }
+
+  const pctFat    = p1?.faturamento && p2?.faturamento ? ((p2.faturamento-p1.faturamento)/p1.faturamento)*100 : null
+  const pctTicket = p1?.ticket_medio && p2?.ticket_medio ? ((p2.ticket_medio-p1.ticket_medio)/p1.ticket_medio)*100 : null
+
+  const sFat    = pctFat    !== null ? semaforo(pctFat,    [10, 0, -10])   : null
+  const sTicket = pctTicket !== null ? semaforo(pctTicket, [5, -5, -15])   : null
+  const sOcup   = p2?.taxa_ocupacao  !== undefined ? semaforo(p2.taxa_ocupacao, [60, 35, 20]) : null
+  const sFidel  = fidel ? semaforo(fidel.taxa_fidelizacao, [70, 50, 30])   : null
+
+  const CHECKLIST_R: { key: keyof Profissional; label: string; obrig: boolean }[] = [
+    {key:'ficha_entrevista',label:'Ficha para Entrevista',obrig:false},
+    {key:'processo_contratacao',label:'Processo de Contratação',obrig:false},
+    {key:'materiais_trabalho',label:'Materiais para Trabalho',obrig:false},
+    {key:'perfil_ideal',label:'Perfil Ideal',obrig:false},
+    {key:'horarios_folgas',label:'Horários e Folgas',obrig:false},
+    {key:'distrato',label:'Distrato',obrig:false},
+    {key:'contrato_trabalho',label:'Contrato de Trabalho',obrig:true},
+    {key:'tem_certificados',label:'Certificados',obrig:false},
+    {key:'plano_carreira',label:'Plano de Carreira',obrig:false},
+  ]
+  const checkOk = CHECKLIST_R.filter(c=>form[c.key]).length
+  const checkTotal = CHECKLIST_R.length
+  const checkPend = CHECKLIST_R.filter(c=>!form[c.key])
+  const checkObrig = checkPend.filter(c=>c.obrig)
+  const sCheck = checkObrig.length > 0
+    ? {cor:'#ef4444', label:'CRÍTICO', score:1}
+    : semaforo((checkOk/checkTotal)*100, [80, 55, 30])
+
+  const ocNeg = (metricas?.feedbacks||[]).filter(f=>f.tipo!=='positivo').length
+  const ocPos = (metricas?.feedbacks||[]).filter(f=>f.tipo==='positivo').length
+  const sOc   = semaforo(ocNeg===0?100:(ocPos/(ocNeg+ocPos||1))*100, [80, 50, 20])
+
+  const allScores = [sFat, sTicket, sOcup, sFidel, sCheck, sOc].filter(Boolean) as {score:number}[]
+  const scoreGeral = allScores.length ? Math.round(allScores.reduce((s,v)=>s+v.score,0)/allScores.length*10) : null
+  const corGeral = !scoreGeral ? '#64748b' : scoreGeral>=70?'#22c55e':scoreGeral>=45?'#f59e0b':'#ef4444'
+  const labelGeral = !scoreGeral ? '—' : scoreGeral>=70?'BOM':scoreGeral>=45?'ATENÇÃO':'CRÍTICO'
+
+  const narrativa = gerarNarrativa(
+    prof.apelido||prof.nome_completo, p1, p2, fidel,
+    metricas?.mix_receita||[], form, metricas?.projecao||null, ocNeg, ocPos
+  )
+
+  // Plano de ação
+  const acoes: {p:'alta'|'media'|'baixa', t:string}[] = []
+  if (checkObrig.length>0) acoes.push({p:'alta', t:`Regularizar documentação obrigatória: ${checkObrig.map(c=>c.label).join(', ')}`})
+  if (!prof.cnpj) acoes.push({p:'alta', t:'Cadastrar CNPJ do profissional'})
+  if (pctTicket!==null && pctTicket<-5) acoes.push({p:'alta', t:`Ticket caindo ${Math.abs(pctTicket).toFixed(1)}% — revisar tabela de preços`})
+  if (p2?.taxa_ocupacao!==undefined && p2.taxa_ocupacao<35) acoes.push({p:'alta', t:`Ocupação em ${p2.taxa_ocupacao.toFixed(0)}% — aumentar agendamentos`})
+  if (fidel && fidel.perdidos>3) acoes.push({p:'media', t:`${fidel.perdidos} clientes não voltaram — criar ação de retenção`})
+  if (pctFat!==null && pctFat<0) acoes.push({p:'media', t:'Faturamento em queda — criar promoção especial'})
+  if (metricas?.projecao?.tendencia==='baixa') acoes.push({p:'media', t:'Tendência de queda — planejar ações de recuperação'})
+
+  const corP = {alta:'#ef4444',media:'#f59e0b',baixa:'#22c55e'}
+  const icoP = {alta:'🔴',media:'🟡',baixa:'🟢'}
+  const txtP = {alta:'URGENTE',media:'ESTA SEMANA',baixa:'ESTE MÊS'}
+
+  return (
+    <div className="space-y-5">
+      {/* Score Geral */}
+      <div className="rounded-2xl p-6 border" style={{background:'rgba(255,255,255,0.02)', borderColor:`${corGeral}44`}}>
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <h2 className="font-syne font-black text-[18px] text-nodri-t1">🩺 Diagnóstico Rápido</h2>
+            <p className="text-[11px] text-nodri-t3 mt-1">Score baseado nos dados do período selecionado</p>
+          </div>
+          <div className="text-right shrink-0 ml-4">
+            <div className="font-syne font-black text-[48px] leading-none" style={{color:corGeral}}>{scoreGeral ?? '—'}</div>
+            <div className="text-[12px] font-bold mt-1" style={{color:corGeral}}>{labelGeral}</div>
+          </div>
+        </div>
+        {scoreGeral !== null && (
+          <div className="w-full bg-nodri-border rounded-full h-3 overflow-hidden">
+            <div className="h-3 rounded-full transition-all" style={{width:`${scoreGeral}%`, background:`linear-gradient(90deg,${corGeral},${corGeral}88)`}}/>
+          </div>
+        )}
+      </div>
+
+      {/* Semáforo por área */}
+      <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
+        <h3 className="font-syne font-bold text-[13px] mb-4">🚦 Status por Área</h3>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {([
+            {l:'💰 Faturamento',  s:sFat,    v: pctFat!==null?`${pctFat>=0?'+':''}${pctFat.toFixed(1)}%`:'Sem dados'},
+            {l:'🎟️ Ticket Médio', s:sTicket, v: pctTicket!==null?`${pctTicket>=0?'+':''}${pctTicket.toFixed(1)}%`:'Sem dados'},
+            {l:'⏱️ Ocupação',     s:sOcup,   v: p2?.taxa_ocupacao!==undefined?`${p2.taxa_ocupacao.toFixed(1)}%`:'Sem dados'},
+            {l:'👥 Fidelização',  s:sFidel,  v: fidel?`${fidel.taxa_fidelizacao}%`:'Sem dados'},
+            {l:'📋 Checklist',    s:sCheck,  v:`${checkOk}/${checkTotal} itens`},
+            {l:'⚠️ Ocorrências',  s:sOc,    v: ocNeg===0?'Nenhuma negativa':`${ocNeg} negativa(s)`},
+          ]).map(item=>(
+            <div key={item.l} className="bg-nodri-card border border-nodri-border rounded-xl p-3 flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <div className="text-[10px] text-nodri-t3 mb-0.5">{item.l}</div>
+                <div className="text-[11px] font-semibold text-nodri-t1 truncate">{item.v}</div>
+              </div>
+              {item.s && (
+                <span className="text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0"
+                  style={{color:item.s.cor, background:`${item.s.cor}22`, border:`1px solid ${item.s.cor}44`}}>
+                  {item.s.label}
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Narrativa personalizada */}
+      {narrativa && (
+        <div className="rounded-2xl p-5 border" style={{background:'rgba(99,102,241,0.04)', borderColor:'rgba(99,102,241,0.25)'}}>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-[18px]">💬</span>
+            <h3 className="font-syne font-bold text-[13px]">Análise Personalizada</h3>
+          </div>
+          <p className="text-[13px] text-nodri-t1 leading-[1.8] font-medium">{narrativa}</p>
+        </div>
+      )}
+
+      {/* Plano de Ação */}
+      {acoes.length > 0 && (
+        <div className="rounded-2xl p-5 border" style={{background:'rgba(99,102,241,0.04)', borderColor:'rgba(99,102,241,0.2)'}}>
+          <h3 className="font-syne font-bold text-[13px] mb-4">🎯 Plano de Ação</h3>
+          <div className="space-y-3">
+            {acoes.slice(0,5).map((a,i)=>(
+              <div key={i} className="flex gap-3 p-3 rounded-xl border bg-nodri-card" style={{borderColor:`${corP[a.p]}33`}}>
+                <span className="text-[18px] shrink-0">{icoP[a.p]}</span>
+                <div>
+                  <span className="text-[9px] font-bold uppercase tracking-wider" style={{color:corP[a.p]}}>{txtP[a.p]}</span>
+                  <p className="text-[12px] text-nodri-t1 leading-relaxed mt-0.5">{a.t}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── AbaPendencias ──
+function AbaPendencias({ profissionalId }: { profissionalId: string }) {
+  const [pendencias, setPendencias] = useState<Array<{
+    id: string; profissional_id: string; mensagem: string
+    data_limite: string | null; resolvido: boolean; resolvido_em: string | null; criado_em: string
+  }>>([])
+  const [loading, setLoading] = useState(true)
+  const [historicoAberto, setHistoricoAberto] = useState(false)
+
+  useEffect(() => {
+    fetch(`/api/pendencias?profissional_id=${profissionalId}`)
+      .then(r => r.json())
+      .then(d => { setPendencias(Array.isArray(d) ? d : []); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [profissionalId])
+
+  async function marcarResolvida(id: string) {
+    const res = await fetch(`/api/pendencias/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ resolvido: true }),
+    })
+    if (res.ok) {
+      const atualizada = await res.json()
+      setPendencias(prev => prev.map(p => p.id === id ? { ...p, ...atualizada } : p))
+    }
+  }
+
+  const hoje = new Date()
+  const abertas = pendencias.filter(p => !p.resolvido)
+  const resolvidas = pendencias.filter(p => p.resolvido)
+
+  function isVencida(p: { data_limite: string | null; resolvido: boolean }) {
+    return !p.resolvido && p.data_limite && new Date(p.data_limite + 'T23:59:59') < hoje
+  }
+
+  if (loading) return <div className="flex justify-center py-10"><Loader2 size={24} className="animate-spin text-nodri-cyan"/></div>
+
+  return (
+    <div className="space-y-4">
+      {abertas.length === 0 && (
+        <div className="text-center py-12 text-nodri-t3">
+          <span className="text-4xl">✅</span>
+          <p className="text-[13px] mt-3">Nenhuma pendência em aberto para este profissional.</p>
+          <p className="text-[11px] mt-1 opacity-60">Adicione pendências em /salon/pendencias</p>
+        </div>
+      )}
+
+      {abertas.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="font-syne font-bold text-[12px] text-nodri-t2">Em Aberto ({abertas.length})</h3>
+          {abertas.map(p => (
+            <div key={p.id} className={`rounded-xl p-4 border flex items-start gap-3 ${isVencida(p) ? 'bg-red-500/5 border-red-500/20' : 'bg-nodri-card border-nodri-border'}`}>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                  {isVencida(p) && <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20">VENCIDO</span>}
+                  {p.data_limite && <span className="text-[9px] text-nodri-t3">Limite: {new Date(p.data_limite + 'T12:00:00').toLocaleDateString('pt-BR')}</span>}
+                </div>
+                <p className="text-[12px] text-nodri-t1">{p.mensagem}</p>
+              </div>
+              <button
+                onClick={() => marcarResolvida(p.id)}
+                className="text-[10px] px-3 py-1.5 rounded-lg bg-green-500/10 text-green-400 border border-green-500/20 hover:bg-green-500/20 transition-colors shrink-0 font-semibold">
+                ✅ Marcar como Feito
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {resolvidas.length > 0 && (
+        <div>
+          <button
+            onClick={() => setHistoricoAberto(v => !v)}
+            className="flex items-center gap-2 text-[11px] text-nodri-t3 hover:text-nodri-t1 transition-colors font-semibold py-2">
+            {historicoAberto ? '▾' : '▸'} Histórico de resolvidas ({resolvidas.length})
+          </button>
+          {historicoAberto && (
+            <div className="space-y-2 mt-2">
+              {resolvidas.map(p => (
+                <div key={p.id} className="rounded-xl p-3 border bg-green-500/5 border-green-500/15">
+                  <p className="text-[11px] text-nodri-t2 line-through">{p.mensagem}</p>
+                  {p.resolvido_em && <p className="text-[9px] text-nodri-t3 mt-0.5">Resolvida em {new Date(p.resolvido_em).toLocaleDateString('pt-BR')}</p>}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── AbaIA ──
+function AbaIA({ profissionalId }: { profissionalId: string }) {
+  const [temApiKey, setTemApiKey] = useState<boolean | null>(null)
+  const [mensagens, setMensagens] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([])
+  const [input, setInput] = useState('')
+  const [enviando, setEnviando] = useState(false)
+  const [conversaId, setConversaId] = useState<string | undefined>(undefined)
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    fetch('/api/ia/config')
+      .then(r => r.json())
+      .then(d => setTemApiKey(!!d.tem_api_key))
+      .catch(() => setTemApiKey(false))
+  }, [])
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+    }
+  }, [mensagens])
+
+  async function enviar() {
+    const texto = input.trim()
+    if (!texto || enviando) return
+
+    const novasMensagens = [...mensagens, { role: 'user' as const, content: texto }]
+    setMensagens(novasMensagens)
+    setInput('')
+    setEnviando(true)
+
+    const res = await fetch('/api/ia/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mensagens: novasMensagens, profissional_id: profissionalId, conversa_id: conversaId }),
+    })
+
+    const d = await res.json()
+    if (res.ok) {
+      setMensagens(prev => [...prev, { role: 'assistant', content: d.resposta }])
+      if (d.conversa_id) setConversaId(d.conversa_id)
+    } else {
+      setMensagens(prev => [...prev, { role: 'assistant', content: `❌ Erro: ${d.error}` }])
+    }
+    setEnviando(false)
+  }
+
+  if (temApiKey === null) return <div className="flex justify-center py-10"><Loader2 size={24} className="animate-spin text-nodri-cyan"/></div>
+
+  if (!temApiKey) return (
+    <div className="text-center py-12">
+      <span className="text-4xl">🤖</span>
+      <h3 className="font-syne font-bold text-[14px] mt-3 mb-2 text-nodri-t1">IA NODRI não configurada</h3>
+      <p className="text-[12px] text-nodri-t3 mb-4">Configure sua API key da Anthropic para usar o chat de IA.</p>
+      <a href="/salon/ia-config"
+        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-nodri-cyan text-nodri-dark text-[12px] font-bold hover:brightness-110">
+        ⚙️ Configurar IA
+      </a>
+    </div>
+  )
+
+  return (
+    <div className="flex flex-col h-[600px] bg-nodri-surface border border-nodri-border rounded-2xl overflow-hidden">
+      {/* Header */}
+      <div className="px-4 py-3 border-b border-nodri-border bg-nodri-card flex items-center gap-2">
+        <span className="text-[14px]">🤖</span>
+        <span className="font-syne font-bold text-[12px] text-nodri-t1">IA NODRI</span>
+        <span className="text-[9px] text-nodri-t3 ml-auto">Chat inteligente do salão</span>
+      </div>
+
+      {/* Mensagens */}
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+        {mensagens.length === 0 && (
+          <div className="text-center py-8 text-nodri-t3">
+            <p className="text-[12px]">Olá! Pergunte sobre o desempenho deste profissional, feedbacks, metas ou qualquer dado do salão.</p>
+          </div>
+        )}
+        {mensagens.map((m, i) => (
+          <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-[12px] leading-relaxed ${
+              m.role === 'user'
+                ? 'bg-nodri-cyan text-nodri-dark font-medium rounded-br-md'
+                : 'bg-nodri-card border border-nodri-border text-nodri-t1 rounded-bl-md'
+            }`}>
+              {m.content}
+            </div>
+          </div>
+        ))}
+        {enviando && (
+          <div className="flex justify-start">
+            <div className="bg-nodri-card border border-nodri-border rounded-2xl rounded-bl-md px-4 py-2.5">
+              <Loader2 size={14} className="animate-spin text-nodri-t3"/>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Input */}
+      <div className="px-4 py-3 border-t border-nodri-border bg-nodri-card flex gap-2">
+        <input
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar() } }}
+          placeholder="Digite sua pergunta..."
+          className="flex-1 bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] outline-none focus:border-nodri-cyan/40 text-nodri-t1"
+        />
+        <button
+          onClick={enviar}
+          disabled={enviando || !input.trim()}
+          className="px-3 py-2 rounded-lg bg-nodri-cyan text-nodri-dark font-bold text-[12px] hover:brightness-110 disabled:opacity-50 flex items-center gap-1.5">
+          {enviando ? <Loader2 size={13} className="animate-spin"/> : '➤'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function PerfilProfissionalPage() {
   const router = useRouter()
   const { id } = useParams() as { id: string }
@@ -922,7 +1282,7 @@ export default function PerfilProfissionalPage() {
   const [form, setForm] = useState<Partial<Profissional>>({})
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
-  const [tab, setTab] = useState<'cadastro'|'desempenho'|'faturamento'|'diagnostico'>('cadastro')
+  const [tab, setTab] = useState<'cadastro'|'desempenho'|'faturamento'|'pendencias'|'ia'>('cadastro')
 
   const hoje = new Date()
   const mesAtual    = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,'0')}`
@@ -963,7 +1323,7 @@ export default function PerfilProfissionalPage() {
   }, [id, p1i, p1f, p2i, p2f])
 
   useEffect(() => {
-    if (tab === 'desempenho' || tab === 'faturamento' || tab === 'diagnostico') buscarMetricas()
+    if (tab === 'desempenho' || tab === 'faturamento') buscarMetricas()
   }, [tab])
 
   async function salvar() {
@@ -1036,7 +1396,8 @@ export default function PerfilProfissionalPage() {
           ['cadastro','👤 Dados Cadastrais'],
           ['faturamento','💰 Faturamento'],
           ['desempenho','📊 Ocorrências'],
-          ['diagnostico','🩺 Diagnóstico'],
+          ['pendencias','📋 Pendências'],
+          ['ia','🤖 IA'],
         ] as const).map(([t,l])=>(
           <button key={t} onClick={()=>setTab(t)}
             className={`px-4 py-3 text-[12px] font-semibold border-b-2 transition-all
@@ -1175,6 +1536,10 @@ export default function PerfilProfissionalPage() {
                 {metricas.sazonalidade?.length > 0 && (
                   <BlocoSazonalidade s={metricas.sazonalidade}/>
                 )}
+                {/* Score + Semáforo + Narrativa — no final do faturamento */}
+                {metricas && !loadMet && (p1 || p2) && (
+                  <BlocoDiagnosticoResumido prof={prof} form={form} metricas={metricas} p1={p1||null} p2={p2||null} fidel={fidel||null}/>
+                )}
               </> : (
                 <div className="text-center py-16 text-nodri-t3">
                   <BarChart2 size={40} className="mx-auto mb-3 opacity-30"/>
@@ -1186,17 +1551,14 @@ export default function PerfilProfissionalPage() {
           </div>
         )}
 
-        {/* ══ DIAGNÓSTICO ══ */}
-        {tab === 'diagnostico' && (
-          <div className="space-y-5">
-            {loadMet && <div className="flex justify-center py-10"><Loader2 size={24} className="animate-spin text-nodri-cyan"/></div>}
-            {!loadMet && (
-              <BlocoDiagnostico
-                prof={prof} form={form} metricas={metricas}
-                p1={p1||null} p2={p2||null} fidel={fidel||null}
-              />
-            )}
-          </div>
+        {/* ══ PENDÊNCIAS ══ */}
+        {tab === 'pendencias' && (
+          <AbaPendencias profissionalId={id}/>
+        )}
+
+        {/* ══ IA ══ */}
+        {tab === 'ia' && (
+          <AbaIA profissionalId={id}/>
         )}
 
         {/* ══ OCORRÊNCIAS (antigo Desempenho) ══ */}
