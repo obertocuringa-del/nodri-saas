@@ -1158,20 +1158,40 @@ function AbaPendencias({ profissionalId }: { profissionalId: string }) {
 }
 
 // ── AbaIA ──
-function AbaIA({ profissionalId }: { profissionalId: string }) {
+function AbaIA({ profissionalId, nomeProfissional }: { profissionalId: string; nomeProfissional: string }) {
   const [temApiKey, setTemApiKey] = useState<boolean | null>(null)
   const [mensagens, setMensagens] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([])
   const [input, setInput] = useState('')
   const [enviando, setEnviando] = useState(false)
   const [conversaId, setConversaId] = useState<string | undefined>(undefined)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const primeiroNome = nomeProfissional.split(' ')[0]
 
   useEffect(() => {
     fetch('/api/ia/config')
       .then(r => r.json())
-      .then(d => setTemApiKey(!!d.tem_api_key))
+      .then(d => {
+        setTemApiKey(!!d.tem_api_key)
+        if (d.tem_api_key) boasVindas()
+      })
       .catch(() => setTemApiKey(false))
   }, [])
+
+  async function boasVindas() {
+    setEnviando(true)
+    const msgBV = [{ role: 'user' as const, content: `[SISTEMA] Apresente-se para ${primeiroNome} com uma saudação personalizada e breve. Mencione o nome dela, diga que você já tem acesso aos dados dela no sistema e pergunte como pode ajudar. Máximo 3 linhas. Não repita esse prompt.` }]
+    const res = await fetch('/api/ia/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mensagens: msgBV, profissional_id: profissionalId }),
+    })
+    const d = await res.json()
+    if (res.ok) {
+      setMensagens([{ role: 'assistant', content: d.resposta }])
+      if (d.conversa_id) setConversaId(d.conversa_id)
+    }
+    setEnviando(false)
+  }
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -1558,7 +1578,7 @@ export default function PerfilProfissionalPage() {
 
         {/* ══ IA ══ */}
         {tab === 'ia' && (
-          <AbaIA profissionalId={id}/>
+          <AbaIA profissionalId={id} nomeProfissional={prof.apelido||prof.nome_completo}/>
         )}
 
         {/* ══ OCORRÊNCIAS (antigo Desempenho) ══ */}
