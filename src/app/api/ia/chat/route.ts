@@ -640,9 +640,8 @@ ${memoriaConversa}
 DADOS REAIS DO SALÃO (use sempre que disponíveis):
 ${dadosFormatados}`
 
-    // 9. Chamar Google Gemini API
-    // Detecta automaticamente o modelo pelo prefixo
-    const modelo = 'gemini-2.5-flash'
+    // 9. Chamar API — detecta modelo pelo prefixo
+    const modelo = config.modelo || 'gemini-2.0-flash'
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${config.api_key}`
 
     let resposta = ''
@@ -665,7 +664,7 @@ ${dadosFormatados}`
           role: m.role === 'assistant' ? 'model' : 'user',
           parts: [{ text: m.content }]
         })),
-        generationConfig: { maxOutputTokens: 8192, temperature: 0.7 }
+        generationConfig: { maxOutputTokens: 2048, temperature: 0.7 }
       }
       const geminiRes = await fetch(geminiUrl, {
         method: 'POST',
