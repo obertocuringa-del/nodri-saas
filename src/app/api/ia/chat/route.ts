@@ -149,23 +149,39 @@ export async function POST(req: NextRequest) {
     dataInicio.setMonth(dataInicio.getMonth() - 24)
     const dataInicioStr = dataInicio.toISOString().slice(0, 7)
 
+    const anoInicio = parseInt(dataInicioStr.slice(0,4)) - 1
     const [
       { data: profissionais },
-      { data: relatorioPeriodos },
+      { data: periodos },
       { data: feedbacksProf },
       { data: feedbacksClientes },
       { data: pendencias },
     ] = await Promise.all([
       supabaseAdmin.from('profissionais').select('id, nome_completo, cargo, ativo').eq('salao_id', salaoId),
-      supabaseAdmin.from('prof_pagamentos').select('profissional_id, ano, mes, faturamento, total_servicos, ticket_medio').eq('salao_id', salaoId).gte('ano', parseInt(dataInicioStr.slice(0,4)) - 1),
+      supabaseAdmin.from('relatorio_periodos').select('ano, mes, prof_pagamentos, prof_servicos, prof_ticket, prof_preferencia, prof_ocupacao, resumo_mensal').eq('salao_id', salaoId).gte('ano', anoInicio).order('ano').order('mes'),
       supabaseAdmin.from('feedback_prof_respostas').select('profissional_id, tipo, ocorrido_descricao, descricao, criado_em').eq('salao_id', salaoId).order('criado_em', { ascending: false }).limit(100),
       supabaseAdmin.from('feedback_respostas').select('nota_geral, comentario, criado_em').eq('salao_id', salaoId).order('criado_em', { ascending: false }).limit(20),
       supabaseAdmin.from('pendencias_profissionais').select('profissional_id, mensagem, data_limite').eq('salao_id', salaoId).eq('resolvido', false),
     ])
 
+    // Extrai faturamento por profissional dos períodos
+    const fatPorProf: Record<string, any[]> = {}
+    for (const per of (periodos || [])) {
+      for (const item of (per.prof_pagamentos || [])) {
+        const nome = item.profissional || ''
+        if (!nome) continue
+        if (!fatPorProf[nome]) fatPorProf[nome] = []
+        fatPorProf[nome].push({ ano: per.ano, mes: per.mes, valor: item.valor_a_pagar + (item.desconto||0) })
+      }
+    }
+    const relatorioPeriodos = Object.entries(fatPorProf).map(([profissional, meses]) => ({
+      profissional, meses
+    }))
+
     const dadosSalao: any = {
       profissionais: profissionais || [],
       relatorio_periodos: relatorioPeriodos || [],
+      periodos_raw: periodos || [],
       feedbacks_prof: feedbacksProf || [],
       feedbacks_clientes: feedbacksClientes || [],
       pendencias: pendencias || [],
