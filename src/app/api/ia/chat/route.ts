@@ -212,7 +212,7 @@ ${config.contexto_adicional ? `CONTEXTO ADICIONAL:\n${config.contexto_adicional}
 
     // 7. Chamar Google Gemini API
     // Detecta automaticamente o modelo pelo prefixo
-    const modelo = 'gemini-2.5-flash-preview-05-20'
+    const modelo = 'gemini-2.5-flash'
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${config.api_key}`
 
     let resposta = ''
