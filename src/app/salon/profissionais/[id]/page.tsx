@@ -1256,12 +1256,39 @@ function AbaIA({ profissionalId, nomeProfissional }: { profissionalId: string; n
         )}
         {mensagens.map((m, i) => (
           <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-[12px] leading-relaxed ${
+            <div className={`rounded-2xl px-4 py-3 text-[12px] leading-relaxed ${
               m.role === 'user'
-                ? 'bg-nodri-cyan text-nodri-dark font-medium rounded-br-md'
-                : 'bg-nodri-card border border-nodri-border text-nodri-t1 rounded-bl-md'
+                ? 'max-w-[75%] bg-nodri-cyan text-nodri-dark font-medium rounded-br-md'
+                : 'max-w-[92%] bg-nodri-card border border-nodri-border text-nodri-t1 rounded-bl-md'
             }`}>
-              {m.content}
+              {m.role === 'assistant' ? (
+                <div className="prose-ia" dangerouslySetInnerHTML={{ __html:
+                  m.content
+                    // Títulos com emoji
+                    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+                    .replace(/^#{1,3}\s+(.+)$/gm, '<div style="font-weight:700;font-size:13px;color:#00e5c8;margin:12px 0 6px;border-bottom:1px solid rgba(0,229,200,0.2);padding-bottom:4px">$1</div>')
+                    // Linhas separadoras
+                    .replace(/^={3,}.*={3,}$/gm, '<hr style="border-color:rgba(255,255,255,0.08);margin:10px 0"/>')
+                    .replace(/^---+$/gm, '<hr style="border-color:rgba(255,255,255,0.08);margin:10px 0"/>')
+                    // Tabelas markdown simples
+                    .replace(/\|(.+)\|/g, (match) => {
+                      if (match.includes('---')) return ''
+                      const cols = match.split('|').filter(c => c.trim())
+                      return '<div style="display:flex;gap:8px;margin:2px 0">' + cols.map(c => `<span style="flex:1;padding:3px 6px;background:rgba(255,255,255,0.04);border-radius:4px;font-size:11px">${c.trim()}</span>`).join('') + '</div>'
+                    })
+                    // Listas com bullets
+                    .replace(/^[•\-\*]\s+(.+)$/gm, '<div style="display:flex;gap:6px;margin:2px 0"><span style="color:#00e5c8;flex-shrink:0">•</span><span>$1</span></div>')
+                    // Listas numeradas
+                    .replace(/^(\d+)\.\s+(.+)$/gm, '<div style="display:flex;gap:6px;margin:3px 0"><span style="color:#7c5cfc;font-weight:700;flex-shrink:0">$1.</span><span>$2</span></div>')
+                    // Emojis de seção como títulos
+                    .replace(/^(🎯|📊|🚨|💰|📈|📅|🔥|📋|🎯|✅|💡|⚡|🏆)\s*(.+)$/gm, '<div style="font-weight:700;font-size:12px;color:#e2e8f0;margin:10px 0 4px">$1 $2</div>')
+                    // Quebras de linha
+                    .replace(/\n\n/g, '<div style="margin:6px 0"></div>')
+                    .replace(/\n/g, '<br/>')
+                }}/>
+              ) : (
+                m.content
+              )}
             </div>
           </div>
         ))}
