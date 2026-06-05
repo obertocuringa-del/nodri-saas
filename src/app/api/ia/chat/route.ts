@@ -211,8 +211,8 @@ ${config.instrucoes_base ? `INSTRUÃ‡Ã•ES CUSTOMIZADAS:\n${config.instrucoe
 ${config.contexto_adicional ? `CONTEXTO ADICIONAL:\n${config.contexto_adicional}` : ''}`
 
     // 7. Chamar Google Gemini API
-    // Usa claude-haiku-4-5 por padrão — melhor custo-benefício
-    const modelo = config.modelo || 'claude-haiku-4-5'
+    // Detecta automaticamente o modelo pelo prefixo
+    const modelo = config.modelo || 'gemini-2.0-flash'
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${config.api_key}`
 
     let resposta = ''
