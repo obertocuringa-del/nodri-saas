@@ -97,21 +97,51 @@ function formatarDadosSalao(dados: any, profissionalId?: string): string {
 
   // Ocorrências de profissionais (atraso, falta, saída cedo, etc.)
   if (dados.feedbacks_prof?.length) {
-    linhas.push('## OCORRÊNCIAS DE PROFISSIONAIS')
-    const contagemOcorr: Record<string, number> = {}
-    dados.feedbacks_prof.forEach((f: any) => {
-      const tipo = f.tipo?.toUpperCase() || 'OUTRO'
-      contagemOcorr[tipo] = (contagemOcorr[tipo] || 0) + 1
-    })
-    Object.entries(contagemOcorr).sort((a,b) => b[1]-a[1]).forEach(([tipo, qtd]) => {
-      linhas.push(`- ${tipo}: ${qtd} ocorrência(s)`)
-    })
-    linhas.push('Detalhe das ocorrências:')
-    dados.feedbacks_prof.slice(-20).forEach((f: any) => {
-      const data = f.criado_em ? new Date(f.criado_em).toLocaleDateString('pt-BR') : ''
-      linhas.push(`  [${f.tipo?.toUpperCase()}] ${data} — ${f.ocorrido_descricao || ''}${f.descricao ? ': ' + f.descricao : ''}`)
-    })
-    linhas.push('')
+    // Se há profissional em foco, filtra pelo nome dele
+    const nomeProf = dados.prof_especifico?.dados?.nome_completo || dados.prof_especifico?.dados?.apelido
+    const ocorrencias = nomeProf
+      ? dados.feedbacks_prof.filter((f: any) => {
+          const nome = (f.profissional_nome || '').toLowerCase()
+          return nome.includes(nomeProf.split(' ')[0].toLowerCase())
+        })
+      : dados.feedbacks_prof
+
+    if (ocorrencias.length) {
+      linhas.push(nomeProf ? `## OCORRÊNCIAS DE ${nomeProf.toUpperCase()}` : '## OCORRÊNCIAS DE PROFISSIONAIS')
+
+      // Agrupa por profissional (quando sem foco)
+      if (!nomeProf) {
+        const porProf: Record<string, any[]> = {}
+        ocorrencias.forEach((f: any) => {
+          const nome = f.profissional_nome || 'Desconhecido'
+          if (!porProf[nome]) porProf[nome] = []
+          porProf[nome].push(f)
+        })
+        Object.entries(porProf).forEach(([nome, items]) => {
+          linhas.push(`### ${nome}`)
+          const contagem: Record<string, number> = {}
+          items.forEach((f: any) => { contagem[f.ocorrido_descricao || f.tipo] = (contagem[f.ocorrido_descricao || f.tipo] || 0) + 1 })
+          Object.entries(contagem).forEach(([tipo, qtd]) => linhas.push(`  - ${tipo}: ${qtd}x`))
+        })
+      } else {
+        const contagem: Record<string, number> = {}
+        ocorrencias.forEach((f: any) => { contagem[f.ocorrido_descricao || f.tipo] = (contagem[f.ocorrido_descricao || f.tipo] || 0) + 1 })
+        Object.entries(contagem).sort((a,b) => b[1]-a[1]).forEach(([tipo, qtd]) => {
+          linhas.push(`- ${tipo}: ${qtd} ocorrência(s)`)
+        })
+        linhas.push('Detalhes:')
+        ocorrencias.slice(-20).forEach((f: any) => {
+          const data = f.criado_em ? new Date(f.criado_em).toLocaleDateString('pt-BR') : ''
+          const tipoLabel = f.tipo === 'negativo' ? '🚨' : '✅'
+          linhas.push(`  ${tipoLabel} ${data} — ${f.ocorrido_descricao || ''}${f.descricao ? ': ' + f.descricao : ''}`)
+        })
+      }
+      linhas.push('')
+    } else if (nomeProf) {
+      linhas.push(`## OCORRÊNCIAS DE ${nomeProf.toUpperCase()}`)
+      linhas.push('Nenhuma ocorrência registrada para este profissional.')
+      linhas.push('')
+    }
   }
 
   // Feedbacks de clientes
@@ -228,7 +258,7 @@ export async function POST(req: NextRequest) {
     ] = await Promise.all([
       supabaseAdmin.from('profissionais').select('id, nome_completo, cargo, ativo').eq('salao_id', salaoId),
       supabaseAdmin.from('relatorio_periodos').select('ano, mes, prof_pagamentos, prof_servicos, prof_ticket, prof_preferencia, prof_ocupacao, resumo_mensal').eq('salao_id', salaoId).gte('ano', anoInicio).order('ano').order('mes'),
-      supabaseAdmin.from('feedback_prof_respostas').select('profissional_id, tipo, ocorrido_descricao, descricao, criado_em').eq('salao_id', salaoId).order('criado_em', { ascending: false }).limit(100),
+      supabaseAdmin.from('feedback_prof_respostas').select('profissional_id, profissional_nome, tipo, ocorrido_descricao, descricao, criado_em').eq('salao_id', salaoId).order('criado_em', { ascending: false }).limit(100),
       supabaseAdmin.from('feedback_respostas').select('nota_geral, comentario, criado_em').eq('salao_id', salaoId).order('criado_em', { ascending: false }).limit(20),
       supabaseAdmin.from('pendencias_profissionais').select('profissional_id, mensagem, data_limite').eq('salao_id', salaoId).eq('resolvido', false),
     ])
