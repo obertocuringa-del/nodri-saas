@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Loader2, Trash2, Plus } from 'lucide-react'
+import { Loader2, Trash2, Plus, ArrowLeft, Calendar } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 
 interface Profissional {
@@ -36,6 +37,7 @@ function statusPendencia(p: Pendencia): 'vencida' | 'pendente' | 'resolvida' {
 }
 
 export default function PendenciasPage() {
+  const router = useRouter()
   const [pendencias, setPendencias] = useState<Pendencia[]>([])
   const [profissionais, setProfissionais] = useState<Profissional[]>([])
   const [loading, setLoading] = useState(true)
@@ -45,6 +47,10 @@ export default function PendenciasPage() {
   const [mensagem, setMensagem] = useState('')
   const [dataLimite, setDataLimite] = useState('')
   const [criando, setCriando] = useState(false)
+
+  // Editar data
+  const [editandoData, setEditandoData] = useState<string | null>(null)
+  const [novaData, setNovaData] = useState('')
 
   useEffect(() => {
     Promise.all([
@@ -90,6 +96,22 @@ export default function PendenciasPage() {
       toast.success('Excluída!')
     } else {
       toast.error('Erro ao excluir')
+    }
+  }
+
+  async function salvarData(id: string) {
+    const res = await fetch(`/api/pendencias/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data_limite: novaData || null }),
+    })
+    if (res.ok) {
+      const atualizada = await res.json()
+      setPendencias(prev => prev.map(p => p.id === id ? { ...p, ...atualizada } : p))
+      setEditandoData(null)
+      toast.success('Data atualizada!')
+    } else {
+      toast.error('Erro ao atualizar data')
     }
   }
 
@@ -142,14 +164,30 @@ export default function PendenciasPage() {
           {p.resolvido_em && (
             <p className="text-[9px] text-nodri-t3 mt-1">Resolvida em {new Date(p.resolvido_em).toLocaleDateString('pt-BR')}</p>
           )}
+          {/* Editar data inline */}
+          {!p.resolvido && editandoData === p.id && (
+            <div className="flex items-center gap-2 mt-2">
+              <input type="date" value={novaData} onChange={e => setNovaData(e.target.value)}
+                className="bg-nodri-card border border-nodri-cyan/40 rounded-lg px-2 py-1 text-[11px] text-nodri-t1 outline-none" />
+              <button onClick={() => salvarData(p.id)} className="text-[10px] px-2 py-1 rounded-lg bg-nodri-cyan text-nodri-dark font-bold">Salvar</button>
+              <button onClick={() => setEditandoData(null)} className="text-[10px] text-nodri-t3 hover:text-nodri-t1">Cancelar</button>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {!p.resolvido && (
-            <button
-              onClick={() => marcarResolvida(p.id, true)}
-              className="text-[10px] px-2 py-1 rounded-lg bg-green-500/10 text-green-400 border border-green-500/20 hover:bg-green-500/20 transition-colors">
-              ✅ Feito
-            </button>
+            <>
+              <button
+                onClick={() => marcarResolvida(p.id, true)}
+                className="text-[10px] px-2 py-1 rounded-lg bg-green-500/10 text-green-400 border border-green-500/20 hover:bg-green-500/20 transition-colors">
+                ✅ Feito
+              </button>
+              <button
+                onClick={() => { setEditandoData(p.id); setNovaData(p.data_limite || '') }}
+                className="text-[10px] px-2 py-1 rounded-lg bg-nodri-card border border-nodri-border text-nodri-t3 hover:text-nodri-t1 transition-colors">
+                <Calendar size={11}/>
+              </button>
+            </>
           )}
           {p.resolvido && (
             <button
@@ -169,9 +207,15 @@ export default function PendenciasPage() {
   return (
     <div className="min-h-screen bg-nodri-dark">
       {/* Header */}
-      <div className="sticky top-0 z-20 bg-nodri-surface border-b border-nodri-border px-5 py-3">
-        <h1 className="font-syne font-bold text-[16px] text-nodri-t1">📋 Pendências Profissionais</h1>
-        <p className="text-[11px] text-nodri-t3 mt-0.5">Gerencie tarefas e compromissos da equipe</p>
+      <div className="sticky top-0 z-20 bg-nodri-surface border-b border-nodri-border px-5 py-3 flex items-center gap-3">
+        <button onClick={() => router.push('/salon')} className="flex items-center gap-1.5 text-nodri-t2 hover:text-nodri-t1 transition-colors text-sm">
+          <ArrowLeft size={15} /> Início
+        </button>
+        <div className="w-px h-4 bg-nodri-border" />
+        <div>
+          <h1 className="font-syne font-bold text-[15px] text-nodri-t1">📋 Pendências Profissionais</h1>
+          <p className="text-[10px] text-nodri-t3">Gerencie tarefas e compromissos da equipe</p>
+        </div>
       </div>
 
       <div className="max-w-3xl mx-auto px-5 py-6 space-y-6">
