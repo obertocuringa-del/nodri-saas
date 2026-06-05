@@ -101,8 +101,14 @@ function formatarDadosSalao(dados: any, profissionalId?: string): string {
     const nomeProf = dados.prof_especifico?.dados?.nome_completo || dados.prof_especifico?.dados?.apelido
     const ocorrencias = nomeProf
       ? dados.feedbacks_prof.filter((f: any) => {
-          const nome = (f.profissional_nome || '').toLowerCase()
-          return nome.includes(nomeProf.split(' ')[0].toLowerCase())
+          const nomeBanco = (f.profissional_nome || '').toLowerCase().trim()
+          const nomeFoco = nomeProf.toLowerCase().trim()
+          // tenta nome completo primeiro, depois apelido, depois primeiro nome
+          const apelido = (dados.prof_especifico?.dados?.apelido || '').toLowerCase().trim()
+          return nomeBanco === nomeFoco
+            || (apelido && nomeBanco === apelido)
+            || nomeBanco.includes(nomeFoco.split(' ')[0])
+            || nomeFoco.includes(nomeBanco.split(' ')[0])
         })
       : dados.feedbacks_prof
 
