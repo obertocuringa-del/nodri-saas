@@ -120,6 +120,11 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
   // ── COMPRA DETALHE ──
   const [selectedCompra, setSelectedCompra] = useState<Record<string, any> | null>(null as Record<string, any> | null)
 
+  // ── IA CONFIG ──
+  const [iaConfig, setIaConfig] = useState({ api_key: '', modelo: 'gemini-1.5-flash', instrucoes_base: '', api_key_salva: false })
+  const [iaConfigLoading, setIaConfigLoading] = useState(false)
+  const [showIaKey, setShowIaKey] = useState(false)
+
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -131,6 +136,19 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  useEffect(() => {
+    if (activeSection === 'ia') {
+      setIaConfigLoading(true)
+      fetch('/api/admin/ia-config')
+        .then(r => r.json())
+        .then(d => {
+          setIaConfig({ api_key: '', modelo: d.modelo || 'gemini-1.5-flash', instrucoes_base: d.instrucoes_base || '', api_key_salva: d.api_key_salva ?? false })
+        })
+        .catch(() => {})
+        .finally(() => setIaConfigLoading(false))
+    }
+  }, [activeSection])
 
   function handleLogout() { window.location.href = '/logout' }
 
@@ -205,6 +223,21 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
       toast.success(acao === 'bloquear' ? '🔴 Salão bloqueado!' : '✅ Salão liberado!')
       if (editSalao?.id === salao.id) setEditForm(p => ({ ...p, status: data.status }))
     } else toast.error('Erro ao alterar status')
+  }
+
+  async function toggleIA(salao: Salao) {
+    const res = await fetch(`/api/admin/saloes/${salao.id}/ia`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ia_ativa: !salao.ia_ativa })
+    })
+    if (res.ok) {
+      setSaloes(prev => prev.map(s => s.id === salao.id ? { ...s, ia_ativa: !s.ia_ativa } : s))
+      if (editSalao?.id === salao.id) setEditSalao(prev => prev ? { ...prev, ia_ativa: !prev.ia_ativa } : prev)
+      toast.success(salao.ia_ativa ? 'IA desativada' : 'IA ativada! ✅')
+    } else {
+      toast.error('Erro ao alterar status da IA')
+    }
   }
 
   async function liberarComNovaLicenca(salaoId: string, licenca_vencimento: string) {
@@ -881,6 +914,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
     { id: 'updates', icon: <RefreshCw size={14} />, label: 'Atualizações' },
     { id: 'relatorios', icon: <BarChart3 size={14} />, label: 'Relatórios' },
     { id: 'config', icon: <Settings size={14} />, label: 'Configurações' },
+    { id: 'ia', icon: <span className="text-[12px]">🤖</span>, label: 'IA' },
   ]
 
   return (
@@ -922,10 +956,10 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
         <div className="px-5 py-3 border-b border-nodri-border bg-nodri-surface flex items-center gap-3 sticky top-0 z-20">
           <div>
             <div className="font-syne font-bold text-[15px]">
-              {activeSection === 'planos' ? 'Gestão de Planos' : activeSection === 'modulos' ? 'Gestão de Módulos' : 'Painel Admin Master'}
+              {activeSection === 'planos' ? 'Gestão de Planos' : activeSection === 'modulos' ? 'Gestão de Módulos' : activeSection === 'ia' ? '🤖 IA NODRI' : 'Painel Admin Master'}
             </div>
             <div className="text-[11px] text-nodri-t2">
-              {activeSection === 'planos' ? 'Planos, Landing Page e Cupons de Desconto' : activeSection === 'modulos' ? 'Criar, editar e gerenciar módulos do sistema' : 'Controle total de salões, licenças e módulos'}
+              {activeSection === 'planos' ? 'Planos, Landing Page e Cupons de Desconto' : activeSection === 'modulos' ? 'Criar, editar e gerenciar módulos do sistema' : activeSection === 'ia' ? 'Configuração global da IA e controle por salão' : 'Controle total de salões, licenças e módulos'}
             </div>
           </div>
           <div className="ml-auto flex gap-2">
@@ -945,7 +979,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                 <Plus size={13} /> Novo Módulo
               </button>
             )}
-            {activeSection !== 'planos' && activeSection !== 'modulos' && (
+            {activeSection !== 'planos' && activeSection !== 'modulos' && activeSection !== 'ia' && (
               <button onClick={() => setShowNovoSalao(true)} className="flex items-center gap-1.5 bg-nodri-cyan text-black text-[11.5px] font-bold px-3 py-1.5 rounded-lg hover:brightness-110 transition-all">
                 <Plus size={13} /> Novo Salão
               </button>
@@ -1458,6 +1492,78 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
           )}
 
           {/* CONFIGURAÇÕES */}
+          {/* ── IA CONFIG ── */}
+          {activeSection === 'ia' && (
+            <div className="space-y-5 max-w-xl">
+              <div className="nodri-card p-5">
+                <div className="font-syne font-bold text-[13px] text-nodri-cyan mb-4">🤖 Configuração da IA NODRI</div>
+                {iaConfigLoading ? (
+                  <div className="flex items-center justify-center py-8"><Loader2 size={20} className="animate-spin text-nodri-cyan" /></div>
+                ) : (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">
+                        API Key Gemini {iaConfig.api_key_salva && <span className="text-green-400 normal-case">(já configurada)</span>}
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showIaKey ? 'text' : 'password'}
+                          value={iaConfig.api_key}
+                          onChange={e => setIaConfig(p => ({ ...p, api_key: e.target.value }))}
+                          placeholder={iaConfig.api_key_salva ? 'Deixe em branco para manter a atual' : 'Sua API Key do Google Gemini'}
+                          className="nodri-input w-full pr-10"
+                        />
+                        <button type="button" onClick={() => setShowIaKey(v => !v)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-nodri-t3 hover:text-nodri-t1">
+                          {showIaKey ? <EyeOff size={14} /> : <Eye size={14} />}
+                        </button>
+                      </div>
+                      <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer"
+                        className="text-[10px] text-nodri-cyan hover:underline mt-1 block">Obter chave Gemini →</a>
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Modelo</label>
+                      <select className="nodri-input w-full" value={iaConfig.modelo} onChange={e => setIaConfig(p => ({ ...p, modelo: e.target.value }))}>
+                        <option value="gemini-1.5-flash">gemini-1.5-flash — Rápido e Grátis</option>
+                        <option value="gemini-1.5-pro">gemini-1.5-pro — Poderoso</option>
+                        <option value="claude-haiku-4-5">claude-haiku-4-5 — Claude Haiku</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Instruções base da IA</label>
+                      <textarea
+                        className="nodri-input w-full resize-none h-24"
+                        placeholder="Personalidade, especialidades, tom de voz..."
+                        value={iaConfig.instrucoes_base}
+                        onChange={e => setIaConfig(p => ({ ...p, instrucoes_base: e.target.value }))}
+                      />
+                    </div>
+                    <button
+                      onClick={async () => {
+                        setIaConfigLoading(true)
+                        const res = await fetch('/api/admin/ia-config', {
+                          method: 'PUT',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ api_key: iaConfig.api_key, modelo: iaConfig.modelo, instrucoes_base: iaConfig.instrucoes_base, ativo: true }),
+                        })
+                        setIaConfigLoading(false)
+                        if (res.ok) {
+                          toast.success('Configuração da IA salva!')
+                          setIaConfig(p => ({ ...p, api_key: '', api_key_salva: p.api_key_salva || !!p.api_key }))
+                        } else {
+                          const d = await res.json()
+                          toast.error(d.error || 'Erro ao salvar')
+                        }
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-nodri-cyan text-black text-[12px] font-bold hover:brightness-110">
+                      <Save size={13} /> Salvar Configuração
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {activeSection === 'config' && (
             <div className="space-y-4 max-w-xl">
               <div className="nodri-card p-5">
@@ -1886,6 +1992,17 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                       </select>
                     </div>
                     <div><label className="nodri-label block mb-1">Observações</label><textarea className="nodri-input resize-none h-16" value={editForm.observacoes} onChange={e => setEditForm(p => ({...p, observacoes: e.target.value}))} /></div>
+                    {/* Toggle IA */}
+                    <div className="flex items-center justify-between p-3 bg-nodri-surface rounded-xl border border-nodri-border">
+                      <div>
+                        <div className="text-[12px] font-semibold text-nodri-t1">🤖 IA NODRI</div>
+                        <div className="text-[10px] text-nodri-t3">Liberar acesso à IA para este salão</div>
+                      </div>
+                      <button type="button" onClick={() => toggleIA(editSalao)}
+                        className={`w-10 h-5 rounded-full relative transition-all ${editSalao.ia_ativa ? 'bg-nodri-cyan' : 'bg-nodri-border'}`}>
+                        <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all ${editSalao.ia_ativa ? 'left-5' : 'left-0.5'}`}/>
+                      </button>
+                    </div>
                   </>
                 )}
                 {editTab === 'acesso' && (

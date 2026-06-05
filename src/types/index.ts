@@ -20,6 +20,7 @@ export interface Salao {
   observacoes?: string
   criado_em: string
   plano?: Plano
+  ia_ativa?: boolean
 }
 
 export interface Usuario {

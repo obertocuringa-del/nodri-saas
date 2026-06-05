@@ -99,18 +99,51 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'mensagens são obrigatórias' }, { status: 400 })
     }
 
-    // 1. Buscar config IA
-    const { data: config } = await supabaseAdmin
-      .from('ia_config')
-      .select('api_key, modelo, instrucoes_base, contexto_adicional')
+    // 1. Verificar se IA está ativa para o salão
+    const { data: salaoData } = await supabaseAdmin
+      .from('saloes')
+      .select('ia_ativa')
+      .eq('id', salaoId)
+      .maybeSingle()
+
+    if (!salaoData?.ia_ativa) {
+      return NextResponse.json({ error: 'IA não ativada para este salão' }, { status: 403 })
+    }
+
+    // 2. Buscar config global da IA
+    const { data: configGlobal } = await supabaseAdmin
+      .from('ia_config_global')
+      .select('api_key, modelo, instrucoes_base, ativo')
+      .limit(1)
+      .maybeSingle()
+
+    if (!configGlobal?.api_key) {
+      return NextResponse.json({ error: 'API key não configurada pelo administrador.' }, { status: 422 })
+    }
+
+    if (!configGlobal.ativo) {
+      return NextResponse.json({ error: 'IA desativada pelo administrador.' }, { status: 403 })
+    }
+
+    // 3. Buscar config adicional do salão (contexto específico)
+    const { data: configSalao } = await supabaseAdmin
+      .from('ia_configuracao')
+      .select('contexto_adicional')
       .eq('salao_id', salaoId)
       .maybeSingle()
 
-    if (!config?.api_key) {
-      return NextResponse.json({ error: 'API key não configurada. Acesse /salon/ia-config para configurar.' }, { status: 422 })
+    const config = {
+      api_key: configGlobal.api_key,
+      modelo: configGlobal.modelo,
+      instrucoes_base: configGlobal.instrucoes_base,
+      contexto_adicional: configSalao?.contexto_adicional || '',
     }
 
-    // 2. Buscar dados do salão
+    if (!config?.api_key) {
+      return NextResponse.json({ error: 'API key não configurada pelo administrador.' }, { status: 422 })
+    }
+
+    // 4. Buscar dados do salão
     const dataInicio = new Date()
     dataInicio.setMonth(dataInicio.getMonth() - 24)
     const dataInicioStr = dataInicio.toISOString().slice(0, 7)
@@ -137,7 +170,7 @@ export async function POST(req: NextRequest) {
       pendencias: pendencias || [],
     }
 
-    // 3. Dados específicos do profissional
+    // 5. Dados específicos do profissional
     if (profissional_id) {
       const [{ data: dadosProf }, { data: periodosProf }] = await Promise.all([
         supabaseAdmin.from('profissionais').select('*').eq('id', profissional_id).maybeSingle(),
@@ -151,7 +184,7 @@ export async function POST(req: NextRequest) {
 
     const dadosFormatados = formatarDadosSalao(dadosSalao, profissional_id)
 
-    // 4. Montar system prompt
+    // 6. Montar system prompt
     const systemPrompt = `Você é a IA NODRI, assistente especialista em gestão de salão de beleza.
 
 ESPECIALIDADES:
@@ -176,7 +209,7 @@ ${dadosFormatados}
 ${config.instrucoes_base ? `INSTRUÇÕES CUSTOMIZADAS:\n${config.instrucoes_base}\n` : ''}
 ${config.contexto_adicional ? `CONTEXTO ADICIONAL:\n${config.contexto_adicional}` : ''}`
 
-    // 5. Chamar Anthropic
+    // 7. Chamar Anthropic
     const anthropic = new Anthropic({ apiKey: config.api_key })
 
     const response = await anthropic.messages.create({
@@ -188,7 +221,7 @@ ${config.contexto_adicional ? `CONTEXTO ADICIONAL:\n${config.contexto_adicional}
 
     const resposta = response.content[0].type === 'text' ? response.content[0].text : ''
 
-    // 6. Salvar/atualizar conversa
+    // 8. Salvar/atualizar conversa
     let conversaIdFinal = conversa_id
     const todasMensagens = [
       ...mensagens,
