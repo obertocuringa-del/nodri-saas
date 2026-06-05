@@ -1532,13 +1532,26 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                       </select>
                     </div>
                     <div>
-                      <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Instruções base da IA</label>
+                      <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">
+                        Instruções personalizadas — comportamento extra da IA (opcional)
+                      </label>
+                      <div className="flex items-center gap-2 mb-2">
+                        <button
+                          type="button"
+                          onClick={() => setIaConfig(p => ({ ...p, instrucoes_base: `Seja sempre cordial e use o nome do profissional ao cumprimentar.\nFoco principal: aumentar faturamento e fidelização de clientes.\nSempre sugira pelo menos uma ação prática ao final de cada resposta.\nUse linguagem simples e direta, sem termos técnicos desnecessários.` }))}
+                          className="text-[10px] px-3 py-1 rounded bg-nodri-border hover:bg-nodri-cyan/20 text-nodri-t2 hover:text-nodri-cyan transition-all flex items-center gap-1"
+                        >
+                          📋 Carregar Prompt Padrão
+                        </button>
+                        <span className="text-[9px] text-nodri-t3">ou escreva do zero abaixo</span>
+                      </div>
                       <textarea
-                        className="nodri-input w-full resize-none h-24"
-                        placeholder="Personalidade, especialidades, tom de voz..."
+                        className="nodri-input w-full resize-none min-h-[300px]"
+                        placeholder="Ex: Sempre cumprimente pelo nome. Foque em aumentar faturamento. Sugira promoções de fidelização..."
                         value={iaConfig.instrucoes_base}
                         onChange={e => setIaConfig(p => ({ ...p, instrucoes_base: e.target.value }))}
                       />
+                      <p className="text-[9px] text-nodri-t3 mt-1">Estas instruções são adicionadas ao Prompt Mestre da IA e permitem personalizar o comportamento para todos os salões.</p>
                     </div>
                     <button
                       onClick={async () => {
