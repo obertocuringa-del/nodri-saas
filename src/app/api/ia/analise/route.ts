@@ -28,6 +28,30 @@ export async function GET(req: NextRequest) {
   }
 }
 
+// DELETE — apaga análise salva (para forçar regeneração)
+export async function DELETE(req: NextRequest) {
+  try {
+    const token = cookies().get('nodri_token')?.value
+    const payload = token ? await verifyJWT(token) : null
+    const salaoId = payload?.salaoId
+    if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+
+    const { searchParams } = new URL(req.url)
+    const profissionalId = searchParams.get('profissional_id')
+    if (!profissionalId) return NextResponse.json({ error: 'profissional_id obrigatório' }, { status: 400 })
+
+    await supabaseAdmin
+      .from('ia_analise_profissional')
+      .delete()
+      .eq('salao_id', salaoId)
+      .eq('profissional_id', profissionalId)
+
+    return NextResponse.json({ ok: true })
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
+}
+
 // POST — gera e salva análise completa do profissional (streaming)
 export async function POST(req: NextRequest) {
   try {

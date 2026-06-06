@@ -1251,8 +1251,7 @@ function AbaIA({ profissionalId, nomeProfissional }: { profissionalId: string; n
   const [enviando, setEnviando] = useState(false)
   const [conversaId, setConversaId] = useState<string | undefined>(undefined)
   const [carregando, setCarregando] = useState(true)
-  const [gerandoAnalise, setGerandoAnalise] = useState(false)
-  const [analisePrevia, setAnalisePrevia] = useState<string | null>(null)
+  const [statusAnalise, setStatusAnalise] = useState<'carregando'|'pronta'|'gerando'|null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const primeiroNome = nomeProfissional.split(' ')[0]
 
@@ -1268,10 +1267,11 @@ function AbaIA({ profissionalId, nomeProfissional }: { profissionalId: string; n
 
         if (configRes.tem_api_key) {
           if (analiseRes.analise) {
-            // Análise já existe — carrega instantaneamente
-            setAnalisePrevia(analiseRes.analise)
+            // Análise já salva — carrega instantaneamente, não precisa gerar
+            setStatusAnalise('pronta')
           } else {
-            // Sem análise — gera em background
+            // Sem análise — gera agora em background (silenciosamente)
+            setStatusAnalise('gerando')
             gerarAnalise()
           }
 
@@ -1292,39 +1292,22 @@ function AbaIA({ profissionalId, nomeProfissional }: { profissionalId: string; n
   }, [profissionalId])
 
   async function gerarAnalise() {
-    setGerandoAnalise(true)
+    setStatusAnalise('gerando')
     try {
       const res = await fetch('/api/ia/analise', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ profissional_id: profissionalId }),
       })
-      if (!res.ok || !res.body) { setGerandoAnalise(false); return }
+      if (!res.ok || !res.body) { setStatusAnalise(null); return }
+      // Consome o stream silenciosamente — só para salvar no banco
       const reader = res.body.getReader()
-      const dec = new TextDecoder()
-      let buffer = ''
-      let analise = ''
       while (true) {
-        const { done, value } = await reader.read()
+        const { done } = await reader.read()
         if (done) break
-        buffer += dec.decode(value, { stream: true })
-        const lines = buffer.split('\n')
-        buffer = lines.pop() || ''
-        for (const line of lines) {
-          if (!line.startsWith('data:')) continue
-          const json = line.slice(5).trim()
-          if (!json) continue
-          try {
-            const parsed = JSON.parse(json)
-            if (parsed.token) {
-              analise += parsed.token
-              setAnalisePrevia(analise)
-            }
-          } catch {}
-        }
       }
     } catch {}
-    setGerandoAnalise(false)
+    setStatusAnalise('pronta')
   }
 
   async function boasVindas() {
@@ -1366,10 +1349,17 @@ function AbaIA({ profissionalId, nomeProfissional }: { profissionalId: string; n
   }
 
   async function novaConversa() {
-    if (!confirm('Apagar o histórico e iniciar nova conversa?')) return
-    await fetch(`/api/ia/conversa?profissional_id=${profissionalId}`, { method: 'DELETE' })
+    if (!confirm('Iniciar nova conversa? A IA vai recarregar todos os dados atualizados.')) return
+    // Apaga conversa e análise salva → vai regenerar tudo
+    await Promise.all([
+      fetch(`/api/ia/conversa?profissional_id=${profissionalId}`, { method: 'DELETE' }),
+      fetch(`/api/ia/analise?profissional_id=${profissionalId}`, { method: 'DELETE' }),
+    ])
     setMensagens([])
     setConversaId(undefined)
+    setStatusAnalise('gerando')
+    // Gera nova análise em background e inicia boas-vindas ao mesmo tempo
+    gerarAnalise()
     await boasVindas()
   }
 
@@ -1457,43 +1447,24 @@ function AbaIA({ profissionalId, nomeProfissional }: { profissionalId: string; n
 
   return (
     <div className="space-y-4">
-
-      {/* Painel de diagnóstico pré-computado */}
-      <div className="rounded-2xl border overflow-hidden" style={{ borderColor: 'rgba(139,92,246,.3)', background: '#0a0714' }}>
-        <div className="px-4 py-3 border-b flex items-center gap-2" style={{ borderColor: 'rgba(139,92,246,.2)', background: 'rgba(139,92,246,.1)' }}>
-          <span className="text-[13px]">🧠</span>
-          <span className="font-syne font-bold text-[12px] text-purple-300">Diagnóstico Completo</span>
-          {gerandoAnalise && <span className="text-[10px] text-nodri-t3 animate-pulse ml-1">Analisando dados...</span>}
-          <button
-            onClick={gerarAnalise}
-            disabled={gerandoAnalise}
-            className="ml-auto text-[10px] px-2.5 py-1 rounded-lg border border-purple-500/30 text-purple-400 hover:bg-purple-500/10 transition-colors disabled:opacity-40">
-            {gerandoAnalise ? '⏳' : '🔄'} Atualizar
-          </button>
-        </div>
-        <div className="p-4 max-h-72 overflow-y-auto">
-          {!analisePrevia && !gerandoAnalise && (
-            <p className="text-[12px] text-nodri-t3 text-center py-4">Nenhuma análise gerada ainda. Clique em Atualizar.</p>
-          )}
-          {(analisePrevia || gerandoAnalise) && (
-            <pre className="text-[11px] text-nodri-t2 whitespace-pre-wrap leading-relaxed font-sans">
-              {analisePrevia}
-              {gerandoAnalise && <span className="animate-pulse text-purple-400">▋</span>}
-            </pre>
-          )}
-        </div>
-      </div>
-
       {/* Chat */}
-      <div className="flex flex-col h-[500px] bg-nodri-surface border border-nodri-border rounded-2xl overflow-hidden">
+      <div className="flex flex-col h-[600px] bg-nodri-surface border border-nodri-border rounded-2xl overflow-hidden">
       {/* Header */}
       <div className="px-4 py-3 border-b border-nodri-border bg-nodri-card flex items-center gap-2">
         <span className="text-[14px]">🤖</span>
         <span className="font-syne font-bold text-[12px] text-nodri-t1">IA NODRI</span>
+        {statusAnalise === 'gerando' && (
+          <span className="text-[9px] text-purple-400 animate-pulse flex items-center gap-1">
+            <Loader2 size={9} className="animate-spin"/> Carregando dados...
+          </span>
+        )}
+        {statusAnalise === 'pronta' && (
+          <span className="text-[9px] text-green-400">⚡ Dados carregados</span>
+        )}
         <button
           onClick={novaConversa}
           className="ml-auto text-[10px] px-2.5 py-1 rounded-lg border border-nodri-border text-nodri-t3 hover:text-nodri-red hover:border-red-500/30 transition-colors"
-          title="Apagar histórico e iniciar nova conversa">
+          title="Nova conversa — recarrega dados atualizados">
           🗑️ Nova conversa
         </button>
       </div>
@@ -1568,8 +1539,6 @@ function AbaIA({ profissionalId, nomeProfissional }: { profissionalId: string; n
           {enviando ? <Loader2 size={13} className="animate-spin"/> : '➤'}
         </button>
       </div>
-    </div>
-
     </div>
   )
 }
