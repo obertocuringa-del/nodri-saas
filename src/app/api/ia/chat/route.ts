@@ -306,6 +306,21 @@ export async function POST(req: NextRequest) {
 
     const dadosFormatados = formatarDadosSalao(dadosSalao, profissional_id)
 
+    // Busca análise pré-computada do profissional (se existir)
+    let analisePreComputada = ''
+    if (profissional_id) {
+      const { data: analise } = await supabaseAdmin
+        .from('ia_analise_profissional')
+        .select('analise, atualizado_em')
+        .eq('salao_id', salaoId)
+        .eq('profissional_id', profissional_id)
+        .maybeSingle()
+      if (analise?.analise) {
+        const dataAnalise = new Date(analise.atualizado_em).toLocaleDateString('pt-BR')
+        analisePreComputada = `\n\nCONHECIMENTO PRÉ-CARREGADO (análise gerada em ${dataAnalise}):\n${analise.analise}\n\nIMPORTANTE: Você já tem o diagnóstico completo deste profissional. Use este conhecimento para responder qualquer pergunta instantaneamente sem precisar recalcular.`
+      }
+    }
+
     // 6. Carregar histórico de conversas anteriores para memória
     let memoriaConversa = ''
     if (profissional_id) {
@@ -681,8 +696,9 @@ Toda resposta deve fazer o usuário pensar:
 
 ${config.instrucoes_base ? `\nINSTRUÇÕES CUSTOMIZADAS DO PROPRIETÁRIO:\n${config.instrucoes_base}\n` : ''}
 ${config.contexto_adicional ? `\nCONTEXTO ESPECÍFICO DO SALÃO:\n${config.contexto_adicional}\n` : ''}
+${analisePreComputada}
 ${memoriaConversa}
-DADOS REAIS DO SALÃO (use sempre que disponíveis):
+DADOS BRUTOS DO SALÃO (referência adicional):
 ${dadosFormatados}`
 
     // 9. Chamar API com streaming
