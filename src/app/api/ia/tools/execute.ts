@@ -65,7 +65,7 @@ export async function executarFerramenta(nome: string, args: any, salaoId: strin
           linhas.push('\nMÉTRICAS DETALHADAS:')
           metricas.forEach((m: any) => {
             const chave = `${MESES[m.mes-1]}/${String(m.ano).slice(2)}`
-            linhas.push(`  ${chave}: ${fmtR(m.faturamento)}, Ticket ${fmtR(m.ticket_medio)}, Ocupação ${m.taxa_ocupacao}%, Dias ${m.dias_trabalhados}, Pref ${m.clientes_preferencia}/${m.clientes_sem_preferencia} sem-pref, Produtos ${m.total_produtos}`)
+            linhas.push(`  ${chave}: ${fmtR(m.faturamento)}, Ticket ${fmtR(m.ticket_medio)}, Ocupação ${m.taxa_ocupacao}%, Dias ${m.dias_trabalhados}, Clientes-fidelizados(com-preferência) ${m.clientes_preferencia}, Clientes-distribuídos-pela-recepção(sem-preferência) ${m.clientes_sem_preferencia}, Produtos ${m.total_produtos}`)
             if (m.servicos_detalhados?.length) {
               const top = [...m.servicos_detalhados].sort((a: any, b: any) => b.valor - a.valor).slice(0, 5)
               top.forEach((s: any) => linhas.push(`    • ${s.nome||s.servico}: ${fmtR(s.valor)} (${s.quantidade||1}x)`))

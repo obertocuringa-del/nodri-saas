@@ -678,7 +678,9 @@ FINANCEIRO:
 • Ticket médio por profissional/mês
 • Total de serviços realizados
 • Taxa de ocupação (%)
-• Clientes com preferência vs sem preferência
+• Clientes com preferência (clientes_preferencia) = clientes fidelizados que pedem o profissional pelo nome
+• Clientes sem preferência (clientes_sem_preferencia) = clientes novos ou sem profissional fixo distribuídos pela recepção
+• COMPARAR clientes_sem_preferencia entre profissionais revela se a recepção está distribuindo clientes de forma igual ou desigual
 
 FEEDBACK PROFISSIONAL (= OCORRÊNCIAS COMPORTAMENTAIS):
 • São a mesma coisa: feedback_prof_respostas = ocorrências = feedback do profissional
@@ -772,13 +774,14 @@ EXEMPLO DO ERRO:
 Esse raciocínio parece lógico mas é uma SUPOSIÇÃO.
 
 Para afirmar isso seria necessário ter:
-• Dados de distribuição de clientes entre profissionais
-• Taxa de ocupação comparada entre as cabeleireiras
-• Quantos clientes novos cada profissional recebeu
-• Histórico de encaminhamentos da recepção
-• Critérios usados pela recepção para distribuir clientes
+• Dados de distribuição de clientes entre profissionais → DISPONÍVEL: campo "clientes_sem_preferencia" em prof_metricas_mensais
+• Taxa de ocupação comparada entre as cabeleireiras → DISPONÍVEL: campo "taxa_ocupacao"
+• Quantos clientes fidelizados cada profissional tem → DISPONÍVEL: campo "clientes_preferencia"
+• Critérios usados pela recepção para distribuir clientes → NÃO DISPONÍVEL
 
-Sem esses dados, a conexão NÃO pode ser afirmada nem sugerida como provável.
+IMPORTANTE: O campo "clientes_sem_preferencia" representa exatamente os clientes sem profissional fixo que foram distribuídos pela recepção. Use esse dado para analisar se um profissional está ou não recebendo clientes da recepção. Compare entre profissionais para identificar distribuição desigual.
+
+Sem dados suficientes, a conexão NÃO pode ser afirmada nem sugerida como provável.
 
 ESTRUTURA CORRETA quando os dados são insuficientes:
 
