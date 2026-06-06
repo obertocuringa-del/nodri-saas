@@ -3,7 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { verifyJWT } from '@/lib/auth'
 import { cookies } from 'next/headers'
 import Anthropic from '@anthropic-ai/sdk'
-import { executarFerramenta, FERRAMENTAS_GEMINI } from './tools/execute'
+import { executarFerramenta, FERRAMENTAS_GEMINI } from '../tools/execute'
 
 // ── Memória Semântica ────────────────────────────────────────────────────────
 
