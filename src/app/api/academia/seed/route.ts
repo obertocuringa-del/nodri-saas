@@ -1464,7 +1464,7 @@ export async function POST(req: NextRequest) {
   try {
     const token = cookies().get('nodri_token')?.value
     const payload = token ? await verifyJWT(token) : null
-    if (!payload || payload.role !== 'admin') {
+    if (!payload || payload.role !== 'master') {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
