@@ -415,6 +415,17 @@ export async function POST(req: NextRequest) {
 
     const dadosFormatados = formatarDadosSalao(dadosSalao, profissional_id)
 
+    // Busca memória evolutiva do salão
+    let memoriaEvolutiva = ''
+    const { data: memoriaData } = await supabaseAdmin
+      .from('ia_memoria_usuario')
+      .select('memoria')
+      .eq('salao_id', salaoId)
+      .maybeSingle()
+    if (memoriaData?.memoria) {
+      memoriaEvolutiva = `\n\nPERFIL DO GESTOR (memória evolutiva — use para personalizar respostas):\n${memoriaData.memoria}\n`
+    }
+
     // Busca análise pré-computada do profissional (se existir)
     let analisePreComputada = ''
     if (profissional_id) {
@@ -882,6 +893,7 @@ Somente aprofundar quando solicitado ou quando isso gerar valor real.`
 
 ${config.instrucoes_base ? `\nINSTRUÇÕES CUSTOMIZADAS DO PROPRIETÁRIO:\n${config.instrucoes_base}\n` : ''}
 ${config.contexto_adicional ? `\nCONTEXTO ESPECÍFICO DO SALÃO:\n${config.contexto_adicional}\n` : ''}
+${memoriaEvolutiva}
 ${analisePreComputada}
 ${memoriaConversa}
 DADOS BRUTOS DO SALÃO (referência adicional):
@@ -922,6 +934,12 @@ ${dadosFormatados}`
             const { data: nova } = await supabaseAdmin.from('ia_conversas').insert({ salao_id: salaoId, profissional_id: profissional_id || null, mensagens: todasMensagens }).select('id').single()
             conversaIdFinal = nova?.id
           }
+          // Atualiza memória evolutiva em background (sem await — não bloqueia)
+          fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://www.nodri.com.br'}/api/ia/memoria`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Cookie: `nodri_token=${token}` },
+            body: JSON.stringify({ mensagens: todasMensagens, conversa_id: conversaIdFinal }),
+          }).catch(() => {})
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true, conversa_id: conversaIdFinal })}\n\n`))
           controller.close()
         }
@@ -990,6 +1008,12 @@ ${dadosFormatados}`
             const { data: nova } = await supabaseAdmin.from('ia_conversas').insert({ salao_id: salaoId, profissional_id: profissional_id || null, mensagens: todasMensagens }).select('id').single()
             conversaIdFinal = nova?.id
           }
+          // Atualiza memória evolutiva em background (sem await — não bloqueia)
+          fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://www.nodri.com.br'}/api/ia/memoria`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Cookie: `nodri_token=${token}` },
+            body: JSON.stringify({ mensagens: todasMensagens, conversa_id: conversaIdFinal }),
+          }).catch(() => {})
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true, conversa_id: conversaIdFinal })}\n\n`))
           controller.close()
         }
