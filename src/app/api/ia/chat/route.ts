@@ -145,23 +145,78 @@ function formatarDadosSalao(dados: any, profissionalId?: string): string {
     }
   }
 
-  // Feedbacks de clientes
+  // Feedbacks de clientes — nota + comentário
   if (dados.feedbacks_clientes?.length) {
-    linhas.push('## FEEDBACKS DE CLIENTES')
-    dados.feedbacks_clientes.slice(-10).forEach((f: any) => {
-      linhas.push(`- Nota: ${f.nota_geral || '?'} â€” ${f.comentario || ''}`)
+    linhas.push('## FEEDBACKS DE CLIENTES (AVALIAÇÕES)')
+    linhas.push(`Total de avaliações: ${dados.feedbacks_clientes.length}`)
+    const notas = dados.feedbacks_clientes.map((f: any) => Number(f.nota_geral)).filter((n: number) => !isNaN(n) && n > 0)
+    if (notas.length) {
+      const media = notas.reduce((a: number, b: number) => a + b, 0) / notas.length
+      const promotores = notas.filter((n: number) => n >= 9).length
+      const neutros = notas.filter((n: number) => n >= 7 && n < 9).length
+      const detratores = notas.filter((n: number) => n < 7).length
+      const nps = Math.round(((promotores - detratores) / notas.length) * 100)
+      linhas.push(`Média geral: ${media.toFixed(1)}/10`)
+      linhas.push(`NPS: ${nps} (Promotores: ${promotores}, Neutros: ${neutros}, Detratores: ${detratores})`)
+    }
+    dados.feedbacks_clientes.forEach((f: any) => {
+      const data = f.criado_em ? new Date(f.criado_em).toLocaleDateString('pt-BR') : ''
+      if (f.nota_geral || f.comentario) {
+        linhas.push(`- [${data}] Nota: ${f.nota_geral || '?'} — ${f.comentario || ''}`)
+      }
     })
     linhas.push('')
   }
 
-  // PendÃªncias em aberto
+  // Métricas mensais detalhadas por profissional (prof_metricas_mensais)
+  if (dados.metricas_mensais?.length) {
+    const MESES_M = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+    linhas.push('## MÉTRICAS DETALHADAS POR PROFISSIONAL')
+    // Agrupa por profissional
+    const metPorProf: Record<string, any[]> = {}
+    dados.metricas_mensais.forEach((m: any) => {
+      const prof = dados.profissionais?.find((p: any) => p.id === m.profissional_id)
+      const nome = prof?.nome_completo || m.profissional_id
+      if (!metPorProf[nome]) metPorProf[nome] = []
+      metPorProf[nome].push(m)
+    })
+    Object.entries(metPorProf).forEach(([nome, meses]) => {
+      linhas.push(`### ${nome}`)
+      meses.forEach((m: any) => {
+        const chave = `${MESES_M[m.mes-1]}/${String(m.ano).slice(2)}`
+        linhas.push(`  ${chave}: Fat R$${Number(m.faturamento||0).toFixed(2)}, ${m.total_servicos} serviços, Ticket R$${Number(m.ticket_medio||0).toFixed(2)}, Ocupação ${m.taxa_ocupacao}%, Dias ${m.dias_trabalhados}, Pref ${m.clientes_preferencia} / Sem-pref ${m.clientes_sem_preferencia}, Produtos ${m.total_produtos}`)
+        // Detalhe dos serviços realizados
+        if (m.servicos_detalhados?.length) {
+          const top = [...m.servicos_detalhados]
+            .sort((a: any, b: any) => b.valor - a.valor)
+            .slice(0, 5)
+          top.forEach((s: any) => linhas.push(`    • ${s.nome || s.servico}: R$${Number(s.valor||0).toFixed(2)} (${s.quantidade || 1}x)`))
+        }
+      })
+    })
+    linhas.push('')
+  }
+
+  // Pendências em aberto
   if (dados.pendencias?.length) {
-    linhas.push('## PENDÃŠNCIAS EM ABERTO')
+    linhas.push('## PENDÊNCIAS EM ABERTO')
     dados.pendencias.forEach((p: any) => {
       const prof = dados.profissionais?.find((pr: any) => pr.id === p.profissional_id)
       const nome = prof?.nome_completo || 'Desconhecido'
       const venc = p.data_limite ? ` [Vence: ${p.data_limite}]` : ''
       linhas.push(`- ${nome}: ${p.mensagem}${venc}`)
+    })
+    linhas.push('')
+  }
+
+  // Pendências resolvidas (histórico)
+  if (dados.pendencias_resolvidas?.length) {
+    linhas.push('## PENDÊNCIAS RESOLVIDAS (HISTÓRICO)')
+    dados.pendencias_resolvidas.forEach((p: any) => {
+      const prof = dados.profissionais?.find((pr: any) => pr.id === p.profissional_id)
+      const nome = prof?.nome_completo || 'Desconhecido'
+      const resolvida = p.resolvido_em ? ` [Resolvida em: ${new Date(p.resolvido_em).toLocaleDateString('pt-BR')}]` : ''
+      linhas.push(`- ${nome}: ${p.mensagem}${resolvida}`)
     })
     linhas.push('')
   }
@@ -250,13 +305,21 @@ export async function POST(req: NextRequest) {
       { data: periodos },
       { data: feedbacksProf },
       { data: feedbacksClientes },
+      { data: feedbacksClientesDetalhados },
       { data: pendencias },
+      { data: pendenciasResolvidas },
+      { data: metricasMensais },
+      { data: formulariosFeedback },
     ] = await Promise.all([
-      supabaseAdmin.from('profissionais').select('id, nome_completo, cargo, ativo').eq('salao_id', salaoId),
-      supabaseAdmin.from('relatorio_periodos').select('ano, mes, prof_pagamentos, prof_servicos, prof_ticket, prof_preferencia, prof_ocupacao, resumo_mensal').eq('salao_id', salaoId).order('ano').order('mes'),
+      supabaseAdmin.from('profissionais').select('*').eq('salao_id', salaoId),
+      supabaseAdmin.from('relatorio_periodos').select('ano, mes, prof_pagamentos, prof_servicos, prof_ticket, prof_preferencia, prof_ocupacao, prof_produtos, resumo_mensal').eq('salao_id', salaoId).order('ano').order('mes'),
       supabaseAdmin.from('feedback_prof_respostas').select('profissional_id, profissional_nome, tipo, ocorrido_descricao, descricao, criado_em').eq('salao_id', salaoId).order('criado_em', { ascending: false }),
       supabaseAdmin.from('feedback_respostas').select('nota_geral, comentario, criado_em').eq('salao_id', salaoId).order('criado_em', { ascending: false }),
-      supabaseAdmin.from('pendencias_profissionais').select('profissional_id, mensagem, data_limite').eq('salao_id', salaoId).eq('resolvido', false),
+      supabaseAdmin.from('feedback_respostas').select('dados, criado_em').eq('salao_id', salaoId).order('criado_em', { ascending: false }),
+      supabaseAdmin.from('pendencias_profissionais').select('profissional_id, mensagem, data_limite, resolvido, resolvido_em').eq('salao_id', salaoId).eq('resolvido', false),
+      supabaseAdmin.from('pendencias_profissionais').select('profissional_id, mensagem, data_limite, resolvido_em').eq('salao_id', salaoId).eq('resolvido', true).order('resolvido_em', { ascending: false }),
+      supabaseAdmin.from('prof_metricas_mensais').select('profissional_id, ano, mes, faturamento, ticket_medio, clientes_preferencia, clientes_sem_preferencia, dias_trabalhados, taxa_ocupacao, total_servicos, total_produtos, servicos_detalhados').eq('salao_id', salaoId).order('ano').order('mes'),
+      supabaseAdmin.from('feedback_formularios').select('id, titulo, token, ativo').eq('salao_id', salaoId),
     ])
 
     // Extrai faturamento por profissional dos períodos
@@ -279,7 +342,11 @@ export async function POST(req: NextRequest) {
       periodos_raw: periodos || [],
       feedbacks_prof: feedbacksProf || [],
       feedbacks_clientes: feedbacksClientes || [],
+      feedbacks_clientes_detalhados: feedbacksClientesDetalhados || [],
       pendencias: pendencias || [],
+      pendencias_resolvidas: pendenciasResolvidas || [],
+      metricas_mensais: metricasMensais || [],
+      formularios_feedback: formulariosFeedback || [],
     }
 
     // 5. Dados especÃ­ficos do profissional
