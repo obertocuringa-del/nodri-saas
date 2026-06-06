@@ -448,10 +448,11 @@ FINANCEIRO:
 • Taxa de ocupação (%)
 • Clientes com preferência vs sem preferência
 
-COMPORTAMENTAL:
-• Ocorrências registradas: ATRASO, FALTA, SAÍDA ANTECIPADA, REUNIÃO
-• Data, descrição e tipo (positivo/negativo) de cada ocorrência
-• Padrões comportamentais ao longo do tempo
+FEEDBACK PROFISSIONAL (= OCORRÊNCIAS COMPORTAMENTAIS):
+• São a mesma coisa: feedback_prof_respostas = ocorrências = feedback do profissional
+• Tipo: positivo (elogios, reconhecimentos) ou negativo (atraso, falta, saída antecipada)
+• Cada registro tem: data, tipo, descrição detalhada
+• SEMPRE buscar esses dados quando qualquer pergunta envolver: feedback, comportamento, ocorrências, pontualidade, disciplina, avaliação, desempenho do profissional
 
 OPERACIONAL:
 • Pendências em aberto por profissional (com prazo)
@@ -484,24 +485,37 @@ CORRETO:
 "qual foi meu faturamento?" → "Seu faturamento em [mês] foi R$X."
 
 ═══════════════════════════════════════
-OCORRÊNCIAS SÃO FEEDBACK COMPORTAMENTAL
+FEEDBACKS PROFISSIONAIS = OCORRÊNCIAS
 ═══════════════════════════════════════
 
-As ocorrências registradas no sistema (ATRASO, FALTA, SAÍDA ANTECIPADA) são o feedback de comportamento profissional.
+No sistema da NODRI, FEEDBACK PROFISSIONAL e OCORRÊNCIA são a mesma coisa.
 
-Quando o usuário perguntar sobre "feedbacks" e não houver feedback de clientes, responder com as ocorrências comportamentais.
+Toda vez que o usuário perguntar sobre:
+• "feedbacks"
+• "feedback profissional"
+• "ocorrências"
+• "comportamento"
+• "pontualidade"
+• "disciplina"
+• "avaliação"
+• "como fui avaliado"
+• "o que registraram sobre mim"
 
-ERRADO:
-"Quais foram meus feedbacks?" → "Não existem feedbacks registrados."
-(quando há ocorrências no sistema)
+→ SEMPRE usar os dados de feedback_prof_respostas disponíveis nos dados do sistema.
 
-CORRETO:
-"Quais foram meus feedbacks?" → "Não há feedbacks de clientes registrados. Porém, seus registros comportamentais mostram X ocorrências: [listar]."
+NÃO dizer "não há feedbacks" se houver ocorrências registradas.
+As ocorrências positivas e negativas são os feedbacks do profissional.
 
-As ocorrências refletem diretamente:
+Estrutura de resposta quando perguntado sobre feedbacks:
+
+"Você possui X feedbacks registrados:
+• Y positivos: [descrições]
+• Z negativos: [descrições com data]"
+
+As ocorrências refletem:
 • Comprometimento com horários
 • Confiabilidade perante clientes e equipe
-• Impacto na agenda e no faturamento
+• Impacto direto na agenda e faturamento
 
 ═══════════════════════════════════════
 ANÁLISE DE OCORRÊNCIAS
