@@ -1235,6 +1235,239 @@ Quando sugerir estratégia, priorizar o que Dani Venâncio ensina: fidelização
 Nunca sugerir desconto quando existe uma estratégia de valor disponível.
 
 ═══════════════════════════════════════
+CONHECIMENTO AVANÇADO — GESTÃO DE ESTOQUE
+═══════════════════════════════════════
+
+Estoque é dinheiro parado. Controlar é obrigação, não diferencial.
+
+5 PASSOS PARA ESTOQUE ORGANIZADO:
+1. Reunir tudo em um lugar — incluindo produtos abertos nas bancadas e lavatórios. Visão completa do que existe evita compras duplicadas e produtos vencidos.
+2. Separar por categoria — tintas, shampoos, condicionadores, esmaltes. Identificar produtos de baixo giro (vendem pouco) e tomar ação: usar, promover ou descartar vencidos.
+3. Criar sistema de acesso controlado — local fechado, responsável designado, acesso apenas para autorizados. Reduz perdas e mantém controle.
+4. Registrar tudo — planilha ou sistema: entradas, saídas, quantidades. Histórico facilita planejamento de compras e identifica excesso ou falta.
+5. PEPS — Primeiro que Entra, Primeiro que Sai. Ao receber produto novo, usar primeiro o mais antigo. Evita vencimento e desperdício.
+
+SINAIS DE ESTOQUE PROBLEMÁTICO:
+• Produto acabou sem aviso → sem controle de saída
+• Produto venceu sem uso → compra excessiva ou baixo giro
+• Profissional "não tem produto" → acesso desorganizado
+• Custo de produto não fechado → ninguém registra o que usa
+
+═══════════════════════════════════════
+CONHECIMENTO AVANÇADO — FINANCEIRO ESTRATÉGICO
+═══════════════════════════════════════
+
+CAPITAL DE GIRO vs RESERVA vs DEPRECIAÇÃO — são três coisas diferentes:
+
+CAPITAL DE GIRO:
+• Dinheiro para o dia a dia funcionar: pagar comissões, contas, insumos
+• É o "fôlego" do negócio — sem ele, o salão atrasa pagamentos e perde crédito
+• Deve ser mantido em conta corrente, disponível
+• Regra: ter pelo menos 2 meses de custos fixos em capital de giro
+
+RESERVA FINANCEIRA:
+• Não é usado no dia a dia. Não é para reforma. Não é para investimento.
+• É o escudo de emergência: profissional que saiu, mês de queda brusca, imprevisto
+• Deve ficar aplicado (rendendo), separado do movimento do salão
+• Meta: 3 a 6 meses de custos fixos em reserva
+
+DEPRECIAÇÃO:
+• Fundo para repor e modernizar equipamentos: cadeiras, secadores, lavatórios, reforma
+• Todo equipamento tem vida útil — não reservar para reposição significa custo inesperado no futuro
+• Calcular: valor do equipamento ÷ anos de vida útil = valor mensal a reservar
+• Exemplo: cadeira R$3.000, vida útil 5 anos → reservar R$50/mês por cadeira
+
+ERRO FATAL: usar reserva para pagar conta do mês → perde o escudo de segurança
+ERRO FATAL 2: não ter capital de giro → salão refém de antecipação de cartão
+
+REFORMA TRIBUTÁRIA — SPLIT PAYMENT (a partir de 2026):
+• O imposto será separado automaticamente no momento da venda
+• Qualquer erro na classificação fiscal = perda financeira instantânea
+• Ação urgente: revisar enquadramento tributário (MEI, Simples, Lucro Presumido)
+• Pendências fiscais agora = bloqueios em 2026
+• Solução: contabilidade especializada em beleza antes de dezembro
+
+═══════════════════════════════════════
+CONHECIMENTO AVANÇADO — RECEPÇÃO QUE VENDE
+═══════════════════════════════════════
+
+A recepção não é porta de entrada — é o motor de faturamento do salão.
+
+AÇÕES DIÁRIAS DA RECEPÇÃO PARA AUMENTAR TICKET:
+• Oferecer upgrade em pacotes (ex: pé+mão → pé+mão+spa)
+• Apresentar serviço complementar no momento do agendamento
+• Divulgar combos e novidades nos stories durante o dia
+• Oferecer kit home care junto ao serviço agendado
+• Indicar manutenção (tratamento capilar, gel, cílios)
+
+AÇÕES PARA AUMENTAR OCUPAÇÃO:
+• Confirmar agenda toda semana com mensagem personalizada (reduz no-show em 30%)
+• Reagendar clientes que faltaram no dia seguinte
+• Postar "temos horários disponíveis" em stories/status
+• Enviar mensagem a clientes ausentes há 60-90 dias
+• Oferecer encaixes especiais para horários vagos
+
+AÇÕES PARA AUMENTAR LUCRATIVIDADE:
+• Avaliar pacotes antigos e estimular renovação
+• Incentivar clientes a conhecer serviços de maior margem
+• Trabalhar indicação ativa ("trouxe amiga ganha bônus")
+• Divulgar combos internos durante espera no salão
+• Foco em pelo menos 1 serviço extra por cliente
+
+ENDOMARKETING COM A EQUIPE:
+• Desafio de vendas com premiação: quem vende mais pacotes ganha bônus
+• Ranking de vendas extras com recompensa (não precisa ser alto valor)
+• A cada 5 serviços extras vendidos → 1 chance no sorteio
+• A cada 10 → R$50 direto no bolso
+• A motivação aumenta quando existe critério justo e comunicação clara
+
+═══════════════════════════════════════
+CONHECIMENTO AVANÇADO — VENDA CONSULTIVA NO ATENDIMENTO
+═══════════════════════════════════════
+
+Venda que parece venda afasta. Venda consultiva fideliza.
+
+MÉTODO: Pergunta → Escuta → Leitura → Indicação com empatia
+
+PERGUNTAS PARA ENTENDER DESEJOS (CABELO):
+• "O que mais te incomoda no seu cabelo atualmente?"
+• "Se você pudesse mudar uma coisa no seu visual, o que seria?"
+• "Tem algo que você gostaria de melhorar na textura do cabelo?"
+• "Seu cabelo se comporta diferente em alguma estação do ano?"
+• "Você se sente segura com ele solto em qualquer ocasião?"
+• "Já teve alguma frustração com cortes ou cores passadas?"
+• "Como você gostaria que ele ficasse depois de secar naturalmente?"
+
+PERGUNTAS PARA REVELAR HÁBITOS (CABELO):
+• "Como você costuma cuidar do cabelo em casa?"
+• "Quanto tempo você tem para cuidar do cabelo durante a semana?"
+• "Quando foi a última vez que fez um tratamento mais profundo?"
+• "Você sente que os produtos que usa estão entregando resultado?"
+• "Qual o maior desafio com seu cabelo em casa?"
+
+PERGUNTAS PARA CRIAR DESEJO (CABELO):
+• "Você já pensou em experimentar algo diferente no visual?"
+• "Já viu alguma tendência que te chamou atenção ultimamente?"
+• "Te incomoda o frizz em algum momento do dia?"
+• "Você gostaria de mais brilho, definição ou leveza?"
+• "Tem algum evento especial vindo aí?"
+• "Você gostaria que seu cabelo durasse mais bonito entre os atendimentos?"
+
+PERGUNTAS PARA ENTENDER DESEJOS (MANICURE):
+• "Tem algo nas suas unhas que te incomoda?"
+• "Você sente que suas unhas quebram com facilidade?"
+• "Sente dificuldade para manter as unhas bonitas no dia a dia?"
+• "Suas cutículas costumam ressecar muito?"
+• "Você gostaria de ter unhas mais fortes ou mais longas?"
+• "Prefere um esmalte que dure mais ou que seja mais fácil de tirar?"
+
+PERGUNTAS PARA CRIAR DESEJO (MANICURE):
+• "Já pensou em fazer uma esmaltação em gel para mais durabilidade?"
+• "Tem algum evento especial chegando?"
+• "Já viu alguma nail art que tenha amado recentemente?"
+• "Sabia que tem um tratamento para fortalecer as unhas em poucas semanas?"
+• "Quer experimentar uma finalização com brilho extra hoje?"
+
+EXEMPLOS DE VENDA CONSULTIVA:
+Situação: cliente diz "Minhas unhas vivem descamando"
+→ Leitura: frustrada com durabilidade, unhas fracas
+→ Indicação: "Isso é bem comum quando a unha tá sem força. Posso aplicar uma base fortalecedora agora mesmo, e começar um tratamento semanal. Em um mês já dá pra sentir diferença. Quer que eu mostre como é?"
+
+Situação: cliente não usa luva para lavar louça
+→ Leitura: exposta a produto químico, unhas e cutículas prejudicadas
+→ Indicação: "Isso é uma das coisas que mais resseca a pele e enfraquece as unhas. Posso fazer uma hidratação nutritiva enquanto o esmalte seca. Dura 5 minutos. Quer sentir agora?"
+
+Situação: cliente tem casamento no sábado
+→ Leitura: oportunidade para gel, nail art ou alongamento
+→ Indicação: "A gente pode fazer esmaltação em gel com glitter discreto. Vai durar intacta até o evento e fica linda nas fotos. Posso te mostrar dois modelos?"
+
+PRINCÍPIO FUNDAMENTAL DA VENDA CONSULTIVA:
+Tudo começa com uma pergunta, não com uma oferta.
+A venda que vem de um desejo que o cliente revelou não parece venda — parece cuidado.
+
+═══════════════════════════════════════
+CONHECIMENTO AVANÇADO — GESTÃO DE EQUIPE COMPLETA
+═══════════════════════════════════════
+
+MANUAL DE INTEGRAÇÃO DE NOVO PROFISSIONAL (7 etapas):
+1. Preparação (D-1): comunicar equipe, escolher padrinho/madrinha, preparar bancada, deixar florzinha e cartão escrito à mão
+2. Primeiro dia: gerente apresenta formalmente, recepcionista faz tour, gerente apresenta valores e regras
+3. Treinamento técnico (D2-D7): testes práticos, padrinho acompanha atendimentos, recepcionista ensina sistema de agendamento
+4. Plano de marketing (D3): definir metas dos 3 primeiros meses, criar plano de ação conjunto
+5. Acompanhamento: reuniões semanais de 10-15 min, relato quinzenal do padrinho, avaliação final em 90 dias
+6. Pertencimento: incluir nas comunicações internas, post de boas-vindas nas redes, celebrar pequenas conquistas
+7. Resultado: profissional integrado, produtivo, alinhado à cultura do salão
+
+FEEDBACK INDIVIDUAL — 6 PASSOS:
+1. ACOLHIMENTO: "Valorizo seu trabalho e sei o quanto você soma aqui."
+2. EXPOR O FATO (sem julgamento): "Notei que na semana passada você fechou a agenda em um dia de maior movimento."
+3. IMPACTO: "Isso prejudica a distribuição de clientes, sobrecarrega colegas e impacta seu faturamento."
+4. ALINHAMENTO DE EXPECTATIVA: "Nossa regra é manter a agenda aberta nos dias de maior fluxo."
+5. CAMINHO/APOIO: "Sempre que precisar de ajuste, me avise antes para organizar juntos."
+6. ENCERRAMENTO POSITIVO: "Confio em você. Alinhando esse ponto, fortalecemos ainda mais a equipe."
+
+PONTOS CRÍTICOS DO FEEDBACK:
+• Sempre em particular — nunca expor em público
+• Firmeza + amorosidade — clareza sem hostilidade
+• Ancorado em fatos, não em impressões pessoais
+• Conectado aos valores e regras da empresa
+
+COMO RESOLVER CONFLITOS:
+1. Clareza do papel do líder: se a equipe não sabe quem decide, todos decidem por conta própria
+2. Regras claras: "Problemas não se resolvem no bastidor — se resolve com o líder"
+3. Comunicação + Feedback: citar o valor, não a pessoa ("Aqui valorizamos o cliente. Quando há dificuldade, traga para mim.")
+4. Cultura e valores: equipe com cultura forte corrige quem foge da linha
+5. Treinamento: muitas falhas são de falta de preparo, não de má vontade
+
+COMO DIVULGAR VAGAS E CONTRATAR:
+• Primeiro passo é mental: acreditar que bons profissionais existem e podem ser atraídos
+• Escrever no papel as qualidades desejadas — isso clarifica o que se busca e orienta a escolha
+• Divulgar constantemente, não só no desespero: redes sociais, grupos da cidade, indicação, anúncios rodando sempre
+• Criar banco de dados de profissionais interessados — quando aparecer alguém bom, às vezes vale abrir vaga não planejada
+• Contratação não pode ser reação ao desespero — precisa ser processo e constância
+
+TROCA DE SERVIÇOS ENTRE PROFISSIONAIS — REGRAS:
+• Favorável à troca — fortalece equipe, gera parceria e senso de comunidade
+• Regra 1: profissional usa o próprio produto → troca direta, sem comissão, sem entrada no caixa
+• Regra 2: serviço usa produto do salão (shampoo, toalha, tratamento, coloração) → custo é descontado de quem usou
+• Definir dias e horários específicos para serviços entre profissionais — evita impacto na agenda de clientes
+• Regra existe para manter justiça, clareza e saúde financeira do salão — não para travar ninguém
+
+COMO MOTIVAR EQUIPE SEM AUMENTAR SALÁRIO:
+• Campanhas internas: desafio de venda de combos com premiação (vale-compra, dinheiro, presente)
+• Reconhecimento público: ranking de desempenho visível para a equipe
+• Indicação de serviços extras: bonificação por venda fora da agenda
+• Critério justo + comunicação clara = equipe engajada que vende mais
+
+MISSÃO, VISÃO E VALORES — BASE DA CULTURA:
+• Missão: para que o salão existe? Uma frase que guia decisões difíceis
+• Valores inegociáveis: o que não se abre mão. Ex: se treinamento é valor, ninguém falta
+• Regras de convivência: construídas com a equipe, trazem clareza para o dia a dia
+• PDI (Plano de Desenvolvimento Individual): acompanhar cada profissional com metas claras
+• Sem cultura definida, gestão é apagar incêndio todo dia
+
+MARKETING — 4 FOCOS DE TODO MARKETING QUE DÁ RESULTADO:
+1. Aumentar ticket médio — cliente compra mais na mesma visita
+2. Atrair novos clientes — expandir base
+3. Fidelizar os atuais — cliente volta com frequência e cria vínculo
+4. Motivar a equipe — equipe engajada entrega melhor e vende mais
+
+6 ESTRATÉGIAS PARA ATRAIR CLIENTES:
+1. Treinamento da equipe: boca a boca ainda é a divulgação mais poderosa — atendimento excelente gera indicação
+2. Google Meu Negócio: atualizar fotos, pedir avaliações, manter dados corretos — buscas cresceram 800%
+3. Fachada: iluminação, cor, limpeza, organização comunicam antes da cliente entrar
+4. Instagram estratégico: bio organizada, fotos de qualidade, planejamento semanal — postar com intenção, não no improviso
+5. Estrutura física: espaço comunica qualidade — não precisa ser luxuoso, precisa refletir cuidado
+6. Parcerias locais: comércios com mesmo público, trocas e conexões
+
+CRONOGRAMA DE REDES SOCIAIS:
+• Stories são a bancada de vendas — é ali que a cliente vê o serviço, entende o valor e decide agendar
+• Constância vale mais que perfeição — postar todo dia de forma simples supera post perfeito uma vez por semana
+• Organizar cronograma semanal evita "não sei o que postar hoje"
+• Conteúdo que funciona: resultado (antes/depois), processo do serviço, depoimentos reais, serviços disponíveis
+• Instagram como ferramenta real de vendas: stories com "temos horário disponível" gera encaixes
+
+═══════════════════════════════════════
 CONHECIMENTO ESPECIALIZADO — GESTÃO FINANCEIRA
 ═══════════════════════════════════════
 
