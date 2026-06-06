@@ -3,7 +3,108 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { verifyJWT } from '@/lib/auth'
 import { cookies } from 'next/headers'
 import Anthropic from '@anthropic-ai/sdk'
-// Gemini via fetch como fallback
+import { executarFerramenta, FERRAMENTAS_GEMINI } from './tools/execute'
+
+// ── Memória Semântica ────────────────────────────────────────────────────────
+
+async function gerarEmbedding(texto: string, apiKey: string): Promise<number[] | null> {
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'models/text-embedding-004', content: { parts: [{ text: texto.slice(0, 2000) }] } }),
+      }
+    )
+    if (!res.ok) return null
+    const data = await res.json()
+    return data.embedding?.values || null
+  } catch { return null }
+}
+
+function cosineSimilarity(a: number[], b: number[]): number {
+  let dot = 0, nA = 0, nB = 0
+  for (let i = 0; i < a.length; i++) { dot += a[i] * b[i]; nA += a[i] ** 2; nB += b[i] ** 2 }
+  return dot / (Math.sqrt(nA) * Math.sqrt(nB) || 1)
+}
+
+async function buscarMemoriaSemântica(embedding: number[], salaoId: string): Promise<string> {
+  try {
+    const { data } = await supabaseAdmin
+      .from('ia_memoria_semantica')
+      .select('resumo, embedding')
+      .eq('salao_id', salaoId)
+      .limit(100)
+    if (!data?.length) return ''
+    const relevantes = data
+      .filter((m: any) => m.embedding)
+      .map((m: any) => ({ resumo: m.resumo, score: cosineSimilarity(embedding, m.embedding) }))
+      .filter(m => m.score > 0.75)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3)
+      .map(m => `• ${m.resumo}`)
+    return relevantes.length ? relevantes.join('\n') : ''
+  } catch { return '' }
+}
+
+async function salvarMemoriaSemântica(
+  resumo: string, conteudo: string, salaoId: string, apiKey: string
+) {
+  try {
+    const embedding = await gerarEmbedding(resumo, apiKey)
+    if (!embedding) return
+    await supabaseAdmin.from('ia_memoria_semantica').insert({
+      salao_id: salaoId, resumo, conteudo,
+      embedding: JSON.stringify(embedding),
+    })
+  } catch {}
+}
+
+// ── Tool Use Gemini (agentic loop) ───────────────────────────────────────────
+
+async function executarLoopFerramentas(
+  systemPrompt: string,
+  history: any[],
+  modelo: string,
+  apiKey: string,
+  salaoId: string
+): Promise<any[]> {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${apiKey}`
+  let loop = [...history]
+
+  for (let i = 0; i < 5; i++) {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: systemPrompt }] },
+        contents: loop,
+        tools: FERRAMENTAS_GEMINI,
+        generationConfig: { maxOutputTokens: 2048, temperature: 0.7 },
+      }),
+    })
+    if (!res.ok) break
+    const data = await res.json()
+    const parts: any[] = data.candidates?.[0]?.content?.parts || []
+    const funcCalls = parts.filter((p: any) => p.functionCall)
+    if (!funcCalls.length) break
+
+    // Executa todas as ferramentas em paralelo
+    const respostas = await Promise.all(
+      funcCalls.map(async (p: any) => ({
+        functionResponse: {
+          name: p.functionCall.name,
+          response: { result: await executarFerramenta(p.functionCall.name, p.functionCall.args, salaoId) },
+        },
+      }))
+    )
+    loop.push({ role: 'model', parts })
+    loop.push({ role: 'user', parts: respostas })
+  }
+
+  return loop
+}
 
 function formatarDadosSalao(dados: any, profissionalId?: string): string {
   const linhas: string[] = []
@@ -414,6 +515,17 @@ export async function POST(req: NextRequest) {
     }
 
     const dadosFormatados = formatarDadosSalao(dadosSalao, profissional_id)
+
+    // Busca memória semântica (conversas anteriores similares)
+    let memoriaSemântica = ''
+    const ultimaMensagem = mensagens.filter((m: any) => m.role === 'user').slice(-1)[0]?.content || ''
+    if (ultimaMensagem && config.api_key) {
+      const embeddingQuery = await gerarEmbedding(ultimaMensagem, config.api_key)
+      if (embeddingQuery) {
+        const memorias = await buscarMemoriaSemântica(embeddingQuery, salaoId)
+        if (memorias) memoriaSemântica = `\nCONVERSAS ANTERIORES RELEVANTES (memória semântica):\n${memorias}\n`
+      }
+    }
 
     // Busca memória evolutiva do salão
     let memoriaEvolutiva = ''
@@ -894,6 +1006,7 @@ Somente aprofundar quando solicitado ou quando isso gerar valor real.`
 ${config.instrucoes_base ? `\nINSTRUÇÕES CUSTOMIZADAS DO PROPRIETÁRIO:\n${config.instrucoes_base}\n` : ''}
 ${config.contexto_adicional ? `\nCONTEXTO ESPECÍFICO DO SALÃO:\n${config.contexto_adicional}\n` : ''}
 ${memoriaEvolutiva}
+${memoriaSemântica}
 ${analisePreComputada}
 ${memoriaConversa}
 DADOS BRUTOS DO SALÃO (referência adicional):
@@ -934,12 +1047,17 @@ ${dadosFormatados}`
             const { data: nova } = await supabaseAdmin.from('ia_conversas').insert({ salao_id: salaoId, profissional_id: profissional_id || null, mensagens: todasMensagens }).select('id').single()
             conversaIdFinal = nova?.id
           }
-          // Atualiza memória evolutiva em background (sem await — não bloqueia)
+          // Atualiza memória evolutiva em background
           fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://www.nodri.com.br'}/api/ia/memoria`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Cookie: `nodri_token=${token}` },
             body: JSON.stringify({ mensagens: todasMensagens, conversa_id: conversaIdFinal }),
           }).catch(() => {})
+          // Salva memória semântica em background
+          if (resposta.length > 100) {
+            const resumo = ultimaMensagem.slice(0, 200)
+            salvarMemoriaSemântica(resumo, `P: ${ultimaMensagem}\nR: ${resposta.slice(0, 800)}`, salaoId, config.api_key).catch(() => {})
+          }
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true, conversa_id: conversaIdFinal })}\n\n`))
           controller.close()
         }
@@ -947,15 +1065,23 @@ ${dadosFormatados}`
       return new Response(readable, { headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' } })
 
     } else {
-      // ── Google Gemini (streaming) ──
+      // ── Google Gemini (Tool Use + streaming) ──
+
+      // Fase 1: loop de ferramentas (não-streaming) — executa tools se necessário
+      const historyBase = mensagens.map((m: any) => ({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: m.content }],
+      }))
+      const historyFinal = await executarLoopFerramentas(
+        systemPrompt, historyBase, modelo, config.api_key, salaoId
+      )
+
+      // Fase 2: streaming da resposta final (sem tools para não re-executar)
       const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:streamGenerateContent?alt=sse&key=${config.api_key}`
       const geminiBody = {
         system_instruction: { parts: [{ text: systemPrompt }] },
-        contents: mensagens.map((m: any) => ({
-          role: m.role === 'assistant' ? 'model' : 'user',
-          parts: [{ text: m.content }]
-        })),
-        generationConfig: { maxOutputTokens: 2048, temperature: 0.7 }
+        contents: historyFinal,
+        generationConfig: { maxOutputTokens: 2048, temperature: 0.7 },
       }
 
       const geminiRes = await fetch(geminiUrl, {
@@ -1008,12 +1134,17 @@ ${dadosFormatados}`
             const { data: nova } = await supabaseAdmin.from('ia_conversas').insert({ salao_id: salaoId, profissional_id: profissional_id || null, mensagens: todasMensagens }).select('id').single()
             conversaIdFinal = nova?.id
           }
-          // Atualiza memória evolutiva em background (sem await — não bloqueia)
+          // Atualiza memória evolutiva em background
           fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://www.nodri.com.br'}/api/ia/memoria`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Cookie: `nodri_token=${token}` },
             body: JSON.stringify({ mensagens: todasMensagens, conversa_id: conversaIdFinal }),
           }).catch(() => {})
+          // Salva memória semântica em background
+          if (resposta.length > 100) {
+            const resumo = ultimaMensagem.slice(0, 200)
+            salvarMemoriaSemântica(resumo, `P: ${ultimaMensagem}\nR: ${resposta.slice(0, 800)}`, salaoId, config.api_key).catch(() => {})
+          }
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true, conversa_id: conversaIdFinal })}\n\n`))
           controller.close()
         }
