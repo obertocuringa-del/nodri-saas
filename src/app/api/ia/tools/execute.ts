@@ -171,7 +171,7 @@ export async function executarFerramenta(nome: string, args: any, salaoId: strin
       case 'buscar_comparativo_profissionais': {
         // Fonte principal: prof_metricas_mensais (usa profissional_id — sem risco de mismatch de nome)
         const { data: profs } = await supabaseAdmin
-          .from('profissionais').select('id, nome_completo, apelido, cargo')
+          .from('profissionais').select('id, nome_completo, apelido, cargo, data_admissao')
           .eq('salao_id', salaoId).eq('ativo', true)
 
         // Pega os 3 meses mais recentes disponíveis
