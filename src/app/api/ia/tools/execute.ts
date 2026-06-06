@@ -389,7 +389,7 @@ export const FERRAMENTAS_GEMINI = [
     functionDeclarations: [
       {
         name: 'buscar_dados_profissional',
-        description: 'Busca dados REAIS do banco sobre um profissional específico pelo nome: faturamento histórico, ticket médio, ocupação, serviços, ocorrências e pendências. Usar SOMENTE quando o usuário mencionar o nome de um profissional e quiser dados reais dele. NÃO usar para perguntas conceituais como "o que é ticket médio" ou "como avaliar um profissional".',
+        description: 'Busca dados REAIS e PRECISOS do banco sobre um profissional específico pelo nome. Retorna: faturamento histórico mês a mês, ticket médio, taxa de ocupação, total de serviços, clientes com preferência (fidelizados), clientes sem preferência (distribuídos pela recepção), dias trabalhados, produtos vendidos, ocorrências e pendências. USAR OBRIGATORIAMENTE quando o usuário perguntar qualquer dado específico de um profissional: sem preferência, com preferência, ocupação, faturamento, serviços, ticket, ocorrências, dias trabalhados — mesmo que o contexto já tenha algum dado. A ferramenta garante precisão total. NÃO usar para perguntas conceituais como "o que é ticket médio".',
         parameters: {
           type: 'OBJECT',
           properties: {
