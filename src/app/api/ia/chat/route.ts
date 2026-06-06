@@ -245,11 +245,6 @@ export async function POST(req: NextRequest) {
     }
 
     // 4. Buscar dados do salÃ£o
-    const dataInicio = new Date()
-    dataInicio.setMonth(dataInicio.getMonth() - 24)
-    const dataInicioStr = dataInicio.toISOString().slice(0, 7)
-
-    const anoInicio = parseInt(dataInicioStr.slice(0,4)) - 1
     const [
       { data: profissionais },
       { data: periodos },
@@ -258,9 +253,9 @@ export async function POST(req: NextRequest) {
       { data: pendencias },
     ] = await Promise.all([
       supabaseAdmin.from('profissionais').select('id, nome_completo, cargo, ativo').eq('salao_id', salaoId),
-      supabaseAdmin.from('relatorio_periodos').select('ano, mes, prof_pagamentos, prof_servicos, prof_ticket, prof_preferencia, prof_ocupacao, resumo_mensal').eq('salao_id', salaoId).gte('ano', anoInicio).order('ano').order('mes'),
-      supabaseAdmin.from('feedback_prof_respostas').select('profissional_id, profissional_nome, tipo, ocorrido_descricao, descricao, criado_em').eq('salao_id', salaoId).order('criado_em', { ascending: false }).limit(100),
-      supabaseAdmin.from('feedback_respostas').select('nota_geral, comentario, criado_em').eq('salao_id', salaoId).order('criado_em', { ascending: false }).limit(20),
+      supabaseAdmin.from('relatorio_periodos').select('ano, mes, prof_pagamentos, prof_servicos, prof_ticket, prof_preferencia, prof_ocupacao, resumo_mensal').eq('salao_id', salaoId).order('ano').order('mes'),
+      supabaseAdmin.from('feedback_prof_respostas').select('profissional_id, profissional_nome, tipo, ocorrido_descricao, descricao, criado_em').eq('salao_id', salaoId).order('criado_em', { ascending: false }),
+      supabaseAdmin.from('feedback_respostas').select('nota_geral, comentario, criado_em').eq('salao_id', salaoId).order('criado_em', { ascending: false }),
       supabaseAdmin.from('pendencias_profissionais').select('profissional_id, mensagem, data_limite').eq('salao_id', salaoId).eq('resolvido', false),
     ])
 
