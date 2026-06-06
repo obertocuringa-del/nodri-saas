@@ -52,10 +52,41 @@ function formatarDadosSalao(dados: any, profissionalId?: string): string {
         totaisMes[chave] = (totaisMes[chave]||0) + Number(item.faturamento_total||0)
       }
     }
-    if (Object.keys(totaisMes).length) {
-      linhas.push('### FATURAMENTO TOTAL DO SALÃO')
-      Object.entries(totaisMes).slice(-12).forEach(([mes, fat]) => {
-        linhas.push(`  ${mes}: ${fmtR(fat)}`)
+    // Resumo completo do salão por mês
+    const resumoSalao: Record<string, any> = {}
+    for (const per of dados.periodos_raw) {
+      const chave = `${MESES[per.mes-1]}/${String(per.ano).slice(2)}`
+      for (const item of (per.resumo_mensal || [])) {
+        if (!resumoSalao[chave]) resumoSalao[chave] = { fat: 0, ticket: 0, clientes: 0, novos: 0, fat_serv: 0, fat_prod: 0 }
+        resumoSalao[chave].fat      += Number(item.faturamento_total || 0)
+        resumoSalao[chave].ticket   += Number(item.ticket_medio || 0)
+        resumoSalao[chave].clientes += Number(item.clientes_atendidos || 0)
+        resumoSalao[chave].novos    += Number(item.clientes_novos || 0)
+        resumoSalao[chave].fat_serv += Number(item.faturamento_servicos || 0)
+        resumoSalao[chave].fat_prod += Number(item.faturamento_produtos || 0)
+      }
+    }
+    if (Object.keys(resumoSalao).length) {
+      linhas.push('### INDICADORES DO SALÃO (mês a mês)')
+      linhas.push('Mês | Faturamento | Ticket Médio | Clientes | Novos | Fat.Serviços | Fat.Produtos')
+      Object.entries(resumoSalao).forEach(([mes, r]) => {
+        linhas.push(`  ${mes}: Fat ${fmtR(r.fat)}, Ticket ${fmtR(r.ticket)}, Clientes ${r.clientes}, Novos ${r.novos}, Serviços ${fmtR(r.fat_serv)}, Produtos ${fmtR(r.fat_prod)}`)
+      })
+      linhas.push('')
+    }
+
+    // Ranking de serviços do salão
+    const rankServicos: Record<string, number> = {}
+    for (const per of dados.periodos_raw) {
+      for (const item of (per.servicos || [])) {
+        const nome = (item.servico || '').toUpperCase().trim()
+        if (nome) rankServicos[nome] = (rankServicos[nome] || 0) + Number(item.quantidade || 0)
+      }
+    }
+    if (Object.keys(rankServicos).length) {
+      linhas.push('### TOP SERVIÇOS DO SALÃO (total de atendimentos)')
+      Object.entries(rankServicos).sort((a,b) => b[1]-a[1]).slice(0, 20).forEach(([serv, qtd]) => {
+        linhas.push(`  - ${serv}: ${qtd}x`)
       })
       linhas.push('')
     }
@@ -312,7 +343,7 @@ export async function POST(req: NextRequest) {
       { data: formulariosFeedback },
     ] = await Promise.all([
       supabaseAdmin.from('profissionais').select('*').eq('salao_id', salaoId),
-      supabaseAdmin.from('relatorio_periodos').select('ano, mes, prof_pagamentos, prof_servicos, prof_ticket, prof_preferencia, prof_ocupacao, prof_produtos, resumo_mensal').eq('salao_id', salaoId).order('ano').order('mes'),
+      supabaseAdmin.from('relatorio_periodos').select('ano, mes, prof_pagamentos, prof_servicos, prof_ticket, prof_preferencia, prof_ocupacao, prof_produtos, resumo_mensal, faturamento_diario, servicos, produtos').eq('salao_id', salaoId).order('ano').order('mes'),
       supabaseAdmin.from('feedback_prof_respostas').select('profissional_id, profissional_nome, tipo, ocorrido_descricao, descricao, criado_em').eq('salao_id', salaoId).order('criado_em', { ascending: false }),
       supabaseAdmin.from('feedback_respostas').select('nota_geral, comentario, criado_em').eq('salao_id', salaoId).order('criado_em', { ascending: false }),
       supabaseAdmin.from('feedback_respostas').select('dados, criado_em').eq('salao_id', salaoId).order('criado_em', { ascending: false }),
