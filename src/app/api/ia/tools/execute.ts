@@ -172,6 +172,7 @@ export async function executarFerramenta(nome: string, args: any, salaoId: strin
         const { data: profs } = await supabaseAdmin.from('profissionais').select('id, nome_completo, apelido, cargo').eq('salao_id', salaoId).eq('ativo', true)
         const { data: periodos } = await supabaseAdmin.from('relatorio_periodos').select('ano, mes, prof_pagamentos, prof_servicos, prof_ticket, prof_ocupacao').eq('salao_id', salaoId).order('ano', { ascending: false }).order('mes', { ascending: false }).limit(3)
         const { data: ocorrs } = await supabaseAdmin.from('feedback_prof_respostas').select('profissional_nome, tipo').eq('salao_id', salaoId)
+        const { data: metricas } = await supabaseAdmin.from('prof_metricas_mensais').select('profissional_id, clientes_preferencia, clientes_sem_preferencia, taxa_ocupacao, ano, mes').eq('salao_id', salaoId).order('ano', { ascending: false }).order('mes', { ascending: false })
 
         const linhas: string[] = ['COMPARATIVO DE PROFISSIONAIS (últimos 3 meses):']
 
@@ -215,16 +216,34 @@ export async function executarFerramenta(nome: string, args: any, salaoId: strin
         const cargo = args.cargo?.toLowerCase() || ''
         const profsFiltrados = (profs || []).filter((p: any) => !cargo || p.cargo?.toLowerCase().includes(cargo))
 
+        // Agrega clientes fidelizados e da recepção por profissional (últimos 3 meses)
+        const prefMap2: Record<string, number> = {}
+        const semPrefMap: Record<string, number> = {}
+        const ocupMetMap: Record<string, number[]> = {}
+        for (const m of (metricas || [])) {
+          const prof = (profs || []).find((p: any) => p.id === m.profissional_id)
+          if (!prof) continue
+          const nome = prof.nome_completo
+          prefMap2[nome] = (prefMap2[nome] || 0) + Number(m.clientes_preferencia || 0)
+          semPrefMap[nome] = (semPrefMap[nome] || 0) + Number(m.clientes_sem_preferencia || 0)
+          if (!ocupMetMap[nome]) ocupMetMap[nome] = []
+          if (m.taxa_ocupacao) ocupMetMap[nome].push(Number(m.taxa_ocupacao))
+        }
+
+        linhas.push('\n| Profissional | Cargo | Faturamento | Serviços | Ticket | Ocupação | Fidelizados | Recepção | Ocorr.Neg |')
+        linhas.push('|---|---|---|---|---|---|---|---|---|')
         profsFiltrados.forEach((p: any) => {
           const nome = p.nome_completo
           const fat = fatMap[nome] || fatMap[p.apelido] || 0
           const serv = servMap[nome] || servMap[p.apelido] || 0
           const ticks = tickMap[nome] || tickMap[p.apelido] || []
-          const ocups = ocupMap[nome] || ocupMap[p.apelido] || []
           const tick = ticks.length ? ticks.reduce((a,b) => a+b, 0)/ticks.length : 0
+          const ocups = ocupMetMap[nome] || []
           const ocup = ocups.length ? ocups.reduce((a,b) => a+b, 0)/ocups.length : 0
+          const fidelizados = prefMap2[nome] || 0
+          const recepcao = semPrefMap[nome] || 0
           const ocorrNeg = ocorrMap[nome] || ocorrMap[p.apelido] || 0
-          linhas.push(`  ${nome} (${p.cargo}): Fat ${fmtR(fat)}, ${serv} serviços, Ticket ${fmtR(tick)}, Ocupação ${ocup.toFixed(0)}%, ${ocorrNeg} ocorrências negativas`)
+          linhas.push(`| ${nome} | ${p.cargo} | ${fmtR(fat)} | ${serv} | ${fmtR(tick)} | ${ocup.toFixed(0)}% | ${fidelizados} | ${recepcao} | ${ocorrNeg} |`)
         })
 
         return linhas.join('\n')
@@ -291,7 +310,7 @@ export const FERRAMENTAS_GEMINI = [
       },
       {
         name: 'buscar_comparativo_profissionais',
-        description: 'Compara o desempenho de todos os profissionais ativos: faturamento, serviços, ticket médio, ocupação e ocorrências negativas.',
+        description: 'Compara o desempenho de todos os profissionais ativos em tabela: faturamento, serviços, ticket médio, ocupação, clientes fidelizados (com preferência), clientes distribuídos pela recepção (sem preferência) e ocorrências negativas. Usar sempre que pedir comparação entre profissionais, ranking, ou análise de distribuição de clientes.',
         parameters: {
           type: 'OBJECT',
           properties: {
