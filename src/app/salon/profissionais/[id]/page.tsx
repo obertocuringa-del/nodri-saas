@@ -1250,18 +1250,36 @@ function AbaIA({ profissionalId, nomeProfissional }: { profissionalId: string; n
   const [input, setInput] = useState('')
   const [enviando, setEnviando] = useState(false)
   const [conversaId, setConversaId] = useState<string | undefined>(undefined)
+  const [carregando, setCarregando] = useState(true)
   const scrollRef = useRef<HTMLDivElement>(null)
   const primeiroNome = nomeProfissional.split(' ')[0]
 
   useEffect(() => {
-    fetch('/api/ia/config')
-      .then(r => r.json())
-      .then(d => {
-        setTemApiKey(!!d.tem_api_key)
-        if (d.tem_api_key) boasVindas()
-      })
-      .catch(() => setTemApiKey(false))
-  }, [])
+    async function init() {
+      try {
+        const [configRes, conversaRes] = await Promise.all([
+          fetch('/api/ia/config').then(r => r.json()),
+          fetch(`/api/ia/conversa?profissional_id=${profissionalId}`).then(r => r.json()),
+        ])
+        setTemApiKey(!!configRes.tem_api_key)
+        if (configRes.tem_api_key) {
+          if (conversaRes.conversa?.mensagens?.length > 0) {
+            // Carrega conversa existente
+            setMensagens(conversaRes.conversa.mensagens)
+            setConversaId(conversaRes.conversa.id)
+          } else {
+            // Sem conversa — envia boas-vindas
+            await boasVindas()
+          }
+        }
+      } catch {
+        setTemApiKey(false)
+      } finally {
+        setCarregando(false)
+      }
+    }
+    init()
+  }, [profissionalId])
 
   async function boasVindas() {
     setEnviando(true)
@@ -1277,6 +1295,14 @@ function AbaIA({ profissionalId, nomeProfissional }: { profissionalId: string; n
       if (d.conversa_id) setConversaId(d.conversa_id)
     }
     setEnviando(false)
+  }
+
+  async function novaConversa() {
+    if (!confirm('Apagar o histórico e iniciar nova conversa?')) return
+    await fetch(`/api/ia/conversa?profissional_id=${profissionalId}`, { method: 'DELETE' })
+    setMensagens([])
+    setConversaId(undefined)
+    await boasVindas()
   }
 
   useEffect(() => {
@@ -1310,7 +1336,7 @@ function AbaIA({ profissionalId, nomeProfissional }: { profissionalId: string; n
     setEnviando(false)
   }
 
-  if (temApiKey === null) return <div className="flex justify-center py-10"><Loader2 size={24} className="animate-spin text-nodri-cyan"/></div>
+  if (temApiKey === null || carregando) return <div className="flex justify-center py-10"><Loader2 size={24} className="animate-spin text-nodri-cyan"/></div>
 
   if (!temApiKey) return (
     <div className="text-center py-12">
@@ -1330,7 +1356,12 @@ function AbaIA({ profissionalId, nomeProfissional }: { profissionalId: string; n
       <div className="px-4 py-3 border-b border-nodri-border bg-nodri-card flex items-center gap-2">
         <span className="text-[14px]">🤖</span>
         <span className="font-syne font-bold text-[12px] text-nodri-t1">IA NODRI</span>
-        <span className="text-[9px] text-nodri-t3 ml-auto">Chat inteligente do salão</span>
+        <button
+          onClick={novaConversa}
+          className="ml-auto text-[10px] px-2.5 py-1 rounded-lg border border-nodri-border text-nodri-t3 hover:text-nodri-red hover:border-red-500/30 transition-colors"
+          title="Apagar histórico e iniciar nova conversa">
+          🗑️ Nova conversa
+        </button>
       </div>
 
       {/* Mensagens */}
