@@ -319,6 +319,62 @@ export async function executarFerramenta(nome: string, args: any, salaoId: strin
         return linhas.join('\n')
       }
 
+      case 'buscar_internet': {
+        // Busca keys Tavily no banco (rotação automática)
+        const { data: keysData } = await supabaseAdmin
+          .from('ia_config_global')
+          .select('tavily_keys')
+          .limit(1)
+          .maybeSingle()
+
+        const keys: string[] = keysData?.tavily_keys || []
+        if (!keys.length) return 'Busca na internet não configurada. Adicione as keys Tavily no painel admin.'
+
+        const query = args.query || ''
+        if (!query) return 'Nenhuma query informada para busca.'
+
+        // Tenta cada key até uma funcionar
+        for (const key of keys) {
+          try {
+            const res = await fetch('https://api.tavily.com/search', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                api_key: key,
+                query: `${query} salão de beleza`,
+                search_depth: 'basic',
+                max_results: 5,
+                include_answer: true,
+                include_raw_content: false,
+              }),
+            })
+
+            if (!res.ok) continue
+
+            const data = await res.json()
+
+            const linhas: string[] = [`RESULTADOS DA INTERNET — "${query}":\n`]
+
+            if (data.answer) {
+              linhas.push(`RESPOSTA DIRETA:\n${data.answer}\n`)
+            }
+
+            if (data.results?.length) {
+              linhas.push('FONTES:')
+              data.results.slice(0, 4).forEach((r: any) => {
+                linhas.push(`\n• ${r.title}`)
+                if (r.content) linhas.push(`  ${r.content.slice(0, 400)}`)
+                linhas.push(`  Fonte: ${r.url}`)
+              })
+            }
+
+            return linhas.join('\n')
+          } catch { continue }
+        }
+
+        return 'Não foi possível realizar a busca na internet no momento. Tente novamente.'
+      }
+
       default:
         return `Ferramenta "${nome}" não reconhecida.`
     }
@@ -374,6 +430,17 @@ export const FERRAMENTAS_GEMINI = [
           properties: {
             tema: { type: 'STRING', description: 'Tema ou palavra-chave para buscar. Ex: "feedback", "estoque", "reativação", "comissão", "conflito".' }
           }
+        }
+      },
+      {
+        name: 'buscar_internet',
+        description: 'Busca informações atualizadas na internet sobre técnicas de procedimentos de salão, colorimetria, tratamentos capilares, tendências de beleza, produtos, técnicas de manicure, estética e qualquer tema relacionado a salão de beleza. Usar quando o usuário perguntar sobre técnicas específicas, procedimentos, produtos ou tendências que exigem informação atualizada da internet. NÃO usar para dados do salão (faturamento, profissionais) — esses têm ferramentas próprias.',
+        parameters: {
+          type: 'OBJECT',
+          properties: {
+            query: { type: 'STRING', description: 'O que buscar na internet. Ex: "técnica balayage passo a passo", "botox capilar como aplicar", "tendências colorimetria 2025".' }
+          },
+          required: ['query']
         }
       }
     ]

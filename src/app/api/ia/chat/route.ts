@@ -371,7 +371,8 @@ export async function POST(req: NextRequest) {
     if (!salaoId) return NextResponse.json({ error: 'NÃ£o autorizado' }, { status: 401 })
 
     const body = await req.json()
-    const { mensagens, profissional_id, conversa_id } = body
+    const { mensagens, profissional_id, conversa_id, modo } = body
+    const modoGestor = modo === 'gestor'
 
     if (!mensagens?.length) {
       return NextResponse.json({ error: 'mensagens sÃ£o obrigatÃ³rias' }, { status: 400 })
@@ -1913,6 +1914,7 @@ Somente aprofundar quando solicitado ou quando isso gerar valor real.`
 
     const systemPrompt = `${PROMPT_MESTRE}
 
+${modoGestor ? `\n⚠️ CONTEXTO ATUAL: DASHBOARD DO GESTOR\nVocê está no painel principal do salão. Não há profissional específico selecionado.\nResponda sempre na perspectiva do SALÃO COMO NEGÓCIO — análises comparativas, estratégias, faturamento total, equipe, operação.\nEvite focar em um único profissional a menos que o gestor pergunte explicitamente sobre alguém.\n` : ''}
 ${config.instrucoes_base ? `\nINSTRUÇÕES CUSTOMIZADAS DO PROPRIETÁRIO:\n${config.instrucoes_base}\n` : ''}
 ${config.contexto_adicional ? `\nCONTEXTO ESPECÍFICO DO SALÃO:\n${config.contexto_adicional}\n` : ''}
 ${memoriaEvolutiva}

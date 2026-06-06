@@ -26,6 +26,7 @@ export async function GET() {
     ...data,
     api_key: masked,
     api_key_salva: !!data.api_key,
+    tavily_keys: data.tavily_keys || [],
   })
 }
 
@@ -37,7 +38,7 @@ export async function PUT(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { api_key, modelo, instrucoes_base, ativo } = body
+  const { api_key, modelo, instrucoes_base, ativo, tavily_keys } = body
 
   // Buscar registro existente
   const { data: existing } = await supabaseAdmin
@@ -47,11 +48,13 @@ export async function PUT(req: NextRequest) {
     .maybeSingle()
 
   const updateData: Record<string, any> = {
-    modelo,
-    instrucoes_base,
-    ativo,
     atualizado_em: new Date().toISOString(),
   }
+
+  if (modelo !== undefined) updateData.modelo = modelo
+  if (instrucoes_base !== undefined) updateData.instrucoes_base = instrucoes_base
+  if (ativo !== undefined) updateData.ativo = ativo
+  if (tavily_keys !== undefined) updateData.tavily_keys = tavily_keys
 
   // Só sobrescreve api_key se foi enviada e não está vazia
   if (api_key && api_key.trim() !== '') {

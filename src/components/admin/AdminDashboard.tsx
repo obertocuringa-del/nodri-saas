@@ -124,6 +124,9 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
   const [iaConfig, setIaConfig] = useState({ api_key: '', modelo: 'claude-haiku-4-5', instrucoes_base: '', api_key_salva: false })
   const [iaConfigLoading, setIaConfigLoading] = useState(false)
   const [showIaKey, setShowIaKey] = useState(false)
+  const [tavilyKeys, setTavilyKeys] = useState<string[]>([])
+  const [novaKeyTavily, setNovaKeyTavily] = useState('')
+  const [tavilySaving, setTavilySaving] = useState(false)
 
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -144,6 +147,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
         .then(r => r.json())
         .then(d => {
           setIaConfig({ api_key: '', modelo: d.modelo || 'gemini-1.5-flash', instrucoes_base: d.instrucoes_base || '', api_key_salva: d.api_key_salva ?? false })
+          setTavilyKeys(d.tavily_keys || [])
         })
         .catch(() => {})
         .finally(() => setIaConfigLoading(false))
@@ -1588,6 +1592,69 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                     </button>
                   </div>
                 )}
+              </div>
+
+              {/* Keys Tavily — Busca na Internet */}
+              <div className="nodri-card p-5">
+                <div className="font-syne font-bold text-[13px] text-nodri-cyan mb-1">🌐 Busca na Internet (Tavily)</div>
+                <p className="text-[10px] text-nodri-t3 mb-4">Keys para a IA buscar técnicas de procedimentos e tendências de beleza na internet. O sistema rotaciona automaticamente quando uma key esgota.</p>
+
+                {/* Lista de keys cadastradas */}
+                <div className="space-y-2 mb-4">
+                  {tavilyKeys.length === 0 && (
+                    <p className="text-[10px] text-nodri-t3 italic">Nenhuma key cadastrada ainda.</p>
+                  )}
+                  {tavilyKeys.map((key, i) => (
+                    <div key={i} className="flex items-center gap-2 bg-nodri-bg2 rounded-lg px-3 py-2">
+                      <span className="text-[10px] text-green-400 font-bold w-16 flex-shrink-0">Key {i + 1}</span>
+                      <span className="text-[10px] text-nodri-t2 flex-1 font-mono truncate">{key.slice(0, 12)}...{key.slice(-6)}</span>
+                      <button
+                        onClick={async () => {
+                          const novas = tavilyKeys.filter((_, idx) => idx !== i)
+                          const res = await fetch('/api/admin/ia-config', {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ tavily_keys: novas }),
+                          })
+                          if (res.ok) { setTavilyKeys(novas); toast.success('Key removida!') }
+                          else toast.error('Erro ao remover key')
+                        }}
+                        className="text-red-400 hover:text-red-300 text-[10px] flex-shrink-0"
+                      >✕</button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Adicionar nova key */}
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={novaKeyTavily}
+                    onChange={e => setNovaKeyTavily(e.target.value)}
+                    placeholder="tvly-dev-xxxxxxxxxxxxxxxx"
+                    className="nodri-input flex-1 text-[11px] font-mono"
+                  />
+                  <button
+                    disabled={!novaKeyTavily.trim() || tavilySaving}
+                    onClick={async () => {
+                      setTavilySaving(true)
+                      const novas = [...tavilyKeys, novaKeyTavily.trim()]
+                      const res = await fetch('/api/admin/ia-config', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ tavily_keys: novas }),
+                      })
+                      setTavilySaving(false)
+                      if (res.ok) { setTavilyKeys(novas); setNovaKeyTavily(''); toast.success('Key adicionada!') }
+                      else toast.error('Erro ao salvar key')
+                    }}
+                    className="px-3 py-2 rounded-lg bg-nodri-cyan text-black text-[11px] font-bold hover:brightness-110 disabled:opacity-40 flex-shrink-0"
+                  >
+                    {tavilySaving ? '...' : '+ Adicionar'}
+                  </button>
+                </div>
+                <a href="https://tavily.com" target="_blank" rel="noopener noreferrer"
+                  className="text-[10px] text-nodri-cyan hover:underline mt-2 block">Criar conta gratuita no Tavily →</a>
               </div>
             </div>
           )}

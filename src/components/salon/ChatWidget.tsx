@@ -128,8 +128,8 @@ export default function ChatWidget() {
       {/* Botão flutuante */}
       <button
         onClick={() => setAberto(v => !v)}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-110"
-        style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}
+        className="fixed z-50 w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-110"
+        style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', bottom: '90px', right: '24px', zIndex: 10000 }}
         title="NODRI IA"
       >
         {aberto
@@ -143,8 +143,8 @@ export default function ChatWidget() {
 
       {/* Janela do chat */}
       {aberto && (
-        <div className="fixed bottom-24 right-6 z-50 w-[380px] max-w-[calc(100vw-24px)] flex flex-col bg-gray-900 rounded-2xl shadow-2xl border border-gray-700 overflow-hidden"
-          style={{ height: '520px' }}>
+        <div className="fixed z-50 w-[380px] max-w-[calc(100vw-24px)] flex flex-col bg-gray-900 rounded-2xl shadow-2xl border border-gray-700 overflow-hidden"
+          style={{ height: '520px', bottom: '162px', right: '24px', zIndex: 10000 }}>
 
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800"
