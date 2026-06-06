@@ -1329,6 +1329,11 @@ ${dadosFormatados}`
     // 9. Chamar API com streaming
     const modelo = config.modelo || 'gemini-2.5-flash'
 
+    // Limita histórico a últimas 10 mensagens para evitar timeout em conversas longas
+    const mensagensLimitadas = mensagens.length > 10
+      ? mensagens.slice(-10)
+      : mensagens
+
     let resposta = ''
 
     if (modelo.startsWith('claude')) {
@@ -1338,7 +1343,7 @@ ${dadosFormatados}`
         model: modelo,
         max_tokens: 2048,
         system: systemPrompt,
-        messages: mensagens.map((m: any) => ({ role: m.role, content: m.content })),
+        messages: mensagensLimitadas.map((m: any) => ({ role: m.role, content: m.content })),
         stream: true,
       })
 
@@ -1382,7 +1387,7 @@ ${dadosFormatados}`
       // ── Google Gemini (Tool Use + streaming) ──
 
       // Fase 1: loop de ferramentas (não-streaming) — executa tools se necessário
-      const historyBase = mensagens.map((m: any) => ({
+      const historyBase = mensagensLimitadas.map((m: any) => ({
         role: m.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: m.content }],
       }))
