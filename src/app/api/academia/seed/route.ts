@@ -1464,7 +1464,9 @@ export async function POST(req: NextRequest) {
   try {
     const token = cookies().get('nodri_token')?.value
     const payload = token ? await verifyJWT(token) : null
-    // seed temporariamente aberto — remover após executar
+    if (!payload || payload.role !== 'master') {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    }
 
     // Remove existentes e insere novos
     await supabaseAdmin.from('academia_artigos').delete().neq('id', '00000000-0000-0000-0000-000000000000')
