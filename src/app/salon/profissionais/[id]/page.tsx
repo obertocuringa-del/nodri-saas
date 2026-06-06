@@ -1446,9 +1446,7 @@ function AbaIA({ profissionalId, nomeProfissional }: { profissionalId: string; n
   )
 
   return (
-    <div className="space-y-4">
-      {/* Chat */}
-      <div className="flex flex-col h-[600px] bg-nodri-surface border border-nodri-border rounded-2xl overflow-hidden">
+    <div className="flex flex-col h-[600px] bg-nodri-surface border border-nodri-border rounded-2xl overflow-hidden">
       {/* Header */}
       <div className="px-4 py-3 border-b border-nodri-border bg-nodri-card flex items-center gap-2">
         <span className="text-[14px]">🤖</span>
