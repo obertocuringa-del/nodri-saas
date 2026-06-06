@@ -96,7 +96,7 @@ export async function executarFerramenta(nome: string, args: any, salaoId: strin
       }
 
       case 'buscar_indicadores_salao': {
-        const { data: periodos } = await supabaseAdmin.from('relatorio_periodos').select('ano, mes, resumo_mensal, servicos').eq('salao_id', salaoId).order('ano').order('mes')
+        const { data: periodos } = await supabaseAdmin.from('relatorio_periodos').select('ano, mes, resumo_mensal, servicos, produtos').eq('salao_id', salaoId).order('ano').order('mes')
 
         // Detecta se foi pedido um mês/ano específico
         const periodoArg = (args.periodo || '').toLowerCase()
@@ -145,6 +145,18 @@ export async function executarFerramenta(nome: string, args: any, salaoId: strin
           for (const s of servsPeriodo) {
             const nome = (s.servico || '').toUpperCase().trim()
             if (nome) rankServicos[nome] = (rankServicos[nome] || 0) + Number(s.quantidade || 0)
+          }
+
+          // Produtos do período com quantidade e valor
+          const prodsPeriodo = (per.produtos || []).filter((p: any) => p.produto || p.nome)
+          if (prodsPeriodo.length && (filtroMes || filtroAno)) {
+            linhas.push(`\n  PRODUTOS VENDIDOS em ${chave}:`)
+            prodsPeriodo
+              .sort((a: any, b: any) => Number(b.quantidade||0) - Number(a.quantidade||0))
+              .forEach((p: any) => {
+                const nome = (p.produto || p.nome || '').toUpperCase()
+                linhas.push(`    • ${nome}: ${p.quantidade||0}x${p.valor ? ' — '+fmtR(Number(p.valor)) : ''}`)
+              })
           }
         }
 
@@ -269,7 +281,7 @@ export const FERRAMENTAS_GEMINI = [
       },
       {
         name: 'buscar_indicadores_salao',
-        description: 'Busca os indicadores gerais do salão: faturamento total, ticket médio, clientes atendidos, clientes novos, faturamento de serviços vs produtos, ranking de serviços. Quando um mês/ano específico for informado, retorna TODOS os serviços vendidos naquele período com quantidade e valor.',
+        description: 'Busca os indicadores gerais do salão: faturamento total, ticket médio, clientes atendidos, clientes novos, faturamento de serviços vs produtos, ranking de serviços e produtos. Quando um mês/ano específico for informado, retorna TODOS os serviços E produtos vendidos naquele período com quantidade e valor.',
         parameters: {
           type: 'OBJECT',
           properties: {
