@@ -289,7 +289,7 @@ export const FERRAMENTAS_GEMINI = [
     functionDeclarations: [
       {
         name: 'buscar_dados_profissional',
-        description: 'Busca todos os dados de um profissional específico: faturamento histórico, ticket médio, ocupação, serviços detalhados, ocorrências/feedbacks comportamentais e pendências.',
+        description: 'Busca dados REAIS do banco sobre um profissional específico pelo nome: faturamento histórico, ticket médio, ocupação, serviços, ocorrências e pendências. Usar SOMENTE quando o usuário mencionar o nome de um profissional e quiser dados reais dele. NÃO usar para perguntas conceituais como "o que é ticket médio" ou "como avaliar um profissional".',
         parameters: {
           type: 'OBJECT',
           properties: {
@@ -310,7 +310,7 @@ export const FERRAMENTAS_GEMINI = [
       },
       {
         name: 'buscar_comparativo_profissionais',
-        description: 'Compara o desempenho de todos os profissionais ativos em tabela: faturamento, serviços, ticket médio, ocupação, clientes fidelizados (com preferência), clientes distribuídos pela recepção (sem preferência) e ocorrências negativas. Usar sempre que pedir comparação entre profissionais, ranking, ou análise de distribuição de clientes.',
+        description: 'Busca dados REAIS do banco comparando todos os profissionais ativos: faturamento, serviços, ticket médio, ocupação, clientes fidelizados, clientes da recepção e ocorrências. Usar SOMENTE quando o usuário pedir comparação real entre profissionais do salão, ranking ou quem performa melhor/pior. NÃO usar para perguntas conceituais como "o que significa ticket alto com ocupação baixa" — essas devem ser respondidas do conhecimento direto.',
         parameters: {
           type: 'OBJECT',
           properties: {
