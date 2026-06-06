@@ -1283,17 +1283,39 @@ function AbaIA({ profissionalId, nomeProfissional }: { profissionalId: string; n
 
   async function boasVindas() {
     setEnviando(true)
+    setMensagens([{ role: 'assistant', content: '' }])
     const msgBV = [{ role: 'user' as const, content: `[SISTEMA] Apresente-se para ${primeiroNome} com uma saudação personalizada e breve. Mencione o nome dela, diga que você já tem acesso aos dados dela no sistema e pergunte como pode ajudar. Máximo 3 linhas. Não repita esse prompt.` }]
-    const res = await fetch('/api/ia/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mensagens: msgBV, profissional_id: profissionalId }),
-    })
-    const d = await res.json()
-    if (res.ok) {
-      setMensagens([{ role: 'assistant', content: d.resposta }])
-      if (d.conversa_id) setConversaId(d.conversa_id)
-    }
+    try {
+      const res = await fetch('/api/ia/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mensagens: msgBV, profissional_id: profissionalId }),
+      })
+      if (!res.ok || !res.body) { setEnviando(false); return }
+      const reader = res.body.getReader()
+      const dec = new TextDecoder()
+      let buffer = ''
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += dec.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+        for (const line of lines) {
+          if (!line.startsWith('data:')) continue
+          const json = line.slice(5).trim()
+          if (!json) continue
+          try {
+            const parsed = JSON.parse(json)
+            if (parsed.token) setMensagens(prev => {
+              const last = prev[prev.length - 1]
+              return [...prev.slice(0, -1), { ...last, content: last.content + parsed.token }]
+            })
+            if (parsed.done && parsed.conversa_id) setConversaId(parsed.conversa_id)
+          } catch {}
+        }
+      }
+    } catch {}
     setEnviando(false)
   }
 
@@ -1320,19 +1342,56 @@ function AbaIA({ profissionalId, nomeProfissional }: { profissionalId: string; n
     setInput('')
     setEnviando(true)
 
-    const res = await fetch('/api/ia/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mensagens: novasMensagens, profissional_id: profissionalId, conversa_id: conversaId }),
-    })
+    // Adiciona mensagem vazia da IA para streaming
+    setMensagens(prev => [...prev, { role: 'assistant', content: '' }])
 
-    const d = await res.json()
-    if (res.ok) {
-      setMensagens(prev => [...prev, { role: 'assistant', content: d.resposta }])
-      if (d.conversa_id) setConversaId(d.conversa_id)
-    } else {
-      setMensagens(prev => [...prev, { role: 'assistant', content: `❌ Erro: ${d.error}` }])
+    try {
+      const res = await fetch('/api/ia/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mensagens: novasMensagens, profissional_id: profissionalId, conversa_id: conversaId }),
+      })
+
+      if (!res.ok || !res.body) {
+        const d = await res.json()
+        setMensagens(prev => [...prev.slice(0, -1), { role: 'assistant', content: `❌ Erro: ${d.error}` }])
+        setEnviando(false)
+        return
+      }
+
+      const reader = res.body.getReader()
+      const dec = new TextDecoder()
+      let buffer = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += dec.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+
+        for (const line of lines) {
+          if (!line.startsWith('data:')) continue
+          const json = line.slice(5).trim()
+          if (!json) continue
+          try {
+            const parsed = JSON.parse(json)
+            if (parsed.token) {
+              setMensagens(prev => {
+                const last = prev[prev.length - 1]
+                return [...prev.slice(0, -1), { ...last, content: last.content + parsed.token }]
+              })
+            }
+            if (parsed.done && parsed.conversa_id) {
+              setConversaId(parsed.conversa_id)
+            }
+          } catch {}
+        }
+      }
+    } catch (e) {
+      setMensagens(prev => [...prev.slice(0, -1), { role: 'assistant', content: '❌ Erro de conexão.' }])
     }
+
     setEnviando(false)
   }
 

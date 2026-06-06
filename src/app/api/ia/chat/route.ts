@@ -685,24 +685,50 @@ ${memoriaConversa}
 DADOS REAIS DO SALÃO (use sempre que disponíveis):
 ${dadosFormatados}`
 
-    // 9. Chamar API — detecta modelo pelo prefixo
+    // 9. Chamar API com streaming
     const modelo = config.modelo || 'gemini-2.5-flash'
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${config.api_key}`
 
     let resposta = ''
 
     if (modelo.startsWith('claude')) {
-      // ── Anthropic Claude ──
+      // ── Anthropic Claude (streaming) ──
       const anthropic = new Anthropic({ apiKey: config.api_key })
-      const response = await anthropic.messages.create({
+      const stream = await anthropic.messages.create({
         model: modelo,
         max_tokens: 2048,
         system: systemPrompt,
         messages: mensagens.map((m: any) => ({ role: m.role, content: m.content })),
+        stream: true,
       })
-      resposta = response.content[0].type === 'text' ? response.content[0].text : ''
+
+      const encoder = new TextEncoder()
+      let conversaIdFinal = conversa_id
+
+      const readable = new ReadableStream({
+        async start(controller) {
+          for await (const chunk of stream) {
+            if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
+              resposta += chunk.delta.text
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ token: chunk.delta.text })}\n\n`))
+            }
+          }
+          // Salvar conversa
+          const todasMensagens = [...mensagens, { role: 'assistant', content: resposta }]
+          if (conversaIdFinal) {
+            await supabaseAdmin.from('ia_conversas').update({ mensagens: todasMensagens, atualizado_em: new Date().toISOString() }).eq('id', conversaIdFinal).eq('salao_id', salaoId)
+          } else {
+            const { data: nova } = await supabaseAdmin.from('ia_conversas').insert({ salao_id: salaoId, profissional_id: profissional_id || null, mensagens: todasMensagens }).select('id').single()
+            conversaIdFinal = nova?.id
+          }
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true, conversa_id: conversaIdFinal })}\n\n`))
+          controller.close()
+        }
+      })
+      return new Response(readable, { headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' } })
+
     } else {
-      // ── Google Gemini ──
+      // ── Google Gemini (streaming) ──
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:streamGenerateContent?alt=sse&key=${config.api_key}`
       const geminiBody = {
         system_instruction: { parts: [{ text: systemPrompt }] },
         contents: mensagens.map((m: any) => ({
@@ -711,46 +737,64 @@ ${dadosFormatados}`
         })),
         generationConfig: { maxOutputTokens: 2048, temperature: 0.7 }
       }
+
       const geminiRes = await fetch(geminiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(geminiBody)
       })
+
       if (!geminiRes.ok) {
         const errBody = await geminiRes.text()
         return NextResponse.json({ error: `Gemini API erro ${geminiRes.status}: ${errBody}` }, { status: 500 })
       }
-      const geminiData = await geminiRes.json()
-      resposta = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || 'Sem resposta da IA.'
+
+      let conversaIdFinal = conversa_id
+      const encoder = new TextEncoder()
+
+      const readable = new ReadableStream({
+        async start(controller) {
+          const reader = geminiRes.body!.getReader()
+          const dec = new TextDecoder()
+          let buffer = ''
+
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+            buffer += dec.decode(value, { stream: true })
+            const lines = buffer.split('\n')
+            buffer = lines.pop() || ''
+
+            for (const line of lines) {
+              if (!line.startsWith('data:')) continue
+              const json = line.slice(5).trim()
+              if (!json || json === '[DONE]') continue
+              try {
+                const parsed = JSON.parse(json)
+                const token = parsed.candidates?.[0]?.content?.parts?.[0]?.text || ''
+                if (token) {
+                  resposta += token
+                  controller.enqueue(encoder.encode(`data: ${JSON.stringify({ token })}\n\n`))
+                }
+              } catch {}
+            }
+          }
+
+          // Salvar conversa
+          const todasMensagens = [...mensagens, { role: 'assistant', content: resposta }]
+          if (conversaIdFinal) {
+            await supabaseAdmin.from('ia_conversas').update({ mensagens: todasMensagens, atualizado_em: new Date().toISOString() }).eq('id', conversaIdFinal).eq('salao_id', salaoId)
+          } else {
+            const { data: nova } = await supabaseAdmin.from('ia_conversas').insert({ salao_id: salaoId, profissional_id: profissional_id || null, mensagens: todasMensagens }).select('id').single()
+            conversaIdFinal = nova?.id
+          }
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true, conversa_id: conversaIdFinal })}\n\n`))
+          controller.close()
+        }
+      })
+
+      return new Response(readable, { headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' } })
     }
-
-    // 10. Salvar/atualizar conversa
-    let conversaIdFinal = conversa_id
-    const todasMensagens = [
-      ...mensagens,
-      { role: 'assistant', content: resposta },
-    ]
-
-    if (conversaIdFinal) {
-      await supabaseAdmin
-        .from('ia_conversas')
-        .update({ mensagens: todasMensagens, atualizado_em: new Date().toISOString() })
-        .eq('id', conversaIdFinal)
-        .eq('salao_id', salaoId)
-    } else {
-      const { data: novaConversa } = await supabaseAdmin
-        .from('ia_conversas')
-        .insert({
-          salao_id: salaoId,
-          profissional_id: profissional_id || null,
-          mensagens: todasMensagens,
-        })
-        .select('id')
-        .single()
-      conversaIdFinal = novaConversa?.id
-    }
-
-    return NextResponse.json({ resposta, conversa_id: conversaIdFinal })
   } catch (err: any) {
     console.error('IA chat error:', err)
     return NextResponse.json({ error: err.message }, { status: 500 })
