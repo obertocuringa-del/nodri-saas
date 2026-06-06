@@ -289,13 +289,34 @@ export async function POST(req: NextRequest) {
 
     // 5. Dados especÃ­ficos do profissional
     if (profissional_id) {
-      const [{ data: dadosProf }, { data: periodosProf }] = await Promise.all([
+      const [{ data: dadosProf }, { data: periodosProf }, { data: feedbacksProfCompleto }] = await Promise.all([
         supabaseAdmin.from('profissionais').select('*').eq('id', profissional_id).maybeSingle(),
         supabaseAdmin.from('prof_pagamentos').select('*').eq('profissional_id', profissional_id).order('ano').order('mes'),
+        // Busca TODAS as ocorrências do profissional em foco sem limite de data
+        supabaseAdmin.from('feedback_prof_respostas')
+          .select('profissional_id, profissional_nome, tipo, ocorrido_descricao, descricao, criado_em')
+          .eq('salao_id', salaoId)
+          .order('criado_em', { ascending: false }),
       ])
       dadosSalao.prof_especifico = {
         dados: dadosProf,
         periodos: periodosProf || [],
+      }
+      // Substitui feedbacks_prof pelo conjunto completo do salão + todas do profissional em foco
+      if (feedbacksProfCompleto) {
+        // Garante que todas as ocorrências do profissional estão incluídas
+        const nomeProfFoco = dadosProf?.nome_completo || ''
+        const apelidoFoco = dadosProf?.apelido || ''
+        const ocorrsProf = feedbacksProfCompleto.filter((f: any) => {
+          const n = (f.profissional_nome || '').toLowerCase()
+          return n === nomeProfFoco.toLowerCase()
+            || (apelidoFoco && n === apelidoFoco.toLowerCase())
+            || n.includes(nomeProfFoco.split(' ')[0].toLowerCase())
+        })
+        // Merge: ocorrências do profissional (todas) + outras do limit(100)
+        const idsProf = new Set(ocorrsProf.map((f: any) => f.criado_em))
+        const outrasOcorrs = (feedbacksProf || []).filter((f: any) => !idsProf.has(f.criado_em))
+        dadosSalao.feedbacks_prof = [...ocorrsProf, ...outrasOcorrs]
       }
     }
 
