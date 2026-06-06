@@ -169,41 +169,48 @@ export async function executarFerramenta(nome: string, args: any, salaoId: strin
       }
 
       case 'buscar_comparativo_profissionais': {
-        const { data: profs } = await supabaseAdmin.from('profissionais').select('id, nome_completo, apelido, cargo').eq('salao_id', salaoId).eq('ativo', true)
-        const { data: periodos } = await supabaseAdmin.from('relatorio_periodos').select('ano, mes, prof_pagamentos, prof_servicos, prof_ticket, prof_ocupacao').eq('salao_id', salaoId).order('ano', { ascending: false }).order('mes', { ascending: false }).limit(3)
-        const { data: ocorrs } = await supabaseAdmin.from('feedback_prof_respostas').select('profissional_nome, tipo').eq('salao_id', salaoId)
-        const { data: metricas } = await supabaseAdmin.from('prof_metricas_mensais').select('profissional_id, clientes_preferencia, clientes_sem_preferencia, taxa_ocupacao, ano, mes').eq('salao_id', salaoId).order('ano', { ascending: false }).order('mes', { ascending: false })
+        // Fonte principal: prof_metricas_mensais (usa profissional_id — sem risco de mismatch de nome)
+        const { data: profs } = await supabaseAdmin
+          .from('profissionais').select('id, nome_completo, apelido, cargo')
+          .eq('salao_id', salaoId).eq('ativo', true)
 
-        const linhas: string[] = ['COMPARATIVO DE PROFISSIONAIS (últimos 3 meses):']
+        // Pega os 3 meses mais recentes disponíveis
+        const { data: metricas } = await supabaseAdmin
+          .from('prof_metricas_mensais')
+          .select('profissional_id, ano, mes, faturamento, total_servicos, ticket_medio, taxa_ocupacao, clientes_preferencia, clientes_sem_preferencia')
+          .eq('salao_id', salaoId)
+          .order('ano', { ascending: false }).order('mes', { ascending: false })
 
-        // Agrega por profissional
-        const fatMap: Record<string, number> = {}
-        const servMap: Record<string, number> = {}
-        const tickMap: Record<string, number[]> = {}
-        const ocupMap: Record<string, number[]> = {}
+        const { data: ocorrs } = await supabaseAdmin
+          .from('feedback_prof_respostas').select('profissional_nome, tipo').eq('salao_id', salaoId)
 
-        for (const per of (periodos || [])) {
-          for (const item of (per.prof_pagamentos || [])) {
-            const n = item.profissional || ''; if (!n) continue
-            fatMap[n] = (fatMap[n] || 0) + Number(item.valor_a_pagar||0) + Number(item.desconto||0)
-          }
-          for (const item of (per.prof_servicos || [])) {
-            const n = item.profissional || ''; if (!n) continue
-            servMap[n] = (servMap[n] || 0) + Number(item.quantidade||0)
-          }
-          for (const item of (per.prof_ticket || [])) {
-            const n = item.profissional || ''; if (!n) continue
-            if (!tickMap[n]) tickMap[n] = []
-            tickMap[n].push(Number(item.ticket_medio||0))
-          }
-          for (const item of (per.prof_ocupacao || [])) {
-            const n = item.profissional || ''; if (!n) continue
-            if (!ocupMap[n]) ocupMap[n] = []
-            ocupMap[n].push(Number(item.ocupacao||0))
-          }
+        // Detecta os 3 meses mais recentes com dados
+        const mesesDisponiveis = [...new Set((metricas || []).map((m: any) => `${m.ano}-${m.mes}`))]
+          .sort((a, b) => b.localeCompare(a)).slice(0, 3)
+
+        // Agrega por profissional_id (fonte confiável)
+        const fatById: Record<string, number> = {}
+        const servById: Record<string, number> = {}
+        const tickById: Record<string, number[]> = {}
+        const ocupById: Record<string, number[]> = {}
+        const prefById: Record<string, number> = {}
+        const semPrefById: Record<string, number> = {}
+
+        for (const m of (metricas || [])) {
+          const chave = `${m.ano}-${m.mes}`
+          if (!mesesDisponiveis.includes(chave)) continue
+          const id = m.profissional_id
+          fatById[id] = (fatById[id] || 0) + Number(m.faturamento || 0)
+          servById[id] = (servById[id] || 0) + Number(m.total_servicos || 0)
+          if (!tickById[id]) tickById[id] = []
+          if (m.ticket_medio) tickById[id].push(Number(m.ticket_medio))
+          if (!ocupById[id]) ocupById[id] = []
+          if (m.taxa_ocupacao) ocupById[id].push(Number(m.taxa_ocupacao))
+          prefById[id] = (prefById[id] || 0) + Number(m.clientes_preferencia || 0)
+          semPrefById[id] = (semPrefById[id] || 0) + Number(m.clientes_sem_preferencia || 0)
         }
 
-        // Ocorrências por profissional
+        // Ocorrências por nome (única fonte disponível)
         const ocorrMap: Record<string, number> = {}
         for (const f of (ocorrs || [])) {
           if (f.tipo === 'negativo') {
@@ -212,38 +219,32 @@ export async function executarFerramenta(nome: string, args: any, salaoId: strin
           }
         }
 
-        // Lista todos
         const cargo = args.cargo?.toLowerCase() || ''
         const profsFiltrados = (profs || []).filter((p: any) => !cargo || p.cargo?.toLowerCase().includes(cargo))
 
-        // Agrega clientes fidelizados e da recepção por profissional (últimos 3 meses)
-        const prefMap2: Record<string, number> = {}
-        const semPrefMap: Record<string, number> = {}
-        const ocupMetMap: Record<string, number[]> = {}
-        for (const m of (metricas || [])) {
-          const prof = (profs || []).find((p: any) => p.id === m.profissional_id)
-          if (!prof) continue
-          const nome = prof.nome_completo
-          prefMap2[nome] = (prefMap2[nome] || 0) + Number(m.clientes_preferencia || 0)
-          semPrefMap[nome] = (semPrefMap[nome] || 0) + Number(m.clientes_sem_preferencia || 0)
-          if (!ocupMetMap[nome]) ocupMetMap[nome] = []
-          if (m.taxa_ocupacao) ocupMetMap[nome].push(Number(m.taxa_ocupacao))
-        }
+        // Ordena por faturamento decrescente para ranking correto
+        profsFiltrados.sort((a: any, b: any) => (fatById[b.id] || 0) - (fatById[a.id] || 0))
 
-        linhas.push('\n| Profissional | Cargo | Faturamento | Serviços | Ticket | Ocupação | Fidelizados | Recepção | Ocorr.Neg |')
-        linhas.push('|---|---|---|---|---|---|---|---|---|')
-        profsFiltrados.forEach((p: any) => {
-          const nome = p.nome_completo
-          const fat = fatMap[nome] || fatMap[p.apelido] || 0
-          const serv = servMap[nome] || servMap[p.apelido] || 0
-          const ticks = tickMap[nome] || tickMap[p.apelido] || []
-          const tick = ticks.length ? ticks.reduce((a,b) => a+b, 0)/ticks.length : 0
-          const ocups = ocupMetMap[nome] || []
-          const ocup = ocups.length ? ocups.reduce((a,b) => a+b, 0)/ocups.length : 0
-          const fidelizados = prefMap2[nome] || 0
-          const recepcao = semPrefMap[nome] || 0
-          const ocorrNeg = ocorrMap[nome] || ocorrMap[p.apelido] || 0
-          linhas.push(`| ${nome} | ${p.cargo} | ${fmtR(fat)} | ${serv} | ${fmtR(tick)} | ${ocup.toFixed(0)}% | ${fidelizados} | ${recepcao} | ${ocorrNeg} |`)
+        const mesesLabel = mesesDisponiveis.map(m => {
+          const [ano, mes] = m.split('-')
+          return `${MESES[Number(mes)-1]}/${String(ano).slice(2)}`
+        }).join(', ')
+
+        const linhas: string[] = [`RANKING DE PROFISSIONAIS — ${mesesLabel} (ordenado por faturamento, fonte: métricas por ID):\n`]
+        linhas.push('| # | Profissional | Cargo | Faturamento | Serviços | Ticket Médio | Ocupação | Fidelizados | Recepção | Ocorr.Neg |')
+        linhas.push('|---|---|---|---|---|---|---|---|---|---|')
+
+        profsFiltrados.forEach((p: any, i: number) => {
+          const fat = fatById[p.id] || 0
+          const serv = servById[p.id] || 0
+          const ticks = tickById[p.id] || []
+          const tick = ticks.length ? ticks.reduce((a: number, b: number) => a + b, 0) / ticks.length : 0
+          const ocups = ocupById[p.id] || []
+          const ocup = ocups.length ? ocups.reduce((a: number, b: number) => a + b, 0) / ocups.length : 0
+          const fidelizados = prefById[p.id] || 0
+          const recepcao = semPrefById[p.id] || 0
+          const ocorrNeg = ocorrMap[p.nome_completo] || ocorrMap[p.apelido] || 0
+          linhas.push(`| ${i+1}º | ${p.nome_completo} | ${p.cargo} | ${fmtR(fat)} | ${serv} | ${fmtR(tick)} | ${ocup.toFixed(0)}% | ${fidelizados} | ${recepcao} | ${ocorrNeg} |`)
         })
 
         return linhas.join('\n')
