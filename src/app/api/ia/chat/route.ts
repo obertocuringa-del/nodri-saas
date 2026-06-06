@@ -95,57 +95,52 @@ function formatarDadosSalao(dados: any, profissionalId?: string): string {
     linhas.push('')
   }
 
-  // Ocorrências de profissionais (atraso, falta, saída cedo, etc.)
+  // Ocorrências / Feedbacks Profissionais — SEMPRE envia todos agrupados por profissional
   if (dados.feedbacks_prof?.length) {
-    // Se há profissional em foco, filtra pelo nome dele
     const nomeProf = dados.prof_especifico?.dados?.nome_completo || dados.prof_especifico?.dados?.apelido
-    const ocorrencias = nomeProf
-      ? dados.feedbacks_prof.filter((f: any) => {
-          const nomeBanco = (f.profissional_nome || '').toLowerCase().trim()
-          const nomeFoco = nomeProf.toLowerCase().trim()
-          // tenta nome completo primeiro, depois apelido, depois primeiro nome
-          const apelido = (dados.prof_especifico?.dados?.apelido || '').toLowerCase().trim()
-          return nomeBanco === nomeFoco
-            || (apelido && nomeBanco === apelido)
-            || nomeBanco.includes(nomeFoco.split(' ')[0])
-            || nomeFoco.includes(nomeBanco.split(' ')[0])
-        })
-      : dados.feedbacks_prof
+    const apelido = (dados.prof_especifico?.dados?.apelido || '').toLowerCase().trim()
 
-    if (ocorrencias.length) {
-      linhas.push(nomeProf ? `## OCORRÊNCIAS DE ${nomeProf.toUpperCase()}` : '## OCORRÊNCIAS DE PROFISSIONAIS')
-
-      // Agrupa por profissional (quando sem foco)
-      if (!nomeProf) {
-        const porProf: Record<string, any[]> = {}
-        ocorrencias.forEach((f: any) => {
-          const nome = f.profissional_nome || 'Desconhecido'
-          if (!porProf[nome]) porProf[nome] = []
-          porProf[nome].push(f)
-        })
-        Object.entries(porProf).forEach(([nome, items]) => {
-          linhas.push(`### ${nome}`)
-          const contagem: Record<string, number> = {}
-          items.forEach((f: any) => { contagem[f.ocorrido_descricao || f.tipo] = (contagem[f.ocorrido_descricao || f.tipo] || 0) + 1 })
-          Object.entries(contagem).forEach(([tipo, qtd]) => linhas.push(`  - ${tipo}: ${qtd}x`))
-        })
-      } else {
+    // 1. Resumo GERAL — todas as ocorrências agrupadas por profissional
+    linhas.push('## FEEDBACKS / OCORRÊNCIAS DE TODOS OS PROFISSIONAIS')
+    const porProf: Record<string, any[]> = {}
+    dados.feedbacks_prof.forEach((f: any) => {
+      const nome = f.profissional_nome || 'Desconhecido'
+      if (!porProf[nome]) porProf[nome] = []
+      porProf[nome].push(f)
+    })
+    Object.entries(porProf)
+      .sort((a, b) => b[1].length - a[1].length)
+      .forEach(([nome, items]) => {
+        const neg = items.filter((f: any) => f.tipo === 'negativo').length
+        const pos = items.filter((f: any) => f.tipo === 'positivo').length
         const contagem: Record<string, number> = {}
-        ocorrencias.forEach((f: any) => { contagem[f.ocorrido_descricao || f.tipo] = (contagem[f.ocorrido_descricao || f.tipo] || 0) + 1 })
-        Object.entries(contagem).sort((a,b) => b[1]-a[1]).forEach(([tipo, qtd]) => {
-          linhas.push(`- ${tipo}: ${qtd} ocorrência(s)`)
-        })
-        linhas.push('Detalhes:')
-        ocorrencias.slice(-20).forEach((f: any) => {
+        items.forEach((f: any) => { contagem[f.ocorrido_descricao || f.tipo] = (contagem[f.ocorrido_descricao || f.tipo] || 0) + 1 })
+        linhas.push(`### ${nome} — Total: ${items.length} (${neg} negativos, ${pos} positivos)`)
+        Object.entries(contagem).forEach(([tipo, qtd]) => linhas.push(`  - ${tipo}: ${qtd}x`))
+      })
+    linhas.push('')
+
+    // 2. Detalhe COMPLETO do profissional em foco (se houver)
+    if (nomeProf) {
+      const ocorrencias = dados.feedbacks_prof.filter((f: any) => {
+        const nomeBanco = (f.profissional_nome || '').toLowerCase().trim()
+        const nomeFoco = nomeProf.toLowerCase().trim()
+        return nomeBanco === nomeFoco
+          || (apelido && nomeBanco === apelido)
+          || nomeBanco.includes(nomeFoco.split(' ')[0])
+          || nomeFoco.includes(nomeBanco.split(' ')[0])
+      })
+      if (ocorrencias.length) {
+        linhas.push(`## DETALHE DE FEEDBACKS — ${nomeProf.toUpperCase()}`)
+        ocorrencias.forEach((f: any) => {
           const data = f.criado_em ? new Date(f.criado_em).toLocaleDateString('pt-BR') : ''
           const tipoLabel = f.tipo === 'negativo' ? '🚨' : '✅'
           linhas.push(`  ${tipoLabel} ${data} — ${f.ocorrido_descricao || ''}${f.descricao ? ': ' + f.descricao : ''}`)
         })
+      } else {
+        linhas.push(`## DETALHE DE FEEDBACKS — ${nomeProf.toUpperCase()}`)
+        linhas.push('Nenhum feedback/ocorrência registrado para este profissional.')
       }
-      linhas.push('')
-    } else if (nomeProf) {
-      linhas.push(`## OCORRÊNCIAS DE ${nomeProf.toUpperCase()}`)
-      linhas.push('Nenhuma ocorrência registrada para este profissional.')
       linhas.push('')
     }
   }
