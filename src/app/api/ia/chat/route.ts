@@ -176,21 +176,11 @@ function formatarDadosSalao(dados: any, profissionalId?: string): string {
       linhas.push('')
     }
 
-    // Ranking de serviços do salão
-    const rankServicos: Record<string, number> = {}
-    for (const per of dados.periodos_raw) {
-      for (const item of (per.servicos || [])) {
-        const nome = (item.servico || '').toUpperCase().trim()
-        if (nome) rankServicos[nome] = (rankServicos[nome] || 0) + Number(item.quantidade || 0)
-      }
-    }
-    if (Object.keys(rankServicos).length) {
-      linhas.push('### TOP SERVIÇOS DO SALÃO (total de atendimentos)')
-      Object.entries(rankServicos).sort((a,b) => b[1]-a[1]).slice(0, 20).forEach(([serv, qtd]) => {
-        linhas.push(`  - ${serv}: ${qtd}x`)
-      })
-      linhas.push('')
-    }
+    // Serviços: apenas aviso para usar ferramenta em consultas específicas
+    linhas.push('### SERVIÇOS E PRODUTOS POR MÊS')
+    linhas.push('  ⚠️ Para consultas de serviços/produtos de um mês específico, use a ferramenta buscar_indicadores_salao com o período desejado.')
+    linhas.push('  ⚠️ NUNCA diga que não tem dados por mês — USE A FERRAMENTA com periodo="mês ano".')
+    linhas.push('')
     // Ocupação por profissional
     const ocupMap: Record<string, Record<string, number>> = {}
     const prefMap: Record<string, Record<string, number>> = {}
@@ -703,6 +693,13 @@ DIAGNÓSTICO PRÉ-CARREGADO:
 • Não recalcule o que já está calculado
 
 REGRA: Use dados reais SEMPRE que disponíveis. Nunca invente números.
+
+REGRA DE FERRAMENTAS — OBRIGATÓRIA:
+Quando o usuário perguntar sobre serviços, produtos, faturamento ou indicadores de um mês específico:
+→ SEMPRE chamar buscar_indicadores_salao com periodo="mês ano"
+→ NUNCA dizer que não tem dados por mês sem antes chamar a ferramenta
+→ NUNCA usar apenas o ranking geral para responder perguntas de período específico
+→ Se a conversa anterior disse "não tenho dados por mês", IGNORAR e chamar a ferramenta agora
 
 ═══════════════════════════════════════
 REGRA DE PRONOMES — CRÍTICA
