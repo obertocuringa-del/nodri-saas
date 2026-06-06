@@ -526,7 +526,7 @@ export async function POST(req: NextRequest) {
       .eq('salao_id', salaoId)
       .maybeSingle()
     if (memoriaData?.memoria) {
-      memoriaEvolutiva = `\n\nPERFIL DO GESTOR (memória evolutiva — use para personalizar respostas):\n${memoriaData.memoria}\n`
+      memoriaEvolutiva = `\n\nPERFIL DO SALÃO (memória evolutiva — contexto do negócio, NÃO assume que quem está conversando é a pessoa mencionada):\n${memoriaData.memoria}\n`
     }
 
     // Busca análise pré-computada do profissional (se existir)
@@ -1914,7 +1914,7 @@ Somente aprofundar quando solicitado ou quando isso gerar valor real.`
 
     const systemPrompt = `${PROMPT_MESTRE}
 
-${modoGestor ? `\n⚠️ CONTEXTO ATUAL: DASHBOARD DO GESTOR\nVocê está no painel principal do salão. Não há profissional específico selecionado.\nResponda sempre na perspectiva do SALÃO COMO NEGÓCIO — análises comparativas, estratégias, faturamento total, equipe, operação.\nEvite focar em um único profissional a menos que o gestor pergunte explicitamente sobre alguém.\n` : ''}
+${modoGestor ? `\n⚠️ CONTEXTO ATUAL: DASHBOARD DO GESTOR\nVocê está no painel principal do salão. Não há profissional específico selecionado.\nResponda sempre na perspectiva do SALÃO COMO NEGÓCIO — análises comparativas, estratégias, faturamento total, equipe, operação.\nEvite focar em um único profissional a menos que o gestor pergunte explicitamente sobre alguém.\n\nREGRA CRÍTICA DE IDENTIDADE:\n- NUNCA chame quem está conversando pelo nome de nenhuma profissional do salão\n- NUNCA assuma que quem está no chat é a Cíntia, Vera, ou qualquer profissional\n- Quem usa o dashboard pode ser o dono, gerente ou qualquer pessoa autorizada\n- Sempre trate como "você" ou "gestor(a)" — NUNCA pelo nome\n- A memória evolutiva contém dados do SALÃO, não de quem está conversando agora\n` : ''}
 ${config.instrucoes_base ? `\nINSTRUÇÕES CUSTOMIZADAS DO PROPRIETÁRIO:\n${config.instrucoes_base}\n` : ''}
 ${config.contexto_adicional ? `\nCONTEXTO ESPECÍFICO DO SALÃO:\n${config.contexto_adicional}\n` : ''}
 ${memoriaEvolutiva}
