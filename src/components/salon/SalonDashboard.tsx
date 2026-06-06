@@ -350,6 +350,11 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               style={{ color: '#f97316' }}>
               📋 Pendências
             </a>
+            <a href="/salon/academia"
+              className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11.5px] border border-transparent hover:bg-white/4 hover:text-nodri-t1 transition-all"
+              style={{ color: '#10b981' }}>
+              🎓 Academia NODRI
+            </a>
           </nav>
 
           {/* Rodapé da sidebar */}
