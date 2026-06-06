@@ -1072,6 +1072,11 @@ function AbaPendencias({ profissionalId }: { profissionalId: string }) {
   }>>([])
   const [loading, setLoading] = useState(true)
   const [historicoAberto, setHistoricoAberto] = useState(false)
+  const [novaMensagem, setNovaMensagem] = useState('')
+  const [novaDataLimite, setNovaDataLimite] = useState('')
+  const [criando, setCriando] = useState(false)
+  const [editandoData, setEditandoData] = useState<string | null>(null)
+  const [novaData, setNovaData] = useState('')
 
   useEffect(() => {
     fetch(`/api/pendencias?profissional_id=${profissionalId}`)
@@ -1079,6 +1084,26 @@ function AbaPendencias({ profissionalId }: { profissionalId: string }) {
       .then(d => { setPendencias(Array.isArray(d) ? d : []); setLoading(false) })
       .catch(() => setLoading(false))
   }, [profissionalId])
+
+  async function criar() {
+    if (!novaMensagem.trim()) return
+    setCriando(true)
+    const res = await fetch('/api/pendencias', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ profissional_id: profissionalId, mensagem: novaMensagem.trim(), data_limite: novaDataLimite || null }),
+    })
+    if (res.ok) {
+      const nova = await res.json()
+      setPendencias(prev => [nova, ...prev])
+      setNovaMensagem('')
+      setNovaDataLimite('')
+      toast.success('Pendência adicionada!')
+    } else {
+      toast.error('Erro ao adicionar pendência')
+    }
+    setCriando(false)
+  }
 
   async function marcarResolvida(id: string) {
     const res = await fetch(`/api/pendencias/${id}`, {
@@ -1089,6 +1114,23 @@ function AbaPendencias({ profissionalId }: { profissionalId: string }) {
     if (res.ok) {
       const atualizada = await res.json()
       setPendencias(prev => prev.map(p => p.id === id ? { ...p, ...atualizada } : p))
+      toast.success('✅ Marcada como feita!')
+    }
+  }
+
+  async function salvarData(id: string) {
+    const res = await fetch(`/api/pendencias/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data_limite: novaData || null }),
+    })
+    if (res.ok) {
+      const atualizada = await res.json()
+      setPendencias(prev => prev.map(p => p.id === id ? { ...p, ...atualizada } : p))
+      setEditandoData(null)
+      toast.success('Data atualizada!')
+    } else {
+      toast.error('Erro ao atualizar data')
     }
   }
 
@@ -1104,11 +1146,37 @@ function AbaPendencias({ profissionalId }: { profissionalId: string }) {
 
   return (
     <div className="space-y-4">
+      {/* Formulário de nova pendência */}
+      <div className="rounded-xl border border-nodri-border bg-nodri-card p-4 space-y-3">
+        <h3 className="font-syne font-bold text-[12px] text-nodri-t1">+ Nova Pendência</h3>
+        <textarea
+          value={novaMensagem}
+          onChange={e => setNovaMensagem(e.target.value)}
+          rows={2}
+          placeholder="Descreva a pendência ou tarefa..."
+          className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] text-nodri-t1 outline-none focus:border-nodri-cyan/40 resize-none"
+        />
+        <div className="flex items-center gap-2">
+          <input
+            type="date"
+            value={novaDataLimite}
+            onChange={e => setNovaDataLimite(e.target.value)}
+            className="bg-nodri-surface border border-nodri-border rounded-lg px-3 py-1.5 text-[11px] text-nodri-t1 outline-none focus:border-nodri-cyan/40"
+            style={{ colorScheme: 'dark' }}
+          />
+          <button
+            onClick={criar}
+            disabled={criando || !novaMensagem.trim()}
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-nodri-cyan text-nodri-dark text-[11px] font-bold disabled:opacity-50 hover:brightness-110 transition-all">
+            {criando ? <Loader2 size={12} className="animate-spin"/> : '+'} Adicionar
+          </button>
+        </div>
+      </div>
+
       {abertas.length === 0 && (
-        <div className="text-center py-12 text-nodri-t3">
-          <span className="text-4xl">✅</span>
-          <p className="text-[13px] mt-3">Nenhuma pendência em aberto para este profissional.</p>
-          <p className="text-[11px] mt-1 opacity-60">Adicione pendências em /salon/pendencias</p>
+        <div className="text-center py-8 text-nodri-t3">
+          <span className="text-3xl">✅</span>
+          <p className="text-[12px] mt-2">Nenhuma pendência em aberto.</p>
         </div>
       )}
 
@@ -1116,19 +1184,37 @@ function AbaPendencias({ profissionalId }: { profissionalId: string }) {
         <div className="space-y-3">
           <h3 className="font-syne font-bold text-[12px] text-nodri-t2">Em Aberto ({abertas.length})</h3>
           {abertas.map(p => (
-            <div key={p.id} className={`rounded-xl p-4 border flex items-start gap-3 ${isVencida(p) ? 'bg-red-500/5 border-red-500/20' : 'bg-nodri-card border-nodri-border'}`}>
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  {isVencida(p) && <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20">VENCIDO</span>}
-                  {p.data_limite && <span className="text-[9px] text-nodri-t3">Limite: {new Date(p.data_limite + 'T12:00:00').toLocaleDateString('pt-BR')}</span>}
+            <div key={p.id} className={`rounded-xl p-4 border space-y-2 ${isVencida(p) ? 'bg-red-500/5 border-red-500/20' : 'bg-nodri-card border-nodri-border'}`}>
+              <div className="flex items-start gap-3">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    {isVencida(p) && <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20">VENCIDO</span>}
+                    {p.data_limite && <span className="text-[9px] text-nodri-t3">Limite: {new Date(p.data_limite + 'T12:00:00').toLocaleDateString('pt-BR')}</span>}
+                  </div>
+                  <p className="text-[12px] text-nodri-t1">{p.mensagem}</p>
                 </div>
-                <p className="text-[12px] text-nodri-t1">{p.mensagem}</p>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => { setEditandoData(p.id); setNovaData(p.data_limite || '') }}
+                    className="text-[10px] px-2 py-1 rounded-lg bg-nodri-surface border border-nodri-border text-nodri-t3 hover:text-nodri-t1 transition-colors">
+                    📅
+                  </button>
+                  <button
+                    onClick={() => marcarResolvida(p.id)}
+                    className="text-[10px] px-3 py-1.5 rounded-lg bg-green-500/10 text-green-400 border border-green-500/20 hover:bg-green-500/20 transition-colors font-semibold">
+                    ✅ Feito
+                  </button>
+                </div>
               </div>
-              <button
-                onClick={() => marcarResolvida(p.id)}
-                className="text-[10px] px-3 py-1.5 rounded-lg bg-green-500/10 text-green-400 border border-green-500/20 hover:bg-green-500/20 transition-colors shrink-0 font-semibold">
-                ✅ Marcar como Feito
-              </button>
+              {editandoData === p.id && (
+                <div className="flex items-center gap-2 pt-1 border-t border-nodri-border">
+                  <input type="date" value={novaData} onChange={e => setNovaData(e.target.value)}
+                    className="bg-nodri-surface border border-nodri-cyan/40 rounded-lg px-2 py-1 text-[11px] text-nodri-t1 outline-none"
+                    style={{ colorScheme: 'dark' }} />
+                  <button onClick={() => salvarData(p.id)} className="text-[10px] px-3 py-1 rounded-lg bg-nodri-cyan text-nodri-dark font-bold">Salvar</button>
+                  <button onClick={() => setEditandoData(null)} className="text-[10px] text-nodri-t3 hover:text-nodri-t1">Cancelar</button>
+                </div>
+              )}
             </div>
           ))}
         </div>
