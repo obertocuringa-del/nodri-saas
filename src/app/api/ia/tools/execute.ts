@@ -98,22 +98,58 @@ export async function executarFerramenta(nome: string, args: any, salaoId: strin
       case 'buscar_indicadores_salao': {
         const { data: periodos } = await supabaseAdmin.from('relatorio_periodos').select('ano, mes, resumo_mensal, servicos').eq('salao_id', salaoId).order('ano').order('mes')
 
-        const linhas: string[] = ['INDICADORES DO SALÃO:']
+        // Detecta se foi pedido um mês/ano específico
+        const periodoArg = (args.periodo || '').toLowerCase()
+        const MESES_NOMES: Record<string, number> = {
+          jan: 1, fev: 2, mar: 3, abr: 4, mai: 5, jun: 6,
+          jul: 7, ago: 8, set: 9, out: 10, nov: 11, dez: 12,
+          janeiro: 1, fevereiro: 2, março: 3, abril: 4, maio: 5, junho: 6,
+          julho: 7, agosto: 8, setembro: 9, outubro: 10, novembro: 11, dezembro: 12,
+        }
+        let filtroMes = 0, filtroAno = 0
+        if (periodoArg) {
+          for (const [nome, num] of Object.entries(MESES_NOMES)) {
+            if (periodoArg.includes(nome)) { filtroMes = num; break }
+          }
+          const anoMatch = periodoArg.match(/20\d{2}/)
+          if (anoMatch) filtroAno = Number(anoMatch[0])
+        }
+
+        const periodosFiltrados = (periodos || []).filter(per => {
+          if (filtroMes && per.mes !== filtroMes) return false
+          if (filtroAno && per.ano !== filtroAno) return false
+          return true
+        })
+
+        const linhas: string[] = [filtroMes || filtroAno
+          ? `INDICADORES DO SALÃO — ${filtroMes ? MESES[filtroMes-1] : ''}${filtroAno ? '/'+String(filtroAno).slice(2) : ''}:`
+          : 'INDICADORES DO SALÃO (histórico completo):']
+
         const rankServicos: Record<string, number> = {}
 
-        for (const per of (periodos || [])) {
+        for (const per of periodosFiltrados) {
           const chave = `${MESES[per.mes-1]}/${String(per.ano).slice(2)}`
           for (const item of (per.resumo_mensal || [])) {
             linhas.push(`  ${chave}: Fat ${fmtR(item.faturamento_total||0)}, Ticket ${fmtR(item.ticket_medio||0)}, Clientes ${item.clientes_atendidos||0}, Novos ${item.clientes_novos||0}, Serviços ${fmtR(item.faturamento_servicos||0)}, Produtos ${fmtR(item.faturamento_produtos||0)}`)
           }
-          for (const s of (per.servicos || [])) {
+          // Serviços do período com quantidade e valor
+          const servsPeriodo = (per.servicos || []).filter((s: any) => s.servico)
+          if (servsPeriodo.length && (filtroMes || filtroAno)) {
+            linhas.push(`\n  SERVIÇOS VENDIDOS em ${chave}:`)
+            servsPeriodo
+              .sort((a: any, b: any) => Number(b.quantidade||0) - Number(a.quantidade||0))
+              .forEach((s: any) => {
+                linhas.push(`    • ${(s.servico||'').toUpperCase()}: ${s.quantidade||0}x${s.valor ? ' — '+fmtR(Number(s.valor)) : ''}`)
+              })
+          }
+          for (const s of servsPeriodo) {
             const nome = (s.servico || '').toUpperCase().trim()
             if (nome) rankServicos[nome] = (rankServicos[nome] || 0) + Number(s.quantidade || 0)
           }
         }
 
-        if (Object.keys(rankServicos).length) {
-          linhas.push('\nTOP 15 SERVIÇOS:')
+        if (!filtroMes && !filtroAno && Object.keys(rankServicos).length) {
+          linhas.push('\nTOP 15 SERVIÇOS (histórico geral):')
           Object.entries(rankServicos).sort((a,b) => b[1]-a[1]).slice(0,15).forEach(([s,q]) => linhas.push(`  ${s}: ${q}x`))
         }
 
@@ -233,11 +269,11 @@ export const FERRAMENTAS_GEMINI = [
       },
       {
         name: 'buscar_indicadores_salao',
-        description: 'Busca os indicadores gerais do salão: faturamento total, ticket médio, clientes atendidos, clientes novos, faturamento de serviços vs produtos, ranking de serviços.',
+        description: 'Busca os indicadores gerais do salão: faturamento total, ticket médio, clientes atendidos, clientes novos, faturamento de serviços vs produtos, ranking de serviços. Quando um mês/ano específico for informado, retorna TODOS os serviços vendidos naquele período com quantidade e valor.',
         parameters: {
           type: 'OBJECT',
           properties: {
-            periodo: { type: 'STRING', description: 'Período opcional, ex: "janeiro 2026" ou "todos"' }
+            periodo: { type: 'STRING', description: 'Período específico, ex: "junho 2025", "março 2026". Deixar vazio para histórico geral.' }
           }
         }
       },
