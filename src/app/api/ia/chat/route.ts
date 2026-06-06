@@ -2008,8 +2008,13 @@ ${dadosFormatados}`
       })
 
       if (!geminiRes.ok) {
-        const errBody = await geminiRes.text()
-        return NextResponse.json({ error: `Gemini API erro ${geminiRes.status}: ${errBody}` }, { status: 500 })
+        if (geminiRes.status === 503) {
+          return NextResponse.json({ error: 'O servidor está sobrecarregado no momento. Aguarde alguns segundos e tente novamente.' }, { status: 503 })
+        }
+        if (geminiRes.status === 429) {
+          return NextResponse.json({ error: 'Limite de requisições atingido. Aguarde um momento e tente novamente.' }, { status: 429 })
+        }
+        return NextResponse.json({ error: 'Não foi possível processar sua pergunta. Tente novamente.' }, { status: 500 })
       }
 
       let conversaIdFinal = conversa_id
