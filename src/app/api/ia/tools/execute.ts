@@ -276,6 +276,49 @@ export async function executarFerramenta(nome: string, args: any, salaoId: strin
         return linhas.join('\n')
       }
 
+      case 'buscar_academia': {
+        const { data: artigos } = await supabaseAdmin
+          .from('academia_artigos')
+          .select('titulo, resumo, conteudo, categoria, emoji')
+          .eq('ativo', true)
+          .order('categoria')
+          .order('ordem')
+
+        if (!artigos?.length) return 'Nenhum artigo encontrado na Academia.'
+
+        // Filtra por tema se fornecido
+        const tema = (args.tema || '').toLowerCase()
+        const filtrados = tema
+          ? artigos.filter((a: any) =>
+              a.titulo.toLowerCase().includes(tema) ||
+              (a.resumo || '').toLowerCase().includes(tema) ||
+              (a.conteudo || '').toLowerCase().includes(tema) ||
+              a.categoria.toLowerCase().includes(tema)
+            )
+          : artigos
+
+        if (!filtrados.length) {
+          const todos = artigos.map((a: any) => `${a.emoji} ${a.titulo} (${a.categoria})`).join('\n')
+          return `Nenhum artigo encontrado sobre "${tema}".\n\nArtigos disponíveis:\n${todos}`
+        }
+
+        // Retorna até 3 artigos mais relevantes com conteúdo completo
+        const linhas = [`ARTIGOS DA ACADEMIA NODRI${tema ? ` — sobre "${tema}"` : ''} (${filtrados.length} encontrados):\n`]
+        filtrados.slice(0, 3).forEach((a: any) => {
+          linhas.push(`\n${'═'.repeat(40)}`)
+          linhas.push(`${a.emoji} ${a.titulo.toUpperCase()}`)
+          linhas.push(`Categoria: ${a.categoria}`)
+          if (a.resumo) linhas.push(`Resumo: ${a.resumo}`)
+          linhas.push(`\n${a.conteudo}`)
+        })
+
+        if (filtrados.length > 3) {
+          linhas.push(`\n... e mais ${filtrados.length - 3} artigos relacionados.`)
+        }
+
+        return linhas.join('\n')
+      }
+
       default:
         return `Ferramenta "${nome}" não reconhecida.`
     }
@@ -322,6 +365,16 @@ export const FERRAMENTAS_GEMINI = [
         name: 'buscar_feedbacks_clientes',
         description: 'Busca feedbacks e avaliações dos clientes: NPS, média geral, promotores, detratores e comentários.',
         parameters: { type: 'OBJECT', properties: {} }
+      },
+      {
+        name: 'buscar_academia',
+        description: 'Busca artigos da Academia NODRI sobre gestão, marketing, equipe, atendimento e operação. Usar quando o usuário perguntar como fazer algo (feedback, reativação, estoque, precificação, conflitos, motivação, etc.) ou quando tiver um artigo relevante para complementar a resposta. Sempre que houver conteúdo na Academia sobre o tema, citar e usar.',
+        parameters: {
+          type: 'OBJECT',
+          properties: {
+            tema: { type: 'STRING', description: 'Tema ou palavra-chave para buscar. Ex: "feedback", "estoque", "reativação", "comissão", "conflito".' }
+          }
+        }
       }
     ]
   }

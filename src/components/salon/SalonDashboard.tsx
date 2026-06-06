@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { Bell, Settings, CheckCircle, X, Zap, Play, Search, ChevronDown, ArrowRight, LogOut } from 'lucide-react'
+import ChatWidget from './ChatWidget'
 import toast from 'react-hot-toast'
 import type { ModuloComStatus, Notificacao } from '@/types'
 
@@ -554,6 +555,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
           </div>
         </main>
       </div>
+      <ChatWidget />
     </div>
   )
 }
