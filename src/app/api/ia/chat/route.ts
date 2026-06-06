@@ -1079,6 +1079,199 @@ Quando solicitado ou quando agregar valor real, gerar:
 🏆 Score — faturamento, ticket, ocupação, pontualidade, disciplina
 
 ═══════════════════════════════════════
+CONHECIMENTO ESPECIALIZADO — GESTÃO FINANCEIRA
+═══════════════════════════════════════
+
+P: Como calcular o ponto de equilíbrio de um salão?
+R: Some todos os custos fixos mensais (aluguel, salários, contas). Divida pelo ticket médio. Resultado = número mínimo de atendimentos para não ter prejuízo. Ex: R$30.000 fixos ÷ R$150 ticket = 200 atendimentos/mês.
+
+P: O que é DRE e como usar num salão?
+R: Demonstrativo de Resultado. Estrutura: Receita bruta → (-) Impostos → Receita líquida → (-) Custos variáveis (comissões, produtos usados) → Margem bruta → (-) Custos fixos (aluguel, salários) → Lucro operacional. Saudável: margem líquida de 15-25%.
+
+P: Como precificar um serviço de salão corretamente?
+R: Custo do produto usado + (hora do profissional × tempo) + rateio dos custos fixos + margem de lucro desejada (mínimo 30%). Nunca precificar olhando só para o concorrente. Ex: mechas: produto R$80 + 3h × R$40/h = R$200 de custo → preço mínimo R$260.
+
+P: Qual o modelo de comissionamento mais justo para salão?
+R: Porcentagem sobre produção (40-50%) é o mais comum. Variações: progressivo (quanto mais fatura, maior o %) incentiva produtividade. Fixo + variável: estabilidade para o profissional + incentivo para crescer. Evitar comissão só fixa — desincentiva esforço.
+
+P: O que é CAC e como calcular?
+R: Custo de Aquisição de Cliente. Soma todos os gastos de marketing do mês ÷ número de clientes novos. Ex: R$2.000 em marketing → 40 novos clientes → CAC = R$50. Ideal: CAC < LTV/3.
+
+P: O que é LTV e por que importa para salão?
+R: Lifetime Value = ticket médio × frequência mensal × meses de relacionamento. Ex: cliente que gasta R$200/mês por 24 meses = LTV R$4.800. Quanto maior o LTV, mais vale investir na fidelização. LTV alto justifica dar desconto na primeira visita.
+
+P: O que é churn e como reduzir?
+R: Taxa de cancelamento/perda de clientes. Calcular: clientes perdidos no mês ÷ clientes ativos no início. Reduzir com: agendamento antecipado na saída, programa de fidelidade, reativação ativa de inativos (60-90 dias sem visita).
+
+P: Como analisar se o ticket médio está bom?
+R: Comparar com o custo médio do serviço. Se ticket médio for menos de 3× o custo do serviço, a margem está apertada. Aumentar ticket: upsell no atendimento, combos, venda de produto. Ticket médio saudável para salão médio: R$150-350.
+
+P: Qual a ocupação ideal de um salão?
+R: Entre 70-85%. Abaixo de 60%: muita capacidade ociosa, perda de receita. Acima de 90%: cliente espera, risco de perder agendamentos, profissional esgotado. Meta: 75%.
+
+P: Como fazer fluxo de caixa simples?
+R: Planilha com: entradas previstas (serviços agendados) + entradas reais (executadas) vs saídas (custos fixos + variáveis). Projetar 30 dias à frente. Alertar se saldo previsto ficar negativo.
+
+═══════════════════════════════════════
+CONHECIMENTO ESPECIALIZADO — MARKETING E VENDAS
+═══════════════════════════════════════
+
+P: Qual a melhor estratégia de marketing para salão no Instagram?
+R: 3 pilares: Resultado (antes/depois), Bastidores (processo do serviço) e Prova social (depoimentos reais). Frequência ideal: 4-5 posts/semana. Stories diários. Reels de transformação têm maior alcance orgânico. Não depender só de promoção — conteúdo de valor atrai cliente que paga bem.
+
+P: Como reativar clientes inativos?
+R: Segmentar por tempo de ausência. 60-90 dias: WhatsApp personalizado com nome e último serviço feito. 90-180 dias: oferta de retorno com bônus (não desconto — ex: "ganhe hidratação grátis"). +180 dias: desconto ou brinde. Taxa de conversão esperada: 15-30% dos contatados.
+
+P: Como criar campanha para datas sazonais?
+R: Antecipação: anunciar 15-20 dias antes. Urgência: vagas limitadas. Não só desconto: criar combos exclusivos da data. Pós-campanha: agendar retorno já na saída. Datas fortes para salão: Dia das Mães (maio), Natal (dezembro), Dia dos Namorados (junho), Dia da Mulher (março).
+
+P: Como vender mais sem parecer chato?
+R: Venda consultiva: identificar necessidade → indicar solução. "Percebi que seu cabelo está ressecado, temos uma nutrição que vai [benefício específico]." Não ofertar indiscriminadamente. Momento certo: durante ou no final do serviço, não na chegada.
+
+P: Como usar WhatsApp para aumentar faturamento?
+R: Confirmação de agenda (reduz no-show em 30%), pós-atendimento (feedback + agendamento do retorno), reativação de inativos, lançamento de promoções segmentadas. Evitar envio em massa sem personalização — parece spam.
+
+P: Qual a diferença entre upsell, cross-sell e upgrade?
+R: Upsell: produto/serviço mais caro que o planejado (botox ao invés de hidratação). Cross-sell: serviço complementar (manicure + pedicure). Upgrade: versão premium do mesmo serviço (mechas balayage ao invés de luzes). Todos aumentam ticket sem precisar de novo cliente.
+
+P: Como criar um script de venda eficiente?
+R: 1. Identificar (observar cabelo/pele do cliente) 2. Perguntar (qual é sua maior dificuldade com o cabelo?) 3. Apresentar (temos X que resolve Y) 4. Mostrar benefício (resultado esperado) 5. Facilitar (posso incluir hoje mesmo). Nunca começar pelo preço.
+
+P: Como medir o ROI de uma campanha de marketing?
+R: (Receita gerada pela campanha - Custo da campanha) ÷ Custo da campanha × 100. Ex: campanha custou R$500, gerou R$2.500 em serviços → ROI = 400%. Acompanhar por cupom, código ou pergunta "como nos conheceu?".
+
+P: Como fidelizar clientes de alto valor?
+R: Identificar os top 20% que geram 80% da receita. Tratamento VIP: atendimento preferencial, lembrar preferências pessoais, contato proativo antes de datas especiais (aniversário, casamento). Pequenos gestos custam pouco e retêm muito.
+
+P: Qual a melhor forma de lidar com avaliações negativas?
+R: Responder em até 24h, de forma profissional e empática. Nunca se defender publicamente. Oferecer solução privada. Transformar crítica em aprendizado. Cliente que reclama e é bem atendido torna-se mais fiel do que quem nunca reclamou.
+
+═══════════════════════════════════════
+CONHECIMENTO ESPECIALIZADO — GESTÃO DE EQUIPE
+═══════════════════════════════════════
+
+P: Como dar feedback para profissional com queda de desempenho?
+R: Modelo SBI: Situação (quando aconteceu) + Comportamento (o que foi observado) + Impacto (o que causou). Ex: "Na semana passada você chegou 30 minutos atrasada (S). A cliente esperou e ficou constrangida (C). Isso afetou a próxima atendente também (I)." Conversa privada, tom respeitoso, foco em comportamento — nunca em caráter.
+
+P: Como definir metas para profissionais?
+R: Meta SMART: Específica, Mensurável, Atingível, Relevante, Temporal. Ex: "Aumentar faturamento de R$8.000 para R$10.000 em 3 meses, atendendo 2 clientes a mais por semana." Meta muito alta desmotiva. Meta muito baixa não estimula. Calcular baseado no histórico + crescimento de 10-20%.
+
+P: Como lidar com fofoca e conflitos entre profissionais?
+R: Não tomar partido sem ouvir todos os lados. Conversa individual com cada envolvido. Reunião de alinhamento com foco em comportamento esperado, não em quem tem razão. Documentar ocorrências. Conflito persistente = reunião com RR e metas claras.
+
+P: Como motivar equipe sem aumentar salário?
+R: Reconhecimento público (melhor do mês), autonomia (deixar profissional sugerir mudanças), desenvolvimento (curso pago pelo salão), flexibilidade (folga extra por meta batida), participação nos resultados (bônus por mês recorde). Dinheiro não é o único motivador — pertencimento e crescimento importam mais.
+
+P: Como identificar profissional com potencial de liderança?
+R: Sinais: resolve problemas sem precisar ser pedido, ajuda colegas espontaneamente, clientes pedem especificamente por ela, mantém qualidade mesmo sem supervisão, sugere melhorias. Investir nesse perfil: mentor, coordenação de turno, responsabilidade em projetos.
+
+P: O que fazer quando profissional ameaça sair e levar clientes?
+R: Avaliar os dados: quantos clientes têm preferência por ela? Qual % do faturamento? Se acima de 20%, risco real. Estratégia: fortalecer relacionamento do salão com esses clientes (não só com a profissional), incentivar outros profissionais a atender essas clientes eventualmente, ter contrato de não-concorrência onde legalmente possível.
+
+P: Como fazer reunião de equipe eficiente?
+R: Máximo 1h. Pauta enviada antes. Começar com resultado positivo do período. Apresentar dados concretos. Definir 2-3 metas para o próximo período. Encerrar com próximos passos e responsáveis. Nunca usar reunião para expor erros de alguém publicamente.
+
+P: Como avaliar se é hora de contratar mais um profissional?
+R: Indicadores: ocupação média acima de 85% por 3 meses consecutivos, tempo de espera para agendamento superior a 2 semanas, profissionais sinalizando cansaço, perda de clientes por falta de vaga. Antes de contratar: otimizar agenda dos atuais.
+
+═══════════════════════════════════════
+CONHECIMENTO ESPECIALIZADO — EXPERIÊNCIA DO CLIENTE
+═══════════════════════════════════════
+
+P: O que é NPS e como interpretar?
+R: Net Promoter Score. Pergunta: "De 0 a 10, quanto recomendaria nosso salão?" Promotores (9-10) - Detratores (0-6) ÷ Total × 100. NPS abaixo de 0: crítico. 0-30: regular. 30-70: bom. 70+: excelente. Ação imediata: ligar para todo detrator em até 48h.
+
+P: Como reduzir taxa de no-show (cliente que não aparece)?
+R: Confirmação automática 48h antes por WhatsApp. Lembrete 2h antes. Lista de espera para preencher horário vago. Política clara de cancelamento com antecedência mínima. No-show recorrente: cobrar sinal ou bloquear horário preferencial.
+
+P: Como criar experiência memorável no salão?
+R: Acolhimento personalizado (chamar pelo nome, lembrar preferências). Bebida/café especial. Conforto durante o serviço (revista, música, temperatura). Explicar o que está sendo feito e por quê. Finalizar com recomendação personalizada de cuidados em casa. Despedida com agendamento do retorno.
+
+P: Como transformar reclamação em oportunidade?
+R: Escutar sem interromper. Pedir desculpas sem justificar o erro. Oferecer solução imediata (refazer, desconto na próxima, reembolso). Agradecer o feedback. Registrar para não repetir. Cliente que reclama e é bem atendido tem retenção 70% maior que cliente que nunca reclamou.
+
+P: O que clientes de salão mais valorizam além do resultado técnico?
+R: Pesquisas indicam: pontualidade (não esperar), atenção exclusiva durante o serviço (profissional no celular é fatal), limpeza e organização, ser lembrada como pessoa (não como cliente #347), facilidade de agendamento, consistência (resultado igual toda vez).
+
+P: Como criar programa de fidelidade que funciona?
+R: Simples e de rápido retorno. Ex: "A cada 10 visitas, ganhe 1 serviço grátis" ou "Gaste R$500 este mês e ganhe R$50 de crédito." Evitar: pontos que expiram, regras complicadas, prêmios inatingíveis. Melhor fidelização: resultado excelente + atendimento memorável, sem precisar de programa formal.
+
+P: Como lidar com cliente insatisfeita com resultado?
+R: Não discutir na hora. Convidar para conversa privada. Perguntar o que esperava e o que recebeu. Se erro do salão: refazer sem custo, pedir desculpas. Se expectativa irreal: mostrar o que é tecnicamente possível com fotos. Nunca deixar cliente sair insatisfeita sem tentativa de resolução.
+
+═══════════════════════════════════════
+CONHECIMENTO ESPECIALIZADO — TÉCNICO CAPILAR
+═══════════════════════════════════════
+
+P: O que é colorimetria e por que importa na gestão?
+R: Ciência das cores capilares. Tom, subtom e profundidade definem qual pigmento usar. Erros de colorimetria geram retoque precoce (custo para o salão), insatisfação (perda de cliente) e danos capilares (processo judicial). Profissional com boa colorimetria tem ticket médio 30-50% maior.
+
+P: Qual a diferença entre nutrição, hidratação e reconstrução?
+R: Hidratação: repõe água (cabelo seco, sem brilho). Nutrição: repõe óleos e lipídios (cabelo poroso, ressecado). Reconstrução: repõe proteínas (cabelo quebradiço, com dano químico). Diagnóstico correto evita produto errado que agrava o problema — e retorno do cliente reclamando.
+
+P: O que é o teste de mecha e quando é obrigatório?
+R: Aplica o produto em uma mecha escondida 48h antes de qualquer processo químico. Obrigatório em: primeira coloração no salão, cabelo com histórico de químicas anteriores, cliente com sensibilidade declarada. Sem teste: risco de reação alérgica, quebra, processo judicial.
+
+P: O que é visagismo e como usar na prática?
+R: Técnica que harmoniza o corte/estilo com o formato do rosto e características físicas do cliente. Rosto oval: qualquer corte. Rosto redondo: comprimento e volume no topo, evitar volume lateral. Quadrado: suavizar ângulos com camadas. Aplicar visagismo aumenta satisfação e fidelização.
+
+P: Quais são os principais cuidados pós-química?
+R: Realinhamento/progressiva: lavar após 3-4 dias, usar shampoo sem sal, evitar prender por 3 dias. Coloração: shampoo para cabelos coloridos, máscara semanal, protetor solar capilar. Descoloração: proteína imediata, reconstrução semanal, hidratação profunda. Orientar errado = cliente retornando com problema = retrabalho sem custo.
+
+P: O que é Brow Lamination e qual o cuidado pós?
+R: Procedimento que alinha e fixa os fios da sobrancelha em posição desejada. Dura 4-6 semanas. Pós-procedimento: não molhar por 24h, não usar oleosos por 48h, hidratar diariamente. Alta demanda atual — ticket médio R$80-180.
+
+P: Como identificar porosidade capilar sem equipamento?
+R: Teste do copo d'água: colocar fio limpo no copo. Afunda rápido = alta porosidade (porosa, absorve tudo). Fica na superfície = baixa porosidade (resistente, dificuldade de absorver produto). Meio do copo = porosidade média. Define qual produto usar e tempo de processamento.
+
+P: O que é Lash Lifting e diferença para extensão de cílios?
+R: Lash Lifting: levanta os cílios naturais com produto químico, sem cílios postiços. Dura 6-8 semanas. Extensão: aplica cílios sintéticos fio a fio nos naturais, dura 3-4 semanas com manutenção quinzenal. Lifting: menor manutenção, menor custo. Extensão: maior impacto visual, maior receita recorrente.
+
+═══════════════════════════════════════
+CONHECIMENTO ESPECIALIZADO — OPERAÇÃO E AGENDA
+═══════════════════════════════════════
+
+P: Como montar uma grade de horários eficiente?
+R: Mapear duração real de cada serviço (não o tempo ideal — o real com pausa). Deixar 10 min de folga entre serviços complexos. Bloquear horários de pico para serviços de maior valor. Distribuir serviços longos (mechas, coloração) no meio do dia, não no fim. Reservar horários iniciais para serviços rápidos de alta rotatividade.
+
+P: Como reduzir tempo ocioso entre atendimentos?
+R: Encaixar serviços de processamento (creme atuando, tinta processando) com serviços rápidos. Ex: iniciar coloração → enquanto processa → fazer sobrancelha de outra cliente → voltar e finalizar. Aumenta faturamento/hora sem contratar mais ninguém.
+
+P: Qual o impacto financeiro de uma falta de profissional?
+R: Calcular: faturamento médio diário do profissional ÷ dias trabalhados × dias de falta. Além disso: cliente remarcada pode desistir (perda definitiva), sobrecarga nos outros (risco de erro). Uma falta = perda real de R$X que pode ser calculada com os dados do sistema.
+
+P: Como calcular produtividade real por hora trabalhada?
+R: Faturamento do mês ÷ (dias trabalhados × horas por dia). Ex: R$10.000 ÷ (20 dias × 8h) = R$62,50/hora. Comparar entre profissionais revela quem usa melhor o tempo — independente do faturamento bruto.
+
+P: Como otimizar a agenda para aumentar faturamento sem contratar?
+R: 1. Reduzir no-show (confirmação automática). 2. Encaixar serviços sobrepostos (coloração + outro serviço). 3. Aumentar ticket por atendimento (upsell). 4. Reduzir serviços de baixo valor em horários de pico. 5. Lista de espera para cancelamentos.
+
+P: O que fazer quando um profissional pede para fechar a agenda?
+R: Registrar motivo e data. Verificar impacto: quantos clientes estão agendados? Quem vai absorver? Comunicar clientes com antecedência mínima de 48h. Calcular perda de receita do dia. Definir política clara: quantas vezes por mês é aceitável, com quanto de antecedência.
+
+═══════════════════════════════════════
+CONHECIMENTO ESPECIALIZADO — INDICADORES E ANÁLISE
+═══════════════════════════════════════
+
+P: Quais KPIs todo gestor de salão deve acompanhar mensalmente?
+R: 1. Faturamento total e por profissional. 2. Ticket médio. 3. Taxa de ocupação. 4. Número de clientes novos vs recorrentes. 5. Taxa de retenção (clientes que voltaram). 6. NPS. 7. Custo fixo como % da receita (ideal: abaixo de 50%). 8. Faturamento por m² (eficiência do espaço). 9. Taxa de no-show. 10. Número de ocorrências por profissional.
+
+P: O que significa um profissional ter ticket alto mas ocupação baixa?
+R: Pode indicar: serviços premium com poucos clientes dispostos a pagar, seletividade excessiva, disponibilidade ruim (cliente não consegue agendar), problema de relacionamento que afasta volume. Solução: analisar qual serviço mais realiza e se o preço está compatível com a demanda local.
+
+P: O que significa ocupação alta mas ticket baixo?
+R: Profissional muito ocupada com serviços de baixo valor. Está "vendendo" tempo barato. Solução: substituir serviços de baixo valor por serviços de maior ticket quando possível, upsell em cada atendimento, revisão da tabela de preços.
+
+P: Como analisar sazonalidade e se preparar?
+R: Comparar mesmo mês em anos anteriores. Identificar meses de queda (jan/fev costumam ser fracos). Preparar: oferta específica para mês fraco, reduzir custos variáveis, usar período para treinamento, criar campanha de reativação antecipada. Meses fortes: aumentar capacidade, evitar folgas, elevar preços de serviços premium.
+
+P: Quando o faturamento cai, por onde começar a análise?
+R: 1. Ticket médio caiu ou volume de atendimentos caiu? 2. Queda em todos os profissionais ou em um específico? 3. Queda em todos os serviços ou em categoria específica? 4. Houve perda de profissional-chave? 5. Houve mudança externa (concorrente novo, economia local)? Cada causa tem solução diferente.
+
+P: Como saber se vale a pena contratar mais um profissional?
+R: Calcular: receita que esse profissional geraria (baseado na média atual) vs custo (salário/comissão + encargos + insumos). Se margem esperada for positiva e a demanda suportar (ocupação atual acima de 80%), vale contratar. Abaixo disso: otimizar primeiro.
+
+═══════════════════════════════════════
 ESPECIALIDADES TÉCNICAS
 ═══════════════════════════════════════
 
