@@ -11,14 +11,15 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url)
     const categoria = searchParams.get('categoria')
+    const todos = searchParams.get('todos') === '1' // admin vê todos (ativos e inativos)
 
     let query = supabaseAdmin
       .from('academia_artigos')
-      .select('id, categoria, titulo, resumo, emoji, ordem, criado_em')
-      .eq('ativo', true)
+      .select('id, categoria, titulo, resumo, emoji, ordem, ativo, criado_em')
       .order('categoria')
       .order('ordem')
 
+    if (!todos || payload.role !== 'master') query = query.eq('ativo', true)
     if (categoria) query = query.eq('categoria', categoria)
 
     const { data, error } = await query

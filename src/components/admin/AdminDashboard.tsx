@@ -915,6 +915,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
     { id: 'relatorios', icon: <BarChart3 size={14} />, label: 'Relatórios' },
     { id: 'config', icon: <Settings size={14} />, label: 'Configurações' },
     { id: 'ia', icon: <span className="text-[12px]">🤖</span>, label: 'IA' },
+    { id: 'academia', icon: <span className="text-[12px]">🎓</span>, label: 'Academia' },
   ]
 
   return (
@@ -1071,6 +1072,18 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
 
           {/* LOGS DO SISTEMA */}
           {activeSection === 'logs' && <LogsSection />}
+
+          {/* ACADEMIA */}
+          {activeSection === 'academia' && (
+            <div className="flex flex-col items-center justify-center py-16 gap-4">
+              <span className="text-6xl">🎓</span>
+              <h2 className="text-xl font-bold text-white">Academia NODRI</h2>
+              <p className="text-gray-400 text-sm text-center max-w-xs">Gerencie os artigos da Academia: crie, edite, oculte e organize o conteúdo por categoria.</p>
+              <a href="/admin/academia" className="bg-amber-500 hover:bg-amber-400 text-black font-semibold px-6 py-2.5 rounded-xl text-sm transition-colors">
+                Abrir Academia
+              </a>
+            </div>
+          )}
 
           {/* GESTÃO DE PLANOS */}
           {activeSection === 'planos' && (
