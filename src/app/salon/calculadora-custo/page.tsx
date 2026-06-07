@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ArrowLeft, Plus, Trash2, Calculator, Loader2, Save, ChevronDown, ChevronUp, History, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Calculator, Loader2, Save, ChevronDown, ChevronUp, History, CheckCircle, ChevronLeft, ChevronRight, X } from 'lucide-react'
 
 const MESES_NOMES = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 
@@ -9,6 +9,342 @@ const MESES_NOMES = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','J
 const fmtR = (v: number) => `R$ ${(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}`
 const n = (s: string) => parseFloat((s||'0').replace(',','.')) || 0
 const pctStr = (v: number, t: number) => t > 0 ? `${((v/t)*100).toFixed(1)}%` : '—'
+
+// ─── Dicionário de informações ───────────────────────────────────────────────
+const INFO: Record<string, {titulo: string, oque: string, como: string, exemplo: string, porque: string}> = {
+  faturamento: {
+    titulo: '💰 Faturamento Mensal',
+    oque: 'É todo o dinheiro que entrou no caixa do seu salão no mês — serviços + produtos vendidos. É o total antes de pagar qualquer despesa.',
+    como: 'Some tudo que você recebeu: dinheiro, cartão, Pix, transferência. Use a média dos últimos 3 meses para um número mais fiel.',
+    exemplo: 'Você fez R$ 48.000 em serviços + R$ 2.000 em produtos = R$ 50.000 de faturamento.',
+    porque: 'É o ponto de partida de tudo. Sem saber quanto entra, não dá para saber se o salão está ganhando ou perdendo dinheiro.',
+  },
+  custIndD: {
+    titulo: '⚙️ Custo Indireto Desejado (%)',
+    oque: 'É o máximo que você quer gastar com contas fixas (aluguel, água, luz, etc.) em relação ao que entra.',
+    como: 'A especialista Dra. Dani Venâncio recomenda 30%. Isso significa: de cada R$ 100 que entra, no máximo R$ 30 devem ir para custos fixos.',
+    exemplo: 'Faturamento R$ 50.000 × 30% = R$ 15.000 máximo em custos fixos.',
+    porque: 'Se gastar mais que isso em custos fixos, sobra pouco para pagar os profissionais e ter lucro.',
+  },
+  custDirD: {
+    titulo: '📌 Custo Direto Desejado (%)',
+    oque: 'É o máximo que você quer gastar com o que é pago diretamente pelos serviços: imposto, produtos usados, comissões e taxa do cartão.',
+    como: 'A Dra. Dani recomenda 55%. Significa que R$ 55 de cada R$ 100 vão para esses custos.',
+    exemplo: 'Faturamento R$ 50.000 × 55% = R$ 27.500 em custos diretos.',
+    porque: 'Controlar esse percentual garante que cada serviço prestado realmente vale a pena financeiramente.',
+  },
+  lucroD: {
+    titulo: '🏆 Lucro Desejado (%)',
+    oque: 'É a porcentagem do faturamento que você quer guardar como lucro do negócio, depois de pagar tudo.',
+    como: 'A Dra. Dani recomenda 15%. Se faturar R$ 50.000, o objetivo é lucrar R$ 7.500.',
+    exemplo: 'R$ 50.000 × 15% = R$ 7.500 de lucro líquido no mês.',
+    porque: 'Sem meta de lucro, o salão trabalha muito e não sobra nada. Esse número é o seu salário como dono do negócio.',
+  },
+  invInicial: {
+    titulo: '🏦 Investimento Inicial',
+    oque: 'É tudo que você gastou para montar o salão: reforma, equipamentos, móveis, decoração, estoque inicial.',
+    como: 'Some todos os gastos feitos antes de abrir as portas. Se não lembra tudo, estime o valor mais próximo possível.',
+    exemplo: 'Reforma R$ 30.000 + cadeiras R$ 15.000 + equipamentos R$ 20.000 + estoque R$ 5.000 = R$ 70.000.',
+    porque: 'Saber quanto investiu ajuda a calcular se o negócio já se pagou e quando você vai recuperar esse dinheiro.',
+  },
+  totalDeprec: {
+    titulo: '📉 Total a ser Depreciado',
+    oque: 'Equipamentos e móveis se desgastam com o tempo e perdem valor. Depreciar é reconhecer esse custo mês a mês.',
+    como: 'Coloque o valor de tudo que vai se desgastar: secadores, cadeiras, espelhos, lavatórios. O sistema divide por 60 meses (5 anos) automaticamente.',
+    exemplo: 'Equipamentos R$ 30.000 ÷ 60 meses = R$ 500/mês de depreciação.',
+    porque: 'Sem calcular depreciação, quando os equipamentos quebrarem você não terá dinheiro para repor. É como guardar um pouquinho todo mês para a reposição.',
+  },
+  aluguel: {
+    titulo: '🏠 Aluguel',
+    oque: 'O valor mensal que você paga pelo espaço do salão.',
+    como: 'Se o imóvel é seu, mesmo assim coloque o valor que pagaria de aluguel para um espaço igual. Isso é importante para saber o custo real.',
+    exemplo: 'Você paga R$ 4.000/mês de aluguel.',
+    porque: 'O aluguel deve ser no máximo 10% do faturamento. Se você fatura R$ 40.000, o aluguel ideal é até R$ 4.000. Acima disso, compromete o lucro.',
+  },
+  energia: {
+    titulo: '⚡ Energia Elétrica',
+    oque: 'A conta de luz do salão — secadores, prancha, ar condicionado, iluminação.',
+    como: 'Use o valor da última fatura ou a média dos últimos 3 meses.',
+    exemplo: 'Conta de luz média de R$ 800/mês.',
+    porque: 'Salão de beleza consome muita energia. Trocar lâmpadas para LED e desligar equipamentos no horário vazio pode economizar 30%.',
+  },
+  agua: {
+    titulo: '💧 Água',
+    oque: 'A conta de água usada nos lavatórios, banheiro e limpeza.',
+    como: 'Use o valor da conta de água do salão. Se dividir com residência, estime só a parte do salão (normalmente 70%).',
+    exemplo: 'Conta total R$ 300, parte do salão R$ 210.',
+    porque: 'Salões usam muita água em lavagens. Torneiras com temporizador e aproveitamento de água podem reduzir esse custo.',
+  },
+  contabilidade: {
+    titulo: '📒 Contabilidade',
+    oque: 'O valor pago ao contador todo mês para cuidar das notas, impostos e folha de pagamento.',
+    como: 'Coloque o honorário mensal do seu contador.',
+    exemplo: 'R$ 500/mês para o contador.',
+    porque: 'É uma despesa obrigatória para quem tem CNPJ. Um bom contador pode economizar muito mais do que cobra em impostos.',
+  },
+  sal13: {
+    titulo: '🎁 13º Salário (Provisão Mensal)',
+    oque: 'Todo mês você deve separar 1/12 do salário de cada funcionário para pagar o 13º em dezembro.',
+    como: 'Some o salário bruto de todos os funcionários e divida por 12.',
+    exemplo: '2 funcionários com R$ 2.000 cada = R$ 4.000 ÷ 12 = R$ 333/mês de provisão.',
+    porque: 'Se não guardar todo mês, em dezembro vai ter que pagar tudo de uma vez e pode faltar dinheiro no caixa.',
+  },
+  ferias: {
+    titulo: '🏖️ Férias (Provisão Mensal)',
+    oque: 'Todo mês você deve separar o valor equivalente às férias de cada funcionário (salário + 1/3).',
+    como: 'Salário bruto × 1,333 ÷ 12 por funcionário.',
+    exemplo: 'Funcionário com R$ 2.000: R$ 2.000 × 1,333 ÷ 12 = R$ 222/mês.',
+    porque: 'Férias são direito do funcionário. Guardar todo mês evita surpresas quando chegar a época.',
+  },
+  fgtsR: {
+    titulo: '💼 FGTS Rescisório (Provisão)',
+    oque: 'Uma reserva para cobrir a multa de 40% do FGTS caso precise demitir um funcionário sem justa causa.',
+    como: 'Calcule 3,5% a 4% do salário bruto de cada funcionário CLT por mês.',
+    exemplo: 'Funcionário com R$ 2.000: R$ 2.000 × 4% = R$ 80/mês de provisão.',
+    porque: 'Se demitir sem provisão, terá que pagar uma multa grande de uma vez só. Guardar todo mês protege o caixa.',
+  },
+  imposto: {
+    titulo: '🧾 Imposto',
+    oque: 'O valor de imposto que seu salão pagou no mês — Simples Nacional, ISS, etc.',
+    como: 'Use o boleto do Simples Nacional do mês ou pergunte ao seu contador o valor exato.',
+    exemplo: 'Faturamento R$ 50.000 no Simples Nacional (6%) = R$ 3.000 de imposto.',
+    porque: 'Imposto é obrigação legal. Saber o valor exato evita surpresas e ajuda a precificar os serviços corretamente.',
+  },
+  produto: {
+    titulo: '🧴 Produto/Insumo',
+    oque: 'O total gasto com produtos usados nos serviços: tintas, químicas, shampoos, etc.',
+    como: 'Some as notas fiscais de compra de produtos do mês ou use o valor do seu estoque consumido.',
+    exemplo: 'Comprou R$ 3.000 em tintas, R$ 800 em hidratação, R$ 500 em outros = R$ 4.300.',
+    porque: 'Produto é custo direto — quanto mais serviços fizer, mais gasta. O ideal é ficar entre 8% e 12% do faturamento.',
+  },
+  rateio: {
+    titulo: '✂️ Rateio/Comissão',
+    oque: 'O valor pago aos profissionais como comissão pelos serviços que realizaram.',
+    como: 'Some todas as comissões pagas no mês a todos os profissionais.',
+    exemplo: '3 cabeleireiros com R$ 5.000 de comissão cada = R$ 15.000.',
+    porque: 'É geralmente o maior custo de um salão. Entender esse número ajuda a definir o percentual de rateio ideal para o negócio.',
+  },
+  taxaC: {
+    titulo: '💳 Taxa de Cartão',
+    oque: 'O total cobrado pelas maquininhas de cartão no mês (débito + crédito + Pix com taxa).',
+    como: 'Some os relatórios de todas as suas maquininhas. Geralmente entre 1,5% e 5% por transação.',
+    exemplo: 'Vendeu R$ 40.000 no cartão com taxa média de 3% = R$ 1.200 de taxa.',
+    porque: 'Muitos donos esquecem essa despesa. Ela pode representar R$ 1.000 a R$ 3.000/mês em salões médios.',
+  },
+  aquisicaoEq: {
+    titulo: '🔧 Aquisição de Equipamento',
+    oque: 'Compras de equipamentos, móveis ou utensílios feitas no mês.',
+    como: 'Coloque apenas compras feitas NESSE mês (não o total investido na abertura).',
+    exemplo: 'Comprou uma cadeira nova por R$ 1.500.',
+    porque: 'Equipamentos são investimentos de capital — separá-los das despesas operacionais dá uma visão mais clara do resultado real do mês.',
+  },
+  distSocios: {
+    titulo: '👥 Distribuição de Sócios',
+    oque: 'O valor retirado do caixa pelos sócios como distribuição de lucro (diferente do pró-labore).',
+    como: 'Coloque o valor total retirado pelos sócios neste mês como distribuição de lucro.',
+    exemplo: '2 sócios retiraram R$ 3.000 cada = R$ 6.000.',
+    porque: 'Importante separar do pró-labore (salário do sócio). Distribuição só deve acontecer quando há lucro real confirmado.',
+  },
+  reservaEmerg: {
+    titulo: '🚨 Reserva de Emergência',
+    oque: 'Dinheiro guardado em poupança ou conta separada para emergências do salão.',
+    como: 'Coloque o saldo atual que você tem separado para emergências.',
+    exemplo: 'R$ 15.000 guardados na poupança do salão.',
+    porque: 'O ideal é ter de 3 a 6 meses de custo operacional guardado. Para R$ 15.000/mês de custo, a reserva ideal é R$ 45.000 a R$ 90.000.',
+  },
+  vlrProdEstoque: {
+    titulo: '📦 Valor de Produtos em Estoque',
+    oque: 'Quanto vale tudo o que você tem em produtos no estoque hoje.',
+    como: 'Faça um inventário dos produtos e some o custo de cada um.',
+    exemplo: 'R$ 8.000 em tintas + R$ 2.000 em outros produtos = R$ 10.000 em estoque.',
+    porque: 'Estoque parado é dinheiro parado. O ideal é ter estoque para 30-45 dias. Mais que isso, está sobrando capital investido sem necessidade.',
+  },
+  taxaCartaoServ: {
+    titulo: '💳 Taxa do Cartão (Global)',
+    oque: 'A porcentagem média que as maquininhas cobram sobre cada venda no cartão.',
+    como: 'Veja nas suas maquininhas a taxa por modalidade. Use a média: (crédito + débito) ÷ 2.',
+    exemplo: 'Débito 1,5% + Crédito 3,5% ÷ 2 = 2,5% de média. Se a maioria paga no crédito, use 3,5%.',
+    porque: 'Esse percentual é descontado de cada serviço antes de calcular o rateio do profissional.',
+  },
+  abatProd: {
+    titulo: '🧴 Abatimento do Produto (%)',
+    oque: 'É o quanto do custo do produto é descontado da base de cálculo do rateio do profissional.',
+    como: 'A Dra. Dani usa 100% — significa que o custo do produto é totalmente abatido antes de calcular a comissão.',
+    exemplo: 'Serviço R$ 100, produto R$ 20, rateio 50%: com 100% abatimento → comissão sobre R$ 80 = R$ 40.',
+    porque: 'Sem abater o produto, o profissional recebe comissão sobre o custo do material também — o que é injusto para o salão.',
+  },
+  custOpServ: {
+    titulo: '⚙️ Custo Operacional (%)',
+    oque: 'Percentual do faturamento gasto com custos fixos do salão (aluguel, luz, água, etc.).',
+    como: 'Se preencheu a aba Receitas e Despesas, esse valor é calculado automaticamente. Se não, use 30% como referência.',
+    exemplo: 'Custo operacional R$ 15.000 ÷ Faturamento R$ 50.000 = 30%.',
+    porque: 'Esse percentual é descontado de cada serviço para mostrar o resultado real — quanto sobra depois de pagar todas as contas fixas.',
+  },
+  salaoParceiro: {
+    titulo: '⚖️ Lei do Salão Parceiro',
+    oque: 'Lei 13.352/2016 que permite que cabeleireiros sejam parceiros (autônomos) e não funcionários CLT do salão.',
+    como: 'Se seus profissionais assinam contrato de parceria, marque SIM. Isso muda como o imposto é calculado.',
+    exemplo: 'Com Salão Parceiro: imposto sobre R$ 50 (margem) e não sobre R$ 100 (preço cheio) = economia real de imposto.',
+    porque: 'Pode reduzir significativamente a carga tributária do salão. Consulte seu contador para formalizar.',
+  },
+  numCad: {
+    titulo: '💺 Número de Cadeiras/Postos',
+    oque: 'Quantas cadeiras ou postos de atendimento existem no seu salão.',
+    como: 'Conte todas as cadeiras ativas — de corte, coloração, manicure, maquiagem, etc.',
+    exemplo: '3 cadeiras de corte + 2 de manicure + 1 de maquiagem = 6 postos.',
+    porque: 'Divide o custo total igualmente entre as cadeiras para saber quanto cada posto precisa gerar para o salão ser lucrativo.',
+  },
+  custoOpCad: {
+    titulo: '⚙️ Custo Operacional para Aluguel',
+    oque: 'O total de custos mensais do salão que precisa ser coberto pelo aluguel das cadeiras.',
+    como: 'Se preencheu Receitas e Despesas, é preenchido automaticamente. Senão, some todas as despesas fixas mensais.',
+    exemplo: 'Aluguel R$ 3.000 + Luz R$ 600 + Internet R$ 150 + ... = R$ 8.000 de custo total.',
+    porque: 'O aluguel de cadeira precisa, no mínimo, cobrir os custos. O valor sugerido acrescenta 50% de margem.',
+  },
+  mTotal: {
+    titulo: '📐 Metragem Total do Salão (m²)',
+    oque: 'A área total do seu salão em metros quadrados.',
+    como: 'Meça ou consulte o contrato de aluguel. Inclua todas as áreas: atendimento, lavabo, estoque, banheiro.',
+    exemplo: 'Salão de 10m × 8m = 80m².',
+    porque: 'Divide o faturamento necessário pela área para saber se cada metro quadrado está sendo bem aproveitado.',
+  },
+  fatMinM2: {
+    titulo: '💰 Faturamento Mínimo Necessário',
+    oque: 'O valor mínimo que o salão precisa faturar para não ter prejuízo (Ponto de Equilíbrio).',
+    como: 'Se preencheu Receitas e Despesas, é calculado automaticamente. Senão, some todas as despesas mensais.',
+    exemplo: 'Se os custos totais são R$ 22.000 e a margem é 44%, o PE é R$ 50.000.',
+    porque: 'Abaixo desse valor, o salão está operando no prejuízo. Acima, começa a ter lucro.',
+  },
+  mSala: {
+    titulo: '🏠 Área de um Espaço Específico (m²)',
+    oque: 'A metragem de uma sala ou área específica que você quer analisar separadamente.',
+    como: 'Mede o comprimento × largura da área específica.',
+    exemplo: 'Sala de manicure de 4m × 3m = 12m².',
+    porque: 'Ajuda a decidir se vale a pena ter aquele espaço — ele precisa gerar o faturamento sugerido para se pagar.',
+  },
+  areaM2: {
+    titulo: '📐 Área Total do Salão (m²)',
+    oque: 'A área em metros quadrados usada para calcular o ponto de equilíbrio por metro quadrado.',
+    como: 'Use a metragem total do salão.',
+    exemplo: 'Salão de 80m².',
+    porque: 'Mostra a eficiência do espaço — quanto cada metro quadrado está gerando de receita.',
+  },
+  numProfs: {
+    titulo: '👥 Número de Profissionais',
+    oque: 'Quantos profissionais trabalham no salão (sócios + funcionários + parceiros).',
+    como: 'Conte todos que atendem clientes ativamente.',
+    exemplo: '1 dona + 2 cabeleireiros + 1 manicure = 4 profissionais.',
+    porque: 'Divide a meta do salão entre os profissionais para saber quanto cada um precisa produzir.',
+  },
+  margemPE: {
+    titulo: '📊 Margem Operacional (%)',
+    oque: 'É a porcentagem que sobra do faturamento depois de pagar os custos diretos (produto, comissão, imposto, cartão).',
+    como: 'Se preencheu Receitas e Despesas, é calculado automaticamente. A Dra. Dani trabalha com referência de 44-45%.',
+    exemplo: 'Faturamento R$ 50.000 - Custos diretos R$ 27.500 = R$ 22.500 de margem = 45%.',
+    porque: 'É essa margem que precisa cobrir todos os custos fixos e ainda gerar lucro.',
+  },
+  metaLucroPE: {
+    titulo: '🎯 Meta de Lucro (%)',
+    oque: 'O percentual de lucro que você quer alcançar no mês.',
+    como: 'Use a mesma meta da aba Receitas e Despesas (padrão Dra. Dani: 15%).',
+    exemplo: 'Meta 15% × R$ 50.000 = R$ 7.500 de lucro desejado.',
+    porque: 'Com essa meta, o sistema calcula quanto você PRECISA faturar para alcançar o lucro desejado.',
+  },
+  precoServico: {
+    titulo: '💵 Preço do Serviço',
+    oque: 'O valor cobrado do cliente por esse serviço.',
+    como: 'Use o preço cheio que o cliente paga, sem desconto.',
+    exemplo: 'Coloração completa: R$ 250.',
+    porque: 'É o ponto de partida para calcular quanto sobra depois de pagar profissional, produto, imposto e cartão.',
+  },
+  rateioServico: {
+    titulo: '✂️ Rateio/Comissão do Serviço (%)',
+    oque: 'A porcentagem do valor do serviço que vai para o profissional que realizou.',
+    como: 'Use o percentual combinado com o profissional.',
+    exemplo: 'Serviço R$ 250 com rateio 50% = R$ 125 para o profissional.',
+    porque: 'É geralmente o maior custo de cada serviço. Ajustar esse percentual tem o maior impacto na lucratividade.',
+  },
+  produtoServico: {
+    titulo: '🧴 Produto Usado no Serviço (R$)',
+    oque: 'O custo dos produtos usados para realizar esse serviço específico.',
+    como: 'Use a aba "Custo de Produto" para calcular o valor exato e coloque aqui.',
+    exemplo: 'Coloração usa R$ 45 em tinta + R$ 8 em oxidante = R$ 53 de produto.',
+    porque: 'Sem somar o custo do produto, o serviço parece mais lucrativo do que realmente é.',
+  },
+  impostoServico: {
+    titulo: '🧾 Imposto sobre o Serviço (%)',
+    oque: 'A alíquota de imposto que incide sobre esse serviço.',
+    como: 'Consulte seu contador. No Simples Nacional pode variar de 4,5% a 19,5% dependendo do faturamento.',
+    exemplo: 'Serviço R$ 250 × 6% de imposto = R$ 15 de imposto.',
+    porque: 'O imposto é um custo real — sem incluí-lo, o resultado do serviço aparece maior do que realmente é.',
+  },
+  qtdEmb: {
+    titulo: '📏 Quantidade da Embalagem',
+    oque: 'Quanto produto tem na embalagem que você compra (em ml, g ou unidades).',
+    como: 'Olhe na embalagem do produto e anote a quantidade total.',
+    exemplo: 'Tinta em tubo de 60g → coloque 60.',
+    porque: 'Serve para calcular o custo por grama/ml e assim saber exatamente quanto cada uso custa.',
+  },
+  precoEmb: {
+    titulo: '💰 Preço da Embalagem',
+    oque: 'Quanto você pagou pela embalagem desse produto.',
+    como: 'Use o valor da nota fiscal ou o preço de compra com seu fornecedor.',
+    exemplo: 'Tubo de tinta R$ 35,27.',
+    porque: 'Junto com a quantidade da embalagem, calcula o custo por grama — a base para saber o custo real de cada serviço.',
+  },
+  qtdUsa: {
+    titulo: '🔢 Quantidade Usada por Serviço',
+    oque: 'Quanto desse produto você usa para realizar um serviço.',
+    como: 'Meça na prática ou estime com base na sua experiência.',
+    exemplo: 'Para coloração longo usa 90g de tinta.',
+    porque: 'Fórmula: (preço ÷ qtd embalagem) × qtd usada = custo por serviço. Pequenas variações aqui mudam muito o custo final.',
+  },
+}
+
+// ─── Componente InfoBtn ──────────────────────────────────────────────────────
+function InfoBtn({ id, className }: { id: string; className?: string }) {
+  const [aberto, setAberto] = useState(false)
+  const info = INFO[id]
+  if (!info) return null
+  return (
+    <>
+      <button
+        onClick={e => { e.stopPropagation(); setAberto(true) }}
+        className={`flex-shrink-0 w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center transition-all hover:scale-110 ${className||''}`}
+        style={{background:'#7c5cfc30',color:'#a78bfa',border:'1px solid #7c5cfc50'}}
+        title={info.titulo}
+      >i</button>
+      {aberto && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.7)'}}>
+          <div className="rounded-2xl border max-w-md w-full shadow-2xl" style={{background:'#111827',borderColor:'#7c5cfc50'}}>
+            <div className="flex items-center justify-between px-5 py-4 border-b" style={{borderColor:'#1e293b'}}>
+              <h3 className="font-bold text-sm text-white">{info.titulo}</h3>
+              <button onClick={() => setAberto(false)} className="p-1 rounded-lg hover:bg-white/10" style={{color:'#64748b'}}><X size={16}/></button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div className="rounded-xl p-3" style={{background:'#0a0f1a'}}>
+                <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{color:'#7c5cfc'}}>📌 O que é?</p>
+                <p className="text-xs leading-relaxed" style={{color:'#cbd5e1'}}>{info.oque}</p>
+              </div>
+              <div className="rounded-xl p-3" style={{background:'#0a0f1a'}}>
+                <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{color:'#10b981'}}>🔢 Como preencher?</p>
+                <p className="text-xs leading-relaxed" style={{color:'#cbd5e1'}}>{info.como}</p>
+              </div>
+              <div className="rounded-xl p-3" style={{background:'#7c5cfc15',border:'1px solid #7c5cfc30'}}>
+                <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{color:'#a78bfa'}}>💡 Exemplo prático</p>
+                <p className="text-xs leading-relaxed" style={{color:'#e2e8f0'}}>{info.exemplo}</p>
+              </div>
+              <div className="rounded-xl p-3" style={{background:'#10b98115',border:'1px solid #10b98130'}}>
+                <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{color:'#10b981'}}>🎯 Por que é importante?</p>
+                <p className="text-xs leading-relaxed" style={{color:'#cbd5e1'}}>{info.porque}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
 
 // ─── Constantes ─────────────────────────────────────────────────────────────
 const DESPESAS_INDIRETAS = [
@@ -510,7 +846,10 @@ Use números reais. Seja direto.`
               <h3 className="font-bold text-sm mb-4" style={{color:'#7c5cfc'}}>⚙️ Configurações</h3>
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label className="text-xs font-bold block mb-1" style={{color:'#94a3b8'}}>💰 Faturamento Mensal (R$)</label>
+                  <div className="flex items-center gap-2 mb-1">
+                    <label className="text-xs font-bold" style={{color:'#94a3b8'}}>💰 Faturamento Mensal (R$)</label>
+                    <InfoBtn id="faturamento"/>
+                  </div>
                   <p className="text-xs mb-1" style={{color:'#475569'}}>Média dos últimos 12 meses ÷ 12</p>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#64748b'}}>R$</span>
@@ -526,7 +865,10 @@ Use números reais. Seja direto.`
                     {l:'Lucro Desejado',v:lucroD,set:setLucroD,c:'#10b981',dica:'Padrão DV: 15%'},
                   ].map(f=>(
                     <div key={f.l}>
-                      <label className="text-[10px] font-bold block mb-1" style={{color:f.c}}>{f.l}</label>
+                      <div className="flex items-center gap-1 mb-1">
+                        <label className="text-[10px] font-bold" style={{color:f.c}}>{f.l}</label>
+                        <InfoBtn id={f.l==='Custo Indireto Desejado'?'custIndD':f.l==='Custo Direto Desejado'?'custDirD':'lucroD'}/>
+                      </div>
                       <p className="text-[9px] mb-1" style={{color:'#475569'}}>{f.dica}</p>
                       <div className="relative">
                         <input type="number" value={f.v} onChange={e=>f.set(e.target.value)}
@@ -540,7 +882,7 @@ Use números reais. Seja direto.`
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-bold block mb-1" style={{color:'#94a3b8'}}>🏦 Investimento Inicial (R$)</label>
+                  <div className="flex items-center gap-2 mb-1"><label className="text-xs font-bold" style={{color:'#94a3b8'}}>🏦 Investimento Inicial (R$)</label><InfoBtn id="invInicial"/></div>
                   <p className="text-xs mb-1" style={{color:'#475569'}}>Valor total investido no negócio</p>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#64748b'}}>R$</span>
@@ -550,7 +892,7 @@ Use números reais. Seja direto.`
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs font-bold block mb-1" style={{color:'#94a3b8'}}>📉 Total a ser Depreciado (R$)</label>
+                  <div className="flex items-center gap-2 mb-1"><label className="text-xs font-bold" style={{color:'#94a3b8'}}>📉 Total a ser Depreciado (R$)</label><InfoBtn id="totalDeprec"/></div>
                   <p className="text-xs mb-1" style={{color:'#475569'}}>
                     Equipamentos, móveis, reformas — dividido por 60 meses (5 anos)
                     {n(totalDeprec)>0 && <span style={{color:'#a78bfa'}}> → {fmtR(depMensal)}/mês</span>}
@@ -582,7 +924,10 @@ Use números reais. Seja direto.`
                 const cor=pctV>20?'#ef4444':pctV>10?'#f59e0b':'#10b981'
                 return(
                   <div key={i} className="grid grid-cols-12 gap-2 px-5 py-2 items-center hover:bg-white/2" style={{borderBottom:'1px solid #1e293b10'}}>
-                    <div className="col-span-5 text-xs" style={{color:'#cbd5e1'}}>{d.nome}</div>
+                    <div className="col-span-5 flex items-center gap-1.5">
+                      <span className="text-xs" style={{color:'#cbd5e1'}}>{d.nome}</span>
+                      <InfoBtn id={d.nome==='Aluguel'?'aluguel':d.nome==='Energia Elétrica'?'energia':d.nome==='Água'?'agua':d.nome==='Contabilidade'?'contabilidade':''}/>
+                    </div>
                     <div className="col-span-3">
                       <div className="relative">
                         <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#64748b'}}>R$</span>
@@ -640,12 +985,15 @@ Use números reais. Seja direto.`
               </div>
               <div className="grid grid-cols-3 gap-4 p-5">
                 {[
-                  {l:'13º Salário',v:sal13,set:setSal13,dica:'Salário anual ÷ 12'},
-                  {l:'Férias',v:ferias,set:setFerias,dica:'(Salário × 1/3) ÷ 12'},
-                  {l:'FGTS Rescisório',v:fgtsR,set:setFgtsR,dica:'Provisão p/ eventual demissão'},
-                ].map(f=>(
+                  {l:'13º Salário',v:sal13,set:setSal13,dica:'Salário anual ÷ 12',info:'sal13'},
+                  {l:'Férias',v:ferias,set:setFerias,dica:'(Salário × 1/3) ÷ 12',info:'ferias'},
+                  {l:'FGTS Rescisório',v:fgtsR,set:setFgtsR,dica:'Provisão p/ eventual demissão',info:'fgtsR'},
+                ].map((f:any)=>(
                   <div key={f.l}>
-                    <label className="text-xs font-bold block mb-1" style={{color:'#a78bfa'}}>{f.l}</label>
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <label className="text-xs font-bold" style={{color:'#a78bfa'}}>{f.l}</label>
+                      <InfoBtn id={f.info}/>
+                    </div>
                     <p className="text-[10px] mb-1" style={{color:'#475569'}}>{f.dica}</p>
                     <div className="relative">
                       <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#64748b'}}>R$</span>
@@ -673,13 +1021,16 @@ Use números reais. Seja direto.`
               </div>
               <div className="grid grid-cols-2 gap-4 p-5">
                 {[
-                  {l:'Imposto (R$)',v:imposto,set:setImposto,dica:'Simples Nacional ou regime tributário do mês'},
-                  {l:'Produto/Insumo (R$)',v:produto,set:setProduto,dica:'Total de produtos consumidos nos serviços'},
-                  {l:'Rateio/Comissão (R$)',v:rateio,set:setRateio,dica:'Comissões pagas aos profissionais'},
-                  {l:'Taxa de Cartão (R$)',v:taxaC,set:setTaxaC,dica:'Total cobrado pelas maquininhas no mês'},
-                ].map(f=>(
+                  {l:'Imposto (R$)',v:imposto,set:setImposto,dica:'Simples Nacional ou regime tributário do mês',info:'imposto'},
+                  {l:'Produto/Insumo (R$)',v:produto,set:setProduto,dica:'Total de produtos consumidos nos serviços',info:'produto'},
+                  {l:'Rateio/Comissão (R$)',v:rateio,set:setRateio,dica:'Comissões pagas aos profissionais',info:'rateio'},
+                  {l:'Taxa de Cartão (R$)',v:taxaC,set:setTaxaC,dica:'Total cobrado pelas maquininhas no mês',info:'taxaC'},
+                ].map((f:any)=>(
                   <div key={f.l}>
-                    <label className="text-xs font-bold block mb-1" style={{color:'#ef4444'}}>{f.l}</label>
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <label className="text-xs font-bold" style={{color:'#ef4444'}}>{f.l}</label>
+                      <InfoBtn id={f.info}/>
+                    </div>
                     <p className="text-[10px] mb-1" style={{color:'#475569'}}>{f.dica}</p>
                     <div className="relative">
                       <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#64748b'}}>R$</span>
@@ -699,11 +1050,14 @@ Use números reais. Seja direto.`
               </div>
               <div className="grid grid-cols-2 gap-4 p-5">
                 {[
-                  {l:'Aquisição de Equipamento (R$)',v:aquisicaoEq,set:setAquisicaoEq,dica:'Compra de equipamentos, móveis, utensílios'},
-                  {l:'Distribuição de Sócios (R$)',v:distSocios,set:setDistSocios,dica:'Retirada de lucros pelos sócios'},
-                ].map(f=>(
+                  {l:'Aquisição de Equipamento (R$)',v:aquisicaoEq,set:setAquisicaoEq,dica:'Compra de equipamentos, móveis, utensílios',info:'aquisicaoEq'},
+                  {l:'Distribuição de Sócios (R$)',v:distSocios,set:setDistSocios,dica:'Retirada de lucros pelos sócios',info:'distSocios'},
+                ].map((f:any)=>(
                   <div key={f.l}>
-                    <label className="text-xs font-bold block mb-1" style={{color:'#06b6d4'}}>{f.l}</label>
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <label className="text-xs font-bold" style={{color:'#06b6d4'}}>{f.l}</label>
+                      <InfoBtn id={f.info}/>
+                    </div>
                     <p className="text-[10px] mb-1" style={{color:'#475569'}}>{f.dica}</p>
                     <div className="relative">
                       <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#64748b'}}>R$</span>
@@ -778,11 +1132,14 @@ Use números reais. Seja direto.`
                 {/* Extras */}
                 <div className="grid grid-cols-2 gap-3">
                   {[
-                    {l:'🚨 Reserva de Emergência',v:reservaEmerg,set:setReservaEmerg,dica:'Valor atual em reserva de emergência'},
-                    {l:'📦 Valor de Produtos em Estoque',v:vlrProdEstoque,set:setVlrProdEstoque,dica:'Valor total do estoque atual'},
-                  ].map(f=>(
+                    {l:'🚨 Reserva de Emergência',v:reservaEmerg,set:setReservaEmerg,dica:'Valor atual em reserva de emergência',info:'reservaEmerg'},
+                    {l:'📦 Valor de Produtos em Estoque',v:vlrProdEstoque,set:setVlrProdEstoque,dica:'Valor total do estoque atual',info:'vlrProdEstoque'},
+                  ].map((f:any)=>(
                     <div key={f.l} className="rounded-xl p-4 border" style={{background:'#111827',borderColor:'#1e293b'}}>
-                      <label className="text-xs font-bold block mb-1" style={{color:'#94a3b8'}}>{f.l}</label>
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <label className="text-xs font-bold" style={{color:'#94a3b8'}}>{f.l}</label>
+                        <InfoBtn id={f.info}/>
+                      </div>
                       <p className="text-[10px] mb-2" style={{color:'#475569'}}>{f.dica}</p>
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#64748b'}}>R$</span>
@@ -824,15 +1181,18 @@ Use números reais. Seja direto.`
               <h3 className="font-bold text-sm mb-4" style={{color:'#10b981'}}>⚙️ Parâmetros</h3>
               <div className="grid grid-cols-4 gap-3">
                 {[
-                  {l:'Custo Operacional (R$)',v:simDespesa,set:setSimDespesa,ph:custoOp>0?custoOp.toFixed(2):'0',tipo:'R$'},
-                  {l:'Margem Operacional (%)',v:margemPE,set:setMargemPE,ph:margOpPct>0?(margOpPct*100).toFixed(1):'44',tipo:'%'},
-                  {l:'Meta Lucro (%)',v:metaLucroPE,set:setMetaLucroPE,ph:n(lucroD)>0?lucroD:'15',tipo:'%'},
-                  {l:'Área do Salão (M²)',v:areaM2,set:setAreaM2,ph:'100',tipo:'m²'},
-                  {l:'Nº de Profissionais',v:numProfs,set:setNumProfs,ph:'3',tipo:''},
-                  {l:'Faturamento Atual (R$)',v:fatPEManual,set:setFatPEManual,ph:fatN>0?fatN.toFixed(2):'0',tipo:'R$'},
-                ].map(f=>(
+                  {l:'Custo Operacional (R$)',v:simDespesa,set:setSimDespesa,ph:custoOp>0?custoOp.toFixed(2):'0',tipo:'R$',info:'custoOpCad'},
+                  {l:'Margem Operacional (%)',v:margemPE,set:setMargemPE,ph:margOpPct>0?(margOpPct*100).toFixed(1):'44',tipo:'%',info:'margemPE'},
+                  {l:'Meta Lucro (%)',v:metaLucroPE,set:setMetaLucroPE,ph:n(lucroD)>0?lucroD:'15',tipo:'%',info:'metaLucroPE'},
+                  {l:'Área do Salão (M²)',v:areaM2,set:setAreaM2,ph:'100',tipo:'m²',info:'areaM2'},
+                  {l:'Nº de Profissionais',v:numProfs,set:setNumProfs,ph:'3',tipo:'',info:'numProfs'},
+                  {l:'Faturamento Atual (R$)',v:fatPEManual,set:setFatPEManual,ph:fatN>0?fatN.toFixed(2):'0',tipo:'R$',info:'faturamento'},
+                ].map((f:any)=>(
                   <div key={f.l}>
-                    <label className="text-xs font-bold block mb-1" style={{color:'#94a3b8'}}>{f.l}</label>
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <label className="text-xs font-bold" style={{color:'#94a3b8'}}>{f.l}</label>
+                      <InfoBtn id={f.info}/>
+                    </div>
                     <div className="relative">
                       {f.tipo==='R$'&&<span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#64748b'}}>R$</span>}
                       <input type="number" value={f.v} onChange={e=>f.set(e.target.value)} placeholder={f.ph}
@@ -914,17 +1274,17 @@ Use números reais. Seja direto.`
               <h3 className="font-bold text-sm mb-3" style={{color:'#7c5cfc'}}>⚙️ Parâmetros Globais</h3>
               <div className="grid grid-cols-4 gap-4 mb-4">
                 <div>
-                  <label className="text-xs font-bold block mb-1" style={{color:'#94a3b8'}}>Taxa do Cartão (%)</label>
+                  <div className="flex items-center gap-1.5 mb-1"><label className="text-xs font-bold" style={{color:'#94a3b8'}}>Taxa do Cartão (%)</label><InfoBtn id="taxaCartaoServ"/></div>
                   <p className="text-[10px] mb-1" style={{color:'#475569'}}>Média das maquininhas. Padrão DV: 5%</p>
                   <div className="relative"><input type="number" value={taxaCartao} onChange={e=>setTaxaCartao(e.target.value)} className="w-full pr-6 pl-3 py-2 rounded-lg text-sm text-white focus:outline-none" style={{background:'#0a0f1a',border:'1px solid #334155'}}/><span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#64748b'}}>%</span></div>
                 </div>
                 <div>
-                  <label className="text-xs font-bold block mb-1" style={{color:'#94a3b8'}}>Abatimento do Produto (%)</label>
+                  <div className="flex items-center gap-1.5 mb-1"><label className="text-xs font-bold" style={{color:'#94a3b8'}}>Abatimento do Produto (%)</label><InfoBtn id="abatProd"/></div>
                   <p className="text-[10px] mb-1" style={{color:'#475569'}}>% do produto abatido do rateio. Padrão DV: 100%</p>
                   <div className="relative"><input type="number" value={abatProd} onChange={e=>setAbatProd(e.target.value)} className="w-full pr-6 pl-3 py-2 rounded-lg text-sm text-white focus:outline-none" style={{background:'#0a0f1a',border:'1px solid #334155'}}/><span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#64748b'}}>%</span></div>
                 </div>
                 <div>
-                  <label className="text-xs font-bold block mb-1" style={{color:'#94a3b8'}}>Custo Operacional (%)</label>
+                  <div className="flex items-center gap-1.5 mb-1"><label className="text-xs font-bold" style={{color:'#94a3b8'}}>Custo Operacional (%)</label><InfoBtn id="custOpServ"/></div>
                   <p className="text-[10px] mb-1" style={{color:'#475569'}}>
                     {fatN>0&&custoOp>0?<>Da aba RD: <strong style={{color:'#a78bfa'}}>{(custoOp/fatN*100).toFixed(1)}%</strong></>:'Informe ou calcule na aba RD'}
                   </p>
@@ -962,7 +1322,12 @@ Use números reais. Seja direto.`
             <div className="rounded-2xl border overflow-hidden" style={{background:'#111827',borderColor:'#1e293b'}}>
               <div className="grid gap-2 px-5 py-3 text-[10px] font-bold uppercase tracking-wider border-b"
                 style={{background:'#0d1525',borderColor:'#1e293b',color:'#475569',gridTemplateColumns:'2fr 1fr 1fr 1fr 1fr 20px'}}>
-                <div>Serviço</div><div>Preço (R$)</div><div>Rateio (%)</div><div>Produto (R$)</div><div>Imposto (%)</div><div></div>
+                <div>Serviço</div>
+                <div className="flex items-center gap-1">Preço (R$)<InfoBtn id="precoServico"/></div>
+                <div className="flex items-center gap-1">Rateio (%)<InfoBtn id="rateioServico"/></div>
+                <div className="flex items-center gap-1">Produto (R$)<InfoBtn id="produtoServico"/></div>
+                <div className="flex items-center gap-1">Imposto (%)<InfoBtn id="impostoServico"/></div>
+                <div></div>
               </div>
               {servicos.map(s=>{
                 const c=calcServ(s)
@@ -1056,7 +1421,11 @@ Use números reais. Seja direto.`
                   </div>
                   <div className="grid gap-2 px-5 py-2 text-[10px] font-bold uppercase tracking-wider border-b"
                     style={{background:'#0a0f1a',borderColor:'#1e293b',color:'#475569',gridTemplateColumns:'2fr 0.7fr 1fr 1fr 1fr 1fr 20px'}}>
-                    <div>Produto/Insumo</div><div>Un.</div><div>Qtd embalagem</div><div>Preço embalagem</div><div>Qtd usada</div><div>Custo/uso</div><div></div>
+                    <div>Produto/Insumo</div><div>Un.</div>
+                    <div className="flex items-center gap-1">Qtd embalagem<InfoBtn id="qtdEmb"/></div>
+                    <div className="flex items-center gap-1">Preço embalagem<InfoBtn id="precoEmb"/></div>
+                    <div className="flex items-center gap-1">Qtd usada<InfoBtn id="qtdUsa"/></div>
+                    <div>Custo/uso</div><div></div>
                   </div>
                   {sp.ingredientes.map((ing,idx)=>{
                     const custo=custoIngred(ing)
@@ -1115,7 +1484,7 @@ Use números reais. Seja direto.`
               <p className="text-xs mb-5" style={{color:'#64748b'}}>Quanto cobrar de aluguel por cadeira para cobrir custos e ter lucro.</p>
               <div className="space-y-4">
                 <div>
-                  <label className="text-xs font-bold block mb-1" style={{color:'#94a3b8'}}>Custo Operacional Mensal Total (R$)</label>
+                  <div className="flex items-center gap-1.5 mb-1"><label className="text-xs font-bold" style={{color:'#94a3b8'}}>Custo Operacional Mensal Total (R$)</label><InfoBtn id="custoOpCad"/></div>
                   <p className="text-xs mb-2" style={{color:'#475569'}}>{custoOp>0?'Preenchido automaticamente — pode editar.':'Preencha a aba Receitas e Despesas ou informe manualmente.'}</p>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{color:'#94a3b8'}}>R$</span>
@@ -1125,7 +1494,7 @@ Use números reais. Seja direto.`
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs font-bold block mb-1" style={{color:'#94a3b8'}}>Número de Cadeiras / Postos</label>
+                  <div className="flex items-center gap-1.5 mb-1"><label className="text-xs font-bold" style={{color:'#94a3b8'}}>Número de Cadeiras / Postos</label><InfoBtn id="numCad"/></div>
                   <p className="text-xs mb-2" style={{color:'#475569'}}>Quantas cadeiras ou postos de atendimento tem o salão?</p>
                   <input type="number" value={numCad} onChange={e=>setNumCad(e.target.value)} placeholder="Ex: 10"
                     className="w-full px-4 py-3 rounded-xl text-white focus:outline-none" style={{background:'#0a0f1a',border:'1px solid #1e293b'}}/>
@@ -1163,7 +1532,7 @@ Use números reais. Seja direto.`
               <p className="text-xs mb-5" style={{color:'#64748b'}}>Quanto cada metro quadrado do salão precisa gerar para ser rentável.</p>
               <div className="space-y-4">
                 <div>
-                  <label className="text-xs font-bold block mb-1" style={{color:'#94a3b8'}}>Faturamento Mínimo Necessário (R$)</label>
+                  <div className="flex items-center gap-1.5 mb-1"><label className="text-xs font-bold" style={{color:'#94a3b8'}}>Faturamento Mínimo Necessário (R$)</label><InfoBtn id="fatMinM2"/></div>
                   <p className="text-xs mb-2" style={{color:'#475569'}}>{pe>0?'Ponto de equilíbrio calculado automaticamente — pode editar.':'Preencha a aba Receitas e Despesas ou informe manualmente.'}</p>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{color:'#94a3b8'}}>R$</span>
@@ -1173,7 +1542,7 @@ Use números reais. Seja direto.`
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs font-bold block mb-1" style={{color:'#94a3b8'}}>Metragem Total do Salão (m²)</label>
+                  <div className="flex items-center gap-1.5 mb-1"><label className="text-xs font-bold" style={{color:'#94a3b8'}}>Metragem Total do Salão (m²)</label><InfoBtn id="mTotal"/></div>
                   <input type="number" value={mTotal} onChange={e=>setMTotal(e.target.value)} placeholder="Ex: 80"
                     className="w-full px-4 py-3 rounded-xl text-white focus:outline-none" style={{background:'#0a0f1a',border:'1px solid #1e293b'}}/>
                 </div>
@@ -1192,7 +1561,7 @@ Use números reais. Seja direto.`
                     </div>
                   </div>
                   <div className="rounded-xl p-4 border" style={{background:'#0a0f1a',borderColor:'#1e293b'}}>
-                    <p className="text-xs font-bold mb-3" style={{color:'#94a3b8'}}>📏 Calcular para um espaço específico:</p>
+                    <div className="flex items-center gap-1.5 mb-3"><p className="text-xs font-bold" style={{color:'#94a3b8'}}>📏 Calcular para um espaço específico:</p><InfoBtn id="mSala"/></div>
                     <div className="flex gap-2 items-center">
                       <input type="number" value={mSala} onChange={e=>setMSala(e.target.value)} placeholder="Ex: 15 m²"
                         className="flex-1 px-4 py-2.5 rounded-lg text-white text-sm focus:outline-none" style={{background:'#111827',border:'1px solid #334155'}}/>
