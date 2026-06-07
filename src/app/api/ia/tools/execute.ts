@@ -23,9 +23,11 @@ export async function executarFerramenta(nome: string, args: any, salaoId: strin
         const prof = encontrarProfissional(args.nome || '', profs || [])
         if (!prof) return `Profissional "${args.nome}" não encontrado.`
 
-        const [{ data: metricas }, { data: ocorrs }, { data: pendencias }] = await Promise.all([
-          // FONTE ÚNICA E CONFIÁVEL: prof_metricas_mensais por profissional_id (mesma fonte da tela)
-          supabaseAdmin.from('prof_metricas_mensais').select('*').eq('salao_id', salaoId).eq('profissional_id', prof.id).order('ano').order('mes'),
+        const [{ data: periodos }, { data: ocorrs }, { data: pendencias }] = await Promise.all([
+          // FONTE CORRETA: relatorio_periodos (mesma fonte da tela de Faturamento)
+          supabaseAdmin.from('relatorio_periodos')
+            .select('ano, mes, prof_pagamentos, prof_ticket, prof_preferencia, prof_ocupacao, prof_servicos, prof_produtos')
+            .eq('salao_id', salaoId).order('ano').order('mes'),
           supabaseAdmin.from('feedback_prof_respostas').select('tipo, ocorrido_descricao, descricao, criado_em, profissional_nome').eq('salao_id', salaoId).order('criado_em', { ascending: false }),
           supabaseAdmin.from('pendencias_profissionais').select('mensagem, data_limite, resolvido').eq('salao_id', salaoId).eq('profissional_id', prof.id),
         ])
@@ -34,20 +36,50 @@ export async function executarFerramenta(nome: string, args: any, salaoId: strin
         linhas.push(`Apelido: ${prof.apelido || '-'} | CNPJ: ${prof.cnpj || 'não cadastrado'}`)
         linhas.push('')
 
-        // DADOS FINANCEIROS E MÉTRICAS — fonte: prof_metricas_mensais (por ID, 100% confiável)
-        if (metricas?.length) {
-          linhas.push('DADOS POR MÊS (fonte oficial — mesma da tela de Faturamento):')
-          linhas.push('⚠️ USE SEMPRE ESSES VALORES. Eles são a fonte verdadeira dos dados.')
-          metricas.forEach((m: any) => {
-            const chave = `${MESES[m.mes-1]}/${String(m.ano).slice(2)}`
-            linhas.push(`  ${chave}: Faturamento=${fmtR(m.faturamento)}, Ticket=${fmtR(m.ticket_medio)}, Ocupação=${m.taxa_ocupacao}%, Dias=${m.dias_trabalhados}, ComPreferência=${m.clientes_preferencia}, SemPreferência=${m.clientes_sem_preferencia}, Serviços=${m.total_servicos}, Produtos=${m.total_produtos}`)
-            if (m.servicos_detalhados?.length) {
-              const top = [...m.servicos_detalhados].sort((a: any, b: any) => b.valor - a.valor).slice(0, 5)
-              top.forEach((s: any) => linhas.push(`    • ${s.nome||s.servico}: ${fmtR(s.valor)} (${s.quantidade||1}x)`))
-            }
-          })
-        } else {
-          linhas.push('Nenhuma métrica encontrada para este profissional.')
+        // Match de nome — mesma lógica da tela
+        const nomeCompleto = prof.nome_completo.toLowerCase().trim()
+        const apelidoProf = (prof.apelido || '').toLowerCase().trim()
+        const tokens = nomeCompleto.split(/\s+/).filter(Boolean).slice(0, 2)
+        function matchProfNome(item: any): boolean {
+          const n = (item.profissional || item.profissional_original || '').toLowerCase().trim()
+          if (!n) return false
+          if (n === nomeCompleto) return true
+          if (apelidoProf && (n === apelidoProf || n.includes(apelidoProf) || apelidoProf.includes(n))) return true
+          const nTokens = n.split(/\s+/).filter(Boolean)
+          const matchCount = tokens.filter((t: string) => nTokens.some((nt: string) => nt.startsWith(t) || t.startsWith(nt))).length
+          return matchCount >= Math.min(tokens.length, 2)
+        }
+
+        // Agrega dados por mês — mesma lógica da tela
+        linhas.push('DADOS POR MÊS (fonte: relatorio_periodos — mesma da tela):')
+        for (const per of (periodos || [])) {
+          const chave = `${MESES[per.mes-1]}/${String(per.ano).slice(2)}`
+          let fat = 0, ticket = 0, ticketCount = 0, pref = 0, semPref = 0
+          let dias = 0, ocup = 0, ocupCount = 0, servTotal = 0, prodTotal = 0
+          let temDados = false
+          for (const item of (per.prof_pagamentos || [])) {
+            if (matchProfNome(item)) { fat += Number(item.valor_a_pagar||0) + Number(item.desconto||0); temDados = true }
+          }
+          for (const item of (per.prof_ticket || [])) {
+            if (matchProfNome(item)) { ticket += Number(item.ticket_medio||0); ticketCount++; temDados = true }
+          }
+          for (const item of (per.prof_preferencia || [])) {
+            if (matchProfNome(item)) { pref += Number(item.clientes_preferencia||0); semPref += Number(item.clientes_sem_preferencia||0); temDados = true }
+          }
+          for (const item of (per.prof_ocupacao || [])) {
+            if (matchProfNome(item)) { dias += Number(item.dias_trabalhados||0); ocup += Number(item.taxa_ocupacao||0); ocupCount++; temDados = true }
+          }
+          for (const item of (per.prof_servicos || [])) {
+            if (matchProfNome(item)) { servTotal += Number(item.quantidade||0); temDados = true }
+          }
+          for (const item of (per.prof_produtos || [])) {
+            if (matchProfNome(item)) { prodTotal += Number(item.quantidade||0); temDados = true }
+          }
+          if (temDados) {
+            const ticketFinal = ticketCount > 0 ? ticket/ticketCount : (servTotal > 0 ? fat/servTotal : 0)
+            const ocupFinal = ocupCount > 0 ? ocup/ocupCount : 0
+            linhas.push(`  ${chave}: Faturamento=${fmtR(fat)}, Ticket=${fmtR(ticketFinal)}, Ocupação=${ocupFinal.toFixed(1)}%, Dias=${dias}, ComPreferência=${pref}, SemPreferência=${semPref}, Serviços=${servTotal}, Produtos=${prodTotal}`)
+          }
         }
 
         // Ocorrências filtradas por nome do profissional
