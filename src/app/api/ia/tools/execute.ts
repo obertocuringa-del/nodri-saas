@@ -23,12 +23,11 @@ export async function executarFerramenta(nome: string, args: any, salaoId: strin
         const prof = encontrarProfissional(args.nome || '', profs || [])
         if (!prof) return `Profissional "${args.nome}" não encontrado.`
 
-        const [{ data: periodos }, { data: metricas }, { data: ocorrs }, { data: pendencias }, { data: profPagamentos }] = await Promise.all([
+        const [{ data: periodos }, { data: metricas }, { data: ocorrs }, { data: pendencias }] = await Promise.all([
           supabaseAdmin.from('relatorio_periodos').select('ano, mes, prof_pagamentos, prof_servicos, prof_ticket, prof_ocupacao, prof_preferencia').eq('salao_id', salaoId).order('ano').order('mes'),
           supabaseAdmin.from('prof_metricas_mensais').select('*').eq('salao_id', salaoId).eq('profissional_id', prof.id).order('ano').order('mes'),
           supabaseAdmin.from('feedback_prof_respostas').select('tipo, ocorrido_descricao, descricao, criado_em').eq('salao_id', salaoId).order('criado_em', { ascending: false }),
           supabaseAdmin.from('pendencias_profissionais').select('mensagem, data_limite, resolvido').eq('salao_id', salaoId).eq('profissional_id', prof.id),
-          supabaseAdmin.from('prof_pagamentos').select('ano, mes, clientes_preferencia, clientes_sem_preferencia, dias_trabalhados, taxa_ocupacao, total_servicos, ticket_medio, faturamento').eq('profissional_id', prof.id).order('ano').order('mes'),
         ])
 
         const linhas: string[] = [`PROFISSIONAL: ${prof.nome_completo} (${prof.cargo})`]
@@ -61,52 +60,12 @@ export async function executarFerramenta(nome: string, args: any, salaoId: strin
           }
         }
 
-        // Métricas detalhadas — usa prof_metricas_mensais como fonte primária
-        // Se clientes_sem_preferencia = 0, cruza com prof_pagamentos para confirmar
-        const metricasMap: Record<string, any> = {}
-        for (const m of (metricas || [])) {
-          const chave = `${m.ano}-${m.mes}`
-          metricasMap[chave] = { ...m }
-        }
-        // Cruza com prof_pagamentos (fonte da tela de Faturamento)
-        for (const p of (profPagamentos || [])) {
-          const chave = `${p.ano}-${p.mes}`
-          if (!metricasMap[chave]) {
-            metricasMap[chave] = { ano: p.ano, mes: p.mes }
-          }
-          // Se o campo estiver zerado em metricas, usa o valor de prof_pagamentos
-          if (!metricasMap[chave].clientes_sem_preferencia && p.clientes_sem_preferencia) {
-            metricasMap[chave].clientes_sem_preferencia = p.clientes_sem_preferencia
-          }
-          if (!metricasMap[chave].clientes_preferencia && p.clientes_preferencia) {
-            metricasMap[chave].clientes_preferencia = p.clientes_preferencia
-          }
-          if (!metricasMap[chave].faturamento && p.faturamento) {
-            metricasMap[chave].faturamento = p.faturamento
-          }
-          if (!metricasMap[chave].ticket_medio && p.ticket_medio) {
-            metricasMap[chave].ticket_medio = p.ticket_medio
-          }
-          if (!metricasMap[chave].taxa_ocupacao && p.taxa_ocupacao) {
-            metricasMap[chave].taxa_ocupacao = p.taxa_ocupacao
-          }
-          if (!metricasMap[chave].total_servicos && p.total_servicos) {
-            metricasMap[chave].total_servicos = p.total_servicos
-          }
-          if (!metricasMap[chave].dias_trabalhados && p.dias_trabalhados) {
-            metricasMap[chave].dias_trabalhados = p.dias_trabalhados
-          }
-        }
-
-        const metricasOrdenadas = Object.values(metricasMap).sort((a: any, b: any) =>
-          a.ano !== b.ano ? a.ano - b.ano : a.mes - b.mes
-        )
-
-        if (metricasOrdenadas.length) {
-          linhas.push('\nMÉTRICAS DETALHADAS (fonte: sistema completo):')
-          metricasOrdenadas.forEach((m: any) => {
+        // Métricas detalhadas
+        if (metricas?.length) {
+          linhas.push('\nMÉTRICAS DETALHADAS:')
+          metricas.forEach((m: any) => {
             const chave = `${MESES[m.mes-1]}/${String(m.ano).slice(2)}`
-            linhas.push(`  ${chave}: ${fmtR(Number(m.faturamento||0))}, Ticket ${fmtR(Number(m.ticket_medio||0))}, Ocupação ${m.taxa_ocupacao||0}%, Dias ${m.dias_trabalhados||0}, Clientes-fidelizados(com-preferência) ${m.clientes_preferencia||0}, Clientes-distribuídos-pela-recepção(sem-preferência) ${m.clientes_sem_preferencia||0}, Produtos ${m.total_produtos||0}`)
+            linhas.push(`  ${chave}: ${fmtR(m.faturamento)}, Ticket ${fmtR(m.ticket_medio)}, Ocupação ${m.taxa_ocupacao}%, Dias ${m.dias_trabalhados}, Clientes-fidelizados(com-preferência) ${m.clientes_preferencia}, Clientes-distribuídos-pela-recepção(sem-preferência) ${m.clientes_sem_preferencia}, Produtos ${m.total_produtos}`)
             if (m.servicos_detalhados?.length) {
               const top = [...m.servicos_detalhados].sort((a: any, b: any) => b.valor - a.valor).slice(0, 5)
               top.forEach((s: any) => linhas.push(`    • ${s.nome||s.servico}: ${fmtR(s.valor)} (${s.quantidade||1}x)`))
@@ -114,13 +73,10 @@ export async function executarFerramenta(nome: string, args: any, salaoId: strin
           })
         }
 
-        // Ocorrências — filtra apenas registros reais (não resumos gerenciais longos)
+        // Ocorrências
         const ocorrProf = (ocorrs || []).filter((f: any) => {
           const n = (f.profissional_nome || '').toLowerCase()
-          const match = n.includes(prof.apelido?.toLowerCase()?.split(' ')[0] || '') || n.includes(prof.nome_completo?.toLowerCase()?.split(' ')[0] || '')
-          // Exclui registros que são claramente resumos gerenciais (descricao muito longa > 300 chars)
-          const naoEhResumo = !f.descricao || f.descricao.length < 300
-          return match && naoEhResumo
+          return n.includes(prof.apelido?.toLowerCase()?.split(' ')[0] || '') || n.includes(prof.nome_completo?.toLowerCase()?.split(' ')[0] || '')
         })
         if (ocorrProf.length) {
           linhas.push(`\nFEEDBACKS/OCORRÊNCIAS (${ocorrProf.length} registros):`)
