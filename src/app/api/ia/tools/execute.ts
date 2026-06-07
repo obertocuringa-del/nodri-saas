@@ -190,82 +190,108 @@ export async function executarFerramenta(nome: string, args: any, salaoId: strin
       }
 
       case 'buscar_comparativo_profissionais': {
-        // Fonte principal: prof_metricas_mensais (usa profissional_id — sem risco de mismatch de nome)
         const { data: profs } = await supabaseAdmin
-          .from('profissionais').select('id, nome_completo, apelido, cargo, data_admissao')
+          .from('profissionais').select('id, nome_completo, apelido, cargo')
           .eq('salao_id', salaoId).eq('ativo', true)
 
-        // Pega os 3 meses mais recentes disponíveis
-        const { data: metricas } = await supabaseAdmin
-          .from('prof_metricas_mensais')
-          .select('profissional_id, ano, mes, faturamento, total_servicos, ticket_medio, taxa_ocupacao, clientes_preferencia, clientes_sem_preferencia')
+        // Busca todos os períodos — filtra por ano se informado
+        let query = supabaseAdmin
+          .from('relatorio_periodos')
+          .select('ano, mes, prof_pagamentos, prof_servicos, prof_ticket, prof_ocupacao, prof_preferencia')
           .eq('salao_id', salaoId)
-          .order('ano', { ascending: false }).order('mes', { ascending: false })
+          .order('ano').order('mes')
+
+        const anoInicio = args.ano_inicio ? Number(args.ano_inicio) : 0
+        const anoFim = args.ano_fim ? Number(args.ano_fim) : 9999
+        if (anoInicio) query = query.gte('ano', anoInicio)
+        if (anoFim < 9999) query = query.lte('ano', anoFim)
+
+        const { data: periodos } = await query
 
         const { data: ocorrs } = await supabaseAdmin
           .from('feedback_prof_respostas').select('profissional_nome, tipo').eq('salao_id', salaoId)
 
-        // Detecta os 3 meses mais recentes com dados
-        const mesesDisponiveis = [...new Set((metricas || []).map((m: any) => `${m.ano}-${m.mes}`))]
-          .sort((a, b) => b.localeCompare(a)).slice(0, 3)
+        // Agrega por profissional usando match de nome (mesma lógica da tela)
+        const fatMap: Record<string, number> = {}
+        const servMap: Record<string, number> = {}
+        const tickMap: Record<string, number[]> = {}
+        const ocupMap: Record<string, number[]> = {}
+        const prefMap: Record<string, number> = {}
+        const semPrefMap: Record<string, number> = {}
 
-        // Agrega por profissional_id (fonte confiável)
-        const fatById: Record<string, number> = {}
-        const servById: Record<string, number> = {}
-        const tickById: Record<string, number[]> = {}
-        const ocupById: Record<string, number[]> = {}
-        const prefById: Record<string, number> = {}
-        const semPrefById: Record<string, number> = {}
-
-        for (const m of (metricas || [])) {
-          const chave = `${m.ano}-${m.mes}`
-          if (!mesesDisponiveis.includes(chave)) continue
-          const id = m.profissional_id
-          fatById[id] = (fatById[id] || 0) + Number(m.faturamento || 0)
-          servById[id] = (servById[id] || 0) + Number(m.total_servicos || 0)
-          if (!tickById[id]) tickById[id] = []
-          if (m.ticket_medio) tickById[id].push(Number(m.ticket_medio))
-          if (!ocupById[id]) ocupById[id] = []
-          if (m.taxa_ocupacao) ocupById[id].push(Number(m.taxa_ocupacao))
-          prefById[id] = (prefById[id] || 0) + Number(m.clientes_preferencia || 0)
-          semPrefById[id] = (semPrefById[id] || 0) + Number(m.clientes_sem_preferencia || 0)
+        for (const per of (periodos || [])) {
+          for (const item of (per.prof_pagamentos || [])) {
+            const n = item.profissional || ''; if (!n) continue
+            fatMap[n] = (fatMap[n] || 0) + Number(item.valor_a_pagar||0) + Number(item.desconto||0)
+          }
+          for (const item of (per.prof_servicos || [])) {
+            const n = item.profissional || ''; if (!n) continue
+            servMap[n] = (servMap[n] || 0) + Number(item.quantidade||0)
+          }
+          for (const item of (per.prof_ticket || [])) {
+            const n = item.profissional || ''; if (!n) continue
+            if (!tickMap[n]) tickMap[n] = []
+            tickMap[n].push(Number(item.ticket_medio||0))
+          }
+          for (const item of (per.prof_ocupacao || [])) {
+            const n = item.profissional || ''; if (!n) continue
+            if (!ocupMap[n]) ocupMap[n] = []
+            ocupMap[n].push(Number(item.taxa_ocupacao||0))
+          }
+          for (const item of (per.prof_preferencia || [])) {
+            const n = item.profissional || ''; if (!n) continue
+            prefMap[n] = (prefMap[n] || 0) + Number(item.clientes_preferencia||0)
+            semPrefMap[n] = (semPrefMap[n] || 0) + Number(item.clientes_sem_preferencia||0)
+          }
         }
 
-        // Ocorrências por nome (única fonte disponível)
-        const ocorrMap: Record<string, number> = {}
+        // Ocorrências por tipo
+        const ocorrNegMap: Record<string, number> = {}
+        const ocorrPosMap: Record<string, number> = {}
         for (const f of (ocorrs || [])) {
-          if (f.tipo === 'negativo') {
-            const n = f.profissional_nome || ''
-            ocorrMap[n] = (ocorrMap[n] || 0) + 1
-          }
+          const n = f.profissional_nome || ''
+          if (f.tipo === 'negativo') ocorrNegMap[n] = (ocorrNegMap[n] || 0) + 1
+          else ocorrPosMap[n] = (ocorrPosMap[n] || 0) + 1
+        }
+
+        // Cruza profissionais com dados aggregados
+        function resolverNome(p: any) {
+          const nome = p.nome_completo
+          const apelido = p.apelido || ''
+          // Tenta match exato, depois por apelido, depois por primeiro nome
+          if (fatMap[nome]) return nome
+          if (apelido && fatMap[apelido]) return apelido
+          const primeiro = nome.split(' ')[0]
+          return Object.keys(fatMap).find(k => k.toLowerCase().includes(primeiro.toLowerCase())) || nome
         }
 
         const cargo = args.cargo?.toLowerCase() || ''
         const profsFiltrados = (profs || []).filter((p: any) => !cargo || p.cargo?.toLowerCase().includes(cargo))
+        profsFiltrados.sort((a: any, b: any) => {
+          const nA = resolverNome(a), nB = resolverNome(b)
+          return (fatMap[nB] || 0) - (fatMap[nA] || 0)
+        })
 
-        // Ordena por faturamento decrescente para ranking correto
-        profsFiltrados.sort((a: any, b: any) => (fatById[b.id] || 0) - (fatById[a.id] || 0))
-
-        const mesesLabel = mesesDisponiveis.map(m => {
-          const [ano, mes] = m.split('-')
-          return `${MESES[Number(mes)-1]}/${String(ano).slice(2)}`
-        }).join(', ')
-
-        const linhas: string[] = [`RANKING DE PROFISSIONAIS — ${mesesLabel} (ordenado por faturamento, fonte: métricas por ID):\n`]
-        linhas.push('| # | Profissional | Cargo | Faturamento | Serviços | Ticket Médio | Ocupação | Fidelizados | Recepção | Ocorr.Neg |')
-        linhas.push('|---|---|---|---|---|---|---|---|---|---|')
+        const periodoLabel = anoInicio ? `${anoInicio}${anoFim < 9999 ? ' a ' + anoFim : ' em diante'}` : 'todo o período'
+        const linhas: string[] = [`RANKING DE PROFISSIONAIS — ${periodoLabel} (ordenado por faturamento):\n`]
+        linhas.push('| # | Profissional | Cargo | Faturamento | Serviços | Ticket Médio | Ocupação | Fidelizados | Recepção | Ocorr.Neg | Ocorr.Pos |')
+        linhas.push('|---|---|---|---|---|---|---|---|---|---|---|')
 
         profsFiltrados.forEach((p: any, i: number) => {
-          const fat = fatById[p.id] || 0
-          const serv = servById[p.id] || 0
-          const ticks = tickById[p.id] || []
+          const n = resolverNome(p)
+          const fat = fatMap[n] || 0
+          const serv = servMap[n] || 0
+          const ticks = tickMap[n] || []
           const tick = ticks.length ? ticks.reduce((a: number, b: number) => a + b, 0) / ticks.length : 0
-          const ocups = ocupById[p.id] || []
+          const ocups = ocupMap[n] || []
           const ocup = ocups.length ? ocups.reduce((a: number, b: number) => a + b, 0) / ocups.length : 0
-          const fidelizados = prefById[p.id] || 0
-          const recepcao = semPrefById[p.id] || 0
-          const ocorrNeg = ocorrMap[p.nome_completo] || ocorrMap[p.apelido] || 0
-          linhas.push(`| ${i+1}º | ${p.nome_completo} | ${p.cargo} | ${fmtR(fat)} | ${serv} | ${fmtR(tick)} | ${ocup.toFixed(0)}% | ${fidelizados} | ${recepcao} | ${ocorrNeg} |`)
+          const fidelizados = prefMap[n] || 0
+          const recepcao = semPrefMap[n] || 0
+          const neg = ocorrNegMap[p.nome_completo] || ocorrNegMap[p.apelido] || 0
+          const pos = ocorrPosMap[p.nome_completo] || ocorrPosMap[p.apelido] || 0
+          if (fat > 0 || serv > 0) {
+            linhas.push(`| ${i+1}º | ${p.nome_completo} | ${p.cargo} | ${fmtR(fat)} | ${serv} | ${fmtR(tick)} | ${ocup.toFixed(0)}% | ${fidelizados} | ${recepcao} | ${neg} | ${pos} |`)
+          }
         })
 
         return linhas.join('\n')
@@ -431,11 +457,13 @@ export const FERRAMENTAS_GEMINI = [
       },
       {
         name: 'buscar_comparativo_profissionais',
-        description: 'Busca dados REAIS do banco comparando todos os profissionais ativos: faturamento, serviços, ticket médio, ocupação, clientes fidelizados, clientes da recepção e ocorrências. Usar SOMENTE quando o usuário pedir comparação real entre profissionais do salão, ranking ou quem performa melhor/pior. NÃO usar para perguntas conceituais como "o que significa ticket alto com ocupação baixa" — essas devem ser respondidas do conhecimento direto.',
+        description: 'Busca dados REAIS comparando todos os profissionais: faturamento, serviços, ticket médio, ocupação, fidelizados, recepção e ocorrências. Suporta filtro por período (ano_inicio, ano_fim). Usar quando pedir ranking, comparativo, quem performa melhor/pior, quem deve ser desligado, análise geral da equipe.',
         parameters: {
           type: 'OBJECT',
           properties: {
-            cargo: { type: 'STRING', description: 'Filtro por cargo, ex: "manicure", "cabeleireiro". Deixar vazio para todos.' }
+            cargo: { type: 'STRING', description: 'Filtro por cargo. Ex: "manicure". Vazio para todos.' },
+            ano_inicio: { type: 'NUMBER', description: 'Ano inicial do período. Ex: 2024. Vazio para todo o histórico.' },
+            ano_fim: { type: 'NUMBER', description: 'Ano final do período. Ex: 2026. Vazio para sem limite.' }
           }
         }
       },

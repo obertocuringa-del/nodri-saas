@@ -81,7 +81,7 @@ async function executarLoopFerramentas(
         system_instruction: { parts: [{ text: systemPrompt }] },
         contents: loop,
         tools: FERRAMENTAS_GEMINI,
-        generationConfig: { maxOutputTokens: 2048, temperature: 0.7 },
+        generationConfig: { maxOutputTokens: 8192, temperature: 0.7 },
       }),
     })
     if (!res.ok) break
@@ -2140,7 +2140,7 @@ ${dadosFormatados}`
       const geminiBody = {
         system_instruction: { parts: [{ text: systemPrompt }] },
         contents: historyFinal,
-        generationConfig: { maxOutputTokens: 2048, temperature: 0.7 },
+        generationConfig: { maxOutputTokens: 8192, temperature: 0.7 },
       }
 
       const geminiRes = await fetch(geminiUrl, {
