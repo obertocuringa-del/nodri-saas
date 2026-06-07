@@ -33,6 +33,9 @@ export default function CalculadoraCustoPage() {
   const [aba, setAba] = useState<'custo' | 'cadeira' | 'metro'>('custo')
   const [faturamento, setFaturamento] = useState('')
   const [ticketMedio, setTicketMedio] = useState('')
+  const [loadingIA, setLoadingIA] = useState(false)
+  const [analiseIA, setAnaliseIA] = useState('')
+  const [erroIA, setErroIA] = useState('')
   const [itens, setItens] = useState<Item[]>(ITENS_PADRAO.map((i, idx) => ({ ...i, id: idx + 1 })))
   // Aluguel de cadeira
   const [numCadeiras, setNumCadeiras] = useState('')
@@ -90,118 +93,83 @@ export default function CalculadoraCustoPage() {
     setItens(prev => prev.map(i => i.id === id ? { ...i, [campo]: val } : i))
   }
 
-  async function calcular() {
+  // Calcular — instantâneo, sem IA
+  function calcular() {
     if (!fat) { alert('Informe o faturamento mensal.'); return }
-    setLoading(true)
-    setResultado(null)
+    const itensPreenchidos = itens.filter(i => parseFloat(i.valor.replace(',', '.')) > 0)
+    setAnaliseIA('')
+    setErroIA('')
+    setResultado({
+      faturamento: fat,
+      totalCustos,
+      lucro,
+      margem,
+      analise: '',
+      itens: itensPreenchidos,
+      ticket,
+      atendimentosPE,
+      atendimentosPorDia,
+      atendimentosAtuais,
+      folga,
+    })
+  }
+
+  // Analisar com IA — separado, opcional
+  async function analisarComIA() {
+    if (!resultado) return
+    setLoadingIA(true)
+    setErroIA('')
+    setAnaliseIA('')
     try {
-      const itensPreenchidos = itens.filter(i => parseFloat(i.valor.replace(',', '.')) > 0)
-      const detalhe = itensPreenchidos.map(i => `- ${i.nome}: ${fmtR(parseFloat(i.valor.replace(',', '.')) || 0)}`).join('\n')
+      const detalhe = resultado.itens.map((i: any) => `- ${i.nome}: ${fmtR(parseFloat(i.valor.replace(',', '.')) || 0)}`).join('\n')
+      const prompt = `Você é a NODRI IA, especialista em gestão financeira de salões de beleza.
 
-      const prompt = `Você é a NODRI IA, especialista em gestão financeira de salões de beleza e referência em ponto de equilíbrio para o setor de beleza.
-
-O gestor preencheu a calculadora de custos operacionais com os seguintes dados:
-
-FATURAMENTO MENSAL: ${fmtR(fat)}
+DADOS DO GESTOR:
+- Faturamento Mensal: ${fmtR(resultado.faturamento)}
+- Total de Custos: ${fmtR(resultado.totalCustos)}
+- Lucro Líquido: ${fmtR(resultado.lucro)}
+- Margem de Lucro: ${resultado.margem.toFixed(1)}%
+${resultado.ticket > 0 ? `- Ticket Médio: ${fmtR(resultado.ticket)}
+- PE: ${resultado.atendimentosPE} atendimentos/mês
+- Situação: ${resultado.folga >= 0 ? `✅ ${resultado.folga} acima do PE` : `🚨 ${Math.abs(resultado.folga)} abaixo do PE`}` : ''}
 
 CUSTOS DETALHADOS:
 ${detalhe}
 
-TOTAIS CALCULADOS:
-- Total de Custos: ${fmtR(totalCustos)}
-- Lucro Líquido: ${fmtR(lucro)}
-- Margem de Lucro: ${margem.toFixed(1)}%
-- Custos representam: ${pct(totalCustos, fat)}% do faturamento
-${ticket > 0 ? `
-PONTO DE EQUILÍBRIO:
-- Ticket Médio informado: ${fmtR(ticket)}
-- Atendimentos necessários para cobrir custos: ${atendimentosPE}/mês (${atendimentosPorDia}/dia)
-- Atendimentos atuais estimados: ${atendimentosAtuais}/mês
-- Situação: ${folga >= 0 ? `✅ ${folga} atendimentos ACIMA do PE — zona de lucro` : `🚨 ${Math.abs(folga)} atendimentos ABAIXO do PE — zona de prejuízo`}` : ''}
+Faça análise financeira prática com:
+1. 🔍 DIAGNÓSTICO (margem saudável: >20%, atenção: 10-20%, crítica: <10%)
+2. ⚡ TOP 3 CUSTOS PARA REDUZIR (com % do faturamento e ação específica)
+3. 📊 BENCHMARKS DO SETOR (aluguel máx 10%, salários 35-45%, produtos 8-12%, marketing 3-5%)
+4. 💡 3 AÇÕES PRÁTICAS (com impacto estimado em R$)
+5. 🎯 META: faturamento ideal para margem de 25%
 
-Faça uma análise financeira completa e prática com:
-
-1. 🔍 DIAGNÓSTICO DA SITUAÇÃO FINANCEIRA
-   - Avalie se a margem está saudável (boa: acima de 20%, atenção: 10-20%, crítica: abaixo de 10%)
-   - Identifique os maiores custos e se estão dentro do padrão do setor de beleza
-   - Aponte inconsistências (ex: custo muito alto ou muito baixo para o faturamento)
-
-2. ⚡ CUSTOS QUE MERECEM ATENÇÃO
-   - Liste os 3 maiores custos com % do faturamento
-   - Sugira ações específicas para reduzir cada um
-
-3. 📊 BENCHMARKS DO SETOR DE BELEZA
-   - Compare com os percentuais ideais para salões:
-     • Aluguel: máx 10% do faturamento
-     • Salários/Comissões: 35-45%
-     • Produtos/Insumos: 8-12%
-     • Marketing: 3-5%
-     • Custos fixos totais: máx 30%
-
-4. 💡 RECOMENDAÇÕES PRÁTICAS
-   - 3 ações concretas para melhorar a margem
-   - Quanto cada ação pode impactar no lucro
-
-5. 🎯 META FINANCEIRA SUGERIDA
-   - Faturamento ideal para ter margem de 25%
-   - Quanto precisaria reduzir custos ou aumentar faturamento
-
-Seja direto, use números reais, evite respostas genéricas.`
+Seja direto e use números reais.`
 
       const res = await fetch('/api/ia/chat', {
-        method: 'POST',
-        credentials: 'include',
+        method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          mensagens: [{ role: 'user', content: prompt }],
-          modo: 'calculadora'
-        })
+        body: JSON.stringify({ mensagens: [{ role: 'user', content: prompt }], modo: 'calculadora' })
       })
+      if (!res.ok) { setErroIA('Servidor sobrecarregado. Tente novamente em alguns segundos.'); return }
 
-      if (!res.ok) {
-        const err = await res.json()
-        alert(err.error || 'Erro ao processar. Tente novamente.')
-        return
-      }
-
-      let texto = ''
       const reader = res.body!.getReader()
       const dec = new TextDecoder('utf-8', { fatal: false })
-      let buf = ''
-
+      let buf = '', texto = ''
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
         buf += dec.decode(value, { stream: true })
-        const lines = buf.split('\n')
-        buf = lines.pop() || ''
+        const lines = buf.split('\n'); buf = lines.pop() || ''
         for (const line of lines) {
           if (!line.startsWith('data:')) continue
           try {
             const d = JSON.parse(line.slice(5).trim())
-            if (d.token) texto += d.token
+            if (d.token) { texto += d.token; setAnaliseIA(texto) }
           } catch {}
         }
       }
-
-      setResultado({
-        faturamento: fat,
-        totalCustos,
-        lucro,
-        margem,
-        analise: texto,
-        itens: itensPreenchidos,
-        ticket,
-        atendimentosPE,
-        atendimentosPorDia,
-        atendimentosAtuais,
-        folga,
-      })
-    } catch (e) {
-      alert('Erro de conexão. Tente novamente.')
-    } finally {
-      setLoading(false)
-    }
+    } catch { setErroIA('Erro de conexão. Tente novamente.') }
+    finally { setLoadingIA(false) }
   }
 
   const corMargem = margem >= 20 ? '#10b981' : margem >= 10 ? '#f59e0b' : '#ef4444'
@@ -285,19 +253,43 @@ Seja direto, use números reais, evite respostas genéricas.`
             </div>
           </div>
 
-          {/* Análise IA */}
-          <div className="rounded-2xl p-6 border" style={{ background: '#111827', borderColor: '#7c5cfc40' }}>
-            <h3 className="font-bold text-sm mb-4 flex items-center gap-2" style={{ color: '#7c5cfc' }}>
-              🤖 Análise da NODRI IA
-            </h3>
-            <div className="text-sm leading-relaxed space-y-1" style={{ color: '#cbd5e1' }}
-              dangerouslySetInnerHTML={{
-                __html: resultado.analise
-                  .replace(/\*\*(.*?)\*\*/g, '<strong style="color:#e2e8f0">$1</strong>')
-                  .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                  .replace(/\n/g, '<br/>')
-              }}
-            />
+          {/* Análise IA — opcional */}
+          <div className="rounded-2xl border overflow-hidden" style={{ borderColor: '#7c5cfc40' }}>
+            {!analiseIA && !loadingIA && !erroIA && (
+              <button onClick={analisarComIA}
+                className="w-full py-4 font-bold text-sm flex items-center justify-center gap-2 transition-all hover:brightness-110"
+                style={{ background: 'linear-gradient(135deg, #7c5cfc20, #a78bfa20)', color: '#a78bfa', border: 'none' }}>
+                🤖 Quero a análise da NODRI IA
+                <span className="text-xs font-normal" style={{ color: '#64748b' }}>— opcional, pode demorar alguns segundos</span>
+              </button>
+            )}
+            {loadingIA && (
+              <div className="p-5 flex items-center gap-3" style={{ background: '#111827' }}>
+                <Loader2 size={18} className="animate-spin" style={{ color: '#7c5cfc' }} />
+                <span className="text-sm" style={{ color: '#94a3b8' }}>NODRI IA analisando seus dados...</span>
+              </div>
+            )}
+            {erroIA && (
+              <div className="p-5 flex items-center justify-between gap-3" style={{ background: '#111827' }}>
+                <span className="text-sm" style={{ color: '#ef4444' }}>⚠️ {erroIA}</span>
+                <button onClick={analisarComIA} className="text-xs px-3 py-1.5 rounded-lg" style={{ background: '#7c5cfc', color: 'white' }}>
+                  Tentar novamente
+                </button>
+              </div>
+            )}
+            {analiseIA && (
+              <div className="p-6" style={{ background: '#111827' }}>
+                <h3 className="font-bold text-sm mb-4" style={{ color: '#7c5cfc' }}>🤖 Análise da NODRI IA</h3>
+                <div className="text-sm leading-relaxed" style={{ color: '#cbd5e1' }}
+                  dangerouslySetInnerHTML={{
+                    __html: analiseIA
+                      .replace(/\*\*(.*?)\*\*/g, '<strong style="color:#e2e8f0">$1</strong>')
+                      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                      .replace(/\n/g, '<br/>')
+                  }}
+                />
+              </div>
+            )}
           </div>
 
           <button onClick={() => setResultado(null)}
@@ -749,24 +741,15 @@ Seja direto, use números reais, evite respostas genéricas.`
         {/* Botão calcular */}
         <button
           onClick={calcular}
-          disabled={loading || !fat}
+          disabled={!fat}
           className="w-full py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-3 transition-all hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
           style={{ background: 'linear-gradient(135deg, #7c5cfc, #a78bfa)', color: 'white' }}>
-          {loading ? (
-            <>
-              <Loader2 size={20} className="animate-spin" />
-              NODRI IA analisando seus dados...
-            </>
-          ) : (
-            <>
-              <Calculator size={20} />
-              Calcular e Analisar com IA
-            </>
-          )}
+          <Calculator size={20} />
+          Ver Resultado
         </button>
 
         <p className="text-center text-xs mt-3" style={{ color: '#334155' }}>
-          A NODRI IA vai comparar seus custos com os benchmarks do setor de beleza
+          Resultado instantâneo — análise IA disponível na próxima tela
         </p>
         </>}
       </div>
