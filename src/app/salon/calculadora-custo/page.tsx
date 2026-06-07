@@ -31,6 +31,7 @@ const ITENS_PADRAO: Omit<Item, 'id'>[] = [
 
 export default function CalculadoraCustoPage() {
   const [faturamento, setFaturamento] = useState('')
+  const [ticketMedio, setTicketMedio] = useState('')
   const [itens, setItens] = useState<Item[]>(ITENS_PADRAO.map((i, idx) => ({ ...i, id: idx + 1 })))
   const [proximo, setProximo] = useState(ITENS_PADRAO.length + 1)
   const [resultado, setResultado] = useState<any>(null)
@@ -38,9 +39,16 @@ export default function CalculadoraCustoPage() {
   const [dicaAberta, setDicaAberta] = useState<number | null>(null)
 
   const fat = parseFloat(faturamento.replace(',', '.')) || 0
+  const ticket = parseFloat(ticketMedio.replace(',', '.')) || 0
   const totalCustos = itens.reduce((s, i) => s + (parseFloat(i.valor.replace(',', '.')) || 0), 0)
   const lucro = fat - totalCustos
   const margem = fat > 0 ? (lucro / fat) * 100 : 0
+  // Ponto de Equilíbrio
+  const atendimentosPE = ticket > 0 ? Math.ceil(totalCustos / ticket) : 0
+  const diasUteis = 26
+  const atendimentosPorDia = atendimentosPE > 0 ? (atendimentosPE / diasUteis).toFixed(1) : '0'
+  const atendimentosAtuais = fat > 0 && ticket > 0 ? Math.round(fat / ticket) : 0
+  const folga = atendimentosAtuais - atendimentosPE
 
   function adicionarItem() {
     setItens(prev => [...prev, { id: proximo, nome: '', valor: '', dica: '', editavel: true }])
@@ -63,7 +71,7 @@ export default function CalculadoraCustoPage() {
       const itensPreenchidos = itens.filter(i => parseFloat(i.valor.replace(',', '.')) > 0)
       const detalhe = itensPreenchidos.map(i => `- ${i.nome}: ${fmtR(parseFloat(i.valor.replace(',', '.')) || 0)}`).join('\n')
 
-      const prompt = `Você é a NODRI IA, especialista em gestão financeira de salões de beleza.
+      const prompt = `Você é a NODRI IA, especialista em gestão financeira de salões de beleza e referência em ponto de equilíbrio para o setor de beleza.
 
 O gestor preencheu a calculadora de custos operacionais com os seguintes dados:
 
@@ -77,6 +85,12 @@ TOTAIS CALCULADOS:
 - Lucro Líquido: ${fmtR(lucro)}
 - Margem de Lucro: ${margem.toFixed(1)}%
 - Custos representam: ${pct(totalCustos, fat)}% do faturamento
+${ticket > 0 ? `
+PONTO DE EQUILÍBRIO:
+- Ticket Médio informado: ${fmtR(ticket)}
+- Atendimentos necessários para cobrir custos: ${atendimentosPE}/mês (${atendimentosPorDia}/dia)
+- Atendimentos atuais estimados: ${atendimentosAtuais}/mês
+- Situação: ${folga >= 0 ? `✅ ${folga} atendimentos ACIMA do PE — zona de lucro` : `🚨 ${Math.abs(folga)} atendimentos ABAIXO do PE — zona de prejuízo`}` : ''}
 
 Faça uma análise financeira completa e prática com:
 
@@ -150,6 +164,11 @@ Seja direto, use números reais, evite respostas genéricas.`
         margem,
         analise: texto,
         itens: itensPreenchidos,
+        ticket,
+        atendimentosPE,
+        atendimentosPorDia,
+        atendimentosAtuais,
+        folga,
       })
     } catch (e) {
       alert('Erro de conexão. Tente novamente.')
@@ -190,6 +209,34 @@ Seja direto, use números reais, evite respostas genéricas.`
               </div>
             ))}
           </div>
+
+          {/* Ponto de Equilíbrio no resultado */}
+          {resultado.ticket > 0 && (
+            <div className="rounded-2xl p-5 border mb-4" style={{ background: '#0d1525', borderColor: '#10b98140' }}>
+              <h3 className="font-bold text-sm mb-3" style={{ color: '#10b981' }}>⚖️ Ponto de Equilíbrio</h3>
+              <div className="grid grid-cols-3 gap-3 text-center">
+                <div>
+                  <p className="text-xs mb-1" style={{ color: '#64748b' }}>PE necessário</p>
+                  <p className="text-2xl font-bold" style={{ color: '#10b981' }}>{resultado.atendimentosPE}</p>
+                  <p className="text-xs" style={{ color: '#475569' }}>atend/mês</p>
+                </div>
+                <div>
+                  <p className="text-xs mb-1" style={{ color: '#64748b' }}>Atendimentos atuais</p>
+                  <p className="text-2xl font-bold" style={{ color: '#f59e0b' }}>{resultado.atendimentosAtuais}</p>
+                  <p className="text-xs" style={{ color: '#475569' }}>atend/mês</p>
+                </div>
+                <div>
+                  <p className="text-xs mb-1" style={{ color: '#64748b' }}>Situação</p>
+                  <p className="text-xl font-bold" style={{ color: resultado.folga >= 0 ? '#10b981' : '#ef4444' }}>
+                    {resultado.folga >= 0 ? `+${resultado.folga}` : resultado.folga}
+                  </p>
+                  <p className="text-xs" style={{ color: resultado.folga >= 0 ? '#10b981' : '#ef4444' }}>
+                    {resultado.folga >= 0 ? 'zona de lucro ✅' : 'zona de risco 🚨'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Breakdown de custos */}
           <div className="rounded-2xl p-5 border mb-6" style={{ background: '#111827', borderColor: '#1e293b' }}>
@@ -274,7 +321,7 @@ Seja direto, use números reais, evite respostas genéricas.`
                   onChange={e => setFaturamento(e.target.value)}
                   placeholder="0,00"
                   className="w-full pl-10 pr-4 py-3 rounded-xl text-white text-lg font-bold focus:outline-none focus:ring-2 transition-all"
-                  style={{ background: '#0a0f1a', border: '1px solid #f59e0b60', focusRingColor: '#f59e0b' }}
+                  style={{ background: '#0a0f1a', border: '1px solid #f59e0b60' }}
                 />
               </div>
             </div>
@@ -288,6 +335,90 @@ Seja direto, use números reais, evite respostas genéricas.`
             )}
           </div>
         </div>
+
+        {/* Ticket Médio */}
+        <div className="rounded-2xl p-6 border mb-4" style={{ background: '#111827', borderColor: '#7c5cfc40' }}>
+          <label className="block font-bold text-base mb-1" style={{ color: '#7c5cfc' }}>
+            🎟️ Ticket Médio por Atendimento
+          </label>
+          <p className="text-xs mb-3" style={{ color: '#64748b' }}>
+            Valor médio que cada cliente gasta por visita. Usado para calcular o Ponto de Equilíbrio.
+          </p>
+          <div className="relative max-w-xs">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium" style={{ color: '#94a3b8' }}>R$</span>
+            <input
+              type="number"
+              value={ticketMedio}
+              onChange={e => setTicketMedio(e.target.value)}
+              placeholder="0,00"
+              className="w-full pl-10 pr-4 py-3 rounded-xl text-white text-lg font-bold focus:outline-none transition-all"
+              style={{ background: '#0a0f1a', border: '1px solid #7c5cfc60' }}
+            />
+          </div>
+        </div>
+
+        {/* Ponto de Equilíbrio */}
+        {ticket > 0 && totalCustos > 0 && (
+          <div className="rounded-2xl p-6 border mb-4" style={{ background: '#0d1525', borderColor: '#10b98140' }}>
+            <h3 className="font-bold text-sm mb-4 flex items-center gap-2" style={{ color: '#10b981' }}>
+              ⚖️ Ponto de Equilíbrio
+              <span className="text-xs font-normal px-2 py-0.5 rounded-full" style={{ background: '#10b98120', color: '#10b981' }}>
+                Quantos atendimentos cobrem seus custos
+              </span>
+            </h3>
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="rounded-xl p-4 border" style={{ background: '#111827', borderColor: '#1e293b' }}>
+                <p className="text-xs mb-1" style={{ color: '#64748b' }}>Atendimentos necessários/mês</p>
+                <p className="text-3xl font-bold" style={{ color: '#10b981' }}>{atendimentosPE}</p>
+                <p className="text-xs mt-1" style={{ color: '#475569' }}>≈ {atendimentosPorDia} por dia útil</p>
+              </div>
+              <div className="rounded-xl p-4 border" style={{ background: '#111827', borderColor: '#1e293b' }}>
+                <p className="text-xs mb-1" style={{ color: '#64748b' }}>Atendimentos atuais/mês</p>
+                <p className="text-3xl font-bold" style={{ color: fat > 0 ? '#f59e0b' : '#475569' }}>
+                  {atendimentosAtuais > 0 ? atendimentosAtuais : '—'}
+                </p>
+                {atendimentosAtuais > 0 && (
+                  <p className="text-xs mt-1" style={{ color: folga >= 0 ? '#10b981' : '#ef4444' }}>
+                    {folga >= 0 ? `✅ +${folga} acima do PE` : `🚨 ${Math.abs(folga)} abaixo do PE`}
+                  </p>
+                )}
+              </div>
+            </div>
+            {/* Barra visual */}
+            {atendimentosAtuais > 0 && (
+              <div>
+                <div className="flex justify-between text-xs mb-1" style={{ color: '#64748b' }}>
+                  <span>0</span>
+                  <span style={{ color: '#10b981' }}>PE: {atendimentosPE}</span>
+                  <span>{Math.max(atendimentosAtuais, atendimentosPE) + 10}</span>
+                </div>
+                <div className="relative h-4 rounded-full overflow-hidden" style={{ background: '#1e293b' }}>
+                  {/* Barra PE */}
+                  <div className="absolute top-0 left-0 h-full rounded-full transition-all"
+                    style={{
+                      width: `${Math.min((atendimentosPE / (Math.max(atendimentosAtuais, atendimentosPE) + 10)) * 100, 100)}%`,
+                      background: '#ef444440'
+                    }} />
+                  {/* Barra atual */}
+                  <div className="absolute top-0 left-0 h-full rounded-full transition-all"
+                    style={{
+                      width: `${Math.min((atendimentosAtuais / (Math.max(atendimentosAtuais, atendimentosPE) + 10)) * 100, 100)}%`,
+                      background: folga >= 0 ? 'linear-gradient(90deg,#10b981,#34d399)' : 'linear-gradient(90deg,#ef4444,#f87171)'
+                    }} />
+                </div>
+                <p className="text-xs mt-2 text-center" style={{ color: '#64748b' }}>
+                  {folga >= 0
+                    ? `Seu salão está ${folga} atendimentos acima do ponto de equilíbrio — zona de lucro ✅`
+                    : `Seu salão precisa de mais ${Math.abs(folga)} atendimentos para cobrir os custos 🚨`
+                  }
+                </p>
+              </div>
+            )}
+            <div className="mt-3 p-3 rounded-xl text-xs" style={{ background: '#10b98110', color: '#10b981', border: '1px solid #10b98120' }}>
+              💡 <strong>Como usar:</strong> Se o seu ticket médio é R${ticket.toFixed(0)}, você precisa de pelo menos <strong>{atendimentosPE} atendimentos/mês</strong> para não ter prejuízo. Abaixo disso = prejuízo. Acima disso = lucro.
+            </div>
+          </div>
+        )}
 
         {/* Mini resumo flutuante */}
         {fat > 0 && (
@@ -333,7 +464,7 @@ Seja direto, use números reais, evite respostas genéricas.`
                         onChange={e => atualizarItem(item.id, 'nome', e.target.value)}
                         placeholder="Nome do gasto"
                         className="w-full px-3 py-1.5 rounded-lg text-sm text-white focus:outline-none focus:ring-1"
-                        style={{ background: '#0a0f1a', border: '1px solid #1e293b', focusRingColor: '#7c5cfc' }}
+                        style={{ background: '#0a0f1a', border: '1px solid #1e293b' }}
                       />
                     ) : (
                       <div>
