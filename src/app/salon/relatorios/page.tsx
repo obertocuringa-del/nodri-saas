@@ -679,7 +679,7 @@ export default function RelatoriosPage() {
 
           {/* ABAS */}
           <div style={{ padding: '12px 20px 0', display: 'flex', gap: 4, borderBottom: '1px solid #1e293b' }}>
-            {([['geral', '📈 Geral'], ['metas', '🎯 Metas'], ['profissionais', '👥 Profissionais'], ['feedbacks', '⭐ Feedbacks']] as const).map(([id, lbl]) => (
+            {([['geral', '📈 Geral'], ['metas', '🎯 Metas']] as const).map(([id, lbl]) => (
               <button key={id} onClick={() => setAba(id as any)}
                 style={{ padding: '8px 18px', border: 'none', borderRadius: '8px 8px 0 0', fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s', background: aba === id ? '#0a0f1a' : 'transparent', color: aba === id ? '#e2e8f0' : '#475569', borderBottom: aba === id ? '2px solid #7c5cfc' : '2px solid transparent', marginBottom: -1 }}>
                 {lbl}
