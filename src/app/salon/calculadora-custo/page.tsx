@@ -396,7 +396,7 @@ export default function CalculadoraCusto() {
   // ── Receitas e Despesas ──────────────────────────────────────────────────
   const [fat,      setFat]      = useState('')
   const [custIndD, setCustIndD] = useState('30')   // % custo indireto desejado
-  const [custDirD, setCustDirD] = useState('55')   // % custo direto desejado
+  const [custDirD, setCustDirD] = useState('')   // % custo direto — calculado automaticamente
   const [lucroD,   setLucroD]   = useState('15')   // % lucro desejado
   const [invInicial,setInvInicial] = useState('')  // investimento inicial
   const [totalDeprec,setTotalDeprec] = useState('') // total a depreciar
@@ -554,6 +554,26 @@ export default function CalculadoraCusto() {
     } finally { setSalvando(false) }
   }
 
+  // ── Custo Direto Desejado automático = 100% - Indireto - Lucro (fórmula DV: =1-E5-M5) ──
+  useEffect(() => {
+    const automatico = (100 - n(custIndD) - n(lucroD)).toFixed(1)
+    setCustDirD(automatico)
+  }, [custIndD, lucroD])
+
+  // ── Provisões automáticas a partir dos Salários (fórmulas planilha DV) ──
+  // 13º = Salários ÷ 12 (0.083333)
+  // Férias = Salários ÷ 36 (0.027778) — apenas o 1/3 constitucional mensal
+  // FGTS Rescisório = Salários × 4% (0.04)
+  useEffect(() => {
+    const salIdx = despInd.findIndex(d => d.nome === 'Salários')
+    const salVal = salIdx >= 0 ? n(despInd[salIdx].valor) : 0
+    if (salVal > 0) {
+      setSal13(String(Math.round(salVal / 12)))
+      setFerias(String(Math.round(salVal / 36)))
+      setFgtsR(String(Math.round(salVal * 0.04)))
+    }
+  }, [despInd])
+
   function mesAnterior() {
     if (mesSel === 1) { setMesSel(12); setAnoSel(a=>a-1) }
     else setMesSel(m=>m-1)
@@ -565,7 +585,7 @@ export default function CalculadoraCusto() {
 
   // Cálculos Receitas e Despesas
   const fatN       = n(fat)
-  const depMensal  = n(totalDeprec) > 0 ? n(totalDeprec) / 60 : 0
+  const depMensal  = n(totalDeprec) > 0 ? n(totalDeprec) / 84 : 0
   const totInd     = despInd.reduce((s,d)=>s+n(d.valor),0) + extrasDespInd.reduce((s,d)=>s+n(d.valor),0)
   const totProvisao= n(sal13) + n(ferias) + n(fgtsR)
   const custoOp    = totInd + totProvisao + depMensal
@@ -860,18 +880,19 @@ Use números reais. Seja direto.`
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    {l:'Custo Indireto Desejado',v:custIndD,set:setCustIndD,c:'#f59e0b',dica:'Padrão DV: 30%'},
-                    {l:'Custo Direto Desejado',v:custDirD,set:setCustDirD,c:'#ef4444',dica:'Padrão DV: 55%'},
-                    {l:'Lucro Desejado',v:lucroD,set:setLucroD,c:'#10b981',dica:'Padrão DV: 15%'},
-                  ].map(f=>(
+                    {l:'Custo Indireto Desejado',v:custIndD,set:setCustIndD,c:'#f59e0b',dica:'Padrão DV: 30%',auto:false,info:'custIndD'},
+                    {l:'Custo Direto Desejado',v:custDirD,set:null,c:'#ef4444',dica:'Calculado: 100% − Indireto − Lucro',auto:true,info:'custDirD'},
+                    {l:'Lucro Desejado',v:lucroD,set:setLucroD,c:'#10b981',dica:'Padrão DV: 15%',auto:false,info:'lucroD'},
+                  ].map((f:any)=>(
                     <div key={f.l}>
                       <div className="flex items-center gap-1 mb-1">
                         <label className="text-[10px] font-bold" style={{color:f.c}}>{f.l}</label>
-                        <InfoBtn id={f.l==='Custo Indireto Desejado'?'custIndD':f.l==='Custo Direto Desejado'?'custDirD':'lucroD'}/>
+                        {f.auto && <span className="text-[8px] px-1 rounded font-bold" style={{background:'#ef444425',color:'#ef4444'}}>=auto</span>}
+                        <InfoBtn id={f.info}/>
                       </div>
                       <p className="text-[9px] mb-1" style={{color:'#475569'}}>{f.dica}</p>
                       <div className="relative">
-                        <input type="number" value={f.v} onChange={e=>f.set(e.target.value)}
+                        <input type="number" value={f.v} onChange={e=>f.set&&f.set(e.target.value)} readOnly={f.auto}
                           className="w-full pr-6 pl-2 py-1.5 rounded-lg text-xs text-white focus:outline-none"
                           style={{background:'#0a0f1a',border:`1px solid ${f.c}40`}}/>
                         <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#64748b'}}>%</span>
@@ -894,7 +915,7 @@ Use números reais. Seja direto.`
                 <div>
                   <div className="flex items-center gap-2 mb-1"><label className="text-xs font-bold" style={{color:'#94a3b8'}}>📉 Total a ser Depreciado (R$)</label><InfoBtn id="totalDeprec"/></div>
                   <p className="text-xs mb-1" style={{color:'#475569'}}>
-                    Equipamentos, móveis, reformas — dividido por 60 meses (5 anos)
+                    Equipamentos, móveis, reformas — dividido por 84 meses (7 anos) — padrão planilha DV
                     {n(totalDeprec)>0 && <span style={{color:'#a78bfa'}}> → {fmtR(depMensal)}/mês</span>}
                   </p>
                   <div className="relative">
@@ -980,14 +1001,17 @@ Use números reais. Seja direto.`
             {/* Provisão */}
             <div className="rounded-2xl border overflow-hidden" style={{background:'#111827',borderColor:'#1e293b'}}>
               <div className="flex items-center justify-between px-5 py-3 border-b" style={{background:'#0d1525',borderColor:'#1e293b'}}>
-                <span className="font-bold text-sm" style={{color:'#a78bfa'}}>📅 Provisão Mensal</span>
+                <div>
+                  <span className="font-bold text-sm" style={{color:'#a78bfa'}}>📅 Provisão Mensal</span>
+                  <p className="text-[10px] mt-0.5" style={{color:'#64748b'}}>✨ Calculado automaticamente a partir do campo <strong style={{color:'#a78bfa'}}>Salários</strong> nas Despesas Indiretas</p>
+                </div>
                 <span className="font-bold text-sm" style={{color:'#a78bfa'}}>{fmtR(totProvisao)}</span>
               </div>
               <div className="grid grid-cols-3 gap-4 p-5">
                 {[
-                  {l:'13º Salário',v:sal13,set:setSal13,dica:'Salário anual ÷ 12',info:'sal13'},
-                  {l:'Férias',v:ferias,set:setFerias,dica:'(Salário × 1/3) ÷ 12',info:'ferias'},
-                  {l:'FGTS Rescisório',v:fgtsR,set:setFgtsR,dica:'Provisão p/ eventual demissão',info:'fgtsR'},
+                  {l:'13º Salário',v:sal13,set:setSal13,dica:'Auto: Salários ÷ 12',info:'sal13'},
+                  {l:'Férias',v:ferias,set:setFerias,dica:'Auto: Salários ÷ 36 (1/3 mensal)',info:'ferias'},
+                  {l:'FGTS Rescisório',v:fgtsR,set:setFgtsR,dica:'Auto: Salários × 4%',info:'fgtsR'},
                 ].map((f:any)=>(
                   <div key={f.l}>
                     <div className="flex items-center gap-1.5 mb-1">
