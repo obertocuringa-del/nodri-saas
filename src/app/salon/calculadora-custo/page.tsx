@@ -30,13 +30,64 @@ const ITENS_PADRAO: Omit<Item, 'id'>[] = [
 ]
 
 export default function CalculadoraCustoPage() {
-  const [aba, setAba] = useState<'custo' | 'cadeira' | 'metro' | 'servicos'>('custo')
+  const [aba, setAba] = useState<'custo' | 'servicos' | 'produto' | 'pe' | 'cadeira' | 'metro'>('custo')
   const [faturamento, setFaturamento] = useState('')
   const [ticketMedio, setTicketMedio] = useState('')
   const [loadingIA, setLoadingIA] = useState(false)
   const [analiseIA, setAnaliseIA] = useState('')
   const [erroIA, setErroIA] = useState('')
   const [itens, setItens] = useState<Item[]>(ITENS_PADRAO.map((i, idx) => ({ ...i, id: idx + 1 })))
+  // Custo de Produto por Serviço
+  interface Ingrediente { id: number; nome: string; qtdEmbalagem: string; qtdUsada: string; precoEmbalagem: string; unidade: string }
+  interface ServicoIngredientes { id: number; nomeServico: string; ingredientes: Ingrediente[] }
+  const [servicosProduto, setServicosProduto] = useState<ServicoIngredientes[]>([
+    { id: 1, nomeServico: '', ingredientes: [{ id: 1, nome: '', qtdEmbalagem: '', qtdUsada: '', precoEmbalagem: '', unidade: 'ml' }] }
+  ])
+  const [proxServProd, setProxServProd] = useState(2)
+
+  function adicionarServicoProduto() {
+    setServicosProduto(prev => [...prev, { id: proxServProd, nomeServico: '', ingredientes: [{ id: 1, nome: '', qtdEmbalagem: '', qtdUsada: '', precoEmbalagem: '', unidade: 'ml' }] }])
+    setProxServProd(p => p + 1)
+  }
+  function adicionarIngrediente(sId: number) {
+    setServicosProduto(prev => prev.map(s => s.id === sId ? {
+      ...s, ingredientes: [...s.ingredientes, { id: s.ingredientes.length + 1, nome: '', qtdEmbalagem: '', qtdUsada: '', precoEmbalagem: '', unidade: 'ml' }]
+    } : s))
+  }
+  function atualizarIngrediente(sId: number, iIdx: number, campo: keyof Ingrediente, val: string) {
+    setServicosProduto(prev => prev.map(s => s.id === sId ? {
+      ...s, ingredientes: s.ingredientes.map((ing, idx) => idx === iIdx ? { ...ing, [campo]: val } : ing)
+    } : s))
+  }
+  function removerIngrediente(sId: number, iIdx: number) {
+    setServicosProduto(prev => prev.map(s => s.id === sId ? {
+      ...s, ingredientes: s.ingredientes.filter((_, idx) => idx !== iIdx)
+    } : s))
+  }
+  function calcCustoIngrediente(ing: Ingrediente): number {
+    const qtdEmb = parseFloat(ing.qtdEmbalagem.replace(',', '.')) || 0
+    const qtdUsa = parseFloat(ing.qtdUsada.replace(',', '.')) || 0
+    const preco = parseFloat(ing.precoEmbalagem.replace(',', '.')) || 0
+    if (!qtdEmb || !qtdUsa || !preco) return 0
+    return (preco / qtdEmb) * qtdUsa
+  }
+
+  // Ponto de Equilíbrio detalhado
+  interface DespesaPE { id: number; nome: string; valor: string; tipo: 'indireta' | 'direta' }
+  const DESPESAS_INDIRETAS_PE = ['Aluguel','Água','Contabilidade','Condomínio','Despesas Bancárias','Energia Elétrica','Estacionamento','Decoração/Manutenção','Internet/Telefone','Software/Sistema','Produtos de Limpeza','IPTU','Marketing/Publicidade','Material de Escritório','Mimos para Clientes','Mimos para Profissionais','Uniformes','Pró-labore','Salários/Encargos','FGTS','Seguro']
+  const DESPESAS_DIRETAS_PE = ['Imposto','Produto/Insumo','Comissão/Rateio','Taxa de Cartão']
+  const [despesasPE, setDespesasPE] = useState<DespesaPE[]>([
+    ...DESPESAS_INDIRETAS_PE.map((n, i) => ({ id: i+1, nome: n, valor: '', tipo: 'indireta' as const })),
+    ...DESPESAS_DIRETAS_PE.map((n, i) => ({ id: DESPESAS_INDIRETAS_PE.length+i+1, nome: n, valor: '', tipo: 'direta' as const }))
+  ])
+  const [margemOpPE, setMargemOpPE] = useState('44')
+  const [metaLucroPE, setMetaLucroPE] = useState('13')
+  const [faturamentoPEDetalhe, setFaturamentoPEDetalhe] = useState('')
+
+  function atualizarDespesaPE(id: number, val: string) {
+    setDespesasPE(prev => prev.map(d => d.id === id ? { ...d, valor: val } : d))
+  }
+
   // Serviços
   interface Servico { id: number; nome: string; preco: string; despDireta: string; produto: string; imposto: string }
   const [servicos, setServicos] = useState<Servico[]>([
@@ -368,17 +419,253 @@ Seja direto e use números reais.`
         <div className="flex gap-2 mb-6 p-1 rounded-xl" style={{ background: '#111827' }}>
           {([
             { id: 'custo', label: 'Custo Operacional', icon: '💰' },
+            { id: 'pe', label: 'Ponto de Equilíbrio', icon: '⚖️' },
             { id: 'servicos', label: 'Calcular Serviços', icon: '💇' },
+            { id: 'produto', label: 'Custo de Produto', icon: '🧴' },
             { id: 'cadeira', label: 'Aluguel de Cadeira', icon: '💺' },
             { id: 'metro', label: 'Faturamento por M²', icon: '📐' },
           ] as const).map(a => (
             <button key={a.id} onClick={() => setAba(a.id)}
-              className="flex-1 py-2.5 px-3 rounded-lg text-xs font-bold transition-all"
+              className="flex-1 py-2 px-2 rounded-lg text-[11px] font-bold transition-all"
               style={{ background: aba === a.id ? '#7c5cfc' : 'transparent', color: aba === a.id ? 'white' : '#64748b' }}>
               {a.icon} {a.label}
             </button>
           ))}
         </div>
+
+        {/* ── ABA PONTO DE EQUILÍBRIO DETALHADO ── */}
+        {aba === 'pe' && (() => {
+          const fatPE = parseFloat(faturamentoPEDetalhe.replace(',','.')) || (fat > 0 ? fat : 0)
+          const margemOp = parseFloat(margemOpPE.replace(',','.')) / 100 || 0
+          const metaLucro = parseFloat(metaLucroPE.replace(',','.')) / 100 || 0
+          const indiretas = despesasPE.filter(d => d.tipo === 'indireta')
+          const diretas = despesasPE.filter(d => d.tipo === 'direta')
+          const totalInd = indiretas.reduce((s,d) => s + (parseFloat(d.valor.replace(',','.')) || 0), 0)
+          const totalDir = diretas.reduce((s,d) => s + (parseFloat(d.valor.replace(',','.')) || 0), 0)
+          const totalDespesas = totalInd + totalDir
+          return (
+            <div className="space-y-4">
+              {/* Parâmetros */}
+              <div className="rounded-2xl p-5 border" style={{ background: '#111827', borderColor: '#10b98140' }}>
+                <h3 className="font-bold text-sm mb-3" style={{ color: '#10b981' }}>⚙️ Parâmetros do Cálculo</h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold mb-1" style={{ color: '#94a3b8' }}>Faturamento Mensal (R$)</label>
+                    <p className="text-xs mb-1" style={{ color: '#475569' }}>{fat > 0 ? `Da calculadora: ${fmtR(fat)}` : 'Informe o faturamento'}</p>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{ color: '#64748b' }}>R$</span>
+                      <input type="number" value={faturamentoPEDetalhe || (fat > 0 ? String(fat) : '')}
+                        onChange={e => setFaturamentoPEDetalhe(e.target.value)}
+                        placeholder={fat > 0 ? String(fat) : '0'}
+                        className="w-full pl-8 pr-3 py-2 rounded-lg text-white text-sm focus:outline-none"
+                        style={{ background: '#0a0f1a', border: '1px solid #10b98160' }} />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold mb-1" style={{ color: '#94a3b8' }}>Margem Operacional (%)</label>
+                    <p className="text-xs mb-1" style={{ color: '#475569' }}>% que sobra após despesas diretas</p>
+                    <div className="relative">
+                      <input type="number" value={margemOpPE} onChange={e => setMargemOpPE(e.target.value)}
+                        className="w-full pr-7 pl-3 py-2 rounded-lg text-white text-sm focus:outline-none"
+                        style={{ background: '#0a0f1a', border: '1px solid #1e293b' }} />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: '#64748b' }}>%</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold mb-1" style={{ color: '#94a3b8' }}>Meta de Lucro (%)</label>
+                    <p className="text-xs mb-1" style={{ color: '#475569' }}>Lucro desejado sobre o faturamento</p>
+                    <div className="relative">
+                      <input type="number" value={metaLucroPE} onChange={e => setMetaLucroPE(e.target.value)}
+                        className="w-full pr-7 pl-3 py-2 rounded-lg text-white text-sm focus:outline-none"
+                        style={{ background: '#0a0f1a', border: '1px solid #1e293b' }} />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: '#64748b' }}>%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Despesas Indiretas */}
+              {[{ titulo: '📋 Despesas Indiretas', lista: indiretas, total: totalInd, cor: '#f59e0b' },
+                { titulo: '📌 Despesas Diretas', lista: diretas, total: totalDir, cor: '#ef4444' }
+              ].map(grupo => (
+                <div key={grupo.titulo} className="rounded-2xl border overflow-hidden" style={{ background: '#111827', borderColor: '#1e293b' }}>
+                  <div className="px-5 py-3 flex items-center justify-between border-b" style={{ background: '#0d1525', borderColor: '#1e293b' }}>
+                    <span className="font-bold text-sm" style={{ color: grupo.cor }}>{grupo.titulo}</span>
+                    <span className="font-bold text-sm" style={{ color: grupo.cor }}>{fmtR(grupo.total)}</span>
+                  </div>
+                  {/* Header */}
+                  <div className="grid grid-cols-12 gap-2 px-5 py-2 text-xs font-bold uppercase tracking-wider" style={{ color: '#475569', borderBottom: '1px solid #1e293b20' }}>
+                    <div className="col-span-4">Despesa</div>
+                    <div className="col-span-2">Valor (R$)</div>
+                    <div className="col-span-2">Anal. Vertical</div>
+                    <div className="col-span-2">P.E. (R$)</div>
+                    <div className="col-span-2">P.E. c/ Lucro</div>
+                  </div>
+                  {grupo.lista.map(d => {
+                    const v = parseFloat(d.valor.replace(',','.')) || 0
+                    const av = fatPE > 0 ? (v / fatPE * 100) : 0
+                    const pe = margemOp > 0 ? v / margemOp : 0
+                    const peLucro = (margemOp - metaLucro) > 0 ? v / (margemOp - metaLucro) : 0
+                    return (
+                      <div key={d.id} className="grid grid-cols-12 gap-2 px-5 py-2 items-center hover:bg-white/2" style={{ borderBottom: '1px solid #1e293b10' }}>
+                        <div className="col-span-4 text-xs" style={{ color: '#cbd5e1' }}>{d.nome}</div>
+                        <div className="col-span-2">
+                          <div className="relative">
+                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{ color: '#64748b' }}>R$</span>
+                            <input type="number" value={d.valor} onChange={e => atualizarDespesaPE(d.id, e.target.value)}
+                              placeholder="0"
+                              className="w-full pl-7 pr-2 py-1 rounded-lg text-xs text-white focus:outline-none"
+                              style={{ background: '#0a0f1a', border: `1px solid ${v > 0 ? '#33415560' : '#1e293b'}` }} />
+                          </div>
+                        </div>
+                        <div className="col-span-2 text-xs text-center" style={{ color: '#64748b' }}>{v > 0 ? `${av.toFixed(1)}%` : '—'}</div>
+                        <div className="col-span-2 text-xs text-center" style={{ color: '#10b981' }}>{v > 0 && margemOp > 0 ? fmtR(pe) : '—'}</div>
+                        <div className="col-span-2 text-xs text-center" style={{ color: '#f59e0b' }}>{v > 0 && (margemOp - metaLucro) > 0 ? fmtR(peLucro) : '—'}</div>
+                      </div>
+                    )
+                  })}
+                </div>
+              ))}
+
+              {/* Totais */}
+              {totalDespesas > 0 && margemOp > 0 && (
+                <div className="grid grid-cols-3 gap-4">
+                  {[
+                    { l: 'Total Despesas', v: fmtR(totalDespesas), c: '#f59e0b' },
+                    { l: 'Ponto de Equilíbrio', v: fmtR(totalDespesas / margemOp), c: '#10b981', sub: `Precisa faturar ${fmtR(totalDespesas / margemOp)}/mês para cobrir tudo` },
+                    { l: 'P.E. com Lucro de '+metaLucroPE+'%', v: (margemOp - metaLucro) > 0 ? fmtR(totalDespesas / (margemOp - metaLucro)) : 'Margem insuficiente', c: '#a78bfa' },
+                  ].map((c, i) => (
+                    <div key={i} className="rounded-2xl p-4 border text-center" style={{ background: '#111827', borderColor: '#1e293b' }}>
+                      <p className="text-xs mb-1" style={{ color: '#64748b' }}>{c.l}</p>
+                      <p className="text-xl font-bold" style={{ color: c.c }}>{c.v}</p>
+                      {c.sub && <p className="text-[10px] mt-1" style={{ color: '#475569' }}>{c.sub}</p>}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="rounded-xl p-4 text-xs space-y-1" style={{ background: '#111827', border: '1px solid #1e293b', color: '#64748b' }}>
+                <p className="font-bold mb-1" style={{ color: '#94a3b8' }}>💡 Como funciona:</p>
+                <p>• <strong style={{ color: '#e2e8f0' }}>P.E.</strong> = Despesa ÷ Margem Operacional% → faturamento mínimo para cobrir essa despesa</p>
+                <p>• <strong style={{ color: '#e2e8f0' }}>P.E. c/ Lucro</strong> = Despesa ÷ (Margem% - Meta Lucro%) → faturamento para cobrir E lucrar</p>
+                <p>• <strong style={{ color: '#e2e8f0' }}>Análise Vertical</strong> = quanto cada despesa representa do faturamento total</p>
+              </div>
+            </div>
+          )
+        })()}
+
+        {/* ── ABA CUSTO DE PRODUTO POR SERVIÇO ── */}
+        {aba === 'produto' && (
+          <div className="space-y-4">
+            <div className="rounded-xl p-3 text-xs" style={{ background: '#7c5cfc15', border: '1px solid #7c5cfc30', color: '#a78bfa' }}>
+              ✨ Calcule o custo exato de cada produto usado por serviço. O total pode ser usado na aba <strong>💇 Calcular Serviços</strong> como "Produto (R$)".
+            </div>
+
+            {servicosProduto.map(sp => {
+              const totalCustoProd = sp.ingredientes.reduce((s, ing) => s + calcCustoIngrediente(ing), 0)
+              return (
+                <div key={sp.id} className="rounded-2xl border overflow-hidden" style={{ background: '#111827', borderColor: '#1e293b' }}>
+                  {/* Header do serviço */}
+                  <div className="px-5 py-4 flex items-center gap-3 border-b" style={{ background: '#0d1525', borderColor: '#1e293b' }}>
+                    <span className="text-lg">🧴</span>
+                    <input value={sp.nomeServico}
+                      onChange={e => setServicosProduto(prev => prev.map(s => s.id === sp.id ? { ...s, nomeServico: e.target.value } : s))}
+                      placeholder="Nome do serviço (ex: Coloração Longo)"
+                      className="flex-1 bg-transparent text-white font-bold text-sm focus:outline-none border-b border-transparent focus:border-purple-500"
+                      style={{ borderBottom: '1px solid #334155' }} />
+                    {totalCustoProd > 0 && (
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-[10px]" style={{ color: '#64748b' }}>Custo total de produto</p>
+                        <p className="font-bold text-base" style={{ color: '#f59e0b' }}>{fmtR(totalCustoProd)}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Header da tabela */}
+                  <div className="grid gap-2 px-5 py-2 text-[10px] font-bold uppercase tracking-wider border-b"
+                    style={{ background: '#0a0f1a', borderColor: '#1e293b', color: '#475569', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 1fr 20px' }}>
+                    <div>Produto/Insumo</div>
+                    <div>Unid.</div>
+                    <div>Qtd embalagem</div>
+                    <div>Preço embalagem</div>
+                    <div>Qtd usada</div>
+                    <div>Custo uso</div>
+                    <div></div>
+                  </div>
+
+                  {/* Ingredientes */}
+                  {sp.ingredientes.map((ing, idx) => {
+                    const custo = calcCustoIngrediente(ing)
+                    return (
+                      <div key={idx} className="grid gap-2 px-5 py-2 items-center hover:bg-white/2"
+                        style={{ borderBottom: '1px solid #1e293b10', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 1fr 20px' }}>
+                        <input value={ing.nome} onChange={e => atualizarIngrediente(sp.id, idx, 'nome', e.target.value)}
+                          placeholder="Ex: Tinta Color"
+                          className="px-3 py-1.5 rounded-lg text-xs text-white focus:outline-none"
+                          style={{ background: '#0a0f1a', border: '1px solid #1e293b' }} />
+                        <select value={ing.unidade} onChange={e => atualizarIngrediente(sp.id, idx, 'unidade', e.target.value)}
+                          className="px-2 py-1.5 rounded-lg text-xs text-white focus:outline-none"
+                          style={{ background: '#0a0f1a', border: '1px solid #1e293b' }}>
+                          {['ml','g','und','L','kg'].map(u => <option key={u} value={u}>{u}</option>)}
+                        </select>
+                        <div className="relative">
+                          <input type="number" value={ing.qtdEmbalagem} onChange={e => atualizarIngrediente(sp.id, idx, 'qtdEmbalagem', e.target.value)}
+                            placeholder="Ex: 60"
+                            className="w-full px-3 py-1.5 rounded-lg text-xs text-white focus:outline-none"
+                            style={{ background: '#0a0f1a', border: '1px solid #1e293b' }} />
+                        </div>
+                        <div className="relative">
+                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{ color: '#64748b' }}>R$</span>
+                          <input type="number" value={ing.precoEmbalagem} onChange={e => atualizarIngrediente(sp.id, idx, 'precoEmbalagem', e.target.value)}
+                            placeholder="0"
+                            className="w-full pl-7 pr-2 py-1.5 rounded-lg text-xs text-white focus:outline-none"
+                            style={{ background: '#0a0f1a', border: '1px solid #1e293b' }} />
+                        </div>
+                        <input type="number" value={ing.qtdUsada} onChange={e => atualizarIngrediente(sp.id, idx, 'qtdUsada', e.target.value)}
+                          placeholder="Ex: 90"
+                          className="px-3 py-1.5 rounded-lg text-xs text-white focus:outline-none"
+                          style={{ background: '#0a0f1a', border: '1px solid #1e293b' }} />
+                        <div className="text-xs font-bold text-center" style={{ color: custo > 0 ? '#f59e0b' : '#334155' }}>
+                          {custo > 0 ? fmtR(custo) : '—'}
+                        </div>
+                        <button onClick={() => removerIngrediente(sp.id, idx)} style={{ color: '#475569' }}>
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    )
+                  })}
+
+                  {/* Footer */}
+                  <div className="px-5 py-3 flex items-center justify-between border-t" style={{ borderColor: '#1e293b' }}>
+                    <button onClick={() => adicionarIngrediente(sp.id)}
+                      className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg"
+                      style={{ background: '#f59e0b20', color: '#f59e0b', border: '1px dashed #f59e0b40' }}>
+                      <Plus size={12} /> Adicionar produto
+                    </button>
+                    {totalCustoProd > 0 && (
+                      <div className="text-xs px-3 py-1.5 rounded-lg font-bold" style={{ background: '#f59e0b20', color: '#f59e0b' }}>
+                        Total: {fmtR(totalCustoProd)} → use em "💇 Calcular Serviços" como Produto (R$)
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+
+            <button onClick={adicionarServicoProduto}
+              className="w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2"
+              style={{ background: '#7c5cfc20', color: '#7c5cfc', border: '1px dashed #7c5cfc40' }}>
+              <Plus size={15} /> Adicionar outro serviço
+            </button>
+
+            <div className="rounded-xl p-4 text-xs space-y-1" style={{ background: '#111827', border: '1px solid #1e293b', color: '#64748b' }}>
+              <p className="font-bold mb-1" style={{ color: '#94a3b8' }}>💡 Fórmula usada:</p>
+              <p>• <strong style={{ color: '#e2e8f0' }}>Custo por uso</strong> = (Preço da embalagem ÷ Qtd total da embalagem) × Qtd usada no serviço</p>
+              <p>• Ex: Tinta R$35 / 60g × 90g usados = <strong style={{ color: '#f59e0b' }}>R$52,50 de custo</strong></p>
+              <p>• Baseado na planilha Ferramenta Financeira DV — Dra. Dani Venâncio</p>
+            </div>
+          </div>
+        )}
 
         {/* ── ABA CALCULAR SERVIÇOS ── */}
         {aba === 'servicos' && (
