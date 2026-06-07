@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ArrowLeft, Plus, Trash2, Calculator, Loader2, ChevronDown, ChevronUp } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Calculator, Loader2, ChevronDown, ChevronUp, Armchair, Grid3x3 } from 'lucide-react'
 
 const fmtR = (v: number) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 const pct = (v: number, t: number) => t > 0 ? ((v / t) * 100).toFixed(1) : '0.0'
@@ -30,9 +30,17 @@ const ITENS_PADRAO: Omit<Item, 'id'>[] = [
 ]
 
 export default function CalculadoraCustoPage() {
+  const [aba, setAba] = useState<'custo' | 'cadeira' | 'metro'>('custo')
   const [faturamento, setFaturamento] = useState('')
   const [ticketMedio, setTicketMedio] = useState('')
   const [itens, setItens] = useState<Item[]>(ITENS_PADRAO.map((i, idx) => ({ ...i, id: idx + 1 })))
+  // Aluguel de cadeira
+  const [numCadeiras, setNumCadeiras] = useState('')
+  const [custoOperacionalCadeira, setCustoOperacionalCadeira] = useState('')
+  // Metro quadrado
+  const [metragemTotal, setMetragemTotal] = useState('')
+  const [faturamentoMinimoM2, setFaturamentoMinimoM2] = useState('')
+  const [metragemSala, setMetragemSala] = useState('')
   const [proximo, setProximo] = useState(ITENS_PADRAO.length + 1)
   const [resultado, setResultado] = useState<any>(null)
   const [loading, setLoading] = useState(false)
@@ -51,6 +59,23 @@ export default function CalculadoraCustoPage() {
   const atendimentosAtuais = fat > 0 && ticket > 0 ? Math.round(fat / ticket) : 0
   const folga = atendimentosAtuais - atendimentosPE
   const folgaReais = fat - faturamentoPE
+
+  // Aluguel de cadeira — usa totalCustos da calculadora principal se não preenchido
+  const custoOpCad = parseFloat(custoOperacionalCadeira.replace(',', '.')) || (totalCustos > 0 ? totalCustos : 0)
+  const nCadeiras = parseInt(numCadeiras) || 0
+  const custoPorCadeira = nCadeiras > 0 ? custoOpCad / nCadeiras : 0
+  const aluguelSugerido = custoPorCadeira * 1.5
+
+  // Metro quadrado — usa faturamentoPE da calculadora principal se não preenchido
+  const fatMinimoM2 = parseFloat(faturamentoMinimoM2.replace(',', '.')) || (faturamentoPE > 0 ? faturamentoPE : 0)
+  const mTotal = parseFloat(metragemTotal.replace(',', '.')) || 0
+  const fatPorM2 = mTotal > 0 ? fatMinimoM2 / mTotal : 0
+  const fatSugeridoPorM2 = fatPorM2 * 1.5
+  const mSala = parseFloat(metragemSala.replace(',', '.')) || 0
+  const fatSugeridoSala = mSala > 0 ? fatSugeridoPorM2 * mSala : 0
+
+  // Interliga: quando totalCustos muda, preenche campo de custo operacional da cadeira se vazio
+  // E faturamentoPE preenche campo de faturamento mínimo do m²
 
   function adicionarItem() {
     setItens(prev => [...prev, { id: proximo, nome: '', valor: '', dica: '', editavel: true }])
@@ -290,22 +315,172 @@ Seja direto, use números reais, evite respostas genéricas.`
       <div className="max-w-4xl mx-auto px-4 py-8">
 
         {/* Header */}
-        <div className="flex items-center gap-3 mb-8">
+        <div className="flex items-center gap-3 mb-6">
           <a href="/salon" className="p-2 rounded-lg hover:bg-white/5 transition-colors" style={{ color: '#94a3b8' }}>
             <ArrowLeft size={18} />
           </a>
           <div>
             <h1 className="text-xl font-bold text-white flex items-center gap-2">
               <Calculator size={22} style={{ color: '#7c5cfc' }} />
-              Calculadora de Custo Operacional
+              Calculadoras do Salão
             </h1>
             <p className="text-xs mt-0.5" style={{ color: '#64748b' }}>
-              Preencha os valores e a NODRI IA gera um diagnóstico completo do seu negócio
+              Os dados são compartilhados entre as calculadoras automaticamente
             </p>
           </div>
         </div>
 
-        {/* Faturamento */}
+        {/* Abas */}
+        <div className="flex gap-2 mb-6 p-1 rounded-xl" style={{ background: '#111827' }}>
+          {([
+            { id: 'custo', label: 'Custo Operacional', icon: '💰' },
+            { id: 'cadeira', label: 'Aluguel de Cadeira', icon: '💺' },
+            { id: 'metro', label: 'Faturamento por M²', icon: '📐' },
+          ] as const).map(a => (
+            <button key={a.id} onClick={() => setAba(a.id)}
+              className="flex-1 py-2.5 px-3 rounded-lg text-xs font-bold transition-all"
+              style={{ background: aba === a.id ? '#7c5cfc' : 'transparent', color: aba === a.id ? 'white' : '#64748b' }}>
+              {a.icon} {a.label}
+            </button>
+          ))}
+        </div>
+
+        {/* ── ABA ALUGUEL DE CADEIRA ── */}
+        {aba === 'cadeira' && (
+          <div className="space-y-4">
+            {totalCustos > 0 && (
+              <div className="rounded-xl p-3 text-xs flex items-center gap-2" style={{ background: '#7c5cfc15', border: '1px solid #7c5cfc30', color: '#a78bfa' }}>
+                ✨ Custo operacional da calculadora principal: <strong>{fmtR(totalCustos)}</strong> — preenchido automaticamente
+              </div>
+            )}
+            <div className="rounded-2xl p-6 border" style={{ background: '#111827', borderColor: '#1e293b' }}>
+              <h2 className="font-bold text-base mb-1" style={{ color: '#f59e0b' }}>💺 Aluguel de Cadeira</h2>
+              <p className="text-xs mb-5" style={{ color: '#64748b' }}>Quanto cobrar de aluguel por cadeira para cobrir custos e ter lucro.</p>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold mb-1" style={{ color: '#94a3b8' }}>Custo Operacional Mensal Total (R$)</label>
+                  <p className="text-xs mb-2" style={{ color: '#475569' }}>Todos os gastos fixos do salão. {totalCustos > 0 ? 'Preenchido automaticamente — pode editar.' : ''}</p>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: '#94a3b8' }}>R$</span>
+                    <input type="number"
+                      value={custoOperacionalCadeira || (totalCustos > 0 && !custoOperacionalCadeira ? String(Math.round(totalCustos)) : '')}
+                      onChange={e => setCustoOperacionalCadeira(e.target.value)}
+                      placeholder={totalCustos > 0 ? totalCustos.toFixed(2) : '0,00'}
+                      className="w-full pl-10 pr-4 py-3 rounded-xl text-white focus:outline-none"
+                      style={{ background: '#0a0f1a', border: '1px solid #f59e0b60' }} />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold mb-1" style={{ color: '#94a3b8' }}>Número de Cadeiras / Postos</label>
+                  <p className="text-xs mb-2" style={{ color: '#475569' }}>Quantas cadeiras ou postos de atendimento tem o salão?</p>
+                  <input type="number" value={numCadeiras} onChange={e => setNumCadeiras(e.target.value)}
+                    placeholder="Ex: 10"
+                    className="w-full px-4 py-3 rounded-xl text-white focus:outline-none"
+                    style={{ background: '#0a0f1a', border: '1px solid #1e293b' }} />
+                </div>
+              </div>
+              {custoPorCadeira > 0 && (
+                <div className="mt-6 space-y-3">
+                  <div className="rounded-xl p-4 border" style={{ background: '#0a0f1a', borderColor: '#f59e0b40' }}>
+                    <p className="text-xs mb-1" style={{ color: '#64748b' }}>📊 Custo por Cadeira (ponto de equilíbrio)</p>
+                    <p className="text-3xl font-bold" style={{ color: '#f59e0b' }}>{fmtR(custoPorCadeira)}</p>
+                    <p className="text-xs mt-1" style={{ color: '#475569' }}>Valor que cada cadeira precisa gerar para cobrir os custos</p>
+                  </div>
+                  <div className="rounded-xl p-4 border" style={{ background: '#0a0f1a', borderColor: '#10b98140' }}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span>⭐</span>
+                      <p className="text-xs font-bold" style={{ color: '#10b981' }}>Aluguel Sugerido por Cadeira</p>
+                      <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: '#10b98120', color: '#10b981' }}>+50% lucro</span>
+                    </div>
+                    <p className="text-3xl font-bold" style={{ color: '#10b981' }}>{fmtR(aluguelSugerido)}</p>
+                    <p className="text-xs mt-1" style={{ color: '#475569' }}>Valor recomendado com margem de lucro de 50%</p>
+                  </div>
+                  <div className="rounded-xl p-4 text-xs space-y-1" style={{ background: '#7c5cfc10', border: '1px solid #7c5cfc30', color: '#a78bfa' }}>
+                    <p><strong>💡 Resumo:</strong></p>
+                    <p>• {nCadeiras} cadeiras × {fmtR(aluguelSugerido)} = <strong>{fmtR(aluguelSugerido * nCadeiras)}/mês arrecadado</strong></p>
+                    <p>• Lucro estimado: <strong style={{ color: '#10b981' }}>{fmtR(aluguelSugerido * nCadeiras - custoOpCad)}/mês</strong></p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── ABA M² ── */}
+        {aba === 'metro' && (
+          <div className="space-y-4">
+            {faturamentoPE > 0 && (
+              <div className="rounded-xl p-3 text-xs flex items-center gap-2" style={{ background: '#7c5cfc15', border: '1px solid #7c5cfc30', color: '#a78bfa' }}>
+                ✨ Faturamento mínimo da calculadora principal: <strong>{fmtR(faturamentoPE)}</strong> — preenchido automaticamente
+              </div>
+            )}
+            <div className="rounded-2xl p-6 border" style={{ background: '#111827', borderColor: '#1e293b' }}>
+              <h2 className="font-bold text-base mb-1" style={{ color: '#06b6d4' }}>📐 Faturamento por M²</h2>
+              <p className="text-xs mb-5" style={{ color: '#64748b' }}>Quanto cada metro quadrado do salão precisa gerar para ser rentável.</p>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold mb-1" style={{ color: '#94a3b8' }}>Faturamento Mínimo Necessário (R$)</label>
+                  <p className="text-xs mb-2" style={{ color: '#475569' }}>Valor para cobrir todas as despesas. {faturamentoPE > 0 ? 'Calculado automaticamente — pode editar.' : ''}</p>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: '#94a3b8' }}>R$</span>
+                    <input type="number"
+                      value={faturamentoMinimoM2 || (faturamentoPE > 0 && !faturamentoMinimoM2 ? String(Math.round(faturamentoPE)) : '')}
+                      onChange={e => setFaturamentoMinimoM2(e.target.value)}
+                      placeholder={faturamentoPE > 0 ? faturamentoPE.toFixed(2) : '0,00'}
+                      className="w-full pl-10 pr-4 py-3 rounded-xl text-white focus:outline-none"
+                      style={{ background: '#0a0f1a', border: '1px solid #06b6d460' }} />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold mb-1" style={{ color: '#94a3b8' }}>Metragem Total do Salão (m²)</label>
+                  <p className="text-xs mb-2" style={{ color: '#475569' }}>Área total do salão em metros quadrados.</p>
+                  <input type="number" value={metragemTotal} onChange={e => setMetragemTotal(e.target.value)}
+                    placeholder="Ex: 80"
+                    className="w-full px-4 py-3 rounded-xl text-white focus:outline-none"
+                    style={{ background: '#0a0f1a', border: '1px solid #1e293b' }} />
+                </div>
+              </div>
+              {fatPorM2 > 0 && (
+                <div className="mt-6 space-y-3">
+                  <div className="rounded-xl p-4 border" style={{ background: '#0a0f1a', borderColor: '#06b6d440' }}>
+                    <p className="text-xs mb-1" style={{ color: '#64748b' }}>📊 Faturamento por M² (ponto de equilíbrio)</p>
+                    <p className="text-3xl font-bold" style={{ color: '#06b6d4' }}>{fmtR(fatPorM2)}/m²</p>
+                    <p className="text-xs mt-1" style={{ color: '#475569' }}>Meta mínima que cada m² precisa gerar</p>
+                  </div>
+                  <div className="rounded-xl p-4 border" style={{ background: '#0a0f1a', borderColor: '#10b98140' }}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span>⭐</span>
+                      <p className="text-xs font-bold" style={{ color: '#10b981' }}>Faturamento Sugerido por M²</p>
+                      <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: '#10b98120', color: '#10b981' }}>+50% margem</span>
+                    </div>
+                    <p className="text-3xl font-bold" style={{ color: '#10b981' }}>{fmtR(fatSugeridoPorM2)}/m²</p>
+                    <p className="text-xs mt-1" style={{ color: '#475569' }}>Valor recomendado com margem de lucro de 50%</p>
+                  </div>
+                  <div className="rounded-xl p-4 border" style={{ background: '#0a0f1a', borderColor: '#1e293b' }}>
+                    <p className="text-xs font-bold mb-3" style={{ color: '#94a3b8' }}>📏 Calcular para um espaço específico:</p>
+                    <div className="flex gap-2 items-center">
+                      <input type="number" value={metragemSala} onChange={e => setMetragemSala(e.target.value)}
+                        placeholder="Ex: 15 m²"
+                        className="flex-1 px-4 py-2.5 rounded-lg text-white text-sm focus:outline-none"
+                        style={{ background: '#111827', border: '1px solid #334155' }} />
+                      <span className="text-sm" style={{ color: '#64748b' }}>m²</span>
+                    </div>
+                    {fatSugeridoSala > 0 && (
+                      <div className="mt-3 p-3 rounded-lg" style={{ background: '#10b98115', border: '1px solid #10b98130' }}>
+                        <p className="text-xs" style={{ color: '#64748b' }}>Faturamento sugerido para {mSala} m²:</p>
+                        <p className="text-2xl font-bold mt-1" style={{ color: '#10b981' }}>{fmtR(fatSugeridoSala)}/mês</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Conteúdo da aba Custo Operacional só aparece quando aba === 'custo' */}
+        {aba !== 'custo' ? null :
+        <>{/* Faturamento */}
         <div className="rounded-2xl p-6 border mb-4" style={{ background: '#111827', borderColor: '#f59e0b40' }}>
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
@@ -593,6 +768,7 @@ Seja direto, use números reais, evite respostas genéricas.`
         <p className="text-center text-xs mt-3" style={{ color: '#334155' }}>
           A NODRI IA vai comparar seus custos com os benchmarks do setor de beleza
         </p>
+        </>}
       </div>
     </div>
   )
