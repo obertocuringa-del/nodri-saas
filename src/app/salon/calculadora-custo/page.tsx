@@ -595,11 +595,14 @@ export default function CalculadoraCusto() {
   const resultOp   = margOpR - custoOp
   const resultOpPct= fatN > 0 ? resultOp / fatN : 0
   const totOutras  = n(aquisicaoEq) + n(distSocios)
-  const resultFin  = resultOp - totOutras
-  const rentab     = fatN > 0 ? resultFin / fatN : 0
+  // Fórmula DV linha 132: =ResultOp - OutrasDespesas + Depreciacao (depreciação é custo não-caixa, soma de volta)
+  const resultFin  = resultOp - totOutras + depMensal
+  // Fórmula DV linha 139: =ResultadoOperacao / Investimento_Inicial (ROI sobre o capital investido)
+  const rentab     = n(invInicial) > 0 ? resultOp / n(invInicial) : 0
   const pe         = margOpPct > 0 ? custoOp / margOpPct : 0
   const peLucro    = (margOpPct - n(lucroD)/100) > 0 ? custoOp / (margOpPct - n(lucroD)/100) : 0
-  const capGiro    = custoOp > 0 ? (custoOp / 30) * 30 : 0 // simplificado
+  // Fórmula DV linha 141: =CustoOp * 3 (3 meses de reserva)
+  const capGiro    = custoOp * 3
 
   // ── Ponto de Equilíbrio detalhado ───────────────────────────────────────
   const fatPE_  = n(fatPEManual)  || fatN
@@ -1102,7 +1105,7 @@ Use números reais. Seja direto.`
                     {l:'Custo Operacional Total',v:custoOp,pct:pctStr(custoOp,fatN),c:'#f59e0b',dica:'Indiretas + Provisão + Depreciação'},
                     {l:'Margem Operacional',v:margOpR,pct:pctStr(margOpR,fatN),c:'#06b6d4',dica:'Faturamento − Despesas Diretas'},
                     {l:'Resultado Operacional',v:resultOp,pct:pctStr(resultOp,fatN),c:corRes(resultOp),dica:'Margem − Custo Operacional'},
-                    {l:'Resultado Financeiro',v:resultFin,pct:pctStr(resultFin,fatN),c:corRes(resultFin),dica:'Resultado Op. − Outras Despesas'},
+                    {l:'Resultado Financeiro',v:resultFin,pct:pctStr(resultFin,fatN),c:corRes(resultFin),dica:'Resultado Op. − Outras Despesas + Depreciação'},
                   ].map((c,i)=>(
                     <div key={i} className="rounded-xl p-4 border" style={{background:'#0d1525',borderColor:'#1e293b'}}>
                       <p className="text-xs mb-0.5" style={{color:'#64748b'}}>{c.l}</p>
@@ -1116,8 +1119,8 @@ Use números reais. Seja direto.`
                   {[
                     {l:'Ponto de Equilíbrio',v:fmtR(pe),c:'#10b981',dica:'Faturamento mínimo para cobrir tudo'},
                     {l:`PE c/ Lucro de ${lucroD}%`,v:fmtR(peLucro),c:'#a78bfa',dica:'Para cobrir custos + lucro desejado'},
-                    {l:'Rentabilidade',v:`${(rentab*100).toFixed(2)}%`,c:corRes(rentab),dica:'Resultado / Faturamento'},
-                    {l:'Capital de Giro Mínimo',v:fmtR(capGiro),c:'#06b6d4',dica:'Reserva para 30 dias de operação'},
+                    {l:'Rentabilidade',v:`${(rentab*100).toFixed(2)}%`,c:corRes(rentab),dica:'Resultado Op. / Investimento Inicial'},
+                    {l:'Capital de Giro Mínimo',v:fmtR(capGiro),c:'#06b6d4',dica:'Custo Operacional × 3 meses'},
                   ].map((c,i)=>(
                     <div key={i} className="rounded-xl p-4 border text-center" style={{background:'#0d1525',borderColor:'#1e293b'}}>
                       <p className="text-[10px] mb-1" style={{color:'#64748b'}}>{c.l}</p>
