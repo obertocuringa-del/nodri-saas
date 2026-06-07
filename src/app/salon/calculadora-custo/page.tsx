@@ -391,7 +391,7 @@ export default function CalculadoraCusto() {
   const [carregando, setCarregando] = useState(false)
 
   // Aba ativa
-  const [aba, setAba] = useState<'rd'|'pe'|'servicos'|'produto'|'cadeira'|'metro'>('rd')
+  const [aba, setAba] = useState<'rd'|'pe'|'servicos'|'produto'|'cadeira'|'metro'|'graficos'>('rd')
 
   // ── Receitas e Despesas ──────────────────────────────────────────────────
   const [fat,      setFat]      = useState('')
