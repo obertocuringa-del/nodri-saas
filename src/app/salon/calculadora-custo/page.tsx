@@ -1135,21 +1135,34 @@ Use números reais. Seja direto.`
                   <p className="text-xs font-bold mb-3" style={{color:'#94a3b8'}}>📊 Realizado vs Desejado (Metodologia DV)</p>
                   <div className="grid grid-cols-3 gap-3">
                     {[
-                      {l:'Custo Indireto',real:fatN>0?custoOp/fatN*100:0,desej:n(custIndD),c:'#f59e0b'},
-                      {l:'Custo Direto',real:fatN>0?totDiretas/fatN*100:0,desej:n(custDirD),c:'#ef4444'},
-                      {l:'Lucro',real:fatN>0?resultOp/fatN*100:0,desej:n(lucroD),c:'#10b981'},
-                    ].map(c=>{
-                      const ok=c.real>=c.desej*0.9&&c.real<=c.desej*1.1
+                      // Para CUSTOS: quanto MENOS, melhor. Ok = abaixo ou igual à meta
+                      {l:'Custo Indireto',real:fatN>0?custoOp/fatN*100:0,desej:n(custIndD),c:'#f59e0b',tipo:'custo',
+                        limite:'máx',dica:'Quanto menor, melhor. Meta é o LIMITE máximo.'},
+                      {l:'Custo Direto',real:fatN>0?totDiretas/fatN*100:0,desej:n(custDirD),c:'#ef4444',tipo:'custo',
+                        limite:'máx',dica:'Quanto menor, melhor. Meta é o LIMITE máximo.'},
+                      // Para LUCRO: quanto MAIS, melhor. Ok = igual ou acima da meta
+                      {l:'Lucro',real:fatN>0?resultOp/fatN*100:0,desej:n(lucroD),c:'#10b981',tipo:'lucro',
+                        limite:'mín',dica:'Quanto maior, melhor. Meta é o MÍNIMO desejado.'},
+                    ].map((c:any)=>{
+                      // Custo: ok se MENOR OU IGUAL à meta (gastar menos é ótimo)
+                      // Lucro: ok se MAIOR OU IGUAL à meta (lucrar mais é ótimo)
+                      const ok = c.tipo==='custo' ? c.real <= c.desej : c.real >= c.desej
+                      const otimo = c.tipo==='custo' ? c.real <= c.desej*0.8 : c.real >= c.desej*1.5
+                      const status = ok
+                        ? (otimo
+                          ? (c.tipo==='custo' ? '🎉 Excelente! Bem abaixo do limite' : '🏆 Excepcional! Muito acima da meta')
+                          : (c.tipo==='custo' ? '✅ Dentro do limite' : '✅ Meta atingida'))
+                        : (c.tipo==='custo' ? '⚠️ Acima do limite máximo' : '⚠️ Abaixo da meta mínima')
+                      const corBorda = ok ? '#10b98130' : '#ef444430'
                       return(
-                        <div key={c.l} className="rounded-lg p-3 border" style={{background:'#0a0f1a',borderColor:ok?'#10b98130':'#ef444430'}}>
+                        <div key={c.l} className="rounded-lg p-3 border" style={{background:'#0a0f1a',borderColor:corBorda}}>
                           <p className="text-[10px] mb-1" style={{color:'#64748b'}}>{c.l}</p>
                           <div className="flex items-end gap-2">
-                            <span className="text-base font-bold" style={{color:c.c}}>{c.real.toFixed(1)}%</span>
-                            <span className="text-[10px]" style={{color:'#475569'}}>meta: {c.desej}%</span>
+                            <span className="text-base font-bold" style={{color:ok?c.c:'#ef4444'}}>{c.real.toFixed(1)}%</span>
+                            <span className="text-[10px]" style={{color:'#475569'}}>{c.limite}: {c.desej}%</span>
                           </div>
-                          <p className="text-[10px] mt-1" style={{color:ok?'#10b981':'#ef4444'}}>
-                            {ok?'✅ Dentro da meta':'⚠️ Fora da meta'}
-                          </p>
+                          <p className="text-[10px] mt-1" style={{color:ok?'#10b981':'#ef4444'}}>{status}</p>
+                          <p className="text-[9px] mt-0.5" style={{color:'#334155'}}>{c.dica}</p>
                         </div>
                       )
                     })}
@@ -1739,35 +1752,46 @@ Use números reais. Seja direto.`
                   </div>
                   <div className="p-5 space-y-4">
                     {[
-                      {l:'Custo Indireto', real:fatN>0?custoOp/fatN*100:0, meta:n(custIndD), c:'#f59e0b', inv:true},
-                      {l:'Custo Direto',   real:fatN>0?totDiretas/fatN*100:0, meta:n(custDirD), c:'#ef4444', inv:true},
-                      {l:'Lucro',          real:fatN>0?resultOp/fatN*100:0, meta:n(lucroD), c:'#10b981', inv:false},
-                    ].map((item,idx)=>{
-                      const ok = item.inv ? item.real <= item.meta * 1.1 : item.real >= item.meta * 0.9
-                      const pctBarra = Math.min((item.real / (item.meta * 1.5)) * 100, 100)
-                      const pctMeta  = (1 / 1.5) * 100
+                      // Custos: meta é o LIMITE MÁXIMO — ficar ABAIXO é ótimo
+                      {l:'Custo Indireto', sub:'Limite máx', real:fatN>0?custoOp/fatN*100:0, meta:n(custIndD), c:'#f59e0b', tipo:'custo'},
+                      {l:'Custo Direto',   sub:'Limite máx', real:fatN>0?totDiretas/fatN*100:0, meta:n(custDirD), c:'#ef4444', tipo:'custo'},
+                      // Lucro: meta é o MÍNIMO DESEJADO — ficar ACIMA é ótimo
+                      {l:'Lucro',          sub:'Meta mín', real:fatN>0?resultOp/fatN*100:0, meta:n(lucroD), c:'#10b981', tipo:'lucro'},
+                    ].map((item:any,idx:number)=>{
+                      // Custo: ok = abaixo ou igual ao limite máximo
+                      // Lucro: ok = igual ou acima da meta mínima
+                      const ok = item.tipo==='custo' ? item.real <= item.meta : item.real >= item.meta
+                      // Para barra: custo vai de 0 até meta*2; lucro vai de 0 até meta*2
+                      const escala = item.meta * 2
+                      const pctBarra = Math.min((item.real / escala) * 100, 100)
+                      const pctMeta  = 50 // meta sempre no meio da barra
+                      const emoji = ok ? '✅' : '⚠️'
+                      const textoStatus = item.tipo==='custo'
+                        ? (item.real <= item.meta * 0.7 ? '🎉 Excelente! Bem abaixo do limite' : ok ? '✅ Dentro do limite' : '⚠️ Acima do limite máximo')
+                        : (item.real >= item.meta * 2 ? '🏆 Excepcional!' : ok ? '✅ Meta atingida' : '⚠️ Abaixo da meta')
                       return (
                         <div key={idx}>
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-bold" style={{color:'#cbd5e1'}}>{item.l}</span>
-                            <div className="flex items-center gap-3">
-                              <span className="text-xs" style={{color:'#475569'}}>Meta: {item.meta}%</span>
-                              <span className="text-sm font-bold" style={{color:item.c}}>{item.real.toFixed(1)}%</span>
-                              <span className="text-xs">{ok ? '✅' : '⚠️'}</span>
+                          <div className="flex items-center justify-between mb-1">
+                            <div>
+                              <span className="text-xs font-bold" style={{color:'#cbd5e1'}}>{item.l}</span>
+                              <span className="text-[9px] ml-2" style={{color:'#475569'}}>{item.sub}: {item.meta}%</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-bold" style={{color:ok?item.c:'#ef4444'}}>{item.real.toFixed(1)}%</span>
+                              <span className="text-xs">{emoji}</span>
                             </div>
                           </div>
                           <div className="w-full rounded-full h-3 relative" style={{background:'#1e293b'}}>
-                            {/* Linha da meta */}
-                            <div className="absolute top-0 bottom-0 w-0.5 z-10" style={{left:`${pctMeta}%`, background:'#ffffff40'}}/>
-                            {/* Barra realizado */}
+                            <div className="absolute top-0 bottom-0 w-0.5 z-10" style={{left:`${pctMeta}%`, background:'#ffffff50'}}/>
                             <div className="h-3 rounded-full transition-all duration-500"
                               style={{width:`${pctBarra}%`, background:ok?`${item.c}80`:'#ef444480', border:`1px solid ${ok?item.c:'#ef4444'}`}}/>
                           </div>
-                          <div className="flex justify-between text-[9px] mt-0.5" style={{color:'#334155'}}>
+                          <div className="flex justify-between text-[9px] mt-0.5 mb-1" style={{color:'#334155'}}>
                             <span>0%</span>
-                            <span style={{color:'#ffffff50'}}>▲ meta {item.meta}%</span>
-                            <span>{(item.meta * 1.5).toFixed(0)}%</span>
+                            <span style={{color:'#ffffff60'}}>▲ {item.sub} {item.meta}%</span>
+                            <span>{escala.toFixed(0)}%</span>
                           </div>
+                          <p className="text-[10px]" style={{color:ok?'#10b981':'#ef4444'}}>{textoStatus}</p>
                         </div>
                       )
                     })}
