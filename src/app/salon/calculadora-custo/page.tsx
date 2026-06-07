@@ -363,13 +363,59 @@ Use números reais. Seja direto.`
   const corRes = (v:number) => v >= 0 ? '#10b981' : '#ef4444'
 
   const ABAS = [
-    {id:'rd',     label:'Receitas e Despesas', icon:'📊'},
-    {id:'pe',     label:'Ponto de Equilíbrio', icon:'⚖️'},
-    {id:'servicos',label:'Calcular Serviços',  icon:'💇'},
-    {id:'produto', label:'Custo de Produto',   icon:'🧴'},
-    {id:'cadeira', label:'Aluguel de Cadeira', icon:'💺'},
-    {id:'metro',   label:'Faturamento por M²', icon:'📐'},
+    {id:'rd',      label:'Receitas e Despesas', icon:'📊'},
+    {id:'pe',      label:'Ponto de Equilíbrio', icon:'⚖️'},
+    {id:'servicos',label:'Calcular Serviços',   icon:'💇'},
+    {id:'produto', label:'Custo de Produto',    icon:'🧴'},
+    {id:'cadeira', label:'Aluguel de Cadeira',  icon:'💺'},
+    {id:'metro',   label:'Faturamento por M²',  icon:'📐'},
+    {id:'graficos',label:'Gráficos',            icon:'📈'},
   ] as const
+
+  // ── Dados para gráficos ──────────────────────────────────────────────────
+  const BENCHMARKS: Record<string, number> = {
+    'Aluguel': 10, 'Energia Elétrica': 3, 'Salários': 40, 'Pró-labore': 10,
+    'Marketing e Publicidade': 5, 'Limpeza e Higiene': 2, 'Internet/Telefone': 1,
+    'Sistema/Software': 1, 'Contabilidade': 2, 'FGTS': 3,
+  }
+
+  const todasDespesas = [
+    ...despInd.filter(d => n(d.valor) > 0).map(d => ({nome: d.nome, valor: n(d.valor), tipo: 'indireta'})),
+    ...extrasDespInd.filter(d => n(d.valor) > 0).map(d => ({nome: d.nome, valor: n(d.valor), tipo: 'indireta'})),
+    {nome: '13º Salário', valor: n(sal13), tipo: 'provisao'},
+    {nome: 'Férias', valor: n(ferias), tipo: 'provisao'},
+    {nome: 'FGTS Rescisório', valor: n(fgtsR), tipo: 'provisao'},
+    {nome: 'Imposto', valor: n(imposto), tipo: 'direta'},
+    {nome: 'Produto/Insumo', valor: n(produto), tipo: 'direta'},
+    {nome: 'Rateio/Comissão', valor: n(rateio), tipo: 'direta'},
+    {nome: 'Taxa de Cartão', valor: n(taxaC), tipo: 'direta'},
+  ].filter(d => d.valor > 0).sort((a, b) => b.valor - a.valor)
+
+  const maxDespesa = todasDespesas[0]?.valor || 1
+
+  function semaforoDespesa(nome: string, valor: number): {cor: string, label: string, icone: string} {
+    const bench = BENCHMARKS[nome]
+    if (!bench || !fatN) return {cor: '#64748b', label: 'Sem benchmark', icone: '⚪'}
+    const pct = (valor / fatN) * 100
+    if (pct > bench * 1.2) return {cor: '#ef4444', label: `${pct.toFixed(1)}% — Acima do limite (máx ${bench}%)`, icone: '🔴'}
+    if (pct > bench * 0.9) return {cor: '#f59e0b', label: `${pct.toFixed(1)}% — No limite (ref ${bench}%)`, icone: '🟡'}
+    return {cor: '#10b981', label: `${pct.toFixed(1)}% — Saudável (ref ${bench}%)`, icone: '🟢'}
+  }
+
+  const scoreFinanceiro = (() => {
+    if (!fatN) return null
+    let pts = 100
+    if (resultOp < 0) pts -= 40
+    else if (resultOp / fatN < 0.05) pts -= 20
+    else if (resultOp / fatN < 0.10) pts -= 10
+    if (custoOp / fatN > n(custIndD) / 100 * 1.2) pts -= 15
+    if (totDiretas / fatN > n(custDirD) / 100 * 1.2) pts -= 15
+    if (fatN < pe) pts -= 20
+    pts = Math.max(0, Math.min(100, pts))
+    if (pts >= 75) return {score: pts, label: 'Saudável', cor: '#10b981', icone: '🟢', sub: 'Parabéns! Suas finanças estão bem controladas.'}
+    if (pts >= 50) return {score: pts, label: 'Atenção', cor: '#f59e0b', icone: '🟡', sub: 'Há pontos de melhoria importantes. Veja os alertas abaixo.'}
+    return {score: pts, label: 'Crítico', cor: '#ef4444', icone: '🔴', sub: 'Situação exige ação imediata. Priorize reduzir custos.'}
+  })()
 
   return (
     <div className="min-h-screen" style={{background:'#0a0f1a',color:'#e2e8f0'}}>
@@ -445,7 +491,7 @@ Use números reais. Seja direto.`
         </div>
 
         {/* Abas */}
-        <div className="grid grid-cols-6 gap-1 mb-6 p-1 rounded-xl" style={{background:'#111827'}}>
+        <div className="grid grid-cols-7 gap-1 mb-6 p-1 rounded-xl" style={{background:'#111827'}}>
           {ABAS.map(a=>(
             <button key={a.id} onClick={()=>setAba(a.id as any)}
               className="py-2 px-1 rounded-lg text-[10px] font-bold transition-all text-center"
@@ -1162,6 +1208,210 @@ Use números reais. Seja direto.`
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* ════ ABA GRÁFICOS ════ */}
+        {aba==='graficos' && (
+          <div className="space-y-5">
+
+            {!fatN ? (
+              <div className="rounded-2xl p-10 text-center border" style={{background:'#111827',borderColor:'#1e293b'}}>
+                <p className="text-4xl mb-3">📊</p>
+                <p className="font-bold text-white mb-1">Nenhum dado ainda</p>
+                <p className="text-sm" style={{color:'#64748b'}}>Preencha o Faturamento e as Despesas na aba <strong style={{color:'#a78bfa'}}>Receitas e Despesas</strong> para ver os gráficos.</p>
+              </div>
+            ) : (
+              <>
+                {/* Score de saúde financeira */}
+                {scoreFinanceiro && (
+                  <div className="rounded-2xl p-5 border" style={{background:'#111827',borderColor:`${scoreFinanceiro.cor}30`}}>
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <p className="text-xs font-bold mb-0.5" style={{color:'#64748b'}}>SCORE DE SAÚDE FINANCEIRA</p>
+                        <p className="text-2xl font-bold" style={{color:scoreFinanceiro.cor}}>{scoreFinanceiro.icone} {scoreFinanceiro.label}</p>
+                        <p className="text-xs mt-1" style={{color:'#64748b'}}>{scoreFinanceiro.sub}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-5xl font-bold" style={{color:scoreFinanceiro.cor}}>{scoreFinanceiro.score}</p>
+                        <p className="text-xs" style={{color:'#475569'}}>/100 pontos</p>
+                      </div>
+                    </div>
+                    {/* Barra do score */}
+                    <div className="w-full rounded-full h-3" style={{background:'#1e293b'}}>
+                      <div className="h-3 rounded-full transition-all duration-700"
+                        style={{width:`${scoreFinanceiro.score}%`, background:`linear-gradient(90deg, #ef4444, #f59e0b, ${scoreFinanceiro.cor})`}}/>
+                    </div>
+                    <div className="flex justify-between text-[10px] mt-1" style={{color:'#334155'}}>
+                      <span>0 — Crítico</span><span>50 — Atenção</span><span>75 — Saudável</span><span>100</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Visão geral — barras horizontais de distribuição */}
+                <div className="rounded-2xl border overflow-hidden" style={{background:'#111827',borderColor:'#1e293b'}}>
+                  <div className="px-5 py-3 border-b" style={{background:'#0d1525',borderColor:'#1e293b'}}>
+                    <p className="font-bold text-sm" style={{color:'#e2e8f0'}}>💰 Distribuição do Faturamento</p>
+                    <p className="text-xs mt-0.5" style={{color:'#64748b'}}>Para onde vai cada R$ que entra no salão</p>
+                  </div>
+                  <div className="p-5 space-y-3">
+                    {[
+                      {l:'Despesas Diretas', v:totDiretas, c:'#ef4444', ico:'📌'},
+                      {l:'Custo Operacional', v:custoOp, c:'#f59e0b', ico:'⚙️'},
+                      {l:'Resultado Operacional', v:Math.max(0,resultOp), c:'#10b981', ico:'💵'},
+                      {l:'Outras Despesas', v:n(aquisicaoEq)+n(distSocios), c:'#06b6d4', ico:'💸'},
+                      resultFin < 0 ? {l:'Prejuízo', v:Math.abs(resultFin), c:'#ef4444', ico:'🚨'} : {l:'Lucro Final', v:resultFin, c:'#a78bfa', ico:'🏆'},
+                    ].filter(i=>i.v>0).map((item,idx)=>{
+                      const pct = fatN > 0 ? (item.v/fatN)*100 : 0
+                      return (
+                        <div key={idx}>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs font-bold" style={{color:'#cbd5e1'}}>{item.ico} {item.l}</span>
+                            <div className="flex items-center gap-3">
+                              <span className="text-xs font-bold" style={{color:item.c}}>{fmtR(item.v)}</span>
+                              <span className="text-xs w-12 text-right" style={{color:'#64748b'}}>{pct.toFixed(1)}%</span>
+                            </div>
+                          </div>
+                          <div className="w-full rounded-full h-4 relative" style={{background:'#1e293b'}}>
+                            <div className="h-4 rounded-full transition-all duration-500 flex items-center justify-end pr-2"
+                              style={{width:`${Math.min(pct,100)}%`, background:`${item.c}30`, border:`1px solid ${item.c}60`}}>
+                              {pct > 8 && <span className="text-[9px] font-bold" style={{color:item.c}}>{pct.toFixed(1)}%</span>}
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                    {/* Barra total */}
+                    <div className="pt-2 border-t" style={{borderColor:'#1e293b'}}>
+                      <div className="flex items-center justify-between text-xs font-bold">
+                        <span style={{color:'#94a3b8'}}>📊 Faturamento Total</span>
+                        <span style={{color:'#e2e8f0'}}>{fmtR(fatN)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Ranking de despesas — maiores custos */}
+                <div className="rounded-2xl border overflow-hidden" style={{background:'#111827',borderColor:'#1e293b'}}>
+                  <div className="px-5 py-3 border-b" style={{background:'#0d1525',borderColor:'#1e293b'}}>
+                    <p className="font-bold text-sm" style={{color:'#e2e8f0'}}>🩸 Ranking — O que mais consome seu caixa</p>
+                    <p className="text-xs mt-0.5" style={{color:'#64748b'}}>Ordenado do maior para o menor</p>
+                  </div>
+                  <div className="p-5 space-y-2">
+                    {todasDespesas.length === 0 ? (
+                      <p className="text-xs text-center py-4" style={{color:'#475569'}}>Preencha as despesas na aba Receitas e Despesas</p>
+                    ) : todasDespesas.map((d,idx)=>{
+                      const pctMax = (d.valor/maxDespesa)*100
+                      const pctFat = fatN > 0 ? (d.valor/fatN)*100 : 0
+                      const sem = semaforoDespesa(d.nome, d.valor)
+                      const cores: Record<string,string> = {indireta:'#f59e0b', provisao:'#a78bfa', direta:'#ef4444'}
+                      const cor = cores[d.tipo] || '#64748b'
+                      return (
+                        <div key={idx} className="rounded-xl p-3" style={{background:'#0a0f1a',border:'1px solid #1e293b'}}>
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold w-5 text-center" style={{color:'#475569'}}>#{idx+1}</span>
+                              <span className="text-xs font-bold" style={{color:'#e2e8f0'}}>{d.nome}</span>
+                              <span className="text-[9px] px-1.5 py-0.5 rounded" style={{background:`${cor}20`,color:cor}}>
+                                {d.tipo === 'indireta' ? 'Indireta' : d.tipo === 'provisao' ? 'Provisão' : 'Direta'}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <span className="text-[10px]">{sem.icone}</span>
+                              <span className="text-xs font-bold" style={{color:cor}}>{fmtR(d.valor)}</span>
+                            </div>
+                          </div>
+                          {/* Barra proporcional ao maior */}
+                          <div className="w-full rounded-full h-2.5 mb-1" style={{background:'#1e293b'}}>
+                            <div className="h-2.5 rounded-full transition-all duration-500"
+                              style={{width:`${pctMax}%`, background:`linear-gradient(90deg, ${cor}80, ${cor})`}}/>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px]" style={{color:sem.cor}}>{sem.label}</span>
+                            <span className="text-[10px]" style={{color:'#475569'}}>{pctFat.toFixed(1)}% do faturamento</span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Realizado vs Meta */}
+                <div className="rounded-2xl border overflow-hidden" style={{background:'#111827',borderColor:'#1e293b'}}>
+                  <div className="px-5 py-3 border-b" style={{background:'#0d1525',borderColor:'#1e293b'}}>
+                    <p className="font-bold text-sm" style={{color:'#e2e8f0'}}>🎯 Realizado vs Meta (Metodologia DV)</p>
+                  </div>
+                  <div className="p-5 space-y-4">
+                    {[
+                      {l:'Custo Indireto', real:fatN>0?custoOp/fatN*100:0, meta:n(custIndD), c:'#f59e0b', inv:true},
+                      {l:'Custo Direto',   real:fatN>0?totDiretas/fatN*100:0, meta:n(custDirD), c:'#ef4444', inv:true},
+                      {l:'Lucro',          real:fatN>0?resultOp/fatN*100:0, meta:n(lucroD), c:'#10b981', inv:false},
+                    ].map((item,idx)=>{
+                      const ok = item.inv ? item.real <= item.meta * 1.1 : item.real >= item.meta * 0.9
+                      const pctBarra = Math.min((item.real / (item.meta * 1.5)) * 100, 100)
+                      const pctMeta  = (1 / 1.5) * 100
+                      return (
+                        <div key={idx}>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-bold" style={{color:'#cbd5e1'}}>{item.l}</span>
+                            <div className="flex items-center gap-3">
+                              <span className="text-xs" style={{color:'#475569'}}>Meta: {item.meta}%</span>
+                              <span className="text-sm font-bold" style={{color:item.c}}>{item.real.toFixed(1)}%</span>
+                              <span className="text-xs">{ok ? '✅' : '⚠️'}</span>
+                            </div>
+                          </div>
+                          <div className="w-full rounded-full h-3 relative" style={{background:'#1e293b'}}>
+                            {/* Linha da meta */}
+                            <div className="absolute top-0 bottom-0 w-0.5 z-10" style={{left:`${pctMeta}%`, background:'#ffffff40'}}/>
+                            {/* Barra realizado */}
+                            <div className="h-3 rounded-full transition-all duration-500"
+                              style={{width:`${pctBarra}%`, background:ok?`${item.c}80`:'#ef444480', border:`1px solid ${ok?item.c:'#ef4444'}`}}/>
+                          </div>
+                          <div className="flex justify-between text-[9px] mt-0.5" style={{color:'#334155'}}>
+                            <span>0%</span>
+                            <span style={{color:'#ffffff50'}}>▲ meta {item.meta}%</span>
+                            <span>{(item.meta * 1.5).toFixed(0)}%</span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Alertas críticos */}
+                {(() => {
+                  const alertas: {msg: string, cor: string, icone: string}[] = []
+                  if (fatN < pe) alertas.push({msg:`Faturando ${fmtR(pe-fatN)} ABAIXO do ponto de equilíbrio — operando no prejuízo`, cor:'#ef4444', icone:'🚨'})
+                  if (resultOp < 0) alertas.push({msg:`Resultado operacional negativo: ${fmtR(resultOp)} — custos maiores que receitas`, cor:'#ef4444', icone:'🔴'})
+                  if (n(despInd.find(d=>d.nome==='Aluguel')?.valor||'0') / fatN > 0.12) alertas.push({msg:`Aluguel acima de 12% do faturamento — considere renegociar`, cor:'#f59e0b', icone:'⚠️'})
+                  if (n(despInd.find(d=>d.nome==='Salários')?.valor||'0') / fatN > 0.45) alertas.push({msg:`Folha salarial acima de 45% — avaliar produtividade da equipe`, cor:'#f59e0b', icone:'⚠️'})
+                  if (fatN > 0 && n(produto) / fatN > 0.15) alertas.push({msg:`Gasto com produtos acima de 15% — rever fornecedores ou desperdício`, cor:'#f59e0b', icone:'⚠️'})
+                  if (alertas.length === 0) return (
+                    <div className="rounded-2xl p-4 border text-center" style={{background:'#10b98110',borderColor:'#10b98130'}}>
+                      <p className="text-2xl mb-1">🎉</p>
+                      <p className="text-sm font-bold" style={{color:'#10b981'}}>Nenhum alerta crítico!</p>
+                      <p className="text-xs mt-1" style={{color:'#64748b'}}>Suas despesas estão dentro dos parâmetros saudáveis.</p>
+                    </div>
+                  )
+                  return (
+                    <div className="rounded-2xl border overflow-hidden" style={{background:'#111827',borderColor:'#1e293b'}}>
+                      <div className="px-5 py-3 border-b" style={{background:'#0d1525',borderColor:'#1e293b'}}>
+                        <p className="font-bold text-sm" style={{color:'#ef4444'}}>🚨 Alertas — Ação Necessária</p>
+                      </div>
+                      <div className="p-4 space-y-2">
+                        {alertas.map((a,i)=>(
+                          <div key={i} className="flex items-start gap-3 p-3 rounded-xl" style={{background:`${a.cor}10`,border:`1px solid ${a.cor}30`}}>
+                            <span className="text-base flex-shrink-0">{a.icone}</span>
+                            <p className="text-xs leading-relaxed" style={{color:a.cor}}>{a.msg}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })()}
+
+              </>
+            )}
           </div>
         )}
 
