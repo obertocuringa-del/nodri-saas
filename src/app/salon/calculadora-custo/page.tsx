@@ -45,10 +45,12 @@ export default function CalculadoraCustoPage() {
   const margem = fat > 0 ? (lucro / fat) * 100 : 0
   // Ponto de Equilíbrio
   const atendimentosPE = ticket > 0 ? Math.ceil(totalCustos / ticket) : 0
+  const faturamentoPE = atendimentosPE * ticket
   const diasUteis = 26
   const atendimentosPorDia = atendimentosPE > 0 ? (atendimentosPE / diasUteis).toFixed(1) : '0'
   const atendimentosAtuais = fat > 0 && ticket > 0 ? Math.round(fat / ticket) : 0
   const folga = atendimentosAtuais - atendimentosPE
+  const folgaReais = fat - faturamentoPE
 
   function adicionarItem() {
     setItens(prev => [...prev, { id: proximo, nome: '', valor: '', dica: '', editavel: true }])
@@ -383,6 +385,30 @@ Seja direto, use números reais, evite respostas genéricas.`
                   </p>
                 )}
               </div>
+            </div>
+
+            {/* Faturamento mínimo */}
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="rounded-xl p-4 border" style={{ background: '#111827', borderColor: '#10b98130' }}>
+                <p className="text-xs mb-1" style={{ color: '#64748b' }}>💰 Faturamento mínimo necessário</p>
+                <p className="text-2xl font-bold" style={{ color: '#10b981' }}>{fmtR(faturamentoPE)}</p>
+                <p className="text-xs mt-1" style={{ color: '#475569' }}>Para cobrir 100% dos custos</p>
+              </div>
+              {fat > 0 && (
+                <div className="rounded-xl p-4 border" style={{ background: '#111827', borderColor: folgaReais >= 0 ? '#10b98130' : '#ef444430' }}>
+                  <p className="text-xs mb-1" style={{ color: '#64748b' }}>
+                    {folgaReais >= 0 ? '✅ Folga financeira' : '🚨 Déficit financeiro'}
+                  </p>
+                  <p className="text-2xl font-bold" style={{ color: folgaReais >= 0 ? '#10b981' : '#ef4444' }}>
+                    {fmtR(Math.abs(folgaReais))}
+                  </p>
+                  <p className="text-xs mt-1" style={{ color: '#475569' }}>
+                    {folgaReais >= 0
+                      ? `Você fatura ${fmtR(folgaReais)} acima do mínimo`
+                      : `Falta ${fmtR(Math.abs(folgaReais))} para cobrir os custos`}
+                  </p>
+                </div>
+              )}
             </div>
             {/* Barra visual */}
             {atendimentosAtuais > 0 && (
