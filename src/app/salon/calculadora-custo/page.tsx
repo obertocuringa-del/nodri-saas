@@ -1,1250 +1,1006 @@
 'use client'
 
 import { useState } from 'react'
-import { ArrowLeft, Plus, Trash2, Calculator, Loader2, ChevronDown, ChevronUp, Armchair, Grid3x3 } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Calculator, Loader2, ChevronDown, ChevronUp } from 'lucide-react'
 
-const fmtR = (v: number) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-const pct = (v: number, t: number) => t > 0 ? ((v / t) * 100).toFixed(1) : '0.0'
+// ─── Helpers ────────────────────────────────────────────────────────────────
+const fmtR = (v: number) => `R$ ${(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}`
+const n = (s: string) => parseFloat((s||'0').replace(',','.')) || 0
+const pctStr = (v: number, t: number) => t > 0 ? `${((v/t)*100).toFixed(1)}%` : '—'
 
-interface Item { id: number; nome: string; valor: string; dica: string; editavel: boolean }
-
-const ITENS_PADRAO: Omit<Item, 'id'>[] = [
-  { nome: 'Água', valor: '', dica: 'Inclua consumo da empresa, limpeza, banheiros, cozinha. Se não tiver, deixe R$ 0.', editavel: false },
-  { nome: 'Aluguel', valor: '', dica: 'Se for imóvel próprio, considere o valor que pagaria de aluguel. Inclua condomínio.', editavel: false },
-  { nome: 'Contabilidade', valor: '', dica: 'Honorários do contador, declarações, folha de pagamento, consultoria fiscal.', editavel: false },
-  { nome: 'Decoração / Manutenção', valor: '', dica: 'Pintura, móveis, reparos, reformas, plantas, decoração sazonal.', editavel: false },
-  { nome: 'Despesas Bancárias', valor: '', dica: 'TEF, DOC, TED, manutenção de conta, cartões, maquininhas. Negocie sempre!', editavel: false },
-  { nome: 'Energia Elétrica', valor: '', dica: 'Equipamentos, iluminação, ar condicionado. LED pode reduzir muito este custo.', editavel: false },
-  { nome: 'Internet / Telefone', valor: '', dica: 'Internet comercial, telefone fixo, celulares corporativos. Conexão rápida é investimento!', editavel: false },
-  { nome: 'Software e Licenças', valor: '', dica: 'Office, antivírus, sistema de gestão, Spotify, apps especializados.', editavel: false },
-  { nome: 'Produtos de Limpeza', valor: '', dica: 'Detergentes, desinfetantes, papel higiênico, álcool gel, sabonetes.', editavel: false },
-  { nome: 'Marketing / Publicidade', valor: '', dica: 'Facebook Ads, Google Ads, panfletos, redes sociais, influencers.', editavel: false },
-  { nome: 'Material de Escritório', valor: '', dica: 'Papel A4, canetas, grampeadores, pastas, impressões, toners.', editavel: false },
-  { nome: 'Mimos para Clientes', valor: '', dica: 'Cafezinho, água, balas, lembrancinhas, brindes. Cliente mimado sempre volta!', editavel: false },
-  { nome: 'Mimos para Profissionais', valor: '', dica: 'Confraternizações, pizzas, presentes de aniversário, incentivos de equipe.', editavel: false },
-  { nome: 'Salários e Encargos', valor: '', dica: 'Salários + INSS + FGTS + 13º + férias + vale alimentação + vale transporte.', editavel: false },
-  { nome: 'Estacionamento', valor: '', dica: 'Aluguel de vagas, manobrista, estacionamento para funcionários.', editavel: false },
-  { nome: 'Pró-labore', valor: '', dica: 'Sua remuneração como sócio/proprietário. Entre 1 a 2 salários mínimos como base.', editavel: false },
-  { nome: 'Impostos / Simples Nacional', valor: '', dica: 'Valor mensal recolhido de impostos. Consulte seu contador para o percentual exato.', editavel: false },
-  { nome: 'Produtos / Insumos', valor: '', dica: 'Tintas, produtos químicos, esmaltes, materiais de consumo para os serviços.', editavel: false },
+// ─── Constantes ─────────────────────────────────────────────────────────────
+const DESPESAS_INDIRETAS = [
+  {nome:'Aluguel',          dica:'Se imóvel próprio, considere o valor de mercado + condomínio.'},
+  {nome:'Água',             dica:'Consumo da empresa: banheiros, limpeza, cozinha.'},
+  {nome:'Contabilidade',    dica:'Honorários do contador, declarações, folha de pagamento.'},
+  {nome:'Condomínio',       dica:'Taxa de condomínio separada do aluguel, se houver.'},
+  {nome:'Despesas Bancárias',dica:'Taxas, manutenção de conta, maquininhas. Negocie sempre!'},
+  {nome:'Devolução Cliente',dica:'Estornos e devoluções de pagamentos de clientes.'},
+  {nome:'Energia Elétrica', dica:'Equipamentos, iluminação, ar condicionado. LED reduz muito.'},
+  {nome:'Estacionamento',   dica:'Aluguel de vagas ou manobrista para clientes/equipe.'},
+  {nome:'Decoração/Manutenção',dica:'Pintura, móveis, reparos, reformas, plantas.'},
+  {nome:'Internet/Telefone',dica:'Internet comercial, telefone fixo, celulares corporativos.'},
+  {nome:'Sistema/Software', dica:'Sistema de gestão, Office, antivírus, apps especializados.'},
+  {nome:'Limpeza e Higiene',dica:'Detergentes, desinfetantes, papel higiênico, álcool gel.'},
+  {nome:'IPTU',             dica:'Imposto predial proporcional ao período.'},
+  {nome:'Marketing e Publicidade',dica:'Facebook Ads, Google, panfletos, influencers.'},
+  {nome:'Material de Escritório',dica:'Papel, canetas, impressões, toners, pastas.'},
+  {nome:'Mimos para Clientes',dica:'Cafezinho, água, balas, lembrancinhas. Cliente mimado volta!'},
+  {nome:'Mimos para Profissionais',dica:'Confraternizações, pizzas, presentes, incentivos.'},
+  {nome:'Uniformes',        dica:'Aventais, camisetas, uniformes da equipe.'},
+  {nome:'Pró-labore',       dica:'Sua remuneração como sócio/proprietário.'},
+  {nome:'Salários',         dica:'Salários dos colaboradores CLT.'},
+  {nome:'FGTS',             dica:'8% sobre o salário bruto de cada colaborador CLT.'},
+  {nome:'Taxa Certificado Digital',dica:'Certificado digital da empresa (anual ÷ 12).'},
+  {nome:'Seguro',           dica:'Seguro do estabelecimento, equipamentos ou responsabilidade civil.'},
 ]
 
-export default function CalculadoraCustoPage() {
-  const [aba, setAba] = useState<'custo' | 'servicos' | 'produto' | 'pe' | 'cadeira' | 'metro'>('custo')
-  const [faturamento, setFaturamento] = useState('')
-  const [ticketMedio, setTicketMedio] = useState('')
-  const [loadingIA, setLoadingIA] = useState(false)
-  const [analiseIA, setAnaliseIA] = useState('')
-  const [erroIA, setErroIA] = useState('')
-  const [itens, setItens] = useState<Item[]>(ITENS_PADRAO.map((i, idx) => ({ ...i, id: idx + 1 })))
-  // Custo de Produto por Serviço
-  interface Ingrediente { id: number; nome: string; qtdEmbalagem: string; qtdUsada: string; precoEmbalagem: string; unidade: string }
-  interface ServicoIngredientes { id: number; nomeServico: string; ingredientes: Ingrediente[] }
-  const [servicosProduto, setServicosProduto] = useState<ServicoIngredientes[]>([
-    { id: 1, nomeServico: '', ingredientes: [{ id: 1, nome: '', qtdEmbalagem: '', qtdUsada: '', precoEmbalagem: '', unidade: 'ml' }] }
-  ])
-  const [proxServProd, setProxServProd] = useState(2)
+// ─── Tipos ──────────────────────────────────────────────────────────────────
+interface DespesaItem { nome: string; valor: string; dica: string; editavel?: boolean }
+interface Ingrediente  { id: number; nome: string; qtdEmb: string; qtdUsa: string; preco: string; unidade: string }
+interface ServicoProd  { id: number; nomeServico: string; ingredientes: Ingrediente[] }
+interface Servico      { id: number; nome: string; preco: string; rateioP: string; produto: string; imposto: string }
 
-  function adicionarServicoProduto() {
-    setServicosProduto(prev => [...prev, { id: proxServProd, nomeServico: '', ingredientes: [{ id: 1, nome: '', qtdEmbalagem: '', qtdUsada: '', precoEmbalagem: '', unidade: 'ml' }] }])
-    setProxServProd(p => p + 1)
-  }
-  function adicionarIngrediente(sId: number) {
-    setServicosProduto(prev => prev.map(s => s.id === sId ? {
-      ...s, ingredientes: [...s.ingredientes, { id: s.ingredientes.length + 1, nome: '', qtdEmbalagem: '', qtdUsada: '', precoEmbalagem: '', unidade: 'ml' }]
-    } : s))
-  }
-  function atualizarIngrediente(sId: number, iIdx: number, campo: keyof Ingrediente, val: string) {
-    setServicosProduto(prev => prev.map(s => s.id === sId ? {
-      ...s, ingredientes: s.ingredientes.map((ing, idx) => idx === iIdx ? { ...ing, [campo]: val } : ing)
-    } : s))
-  }
-  function removerIngrediente(sId: number, iIdx: number) {
-    setServicosProduto(prev => prev.map(s => s.id === sId ? {
-      ...s, ingredientes: s.ingredientes.filter((_, idx) => idx !== iIdx)
-    } : s))
-  }
-  function calcCustoIngrediente(ing: Ingrediente): number {
-    const qtdEmb = parseFloat(ing.qtdEmbalagem.replace(',', '.')) || 0
-    const qtdUsa = parseFloat(ing.qtdUsada.replace(',', '.')) || 0
-    const preco = parseFloat(ing.precoEmbalagem.replace(',', '.')) || 0
-    if (!qtdEmb || !qtdUsa || !preco) return 0
-    return (preco / qtdEmb) * qtdUsa
-  }
+// ─── Componente principal ────────────────────────────────────────────────────
+export default function CalculadoraCusto() {
+  // Aba ativa
+  const [aba, setAba] = useState<'rd'|'pe'|'servicos'|'produto'|'cadeira'|'metro'>('rd')
 
-  // Ponto de Equilíbrio detalhado
-  interface DespesaPE { id: number; nome: string; valor: string; tipo: 'indireta' | 'direta' }
-  const DESPESAS_INDIRETAS_PE = ['Aluguel','Água','Contabilidade','Condomínio','Despesas Bancárias','Energia Elétrica','Estacionamento','Decoração/Manutenção','Internet/Telefone','Software/Sistema','Produtos de Limpeza','IPTU','Marketing/Publicidade','Material de Escritório','Mimos para Clientes','Mimos para Profissionais','Uniformes','Pró-labore','Salários/Encargos','FGTS','Seguro']
-  const DESPESAS_DIRETAS_PE = ['Imposto','Produto/Insumo','Comissão/Rateio','Taxa de Cartão']
-  const [despesasPE, setDespesasPE] = useState<DespesaPE[]>([
-    ...DESPESAS_INDIRETAS_PE.map((n, i) => ({ id: i+1, nome: n, valor: '', tipo: 'indireta' as const })),
-    ...DESPESAS_DIRETAS_PE.map((n, i) => ({ id: DESPESAS_INDIRETAS_PE.length+i+1, nome: n, valor: '', tipo: 'direta' as const }))
-  ])
-  const [margemOpPE, setMargemOpPE] = useState('44')
-  const [metaLucroPE, setMetaLucroPE] = useState('13')
-  const [faturamentoPEDetalhe, setFaturamentoPEDetalhe] = useState('')
+  // ── Receitas e Despesas ──────────────────────────────────────────────────
+  const [fat,      setFat]      = useState('')
+  const [custIndD, setCustIndD] = useState('30')   // % custo indireto desejado
+  const [custDirD, setCustDirD] = useState('55')   // % custo direto desejado
+  const [lucroD,   setLucroD]   = useState('15')   // % lucro desejado
+  const [invInicial,setInvInicial] = useState('')  // investimento inicial
+  const [totalDeprec,setTotalDeprec] = useState('') // total a depreciar
+  const [despInd, setDespInd]   = useState<DespesaItem[]>(
+    DESPESAS_INDIRETAS.map(d => ({...d, valor:''}))
+  )
+  // Provisão
+  const [sal13,  setSal13]  = useState('') // 13º salário mensal
+  const [ferias, setFerias] = useState('') // férias mensal
+  const [fgtsR,  setFgtsR]  = useState('') // FGTS rescisório mensal
+  // Despesas diretas
+  const [imposto, setImposto] = useState('')
+  const [produto, setProduto] = useState('')
+  const [rateio,  setRateio]  = useState('')
+  const [taxaC,   setTaxaC]   = useState('')
+  // Outras despesas
+  const [aquisicaoEq, setAquisicaoEq] = useState('')
+  const [distSocios,  setDistSocios]  = useState('')
+  // Campos extras
+  const [extrasDespInd, setExtrasDespInd] = useState<DespesaItem[]>([])
+  const [reservaEmerg,  setReservaEmerg]  = useState('')
+  const [vlrProdEstoque,setVlrProdEstoque]= useState('')
 
-  function atualizarDespesaPE(id: number, val: string) {
-    setDespesasPE(prev => prev.map(d => d.id === id ? { ...d, valor: val } : d))
-  }
+  // Cálculos Receitas e Despesas
+  const fatN       = n(fat)
+  const depMensal  = n(totalDeprec) > 0 ? n(totalDeprec) / 60 : 0
+  const totInd     = despInd.reduce((s,d)=>s+n(d.valor),0) + extrasDespInd.reduce((s,d)=>s+n(d.valor),0)
+  const totProvisao= n(sal13) + n(ferias) + n(fgtsR)
+  const custoOp    = totInd + totProvisao + depMensal
+  const totDiretas = n(imposto) + n(produto) + n(rateio) + n(taxaC)
+  const margOpR    = fatN - totDiretas
+  const margOpPct  = fatN > 0 ? margOpR / fatN : 0
+  const resultOp   = margOpR - custoOp
+  const resultOpPct= fatN > 0 ? resultOp / fatN : 0
+  const totOutras  = n(aquisicaoEq) + n(distSocios)
+  const resultFin  = resultOp - totOutras
+  const rentab     = fatN > 0 ? resultFin / fatN : 0
+  const pe         = margOpPct > 0 ? custoOp / margOpPct : 0
+  const peLucro    = (margOpPct - n(lucroD)/100) > 0 ? custoOp / (margOpPct - n(lucroD)/100) : 0
+  const capGiro    = custoOp > 0 ? (custoOp / 30) * 30 : 0 // simplificado
 
-  // Serviços
-  interface Servico { id: number; nome: string; preco: string; despDireta: string; produto: string; imposto: string }
-  const [servicos, setServicos] = useState<Servico[]>([
-    { id: 1, nome: '', preco: '', despDireta: '', produto: '', imposto: '' }
-  ])
-  const [proxServ, setProxServ] = useState(2)
-  const [taxaCartao, setTaxaCartao] = useState('5')
-  const [custoOperServico, setCustoOperServico] = useState('30')
-  const [salaoParceiro, setSalaoParceiro] = useState(false)
+  // ── Ponto de Equilíbrio detalhado ───────────────────────────────────────
+  const [areaM2,     setAreaM2]     = useState('100')
+  const [numProfs,   setNumProfs]   = useState('3')
+  const [margemPE,   setMargemPE]   = useState('')  // % margem op (puxa do RD se vazio)
+  const [metaLucroPE,setMetaLucroPE] = useState('') // % lucro (puxa do RD se vazio)
+  const [fatPEManual,setFatPEManual] = useState('') // faturamento (puxa do RD se vazio)
+  const [simDespesa, setSimDespesa]  = useState('') // simulador de despesa
 
-  function adicionarServico() {
-    setServicos(prev => [...prev, { id: proxServ, nome: '', preco: '', despDireta: '', produto: '', imposto: '' }])
-    setProxServ(p => p + 1)
-  }
-  function removerServico(id: number) {
-    setServicos(prev => prev.filter(s => s.id !== id))
-  }
-  function atualizarServico(id: number, campo: keyof Servico, val: string) {
-    setServicos(prev => prev.map(s => s.id === id ? { ...s, [campo]: val } : s))
-  }
-  function calcularServico(s: Servico) {
-    const preco = parseFloat(s.preco.replace(',', '.')) || 0
-    const despDir = parseFloat(s.despDireta.replace(',', '.')) / 100 || 0
-    const produto = parseFloat(s.produto.replace(',', '.')) || 0
-    const imposto = parseFloat(s.imposto.replace(',', '.')) / 100 || 0
-    const taxaC = parseFloat(taxaCartao.replace(',', '.')) / 100 || 0
-    const custoOp = parseFloat(custoOperServico.replace(',', '.')) / 100 || 0
+  const fatPE_  = n(fatPEManual)  || fatN
+  const margPE_ = n(margemPE)/100 || margOpPct
+  const metaPE_ = n(metaLucroPE)/100 || n(lucroD)/100
+  const custoOpPE_ = custoOp > 0 ? custoOp : n(simDespesa)
+  const area_   = n(areaM2) || 100
+  const profs_  = n(numProfs) || 1
+
+  const PE_          = margPE_ > 0 ? custoOpPE_ / margPE_ : 0
+  const PELucro_     = (margPE_ - metaPE_) > 0 ? custoOpPE_ / (margPE_ - metaPE_) : 0
+  const PEProf_      = profs_ > 0 ? PE_ / profs_ : 0
+  const PEProfLucro_ = profs_ > 0 ? PELucro_ / profs_ : 0
+  const PEM2_        = area_ > 0 ? PE_ / area_ : 0
+  const PEM2Lucro_   = area_ > 0 ? PELucro_ / area_ : 0
+
+  // ── Calcular Serviços ────────────────────────────────────────────────────
+  const [servicos,    setServicos]    = useState<Servico[]>([{id:1,nome:'',preco:'',rateioP:'',produto:'',imposto:''}])
+  const [proxServ,    setProxServ]    = useState(2)
+  const [taxaCartao,  setTaxaCartao]  = useState('5')
+  const [abatProd,    setAbatProd]    = useState('100')  // % abatimento produto
+  const [custOpServ,  setCustOpServ]  = useState('')     // % custo op (puxa do RD)
+  const [taxaAntesRateio, setTaxaAntesRateio] = useState(true)
+  const [prodAntesRateio, setProdAntesRateio] = useState(true)
+  const [salaoParceiro,   setSalaoParceiro]   = useState(true)
+
+  const custOpServN = n(custOpServ)/100 || (fatN > 0 && custoOp > 0 ? custoOp/fatN : 0.30)
+
+  function calcServ(s: Servico) {
+    const preco = n(s.preco)
     if (!preco) return null
+    const rP    = n(s.rateioP) / 100
+    const prod  = n(s.produto)
+    const imp   = n(s.imposto) / 100
+    const taxC  = n(taxaCartao) / 100
+    const abat  = n(abatProd) / 100
 
-    const rateio = preco * despDir
-    const cartao = preco * taxaC
-    const impostoR = salaoParceiro ? (preco - rateio) * imposto : preco * imposto
-    const total = rateio + produto + cartao + impostoR
-    const margemOp = preco - total
-    const margemOpPct = preco > 0 ? margemOp / preco : 0
-    const custoOpR = preco * custoOp
-    const resultado = preco - total - custoOpR
-    const resultadoPct = preco > 0 ? resultado / preco : 0
+    // Fórmula exata da planilha DV:
+    // Rateio R$ = (Preço × Rateio%) - IF(taxaAntesRateio, Preço×Rateio%×Taxa, 0) - IF(prodAntesRateio, Produto×Abatimento, 0)
+    const baseRateio = preco * rP
+    const abatTaxa   = taxaAntesRateio ? baseRateio * taxC : 0
+    const abatProdR  = prodAntesRateio  ? prod * abat      : 0
+    const rateioR    = baseRateio - abatTaxa - abatProdR
 
-    return { preco, rateio, produto, cartao, impostoR, total, totalPct: total/preco, margemOp, margemOpPct, custoOpR, custoOpPct: custoOp, resultado, resultadoPct }
+    const cartaoR    = preco * taxC
+    // Imposto: salão parceiro = (Preço - Rateio) × Imp%; senão Preço × Imp%
+    const impostR    = salaoParceiro ? (preco - rateioR) * imp : preco * imp
+    const total      = rateioR + prod + cartaoR + impostR
+    const margOp     = preco - total
+    const custoOpR   = preco * custOpServN
+    const resultado  = preco - total - custoOpR
+
+    return {preco,rateioR,prod,cartaoR,impostR,total,
+            totalPct:total/preco,margOp,margOpPct:margOp/preco,
+            custoOpR,custOpPct:custOpServN,resultado,resultPct:resultado/preco}
   }
 
-  // Aluguel de cadeira
-  const [numCadeiras, setNumCadeiras] = useState('')
-  const [custoOperacionalCadeira, setCustoOperacionalCadeira] = useState('')
-  // Metro quadrado
-  const [metragemTotal, setMetragemTotal] = useState('')
-  const [faturamentoMinimoM2, setFaturamentoMinimoM2] = useState('')
-  const [metragemSala, setMetragemSala] = useState('')
-  const [proximo, setProximo] = useState(ITENS_PADRAO.length + 1)
-  const [resultado, setResultado] = useState<any>(null)
-  const [loading, setLoading] = useState(false)
-  const [dicaAberta, setDicaAberta] = useState<number | null>(null)
+  // ── Custo de Produto ─────────────────────────────────────────────────────
+  const [servicosProd, setServicoProd] = useState<ServicoProd[]>([
+    {id:1, nomeServico:'', ingredientes:[{id:1,nome:'',qtdEmb:'',qtdUsa:'',preco:'',unidade:'ml'}]}
+  ])
+  const [proxSP, setProxSP] = useState(2)
 
-  const fat = parseFloat(faturamento.replace(',', '.')) || 0
-  const ticket = parseFloat(ticketMedio.replace(',', '.')) || 0
-  const totalCustos = itens.reduce((s, i) => s + (parseFloat(i.valor.replace(',', '.')) || 0), 0)
-  const lucro = fat - totalCustos
-  const margem = fat > 0 ? (lucro / fat) * 100 : 0
-  // Ponto de Equilíbrio
-  const atendimentosPE = ticket > 0 ? Math.ceil(totalCustos / ticket) : 0
-  const faturamentoPE = atendimentosPE * ticket
-  const diasUteis = 26
-  const atendimentosPorDia = atendimentosPE > 0 ? (atendimentosPE / diasUteis).toFixed(1) : '0'
-  const atendimentosAtuais = fat > 0 && ticket > 0 ? Math.round(fat / ticket) : 0
-  const folga = atendimentosAtuais - atendimentosPE
-  const folgaReais = fat - faturamentoPE
-
-  // Aluguel de cadeira — usa totalCustos da calculadora principal se não preenchido
-  const custoOpCad = parseFloat(custoOperacionalCadeira.replace(',', '.')) || (totalCustos > 0 ? totalCustos : 0)
-  const nCadeiras = parseInt(numCadeiras) || 0
-  const custoPorCadeira = nCadeiras > 0 ? custoOpCad / nCadeiras : 0
-  const aluguelSugerido = custoPorCadeira * 1.5
-
-  // Metro quadrado — usa faturamentoPE da calculadora principal se não preenchido
-  const fatMinimoM2 = parseFloat(faturamentoMinimoM2.replace(',', '.')) || (faturamentoPE > 0 ? faturamentoPE : 0)
-  const mTotal = parseFloat(metragemTotal.replace(',', '.')) || 0
-  const fatPorM2 = mTotal > 0 ? fatMinimoM2 / mTotal : 0
-  const fatSugeridoPorM2 = fatPorM2 * 1.5
-  const mSala = parseFloat(metragemSala.replace(',', '.')) || 0
-  const fatSugeridoSala = mSala > 0 ? fatSugeridoPorM2 * mSala : 0
-
-  // Interliga: quando totalCustos muda, preenche campo de custo operacional da cadeira se vazio
-  // E faturamentoPE preenche campo de faturamento mínimo do m²
-
-  function adicionarItem() {
-    setItens(prev => [...prev, { id: proximo, nome: '', valor: '', dica: '', editavel: true }])
-    setProximo(p => p + 1)
+  function custoIngred(i: Ingrediente): number {
+    const emb = n(i.qtdEmb), usa = n(i.qtdUsa), prec = n(i.preco)
+    return emb > 0 ? (prec / emb) * usa : 0
   }
 
-  function removerItem(id: number) {
-    setItens(prev => prev.filter(i => i.id !== id))
-  }
+  // ── Aluguel de Cadeira ───────────────────────────────────────────────────
+  const [numCad,    setNumCad]    = useState('')
+  const [custoOpCad,setCustoOpCad]= useState('')
 
-  function atualizarItem(id: number, campo: 'nome' | 'valor', val: string) {
-    setItens(prev => prev.map(i => i.id === id ? { ...i, [campo]: val } : i))
-  }
+  const custoOpCadN = n(custoOpCad) || custoOp
+  const custPorCad  = n(numCad) > 0 ? custoOpCadN / n(numCad) : 0
+  const alugSuger   = custPorCad * 1.5
 
-  // Calcular — instantâneo, sem IA
-  function calcular() {
-    if (!fat) { alert('Informe o faturamento mensal.'); return }
-    const itensPreenchidos = itens.filter(i => parseFloat(i.valor.replace(',', '.')) > 0)
-    setAnaliseIA('')
-    setErroIA('')
-    setResultado({
-      faturamento: fat,
-      totalCustos,
-      lucro,
-      margem,
-      analise: '',
-      itens: itensPreenchidos,
-      ticket,
-      atendimentosPE,
-      atendimentosPorDia,
-      atendimentosAtuais,
-      folga,
-    })
-  }
+  // ── Faturamento por M² ───────────────────────────────────────────────────
+  const [mTotal,  setMTotal]  = useState('')
+  const [fatMinM2,setFatMinM2]= useState('')
+  const [mSala,   setMSala]   = useState('')
 
-  // Analisar com IA — separado, opcional
-  async function analisarComIA() {
-    if (!resultado) return
-    setLoadingIA(true)
-    setErroIA('')
-    setAnaliseIA('')
+  const fatMinM2N   = n(fatMinM2) || pe
+  const fatPorM2    = n(mTotal) > 0 ? fatMinM2N / n(mTotal) : 0
+  const fatSugM2    = fatPorM2 * 1.5
+  const fatSugSala  = n(mSala) > 0 ? fatSugM2 * n(mSala) : 0
+
+  // ── IA ───────────────────────────────────────────────────────────────────
+  const [analiseIA,  setAnaliseIA]  = useState('')
+  const [loadingIA,  setLoadingIA]  = useState(false)
+  const [erroIA,     setErroIA]     = useState('')
+
+  async function analisarIA() {
+    setLoadingIA(true); setErroIA(''); setAnaliseIA('')
     try {
-      const detalhe = resultado.itens.map((i: any) => `- ${i.nome}: ${fmtR(parseFloat(i.valor.replace(',', '.')) || 0)}`).join('\n')
-      const prompt = `Você é a NODRI IA, especialista em gestão financeira de salões de beleza.
+      const detalhe = despInd.filter(d=>n(d.valor)>0).map(d=>`- ${d.nome}: ${fmtR(n(d.valor))}`).join('\n')
+      const prompt = `Você é a NODRI IA, especialista em gestão financeira de salões.
 
-DADOS DO GESTOR:
-- Faturamento Mensal: ${fmtR(resultado.faturamento)}
-- Total de Custos: ${fmtR(resultado.totalCustos)}
-- Lucro Líquido: ${fmtR(resultado.lucro)}
-- Margem de Lucro: ${resultado.margem.toFixed(1)}%
-${resultado.ticket > 0 ? `- Ticket Médio: ${fmtR(resultado.ticket)}
-- PE: ${resultado.atendimentosPE} atendimentos/mês
-- Situação: ${resultado.folga >= 0 ? `✅ ${resultado.folga} acima do PE` : `🚨 ${Math.abs(resultado.folga)} abaixo do PE`}` : ''}
+RECEITAS E DESPESAS DO SALÃO:
+- Faturamento: ${fmtR(fatN)}
+- Total Despesas Indiretas: ${fmtR(totInd)}
+- Provisão (13º+Férias+FGTS): ${fmtR(totProvisao)}
+- Depreciação: ${fmtR(depMensal)}/mês
+- Custo Operacional Total: ${fmtR(custoOp)} (${pctStr(custoOp,fatN)} do fat.)
+- Despesas Diretas: ${fmtR(totDiretas)}
+- Margem Operacional: ${fmtR(margOpR)} (${(margOpPct*100).toFixed(1)}%)
+- Resultado Operacional: ${fmtR(resultOp)} (${(resultOpPct*100).toFixed(1)}%)
+- Ponto de Equilíbrio: ${fmtR(pe)}
+- Rentabilidade: ${(rentab*100).toFixed(2)}%
+
+Custos desejados: Indireto ${custIndD}% | Direto ${custDirD}% | Lucro ${lucroD}%
 
 CUSTOS DETALHADOS:
 ${detalhe}
 
-Faça análise financeira prática com:
+Analise com:
 1. 🔍 DIAGNÓSTICO (margem saudável: >20%, atenção: 10-20%, crítica: <10%)
-2. ⚡ TOP 3 CUSTOS PARA REDUZIR (com % do faturamento e ação específica)
-3. 📊 BENCHMARKS DO SETOR (aluguel máx 10%, salários 35-45%, produtos 8-12%, marketing 3-5%)
-4. 💡 3 AÇÕES PRÁTICAS (com impacto estimado em R$)
+2. ⚡ TOP 3 CUSTOS PARA REDUZIR com ação específica e impacto em R$
+3. 📊 BENCHMARKS: Aluguel máx 10%, Salários 35-45%, Produtos 8-12%, Marketing 3-5%
+4. 💡 3 AÇÕES PRÁTICAS com impacto estimado
 5. 🎯 META: faturamento ideal para margem de 25%
 
-Seja direto e use números reais.`
+Use números reais. Seja direto.`
 
-      const res = await fetch('/api/ia/chat', {
-        method: 'POST', credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mensagens: [{ role: 'user', content: prompt }], modo: 'calculadora' })
-      })
-      if (!res.ok) { setErroIA('Servidor sobrecarregado. Tente novamente em alguns segundos.'); return }
-
-      const reader = res.body!.getReader()
-      const dec = new TextDecoder('utf-8', { fatal: false })
-      let buf = '', texto = ''
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        buf += dec.decode(value, { stream: true })
-        const lines = buf.split('\n'); buf = lines.pop() || ''
-        for (const line of lines) {
-          if (!line.startsWith('data:')) continue
-          try {
-            const d = JSON.parse(line.slice(5).trim())
-            if (d.token) { texto += d.token; setAnaliseIA(texto) }
-          } catch {}
+      const res = await fetch('/api/ia/chat',{method:'POST',credentials:'include',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({mensagens:[{role:'user',content:prompt}],modo:'calculadora'})})
+      if(!res.ok){setErroIA('Servidor sobrecarregado. Tente novamente.');return}
+      const reader=res.body!.getReader(); const dec=new TextDecoder('utf-8',{fatal:false})
+      let buf='',txt=''
+      while(true){
+        const {done,value}=await reader.read(); if(done)break
+        buf+=dec.decode(value,{stream:true})
+        const lines=buf.split('\n'); buf=lines.pop()||''
+        for(const line of lines){
+          if(!line.startsWith('data:'))continue
+          try{const d=JSON.parse(line.slice(5).trim()); if(d.token){txt+=d.token;setAnaliseIA(txt)}}catch{}
         }
       }
-    } catch { setErroIA('Erro de conexão. Tente novamente.') }
-    finally { setLoadingIA(false) }
+    } catch{setErroIA('Erro de conexão. Tente novamente.')}
+    finally{setLoadingIA(false)}
   }
 
-  const corMargem = margem >= 20 ? '#10b981' : margem >= 10 ? '#f59e0b' : '#ef4444'
+  // ─── Render ─────────────────────────────────────────────────────────────
+  const corRes = (v:number) => v >= 0 ? '#10b981' : '#ef4444'
 
-  if (resultado) {
-    return (
-      <div className="min-h-screen" style={{ background: '#0a0f1a', color: '#e2e8f0' }}>
-        <div className="max-w-3xl mx-auto px-4 py-8">
-          <button onClick={() => setResultado(null)}
-            className="flex items-center gap-2 text-sm mb-6 hover:text-white transition-colors"
-            style={{ color: '#94a3b8' }}>
-            <ArrowLeft size={16} /> Refazer cálculo
-          </button>
-
-          <div className="text-center mb-8">
-            <div className="text-4xl mb-2">🎉</div>
-            <h1 className="text-2xl font-bold text-white">Análise Concluída!</h1>
-            <p style={{ color: '#94a3b8' }} className="text-sm mt-1">Sua análise completa de custos operacionais</p>
-          </div>
-
-          {/* Cards de resultado */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            {[
-              { label: '💰 Faturamento', valor: fmtR(resultado.faturamento), cor: '#f59e0b' },
-              { label: '📊 Total de Custos', valor: fmtR(resultado.totalCustos), cor: '#ef4444' },
-              { label: '📈 Margem de Lucro', valor: `${resultado.margem.toFixed(1)}%`, cor: corMargem },
-              { label: '💵 Lucro Líquido', valor: fmtR(resultado.lucro), cor: resultado.lucro >= 0 ? '#10b981' : '#ef4444' },
-            ].map((c, i) => (
-              <div key={i} className="rounded-2xl p-5 border" style={{ background: '#111827', borderColor: '#1e293b' }}>
-                <p className="text-xs mb-1" style={{ color: '#94a3b8' }}>{c.label}</p>
-                <p className="text-2xl font-bold" style={{ color: c.cor }}>{c.valor}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* Ponto de Equilíbrio no resultado */}
-          {resultado.ticket > 0 && (
-            <div className="rounded-2xl p-5 border mb-4" style={{ background: '#0d1525', borderColor: '#10b98140' }}>
-              <h3 className="font-bold text-sm mb-3" style={{ color: '#10b981' }}>⚖️ Ponto de Equilíbrio</h3>
-              <div className="grid grid-cols-3 gap-3 text-center">
-                <div>
-                  <p className="text-xs mb-1" style={{ color: '#64748b' }}>PE necessário</p>
-                  <p className="text-2xl font-bold" style={{ color: '#10b981' }}>{resultado.atendimentosPE}</p>
-                  <p className="text-xs" style={{ color: '#475569' }}>atend/mês</p>
-                </div>
-                <div>
-                  <p className="text-xs mb-1" style={{ color: '#64748b' }}>Atendimentos atuais</p>
-                  <p className="text-2xl font-bold" style={{ color: '#f59e0b' }}>{resultado.atendimentosAtuais}</p>
-                  <p className="text-xs" style={{ color: '#475569' }}>atend/mês</p>
-                </div>
-                <div>
-                  <p className="text-xs mb-1" style={{ color: '#64748b' }}>Situação</p>
-                  <p className="text-xl font-bold" style={{ color: resultado.folga >= 0 ? '#10b981' : '#ef4444' }}>
-                    {resultado.folga >= 0 ? `+${resultado.folga}` : resultado.folga}
-                  </p>
-                  <p className="text-xs" style={{ color: resultado.folga >= 0 ? '#10b981' : '#ef4444' }}>
-                    {resultado.folga >= 0 ? 'zona de lucro ✅' : 'zona de risco 🚨'}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Breakdown de custos */}
-          <div className="rounded-2xl p-5 border mb-6" style={{ background: '#111827', borderColor: '#1e293b' }}>
-            <h3 className="font-bold text-sm mb-3" style={{ color: '#7c5cfc' }}>📋 Detalhamento dos Custos</h3>
-            <div className="space-y-2">
-              {resultado.itens.map((item: any, i: number) => {
-                const v = parseFloat(item.valor.replace(',', '.')) || 0
-                const p = resultado.faturamento > 0 ? (v / resultado.faturamento * 100).toFixed(1) : '0'
-                return (
-                  <div key={i} className="flex items-center justify-between text-sm">
-                    <span style={{ color: '#94a3b8' }}>{item.nome}</span>
-                    <div className="flex items-center gap-3">
-                      <span style={{ color: '#64748b', fontSize: 11 }}>{p}% do fat.</span>
-                      <span className="font-medium text-white">{fmtR(v)}</span>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Análise IA — opcional */}
-          <div className="rounded-2xl border overflow-hidden" style={{ borderColor: '#7c5cfc40' }}>
-            {!analiseIA && !loadingIA && !erroIA && (
-              <button onClick={analisarComIA}
-                className="w-full py-4 font-bold text-sm flex items-center justify-center gap-2 transition-all hover:brightness-110"
-                style={{ background: 'linear-gradient(135deg, #7c5cfc20, #a78bfa20)', color: '#a78bfa', border: 'none' }}>
-                🤖 Quero a análise da NODRI IA
-                <span className="text-xs font-normal" style={{ color: '#64748b' }}>— opcional, pode demorar alguns segundos</span>
-              </button>
-            )}
-            {loadingIA && (
-              <div className="p-5 flex items-center gap-3" style={{ background: '#111827' }}>
-                <Loader2 size={18} className="animate-spin" style={{ color: '#7c5cfc' }} />
-                <span className="text-sm" style={{ color: '#94a3b8' }}>NODRI IA analisando seus dados...</span>
-              </div>
-            )}
-            {erroIA && (
-              <div className="p-5 flex items-center justify-between gap-3" style={{ background: '#111827' }}>
-                <span className="text-sm" style={{ color: '#ef4444' }}>⚠️ {erroIA}</span>
-                <button onClick={analisarComIA} className="text-xs px-3 py-1.5 rounded-lg" style={{ background: '#7c5cfc', color: 'white' }}>
-                  Tentar novamente
-                </button>
-              </div>
-            )}
-            {analiseIA && (
-              <div className="p-6" style={{ background: '#111827' }}>
-                <h3 className="font-bold text-sm mb-4" style={{ color: '#7c5cfc' }}>🤖 Análise da NODRI IA</h3>
-                <div className="text-sm leading-relaxed" style={{ color: '#cbd5e1' }}
-                  dangerouslySetInnerHTML={{
-                    __html: analiseIA
-                      .replace(/\*\*(.*?)\*\*/g, '<strong style="color:#e2e8f0">$1</strong>')
-                      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                      .replace(/\n/g, '<br/>')
-                  }}
-                />
-              </div>
-            )}
-          </div>
-
-          <button onClick={() => setResultado(null)}
-            className="w-full mt-6 py-3 rounded-xl font-bold text-sm transition-all hover:brightness-110"
-            style={{ background: 'linear-gradient(135deg, #7c5cfc, #a78bfa)', color: 'white' }}>
-            🔄 Nova Análise
-          </button>
-        </div>
-      </div>
-    )
-  }
+  const ABAS = [
+    {id:'rd',     label:'Receitas e Despesas', icon:'📊'},
+    {id:'pe',     label:'Ponto de Equilíbrio', icon:'⚖️'},
+    {id:'servicos',label:'Calcular Serviços',  icon:'💇'},
+    {id:'produto', label:'Custo de Produto',   icon:'🧴'},
+    {id:'cadeira', label:'Aluguel de Cadeira', icon:'💺'},
+    {id:'metro',   label:'Faturamento por M²', icon:'📐'},
+  ] as const
 
   return (
-    <div className="min-h-screen" style={{ background: '#0a0f1a', color: '#e2e8f0' }}>
-      <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="min-h-screen" style={{background:'#0a0f1a',color:'#e2e8f0'}}>
+      <div className="max-w-5xl mx-auto px-4 py-8">
 
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
-          <a href="/salon" className="p-2 rounded-lg hover:bg-white/5 transition-colors" style={{ color: '#94a3b8' }}>
-            <ArrowLeft size={18} />
-          </a>
+          <a href="/salon" className="p-2 rounded-lg hover:bg-white/5" style={{color:'#94a3b8'}}><ArrowLeft size={18}/></a>
           <div>
             <h1 className="text-xl font-bold text-white flex items-center gap-2">
-              <Calculator size={22} style={{ color: '#7c5cfc' }} />
-              Calculadoras do Salão
+              <Calculator size={22} style={{color:'#7c5cfc'}}/>Calculadoras do Salão
             </h1>
-            <p className="text-xs mt-0.5" style={{ color: '#64748b' }}>
-              Os dados são compartilhados entre as calculadoras automaticamente
+            <p className="text-xs mt-0.5" style={{color:'#64748b'}}>
+              Baseado na metodologia Dra. Dani Venâncio — dados interligados entre as calculadoras
             </p>
           </div>
         </div>
 
         {/* Abas */}
-        <div className="flex gap-2 mb-6 p-1 rounded-xl" style={{ background: '#111827' }}>
-          {([
-            { id: 'custo', label: 'Custo Operacional', icon: '💰' },
-            { id: 'pe', label: 'Ponto de Equilíbrio', icon: '⚖️' },
-            { id: 'servicos', label: 'Calcular Serviços', icon: '💇' },
-            { id: 'produto', label: 'Custo de Produto', icon: '🧴' },
-            { id: 'cadeira', label: 'Aluguel de Cadeira', icon: '💺' },
-            { id: 'metro', label: 'Faturamento por M²', icon: '📐' },
-          ] as const).map(a => (
-            <button key={a.id} onClick={() => setAba(a.id)}
-              className="flex-1 py-2 px-2 rounded-lg text-[11px] font-bold transition-all"
-              style={{ background: aba === a.id ? '#7c5cfc' : 'transparent', color: aba === a.id ? 'white' : '#64748b' }}>
-              {a.icon} {a.label}
+        <div className="grid grid-cols-6 gap-1 mb-6 p-1 rounded-xl" style={{background:'#111827'}}>
+          {ABAS.map(a=>(
+            <button key={a.id} onClick={()=>setAba(a.id as any)}
+              className="py-2 px-1 rounded-lg text-[10px] font-bold transition-all text-center"
+              style={{background:aba===a.id?'#7c5cfc':'transparent',color:aba===a.id?'white':'#64748b'}}>
+              <div>{a.icon}</div><div className="mt-0.5 leading-tight">{a.label}</div>
             </button>
           ))}
         </div>
 
-        {/* ── ABA PONTO DE EQUILÍBRIO DETALHADO ── */}
-        {aba === 'pe' && (() => {
-          const fatPE = parseFloat(faturamentoPEDetalhe.replace(',','.')) || (fat > 0 ? fat : 0)
-          const margemOp = parseFloat(margemOpPE.replace(',','.')) / 100 || 0
-          const metaLucro = parseFloat(metaLucroPE.replace(',','.')) / 100 || 0
-          const indiretas = despesasPE.filter(d => d.tipo === 'indireta')
-          const diretas = despesasPE.filter(d => d.tipo === 'direta')
-          const totalInd = indiretas.reduce((s,d) => s + (parseFloat(d.valor.replace(',','.')) || 0), 0)
-          const totalDir = diretas.reduce((s,d) => s + (parseFloat(d.valor.replace(',','.')) || 0), 0)
-          const totalDespesas = totalInd + totalDir
-          return (
-            <div className="space-y-4">
-              {/* Parâmetros */}
-              <div className="rounded-2xl p-5 border" style={{ background: '#111827', borderColor: '#10b98140' }}>
-                <h3 className="font-bold text-sm mb-3" style={{ color: '#10b981' }}>⚙️ Parâmetros do Cálculo</h3>
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold mb-1" style={{ color: '#94a3b8' }}>Faturamento Mensal (R$)</label>
-                    <p className="text-xs mb-1" style={{ color: '#475569' }}>{fat > 0 ? `Da calculadora: ${fmtR(fat)}` : 'Informe o faturamento'}</p>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{ color: '#64748b' }}>R$</span>
-                      <input type="number" value={faturamentoPEDetalhe || (fat > 0 ? String(fat) : '')}
-                        onChange={e => setFaturamentoPEDetalhe(e.target.value)}
-                        placeholder={fat > 0 ? String(fat) : '0'}
-                        className="w-full pl-8 pr-3 py-2 rounded-lg text-white text-sm focus:outline-none"
-                        style={{ background: '#0a0f1a', border: '1px solid #10b98160' }} />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold mb-1" style={{ color: '#94a3b8' }}>Margem Operacional (%)</label>
-                    <p className="text-xs mb-1" style={{ color: '#475569' }}>% que sobra após despesas diretas</p>
-                    <div className="relative">
-                      <input type="number" value={margemOpPE} onChange={e => setMargemOpPE(e.target.value)}
-                        className="w-full pr-7 pl-3 py-2 rounded-lg text-white text-sm focus:outline-none"
-                        style={{ background: '#0a0f1a', border: '1px solid #1e293b' }} />
-                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: '#64748b' }}>%</span>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold mb-1" style={{ color: '#94a3b8' }}>Meta de Lucro (%)</label>
-                    <p className="text-xs mb-1" style={{ color: '#475569' }}>Lucro desejado sobre o faturamento</p>
-                    <div className="relative">
-                      <input type="number" value={metaLucroPE} onChange={e => setMetaLucroPE(e.target.value)}
-                        className="w-full pr-7 pl-3 py-2 rounded-lg text-white text-sm focus:outline-none"
-                        style={{ background: '#0a0f1a', border: '1px solid #1e293b' }} />
-                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: '#64748b' }}>%</span>
-                    </div>
+        {/* ════ ABA RECEITAS E DESPESAS ════ */}
+        {aba==='rd' && (
+          <div className="space-y-4">
+
+            {/* Card configurações */}
+            <div className="rounded-2xl p-5 border" style={{background:'#111827',borderColor:'#7c5cfc40'}}>
+              <h3 className="font-bold text-sm mb-4" style={{color:'#7c5cfc'}}>⚙️ Configurações</h3>
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="text-xs font-bold block mb-1" style={{color:'#94a3b8'}}>💰 Faturamento Mensal (R$)</label>
+                  <p className="text-xs mb-1" style={{color:'#475569'}}>Média dos últimos 12 meses ÷ 12</p>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#64748b'}}>R$</span>
+                    <input type="number" value={fat} onChange={e=>setFat(e.target.value)} placeholder="Ex: 50000"
+                      className="w-full pl-9 pr-3 py-2.5 rounded-xl text-white text-base font-bold focus:outline-none"
+                      style={{background:'#0a0f1a',border:'1px solid #7c5cfc60'}}/>
                   </div>
                 </div>
-              </div>
-
-              {/* Despesas Indiretas */}
-              {[{ titulo: '📋 Despesas Indiretas', lista: indiretas, total: totalInd, cor: '#f59e0b' },
-                { titulo: '📌 Despesas Diretas', lista: diretas, total: totalDir, cor: '#ef4444' }
-              ].map(grupo => (
-                <div key={grupo.titulo} className="rounded-2xl border overflow-hidden" style={{ background: '#111827', borderColor: '#1e293b' }}>
-                  <div className="px-5 py-3 flex items-center justify-between border-b" style={{ background: '#0d1525', borderColor: '#1e293b' }}>
-                    <span className="font-bold text-sm" style={{ color: grupo.cor }}>{grupo.titulo}</span>
-                    <span className="font-bold text-sm" style={{ color: grupo.cor }}>{fmtR(grupo.total)}</span>
-                  </div>
-                  {/* Header */}
-                  <div className="grid grid-cols-12 gap-2 px-5 py-2 text-xs font-bold uppercase tracking-wider" style={{ color: '#475569', borderBottom: '1px solid #1e293b20' }}>
-                    <div className="col-span-4">Despesa</div>
-                    <div className="col-span-2">Valor (R$)</div>
-                    <div className="col-span-2">Anal. Vertical</div>
-                    <div className="col-span-2">P.E. (R$)</div>
-                    <div className="col-span-2">P.E. c/ Lucro</div>
-                  </div>
-                  {grupo.lista.map(d => {
-                    const v = parseFloat(d.valor.replace(',','.')) || 0
-                    const av = fatPE > 0 ? (v / fatPE * 100) : 0
-                    const pe = margemOp > 0 ? v / margemOp : 0
-                    const peLucro = (margemOp - metaLucro) > 0 ? v / (margemOp - metaLucro) : 0
-                    return (
-                      <div key={d.id} className="grid grid-cols-12 gap-2 px-5 py-2 items-center hover:bg-white/2" style={{ borderBottom: '1px solid #1e293b10' }}>
-                        <div className="col-span-4 text-xs" style={{ color: '#cbd5e1' }}>{d.nome}</div>
-                        <div className="col-span-2">
-                          <div className="relative">
-                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{ color: '#64748b' }}>R$</span>
-                            <input type="number" value={d.valor} onChange={e => atualizarDespesaPE(d.id, e.target.value)}
-                              placeholder="0"
-                              className="w-full pl-7 pr-2 py-1 rounded-lg text-xs text-white focus:outline-none"
-                              style={{ background: '#0a0f1a', border: `1px solid ${v > 0 ? '#33415560' : '#1e293b'}` }} />
-                          </div>
-                        </div>
-                        <div className="col-span-2 text-xs text-center" style={{ color: '#64748b' }}>{v > 0 ? `${av.toFixed(1)}%` : '—'}</div>
-                        <div className="col-span-2 text-xs text-center" style={{ color: '#10b981' }}>{v > 0 && margemOp > 0 ? fmtR(pe) : '—'}</div>
-                        <div className="col-span-2 text-xs text-center" style={{ color: '#f59e0b' }}>{v > 0 && (margemOp - metaLucro) > 0 ? fmtR(peLucro) : '—'}</div>
-                      </div>
-                    )
-                  })}
-                </div>
-              ))}
-
-              {/* Totais */}
-              {totalDespesas > 0 && margemOp > 0 && (
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-3 gap-2">
                   {[
-                    { l: 'Total Despesas', v: fmtR(totalDespesas), c: '#f59e0b' },
-                    { l: 'Ponto de Equilíbrio', v: fmtR(totalDespesas / margemOp), c: '#10b981', sub: `Precisa faturar ${fmtR(totalDespesas / margemOp)}/mês para cobrir tudo` },
-                    { l: 'P.E. com Lucro de '+metaLucroPE+'%', v: (margemOp - metaLucro) > 0 ? fmtR(totalDespesas / (margemOp - metaLucro)) : 'Margem insuficiente', c: '#a78bfa' },
-                  ].map((c, i) => (
-                    <div key={i} className="rounded-2xl p-4 border text-center" style={{ background: '#111827', borderColor: '#1e293b' }}>
-                      <p className="text-xs mb-1" style={{ color: '#64748b' }}>{c.l}</p>
-                      <p className="text-xl font-bold" style={{ color: c.c }}>{c.v}</p>
-                      {c.sub && <p className="text-[10px] mt-1" style={{ color: '#475569' }}>{c.sub}</p>}
+                    {l:'Custo Indireto Desejado',v:custIndD,set:setCustIndD,c:'#f59e0b',dica:'Padrão DV: 30%'},
+                    {l:'Custo Direto Desejado',v:custDirD,set:setCustDirD,c:'#ef4444',dica:'Padrão DV: 55%'},
+                    {l:'Lucro Desejado',v:lucroD,set:setLucroD,c:'#10b981',dica:'Padrão DV: 15%'},
+                  ].map(f=>(
+                    <div key={f.l}>
+                      <label className="text-[10px] font-bold block mb-1" style={{color:f.c}}>{f.l}</label>
+                      <p className="text-[9px] mb-1" style={{color:'#475569'}}>{f.dica}</p>
+                      <div className="relative">
+                        <input type="number" value={f.v} onChange={e=>f.set(e.target.value)}
+                          className="w-full pr-6 pl-2 py-1.5 rounded-lg text-xs text-white focus:outline-none"
+                          style={{background:'#0a0f1a',border:`1px solid ${f.c}40`}}/>
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#64748b'}}>%</span>
+                      </div>
                     </div>
                   ))}
                 </div>
-              )}
-
-              <div className="rounded-xl p-4 text-xs space-y-1" style={{ background: '#111827', border: '1px solid #1e293b', color: '#64748b' }}>
-                <p className="font-bold mb-1" style={{ color: '#94a3b8' }}>💡 Como funciona:</p>
-                <p>• <strong style={{ color: '#e2e8f0' }}>P.E.</strong> = Despesa ÷ Margem Operacional% → faturamento mínimo para cobrir essa despesa</p>
-                <p>• <strong style={{ color: '#e2e8f0' }}>P.E. c/ Lucro</strong> = Despesa ÷ (Margem% - Meta Lucro%) → faturamento para cobrir E lucrar</p>
-                <p>• <strong style={{ color: '#e2e8f0' }}>Análise Vertical</strong> = quanto cada despesa representa do faturamento total</p>
               </div>
-            </div>
-          )
-        })()}
-
-        {/* ── ABA CUSTO DE PRODUTO POR SERVIÇO ── */}
-        {aba === 'produto' && (
-          <div className="space-y-4">
-            <div className="rounded-xl p-3 text-xs" style={{ background: '#7c5cfc15', border: '1px solid #7c5cfc30', color: '#a78bfa' }}>
-              ✨ Calcule o custo exato de cada produto usado por serviço. O total pode ser usado na aba <strong>💇 Calcular Serviços</strong> como "Produto (R$)".
-            </div>
-
-            {servicosProduto.map(sp => {
-              const totalCustoProd = sp.ingredientes.reduce((s, ing) => s + calcCustoIngrediente(ing), 0)
-              return (
-                <div key={sp.id} className="rounded-2xl border overflow-hidden" style={{ background: '#111827', borderColor: '#1e293b' }}>
-                  {/* Header do serviço */}
-                  <div className="px-5 py-4 flex items-center gap-3 border-b" style={{ background: '#0d1525', borderColor: '#1e293b' }}>
-                    <span className="text-lg">🧴</span>
-                    <input value={sp.nomeServico}
-                      onChange={e => setServicosProduto(prev => prev.map(s => s.id === sp.id ? { ...s, nomeServico: e.target.value } : s))}
-                      placeholder="Nome do serviço (ex: Coloração Longo)"
-                      className="flex-1 bg-transparent text-white font-bold text-sm focus:outline-none border-b border-transparent focus:border-purple-500"
-                      style={{ borderBottom: '1px solid #334155' }} />
-                    {totalCustoProd > 0 && (
-                      <div className="text-right flex-shrink-0">
-                        <p className="text-[10px]" style={{ color: '#64748b' }}>Custo total de produto</p>
-                        <p className="font-bold text-base" style={{ color: '#f59e0b' }}>{fmtR(totalCustoProd)}</p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Header da tabela */}
-                  <div className="grid gap-2 px-5 py-2 text-[10px] font-bold uppercase tracking-wider border-b"
-                    style={{ background: '#0a0f1a', borderColor: '#1e293b', color: '#475569', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 1fr 20px' }}>
-                    <div>Produto/Insumo</div>
-                    <div>Unid.</div>
-                    <div>Qtd embalagem</div>
-                    <div>Preço embalagem</div>
-                    <div>Qtd usada</div>
-                    <div>Custo uso</div>
-                    <div></div>
-                  </div>
-
-                  {/* Ingredientes */}
-                  {sp.ingredientes.map((ing, idx) => {
-                    const custo = calcCustoIngrediente(ing)
-                    return (
-                      <div key={idx} className="grid gap-2 px-5 py-2 items-center hover:bg-white/2"
-                        style={{ borderBottom: '1px solid #1e293b10', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 1fr 20px' }}>
-                        <input value={ing.nome} onChange={e => atualizarIngrediente(sp.id, idx, 'nome', e.target.value)}
-                          placeholder="Ex: Tinta Color"
-                          className="px-3 py-1.5 rounded-lg text-xs text-white focus:outline-none"
-                          style={{ background: '#0a0f1a', border: '1px solid #1e293b' }} />
-                        <select value={ing.unidade} onChange={e => atualizarIngrediente(sp.id, idx, 'unidade', e.target.value)}
-                          className="px-2 py-1.5 rounded-lg text-xs text-white focus:outline-none"
-                          style={{ background: '#0a0f1a', border: '1px solid #1e293b' }}>
-                          {['ml','g','und','L','kg'].map(u => <option key={u} value={u}>{u}</option>)}
-                        </select>
-                        <div className="relative">
-                          <input type="number" value={ing.qtdEmbalagem} onChange={e => atualizarIngrediente(sp.id, idx, 'qtdEmbalagem', e.target.value)}
-                            placeholder="Ex: 60"
-                            className="w-full px-3 py-1.5 rounded-lg text-xs text-white focus:outline-none"
-                            style={{ background: '#0a0f1a', border: '1px solid #1e293b' }} />
-                        </div>
-                        <div className="relative">
-                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{ color: '#64748b' }}>R$</span>
-                          <input type="number" value={ing.precoEmbalagem} onChange={e => atualizarIngrediente(sp.id, idx, 'precoEmbalagem', e.target.value)}
-                            placeholder="0"
-                            className="w-full pl-7 pr-2 py-1.5 rounded-lg text-xs text-white focus:outline-none"
-                            style={{ background: '#0a0f1a', border: '1px solid #1e293b' }} />
-                        </div>
-                        <input type="number" value={ing.qtdUsada} onChange={e => atualizarIngrediente(sp.id, idx, 'qtdUsada', e.target.value)}
-                          placeholder="Ex: 90"
-                          className="px-3 py-1.5 rounded-lg text-xs text-white focus:outline-none"
-                          style={{ background: '#0a0f1a', border: '1px solid #1e293b' }} />
-                        <div className="text-xs font-bold text-center" style={{ color: custo > 0 ? '#f59e0b' : '#334155' }}>
-                          {custo > 0 ? fmtR(custo) : '—'}
-                        </div>
-                        <button onClick={() => removerIngrediente(sp.id, idx)} style={{ color: '#475569' }}>
-                          <Trash2 size={12} />
-                        </button>
-                      </div>
-                    )
-                  })}
-
-                  {/* Footer */}
-                  <div className="px-5 py-3 flex items-center justify-between border-t" style={{ borderColor: '#1e293b' }}>
-                    <button onClick={() => adicionarIngrediente(sp.id)}
-                      className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg"
-                      style={{ background: '#f59e0b20', color: '#f59e0b', border: '1px dashed #f59e0b40' }}>
-                      <Plus size={12} /> Adicionar produto
-                    </button>
-                    {totalCustoProd > 0 && (
-                      <div className="text-xs px-3 py-1.5 rounded-lg font-bold" style={{ background: '#f59e0b20', color: '#f59e0b' }}>
-                        Total: {fmtR(totalCustoProd)} → use em "💇 Calcular Serviços" como Produto (R$)
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
-
-            <button onClick={adicionarServicoProduto}
-              className="w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2"
-              style={{ background: '#7c5cfc20', color: '#7c5cfc', border: '1px dashed #7c5cfc40' }}>
-              <Plus size={15} /> Adicionar outro serviço
-            </button>
-
-            <div className="rounded-xl p-4 text-xs space-y-1" style={{ background: '#111827', border: '1px solid #1e293b', color: '#64748b' }}>
-              <p className="font-bold mb-1" style={{ color: '#94a3b8' }}>💡 Fórmula usada:</p>
-              <p>• <strong style={{ color: '#e2e8f0' }}>Custo por uso</strong> = (Preço da embalagem ÷ Qtd total da embalagem) × Qtd usada no serviço</p>
-              <p>• Ex: Tinta R$35 / 60g × 90g usados = <strong style={{ color: '#f59e0b' }}>R$52,50 de custo</strong></p>
-              <p>• Baseado na planilha Ferramenta Financeira DV — Dra. Dani Venâncio</p>
-            </div>
-          </div>
-        )}
-
-        {/* ── ABA CALCULAR SERVIÇOS ── */}
-        {aba === 'servicos' && (
-          <div className="space-y-4">
-            {/* Parâmetros globais */}
-            <div className="rounded-2xl p-5 border" style={{ background: '#111827', borderColor: '#7c5cfc40' }}>
-              <h3 className="font-bold text-sm mb-3" style={{ color: '#7c5cfc' }}>⚙️ Parâmetros Globais</h3>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold mb-1" style={{ color: '#94a3b8' }}>Taxa do Cartão (%)</label>
-                  <p className="text-xs mb-1" style={{ color: '#475569' }}>Média das maquininhas</p>
+                  <label className="text-xs font-bold block mb-1" style={{color:'#94a3b8'}}>🏦 Investimento Inicial (R$)</label>
+                  <p className="text-xs mb-1" style={{color:'#475569'}}>Valor total investido no negócio</p>
                   <div className="relative">
-                    <input type="number" value={taxaCartao} onChange={e => setTaxaCartao(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg text-white text-sm focus:outline-none"
-                      style={{ background: '#0a0f1a', border: '1px solid #334155' }} />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs" style={{ color: '#64748b' }}>%</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#64748b'}}>R$</span>
+                    <input type="number" value={invInicial} onChange={e=>setInvInicial(e.target.value)} placeholder="Ex: 100000"
+                      className="w-full pl-9 pr-3 py-2 rounded-xl text-white text-sm focus:outline-none"
+                      style={{background:'#0a0f1a',border:'1px solid #1e293b'}}/>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold mb-1" style={{ color: '#94a3b8' }}>Custo Operacional (%)</label>
-                  <p className="text-xs mb-1" style={{ color: '#475569' }}>
-                    {totalCustos > 0 && fat > 0 ? `Calculado: ${((totalCustos/fat)*100).toFixed(1)}%` : 'Do custo operacional'}
+                  <label className="text-xs font-bold block mb-1" style={{color:'#94a3b8'}}>📉 Total a ser Depreciado (R$)</label>
+                  <p className="text-xs mb-1" style={{color:'#475569'}}>
+                    Equipamentos, móveis, reformas — dividido por 60 meses (5 anos)
+                    {n(totalDeprec)>0 && <span style={{color:'#a78bfa'}}> → {fmtR(depMensal)}/mês</span>}
                   </p>
                   <div className="relative">
-                    <input type="number"
-                      value={custoOperServico}
-                      onChange={e => setCustoOperServico(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg text-white text-sm focus:outline-none"
-                      style={{ background: '#0a0f1a', border: '1px solid #334155' }} />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs" style={{ color: '#64748b' }}>%</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#64748b'}}>R$</span>
+                    <input type="number" value={totalDeprec} onChange={e=>setTotalDeprec(e.target.value)} placeholder="Ex: 10000"
+                      className="w-full pl-9 pr-3 py-2 rounded-xl text-white text-sm focus:outline-none"
+                      style={{background:'#0a0f1a',border:'1px solid #1e293b'}}/>
                   </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-bold mb-1" style={{ color: '#94a3b8' }}>Lei do Salão Parceiro</label>
-                  <p className="text-xs mb-1" style={{ color: '#475569' }}>Imposto sobre margem</p>
-                  <button onClick={() => setSalaoParceiro(p => !p)}
-                    className="w-full py-2 rounded-lg text-sm font-bold transition-all"
-                    style={{ background: salaoParceiro ? '#10b981' : '#1e293b', color: salaoParceiro ? 'white' : '#64748b', border: `1px solid ${salaoParceiro ? '#10b981' : '#334155'}` }}>
-                    {salaoParceiro ? '✅ SIM' : 'NÃO'}
-                  </button>
-                </div>
               </div>
-              {totalCustos > 0 && fat > 0 && (
-                <div className="mt-3 p-2 rounded-lg text-xs" style={{ background: '#7c5cfc10', color: '#a78bfa', border: '1px solid #7c5cfc20' }}>
-                  ✨ Custo operacional da sua calculadora: <strong>{((totalCustos/fat)*100).toFixed(1)}%</strong> — clique no campo e use esse valor para maior precisão
-                </div>
-              )}
             </div>
 
-            {/* Lista de serviços */}
-            <div className="rounded-2xl border overflow-hidden" style={{ background: '#111827', borderColor: '#1e293b' }}>
-              {/* Header */}
-              <div className="grid gap-2 px-4 py-3 text-xs font-bold uppercase tracking-wider border-b"
-                style={{ background: '#0d1525', borderColor: '#1e293b', color: '#64748b', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 20px' }}>
-                <div>Serviço</div>
-                <div>Preço (R$)</div>
-                <div>Desp. Diretas (%)</div>
-                <div>Produto (R$)</div>
-                <div>Imposto (%)</div>
-                <div></div>
+            {/* Despesas Indiretas */}
+            <div className="rounded-2xl border overflow-hidden" style={{background:'#111827',borderColor:'#1e293b'}}>
+              <div className="flex items-center justify-between px-5 py-3 border-b" style={{background:'#0d1525',borderColor:'#1e293b'}}>
+                <span className="font-bold text-sm" style={{color:'#f59e0b'}}>📋 Despesas Indiretas</span>
+                <span className="font-bold text-sm" style={{color:'#f59e0b'}}>{fmtR(totInd)}</span>
               </div>
-
-              {/* Linhas */}
-              <div className="divide-y" style={{ borderColor: '#1e293b20' }}>
-                {servicos.map((s) => {
-                  const calc = calcularServico(s)
-                  const corResultado = calc && calc.resultado > 0 ? '#10b981' : '#ef4444'
-                  return (
-                    <div key={s.id}>
-                      {/* Inputs */}
-                      <div className="grid gap-2 px-4 py-3 items-center"
-                        style={{ gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 20px' }}>
-                        <input value={s.nome} onChange={e => atualizarServico(s.id, 'nome', e.target.value)}
-                          placeholder="Nome do serviço"
-                          className="w-full px-3 py-2 rounded-lg text-sm text-white focus:outline-none"
-                          style={{ background: '#0a0f1a', border: '1px solid #1e293b' }} />
-                        <div className="relative">
-                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: '#64748b' }}>R$</span>
-                          <input type="number" value={s.preco} onChange={e => atualizarServico(s.id, 'preco', e.target.value)}
-                            placeholder="0"
-                            className="w-full pl-7 pr-2 py-2 rounded-lg text-sm text-white focus:outline-none"
-                            style={{ background: '#0a0f1a', border: `1px solid ${s.preco ? '#7c5cfc40' : '#1e293b'}` }} />
-                        </div>
-                        <div className="relative">
-                          <input type="number" value={s.despDireta} onChange={e => atualizarServico(s.id, 'despDireta', e.target.value)}
-                            placeholder="0"
-                            className="w-full pr-6 pl-3 py-2 rounded-lg text-sm text-white focus:outline-none"
-                            style={{ background: '#0a0f1a', border: '1px solid #1e293b' }} />
-                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: '#64748b' }}>%</span>
-                        </div>
-                        <div className="relative">
-                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: '#64748b' }}>R$</span>
-                          <input type="number" value={s.produto} onChange={e => atualizarServico(s.id, 'produto', e.target.value)}
-                            placeholder="0"
-                            className="w-full pl-7 pr-2 py-2 rounded-lg text-sm text-white focus:outline-none"
-                            style={{ background: '#0a0f1a', border: '1px solid #1e293b' }} />
-                        </div>
-                        <div className="relative">
-                          <input type="number" value={s.imposto} onChange={e => atualizarServico(s.id, 'imposto', e.target.value)}
-                            placeholder="0"
-                            className="w-full pr-6 pl-3 py-2 rounded-lg text-sm text-white focus:outline-none"
-                            style={{ background: '#0a0f1a', border: '1px solid #1e293b' }} />
-                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: '#64748b' }}>%</span>
-                        </div>
-                        <button onClick={() => removerServico(s.id)} className="text-center" style={{ color: '#475569' }}>
-                          <Trash2 size={13} />
-                        </button>
+              <div className="grid grid-cols-12 gap-2 px-5 py-2 text-[10px] font-bold uppercase tracking-wider border-b" style={{color:'#475569',borderColor:'#1e293b20'}}>
+                <div className="col-span-5">Despesa</div>
+                <div className="col-span-3">Valor Mensal (R$)</div>
+                <div className="col-span-2">% Fat.</div>
+                <div className="col-span-2">Dica</div>
+              </div>
+              {despInd.map((d,i)=>{
+                const v=n(d.valor), pctV=fatN>0?(v/fatN*100):0
+                const cor=pctV>20?'#ef4444':pctV>10?'#f59e0b':'#10b981'
+                return(
+                  <div key={i} className="grid grid-cols-12 gap-2 px-5 py-2 items-center hover:bg-white/2" style={{borderBottom:'1px solid #1e293b10'}}>
+                    <div className="col-span-5 text-xs" style={{color:'#cbd5e1'}}>{d.nome}</div>
+                    <div className="col-span-3">
+                      <div className="relative">
+                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#64748b'}}>R$</span>
+                        <input type="number" value={d.valor}
+                          onChange={e=>{const nd=[...despInd];nd[i]={...nd[i],valor:e.target.value};setDespInd(nd)}}
+                          placeholder="0"
+                          className="w-full pl-6 pr-2 py-1 rounded-lg text-xs text-white focus:outline-none"
+                          style={{background:'#0a0f1a',border:`1px solid ${v>0?'#33415560':'#1e293b'}`}}/>
                       </div>
-
-                      {/* Resultado calculado */}
-                      {calc && (
-                        <div className="mx-4 mb-3 rounded-xl overflow-hidden border" style={{ borderColor: '#1e293b' }}>
-                          <div className="grid grid-cols-4 divide-x text-center py-2" style={{ background: '#0a0f1a', borderColor: '#1e293b' }}>
-                            {[
-                              { l: 'Total Despesas', v: fmtR(calc.total), p: `${(calc.totalPct*100).toFixed(1)}%`, c: '#f59e0b' },
-                              { l: 'Margem Operacional', v: fmtR(calc.margemOp), p: `${(calc.margemOpPct*100).toFixed(1)}%`, c: '#06b6d4' },
-                              { l: 'Custo Operacional', v: fmtR(calc.custoOpR), p: `${(calc.custoOpPct*100).toFixed(1)}%`, c: '#a78bfa' },
-                              { l: 'RESULTADO LÍQUIDO', v: fmtR(calc.resultado), p: `${(calc.resultadoPct*100).toFixed(1)}%`, c: corResultado },
-                            ].map((item, i) => (
-                              <div key={i} className="px-2 py-1">
-                                <p className="text-[9px] uppercase tracking-wider mb-0.5" style={{ color: '#475569' }}>{item.l}</p>
-                                <p className="text-sm font-bold" style={{ color: item.c }}>{item.v}</p>
-                                <p className="text-[10px]" style={{ color: item.c + '99' }}>{item.p}</p>
-                              </div>
-                            ))}
-                          </div>
-                          {/* Breakdown detalhado */}
-                          <div className="grid grid-cols-4 divide-x text-center py-1.5 border-t text-[10px]" style={{ background: '#111827', borderColor: '#1e293b', color: '#64748b' }}>
-                            <div>Rateio: {fmtR(calc.rateio)} | Produto: {fmtR(calc.produto)}</div>
-                            <div>Cartão: {fmtR(calc.cartao)} ({taxaCartao}%)</div>
-                            <div>Imposto: {fmtR(calc.impostoR)}</div>
-                            <div style={{ color: calc.resultado > 0 ? '#10b981' : '#ef4444', fontWeight: 'bold' }}>
-                              {calc.resultado > 0 ? '✅ Lucrativo' : '🚨 Prejuízo'}
-                            </div>
-                          </div>
-                        </div>
-                      )}
                     </div>
-                  )
-                })}
-              </div>
-
-              {/* Botão adicionar */}
-              <div className="px-4 py-3 border-t" style={{ borderColor: '#1e293b' }}>
-                <button onClick={adicionarServico}
-                  className="flex items-center gap-2 text-sm px-4 py-2 rounded-lg transition-all"
-                  style={{ background: '#7c5cfc20', color: '#7c5cfc', border: '1px dashed #7c5cfc40' }}>
-                  <Plus size={14} /> Adicionar serviço
+                    <div className="col-span-2 text-xs text-center" style={{color:v>0?cor:'#334155'}}>
+                      {v>0?`${pctV.toFixed(1)}%`:'—'}
+                    </div>
+                    <div className="col-span-2 text-[10px]" style={{color:'#475569'}}>{d.dica}</div>
+                  </div>
+                )
+              })}
+              {/* Extras */}
+              {extrasDespInd.map((d,i)=>(
+                <div key={i} className="grid grid-cols-12 gap-2 px-5 py-2 items-center" style={{borderBottom:'1px solid #1e293b10'}}>
+                  <div className="col-span-5">
+                    <input value={d.nome} onChange={e=>{const nd=[...extrasDespInd];nd[i]={...nd[i],nome:e.target.value};setExtrasDespInd(nd)}}
+                      placeholder="Nome da despesa"
+                      className="w-full px-2 py-1 rounded-lg text-xs text-white focus:outline-none"
+                      style={{background:'#0a0f1a',border:'1px solid #334155'}}/>
+                  </div>
+                  <div className="col-span-3">
+                    <div className="relative">
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#64748b'}}>R$</span>
+                      <input type="number" value={d.valor} onChange={e=>{const nd=[...extrasDespInd];nd[i]={...nd[i],valor:e.target.value};setExtrasDespInd(nd)}}
+                        className="w-full pl-6 pr-2 py-1 rounded-lg text-xs text-white focus:outline-none"
+                        style={{background:'#0a0f1a',border:'1px solid #334155'}}/>
+                    </div>
+                  </div>
+                  <div className="col-span-2"/>
+                  <div className="col-span-2 flex justify-end">
+                    <button onClick={()=>setExtrasDespInd(prev=>prev.filter((_,idx)=>idx!==i))} style={{color:'#475569'}}><Trash2 size={12}/></button>
+                  </div>
+                </div>
+              ))}
+              <div className="px-5 py-3 border-t" style={{borderColor:'#1e293b'}}>
+                <button onClick={()=>setExtrasDespInd(p=>[...p,{nome:'',valor:'',dica:''}])}
+                  className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg"
+                  style={{background:'#f59e0b20',color:'#f59e0b',border:'1px dashed #f59e0b40'}}>
+                  <Plus size={12}/> Adicionar despesa
                 </button>
               </div>
             </div>
 
-            {/* Legenda das colunas */}
-            <div className="rounded-xl p-4 text-xs space-y-1" style={{ background: '#111827', border: '1px solid #1e293b', color: '#64748b' }}>
-              <p className="font-bold mb-2" style={{ color: '#94a3b8' }}>💡 Como preencher:</p>
-              <p>• <strong style={{ color: '#e2e8f0' }}>Desp. Diretas (%)</strong> — percentual das despesas indiretas do salão rateado por serviço (ex: 30%)</p>
-              <p>• <strong style={{ color: '#e2e8f0' }}>Produto (R$)</strong> — custo do produto/insumo usado no serviço (tinta, esmalte, etc.)</p>
-              <p>• <strong style={{ color: '#e2e8f0' }}>Imposto (%)</strong> — alíquota do Simples Nacional ou regime tributário (ex: 5%)</p>
-              <p>• <strong style={{ color: '#e2e8f0' }}>Lei do Salão Parceiro</strong> — se ativado, imposto incide sobre a margem, não sobre o preço total</p>
-            </div>
-          </div>
-        )}
-
-        {/* ── ABA ALUGUEL DE CADEIRA ── */}
-        {aba === 'cadeira' && (
-          <div className="space-y-4">
-            {totalCustos > 0 && (
-              <div className="rounded-xl p-3 text-xs flex items-center gap-2" style={{ background: '#7c5cfc15', border: '1px solid #7c5cfc30', color: '#a78bfa' }}>
-                ✨ Custo operacional da calculadora principal: <strong>{fmtR(totalCustos)}</strong> — preenchido automaticamente
+            {/* Provisão */}
+            <div className="rounded-2xl border overflow-hidden" style={{background:'#111827',borderColor:'#1e293b'}}>
+              <div className="flex items-center justify-between px-5 py-3 border-b" style={{background:'#0d1525',borderColor:'#1e293b'}}>
+                <span className="font-bold text-sm" style={{color:'#a78bfa'}}>📅 Provisão Mensal</span>
+                <span className="font-bold text-sm" style={{color:'#a78bfa'}}>{fmtR(totProvisao)}</span>
               </div>
-            )}
-            <div className="rounded-2xl p-6 border" style={{ background: '#111827', borderColor: '#1e293b' }}>
-              <h2 className="font-bold text-base mb-1" style={{ color: '#f59e0b' }}>💺 Aluguel de Cadeira</h2>
-              <p className="text-xs mb-5" style={{ color: '#64748b' }}>Quanto cobrar de aluguel por cadeira para cobrir custos e ter lucro.</p>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold mb-1" style={{ color: '#94a3b8' }}>Custo Operacional Mensal Total (R$)</label>
-                  <p className="text-xs mb-2" style={{ color: '#475569' }}>Todos os gastos fixos do salão. {totalCustos > 0 ? 'Preenchido automaticamente — pode editar.' : ''}</p>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: '#94a3b8' }}>R$</span>
-                    <input type="number"
-                      value={custoOperacionalCadeira || (totalCustos > 0 && !custoOperacionalCadeira ? String(Math.round(totalCustos)) : '')}
-                      onChange={e => setCustoOperacionalCadeira(e.target.value)}
-                      placeholder={totalCustos > 0 ? totalCustos.toFixed(2) : '0,00'}
-                      className="w-full pl-10 pr-4 py-3 rounded-xl text-white focus:outline-none"
-                      style={{ background: '#0a0f1a', border: '1px solid #f59e0b60' }} />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold mb-1" style={{ color: '#94a3b8' }}>Número de Cadeiras / Postos</label>
-                  <p className="text-xs mb-2" style={{ color: '#475569' }}>Quantas cadeiras ou postos de atendimento tem o salão?</p>
-                  <input type="number" value={numCadeiras} onChange={e => setNumCadeiras(e.target.value)}
-                    placeholder="Ex: 10"
-                    className="w-full px-4 py-3 rounded-xl text-white focus:outline-none"
-                    style={{ background: '#0a0f1a', border: '1px solid #1e293b' }} />
-                </div>
-              </div>
-              {custoPorCadeira > 0 && (
-                <div className="mt-6 space-y-3">
-                  <div className="rounded-xl p-4 border" style={{ background: '#0a0f1a', borderColor: '#f59e0b40' }}>
-                    <p className="text-xs mb-1" style={{ color: '#64748b' }}>📊 Custo por Cadeira (ponto de equilíbrio)</p>
-                    <p className="text-3xl font-bold" style={{ color: '#f59e0b' }}>{fmtR(custoPorCadeira)}</p>
-                    <p className="text-xs mt-1" style={{ color: '#475569' }}>Valor que cada cadeira precisa gerar para cobrir os custos</p>
-                  </div>
-                  <div className="rounded-xl p-4 border" style={{ background: '#0a0f1a', borderColor: '#10b98140' }}>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span>⭐</span>
-                      <p className="text-xs font-bold" style={{ color: '#10b981' }}>Aluguel Sugerido por Cadeira</p>
-                      <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: '#10b98120', color: '#10b981' }}>+50% lucro</span>
-                    </div>
-                    <p className="text-3xl font-bold" style={{ color: '#10b981' }}>{fmtR(aluguelSugerido)}</p>
-                    <p className="text-xs mt-1" style={{ color: '#475569' }}>Valor recomendado com margem de lucro de 50%</p>
-                  </div>
-                  <div className="rounded-xl p-4 text-xs space-y-1" style={{ background: '#7c5cfc10', border: '1px solid #7c5cfc30', color: '#a78bfa' }}>
-                    <p><strong>💡 Resumo:</strong></p>
-                    <p>• {nCadeiras} cadeiras × {fmtR(aluguelSugerido)} = <strong>{fmtR(aluguelSugerido * nCadeiras)}/mês arrecadado</strong></p>
-                    <p>• Lucro estimado: <strong style={{ color: '#10b981' }}>{fmtR(aluguelSugerido * nCadeiras - custoOpCad)}/mês</strong></p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* ── ABA M² ── */}
-        {aba === 'metro' && (
-          <div className="space-y-4">
-            {faturamentoPE > 0 && (
-              <div className="rounded-xl p-3 text-xs flex items-center gap-2" style={{ background: '#7c5cfc15', border: '1px solid #7c5cfc30', color: '#a78bfa' }}>
-                ✨ Faturamento mínimo da calculadora principal: <strong>{fmtR(faturamentoPE)}</strong> — preenchido automaticamente
-              </div>
-            )}
-            <div className="rounded-2xl p-6 border" style={{ background: '#111827', borderColor: '#1e293b' }}>
-              <h2 className="font-bold text-base mb-1" style={{ color: '#06b6d4' }}>📐 Faturamento por M²</h2>
-              <p className="text-xs mb-5" style={{ color: '#64748b' }}>Quanto cada metro quadrado do salão precisa gerar para ser rentável.</p>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold mb-1" style={{ color: '#94a3b8' }}>Faturamento Mínimo Necessário (R$)</label>
-                  <p className="text-xs mb-2" style={{ color: '#475569' }}>Valor para cobrir todas as despesas. {faturamentoPE > 0 ? 'Calculado automaticamente — pode editar.' : ''}</p>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: '#94a3b8' }}>R$</span>
-                    <input type="number"
-                      value={faturamentoMinimoM2 || (faturamentoPE > 0 && !faturamentoMinimoM2 ? String(Math.round(faturamentoPE)) : '')}
-                      onChange={e => setFaturamentoMinimoM2(e.target.value)}
-                      placeholder={faturamentoPE > 0 ? faturamentoPE.toFixed(2) : '0,00'}
-                      className="w-full pl-10 pr-4 py-3 rounded-xl text-white focus:outline-none"
-                      style={{ background: '#0a0f1a', border: '1px solid #06b6d460' }} />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold mb-1" style={{ color: '#94a3b8' }}>Metragem Total do Salão (m²)</label>
-                  <p className="text-xs mb-2" style={{ color: '#475569' }}>Área total do salão em metros quadrados.</p>
-                  <input type="number" value={metragemTotal} onChange={e => setMetragemTotal(e.target.value)}
-                    placeholder="Ex: 80"
-                    className="w-full px-4 py-3 rounded-xl text-white focus:outline-none"
-                    style={{ background: '#0a0f1a', border: '1px solid #1e293b' }} />
-                </div>
-              </div>
-              {fatPorM2 > 0 && (
-                <div className="mt-6 space-y-3">
-                  <div className="rounded-xl p-4 border" style={{ background: '#0a0f1a', borderColor: '#06b6d440' }}>
-                    <p className="text-xs mb-1" style={{ color: '#64748b' }}>📊 Faturamento por M² (ponto de equilíbrio)</p>
-                    <p className="text-3xl font-bold" style={{ color: '#06b6d4' }}>{fmtR(fatPorM2)}/m²</p>
-                    <p className="text-xs mt-1" style={{ color: '#475569' }}>Meta mínima que cada m² precisa gerar</p>
-                  </div>
-                  <div className="rounded-xl p-4 border" style={{ background: '#0a0f1a', borderColor: '#10b98140' }}>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span>⭐</span>
-                      <p className="text-xs font-bold" style={{ color: '#10b981' }}>Faturamento Sugerido por M²</p>
-                      <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: '#10b98120', color: '#10b981' }}>+50% margem</span>
-                    </div>
-                    <p className="text-3xl font-bold" style={{ color: '#10b981' }}>{fmtR(fatSugeridoPorM2)}/m²</p>
-                    <p className="text-xs mt-1" style={{ color: '#475569' }}>Valor recomendado com margem de lucro de 50%</p>
-                  </div>
-                  <div className="rounded-xl p-4 border" style={{ background: '#0a0f1a', borderColor: '#1e293b' }}>
-                    <p className="text-xs font-bold mb-3" style={{ color: '#94a3b8' }}>📏 Calcular para um espaço específico:</p>
-                    <div className="flex gap-2 items-center">
-                      <input type="number" value={metragemSala} onChange={e => setMetragemSala(e.target.value)}
-                        placeholder="Ex: 15 m²"
-                        className="flex-1 px-4 py-2.5 rounded-lg text-white text-sm focus:outline-none"
-                        style={{ background: '#111827', border: '1px solid #334155' }} />
-                      <span className="text-sm" style={{ color: '#64748b' }}>m²</span>
-                    </div>
-                    {fatSugeridoSala > 0 && (
-                      <div className="mt-3 p-3 rounded-lg" style={{ background: '#10b98115', border: '1px solid #10b98130' }}>
-                        <p className="text-xs" style={{ color: '#64748b' }}>Faturamento sugerido para {mSala} m²:</p>
-                        <p className="text-2xl font-bold mt-1" style={{ color: '#10b981' }}>{fmtR(fatSugeridoSala)}/mês</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Conteúdo da aba Custo Operacional só aparece quando aba === 'custo' */}
-        {aba !== 'custo' ? null :
-        <>{/* Faturamento */}
-        <div className="rounded-2xl p-6 border mb-4" style={{ background: '#111827', borderColor: '#f59e0b40' }}>
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1">
-              <label className="block font-bold text-base mb-1" style={{ color: '#f59e0b' }}>
-                💰 Faturamento Mensal
-              </label>
-              <p className="text-xs mb-3" style={{ color: '#64748b' }}>
-                Qual é a média do seu faturamento mensal? Some os últimos 12 meses e divida por 12.
-              </p>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium" style={{ color: '#94a3b8' }}>R$</span>
-                <input
-                  type="number"
-                  value={faturamento}
-                  onChange={e => setFaturamento(e.target.value)}
-                  placeholder="0,00"
-                  className="w-full pl-10 pr-4 py-3 rounded-xl text-white text-lg font-bold focus:outline-none focus:ring-2 transition-all"
-                  style={{ background: '#0a0f1a', border: '1px solid #f59e0b60' }}
-                />
-              </div>
-            </div>
-            {fat > 0 && (
-              <div className="text-right flex-shrink-0">
-                <p className="text-xs" style={{ color: '#64748b' }}>Custo atual</p>
-                <p className="font-bold text-sm" style={{ color: totalCustos > fat ? '#ef4444' : '#10b981' }}>
-                  {pct(totalCustos, fat)}% do fat.
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Ticket Médio */}
-        <div className="rounded-2xl p-6 border mb-4" style={{ background: '#111827', borderColor: '#7c5cfc40' }}>
-          <label className="block font-bold text-base mb-1" style={{ color: '#7c5cfc' }}>
-            🎟️ Ticket Médio por Atendimento
-          </label>
-          <p className="text-xs mb-3" style={{ color: '#64748b' }}>
-            Valor médio que cada cliente gasta por visita. Usado para calcular o Ponto de Equilíbrio.
-          </p>
-          <div className="relative max-w-xs">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium" style={{ color: '#94a3b8' }}>R$</span>
-            <input
-              type="number"
-              value={ticketMedio}
-              onChange={e => setTicketMedio(e.target.value)}
-              placeholder="0,00"
-              className="w-full pl-10 pr-4 py-3 rounded-xl text-white text-lg font-bold focus:outline-none transition-all"
-              style={{ background: '#0a0f1a', border: '1px solid #7c5cfc60' }}
-            />
-          </div>
-        </div>
-
-        {/* Ponto de Equilíbrio */}
-        {ticket > 0 && totalCustos > 0 && (
-          <div className="rounded-2xl p-6 border mb-4" style={{ background: '#0d1525', borderColor: '#10b98140' }}>
-            <h3 className="font-bold text-sm mb-4 flex items-center gap-2" style={{ color: '#10b981' }}>
-              ⚖️ Ponto de Equilíbrio
-              <span className="text-xs font-normal px-2 py-0.5 rounded-full" style={{ background: '#10b98120', color: '#10b981' }}>
-                Quantos atendimentos cobrem seus custos
-              </span>
-            </h3>
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div className="rounded-xl p-4 border" style={{ background: '#111827', borderColor: '#1e293b' }}>
-                <p className="text-xs mb-1" style={{ color: '#64748b' }}>Atendimentos necessários/mês</p>
-                <p className="text-3xl font-bold" style={{ color: '#10b981' }}>{atendimentosPE}</p>
-                <p className="text-xs mt-1" style={{ color: '#475569' }}>≈ {atendimentosPorDia} por dia útil</p>
-              </div>
-              <div className="rounded-xl p-4 border" style={{ background: '#111827', borderColor: '#1e293b' }}>
-                <p className="text-xs mb-1" style={{ color: '#64748b' }}>Atendimentos atuais/mês</p>
-                <p className="text-3xl font-bold" style={{ color: fat > 0 ? '#f59e0b' : '#475569' }}>
-                  {atendimentosAtuais > 0 ? atendimentosAtuais : '—'}
-                </p>
-                {atendimentosAtuais > 0 && (
-                  <p className="text-xs mt-1" style={{ color: folga >= 0 ? '#10b981' : '#ef4444' }}>
-                    {folga >= 0 ? `✅ +${folga} acima do PE` : `🚨 ${Math.abs(folga)} abaixo do PE`}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Faturamento mínimo */}
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div className="rounded-xl p-4 border" style={{ background: '#111827', borderColor: '#10b98130' }}>
-                <p className="text-xs mb-1" style={{ color: '#64748b' }}>💰 Faturamento mínimo necessário</p>
-                <p className="text-2xl font-bold" style={{ color: '#10b981' }}>{fmtR(faturamentoPE)}</p>
-                <p className="text-xs mt-1" style={{ color: '#475569' }}>Para cobrir 100% dos custos</p>
-              </div>
-              {fat > 0 && (
-                <div className="rounded-xl p-4 border" style={{ background: '#111827', borderColor: folgaReais >= 0 ? '#10b98130' : '#ef444430' }}>
-                  <p className="text-xs mb-1" style={{ color: '#64748b' }}>
-                    {folgaReais >= 0 ? '✅ Folga financeira' : '🚨 Déficit financeiro'}
-                  </p>
-                  <p className="text-2xl font-bold" style={{ color: folgaReais >= 0 ? '#10b981' : '#ef4444' }}>
-                    {fmtR(Math.abs(folgaReais))}
-                  </p>
-                  <p className="text-xs mt-1" style={{ color: '#475569' }}>
-                    {folgaReais >= 0
-                      ? `Você fatura ${fmtR(folgaReais)} acima do mínimo`
-                      : `Falta ${fmtR(Math.abs(folgaReais))} para cobrir os custos`}
-                  </p>
-                </div>
-              )}
-            </div>
-            {/* Barra visual */}
-            {atendimentosAtuais > 0 && (
-              <div>
-                <div className="flex justify-between text-xs mb-1" style={{ color: '#64748b' }}>
-                  <span>0</span>
-                  <span style={{ color: '#10b981' }}>PE: {atendimentosPE}</span>
-                  <span>{Math.max(atendimentosAtuais, atendimentosPE) + 10}</span>
-                </div>
-                <div className="relative h-4 rounded-full overflow-hidden" style={{ background: '#1e293b' }}>
-                  {/* Barra PE */}
-                  <div className="absolute top-0 left-0 h-full rounded-full transition-all"
-                    style={{
-                      width: `${Math.min((atendimentosPE / (Math.max(atendimentosAtuais, atendimentosPE) + 10)) * 100, 100)}%`,
-                      background: '#ef444440'
-                    }} />
-                  {/* Barra atual */}
-                  <div className="absolute top-0 left-0 h-full rounded-full transition-all"
-                    style={{
-                      width: `${Math.min((atendimentosAtuais / (Math.max(atendimentosAtuais, atendimentosPE) + 10)) * 100, 100)}%`,
-                      background: folga >= 0 ? 'linear-gradient(90deg,#10b981,#34d399)' : 'linear-gradient(90deg,#ef4444,#f87171)'
-                    }} />
-                </div>
-                <p className="text-xs mt-2 text-center" style={{ color: '#64748b' }}>
-                  {folga >= 0
-                    ? `Seu salão está ${folga} atendimentos acima do ponto de equilíbrio — zona de lucro ✅`
-                    : `Seu salão precisa de mais ${Math.abs(folga)} atendimentos para cobrir os custos 🚨`
-                  }
-                </p>
-              </div>
-            )}
-            <div className="mt-3 p-3 rounded-xl text-xs" style={{ background: '#10b98110', color: '#10b981', border: '1px solid #10b98120' }}>
-              💡 <strong>Como usar:</strong> Se o seu ticket médio é R${ticket.toFixed(0)}, você precisa de pelo menos <strong>{atendimentosPE} atendimentos/mês</strong> para não ter prejuízo. Abaixo disso = prejuízo. Acima disso = lucro.
-            </div>
-          </div>
-        )}
-
-        {/* Mini resumo flutuante */}
-        {fat > 0 && (
-          <div className="grid grid-cols-3 gap-3 mb-4">
-            {[
-              { l: 'Total Custos', v: fmtR(totalCustos), c: '#ef4444' },
-              { l: 'Lucro Líquido', v: fmtR(lucro), c: lucro >= 0 ? '#10b981' : '#ef4444' },
-              { l: 'Margem', v: `${margem.toFixed(1)}%`, c: corMargem },
-            ].map((c, i) => (
-              <div key={i} className="rounded-xl p-3 border text-center" style={{ background: '#111827', borderColor: '#1e293b' }}>
-                <p className="text-[10px] mb-1" style={{ color: '#64748b' }}>{c.l}</p>
-                <p className="font-bold text-sm" style={{ color: c.c }}>{c.v}</p>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Tabela de custos */}
-        <div className="rounded-2xl border overflow-hidden mb-4" style={{ background: '#111827', borderColor: '#1e293b' }}>
-          {/* Header da tabela */}
-          <div className="grid grid-cols-12 gap-3 px-5 py-3 text-xs font-bold uppercase tracking-wider border-b" style={{ background: '#0d1525', borderColor: '#1e293b', color: '#64748b' }}>
-            <div className="col-span-5">Item de Custo</div>
-            <div className="col-span-3">Valor Mensal (R$)</div>
-            <div className="col-span-3">% do Faturamento</div>
-            <div className="col-span-1"></div>
-          </div>
-
-          {/* Itens */}
-          <div className="divide-y" style={{ borderColor: '#1e293b15' }}>
-            {itens.map((item) => {
-              const v = parseFloat(item.valor.replace(',', '.')) || 0
-              const p = fat > 0 ? (v / fat * 100) : 0
-              const corP = p > 20 ? '#ef4444' : p > 10 ? '#f59e0b' : '#10b981'
-
-              return (
-                <div key={item.id} className="grid grid-cols-12 gap-3 px-5 py-3 items-center hover:bg-white/2 transition-colors">
-                  {/* Nome */}
-                  <div className="col-span-5">
-                    {item.editavel ? (
-                      <input
-                        type="text"
-                        value={item.nome}
-                        onChange={e => atualizarItem(item.id, 'nome', e.target.value)}
-                        placeholder="Nome do gasto"
-                        className="w-full px-3 py-1.5 rounded-lg text-sm text-white focus:outline-none focus:ring-1"
-                        style={{ background: '#0a0f1a', border: '1px solid #1e293b' }}
-                      />
-                    ) : (
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium" style={{ color: '#cbd5e1' }}>{item.nome}</span>
-                          {item.dica && (
-                            <button
-                              onClick={() => setDicaAberta(dicaAberta === item.id ? null : item.id)}
-                              className="text-xs px-1.5 py-0.5 rounded transition-colors"
-                              style={{ color: '#64748b', background: '#1e293b' }}>
-                              {dicaAberta === item.id ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
-                            </button>
-                          )}
-                        </div>
-                        {dicaAberta === item.id && item.dica && (
-                          <p className="text-xs mt-1 leading-relaxed" style={{ color: '#64748b' }}>
-                            💡 {item.dica}
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Valor */}
-                  <div className="col-span-3">
+              <div className="grid grid-cols-3 gap-4 p-5">
+                {[
+                  {l:'13º Salário',v:sal13,set:setSal13,dica:'Salário anual ÷ 12'},
+                  {l:'Férias',v:ferias,set:setFerias,dica:'(Salário × 1/3) ÷ 12'},
+                  {l:'FGTS Rescisório',v:fgtsR,set:setFgtsR,dica:'Provisão p/ eventual demissão'},
+                ].map(f=>(
+                  <div key={f.l}>
+                    <label className="text-xs font-bold block mb-1" style={{color:'#a78bfa'}}>{f.l}</label>
+                    <p className="text-[10px] mb-1" style={{color:'#475569'}}>{f.dica}</p>
                     <div className="relative">
-                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs" style={{ color: '#64748b' }}>R$</span>
-                      <input
-                        type="number"
-                        value={item.valor}
-                        onChange={e => atualizarItem(item.id, 'valor', e.target.value)}
-                        placeholder="0"
-                        className="w-full pl-8 pr-3 py-1.5 rounded-lg text-sm text-white focus:outline-none focus:ring-1 transition-all"
-                        style={{ background: '#0a0f1a', border: `1px solid ${v > 0 ? '#7c5cfc40' : '#1e293b'}` }}
-                      />
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#64748b'}}>R$</span>
+                      <input type="number" value={f.v} onChange={e=>f.set(e.target.value)} placeholder="0"
+                        className="w-full pl-8 pr-2 py-2 rounded-lg text-sm text-white focus:outline-none"
+                        style={{background:'#0a0f1a',border:'1px solid #1e293b'}}/>
                     </div>
                   </div>
+                ))}
+              </div>
+              {depMensal > 0 && (
+                <div className="px-5 pb-3 flex items-center gap-2 text-xs" style={{color:'#64748b'}}>
+                  <span>📉 Depreciação mensal:</span>
+                  <span className="font-bold" style={{color:'#a78bfa'}}>{fmtR(depMensal)}</span>
+                  <span style={{color:'#334155'}}>(inclusa no Custo Operacional)</span>
+                </div>
+              )}
+            </div>
 
-                  {/* % */}
-                  <div className="col-span-3">
-                    {v > 0 && fat > 0 ? (
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 h-1.5 rounded-full" style={{ background: '#1e293b' }}>
-                          <div className="h-1.5 rounded-full transition-all" style={{ width: `${Math.min(p, 100)}%`, background: corP }} />
+            {/* Despesas Diretas */}
+            <div className="rounded-2xl border overflow-hidden" style={{background:'#111827',borderColor:'#1e293b'}}>
+              <div className="flex items-center justify-between px-5 py-3 border-b" style={{background:'#0d1525',borderColor:'#1e293b'}}>
+                <span className="font-bold text-sm" style={{color:'#ef4444'}}>📌 Despesas Diretas</span>
+                <span className="font-bold text-sm" style={{color:'#ef4444'}}>{fmtR(totDiretas)}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-4 p-5">
+                {[
+                  {l:'Imposto (R$)',v:imposto,set:setImposto,dica:'Simples Nacional ou regime tributário do mês'},
+                  {l:'Produto/Insumo (R$)',v:produto,set:setProduto,dica:'Total de produtos consumidos nos serviços'},
+                  {l:'Rateio/Comissão (R$)',v:rateio,set:setRateio,dica:'Comissões pagas aos profissionais'},
+                  {l:'Taxa de Cartão (R$)',v:taxaC,set:setTaxaC,dica:'Total cobrado pelas maquininhas no mês'},
+                ].map(f=>(
+                  <div key={f.l}>
+                    <label className="text-xs font-bold block mb-1" style={{color:'#ef4444'}}>{f.l}</label>
+                    <p className="text-[10px] mb-1" style={{color:'#475569'}}>{f.dica}</p>
+                    <div className="relative">
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#64748b'}}>R$</span>
+                      <input type="number" value={f.v} onChange={e=>f.set(e.target.value)} placeholder="0"
+                        className="w-full pl-8 pr-2 py-2 rounded-lg text-sm text-white focus:outline-none"
+                        style={{background:'#0a0f1a',border:'1px solid #1e293b'}}/>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Outras Despesas */}
+            <div className="rounded-2xl border overflow-hidden" style={{background:'#111827',borderColor:'#1e293b'}}>
+              <div className="px-5 py-3 border-b" style={{background:'#0d1525',borderColor:'#1e293b'}}>
+                <span className="font-bold text-sm" style={{color:'#06b6d4'}}>💸 Outras Despesas / Gasto de Capital</span>
+              </div>
+              <div className="grid grid-cols-2 gap-4 p-5">
+                {[
+                  {l:'Aquisição de Equipamento (R$)',v:aquisicaoEq,set:setAquisicaoEq,dica:'Compra de equipamentos, móveis, utensílios'},
+                  {l:'Distribuição de Sócios (R$)',v:distSocios,set:setDistSocios,dica:'Retirada de lucros pelos sócios'},
+                ].map(f=>(
+                  <div key={f.l}>
+                    <label className="text-xs font-bold block mb-1" style={{color:'#06b6d4'}}>{f.l}</label>
+                    <p className="text-[10px] mb-1" style={{color:'#475569'}}>{f.dica}</p>
+                    <div className="relative">
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#64748b'}}>R$</span>
+                      <input type="number" value={f.v} onChange={e=>f.set(e.target.value)} placeholder="0"
+                        className="w-full pl-8 pr-2 py-2 rounded-lg text-sm text-white focus:outline-none"
+                        style={{background:'#0a0f1a',border:'1px solid #1e293b'}}/>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Resultado */}
+            {fatN > 0 && (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    {l:'Custo Operacional Total',v:custoOp,pct:pctStr(custoOp,fatN),c:'#f59e0b',dica:'Indiretas + Provisão + Depreciação'},
+                    {l:'Margem Operacional',v:margOpR,pct:pctStr(margOpR,fatN),c:'#06b6d4',dica:'Faturamento − Despesas Diretas'},
+                    {l:'Resultado Operacional',v:resultOp,pct:pctStr(resultOp,fatN),c:corRes(resultOp),dica:'Margem − Custo Operacional'},
+                    {l:'Resultado Financeiro',v:resultFin,pct:pctStr(resultFin,fatN),c:corRes(resultFin),dica:'Resultado Op. − Outras Despesas'},
+                  ].map((c,i)=>(
+                    <div key={i} className="rounded-xl p-4 border" style={{background:'#0d1525',borderColor:'#1e293b'}}>
+                      <p className="text-xs mb-0.5" style={{color:'#64748b'}}>{c.l}</p>
+                      <p className="text-[10px] mb-2" style={{color:'#334155'}}>{c.dica}</p>
+                      <p className="text-2xl font-bold" style={{color:c.c}}>{fmtR(c.v)}</p>
+                      <p className="text-xs mt-1" style={{color:c.c+'99'}}>{c.pct} do faturamento</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-4 gap-3">
+                  {[
+                    {l:'Ponto de Equilíbrio',v:fmtR(pe),c:'#10b981',dica:'Faturamento mínimo para cobrir tudo'},
+                    {l:`PE c/ Lucro de ${lucroD}%`,v:fmtR(peLucro),c:'#a78bfa',dica:'Para cobrir custos + lucro desejado'},
+                    {l:'Rentabilidade',v:`${(rentab*100).toFixed(2)}%`,c:corRes(rentab),dica:'Resultado / Faturamento'},
+                    {l:'Capital de Giro Mínimo',v:fmtR(capGiro),c:'#06b6d4',dica:'Reserva para 30 dias de operação'},
+                  ].map((c,i)=>(
+                    <div key={i} className="rounded-xl p-4 border text-center" style={{background:'#0d1525',borderColor:'#1e293b'}}>
+                      <p className="text-[10px] mb-1" style={{color:'#64748b'}}>{c.l}</p>
+                      <p className="text-lg font-bold" style={{color:c.c}}>{c.v}</p>
+                      <p className="text-[9px] mt-1" style={{color:'#334155'}}>{c.dica}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Verificação vs desejado */}
+                <div className="rounded-xl p-4 border" style={{background:'#111827',borderColor:'#1e293b'}}>
+                  <p className="text-xs font-bold mb-3" style={{color:'#94a3b8'}}>📊 Realizado vs Desejado (Metodologia DV)</p>
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      {l:'Custo Indireto',real:fatN>0?custoOp/fatN*100:0,desej:n(custIndD),c:'#f59e0b'},
+                      {l:'Custo Direto',real:fatN>0?totDiretas/fatN*100:0,desej:n(custDirD),c:'#ef4444'},
+                      {l:'Lucro',real:fatN>0?resultOp/fatN*100:0,desej:n(lucroD),c:'#10b981'},
+                    ].map(c=>{
+                      const ok=c.real>=c.desej*0.9&&c.real<=c.desej*1.1
+                      return(
+                        <div key={c.l} className="rounded-lg p-3 border" style={{background:'#0a0f1a',borderColor:ok?'#10b98130':'#ef444430'}}>
+                          <p className="text-[10px] mb-1" style={{color:'#64748b'}}>{c.l}</p>
+                          <div className="flex items-end gap-2">
+                            <span className="text-base font-bold" style={{color:c.c}}>{c.real.toFixed(1)}%</span>
+                            <span className="text-[10px]" style={{color:'#475569'}}>meta: {c.desej}%</span>
+                          </div>
+                          <p className="text-[10px] mt-1" style={{color:ok?'#10b981':'#ef4444'}}>
+                            {ok?'✅ Dentro da meta':'⚠️ Fora da meta'}
+                          </p>
                         </div>
-                        <span className="text-xs font-medium w-10 text-right" style={{ color: corP }}>
-                          {p.toFixed(1)}%
-                        </span>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Extras */}
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    {l:'🚨 Reserva de Emergência',v:reservaEmerg,set:setReservaEmerg,dica:'Valor atual em reserva de emergência'},
+                    {l:'📦 Valor de Produtos em Estoque',v:vlrProdEstoque,set:setVlrProdEstoque,dica:'Valor total do estoque atual'},
+                  ].map(f=>(
+                    <div key={f.l} className="rounded-xl p-4 border" style={{background:'#111827',borderColor:'#1e293b'}}>
+                      <label className="text-xs font-bold block mb-1" style={{color:'#94a3b8'}}>{f.l}</label>
+                      <p className="text-[10px] mb-2" style={{color:'#475569'}}>{f.dica}</p>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#64748b'}}>R$</span>
+                        <input type="number" value={f.v} onChange={e=>f.set(e.target.value)} placeholder="0"
+                          className="w-full pl-9 pr-3 py-2 rounded-lg text-sm text-white focus:outline-none"
+                          style={{background:'#0a0f1a',border:'1px solid #1e293b'}}/>
                       </div>
-                    ) : (
-                      <span className="text-xs" style={{ color: '#334155' }}>—</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Botão IA */}
+                <div className="rounded-2xl border overflow-hidden" style={{borderColor:'#7c5cfc40'}}>
+                  {!analiseIA&&!loadingIA&&!erroIA&&(
+                    <button onClick={analisarIA} className="w-full py-4 font-bold text-sm flex items-center justify-center gap-2 transition-all hover:brightness-110"
+                      style={{background:'linear-gradient(135deg,#7c5cfc20,#a78bfa20)',color:'#a78bfa',border:'none'}}>
+                      🤖 Quero a análise completa da NODRI IA
+                      <span className="text-xs font-normal" style={{color:'#64748b'}}>— opcional</span>
+                    </button>
+                  )}
+                  {loadingIA&&(<div className="p-5 flex items-center gap-3" style={{background:'#111827'}}><Loader2 size={18} className="animate-spin" style={{color:'#7c5cfc'}}/><span className="text-sm" style={{color:'#94a3b8'}}>NODRI IA analisando...</span></div>)}
+                  {erroIA&&(<div className="p-5 flex items-center justify-between" style={{background:'#111827'}}><span className="text-sm" style={{color:'#ef4444'}}>⚠️ {erroIA}</span><button onClick={analisarIA} className="text-xs px-3 py-1.5 rounded-lg" style={{background:'#7c5cfc',color:'white'}}>Tentar novamente</button></div>)}
+                  {analiseIA&&(<div className="p-6" style={{background:'#111827'}}><h3 className="font-bold text-sm mb-4" style={{color:'#7c5cfc'}}>🤖 Análise da NODRI IA</h3><div className="text-sm leading-relaxed" style={{color:'#cbd5e1'}} dangerouslySetInnerHTML={{__html:analiseIA.replace(/\*\*(.*?)\*\*/g,'<strong style="color:#e2e8f0">$1</strong>').replace(/\n/g,'<br/>')}}/></div>)}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ════ ABA PONTO DE EQUILÍBRIO ════ */}
+        {aba==='pe' && (
+          <div className="space-y-4">
+            {(custoOp>0||fatN>0) && (
+              <div className="rounded-xl p-3 text-xs flex items-center gap-2" style={{background:'#7c5cfc15',border:'1px solid #7c5cfc30',color:'#a78bfa'}}>
+                ✨ Dados da aba Receitas e Despesas: Custo Op. <strong>{fmtR(custoOp)}</strong> | Margem <strong>{(margOpPct*100).toFixed(1)}%</strong> | Faturamento <strong>{fmtR(fatN)}</strong>
+              </div>
+            )}
+            <div className="rounded-2xl p-5 border" style={{background:'#111827',borderColor:'#10b98140'}}>
+              <h3 className="font-bold text-sm mb-4" style={{color:'#10b981'}}>⚙️ Parâmetros</h3>
+              <div className="grid grid-cols-4 gap-3">
+                {[
+                  {l:'Custo Operacional (R$)',v:simDespesa,set:setSimDespesa,ph:custoOp>0?custoOp.toFixed(2):'0',tipo:'R$'},
+                  {l:'Margem Operacional (%)',v:margemPE,set:setMargemPE,ph:margOpPct>0?(margOpPct*100).toFixed(1):'44',tipo:'%'},
+                  {l:'Meta Lucro (%)',v:metaLucroPE,set:setMetaLucroPE,ph:n(lucroD)>0?lucroD:'15',tipo:'%'},
+                  {l:'Área do Salão (M²)',v:areaM2,set:setAreaM2,ph:'100',tipo:'m²'},
+                  {l:'Nº de Profissionais',v:numProfs,set:setNumProfs,ph:'3',tipo:''},
+                  {l:'Faturamento Atual (R$)',v:fatPEManual,set:setFatPEManual,ph:fatN>0?fatN.toFixed(2):'0',tipo:'R$'},
+                ].map(f=>(
+                  <div key={f.l}>
+                    <label className="text-xs font-bold block mb-1" style={{color:'#94a3b8'}}>{f.l}</label>
+                    <div className="relative">
+                      {f.tipo==='R$'&&<span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#64748b'}}>R$</span>}
+                      <input type="number" value={f.v} onChange={e=>f.set(e.target.value)} placeholder={f.ph}
+                        className={`w-full ${f.tipo==='R$'?'pl-7':'pl-3'} ${f.tipo&&f.tipo!=='R$'?'pr-7':'pr-3'} py-2 rounded-lg text-xs text-white focus:outline-none`}
+                        style={{background:'#0a0f1a',border:'1px solid #1e293b'}}/>
+                      {f.tipo&&f.tipo!=='R$'&&<span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#64748b'}}>{f.tipo}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Resultados PE */}
+            {custoOpPE_>0&&margPE_>0&&(
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-4">
+                  {[
+                    {l:'⚖️ Ponto de Equilíbrio',v:fmtR(PE_),sub:'Faturamento mínimo para cobrir todos os custos',c:'#10b981'},
+                    {l:`🎯 PE p/ Lucro de ${n(metaLucroPE)||n(lucroD)}%`,v:fmtR(PELucro_),sub:'Para cobrir custos E ter o lucro desejado',c:'#a78bfa'},
+                  ].map((c,i)=>(
+                    <div key={i} className="rounded-2xl p-5 border" style={{background:'#0d1525',borderColor:`${c.c}30`}}>
+                      <p className="text-xs font-bold mb-1" style={{color:c.c}}>{c.l}</p>
+                      <p className="text-3xl font-bold mt-2" style={{color:c.c}}>{c.v}</p>
+                      <p className="text-xs mt-2" style={{color:'#475569'}}>{c.sub}</p>
+                      {fatPE_>0&&<p className="text-xs mt-1" style={{color:fatPE_>=PE_?'#10b981':'#ef4444'}}>{fatPE_>=PE_?`✅ Você fatura ${fmtR(fatPE_-PE_)} acima do PE`:`🚨 Falta ${fmtR(PE_-fatPE_)} para o PE`}</p>}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-2xl p-4 border" style={{background:'#111827',borderColor:'#1e293b'}}>
+                    <p className="text-xs font-bold mb-3" style={{color:'#06b6d4'}}>👤 PE por Profissional ({profs_} profissionais)</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      {[
+                        {l:'PE por Profissional',v:fmtR(PEProf_)},
+                        {l:'PE c/ Lucro por Prof.',v:fmtR(PEProfLucro_)},
+                      ].map((c,i)=>(
+                        <div key={i}>
+                          <p className="text-[10px]" style={{color:'#64748b'}}>{c.l}</p>
+                          <p className="text-lg font-bold" style={{color:'#06b6d4'}}>{c.v}</p>
+                          <p className="text-[9px]" style={{color:'#334155'}}>cada profissional precisa gerar</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="rounded-2xl p-4 border" style={{background:'#111827',borderColor:'#1e293b'}}>
+                    <p className="text-xs font-bold mb-3" style={{color:'#f59e0b'}}>📐 PE por M² ({n(areaM2)||100} m²)</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      {[
+                        {l:'PE por M²',v:`${fmtR(PEM2_)}/m²`},
+                        {l:'PE c/ Lucro por M²',v:`${fmtR(PEM2Lucro_)}/m²`},
+                      ].map((c,i)=>(
+                        <div key={i}>
+                          <p className="text-[10px]" style={{color:'#64748b'}}>{c.l}</p>
+                          <p className="text-lg font-bold" style={{color:'#f59e0b'}}>{c.v}</p>
+                          <p className="text-[9px]" style={{color:'#334155'}}>cada m² precisa gerar</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-xl p-4 text-xs space-y-1" style={{background:'#111827',border:'1px solid #1e293b',color:'#64748b'}}>
+                  <p className="font-bold mb-1" style={{color:'#94a3b8'}}>💡 Como funciona:</p>
+                  <p>• <strong style={{color:'#e2e8f0'}}>PE</strong> = Custo Operacional ÷ Margem Operacional% — faturamento mínimo para não ter prejuízo</p>
+                  <p>• <strong style={{color:'#e2e8f0'}}>PE c/ Lucro</strong> = Custo Op ÷ (Margem% − Meta Lucro%) — para cobrir E lucrar</p>
+                  <p>• <strong style={{color:'#e2e8f0'}}>PE por Profissional</strong> = PE Total ÷ nº de profissionais — meta individual</p>
+                  <p>• <strong style={{color:'#e2e8f0'}}>PE por M²</strong> = PE Total ÷ área do salão — eficiência do espaço</p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ════ ABA CALCULAR SERVIÇOS ════ */}
+        {aba==='servicos' && (
+          <div className="space-y-4">
+            <div className="rounded-2xl p-5 border" style={{background:'#111827',borderColor:'#7c5cfc40'}}>
+              <h3 className="font-bold text-sm mb-3" style={{color:'#7c5cfc'}}>⚙️ Parâmetros Globais</h3>
+              <div className="grid grid-cols-4 gap-4 mb-4">
+                <div>
+                  <label className="text-xs font-bold block mb-1" style={{color:'#94a3b8'}}>Taxa do Cartão (%)</label>
+                  <p className="text-[10px] mb-1" style={{color:'#475569'}}>Média das maquininhas. Padrão DV: 5%</p>
+                  <div className="relative"><input type="number" value={taxaCartao} onChange={e=>setTaxaCartao(e.target.value)} className="w-full pr-6 pl-3 py-2 rounded-lg text-sm text-white focus:outline-none" style={{background:'#0a0f1a',border:'1px solid #334155'}}/><span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#64748b'}}>%</span></div>
+                </div>
+                <div>
+                  <label className="text-xs font-bold block mb-1" style={{color:'#94a3b8'}}>Abatimento do Produto (%)</label>
+                  <p className="text-[10px] mb-1" style={{color:'#475569'}}>% do produto abatido do rateio. Padrão DV: 100%</p>
+                  <div className="relative"><input type="number" value={abatProd} onChange={e=>setAbatProd(e.target.value)} className="w-full pr-6 pl-3 py-2 rounded-lg text-sm text-white focus:outline-none" style={{background:'#0a0f1a',border:'1px solid #334155'}}/><span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#64748b'}}>%</span></div>
+                </div>
+                <div>
+                  <label className="text-xs font-bold block mb-1" style={{color:'#94a3b8'}}>Custo Operacional (%)</label>
+                  <p className="text-[10px] mb-1" style={{color:'#475569'}}>
+                    {fatN>0&&custoOp>0?<>Da aba RD: <strong style={{color:'#a78bfa'}}>{(custoOp/fatN*100).toFixed(1)}%</strong></>:'Informe ou calcule na aba RD'}
+                  </p>
+                  <div className="relative">
+                    <input type="number" value={custOpServ}
+                      onChange={e=>setCustOpServ(e.target.value)}
+                      placeholder={fatN>0&&custoOp>0?(custoOp/fatN*100).toFixed(1):'30'}
+                      className="w-full pr-6 pl-3 py-2 rounded-lg text-sm text-white focus:outline-none"
+                      style={{background:'#0a0f1a',border:'1px solid #334155'}}/>
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#64748b'}}>%</span>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-bold block mb-1" style={{color:'#94a3b8'}}>Lei do Salão Parceiro</label>
+                  <p className="text-[10px] mb-1" style={{color:'#475569'}}>Imposto incide sobre a margem, não o preço total</p>
+                  <button onClick={()=>setSalaoParceiro(p=>!p)} className="w-full py-2 rounded-lg text-sm font-bold transition-all"
+                    style={{background:salaoParceiro?'#10b981':'#1e293b',color:salaoParceiro?'white':'#64748b',border:`1px solid ${salaoParceiro?'#10b981':'#334155'}`}}>
+                    {salaoParceiro?'✅ SIM':'NÃO'}
+                  </button>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-xs p-3 rounded-lg" style={{background:'#0a0f1a',color:'#64748b'}}>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={taxaAntesRateio} onChange={e=>setTaxaAntesRateio(e.target.checked)} className="accent-purple-500"/>
+                  <span style={{color:'#cbd5e1'}}>✅ Taxa do cartão deve ser abatida do valor antes de calcular o rateio</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={prodAntesRateio} onChange={e=>setProdAntesRateio(e.target.checked)} className="accent-purple-500"/>
+                  <span style={{color:'#cbd5e1'}}>✅ Valor do produto deve ser abatido do rateio</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Tabela de serviços */}
+            <div className="rounded-2xl border overflow-hidden" style={{background:'#111827',borderColor:'#1e293b'}}>
+              <div className="grid gap-2 px-5 py-3 text-[10px] font-bold uppercase tracking-wider border-b"
+                style={{background:'#0d1525',borderColor:'#1e293b',color:'#475569',gridTemplateColumns:'2fr 1fr 1fr 1fr 1fr 20px'}}>
+                <div>Serviço</div><div>Preço (R$)</div><div>Rateio (%)</div><div>Produto (R$)</div><div>Imposto (%)</div><div></div>
+              </div>
+              {servicos.map(s=>{
+                const c=calcServ(s)
+                return(
+                  <div key={s.id}>
+                    <div className="grid gap-2 px-5 py-3 items-center" style={{gridTemplateColumns:'2fr 1fr 1fr 1fr 1fr 20px'}}>
+                      <input value={s.nome} onChange={e=>setServicos(p=>p.map(x=>x.id===s.id?{...x,nome:e.target.value}:x))}
+                        placeholder="Ex: Coloração longo" className="px-3 py-2 rounded-lg text-sm text-white focus:outline-none" style={{background:'#0a0f1a',border:'1px solid #1e293b'}}/>
+                      {[
+                        {k:'preco' as const,ph:'0',pre:'R$'},
+                        {k:'rateioP' as const,ph:'50',suf:'%'},
+                        {k:'produto' as const,ph:'0',pre:'R$'},
+                        {k:'imposto' as const,ph:'5',suf:'%'},
+                      ].map(f=>(
+                        <div key={f.k} className="relative">
+                          {f.pre&&<span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#64748b'}}>{f.pre}</span>}
+                          <input type="number" value={(s as any)[f.k]}
+                            onChange={e=>setServicos(p=>p.map(x=>x.id===s.id?{...x,[f.k]:e.target.value}:x))}
+                            placeholder={f.ph}
+                            className={`w-full ${f.pre?'pl-7':'pl-3'} ${f.suf?'pr-6':'pr-2'} py-2 rounded-lg text-sm text-white focus:outline-none`}
+                            style={{background:'#0a0f1a',border:`1px solid ${n((s as any)[f.k])>0?'#7c5cfc40':'#1e293b'}`}}/>
+                          {f.suf&&<span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#64748b'}}>{f.suf}</span>}
+                        </div>
+                      ))}
+                      <button onClick={()=>setServicos(p=>p.filter(x=>x.id!==s.id))} style={{color:'#475569'}}><Trash2 size={13}/></button>
+                    </div>
+                    {c&&(
+                      <div className="mx-4 mb-3 rounded-xl overflow-hidden border" style={{borderColor:'#1e293b'}}>
+                        <div className="grid grid-cols-4 divide-x text-center py-2" style={{background:'#0a0f1a',borderColor:'#1e293b'}}>
+                          {[
+                            {l:'Total Despesas',v:fmtR(c.total),p:`${(c.totalPct*100).toFixed(1)}%`,co:'#f59e0b'},
+                            {l:'Margem Operacional',v:fmtR(c.margOp),p:`${(c.margOpPct*100).toFixed(1)}%`,co:'#06b6d4'},
+                            {l:'Custo Operacional',v:fmtR(c.custoOpR),p:`${(c.custOpPct*100).toFixed(1)}%`,co:'#a78bfa'},
+                            {l:'RESULTADO LÍQUIDO',v:fmtR(c.resultado),p:`${(c.resultPct*100).toFixed(1)}%`,co:corRes(c.resultado)},
+                          ].map((item,i)=>(
+                            <div key={i} className="px-2 py-1">
+                              <p className="text-[9px] uppercase tracking-wider mb-0.5" style={{color:'#475569'}}>{item.l}</p>
+                              <p className="text-sm font-bold" style={{color:item.co}}>{item.v}</p>
+                              <p className="text-[10px]" style={{color:item.co+'99'}}>{item.p}</p>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="grid grid-cols-4 text-center py-1.5 border-t text-[10px]" style={{background:'#111827',borderColor:'#1e293b',color:'#64748b'}}>
+                          <div>Rateio: {fmtR(c.rateioR)}</div>
+                          <div>Produto: {fmtR(c.prod)} | Cartão: {fmtR(c.cartaoR)}</div>
+                          <div>Imposto: {fmtR(c.impostR)}</div>
+                          <div style={{color:c.resultado>0?'#10b981':'#ef4444',fontWeight:'bold'}}>{c.resultado>0?'✅ Lucrativo':'🚨 Prejuízo'}</div>
+                        </div>
+                      </div>
                     )}
                   </div>
+                )
+              })}
+              <div className="px-5 py-3 border-t" style={{borderColor:'#1e293b'}}>
+                <button onClick={()=>{setServicos(p=>[...p,{id:proxServ,nome:'',preco:'',rateioP:'',produto:'',imposto:''}]);setProxServ(p=>p+1)}}
+                  className="flex items-center gap-2 text-sm px-4 py-2 rounded-lg"
+                  style={{background:'#7c5cfc20',color:'#7c5cfc',border:'1px dashed #7c5cfc40'}}>
+                  <Plus size={14}/> Adicionar serviço
+                </button>
+              </div>
+            </div>
 
-                  {/* Remover */}
-                  <div className="col-span-1 flex justify-end">
-                    {item.editavel && (
-                      <button onClick={() => removerItem(item.id)}
-                        className="p-1 rounded hover:bg-red-500/20 transition-colors"
-                        style={{ color: '#ef4444' }}>
-                        <Trash2 size={13} />
-                      </button>
-                    )}
+            <div className="rounded-xl p-4 text-xs space-y-1" style={{background:'#111827',border:'1px solid #1e293b',color:'#64748b'}}>
+              <p className="font-bold mb-1" style={{color:'#94a3b8'}}>💡 Fórmula exata (Planilha Dra. Dani Venâncio):</p>
+              <p>• <strong style={{color:'#e2e8f0'}}>Rateio R$</strong> = (Preço × Rateio%) − (Preço × Rateio% × Taxa_Cartão%) − (Produto × Abatimento%)</p>
+              <p>• <strong style={{color:'#e2e8f0'}}>Imposto</strong>: Salão Parceiro → (Preço − Rateio) × Imp%. Normal → Preço × Imp%</p>
+              <p>• <strong style={{color:'#e2e8f0'}}>Resultado</strong> = Preço − Total Despesas − Custo Operacional</p>
+              <p style={{color:'#a78bfa'}}>Exemplo: Preço R$100 | Rateio 50% | Produto R$10 | Cartão 5% | Imposto 5% → Rateio R$37,50 | Resultado R$14,38</p>
+            </div>
+          </div>
+        )}
+
+        {/* ════ ABA CUSTO DE PRODUTO ════ */}
+        {aba==='produto' && (
+          <div className="space-y-4">
+            <div className="rounded-xl p-3 text-xs" style={{background:'#7c5cfc15',border:'1px solid #7c5cfc30',color:'#a78bfa'}}>
+              ✨ Calcule o custo exato de cada insumo por serviço. Use o total em <strong>💇 Calcular Serviços</strong> → campo "Produto (R$)".
+            </div>
+            {servicosProd.map(sp=>{
+              const total=sp.ingredientes.reduce((s,i)=>s+custoIngred(i),0)
+              return(
+                <div key={sp.id} className="rounded-2xl border overflow-hidden" style={{background:'#111827',borderColor:'#1e293b'}}>
+                  <div className="px-5 py-4 flex items-center gap-3 border-b" style={{background:'#0d1525',borderColor:'#1e293b'}}>
+                    <span className="text-lg">🧴</span>
+                    <input value={sp.nomeServico}
+                      onChange={e=>setServicoProd(p=>p.map(s=>s.id===sp.id?{...s,nomeServico:e.target.value}:s))}
+                      placeholder="Nome do serviço (ex: Coloração Longo)"
+                      className="flex-1 bg-transparent text-white font-bold text-sm focus:outline-none"
+                      style={{borderBottom:'1px solid #334155'}}/>
+                    {total>0&&<div className="text-right flex-shrink-0"><p className="text-[10px]" style={{color:'#64748b'}}>Custo total</p><p className="font-bold text-lg" style={{color:'#f59e0b'}}>{fmtR(total)}</p></div>}
+                  </div>
+                  <div className="grid gap-2 px-5 py-2 text-[10px] font-bold uppercase tracking-wider border-b"
+                    style={{background:'#0a0f1a',borderColor:'#1e293b',color:'#475569',gridTemplateColumns:'2fr 0.7fr 1fr 1fr 1fr 1fr 20px'}}>
+                    <div>Produto/Insumo</div><div>Un.</div><div>Qtd embalagem</div><div>Preço embalagem</div><div>Qtd usada</div><div>Custo/uso</div><div></div>
+                  </div>
+                  {sp.ingredientes.map((ing,idx)=>{
+                    const custo=custoIngred(ing)
+                    return(
+                      <div key={idx} className="grid gap-2 px-5 py-2 items-center hover:bg-white/2"
+                        style={{borderBottom:'1px solid #1e293b10',gridTemplateColumns:'2fr 0.7fr 1fr 1fr 1fr 1fr 20px'}}>
+                        <input value={ing.nome} onChange={e=>atualizarIngrediente(sp.id,idx,'nome',e.target.value)} placeholder="Ex: Tinta Color"
+                          className="px-3 py-1.5 rounded-lg text-xs text-white focus:outline-none" style={{background:'#0a0f1a',border:'1px solid #1e293b'}}/>
+                        <select value={ing.unidade} onChange={e=>atualizarIngrediente(sp.id,idx,'unidade',e.target.value)}
+                          className="px-2 py-1.5 rounded-lg text-xs text-white focus:outline-none" style={{background:'#0a0f1a',border:'1px solid #1e293b'}}>
+                          {['ml','g','und','L','kg'].map(u=><option key={u} value={u}>{u}</option>)}
+                        </select>
+                        <input type="number" value={ing.qtdEmb} onChange={e=>atualizarIngrediente(sp.id,idx,'qtdEmb',e.target.value)}
+                          placeholder="Ex: 60" className="px-3 py-1.5 rounded-lg text-xs text-white focus:outline-none" style={{background:'#0a0f1a',border:'1px solid #1e293b'}}/>
+                        <div className="relative">
+                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#64748b'}}>R$</span>
+                          <input type="number" value={ing.preco} onChange={e=>atualizarIngrediente(sp.id,idx,'preco',e.target.value)}
+                            placeholder="0" className="w-full pl-7 pr-2 py-1.5 rounded-lg text-xs text-white focus:outline-none" style={{background:'#0a0f1a',border:'1px solid #1e293b'}}/>
+                        </div>
+                        <input type="number" value={ing.qtdUsa} onChange={e=>atualizarIngrediente(sp.id,idx,'qtdUsa',e.target.value)}
+                          placeholder="Ex: 90" className="px-3 py-1.5 rounded-lg text-xs text-white focus:outline-none" style={{background:'#0a0f1a',border:'1px solid #1e293b'}}/>
+                        <div className="text-xs font-bold text-center" style={{color:custo>0?'#f59e0b':'#334155'}}>{custo>0?fmtR(custo):'—'}</div>
+                        <button onClick={()=>removerIngrediente(sp.id,idx)} style={{color:'#475569'}}><Trash2 size={12}/></button>
+                      </div>
+                    )
+                  })}
+                  <div className="px-5 py-3 flex items-center justify-between border-t" style={{borderColor:'#1e293b'}}>
+                    <button onClick={()=>adicionarIngrediente(sp.id)} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg"
+                      style={{background:'#f59e0b20',color:'#f59e0b',border:'1px dashed #f59e0b40'}}>
+                      <Plus size={12}/> Adicionar produto
+                    </button>
+                    {total>0&&<div className="text-xs px-3 py-1.5 rounded-lg font-bold" style={{background:'#f59e0b20',color:'#f59e0b'}}>Total: {fmtR(total)}</div>}
                   </div>
                 </div>
               )
             })}
-          </div>
-
-          {/* Botão adicionar */}
-          <div className="px-5 py-3 border-t" style={{ borderColor: '#1e293b' }}>
-            <button onClick={adicionarItem}
-              className="flex items-center gap-2 text-sm px-4 py-2 rounded-lg transition-all hover:brightness-110"
-              style={{ background: '#7c5cfc20', color: '#7c5cfc', border: '1px dashed #7c5cfc40' }}>
-              <Plus size={15} />
-              Adicionar outro gasto
+            <button onClick={()=>{setServicoProd(p=>[...p,{id:proxSP,nomeServico:'',ingredientes:[{id:1,nome:'',qtdEmb:'',qtdUsa:'',preco:'',unidade:'ml'}]}]);setProxSP(p=>p+1)}}
+              className="w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2"
+              style={{background:'#7c5cfc20',color:'#7c5cfc',border:'1px dashed #7c5cfc40'}}>
+              <Plus size={15}/> Adicionar outro serviço
             </button>
+            <div className="rounded-xl p-4 text-xs space-y-1" style={{background:'#111827',border:'1px solid #1e293b',color:'#64748b'}}>
+              <p className="font-bold mb-1" style={{color:'#94a3b8'}}>💡 Fórmula:</p>
+              <p>• Custo por uso = (Preço da embalagem ÷ Qtd da embalagem) × Qtd usada no serviço</p>
+              <p style={{color:'#a78bfa'}}>Ex: Tinta R$35,27 / 60g × 90g usados = <strong>R$52,91 de custo</strong></p>
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Botão calcular */}
-        <button
-          onClick={calcular}
-          disabled={!fat}
-          className="w-full py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-3 transition-all hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
-          style={{ background: 'linear-gradient(135deg, #7c5cfc, #a78bfa)', color: 'white' }}>
-          <Calculator size={20} />
-          Ver Resultado
-        </button>
+        {/* ════ ABA ALUGUEL DE CADEIRA ════ */}
+        {aba==='cadeira' && (
+          <div className="space-y-4">
+            {custoOp>0&&<div className="rounded-xl p-3 text-xs" style={{background:'#7c5cfc15',border:'1px solid #7c5cfc30',color:'#a78bfa'}}>✨ Custo operacional da aba Receitas e Despesas: <strong>{fmtR(custoOp)}</strong> — preenchido automaticamente</div>}
+            <div className="rounded-2xl p-6 border" style={{background:'#111827',borderColor:'#1e293b'}}>
+              <h2 className="font-bold text-base mb-1" style={{color:'#f59e0b'}}>💺 Aluguel de Cadeira</h2>
+              <p className="text-xs mb-5" style={{color:'#64748b'}}>Quanto cobrar de aluguel por cadeira para cobrir custos e ter lucro.</p>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-bold block mb-1" style={{color:'#94a3b8'}}>Custo Operacional Mensal Total (R$)</label>
+                  <p className="text-xs mb-2" style={{color:'#475569'}}>{custoOp>0?'Preenchido automaticamente — pode editar.':'Preencha a aba Receitas e Despesas ou informe manualmente.'}</p>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{color:'#94a3b8'}}>R$</span>
+                    <input type="number" value={custoOpCad||(custoOp>0?String(Math.round(custoOp)):'')} onChange={e=>setCustoOpCad(e.target.value)}
+                      placeholder={custoOp>0?custoOp.toFixed(2):'0,00'} className="w-full pl-10 pr-4 py-3 rounded-xl text-white focus:outline-none"
+                      style={{background:'#0a0f1a',border:'1px solid #f59e0b60'}}/>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-bold block mb-1" style={{color:'#94a3b8'}}>Número de Cadeiras / Postos</label>
+                  <p className="text-xs mb-2" style={{color:'#475569'}}>Quantas cadeiras ou postos de atendimento tem o salão?</p>
+                  <input type="number" value={numCad} onChange={e=>setNumCad(e.target.value)} placeholder="Ex: 10"
+                    className="w-full px-4 py-3 rounded-xl text-white focus:outline-none" style={{background:'#0a0f1a',border:'1px solid #1e293b'}}/>
+                </div>
+              </div>
+              {custPorCad>0&&(
+                <div className="mt-6 space-y-3">
+                  <div className="rounded-xl p-4 border" style={{background:'#0a0f1a',borderColor:'#f59e0b40'}}>
+                    <p className="text-xs mb-1" style={{color:'#64748b'}}>📊 Custo por Cadeira (ponto de equilíbrio)</p>
+                    <p className="text-3xl font-bold" style={{color:'#f59e0b'}}>{fmtR(custPorCad)}</p>
+                    <p className="text-xs mt-1" style={{color:'#475569'}}>Valor que cada cadeira precisa gerar para cobrir os custos</p>
+                  </div>
+                  <div className="rounded-xl p-4 border" style={{background:'#0a0f1a',borderColor:'#10b98140'}}>
+                    <div className="flex items-center gap-2 mb-1"><span>⭐</span><p className="text-xs font-bold" style={{color:'#10b981'}}>Aluguel Sugerido por Cadeira</p><span className="text-xs px-2 py-0.5 rounded-full" style={{background:'#10b98120',color:'#10b981'}}>+50% lucro</span></div>
+                    <p className="text-3xl font-bold" style={{color:'#10b981'}}>{fmtR(alugSuger)}</p>
+                    <p className="text-xs mt-1" style={{color:'#475569'}}>Valor recomendado com margem de lucro de 50%</p>
+                  </div>
+                  <div className="rounded-xl p-4 text-xs space-y-1" style={{background:'#7c5cfc10',border:'1px solid #7c5cfc30',color:'#a78bfa'}}>
+                    <p><strong>💡 Resumo:</strong></p>
+                    <p>• {n(numCad)} cadeiras × {fmtR(alugSuger)} = <strong>{fmtR(alugSuger*n(numCad))}/mês arrecadado</strong></p>
+                    <p>• Lucro estimado: <strong style={{color:'#10b981'}}>{fmtR(alugSuger*n(numCad)-custoOpCadN)}/mês</strong></p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
-        <p className="text-center text-xs mt-3" style={{ color: '#334155' }}>
-          Resultado instantâneo — análise IA disponível na próxima tela
-        </p>
-        </>}
+        {/* ════ ABA FATURAMENTO POR M² ════ */}
+        {aba==='metro' && (
+          <div className="space-y-4">
+            {pe>0&&<div className="rounded-xl p-3 text-xs" style={{background:'#7c5cfc15',border:'1px solid #7c5cfc30',color:'#a78bfa'}}>✨ Ponto de equilíbrio da aba Receitas e Despesas: <strong>{fmtR(pe)}</strong> — preenchido automaticamente como faturamento mínimo</div>}
+            <div className="rounded-2xl p-6 border" style={{background:'#111827',borderColor:'#1e293b'}}>
+              <h2 className="font-bold text-base mb-1" style={{color:'#06b6d4'}}>📐 Faturamento por M²</h2>
+              <p className="text-xs mb-5" style={{color:'#64748b'}}>Quanto cada metro quadrado do salão precisa gerar para ser rentável.</p>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-bold block mb-1" style={{color:'#94a3b8'}}>Faturamento Mínimo Necessário (R$)</label>
+                  <p className="text-xs mb-2" style={{color:'#475569'}}>{pe>0?'Ponto de equilíbrio calculado automaticamente — pode editar.':'Preencha a aba Receitas e Despesas ou informe manualmente.'}</p>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{color:'#94a3b8'}}>R$</span>
+                    <input type="number" value={fatMinM2||(pe>0?String(Math.round(pe)):'')} onChange={e=>setFatMinM2(e.target.value)}
+                      placeholder={pe>0?pe.toFixed(2):'0,00'} className="w-full pl-10 pr-4 py-3 rounded-xl text-white focus:outline-none"
+                      style={{background:'#0a0f1a',border:'1px solid #06b6d460'}}/>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-bold block mb-1" style={{color:'#94a3b8'}}>Metragem Total do Salão (m²)</label>
+                  <input type="number" value={mTotal} onChange={e=>setMTotal(e.target.value)} placeholder="Ex: 80"
+                    className="w-full px-4 py-3 rounded-xl text-white focus:outline-none" style={{background:'#0a0f1a',border:'1px solid #1e293b'}}/>
+                </div>
+              </div>
+              {fatPorM2>0&&(
+                <div className="mt-6 space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-xl p-4 border" style={{background:'#0a0f1a',borderColor:'#06b6d440'}}>
+                      <p className="text-xs mb-1" style={{color:'#64748b'}}>📊 Faturamento por M² (P.E.)</p>
+                      <p className="text-3xl font-bold" style={{color:'#06b6d4'}}>{fmtR(fatPorM2)}/m²</p>
+                      <p className="text-xs mt-1" style={{color:'#475569'}}>Meta mínima por m² para cobrir custos</p>
+                    </div>
+                    <div className="rounded-xl p-4 border" style={{background:'#0a0f1a',borderColor:'#10b98140'}}>
+                      <div className="flex items-center gap-2 mb-1"><span>⭐</span><p className="text-xs font-bold" style={{color:'#10b981'}}>Faturamento Sugerido por M²</p><span className="text-xs px-2 py-0.5 rounded-full" style={{background:'#10b98120',color:'#10b981'}}>+50%</span></div>
+                      <p className="text-3xl font-bold" style={{color:'#10b981'}}>{fmtR(fatSugM2)}/m²</p>
+                    </div>
+                  </div>
+                  <div className="rounded-xl p-4 border" style={{background:'#0a0f1a',borderColor:'#1e293b'}}>
+                    <p className="text-xs font-bold mb-3" style={{color:'#94a3b8'}}>📏 Calcular para um espaço específico:</p>
+                    <div className="flex gap-2 items-center">
+                      <input type="number" value={mSala} onChange={e=>setMSala(e.target.value)} placeholder="Ex: 15 m²"
+                        className="flex-1 px-4 py-2.5 rounded-lg text-white text-sm focus:outline-none" style={{background:'#111827',border:'1px solid #334155'}}/>
+                      <span className="text-sm" style={{color:'#64748b'}}>m²</span>
+                    </div>
+                    {fatSugSala>0&&(
+                      <div className="mt-3 p-3 rounded-lg" style={{background:'#10b98115',border:'1px solid #10b98130'}}>
+                        <p className="text-xs" style={{color:'#64748b'}}>Faturamento sugerido para {mSala} m²:</p>
+                        <p className="text-2xl font-bold mt-1" style={{color:'#10b981'}}>{fmtR(fatSugSala)}/mês</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   )
+
+  // Funções auxiliares de custo de produto
+  function adicionarIngrediente(sId: number) {
+    setServicoProd(p=>p.map(s=>s.id===sId?{...s,ingredientes:[...s.ingredientes,{id:s.ingredientes.length+1,nome:'',qtdEmb:'',qtdUsa:'',preco:'',unidade:'ml'}]}:s))
+  }
+  function atualizarIngrediente(sId: number, iIdx: number, campo: keyof Ingrediente, val: string) {
+    setServicoProd(p=>p.map(s=>s.id===sId?{...s,ingredientes:s.ingredientes.map((ing,idx)=>idx===iIdx?{...ing,[campo]:val}:ing)}:s))
+  }
+  function removerIngrediente(sId: number, iIdx: number) {
+    setServicoProd(p=>p.map(s=>s.id===sId?{...s,ingredientes:s.ingredientes.filter((_,idx)=>idx!==iIdx)}:s))
+  }
 }
