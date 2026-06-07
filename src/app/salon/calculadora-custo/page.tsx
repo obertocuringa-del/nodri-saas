@@ -1,7 +1,9 @@
 'use client'
 
-import { useState } from 'react'
-import { ArrowLeft, Plus, Trash2, Calculator, Loader2, ChevronDown, ChevronUp } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { ArrowLeft, Plus, Trash2, Calculator, Loader2, Save, ChevronDown, ChevronUp, History, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react'
+
+const MESES_NOMES = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 const fmtR = (v: number) => `R$ ${(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}`
@@ -43,6 +45,15 @@ interface Servico      { id: number; nome: string; preco: string; rateioP: strin
 
 // ─── Componente principal ────────────────────────────────────────────────────
 export default function CalculadoraCusto() {
+  // ── Histórico mensal ────────────────────────────────────────────────────────
+  const hoje = new Date()
+  const [anoSel,    setAnoSel]    = useState(hoje.getFullYear())
+  const [mesSel,    setMesSel]    = useState(hoje.getMonth() + 1)
+  const [salvando,  setSalvando]  = useState(false)
+  const [savedMsg,  setSavedMsg]  = useState('')
+  const [mesesComDados, setMesesComDados] = useState<{ano:number,mes:number}[]>([])
+  const [carregando, setCarregando] = useState(false)
+
   // Aba ativa
   const [aba, setAba] = useState<'rd'|'pe'|'servicos'|'produto'|'cadeira'|'metro'>('rd')
 
@@ -73,6 +84,149 @@ export default function CalculadoraCusto() {
   const [reservaEmerg,  setReservaEmerg]  = useState('')
   const [vlrProdEstoque,setVlrProdEstoque]= useState('')
 
+  // ── Ponto de Equilíbrio ──────────────────────────────────────────────────
+  const [areaM2,     setAreaM2]     = useState('100')
+  const [numProfs,   setNumProfs]   = useState('3')
+  const [margemPE,   setMargemPE]   = useState('')
+  const [metaLucroPE,setMetaLucroPE] = useState('')
+  const [fatPEManual,setFatPEManual] = useState('')
+  const [simDespesa, setSimDespesa]  = useState('')
+
+  // ── Calcular Serviços ────────────────────────────────────────────────────
+  const [servicos,    setServicos]    = useState<Servico[]>([{id:1,nome:'',preco:'',rateioP:'',produto:'',imposto:''}])
+  const [proxServ,    setProxServ]    = useState(2)
+  const [taxaCartao,  setTaxaCartao]  = useState('5')
+  const [abatProd,    setAbatProd]    = useState('100')
+  const [custOpServ,  setCustOpServ]  = useState('')
+  const [taxaAntesRateio, setTaxaAntesRateio] = useState(true)
+  const [prodAntesRateio, setProdAntesRateio] = useState(true)
+  const [salaoParceiro,   setSalaoParceiro]   = useState(true)
+
+  // ── Custo de Produto ─────────────────────────────────────────────────────
+  const [servicosProd, setServicoProd] = useState<ServicoProd[]>([
+    {id:1, nomeServico:'', ingredientes:[{id:1,nome:'',qtdEmb:'',qtdUsa:'',preco:'',unidade:'ml'}]}
+  ])
+  const [proxSP, setProxSP] = useState(2)
+
+  // ── Aluguel de Cadeira ───────────────────────────────────────────────────
+  const [numCad,    setNumCad]    = useState('')
+  const [custoOpCad,setCustoOpCad]= useState('')
+
+  // ── Faturamento por M² ───────────────────────────────────────────────────
+  const [mTotal,  setMTotal]  = useState('')
+  const [fatMinM2,setFatMinM2]= useState('')
+  const [mSala,   setMSala]   = useState('')
+
+  // ── IA ───────────────────────────────────────────────────────────────────
+  const [analiseIA,  setAnaliseIA]  = useState('')
+  const [loadingIA,  setLoadingIA]  = useState(false)
+  const [erroIA,     setErroIA]     = useState('')
+
+  // ── Funções de serializar/desserializar todos os campos ─────────────────────
+  function coletarDados() {
+    return {
+      fat, custIndD, custDirD, lucroD, invInicial, totalDeprec,
+      despInd: despInd.map(d=>({nome:d.nome,valor:d.valor})),
+      extrasDespInd: extrasDespInd.map(d=>({nome:d.nome,valor:d.valor})),
+      sal13, ferias, fgtsR, imposto, produto, rateio, taxaC,
+      aquisicaoEq, distSocios, reservaEmerg, vlrProdEstoque,
+      areaM2, numProfs, margemPE, metaLucroPE, fatPEManual, simDespesa,
+      taxaCartao, abatProd, custOpServ, taxaAntesRateio, prodAntesRateio, salaoParceiro,
+      servicos, numCad, custoOpCad, mTotal, fatMinM2, mSala,
+      servicosProd,
+    }
+  }
+
+  function aplicarDados(d: ReturnType<typeof coletarDados>) {
+    if (!d) return
+    if (d.fat !== undefined) setFat(d.fat)
+    if (d.custIndD !== undefined) setCustIndD(d.custIndD)
+    if (d.custDirD !== undefined) setCustDirD(d.custDirD)
+    if (d.lucroD !== undefined) setLucroD(d.lucroD)
+    if (d.invInicial !== undefined) setInvInicial(d.invInicial)
+    if (d.totalDeprec !== undefined) setTotalDeprec(d.totalDeprec)
+    if (d.despInd) setDespInd(DESPESAS_INDIRETAS.map((di,i)=>({...di,valor:d.despInd[i]?.valor||''})))
+    if (d.extrasDespInd) setExtrasDespInd(d.extrasDespInd.map((x:any)=>({nome:x.nome,valor:x.valor,dica:''})))
+    if (d.sal13 !== undefined) setSal13(d.sal13)
+    if (d.ferias !== undefined) setFerias(d.ferias)
+    if (d.fgtsR !== undefined) setFgtsR(d.fgtsR)
+    if (d.imposto !== undefined) setImposto(d.imposto)
+    if (d.produto !== undefined) setProduto(d.produto)
+    if (d.rateio !== undefined) setRateio(d.rateio)
+    if (d.taxaC !== undefined) setTaxaC(d.taxaC)
+    if (d.aquisicaoEq !== undefined) setAquisicaoEq(d.aquisicaoEq)
+    if (d.distSocios !== undefined) setDistSocios(d.distSocios)
+    if (d.reservaEmerg !== undefined) setReservaEmerg(d.reservaEmerg)
+    if (d.vlrProdEstoque !== undefined) setVlrProdEstoque(d.vlrProdEstoque)
+    if (d.areaM2 !== undefined) setAreaM2(d.areaM2)
+    if (d.numProfs !== undefined) setNumProfs(d.numProfs)
+    if (d.margemPE !== undefined) setMargemPE(d.margemPE)
+    if (d.metaLucroPE !== undefined) setMetaLucroPE(d.metaLucroPE)
+    if (d.fatPEManual !== undefined) setFatPEManual(d.fatPEManual)
+    if (d.simDespesa !== undefined) setSimDespesa(d.simDespesa)
+    if (d.taxaCartao !== undefined) setTaxaCartao(d.taxaCartao)
+    if (d.abatProd !== undefined) setAbatProd(d.abatProd)
+    if (d.custOpServ !== undefined) setCustOpServ(d.custOpServ)
+    if (d.taxaAntesRateio !== undefined) setTaxaAntesRateio(d.taxaAntesRateio)
+    if (d.prodAntesRateio !== undefined) setProdAntesRateio(d.prodAntesRateio)
+    if (d.salaoParceiro !== undefined) setSalaoParceiro(d.salaoParceiro)
+    if (d.servicos) setServicos(d.servicos)
+    if (d.numCad !== undefined) setNumCad(d.numCad)
+    if (d.custoOpCad !== undefined) setCustoOpCad(d.custoOpCad)
+    if (d.mTotal !== undefined) setMTotal(d.mTotal)
+    if (d.fatMinM2 !== undefined) setFatMinM2(d.fatMinM2)
+    if (d.mSala !== undefined) setMSala(d.mSala)
+    if (d.servicosProd) setServicoProd(d.servicosProd)
+  }
+
+  // Carrega lista de meses com dados
+  useEffect(() => {
+    fetch('/api/salon/calculadora', { credentials: 'include' })
+      .then(r => r.json())
+      .then(d => { if (d.historico) setMesesComDados(d.historico.map((h:any)=>({ano:h.ano,mes:h.mes}))) })
+      .catch(() => {})
+  }, [])
+
+  // Carrega mês selecionado
+  useEffect(() => {
+    setCarregando(true)
+    setAnaliseIA(''); setErroIA('')
+    fetch(`/api/salon/calculadora?ano=${anoSel}&mes=${mesSel}`, { credentials: 'include' })
+      .then(r => r.json())
+      .then(d => { if (d.dados) aplicarDados(d.dados) })
+      .catch(() => {})
+      .finally(() => setCarregando(false))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [anoSel, mesSel])
+
+  async function salvarMes() {
+    setSalvando(true); setSavedMsg('')
+    try {
+      const res = await fetch('/api/salon/calculadora', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ano: anoSel, mes: mesSel, dados: coletarDados() }),
+      })
+      if (res.ok) {
+        setSavedMsg('Salvo!')
+        setMesesComDados(prev => {
+          const existe = prev.some(m=>m.ano===anoSel&&m.mes===mesSel)
+          return existe ? prev : [...prev, {ano:anoSel,mes:mesSel}]
+        })
+        setTimeout(() => setSavedMsg(''), 3000)
+      }
+    } finally { setSalvando(false) }
+  }
+
+  function mesAnterior() {
+    if (mesSel === 1) { setMesSel(12); setAnoSel(a=>a-1) }
+    else setMesSel(m=>m-1)
+  }
+  function mesProximo() {
+    if (mesSel === 12) { setMesSel(1); setAnoSel(a=>a+1) }
+    else setMesSel(m=>m+1)
+  }
+
   // Cálculos Receitas e Despesas
   const fatN       = n(fat)
   const depMensal  = n(totalDeprec) > 0 ? n(totalDeprec) / 60 : 0
@@ -92,13 +246,6 @@ export default function CalculadoraCusto() {
   const capGiro    = custoOp > 0 ? (custoOp / 30) * 30 : 0 // simplificado
 
   // ── Ponto de Equilíbrio detalhado ───────────────────────────────────────
-  const [areaM2,     setAreaM2]     = useState('100')
-  const [numProfs,   setNumProfs]   = useState('3')
-  const [margemPE,   setMargemPE]   = useState('')  // % margem op (puxa do RD se vazio)
-  const [metaLucroPE,setMetaLucroPE] = useState('') // % lucro (puxa do RD se vazio)
-  const [fatPEManual,setFatPEManual] = useState('') // faturamento (puxa do RD se vazio)
-  const [simDespesa, setSimDespesa]  = useState('') // simulador de despesa
-
   const fatPE_  = n(fatPEManual)  || fatN
   const margPE_ = n(margemPE)/100 || margOpPct
   const metaPE_ = n(metaLucroPE)/100 || n(lucroD)/100
@@ -114,15 +261,6 @@ export default function CalculadoraCusto() {
   const PEM2Lucro_   = area_ > 0 ? PELucro_ / area_ : 0
 
   // ── Calcular Serviços ────────────────────────────────────────────────────
-  const [servicos,    setServicos]    = useState<Servico[]>([{id:1,nome:'',preco:'',rateioP:'',produto:'',imposto:''}])
-  const [proxServ,    setProxServ]    = useState(2)
-  const [taxaCartao,  setTaxaCartao]  = useState('5')
-  const [abatProd,    setAbatProd]    = useState('100')  // % abatimento produto
-  const [custOpServ,  setCustOpServ]  = useState('')     // % custo op (puxa do RD)
-  const [taxaAntesRateio, setTaxaAntesRateio] = useState(true)
-  const [prodAntesRateio, setProdAntesRateio] = useState(true)
-  const [salaoParceiro,   setSalaoParceiro]   = useState(true)
-
   const custOpServN = n(custOpServ)/100 || (fatN > 0 && custoOp > 0 ? custoOp/fatN : 0.30)
 
   function calcServ(s: Servico) {
@@ -154,39 +292,21 @@ export default function CalculadoraCusto() {
             custoOpR,custOpPct:custOpServN,resultado,resultPct:resultado/preco}
   }
 
-  // ── Custo de Produto ─────────────────────────────────────────────────────
-  const [servicosProd, setServicoProd] = useState<ServicoProd[]>([
-    {id:1, nomeServico:'', ingredientes:[{id:1,nome:'',qtdEmb:'',qtdUsa:'',preco:'',unidade:'ml'}]}
-  ])
-  const [proxSP, setProxSP] = useState(2)
-
   function custoIngred(i: Ingrediente): number {
     const emb = n(i.qtdEmb), usa = n(i.qtdUsa), prec = n(i.preco)
     return emb > 0 ? (prec / emb) * usa : 0
   }
 
   // ── Aluguel de Cadeira ───────────────────────────────────────────────────
-  const [numCad,    setNumCad]    = useState('')
-  const [custoOpCad,setCustoOpCad]= useState('')
-
   const custoOpCadN = n(custoOpCad) || custoOp
   const custPorCad  = n(numCad) > 0 ? custoOpCadN / n(numCad) : 0
   const alugSuger   = custPorCad * 1.5
 
   // ── Faturamento por M² ───────────────────────────────────────────────────
-  const [mTotal,  setMTotal]  = useState('')
-  const [fatMinM2,setFatMinM2]= useState('')
-  const [mSala,   setMSala]   = useState('')
-
   const fatMinM2N   = n(fatMinM2) || pe
   const fatPorM2    = n(mTotal) > 0 ? fatMinM2N / n(mTotal) : 0
   const fatSugM2    = fatPorM2 * 1.5
   const fatSugSala  = n(mSala) > 0 ? fatSugM2 * n(mSala) : 0
-
-  // ── IA ───────────────────────────────────────────────────────────────────
-  const [analiseIA,  setAnaliseIA]  = useState('')
-  const [loadingIA,  setLoadingIA]  = useState(false)
-  const [erroIA,     setErroIA]     = useState('')
 
   async function analisarIA() {
     setLoadingIA(true); setErroIA(''); setAnaliseIA('')
@@ -256,15 +376,71 @@ Use números reais. Seja direto.`
       <div className="max-w-5xl mx-auto px-4 py-8">
 
         {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-3 mb-4">
           <a href="/salon" className="p-2 rounded-lg hover:bg-white/5" style={{color:'#94a3b8'}}><ArrowLeft size={18}/></a>
-          <div>
+          <div className="flex-1">
             <h1 className="text-xl font-bold text-white flex items-center gap-2">
               <Calculator size={22} style={{color:'#7c5cfc'}}/>Calculadoras do Salão
             </h1>
             <p className="text-xs mt-0.5" style={{color:'#64748b'}}>
               Baseado na metodologia Dra. Dani Venâncio — dados interligados entre as calculadoras
             </p>
+          </div>
+        </div>
+
+        {/* Seletor de mês + Salvar */}
+        <div className="flex items-center gap-3 mb-6 p-3 rounded-xl border" style={{background:'#111827',borderColor:'#1e293b'}}>
+          <History size={15} style={{color:'#7c5cfc',flexShrink:0}}/>
+          <span className="text-xs font-bold" style={{color:'#64748b'}}>Período:</span>
+
+          {/* Navegação mês */}
+          <div className="flex items-center gap-1">
+            <button onClick={mesAnterior} className="p-1 rounded hover:bg-white/5" style={{color:'#64748b'}}><ChevronLeft size={14}/></button>
+            <div className="flex items-center gap-1">
+              <select value={mesSel} onChange={e=>setMesSel(Number(e.target.value))}
+                className="text-xs font-bold px-2 py-1 rounded-lg focus:outline-none"
+                style={{background:'#0a0f1a',color:'#e2e8f0',border:'1px solid #334155'}}>
+                {MESES_NOMES.slice(1).map((nome,i)=>{
+                  const m=i+1; const temDados=mesesComDados.some(x=>x.ano===anoSel&&x.mes===m)
+                  return <option key={m} value={m}>{nome}{temDados?' ●':''}</option>
+                })}
+              </select>
+              <select value={anoSel} onChange={e=>setAnoSel(Number(e.target.value))}
+                className="text-xs font-bold px-2 py-1 rounded-lg focus:outline-none"
+                style={{background:'#0a0f1a',color:'#e2e8f0',border:'1px solid #334155'}}>
+                {[anoSel-1,anoSel,anoSel+1].map(a=><option key={a} value={a}>{a}</option>)}
+              </select>
+            </div>
+            <button onClick={mesProximo} className="p-1 rounded hover:bg-white/5" style={{color:'#64748b'}}><ChevronRight size={14}/></button>
+          </div>
+
+          {carregando && <Loader2 size={13} className="animate-spin" style={{color:'#7c5cfc'}}/>}
+
+          {/* Indicadores de meses salvos */}
+          {mesesComDados.length > 0 && (
+            <div className="flex-1 flex items-center gap-1 overflow-x-auto">
+              {mesesComDados.slice(0,6).map(m=>(
+                <button key={`${m.ano}-${m.mes}`}
+                  onClick={()=>{setAnoSel(m.ano);setMesSel(m.mes)}}
+                  className="flex-shrink-0 text-[10px] px-2 py-0.5 rounded-full font-bold transition-all"
+                  style={{
+                    background: m.ano===anoSel&&m.mes===mesSel ? '#7c5cfc' : '#7c5cfc20',
+                    color: m.ano===anoSel&&m.mes===mesSel ? 'white' : '#7c5cfc',
+                  }}>
+                  {MESES_NOMES[m.mes].slice(0,3)}/{String(m.ano).slice(2)}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="ml-auto flex items-center gap-2">
+            {savedMsg && <span className="text-xs flex items-center gap-1" style={{color:'#10b981'}}><CheckCircle size={12}/>{savedMsg}</span>}
+            <button onClick={salvarMes} disabled={salvando}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all disabled:opacity-50"
+              style={{background:'#7c5cfc',color:'white'}}>
+              {salvando ? <Loader2 size={12} className="animate-spin"/> : <Save size={12}/>}
+              Salvar {MESES_NOMES[mesSel]}
+            </button>
           </div>
         </div>
 
