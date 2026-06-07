@@ -726,6 +726,13 @@ A ferramenta contém: faturamento, ticket, ocupação, serviços, clientes com p
 Se o dado existe no sistema, a ferramenta vai encontrar.
 Só dizer "não tenho" DEPOIS de chamar a ferramenta e confirmar que o retorno está vazio.
 
+REGRA CRÍTICA — FONTE ÚNICA PARA DADOS DE PROFISSIONAL:
+Quando a ferramenta buscar_dados_profissional retornar dados, USE EXCLUSIVAMENTE esses valores.
+IGNORE qualquer dado do contexto pré-carregado (DADOS BRUTOS DO SALÃO) que contradiga a ferramenta.
+A ferramenta lê de prof_metricas_mensais por profissional_id — é a fonte oficial, idêntica à tela do sistema.
+O contexto pré-carregado usa match por nome de texto — pode ter inconsistências.
+PRIORIDADE: ferramenta > contexto pré-carregado. Sempre.
+
 NÃO USAR FERRAMENTA quando a pergunta for conceitual, educacional ou estratégica:
 → "o que significa ticket alto com ocupação baixa?" → responder do conhecimento
 → "como calcular ponto de equilíbrio?" → responder do conhecimento

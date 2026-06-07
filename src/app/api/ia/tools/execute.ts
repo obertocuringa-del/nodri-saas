@@ -23,10 +23,10 @@ export async function executarFerramenta(nome: string, args: any, salaoId: strin
         const prof = encontrarProfissional(args.nome || '', profs || [])
         if (!prof) return `Profissional "${args.nome}" não encontrado.`
 
-        const [{ data: periodos }, { data: metricas }, { data: ocorrs }, { data: pendencias }] = await Promise.all([
-          supabaseAdmin.from('relatorio_periodos').select('ano, mes, prof_pagamentos, prof_servicos, prof_ticket, prof_ocupacao, prof_preferencia').eq('salao_id', salaoId).order('ano').order('mes'),
+        const [{ data: metricas }, { data: ocorrs }, { data: pendencias }] = await Promise.all([
+          // FONTE ÚNICA E CONFIÁVEL: prof_metricas_mensais por profissional_id (mesma fonte da tela)
           supabaseAdmin.from('prof_metricas_mensais').select('*').eq('salao_id', salaoId).eq('profissional_id', prof.id).order('ano').order('mes'),
-          supabaseAdmin.from('feedback_prof_respostas').select('tipo, ocorrido_descricao, descricao, criado_em').eq('salao_id', salaoId).order('criado_em', { ascending: false }),
+          supabaseAdmin.from('feedback_prof_respostas').select('tipo, ocorrido_descricao, descricao, criado_em, profissional_nome').eq('salao_id', salaoId).order('criado_em', { ascending: false }),
           supabaseAdmin.from('pendencias_profissionais').select('mensagem, data_limite, resolvido').eq('salao_id', salaoId).eq('profissional_id', prof.id),
         ])
 
@@ -34,55 +34,44 @@ export async function executarFerramenta(nome: string, args: any, salaoId: strin
         linhas.push(`Apelido: ${prof.apelido || '-'} | CNPJ: ${prof.cnpj || 'não cadastrado'}`)
         linhas.push('')
 
-        // Financeiro por período
-        linhas.push('HISTÓRICO FINANCEIRO:')
-        for (const per of (periodos || [])) {
-          const chave = `${MESES[per.mes-1]}/${String(per.ano).slice(2)}`
-          const fat = (per.prof_pagamentos || []).find((p: any) => {
-            const n = (p.profissional || '').toLowerCase()
-            return n.includes(prof.apelido?.toLowerCase()?.split(' ')[0] || '') || n.includes(prof.nome_completo?.toLowerCase()?.split(' ')[0] || '')
-          })
-          const serv = (per.prof_servicos || []).find((p: any) => {
-            const n = (p.profissional || '').toLowerCase()
-            return n.includes(prof.apelido?.toLowerCase()?.split(' ')[0] || '') || n.includes(prof.nome_completo?.toLowerCase()?.split(' ')[0] || '')
-          })
-          const tick = (per.prof_ticket || []).find((p: any) => {
-            const n = (p.profissional || '').toLowerCase()
-            return n.includes(prof.apelido?.toLowerCase()?.split(' ')[0] || '') || n.includes(prof.nome_completo?.toLowerCase()?.split(' ')[0] || '')
-          })
-          const ocup = (per.prof_ocupacao || []).find((p: any) => {
-            const n = (p.profissional || '').toLowerCase()
-            return n.includes(prof.apelido?.toLowerCase()?.split(' ')[0] || '') || n.includes(prof.nome_completo?.toLowerCase()?.split(' ')[0] || '')
-          })
-          if (fat || serv) {
-            const fatVal = fat ? (Number(fat.valor_a_pagar||0) + Number(fat.desconto||0)) : 0
-            linhas.push(`  ${chave}: ${fmtR(fatVal)}, ${serv?.quantidade||0} serviços, Ticket ${fmtR(Number(tick?.ticket_medio||0))}, Ocupação ${ocup?.ocupacao||0}%`)
-          }
-        }
-
-        // Métricas detalhadas — fonte única: prof_metricas_mensais (mesma fonte da tela)
+        // DADOS FINANCEIROS E MÉTRICAS — fonte: prof_metricas_mensais (por ID, 100% confiável)
         if (metricas?.length) {
-          linhas.push('\nMÉTRICAS DETALHADAS:')
+          linhas.push('DADOS POR MÊS (fonte oficial — mesma da tela de Faturamento):')
+          linhas.push('⚠️ USE SEMPRE ESSES VALORES. Eles são a fonte verdadeira dos dados.')
           metricas.forEach((m: any) => {
             const chave = `${MESES[m.mes-1]}/${String(m.ano).slice(2)}`
-            linhas.push(`  ${chave}: ${fmtR(m.faturamento)}, Ticket ${fmtR(m.ticket_medio)}, Ocupação ${m.taxa_ocupacao}%, Dias ${m.dias_trabalhados}, Clientes-fidelizados(com-preferência) ${m.clientes_preferencia}, Clientes-distribuídos-pela-recepção(sem-preferência) ${m.clientes_sem_preferencia}, Produtos ${m.total_produtos}`)
+            linhas.push(`  ${chave}: Faturamento=${fmtR(m.faturamento)}, Ticket=${fmtR(m.ticket_medio)}, Ocupação=${m.taxa_ocupacao}%, Dias=${m.dias_trabalhados}, ComPreferência=${m.clientes_preferencia}, SemPreferência=${m.clientes_sem_preferencia}, Serviços=${m.total_servicos}, Produtos=${m.total_produtos}`)
             if (m.servicos_detalhados?.length) {
               const top = [...m.servicos_detalhados].sort((a: any, b: any) => b.valor - a.valor).slice(0, 5)
               top.forEach((s: any) => linhas.push(`    • ${s.nome||s.servico}: ${fmtR(s.valor)} (${s.quantidade||1}x)`))
             }
           })
+        } else {
+          linhas.push('Nenhuma métrica encontrada para este profissional.')
         }
 
-        // Ocorrências
+        // Ocorrências filtradas por nome do profissional
+        const primeiroNome = prof.nome_completo?.toLowerCase()?.split(' ')[0] || ''
+        const apelidoNome = prof.apelido?.toLowerCase()?.split(' ')[0] || ''
         const ocorrProf = (ocorrs || []).filter((f: any) => {
           const n = (f.profissional_nome || '').toLowerCase()
-          return n.includes(prof.apelido?.toLowerCase()?.split(' ')[0] || '') || n.includes(prof.nome_completo?.toLowerCase()?.split(' ')[0] || '')
+          return (primeiroNome && n.includes(primeiroNome)) || (apelidoNome && n.includes(apelidoNome))
         })
         if (ocorrProf.length) {
-          linhas.push(`\nFEEDBACKS/OCORRÊNCIAS (${ocorrProf.length} registros):`)
-          const contagem: Record<string, number> = {}
-          ocorrProf.forEach((f: any) => { contagem[f.ocorrido_descricao || f.tipo] = (contagem[f.ocorrido_descricao || f.tipo] || 0) + 1 })
-          Object.entries(contagem).sort((a,b) => b[1]-a[1]).forEach(([tipo, qtd]) => linhas.push(`  ${tipo}: ${qtd}x`))
+          linhas.push(`\nOCORRÊNCIAS/FEEDBACKS (${ocorrProf.length} registros totais):`)
+          // Agrupa por tipo com contagem e datas
+          const contagem: Record<string, { qtd: number; datas: string[] }> = {}
+          ocorrProf.forEach((f: any) => {
+            const tipo = f.ocorrido_descricao || f.tipo || 'Outro'
+            if (!contagem[tipo]) contagem[tipo] = { qtd: 0, datas: [] }
+            contagem[tipo].qtd++
+            if (f.criado_em) contagem[tipo].datas.push(new Date(f.criado_em).toLocaleDateString('pt-BR'))
+          })
+          Object.entries(contagem)
+            .sort((a,b) => b[1].qtd - a[1].qtd)
+            .forEach(([tipo, v]) => linhas.push(`  ${tipo}: ${v.qtd}x`))
+        } else {
+          linhas.push('\nNenhuma ocorrência registrada para este profissional.')
         }
 
         // Pendências
