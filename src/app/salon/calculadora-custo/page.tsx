@@ -864,6 +864,28 @@ Use números reais. Seja direto.`
         {aba==='rd' && (
           <div className="space-y-4">
 
+            {/* Guia passo a passo */}
+            <div className="rounded-2xl p-4 border" style={{background:'#0d1525',borderColor:'#7c5cfc30'}}>
+              <p className="text-xs font-bold mb-3" style={{color:'#7c5cfc'}}>📋 Como preencher — siga os 4 passos em ordem:</p>
+              <div className="grid grid-cols-4 gap-2">
+                {[
+                  {n:'1',titulo:'Faturamento',desc:'Quanto entrou no caixa este mês (dinheiro + cartão + Pix)',ok:fatN>0,cor:'#10b981'},
+                  {n:'2',titulo:'Despesas Fixas',desc:'Aluguel, luz, água, salários e todos os gastos que sempre têm',ok:totInd>0,cor:'#f59e0b'},
+                  {n:'3',titulo:'Despesas Variáveis',desc:'Imposto, produtos usados, comissões e taxa do cartão deste mês',ok:totDiretas>0,cor:'#ef4444'},
+                  {n:'4',titulo:'Veja o Resultado',desc:'Role até o final — seu lucro, ponto de equilíbrio e situação aparecem automaticamente',ok:fatN>0&&totInd>0&&totDiretas>0,cor:'#7c5cfc'},
+                ].map(p=>(
+                  <div key={p.n} className="rounded-xl p-3 border text-center" style={{background:p.ok?`${p.cor}10`:'#111827',borderColor:p.ok?p.cor+'40':'#1e293b'}}>
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold mx-auto mb-2"
+                      style={{background:p.ok?p.cor:'#1e293b',color:p.ok?'white':'#475569'}}>
+                      {p.ok?'✓':p.n}
+                    </div>
+                    <p className="text-[10px] font-bold mb-1" style={{color:p.ok?p.cor:'#94a3b8'}}>Passo {p.n}: {p.titulo}</p>
+                    <p className="text-[9px] leading-tight" style={{color:'#475569'}}>{p.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {/* Card configurações */}
             <div className="rounded-2xl p-5 border" style={{background:'#111827',borderColor:'#7c5cfc40'}}>
               <h3 className="font-bold text-sm mb-4" style={{color:'#7c5cfc'}}>⚙️ Configurações</h3>
@@ -1189,6 +1211,164 @@ Use números reais. Seja direto.`
                       </div>
                     </div>
                   ))}
+                </div>
+
+                {/* ══ RESUMO FINANCEIRO COMPLETO ══ */}
+                <div className="rounded-2xl border overflow-hidden" style={{borderColor:'#7c5cfc50'}}>
+                  <div className="px-5 py-4 border-b" style={{background:'linear-gradient(135deg,#0d1525,#111827)',borderColor:'#1e293b'}}>
+                    <h2 className="font-bold text-base text-white flex items-center gap-2">📊 Resumo da Situação Financeira — {MESES_NOMES[mesSel]}/{anoSel}</h2>
+                    <p className="text-xs mt-1" style={{color:'#64748b'}}>Tudo que você precisa saber sobre a saúde financeira do seu salão neste mês.</p>
+                  </div>
+
+                  {/* Semáforo geral */}
+                  {(() => {
+                    const lucroReal = fatN > 0 ? resultOp / fatN * 100 : 0
+                    const acimaPE = fatN >= pe && pe > 0
+                    let cor = '#10b981', icone = '🟢', titulo = 'SAUDÁVEL', msg = 'Parabéns! O salão está lucrando e acima do ponto de equilíbrio.'
+                    if (!acimaPE || lucroReal < 0) { cor='#ef4444'; icone='🔴'; titulo='ATENÇÃO URGENTE'; msg='O salão está operando abaixo do ponto de equilíbrio. Os gastos superam a receita.' }
+                    else if (lucroReal < 10) { cor='#f59e0b'; icone='🟡'; titulo='ATENÇÃO'; msg='O salão cobre os custos, mas a margem de lucro está baixa. É hora de revisar os gastos.' }
+                    return (
+                      <div className="p-5 border-b" style={{background:`${cor}08`,borderColor:`${cor}30`}}>
+                        <div className="flex items-center gap-4">
+                          <div className="text-4xl">{icone}</div>
+                          <div className="flex-1">
+                            <p className="text-lg font-bold" style={{color:cor}}>Situação: {titulo}</p>
+                            <p className="text-sm mt-1" style={{color:'#94a3b8'}}>{msg}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs" style={{color:'#64748b'}}>Lucro do mês</p>
+                            <p className="text-2xl font-bold" style={{color:cor}}>{fmtR(resultOp)}</p>
+                            <p className="text-xs" style={{color:cor+'99'}}>{lucroReal.toFixed(1)}% do faturamento</p>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })()}
+
+                  {/* O que entrou e o que saiu */}
+                  <div className="p-5 border-b" style={{borderColor:'#1e293b'}}>
+                    <p className="text-xs font-bold mb-4" style={{color:'#94a3b8'}}>💰 PARA ONDE FOI O SEU DINHEIRO</p>
+                    <div className="space-y-3">
+                      {/* Barra de faturamento */}
+                      <div className="flex items-center gap-3">
+                        <div className="w-32 text-xs text-right" style={{color:'#cbd5e1'}}>Faturamento</div>
+                        <div className="flex-1 rounded-full h-6 relative overflow-hidden" style={{background:'#1e293b'}}>
+                          <div className="h-6 rounded-full flex items-center px-3" style={{width:'100%',background:'#10b98130',border:'1px solid #10b98150'}}>
+                            <span className="text-[10px] font-bold" style={{color:'#10b981'}}>{fmtR(fatN)} = 100%</span>
+                          </div>
+                        </div>
+                      </div>
+                      {[
+                        {l:'Despesas Diretas',v:totDiretas,c:'#ef4444',desc:'Comissões, produtos, imposto, cartão'},
+                        {l:'Despesas Fixas',v:custoOp,c:'#f59e0b',desc:'Aluguel, luz, salários, provisões, depreciação'},
+                        {l:'Outras Despesas',v:n(aquisicaoEq)+n(distSocios),c:'#06b6d4',desc:'Equipamentos, distribuição de sócios'},
+                        {l:'LUCRO LÍQUIDO',v:Math.max(0,resultOp),c:'#7c5cfc',desc:'O que sobrou para você'},
+                      ].filter(i=>i.v>0).map((item,idx)=>{
+                        const pct = fatN > 0 ? (item.v/fatN)*100 : 0
+                        return (
+                          <div key={idx} className="flex items-center gap-3">
+                            <div className="w-32 text-xs text-right" style={{color:'#cbd5e1'}}>{item.l}</div>
+                            <div className="flex-1 rounded-full h-6 relative overflow-hidden" style={{background:'#1e293b'}}>
+                              <div className="h-6 rounded-full flex items-center px-3 transition-all" style={{width:`${Math.max(pct,3)}%`,background:`${item.c}25`,border:`1px solid ${item.c}50`}}>
+                                <span className="text-[10px] font-bold whitespace-nowrap" style={{color:item.c}}>{fmtR(item.v)} ({pct.toFixed(1)}%)</span>
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                      {resultOp < 0 && (
+                        <div className="flex items-center gap-3">
+                          <div className="w-32 text-xs text-right" style={{color:'#ef4444'}}>PREJUÍZO</div>
+                          <div className="flex-1 rounded-full h-6 flex items-center px-3" style={{background:'#ef444415',border:'1px solid #ef444440'}}>
+                            <span className="text-[10px] font-bold" style={{color:'#ef4444'}}>🚨 {fmtR(Math.abs(resultOp))} de prejuízo neste mês</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Números-chave em linguagem simples */}
+                  <div className="p-5 border-b" style={{borderColor:'#1e293b'}}>
+                    <p className="text-xs font-bold mb-4" style={{color:'#94a3b8'}}>🎯 OS NÚMEROS QUE VOCÊ PRECISA SABER</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="rounded-xl p-4" style={{background:'#0a0f1a',border:'1px solid #1e293b'}}>
+                        <p className="text-xs mb-1" style={{color:'#64748b'}}>⚖️ Ponto de Equilíbrio</p>
+                        <p className="text-xl font-bold" style={{color:'#10b981'}}>{fmtR(pe)}</p>
+                        <p className="text-[10px] mt-1" style={{color:'#475569'}}>É o mínimo que você precisa faturar para não ter prejuízo.</p>
+                        <p className="text-[10px] mt-1 font-bold" style={{color:fatN>=pe&&pe>0?'#10b981':'#ef4444'}}>
+                          {pe===0?'Preencha as despesas acima':fatN>=pe?`✅ Você está ${fmtR(fatN-pe)} ACIMA do equilíbrio`:`🚨 Falta ${fmtR(pe-fatN)} para cobrir todos os custos`}
+                        </p>
+                      </div>
+                      <div className="rounded-xl p-4" style={{background:'#0a0f1a',border:'1px solid #1e293b'}}>
+                        <p className="text-xs mb-1" style={{color:'#64748b'}}>🎯 Para ter {lucroD}% de Lucro</p>
+                        <p className="text-xl font-bold" style={{color:'#a78bfa'}}>{fmtR(peLucro)}</p>
+                        <p className="text-[10px] mt-1" style={{color:'#475569'}}>Faturamento necessário para atingir sua meta de lucro.</p>
+                        <p className="text-[10px] mt-1 font-bold" style={{color:fatN>=peLucro&&peLucro>0?'#10b981':'#f59e0b'}}>
+                          {peLucro===0?'—':fatN>=peLucro?`✅ Meta atingida!`:`Falta ${fmtR(peLucro-fatN)} para a meta`}
+                        </p>
+                      </div>
+                      <div className="rounded-xl p-4" style={{background:'#0a0f1a',border:'1px solid #1e293b'}}>
+                        <p className="text-xs mb-1" style={{color:'#64748b'}}>💼 Retorno sobre Investimento</p>
+                        <p className="text-xl font-bold" style={{color:rentab>0?'#10b981':'#ef4444'}}>{n(invInicial)>0?(rentab*100).toFixed(2)+'%':'—'}</p>
+                        <p className="text-[10px] mt-1" style={{color:'#475569'}}>
+                          {n(invInicial)>0?`Para cada R$100 investidos, você recuperou R$${(rentab*100).toFixed(2)}.`:'Informe o Investimento Inicial para calcular.'}
+                        </p>
+                      </div>
+                      <div className="rounded-xl p-4" style={{background:'#0a0f1a',border:'1px solid #1e293b'}}>
+                        <p className="text-xs mb-1" style={{color:'#64748b'}}>🏦 Reserva de Emergência Ideal</p>
+                        <p className="text-xl font-bold" style={{color:'#06b6d4'}}>{fmtR(capGiro)}</p>
+                        <p className="text-[10px] mt-1" style={{color:'#475569'}}>3 meses de custos guardados para emergências.</p>
+                        <p className="text-[10px] mt-1 font-bold" style={{color:n(reservaEmerg)>=capGiro&&capGiro>0?'#10b981':'#f59e0b'}}>
+                          {capGiro===0?'—':n(reservaEmerg)>=capGiro?'✅ Reserva adequada':`Você tem ${fmtR(n(reservaEmerg))} — falta ${fmtR(capGiro-n(reservaEmerg))}`}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Diagnóstico dos custos */}
+                  <div className="p-5 border-b" style={{borderColor:'#1e293b'}}>
+                    <p className="text-xs font-bold mb-3" style={{color:'#94a3b8'}}>🔍 DIAGNÓSTICO DOS SEUS CUSTOS</p>
+                    <div className="space-y-2">
+                      {[
+                        {nome:'Aluguel',valor:n(despInd.find(d=>d.nome==='Aluguel')?.valor||'0'),limite:10,dica:'O ideal é até 10% do faturamento.'},
+                        {nome:'Salários',valor:n(despInd.find(d=>d.nome==='Salários')?.valor||'0'),limite:40,dica:'O ideal é entre 35% e 45%.'},
+                        {nome:'Rateio/Comissão',valor:n(rateio),limite:50,dica:'Geralmente 40% a 55% do faturamento em comissões.'},
+                        {nome:'Produto/Insumo',valor:n(produto),limite:12,dica:'O ideal é entre 8% e 12% do faturamento.'},
+                        {nome:'Marketing',valor:n(despInd.find(d=>d.nome==='Marketing e Publicidade')?.valor||'0'),limite:5,dica:'Invista entre 3% e 5% do faturamento.'},
+                      ].filter(c=>c.valor>0&&fatN>0).map((c,i)=>{
+                        const pct = (c.valor/fatN)*100
+                        const ok = pct <= c.limite
+                        return (
+                          <div key={i} className="flex items-center gap-3 p-2 rounded-lg" style={{background:'#0a0f1a'}}>
+                            <span className="text-xs w-3">{ok?'✅':'⚠️'}</span>
+                            <div className="flex-1">
+                              <div className="flex justify-between items-center mb-0.5">
+                                <span className="text-xs font-bold" style={{color:'#cbd5e1'}}>{c.nome}</span>
+                                <span className="text-xs font-bold" style={{color:ok?'#10b981':'#f59e0b'}}>{fmtR(c.valor)} ({pct.toFixed(1)}%)</span>
+                              </div>
+                              <p className="text-[9px]" style={{color:'#475569'}}>{c.dica} {ok?'':'Você está acima.'}</p>
+                            </div>
+                          </div>
+                        )
+                      })}
+                      {fatN===0&&<p className="text-xs text-center py-3" style={{color:'#475569'}}>Preencha o faturamento e as despesas para ver o diagnóstico.</p>}
+                    </div>
+                  </div>
+
+                  {/* Próximos passos */}
+                  {fatN > 0 && (
+                    <div className="p-5">
+                      <p className="text-xs font-bold mb-3" style={{color:'#94a3b8'}}>💡 O QUE FAZER AGORA</p>
+                      <div className="space-y-2">
+                        {resultOp < 0 && <div className="flex gap-2 p-3 rounded-xl" style={{background:'#ef444415',border:'1px solid #ef444430'}}><span>🚨</span><p className="text-xs" style={{color:'#fca5a5'}}>Seus gastos estão maiores que sua receita. Revise urgentemente as despesas diretas e veja se é possível aumentar o faturamento.</p></div>}
+                        {fatN < pe && pe > 0 && resultOp >= 0 && <div className="flex gap-2 p-3 rounded-xl" style={{background:'#f59e0b15',border:'1px solid #f59e0b30'}}><span>⚠️</span><p className="text-xs" style={{color:'#fbbf24'}}>Você está abaixo do ponto de equilíbrio. Tente aumentar o faturamento em {fmtR(pe-fatN)} ou reduzir os custos fixos.</p></div>}
+                        {pe > 0 && fatN >= pe && fatN < peLucro && <div className="flex gap-2 p-3 rounded-xl" style={{background:'#7c5cfc15',border:'1px solid #7c5cfc30'}}><span>📈</span><p className="text-xs" style={{color:'#a78bfa'}}>Você cobre os custos, mas ainda não atingiu sua meta de lucro. Falta {fmtR(peLucro-fatN)} de faturamento. Adicione mais clientes ou suba o ticket médio.</p></div>}
+                        {peLucro > 0 && fatN >= peLucro && <div className="flex gap-2 p-3 rounded-xl" style={{background:'#10b98115',border:'1px solid #10b98130'}}><span>🏆</span><p className="text-xs" style={{color:'#6ee7b7'}}>Excelente! Você superou a meta de lucro. Agora pense em guardar parte do lucro na reserva de emergência e considere reinvestir no salão.</p></div>}
+                        {n(reservaEmerg) < capGiro && capGiro > 0 && <div className="flex gap-2 p-3 rounded-xl" style={{background:'#06b6d415',border:'1px solid #06b6d430'}}><span>💰</span><p className="text-xs" style={{color:'#67e8f9'}}>Sua reserva de emergência está abaixo do ideal. Tente guardar pelo menos {fmtR(capGiro/12)}/mês até atingir {fmtR(capGiro)}.</p></div>}
+                        <div className="flex gap-2 p-3 rounded-xl" style={{background:'#7c5cfc15',border:'1px solid #7c5cfc30'}}><span>📅</span><p className="text-xs" style={{color:'#a78bfa'}}>Salve os dados deste mês clicando em <strong>"Salvar {MESES_NOMES[mesSel]}"</strong> no topo para comparar com os próximos meses.</p></div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Botão IA */}
