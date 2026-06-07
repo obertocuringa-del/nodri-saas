@@ -1262,7 +1262,7 @@ Use números reais. Seja direto.`
                         {l:'Despesas Diretas',v:totDiretas,c:'#ef4444',desc:'Comissões, produtos, imposto, cartão'},
                         {l:'Despesas Fixas',v:custoOp,c:'#f59e0b',desc:'Aluguel, luz, salários, provisões, depreciação'},
                         {l:'Outras Despesas',v:n(aquisicaoEq)+n(distSocios),c:'#06b6d4',desc:'Equipamentos, distribuição de sócios'},
-                        {l:'LUCRO LÍQUIDO',v:Math.max(0,resultOp),c:'#7c5cfc',desc:'O que sobrou para você'},
+                        {l:'LUCRO LÍQUIDO',v:Math.max(0,resultOp-totOutras),c:'#7c5cfc',desc:'O que sobrou para você depois de tudo'},
                       ].filter(i=>i.v>0).map((item,idx)=>{
                         const pct = fatN > 0 ? (item.v/fatN)*100 : 0
                         return (
