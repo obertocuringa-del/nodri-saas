@@ -30,13 +30,55 @@ const ITENS_PADRAO: Omit<Item, 'id'>[] = [
 ]
 
 export default function CalculadoraCustoPage() {
-  const [aba, setAba] = useState<'custo' | 'cadeira' | 'metro'>('custo')
+  const [aba, setAba] = useState<'custo' | 'cadeira' | 'metro' | 'servicos'>('custo')
   const [faturamento, setFaturamento] = useState('')
   const [ticketMedio, setTicketMedio] = useState('')
   const [loadingIA, setLoadingIA] = useState(false)
   const [analiseIA, setAnaliseIA] = useState('')
   const [erroIA, setErroIA] = useState('')
   const [itens, setItens] = useState<Item[]>(ITENS_PADRAO.map((i, idx) => ({ ...i, id: idx + 1 })))
+  // Serviços
+  interface Servico { id: number; nome: string; preco: string; despDireta: string; produto: string; imposto: string }
+  const [servicos, setServicos] = useState<Servico[]>([
+    { id: 1, nome: '', preco: '', despDireta: '', produto: '', imposto: '' }
+  ])
+  const [proxServ, setProxServ] = useState(2)
+  const [taxaCartao, setTaxaCartao] = useState('5')
+  const [custoOperServico, setCustoOperServico] = useState('30')
+  const [salaoParceiro, setSalaoParceiro] = useState(false)
+
+  function adicionarServico() {
+    setServicos(prev => [...prev, { id: proxServ, nome: '', preco: '', despDireta: '', produto: '', imposto: '' }])
+    setProxServ(p => p + 1)
+  }
+  function removerServico(id: number) {
+    setServicos(prev => prev.filter(s => s.id !== id))
+  }
+  function atualizarServico(id: number, campo: keyof Servico, val: string) {
+    setServicos(prev => prev.map(s => s.id === id ? { ...s, [campo]: val } : s))
+  }
+  function calcularServico(s: Servico) {
+    const preco = parseFloat(s.preco.replace(',', '.')) || 0
+    const despDir = parseFloat(s.despDireta.replace(',', '.')) / 100 || 0
+    const produto = parseFloat(s.produto.replace(',', '.')) || 0
+    const imposto = parseFloat(s.imposto.replace(',', '.')) / 100 || 0
+    const taxaC = parseFloat(taxaCartao.replace(',', '.')) / 100 || 0
+    const custoOp = parseFloat(custoOperServico.replace(',', '.')) / 100 || 0
+    if (!preco) return null
+
+    const rateio = preco * despDir
+    const cartao = preco * taxaC
+    const impostoR = salaoParceiro ? (preco - rateio) * imposto : preco * imposto
+    const total = rateio + produto + cartao + impostoR
+    const margemOp = preco - total
+    const margemOpPct = preco > 0 ? margemOp / preco : 0
+    const custoOpR = preco * custoOp
+    const resultado = preco - total - custoOpR
+    const resultadoPct = preco > 0 ? resultado / preco : 0
+
+    return { preco, rateio, produto, cartao, impostoR, total, totalPct: total/preco, margemOp, margemOpPct, custoOpR, custoOpPct: custoOp, resultado, resultadoPct }
+  }
+
   // Aluguel de cadeira
   const [numCadeiras, setNumCadeiras] = useState('')
   const [custoOperacionalCadeira, setCustoOperacionalCadeira] = useState('')
@@ -326,6 +368,7 @@ Seja direto e use números reais.`
         <div className="flex gap-2 mb-6 p-1 rounded-xl" style={{ background: '#111827' }}>
           {([
             { id: 'custo', label: 'Custo Operacional', icon: '💰' },
+            { id: 'servicos', label: 'Calcular Serviços', icon: '💇' },
             { id: 'cadeira', label: 'Aluguel de Cadeira', icon: '💺' },
             { id: 'metro', label: 'Faturamento por M²', icon: '📐' },
           ] as const).map(a => (
@@ -336,6 +379,168 @@ Seja direto e use números reais.`
             </button>
           ))}
         </div>
+
+        {/* ── ABA CALCULAR SERVIÇOS ── */}
+        {aba === 'servicos' && (
+          <div className="space-y-4">
+            {/* Parâmetros globais */}
+            <div className="rounded-2xl p-5 border" style={{ background: '#111827', borderColor: '#7c5cfc40' }}>
+              <h3 className="font-bold text-sm mb-3" style={{ color: '#7c5cfc' }}>⚙️ Parâmetros Globais</h3>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-bold mb-1" style={{ color: '#94a3b8' }}>Taxa do Cartão (%)</label>
+                  <p className="text-xs mb-1" style={{ color: '#475569' }}>Média das maquininhas</p>
+                  <div className="relative">
+                    <input type="number" value={taxaCartao} onChange={e => setTaxaCartao(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg text-white text-sm focus:outline-none"
+                      style={{ background: '#0a0f1a', border: '1px solid #334155' }} />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs" style={{ color: '#64748b' }}>%</span>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold mb-1" style={{ color: '#94a3b8' }}>Custo Operacional (%)</label>
+                  <p className="text-xs mb-1" style={{ color: '#475569' }}>
+                    {totalCustos > 0 && fat > 0 ? `Calculado: ${((totalCustos/fat)*100).toFixed(1)}%` : 'Do custo operacional'}
+                  </p>
+                  <div className="relative">
+                    <input type="number"
+                      value={custoOperServico}
+                      onChange={e => setCustoOperServico(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg text-white text-sm focus:outline-none"
+                      style={{ background: '#0a0f1a', border: '1px solid #334155' }} />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs" style={{ color: '#64748b' }}>%</span>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold mb-1" style={{ color: '#94a3b8' }}>Lei do Salão Parceiro</label>
+                  <p className="text-xs mb-1" style={{ color: '#475569' }}>Imposto sobre margem</p>
+                  <button onClick={() => setSalaoParceiro(p => !p)}
+                    className="w-full py-2 rounded-lg text-sm font-bold transition-all"
+                    style={{ background: salaoParceiro ? '#10b981' : '#1e293b', color: salaoParceiro ? 'white' : '#64748b', border: `1px solid ${salaoParceiro ? '#10b981' : '#334155'}` }}>
+                    {salaoParceiro ? '✅ SIM' : 'NÃO'}
+                  </button>
+                </div>
+              </div>
+              {totalCustos > 0 && fat > 0 && (
+                <div className="mt-3 p-2 rounded-lg text-xs" style={{ background: '#7c5cfc10', color: '#a78bfa', border: '1px solid #7c5cfc20' }}>
+                  ✨ Custo operacional da sua calculadora: <strong>{((totalCustos/fat)*100).toFixed(1)}%</strong> — clique no campo e use esse valor para maior precisão
+                </div>
+              )}
+            </div>
+
+            {/* Lista de serviços */}
+            <div className="rounded-2xl border overflow-hidden" style={{ background: '#111827', borderColor: '#1e293b' }}>
+              {/* Header */}
+              <div className="grid gap-2 px-4 py-3 text-xs font-bold uppercase tracking-wider border-b"
+                style={{ background: '#0d1525', borderColor: '#1e293b', color: '#64748b', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 20px' }}>
+                <div>Serviço</div>
+                <div>Preço (R$)</div>
+                <div>Desp. Diretas (%)</div>
+                <div>Produto (R$)</div>
+                <div>Imposto (%)</div>
+                <div></div>
+              </div>
+
+              {/* Linhas */}
+              <div className="divide-y" style={{ borderColor: '#1e293b20' }}>
+                {servicos.map((s) => {
+                  const calc = calcularServico(s)
+                  const corResultado = calc && calc.resultado > 0 ? '#10b981' : '#ef4444'
+                  return (
+                    <div key={s.id}>
+                      {/* Inputs */}
+                      <div className="grid gap-2 px-4 py-3 items-center"
+                        style={{ gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 20px' }}>
+                        <input value={s.nome} onChange={e => atualizarServico(s.id, 'nome', e.target.value)}
+                          placeholder="Nome do serviço"
+                          className="w-full px-3 py-2 rounded-lg text-sm text-white focus:outline-none"
+                          style={{ background: '#0a0f1a', border: '1px solid #1e293b' }} />
+                        <div className="relative">
+                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: '#64748b' }}>R$</span>
+                          <input type="number" value={s.preco} onChange={e => atualizarServico(s.id, 'preco', e.target.value)}
+                            placeholder="0"
+                            className="w-full pl-7 pr-2 py-2 rounded-lg text-sm text-white focus:outline-none"
+                            style={{ background: '#0a0f1a', border: `1px solid ${s.preco ? '#7c5cfc40' : '#1e293b'}` }} />
+                        </div>
+                        <div className="relative">
+                          <input type="number" value={s.despDireta} onChange={e => atualizarServico(s.id, 'despDireta', e.target.value)}
+                            placeholder="0"
+                            className="w-full pr-6 pl-3 py-2 rounded-lg text-sm text-white focus:outline-none"
+                            style={{ background: '#0a0f1a', border: '1px solid #1e293b' }} />
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: '#64748b' }}>%</span>
+                        </div>
+                        <div className="relative">
+                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: '#64748b' }}>R$</span>
+                          <input type="number" value={s.produto} onChange={e => atualizarServico(s.id, 'produto', e.target.value)}
+                            placeholder="0"
+                            className="w-full pl-7 pr-2 py-2 rounded-lg text-sm text-white focus:outline-none"
+                            style={{ background: '#0a0f1a', border: '1px solid #1e293b' }} />
+                        </div>
+                        <div className="relative">
+                          <input type="number" value={s.imposto} onChange={e => atualizarServico(s.id, 'imposto', e.target.value)}
+                            placeholder="0"
+                            className="w-full pr-6 pl-3 py-2 rounded-lg text-sm text-white focus:outline-none"
+                            style={{ background: '#0a0f1a', border: '1px solid #1e293b' }} />
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: '#64748b' }}>%</span>
+                        </div>
+                        <button onClick={() => removerServico(s.id)} className="text-center" style={{ color: '#475569' }}>
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+
+                      {/* Resultado calculado */}
+                      {calc && (
+                        <div className="mx-4 mb-3 rounded-xl overflow-hidden border" style={{ borderColor: '#1e293b' }}>
+                          <div className="grid grid-cols-4 divide-x text-center py-2" style={{ background: '#0a0f1a', borderColor: '#1e293b' }}>
+                            {[
+                              { l: 'Total Despesas', v: fmtR(calc.total), p: `${(calc.totalPct*100).toFixed(1)}%`, c: '#f59e0b' },
+                              { l: 'Margem Operacional', v: fmtR(calc.margemOp), p: `${(calc.margemOpPct*100).toFixed(1)}%`, c: '#06b6d4' },
+                              { l: 'Custo Operacional', v: fmtR(calc.custoOpR), p: `${(calc.custoOpPct*100).toFixed(1)}%`, c: '#a78bfa' },
+                              { l: 'RESULTADO LÍQUIDO', v: fmtR(calc.resultado), p: `${(calc.resultadoPct*100).toFixed(1)}%`, c: corResultado },
+                            ].map((item, i) => (
+                              <div key={i} className="px-2 py-1">
+                                <p className="text-[9px] uppercase tracking-wider mb-0.5" style={{ color: '#475569' }}>{item.l}</p>
+                                <p className="text-sm font-bold" style={{ color: item.c }}>{item.v}</p>
+                                <p className="text-[10px]" style={{ color: item.c + '99' }}>{item.p}</p>
+                              </div>
+                            ))}
+                          </div>
+                          {/* Breakdown detalhado */}
+                          <div className="grid grid-cols-4 divide-x text-center py-1.5 border-t text-[10px]" style={{ background: '#111827', borderColor: '#1e293b', color: '#64748b' }}>
+                            <div>Rateio: {fmtR(calc.rateio)} | Produto: {fmtR(calc.produto)}</div>
+                            <div>Cartão: {fmtR(calc.cartao)} ({taxaCartao}%)</div>
+                            <div>Imposto: {fmtR(calc.impostoR)}</div>
+                            <div style={{ color: calc.resultado > 0 ? '#10b981' : '#ef4444', fontWeight: 'bold' }}>
+                              {calc.resultado > 0 ? '✅ Lucrativo' : '🚨 Prejuízo'}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Botão adicionar */}
+              <div className="px-4 py-3 border-t" style={{ borderColor: '#1e293b' }}>
+                <button onClick={adicionarServico}
+                  className="flex items-center gap-2 text-sm px-4 py-2 rounded-lg transition-all"
+                  style={{ background: '#7c5cfc20', color: '#7c5cfc', border: '1px dashed #7c5cfc40' }}>
+                  <Plus size={14} /> Adicionar serviço
+                </button>
+              </div>
+            </div>
+
+            {/* Legenda das colunas */}
+            <div className="rounded-xl p-4 text-xs space-y-1" style={{ background: '#111827', border: '1px solid #1e293b', color: '#64748b' }}>
+              <p className="font-bold mb-2" style={{ color: '#94a3b8' }}>💡 Como preencher:</p>
+              <p>• <strong style={{ color: '#e2e8f0' }}>Desp. Diretas (%)</strong> — percentual das despesas indiretas do salão rateado por serviço (ex: 30%)</p>
+              <p>• <strong style={{ color: '#e2e8f0' }}>Produto (R$)</strong> — custo do produto/insumo usado no serviço (tinta, esmalte, etc.)</p>
+              <p>• <strong style={{ color: '#e2e8f0' }}>Imposto (%)</strong> — alíquota do Simples Nacional ou regime tributário (ex: 5%)</p>
+              <p>• <strong style={{ color: '#e2e8f0' }}>Lei do Salão Parceiro</strong> — se ativado, imposto incide sobre a margem, não sobre o preço total</p>
+            </div>
+          </div>
+        )}
 
         {/* ── ABA ALUGUEL DE CADEIRA ── */}
         {aba === 'cadeira' && (
