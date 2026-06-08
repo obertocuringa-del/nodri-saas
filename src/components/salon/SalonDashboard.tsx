@@ -224,6 +224,12 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
     'Precificar Serviços':           'precificar-servicos',
   }
 
+  // Módulos que abrem página web em vez de lançar programa local
+  const MODULO_WEB: Record<string, string> = {
+    'Academia NODRI':    '/salon/academia',
+    'Custo Operacional': '/salon/calculadora-custo',
+  }
+
   function handleAbrir(modulo: ModuloComStatus) {
     // Em manutenção — bloqueia mesmo que habilitado
     if (modulo.em_manutencao) {
@@ -236,6 +242,10 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
     }
     if (!modulo.habilitado) {
       toast('Entre em contato para ativar este módulo.', { icon: '🔒' })
+      return
+    }
+    if (MODULO_WEB[modulo.nome]) {
+      window.location.href = MODULO_WEB[modulo.nome]
       return
     }
     const slug = MODULO_SLUG[modulo.nome] || modulo.nome.toLowerCase().replace(/ /g, '-')
@@ -362,16 +372,6 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11.5px] border border-transparent hover:bg-white/4 hover:text-nodri-t1 transition-all"
               style={{ color: '#f97316' }}>
               📋 Pendências
-            </a>
-            <a href="/salon/academia"
-              className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11.5px] border border-transparent hover:bg-white/4 hover:text-nodri-t1 transition-all"
-              style={{ color: '#10b981' }}>
-              🎓 Academia NODRI
-            </a>
-            <a href="/salon/calculadora-custo"
-              className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11.5px] border border-transparent hover:bg-white/4 hover:text-nodri-t1 transition-all"
-              style={{ color: '#f59e0b' }}>
-              🧮 Custo Operacional
             </a>
           </nav>
 
