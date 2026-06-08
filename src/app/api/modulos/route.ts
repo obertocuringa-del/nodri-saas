@@ -35,9 +35,9 @@ export async function PUT(req: NextRequest) {
   if (!payload || payload.role !== 'master') return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   const body = await req.json()
   const { id, ...rest } = body
-  const { data, error } = await supabaseAdmin.from('modulos').update(rest).eq('id', id).select().single()
+  const { data, error } = await supabaseAdmin.from('modulos').update(rest).eq('id', id).select()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data)
+  return NextResponse.json(data?.[0] || {})
 }
 
 export async function DELETE(req: NextRequest) {
