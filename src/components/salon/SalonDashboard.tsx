@@ -318,15 +318,15 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
             <p className="text-[9px] text-nodri-t3 uppercase tracking-widest px-2.5 py-1.5 font-medium mt-1">Módulos</p>
             <button onClick={() => setFiltro('todos')}
               className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11.5px] border transition-all ${filtro === 'todos' && busca === '' ? 'bg-nodri-cyan/9 text-nodri-cyan border-nodri-cyan/17' : 'text-nodri-t2 border-transparent hover:bg-white/4 hover:text-nodri-t1'}`}>
-              ⚡ Todos os Módulos
+              Todos os Módulos
             </button>
             <button onClick={() => setFiltro('ativos')}
               className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11.5px] border transition-all ${filtro === 'ativos' ? 'bg-nodri-cyan/9 text-nodri-cyan border-nodri-cyan/17' : 'text-nodri-t2 border-transparent hover:bg-white/4 hover:text-nodri-t1'}`}>
-              ✅ Ativos
+              Ativos
             </button>
             <button onClick={() => setFiltro('bloqueados')}
               className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11.5px] border transition-all ${filtro === 'bloqueados' ? 'bg-nodri-cyan/9 text-nodri-cyan border-nodri-cyan/17' : 'text-nodri-t2 border-transparent hover:bg-white/4 hover:text-nodri-t1'}`}>
-              🔒 Bloqueados
+              Bloqueados
             </button>
 
             {/* CONTEÚDO */}
@@ -359,16 +359,16 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
             <p className="text-[9px] text-nodri-t3 uppercase tracking-widest px-2.5 py-1.5 font-medium mt-3">Ferramentas</p>
             <a href="/salon/feedback"
               className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11.5px] border border-transparent text-nodri-pink hover:bg-nodri-pink/8 hover:border-nodri-pink/20 transition-all">
-              ⭐ Feedback de Cliente
+              Feedback de Cliente
             </a>
             <a href="/salon/feedback-profissional"
               className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11.5px] border border-transparent text-nodri-purple hover:bg-nodri-purple/8 hover:border-nodri-purple/20 transition-all">
-              👥 Feedback Profissional
+              Feedback Profissional
             </a>
             <a href="/salon/pendencias"
               className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11.5px] border border-transparent hover:bg-white/4 hover:text-nodri-t1 transition-all"
               style={{ color: '#f97316' }}>
-              📋 Pendências
+              Pendências
             </a>
           </nav>
 
