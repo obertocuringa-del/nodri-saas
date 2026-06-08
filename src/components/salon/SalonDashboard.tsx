@@ -241,12 +241,12 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
       })
       return
     }
-    if (!modulo.habilitado) {
-      toast('Entre em contato para ativar este módulo.', { icon: '🔒' })
-      return
-    }
     if (MODULO_WEB[modulo.nome]) {
       window.location.href = MODULO_WEB[modulo.nome]
+      return
+    }
+    if (!modulo.habilitado) {
+      toast('Entre em contato para ativar este módulo.', { icon: '🔒' })
       return
     }
     const slug = MODULO_SLUG[modulo.nome] || modulo.nome.toLowerCase().replace(/ /g, '-')
