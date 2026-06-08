@@ -530,6 +530,18 @@ export default function CalculadoraCusto() {
   const [atualizando, setAtualizando] = useState(false)
   // Histórico para comparativo mensal
   const [historicoMeses, setHistoricoMeses] = useState<any[]>([])
+  // Catálogo de despesas
+  interface DespesaCat { id:string; nome:string; categoria:string; observacao?:string }
+  const [despesasCatalogo, setDespesasCatalogo] = useState<DespesaCat[]>([])
+  const [sugestoesPadrao, setSugestoesPadrao] = useState<{nome:string,categoria:string}[]>([])
+  const [autocomplDespesa, setAutocomplDespesa] = useState<string|null>(null)
+  // Extras para Despesas Diretas e Outras Despesas
+  const [extrasDiretas, setExtrasDiretas] = useState<DespesaItem[]>([])
+  const [extrasOutras, setExtrasOutras] = useState<DespesaItem[]>([])
+  // Gerenciar catálogo de despesas
+  const [showCatDespesa, setShowCatDespesa] = useState(false)
+  const [editDespCat, setEditDespCat] = useState<DespesaCat|null>(null)
+  const [fdNome, setFdNome] = useState(''); const [fdCat, setFdCat] = useState('indireta'); const [fdObs, setFdObs] = useState('')
   const [vlrProdEstoque,setVlrProdEstoque]= useState('')
 
   // ── Ponto de Equilíbrio ──────────────────────────────────────────────────
@@ -579,6 +591,8 @@ export default function CalculadoraCusto() {
       fat, custIndD, custDirD, lucroD, invInicial, totalDeprec,
       despInd: despInd.map(d=>({nome:d.nome,valor:d.valor})),
       extrasDespInd: extrasDespInd.map(d=>({nome:d.nome,valor:d.valor})),
+      extrasDiretas: extrasDiretas.map(d=>({nome:d.nome,valor:d.valor})),
+      extrasOutras: extrasOutras.map(d=>({nome:d.nome,valor:d.valor})),
       sal13, ferias, fgtsR, imposto, produto, rateio, taxaC,
       aquisicaoEq, distSocios, reservaEmerg, vlrProdEstoque,
       areaM2, numProfs, margemPE, metaLucroPE, fatPEManual, simDespesa,
@@ -598,6 +612,8 @@ export default function CalculadoraCusto() {
     if (d.totalDeprec !== undefined) setTotalDeprec(d.totalDeprec)
     if (d.despInd) setDespInd(DESPESAS_INDIRETAS.map((di,i)=>({...di,valor:d.despInd[i]?.valor||''})))
     if (d.extrasDespInd) setExtrasDespInd(d.extrasDespInd.map((x:any)=>({nome:x.nome,valor:x.valor,dica:''})))
+    if ((d as any).extrasDiretas) setExtrasDiretas((d as any).extrasDiretas.map((x:any)=>({nome:x.nome,valor:x.valor,dica:''})))
+    if ((d as any).extrasOutras) setExtrasOutras((d as any).extrasOutras.map((x:any)=>({nome:x.nome,valor:x.valor,dica:''})))
     if (d.sal13 !== undefined) setSal13(d.sal13)
     if (d.ferias !== undefined) setFerias(d.ferias)
     if (d.fgtsR !== undefined) setFgtsR(d.fgtsR)
@@ -748,6 +764,50 @@ export default function CalculadoraCusto() {
     }
   }, [despInd])
 
+  // Carrega catálogo de despesas
+  useEffect(() => {
+    fetch('/api/salon/despesas-catalogo', { credentials:'include' })
+      .then(r=>r.json())
+      .then(d=>{
+        if(d.despesas?.length>0) setDespesasCatalogo(d.despesas)
+        if(d.sugestoes?.length>0) setSugestoesPadrao(d.sugestoes)
+      }).catch(()=>{})
+  }, [])
+
+  async function seedDespesas() {
+    const res = await fetch('/api/salon/despesas-catalogo', { method:'POST', credentials:'include',
+      headers:{'Content-Type':'application/json'}, body:JSON.stringify({seed:true}) })
+    if(res.ok) { const d = await res.json(); setDespesasCatalogo(d.despesas||[]); setSugestoesPadrao([]) }
+  }
+
+  async function salvarDespCat(editar?: string) {
+    const url = editar ? `/api/salon/despesas-catalogo/${editar}` : '/api/salon/despesas-catalogo'
+    const method = editar ? 'PUT' : 'POST'
+    const res = await fetch(url, { method, credentials:'include',
+      headers:{'Content-Type':'application/json'}, body:JSON.stringify({nome:fdNome,categoria:fdCat,observacao:fdObs}) })
+    if(res.ok) {
+      const d = await res.json()
+      if(editar) setDespesasCatalogo(p=>p.map(x=>x.id===editar?d.despesa:x).sort((a,b)=>a.nome.localeCompare(b.nome)))
+      else setDespesasCatalogo(p=>[...p,d.despesa].sort((a,b)=>a.nome.localeCompare(b.nome)))
+      setFdNome(''); setFdCat('indireta'); setFdObs(''); setEditDespCat(null)
+    }
+  }
+
+  async function excluirDespCat(id: string) {
+    if(!confirm('Excluir esta despesa do catálogo?')) return
+    await fetch(`/api/salon/despesas-catalogo/${id}`, { method:'DELETE', credentials:'include' })
+    setDespesasCatalogo(p=>p.filter(x=>x.id!==id))
+  }
+
+  // Autocomplete de despesa — retorna lista filtrada pelo texto
+  function sugestoesDespesa(texto: string, categoria?: string) {
+    const todas = despesasCatalogo.length > 0 ? despesasCatalogo : sugestoesPadrao.map(s=>({...s,id:'',observacao:''}))
+    return todas
+      .filter(d => (!categoria || d.categoria === categoria))
+      .filter(d => !texto || d.nome.toLowerCase().includes(texto.toLowerCase()))
+      .slice(0, 8)
+  }
+
   // Carrega catálogos e histórico ao iniciar
   useEffect(() => {
     fetch('/api/salon/produtos-catalogo', { credentials:'include' })
@@ -858,12 +918,12 @@ export default function CalculadoraCusto() {
   const totInd     = despInd.reduce((s,d)=>s+n(d.valor),0) + extrasDespInd.reduce((s,d)=>s+n(d.valor),0)
   const totProvisao= n(sal13) + n(ferias) + n(fgtsR)
   const custoOp    = totInd + totProvisao + depMensal
-  const totDiretas = n(imposto) + n(produto) + n(rateio) + n(taxaC)
+  const totDiretas = n(imposto) + n(produto) + n(rateio) + n(taxaC) + extrasDiretas.reduce((s,d)=>s+n(d.valor),0)
   const margOpR    = fatN - totDiretas
   const margOpPct  = fatN > 0 ? margOpR / fatN : 0
   const resultOp   = margOpR - custoOp
   const resultOpPct= fatN > 0 ? resultOp / fatN : 0
-  const totOutras  = n(aquisicaoEq) + n(distSocios)
+  const totOutras  = n(aquisicaoEq) + n(distSocios) + extrasOutras.reduce((s,d)=>s+n(d.valor),0)
   // Fórmula DV linha 132: =ResultOp - OutrasDespesas + Depreciacao (depreciação é custo não-caixa, soma de volta)
   const resultFin  = resultOp - totOutras + depMensal
   // Fórmula DV linha 139: =ResultadoOperacao / Investimento_Inicial (ROI sobre o capital investido)
@@ -1257,7 +1317,14 @@ Use números reais. Seja direto.`
             <div className="rounded-2xl border overflow-hidden" style={{background:'#111827',borderColor:'#1e293b'}}>
               <div className="flex items-center justify-between px-5 py-3 border-b" style={{background:'#0d1525',borderColor:'#1e293b'}}>
                 <span className="font-bold text-sm" style={{color:'#f59e0b'}}>📋 Despesas Indiretas</span>
-                <span className="font-bold text-sm" style={{color:'#f59e0b'}}>{fmtR(totInd)}</span>
+                <div className="flex items-center gap-3">
+                  <button onClick={()=>setShowCatDespesa(true)}
+                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg"
+                    style={{background:'#f59e0b20',color:'#f59e0b',border:'1px solid #f59e0b40'}}>
+                    <Plus size={11}/> Gerenciar Catálogo
+                  </button>
+                  <span className="font-bold text-sm" style={{color:'#f59e0b'}}>{fmtR(totInd)}</span>
+                </div>
               </div>
               <div className="grid grid-cols-12 gap-2 px-5 py-2 text-[10px] font-bold uppercase tracking-wider border-b" style={{color:'#475569',borderColor:'#1e293b20'}}>
                 <div className="col-span-5">Despesa</div>
@@ -1294,11 +1361,20 @@ Use números reais. Seja direto.`
               {/* Extras */}
               {extrasDespInd.map((d,i)=>(
                 <div key={i} className="grid grid-cols-12 gap-2 px-5 py-2 items-center" style={{borderBottom:'1px solid #1e293b10'}}>
-                  <div className="col-span-5">
-                    <input value={d.nome} onChange={e=>{const nd=[...extrasDespInd];nd[i]={...nd[i],nome:e.target.value};setExtrasDespInd(nd)}}
+                  <div className="col-span-5 relative">
+                    <input value={d.nome} onChange={e=>{const nd=[...extrasDespInd];nd[i]={...nd[i],nome:e.target.value};setExtrasDespInd(nd);setAutocomplDespesa(`ind-${i}`)}}
+                      onFocus={()=>setAutocomplDespesa(`ind-${i}`)} onBlur={()=>setTimeout(()=>setAutocomplDespesa(null),200)}
                       placeholder="Nome da despesa"
                       className="w-full px-2 py-1 rounded-lg text-xs text-white focus:outline-none"
                       style={{background:'#0a0f1a',border:'1px solid #334155'}}/>
+                    {autocomplDespesa===`ind-${i}` && sugestoesDespesa(d.nome,'indireta').length>0 && (
+                      <div className="absolute top-full left-0 right-0 z-50 rounded-lg border shadow-xl" style={{background:'#111827',borderColor:'#334155'}}>
+                        {sugestoesDespesa(d.nome,'indireta').map((s,si)=>(
+                          <button key={si} onMouseDown={()=>{const nd=[...extrasDespInd];nd[i]={...nd[i],nome:s.nome};setExtrasDespInd(nd);setAutocomplDespesa(null)}}
+                            className="w-full text-left px-3 py-1.5 text-xs hover:bg-white/5 text-white" style={{borderBottom:'1px solid #1e293b10'}}>{s.nome}</button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div className="col-span-3">
                     <div className="relative">
@@ -1389,13 +1465,48 @@ Use números reais. Seja direto.`
                     </div>
                   </div>
                 ))}
+                {/* Extras Diretas */}
+                {extrasDiretas.map((d,i)=>(
+                  <div key={i} className="relative">
+                    <div className="flex items-center gap-1 mb-1">
+                      <div className="flex-1 relative">
+                        <input value={d.nome} onChange={e=>{const nd=[...extrasDiretas];nd[i]={...nd[i],nome:e.target.value};setExtrasDiretas(nd);setAutocomplDespesa(`dir-${i}`)}}
+                          onFocus={()=>setAutocomplDespesa(`dir-${i}`)} onBlur={()=>setTimeout(()=>setAutocomplDespesa(null),200)}
+                          placeholder="Nome da despesa" className="w-full px-2 py-1 rounded-lg text-xs text-white focus:outline-none"
+                          style={{background:'#0a0f1a',border:'1px solid #ef444440'}}/>
+                        {autocomplDespesa===`dir-${i}` && sugestoesDespesa(d.nome,'direta').length>0 && (
+                          <div className="absolute top-full left-0 right-0 z-50 rounded-lg border shadow-xl" style={{background:'#111827',borderColor:'#334155'}}>
+                            {sugestoesDespesa(d.nome,'direta').map((s,si)=>(
+                              <button key={si} onMouseDown={()=>{const nd=[...extrasDiretas];nd[i]={...nd[i],nome:s.nome};setExtrasDiretas(nd);setAutocomplDespesa(null)}}
+                                className="w-full text-left px-3 py-1.5 text-xs hover:bg-white/5 text-white" style={{borderBottom:'1px solid #1e293b10'}}>{s.nome}</button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <button onClick={()=>setExtrasDiretas(p=>p.filter((_,idx)=>idx!==i))} style={{color:'#475569'}}><Trash2 size={12}/></button>
+                    </div>
+                    <div className="relative">
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#64748b'}}>R$</span>
+                      <input type="number" value={d.valor} onChange={e=>{const nd=[...extrasDiretas];nd[i]={...nd[i],valor:e.target.value};setExtrasDiretas(nd)}}
+                        className="w-full pl-6 pr-2 py-1.5 rounded-lg text-xs text-white focus:outline-none" style={{background:'#0a0f1a',border:'1px solid #334155'}}/>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="px-5 py-3 border-t" style={{borderColor:'#1e293b'}}>
+                <button onClick={()=>setExtrasDiretas(p=>[...p,{nome:'',valor:'',dica:''}])}
+                  className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg"
+                  style={{background:'#ef444420',color:'#ef4444',border:'1px dashed #ef444440'}}>
+                  <Plus size={12}/> Adicionar despesa direta
+                </button>
               </div>
             </div>
 
             {/* Outras Despesas */}
             <div className="rounded-2xl border overflow-hidden" style={{background:'#111827',borderColor:'#1e293b'}}>
-              <div className="px-5 py-3 border-b" style={{background:'#0d1525',borderColor:'#1e293b'}}>
+              <div className="flex items-center justify-between px-5 py-3 border-b" style={{background:'#0d1525',borderColor:'#1e293b'}}>
                 <span className="font-bold text-sm" style={{color:'#06b6d4'}}>💸 Outras Despesas / Gasto de Capital</span>
+                <span className="font-bold text-sm" style={{color:'#06b6d4'}}>{fmtR(n(aquisicaoEq)+n(distSocios)+extrasOutras.reduce((s,d)=>s+n(d.valor),0))}</span>
               </div>
               <div className="grid grid-cols-2 gap-4 p-5">
                 {[
@@ -1416,6 +1527,40 @@ Use números reais. Seja direto.`
                     </div>
                   </div>
                 ))}
+                {/* Extras Outras */}
+                {extrasOutras.map((d,i)=>(
+                  <div key={i} className="relative">
+                    <div className="flex items-center gap-1 mb-1">
+                      <div className="flex-1 relative">
+                        <input value={d.nome} onChange={e=>{const nd=[...extrasOutras];nd[i]={...nd[i],nome:e.target.value};setExtrasOutras(nd);setAutocomplDespesa(`out-${i}`)}}
+                          onFocus={()=>setAutocomplDespesa(`out-${i}`)} onBlur={()=>setTimeout(()=>setAutocomplDespesa(null),200)}
+                          placeholder="Nome da despesa" className="w-full px-2 py-1 rounded-lg text-xs text-white focus:outline-none"
+                          style={{background:'#0a0f1a',border:'1px solid #06b6d440'}}/>
+                        {autocomplDespesa===`out-${i}` && sugestoesDespesa(d.nome,'outras').length>0 && (
+                          <div className="absolute top-full left-0 right-0 z-50 rounded-lg border shadow-xl" style={{background:'#111827',borderColor:'#334155'}}>
+                            {sugestoesDespesa(d.nome,'outras').map((s,si)=>(
+                              <button key={si} onMouseDown={()=>{const nd=[...extrasOutras];nd[i]={...nd[i],nome:s.nome};setExtrasOutras(nd);setAutocomplDespesa(null)}}
+                                className="w-full text-left px-3 py-1.5 text-xs hover:bg-white/5 text-white" style={{borderBottom:'1px solid #1e293b10'}}>{s.nome}</button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <button onClick={()=>setExtrasOutras(p=>p.filter((_,idx)=>idx!==i))} style={{color:'#475569'}}><Trash2 size={12}/></button>
+                    </div>
+                    <div className="relative">
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#64748b'}}>R$</span>
+                      <input type="number" value={d.valor} onChange={e=>{const nd=[...extrasOutras];nd[i]={...nd[i],valor:e.target.value};setExtrasOutras(nd)}}
+                        className="w-full pl-6 pr-2 py-1.5 rounded-lg text-xs text-white focus:outline-none" style={{background:'#0a0f1a',border:'1px solid #334155'}}/>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="px-5 py-3 border-t" style={{borderColor:'#1e293b'}}>
+                <button onClick={()=>setExtrasOutras(p=>[...p,{nome:'',valor:'',dica:''}])}
+                  className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg"
+                  style={{background:'#06b6d420',color:'#06b6d4',border:'1px dashed #06b6d440'}}>
+                  <Plus size={12}/> Adicionar outra despesa
+                </button>
               </div>
             </div>
 
@@ -2798,6 +2943,112 @@ Use números reais. Seja direto.`
         )}
 
       </div>
+
+      {/* Modal Catálogo de Despesas */}
+      {showCatDespesa && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.75)'}}>
+          <div className="rounded-2xl border w-full max-w-2xl shadow-2xl flex flex-col" style={{background:'#111827',borderColor:'#f59e0b50',maxHeight:'90vh'}}>
+            <div className="flex items-center justify-between px-6 py-4 border-b" style={{borderColor:'#1e293b'}}>
+              <div>
+                <h2 className="font-bold text-base" style={{color:'#f59e0b'}}>📋 Catálogo de Despesas</h2>
+                <p className="text-xs mt-0.5" style={{color:'#64748b'}}>Cadastre suas despesas para usar autocomplete em todos os campos</p>
+              </div>
+              <button onClick={()=>{setShowCatDespesa(false);setEditDespCat(null);setFdNome('');setFdCat('indireta');setFdObs('')}}
+                className="p-2 rounded-lg hover:bg-white/5" style={{color:'#94a3b8'}}><X size={18}/></button>
+            </div>
+
+            {/* Formulário */}
+            <div className="px-6 py-4 border-b" style={{borderColor:'#1e293b',background:'#0d1525'}}>
+              <p className="text-xs font-bold mb-3" style={{color:'#94a3b8'}}>{editDespCat ? '✏️ Editando despesa' : '➕ Nova despesa'}</p>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="col-span-2">
+                  <label className="text-[10px] font-bold mb-1 block" style={{color:'#64748b'}}>NOME DA DESPESA</label>
+                  <input value={fdNome} onChange={e=>setFdNome(e.target.value)} placeholder="Ex: Aluguel, Internet, Salários..."
+                    className="w-full px-3 py-2 rounded-lg text-sm text-white focus:outline-none"
+                    style={{background:'#111827',border:'1px solid #334155'}}/>
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold mb-1 block" style={{color:'#64748b'}}>CATEGORIA</label>
+                  <select value={fdCat} onChange={e=>setFdCat(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg text-sm text-white focus:outline-none"
+                    style={{background:'#111827',border:'1px solid #334155'}}>
+                    <option value="indireta">Indireta (fixa)</option>
+                    <option value="direta">Direta</option>
+                    <option value="outras">Outras / Capital</option>
+                  </select>
+                </div>
+              </div>
+              <div className="mt-3">
+                <label className="text-[10px] font-bold mb-1 block" style={{color:'#64748b'}}>OBSERVAÇÃO (opcional)</label>
+                <input value={fdObs} onChange={e=>setFdObs(e.target.value)} placeholder="Descrição ou dica para esta despesa"
+                  className="w-full px-3 py-2 rounded-lg text-sm text-white focus:outline-none"
+                  style={{background:'#111827',border:'1px solid #334155'}}/>
+              </div>
+              <div className="flex gap-2 mt-3">
+                <button onClick={()=>salvarDespCat(editDespCat?.id)} disabled={!fdNome.trim()}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold disabled:opacity-40"
+                  style={{background:'#f59e0b',color:'#000'}}>
+                  <Save size={14}/> {editDespCat ? 'Salvar alteração' : 'Adicionar'}
+                </button>
+                {editDespCat && (
+                  <button onClick={()=>{setEditDespCat(null);setFdNome('');setFdCat('indireta');setFdObs('')}}
+                    className="px-4 py-2 rounded-lg text-sm" style={{background:'#1e293b',color:'#94a3b8'}}>
+                    Cancelar
+                  </button>
+                )}
+                {despesasCatalogo.length === 0 && (
+                  <button onClick={seedDespesas}
+                    className="ml-auto px-4 py-2 rounded-lg text-xs" style={{background:'#1e293b',color:'#94a3b8',border:'1px dashed #334155'}}>
+                    Pré-popular com despesas padrão
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Lista */}
+            <div className="overflow-y-auto flex-1 px-6 py-4">
+              {despesasCatalogo.length === 0 ? (
+                <p className="text-center py-8 text-sm" style={{color:'#475569'}}>Nenhuma despesa cadastrada ainda. Adicione acima ou clique em "Pré-popular".</p>
+              ) : (
+                <>
+                  {(['indireta','direta','outras'] as const).map(cat=>{
+                    const itens = despesasCatalogo.filter(d=>d.categoria===cat)
+                    if(!itens.length) return null
+                    const catLabel = cat==='indireta'?'📋 Indiretas (fixas)':cat==='direta'?'📌 Diretas':'💸 Outras / Capital'
+                    const catCor = cat==='indireta'?'#f59e0b':cat==='direta'?'#ef4444':'#06b6d4'
+                    return (
+                      <div key={cat} className="mb-4">
+                        <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{color:catCor}}>{catLabel}</p>
+                        <div className="space-y-1">
+                          {itens.map(d=>(
+                            <div key={d.id} className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-white/3" style={{background:'#0d1525',border:'1px solid #1e293b10'}}>
+                              <div>
+                                <span className="text-sm text-white">{d.nome}</span>
+                                {d.observacao && <span className="ml-2 text-[10px]" style={{color:'#475569'}}>{d.observacao}</span>}
+                              </div>
+                              <div className="flex gap-2">
+                                <button onClick={()=>{setEditDespCat(d);setFdNome(d.nome);setFdCat(d.categoria);setFdObs(d.observacao||'')}}
+                                  className="p-1.5 rounded-lg hover:bg-white/5" style={{color:'#f59e0b'}} title="Editar">
+                                  <Save size={12}/>
+                                </button>
+                                <button onClick={()=>excluirDespCat(d.id)}
+                                  className="p-1.5 rounded-lg hover:bg-white/5" style={{color:'#ef4444'}} title="Excluir">
+                                  <Trash2 size={12}/>
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   )
 
