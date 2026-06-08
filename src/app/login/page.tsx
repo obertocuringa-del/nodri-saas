@@ -89,11 +89,11 @@ export default function LoginPage() {
           <div className="mt-4 pt-4 border-t border-nodri-border flex items-center justify-between">
             <Link href="/recuperar-senha"
               className="text-nodri-cyan text-xs hover:underline font-semibold flex items-center gap-1">
-              🔐 Esqueci minha senha
+              Esqueci minha senha
             </Link>
             <a href="https://wa.me/5561982195214" target="_blank" rel="noopener noreferrer"
               className="text-nodri-t3 text-xs hover:text-nodri-cyan transition-colors">
-              💬 Suporte
+              Suporte
             </a>
           </div>
         </div>

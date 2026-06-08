@@ -124,7 +124,7 @@ export default function PendenciasPage() {
     if (res.ok) {
       const atualizada = await res.json()
       setPendencias(prev => prev.map(p => p.id === id ? { ...p, ...atualizada } : p))
-      toast.success(resolvido ? '✅ Marcada como resolvida!' : 'Reaberta!')
+      toast.success(resolvido ? 'Marcada como resolvida!' : 'Reaberta!')
     } else {
       toast.error('Erro ao atualizar')
     }
@@ -180,7 +180,7 @@ export default function PendenciasPage() {
               <button
                 onClick={() => marcarResolvida(p.id, true)}
                 className="text-[10px] px-2 py-1 rounded-lg bg-green-500/10 text-green-400 border border-green-500/20 hover:bg-green-500/20 transition-colors">
-                ✅ Feito
+                Feito
               </button>
               <button
                 onClick={() => { setEditandoData(p.id); setNovaData(p.data_limite || '') }}
@@ -213,7 +213,7 @@ export default function PendenciasPage() {
         </button>
         <div className="w-px h-4 bg-nodri-border" />
         <div>
-          <h1 className="font-syne font-bold text-[15px] text-nodri-t1">📋 Pendências Profissionais</h1>
+          <h1 className="font-syne font-bold text-[15px] text-nodri-t1">Pendências Profissionais</h1>
           <p className="text-[10px] text-nodri-t3">Gerencie tarefas e compromissos da equipe</p>
         </div>
       </div>
@@ -262,9 +262,9 @@ export default function PendenciasPage() {
         {/* Resumo */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[
-            { l: '🔴 Vencidas', v: vencidas.length, cor: '#ef4444' },
-            { l: '🟡 Pendentes', v: pendentes.length, cor: '#f59e0b' },
-            { l: '✅ Resolvidas', v: resolvidas.length, cor: '#22c55e' },
+            { l: 'Vencidas', v: vencidas.length, cor: '#ef4444' },
+            { l: 'Pendentes', v: pendentes.length, cor: '#f59e0b' },
+            { l: 'Resolvidas', v: resolvidas.length, cor: '#22c55e' },
           ].map(item => (
             <div key={item.l} className="bg-nodri-card border border-nodri-border rounded-xl p-3 text-center">
               <div className="text-[9px] text-nodri-t3 mb-1">{item.l}</div>
@@ -276,7 +276,7 @@ export default function PendenciasPage() {
         {/* Vencidas */}
         {vencidas.length > 0 && (
           <div className="space-y-2">
-            <h3 className="font-syne font-bold text-[12px] text-red-400">🔴 Vencidas ({vencidas.length})</h3>
+            <h3 className="font-syne font-bold text-[12px] text-red-400">Vencidas ({vencidas.length})</h3>
             {vencidas.map(p => <PendenciaCard key={p.id} p={p}/>)}
           </div>
         )}
@@ -284,7 +284,7 @@ export default function PendenciasPage() {
         {/* Pendentes */}
         {pendentes.length > 0 && (
           <div className="space-y-2">
-            <h3 className="font-syne font-bold text-[12px] text-amber-400">🟡 Pendentes ({pendentes.length})</h3>
+            <h3 className="font-syne font-bold text-[12px] text-amber-400">Pendentes ({pendentes.length})</h3>
             {pendentes.map(p => <PendenciaCard key={p.id} p={p}/>)}
           </div>
         )}
@@ -292,14 +292,14 @@ export default function PendenciasPage() {
         {/* Resolvidas */}
         {resolvidas.length > 0 && (
           <div className="space-y-2">
-            <h3 className="font-syne font-bold text-[12px] text-green-400">✅ Resolvidas ({resolvidas.length})</h3>
+            <h3 className="font-syne font-bold text-[12px] text-green-400">Resolvidas ({resolvidas.length})</h3>
             {resolvidas.map(p => <PendenciaCard key={p.id} p={p}/>)}
           </div>
         )}
 
         {pendencias.length === 0 && (
           <div className="text-center py-16 text-nodri-t3">
-            <span className="text-4xl">📋</span>
+            <span className="text-4xl"></span>
             <p className="text-[13px] mt-3">Nenhuma pendência cadastrada.</p>
           </div>
         )}

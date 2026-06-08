@@ -54,7 +54,7 @@ export default function RenovarLicencaPage() {
               style={{ borderColor: plano.destaque ? plano.cor : undefined }}>
               {plano.destaque && (
                 <div className="text-center mb-3">
-                  <span className="text-[10px] font-bold px-3 py-1 rounded-full" style={{ background: plano.cor, color: '#fff' }}>⭐ MAIS POPULAR</span>
+                  <span className="text-[10px] font-bold px-3 py-1 rounded-full" style={{ background: plano.cor, color: '#fff' }}>MAIS POPULAR</span>
                 </div>
               )}
               <h3 className="font-syne font-black text-lg mb-1" style={{ color: plano.cor }}>{plano.nome}</h3>

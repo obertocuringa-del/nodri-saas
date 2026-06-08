@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect } from 'react'
 import { ArrowLeft, Plus, Trash2, Calculator, Loader2, Save, ChevronDown, ChevronUp, History, CheckCircle, ChevronLeft, ChevronRight, X } from 'lucide-react'
@@ -13,287 +13,287 @@ const pctStr = (v: number, t: number) => t > 0 ? `${((v/t)*100).toFixed(1)}%` : 
 // ─── Dicionário de informações ───────────────────────────────────────────────
 const INFO: Record<string, {titulo: string, oque: string, como: string, exemplo: string, porque: string}> = {
   faturamento: {
-    titulo: '💰 Faturamento Mensal',
+    titulo: 'Faturamento Mensal',
     oque: 'É todo o dinheiro que entrou no caixa do seu salão no mês — serviços + produtos vendidos. É o total antes de pagar qualquer despesa.',
     como: 'Some tudo que você recebeu: dinheiro, cartão, Pix, transferência. Use a média dos últimos 3 meses para um número mais fiel.',
     exemplo: 'Você fez R$ 48.000 em serviços + R$ 2.000 em produtos = R$ 50.000 de faturamento.',
     porque: 'É o ponto de partida de tudo. Sem saber quanto entra, não dá para saber se o salão está ganhando ou perdendo dinheiro.',
   },
   custIndD: {
-    titulo: '⚙️ Custo Indireto Desejado (%)',
+    titulo: 'Custo Indireto Desejado (%)',
     oque: 'É o máximo que você quer gastar com contas fixas (aluguel, água, luz, etc.) em relação ao que entra.',
     como: 'A especialista Especialistas recomendam 30%. Isso significa: de cada R$ 100 que entra, no máximo R$ 30 devem ir para custos fixos.',
     exemplo: 'Faturamento R$ 50.000 × 30% = R$ 15.000 máximo em custos fixos.',
     porque: 'Se gastar mais que isso em custos fixos, sobra pouco para pagar os profissionais e ter lucro.',
   },
   custDirD: {
-    titulo: '📌 Custo Direto Desejado (%)',
+    titulo: 'Custo Direto Desejado (%)',
     oque: 'É o máximo que você quer gastar com o que é pago diretamente pelos serviços: imposto, produtos usados, comissões e taxa do cartão.',
     como: 'O recomendado é 55%. Significa que R$ 55 de cada R$ 100 vão para esses custos.',
     exemplo: 'Faturamento R$ 50.000 × 55% = R$ 27.500 em custos diretos.',
     porque: 'Controlar esse percentual garante que cada serviço prestado realmente vale a pena financeiramente.',
   },
   lucroD: {
-    titulo: '🏆 Lucro Desejado (%)',
+    titulo: 'Lucro Desejado (%)',
     oque: 'É a porcentagem do faturamento que você quer guardar como lucro do negócio, depois de pagar tudo.',
     como: 'O recomendado é 15%. Se faturar R$ 50.000, o objetivo é lucrar R$ 7.500.',
     exemplo: 'R$ 50.000 × 15% = R$ 7.500 de lucro líquido no mês.',
     porque: 'Sem meta de lucro, o salão trabalha muito e não sobra nada. Esse número é o seu salário como dono do negócio.',
   },
   invInicial: {
-    titulo: '🏦 Investimento Inicial',
+    titulo: 'Investimento Inicial',
     oque: 'É tudo que você gastou para montar o salão: reforma, equipamentos, móveis, decoração, estoque inicial.',
     como: 'Some todos os gastos feitos antes de abrir as portas. Se não lembra tudo, estime o valor mais próximo possível.',
     exemplo: 'Reforma R$ 30.000 + cadeiras R$ 15.000 + equipamentos R$ 20.000 + estoque R$ 5.000 = R$ 70.000.',
     porque: 'Saber quanto investiu ajuda a calcular se o negócio já se pagou e quando você vai recuperar esse dinheiro.',
   },
   totalDeprec: {
-    titulo: '📉 Total a ser Depreciado',
+    titulo: 'Total a ser Depreciado',
     oque: 'Equipamentos e móveis se desgastam com o tempo e perdem valor. Depreciar é reconhecer esse custo mês a mês.',
     como: 'Coloque o valor de tudo que vai se desgastar: secadores, cadeiras, espelhos, lavatórios. O sistema divide por 60 meses (5 anos) automaticamente.',
     exemplo: 'Equipamentos R$ 30.000 ÷ 60 meses = R$ 500/mês de depreciação.',
     porque: 'Sem calcular depreciação, quando os equipamentos quebrarem você não terá dinheiro para repor. É como guardar um pouquinho todo mês para a reposição.',
   },
   aluguel: {
-    titulo: '🏠 Aluguel',
+    titulo: 'Aluguel',
     oque: 'O valor mensal que você paga pelo espaço do salão.',
     como: 'Se o imóvel é seu, mesmo assim coloque o valor que pagaria de aluguel para um espaço igual. Isso é importante para saber o custo real.',
     exemplo: 'Você paga R$ 4.000/mês de aluguel.',
     porque: 'O aluguel deve ser no máximo 10% do faturamento. Se você fatura R$ 40.000, o aluguel ideal é até R$ 4.000. Acima disso, compromete o lucro.',
   },
   energia: {
-    titulo: '⚡ Energia Elétrica',
+    titulo: 'Energia Elétrica',
     oque: 'A conta de luz do salão — secadores, prancha, ar condicionado, iluminação.',
     como: 'Use o valor da última fatura ou a média dos últimos 3 meses.',
     exemplo: 'Conta de luz média de R$ 800/mês.',
     porque: 'Salão de beleza consome muita energia. Trocar lâmpadas para LED e desligar equipamentos no horário vazio pode economizar 30%.',
   },
   agua: {
-    titulo: '💧 Água',
+    titulo: 'Água',
     oque: 'A conta de água usada nos lavatórios, banheiro e limpeza.',
     como: 'Use o valor da conta de água do salão. Se dividir com residência, estime só a parte do salão (normalmente 70%).',
     exemplo: 'Conta total R$ 300, parte do salão R$ 210.',
     porque: 'Salões usam muita água em lavagens. Torneiras com temporizador e aproveitamento de água podem reduzir esse custo.',
   },
   contabilidade: {
-    titulo: '📒 Contabilidade',
+    titulo: 'Contabilidade',
     oque: 'O valor pago ao contador todo mês para cuidar das notas, impostos e folha de pagamento.',
     como: 'Coloque o honorário mensal do seu contador.',
     exemplo: 'R$ 500/mês para o contador.',
     porque: 'É uma despesa obrigatória para quem tem CNPJ. Um bom contador pode economizar muito mais do que cobra em impostos.',
   },
   sal13: {
-    titulo: '🎁 13º Salário (Provisão Mensal)',
+    titulo: '13o Salário (Provisão Mensal)',
     oque: 'Todo mês você deve separar 1/12 do salário de cada funcionário para pagar o 13º em dezembro.',
     como: 'Some o salário bruto de todos os funcionários e divida por 12.',
     exemplo: '2 funcionários com R$ 2.000 cada = R$ 4.000 ÷ 12 = R$ 333/mês de provisão.',
     porque: 'Se não guardar todo mês, em dezembro vai ter que pagar tudo de uma vez e pode faltar dinheiro no caixa.',
   },
   ferias: {
-    titulo: '🏖️ Férias (Provisão Mensal)',
+    titulo: 'Férias (Provisão Mensal)',
     oque: 'Todo mês você deve separar o valor equivalente às férias de cada funcionário (salário + 1/3).',
     como: 'Salário bruto × 1,333 ÷ 12 por funcionário.',
     exemplo: 'Funcionário com R$ 2.000: R$ 2.000 × 1,333 ÷ 12 = R$ 222/mês.',
     porque: 'Férias são direito do funcionário. Guardar todo mês evita surpresas quando chegar a época.',
   },
   fgtsR: {
-    titulo: '💼 FGTS Rescisório (Provisão)',
+    titulo: 'FGTS Rescisório (Provisão)',
     oque: 'Uma reserva para cobrir a multa de 40% do FGTS caso precise demitir um funcionário sem justa causa.',
     como: 'Calcule 3,5% a 4% do salário bruto de cada funcionário CLT por mês.',
     exemplo: 'Funcionário com R$ 2.000: R$ 2.000 × 4% = R$ 80/mês de provisão.',
     porque: 'Se demitir sem provisão, terá que pagar uma multa grande de uma vez só. Guardar todo mês protege o caixa.',
   },
   imposto: {
-    titulo: '🧾 Imposto',
+    titulo: 'Imposto',
     oque: 'O valor de imposto que seu salão pagou no mês — Simples Nacional, ISS, etc.',
     como: 'Use o boleto do Simples Nacional do mês ou pergunte ao seu contador o valor exato.',
     exemplo: 'Faturamento R$ 50.000 no Simples Nacional (6%) = R$ 3.000 de imposto.',
     porque: 'Imposto é obrigação legal. Saber o valor exato evita surpresas e ajuda a precificar os serviços corretamente.',
   },
   produto: {
-    titulo: '🧴 Produto/Insumo',
+    titulo: 'Produto/Insumo',
     oque: 'O total gasto com produtos usados nos serviços: tintas, químicas, shampoos, etc.',
     como: 'Some as notas fiscais de compra de produtos do mês ou use o valor do seu estoque consumido.',
     exemplo: 'Comprou R$ 3.000 em tintas, R$ 800 em hidratação, R$ 500 em outros = R$ 4.300.',
     porque: 'Produto é custo direto — quanto mais serviços fizer, mais gasta. O ideal é ficar entre 8% e 12% do faturamento.',
   },
   rateio: {
-    titulo: '✂️ Rateio/Comissão',
+    titulo: 'Rateio/Comissão',
     oque: 'O valor pago aos profissionais como comissão pelos serviços que realizaram.',
     como: 'Some todas as comissões pagas no mês a todos os profissionais.',
     exemplo: '3 cabeleireiros com R$ 5.000 de comissão cada = R$ 15.000.',
     porque: 'É geralmente o maior custo de um salão. Entender esse número ajuda a definir o percentual de rateio ideal para o negócio.',
   },
   taxaC: {
-    titulo: '💳 Taxa de Cartão',
+    titulo: 'Taxa de Cartão',
     oque: 'O total cobrado pelas maquininhas de cartão no mês (débito + crédito + Pix com taxa).',
     como: 'Some os relatórios de todas as suas maquininhas. Geralmente entre 1,5% e 5% por transação.',
     exemplo: 'Vendeu R$ 40.000 no cartão com taxa média de 3% = R$ 1.200 de taxa.',
     porque: 'Muitos donos esquecem essa despesa. Ela pode representar R$ 1.000 a R$ 3.000/mês em salões médios.',
   },
   aquisicaoEq: {
-    titulo: '🔧 Aquisição de Equipamento',
+    titulo: 'Aquisição de Equipamento',
     oque: 'Compras de equipamentos, móveis ou utensílios feitas no mês.',
     como: 'Coloque apenas compras feitas NESSE mês (não o total investido na abertura).',
     exemplo: 'Comprou uma cadeira nova por R$ 1.500.',
     porque: 'Equipamentos são investimentos de capital — separá-los das despesas operacionais dá uma visão mais clara do resultado real do mês.',
   },
   distSocios: {
-    titulo: '👥 Distribuição de Sócios',
+    titulo: 'Distribuição de Sócios',
     oque: 'O valor retirado do caixa pelos sócios como distribuição de lucro (diferente do pró-labore).',
     como: 'Coloque o valor total retirado pelos sócios neste mês como distribuição de lucro.',
     exemplo: '2 sócios retiraram R$ 3.000 cada = R$ 6.000.',
     porque: 'Importante separar do pró-labore (salário do sócio). Distribuição só deve acontecer quando há lucro real confirmado.',
   },
   reservaEmerg: {
-    titulo: '🚨 Reserva de Emergência',
+    titulo: 'Reserva de Emergência',
     oque: 'Dinheiro guardado em poupança ou conta separada para emergências do salão.',
     como: 'Coloque o saldo atual que você tem separado para emergências.',
     exemplo: 'R$ 15.000 guardados na poupança do salão.',
     porque: 'O ideal é ter de 3 a 6 meses de custo operacional guardado. Para R$ 15.000/mês de custo, a reserva ideal é R$ 45.000 a R$ 90.000.',
   },
   vlrProdEstoque: {
-    titulo: '📦 Valor de Produtos em Estoque',
+    titulo: 'Valor de Produtos em Estoque',
     oque: 'Quanto vale tudo o que você tem em produtos no estoque hoje.',
     como: 'Faça um inventário dos produtos e some o custo de cada um.',
     exemplo: 'R$ 8.000 em tintas + R$ 2.000 em outros produtos = R$ 10.000 em estoque.',
     porque: 'Estoque parado é dinheiro parado. O ideal é ter estoque para 30-45 dias. Mais que isso, está sobrando capital investido sem necessidade.',
   },
   taxaCartaoServ: {
-    titulo: '💳 Taxa do Cartão (Global)',
+    titulo: 'Taxa do Cartão (Global)',
     oque: 'A porcentagem média que as maquininhas cobram sobre cada venda no cartão.',
     como: 'Veja nas suas maquininhas a taxa por modalidade. Use a média: (crédito + débito) ÷ 2.',
     exemplo: 'Débito 1,5% + Crédito 3,5% ÷ 2 = 2,5% de média. Se a maioria paga no crédito, use 3,5%.',
     porque: 'Esse percentual é descontado de cada serviço antes de calcular o rateio do profissional.',
   },
   abatProd: {
-    titulo: '🧴 Abatimento do Produto (%)',
+    titulo: 'Abatimento do Produto (%)',
     oque: 'É o quanto do custo do produto é descontado da base de cálculo do rateio do profissional.',
     como: 'O recomendado é 100% — significa que o custo do produto é totalmente abatido antes de calcular a comissão.',
     exemplo: 'Serviço R$ 100, produto R$ 20, rateio 50%: com 100% abatimento → comissão sobre R$ 80 = R$ 40.',
     porque: 'Sem abater o produto, o profissional recebe comissão sobre o custo do material também — o que é injusto para o salão.',
   },
   custOpServ: {
-    titulo: '⚙️ Custo Operacional (%)',
+    titulo: 'Custo Operacional (%)',
     oque: 'Percentual do faturamento gasto com custos fixos do salão (aluguel, luz, água, etc.).',
     como: 'Se preencheu a aba Receitas e Despesas, esse valor é calculado automaticamente. Se não, use 30% como referência.',
     exemplo: 'Custo operacional R$ 15.000 ÷ Faturamento R$ 50.000 = 30%.',
     porque: 'Esse percentual é descontado de cada serviço para mostrar o resultado real — quanto sobra depois de pagar todas as contas fixas.',
   },
   salaoParceiro: {
-    titulo: '⚖️ Lei do Salão Parceiro',
+    titulo: 'Lei do Salão Parceiro',
     oque: 'Lei 13.352/2016 que permite que cabeleireiros sejam parceiros (autônomos) e não funcionários CLT do salão.',
     como: 'Se seus profissionais assinam contrato de parceria, marque SIM. Isso muda como o imposto é calculado.',
     exemplo: 'Com Salão Parceiro: imposto sobre R$ 50 (margem) e não sobre R$ 100 (preço cheio) = economia real de imposto.',
     porque: 'Pode reduzir significativamente a carga tributária do salão. Consulte seu contador para formalizar.',
   },
   numCad: {
-    titulo: '💺 Número de Cadeiras/Postos',
+    titulo: 'Número de Cadeiras/Postos',
     oque: 'Quantas cadeiras ou postos de atendimento existem no seu salão.',
     como: 'Conte todas as cadeiras ativas — de corte, coloração, manicure, maquiagem, etc.',
     exemplo: '3 cadeiras de corte + 2 de manicure + 1 de maquiagem = 6 postos.',
     porque: 'Divide o custo total igualmente entre as cadeiras para saber quanto cada posto precisa gerar para o salão ser lucrativo.',
   },
   custoOpCad: {
-    titulo: '⚙️ Custo Operacional para Aluguel',
+    titulo: 'Custo Operacional para Aluguel',
     oque: 'O total de custos mensais do salão que precisa ser coberto pelo aluguel das cadeiras.',
     como: 'Se preencheu Receitas e Despesas, é preenchido automaticamente. Senão, some todas as despesas fixas mensais.',
     exemplo: 'Aluguel R$ 3.000 + Luz R$ 600 + Internet R$ 150 + ... = R$ 8.000 de custo total.',
     porque: 'O aluguel de cadeira precisa, no mínimo, cobrir os custos. O valor sugerido acrescenta 50% de margem.',
   },
   mTotal: {
-    titulo: '📐 Metragem Total do Salão (m²)',
+    titulo: 'Metragem Total do Salão (m²)',
     oque: 'A área total do seu salão em metros quadrados.',
     como: 'Meça ou consulte o contrato de aluguel. Inclua todas as áreas: atendimento, lavabo, estoque, banheiro.',
     exemplo: 'Salão de 10m × 8m = 80m².',
     porque: 'Divide o faturamento necessário pela área para saber se cada metro quadrado está sendo bem aproveitado.',
   },
   fatMinM2: {
-    titulo: '💰 Faturamento Mínimo Necessário',
+    titulo: 'Faturamento Mínimo Necessário',
     oque: 'O valor mínimo que o salão precisa faturar para não ter prejuízo (Ponto de Equilíbrio).',
     como: 'Se preencheu Receitas e Despesas, é calculado automaticamente. Senão, some todas as despesas mensais.',
     exemplo: 'Se os custos totais são R$ 22.000 e a margem é 44%, o PE é R$ 50.000.',
     porque: 'Abaixo desse valor, o salão está operando no prejuízo. Acima, começa a ter lucro.',
   },
   mSala: {
-    titulo: '🏠 Área de um Espaço Específico (m²)',
+    titulo: 'Área de um Espaço Específico (m²)',
     oque: 'A metragem de uma sala ou área específica que você quer analisar separadamente.',
     como: 'Mede o comprimento × largura da área específica.',
     exemplo: 'Sala de manicure de 4m × 3m = 12m².',
     porque: 'Ajuda a decidir se vale a pena ter aquele espaço — ele precisa gerar o faturamento sugerido para se pagar.',
   },
   areaM2: {
-    titulo: '📐 Área Total do Salão (m²)',
+    titulo: 'Área Total do Salão (m²)',
     oque: 'A área em metros quadrados usada para calcular o ponto de equilíbrio por metro quadrado.',
     como: 'Use a metragem total do salão.',
     exemplo: 'Salão de 80m².',
     porque: 'Mostra a eficiência do espaço — quanto cada metro quadrado está gerando de receita.',
   },
   numProfs: {
-    titulo: '👥 Número de Profissionais',
+    titulo: 'Número de Profissionais',
     oque: 'Quantos profissionais trabalham no salão (sócios + funcionários + parceiros).',
     como: 'Conte todos que atendem clientes ativamente.',
     exemplo: '1 dona + 2 cabeleireiros + 1 manicure = 4 profissionais.',
     porque: 'Divide a meta do salão entre os profissionais para saber quanto cada um precisa produzir.',
   },
   margemPE: {
-    titulo: '📊 Margem Operacional (%)',
+    titulo: 'Margem Operacional (%)',
     oque: 'É a porcentagem que sobra do faturamento depois de pagar os custos diretos (produto, comissão, imposto, cartão).',
     como: 'Se preencheu Receitas e Despesas, é calculado automaticamente. A referência do mercado é 44-45%.',
     exemplo: 'Faturamento R$ 50.000 - Custos diretos R$ 27.500 = R$ 22.500 de margem = 45%.',
     porque: 'É essa margem que precisa cobrir todos os custos fixos e ainda gerar lucro.',
   },
   metaLucroPE: {
-    titulo: '🎯 Meta de Lucro (%)',
+    titulo: 'Meta de Lucro (%)',
     oque: 'O percentual de lucro que você quer alcançar no mês.',
     como: 'Use a mesma meta da aba Receitas e Despesas (recomendado: 15%).',
     exemplo: 'Meta 15% × R$ 50.000 = R$ 7.500 de lucro desejado.',
     porque: 'Com essa meta, o sistema calcula quanto você PRECISA faturar para alcançar o lucro desejado.',
   },
   precoServico: {
-    titulo: '💵 Preço do Serviço',
+    titulo: 'Preço do Serviço',
     oque: 'O valor cobrado do cliente por esse serviço.',
     como: 'Use o preço cheio que o cliente paga, sem desconto.',
     exemplo: 'Coloração completa: R$ 250.',
     porque: 'É o ponto de partida para calcular quanto sobra depois de pagar profissional, produto, imposto e cartão.',
   },
   rateioServico: {
-    titulo: '✂️ Rateio/Comissão do Serviço (%)',
+    titulo: 'Rateio/Comissão do Serviço (%)',
     oque: 'A porcentagem do valor do serviço que vai para o profissional que realizou.',
     como: 'Use o percentual combinado com o profissional.',
     exemplo: 'Serviço R$ 250 com rateio 50% = R$ 125 para o profissional.',
     porque: 'É geralmente o maior custo de cada serviço. Ajustar esse percentual tem o maior impacto na lucratividade.',
   },
   produtoServico: {
-    titulo: '🧴 Produto Usado no Serviço (R$)',
+    titulo: 'Produto Usado no Serviço (R$)',
     oque: 'O custo dos produtos usados para realizar esse serviço específico.',
     como: 'Use a aba "Custo de Produto" para calcular o valor exato e coloque aqui.',
     exemplo: 'Coloração usa R$ 45 em tinta + R$ 8 em oxidante = R$ 53 de produto.',
     porque: 'Sem somar o custo do produto, o serviço parece mais lucrativo do que realmente é.',
   },
   impostoServico: {
-    titulo: '🧾 Imposto sobre o Serviço (%)',
+    titulo: 'Imposto sobre o Serviço (%)',
     oque: 'A alíquota de imposto que incide sobre esse serviço.',
     como: 'Consulte seu contador. No Simples Nacional pode variar de 4,5% a 19,5% dependendo do faturamento.',
     exemplo: 'Serviço R$ 250 × 6% de imposto = R$ 15 de imposto.',
     porque: 'O imposto é um custo real — sem incluí-lo, o resultado do serviço aparece maior do que realmente é.',
   },
   qtdEmb: {
-    titulo: '📏 Quantidade da Embalagem',
+    titulo: 'Quantidade da Embalagem',
     oque: 'Quanto produto tem na embalagem que você compra (em ml, g ou unidades).',
     como: 'Olhe na embalagem do produto e anote a quantidade total.',
     exemplo: 'Tinta em tubo de 60g → coloque 60.',
     porque: 'Serve para calcular o custo por grama/ml e assim saber exatamente quanto cada uso custa.',
   },
   precoEmb: {
-    titulo: '💰 Preço da Embalagem',
+    titulo: 'Preço da Embalagem',
     oque: 'Quanto você pagou pela embalagem desse produto.',
     como: 'Use o valor da nota fiscal ou o preço de compra com seu fornecedor.',
     exemplo: 'Tubo de tinta R$ 35,27.',
     porque: 'Junto com a quantidade da embalagem, calcula o custo por grama — a base para saber o custo real de cada serviço.',
   },
   qtdUsa: {
-    titulo: '🔢 Quantidade Usada por Serviço',
+    titulo: 'Quantidade Usada por Serviço',
     oque: 'Quanto desse produto você usa para realizar um serviço.',
     como: 'Meça na prática ou estime com base na sua experiência.',
     exemplo: 'Para coloração longo usa 90g de tinta.',
@@ -323,19 +323,19 @@ function InfoBtn({ id, className }: { id: string; className?: string }) {
             </div>
             <div className="p-5 space-y-4">
               <div className="rounded-xl p-3" style={{background:'#0a0f1a'}}>
-                <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{color:'#7c5cfc'}}>📌 O que é?</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{color:'#7c5cfc'}}>O que é?</p>
                 <p className="text-xs leading-relaxed" style={{color:'#cbd5e1'}}>{info.oque}</p>
               </div>
               <div className="rounded-xl p-3" style={{background:'#0a0f1a'}}>
-                <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{color:'#10b981'}}>🔢 Como preencher?</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{color:'#10b981'}}>Como preencher?</p>
                 <p className="text-xs leading-relaxed" style={{color:'#cbd5e1'}}>{info.como}</p>
               </div>
               <div className="rounded-xl p-3" style={{background:'#7c5cfc15',border:'1px solid #7c5cfc30'}}>
-                <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{color:'#a78bfa'}}>💡 Exemplo prático</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{color:'#a78bfa'}}>Exemplo prático</p>
                 <p className="text-xs leading-relaxed" style={{color:'#e2e8f0'}}>{info.exemplo}</p>
               </div>
               <div className="rounded-xl p-3" style={{background:'#10b98115',border:'1px solid #10b98130'}}>
-                <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{color:'#10b981'}}>🎯 Por que é importante?</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{color:'#10b981'}}>Por que é importante?</p>
                 <p className="text-xs leading-relaxed" style={{color:'#cbd5e1'}}>{info.porque}</p>
               </div>
             </div>
@@ -363,13 +363,13 @@ function AvisoDefault({ ativo, padrao, onPreencher, onManter }: {
         className="flex-shrink-0 flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold animate-pulse"
         style={{background:'#f59e0b20',color:'#f59e0b',border:'1px solid #f59e0b50'}}
         title="Campo usando valor padrão — clique para decidir">
-        ⚠️ padrão
+        padrão
       </button>
       {aberto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.7)'}}>
           <div className="rounded-2xl border max-w-sm w-full shadow-2xl" style={{background:'#111827',borderColor:'#f59e0b50'}}>
             <div className="px-5 py-4 border-b" style={{borderColor:'#1e293b'}}>
-              <h3 className="font-bold text-sm text-white flex items-center gap-2">⚠️ Campo usando valor padrão</h3>
+              <h3 className="font-bold text-sm text-white flex items-center gap-2">Campo usando valor padrão</h3>
             </div>
             <div className="p-5 space-y-3">
               <div className="rounded-xl p-3" style={{background:'#f59e0b10',border:'1px solid #f59e0b30'}}>
@@ -384,12 +384,12 @@ function AvisoDefault({ ativo, padrao, onPreencher, onManter }: {
                 <button onClick={() => { setAberto(false); onPreencher() }}
                   className="py-2.5 rounded-xl text-xs font-bold"
                   style={{background:'#7c5cfc',color:'white'}}>
-                  ✏️ Quero preencher
+                  Quero preencher
                 </button>
                 <button onClick={() => { setAberto(false); onManter() }}
                   className="py-2.5 rounded-xl text-xs font-bold"
                   style={{background:'#1e293b',color:'#94a3b8',border:'1px solid #334155'}}>
-                  ✅ Manter padrão
+                  Manter padrão
                 </button>
               </div>
             </div>
@@ -404,7 +404,7 @@ function AvisoDefault({ ativo, padrao, onPreencher, onManter }: {
 function GuiaPassos({ passos }: { passos: {titulo: string, desc: string, ok: boolean, cor: string}[] }) {
   return (
     <div className="rounded-2xl p-4 border mb-4" style={{background:'#0d1525',borderColor:'#7c5cfc30'}}>
-      <p className="text-xs font-bold mb-3" style={{color:'#7c5cfc'}}>📋 Como preencher — siga os passos em ordem:</p>
+      <p className="text-xs font-bold mb-3" style={{color:'#7c5cfc'}}>Como preencher — siga os passos em ordem:</p>
       <div className="grid gap-2" style={{gridTemplateColumns:`repeat(${passos.length}, 1fr)`}}>
         {passos.map((p, i) => (
           <div key={i} className="rounded-xl p-3 border text-center" style={{
@@ -1056,11 +1056,11 @@ CUSTOS DETALHADOS:
 ${detalhe}
 
 Analise com:
-1. 🔍 DIAGNÓSTICO (margem saudável: >20%, atenção: 10-20%, crítica: <10%)
-2. ⚡ TOP 3 CUSTOS PARA REDUZIR com ação específica e impacto em R$
-3. 📊 BENCHMARKS: Aluguel máx 10%, Salários 35-45%, Produtos 8-12%, Marketing 3-5%
-4. 💡 3 AÇÕES PRÁTICAS com impacto estimado
-5. 🎯 META: faturamento ideal para margem de 25%
+1. DIAGNÓSTICO (margem saudável: >20%, atenção: 10-20%, crítica: <10%)
+2. TOP 3 CUSTOS PARA REDUZIR com ação específica e impacto em R$
+3. BENCHMARKS: Aluguel máx 10%, Salários 35-45%, Produtos 8-12%, Marketing 3-5%
+4. 3 AÇÕES PRÁTICAS com impacto estimado
+5. META: faturamento ideal para margem de 25%
 
 Use números reais. Seja direto.`
 
@@ -1087,14 +1087,14 @@ Use números reais. Seja direto.`
   const corRes = (v:number) => v >= 0 ? '#10b981' : '#ef4444'
 
   const ABAS = [
-    {id:'rd',        label:'Receitas e Despesas', icon:'📊'},
-    {id:'pe',        label:'Ponto de Equilíbrio', icon:'⚖️'},
-    {id:'servicos',  label:'Calcular Serviços',   icon:'💇'},
-    {id:'produto',   label:'Custo de Produto',    icon:'🧴'},
-    {id:'catproduto',label:'Catálogo Produtos',   icon:'📦'},
-    {id:'cadeira',   label:'Aluguel de Cadeira',  icon:'💺'},
-    {id:'metro',     label:'Faturamento por M²',  icon:'📐'},
-    {id:'graficos',  label:'Gráficos',            icon:'📈'},
+    {id:'rd',        label:'Receitas e Despesas', icon:''},
+    {id:'pe',        label:'Ponto de Equilíbrio', icon:''},
+    {id:'servicos',  label:'Calcular Serviços',   icon:''},
+    {id:'produto',   label:'Custo de Produto',    icon:''},
+    {id:'catproduto',label:'Catálogo Produtos',   icon:''},
+    {id:'cadeira',   label:'Aluguel de Cadeira',  icon:''},
+    {id:'metro',     label:'Faturamento por M²',  icon:''},
+    {id:'graficos',  label:'Gráficos',            icon:''},
   ] as const
 
   // ── Dados para gráficos ──────────────────────────────────────────────────

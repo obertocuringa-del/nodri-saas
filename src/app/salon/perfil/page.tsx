@@ -29,7 +29,7 @@ export default function PerfilSalaoPage() {
       body: JSON.stringify({ nome: form.nome, responsavel: form.responsavel, telefone: form.telefone, nova_senha: form.nova_senha || undefined }),
     })
     setSaving(false)
-    if (res.ok) { toast.success('✅ Perfil atualizado!'); setForm(p => ({ ...p, nova_senha: '', confirmar_senha: '' })) }
+    if (res.ok) { toast.success('Perfil atualizado!'); setForm(p => ({ ...p, nova_senha: '', confirmar_senha: '' })) }
     else toast.error('Erro ao salvar')
   }
 
@@ -49,7 +49,7 @@ export default function PerfilSalaoPage() {
         ) : (
           <form onSubmit={handleSalvar} className="space-y-4">
             <div className="nodri-card p-5 space-y-4">
-              <h2 className="font-syne font-bold text-[13px] text-nodri-cyan">📋 Dados do Salão</h2>
+              <h2 className="font-syne font-bold text-[13px] text-nodri-cyan">Dados do Salão</h2>
               <div>
                 <label className="text-[11px] text-nodri-t3 uppercase tracking-wider mb-1.5 block">Nome do Salão</label>
                 <div className="relative">
@@ -86,7 +86,7 @@ export default function PerfilSalaoPage() {
             </div>
 
             <div className="nodri-card p-5 space-y-4">
-              <h2 className="font-syne font-bold text-[13px] text-nodri-cyan">🔐 Alterar Senha</h2>
+              <h2 className="font-syne font-bold text-[13px] text-nodri-cyan">Alterar Senha</h2>
               <p className="text-nodri-t3 text-[11px]">Deixe em branco para manter a senha atual.</p>
               <div>
                 <label className="text-[11px] text-nodri-t3 uppercase tracking-wider mb-1.5 block">Nova Senha</label>

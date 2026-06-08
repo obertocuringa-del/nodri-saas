@@ -61,7 +61,7 @@ export default function TrabalheConoscoPage() {
           <>
             {/* Hero */}
             <div className="text-center mb-10">
-              <div className="text-5xl mb-4">🤝</div>
+              <div className="text-5xl mb-4"></div>
               <h1 className="font-syne font-black text-3xl mb-3">Trabalhe Conosco</h1>
               <p className="text-nodri-t2 text-base leading-relaxed max-w-lg mx-auto">
                 Indique o NODRI e ganhe <strong className="text-nodri-cyan">40% de comissão</strong> em cada venda realizada com o seu cupom exclusivo.
@@ -71,9 +71,9 @@ export default function TrabalheConoscoPage() {
             {/* Cards de benefícios */}
             <div className="grid grid-cols-3 gap-3 mb-10">
               {[
-                { emoji: '💰', titulo: '40% de Comissão', desc: 'Em cada venda que você indicar' },
-                { emoji: '🔗', titulo: 'Link Exclusivo', desc: 'Seu link personalizado para divulgar' },
-                { emoji: '📱', titulo: 'Pagamento via Pix', desc: 'Receba diretamente na sua conta' },
+                { emoji: '', titulo: '40% de Comissão', desc: 'Em cada venda que você indicar' },
+                { emoji: '', titulo: 'Link Exclusivo', desc: 'Seu link personalizado para divulgar' },
+                { emoji: '', titulo: 'Pagamento via Pix', desc: 'Receba diretamente na sua conta' },
               ].map(b => (
                 <div key={b.titulo} className="nodri-card p-4 text-center">
                   <div className="text-2xl mb-2">{b.emoji}</div>
@@ -141,7 +141,7 @@ export default function TrabalheConoscoPage() {
 
                 <button type="submit" disabled={loading}
                   className="w-full py-3.5 bg-nodri-cyan text-black font-bold rounded-xl flex items-center justify-center gap-2 hover:brightness-110 disabled:opacity-50 transition-all text-[14px] mt-2">
-                  {loading ? <><Loader2 size={18} className="animate-spin" /> Cadastrando...</> : '🚀 Quero ser Afiliado!'}
+                  {loading ? <><Loader2 size={18} className="animate-spin" /> Cadastrando...</> : 'Quero ser Afiliado!'}
                 </button>
               </form>
             </div>
@@ -150,14 +150,14 @@ export default function TrabalheConoscoPage() {
           /* Tela de sucesso */
           <div className="nodri-card p-10 text-center">
             <CheckCircle size={56} className="text-nodri-green mx-auto mb-4" />
-            <h2 className="font-syne font-black text-2xl mb-2">Cadastro realizado! 🎉</h2>
+            <h2 className="font-syne font-black text-2xl mb-2">Cadastro realizado!</h2>
             <p className="text-nodri-t2 text-sm mb-8 leading-relaxed">
               Seu cupom e link exclusivos foram gerados. <br />Enviamos também por email com todas as instruções.
             </p>
 
             {/* Cupom */}
             <div className="bg-nodri-surface border-2 border-dashed border-nodri-cyan rounded-xl p-6 mb-4">
-              <p className="text-[11px] text-nodri-t3 uppercase tracking-wider mb-2">🎫 Seu cupom exclusivo</p>
+              <p className="text-[11px] text-nodri-t3 uppercase tracking-wider mb-2">Seu cupom exclusivo</p>
               <div className="flex items-center justify-center gap-3">
                 <span className="font-mono font-black text-2xl text-nodri-cyan tracking-widest">{resultado.cupom}</span>
                 <button onClick={() => copiar(resultado.cupom, 'Cupom')}
@@ -169,7 +169,7 @@ export default function TrabalheConoscoPage() {
 
             {/* Link */}
             <div className="bg-nodri-surface border border-nodri-border rounded-xl p-4 mb-6">
-              <p className="text-[11px] text-nodri-t3 uppercase tracking-wider mb-2">🔗 Seu link de divulgação</p>
+              <p className="text-[11px] text-nodri-t3 uppercase tracking-wider mb-2">Seu link de divulgação</p>
               <div className="flex items-center gap-2">
                 <span className="flex-1 font-mono text-[11px] text-nodri-purple text-left break-all">{resultado.link}</span>
                 <button onClick={() => copiar(resultado.link, 'Link')}
@@ -184,7 +184,7 @@ export default function TrabalheConoscoPage() {
             </div>
 
             <div className="bg-nodri-cyan/5 border border-nodri-cyan/20 rounded-xl p-4 text-left">
-              <p className="text-[12px] font-bold text-nodri-cyan mb-2">💡 Como usar:</p>
+              <p className="text-[12px] font-bold text-nodri-cyan mb-2">Como usar:</p>
               <ul className="text-[11px] text-nodri-t2 space-y-1 leading-relaxed">
                 <li>• Compartilhe o link ou cupom com seus contatos</li>
                 <li>• Quando comprarem usando seu cupom, você ganha <strong className="text-nodri-cyan">40%</strong></li>

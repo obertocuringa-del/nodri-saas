@@ -80,7 +80,7 @@ function Badge({ pct, p1, p2 }: { pct: number; p1: number; p2: number }) {
   const isNovo = p2 === 0 && p1 > 0
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, fontWeight: 700, color: text, background: bg, padding: '2px 7px', borderRadius: 20, whiteSpace: 'nowrap' }}>
-      {isNovo ? '✨ NOVO' : <><Icon size={10} />{pct > 0 ? '+' : ''}{pct.toFixed(1)}%</>}
+      {isNovo ? 'NOVO' : <><Icon size={10} />{pct > 0 ? '+' : ''}{pct.toFixed(1)}%</>}
     </span>
   )
 }
@@ -186,7 +186,7 @@ function TabelaComp({ title, items, label1, label2 }: { title: string; items: It
       <div style={{ padding: '16px 16px 12px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid #1e293b' }}>
         <h3 style={{ color: '#e2e8f0', fontSize: 14, fontWeight: 700, margin: 0, flex: 1 }}>{title}</h3>
         <span style={{ fontSize: 11, color: '#475569' }}>{sorted.length} itens</span>
-        <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="🔍 filtrar..."
+        <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="filtrar..."
           style={{ background: '#111827', border: '1px solid #1e293b', borderRadius: 6, padding: '4px 10px', fontSize: 12, color: '#e2e8f0', outline: 'none', width: 140 }} />
       </div>
       <div style={{ overflowX: 'auto' }}>
@@ -576,7 +576,7 @@ export default function RelatoriosPage() {
       if (ult) { setP1Mes(ult.mes); setP1Ano(ult.ano) }
 
       setShowImport(false)
-      toast.success(`✅ ${novosPeriodos.map(p => `${MESES_FULL[p.mes]}/${p.ano}`).join(', ')} importado e salvo no banco! ${srvRaw.length} serviços, ${prdRaw.length} produtos.`)
+      toast.success(`${novosPeriodos.map(p => `${MESES_FULL[p.mes]}/${p.ano}`).join(', ')} importado e salvo no banco! ${srvRaw.length} serviços, ${prdRaw.length} produtos.`)
     } catch (e: any) {
       console.error(e)
       toast.error('Erro ao importar. Verifique se é o base_dados_nodri.xlsx correto.')
@@ -616,7 +616,7 @@ export default function RelatoriosPage() {
             <div style={{ display: 'flex', background: '#111827', borderRadius: 7, border: '1px solid #1e293b', padding: 2, gap: 2 }}>
               {(['auto', 'custom'] as const).map(m => (
                 <button key={m} onClick={() => setModo(m)} style={{ padding: '4px 12px', borderRadius: 5, border: 'none', fontSize: 11, fontWeight: 600, cursor: 'pointer', background: modo === m ? '#7c5cfc' : 'transparent', color: modo === m ? 'white' : '#64748b' }}>
-                  {m === 'auto' ? '📅 Automático' : '⚙️ Personalizado'}
+                  {m === 'auto' ? 'Automático' : 'Personalizado'}
                 </button>
               ))}
             </div>
@@ -679,7 +679,7 @@ export default function RelatoriosPage() {
 
           {/* ABAS */}
           <div style={{ padding: '12px 20px 0', display: 'flex', gap: 4, borderBottom: '1px solid #1e293b' }}>
-            {([['geral', '📈 Geral'], ['metas', '🎯 Metas']] as const).map(([id, lbl]) => (
+            {([['geral', 'Geral'], ['metas', 'Metas']] as const).map(([id, lbl]) => (
               <button key={id} onClick={() => setAba(id as any)}
                 style={{ padding: '8px 18px', border: 'none', borderRadius: '8px 8px 0 0', fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s', background: aba === id ? '#0a0f1a' : 'transparent', color: aba === id ? '#e2e8f0' : '#475569', borderBottom: aba === id ? '2px solid #7c5cfc' : '2px solid transparent', marginBottom: -1 }}>
                 {lbl}
@@ -700,12 +700,12 @@ export default function RelatoriosPage() {
                 {/* KPIs */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 10, marginBottom: 20 }}>
                   {[
-                    { lbl: 'Faturamento Total', v1: r1.fat_total, v2: r2.fat_total, fmt: moeda, ico: '💰' },
-                    { lbl: 'Ticket Médio', v1: r1.ticket, v2: r2.ticket, fmt: moeda, ico: '🎟️' },
-                    { lbl: 'Clientes Atendidos', v1: r1.clientes, v2: r2.clientes, fmt: (v: number) => v.toLocaleString('pt-BR'), ico: '👥' },
-                    { lbl: 'Clientes Novos', v1: r1.novos, v2: r2.novos, fmt: (v: number) => v.toLocaleString('pt-BR'), ico: '🆕' },
-                    { lbl: 'Fat. Serviços', v1: r1.fat_srv, v2: r2.fat_srv, fmt: moeda, ico: '✂️' },
-                    { lbl: 'Fat. Produtos', v1: r1.fat_prd, v2: r2.fat_prd, fmt: moeda, ico: '📦' },
+                    { lbl: 'Faturamento Total', v1: r1.fat_total, v2: r2.fat_total, fmt: moeda, ico: '' },
+                    { lbl: 'Ticket Médio', v1: r1.ticket, v2: r2.ticket, fmt: moeda, ico: '' },
+                    { lbl: 'Clientes Atendidos', v1: r1.clientes, v2: r2.clientes, fmt: (v: number) => v.toLocaleString('pt-BR'), ico: '' },
+                    { lbl: 'Clientes Novos', v1: r1.novos, v2: r2.novos, fmt: (v: number) => v.toLocaleString('pt-BR'), ico: '' },
+                    { lbl: 'Fat. Serviços', v1: r1.fat_srv, v2: r2.fat_srv, fmt: moeda, ico: '' },
+                    { lbl: 'Fat. Produtos', v1: r1.fat_prd, v2: r2.fat_prd, fmt: moeda, ico: '' },
                   ].map(card => {
                     const p = calcPct(card.v1, card.v2)
                     const { bg, text, border, Icon } = corPct(p)
@@ -753,8 +753,8 @@ export default function RelatoriosPage() {
                 </div>
 
                 {/* Tabelas completas */}
-                <TabelaComp title="✂️ Serviços Vendidos" items={compSrv} label1={label1} label2={label2} />
-                <TabelaComp title="📦 Produtos Vendidos" items={compPrd} label1={label1} label2={label2} />
+                <TabelaComp title="Serviços Vendidos" items={compSrv} label1={label1} label2={label2} />
+                <TabelaComp title="Produtos Vendidos" items={compPrd} label1={label1} label2={label2} />
               </div>
             )}
 
@@ -790,12 +790,12 @@ export default function RelatoriosPage() {
                   <>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 10, marginBottom: 20 }}>
                       {[
-                        { lbl: '🎯 Meta Total', val: moeda(metaTotal), cor: '#7c5cfc' },
-                        { lbl: '✅ Realizado', val: moeda(realizado), cor: '#10b981' },
-                        { lbl: '⏳ Restante', val: moeda(restante), cor: restante > 0 ? '#f59e0b' : '#10b981' },
-                        { lbl: '📈 Progresso', val: `${progresso.toFixed(1)}%`, cor: progresso >= 100 ? '#10b981' : progresso >= 80 ? '#06b6d4' : '#f59e0b' },
-                        { lbl: '🚀 Super Meta (+30%)', val: moeda(superMeta), cor: '#f43f8e' },
-                        { lbl: '📊 vs Ano Anterior', val: `${calcPct(realizado, r2.fat_total) > 0 ? '+' : ''}${calcPct(realizado, r2.fat_total).toFixed(1)}%`, cor: calcPct(realizado, r2.fat_total) >= 0 ? '#10b981' : '#ef4444' },
+                        { lbl: 'Meta Total', val: moeda(metaTotal), cor: '#7c5cfc' },
+                        { lbl: 'Realizado', val: moeda(realizado), cor: '#10b981' },
+                        { lbl: 'Restante', val: moeda(restante), cor: restante > 0 ? '#f59e0b' : '#10b981' },
+                        { lbl: 'Progresso', val: `${progresso.toFixed(1)}%`, cor: progresso >= 100 ? '#10b981' : progresso >= 80 ? '#06b6d4' : '#f59e0b' },
+                        { lbl: 'Super Meta (+30%)', val: moeda(superMeta), cor: '#f43f8e' },
+                        { lbl: 'vs Ano Anterior', val: `${calcPct(realizado, r2.fat_total) > 0 ? '+' : ''}${calcPct(realizado, r2.fat_total).toFixed(1)}%`, cor: calcPct(realizado, r2.fat_total) >= 0 ? '#10b981' : '#ef4444' },
                       ].map(card => (
                         <div key={card.lbl} style={{ background: '#0a0f1a', border: `1px solid ${card.cor}30`, borderLeft: `3px solid ${card.cor}`, borderRadius: 10, padding: '14px 16px' }}>
                           <div style={{ fontSize: 11, color: '#475569', marginBottom: 6, fontWeight: 600 }}>{card.lbl}</div>
@@ -821,7 +821,7 @@ export default function RelatoriosPage() {
 
                     {/* Tabela comparativo histórico */}
                     <div style={{ background: '#0a0f1a', border: '1px solid #1e293b', borderRadius: 12, padding: 20, marginBottom: 16 }}>
-                      <h3 style={{ color: '#e2e8f0', fontSize: 14, fontWeight: 700, margin: '0 0 16px' }}>📊 Comparativo Histórico</h3>
+                      <h3 style={{ color: '#e2e8f0', fontSize: 14, fontWeight: 700, margin: '0 0 16px' }}>Comparativo Histórico</h3>
                       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                         <tbody>
                           {[
@@ -844,7 +844,7 @@ export default function RelatoriosPage() {
                     {/* Calendário — período ATUAL (P1) com REALIZADO; META calculada por pesos do P2 */}
                     {todosDiasCalendario.length > 0 && (
                       <div style={{ background: '#0a0f1a', border: '1px solid #1e293b', borderRadius: 12, padding: 20 }}>
-                        <h3 style={{ color: '#e2e8f0', fontSize: 14, fontWeight: 700, margin: '0 0 4px' }}>📅 FATURAMENTO DIÁRIO E METAS — {label1.toUpperCase()}</h3>
+                        <h3 style={{ color: '#e2e8f0', fontSize: 14, fontWeight: 700, margin: '0 0 4px' }}>FATURAMENTO DIÁRIO E METAS — {label1.toUpperCase()}</h3>
                         <p style={{ color: '#475569', fontSize: 11, margin: '0 0 16px' }}>Período atual. META e SUPER META calculadas por peso do dia da semana com base em {label2}.</p>
                         <div style={{ overflowX: 'auto' }}>
                           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 700 }}>
@@ -876,13 +876,13 @@ export default function RelatoriosPage() {
                                 const isFuturo = dataDia > hoje
                                 let status: string; let statusCor: string; let statusBg: string
                                 if (d.valor > 0) {
-                                  status = '💰 REALIZADO';     statusCor = '#10b981'; statusBg = '#10b98115'
+                                  status = 'REALIZADO';     statusCor = '#10b981'; statusBg = '#10b98115'
                                 } else if (isHoje) {
-                                  status = '🔄 HOJE';          statusCor = '#3b82f6'; statusBg = '#3b82f615'
+                                  status = 'HOJE';          statusCor = '#3b82f6'; statusBg = '#3b82f615'
                                 } else if (isFuturo) {
-                                  status = '⏳ FUTURO';        statusCor = '#94a3b8'; statusBg = '#94a3b810'
+                                  status = 'FUTURO';        statusCor = '#94a3b8'; statusBg = '#94a3b810'
                                 } else {
-                                  status = '❌ NÃO REALIZADO'; statusCor = '#ef4444'; statusBg = '#ef444415'
+                                  status = 'NAO REALIZADO'; statusCor = '#ef4444'; statusBg = '#ef444415'
                                 }
                                 return (
                                   <tr key={i} style={{ borderBottom: '1px solid #0d1520', background: i % 2 === 0 ? 'transparent' : '#060d1808' }}>
@@ -900,7 +900,7 @@ export default function RelatoriosPage() {
                           </table>
                         </div>
                         <p style={{ color: '#334155', fontSize: 11, marginTop: 12, padding: '10px 0 0', borderTop: '1px solid #1e293b' }}>
-                          📝 <strong style={{ color: '#475569' }}>Nota:</strong> As metas diárias são calculadas respeitando o peso de cada dia da semana com base no histórico do período anterior. A SUPER META é calculada automaticamente como 5% acima da META.
+                          <strong style={{ color: '#475569' }}>Nota:</strong> As metas diárias são calculadas respeitando o peso de cada dia da semana com base no histórico do período anterior. A SUPER META é calculada automaticamente como 5% acima da META.
                         </p>
                       </div>
                     )}
@@ -956,7 +956,7 @@ export default function RelatoriosPage() {
                     .map(f => ({ ...f, profissional: resolverNome(f.profissional, profsCadastrados) }))
                   return (
                     <div key={tipo}>
-                      <h3 style={{ color: cor, fontSize: 14, fontWeight: 700, marginBottom: 12 }}>{tipo === 'POSITIVO' ? '✅' : '❌'} {tipo} ({items.length})</h3>
+                      <h3 style={{ color: cor, fontSize: 14, fontWeight: 700, marginBottom: 12 }}>{tipo} ({items.length})</h3>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 600, overflowY: 'auto' }}>
                         {items.slice(0, 60).map((f, i) => (
                           <div key={i} style={{ background: '#0a0f1a', border: `1px solid ${cor}25`, borderLeft: `3px solid ${cor}`, borderRadius: 8, padding: 12 }}>
@@ -984,7 +984,7 @@ export default function RelatoriosPage() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: 20 }}>
           <div style={{ background: '#0a0f1a', border: '1px solid #1e293b', borderRadius: 16, padding: 32, maxWidth: 480, width: '100%' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-              <h2 style={{ color: '#e2e8f0', fontSize: 18, fontWeight: 700, margin: 0 }}>📥 Importar Planilha</h2>
+              <h2 style={{ color: '#e2e8f0', fontSize: 18, fontWeight: 700, margin: 0 }}>Importar Planilha</h2>
               <button onClick={() => setShowImport(false)} style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: 18 }}>✕</button>
             </div>
             <p style={{ color: '#64748b', fontSize: 13, marginBottom: 20, lineHeight: 1.7 }}>
@@ -998,7 +998,7 @@ export default function RelatoriosPage() {
               <p style={{ color: '#475569', fontSize: 12, margin: 0 }}>base_dados_nodri.xlsx</p>
             </div>
             <input ref={fileRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) importarExcel(f) }} />
-            {loading && <p style={{ color: '#7c5cfc', textAlign: 'center', marginTop: 16, fontSize: 13 }}>⏳ Processando planilha...</p>}
+            {loading && <p style={{ color: '#7c5cfc', textAlign: 'center', marginTop: 16, fontSize: 13 }}>Processando planilha...</p>}
           </div>
         </div>
       )}

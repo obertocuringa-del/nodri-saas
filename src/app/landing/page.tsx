@@ -9,10 +9,10 @@ const DEFAULT_CONFIG = {
   hero_cor_botao: '#7c5cfc',
   beneficios_titulo: 'Por que escolher o NODRI?',
   beneficios: [
-    { emoji: '⚡', titulo: 'Abre com 1 clique', desc: 'Clique em Abrir no site e o programa abre instantaneamente no seu computador.' },
-    { emoji: '💬', titulo: 'Integrado ao WhatsApp', desc: 'Envie confirmações, feedbacks e listas direto pelo WhatsApp sem copiar e colar.' },
-    { emoji: '📊', titulo: 'Relatórios completos', desc: 'Acompanhe faturamento, desempenho de profissionais e reservas financeiras.' },
-    { emoji: '🔄', titulo: 'Atualizações automáticas', desc: 'Receba novas versões dos programas sem precisar reinstalar tudo.' },
+    { emoji: '', titulo: 'Abre com 1 clique', desc: 'Clique em Abrir no site e o programa abre instantaneamente no seu computador.' },
+    { emoji: '', titulo: 'Integrado ao WhatsApp', desc: 'Envie confirmações, feedbacks e listas direto pelo WhatsApp sem copiar e colar.' },
+    { emoji: '', titulo: 'Relatórios completos', desc: 'Acompanhe faturamento, desempenho de profissionais e reservas financeiras.' },
+    { emoji: '', titulo: 'Atualizações automáticas', desc: 'Receba novas versões dos programas sem precisar reinstalar tudo.' },
   ],
   planos_titulo: 'Escolha seu Plano',
   planos_subtitulo: 'Pagamento único mensal via PIX ou cartão',
@@ -26,10 +26,10 @@ const DEFAULT_CONFIG = {
   afiliados_comissao: 40,
   afiliados_botao: 'Quero ser Afiliado →',
   afiliados_chips: [
-    { emoji: '🎫', texto: 'Cupom exclusivo' },
-    { emoji: '🔗', texto: 'Link personalizado' },
-    { emoji: '💰', texto: '40% por venda' },
-    { emoji: '📱', texto: 'Pix direto' },
+    { emoji: '', texto: 'Cupom exclusivo' },
+    { emoji: '', texto: 'Link personalizado' },
+    { emoji: '', texto: '40% por venda' },
+    { emoji: '', texto: 'Pix direto' },
   ],
   footer_logo: 'NODRI',
   footer_texto: 'Sistema de Gestão para Salões de Beleza',
@@ -112,7 +112,7 @@ export default function LandingPage() {
       {/* TRABALHE CONOSCO */}
       <section style={{ background: 'linear-gradient(135deg,#0d1117,#161820)', padding: '60px 20px', textAlign: 'center', borderTop: '1px solid #232840' }}>
         <div style={{ maxWidth: 600, margin: '0 auto' }}>
-          <div style={{ fontSize: 40, marginBottom: 16 }}>🤝</div>
+          <div style={{ fontSize: 40, marginBottom: 16 }}></div>
           <h2 style={{ fontSize: 28, fontWeight: 900, color: '#00e5c8', marginBottom: 12 }}>{cfg.afiliados_titulo}</h2>
           <p style={{ color: '#94a3b8', fontSize: 15, lineHeight: 1.7, marginBottom: 8 }}>{cfg.afiliados_subtitulo}</p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', margin: '24px 0' }}>
@@ -136,7 +136,7 @@ export default function LandingPage() {
         <div style={{ marginTop: 16, display: 'flex', gap: 20, justifyContent: 'center', flexWrap: 'wrap' }}>
           <a href="/trabalhe-conosco" style={{ color: '#00e5c8', fontSize: 12, textDecoration: 'none' }}>Trabalhe Conosco</a>
           <a href="/afiliado" style={{ color: '#00e5c8', fontSize: 12, textDecoration: 'none' }}>Painel do Afiliado</a>
-          <a href={`https://wa.me/${cfg.footer_whatsapp}`} target="_blank" rel="noopener noreferrer" style={{ color: '#25D366', fontSize: 12, textDecoration: 'none' }}>💬 WhatsApp</a>
+          <a href={`https://wa.me/${cfg.footer_whatsapp}`} target="_blank" rel="noopener noreferrer" style={{ color: '#25D366', fontSize: 12, textDecoration: 'none' }}>WhatsApp</a>
           <a href="/login" style={{ color: '#7c5cfc', fontSize: 12, textDecoration: 'none' }}>Área do Cliente</a>
         </div>
       </footer>
