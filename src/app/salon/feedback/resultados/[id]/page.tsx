@@ -504,7 +504,7 @@ export default function ResultadosPage() {
                       {iaAnalise.analise_financeira && (
                         <div>
                           <div className="text-[11px] font-bold text-yellow-400 mb-2 flex items-center gap-1.5"><BarChart2 size={13} /> 💵 Análise Financeira</div>
-                          <div className="grid grid-cols-3 gap-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                             <div className="p-3 rounded-xl text-center" style={{ background: 'rgba(250,204,21,.06)', border: '1px solid rgba(250,204,21,.2)' }}>
                               <div className="text-[9px] text-yellow-400 uppercase mb-1">Ticket Médio</div>
                               <div className="text-[13px] font-bold text-nodri-t1">{iaAnalise.analise_financeira.ticket_medio_estimado}</div>
@@ -525,7 +525,7 @@ export default function ResultadosPage() {
                       {iaAnalise.analise_clientes && (
                         <div>
                           <div className="text-[11px] font-bold text-cyan-400 mb-2 flex items-center gap-1.5"><Users size={13} /> 👥 Análise de Clientes</div>
-                          <div className="grid grid-cols-3 gap-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                             <div className="p-3 rounded-xl" style={{ background: 'rgba(6,182,212,.05)', border: '1px solid rgba(6,182,212,.15)' }}>
                               <div className="text-[9px] text-cyan-400 uppercase mb-1">Perfil Dominante</div>
                               <p className="text-[11px] text-nodri-t2">{iaAnalise.analise_clientes.perfil_dominante}</p>
@@ -546,7 +546,7 @@ export default function ResultadosPage() {
                       {iaAnalise.analise_servicos && (
                         <div>
                           <div className="text-[11px] font-bold text-purple-400 mb-2 flex items-center gap-1.5"><Zap size={13} /> 📊 Análise dos Serviços</div>
-                          <div className="grid grid-cols-3 gap-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                             <div className="p-3 rounded-xl" style={{ background: 'rgba(34,197,94,.05)', border: '1px solid rgba(34,197,94,.15)' }}>
                               <div className="text-[9px] text-green-400 uppercase mb-1">Mais Elogiados</div>
                               <ul className="space-y-0.5">{iaAnalise.analise_servicos.mais_elogiados.map((s, i) => <li key={i} className="text-[11px] text-nodri-t2">✅ {s}</li>)}</ul>
@@ -567,7 +567,7 @@ export default function ResultadosPage() {
                       {iaAnalise.analise_agenda && (
                         <div>
                           <div className="text-[11px] font-bold text-cyan-400 mb-2 flex items-center gap-1.5"><Clock size={13} /> 📅 Análise da Agenda</div>
-                          <div className="grid grid-cols-3 gap-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                             <div className="p-3 rounded-xl" style={{ background: 'rgba(34,197,94,.05)', border: '1px solid rgba(34,197,94,.15)' }}>
                               <div className="text-[9px] text-green-400 uppercase mb-1">Horários de Pico</div>
                               <p className="text-[11px] text-nodri-t2">{iaAnalise.analise_agenda.horarios_pico}</p>
@@ -702,7 +702,7 @@ export default function ResultadosPage() {
                       {iaAnalise.previsao && (
                         <div>
                           <div className="text-[11px] font-bold text-purple-400 mb-2 flex items-center gap-1.5"><TrendingUp size={13} /> 🔮 Previsão Inteligente</div>
-                          <div className="grid grid-cols-3 gap-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                             {[
                               { label: 'Conservador', data: iaAnalise.previsao.cenario_conservador, cor: '#f87171' },
                               { label: 'Realista', data: iaAnalise.previsao.cenario_realista, cor: '#facc15' },

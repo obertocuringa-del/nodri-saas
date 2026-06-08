@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Plus, Search, UserCheck, UserX, Edit2, Trash2, Upload, X, ChevronRight, Users, FileText, Briefcase, Clock, Award, BookOpen, FileSignature, AlertCircle, TrendingUp, Building2 } from 'lucide-react'
+import { ArrowLeft, Plus, Search, UserCheck, UserX, Edit2, Trash2, Upload, X, ChevronRight, Users, FileText, Briefcase, Clock, Award, BookOpen, FileSignature, AlertCircle, TrendingUp, Building2, Menu } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 interface Profissional {
@@ -69,6 +69,7 @@ const FORM_INITIAL = {
 export default function ProfissionaisPage() {
   const router = useRouter()
   const [secao, setSecao] = useState('lista')
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [profissionais, setProfissionais] = useState<Profissional[]>([])
   const [loading, setLoading] = useState(true)
   const [busca, setBusca] = useState('')
@@ -225,6 +226,9 @@ export default function ProfissionaisPage() {
 
       {/* TOP BAR */}
       <div style={{ background: '#0d1117', borderBottom: '1px solid #1e293b', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: '12px', position: 'sticky', top: 0, zIndex: 10 }}>
+        <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-1 rounded" style={{ color: '#64748b', background: 'none', border: 'none', cursor: 'pointer' }}>
+          <Menu size={18} />
+        </button>
         <a href="/salon" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', textDecoration: 'none', fontSize: '13px' }}>
           <ArrowLeft size={15} /> Voltar
         </a>
@@ -234,8 +238,11 @@ export default function ProfissionaisPage() {
 
       <div style={{ display: 'flex', flex: 1 }}>
 
+        {/* Overlay mobile */}
+        {sidebarOpen && <div className="fixed inset-0 bg-black/60 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
+
         {/* SIDEBAR */}
-        <aside style={{ width: '230px', minWidth: '230px', background: '#0d1117', borderRight: '1px solid #1e293b', padding: '12px 8px', overflowY: 'auto' }}>
+        <aside className={`fixed lg:relative inset-y-0 left-0 z-50 lg:z-auto transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`} style={{ width: '230px', minWidth: '230px', background: '#0d1117', borderRight: '1px solid #1e293b', padding: '12px 8px', overflowY: 'auto' }}>
           {SIDEBAR_ITEMS.map(item => {
             const Icon = item.icon
             const ativo = secao === item.id

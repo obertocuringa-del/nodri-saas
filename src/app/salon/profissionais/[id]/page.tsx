@@ -564,7 +564,7 @@ function BlocoDiagnostico({ prof, form, metricas, p1, p2, fidel }: {
       {metricas?.feedbacks && metricas.feedbacks.length > 0 && (
         <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
           <h3 className="font-syne font-bold text-[13px] mb-4">⚠️ Ocorrências no Período <span className="text-[10px] text-nodri-t3 font-normal">{metricas.feedbacks.length} registros</span></h3>
-          <div className="grid grid-cols-3 gap-3 mb-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
             {[{l:'Positivas',v:ocPos,c:'#22c55e'},{l:'Negativas',v:ocNeg,c:'#ef4444'},{l:'Total',v:metricas.feedbacks.length,c:'#7c5cfc'}].map(item=>(
               <div key={item.l} className="bg-nodri-card border border-nodri-border rounded-xl p-3 text-center">
                 <div className="text-[9px] text-nodri-t3 uppercase mb-1">{item.l}</div>
@@ -849,7 +849,7 @@ function BlocoProjecao({ p }: { p: ProjecaoData }) {
           {p.tendencia==='alta'?'📈 CRESCENDO':p.tendencia==='baixa'?'📉 QUEDA':'➡️ ESTÁVEL'}
         </span>
       </div>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <div className="bg-nodri-card border border-nodri-border rounded-xl p-3">
           <div className="text-[9px] text-nodri-t3 uppercase mb-1">Próximo Mês</div>
           <div className="font-syne font-bold text-[13px] text-nodri-t1">{MESES_NOMES[p.proximo_mes-1]} {p.proximo_ano}</div>
@@ -1836,7 +1836,7 @@ export default function PerfilProfissionalPage() {
             {metricas && !loadMet && <>
 
               {/* Resumo de feedbacks no período */}
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {[
                   { l: 'Total P1', v: metricas.feedbacks_p1_total, cor: '#7c5cfc' },
                   { l: 'Total P2', v: metricas.feedbacks_p2_total, cor: '#00e5c8' },

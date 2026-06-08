@@ -245,7 +245,7 @@ export default function BloqueiosPage() {
             </div>
 
             {/* Resumo */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {[
                 { label: 'Total', val: data.profissionais.length, cor: '#94a3b8' },
                 { label: 'Disponíveis', val: disponiveis.length, cor: '#4ade80' },

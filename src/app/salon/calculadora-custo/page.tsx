@@ -1216,10 +1216,10 @@ Use números reais. Seja direto.`
         </div>
 
         {/* Abas */}
-        <div className="grid grid-cols-8 gap-1 mb-6 p-1 rounded-xl" style={{background:'#111827'}}>
+        <div className="flex gap-1 mb-6 p-1 rounded-xl overflow-x-auto" style={{background:'#111827'}}>
           {ABAS.map(a=>(
             <button key={a.id} onClick={()=>setAba(a.id as any)}
-              className="py-2 px-1 rounded-lg text-[10px] font-bold transition-all text-center"
+              className="flex-shrink-0 py-2 px-2 sm:px-1 rounded-lg text-[10px] font-bold transition-all text-center min-w-[72px] sm:min-w-0 sm:flex-1"
               style={{background:aba===a.id?'#7c5cfc':'transparent',color:aba===a.id?'white':'#64748b'}}>
               <div>{a.icon}</div><div className="mt-0.5 leading-tight">{a.label}</div>
             </button>
@@ -1233,7 +1233,7 @@ Use números reais. Seja direto.`
             {/* Guia passo a passo */}
             <div className="rounded-2xl p-4 border" style={{background:'#0d1525',borderColor:'#7c5cfc30'}}>
               <p className="text-xs font-bold mb-3" style={{color:'#7c5cfc'}}>📋 Como preencher — siga os 4 passos em ordem:</p>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {[
                   {n:'1',titulo:'Faturamento',desc:'Quanto entrou no caixa este mês (dinheiro + cartão + Pix)',ok:fatN>0,cor:'#10b981'},
                   {n:'2',titulo:'Despesas Fixas',desc:'Aluguel, luz, água, salários e todos os gastos que sempre têm',ok:totInd>0,cor:'#f59e0b'},
@@ -1255,7 +1255,7 @@ Use números reais. Seja direto.`
             {/* Card configurações */}
             <div className="rounded-2xl p-5 border" style={{background:'#111827',borderColor:'#7c5cfc40'}}>
               <h3 className="font-bold text-sm mb-4" style={{color:'#7c5cfc'}}>⚙️ Configurações</h3>
-              <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <label className="text-xs font-bold" style={{color:'#94a3b8'}}>💰 Faturamento Mensal (R$)</label>
@@ -1293,7 +1293,7 @@ Use números reais. Seja direto.`
                   ))}
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <div className="flex items-center gap-2 mb-1"><label className="text-xs font-bold" style={{color:'#94a3b8'}}>🏦 Investimento Inicial (R$)</label><InfoBtn id="invInicial"/></div>
                   <p className="text-xs mb-1" style={{color:'#475569'}}>Valor total investido no negócio</p>
@@ -1427,7 +1427,7 @@ Use números reais. Seja direto.`
                 </div>
                 <span className="font-bold text-sm" style={{color:'#a78bfa'}}>{fmtR(totProvisao)}</span>
               </button>
-              {secProvisao && <><div className="grid grid-cols-3 gap-4 p-5">
+              {secProvisao && <><div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-5">
                 {[
                   {l:'13º Salário',v:sal13,set:setSal13,dica:'Auto: Salários ÷ 12',info:'sal13'},
                   {l:'Férias',v:ferias,set:setFerias,dica:'Auto: Salários ÷ 36 (1/3 mensal)',info:'ferias'},
@@ -1467,7 +1467,7 @@ Use números reais. Seja direto.`
                 </div>
                 <span className="font-bold text-sm" style={{color:'#ef4444'}}>{fmtR(totDiretas)}</span>
               </button>
-              {secDiretas && <><div className="grid grid-cols-2 gap-4 p-5">
+              {secDiretas && <><div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-5">
                 {[
                   {l:'Imposto (R$)',v:imposto,set:setImposto,dica:'Simples Nacional ou regime tributário do mês',info:'imposto'},
                   {l:'Produto/Insumo (R$)',v:produto,set:setProduto,dica:'Total de produtos consumidos nos serviços',info:'produto'},
@@ -1536,7 +1536,7 @@ Use números reais. Seja direto.`
                 <span className="font-bold text-sm" style={{color:'#06b6d4'}}>{fmtR(totOutras)}</span>
               </button>
               {secOutras && <>
-              <div className="grid grid-cols-2 gap-4 p-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-5">
                 {[
                   {l:'Aquisição de Equipamento (R$)',v:aquisicaoEq,set:setAquisicaoEq,dica:'Compra de equipamentos, móveis, utensílios',info:'aquisicaoEq'},
                   {l:'Distribuição de Sócios (R$)',v:distSocios,set:setDistSocios,dica:'Retirada de lucros pelos sócios',info:'distSocios'},
@@ -1611,7 +1611,7 @@ Use números reais. Seja direto.`
                   </button>
                 </div>
                 {secResultado && <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {[
                     {l:'Custo Operacional Total',v:custoOp,pct:pctStr(custoOp,fatN),c:'#f59e0b',dica:'Indiretas + Provisão + Depreciação'},
                     {l:'Margem Operacional',v:margOpR,pct:pctStr(margOpR,fatN),c:'#06b6d4',dica:'Faturamento − Despesas Diretas'},
@@ -1626,7 +1626,7 @@ Use números reais. Seja direto.`
                     </div>
                   ))}
                 </div>
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[
                     {l:'Ponto de Equilíbrio',v:fmtR(pe),c:'#10b981',dica:'Faturamento mínimo para cobrir tudo'},
                     {l:`PE c/ Lucro de ${lucroD}%`,v:fmtR(peLucro),c:'#a78bfa',dica:'Para cobrir custos + lucro desejado'},
@@ -1644,7 +1644,7 @@ Use números reais. Seja direto.`
                 {/* Verificação vs desejado */}
                 <div className="rounded-xl p-4 border" style={{background:'#111827',borderColor:'#1e293b'}}>
                   <p className="text-xs font-bold mb-3" style={{color:'#94a3b8'}}>📊 Realizado vs Desejado (Metodologia Recomendada)</p>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {[
                       // Para CUSTOS: quanto MENOS, melhor. Ok = abaixo ou igual à meta
                       {l:'Custo Indireto',real:fatN>0?custoOp/fatN*100:0,desej:n(custIndD),c:'#f59e0b',tipo:'custo',
@@ -1681,7 +1681,7 @@ Use números reais. Seja direto.`
                 </div>
 
                 {/* Extras */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {[
                     {l:'🚨 Quanto guardei de reserva ESTE MÊS',v:reservaEmerg,set:setReservaEmerg,dica:'O que você separou/guardou especificamente este mês',info:'reservaEmerg'},
                     {l:'📦 Valor de Produtos em Estoque',v:vlrProdEstoque,set:setVlrProdEstoque,dica:'Valor total do estoque atual',info:'vlrProdEstoque'},
@@ -1779,7 +1779,7 @@ Use números reais. Seja direto.`
                   {/* Números-chave em linguagem simples */}
                   <div className="p-5 border-b" style={{borderColor:'#1e293b'}}>
                     <p className="text-xs font-bold mb-4" style={{color:'#94a3b8'}}>🎯 OS NÚMEROS QUE VOCÊ PRECISA SABER</p>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="rounded-xl p-4" style={{background:'#0a0f1a',border:'1px solid #1e293b'}}>
                         <p className="text-xs mb-1" style={{color:'#64748b'}}>⚖️ Ponto de Equilíbrio</p>
                         <p className="text-xl font-bold" style={{color:'#10b981'}}>{fmtR(pe)}</p>
@@ -1929,7 +1929,7 @@ Use números reais. Seja direto.`
             )}
             <div className="rounded-2xl p-5 border" style={{background:'#111827',borderColor:'#10b98140'}}>
               <h3 className="font-bold text-sm mb-4" style={{color:'#10b981'}}>⚙️ Parâmetros</h3>
-              <div className="grid grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
                   {l:'Custo Operacional (R$)',v:simDespesa,set:setSimDespesa,ph:custoOp>0?custoOp.toFixed(2):'0',tipo:'R$',info:'custoOpCad'},
                   {l:'Margem Operacional (%)',v:margemPE,set:setMargemPE,ph:margOpPct>0?(margOpPct*100).toFixed(1):'44',tipo:'%',info:'margemPE'},
@@ -1959,7 +1959,7 @@ Use números reais. Seja direto.`
             {/* Resultados PE */}
             {custoOpPE_>0&&margPE_>0&&(
               <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {[
                     {l:'⚖️ Ponto de Equilíbrio',v:fmtR(PE_),sub:'Faturamento mínimo para cobrir todos os custos',c:'#10b981'},
                     {l:`🎯 PE p/ Lucro de ${n(metaLucroPE)||n(lucroD)}%`,v:fmtR(PELucro_),sub:'Para cobrir custos E ter o lucro desejado',c:'#a78bfa'},
@@ -1973,10 +1973,10 @@ Use números reais. Seja direto.`
                   ))}
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="rounded-2xl p-4 border" style={{background:'#111827',borderColor:'#1e293b'}}>
                     <p className="text-xs font-bold mb-3" style={{color:'#06b6d4'}}>👤 PE por Profissional ({profs_} profissionais)</p>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {[
                         {l:'PE por Profissional',v:fmtR(PEProf_)},
                         {l:'PE c/ Lucro por Prof.',v:fmtR(PEProfLucro_)},
@@ -1991,7 +1991,7 @@ Use números reais. Seja direto.`
                   </div>
                   <div className="rounded-2xl p-4 border" style={{background:'#111827',borderColor:'#1e293b'}}>
                     <p className="text-xs font-bold mb-3" style={{color:'#f59e0b'}}>📐 PE por M² ({n(areaM2)||100} m²)</p>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {[
                         {l:'PE por M²',v:`${fmtR(PEM2_)}/m²`},
                         {l:'PE c/ Lucro por M²',v:`${fmtR(PEM2Lucro_)}/m²`},
@@ -2041,7 +2041,7 @@ Use números reais. Seja direto.`
                 <ChevronDown size={14} style={{color:'#475569'}}/>
               </button>
               {secConfigServ && <div className="p-5">
-              <div className="grid grid-cols-4 gap-4 mb-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
                 <div>
                   <div className="flex items-center gap-1.5 mb-1">
                     <label className="text-xs font-bold" style={{color:'#94a3b8'}}>Taxa do Cartão (%)</label>
@@ -2504,7 +2504,7 @@ Use números reais. Seja direto.`
               </div>
               {fatPorM2>0&&(
                 <div className="mt-6 space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="rounded-xl p-4 border" style={{background:'#0a0f1a',borderColor:'#06b6d440'}}>
                       <p className="text-xs mb-1" style={{color:'#64748b'}}>📊 Faturamento por M² (P.E.)</p>
                       <p className="text-3xl font-bold" style={{color:'#06b6d4'}}>{fmtR(fatPorM2)}/m²</p>
@@ -2990,7 +2990,7 @@ Use números reais. Seja direto.`
             {/* Formulário */}
             <div className="px-6 py-4 border-b" style={{borderColor:'#1e293b',background:'#0d1525'}}>
               <p className="text-xs font-bold mb-3" style={{color:'#94a3b8'}}>{editDespCat ? '✏️ Editando despesa' : '➕ Nova despesa'}</p>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <div className="col-span-2">
                   <label className="text-[10px] font-bold mb-1 block" style={{color:'#64748b'}}>NOME DA DESPESA</label>
                   <input value={fdNome} onChange={e=>setFdNome(e.target.value)} placeholder="Ex: Aluguel, Internet, Salários..."

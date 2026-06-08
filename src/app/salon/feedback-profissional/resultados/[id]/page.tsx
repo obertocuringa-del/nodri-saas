@@ -244,7 +244,7 @@ export default function ResultadosProfPage() {
                   </div>
                 )}
 
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[
                     { label: 'Total', val: data.total, cor: '#94a3b8' },
                     { label: 'Positivos', val: data.totalPositivo, cor: '#4ade80' },

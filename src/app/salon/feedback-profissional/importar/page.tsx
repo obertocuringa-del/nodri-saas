@@ -175,7 +175,7 @@ export default function ImportarPage() {
               <span className="font-bold text-green-400 text-sm">Importação concluída!</span>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {[
                 { label: 'Importados', val: result.importados, cor: '#4ade80' },
                 { label: 'Ignorados', val: result.ignorados, cor: '#94a3b8' },
