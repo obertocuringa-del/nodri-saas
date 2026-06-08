@@ -117,7 +117,7 @@ export default function ResultadosPage() {
     setIaLoading(false)
   }
 
-  // ── EXPORTAR CSV ──────────────────────────────────────────
+  //  EXPORTAR CSV 
   function exportarCSV() {
     if (!data) return
     const linhas: string[][] = []
@@ -162,14 +162,14 @@ export default function ResultadosPage() {
     toast.success('CSV exportado!')
   }
 
-  // ── EXPORTAR PDF (impressão) ──────────────────────────────
+  //  EXPORTAR PDF (impressão) 
   function exportarPDF() {
     window.print()
   }
 
   const PRIORIDADE_COR: Record<string, string> = { alta: '#f87171', media: '#facc15', baixa: '#4ade80' }
   const DIFICULDADE_COR: Record<string, string> = { fácil: '#4ade80', media: '#facc15', difícil: '#f87171' }
-  const PRAZO_ICON: Record<string, string> = { imediato: '🔥', 'curto prazo': '📅', 'médio prazo': '🗓️' }
+  const PRAZO_ICON: Record<string, string> = { imediato: '', 'curto prazo': '', 'médio prazo': '' }
 
   return (
     <>
@@ -228,13 +228,13 @@ export default function ResultadosPage() {
             </div>
           ) : !data ? null : (
             <>
-              {/* ── ALERTA MÉDIA BAIXA ── */}
+              {/*  ALERTA MÉDIA BAIXA  */}
               {data.alertaMedia.ativo && (
                 <div className="flex items-center gap-3 px-5 py-4 rounded-2xl border animate-pulse"
                   style={{ background: 'rgba(239,68,68,0.08)', borderColor: 'rgba(239,68,68,0.4)' }}>
                   <AlertTriangle size={20} className="text-red-400 shrink-0" />
                   <div>
-                    <div className="font-bold text-red-400 text-sm">⚠️ Atenção — Nota média abaixo de 7</div>
+                    <div className="font-bold text-red-400 text-sm"> Atenção — Nota média abaixo de 7</div>
                     <p className="text-[12px] text-nodri-t2 mt-0.5">
                       A média atual é <strong className="text-red-400">{data.alertaMedia.media}</strong>. Isso indica insatisfação generalizada. Acione a IA para diagnóstico e ações corretivas imediatas.
                     </p>
@@ -242,7 +242,7 @@ export default function ResultadosPage() {
                 </div>
               )}
 
-              {/* ── CARDS RESUMO ── */}
+              {/*  CARDS RESUMO  */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="print-card p-4 rounded-xl border" style={{ background: '#0d1117', borderColor: 'rgba(34,197,94,0.2)' }}>
                   <div className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1">Respostas</div>
@@ -256,7 +256,7 @@ export default function ResultadosPage() {
                       <div className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1">Nota Média</div>
                       <div className="text-3xl font-black text-purple-400">{s.media}<span className="text-sm text-nodri-t3">/10</span></div>
                       <div className="text-[10px] mt-1" style={{ color: s.media >= 8 ? '#4ade80' : s.media >= 7 ? '#facc15' : '#f87171' }}>
-                        {s.media >= 8 ? '● Ótimo' : s.media >= 7 ? '● Bom' : '● Atenção'}
+                        {s.media >= 8 ? ' Ótimo' : s.media >= 7 ? ' Bom' : ' Atenção'}
                       </div>
                     </div>
                   )
@@ -279,7 +279,7 @@ export default function ResultadosPage() {
                 )}
               </div>
 
-              {/* ── NPS cards (escala) ── */}
+              {/*  NPS cards (escala)  */}
               {data.perguntas.filter(p => p.tipo === 'escala').map(p => {
                 const s = data.stats[p.id] as EscalaStat
                 if (!s || s.total === 0) return null
@@ -315,7 +315,7 @@ export default function ResultadosPage() {
                 )
               })}
 
-              {/* ── TENDÊNCIA SEMANAL ── */}
+              {/*  TENDÊNCIA SEMANAL  */}
               {data.tendenciaSemanal.length >= 2 && (
                 <div className="print-card rounded-2xl border p-5" style={{ background: '#0d1117', borderColor: 'rgba(255,255,255,.07)' }}>
                   <div className="flex items-center gap-2 mb-4">
@@ -361,7 +361,7 @@ export default function ResultadosPage() {
                 </div>
               )}
 
-              {/* ── SEGMENTAÇÃO NOVO X RECORRENTE ── */}
+              {/*  SEGMENTAÇÃO NOVO X RECORRENTE  */}
               {data.segmentacao && (data.segmentacao.novos.count > 0 || data.segmentacao.recorrentes.count > 0) && (
                 <div className="print-card rounded-2xl border p-5" style={{ background: '#0d1117', borderColor: 'rgba(255,255,255,.07)' }}>
                   <div className="flex items-center gap-2 mb-4">
@@ -370,8 +370,8 @@ export default function ResultadosPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     {[
-                      { label: '🆕 Clientes Novos', data: data.segmentacao.novos, cor: '#a78bfa' },
-                      { label: '🔄 Clientes Recorrentes', data: data.segmentacao.recorrentes, cor: '#34d399' },
+                      { label: ' Clientes Novos', data: data.segmentacao.novos, cor: '#a78bfa' },
+                      { label: ' Clientes Recorrentes', data: data.segmentacao.recorrentes, cor: '#34d399' },
                     ].map(({ label, data: seg, cor }) => (
                       <div key={label} className="p-4 rounded-xl border text-center" style={{ borderColor: `${cor}30`, background: `${cor}08` }}>
                         <div className="text-[11px] font-semibold mb-2" style={{ color: cor }}>{label}</div>
@@ -379,7 +379,7 @@ export default function ResultadosPage() {
                         <div className="text-[10px] text-nodri-t3">{seg.count} resposta{seg.count !== 1 ? 's' : ''} · média /10</div>
                         {seg.count > 0 && seg.media > 0 && (
                           <div className="mt-2 text-[10px] font-semibold" style={{ color: seg.media >= 8 ? '#4ade80' : seg.media >= 7 ? '#facc15' : '#f87171' }}>
-                            {seg.media >= 8 ? '● Satisfeitos' : seg.media >= 7 ? '● Razoável' : '● Atenção urgente'}
+                            {seg.media >= 8 ? ' Satisfeitos' : seg.media >= 7 ? ' Razoável' : ' Atenção urgente'}
                           </div>
                         )}
                       </div>
@@ -388,22 +388,22 @@ export default function ResultadosPage() {
                   {data.segmentacao.novos.count > 0 && data.segmentacao.recorrentes.count > 0 && (
                     <div className="mt-3 p-3 rounded-xl text-[11px]" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,.05)' }}>
                       {data.segmentacao.novos.media > data.segmentacao.recorrentes.media
-                        ? <span className="text-nodri-t2">💡 Clientes novos avaliam melhor que recorrentes — atenção à experiência de longo prazo e fidelização.</span>
+                        ? <span className="text-nodri-t2"> Clientes novos avaliam melhor que recorrentes — atenção à experiência de longo prazo e fidelização.</span>
                         : data.segmentacao.recorrentes.media > data.segmentacao.novos.media
-                          ? <span className="text-nodri-t2">💡 Clientes recorrentes avaliam melhor — ótimo sinal de fidelização. Foque em converter novos em fiéis.</span>
-                          : <span className="text-nodri-t2">💡 Avaliações semelhantes entre novos e recorrentes — consistência no atendimento.</span>}
+                          ? <span className="text-nodri-t2"> Clientes recorrentes avaliam melhor — ótimo sinal de fidelização. Foque em converter novos em fiéis.</span>
+                          : <span className="text-nodri-t2"> Avaliações semelhantes entre novos e recorrentes — consistência no atendimento.</span>}
                     </div>
                   )}
                 </div>
               )}
 
-              {/* ── IA ANÁLISE ── */}
+              {/*  IA ANÁLISE  */}
               {showIa && (
                 <div className="print-card rounded-2xl border overflow-hidden" style={{ borderColor: 'rgba(139,92,246,.3)', background: '#0a0714' }}>
                   <div className="px-5 py-3 border-b flex items-center gap-2 no-print" style={{ borderColor: 'rgba(139,92,246,.2)', background: 'rgba(139,92,246,.1)' }}>
                     <Brain size={16} className="text-purple-400" />
                     <span className="font-syne font-bold text-sm text-purple-300">Análise Estratégica — IA Claude</span>
-                    <button onClick={() => setShowIa(false)} className="ml-auto text-nodri-t3 hover:text-nodri-t1 no-print">✕</button>
+                    <button onClick={() => setShowIa(false)} className="ml-auto text-nodri-t3 hover:text-nodri-t1 no-print"></button>
                   </div>
                   {iaLoading && (
                     <div className="p-8 text-center">
@@ -417,7 +417,7 @@ export default function ResultadosPage() {
                       {/* RESUMO EXECUTIVO */}
                       <div className="flex gap-4">
                         <div className="flex-1 p-4 rounded-xl" style={{ background: 'rgba(139,92,246,.08)', border: '1px solid rgba(139,92,246,.2)' }}>
-                          <div className="text-[10px] font-bold text-purple-400 uppercase tracking-wider mb-2">📊 Resumo Executivo</div>
+                          <div className="text-[10px] font-bold text-purple-400 uppercase tracking-wider mb-2"> Resumo Executivo</div>
                           {typeof iaAnalise.resumo_executivo === 'string' ? (
                             <p className="text-nodri-t1 text-sm leading-relaxed">{iaAnalise.resumo_executivo}</p>
                           ) : (
@@ -442,7 +442,7 @@ export default function ResultadosPage() {
                               </div>
                             </div>
                           )}
-                          {iaAnalise.insight_nps && <p className="text-nodri-t2 text-[11px] mt-2 pt-2 border-t border-nodri-border">📊 {iaAnalise.insight_nps}</p>}
+                          {iaAnalise.insight_nps && <p className="text-nodri-t2 text-[11px] mt-2 pt-2 border-t border-nodri-border"> {iaAnalise.insight_nps}</p>}
                         </div>
                         <div className="flex flex-col items-center p-4 rounded-xl shrink-0" style={{ background: 'rgba(139,92,246,.08)', border: '1px solid rgba(139,92,246,.2)', minWidth: '100px' }}>
                           <div className="text-[10px] font-bold text-purple-400 uppercase tracking-wider mb-2">Saúde</div>
@@ -459,7 +459,7 @@ export default function ResultadosPage() {
                       {/* INSIGHT EXCLUSIVO */}
                       {iaAnalise.insight_exclusivo && (
                         <div className="p-4 rounded-xl" style={{ background: 'linear-gradient(135deg,rgba(124,92,252,.12),rgba(244,63,142,.12))', border: '1px solid rgba(139,92,246,.35)' }}>
-                          <div className="text-[10px] font-bold text-purple-300 uppercase tracking-wider mb-1.5">🤖 Insight Exclusivo da IA</div>
+                          <div className="text-[10px] font-bold text-purple-300 uppercase tracking-wider mb-1.5"> Insight Exclusivo da IA</div>
                           <p className="text-nodri-t1 text-[12px] leading-relaxed font-medium">{iaAnalise.insight_exclusivo}</p>
                         </div>
                       )}
@@ -467,11 +467,11 @@ export default function ResultadosPage() {
                       {/* GARGALOS */}
                       {iaAnalise.gargalos && iaAnalise.gargalos.length > 0 && (
                         <div>
-                          <div className="text-[11px] font-bold text-red-400 mb-2 flex items-center gap-1.5"><AlertTriangle size={13} /> 🚨 Gargalos Identificados</div>
+                          <div className="text-[11px] font-bold text-red-400 mb-2 flex items-center gap-1.5"><AlertTriangle size={13} />  Gargalos Identificados</div>
                           <div className="space-y-2">
                             {iaAnalise.gargalos.map((g, i) => (
                               <div key={i} className="p-3 rounded-xl flex items-start gap-3" style={{ background: 'rgba(239,68,68,.06)', border: '1px solid rgba(239,68,68,.2)' }}>
-                                <span className="text-base shrink-0">{g.emoji || '🚨'}</span>
+                                <span className="text-base shrink-0">{g.emoji || ''}</span>
                                 <div>
                                   <div className="text-[11px] font-semibold text-red-300 mb-0.5">{g.titulo}</div>
                                   <p className="text-[11px] text-nodri-t2">{g.descricao}</p>
@@ -485,11 +485,11 @@ export default function ResultadosPage() {
                       {/* OPORTUNIDADES ESCONDIDAS */}
                       {iaAnalise.oportunidades_escondidas && iaAnalise.oportunidades_escondidas.length > 0 && (
                         <div>
-                          <div className="text-[11px] font-bold text-green-400 mb-2 flex items-center gap-1.5"><TrendingUp size={13} /> 💰 Oportunidades Escondidas</div>
+                          <div className="text-[11px] font-bold text-green-400 mb-2 flex items-center gap-1.5"><TrendingUp size={13} />  Oportunidades Escondidas</div>
                           <div className="space-y-2">
                             {iaAnalise.oportunidades_escondidas.map((o, i) => (
                               <div key={i} className="p-3 rounded-xl flex items-start gap-3" style={{ background: 'rgba(34,197,94,.06)', border: '1px solid rgba(34,197,94,.2)' }}>
-                                <span className="text-base shrink-0">{o.emoji || '✅'}</span>
+                                <span className="text-base shrink-0">{o.emoji || ''}</span>
                                 <div>
                                   <div className="text-[11px] font-semibold text-green-300 mb-0.5">{o.titulo}</div>
                                   <p className="text-[11px] text-nodri-t2">{o.descricao}</p>
@@ -503,7 +503,7 @@ export default function ResultadosPage() {
                       {/* ANÁLISE FINANCEIRA */}
                       {iaAnalise.analise_financeira && (
                         <div>
-                          <div className="text-[11px] font-bold text-yellow-400 mb-2 flex items-center gap-1.5"><BarChart2 size={13} /> 💵 Análise Financeira</div>
+                          <div className="text-[11px] font-bold text-yellow-400 mb-2 flex items-center gap-1.5"><BarChart2 size={13} />  Análise Financeira</div>
                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                             <div className="p-3 rounded-xl text-center" style={{ background: 'rgba(250,204,21,.06)', border: '1px solid rgba(250,204,21,.2)' }}>
                               <div className="text-[9px] text-yellow-400 uppercase mb-1">Ticket Médio</div>
@@ -524,7 +524,7 @@ export default function ResultadosPage() {
                       {/* ANÁLISE DE CLIENTES */}
                       {iaAnalise.analise_clientes && (
                         <div>
-                          <div className="text-[11px] font-bold text-cyan-400 mb-2 flex items-center gap-1.5"><Users size={13} /> 👥 Análise de Clientes</div>
+                          <div className="text-[11px] font-bold text-cyan-400 mb-2 flex items-center gap-1.5"><Users size={13} />  Análise de Clientes</div>
                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                             <div className="p-3 rounded-xl" style={{ background: 'rgba(6,182,212,.05)', border: '1px solid rgba(6,182,212,.15)' }}>
                               <div className="text-[9px] text-cyan-400 uppercase mb-1">Perfil Dominante</div>
@@ -545,15 +545,15 @@ export default function ResultadosPage() {
                       {/* ANÁLISE DE SERVIÇOS */}
                       {iaAnalise.analise_servicos && (
                         <div>
-                          <div className="text-[11px] font-bold text-purple-400 mb-2 flex items-center gap-1.5"><Zap size={13} /> 📊 Análise dos Serviços</div>
+                          <div className="text-[11px] font-bold text-purple-400 mb-2 flex items-center gap-1.5"><Zap size={13} />  Análise dos Serviços</div>
                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                             <div className="p-3 rounded-xl" style={{ background: 'rgba(34,197,94,.05)', border: '1px solid rgba(34,197,94,.15)' }}>
                               <div className="text-[9px] text-green-400 uppercase mb-1">Mais Elogiados</div>
-                              <ul className="space-y-0.5">{iaAnalise.analise_servicos.mais_elogiados.map((s, i) => <li key={i} className="text-[11px] text-nodri-t2">✅ {s}</li>)}</ul>
+                              <ul className="space-y-0.5">{iaAnalise.analise_servicos.mais_elogiados.map((s, i) => <li key={i} className="text-[11px] text-nodri-t2"> {s}</li>)}</ul>
                             </div>
                             <div className="p-3 rounded-xl" style={{ background: 'rgba(239,68,68,.05)', border: '1px solid rgba(239,68,68,.15)' }}>
                               <div className="text-[9px] text-red-400 uppercase mb-1">Mais Criticados</div>
-                              <ul className="space-y-0.5">{iaAnalise.analise_servicos.mais_criticados.map((s, i) => <li key={i} className="text-[11px] text-nodri-t2">⚠️ {s}</li>)}</ul>
+                              <ul className="space-y-0.5">{iaAnalise.analise_servicos.mais_criticados.map((s, i) => <li key={i} className="text-[11px] text-nodri-t2"> {s}</li>)}</ul>
                             </div>
                             <div className="p-3 rounded-xl" style={{ background: 'rgba(250,204,21,.05)', border: '1px solid rgba(250,204,21,.15)' }}>
                               <div className="text-[9px] text-yellow-400 uppercase mb-1">Upsell</div>
@@ -566,7 +566,7 @@ export default function ResultadosPage() {
                       {/* ANÁLISE DE AGENDA */}
                       {iaAnalise.analise_agenda && (
                         <div>
-                          <div className="text-[11px] font-bold text-cyan-400 mb-2 flex items-center gap-1.5"><Clock size={13} /> 📅 Análise da Agenda</div>
+                          <div className="text-[11px] font-bold text-cyan-400 mb-2 flex items-center gap-1.5"><Clock size={13} />  Análise da Agenda</div>
                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                             <div className="p-3 rounded-xl" style={{ background: 'rgba(34,197,94,.05)', border: '1px solid rgba(34,197,94,.15)' }}>
                               <div className="text-[9px] text-green-400 uppercase mb-1">Horários de Pico</div>
@@ -591,19 +591,19 @@ export default function ResultadosPage() {
                           <div className="grid sm:grid-cols-3 gap-2">
                             {iaAnalise.insight_retencao && (
                               <div className="p-3 rounded-xl" style={{ background: 'rgba(6,182,212,.05)', border: '1px solid rgba(6,182,212,.15)' }}>
-                                <div className="text-[10px] font-bold text-cyan-400 mb-1">🔄 Retenção</div>
+                                <div className="text-[10px] font-bold text-cyan-400 mb-1"> Retenção</div>
                                 <p className="text-[11px] text-nodri-t2 leading-relaxed">{iaAnalise.insight_retencao}</p>
                               </div>
                             )}
                             {iaAnalise.insight_ticket && (
                               <div className="p-3 rounded-xl" style={{ background: 'rgba(250,204,21,.05)', border: '1px solid rgba(250,204,21,.15)' }}>
-                                <div className="text-[10px] font-bold text-yellow-400 mb-1">💰 Ticket Médio</div>
+                                <div className="text-[10px] font-bold text-yellow-400 mb-1"> Ticket Médio</div>
                                 <p className="text-[11px] text-nodri-t2 leading-relaxed">{iaAnalise.insight_ticket}</p>
                               </div>
                             )}
                             {iaAnalise.insight_horario && (
                               <div className="p-3 rounded-xl" style={{ background: 'rgba(34,197,94,.05)', border: '1px solid rgba(34,197,94,.15)' }}>
-                                <div className="text-[10px] font-bold text-green-400 mb-1">🕐 Horários</div>
+                                <div className="text-[10px] font-bold text-green-400 mb-1"> Horários</div>
                                 <p className="text-[11px] text-nodri-t2 leading-relaxed">{iaAnalise.insight_horario}</p>
                               </div>
                             )}
@@ -650,12 +650,12 @@ export default function ResultadosPage() {
                       {/* PLANO DE AÇÃO */}
                       {iaAnalise.plano_acao && (
                         <div>
-                          <div className="text-[11px] font-bold text-cyan-400 mb-2 flex items-center gap-1.5"><Zap size={13} /> 📈 Plano de Ação</div>
+                          <div className="text-[11px] font-bold text-cyan-400 mb-2 flex items-center gap-1.5"><Zap size={13} />  Plano de Ação</div>
                           <div className="grid sm:grid-cols-3 gap-3">
                             {[
-                              { label: '🔥 Próximos 7 dias', items: iaAnalise.plano_acao.proximos_7_dias, cor: '#f97316' },
-                              { label: '📅 Próximos 30 dias', items: iaAnalise.plano_acao.proximos_30_dias, cor: '#facc15' },
-                              { label: '🗓️ Próximos 90 dias', items: iaAnalise.plano_acao.proximos_90_dias, cor: '#a78bfa' },
+                              { label: ' Próximos 7 dias', items: iaAnalise.plano_acao.proximos_7_dias, cor: '#f97316' },
+                              { label: ' Próximos 30 dias', items: iaAnalise.plano_acao.proximos_30_dias, cor: '#facc15' },
+                              { label: ' Próximos 90 dias', items: iaAnalise.plano_acao.proximos_90_dias, cor: '#a78bfa' },
                             ].map(({ label, items, cor }) => (
                               <div key={label} className="p-3 rounded-xl" style={{ background: `${cor}08`, border: `1px solid ${cor}25` }}>
                                 <div className="text-[10px] font-bold uppercase mb-2" style={{ color: cor }}>{label}</div>
@@ -681,7 +681,7 @@ export default function ResultadosPage() {
                             {iaAnalise.acoes_prioritarias.map((a, i) => (
                               <div key={i} className="p-3 rounded-xl" style={{ background: 'rgba(6,182,212,.05)', border: '1px solid rgba(6,182,212,.15)' }}>
                                 <div className="flex items-start gap-2 mb-1">
-                                  <span className="text-sm">{PRAZO_ICON[a.prazo] || '📌'}</span>
+                                  <span className="text-sm">{PRAZO_ICON[a.prazo] || ''}</span>
                                   <div className="font-semibold text-nodri-t1 text-[12px]">{a.acao}</div>
                                 </div>
                                 <div className="flex items-center gap-3 ml-6">
@@ -701,7 +701,7 @@ export default function ResultadosPage() {
                       {/* PREVISÃO */}
                       {iaAnalise.previsao && (
                         <div>
-                          <div className="text-[11px] font-bold text-purple-400 mb-2 flex items-center gap-1.5"><TrendingUp size={13} /> 🔮 Previsão Inteligente</div>
+                          <div className="text-[11px] font-bold text-purple-400 mb-2 flex items-center gap-1.5"><TrendingUp size={13} />  Previsão Inteligente</div>
                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                             {[
                               { label: 'Conservador', data: iaAnalise.previsao.cenario_conservador, cor: '#f87171' },
@@ -736,7 +736,7 @@ export default function ResultadosPage() {
                 </div>
               )}
 
-              {/* ── RESULTADOS POR PERGUNTA ── */}
+              {/*  RESULTADOS POR PERGUNTA  */}
               <div className="space-y-4">
                 {data.perguntas.map((pergunta, idx) => {
                   const stat = data.stats[pergunta.id]
@@ -846,11 +846,11 @@ export default function ResultadosPage() {
                 })}
               </div>
 
-              {/* ── COMENTÁRIOS ── */}
+              {/*  COMENTÁRIOS  */}
               {data.comentarios.length > 0 && (
                 <div className="print-card rounded-2xl border overflow-hidden" style={{ background: '#0d1117', borderColor: 'rgba(255,255,255,.07)' }}>
                   <div className="px-5 py-3 border-b flex items-center gap-2" style={{ borderColor: 'rgba(255,255,255,.06)' }}>
-                    <span className="text-lg">💬</span>
+                    <span className="text-lg"></span>
                     <span className="text-[13px] font-medium text-nodri-t1">Comentários dos Clientes</span>
                     <span className="ml-auto text-[10px] text-nodri-t3">{data.comentarios.length} comentário{data.comentarios.length !== 1 ? 's' : ''}</span>
                   </div>
@@ -867,7 +867,7 @@ export default function ResultadosPage() {
 
               {data.total_respostas === 0 && (
                 <div className="text-center py-20">
-                  <div className="text-5xl mb-4">📭</div>
+                  <div className="text-5xl mb-4"></div>
                   <h3 className="text-nodri-t1 font-semibold text-lg mb-2">Nenhuma resposta ainda</h3>
                   <p className="text-nodri-t2 text-sm">Compartilhe o link com seus clientes para começar a coletar avaliações.</p>
                 </div>

@@ -292,13 +292,13 @@ export default function BloqueiosPage() {
                         <div className="flex flex-col gap-1 mt-2 text-[11px]">
                           {p.datas_atrasos.length > 0 && (
                             <span>
-                              <span className="text-yellow-400 font-bold">⏰ {p.datas_atrasos.length} atraso{p.datas_atrasos.length > 1 ? 's' : ''}: </span>
+                              <span className="text-yellow-400 font-bold"> {p.datas_atrasos.length} atraso{p.datas_atrasos.length > 1 ? 's' : ''}: </span>
                               <span className="text-nodri-t3">{p.datas_atrasos.join(', ')}</span>
                             </span>
                           )}
                           {p.datas_faltas.length > 0 && (
                             <span>
-                              <span className="text-red-400 font-bold">❌ {p.datas_faltas.length} falta{p.datas_faltas.length > 1 ? 's' : ''}: </span>
+                              <span className="text-red-400 font-bold"> {p.datas_faltas.length} falta{p.datas_faltas.length > 1 ? 's' : ''}: </span>
                               <span className="text-nodri-t3">{p.datas_faltas.join(', ')}</span>
                             </span>
                           )}
@@ -342,27 +342,27 @@ export default function BloqueiosPage() {
                         </div>
                         <span className="flex-1 text-[12px] font-semibold text-nodri-t1 truncate">{p.nome}</span>
                         {temOcorrencia
-                          ? <span className="text-yellow-400 shrink-0 text-sm">⏰</span>
-                          : <span className="text-green-400 shrink-0 text-sm">✓</span>}
+                          ? <span className="text-yellow-400 shrink-0 text-sm"></span>
+                          : <span className="text-green-400 shrink-0 text-sm"></span>}
                       </div>
                       {temOcorrencia && (
                         <div className="flex flex-col gap-1 pl-9">
                           {p.atrasos_semana > 0 && (
                             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full w-fit"
                               style={{ background: 'rgba(250,204,21,.12)', color: '#facc15', border: '1px solid rgba(250,204,21,.25)' }}>
-                              ⏰ {p.atrasos_semana} atraso{p.atrasos_semana > 1 ? 's' : ''}: {p.datas_atrasos.join(', ')}
+                               {p.atrasos_semana} atraso{p.atrasos_semana > 1 ? 's' : ''}: {p.datas_atrasos.join(', ')}
                             </span>
                           )}
                           {p.faltas_mes > 0 && (
                             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full w-fit"
                               style={{ background: 'rgba(239,68,68,.12)', color: '#f87171', border: '1px solid rgba(239,68,68,.25)' }}>
-                              ❌ {p.faltas_mes} falta{p.faltas_mes > 1 ? 's' : ''}: {p.datas_faltas.join(', ')}
+                               {p.faltas_mes} falta{p.faltas_mes > 1 ? 's' : ''}: {p.datas_faltas.join(', ')}
                             </span>
                           )}
                           {ocorRegrasCriadas.map(o => (
                             <span key={o.descricao} className="text-[10px] font-bold px-1.5 py-0.5 rounded-full w-fit"
                               style={{ background: 'rgba(139,92,246,.12)', color: '#c4b5fd', border: '1px solid rgba(139,92,246,.25)' }}>
-                              ⚠️ {o.quantidade} {o.descricao}{o.quantidade > 1 ? 's' : ''}: {o.datas.join(', ')}
+                               {o.quantidade} {o.descricao}{o.quantidade > 1 ? 's' : ''}: {o.datas.join(', ')}
                             </span>
                           ))}
                         </div>
@@ -398,15 +398,15 @@ export default function BloqueiosPage() {
                 {!editandoRegras ? (
                   <div className="space-y-2 text-[12px]">
                     <div className="flex items-center gap-2">
-                      <span className="text-yellow-400">⏰</span>
+                      <span className="text-yellow-400"></span>
                       <span className="text-nodri-t2"><strong className="text-yellow-400">{regras.atrasos_por_semana}+ atrasos</strong> na mesma semana → bloqueio de <strong className="text-nodri-t1">{regras.dias_bloqueio_atraso} dias</strong></span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-red-400">❌</span>
+                      <span className="text-red-400"></span>
                       <span className="text-nodri-t2"><strong className="text-red-400">{regras.faltas_por_mes}+ faltas</strong> no mesmo mês → bloqueio de <strong className="text-nodri-t1">{regras.dias_bloqueio_falta} dias</strong></span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-nodri-t3">🔓</span>
+                      <span className="text-nodri-t3"></span>
                       <span className="text-nodri-t3 text-[11px]">Desbloqueio manual remove imediatamente, independente da data de expiração.</span>
                     </div>
                   </div>
@@ -495,7 +495,7 @@ export default function BloqueiosPage() {
                         ) : (
                           <div className="p-3 rounded-lg text-[11px] text-yellow-400 flex items-center gap-2"
                             style={{ background: 'rgba(250,204,21,.08)', border: '1px solid rgba(250,204,21,.2)' }}>
-                            ⚠️ Nenhuma ocorrência cadastrada. Cadastre primeiro em <strong>Feedback Profissional → Ocorrências</strong>.
+                             Nenhuma ocorrência cadastrada. Cadastre primeiro em <strong>Feedback Profissional → Ocorrências</strong>.
                           </div>
                         )}
                       </div>
@@ -602,8 +602,8 @@ export default function BloqueiosPage() {
                           </div>
                           <div className="text-[10px] mt-0.5">
                             {rc.profissional_nome
-                              ? <span className="text-purple-400">👤 Somente: <strong>{rc.profissional_nome}</strong></span>
-                              : <span className="text-nodri-t3">👥 Todos os profissionais</span>}
+                              ? <span className="text-purple-400"> Somente: <strong>{rc.profissional_nome}</strong></span>
+                              : <span className="text-nodri-t3"> Todos os profissionais</span>}
                           </div>
                         </div>
                         <div className="flex items-center gap-1 shrink-0">

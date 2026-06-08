@@ -194,7 +194,7 @@ export default function ResultadosProfPage() {
     toast.success('CSV exportado!')
   }
 
-  const PRAZO_ICON: Record<string, string> = { imediato: '🔥', 'esta semana': '📅', 'este mês': '🗓️' }
+  const PRAZO_ICON: Record<string, string> = { imediato: '', 'esta semana': '', 'este mês': '' }
   const evolucaoProfissional = data?.evolucaoIndividual.find(e => e.profissional === profEvol)
   const placardMes = data?.placardMensal[mesSelecionado]
 
@@ -230,13 +230,13 @@ export default function ResultadosProfPage() {
             <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-t-nodri-cyan rounded-full animate-spin" /></div>
           ) : !data ? null : (
             <>
-              {/* ── RESUMO EXECUTIVO ── */}
+              {/*  RESUMO EXECUTIVO  */}
               <div className="space-y-3">
                 {data.alertaDesempenho && data.profCritico && (
                   <div className="flex items-center gap-3 px-4 py-3 rounded-xl border" style={{ background: 'rgba(239,68,68,.08)', borderColor: 'rgba(239,68,68,.4)' }}>
                     <AlertTriangle size={18} className="text-red-400 shrink-0" />
                     <div>
-                      <div className="font-bold text-red-400 text-sm">⚠️ Ação imediata necessária</div>
+                      <div className="font-bold text-red-400 text-sm"> Ação imediata necessária</div>
                       <p className="text-[12px] text-nodri-t2 mt-0.5">
                         <strong className="text-red-400">{data.profCritico.nome}</strong> — score {data.profCritico.score}% · {data.profCritico.negativo} negativos de {data.profCritico.total} registros
                       </p>
@@ -283,7 +283,7 @@ export default function ResultadosProfPage() {
                 </div>
               </div>
 
-              {/* ── ABAS ── */}
+              {/*  ABAS  */}
               <div className="flex gap-1 border-b border-nodri-border overflow-x-auto no-print">
                 {ABAS.map(({ id: aid, label, icon: Icon }) => (
                   <button key={aid} onClick={() => setAbaAtiva(aid as Aba)}
@@ -297,7 +297,7 @@ export default function ResultadosProfPage() {
                 ))}
               </div>
 
-              {/* ══ ABA: PROFISSIONAIS ══ */}
+              {/*  ABA: PROFISSIONAIS  */}
               {abaAtiva === 'profissionais' && (
                 <div className="space-y-4">
                   {/* Placar Mensal — Ocorrências por Profissional */}
@@ -340,7 +340,7 @@ export default function ResultadosProfPage() {
                     return (
                     <div className="pcard rounded-2xl border overflow-hidden" style={{ background: '#0d1117', borderColor: 'rgba(255,255,255,.07)' }}>
                       <div className="px-5 py-3 border-b flex items-center gap-2 flex-wrap" style={{ borderColor: 'rgba(255,255,255,.06)' }}>
-                        <span className="text-sm">📊</span>
+                        <span className="text-sm"></span>
                         <span className="text-[13px] font-semibold text-nodri-t1">Placar Mensal</span>
                         {mesAnteriorKey && <span className="text-[10px] text-nodri-t3 ml-1">— vs {formatMes(mesAnteriorKey)}</span>}
                         <div className="ml-auto flex items-center gap-2 flex-wrap">
@@ -413,22 +413,22 @@ export default function ResultadosProfPage() {
                                   {/* Mês anterior resumo */}
                                   <div className="text-center">
                                     {ant ? (
-                                      <span className="text-[11px] text-nodri-t3">❌ {ant.negativo} | ✅ {ant.positivo}</span>
+                                      <span className="text-[11px] text-nodri-t3"> {ant.negativo} |  {ant.positivo}</span>
                                     ) : <span className="text-[10px] text-nodri-t3/40">—</span>}
                                   </div>
                                   {/* Mês atual resumo + mensagem */}
                                   <div className="flex flex-col items-center gap-0.5">
                                     <div className="flex items-center gap-2">
                                       {atual ? (
-                                        <span className="text-[11px] text-nodri-t1">❌ {atual.negativo} | ✅ {atual.positivo}</span>
+                                        <span className="text-[11px] text-nodri-t1"> {atual.negativo} |  {atual.positivo}</span>
                                       ) : <span className="text-[10px] text-nodri-t3/40">—</span>}
-                                      <span className="text-nodri-t3 text-[9px]">{aberto ? '▲' : '▼'}</span>
+                                      <span className="text-nodri-t3 text-[9px]">{aberto ? '' : ''}</span>
                                     </div>
                                     {deltaNeg != null && deltaNeg !== 0 && mesAnteriorKey && (
                                       <span className="text-[9px] font-semibold text-center leading-tight" style={{ color: corDelta }}>
                                         {deltaNeg < 0
-                                          ? `🎉 ${Math.abs(deltaNeg)}x menos que ${formatMes(mesAnteriorKey)}`
-                                          : `⚠️ ${deltaNeg}x mais que ${formatMes(mesAnteriorKey)}`}
+                                          ? ` ${Math.abs(deltaNeg)}x menos que ${formatMes(mesAnteriorKey)}`
+                                          : ` ${deltaNeg}x mais que ${formatMes(mesAnteriorKey)}`}
                                       </span>
                                     )}
                                   </div>
@@ -492,7 +492,7 @@ export default function ResultadosProfPage() {
                   {historicoBloqueios && historicoBloqueios.profissionais.length > 0 && (
                     <div className="pcard rounded-2xl border overflow-hidden" style={{ background: '#0d1117', borderColor: 'rgba(239,68,68,.2)' }}>
                       <div className="px-5 py-3 border-b flex items-center gap-2" style={{ borderColor: 'rgba(239,68,68,.12)', background: 'rgba(239,68,68,.05)' }}>
-                        <span className="text-sm">🔒</span>
+                        <span className="text-sm"></span>
                         <span className="text-[13px] font-semibold text-red-300">Histórico de Bloqueios {historicoBloqueios.ano}</span>
                         <span className="text-[10px] text-nodri-t3 ml-1">— reincidentes em bloqueio</span>
                         <span className="ml-auto text-[11px] font-bold text-red-400">{historicoBloqueios.profissionais.length} prof.</span>
@@ -516,7 +516,7 @@ export default function ResultadosProfPage() {
                                       style={{ background: `${cor}20`, color: cor, border: `1px solid ${cor}40` }}>
                                       {p.total}x bloqueado{p.total > 1 ? 's' : ''}
                                     </span>
-                                    {p.total >= 3 && <span className="text-[9px] font-black text-red-400">⚠ REINCIDENTE</span>}
+                                    {p.total >= 3 && <span className="text-[9px] font-black text-red-400"> REINCIDENTE</span>}
                                   </div>
                                   {p.ultimo && (
                                     <span className="text-[10px] text-nodri-t3">
@@ -524,7 +524,7 @@ export default function ResultadosProfPage() {
                                     </span>
                                   )}
                                 </div>
-                                <span className="text-nodri-t3 text-[11px] shrink-0">{aberto ? '▲' : '▼'}</span>
+                                <span className="text-nodri-t3 text-[11px] shrink-0">{aberto ? '' : ''}</span>
                               </button>
                               {aberto && (
                                 <div className="px-4 pb-3 space-y-1.5">
@@ -560,13 +560,13 @@ export default function ResultadosProfPage() {
                 </div>
               )}
 
-              {/* ══ ABA: OCORRÊNCIAS ══ */}
+              {/*  ABA: OCORRÊNCIAS  */}
               {abaAtiva === 'ocorrencias' && (
                 <div className="space-y-4">
                   {/* Ocorrências mais frequentes */}
                   <div className="pcard rounded-2xl border overflow-hidden" style={{ background: '#0d1117', borderColor: 'rgba(255,255,255,.07)' }}>
                     <div className="px-5 py-3 border-b flex items-center gap-2" style={{ borderColor: 'rgba(255,255,255,.06)' }}>
-                      <span className="text-sm">📋</span>
+                      <span className="text-sm"></span>
                       <span className="text-[13px] font-semibold text-nodri-t1">Ocorrências Mais Frequentes</span>
                     </div>
                     <div className="p-5 space-y-2">
@@ -594,7 +594,7 @@ export default function ResultadosProfPage() {
                   {data.matriz.length > 0 && data.topOcorrencias.length > 0 && (
                     <div className="pcard rounded-2xl border overflow-hidden" style={{ background: '#0d1117', borderColor: 'rgba(255,255,255,.07)' }}>
                       <div className="px-5 py-3 border-b flex items-center gap-2" style={{ borderColor: 'rgba(255,255,255,.06)' }}>
-                        <span className="text-sm">🔢</span>
+                        <span className="text-sm"></span>
                         <span className="text-[13px] font-semibold text-nodri-t1">Matriz Profissional × Ocorrência</span>
                         <span className="text-[10px] text-nodri-t3 ml-1">— quem tem qual problema</span>
                       </div>
@@ -655,14 +655,14 @@ export default function ResultadosProfPage() {
                 </div>
               )}
 
-              {/* ══ ABA: PLANO DE AÇÃO ══ */}
+              {/*  ABA: PLANO DE AÇÃO  */}
               {abaAtiva === 'plano' && (
                 <div className="space-y-4">
                   {data.planoAcao && data.planoAcao.length > 0 ? (
                     <div className="pcard rounded-2xl border overflow-hidden" style={{ background: '#0d1117', borderColor: 'rgba(139,92,246,.25)' }}>
                       <div className="px-5 py-3 border-b" style={{ borderColor: 'rgba(139,92,246,.15)', background: 'rgba(139,92,246,.07)' }}>
                         <div className="flex items-center gap-2">
-                          <span className="text-base">🎯</span>
+                          <span className="text-base"></span>
                           <span className="font-syne font-bold text-sm text-purple-300">Plano de Ação Corretiva</span>
                         </div>
                         <p className="text-[10px] text-nodri-t3 mt-1">Ações baseadas na quantidade de ocorrências — quanto maior a reincidência, mais formal a medida.</p>
@@ -694,7 +694,7 @@ export default function ResultadosProfPage() {
                                         style={{ background: `${acao.stage_cor}20`, color: acao.stage_cor, border: `1px solid ${acao.stage_cor}40` }}>
                                         {acao.count}x
                                       </span>
-                                      {acao.urgente && <span className="text-[8px] font-black text-red-400 uppercase">⚠ Urgente</span>}
+                                      {acao.urgente && <span className="text-[8px] font-black text-red-400 uppercase"> Urgente</span>}
                                     </div>
                                   </div>
                                   <div className="flex-1">
@@ -733,14 +733,14 @@ export default function ResultadosProfPage() {
                     </div>
                   ) : (
                     <div className="text-center py-16">
-                      <div className="text-4xl mb-3">✅</div>
+                      <div className="text-4xl mb-3"></div>
                       <p className="text-nodri-t2 text-sm">Nenhum plano de ação necessário no momento.</p>
                     </div>
                   )}
                 </div>
               )}
 
-              {/* ══ ABA: TENDÊNCIAS ══ */}
+              {/*  ABA: TENDÊNCIAS  */}
               {abaAtiva === 'tendencias' && (
                 <div className="space-y-4">
 
@@ -748,7 +748,7 @@ export default function ResultadosProfPage() {
                   {data.diasSemana.some(d => d.total > 0) && (
                     <div className="pcard rounded-2xl border p-5" style={{ background: '#0d1117', borderColor: 'rgba(255,255,255,.07)' }}>
                       <div className="flex items-center gap-2 mb-4">
-                        <span className="text-sm">📅</span>
+                        <span className="text-sm"></span>
                         <span className="text-[13px] font-semibold text-nodri-t1">Dias da Semana com Mais Ocorrências</span>
                       </div>
                       <div className="flex items-end gap-2 h-28">
@@ -770,7 +770,7 @@ export default function ResultadosProfPage() {
                       </div>
                       {(() => {
                         const piorDia = data.diasSemana.filter(d => d.total > 0).sort((a, b) => b.negativo - a.negativo)[0]
-                        return piorDia ? <p className="text-[10px] text-nodri-t3 mt-3">⚠️ Pior dia: <strong className="text-red-400">{piorDia.dia}</strong> ({piorDia.negativo} negativos)</p> : null
+                        return piorDia ? <p className="text-[10px] text-nodri-t3 mt-3"> Pior dia: <strong className="text-red-400">{piorDia.dia}</strong> ({piorDia.negativo} negativos)</p> : null
                       })()}
                     </div>
                   )}
@@ -779,7 +779,7 @@ export default function ResultadosProfPage() {
                   {data.respostas_recentes.length > 0 && (
                     <div className="pcard rounded-2xl border overflow-hidden" style={{ background: '#0d1117', borderColor: 'rgba(255,255,255,.07)' }}>
                       <div className="px-5 py-3 border-b flex items-center gap-2" style={{ borderColor: 'rgba(255,255,255,.06)' }}>
-                        <span className="text-sm">📝</span>
+                        <span className="text-sm"></span>
                         <span className="text-[13px] font-semibold text-nodri-t1">Registros Recentes</span>
                       </div>
                       <div className="p-5 space-y-2">
@@ -804,7 +804,7 @@ export default function ResultadosProfPage() {
                 </div>
               )}
 
-              {/* ══ ABA: IA CLAUDE ══ */}
+              {/*  ABA: IA CLAUDE  */}
               {abaAtiva === 'ia' && (
                 <div>
                   {!ia && !iaLoading && !iaErro && (
@@ -830,7 +830,7 @@ export default function ResultadosProfPage() {
                         <div className="flex-1 p-4 rounded-xl" style={{ background: 'rgba(139,92,246,.08)', border: '1px solid rgba(139,92,246,.2)' }}>
                           <div className="text-[10px] font-bold text-purple-400 uppercase tracking-wider mb-2">Resumo da Equipe</div>
                           <p className="text-nodri-t1 text-sm leading-relaxed">{ia.resumo_executivo}</p>
-                          {ia.riscos_retencao && <p className="text-[11px] text-nodri-t2 mt-2 pt-2 border-t border-nodri-border">⚡ {ia.riscos_retencao}</p>}
+                          {ia.riscos_retencao && <p className="text-[11px] text-nodri-t2 mt-2 pt-2 border-t border-nodri-border"> {ia.riscos_retencao}</p>}
                         </div>
                         <div className="flex flex-col items-center p-4 rounded-xl shrink-0" style={{ background: 'rgba(139,92,246,.08)', border: '1px solid rgba(139,92,246,.2)', minWidth: '100px' }}>
                           <div className="text-[10px] font-bold text-purple-400 mb-1">Clima</div>
@@ -844,7 +844,7 @@ export default function ResultadosProfPage() {
                           <div className="grid sm:grid-cols-2 gap-2">
                             {ia.destaques_positivos.map((d, i) => (
                               <div key={i} className="p-3 rounded-xl" style={{ background: 'rgba(34,197,94,.06)', border: '1px solid rgba(34,197,94,.2)' }}>
-                                <div className="text-[11px] font-semibold text-green-400 mb-0.5">⭐ {d.nome}</div>
+                                <div className="text-[11px] font-semibold text-green-400 mb-0.5"> {d.nome}</div>
                                 <p className="text-[11px] text-nodri-t2">{d.motivo}</p>
                               </div>
                             ))}
@@ -857,7 +857,7 @@ export default function ResultadosProfPage() {
                           <div className="space-y-2">
                             {ia.alertas_urgentes.map((a, i) => (
                               <div key={i} className="p-3 rounded-xl" style={{ background: 'rgba(239,68,68,.06)', border: '1px solid rgba(239,68,68,.2)' }}>
-                                <div className="text-[11px] font-semibold text-red-400 mb-0.5">🚨 {a.nome}</div>
+                                <div className="text-[11px] font-semibold text-red-400 mb-0.5"> {a.nome}</div>
                                 <p className="text-[11px] text-nodri-t2 mb-1">{a.problema}</p>
                                 <p className="text-[11px] text-nodri-cyan">→ {a.recomendacao}</p>
                               </div>
@@ -891,7 +891,7 @@ export default function ResultadosProfPage() {
                           <div className="space-y-1.5">
                             {ia.acoes_gestao.map((a, i) => (
                               <div key={i} className="p-3 rounded-xl flex items-start gap-2" style={{ background: 'rgba(6,182,212,.05)', border: '1px solid rgba(6,182,212,.15)' }}>
-                                <span>{PRAZO_ICON[a.prazo] || '📌'}</span>
+                                <span>{PRAZO_ICON[a.prazo] || ''}</span>
                                 <div>
                                   <div className="text-[12px] font-semibold text-nodri-t1">{a.acao}</div>
                                   <div className="text-[10px] text-nodri-t3">{a.profissional} · {a.prazo}</div>
@@ -903,7 +903,7 @@ export default function ResultadosProfPage() {
                       )}
                       {ia.recomendacoes_treinamento?.length > 0 && (
                         <div>
-                          <div className="text-[11px] font-bold text-yellow-400 mb-2">🎓 Recomendações de Treinamento</div>
+                          <div className="text-[11px] font-bold text-yellow-400 mb-2"> Recomendações de Treinamento</div>
                           <ul className="space-y-1">
                             {ia.recomendacoes_treinamento.map((r, i) => <li key={i} className="text-[11px] text-nodri-t2 flex gap-2"><span className="text-yellow-400">→</span>{r}</li>)}
                           </ul>
@@ -916,7 +916,7 @@ export default function ResultadosProfPage() {
 
               {data.total === 0 && (
                 <div className="text-center py-20">
-                  <div className="text-5xl mb-4">📭</div>
+                  <div className="text-5xl mb-4"></div>
                   <h3 className="text-nodri-t1 font-semibold text-lg mb-2">Nenhum registro ainda</h3>
                   <p className="text-nodri-t2 text-sm">Compartilhe o link para começar a registrar ocorrências.</p>
                 </div>

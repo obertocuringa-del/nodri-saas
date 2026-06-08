@@ -9,14 +9,14 @@ import {
 import toast from 'react-hot-toast'
 
 const CATEGORIAS = [
-  { key: 'financeiro',   label: '💰 Gestão Financeira' },
-  { key: 'marketing',   label: '📣 Marketing e Vendas' },
-  { key: 'equipe',      label: '👥 Gestão de Equipe' },
-  { key: 'atendimento', label: '💆 Atendimento e Vendas' },
-  { key: 'operacao',    label: '📅 Operação e Agenda' },
+  { key: 'financeiro',   label: ' Gestão Financeira' },
+  { key: 'marketing',   label: ' Marketing e Vendas' },
+  { key: 'equipe',      label: ' Gestão de Equipe' },
+  { key: 'atendimento', label: ' Atendimento e Vendas' },
+  { key: 'operacao',    label: ' Operação e Agenda' },
 ]
 
-const EMOJIS = ['📄','💰','📊','💳','💼','📣','🎯','🔄','📅','💡','🤝','💬','⚔️','🚀','📋','🌟','🧴','💆','😔','💎','🎓','⚖️','🏆','📈','🔑','✨','🚫','🎪','🧠','💪']
+const EMOJIS = ['','','','','','','','','','','','','','','','','','','','','','','','','','','','','','']
 
 interface Artigo {
   id: string
@@ -35,7 +35,7 @@ const ARTIGO_VAZIO: Omit<Artigo, 'id' | 'criado_em'> = {
   titulo: '',
   resumo: '',
   conteudo: '',
-  emoji: '📄',
+  emoji: '',
   ordem: 0,
   ativo: true,
 }

@@ -99,7 +99,7 @@ export default function FeedbackPublicoPage() {
 
   const cor = form?.cor_primaria || '#be185d'
 
-  // ── LOADING ──────────────────────────────────────────────
+  //  LOADING 
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #fff1f5 0%, #fdf4ff 50%, #f0f9ff 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -118,12 +118,12 @@ export default function FeedbackPublicoPage() {
     )
   }
 
-  // ── ERRO ──────────────────────────────────────────────────
+  //  ERRO 
   if (error) {
     return (
       <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #fff1f5 0%, #fdf4ff 50%, #f0f9ff 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
         <div style={{ textAlign: 'center', maxWidth: 360 }}>
-          <div style={{ fontSize: 56, marginBottom: 16 }}>🔒</div>
+          <div style={{ fontSize: 56, marginBottom: 16 }}></div>
           <h1 style={{ color: '#111827', fontWeight: 700, fontSize: 22, marginBottom: 8 }}>Formulário indisponível</h1>
           <p style={{ color: '#6b7280', fontSize: 15 }}>{error}</p>
         </div>
@@ -131,7 +131,7 @@ export default function FeedbackPublicoPage() {
     )
   }
 
-  // ── ENVIADO ───────────────────────────────────────────────
+  //  ENVIADO 
   if (enviado) {
     return (
       <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #fff1f5 0%, #fdf4ff 50%, #f0f9ff 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
@@ -154,7 +154,7 @@ export default function FeedbackPublicoPage() {
           </p>
           <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 28 }}>
             {[1,2,3,4,5].map(i => (
-              <span key={i} style={{ fontSize: 28 }}>⭐</span>
+              <span key={i} style={{ fontSize: 28 }}></span>
             ))}
           </div>
           {form?.salao_nome && (
@@ -173,7 +173,7 @@ export default function FeedbackPublicoPage() {
     ? form.salao_nome.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)
     : 'S'
 
-  // ── FORMULÁRIO ────────────────────────────────────────────
+  //  FORMULÁRIO 
   return (
     <>
       <style>{`
@@ -273,8 +273,8 @@ export default function FeedbackPublicoPage() {
                     })}
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
-                    <span style={{ fontSize: 11, color: '#9ca3af' }}>😞 Não voltaria</span>
-                    <span style={{ fontSize: 11, color: '#9ca3af' }}>😍 Com certeza voltaria</span>
+                    <span style={{ fontSize: 11, color: '#9ca3af' }}> Não voltaria</span>
+                    <span style={{ fontSize: 11, color: '#9ca3af' }}> Com certeza voltaria</span>
                   </div>
                 </div>
               )}
@@ -468,7 +468,7 @@ export default function FeedbackPublicoPage() {
               padding: '14px 18px', marginBottom: 16, fontSize: 14, color: '#dc2626',
               display: 'flex', alignItems: 'center', gap: 8,
             }}>
-              ⚠️ {erroEnvio}
+               {erroEnvio}
             </div>
           )}
 

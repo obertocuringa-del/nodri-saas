@@ -68,7 +68,7 @@ export default function FeedbackProfissionalPublico() {
 
   if (error) return (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg,#f5f3ff,#ede9fe)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ textAlign: 'center' }}><div style={{ fontSize: 52, marginBottom: 16 }}>🔒</div>
+      <div style={{ textAlign: 'center' }}><div style={{ fontSize: 52, marginBottom: 16 }}></div>
         <h1 style={{ color: '#111827', fontWeight: 700, fontSize: 20 }}>Formulário indisponível</h1>
         <p style={{ color: '#6b7280', marginTop: 8 }}>{error}</p></div>
     </div>
@@ -136,7 +136,7 @@ export default function FeedbackProfissionalPublico() {
                     background: sel ? `${cor}10` : '#f9fafb', cursor: 'pointer', fontWeight: 700, fontSize: 15,
                     color: sel ? cor : '#6b7280', transition: 'all .15s', boxShadow: sel ? `0 4px 20px ${cor}20` : 'none',
                   }}>
-                    {t === 'positivo' ? '👍 POSITIVO' : '👎 NEGATIVO'}
+                    {t === 'positivo' ? ' POSITIVO' : ' NEGATIVO'}
                   </button>
                 )
               })}
@@ -166,7 +166,7 @@ export default function FeedbackProfissionalPublico() {
 
           {erroEnvio && (
             <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 14, padding: '14px 18px', marginBottom: 16, fontSize: 13, color: '#dc2626' }}>
-              ⚠️ {erroEnvio}
+              ️ {erroEnvio}
             </div>
           )}
 

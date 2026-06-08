@@ -33,10 +33,10 @@ const DEFAULT_LANDING = {
   hero_cor_botao: '#7c5cfc',
   beneficios_titulo: 'Por que escolher o NODRI?',
   beneficios: [
-    { emoji: '⚡', titulo: 'Abre com 1 clique', desc: 'Clique em Abrir no site e o programa abre instantaneamente no seu computador.' },
-    { emoji: '💬', titulo: 'Integrado ao WhatsApp', desc: 'Envie confirmações, feedbacks e listas direto pelo WhatsApp.' },
-    { emoji: '📊', titulo: 'Relatórios completos', desc: 'Acompanhe faturamento, desempenho de profissionais e reservas financeiras.' },
-    { emoji: '🔄', titulo: 'Atualizações automáticas', desc: 'Receba novas versões dos programas sem precisar reinstalar tudo.' },
+    { emoji: '', titulo: 'Abre com 1 clique', desc: 'Clique em Abrir no site e o programa abre instantaneamente no seu computador.' },
+    { emoji: '', titulo: 'Integrado ao WhatsApp', desc: 'Envie confirmações, feedbacks e listas direto pelo WhatsApp.' },
+    { emoji: '', titulo: 'Relatórios completos', desc: 'Acompanhe faturamento, desempenho de profissionais e reservas financeiras.' },
+    { emoji: '', titulo: 'Atualizações automáticas', desc: 'Receba novas versões dos programas sem precisar reinstalar tudo.' },
   ],
   planos_titulo: 'Escolha seu Plano',
   planos_subtitulo: 'Pagamento único mensal via PIX ou cartão',
@@ -49,10 +49,10 @@ const DEFAULT_LANDING = {
   afiliados_subtitulo: 'Indique o NODRI e ganhe 40% de comissão em cada venda com seu cupom exclusivo.',
   afiliados_botao: 'Quero ser Afiliado →',
   afiliados_chips: [
-    { emoji: '🎫', texto: 'Cupom exclusivo' },
-    { emoji: '🔗', texto: 'Link personalizado' },
-    { emoji: '💰', texto: '40% por venda' },
-    { emoji: '📱', texto: 'Pix direto' },
+    { emoji: '', texto: 'Cupom exclusivo' },
+    { emoji: '', texto: 'Link personalizado' },
+    { emoji: '', texto: '40% por venda' },
+    { emoji: '', texto: 'Pix direto' },
   ],
   footer_logo: 'NODRI',
   footer_texto: 'Sistema de Gestão para Salões de Beleza',
@@ -65,10 +65,10 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
   const [planos, setPlanos] = useState(initialPlanos)
   const [localModulos, setLocalModulos] = useState(initialModulos)
 
-  // ── MÓDULOS CRUD ──
+  //  MÓDULOS CRUD 
   const [showNovoModulo, setShowNovoModulo] = useState(false)
   const [editModulo, setEditModulo] = useState<Modulo | null>(null)
-  const [moduloForm, setModuloForm] = useState({ nome: '', slug: '', descricao: '', versao: '1.0.0', icone: '⚙️', cor_classe: '', categoria: '', ordem: '0' })
+  const [moduloForm, setModuloForm] = useState({ nome: '', slug: '', descricao: '', versao: '1.0.0', icone: '', cor_classe: '', categoria: '', ordem: '0' })
   const [savingModulo, setSavingModulo] = useState(false)
   const [togglingManutencao, setTogglingManutencao] = useState<string | null>(null)
   const [activeSection, setActiveSection] = useState('dashboard')
@@ -106,21 +106,21 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
   const [savingNotif, setSavingNotif] = useState(false)
   const [deletingNotif, setDeletingNotif] = useState<string | null>(null)
 
-  // ── LANDING PAGE EDITOR ──
+  //  LANDING PAGE EDITOR 
   const [planosTab, setPlanosTab] = useState<'planos' | 'landing' | 'cupons'>('planos')
   const [landingConfig, setLandingConfig] = useState<typeof DEFAULT_LANDING | null>(null)
   const [savingLanding, setSavingLanding] = useState(false)
 
-  // ── CUPONS ──
+  //  CUPONS 
   const [cupons, setCupons] = useState<Cupom[]>([])
   const [cuponForm, setCuponForm] = useState({ percentual: '', codigo: '' })
   const [savingCupon, setSavingCupon] = useState(false)
   const [loadingCupons, setLoadingCupons] = useState(false)
 
-  // ── COMPRA DETALHE ──
+  //  COMPRA DETALHE 
   const [selectedCompra, setSelectedCompra] = useState<Record<string, any> | null>(null as Record<string, any> | null)
 
-  // ── IA CONFIG ──
+  //  IA CONFIG 
   const [iaConfig, setIaConfig] = useState({ api_key: '', modelo: 'claude-haiku-4-5', instrucoes_base: '', api_key_salva: false })
   const [iaConfigLoading, setIaConfigLoading] = useState(false)
   const [showIaKey, setShowIaKey] = useState(false)
@@ -414,7 +414,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
     else toast.error('Erro ao excluir plano')
   }
 
-  // ── LANDING EDITOR ──
+  //  LANDING EDITOR 
   async function loadLandingConfig() {
     try {
       const res = await fetch('/api/landing-config')
@@ -459,7 +459,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
     setLandingConfig({ ...landingConfig, landing_planos: arr })
   }
 
-  // ── CUPONS ──
+  //  CUPONS 
   async function loadCupons() {
     setLoadingCupons(true)
     try {
@@ -509,14 +509,14 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
     else toast.error('Erro ao excluir cupom')
   }
 
-  // ── MÓDULOS ──
+  //  MÓDULOS 
   function resetModuloForm() {
-    setModuloForm({ nome: '', slug: '', descricao: '', versao: '1.0.0', icone: '⚙️', cor_classe: '', categoria: '', ordem: '0' })
+    setModuloForm({ nome: '', slug: '', descricao: '', versao: '1.0.0', icone: '', cor_classe: '', categoria: '', ordem: '0' })
   }
 
   function openEditModulo(m: Modulo) {
     setEditModulo(m)
-    setModuloForm({ nome: m.nome, slug: m.slug, descricao: m.descricao || '', versao: m.versao || '1.0.0', icone: m.icone || '⚙️', cor_classe: m.cor_classe || '', categoria: m.categoria || '', ordem: String(m.ordem || 0) })
+    setModuloForm({ nome: m.nome, slug: m.slug, descricao: m.descricao || '', versao: m.versao || '1.0.0', icone: m.icone || '', cor_classe: m.cor_classe || '', categoria: m.categoria || '', ordem: String(m.ordem || 0) })
     setShowNovoModulo(true)
   }
 
@@ -1187,7 +1187,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                       <div className="nodri-card p-4">
                         <div className="flex items-center justify-between mb-3">
                           <div className="font-syne font-bold text-[12px] text-nodri-cyan">Seção Benefícios</div>
-                          <button onClick={() => setLandingConfig({ ...landingConfig, beneficios: [...landingConfig.beneficios, { emoji: '⭐', titulo: 'Novo benefício', desc: 'Descrição' }] })}
+                          <button onClick={() => setLandingConfig({ ...landingConfig, beneficios: [...landingConfig.beneficios, { emoji: '', titulo: 'Novo benefício', desc: 'Descrição' }] })}
                             className="flex items-center gap-1 text-[11px] bg-nodri-cyan text-black px-2.5 py-1 rounded-lg font-bold hover:brightness-110">
                             <Plus size={11} /> Adicionar
                           </button>
@@ -1254,7 +1254,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                               </div>
                               <label className="flex items-center gap-2 text-[11px] text-nodri-t2 mb-3 cursor-pointer">
                                 <input type="checkbox" checked={p.destaque} onChange={e => { const arr = [...landingConfig.landing_planos]; arr[pi] = { ...arr[pi], destaque: e.target.checked }; setLandingConfig({ ...landingConfig, landing_planos: arr }) }} />
-                                ⭐ Destacar como "Mais Popular"
+                                 Destacar como "Mais Popular"
                               </label>
                               <div className="space-y-1.5">
                                 <div className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1">Módulos inclusos:</div>
@@ -1294,7 +1294,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                           <div>
                             <div className="flex items-center justify-between mb-2">
                               <label className="text-[10px] text-nodri-t3 uppercase tracking-wider">Chips de destaque</label>
-                              <button onClick={() => setLandingConfig({ ...landingConfig, afiliados_chips: [...((landingConfig as any).afiliados_chips || []), { emoji: '✅', texto: 'Novo item' }] } as any)}
+                              <button onClick={() => setLandingConfig({ ...landingConfig, afiliados_chips: [...((landingConfig as any).afiliados_chips || []), { emoji: '', texto: 'Novo item' }] } as any)}
                                 className="text-[10px] bg-nodri-cyan text-black px-2 py-0.5 rounded font-bold">+ Adicionar</button>
                             </div>
                             <div className="space-y-2">
@@ -1509,7 +1509,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
           )}
 
           {/* CONFIGURAÇÕES */}
-          {/* ── IA CONFIG ── */}
+          {/*  IA CONFIG  */}
           {activeSection === 'ia' && (
             <div className="space-y-5 max-w-xl">
               <div className="nodri-card p-5">
@@ -1620,7 +1620,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                           else toast.error('Erro ao remover key')
                         }}
                         className="text-red-400 hover:text-red-300 text-[10px] flex-shrink-0"
-                      >✕</button>
+                      ></button>
                     </div>
                   ))}
                 </div>
@@ -2189,7 +2189,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
               <div><label className="nodri-label block mb-1">Descrição</label><textarea className="nodri-input resize-none h-16" placeholder="Descreva o que o módulo faz..." value={moduloForm.descricao} onChange={e => setModuloForm(p => ({...p, descricao: e.target.value}))} /></div>
               <div className="grid grid-cols-3 gap-3">
                 <div><label className="nodri-label block mb-1">Versão</label><input className="nodri-input" placeholder="1.0.0" value={moduloForm.versao} onChange={e => setModuloForm(p => ({...p, versao: e.target.value}))} /></div>
-                <div><label className="nodri-label block mb-1">Ícone (emoji)</label><input className="nodri-input text-center text-[18px]" placeholder="⚙️" value={moduloForm.icone} onChange={e => setModuloForm(p => ({...p, icone: e.target.value}))} /></div>
+                <div><label className="nodri-label block mb-1">Ícone (emoji)</label><input className="nodri-input text-center text-[18px]" placeholder="" value={moduloForm.icone} onChange={e => setModuloForm(p => ({...p, icone: e.target.value}))} /></div>
                 <div><label className="nodri-label block mb-1">Ordem</label><input type="number" min="0" className="nodri-input" placeholder="0" value={moduloForm.ordem} onChange={e => setModuloForm(p => ({...p, ordem: e.target.value}))} /></div>
               </div>
               <div className="grid grid-cols-2 gap-3">

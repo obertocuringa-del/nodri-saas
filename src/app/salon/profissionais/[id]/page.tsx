@@ -89,12 +89,12 @@ function BlocoFidelizacao({ f }: { f: Fidelizacao }) {
       borderColor: isCrit ? 'rgba(239,68,68,0.25)' : 'rgba(34,197,94,0.25)'
     }}>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-syne font-bold text-[13px]">🔍 Análise de Fidelização</h3>
+        <h3 className="font-syne font-bold text-[13px]"> Análise de Fidelização</h3>
         <span className={`text-[10px] px-3 py-1 rounded-full font-bold border ${
           isCrit ? 'text-red-400 border-red-400/30 bg-red-400/10' :
           f.nivel==='alto' ? 'text-nodri-amber border-nodri-amber/30 bg-nodri-amber/10' :
           'text-nodri-green border-nodri-green/30 bg-nodri-green/10'
-        }`}>{isCrit ? '🔴 CRÍTICO' : f.nivel==='alto' ? '🟡 ATENÇÃO' : '🟢 BOM'}</span>
+        }`}>{isCrit ? ' CRÍTICO' : f.nivel==='alto' ? ' ATENÇÃO' : ' BOM'}</span>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
         {[
@@ -123,7 +123,7 @@ function BlocoFidelizacao({ f }: { f: Fidelizacao }) {
         </div>
         <p className="text-[10px] text-nodri-t3">
           De cada 100 novos, <strong className="text-nodri-t1">{Math.abs(Math.round(f.taxa_fidelizacao))}</strong> viram fiéis.
-          {isCrit && ' ⚠️ Crie estratégia de pós-venda imediato!'}
+          {isCrit && ' ️ Crie estratégia de pós-venda imediato!'}
         </p>
       </div>
     </div>
@@ -168,7 +168,7 @@ function TabelaServicos({ p1, p2, nomeProfissional }: { p1: MetricaBloco | null;
       <div className="bg-nodri-surface border border-nodri-border rounded-2xl overflow-hidden">
         <div className="px-5 py-3 flex items-center justify-between" style={{background:'#0f3460'}}>
           <h3 className="font-syne font-bold text-[13px] text-white">
-            📋 SERVIÇOS REALIZADOS{nomeProfissional ? ` POR ${nomeProfissional.toUpperCase()}` : ''}
+             SERVIÇOS REALIZADOS{nomeProfissional ? ` POR ${nomeProfissional.toUpperCase()}` : ''}
           </h3>
           <span className="text-[11px] text-white/70">{sorted.length} serviços</span>
         </div>
@@ -195,11 +195,11 @@ function TabelaServicos({ p1, p2, nomeProfissional }: { p1: MetricaBloco | null;
                     <td className="py-2.5 px-4 text-center font-bold" style={{color: q2>0?'#e2e8f0':'#64748b'}}>{q2||'–'}</td>
                     <td className="py-2.5 px-4 text-center text-nodri-t3">{q1||'–'}</td>
                     <td className="py-2.5 px-4 text-center">
-                      {isNovo    && <span className="text-nodri-green font-bold">▲ 100%</span>}
-                      {isCaiu100 && <span className="text-nodri-red font-bold">▼ 100%</span>}
+                      {isNovo    && <span className="text-nodri-green font-bold"> 100%</span>}
+                      {isCaiu100 && <span className="text-nodri-red font-bold"> 100%</span>}
                       {!isNovo && !isCaiu100 && d!==null && (
                         <span className={`font-bold ${d>0?'text-nodri-green':d<0?'text-nodri-red':'text-nodri-t3'}`}>
-                          {d>0?'▲':d<0?'▼':'•'} {d===0?'0':Math.abs(d).toFixed(1)}%
+                          {d>0?'':d<0?'':'•'} {d===0?'0':Math.abs(d).toFixed(1)}%
                         </span>
                       )}
                       {!isNovo && !isCaiu100 && d===null && <span className="text-nodri-t3">• 0%</span>}
@@ -277,7 +277,7 @@ function TabelaServicos({ p1, p2, nomeProfissional }: { p1: MetricaBloco | null;
   )
 }
 
-// ── Gerador de narrativa personalizada ──
+//  Gerador de narrativa personalizada 
 function gerarNarrativa(
   nome: string, p1: MetricaBloco|null, p2: MetricaBloco|null,
   fidel: Fidelizacao|null, mix: MixItem[], form: Partial<Profissional>,
@@ -370,7 +370,7 @@ function gerarNarrativa(
 
   // 7. Checklist
   if (checkObrig.length>0)
-    partes.push(`⚠️ Atenção: há item obrigatório pendente no checklist (${checkObrig.map((c:any)=>c.label).join(', ')}) — regularize o quanto antes.`)
+    partes.push(`️ Atenção: há item obrigatório pendente no checklist (${checkObrig.map((c:any)=>c.label).join(', ')}) — regularize o quanto antes.`)
 
   // 8. Projeção
   if (projecao) {
@@ -383,7 +383,7 @@ function gerarNarrativa(
   return partes.join(' ')
 }
 
-// ── Diagnóstico Automático ──
+//  Diagnóstico Automático 
 function BlocoDiagnostico({ prof, form, metricas, p1, p2, fidel }: {
   prof: Profissional; form: Partial<Profissional>
   metricas: DadosMetricas | null; p1: MetricaBloco | null; p2: MetricaBloco | null; fidel: Fidelizacao | null
@@ -435,15 +435,15 @@ function BlocoDiagnostico({ prof, form, metricas, p1, p2, fidel }: {
 
   // Diagnóstico textual
   const textos: string[] = []
-  if (pctFat!==null) textos.push(pctFat>=10 ? `✅ Faturamento cresceu ${pctFat.toFixed(1)}% — excelente desempenho no período.` : pctFat>=0 ? `⚠️ Faturamento cresceu apenas ${pctFat.toFixed(1)}% — há espaço para melhorar.` : `🔴 Faturamento caiu ${Math.abs(pctFat).toFixed(1)}% — ação imediata necessária.`)
-  if (pctTicket!==null) textos.push(pctTicket>=5 ? `✅ Ticket médio subiu ${pctTicket.toFixed(1)}% — você está agregando mais valor por atendimento.` : pctTicket>=-5 ? `⚠️ Ticket médio praticamente estável (${pctTicket.toFixed(1)}%) — considere serviços complementares.` : `🔴 Ticket médio caiu ${Math.abs(pctTicket).toFixed(1)}% — você trabalhou mais e ganhou menos por atendimento. Revise preços ou ofereça serviços de maior valor.`)
-  if (p2?.taxa_ocupacao!==undefined) textos.push(p2.taxa_ocupacao>=60 ? `✅ Ocupação em ${p2.taxa_ocupacao.toFixed(1)}% — agenda bem preenchida.` : p2.taxa_ocupacao>=35 ? `⚠️ Ocupação em ${p2.taxa_ocupacao.toFixed(1)}% — tente preencher mais horários disponíveis.` : `🔴 Ocupação de apenas ${p2.taxa_ocupacao.toFixed(1)}% — agenda muito vazia. Invista em confirmação de agendamentos e divulgação.`)
-  if (fidel) textos.push(fidel.taxa_fidelizacao>=70 ? `✅ ${fidel.taxa_fidelizacao}% dos novos clientes voltaram — ótima fidelização!` : fidel.taxa_fidelizacao>=50 ? `⚠️ Apenas ${fidel.taxa_fidelizacao}% dos novos voltaram. ${fidel.perdidos} clientes não retornaram.` : `🔴 Fidelização crítica: ${fidel.taxa_fidelizacao}%. ${fidel.perdidos} clientes novos não voltaram (prejuízo estimado: ${fmt$(fidel.valor_perdido)}).`)
-  if (checkObrig.length>0) textos.push(`🔴 ${checkObrig.length} item(s) obrigatório(s) do checklist pendente(s): ${checkObrig.map(c=>c.label).join(', ')}.`)
-  if (!prof.cnpj) textos.push('🔴 CNPJ não cadastrado — regularize a situação do profissional.')
-  if (ocNeg>0) textos.push(`⚠️ ${ocNeg} ocorrência(s) negativa(s) registrada(s). ${ocPos>0?`${ocPos} positiva(s) compensam parcialmente.`:''}`)
-  if (metricas?.projecao?.tendencia==='alta') textos.push(`✅ Tendência de crescimento projetada para o próximo mês.`)
-  if (metricas?.projecao?.tendencia==='baixa') textos.push(`🔴 Tendência de queda projetada — planeje ações de recuperação.`)
+  if (pctFat!==null) textos.push(pctFat>=10 ? ` Faturamento cresceu ${pctFat.toFixed(1)}% — excelente desempenho no período.` : pctFat>=0 ? `️ Faturamento cresceu apenas ${pctFat.toFixed(1)}% — há espaço para melhorar.` : ` Faturamento caiu ${Math.abs(pctFat).toFixed(1)}% — ação imediata necessária.`)
+  if (pctTicket!==null) textos.push(pctTicket>=5 ? ` Ticket médio subiu ${pctTicket.toFixed(1)}% — você está agregando mais valor por atendimento.` : pctTicket>=-5 ? `️ Ticket médio praticamente estável (${pctTicket.toFixed(1)}%) — considere serviços complementares.` : ` Ticket médio caiu ${Math.abs(pctTicket).toFixed(1)}% — você trabalhou mais e ganhou menos por atendimento. Revise preços ou ofereça serviços de maior valor.`)
+  if (p2?.taxa_ocupacao!==undefined) textos.push(p2.taxa_ocupacao>=60 ? ` Ocupação em ${p2.taxa_ocupacao.toFixed(1)}% — agenda bem preenchida.` : p2.taxa_ocupacao>=35 ? `️ Ocupação em ${p2.taxa_ocupacao.toFixed(1)}% — tente preencher mais horários disponíveis.` : ` Ocupação de apenas ${p2.taxa_ocupacao.toFixed(1)}% — agenda muito vazia. Invista em confirmação de agendamentos e divulgação.`)
+  if (fidel) textos.push(fidel.taxa_fidelizacao>=70 ? ` ${fidel.taxa_fidelizacao}% dos novos clientes voltaram — ótima fidelização!` : fidel.taxa_fidelizacao>=50 ? `️ Apenas ${fidel.taxa_fidelizacao}% dos novos voltaram. ${fidel.perdidos} clientes não retornaram.` : ` Fidelização crítica: ${fidel.taxa_fidelizacao}%. ${fidel.perdidos} clientes novos não voltaram (prejuízo estimado: ${fmt$(fidel.valor_perdido)}).`)
+  if (checkObrig.length>0) textos.push(` ${checkObrig.length} item(s) obrigatório(s) do checklist pendente(s): ${checkObrig.map(c=>c.label).join(', ')}.`)
+  if (!prof.cnpj) textos.push(' CNPJ não cadastrado — regularize a situação do profissional.')
+  if (ocNeg>0) textos.push(`️ ${ocNeg} ocorrência(s) negativa(s) registrada(s). ${ocPos>0?`${ocPos} positiva(s) compensam parcialmente.`:''}`)
+  if (metricas?.projecao?.tendencia==='alta') textos.push(` Tendência de crescimento projetada para o próximo mês.`)
+  if (metricas?.projecao?.tendencia==='baixa') textos.push(` Tendência de queda projetada — planeje ações de recuperação.`)
 
   // Plano de ação
   const acoes: {p:'alta'|'media'|'baixa', t:string}[] = []
@@ -458,7 +458,7 @@ function BlocoDiagnostico({ prof, form, metricas, p1, p2, fidel }: {
   if (checkPend.length>0 && checkObrig.length===0) acoes.push({p:'baixa', t:`Completar checklist: ${checkOk}/${checkTotal} itens concluídos`})
 
   const corP = {alta:'#ef4444',media:'#f59e0b',baixa:'#22c55e'}
-  const icoP = {alta:'🔴',media:'🟡',baixa:'🟢'}
+  const icoP = {alta:'',media:'',baixa:''}
   const txtP = {alta:'URGENTE',media:'ESTA SEMANA',baixa:'ESTE MÊS'}
 
   const semDados = !p1 && !p2 && !metricas
@@ -469,9 +469,9 @@ function BlocoDiagnostico({ prof, form, metricas, p1, p2, fidel }: {
       <div className="rounded-2xl p-6 border" style={{background:'rgba(255,255,255,0.02)', borderColor:`${corGeral}44`}}>
         <div className="flex items-start justify-between mb-4">
           <div>
-            <h2 className="font-syne font-black text-[18px] text-nodri-t1">🩺 Diagnóstico Geral</h2>
+            <h2 className="font-syne font-black text-[18px] text-nodri-t1"> Diagnóstico Geral</h2>
             <p className="text-[11px] text-nodri-t3 mt-1">Análise automática cruzando cadastro, faturamento e ocorrências</p>
-            {semDados && <p className="text-[11px] text-nodri-amber mt-2">⚠️ Aplique um filtro na aba Faturamento para análise completa.</p>}
+            {semDados && <p className="text-[11px] text-nodri-amber mt-2">️ Aplique um filtro na aba Faturamento para análise completa.</p>}
           </div>
           <div className="text-right shrink-0 ml-4">
             <div className="font-syne font-black text-[48px] leading-none" style={{color:corGeral}}>{scoreGeral ?? '—'}</div>
@@ -487,15 +487,15 @@ function BlocoDiagnostico({ prof, form, metricas, p1, p2, fidel }: {
 
       {/* Semáforo por área */}
       <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
-        <h3 className="font-syne font-bold text-[13px] mb-4">🚦 Status por Área</h3>
+        <h3 className="font-syne font-bold text-[13px] mb-4"> Status por Área</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {([
-            {l:'💰 Faturamento',  s:sFat,    v: pctFat!==null?`${pctFat>=0?'+':''}${pctFat.toFixed(1)}%`:'Sem dados'},
-            {l:'🎟️ Ticket Médio', s:sTicket, v: pctTicket!==null?`${pctTicket>=0?'+':''}${pctTicket.toFixed(1)}%`:'Sem dados'},
-            {l:'⏱️ Ocupação',     s:sOcup,   v: p2?.taxa_ocupacao!==undefined?`${p2.taxa_ocupacao.toFixed(1)}%`:'Sem dados'},
-            {l:'👥 Fidelização',  s:sFidel,  v: fidel?`${fidel.taxa_fidelizacao}%`:'Sem dados'},
-            {l:'📋 Checklist',    s:sCheck,  v:`${checkOk}/${checkTotal} itens`},
-            {l:'⚠️ Ocorrências',  s:sOc,    v: ocNeg===0?'Nenhuma negativa':`${ocNeg} negativa(s)`},
+            {l:' Faturamento',  s:sFat,    v: pctFat!==null?`${pctFat>=0?'+':''}${pctFat.toFixed(1)}%`:'Sem dados'},
+            {l:'️ Ticket Médio', s:sTicket, v: pctTicket!==null?`${pctTicket>=0?'+':''}${pctTicket.toFixed(1)}%`:'Sem dados'},
+            {l:'️ Ocupação',     s:sOcup,   v: p2?.taxa_ocupacao!==undefined?`${p2.taxa_ocupacao.toFixed(1)}%`:'Sem dados'},
+            {l:' Fidelização',  s:sFidel,  v: fidel?`${fidel.taxa_fidelizacao}%`:'Sem dados'},
+            {l:' Checklist',    s:sCheck,  v:`${checkOk}/${checkTotal} itens`},
+            {l:'️ Ocorrências',  s:sOc,    v: ocNeg===0?'Nenhuma negativa':`${ocNeg} negativa(s)`},
           ]).map(item=>(
             <div key={item.l} className="bg-nodri-card border border-nodri-border rounded-xl p-3 flex items-center justify-between gap-2">
               <div className="min-w-0">
@@ -523,7 +523,7 @@ function BlocoDiagnostico({ prof, form, metricas, p1, p2, fidel }: {
         return (
           <div className="rounded-2xl p-5 border" style={{background:'rgba(99,102,241,0.04)', borderColor:'rgba(99,102,241,0.25)'}}>
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-[18px]">💬</span>
+              <span className="text-[18px]"></span>
               <h3 className="font-syne font-bold text-[13px]">Análise Personalizada</h3>
             </div>
             <p className="text-[13px] text-nodri-t1 leading-[1.8] font-medium">{narrativa}</p>
@@ -534,7 +534,7 @@ function BlocoDiagnostico({ prof, form, metricas, p1, p2, fidel }: {
       {/* Bullets de apoio */}
       {textos.length > 0 && (
         <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
-          <h3 className="font-syne font-bold text-[13px] mb-4">📌 Pontos de Atenção</h3>
+          <h3 className="font-syne font-bold text-[13px] mb-4"> Pontos de Atenção</h3>
           <div className="space-y-2">
             {textos.map((t,i)=>(
               <p key={i} className="text-[12px] text-nodri-t2 leading-relaxed p-3 bg-nodri-card rounded-xl border border-nodri-border/50">{t}</p>
@@ -546,12 +546,12 @@ function BlocoDiagnostico({ prof, form, metricas, p1, p2, fidel }: {
       {/* Checklist pendências */}
       {checkPend.length > 0 && (
         <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
-          <h3 className="font-syne font-bold text-[13px] mb-4">📋 Checklist — Itens Pendentes <span className="text-[10px] text-nodri-t3 font-normal">{checkOk}/{checkTotal} concluídos</span></h3>
+          <h3 className="font-syne font-bold text-[13px] mb-4"> Checklist — Itens Pendentes <span className="text-[10px] text-nodri-t3 font-normal">{checkOk}/{checkTotal} concluídos</span></h3>
           <div className="space-y-2">
             {checkPend.map(c=>(
               <div key={c.key} className="flex items-center gap-3 p-2.5 rounded-xl border"
                 style={{background:c.obrig?'rgba(239,68,68,0.05)':'rgba(245,158,11,0.05)', borderColor:c.obrig?'rgba(239,68,68,0.2)':'rgba(245,158,11,0.2)'}}>
-                <span>{c.obrig?'🔴':'🟡'}</span>
+                <span>{c.obrig?'':''}</span>
                 <span className="text-[11px] text-nodri-t1 flex-1">{c.label}</span>
                 {c.obrig && <span className="text-[9px] font-bold text-red-400 bg-red-400/10 px-2 py-0.5 rounded-full">OBRIGATÓRIO</span>}
               </div>
@@ -563,7 +563,7 @@ function BlocoDiagnostico({ prof, form, metricas, p1, p2, fidel }: {
       {/* Ocorrências */}
       {metricas?.feedbacks && metricas.feedbacks.length > 0 && (
         <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
-          <h3 className="font-syne font-bold text-[13px] mb-4">⚠️ Ocorrências no Período <span className="text-[10px] text-nodri-t3 font-normal">{metricas.feedbacks.length} registros</span></h3>
+          <h3 className="font-syne font-bold text-[13px] mb-4">️ Ocorrências no Período <span className="text-[10px] text-nodri-t3 font-normal">{metricas.feedbacks.length} registros</span></h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
             {[{l:'Positivas',v:ocPos,c:'#22c55e'},{l:'Negativas',v:ocNeg,c:'#ef4444'},{l:'Total',v:metricas.feedbacks.length,c:'#7c5cfc'}].map(item=>(
               <div key={item.l} className="bg-nodri-card border border-nodri-border rounded-xl p-3 text-center">
@@ -578,7 +578,7 @@ function BlocoDiagnostico({ prof, form, metricas, p1, p2, fidel }: {
               return (
                 <div key={fb.id} className="p-2.5 rounded-xl border text-[11px]"
                   style={{background:pos?'rgba(34,197,94,0.05)':'rgba(239,68,68,0.05)', borderColor:pos?'rgba(34,197,94,0.15)':'rgba(239,68,68,0.15)'}}>
-                  <span style={{color:pos?'#22c55e':'#ef4444',fontWeight:700}}>{pos?'✅':'❌'} {fb.ocorrido_descricao}</span>
+                  <span style={{color:pos?'#22c55e':'#ef4444',fontWeight:700}}>{pos?'':''} {fb.ocorrido_descricao}</span>
                   {fb.descricao && <p className="text-nodri-t3 mt-0.5 italic text-[10px]">"{fb.descricao}"</p>}
                 </div>
               )
@@ -590,7 +590,7 @@ function BlocoDiagnostico({ prof, form, metricas, p1, p2, fidel }: {
       {/* Plano de Ação */}
       {acoes.length > 0 && (
         <div className="rounded-2xl p-5 border" style={{background:'rgba(99,102,241,0.04)', borderColor:'rgba(99,102,241,0.2)'}}>
-          <h3 className="font-syne font-bold text-[13px] mb-4">🎯 Plano de Ação — Prioridades</h3>
+          <h3 className="font-syne font-bold text-[13px] mb-4"> Plano de Ação — Prioridades</h3>
           <div className="space-y-3">
             {acoes.slice(0,6).map((a,i)=>(
               <div key={i} className="flex gap-3 p-3 rounded-xl border bg-nodri-card" style={{borderColor:`${corP[a.p]}33`}}>
@@ -607,7 +607,7 @@ function BlocoDiagnostico({ prof, form, metricas, p1, p2, fidel }: {
 
       {acoes.length===0 && textos.length===0 && !semDados && (
         <div className="text-center py-10 text-nodri-t3">
-          <span className="text-4xl">🎉</span>
+          <span className="text-4xl"></span>
           <p className="text-[13px] mt-3">Nenhuma ação necessária — tudo dentro do esperado!</p>
         </div>
       )}
@@ -630,7 +630,7 @@ const CHECKLIST: { key: keyof Profissional; label: string; obrig: boolean }[] = 
 const inputCls = "w-full bg-nodri-card border border-nodri-border rounded-lg px-3 py-2 text-[12px] outline-none focus:border-nodri-cyan/40 transition-colors text-nodri-t1"
 const labelCls = "text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block"
 
-// ── Filtros compartilhados ──
+//  Filtros compartilhados 
 function FiltroComparacao({ modoFiltro, setModoFiltro, p1i, setP1i, p1f, setP1f, p2i, setP2i, p2f, setP2f, onAplicar, loading }: any) {
   // Fix: ao trocar para "Mês a Mês", reseta as datas fim para igualar ao início
   function handleModo(m: 'simples'|'range') {
@@ -654,8 +654,8 @@ function FiltroComparacao({ modoFiltro, setModoFiltro, p1i, setP1i, p1f, setP1f,
       </div>
       <div className="grid grid-cols-2 gap-4">
         {[
-          { label: modoFiltro==='simples' ? '📅 Período Anterior (P1)' : '📅 Período 1', ini: p1i, fim: p1f, setIni: setP1i, setFim: setP1f },
-          { label: modoFiltro==='simples' ? '📅 Período Atual (P2)'    : '📅 Período 2', ini: p2i, fim: p2f, setIni: setP2i, setFim: setP2f },
+          { label: modoFiltro==='simples' ? ' Período Anterior (P1)' : ' Período 1', ini: p1i, fim: p1f, setIni: setP1i, setFim: setP1f },
+          { label: modoFiltro==='simples' ? ' Período Atual (P2)'    : ' Período 2', ini: p2i, fim: p2f, setIni: setP2i, setFim: setP2f },
         ].map((col,ci)=>(
           <div key={ci} className="bg-nodri-card/50 rounded-xl p-3 border border-nodri-border">
             <div className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-2">{col.label}</div>
@@ -677,7 +677,7 @@ function FiltroComparacao({ modoFiltro, setModoFiltro, p1i, setP1i, p1f, setP1f,
   )
 }
 
-// ── Gráfico de barras verticais com comparativo ano anterior ──
+//  Gráfico de barras verticais com comparativo ano anterior 
 function GraficoFaturamento({ historico }: { historico: HistoricoItem[] }) {
   if (!historico.length) return null
   const recente = historico.slice(-12)
@@ -691,7 +691,7 @@ function GraficoFaturamento({ historico }: { historico: HistoricoItem[] }) {
 
   return (
     <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
-      <h3 className="font-syne font-bold text-[13px] mb-1">📈 Faturamento Mensal</h3>
+      <h3 className="font-syne font-bold text-[13px] mb-1"> Faturamento Mensal</h3>
       <div className="flex gap-4 mb-4 text-[9px] text-nodri-t3">
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm" style={{background:'linear-gradient(to top,#00e5c8,#7c5cfc)'}}/> Atual</span>
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm opacity-40 bg-purple-400"/> Ano ant.</span>
@@ -743,7 +743,7 @@ function GraficoFaturamento({ historico }: { historico: HistoricoItem[] }) {
   )
 }
 
-// ── Eficiência ──
+//  Eficiência 
 function BlocoEficiencia({ p1, p2 }: { p1: MetricaBloco; p2: MetricaBloco }) {
   const fmt$ = (v: number) => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0)
   const f = (v:number) => v.toLocaleString('pt-BR',{maximumFractionDigits:1})
@@ -755,12 +755,12 @@ function BlocoEficiencia({ p1, p2 }: { p1: MetricaBloco; p2: MetricaBloco }) {
   const ticketS2 = p2.total_servicos>0 ? p2.faturamento/p2.total_servicos : 0
   return (
     <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
-      <h3 className="font-syne font-bold text-[13px] mb-4">⚡ Eficiência por Dia Trabalhado</h3>
+      <h3 className="font-syne font-bold text-[13px] mb-4"> Eficiência por Dia Trabalhado</h3>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {[
-          {l:'💰 Faturamento / Dia', a:fatDia2, b:fatDia1, f:(v:number)=>fmt$(v)},
-          {l:'✂️ Serviços / Dia',    a:sDia2,   b:sDia1,   f:(v:number)=>f(v)},
-          {l:'🎟️ Ticket / Serviço',  a:ticketS2, b:ticketS1, f:(v:number)=>fmt$(v)},
+          {l:' Faturamento / Dia', a:fatDia2, b:fatDia1, f:(v:number)=>fmt$(v)},
+          {l:'️ Serviços / Dia',    a:sDia2,   b:sDia1,   f:(v:number)=>f(v)},
+          {l:'️ Ticket / Serviço',  a:ticketS2, b:ticketS1, f:(v:number)=>fmt$(v)},
         ].map(item=>(
           <div key={item.l} className="bg-nodri-card border border-nodri-border rounded-xl p-3">
             <div className="text-[9px] text-nodri-t3 uppercase tracking-wider mb-1">{item.l}</div>
@@ -776,7 +776,7 @@ function BlocoEficiencia({ p1, p2 }: { p1: MetricaBloco; p2: MetricaBloco }) {
   )
 }
 
-// ── Mix de Receita ──
+//  Mix de Receita 
 function BlocoMixReceita({ mix }: { mix: MixItem[] }) {
   const fmt$ = (v: number) => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0)
   if (!mix.length) return null
@@ -784,7 +784,7 @@ function BlocoMixReceita({ mix }: { mix: MixItem[] }) {
   const maxPct = Math.max(...mix.map(m=>m.pct), 1)
   return (
     <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
-      <h3 className="font-syne font-bold text-[13px] mb-4">🎯 Mix de Receita — Top Serviços (histórico completo)</h3>
+      <h3 className="font-syne font-bold text-[13px] mb-4"> Mix de Receita — Top Serviços (histórico completo)</h3>
       <div className="space-y-2">
         {mix.map((item,i)=>(
           <div key={item.servico} className="flex items-center gap-3">
@@ -801,14 +801,14 @@ function BlocoMixReceita({ mix }: { mix: MixItem[] }) {
   )
 }
 
-// ── Clientes Novos vs Fiéis ──
+//  Clientes Novos vs Fiéis 
 function BlocoClientesFidelizacao({ historico }: { historico: HistoricoItem[] }) {
   const recent = historico.filter(h=>h.clientes_preferencia>0||h.clientes_sem_preferencia>0).slice(-12)
   if (!recent.length) return null
   const max = Math.max(...recent.map(h=>h.clientes_preferencia+h.clientes_sem_preferencia), 1)
   return (
     <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
-      <h3 className="font-syne font-bold text-[13px] mb-4">👥 Clientes Fiéis vs Novos — Evolução Mensal</h3>
+      <h3 className="font-syne font-bold text-[13px] mb-4"> Clientes Fiéis vs Novos — Evolução Mensal</h3>
       <div className="flex gap-4 mb-3 text-[9px] text-nodri-t3">
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm" style={{background:'#22c55e'}}/> Fiéis (preferência)</span>
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm" style={{background:'#06b6d4'}}/> Novos (sem pref.)</span>
@@ -834,7 +834,7 @@ function BlocoClientesFidelizacao({ historico }: { historico: HistoricoItem[] })
   )
 }
 
-// ── Projeção ──
+//  Projeção 
 function BlocoProjecao({ p }: { p: ProjecaoData }) {
   const fmt$ = (v: number) => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0)
   const MESES_NOMES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
@@ -844,9 +844,9 @@ function BlocoProjecao({ p }: { p: ProjecaoData }) {
   return (
     <div className="rounded-2xl p-5 border" style={{background:bg,borderColor:bd}}>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-syne font-bold text-[13px]">🔮 Projeção de Faturamento</h3>
+        <h3 className="font-syne font-bold text-[13px]"> Projeção de Faturamento</h3>
         <span className="text-[10px] px-3 py-1 rounded-full font-bold border" style={{color:cor,borderColor:bd,background:bg}}>
-          {p.tendencia==='alta'?'📈 CRESCENDO':p.tendencia==='baixa'?'📉 QUEDA':'➡️ ESTÁVEL'}
+          {p.tendencia==='alta'?' CRESCENDO':p.tendencia==='baixa'?' QUEDA':'️ ESTÁVEL'}
         </span>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -865,12 +865,12 @@ function BlocoProjecao({ p }: { p: ProjecaoData }) {
           </div>
         </div>
       </div>
-      <p className="text-[10px] text-nodri-t3 mt-3">📊 Baseado na tendência dos últimos {p.baseado_em} meses registrados</p>
+      <p className="text-[10px] text-nodri-t3 mt-3"> Baseado na tendência dos últimos {p.baseado_em} meses registrados</p>
     </div>
   )
 }
 
-// ── Sazonalidade ──
+//  Sazonalidade 
 function BlocoSazonalidade({ s }: { s: SazonalidadeItem[] }) {
   const fmt$ = (v: number) => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0)
   const comDados = s.filter(m=>m.count>0)
@@ -881,10 +881,10 @@ function BlocoSazonalidade({ s }: { s: SazonalidadeItem[] }) {
   return (
     <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
       <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-        <h3 className="font-syne font-bold text-[13px]">🌊 Sazonalidade — Médias Históricas por Mês</h3>
+        <h3 className="font-syne font-bold text-[13px]"> Sazonalidade — Médias Históricas por Mês</h3>
         <div className="flex gap-3 text-[10px]">
-          <span style={{color:'#22c55e',fontWeight:700}}>🔝 {MESES[melhor.mes-1]} ({fmt$(melhor.media)})</span>
-          <span style={{color:'#ef4444',fontWeight:700}}>⬇️ {MESES[pior.mes-1]} ({fmt$(pior.media)})</span>
+          <span style={{color:'#22c55e',fontWeight:700}}> {MESES[melhor.mes-1]} ({fmt$(melhor.media)})</span>
+          <span style={{color:'#ef4444',fontWeight:700}}>️ {MESES[pior.mes-1]} ({fmt$(pior.media)})</span>
         </div>
       </div>
       <div className="grid grid-cols-6 md:grid-cols-12 gap-1.5">
@@ -909,12 +909,12 @@ function BlocoSazonalidade({ s }: { s: SazonalidadeItem[] }) {
           )
         })}
       </div>
-      <p className="text-[9px] text-nodri-t3 mt-3">🟢 Melhor mês · 🔴 Pior mês · Número = quantidade de anos com dados</p>
+      <p className="text-[9px] text-nodri-t3 mt-3"> Melhor mês ·  Pior mês · Número = quantidade de anos com dados</p>
     </div>
   )
 }
 
-// ── BlocoDiagnosticoResumido — Score + Semáforo + Narrativa + Plano de Ação (sem checklist/ocorrências) ──
+//  BlocoDiagnosticoResumido — Score + Semáforo + Narrativa + Plano de Ação (sem checklist/ocorrências) 
 function BlocoDiagnosticoResumido({ prof, form, metricas, p1, p2, fidel }: {
   prof: Profissional; form: Partial<Profissional>
   metricas: DadosMetricas | null; p1: MetricaBloco | null; p2: MetricaBloco | null; fidel: Fidelizacao | null
@@ -980,7 +980,7 @@ function BlocoDiagnosticoResumido({ prof, form, metricas, p1, p2, fidel }: {
   if (metricas?.projecao?.tendencia==='baixa') acoes.push({p:'media', t:'Tendência de queda — planejar ações de recuperação'})
 
   const corP = {alta:'#ef4444',media:'#f59e0b',baixa:'#22c55e'}
-  const icoP = {alta:'🔴',media:'🟡',baixa:'🟢'}
+  const icoP = {alta:'',media:'',baixa:''}
   const txtP = {alta:'URGENTE',media:'ESTA SEMANA',baixa:'ESTE MÊS'}
 
   return (
@@ -989,7 +989,7 @@ function BlocoDiagnosticoResumido({ prof, form, metricas, p1, p2, fidel }: {
       <div className="rounded-2xl p-6 border" style={{background:'rgba(255,255,255,0.02)', borderColor:`${corGeral}44`}}>
         <div className="flex items-start justify-between mb-4">
           <div>
-            <h2 className="font-syne font-black text-[18px] text-nodri-t1">🩺 Diagnóstico Rápido</h2>
+            <h2 className="font-syne font-black text-[18px] text-nodri-t1"> Diagnóstico Rápido</h2>
             <p className="text-[11px] text-nodri-t3 mt-1">Score baseado nos dados do período selecionado</p>
           </div>
           <div className="text-right shrink-0 ml-4">
@@ -1006,15 +1006,15 @@ function BlocoDiagnosticoResumido({ prof, form, metricas, p1, p2, fidel }: {
 
       {/* Semáforo por área */}
       <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
-        <h3 className="font-syne font-bold text-[13px] mb-4">🚦 Status por Área</h3>
+        <h3 className="font-syne font-bold text-[13px] mb-4"> Status por Área</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {([
-            {l:'💰 Faturamento',  s:sFat,    v: pctFat!==null?`${pctFat>=0?'+':''}${pctFat.toFixed(1)}%`:'Sem dados'},
-            {l:'🎟️ Ticket Médio', s:sTicket, v: pctTicket!==null?`${pctTicket>=0?'+':''}${pctTicket.toFixed(1)}%`:'Sem dados'},
-            {l:'⏱️ Ocupação',     s:sOcup,   v: p2?.taxa_ocupacao!==undefined?`${p2.taxa_ocupacao.toFixed(1)}%`:'Sem dados'},
-            {l:'👥 Fidelização',  s:sFidel,  v: fidel?`${fidel.taxa_fidelizacao}%`:'Sem dados'},
-            {l:'📋 Checklist',    s:sCheck,  v:`${checkOk}/${checkTotal} itens`},
-            {l:'⚠️ Ocorrências',  s:sOc,    v: ocNeg===0?'Nenhuma negativa':`${ocNeg} negativa(s)`},
+            {l:' Faturamento',  s:sFat,    v: pctFat!==null?`${pctFat>=0?'+':''}${pctFat.toFixed(1)}%`:'Sem dados'},
+            {l:'️ Ticket Médio', s:sTicket, v: pctTicket!==null?`${pctTicket>=0?'+':''}${pctTicket.toFixed(1)}%`:'Sem dados'},
+            {l:'️ Ocupação',     s:sOcup,   v: p2?.taxa_ocupacao!==undefined?`${p2.taxa_ocupacao.toFixed(1)}%`:'Sem dados'},
+            {l:' Fidelização',  s:sFidel,  v: fidel?`${fidel.taxa_fidelizacao}%`:'Sem dados'},
+            {l:' Checklist',    s:sCheck,  v:`${checkOk}/${checkTotal} itens`},
+            {l:'️ Ocorrências',  s:sOc,    v: ocNeg===0?'Nenhuma negativa':`${ocNeg} negativa(s)`},
           ]).map(item=>(
             <div key={item.l} className="bg-nodri-card border border-nodri-border rounded-xl p-3 flex items-center justify-between gap-2">
               <div className="min-w-0">
@@ -1036,7 +1036,7 @@ function BlocoDiagnosticoResumido({ prof, form, metricas, p1, p2, fidel }: {
       {narrativa && (
         <div className="rounded-2xl p-5 border" style={{background:'rgba(99,102,241,0.04)', borderColor:'rgba(99,102,241,0.25)'}}>
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-[18px]">💬</span>
+            <span className="text-[18px]"></span>
             <h3 className="font-syne font-bold text-[13px]">Análise Personalizada</h3>
           </div>
           <p className="text-[13px] text-nodri-t1 leading-[1.8] font-medium">{narrativa}</p>
@@ -1046,7 +1046,7 @@ function BlocoDiagnosticoResumido({ prof, form, metricas, p1, p2, fidel }: {
       {/* Plano de Ação */}
       {acoes.length > 0 && (
         <div className="rounded-2xl p-5 border" style={{background:'rgba(99,102,241,0.04)', borderColor:'rgba(99,102,241,0.2)'}}>
-          <h3 className="font-syne font-bold text-[13px] mb-4">🎯 Plano de Ação</h3>
+          <h3 className="font-syne font-bold text-[13px] mb-4"> Plano de Ação</h3>
           <div className="space-y-3">
             {acoes.slice(0,5).map((a,i)=>(
               <div key={i} className="flex gap-3 p-3 rounded-xl border bg-nodri-card" style={{borderColor:`${corP[a.p]}33`}}>
@@ -1064,7 +1064,7 @@ function BlocoDiagnosticoResumido({ prof, form, metricas, p1, p2, fidel }: {
   )
 }
 
-// ── PendenciasLateral — painel compacto para a aba Dados Cadastrais ──
+//  PendenciasLateral — painel compacto para a aba Dados Cadastrais 
 function PendenciasLateral({ profissionalId }: { profissionalId: string }) {
   const [pendencias, setPendencias] = useState<Array<{
     id: string; mensagem: string; data_limite: string | null
@@ -1100,7 +1100,7 @@ function PendenciasLateral({ profissionalId }: { profissionalId: string }) {
     <div className="rounded-2xl border sticky top-20 space-y-3 p-4"
       style={{ background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.06)' }}>
       <div className="flex items-center justify-between">
-        <h2 className="font-syne font-bold text-[12px] text-nodri-cyan">📋 Pendências</h2>
+        <h2 className="font-syne font-bold text-[12px] text-nodri-cyan"> Pendências</h2>
         {abertas.length > 0 && (
           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20">
             {abertas.length}
@@ -1133,7 +1133,7 @@ function PendenciasLateral({ profissionalId }: { profissionalId: string }) {
                 <button
                   onClick={() => marcarFeito(p.id)}
                   className="ml-auto text-[10px] px-2.5 py-1 rounded-lg bg-green-500/10 text-green-400 border border-green-500/20 hover:bg-green-500/20 transition-colors font-semibold">
-                  ✅ Feito
+                   Feito
                 </button>
               </div>
             </div>
@@ -1146,7 +1146,7 @@ function PendenciasLateral({ profissionalId }: { profissionalId: string }) {
           <button
             onClick={() => setHistoricoAberto(v => !v)}
             className="flex items-center gap-1 text-[10px] text-nodri-t3 hover:text-nodri-t1 transition-colors font-semibold py-1">
-            {historicoAberto ? '▾' : '▸'} Histórico ({resolvidas.length})
+            {historicoAberto ? '' : ''} Histórico ({resolvidas.length})
           </button>
           {historicoAberto && (
             <div className="space-y-1.5 mt-2">
@@ -1169,7 +1169,7 @@ function PendenciasLateral({ profissionalId }: { profissionalId: string }) {
   )
 }
 
-// ── AbaPendencias ──
+//  AbaPendencias 
 function AbaPendencias({ profissionalId }: { profissionalId: string }) {
   const [pendencias, setPendencias] = useState<Array<{
     id: string; profissional_id: string; mensagem: string
@@ -1219,7 +1219,7 @@ function AbaPendencias({ profissionalId }: { profissionalId: string }) {
     if (res.ok) {
       const atualizada = await res.json()
       setPendencias(prev => prev.map(p => p.id === id ? { ...p, ...atualizada } : p))
-      toast.success('✅ Marcada como feita!')
+      toast.success(' Marcada como feita!')
     }
   }
 
@@ -1280,7 +1280,7 @@ function AbaPendencias({ profissionalId }: { profissionalId: string }) {
 
       {abertas.length === 0 && (
         <div className="text-center py-8 text-nodri-t3">
-          <span className="text-3xl">✅</span>
+          <span className="text-3xl"></span>
           <p className="text-[12px] mt-2">Nenhuma pendência em aberto.</p>
         </div>
       )}
@@ -1302,12 +1302,12 @@ function AbaPendencias({ profissionalId }: { profissionalId: string }) {
                   <button
                     onClick={() => { setEditandoData(p.id); setNovaData(p.data_limite || '') }}
                     className="text-[10px] px-2 py-1 rounded-lg bg-nodri-surface border border-nodri-border text-nodri-t3 hover:text-nodri-t1 transition-colors">
-                    📅
+                    
                   </button>
                   <button
                     onClick={() => marcarResolvida(p.id)}
                     className="text-[10px] px-3 py-1.5 rounded-lg bg-green-500/10 text-green-400 border border-green-500/20 hover:bg-green-500/20 transition-colors font-semibold">
-                    ✅ Feito
+                     Feito
                   </button>
                 </div>
               </div>
@@ -1330,7 +1330,7 @@ function AbaPendencias({ profissionalId }: { profissionalId: string }) {
           <button
             onClick={() => setHistoricoAberto(v => !v)}
             className="flex items-center gap-2 text-[11px] text-nodri-t3 hover:text-nodri-t1 transition-colors font-semibold py-2">
-            {historicoAberto ? '▾' : '▸'} Histórico de resolvidas ({resolvidas.length})
+            {historicoAberto ? '' : ''} Histórico de resolvidas ({resolvidas.length})
           </button>
           {historicoAberto && (
             <div className="space-y-2 mt-2">
@@ -1348,7 +1348,7 @@ function AbaPendencias({ profissionalId }: { profissionalId: string }) {
   )
 }
 
-// ── AbaIA ──
+//  AbaIA 
 function AbaIA({ profissionalId, nomeProfissional }: { profissionalId: string; nomeProfissional: string }) {
   const [temApiKey, setTemApiKey] = useState<boolean | null>(null)
   const [mensagens, setMensagens] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([])
@@ -1495,7 +1495,7 @@ function AbaIA({ profissionalId, nomeProfissional }: { profissionalId: string; n
 
       if (!res.ok || !res.body) {
         const d = await res.json()
-        setMensagens(prev => [...prev.slice(0, -1), { role: 'assistant', content: `❌ Erro: ${d.error}` }])
+        setMensagens(prev => [...prev.slice(0, -1), { role: 'assistant', content: ` Erro: ${d.error}` }])
         setEnviando(false)
         return
       }
@@ -1530,7 +1530,7 @@ function AbaIA({ profissionalId, nomeProfissional }: { profissionalId: string; n
         }
       }
     } catch (e) {
-      setMensagens(prev => [...prev.slice(0, -1), { role: 'assistant', content: '❌ Erro de conexão.' }])
+      setMensagens(prev => [...prev.slice(0, -1), { role: 'assistant', content: ' Erro de conexão.' }])
     }
 
     setEnviando(false)
@@ -1540,12 +1540,12 @@ function AbaIA({ profissionalId, nomeProfissional }: { profissionalId: string; n
 
   if (!temApiKey) return (
     <div className="text-center py-12">
-      <span className="text-4xl">🤖</span>
+      <span className="text-4xl"></span>
       <h3 className="font-syne font-bold text-[14px] mt-3 mb-2 text-nodri-t1">IA NODRI não configurada</h3>
       <p className="text-[12px] text-nodri-t3 mb-4">Configure sua API key da Anthropic para usar o chat de IA.</p>
       <a href="/salon/ia-config"
         className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-nodri-cyan text-nodri-dark text-[12px] font-bold hover:brightness-110">
-        ⚙️ Configurar IA
+        ️ Configurar IA
       </a>
     </div>
   )
@@ -1554,7 +1554,7 @@ function AbaIA({ profissionalId, nomeProfissional }: { profissionalId: string; n
     <div className="flex flex-col h-[600px] bg-nodri-surface border border-nodri-border rounded-2xl overflow-hidden">
       {/* Header */}
       <div className="px-4 py-3 border-b border-nodri-border bg-nodri-card flex items-center gap-2">
-        <span className="text-[14px]">🤖</span>
+        <span className="text-[14px]"></span>
         <span className="font-syne font-bold text-[12px] text-nodri-t1">IA NODRI</span>
         {statusAnalise === 'gerando' && (
           <span className="text-[9px] text-purple-400 animate-pulse flex items-center gap-1">
@@ -1562,13 +1562,13 @@ function AbaIA({ profissionalId, nomeProfissional }: { profissionalId: string; n
           </span>
         )}
         {statusAnalise === 'pronta' && (
-          <span className="text-[9px] text-green-400">⚡ Dados carregados</span>
+          <span className="text-[9px] text-green-400"> Dados carregados</span>
         )}
         <button
           onClick={novaConversa}
           className="ml-auto text-[10px] px-2.5 py-1 rounded-lg border border-nodri-border text-nodri-t3 hover:text-nodri-red hover:border-red-500/30 transition-colors"
           title="Nova conversa — recarrega dados atualizados">
-          🗑️ Nova conversa
+          ️ Nova conversa
         </button>
       </div>
 
@@ -1606,7 +1606,7 @@ function AbaIA({ profissionalId, nomeProfissional }: { profissionalId: string; n
                     // Listas numeradas
                     .replace(/^(\d+)\.\s+(.+)$/gm, '<div style="display:flex;gap:6px;margin:3px 0"><span style="color:#7c5cfc;font-weight:700;flex-shrink:0">$1.</span><span>$2</span></div>')
                     // Emojis de seção como títulos
-                    .replace(/^(🎯|📊|🚨|💰|📈|📅|🔥|📋|🎯|✅|💡|⚡|🏆)\s*(.+)$/gm, '<div style="font-weight:700;font-size:12px;color:#e2e8f0;margin:10px 0 4px">$1 $2</div>')
+                    .replace(/^(||||||||||||)\s*(.+)$/gm, '<div style="font-weight:700;font-size:12px;color:#e2e8f0;margin:10px 0 4px">$1 $2</div>')
                     // Quebras de linha
                     .replace(/\n\n/g, '<div style="margin:6px 0"></div>')
                     .replace(/\n/g, '<br/>')
@@ -1639,7 +1639,7 @@ function AbaIA({ profissionalId, nomeProfissional }: { profissionalId: string; n
           onClick={enviar}
           disabled={enviando || !input.trim()}
           className="px-3 py-2 rounded-lg bg-nodri-cyan text-nodri-dark font-bold text-[12px] hover:brightness-110 disabled:opacity-50 flex items-center gap-1.5">
-          {enviando ? <Loader2 size={13} className="animate-spin"/> : '➤'}
+          {enviando ? <Loader2 size={13} className="animate-spin"/> : ''}
         </button>
       </div>
     </div>
@@ -1705,7 +1705,7 @@ export default function PerfilProfissionalPage() {
       method: 'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(cleaned)
     })
     setSalvando(false)
-    if (res.ok) { const d = await res.json(); setProf(d); setForm(d); toast.success('✅ Salvo!') }
+    if (res.ok) { const d = await res.json(); setProf(d); setForm(d); toast.success(' Salvo!') }
     else toast.error('Erro ao salvar')
   }
 
@@ -1765,11 +1765,11 @@ export default function PerfilProfissionalPage() {
       {/* Tabs */}
       <div className="bg-nodri-surface border-b border-nodri-border px-5 flex">
         {([
-          ['cadastro','👤 Dados Cadastrais'],
-          ['faturamento','💰 Faturamento'],
-          ['desempenho','📊 Ocorrências'],
-          ['pendencias','📋 Pendências'],
-          ['ia','🤖 IA'],
+          ['cadastro',' Dados Cadastrais'],
+          ['faturamento',' Faturamento'],
+          ['desempenho',' Ocorrências'],
+          ['pendencias',' Pendências'],
+          ['ia',' IA'],
         ] as const).map(([t,l])=>(
           <button key={t} onClick={()=>setTab(t)}
             className={`px-4 py-3 text-[12px] font-semibold border-b-2 transition-all
@@ -1781,12 +1781,12 @@ export default function PerfilProfissionalPage() {
 
       <div className="max-w-5xl mx-auto px-5 py-6">
 
-        {/* ══ CADASTRO ══ */}
+        {/*  CADASTRO  */}
         {tab === 'cadastro' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-5">
               <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5 space-y-4">
-                <h2 className="font-syne font-bold text-[12px] text-nodri-cyan">📋 Dados Pessoais</h2>
+                <h2 className="font-syne font-bold text-[12px] text-nodri-cyan"> Dados Pessoais</h2>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="col-span-2"><label className={labelCls}>Nome Completo *</label><input value={form.nome_completo||''} onChange={e=>set('nome_completo',e.target.value)} className={inputCls}/></div>
                   <div><label className={labelCls}>Apelido</label><input value={form.apelido||''} onChange={e=>set('apelido',e.target.value)} className={inputCls}/></div>
@@ -1807,7 +1807,7 @@ export default function PerfilProfissionalPage() {
                 </div>
               </div>
               <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5 space-y-3">
-                <h2 className="font-syne font-bold text-[12px] text-nodri-pink">🌟 Perfil Pessoal</h2>
+                <h2 className="font-syne font-bold text-[12px] text-nodri-pink"> Perfil Pessoal</h2>
                 <div className="grid grid-cols-2 gap-3">
                   {[['cor_favorita','Cor Favorita'],['comida_favorita','Comida Favorita'],['animal_favorito','Animal Favorito'],['hobbies','Hobbies'],['um_sonho','Um Sonho']].map(([k,l])=>(
                     <div key={k} className={k==='hobbies'||k==='um_sonho'?'col-span-2':''}>
@@ -1818,14 +1818,14 @@ export default function PerfilProfissionalPage() {
                 </div>
               </div>
               <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5 space-y-3">
-                <h2 className="font-syne font-bold text-[12px] text-nodri-amber">🏦 Dados Profissionais</h2>
+                <h2 className="font-syne font-bold text-[12px] text-nodri-amber"> Dados Profissionais</h2>
                 <div className="grid grid-cols-2 gap-3">
                   <div><label className={labelCls}>CNPJ *</label><input value={form.cnpj||''} onChange={e=>set('cnpj',e.target.value)} placeholder="00.000.000/0000-00" className={inputCls}/></div>
                   <div><label className={labelCls}>Dados Bancários</label><input value={form.conta_bancaria||''} onChange={e=>set('conta_bancaria',e.target.value)} placeholder="Banco / Ag / Conta" className={inputCls}/></div>
                 </div>
               </div>
               <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
-                <h2 className="font-syne font-bold text-[12px] text-nodri-purple mb-3">⚙️ Status</h2>
+                <h2 className="font-syne font-bold text-[12px] text-nodri-purple mb-3">️ Status</h2>
                 <label className="flex items-center gap-3 cursor-pointer" onClick={()=>set('ativo',!form.ativo)}>
                   <div className={`w-10 h-5 rounded-full relative transition-all ${form.ativo?'bg-nodri-green':'bg-nodri-border'}`}>
                     <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all ${form.ativo?'left-5':'left-0.5'}`}/>
@@ -1840,7 +1840,7 @@ export default function PerfilProfissionalPage() {
           </div>
         )}
 
-        {/* ══ FATURAMENTO ══ */}
+        {/*  FATURAMENTO  */}
         {tab === 'faturamento' && (
           <div className="space-y-6">
             <FiltroComparacao {...{modoFiltro,setModoFiltro,p1i,setP1i,p1f,setP1f,p2i,setP2i,p2f,setP2f,onAplicar:buscarMetricas,loading:loadMet}}/>
@@ -1850,14 +1850,14 @@ export default function PerfilProfissionalPage() {
                 <div>
                   <p className="text-[11px] text-nodri-t3 uppercase tracking-widest mb-3 font-semibold">Comparativo P1 vs P2</p>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <MetCard label="💰 Faturamento"      atual={p2?.faturamento||0}              anterior={p1?.faturamento||0}              fmt="m"/>
-                    <MetCard label="🎟️ Ticket Médio"     atual={p2?.ticket_medio||0}             anterior={p1?.ticket_medio||0}             fmt="m"/>
-                    <MetCard label="⭐ Preferência"      atual={p2?.clientes_preferencia||0}     anterior={p1?.clientes_preferencia||0}/>
-                    <MetCard label="🚫 Sem Pref."        atual={p2?.clientes_sem_preferencia||0} anterior={p1?.clientes_sem_preferencia||0}/>
-                    <MetCard label="📆 Dias Trabalhados" atual={p2?.dias_trabalhados||0}         anterior={p1?.dias_trabalhados||0}/>
-                    <MetCard label="⏳ Ocupação"         atual={p2?.taxa_ocupacao||0}            anterior={p1?.taxa_ocupacao||0}            fmt="p"/>
-                    <MetCard label="✂️ Serviços"         atual={p2?.total_servicos||0}           anterior={p1?.total_servicos||0}/>
-                    <MetCard label="🧴 Produtos"         atual={p2?.total_produtos||0}           anterior={p1?.total_produtos||0}/>
+                    <MetCard label=" Faturamento"      atual={p2?.faturamento||0}              anterior={p1?.faturamento||0}              fmt="m"/>
+                    <MetCard label="️ Ticket Médio"     atual={p2?.ticket_medio||0}             anterior={p1?.ticket_medio||0}             fmt="m"/>
+                    <MetCard label=" Preferência"      atual={p2?.clientes_preferencia||0}     anterior={p1?.clientes_preferencia||0}/>
+                    <MetCard label=" Sem Pref."        atual={p2?.clientes_sem_preferencia||0} anterior={p1?.clientes_sem_preferencia||0}/>
+                    <MetCard label=" Dias Trabalhados" atual={p2?.dias_trabalhados||0}         anterior={p1?.dias_trabalhados||0}/>
+                    <MetCard label=" Ocupação"         atual={p2?.taxa_ocupacao||0}            anterior={p1?.taxa_ocupacao||0}            fmt="p"/>
+                    <MetCard label="️ Serviços"         atual={p2?.total_servicos||0}           anterior={p1?.total_servicos||0}/>
+                    <MetCard label=" Produtos"         atual={p2?.total_produtos||0}           anterior={p1?.total_produtos||0}/>
                   </div>
                 </div>
                 {fidel && <BlocoFidelizacao f={fidel}/>}
@@ -1901,17 +1901,17 @@ export default function PerfilProfissionalPage() {
           </div>
         )}
 
-        {/* ══ PENDÊNCIAS ══ */}
+        {/*  PENDÊNCIAS  */}
         {tab === 'pendencias' && (
           <AbaPendencias profissionalId={id}/>
         )}
 
-        {/* ══ IA ══ */}
+        {/*  IA  */}
         {tab === 'ia' && (
           <AbaIA profissionalId={id} nomeProfissional={prof.apelido||prof.nome_completo}/>
         )}
 
-        {/* ══ OCORRÊNCIAS (antigo Desempenho) ══ */}
+        {/*  OCORRÊNCIAS (antigo Desempenho)  */}
         {tab === 'desempenho' && (
           <div className="space-y-6">
             <FiltroComparacao {...{modoFiltro,setModoFiltro,p1i,setP1i,p1f,setP1f,p2i,setP2i,p2f,setP2f,onAplicar:buscarMetricas,loading:loadMet}}/>
@@ -1941,7 +1941,7 @@ export default function PerfilProfissionalPage() {
               {metricas.ocorrencias_comparativo.length > 0 && (
                 <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
                   <h3 className="font-syne font-bold text-[13px] mb-4">
-                    📌 Comparativo de Ocorrências — P1 vs P2
+                     Comparativo de Ocorrências — P1 vs P2
                     <span className="ml-2 text-[10px] text-nodri-t3 font-normal">por período selecionado</span>
                   </h3>
                   <div className="overflow-x-auto">
@@ -2009,9 +2009,9 @@ export default function PerfilProfissionalPage() {
                         }}>
                           <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${pos?'text-nodri-green bg-nodri-green/10':'text-nodri-red bg-nodri-red/10'}`}>
-                              {pos?'✅ POSITIVO':'❌ NEGATIVO'}
+                              {pos?' POSITIVO':' NEGATIVO'}
                             </span>
-                            <span className="text-[10px] text-nodri-amber font-semibold">📌 {fb.ocorrido_descricao}</span>
+                            <span className="text-[10px] text-nodri-amber font-semibold"> {fb.ocorrido_descricao}</span>
                             <span className="ml-auto text-[9px] text-nodri-t3">
                               {new Date(fb.criado_em).toLocaleDateString('pt-BR')} {new Date(fb.criado_em).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}
                             </span>

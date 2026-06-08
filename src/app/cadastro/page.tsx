@@ -132,7 +132,7 @@ function CadastroInner() {
           </div>
         </div>
 
-        {/* ── ETAPA 1: FORMULÁRIO ── */}
+        {/*  ETAPA 1: FORMULÁRIO  */}
         {etapa === 'form' && (
           <div style={{ background: '#111', border: '1px solid #222', borderRadius: 16, padding: 28 }}>
 
@@ -205,7 +205,7 @@ function CadastroInner() {
           </div>
         )}
 
-        {/* ── ETAPA 2: ESCOLHA DE PAGAMENTO ── */}
+        {/*  ETAPA 2: ESCOLHA DE PAGAMENTO  */}
         {etapa === 'pagamento' && (
           <div style={{ background: '#111', border: '1px solid #222', borderRadius: 16, padding: 28 }}>
             <h3 style={{ margin: '0 0 20px', fontSize: 15, fontWeight: 700 }}>Como deseja pagar?</h3>
@@ -244,7 +244,7 @@ function CadastroInner() {
           </div>
         )}
 
-        {/* ── ETAPA 3: PIX QR CODE ── */}
+        {/*  ETAPA 3: PIX QR CODE  */}
         {etapa === 'pix' && pixData && (
           <div style={{ background: '#111', border: '1px solid #222', borderRadius: 16, padding: 28, textAlign: 'center' }}>
             <div style={{ fontSize: 13, color: '#aaa', marginBottom: 20 }}>

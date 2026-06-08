@@ -33,7 +33,7 @@ export default function ImportarExcelPage() {
       const res = await fetch('/api/relatorios/importar-excel', { method: 'POST', body: form })
       const data = await res.json()
       setResultado(data)
-      if (data.ok) toast.success(`✅ ${data.periodos_salvos} períodos importados!`)
+      if (data.ok) toast.success(` ${data.periodos_salvos} períodos importados!`)
       else toast.error('Erro na importação')
     } catch (e) {
       toast.error('Erro de conexão')
@@ -57,10 +57,10 @@ export default function ImportarExcelPage() {
       <div className="max-w-2xl mx-auto px-5 py-10">
         {/* Info */}
         <div className="bg-nodri-cyan/8 border border-nodri-cyan/20 rounded-2xl p-5 mb-6">
-          <h2 className="font-syne font-bold text-[13px] text-nodri-cyan mb-2">📋 O que será importado</h2>
+          <h2 className="font-syne font-bold text-[13px] text-nodri-cyan mb-2"> O que será importado</h2>
           <div className="grid grid-cols-2 gap-2 text-[11px] text-nodri-t2">
-            {['✅ Faturamento por profissional','✅ Ticket Médio','✅ Clientes Preferência','✅ Ocupação e Dias Trabalhados',
-              '✅ Serviços detalhados','✅ Produtos','✅ Feedbacks históricos','✅ Resumo mensal'].map(item => (
+            {[' Faturamento por profissional',' Ticket Médio',' Clientes Preferência',' Ocupação e Dias Trabalhados',
+              ' Serviços detalhados',' Produtos',' Feedbacks históricos',' Resumo mensal'].map(item => (
               <div key={item}>{item}</div>
             ))}
           </div>
@@ -131,12 +131,12 @@ export default function ImportarExcelPage() {
                 </div>
                 {resultado.erros?.length > 0 && (
                   <div className="mt-3 text-[11px] text-nodri-amber">
-                    <strong>⚠ {resultado.erros.length} erros:</strong>
+                    <strong> {resultado.erros.length} erros:</strong>
                     {resultado.erros.slice(0,3).map((e: string) => <div key={e}>• {e}</div>)}
                   </div>
                 )}
                 <p className="text-[11px] text-nodri-t3 mt-3">
-                  ✅ Agora acesse o perfil de qualquer profissional → aba Faturamento para ver os dados!
+                   Agora acesse o perfil de qualquer profissional → aba Faturamento para ver os dados!
                 </p>
               </>
             ) : (

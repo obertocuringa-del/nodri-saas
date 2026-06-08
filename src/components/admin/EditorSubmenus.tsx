@@ -8,7 +8,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
-/* ─── Tipos ─── */
+/*  Tipos  */
 type SecaoTipo = 'video' | 'texto' | 'imagens' | 'tabela' | 'colunas' | 'checklist' | 'faq' | 'pdf' | 'excel' | 'downloads'
 
 interface SubItem { titulo: string; slug: string; oculto?: boolean }
@@ -36,18 +36,18 @@ interface Submenu {
   oculto?: boolean
 }
 
-/* ─── Constantes ─── */
+/*  Constantes  */
 const SECOES_INFO: Record<SecaoTipo, { label: string; emoji: string }> = {
-  video:     { label: 'Vídeo YouTube',    emoji: '▶️' },
-  texto:     { label: 'Texto Rico',       emoji: '📝' },
-  imagens:   { label: 'Imagens',          emoji: '🖼️' },
+  video:     { label: 'Vídeo YouTube',    emoji: '️' },
+  texto:     { label: 'Texto Rico',       emoji: '' },
+  imagens:   { label: 'Imagens',          emoji: '️' },
   tabela:    { label: 'Tabela',           emoji: '⊞' },
   colunas:   { label: 'Colunas',          emoji: '⫸' },
-  checklist: { label: 'Checklist',        emoji: '✅' },
-  faq:       { label: 'FAQ',              emoji: '❓' },
-  pdf:       { label: 'PDF',              emoji: '📄' },
-  excel:     { label: 'Excel / Planilha', emoji: '📊' },
-  downloads: { label: 'Downloads',        emoji: '⬇️' },
+  checklist: { label: 'Checklist',        emoji: '' },
+  faq:       { label: 'FAQ',              emoji: '' },
+  pdf:       { label: 'PDF',              emoji: '' },
+  excel:     { label: 'Excel / Planilha', emoji: '' },
+  downloads: { label: 'Downloads',        emoji: '️' },
 }
 
 const ORDEM_PADRAO: SecaoTipo[] = ['video', 'texto', 'imagens', 'tabela', 'colunas', 'checklist', 'faq', 'pdf', 'excel', 'downloads']
@@ -119,7 +119,7 @@ const MENUS_INICIAIS: MenuCategoria[] = [
   ]},
 ]
 
-/* ══════════════════════════════════════════════════════ */
+/*  */
 export default function EditorSubmenus() {
   const [menus, setMenus] = useState<MenuCategoria[]>(MENUS_INICIAIS)
   const [categoriaAtiva, setCategoriaAtiva] = useState(MENUS_INICIAIS[0].categoria)
@@ -164,7 +164,7 @@ export default function EditorSubmenus() {
   const dragSecaoOver = useRef<SecaoTipo | null>(null)
   const [dragHighlight, setDragHighlight] = useState<SecaoTipo | null>(null)
 
-  /* ── Persistência da estrutura do menu ── */
+  /*  Persistência da estrutura do menu  */
   async function saveEstrutura(novosMenus: MenuCategoria[]) {
     try {
       await fetch('/api/menu-estrutura', {
@@ -175,7 +175,7 @@ export default function EditorSubmenus() {
     } catch {}
   }
 
-  /* ── Helpers globais ── */
+  /*  Helpers globais  */
   function getOrdem(): SecaoTipo[] { return dados?.conteudo?.ordem_secoes || ORDEM_PADRAO }
 
   // Helper: atualiza campos do conteudo sem depender de `dados` no closure (evita erro TS em async)
@@ -200,7 +200,7 @@ export default function EditorSubmenus() {
     setSecoesColapsadas(prev => { const n = new Set(prev); n.has(tipo) ? n.delete(tipo) : n.add(tipo); return n })
   }
 
-  /* ── Upload ── */
+  /*  Upload  */
   async function handleUpload(key: string, file: File): Promise<string | null> {
     setUploadingKey(key)
     const fd = new FormData()
@@ -216,10 +216,10 @@ export default function EditorSubmenus() {
     return null
   }
 
-  /* ── execCommand helper ── */
+  /*  execCommand helper  */
   function execCmd(cmd: string, val?: string) { document.execCommand(cmd, false, val) }
 
-  /* ── API calls ── */
+  /*  API calls  */
   async function abrirEditor(slug: string, titulo: string) {
     setSlugAtivo(slug); setLoading(true)
     const res = await fetch(`/api/conteudo/${slug}`)
@@ -251,7 +251,7 @@ export default function EditorSubmenus() {
       }),
     })
     setSaving(false)
-    if (res.ok) toast.success('✅ Salvo com sucesso!')
+    if (res.ok) toast.success(' Salvo com sucesso!')
     else toast.error('Erro ao salvar')
   }
 
@@ -274,7 +274,7 @@ export default function EditorSubmenus() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ titulo: dados.titulo, video_url: dados.video_url, conteudo: { ...dados.conteudo, oculto: novoOculto } }),
     })
-    toast.success(novoOculto ? '🙈 Página ocultada' : '👁 Página visível')
+    toast.success(novoOculto ? ' Página ocultada' : ' Página visível')
   }
 
   function adicionarItem() {
@@ -326,7 +326,7 @@ export default function EditorSubmenus() {
     toast.success('Página renomeada!')
   }
 
-  /* ── Seção: VÍDEO ── */
+  /*  Seção: VÍDEO  */
   function renderVideo() {
     if (!dados) return null
     const m = dados.video_url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{11})/)
@@ -341,13 +341,13 @@ export default function EditorSubmenus() {
               className="absolute inset-0 w-full h-full rounded-lg" style={{ border: 'none' }} allowFullScreen />
           </div>
         ) : dados.video_url ? (
-          <p className="text-nodri-red text-[11px]">⚠️ Link inválido do YouTube</p>
+          <p className="text-nodri-red text-[11px]">️ Link inválido do YouTube</p>
         ) : null}
       </div>
     )
   }
 
-  /* ── Seção: TEXTO RICO ── */
+  /*  Seção: TEXTO RICO  */
   function renderTexto() {
     if (!dados) return null
     return (
@@ -407,12 +407,12 @@ export default function EditorSubmenus() {
           className="min-h-[140px] max-h-[400px] overflow-y-auto bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2.5 text-[13px] text-nodri-t1 outline-none focus:border-nodri-cyan transition-colors leading-relaxed"
           style={{ whiteSpace: 'pre-wrap' }}
         />
-        <p className="text-[10px] text-nodri-t3">💡 Selecione o texto e use a barra acima para formatar</p>
+        <p className="text-[10px] text-nodri-t3"> Selecione o texto e use a barra acima para formatar</p>
       </div>
     )
   }
 
-  /* ── Seção: IMAGENS ── */
+  /*  Seção: IMAGENS  */
   function renderImagens() {
     if (!dados) return null
     const imagens = dados.conteudo.imagens || []
@@ -470,7 +470,7 @@ export default function EditorSubmenus() {
     )
   }
 
-  /* ── Seção: TABELA ── */
+  /*  Seção: TABELA  */
   function renderTabela() {
     if (!dados) return null
     const tabela = dados.conteudo.tabela || { linhas: 3, cols: 3, data: Array(3).fill(null).map(() => Array(3).fill('')) }
@@ -559,7 +559,7 @@ export default function EditorSubmenus() {
     )
   }
 
-  /* ── Seção: COLUNAS ── */
+  /*  Seção: COLUNAS  */
   function renderColunas() {
     if (!dados) return null
     const colunas = dados.conteudo.colunas || null
@@ -633,12 +633,12 @@ export default function EditorSubmenus() {
             </div>
           ))}
         </div>
-        <p className="text-[10px] text-nodri-t3">💡 Clique dentro de cada coluna para editar</p>
+        <p className="text-[10px] text-nodri-t3"> Clique dentro de cada coluna para editar</p>
       </div>
     )
   }
 
-  /* ── Seção: CHECKLIST ── */
+  /*  Seção: CHECKLIST  */
   function renderChecklist() {
     if (!dados) return null
     const list = dados.conteudo.checklist || []
@@ -651,7 +651,7 @@ export default function EditorSubmenus() {
         </button>
         {list.map((item, i) => (
           <div key={i} className="flex gap-2">
-            <span className="text-nodri-green mt-2 shrink-0">✓</span>
+            <span className="text-nodri-green mt-2 shrink-0"></span>
             <input value={item} onChange={e => { const a = [...list]; a[i] = e.target.value; upd(a) }} placeholder={`Item ${i + 1}`}
               className="flex-1 bg-nodri-surface border border-nodri-border rounded px-2.5 py-1.5 text-[12px] outline-none focus:border-nodri-cyan" />
             <button onClick={() => upd(list.filter((_, j) => j !== i))} className="p-1.5 text-nodri-red hover:bg-nodri-red/10 rounded"><Trash2 size={12} /></button>
@@ -662,7 +662,7 @@ export default function EditorSubmenus() {
     )
   }
 
-  /* ── Seção: FAQ ── */
+  /*  Seção: FAQ  */
   function renderFaq() {
     if (!dados) return null
     const list = dados.conteudo.faq || []
@@ -689,7 +689,7 @@ export default function EditorSubmenus() {
     )
   }
 
-  /* ── Seção: PDF ── */
+  /*  Seção: PDF  */
   function renderPdf() {
     if (!dados) return null
     const pdfs = dados.conteudo.arquivos_pdf || []
@@ -712,13 +712,13 @@ export default function EditorSubmenus() {
           {uploadingKey === 'pdf' ? (
             <><Loader2 size={22} className="animate-spin text-nodri-red" /><span className="text-[12px] text-nodri-red">Enviando PDF...</span></>
           ) : (
-            <><span className="text-[28px]">📄</span><span className="text-[12px] text-nodri-t2 text-center">Clique para fazer upload de PDF<br /><span className="text-[10px] text-nodri-t3">.pdf</span></span></>
+            <><span className="text-[28px]"></span><span className="text-[12px] text-nodri-t2 text-center">Clique para fazer upload de PDF<br /><span className="text-[10px] text-nodri-t3">.pdf</span></span></>
           )}
           <input type="file" accept=".pdf" className="hidden" onChange={e => e.target.files?.[0] && addPdf(e.target.files[0])} />
         </label>
         {pdfs.map(pdf => (
           <div key={pdf.id} className="flex items-center gap-3 p-3 bg-nodri-surface border border-nodri-border rounded-lg">
-            <span className="text-[22px] shrink-0">📄</span>
+            <span className="text-[22px] shrink-0"></span>
             <div className="flex-1 min-w-0">
               <div className="text-[12px] font-medium text-nodri-t1 truncate">{pdf.nome}</div>
               <a href={pdf.url} target="_blank" rel="noopener noreferrer" className="text-[11px] text-nodri-cyan hover:underline">Abrir PDF ↗</a>
@@ -731,7 +731,7 @@ export default function EditorSubmenus() {
     )
   }
 
-  /* ── Seção: EXCEL ── */
+  /*  Seção: EXCEL  */
   function renderExcel() {
     if (!dados) return null
     const excels = dados.conteudo.arquivos_excel || []
@@ -754,13 +754,13 @@ export default function EditorSubmenus() {
           {uploadingKey === 'excel' ? (
             <><Loader2 size={22} className="animate-spin text-nodri-green" /><span className="text-[12px] text-nodri-green">Enviando planilha...</span></>
           ) : (
-            <><span className="text-[28px]">📊</span><span className="text-[12px] text-nodri-t2 text-center">Clique para fazer upload de planilha Excel<br /><span className="text-[10px] text-nodri-t3">.xlsx, .xls, .csv</span></span></>
+            <><span className="text-[28px]"></span><span className="text-[12px] text-nodri-t2 text-center">Clique para fazer upload de planilha Excel<br /><span className="text-[10px] text-nodri-t3">.xlsx, .xls, .csv</span></span></>
           )}
           <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={e => e.target.files?.[0] && addExcel(e.target.files[0])} />
         </label>
         {excels.map(ex => (
           <div key={ex.id} className="flex items-center gap-3 p-3 bg-nodri-surface border border-nodri-border rounded-lg">
-            <span className="text-[22px] shrink-0">📊</span>
+            <span className="text-[22px] shrink-0"></span>
             <div className="flex-1 min-w-0">
               <div className="text-[12px] font-medium text-nodri-t1 truncate">{ex.nome}</div>
               <a href={ex.url} target="_blank" rel="noopener noreferrer" className="text-[11px] text-nodri-cyan hover:underline">Baixar planilha ↗</a>
@@ -773,7 +773,7 @@ export default function EditorSubmenus() {
     )
   }
 
-  /* ── Seção: DOWNLOADS ── */
+  /*  Seção: DOWNLOADS  */
   function renderDownloads() {
     if (!dados) return null
     const list = dados.conteudo.downloads || []
@@ -798,16 +798,16 @@ export default function EditorSubmenus() {
     )
   }
 
-  /* ─────────────── RENDER PRINCIPAL ─────────────── */
+  /*  RENDER PRINCIPAL  */
   const categoriaAtual = menus.find(m => m.categoria === categoriaAtiva)
 
   return (
     <div className="flex gap-4 h-full min-h-0">
 
-      {/* ── SIDEBAR ── */}
+      {/*  SIDEBAR  */}
       <div className="w-64 shrink-0 space-y-1 overflow-y-auto pb-4">
         <div className="flex items-center justify-between mb-3 sticky top-0 bg-nodri-dark py-1">
-          <div className="font-syne font-bold text-[12px] text-nodri-cyan">📋 Páginas</div>
+          <div className="font-syne font-bold text-[12px] text-nodri-cyan"> Páginas</div>
           <div className="flex gap-1">
             <button onClick={() => setShowNovaCategoria(true)} title="Nova categoria"
               className="p-1.5 bg-nodri-purple/10 border border-nodri-purple/30 text-nodri-purple rounded hover:bg-nodri-purple/20 transition-all">
@@ -863,7 +863,7 @@ export default function EditorSubmenus() {
               ) : (
                 <button onClick={() => setCategoriaAtiva(menu.categoria)}
                   className={`flex-1 flex items-center justify-between px-2.5 py-2 rounded-lg text-[11px] font-bold transition-all ${categoriaAtiva === menu.categoria ? 'bg-nodri-cyan/10 text-nodri-cyan border border-nodri-cyan/20' : 'text-nodri-t2 hover:text-nodri-t1 hover:bg-white/3'}`}>
-                  <span className={`truncate ${menu.oculto ? 'opacity-40 italic' : ''}`}>{menu.oculto && '🙈 '}{menu.categoria}</span>
+                  <span className={`truncate ${menu.oculto ? 'opacity-40 italic' : ''}`}>{menu.oculto && ' '}{menu.categoria}</span>
                   <span className="text-[9px] opacity-60 ml-1">{menu.itens.length}</span>
                   {categoriaAtiva === menu.categoria ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
                 </button>
@@ -876,7 +876,7 @@ export default function EditorSubmenus() {
                     const novos = menus.map(m => m.categoria === menu.categoria ? { ...m, oculto: !m.oculto } : m)
                     setMenus(novos)
                     saveEstrutura(novos)
-                    toast.success(menu.oculto ? '👁 Categoria visível' : '🙈 Categoria ocultada')
+                    toast.success(menu.oculto ? ' Categoria visível' : ' Categoria ocultada')
                   }} title={menu.oculto ? 'Mostrar categoria' : 'Ocultar categoria'}
                     className={`p-1 transition-colors rounded ${menu.oculto ? 'text-nodri-amber hover:text-nodri-t1' : 'text-nodri-t3 hover:text-nodri-amber'}`}>
                     {menu.oculto ? <Eye size={10} /> : <EyeOff size={10} />}
@@ -902,7 +902,7 @@ export default function EditorSubmenus() {
                       <>
                         <button onClick={() => abrirEditor(item.slug, item.titulo)}
                           className={`flex-1 text-left px-2.5 py-1.5 rounded text-[10.5px] transition-all truncate ${slugAtivo === item.slug ? 'bg-nodri-purple/10 text-nodri-purple border border-nodri-purple/20' : 'text-nodri-t3 hover:text-nodri-t1 hover:bg-white/2'} ${item.oculto ? 'opacity-40 italic' : ''}`}>
-                          {item.oculto && '🙈 '}{item.titulo}
+                          {item.oculto && ' '}{item.titulo}
                         </button>
                         <button onClick={() => { setEditandoItem(item.slug); setNomePagina(item.titulo) }} title="Renomear"
                           className="opacity-0 group-hover:opacity-100 p-1 text-nodri-t3 hover:text-nodri-cyan transition-all rounded shrink-0"><Edit3 size={10} /></button>
@@ -923,7 +923,7 @@ export default function EditorSubmenus() {
       {confirmDelete && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
           <div className="nodri-card p-6 max-w-sm w-full mx-4">
-            <h3 className="font-syne font-bold text-[14px] mb-2 text-nodri-red">⚠️ Excluir página?</h3>
+            <h3 className="font-syne font-bold text-[14px] mb-2 text-nodri-red">️ Excluir página?</h3>
             <p className="text-nodri-t2 text-[12px] mb-4">Esta ação não pode ser desfeita.</p>
             <div className="flex gap-3">
               <button onClick={() => excluirPagina(confirmDelete)} className="flex-1 py-2 bg-nodri-red text-white font-bold rounded-lg text-[12px] hover:brightness-110">Excluir</button>
@@ -933,7 +933,7 @@ export default function EditorSubmenus() {
         </div>
       )}
 
-      {/* ── EDITOR PRINCIPAL ── */}
+      {/*  EDITOR PRINCIPAL  */}
       <div className="flex-1 overflow-y-auto">
         {!slugAtivo ? (
           <div className="nodri-card p-10 text-center flex flex-col items-center justify-center" style={{ minHeight: 400 }}>
@@ -984,7 +984,7 @@ export default function EditorSubmenus() {
 
             {dados.oculto && (
               <div className="bg-nodri-amber/10 border border-nodri-amber/30 rounded-xl p-3 text-[12px] text-nodri-amber flex items-center gap-2">
-                🙈 <strong>Página oculta</strong> — Clientes não verão esta página no menu.
+                 <strong>Página oculta</strong> — Clientes não verão esta página no menu.
               </div>
             )}
 

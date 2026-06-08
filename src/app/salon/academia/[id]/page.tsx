@@ -5,11 +5,11 @@ import { useRouter, useParams } from 'next/navigation'
 import { ArrowLeft, BookOpen, Clock } from 'lucide-react'
 
 const CAT_LABEL: Record<string, string> = {
-  financeiro: '💰 Gestão Financeira',
-  marketing: '📣 Marketing e Vendas',
-  equipe: '👥 Gestão de Equipe',
-  atendimento: '💆 Atendimento e Vendas',
-  operacao: '📅 Operação e Agenda',
+  financeiro: ' Gestão Financeira',
+  marketing: ' Marketing e Vendas',
+  equipe: ' Gestão de Equipe',
+  atendimento: ' Atendimento e Vendas',
+  operacao: ' Operação e Agenda',
 }
 
 interface Artigo {

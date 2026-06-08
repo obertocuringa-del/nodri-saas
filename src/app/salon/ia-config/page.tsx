@@ -70,7 +70,7 @@ export default function IAConfigPage() {
     <div className="min-h-screen bg-nodri-dark">
       {/* Header */}
       <div className="sticky top-0 z-20 bg-nodri-surface border-b border-nodri-border px-5 py-3">
-        <h1 className="font-syne font-bold text-[16px] text-nodri-t1">🤖 IA NODRI</h1>
+        <h1 className="font-syne font-bold text-[16px] text-nodri-t1"> IA NODRI</h1>
         <p className="text-[11px] text-nodri-t3 mt-0.5">Assistente inteligente para gestão do seu salão</p>
       </div>
 
@@ -79,7 +79,7 @@ export default function IAConfigPage() {
         {/* Status da IA */}
         {iaAtiva ? (
           <div className="rounded-xl p-4 border border-green-500/30 bg-green-500/5 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center text-[24px]">🤖</div>
+            <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center text-[24px]"></div>
             <div>
               <div className="font-syne font-bold text-[14px] text-green-400">IA NODRI Ativada</div>
               <div className="text-[11px] text-nodri-t2 mt-0.5">A IA está disponível para este salão. A chave e o modelo são gerenciados pelo administrador NODRI.</div>
@@ -87,7 +87,7 @@ export default function IAConfigPage() {
           </div>
         ) : (
           <div className="rounded-xl p-4 border border-nodri-border bg-nodri-surface/50 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-nodri-border/30 flex items-center justify-center text-[24px] grayscale opacity-50">🤖</div>
+            <div className="w-12 h-12 rounded-xl bg-nodri-border/30 flex items-center justify-center text-[24px] grayscale opacity-50"></div>
             <div>
               <div className="font-syne font-bold text-[14px] text-nodri-t2">IA não disponível</div>
               <div className="text-[11px] text-nodri-t3 mt-0.5">Entre em contato com o suporte NODRI para ativar a IA para o seu salão.</div>
@@ -99,7 +99,7 @@ export default function IAConfigPage() {
         {iaAtiva && (
           <form onSubmit={salvar} className="bg-nodri-surface border border-nodri-border rounded-2xl p-5 space-y-4">
             <div>
-              <h2 className="font-syne font-bold text-[13px]">📝 Instruções adicionais do salão</h2>
+              <h2 className="font-syne font-bold text-[13px]"> Instruções adicionais do salão</h2>
               <p className="text-[11px] text-nodri-t2 mt-1">
                 Dê um contexto específico sobre o seu salão para personalizar as respostas da IA: especialidades, foco, estilo de atendimento, etc.
               </p>

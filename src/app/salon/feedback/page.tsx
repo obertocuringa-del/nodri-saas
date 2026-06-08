@@ -35,11 +35,11 @@ const TIPO_LABELS: Record<TipoPergunta, string> = {
 }
 
 const TIPO_ICONS: Record<TipoPergunta, string> = {
-  escala: '📊',
-  multipla_escolha: '🔘',
-  texto: '📝',
-  sim_nao: '✅',
-  grid: '🔢',
+  escala: '',
+  multipla_escolha: '',
+  texto: '',
+  sim_nao: '',
+  grid: '',
 }
 
 export default function FeedbackPage() {

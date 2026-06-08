@@ -29,7 +29,7 @@ export interface Bloco {
   altura?: number
 }
 
-// ── BARRA DE FERRAMENTAS RICH TEXT ──
+//  BARRA DE FERRAMENTAS RICH TEXT 
 function BarraFerramentas({ editor }: { editor: any }) {
   if (!editor) return null
   const btn = (ativo: boolean, onClick: () => void, label: string, children: React.ReactNode) => (
@@ -45,9 +45,9 @@ function BarraFerramentas({ editor }: { editor: any }) {
       {btn(editor.isActive('underline'), () => editor.chain().focus().toggleUnderline().run(), 'Sublinhado', <u>U</u>)}
       {btn(editor.isActive('strike'), () => editor.chain().focus().toggleStrike().run(), 'Tachado', <s>S</s>)}
       <div className="w-px h-5 bg-nodri-border mx-1 self-center" />
-      {btn(editor.isActive({ textAlign: 'left' }), () => editor.chain().focus().setTextAlign('left').run(), 'Esquerda', '⬅')}
+      {btn(editor.isActive({ textAlign: 'left' }), () => editor.chain().focus().setTextAlign('left').run(), 'Esquerda', '')}
       {btn(editor.isActive({ textAlign: 'center' }), () => editor.chain().focus().setTextAlign('center').run(), 'Centro', '↔')}
-      {btn(editor.isActive({ textAlign: 'right' }), () => editor.chain().focus().setTextAlign('right').run(), 'Direita', '➡')}
+      {btn(editor.isActive({ textAlign: 'right' }), () => editor.chain().focus().setTextAlign('right').run(), 'Direita', '')}
       <div className="w-px h-5 bg-nodri-border mx-1 self-center" />
       {btn(editor.isActive('heading', { level: 1 }), () => editor.chain().focus().toggleHeading({ level: 1 }).run(), 'H1', 'H1')}
       {btn(editor.isActive('heading', { level: 2 }), () => editor.chain().focus().toggleHeading({ level: 2 }).run(), 'H2', 'H2')}
@@ -58,11 +58,11 @@ function BarraFerramentas({ editor }: { editor: any }) {
       {btn(editor.isActive('blockquote'), () => editor.chain().focus().toggleBlockquote().run(), 'Citação', '" "')}
       <div className="w-px h-5 bg-nodri-border mx-1 self-center" />
       <label className="flex items-center gap-1 px-2 py-1 rounded text-[11px] text-nodri-t2 hover:bg-white/10 cursor-pointer" title="Cor do texto">
-        🎨
+        
         <input type="color" className="w-0 h-0 opacity-0" onChange={e => editor.chain().focus().setColor(e.target.value).run()} />
       </label>
       <label className="flex items-center gap-1 px-2 py-1 rounded text-[11px] text-nodri-t2 hover:bg-white/10 cursor-pointer" title="Destaque">
-        🖌
+        
         <input type="color" className="w-0 h-0 opacity-0" onChange={e => editor.chain().focus().setHighlight({ color: e.target.value }).run()} />
       </label>
       <div className="w-px h-5 bg-nodri-border mx-1 self-center" />
@@ -79,7 +79,7 @@ function BarraFerramentas({ editor }: { editor: any }) {
   )
 }
 
-// ── BLOCO TEXTO RICO ──
+//  BLOCO TEXTO RICO 
 function BlocoTexto({ bloco, onChange }: { bloco: Bloco; onChange: (c: any) => void }) {
   const editor = useEditor({
     extensions: [
@@ -111,7 +111,7 @@ function BlocoTexto({ bloco, onChange }: { bloco: Bloco; onChange: (c: any) => v
   )
 }
 
-// ── BLOCO IMAGEM ──
+//  BLOCO IMAGEM 
 function BlocoImagem({ bloco, onChange }: { bloco: Bloco; onChange: (c: any) => void }) {
   const [uploading, setUploading] = useState(false)
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -151,7 +151,7 @@ function BlocoImagem({ bloco, onChange }: { bloco: Bloco; onChange: (c: any) => 
   )
 }
 
-// ── BLOCO VÍDEO YOUTUBE ──
+//  BLOCO VÍDEO YOUTUBE 
 function BlocoVideo({ bloco, onChange }: { bloco: Bloco; onChange: (c: any) => void }) {
   const embedUrl = (() => {
     const url = bloco.conteudo?.url || ''
@@ -172,7 +172,7 @@ function BlocoVideo({ bloco, onChange }: { bloco: Bloco; onChange: (c: any) => v
   )
 }
 
-// ── BLOCO ARQUIVO (PDF / EXCEL) ──
+//  BLOCO ARQUIVO (PDF / EXCEL) 
 function BlocoArquivo({ bloco, onChange, tipo }: { bloco: Bloco; onChange: (c: any) => void; tipo: 'pdf' | 'excel' }) {
   const [uploading, setUploading] = useState(false)
   const accept = tipo === 'pdf' ? '.pdf' : '.xlsx,.xls,.csv'
@@ -194,7 +194,7 @@ function BlocoArquivo({ bloco, onChange, tipo }: { bloco: Bloco; onChange: (c: a
     <div>
       {bloco.conteudo?.url ? (
         <div className="flex items-center gap-3 p-3 bg-nodri-surface border border-nodri-border rounded-lg">
-          <span className="text-2xl">{tipo === 'pdf' ? '📄' : '📊'}</span>
+          <span className="text-2xl">{tipo === 'pdf' ? '' : ''}</span>
           <a href={bloco.conteudo.url} target="_blank" rel="noopener noreferrer" className="flex-1 text-[12px] text-nodri-cyan hover:underline truncate">{bloco.conteudo.nome}</a>
           <button onClick={() => onChange({ url: '', nome: '' })} className="text-nodri-red text-[10px] hover:underline">Remover</button>
         </div>
@@ -212,7 +212,7 @@ function BlocoArquivo({ bloco, onChange, tipo }: { bloco: Bloco; onChange: (c: a
   )
 }
 
-// ── BLOCO COLUNAS ──
+//  BLOCO COLUNAS 
 function BlocoColunas({ bloco, onChange }: { bloco: Bloco; onChange: (c: any) => void }) {
   const cols = bloco.conteudo?.colunas || ['', '']
   const setCols = (arr: string[]) => onChange({ colunas: arr })
@@ -238,7 +238,7 @@ function BlocoColunas({ bloco, onChange }: { bloco: Bloco; onChange: (c: any) =>
   )
 }
 
-// ── ITEM SORTÁVEL ──
+//  ITEM SORTÁVEL 
 function BlocoSortavel({ bloco, onRemove, onUpdate, onResize }: {
   bloco: Bloco
   onRemove: () => void
@@ -250,9 +250,9 @@ function BlocoSortavel({ bloco, onRemove, onUpdate, onResize }: {
   const [expandido, setExpandido] = useState(true)
 
   const TIPOS_LABEL: Record<BlocoTipo, string> = {
-    texto: '📝 Texto Rico', imagem: '🖼️ Imagem', video: '🎬 Vídeo YouTube',
-    pdf: '📄 PDF', excel: '📊 Excel', tabela: '🔲 Tabela', colunas: '⊞ Colunas',
-    checklist: '✅ Checklist', faq: '❓ FAQ',
+    texto: ' Texto Rico', imagem: '️ Imagem', video: ' Vídeo YouTube',
+    pdf: ' PDF', excel: ' Excel', tabela: ' Tabela', colunas: '⊞ Colunas',
+    checklist: ' Checklist', faq: ' FAQ',
   }
 
   return (
@@ -324,7 +324,7 @@ function BlocoSortavel({ bloco, onRemove, onUpdate, onResize }: {
   )
 }
 
-// ── EDITOR PRINCIPAL ──
+//  EDITOR PRINCIPAL 
 interface EditorBlocosProps {
   blocos: Bloco[]
   onChange: (blocos: Bloco[]) => void
@@ -333,14 +333,14 @@ interface EditorBlocosProps {
 function gerarId() { return Math.random().toString(36).slice(2) }
 
 const TIPOS_DISPONIVEIS: { tipo: BlocoTipo; label: string; icone: string }[] = [
-  { tipo: 'texto', label: 'Texto Rico', icone: '📝' },
-  { tipo: 'imagem', label: 'Imagem', icone: '🖼️' },
-  { tipo: 'video', label: 'Vídeo YouTube', icone: '🎬' },
-  { tipo: 'pdf', label: 'PDF', icone: '📄' },
-  { tipo: 'excel', label: 'Excel/Planilha', icone: '📊' },
+  { tipo: 'texto', label: 'Texto Rico', icone: '' },
+  { tipo: 'imagem', label: 'Imagem', icone: '️' },
+  { tipo: 'video', label: 'Vídeo YouTube', icone: '' },
+  { tipo: 'pdf', label: 'PDF', icone: '' },
+  { tipo: 'excel', label: 'Excel/Planilha', icone: '' },
   { tipo: 'colunas', label: 'Colunas', icone: '⊞' },
-  { tipo: 'checklist', label: 'Checklist', icone: '✅' },
-  { tipo: 'faq', label: 'FAQ', icone: '❓' },
+  { tipo: 'checklist', label: 'Checklist', icone: '' },
+  { tipo: 'faq', label: 'FAQ', icone: '' },
 ]
 
 export default function EditorBlocos({ blocos, onChange }: EditorBlocosProps) {
