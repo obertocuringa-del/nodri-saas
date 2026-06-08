@@ -242,12 +242,12 @@ export default function ProfissionaisPage() {
         {sidebarOpen && <div className="fixed inset-0 bg-black/60 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
 
         {/* SIDEBAR */}
-        <aside className={`fixed lg:relative inset-y-0 left-0 z-50 lg:z-auto transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`} style={{ width: '230px', minWidth: '230px', background: '#0d1117', borderRight: '1px solid #1e293b', padding: '12px 8px', overflowY: 'auto' }}>
+        <aside className={`shrink-0 lg:static lg:translate-x-0 fixed top-[49px] bottom-0 left-0 z-50 transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`} style={{ width: '230px', minWidth: '230px', background: '#0d1117', borderRight: '1px solid #1e293b', padding: '12px 8px', overflowY: 'auto' }}>
           {SIDEBAR_ITEMS.map(item => {
             const Icon = item.icon
             const ativo = secao === item.id
             return (
-              <button key={item.id} onClick={() => { setSecao(item.id); if (item.id === 'cadastrar') { setEditando(null); setForm({ ...FORM_INITIAL }); setFotoPreview('') } }}
+              <button key={item.id} onClick={() => { setSecao(item.id); setSidebarOpen(false); if (item.id === 'cadastrar') { setEditando(null); setForm({ ...FORM_INITIAL }); setFotoPreview('') } }}
                 style={{
                   width: '100%', display: 'flex', alignItems: 'center', gap: '9px',
                   padding: '9px 10px', borderRadius: '8px', border: 'none', cursor: 'pointer',

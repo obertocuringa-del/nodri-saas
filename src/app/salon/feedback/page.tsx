@@ -237,7 +237,10 @@ export default function FeedbackPage() {
         {sidebarOpen && <div className="fixed inset-0 bg-black/60 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
 
         {/* SIDEBAR - Lista de formulários */}
-        <div className={`fixed lg:relative inset-y-0 left-0 z-50 lg:z-auto transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} w-64 border-r border-nodri-border bg-nodri-surface flex flex-col overflow-y-auto shrink-0`}>
+        <div className={`w-64 shrink-0 border-r border-nodri-border bg-nodri-surface flex flex-col overflow-y-auto
+          lg:static lg:translate-x-0
+          fixed top-[57px] bottom-0 left-0 z-50 transition-transform duration-300
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
           <div className="p-3 border-b border-nodri-border">
             <div className="text-[10px] font-bold text-nodri-t3 uppercase tracking-wider">Formulários</div>
           </div>
