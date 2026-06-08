@@ -1798,18 +1798,23 @@ Use números reais. Seja direto.`
                       <input value={s.nome} onChange={e=>setServicos(p=>p.map(x=>x.id===s.id?{...x,nome:e.target.value}:x))}
                         placeholder="Ex: Coloração longo" className="px-3 py-2 rounded-lg text-sm text-white focus:outline-none" style={{background:'#0a0f1a',border:'1px solid #1e293b'}}/>
                       {[
-                        {k:'preco' as const,ph:'0',pre:'R$'},
-                        {k:'rateioP' as const,ph:'50',suf:'%'},
-                        {k:'produto' as const,ph:'0',pre:'R$'},
-                        {k:'imposto' as const,ph:'5',suf:'%'},
-                      ].map(f=>(
+                        {k:'preco' as const,ph:'0',pre:'R$',aviso:false,padrao:''},
+                        {k:'rateioP' as const,ph:'50',suf:'%',aviso:!(s as any).rateioP,padrao:'50% (padrão)'},
+                        {k:'produto' as const,ph:'0',pre:'R$',aviso:false,padrao:''},
+                        {k:'imposto' as const,ph:'5',suf:'%',aviso:!(s as any).imposto,padrao:'5% (padrão)'},
+                      ].map((f:any)=>(
                         <div key={f.k} className="relative">
+                          {f.aviso && (
+                            <div className="absolute -top-2 left-0 z-10">
+                              <AvisoDefault ativo={true} padrao={f.padrao} onPreencher={()=>{}} onManter={()=>{}}/>
+                            </div>
+                          )}
                           {f.pre&&<span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#64748b'}}>{f.pre}</span>}
                           <input type="number" value={(s as any)[f.k]}
                             onChange={e=>setServicos(p=>p.map(x=>x.id===s.id?{...x,[f.k]:e.target.value}:x))}
                             placeholder={f.ph}
                             className={`w-full ${f.pre?'pl-7':'pl-3'} ${f.suf?'pr-6':'pr-2'} py-2 rounded-lg text-sm text-white focus:outline-none`}
-                            style={{background:'#0a0f1a',border:`1px solid ${n((s as any)[f.k])>0?'#7c5cfc40':'#1e293b'}`}}/>
+                            style={{background:'#0a0f1a',border:`1px solid ${f.aviso?'#f59e0b40':n((s as any)[f.k])>0?'#7c5cfc40':'#1e293b'}`}}/>
                           {f.suf&&<span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#64748b'}}>{f.suf}</span>}
                         </div>
                       ))}
@@ -1819,15 +1824,16 @@ Use números reais. Seja direto.`
                       <div className="mx-4 mb-3 rounded-xl overflow-hidden border" style={{borderColor:'#1e293b'}}>
                         <div className="grid grid-cols-4 divide-x text-center py-2" style={{background:'#0a0f1a',borderColor:'#1e293b'}}>
                           {[
-                            {l:'Total Despesas',v:fmtR(c.total),p:`${(c.totalPct*100).toFixed(1)}%`,co:'#f59e0b'},
-                            {l:'Margem Operacional',v:fmtR(c.margOp),p:`${(c.margOpPct*100).toFixed(1)}%`,co:'#06b6d4'},
-                            {l:'Custo Operacional',v:fmtR(c.custoOpR),p:`${(c.custOpPct*100).toFixed(1)}%`,co:'#a78bfa'},
-                            {l:'RESULTADO LÍQUIDO',v:fmtR(c.resultado),p:`${(c.resultPct*100).toFixed(1)}%`,co:corRes(c.resultado)},
+                            {l:'💸 Total de Despesas',sub:'Tudo que custa realizar este serviço',v:fmtR(c.total),p:`${(c.totalPct*100).toFixed(1)}%`,co:'#f59e0b'},
+                            {l:'📊 Margem Operacional',sub:'O que sobrou após pagar comissão, produto, cartão e imposto',v:fmtR(c.margOp),p:`${(c.margOpPct*100).toFixed(1)}%`,co:'#06b6d4'},
+                            {l:'🏢 Custo Operacional',sub:'Parte dos custos fixos do salão que este serviço cobre',v:fmtR(c.custoOpR),p:`${(c.custOpPct*100).toFixed(1)}%`,co:'#a78bfa'},
+                            {l:'🏆 Resultado Líquido',sub:'Seu lucro real após pagar absolutamente tudo',v:fmtR(c.resultado),p:`${(c.resultPct*100).toFixed(1)}%`,co:corRes(c.resultado)},
                           ].map((item,i)=>(
-                            <div key={i} className="px-2 py-1">
-                              <p className="text-[9px] uppercase tracking-wider mb-0.5" style={{color:'#475569'}}>{item.l}</p>
+                            <div key={i} className="px-2 py-2">
+                              <p className="text-[9px] font-bold mb-0.5" style={{color:'#94a3b8'}}>{item.l}</p>
+                              <p className="text-[8px] mb-1 leading-tight" style={{color:'#334155'}}>{item.sub}</p>
                               <p className="text-sm font-bold" style={{color:item.co}}>{item.v}</p>
-                              <p className="text-[10px]" style={{color:item.co+'99'}}>{item.p}</p>
+                              <p className="text-[10px]" style={{color:item.co+'99'}}>{item.p} do preço</p>
                             </div>
                           ))}
                         </div>
@@ -1956,8 +1962,16 @@ Use números reais. Seja direto.`
               <p className="text-xs mb-5" style={{color:'#64748b'}}>Quanto cobrar de aluguel por cadeira para cobrir custos e ter lucro.</p>
               <div className="space-y-4">
                 <div>
-                  <div className="flex items-center gap-1.5 mb-1"><label className="text-xs font-bold" style={{color:'#94a3b8'}}>Custo Operacional Mensal Total (R$)</label><InfoBtn id="custoOpCad"/></div>
-                  <p className="text-xs mb-2" style={{color:'#475569'}}>{custoOp>0?'Preenchido automaticamente — pode editar.':'Preencha a aba Receitas e Despesas ou informe manualmente.'}</p>
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <label className="text-xs font-bold" style={{color:'#94a3b8'}}>Custo Operacional Mensal Total (R$)</label>
+                    <InfoBtn id="custoOpCad"/>
+                    {custoOp>0 && !custoOpCad && <AvisoDefault ativo={true} padrao={`${fmtR(custoOp)} (mês atual — use média para mais precisão)`} onPreencher={()=>{}} onManter={()=>{}}/>}
+                  </div>
+                  <p className="text-xs mb-2" style={{color:'#475569'}}>
+                    {mediaCustoOp>0&&fatN>0
+                      ? <>Média de {qtdMesesMedia} meses: <strong style={{color:'#10b981'}}>{fmtR(custoOp*(1))}</strong> — edite para usar a média histórica</>
+                      : custoOp>0?'Usando mês atual — pode editar para colocar a média dos seus meses':'Preencha a aba Receitas e Despesas ou informe manualmente.'}
+                  </p>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{color:'#94a3b8'}}>R$</span>
                     <input type="number" value={custoOpCad||(custoOp>0?String(Math.round(custoOp)):'')} onChange={e=>setCustoOpCad(e.target.value)}
@@ -2009,8 +2023,12 @@ Use números reais. Seja direto.`
               <p className="text-xs mb-5" style={{color:'#64748b'}}>Quanto cada metro quadrado do salão precisa gerar para ser rentável.</p>
               <div className="space-y-4">
                 <div>
-                  <div className="flex items-center gap-1.5 mb-1"><label className="text-xs font-bold" style={{color:'#94a3b8'}}>Faturamento Mínimo Necessário (R$)</label><InfoBtn id="fatMinM2"/></div>
-                  <p className="text-xs mb-2" style={{color:'#475569'}}>{pe>0?'Ponto de equilíbrio calculado automaticamente — pode editar.':'Preencha a aba Receitas e Despesas ou informe manualmente.'}</p>
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <label className="text-xs font-bold" style={{color:'#94a3b8'}}>Faturamento Mínimo Necessário (R$)</label>
+                    <InfoBtn id="fatMinM2"/>
+                    {pe>0 && !fatMinM2 && <AvisoDefault ativo={true} padrao={`${fmtR(pe)} (mês atual — considere usar a média dos seus meses)`} onPreencher={()=>{}} onManter={()=>{}}/>}
+                  </div>
+                  <p className="text-xs mb-2" style={{color:'#475569'}}>{pe>0?'Ponto de equilíbrio do mês atual — pode editar para usar a média dos seus meses':'Preencha a aba Receitas e Despesas ou informe manualmente.'}</p>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{color:'#94a3b8'}}>R$</span>
                     <input type="number" value={fatMinM2||(pe>0?String(Math.round(pe)):'')} onChange={e=>setFatMinM2(e.target.value)}
