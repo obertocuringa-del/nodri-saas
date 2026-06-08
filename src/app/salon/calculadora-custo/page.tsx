@@ -346,6 +346,86 @@ function InfoBtn({ id, className }: { id: string; className?: string }) {
   )
 }
 
+// ─── Componente AvisoDefault ────────────────────────────────────────────────
+// Mostra badge laranja quando campo está usando valor padrão
+function AvisoDefault({ ativo, padrao, onPreencher, onManter }: {
+  ativo: boolean
+  padrao: string
+  onPreencher: () => void
+  onManter: () => void
+}) {
+  const [aberto, setAberto] = useState(false)
+  if (!ativo) return null
+  return (
+    <>
+      <button
+        onClick={e => { e.stopPropagation(); setAberto(true) }}
+        className="flex-shrink-0 flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold animate-pulse"
+        style={{background:'#f59e0b20',color:'#f59e0b',border:'1px solid #f59e0b50'}}
+        title="Campo usando valor padrão — clique para decidir">
+        ⚠️ padrão
+      </button>
+      {aberto && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.7)'}}>
+          <div className="rounded-2xl border max-w-sm w-full shadow-2xl" style={{background:'#111827',borderColor:'#f59e0b50'}}>
+            <div className="px-5 py-4 border-b" style={{borderColor:'#1e293b'}}>
+              <h3 className="font-bold text-sm text-white flex items-center gap-2">⚠️ Campo usando valor padrão</h3>
+            </div>
+            <div className="p-5 space-y-3">
+              <div className="rounded-xl p-3" style={{background:'#f59e0b10',border:'1px solid #f59e0b30'}}>
+                <p className="text-xs" style={{color:'#fbbf24'}}>
+                  Este campo está usando o valor padrão: <strong>{padrao}</strong>
+                </p>
+                <p className="text-xs mt-1" style={{color:'#94a3b8'}}>
+                  Para um resultado mais preciso, preencha com os dados reais do seu salão.
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <button onClick={() => { setAberto(false); onPreencher() }}
+                  className="py-2.5 rounded-xl text-xs font-bold"
+                  style={{background:'#7c5cfc',color:'white'}}>
+                  ✏️ Quero preencher
+                </button>
+                <button onClick={() => { setAberto(false); onManter() }}
+                  className="py-2.5 rounded-xl text-xs font-bold"
+                  style={{background:'#1e293b',color:'#94a3b8',border:'1px solid #334155'}}>
+                  ✅ Manter padrão
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
+// ─── Componente GuiaPassos ───────────────────────────────────────────────────
+function GuiaPassos({ passos }: { passos: {titulo: string, desc: string, ok: boolean, cor: string}[] }) {
+  return (
+    <div className="rounded-2xl p-4 border mb-4" style={{background:'#0d1525',borderColor:'#7c5cfc30'}}>
+      <p className="text-xs font-bold mb-3" style={{color:'#7c5cfc'}}>📋 Como preencher — siga os passos em ordem:</p>
+      <div className="grid gap-2" style={{gridTemplateColumns:`repeat(${passos.length}, 1fr)`}}>
+        {passos.map((p, i) => (
+          <div key={i} className="rounded-xl p-3 border text-center" style={{
+            background: p.ok ? `${p.cor}10` : '#111827',
+            borderColor: p.ok ? `${p.cor}40` : '#1e293b',
+          }}>
+            <div className="w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold mx-auto mb-2"
+              style={{background: p.ok ? p.cor : '#1e293b', color: p.ok ? 'white' : '#475569'}}>
+              {p.ok ? '✓' : i+1}
+            </div>
+            <p className="text-[10px] font-bold mb-1" style={{color: p.ok ? p.cor : '#94a3b8'}}>
+              {p.titulo}
+            </p>
+            <p className="text-[9px] leading-tight" style={{color:'#475569'}}>{p.desc}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ─── Constantes ─────────────────────────────────────────────────────────────
 const DESPESAS_INDIRETAS = [
   {nome:'Aluguel',          dica:'Se imóvel próprio, considere o valor de mercado + condomínio.'},
@@ -965,6 +1045,7 @@ Use números reais. Seja direto.`
                   <div className="flex items-center gap-2 mb-1">
                     <label className="text-xs font-bold" style={{color:'#94a3b8'}}>💰 Faturamento Mensal (R$)</label>
                     <InfoBtn id="faturamento"/>
+                    <AvisoDefault ativo={!fat||fat==='0'} padrao="não preenchido" onPreencher={()=>{}} onManter={()=>{}}/>
                   </div>
                   <p className="text-xs mb-1" style={{color:'#475569'}}>Média dos últimos 12 meses ÷ 12</p>
                   <div className="relative">
@@ -1490,6 +1571,12 @@ Use números reais. Seja direto.`
         {/* ════ ABA PONTO DE EQUILÍBRIO ════ */}
         {aba==='pe' && (
           <div className="space-y-4">
+            <GuiaPassos passos={[
+              {titulo:'Receitas e Despesas',desc:'Preencha a aba RD primeiro — os valores vêm de lá automaticamente',ok:custoOp>0&&fatN>0,cor:'#10b981'},
+              {titulo:'Área e Profissionais',desc:'Informe a metragem do salão e quantos profissionais trabalham',ok:n(areaM2)>0&&n(numProfs)>0,cor:'#f59e0b'},
+              {titulo:'Meta de Lucro',desc:'Defina qual % de lucro você quer alcançar',ok:n(metaLucroPE)>0||n(lucroD)>0,cor:'#a78bfa'},
+              {titulo:'Ver o PE',desc:'O Ponto de Equilíbrio aparece automaticamente abaixo',ok:PE_>0,cor:'#7c5cfc'},
+            ]}/>
             {(custoOp>0||fatN>0) && (
               <div className="rounded-xl p-3 text-xs flex items-center gap-2" style={{background:'#7c5cfc15',border:'1px solid #7c5cfc30',color:'#a78bfa'}}>
                 ✨ Dados da aba Receitas e Despesas: Custo Op. <strong>{fmtR(custoOp)}</strong> | Margem <strong>{(margOpPct*100).toFixed(1)}%</strong> | Faturamento <strong>{fmtR(fatN)}</strong>
@@ -1510,6 +1597,7 @@ Use números reais. Seja direto.`
                     <div className="flex items-center gap-1.5 mb-1">
                       <label className="text-xs font-bold" style={{color:'#94a3b8'}}>{f.l}</label>
                       <InfoBtn id={f.info}/>
+                      {!f.v && f.ph && <AvisoDefault ativo={true} padrao={`usando ${f.ph} (automático)`} onPreencher={()=>{}} onManter={()=>{}}/>}
                     </div>
                     <div className="relative">
                       {f.tipo==='R$'&&<span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#64748b'}}>R$</span>}
@@ -1588,11 +1676,21 @@ Use números reais. Seja direto.`
         {/* ════ ABA CALCULAR SERVIÇOS ════ */}
         {aba==='servicos' && (
           <div className="space-y-4">
+            <GuiaPassos passos={[
+              {titulo:'Parâmetros Globais',desc:'Configure taxa do cartão e custo operacional do seu salão',ok:n(taxaCartao)>0,cor:'#10b981'},
+              {titulo:'Adicione Serviços',desc:'Nome, preço e percentual de rateio do profissional',ok:servicos.some(s=>s.nome&&n(s.preco)>0),cor:'#f59e0b'},
+              {titulo:'Produto e Imposto',desc:'Custo do produto usado e % de imposto de cada serviço',ok:servicos.some(s=>n(s.imposto)>0),cor:'#a78bfa'},
+              {titulo:'Ver Resultado',desc:'Resultado líquido de cada serviço aparece automaticamente',ok:servicos.some(s=>n(s.preco)>0&&n(s.rateioP)>0),cor:'#7c5cfc'},
+            ]}/>
             <div className="rounded-2xl p-5 border" style={{background:'#111827',borderColor:'#7c5cfc40'}}>
               <h3 className="font-bold text-sm mb-3" style={{color:'#7c5cfc'}}>⚙️ Parâmetros Globais</h3>
               <div className="grid grid-cols-4 gap-4 mb-4">
                 <div>
-                  <div className="flex items-center gap-1.5 mb-1"><label className="text-xs font-bold" style={{color:'#94a3b8'}}>Taxa do Cartão (%)</label><InfoBtn id="taxaCartaoServ"/></div>
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <label className="text-xs font-bold" style={{color:'#94a3b8'}}>Taxa do Cartão (%)</label>
+                    <InfoBtn id="taxaCartaoServ"/>
+                    <AvisoDefault ativo={taxaCartao==='5'} padrao="5% (padrão)" onPreencher={()=>{}} onManter={()=>{}}/>
+                  </div>
                   <p className="text-[10px] mb-1" style={{color:'#475569'}}>Média das maquininhas. Recomendado: 5%</p>
                   <div className="relative"><input type="number" value={taxaCartao} onChange={e=>setTaxaCartao(e.target.value)} className="w-full pr-6 pl-3 py-2 rounded-lg text-sm text-white focus:outline-none" style={{background:'#0a0f1a',border:'1px solid #334155'}}/><span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#64748b'}}>%</span></div>
                 </div>
@@ -1766,6 +1864,12 @@ Use números reais. Seja direto.`
         {/* ════ ABA CUSTO DE PRODUTO ════ */}
         {aba==='produto' && (
           <div className="space-y-4">
+            <GuiaPassos passos={[
+              {titulo:'Nome do Serviço',desc:'Ex: Coloração, Hidratação, Escova',ok:servicosProd.some(s=>s.nomeServico.trim().length>0),cor:'#10b981'},
+              {titulo:'Adicione Produtos',desc:'Liste cada produto usado neste serviço',ok:servicosProd.some(s=>s.ingredientes.some(i=>i.nome.trim().length>0)),cor:'#f59e0b'},
+              {titulo:'Qtd e Preço',desc:'Quantidade da embalagem, preço pago e quanto usa por serviço',ok:servicosProd.some(s=>s.ingredientes.some(i=>n(i.qtdEmb)>0&&n(i.preco)>0&&n(i.qtdUsa)>0)),cor:'#a78bfa'},
+              {titulo:'Ver Custo Total',desc:'O custo exato do produto por serviço aparece automaticamente',ok:servicosProd.some(s=>s.ingredientes.some(i=>n(i.qtdEmb)>0&&n(i.preco)>0&&n(i.qtdUsa)>0)),cor:'#7c5cfc'},
+            ]}/>
             <div className="rounded-xl p-3 text-xs" style={{background:'#7c5cfc15',border:'1px solid #7c5cfc30',color:'#a78bfa'}}>
               ✨ Calcule o custo exato de cada insumo por serviço. Use o total em <strong>💇 Calcular Serviços</strong> → campo "Produto (R$)".
             </div>
@@ -1841,6 +1945,11 @@ Use números reais. Seja direto.`
         {/* ════ ABA ALUGUEL DE CADEIRA ════ */}
         {aba==='cadeira' && (
           <div className="space-y-4">
+            <GuiaPassos passos={[
+              {titulo:'Custo Operacional',desc:'Vem automático da aba RD. Se não preencheu, informe manualmente',ok:custoOp>0||n(custoOpCad)>0,cor:'#10b981'},
+              {titulo:'Nº de Cadeiras',desc:'Quantas cadeiras ou postos de atendimento tem o salão',ok:n(numCad)>0,cor:'#f59e0b'},
+              {titulo:'Ver Aluguel Sugerido',desc:'Valor mínimo e sugerido por cadeira aparecem automaticamente',ok:custPorCad>0,cor:'#7c5cfc'},
+            ]}/>
             {custoOp>0&&<div className="rounded-xl p-3 text-xs" style={{background:'#7c5cfc15',border:'1px solid #7c5cfc30',color:'#a78bfa'}}>✨ Custo operacional da aba Receitas e Despesas: <strong>{fmtR(custoOp)}</strong> — preenchido automaticamente</div>}
             <div className="rounded-2xl p-6 border" style={{background:'#111827',borderColor:'#1e293b'}}>
               <h2 className="font-bold text-base mb-1" style={{color:'#f59e0b'}}>💺 Aluguel de Cadeira</h2>
@@ -1889,6 +1998,11 @@ Use números reais. Seja direto.`
         {/* ════ ABA FATURAMENTO POR M² ════ */}
         {aba==='metro' && (
           <div className="space-y-4">
+            <GuiaPassos passos={[
+              {titulo:'Faturamento Mínimo',desc:'Vem do Ponto de Equilíbrio automaticamente. Ou informe manualmente',ok:pe>0||n(fatMinM2)>0,cor:'#10b981'},
+              {titulo:'Metragem do Salão',desc:'Área total do salão em metros quadrados',ok:n(mTotal)>0,cor:'#f59e0b'},
+              {titulo:'Ver Resultado por M²',desc:'Faturamento necessário por metro quadrado aparece automaticamente',ok:fatPorM2>0,cor:'#7c5cfc'},
+            ]}/>
             {pe>0&&<div className="rounded-xl p-3 text-xs" style={{background:'#7c5cfc15',border:'1px solid #7c5cfc30',color:'#a78bfa'}}>✨ Ponto de equilíbrio da aba Receitas e Despesas: <strong>{fmtR(pe)}</strong> — preenchido automaticamente como faturamento mínimo</div>}
             <div className="rounded-2xl p-6 border" style={{background:'#111827',borderColor:'#1e293b'}}>
               <h2 className="font-bold text-base mb-1" style={{color:'#06b6d4'}}>📐 Faturamento por M²</h2>
