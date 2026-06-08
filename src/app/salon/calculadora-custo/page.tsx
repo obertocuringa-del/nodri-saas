@@ -2174,41 +2174,6 @@ Use números reais. Seja direto.`
                           <div>Imposto: {fmtR(c.impostR)}</div>
                           <div style={{color:c.resultado>0?'#10b981':'#ef4444',fontWeight:'bold'}}>{c.resultado>0?'✅ Lucrativo':'🚨 Prejuízo'}</div>
                         </div>
-                        {/* Preço mínimo sugerido */}
-                        {(()=>{
-                          const pMin = calcPrecoMinimo(s, 0)
-                          const pMeta = calcPrecoMinimo(s, n(lucroD)/100)
-                          if(pMin === null) return null
-                          const semProduto = n(s.produto) === 0
-                          const abaixoMin = !semProduto && c.preco < pMin
-                          const abaixoMeta = pMeta !== null && !semProduto && c.preco < pMeta
-                          return (
-                            <div className="px-4 py-2 flex items-center gap-4 flex-wrap" style={{background:'#0a0f1a',borderTop:'1px solid #1e293b'}}>
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-[9px] font-bold" style={{color:'#64748b'}}>💡 Preço mín. (empate):</span>
-                                {semProduto
-                                  ? <span className="text-[9px]" style={{color:'#64748b'}}>custos são % — qualquer valor positivo cobre</span>
-                                  : <>
-                                      <span className="text-xs font-bold" style={{color:abaixoMin?'#ef4444':'#10b981'}}>{fmtR(pMin)}</span>
-                                      {abaixoMin && <span className="text-[9px] px-1.5 py-0.5 rounded" style={{background:'#ef444420',color:'#f87171'}}>⚠️ Abaixo do custo! Aumente {fmtR(pMin-c.preco)}</span>}
-                                    </>
-                                }
-                              </div>
-                              {pMeta !== null && (
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-[9px] font-bold" style={{color:'#64748b'}}>🎯 Para {n(lucroD)||15}% lucro:</span>
-                                  {semProduto
-                                    ? <span className="text-[9px]" style={{color:'#64748b'}}>lucro depende do volume de atendimentos</span>
-                                    : <>
-                                        <span className="text-xs font-bold" style={{color:abaixoMeta?'#f59e0b':'#10b981'}}>{fmtR(pMeta)}</span>
-                                        {abaixoMeta && <span className="text-[9px]" style={{color:'#f59e0b'}}>falta {fmtR(pMeta-c.preco)}</span>}
-                                      </>
-                                  }
-                                </div>
-                              )}
-                            </div>
-                          )
-                        })()}
                       </div>
                     )}
                   </div>
