@@ -540,6 +540,13 @@ export default function CalculadoraCusto() {
   const [extrasOutras, setExtrasOutras] = useState<DespesaItem[]>([])
   // Gerenciar catálogo de despesas
   const [showCatDespesa, setShowCatDespesa] = useState(false)
+  // Seções colapsáveis
+  const [secIndiretas,  setSecIndiretas]  = useState(true)
+  const [secProvisao,   setSecProvisao]   = useState(false)
+  const [secDiretas,    setSecDiretas]    = useState(true)
+  const [secOutras,     setSecOutras]     = useState(false)
+  const [secResultado,  setSecResultado]  = useState(true)
+  const [secConfigServ, setSecConfigServ] = useState(false)
   const [editDespCat, setEditDespCat] = useState<DespesaCat|null>(null)
   const [fdNome, setFdNome] = useState(''); const [fdCat, setFdCat] = useState('indireta'); const [fdObs, setFdObs] = useState('')
   const [vlrProdEstoque,setVlrProdEstoque]= useState('')
@@ -1315,9 +1322,13 @@ Use números reais. Seja direto.`
 
             {/* Despesas Indiretas */}
             <div className="rounded-2xl border overflow-hidden" style={{background:'#111827',borderColor:'#1e293b'}}>
-              <div className="flex items-center justify-between px-5 py-3 border-b" style={{background:'#0d1525',borderColor:'#1e293b'}}>
-                <span className="font-bold text-sm" style={{color:'#f59e0b'}}>📋 Despesas Indiretas</span>
-                <div className="flex items-center gap-3">
+              <button onClick={()=>setSecIndiretas(p=>!p)} className="w-full flex items-center justify-between px-5 py-3 border-b hover:bg-white/2 transition-colors" style={{background:'#0d1525',borderColor:'#1e293b'}}>
+                <div className="flex items-center gap-2">
+                  {secIndiretas ? <ChevronUp size={14} style={{color:'#f59e0b'}}/> : <ChevronDown size={14} style={{color:'#f59e0b'}}/>}
+                  <span className="font-bold text-sm" style={{color:'#f59e0b'}}>📋 Despesas Indiretas (Fixas)</span>
+                  {!secIndiretas && totInd > 0 && <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{background:'#f59e0b20',color:'#f59e0b'}}>{fmtR(totInd)}</span>}
+                </div>
+                <div className="flex items-center gap-3" onClick={e=>e.stopPropagation()}>
                   <button onClick={()=>setShowCatDespesa(true)}
                     className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg"
                     style={{background:'#f59e0b20',color:'#f59e0b',border:'1px solid #f59e0b40'}}>
@@ -1325,8 +1336,13 @@ Use números reais. Seja direto.`
                   </button>
                   <span className="font-bold text-sm" style={{color:'#f59e0b'}}>{fmtR(totInd)}</span>
                 </div>
-              </div>
-              <div className="grid grid-cols-12 gap-2 px-5 py-2 text-[10px] font-bold uppercase tracking-wider border-b" style={{color:'#475569',borderColor:'#1e293b20'}}>
+              </button>
+              {!secIndiretas && (
+                <div className="px-5 py-3 text-xs" style={{color:'#475569'}}>
+                  Clique no cabeçalho para expandir e preencher as despesas fixas mensais.
+                </div>
+              )}
+              {secIndiretas && <><div className="grid grid-cols-12 gap-2 px-5 py-2 text-[10px] font-bold uppercase tracking-wider border-b" style={{color:'#475569',borderColor:'#1e293b20'}}>
                 <div className="col-span-5">Despesa</div>
                 <div className="col-span-3">Valor Mensal (R$)</div>
                 <div className="col-span-2">% Fat.</div>
@@ -1396,19 +1412,22 @@ Use números reais. Seja direto.`
                   style={{background:'#f59e0b20',color:'#f59e0b',border:'1px dashed #f59e0b40'}}>
                   <Plus size={12}/> Adicionar despesa
                 </button>
-              </div>
+              </div></>}
             </div>
 
             {/* Provisão */}
             <div className="rounded-2xl border overflow-hidden" style={{background:'#111827',borderColor:'#1e293b'}}>
-              <div className="flex items-center justify-between px-5 py-3 border-b" style={{background:'#0d1525',borderColor:'#1e293b'}}>
-                <div>
-                  <span className="font-bold text-sm" style={{color:'#a78bfa'}}>📅 Provisão Mensal</span>
-                  <p className="text-[10px] mt-0.5" style={{color:'#64748b'}}>✨ Calculado automaticamente a partir do campo <strong style={{color:'#a78bfa'}}>Salários</strong> nas Despesas Indiretas</p>
+              <button onClick={()=>setSecProvisao(p=>!p)} className="w-full flex items-center justify-between px-5 py-3 border-b hover:bg-white/2 transition-colors" style={{background:'#0d1525',borderColor:'#1e293b'}}>
+                <div className="flex items-center gap-2">
+                  {secProvisao ? <ChevronUp size={14} style={{color:'#a78bfa'}}/> : <ChevronDown size={14} style={{color:'#a78bfa'}}/>}
+                  <div className="text-left">
+                    <span className="font-bold text-sm" style={{color:'#a78bfa'}}>📅 Provisão Mensal</span>
+                    <p className="text-[10px] mt-0.5" style={{color:'#64748b'}}>✨ Automático a partir de <strong style={{color:'#a78bfa'}}>Salários</strong></p>
+                  </div>
                 </div>
                 <span className="font-bold text-sm" style={{color:'#a78bfa'}}>{fmtR(totProvisao)}</span>
-              </div>
-              <div className="grid grid-cols-3 gap-4 p-5">
+              </button>
+              {secProvisao && <><div className="grid grid-cols-3 gap-4 p-5">
                 {[
                   {l:'13º Salário',v:sal13,set:setSal13,dica:'Auto: Salários ÷ 12',info:'sal13'},
                   {l:'Férias',v:ferias,set:setFerias,dica:'Auto: Salários ÷ 36 (1/3 mensal)',info:'ferias'},
@@ -1435,16 +1454,20 @@ Use números reais. Seja direto.`
                   <span className="font-bold" style={{color:'#a78bfa'}}>{fmtR(depMensal)}</span>
                   <span style={{color:'#334155'}}>(inclusa no Custo Operacional)</span>
                 </div>
-              )}
+              )}</>}
             </div>
 
             {/* Despesas Diretas */}
             <div className="rounded-2xl border overflow-hidden" style={{background:'#111827',borderColor:'#1e293b'}}>
-              <div className="flex items-center justify-between px-5 py-3 border-b" style={{background:'#0d1525',borderColor:'#1e293b'}}>
-                <span className="font-bold text-sm" style={{color:'#ef4444'}}>📌 Despesas Diretas</span>
+              <button onClick={()=>setSecDiretas(p=>!p)} className="w-full flex items-center justify-between px-5 py-3 border-b hover:bg-white/2 transition-colors" style={{background:'#0d1525',borderColor:'#1e293b'}}>
+                <div className="flex items-center gap-2">
+                  {secDiretas ? <ChevronUp size={14} style={{color:'#ef4444'}}/> : <ChevronDown size={14} style={{color:'#ef4444'}}/>}
+                  <span className="font-bold text-sm" style={{color:'#ef4444'}}>📌 Despesas Diretas (Variáveis)</span>
+                  {!secDiretas && totDiretas > 0 && <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{background:'#ef444420',color:'#ef4444'}}>{fmtR(totDiretas)}</span>}
+                </div>
                 <span className="font-bold text-sm" style={{color:'#ef4444'}}>{fmtR(totDiretas)}</span>
-              </div>
-              <div className="grid grid-cols-2 gap-4 p-5">
+              </button>
+              {secDiretas && <><div className="grid grid-cols-2 gap-4 p-5">
                 {[
                   {l:'Imposto (R$)',v:imposto,set:setImposto,dica:'Simples Nacional ou regime tributário do mês',info:'imposto'},
                   {l:'Produto/Insumo (R$)',v:produto,set:setProduto,dica:'Total de produtos consumidos nos serviços',info:'produto'},
@@ -1499,15 +1522,20 @@ Use números reais. Seja direto.`
                   style={{background:'#ef444420',color:'#ef4444',border:'1px dashed #ef444440'}}>
                   <Plus size={12}/> Adicionar despesa direta
                 </button>
-              </div>
+              </div></>}
             </div>
 
             {/* Outras Despesas */}
             <div className="rounded-2xl border overflow-hidden" style={{background:'#111827',borderColor:'#1e293b'}}>
-              <div className="flex items-center justify-between px-5 py-3 border-b" style={{background:'#0d1525',borderColor:'#1e293b'}}>
-                <span className="font-bold text-sm" style={{color:'#06b6d4'}}>💸 Outras Despesas / Gasto de Capital</span>
-                <span className="font-bold text-sm" style={{color:'#06b6d4'}}>{fmtR(n(aquisicaoEq)+n(distSocios)+extrasOutras.reduce((s,d)=>s+n(d.valor),0))}</span>
-              </div>
+              <button onClick={()=>setSecOutras(p=>!p)} className="w-full flex items-center justify-between px-5 py-3 border-b hover:bg-white/2 transition-colors" style={{background:'#0d1525',borderColor:'#1e293b'}}>
+                <div className="flex items-center gap-2">
+                  {secOutras ? <ChevronUp size={14} style={{color:'#06b6d4'}}/> : <ChevronDown size={14} style={{color:'#06b6d4'}}/>}
+                  <span className="font-bold text-sm" style={{color:'#06b6d4'}}>💸 Outras Despesas / Gasto de Capital</span>
+                  {!secOutras && totOutras > 0 && <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{background:'#06b6d420',color:'#06b6d4'}}>{fmtR(totOutras)}</span>}
+                </div>
+                <span className="font-bold text-sm" style={{color:'#06b6d4'}}>{fmtR(totOutras)}</span>
+              </button>
+              {secOutras && <>
               <div className="grid grid-cols-2 gap-4 p-5">
                 {[
                   {l:'Aquisição de Equipamento (R$)',v:aquisicaoEq,set:setAquisicaoEq,dica:'Compra de equipamentos, móveis, utensílios',info:'aquisicaoEq'},
@@ -1561,12 +1589,28 @@ Use números reais. Seja direto.`
                   style={{background:'#06b6d420',color:'#06b6d4',border:'1px dashed #06b6d440'}}>
                   <Plus size={12}/> Adicionar outra despesa
                 </button>
-              </div>
+              </div></>}
             </div>
 
             {/* Resultado */}
             {fatN > 0 && (
               <div className="space-y-3">
+                {/* Resumo sempre visível */}
+                <div className="rounded-2xl border overflow-hidden" style={{background:'#111827',borderColor:'#10b98130'}}>
+                  <button onClick={()=>setSecResultado(p=>!p)} className="w-full flex items-center justify-between px-5 py-4 hover:bg-white/2 transition-colors">
+                    <div className="flex items-center gap-3">
+                      {secResultado ? <ChevronUp size={14} style={{color:'#10b981'}}/> : <ChevronDown size={14} style={{color:'#10b981'}}/>}
+                      <span className="font-bold text-sm" style={{color:'#10b981'}}>📊 Resultado do Mês</span>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <p className="text-[10px]" style={{color:'#64748b'}}>Resultado Operacional</p>
+                        <p className="text-lg font-bold" style={{color:corRes(resultOp)}}>{fmtR(resultOp)} <span className="text-xs font-normal">({pctStr(resultOp,fatN)})</span></p>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+                {secResultado && <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   {[
                     {l:'Custo Operacional Total',v:custoOp,pct:pctStr(custoOp,fatN),c:'#f59e0b',dica:'Indiretas + Provisão + Depreciação'},
@@ -1863,7 +1907,7 @@ Use números reais. Seja direto.`
                   {erroIA&&(<div className="p-5 flex items-center justify-between" style={{background:'#111827'}}><span className="text-sm" style={{color:'#ef4444'}}>⚠️ {erroIA}</span><button onClick={analisarIA} className="text-xs px-3 py-1.5 rounded-lg" style={{background:'#7c5cfc',color:'white'}}>Tentar novamente</button></div>)}
                   {analiseIA&&(<div className="p-6" style={{background:'#111827'}}><h3 className="font-bold text-sm mb-4" style={{color:'#7c5cfc'}}>🤖 Análise da NODRI IA</h3><div className="text-sm leading-relaxed" style={{color:'#cbd5e1'}} dangerouslySetInnerHTML={{__html:analiseIA.replace(/\*\*(.*?)\*\*/g,'<strong style="color:#e2e8f0">$1</strong>').replace(/\n/g,'<br/>')}}/></div>)}
                 </div>
-              </div>
+              </div>}
             )}
           </div>
         )}
@@ -1986,8 +2030,16 @@ Use números reais. Seja direto.`
               {titulo:'Produto e Imposto',desc:'Custo do produto usado e % de imposto de cada serviço',ok:servicos.some(s=>n(s.imposto)>0),cor:'#a78bfa'},
               {titulo:'Ver Resultado',desc:'Resultado líquido de cada serviço aparece automaticamente',ok:servicos.some(s=>n(s.preco)>0&&n(s.rateioP)>0),cor:'#7c5cfc'},
             ]}/>
-            <div className="rounded-2xl p-5 border" style={{background:'#111827',borderColor:'#7c5cfc40'}}>
-              <h3 className="font-bold text-sm mb-3" style={{color:'#7c5cfc'}}>⚙️ Parâmetros Globais</h3>
+            <div className="rounded-2xl border overflow-hidden" style={{background:'#111827',borderColor:'#7c5cfc40'}}>
+              <button onClick={()=>setSecConfigServ(p=>!p)} className="w-full flex items-center justify-between px-5 py-3 hover:bg-white/2 transition-colors" style={{background:'#0d1525'}}>
+                <div className="flex items-center gap-2">
+                  {secConfigServ ? <ChevronUp size={14} style={{color:'#7c5cfc'}}/> : <ChevronDown size={14} style={{color:'#7c5cfc'}}/>}
+                  <span className="font-bold text-sm" style={{color:'#7c5cfc'}}>⚙️ Configurações do Cálculo</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full" style={{background:'#7c5cfc20',color:'#a78bfa'}}>Cartão {taxaCartao}% · CustoOp {(custOpServN*100).toFixed(0)}% · {salaoParceiro?'Salão Parceiro ✓':'Sem Parceiro'}</span>
+                </div>
+                <ChevronDown size={14} style={{color:'#475569'}}/>
+              </button>
+              {secConfigServ && <div className="p-5">
               <div className="grid grid-cols-4 gap-4 mb-4">
                 <div>
                   <div className="flex items-center gap-1.5 mb-1">
@@ -2081,6 +2133,7 @@ Use números reais. Seja direto.`
                   <span style={{color:'#cbd5e1'}}>✅ Valor do produto deve ser abatido do rateio</span>
                 </label>
               </div>
+              </div>}
             </div>
 
             {/* Barra de busca e ordenação */}
