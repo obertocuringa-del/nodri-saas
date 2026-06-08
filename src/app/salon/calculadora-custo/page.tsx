@@ -471,7 +471,7 @@ export default function CalculadoraCusto() {
   const [carregando, setCarregando] = useState(false)
 
   // Aba ativa
-  const [aba, setAba] = useState<'rd'|'pe'|'servicos'|'produto'|'cadeira'|'metro'|'graficos'>('rd')
+  const [aba, setAba] = useState<'rd'|'pe'|'servicos'|'catservico'|'produto'|'catproduto'|'cadeira'|'metro'|'graficos'>('rd')
 
   // ── Receitas e Despesas ──────────────────────────────────────────────────
   const [fat,      setFat]      = useState('')
@@ -502,6 +502,30 @@ export default function CalculadoraCusto() {
   const [mediaCustoOp, setMediaCustoOp] = useState(0) // média do custo operacional % de todos os meses
   const [qtdMesesMedia, setQtdMesesMedia] = useState(0) // quantos meses foram usados na média
   const [modoCustoOp, setModoCustoOp] = useState<'dani'|'real'>('real') // modo de cálculo do custo operacional
+
+  // ── Catálogos ─────────────────────────────────────────────────────────────
+  interface ProdutoCatalogo { id:string; nome:string; marca:string; unidade:string; qtd_embalagem:number; preco:number }
+  interface ServicoCatalogo { id:string; nome:string; rateio_pct:number; imposto_pct:number; produto_padrao:number }
+  const [produtosCatalogo, setProdutosCatalogo] = useState<ProdutoCatalogo[]>([])
+  const [servicosCatalogo, setServicosCatalogo] = useState<ServicoCatalogo[]>([])
+  const [buscarProduto, setBuscarProduto] = useState('')
+  const [buscarServico, setBuscarServico] = useState('')
+  const [editandoProd, setEditandoProd] = useState<string|null>(null)
+  const [editandoServ, setEditandoServ] = useState<string|null>(null)
+  const [salvandoCat, setSalvandoCat] = useState(false)
+  const [msgCat, setMsgCat] = useState('')
+  // Form cadastro produto
+  const [fNome, setFNome] = useState(''); const [fMarca, setFMarca] = useState('')
+  const [fUnid, setFUnid] = useState('ml'); const [fQtd, setFQtd] = useState('')
+  const [fPreco, setFPreco] = useState('')
+  // Form cadastro serviço
+  const [fsNome, setFsNome] = useState(''); const [fsRateio, setFsRateio] = useState('50')
+  const [fsImposto, setFsImposto] = useState('5'); const [fsProduto, setFsProduto] = useState('0')
+  // Accordion aberto
+  const [acordeaoProd, setAcordeaoProd] = useState<string|null>(null)
+  const [acordeaoServ, setAcordeaoServ] = useState<string|null>(null)
+  // Atualizar (feedback visual)
+  const [atualizando, setAtualizando] = useState(false)
   const [vlrProdEstoque,setVlrProdEstoque]= useState('')
 
   // ── Ponto de Equilíbrio ──────────────────────────────────────────────────
@@ -717,6 +741,77 @@ export default function CalculadoraCusto() {
     }
   }, [despInd])
 
+  // Carrega catálogos ao iniciar
+  useEffect(() => {
+    fetch('/api/salon/produtos-catalogo', { credentials:'include' })
+      .then(r=>r.json()).then(d=>{ if(d.produtos) setProdutosCatalogo(d.produtos) }).catch(()=>{})
+    fetch('/api/salon/servicos-catalogo', { credentials:'include' })
+      .then(r=>r.json()).then(d=>{ if(d.servicos) setServicosCatalogo(d.servicos) }).catch(()=>{})
+  }, [])
+
+  async function salvarProduto(editar?: string) {
+    setSalvandoCat(true); setMsgCat('')
+    try {
+      const body = { nome:fNome, marca:fMarca, unidade:fUnid, qtd_embalagem:parseFloat(fQtd)||0, preco:parseFloat(fPreco)||0 }
+      const url = editar ? `/api/salon/produtos-catalogo/${editar}` : '/api/salon/produtos-catalogo'
+      const method = editar ? 'PUT' : 'POST'
+      const res = await fetch(url, { method, credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) })
+      if(res.ok) {
+        const d = await res.json()
+        if(editar) setProdutosCatalogo(p=>p.map(x=>x.id===editar?d.produto:x).sort((a,b)=>a.nome.localeCompare(b.nome)))
+        else setProdutosCatalogo(p=>[...p, d.produto].sort((a,b)=>a.nome.localeCompare(b.nome)))
+        setFNome(''); setFMarca(''); setFUnid('ml'); setFQtd(''); setFPreco('')
+        setEditandoProd(null); setMsgCat('✅ Produto salvo!')
+        setTimeout(()=>setMsgCat(''),3000)
+      }
+    } finally { setSalvandoCat(false) }
+  }
+
+  async function excluirProduto(id: string) {
+    if(!confirm('Excluir este produto do catálogo?')) return
+    await fetch(`/api/salon/produtos-catalogo/${id}`, { method:'DELETE', credentials:'include' })
+    setProdutosCatalogo(p=>p.filter(x=>x.id!==id))
+  }
+
+  function editarProduto(p: ProdutoCatalogo) {
+    setFNome(p.nome); setFMarca(p.marca||''); setFUnid(p.unidade); setFQtd(String(p.qtd_embalagem)); setFPreco(String(p.preco))
+    setEditandoProd(p.id)
+  }
+
+  async function salvarServico(editar?: string) {
+    setSalvandoCat(true); setMsgCat('')
+    try {
+      const body = { nome:fsNome, rateio_pct:parseFloat(fsRateio)||50, imposto_pct:parseFloat(fsImposto)||5, produto_padrao:parseFloat(fsProduto)||0 }
+      const url = editar ? `/api/salon/servicos-catalogo/${editar}` : '/api/salon/servicos-catalogo'
+      const method = editar ? 'PUT' : 'POST'
+      const res = await fetch(url, { method, credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) })
+      if(res.ok) {
+        const d = await res.json()
+        if(editar) setServicosCatalogo(p=>p.map(x=>x.id===editar?d.servico:x).sort((a,b)=>a.nome.localeCompare(b.nome)))
+        else setServicosCatalogo(p=>[...p, d.servico].sort((a,b)=>a.nome.localeCompare(b.nome)))
+        setFsNome(''); setFsRateio('50'); setFsImposto('5'); setFsProduto('0')
+        setEditandoServ(null); setMsgCat('✅ Serviço salvo!')
+        setTimeout(()=>setMsgCat(''),3000)
+      }
+    } finally { setSalvandoCat(false) }
+  }
+
+  async function excluirServico(id: string) {
+    if(!confirm('Excluir este serviço do catálogo?')) return
+    await fetch(`/api/salon/servicos-catalogo/${id}`, { method:'DELETE', credentials:'include' })
+    setServicosCatalogo(p=>p.filter(x=>x.id!==id))
+  }
+
+  function editarServico(s: ServicoCatalogo) {
+    setFsNome(s.nome); setFsRateio(String(s.rateio_pct)); setFsImposto(String(s.imposto_pct)); setFsProduto(String(s.produto_padrao))
+    setEditandoServ(s.id)
+  }
+
+  function atualizar() {
+    setAtualizando(true)
+    setTimeout(()=>setAtualizando(false), 800)
+  }
+
   function mesAnterior() {
     if (mesSel === 1) { setMesSel(12); setAnoSel(a=>a-1) }
     else setMesSel(m=>m-1)
@@ -873,13 +968,15 @@ Use números reais. Seja direto.`
   const corRes = (v:number) => v >= 0 ? '#10b981' : '#ef4444'
 
   const ABAS = [
-    {id:'rd',      label:'Receitas e Despesas', icon:'📊'},
-    {id:'pe',      label:'Ponto de Equilíbrio', icon:'⚖️'},
-    {id:'servicos',label:'Calcular Serviços',   icon:'💇'},
-    {id:'produto', label:'Custo de Produto',    icon:'🧴'},
-    {id:'cadeira', label:'Aluguel de Cadeira',  icon:'💺'},
-    {id:'metro',   label:'Faturamento por M²',  icon:'📐'},
-    {id:'graficos',label:'Gráficos',            icon:'📈'},
+    {id:'rd',        label:'Receitas e Despesas', icon:'📊'},
+    {id:'pe',        label:'Ponto de Equilíbrio', icon:'⚖️'},
+    {id:'servicos',  label:'Calcular Serviços',   icon:'💇'},
+    {id:'catservico',label:'Catálogo Serviços',   icon:'📋'},
+    {id:'produto',   label:'Custo de Produto',    icon:'🧴'},
+    {id:'catproduto',label:'Catálogo Produtos',   icon:'📦'},
+    {id:'cadeira',   label:'Aluguel de Cadeira',  icon:'💺'},
+    {id:'metro',     label:'Faturamento por M²',  icon:'📐'},
+    {id:'graficos',  label:'Gráficos',            icon:'📈'},
   ] as const
 
   // ── Dados para gráficos ──────────────────────────────────────────────────
@@ -1001,7 +1098,7 @@ Use números reais. Seja direto.`
         </div>
 
         {/* Abas */}
-        <div className="grid grid-cols-7 gap-1 mb-6 p-1 rounded-xl" style={{background:'#111827'}}>
+        <div className="grid grid-cols-9 gap-1 mb-6 p-1 rounded-xl" style={{background:'#111827'}}>
           {ABAS.map(a=>(
             <button key={a.id} onClick={()=>setAba(a.id as any)}
               className="py-2 px-1 rounded-lg text-[10px] font-bold transition-all text-center"
@@ -1550,6 +1647,13 @@ Use números reais. Seja direto.`
                   )}
                 </div>
 
+                {/* Botão Atualizar */}
+                <button onClick={atualizar}
+                  className="w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all"
+                  style={{background:atualizando?'#10b98120':'#1e293b',color:atualizando?'#10b981':'#64748b',border:`1px solid ${atualizando?'#10b981':'#334155'}`}}>
+                  {atualizando ? '✅ Tudo atualizado!' : '🔄 Atualizar Resultados'}
+                </button>
+
                 {/* Botão IA */}
                 <div className="rounded-2xl border overflow-hidden" style={{borderColor:'#7c5cfc40'}}>
                   {!analiseIA&&!loadingIA&&!erroIA&&(
@@ -1670,6 +1774,10 @@ Use números reais. Seja direto.`
                 </div>
               </div>
             )}
+            <button onClick={atualizar} className="w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all"
+              style={{background:atualizando?'#10b98120':'#1e293b',color:atualizando?'#10b981':'#64748b',border:`1px solid ${atualizando?'#10b981':'#334155'}`}}>
+              {atualizando?'✅ Tudo atualizado!':'🔄 Atualizar Resultados'}
+            </button>
           </div>
         )}
 
@@ -2287,6 +2395,153 @@ Use números reais. Seja direto.`
 
               </>
             )}
+          </div>
+        )}
+
+        {/* ════ ABA CATÁLOGO DE SERVIÇOS ════ */}
+        {aba==='catservico' && (
+          <div className="space-y-4">
+            {/* Formulário cadastro */}
+            <div className="rounded-2xl p-5 border" style={{background:'#111827',borderColor:'#7c5cfc40'}}>
+              <h3 className="font-bold text-sm mb-4" style={{color:'#7c5cfc'}}>{editandoServ?'✏️ Editar Serviço':'➕ Cadastrar Novo Serviço'}</h3>
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <div><label className="text-xs font-bold block mb-1" style={{color:'#94a3b8'}}>Nome do Serviço *</label>
+                  <input value={fsNome} onChange={e=>setFsNome(e.target.value)} placeholder="Ex: Coloração Completa"
+                    className="w-full px-3 py-2 rounded-xl text-sm text-white focus:outline-none" style={{background:'#0a0f1a',border:'1px solid #334155'}}/></div>
+                <div><label className="text-xs font-bold block mb-1" style={{color:'#94a3b8'}}>Rateio Profissional (%)</label>
+                  <input type="number" value={fsRateio} onChange={e=>setFsRateio(e.target.value)} placeholder="50"
+                    className="w-full px-3 py-2 rounded-xl text-sm text-white focus:outline-none" style={{background:'#0a0f1a',border:'1px solid #334155'}}/></div>
+                <div><label className="text-xs font-bold block mb-1" style={{color:'#94a3b8'}}>Imposto (%)</label>
+                  <input type="number" value={fsImposto} onChange={e=>setFsImposto(e.target.value)} placeholder="5"
+                    className="w-full px-3 py-2 rounded-xl text-sm text-white focus:outline-none" style={{background:'#0a0f1a',border:'1px solid #334155'}}/></div>
+                <div><label className="text-xs font-bold block mb-1" style={{color:'#94a3b8'}}>Produto Padrão (R$)</label>
+                  <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#64748b'}}>R$</span>
+                  <input type="number" value={fsProduto} onChange={e=>setFsProduto(e.target.value)} placeholder="0"
+                    className="w-full pl-9 pr-3 py-2 rounded-xl text-sm text-white focus:outline-none" style={{background:'#0a0f1a',border:'1px solid #334155'}}/></div></div>
+              </div>
+              <div className="flex items-center gap-3">
+                <button onClick={()=>salvarServico(editandoServ||undefined)} disabled={!fsNome||salvandoCat}
+                  className="px-5 py-2 rounded-xl text-sm font-bold disabled:opacity-50"
+                  style={{background:'#7c5cfc',color:'white'}}>
+                  {salvandoCat?'Salvando...':editandoServ?'Salvar alterações':'Cadastrar Serviço'}
+                </button>
+                {editandoServ&&<button onClick={()=>{setEditandoServ(null);setFsNome('');setFsRateio('50');setFsImposto('5');setFsProduto('0')}}
+                  className="px-4 py-2 rounded-xl text-xs" style={{background:'#1e293b',color:'#94a3b8'}}>Cancelar</button>}
+                {msgCat&&<span className="text-xs font-bold" style={{color:'#10b981'}}>{msgCat}</span>}
+              </div>
+            </div>
+            {/* Lista */}
+            <div className="rounded-2xl border overflow-hidden" style={{background:'#111827',borderColor:'#1e293b'}}>
+              <div className="flex items-center justify-between px-5 py-3 border-b" style={{background:'#0d1525',borderColor:'#1e293b'}}>
+                <span className="font-bold text-sm text-white">📋 Serviços Cadastrados ({servicosCatalogo.length})</span>
+                <input value={buscarServico} onChange={e=>setBuscarServico(e.target.value)} placeholder="🔍 Buscar serviço..."
+                  className="px-3 py-1.5 rounded-lg text-xs text-white focus:outline-none w-48" style={{background:'#0a0f1a',border:'1px solid #334155'}}/>
+              </div>
+              {servicosCatalogo.filter(s=>s.nome.toLowerCase().includes(buscarServico.toLowerCase())).length===0
+                ? <p className="text-center py-8 text-sm" style={{color:'#475569'}}>Nenhum serviço cadastrado ainda</p>
+                : servicosCatalogo.filter(s=>s.nome.toLowerCase().includes(buscarServico.toLowerCase())).map(s=>(
+                  <div key={s.id} className="border-b" style={{borderColor:'#1e293b10'}}>
+                    <div className="flex items-center justify-between px-5 py-3 cursor-pointer hover:bg-white/2"
+                      onClick={()=>setAcordeaoServ(acordeaoServ===s.id?null:s.id)}>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs" style={{color:'#64748b'}}>{acordeaoServ===s.id?'▼':'▶'}</span>
+                        <span className="text-sm font-bold text-white">{s.nome}</span>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span className="text-xs" style={{color:'#a78bfa'}}>Rateio: {s.rateio_pct}%</span>
+                        <span className="text-xs" style={{color:'#f59e0b'}}>Imposto: {s.imposto_pct}%</span>
+                        <button onClick={e=>{e.stopPropagation();editarServico(s);setAba('catservico')}} className="text-xs px-2 py-1 rounded" style={{background:'#7c5cfc20',color:'#a78bfa'}}>✏️ Editar</button>
+                        <button onClick={e=>{e.stopPropagation();excluirServico(s.id)}} className="text-xs px-2 py-1 rounded" style={{background:'#ef444420',color:'#f87171'}}>🗑️</button>
+                      </div>
+                    </div>
+                    {acordeaoServ===s.id&&(
+                      <div className="px-5 pb-3 grid grid-cols-3 gap-3">
+                        {[{l:'Rateio',v:`${s.rateio_pct}%`},{l:'Imposto',v:`${s.imposto_pct}%`},{l:'Produto padrão',v:`R$ ${s.produto_padrao||0}`}].map((i,idx)=>(
+                          <div key={idx} className="rounded-lg p-3 text-center" style={{background:'#0a0f1a'}}>
+                            <p className="text-[10px]" style={{color:'#64748b'}}>{i.l}</p>
+                            <p className="text-sm font-bold" style={{color:'#e2e8f0'}}>{i.v}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
+
+        {/* ════ ABA CATÁLOGO DE PRODUTOS ════ */}
+        {aba==='catproduto' && (
+          <div className="space-y-4">
+            {/* Formulário cadastro */}
+            <div className="rounded-2xl p-5 border" style={{background:'#111827',borderColor:'#f59e0b40'}}>
+              <h3 className="font-bold text-sm mb-4" style={{color:'#f59e0b'}}>{editandoProd?'✏️ Editar Produto':'➕ Cadastrar Novo Produto'}</h3>
+              <div className="grid grid-cols-3 gap-3 mb-3">
+                <div className="col-span-2"><label className="text-xs font-bold block mb-1" style={{color:'#94a3b8'}}>Nome do Produto *</label>
+                  <input value={fNome} onChange={e=>setFNome(e.target.value)} placeholder="Ex: Tinta Color Sem Amônia"
+                    className="w-full px-3 py-2 rounded-xl text-sm text-white focus:outline-none" style={{background:'#0a0f1a',border:'1px solid #334155'}}/></div>
+                <div><label className="text-xs font-bold block mb-1" style={{color:'#94a3b8'}}>Marca</label>
+                  <input value={fMarca} onChange={e=>setFMarca(e.target.value)} placeholder="Ex: Wella"
+                    className="w-full px-3 py-2 rounded-xl text-sm text-white focus:outline-none" style={{background:'#0a0f1a',border:'1px solid #334155'}}/></div>
+                <div><label className="text-xs font-bold block mb-1" style={{color:'#94a3b8'}}>Unidade</label>
+                  <select value={fUnid} onChange={e=>setFUnid(e.target.value)} className="w-full px-3 py-2 rounded-xl text-sm text-white focus:outline-none" style={{background:'#0a0f1a',border:'1px solid #334155'}}>
+                    {['ml','g','und','L','kg','outros'].map(u=><option key={u} value={u}>{u}</option>)}</select></div>
+                <div><label className="text-xs font-bold block mb-1" style={{color:'#94a3b8'}}>Qtd da Embalagem</label>
+                  <input type="number" value={fQtd} onChange={e=>setFQtd(e.target.value)} placeholder="Ex: 60"
+                    className="w-full px-3 py-2 rounded-xl text-sm text-white focus:outline-none" style={{background:'#0a0f1a',border:'1px solid #334155'}}/></div>
+                <div><label className="text-xs font-bold block mb-1" style={{color:'#94a3b8'}}>Preço da Embalagem (R$)</label>
+                  <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#64748b'}}>R$</span>
+                  <input type="number" value={fPreco} onChange={e=>setFPreco(e.target.value)} placeholder="Ex: 35,27"
+                    className="w-full pl-9 pr-3 py-2 rounded-xl text-sm text-white focus:outline-none" style={{background:'#0a0f1a',border:'1px solid #334155'}}/></div></div>
+              </div>
+              <div className="flex items-center gap-3">
+                <button onClick={()=>salvarProduto(editandoProd||undefined)} disabled={!fNome||salvandoCat}
+                  className="px-5 py-2 rounded-xl text-sm font-bold disabled:opacity-50"
+                  style={{background:'#f59e0b',color:'#000'}}>
+                  {salvandoCat?'Salvando...':editandoProd?'Salvar alterações':'Cadastrar Produto'}
+                </button>
+                {editandoProd&&<button onClick={()=>{setEditandoProd(null);setFNome('');setFMarca('');setFUnid('ml');setFQtd('');setFPreco('')}}
+                  className="px-4 py-2 rounded-xl text-xs" style={{background:'#1e293b',color:'#94a3b8'}}>Cancelar</button>}
+                {msgCat&&<span className="text-xs font-bold" style={{color:'#10b981'}}>{msgCat}</span>}
+              </div>
+            </div>
+            {/* Lista */}
+            <div className="rounded-2xl border overflow-hidden" style={{background:'#111827',borderColor:'#1e293b'}}>
+              <div className="flex items-center justify-between px-5 py-3 border-b" style={{background:'#0d1525',borderColor:'#1e293b'}}>
+                <span className="font-bold text-sm text-white">📦 Produtos Cadastrados ({produtosCatalogo.length})</span>
+                <input value={buscarProduto} onChange={e=>setBuscarProduto(e.target.value)} placeholder="🔍 Buscar produto..."
+                  className="px-3 py-1.5 rounded-lg text-xs text-white focus:outline-none w-48" style={{background:'#0a0f1a',border:'1px solid #334155'}}/>
+              </div>
+              {produtosCatalogo.filter(p=>p.nome.toLowerCase().includes(buscarProduto.toLowerCase())).length===0
+                ? <p className="text-center py-8 text-sm" style={{color:'#475569'}}>Nenhum produto cadastrado ainda</p>
+                : produtosCatalogo.filter(p=>p.nome.toLowerCase().includes(buscarProduto.toLowerCase())).map(p=>(
+                  <div key={p.id} className="border-b" style={{borderColor:'#1e293b10'}}>
+                    <div className="flex items-center justify-between px-5 py-3 cursor-pointer hover:bg-white/2"
+                      onClick={()=>setAcordeaoProd(acordeaoProd===p.id?null:p.id)}>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs" style={{color:'#64748b'}}>{acordeaoProd===p.id?'▼':'▶'}</span>
+                        <span className="text-sm font-bold text-white">{p.nome}</span>
+                        {p.marca&&<span className="text-xs px-2 py-0.5 rounded-full" style={{background:'#f59e0b20',color:'#f59e0b'}}>{p.marca}</span>}
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span className="text-xs" style={{color:'#10b981'}}>R$ {p.preco} / {p.qtd_embalagem}{p.unidade}</span>
+                        <button onClick={e=>{e.stopPropagation();editarProduto(p);setAba('catproduto')}} className="text-xs px-2 py-1 rounded" style={{background:'#7c5cfc20',color:'#a78bfa'}}>✏️ Editar</button>
+                        <button onClick={e=>{e.stopPropagation();excluirProduto(p.id)}} className="text-xs px-2 py-1 rounded" style={{background:'#ef444420',color:'#f87171'}}>🗑️</button>
+                      </div>
+                    </div>
+                    {acordeaoProd===p.id&&(
+                      <div className="px-5 pb-3 grid grid-cols-4 gap-3">
+                        {[{l:'Unidade',v:p.unidade},{l:'Qtd Embalagem',v:`${p.qtd_embalagem}${p.unidade}`},{l:'Preço',v:`R$ ${p.preco}`},{l:'Custo/unidade',v:`R$ ${p.qtd_embalagem>0?(p.preco/p.qtd_embalagem).toFixed(4):'-'}`}].map((i,idx)=>(
+                          <div key={idx} className="rounded-lg p-3 text-center" style={{background:'#0a0f1a'}}>
+                            <p className="text-[10px]" style={{color:'#64748b'}}>{i.l}</p>
+                            <p className="text-sm font-bold" style={{color:'#e2e8f0'}}>{i.v}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+            </div>
           </div>
         )}
 
