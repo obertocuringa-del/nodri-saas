@@ -316,27 +316,27 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
           <nav className="flex-1 px-2 py-3 space-y-0.5">
 
             {/* MÓDULOS */}
-            <p className="text-[9px] font-semibold text-nodri-t3 uppercase tracking-widest px-2 pb-1">Módulos</p>
+            <p className="text-[10px] font-bold text-nodri-t1 uppercase tracking-[2px] px-2 pb-1 border-b border-nodri-border mb-1">Módulos</p>
             {[
-              { label: 'Todos os Módulos', onClick: () => setFiltro('todos'), active: filtro === 'todos' && busca === '' },
-              { label: 'Ativos',           onClick: () => setFiltro('ativos'), active: filtro === 'ativos' },
-              { label: 'Bloqueados',       onClick: () => setFiltro('bloqueados'), active: filtro === 'bloqueados' },
+              { label: 'TODOS OS MÓDULOS', onClick: () => setFiltro('todos'), active: filtro === 'todos' && busca === '' },
+              { label: 'ATIVOS',           onClick: () => setFiltro('ativos'), active: filtro === 'ativos' },
+              { label: 'BLOQUEADOS',       onClick: () => setFiltro('bloqueados'), active: filtro === 'bloqueados' },
             ].map(item => (
               <button key={item.label} onClick={item.onClick}
-                className={`w-full text-left px-3 py-2 rounded-md text-[12px] transition-colors ${item.active ? 'bg-white/6 text-nodri-t1 font-medium' : 'text-nodri-t3 hover:text-nodri-t2 hover:bg-white/3'}`}>
+                className={`w-full text-left px-3 py-2 rounded-md text-[11px] font-medium tracking-wide transition-colors ${item.active ? 'bg-white/6 text-nodri-t1' : 'text-nodri-t3 hover:text-nodri-t2 hover:bg-white/3'}`}>
                 {item.label}
               </button>
             ))}
 
             {/* CONTEÚDO */}
             <div className="pt-4 pb-1">
-              <p className="text-[9px] font-semibold text-nodri-t3 uppercase tracking-widest px-2 pb-1">Conteúdo</p>
+              <p className="text-[10px] font-bold text-nodri-t1 uppercase tracking-[2px] px-2 pb-1 border-b border-nodri-border mb-1">Conteúdo</p>
             </div>
             {TODAS_CATEGORIAS.map(cat => (
               <div key={cat}>
                 <button onClick={() => setOpenDropdown(openDropdown === cat ? null : cat)}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-[12px] transition-colors ${openDropdown === cat ? 'bg-white/6 text-nodri-t1 font-medium' : 'text-nodri-t3 hover:text-nodri-t2 hover:bg-white/3'}`}>
-                  <span className="truncate">{cat}</span>
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-[11px] font-medium tracking-wide transition-colors ${openDropdown === cat ? 'bg-white/6 text-nodri-t1' : 'text-nodri-t3 hover:text-nodri-t2 hover:bg-white/3'}`}>
+                  <span className="truncate uppercase">{cat}</span>
                   <ChevronDown size={11} className={`shrink-0 transition-transform ml-1 ${openDropdown === cat ? 'rotate-180' : ''}`} />
                 </button>
                 {openDropdown === cat && menuDinamico[cat] && (
@@ -346,7 +346,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                         item.title.toLowerCase().replace(/^\d+\.\s*/, '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-')
                       return (
                         <a key={i} href={`/conteudo/${slug}`}
-                          className="flex items-center gap-1.5 px-2 py-1.5 rounded text-[11px] text-nodri-t3 hover:text-nodri-t1 hover:bg-white/3 transition-colors truncate">
+                          className="flex items-center gap-1.5 px-2 py-1.5 rounded text-[11px] font-medium text-nodri-t3 hover:text-nodri-t1 hover:bg-white/3 transition-colors truncate uppercase">
                           <ArrowRight size={9} className="shrink-0 opacity-50" />{item.title.replace(/^\d+\.\s*/, '')}
                         </a>
                       )
@@ -358,18 +358,18 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
 
             {/* FERRAMENTAS */}
             <div className="pt-4 pb-1">
-              <p className="text-[9px] font-semibold text-nodri-t3 uppercase tracking-widest px-2 pb-1">Ferramentas</p>
+              <p className="text-[10px] font-bold text-nodri-t1 uppercase tracking-[2px] px-2 pb-1 border-b border-nodri-border mb-1">Ferramentas</p>
             </div>
             <a href="/salon/feedback"
-              className="w-full flex items-center px-3 py-2 rounded-md text-[12px] text-nodri-pink hover:bg-nodri-pink/8 transition-colors">
+              className="w-full flex items-center px-3 py-2 rounded-md text-[11px] font-medium tracking-wide text-nodri-pink hover:bg-nodri-pink/8 transition-colors uppercase">
               Feedback de Cliente
             </a>
             <a href="/salon/feedback-profissional"
-              className="w-full flex items-center px-3 py-2 rounded-md text-[12px] text-nodri-purple hover:bg-nodri-purple/8 transition-colors">
+              className="w-full flex items-center px-3 py-2 rounded-md text-[11px] font-medium tracking-wide text-nodri-purple hover:bg-nodri-purple/8 transition-colors uppercase">
               Feedback Profissional
             </a>
             <a href="/salon/pendencias"
-              className="w-full flex items-center px-3 py-2 rounded-md text-[12px] transition-colors"
+              className="w-full flex items-center px-3 py-2 rounded-md text-[11px] font-medium tracking-wide uppercase transition-colors"
               style={{ color: '#f97316' }}>
               Pendências
             </a>
