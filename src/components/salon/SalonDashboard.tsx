@@ -112,7 +112,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
       })
       .catch(() => {})
   }, [])
-  const TABS_FIXAS = ['Todos os Módulos', 'Manual do Usuário', 'Dicas Nodri', 'Gestão de Pessoas', 'Gestão Financeira', 'Marketing', 'Feedback de Cliente', 'Feedback Profissional']
+  const TABS_FIXAS = ['Todos os Módulos', 'Manual do Usuário', 'Dicas Nodri', 'Feedback de Cliente', 'Feedback Profissional']
   const [menuDinamico, setMenuDinamico] = useState<Record<string, { title: string; url: string }[]>>(MENU_LINKS)
   const [tabsExtras, setTabsExtras] = useState<string[]>([])
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -264,6 +264,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
   const TABS = [...TABS_FIXAS, ...tabsExtras]
 
   const CATEGORIAS_CONTEUDO = TABS_FIXAS.filter(t => t !== 'Todos os Módulos' && t !== 'Feedback de Cliente' && t !== 'Feedback Profissional')
+
   const TODAS_CATEGORIAS = [...CATEGORIAS_CONTEUDO, ...tabsExtras]
 
   return (
@@ -312,41 +313,41 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
             </div>
           </div>
 
-          <nav className="flex-1 p-2 space-y-0.5">
+          <nav className="flex-1 px-2 py-3 space-y-0.5">
 
             {/* MÓDULOS */}
-            <p className="text-[9px] text-nodri-t3 uppercase tracking-widest px-2.5 py-1.5 font-medium mt-1">Módulos</p>
-            <button onClick={() => setFiltro('todos')}
-              className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11.5px] border transition-all ${filtro === 'todos' && busca === '' ? 'bg-nodri-cyan/9 text-nodri-cyan border-nodri-cyan/17' : 'text-nodri-t2 border-transparent hover:bg-white/4 hover:text-nodri-t1'}`}>
-              Todos os Módulos
-            </button>
-            <button onClick={() => setFiltro('ativos')}
-              className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11.5px] border transition-all ${filtro === 'ativos' ? 'bg-nodri-cyan/9 text-nodri-cyan border-nodri-cyan/17' : 'text-nodri-t2 border-transparent hover:bg-white/4 hover:text-nodri-t1'}`}>
-              Ativos
-            </button>
-            <button onClick={() => setFiltro('bloqueados')}
-              className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11.5px] border transition-all ${filtro === 'bloqueados' ? 'bg-nodri-cyan/9 text-nodri-cyan border-nodri-cyan/17' : 'text-nodri-t2 border-transparent hover:bg-white/4 hover:text-nodri-t1'}`}>
-              Bloqueados
-            </button>
+            <p className="text-[9px] font-semibold text-nodri-t3 uppercase tracking-widest px-2 pb-1">Módulos</p>
+            {[
+              { label: 'Todos os Módulos', onClick: () => setFiltro('todos'), active: filtro === 'todos' && busca === '' },
+              { label: 'Ativos',           onClick: () => setFiltro('ativos'), active: filtro === 'ativos' },
+              { label: 'Bloqueados',       onClick: () => setFiltro('bloqueados'), active: filtro === 'bloqueados' },
+            ].map(item => (
+              <button key={item.label} onClick={item.onClick}
+                className={`w-full text-left px-3 py-2 rounded-md text-[12px] transition-colors ${item.active ? 'bg-white/6 text-nodri-t1 font-medium' : 'text-nodri-t3 hover:text-nodri-t2 hover:bg-white/3'}`}>
+                {item.label}
+              </button>
+            ))}
 
             {/* CONTEÚDO */}
-            <p className="text-[9px] text-nodri-t3 uppercase tracking-widest px-2.5 py-1.5 font-medium mt-3">Conteúdo</p>
+            <div className="pt-4 pb-1">
+              <p className="text-[9px] font-semibold text-nodri-t3 uppercase tracking-widest px-2 pb-1">Conteúdo</p>
+            </div>
             {TODAS_CATEGORIAS.map(cat => (
               <div key={cat}>
                 <button onClick={() => setOpenDropdown(openDropdown === cat ? null : cat)}
-                  className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-[11.5px] border transition-all ${openDropdown === cat ? 'bg-nodri-cyan/9 text-nodri-cyan border-nodri-cyan/17' : 'text-nodri-t2 border-transparent hover:bg-white/4 hover:text-nodri-t1'}`}>
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-[12px] transition-colors ${openDropdown === cat ? 'bg-white/6 text-nodri-t1 font-medium' : 'text-nodri-t3 hover:text-nodri-t2 hover:bg-white/3'}`}>
                   <span className="truncate">{cat}</span>
-                  <ChevronDown size={11} className={`shrink-0 transition-transform ${openDropdown === cat ? 'rotate-180 text-nodri-cyan' : ''}`} />
+                  <ChevronDown size={11} className={`shrink-0 transition-transform ml-1 ${openDropdown === cat ? 'rotate-180' : ''}`} />
                 </button>
                 {openDropdown === cat && menuDinamico[cat] && (
-                  <div className="ml-3 mt-0.5 mb-1 space-y-0.5 border-l border-nodri-border pl-2">
+                  <div className="ml-3 mt-0.5 mb-1 border-l border-nodri-border pl-2 space-y-0.5">
                     {menuDinamico[cat].map((item, i) => {
                       const slug = item.url?.startsWith('/conteudo/') ? item.url.replace('/conteudo/', '') :
                         item.title.toLowerCase().replace(/^\d+\.\s*/, '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-')
                       return (
                         <a key={i} href={`/conteudo/${slug}`}
-                          className="flex items-center gap-1.5 px-2 py-1.5 rounded text-[10.5px] text-nodri-t3 hover:text-nodri-cyan hover:bg-white/3 transition-all truncate">
-                          <ArrowRight size={9} className="shrink-0" />{item.title.replace(/^\d+\.\s*/, '')}
+                          className="flex items-center gap-1.5 px-2 py-1.5 rounded text-[11px] text-nodri-t3 hover:text-nodri-t1 hover:bg-white/3 transition-colors truncate">
+                          <ArrowRight size={9} className="shrink-0 opacity-50" />{item.title.replace(/^\d+\.\s*/, '')}
                         </a>
                       )
                     })}
@@ -356,17 +357,19 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
             ))}
 
             {/* FERRAMENTAS */}
-            <p className="text-[9px] text-nodri-t3 uppercase tracking-widest px-2.5 py-1.5 font-medium mt-3">Ferramentas</p>
+            <div className="pt-4 pb-1">
+              <p className="text-[9px] font-semibold text-nodri-t3 uppercase tracking-widest px-2 pb-1">Ferramentas</p>
+            </div>
             <a href="/salon/feedback"
-              className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11.5px] border border-transparent text-nodri-pink hover:bg-nodri-pink/8 hover:border-nodri-pink/20 transition-all">
+              className="w-full flex items-center px-3 py-2 rounded-md text-[12px] text-nodri-pink hover:bg-nodri-pink/8 transition-colors">
               Feedback de Cliente
             </a>
             <a href="/salon/feedback-profissional"
-              className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11.5px] border border-transparent text-nodri-purple hover:bg-nodri-purple/8 hover:border-nodri-purple/20 transition-all">
+              className="w-full flex items-center px-3 py-2 rounded-md text-[12px] text-nodri-purple hover:bg-nodri-purple/8 transition-colors">
               Feedback Profissional
             </a>
             <a href="/salon/pendencias"
-              className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11.5px] border border-transparent hover:bg-white/4 hover:text-nodri-t1 transition-all"
+              className="w-full flex items-center px-3 py-2 rounded-md text-[12px] transition-colors"
               style={{ color: '#f97316' }}>
               Pendências
             </a>
