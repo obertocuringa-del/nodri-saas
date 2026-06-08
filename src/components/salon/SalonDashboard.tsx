@@ -1,7 +1,7 @@
 ﻿'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Bell, Settings, CheckCircle, X, Zap, Play, Search, ChevronDown, ArrowRight, LogOut } from 'lucide-react'
+import { Bell, Settings, CheckCircle, X, Zap, Play, Search, ChevronDown, ArrowRight, LogOut, Menu } from 'lucide-react'
 import ChatWidget from './ChatWidget'
 import toast from 'react-hot-toast'
 import type { ModuloComStatus, Notificacao } from '@/types'
@@ -97,6 +97,7 @@ if (typeof document !== 'undefined') {
 
 export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes, totalAtivos, totalModulos }: Props) {
   const [filtro, setFiltro] = useState<'todos' | 'ativos' | 'bloqueados'>('ativos')
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [notifDismissed, setNotifDismissed] = useState(false)
   const [notifIndex, setNotifIndex] = useState(0)
   const [busca, setBusca] = useState('')
@@ -271,8 +272,19 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
       {/* LAYOUT PRINCIPAL: SIDEBAR + CONTEÚDO */}
       <div className="flex flex-1 overflow-hidden">
 
+        {/* Overlay mobile */}
+        {sidebarOpen && (
+          <div className="fixed inset-0 bg-black/60 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
+        )}
+
         {/* ── SIDEBAR ── */}
-        <aside ref={dropdownRef} className="w-[210px] min-w-[210px] bg-nodri-surface border-r border-nodri-border flex flex-col overflow-y-auto">
+        <aside ref={dropdownRef} className={`
+          fixed lg:relative inset-y-0 left-0 z-50 lg:z-auto
+          w-[260px] lg:w-[210px] min-w-[210px]
+          bg-nodri-surface border-r border-nodri-border flex flex-col overflow-y-auto
+          transition-transform duration-300 ease-in-out
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        `}>
 
           {/* Logo */}
           <div className="px-4 py-4 border-b border-nodri-border flex items-center gap-2.5">
@@ -394,35 +406,39 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
 
           {/* Barra superior fina */}
           <div className="border-b border-nodri-border bg-nodri-surface/50 sticky top-0 z-10">
-            <div className="px-5 py-2.5 flex items-center gap-3">
-            <div className="flex items-center gap-2 flex-1">
-              <h1 className="font-syne font-bold text-[13px] text-nodri-t1">Módulos do Sistema</h1>
-              <span className="text-[11px] text-nodri-t2"><span className="text-nodri-cyan font-semibold">{totalAtivos}</span>/{totalModulos} ativados</span>
-            </div>
-            {configPrograma?.link && (
-              <div className="flex items-center gap-2">
-                <a href={configPrograma.link} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10.5px] font-bold transition-all hover:brightness-110"
-                  style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.35)', color: '#a5b4fc' }}>
-                  Baixar Programa Complementar
-                </a>
-                {configPrograma.atualizacao_ativa && configPrograma.link_atualizacao && (
-                  <a href={configPrograma.link_atualizacao} target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10.5px] font-bold"
-                    style={{ background: 'rgba(234,179,8,0.10)', border: '1px solid rgba(234,179,8,0.45)', color: '#facc15', animation: 'nodriPulseBtn 1.8s ease-in-out infinite' }}>
-                    Baixar Atualização Agora
-                  </a>
-                )}
+            <div className="px-3 lg:px-5 py-2.5 flex items-center gap-2 lg:gap-3">
+              {/* Hamburger mobile */}
+              <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-1.5 rounded-lg text-nodri-t2 hover:text-nodri-cyan">
+                <Menu size={18} />
+              </button>
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <h1 className="font-syne font-bold text-[13px] text-nodri-t1 truncate">Módulos</h1>
+                <span className="text-[11px] text-nodri-t2 hidden sm:inline"><span className="text-nodri-cyan font-semibold">{totalAtivos}</span>/{totalModulos}</span>
               </div>
-            )}
-            <div className="relative">
-              <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-nodri-t3" />
-              <input type="text" placeholder="Buscar módulo..." value={busca} onChange={e => setBusca(e.target.value)}
-                className="bg-nodri-card border border-nodri-border rounded-lg pl-7 pr-3 py-1.5 text-[11px] outline-none focus:border-nodri-cyan/40 w-40" />
-            </div>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-nodri-cyan/7 border border-nodri-cyan/17 rounded-lg text-[10.5px] text-nodri-cyan font-semibold">
-              <CheckCircle size={12} />{totalAtivos}/{totalModulos} ativos
-            </div>
+              {configPrograma?.link && (
+                <div className="hidden md:flex items-center gap-2">
+                  <a href={configPrograma.link} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10.5px] font-bold transition-all hover:brightness-110"
+                    style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.35)', color: '#a5b4fc' }}>
+                    Baixar Programa
+                  </a>
+                  {configPrograma.atualizacao_ativa && configPrograma.link_atualizacao && (
+                    <a href={configPrograma.link_atualizacao} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10.5px] font-bold"
+                      style={{ background: 'rgba(234,179,8,0.10)', border: '1px solid rgba(234,179,8,0.45)', color: '#facc15', animation: 'nodriPulseBtn 1.8s ease-in-out infinite' }}>
+                      Atualização
+                    </a>
+                  )}
+                </div>
+              )}
+              <div className="relative">
+                <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-nodri-t3" />
+                <input type="text" placeholder="Buscar..." value={busca} onChange={e => setBusca(e.target.value)}
+                  className="bg-nodri-card border border-nodri-border rounded-lg pl-7 pr-3 py-1.5 text-[11px] outline-none focus:border-nodri-cyan/40 w-28 sm:w-40" />
+              </div>
+              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-nodri-cyan/7 border border-nodri-cyan/17 rounded-lg text-[10.5px] text-nodri-cyan font-semibold">
+                <CheckCircle size={12} />{totalAtivos}/{totalModulos}
+              </div>
             </div>
           </div>
 

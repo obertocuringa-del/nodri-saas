@@ -135,7 +135,7 @@ function CadastroInner() {
         {etapa === 'form' && (
           <div style={{ background: '#111', border: '1px solid #222', borderRadius: 16, padding: 28 }}>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
               <div>
                 <label style={lbl}>Nome do Salão *</label>
                 <input style={inp} placeholder="Ex: Salão Bella" value={form.nome_salao} onChange={e => setForm(p => ({ ...p, nome_salao: e.target.value }))} />
@@ -151,7 +151,7 @@ function CadastroInner() {
               <input style={inp} placeholder="Ex: São Paulo - SP" value={form.cidade} onChange={e => setForm(p => ({ ...p, cidade: e.target.value }))} />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
               <div>
                 <label style={lbl}>Email *</label>
                 <input type="email" style={inp} placeholder="seu@email.com" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} />
