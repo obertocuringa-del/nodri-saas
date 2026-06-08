@@ -225,11 +225,13 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
   }
 
   // Módulos que abrem página web em vez de lançar programa local
-  const MODULO_WEB: Record<string, string> = {
-    'Academia NODRI':           '/salon/academia',
-    'ACADEMIA NODRI':           '/salon/academia',
-    'Custo Operacional':        '/salon/calculadora-custo',
-    'CALCULADORA / FINANCEIRA': '/salon/calculadora-custo',
+  const MODULO_WEB_SLUG: Array<{ chaves: string[]; url: string }> = [
+    { chaves: ['academia nodri'], url: '/salon/academia' },
+    { chaves: ['custo operacional', 'calculadora / financeira', 'calculadora/financeira'], url: '/salon/calculadora-custo' },
+  ]
+  function getModuloWebUrl(nome: string): string | null {
+    const norm = nome.toLowerCase().trim()
+    return MODULO_WEB_SLUG.find(m => m.chaves.some(c => norm.includes(c)))?.url ?? null
   }
 
   function handleAbrir(modulo: ModuloComStatus) {
@@ -242,8 +244,9 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
       })
       return
     }
-    if (MODULO_WEB[modulo.nome]) {
-      window.location.href = MODULO_WEB[modulo.nome]
+    const webUrl = getModuloWebUrl(modulo.nome)
+    if (webUrl) {
+      window.location.href = webUrl
       return
     }
     if (!modulo.habilitado) {
