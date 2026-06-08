@@ -228,6 +228,8 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
   const MODULO_WEB_SLUG: Array<{ chaves: string[]; url: string }> = [
     { chaves: ['academia nodri'], url: '/salon/academia' },
     { chaves: ['custo operacional', 'calculadora / financeira', 'calculadora/financeira'], url: '/salon/calculadora-custo' },
+    { chaves: ['profissionais'], url: '/salon/profissionais' },
+    { chaves: ['relatórios', 'relatorios'], url: '/salon/relatorios' },
   ]
   function getModuloWebUrl(nome: string): string | null {
     const norm = nome.toLowerCase().trim()
@@ -355,16 +357,6 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
 
             {/* FERRAMENTAS */}
             <p className="text-[9px] text-nodri-t3 uppercase tracking-widest px-2.5 py-1.5 font-medium mt-3">Ferramentas</p>
-            <a href="/salon/profissionais"
-              className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11.5px] border border-transparent hover:bg-white/4 hover:text-nodri-t1 transition-all"
-              style={{ color: '#7c5cfc' }}>
-              👤 Profissionais
-            </a>
-            <a href="/salon/relatorios"
-              className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11.5px] border border-transparent hover:bg-white/4 hover:text-nodri-t1 transition-all"
-              style={{ color: '#06b6d4' }}>
-              📊 Relatórios
-            </a>
             <a href="/salon/feedback"
               className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11.5px] border border-transparent text-nodri-pink hover:bg-nodri-pink/8 hover:border-nodri-pink/20 transition-all">
               ⭐ Feedback de Cliente
