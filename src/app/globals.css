@@ -23,6 +23,15 @@
 
 * { box-sizing: border-box; }
 
+/* ── Impressão / PDF ──────────────────────────────── */
+@media print {
+  body { background: white !important; color: black !important; font-size: 11px; }
+  nav, header, button, [data-noprint], .no-print { display: none !important; }
+  * { color: black !important; background: white !important; border-color: #ccc !important; }
+  .rounded-2xl, .rounded-xl { border: 1px solid #ddd !important; margin-bottom: 8px; }
+  @page { margin: 15mm; size: A4; }
+}
+
 html, body {
   background-color: var(--nodri-dark);
   color: var(--nodri-t1);

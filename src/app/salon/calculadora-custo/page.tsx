@@ -528,6 +528,8 @@ export default function CalculadoraCusto() {
   const [autocompleteKey, setAutocompleteKey] = useState<string|null>(null)
   // Atualizar (feedback visual)
   const [atualizando, setAtualizando] = useState(false)
+  // Histórico para comparativo mensal
+  const [historicoMeses, setHistoricoMeses] = useState<any[]>([])
   const [vlrProdEstoque,setVlrProdEstoque]= useState('')
 
   // ── Ponto de Equilíbrio ──────────────────────────────────────────────────
@@ -746,12 +748,36 @@ export default function CalculadoraCusto() {
     }
   }, [despInd])
 
-  // Carrega catálogos ao iniciar
+  // Carrega catálogos e histórico ao iniciar
   useEffect(() => {
     fetch('/api/salon/produtos-catalogo', { credentials:'include' })
       .then(r=>r.json()).then(d=>{ if(d.produtos) setProdutosCatalogo(d.produtos) }).catch(()=>{})
     fetch('/api/salon/servicos-catalogo', { credentials:'include' })
       .then(r=>r.json()).then(d=>{ if(d.servicos) setServicosCatalogo(d.servicos) }).catch(()=>{})
+    // Carrega histórico para comparativo mensal
+    fetch('/api/salon/calculadora', { credentials:'include' })
+      .then(r=>r.json())
+      .then(d=>{
+        if(d.historico) {
+          const processado = d.historico
+            .filter((h:any)=>(parseFloat(h.dados?.fat||'0')||0)>0)
+            .map((h:any)=>{
+              const dados = h.dados||{}
+              const fatM = parseFloat(dados.fat||'0')||0
+              const ind = (dados.despInd||[]).reduce((s:number,d:any)=>s+(parseFloat(d.valor||'0')||0),0)
+                        + (dados.extrasDespInd||[]).reduce((s:number,d:any)=>s+(parseFloat(d.valor||'0')||0),0)
+              const prov = (parseFloat(dados.sal13||'0')||0)+(parseFloat(dados.ferias||'0')||0)+(parseFloat(dados.fgtsR||'0')||0)
+              const dep = (parseFloat(dados.totalDeprec||'0')||0)/84
+              const custoOpM = ind+prov+dep
+              const dirM = (parseFloat(dados.imposto||'0')||0)+(parseFloat(dados.produto||'0')||0)+(parseFloat(dados.rateio||'0')||0)+(parseFloat(dados.taxaC||'0')||0)
+              const margM = fatM-dirM
+              const resultM = margM-custoOpM
+              return { ano:h.ano, mes:h.mes, fat:fatM, custoOp:custoOpM, dir:dirM, resultado:resultM, rentab:fatM>0?resultM/fatM:0 }
+            })
+            .sort((a:any,b:any)=> a.ano!==b.ano?a.ano-b.ano:a.mes-b.mes)
+          setHistoricoMeses(processado)
+        }
+      }).catch(()=>{})
   }, [])
 
   async function salvarProduto(editar?: string) {
@@ -900,6 +926,27 @@ export default function CalculadoraCusto() {
     return {preco,rateioR,prod,cartaoR,impostR,total,
             totalPct:total/preco,margOp,margOpPct:margOp/preco,
             custoOpR,custOpPct:custOpServN,resultado,resultPct:resultado/preco}
+  }
+
+  // Calcula preço mínimo para atingir lucro desejado
+  // Fórmula: P = F / (K - targetLucro)
+  // K = 1 - rP - (1-rP+taxC)×imp - custOpPct  (coef. de preço no resultado)
+  // F = prod × [1 - abat×(1-imp)]              (custo fixo do produto)
+  function calcPrecoMinimo(s: Servico, targetLucro: number) {
+    const rP   = n(s.rateioP) / 100
+    const prod = n(s.produto)
+    const imp  = n(s.imposto) / 100
+    const taxC = n(taxaCartao) / 100
+    const abat = n(abatProd) / 100
+    const co   = custOpServN
+
+    // Coeficiente de P no resultado (com salão parceiro e flags ativas)
+    const K = 1 - rP - (salaoParceiro ? (1 - rP + taxC) * imp : imp) - co
+    // Custo fixo (produto - parte do abatimento que gera custo fixo)
+    const F = prod * (1 - abat * (1 - imp))
+
+    if (K - targetLucro <= 0) return null
+    return F / (K - targetLucro)
   }
 
   function custoIngred(i: Ingrediente): number {
@@ -1982,6 +2029,30 @@ Use números reais. Seja direto.`
                           <div>Imposto: {fmtR(c.impostR)}</div>
                           <div style={{color:c.resultado>0?'#10b981':'#ef4444',fontWeight:'bold'}}>{c.resultado>0?'✅ Lucrativo':'🚨 Prejuízo'}</div>
                         </div>
+                        {/* Preço mínimo sugerido */}
+                        {(()=>{
+                          const pMin = calcPrecoMinimo(s, 0)
+                          const pMeta = calcPrecoMinimo(s, n(lucroD)/100)
+                          if(!pMin) return null
+                          const abaixoMin = c.preco < pMin
+                          const abaixoMeta = pMeta && c.preco < pMeta
+                          return (
+                            <div className="px-4 py-2 flex items-center gap-4 flex-wrap" style={{background:'#0a0f1a',borderTop:'1px solid #1e293b'}}>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[9px] font-bold" style={{color:'#64748b'}}>💡 Preço mín. (empate):</span>
+                                <span className="text-xs font-bold" style={{color:abaixoMin?'#ef4444':'#10b981'}}>{fmtR(pMin)}</span>
+                                {abaixoMin && <span className="text-[9px] px-1.5 py-0.5 rounded" style={{background:'#ef444420',color:'#f87171'}}>⚠️ Cobrando abaixo do custo! Aumente {fmtR(pMin-c.preco)}</span>}
+                              </div>
+                              {pMeta && (
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[9px] font-bold" style={{color:'#64748b'}}>🎯 Para {n(lucroD)||15}% lucro:</span>
+                                  <span className="text-xs font-bold" style={{color:abaixoMeta?'#f59e0b':'#10b981'}}>{fmtR(pMeta)}</span>
+                                  {abaixoMeta && <span className="text-[9px]" style={{color:'#f59e0b'}}>falta {fmtR(pMeta-c.preco)}</span>}
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })()}
                       </div>
                     )}
                   </div>
@@ -2499,7 +2570,82 @@ Use números reais. Seja direto.`
                   )
                 })()}
 
+                {/* Comparativo Mês a Mês */}
+                {historicoMeses.length > 1 && (
+                  <div className="rounded-2xl border overflow-hidden" style={{background:'#111827',borderColor:'#1e293b'}}>
+                    <div className="px-5 py-3 border-b" style={{background:'#0d1525',borderColor:'#1e293b'}}>
+                      <p className="font-bold text-sm" style={{color:'#e2e8f0'}}>📅 Evolução Mensal — últimos {historicoMeses.length} meses</p>
+                      <p className="text-xs mt-0.5" style={{color:'#64748b'}}>Comparativo de Faturamento, Custo e Resultado mês a mês</p>
+                    </div>
+                    <div className="p-5 space-y-4">
+                      {/* Faturamento */}
+                      {[
+                        {label:'💰 Faturamento', key:'fat', cor:'#10b981'},
+                        {label:'⚙️ Custo Operacional', key:'custoOp', cor:'#f59e0b'},
+                        {label:'💵 Resultado', key:'resultado', cor:'#7c5cfc'},
+                      ].map(({label,key,cor})=>{
+                        const maxVal = Math.max(...historicoMeses.map((m:any)=>Math.abs(m[key]||0)),1)
+                        return (
+                          <div key={key}>
+                            <p className="text-xs font-bold mb-2" style={{color:'#94a3b8'}}>{label}</p>
+                            <div className="flex items-end gap-1" style={{height:'60px'}}>
+                              {historicoMeses.map((m:any,i:number)=>{
+                                const val = m[key]||0
+                                const pct = Math.min(Math.abs(val)/maxVal*100,100)
+                                const negativo = val < 0
+                                return (
+                                  <div key={i} className="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+                                    <div className="text-[8px] font-bold" style={{color:negativo?'#ef4444':cor}}>{fmtR(val).replace('R$ ','R$')}</div>
+                                    <div className="w-full rounded-t-sm transition-all"
+                                      style={{height:`${pct}%`,background:negativo?'#ef444460':`${cor}60`,border:`1px solid ${negativo?'#ef4444':cor}`,minHeight:'4px'}}/>
+                                    <div className="text-[7px]" style={{color:'#475569'}}>{MESES_NOMES[m.mes].slice(0,3)}/{String(m.ano).slice(2)}</div>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        )
+                      })}
+                      {/* Tendência */}
+                      {historicoMeses.length >= 2 && (()=>{
+                        const ult = historicoMeses[historicoMeses.length-1]
+                        const ant = historicoMeses[historicoMeses.length-2]
+                        const varFat = ant.fat>0?((ult.fat-ant.fat)/ant.fat*100):0
+                        const varRes = ant.resultado!==0?((ult.resultado-ant.resultado)/Math.abs(ant.resultado)*100):0
+                        return (
+                          <div className="grid grid-cols-2 gap-3 pt-2 border-t" style={{borderColor:'#1e293b'}}>
+                            <div className="rounded-xl p-3" style={{background:'#0a0f1a'}}>
+                              <p className="text-[10px]" style={{color:'#64748b'}}>Variação Faturamento (vs mês anterior)</p>
+                              <p className="text-lg font-bold" style={{color:varFat>=0?'#10b981':'#ef4444'}}>{varFat>=0?'+':''}{varFat.toFixed(1)}%</p>
+                            </div>
+                            <div className="rounded-xl p-3" style={{background:'#0a0f1a'}}>
+                              <p className="text-[10px]" style={{color:'#64748b'}}>Variação Resultado (vs mês anterior)</p>
+                              <p className="text-lg font-bold" style={{color:varRes>=0?'#10b981':'#ef4444'}}>{varRes>=0?'+':''}{varRes.toFixed(1)}%</p>
+                            </div>
+                          </div>
+                        )
+                      })()}
+                    </div>
+                  </div>
+                )}
+                {historicoMeses.length <= 1 && (
+                  <div className="rounded-xl p-4 text-center" style={{background:'#111827',border:'1px solid #1e293b'}}>
+                    <p className="text-2xl mb-1">📅</p>
+                    <p className="text-sm font-bold" style={{color:'#94a3b8'}}>Comparativo mensal disponível com 2+ meses salvos</p>
+                    <p className="text-xs mt-1" style={{color:'#64748b'}}>Salve os dados deste mês e do próximo para ver a evolução</p>
+                  </div>
+                )}
+
               </>
+            )}
+
+            {/* Botão Exportar PDF */}
+            {fatN > 0 && (
+              <button onClick={()=>window.print()}
+                className="w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2"
+                style={{background:'#7c5cfc20',color:'#a78bfa',border:'1px solid #7c5cfc40'}}>
+                🖨️ Exportar / Imprimir Relatório PDF
+              </button>
             )}
           </div>
         )}
