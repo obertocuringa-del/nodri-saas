@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Trash2, Edit2, Link2, BarChart2, Check, X, ChevronDown, ChevronUp, ArrowLeft, Eye, EyeOff, GripVertical, Copy } from 'lucide-react'
+import { Plus, Trash2, Edit2, Link2, BarChart2, Check, X, ChevronDown, ChevronUp, ArrowLeft, Eye, EyeOff, GripVertical, Copy, Menu } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 type TipoPergunta = 'escala' | 'multipla_escolha' | 'texto' | 'sim_nao' | 'grid'
@@ -44,6 +44,7 @@ const TIPO_ICONS: Record<TipoPergunta, string> = {
 
 export default function FeedbackPage() {
   const router = useRouter()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [formularios, setFormularios] = useState<Formulario[]>([])
   const [selected, setSelected] = useState<Formulario | null>(null)
   const [perguntas, setPerguntas] = useState<Pergunta[]>([])
@@ -214,7 +215,10 @@ export default function FeedbackPage() {
   return (
     <div className="nodri-salon-bg min-h-screen">
       {/* NAVBAR */}
-      <nav className="bg-nodri-surface border-b border-nodri-border px-5 py-3 flex items-center gap-3 sticky top-0 z-50">
+      <nav className="bg-nodri-surface border-b border-nodri-border px-3 lg:px-5 py-3 flex items-center gap-3 sticky top-0 z-50">
+        <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-1.5 rounded-lg text-nodri-t2 hover:text-nodri-cyan transition-colors">
+          <Menu size={18} />
+        </button>
         <button onClick={() => router.push('/salon')} className="flex items-center gap-1.5 text-nodri-t2 hover:text-nodri-t1 transition-colors text-sm">
           <ArrowLeft size={15} /> Voltar
         </button>
@@ -223,14 +227,17 @@ export default function FeedbackPage() {
           <span className="text-xl">⭐</span>
           <div>
             <div className="font-syne font-bold text-sm text-nodri-t1">Feedback de Cliente</div>
-            <div className="text-[10px] text-nodri-t3">Colete e analise avaliações dos seus clientes</div>
+            <div className="hidden sm:block text-[10px] text-nodri-t3">Colete e analise avaliações dos seus clientes</div>
           </div>
         </div>
       </nav>
 
       <div className="flex h-[calc(100vh-57px)]">
+        {/* Overlay mobile */}
+        {sidebarOpen && <div className="fixed inset-0 bg-black/60 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
+
         {/* SIDEBAR - Lista de formulários */}
-        <div className="w-64 border-r border-nodri-border bg-nodri-surface/50 flex flex-col overflow-y-auto shrink-0">
+        <div className={`fixed lg:relative inset-y-0 left-0 z-50 lg:z-auto transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} w-64 border-r border-nodri-border bg-nodri-surface flex flex-col overflow-y-auto shrink-0`}>
           <div className="p-3 border-b border-nodri-border">
             <div className="text-[10px] font-bold text-nodri-t3 uppercase tracking-wider">Formulários</div>
           </div>
@@ -245,7 +252,7 @@ export default function FeedbackPage() {
             </div>
           ) : (
             formularios.map(f => (
-              <button key={f.id} onClick={() => selectForm(f)}
+              <button key={f.id} onClick={() => { selectForm(f); setSidebarOpen(false) }}
                 className={`w-full text-left px-3 py-3 border-b border-nodri-border/50 transition-all hover:bg-nodri-surface ${selected?.id === f.id ? 'bg-nodri-surface border-l-2 border-l-nodri-cyan' : ''}`}>
                 <div className="flex items-center gap-2 mb-1">
                   <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${f.ativo ? 'bg-green-400' : 'bg-red-400'}`} />

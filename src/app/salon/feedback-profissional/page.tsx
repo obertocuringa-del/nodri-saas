@@ -1,7 +1,7 @@
 ﻿'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Plus, Trash2, Edit2, Check, X, Copy, Eye, BarChart2, Users, ClipboardList, Upload, Lock, Settings2 } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Edit2, Check, X, Copy, Eye, BarChart2, Users, ClipboardList, Upload, Lock, Settings2, Menu } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 interface Formulario { id: string; titulo: string; token: string; ativo: boolean; criado_em: string }
@@ -10,6 +10,7 @@ interface Ocorrido { id: string; descricao: string; ativo: boolean }
 
 export default function FeedbackProfissionalPage() {
   const router = useRouter()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [formularios, setFormularios] = useState<Formulario[]>([])
   const [selected, setSelected] = useState<Formulario | null>(null)
   const [tab, setTab] = useState<'registrar' | 'profissionais' | 'ocorridos' | 'link'>('registrar')
@@ -212,7 +213,10 @@ export default function FeedbackProfissionalPage() {
 
   return (
     <div className="nodri-salon-bg min-h-screen">
-      <nav className="bg-nodri-surface border-b border-nodri-border px-5 py-3 flex items-center gap-3 sticky top-0 z-50">
+      <nav className="bg-nodri-surface border-b border-nodri-border px-3 lg:px-5 py-3 flex items-center gap-3 sticky top-0 z-50">
+        <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-1.5 rounded-lg text-nodri-t2 hover:text-nodri-cyan transition-colors">
+          <Menu size={18} />
+        </button>
         <button onClick={() => router.push('/salon')} className="flex items-center gap-1.5 text-nodri-t2 hover:text-nodri-t1 text-sm">
           <ArrowLeft size={15} /> Voltar
         </button>
@@ -221,14 +225,17 @@ export default function FeedbackProfissionalPage() {
           <span className="text-xl">👥</span>
           <div>
             <div className="font-syne font-bold text-sm text-nodri-t1">Feedback Profissional</div>
-            <div className="text-[10px] text-nodri-t3">Avalie o desempenho da sua equipe</div>
+            <div className="hidden sm:block text-[10px] text-nodri-t3">Avalie o desempenho da sua equipe</div>
           </div>
         </div>
       </nav>
 
       <div className="flex h-[calc(100vh-57px)]">
+        {/* Overlay mobile */}
+        {sidebarOpen && <div className="fixed inset-0 bg-black/60 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
+
         {/* SIDEBAR */}
-        <div className="w-64 border-r border-nodri-border bg-nodri-surface/50 flex flex-col overflow-y-auto shrink-0">
+        <div className={`fixed lg:relative inset-y-0 left-0 z-50 lg:z-auto transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} w-64 border-r border-nodri-border bg-nodri-surface flex flex-col overflow-y-auto shrink-0`}>
           <div className="p-3 border-b border-nodri-border">
             <div className="text-[10px] font-bold text-nodri-t3 uppercase tracking-wider">Formulários</div>
           </div>
@@ -244,7 +251,7 @@ export default function FeedbackProfissionalPage() {
             formularios.map(f => (
               <button
                 key={f.id}
-                onClick={() => setSelected(f)}
+                onClick={() => { setSelected(f); setSidebarOpen(false) }}
                 className={`w-full text-left px-3 py-3 border-b border-nodri-border/50 transition-all hover:bg-nodri-surface ${selected?.id === f.id ? 'bg-nodri-surface border-l-2 border-l-nodri-cyan' : ''}`}
               >
                 <div className="flex items-center gap-2 mb-1">
