@@ -1064,6 +1064,111 @@ function BlocoDiagnosticoResumido({ prof, form, metricas, p1, p2, fidel }: {
   )
 }
 
+// ── PendenciasLateral — painel compacto para a aba Dados Cadastrais ──
+function PendenciasLateral({ profissionalId }: { profissionalId: string }) {
+  const [pendencias, setPendencias] = useState<Array<{
+    id: string; mensagem: string; data_limite: string | null
+    resolvido: boolean; resolvido_em: string | null
+  }>>([])
+  const [loading, setLoading] = useState(true)
+  const [historicoAberto, setHistoricoAberto] = useState(false)
+
+  useEffect(() => {
+    fetch(`/api/pendencias?profissional_id=${profissionalId}`)
+      .then(r => r.json())
+      .then(d => { setPendencias(Array.isArray(d) ? d : []); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [profissionalId])
+
+  async function marcarFeito(itemId: string) {
+    const res = await fetch(`/api/pendencias/${itemId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ resolvido: true, resolvido_em: new Date().toISOString() }),
+    })
+    if (res.ok) {
+      setPendencias(prev => prev.map(p =>
+        p.id === itemId ? { ...p, resolvido: true, resolvido_em: new Date().toISOString() } : p
+      ))
+    }
+  }
+
+  const abertas = pendencias.filter(p => !p.resolvido)
+  const resolvidas = pendencias.filter(p => p.resolvido)
+
+  return (
+    <div className="rounded-2xl border sticky top-20 space-y-3 p-4"
+      style={{ background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.06)' }}>
+      <div className="flex items-center justify-between">
+        <h2 className="font-syne font-bold text-[12px] text-nodri-cyan">📋 Pendências</h2>
+        {abertas.length > 0 && (
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20">
+            {abertas.length}
+          </span>
+        )}
+      </div>
+
+      {loading && (
+        <div className="flex justify-center py-4">
+          <Loader2 size={18} className="animate-spin text-nodri-cyan"/>
+        </div>
+      )}
+
+      {!loading && abertas.length === 0 && (
+        <p className="text-[11px] text-nodri-t3 py-2">Nenhuma pendência ativa</p>
+      )}
+
+      {!loading && abertas.length > 0 && (
+        <div className="space-y-2">
+          {abertas.map(p => (
+            <div key={p.id} className="rounded-xl p-3 border space-y-1.5"
+              style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
+              <p className="text-[11px] text-nodri-t1 leading-snug">{p.mensagem}</p>
+              <div className="flex items-center justify-between gap-2">
+                {p.data_limite && (
+                  <span className="text-[9px] text-nodri-t3">
+                    Limite: {new Date(p.data_limite + 'T12:00:00').toLocaleDateString('pt-BR')}
+                  </span>
+                )}
+                <button
+                  onClick={() => marcarFeito(p.id)}
+                  className="ml-auto text-[10px] px-2.5 py-1 rounded-lg bg-green-500/10 text-green-400 border border-green-500/20 hover:bg-green-500/20 transition-colors font-semibold">
+                  ✅ Feito
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!loading && resolvidas.length > 0 && (
+        <div>
+          <button
+            onClick={() => setHistoricoAberto(v => !v)}
+            className="flex items-center gap-1 text-[10px] text-nodri-t3 hover:text-nodri-t1 transition-colors font-semibold py-1">
+            {historicoAberto ? '▾' : '▸'} Histórico ({resolvidas.length})
+          </button>
+          {historicoAberto && (
+            <div className="space-y-1.5 mt-2">
+              {resolvidas.map(p => (
+                <div key={p.id} className="rounded-xl p-2.5 border"
+                  style={{ background: 'rgba(34,197,94,0.04)', borderColor: 'rgba(34,197,94,0.12)' }}>
+                  <p className="text-[10px] text-nodri-t3 line-through">{p.mensagem}</p>
+                  {p.resolvido_em && (
+                    <p className="text-[9px] text-nodri-t3/60 mt-0.5">
+                      {new Date(p.resolvido_em).toLocaleDateString('pt-BR')}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── AbaPendencias ──
 function AbaPendencias({ profissionalId }: { profissionalId: string }) {
   const [pendencias, setPendencias] = useState<Array<{
@@ -1730,29 +1835,7 @@ export default function PerfilProfissionalPage() {
               </div>
             </div>
             <div>
-              <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5 sticky top-20">
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="font-syne font-bold text-[12px] text-nodri-cyan">✅ Checklist</h2>
-                  <span className="text-[10px] text-nodri-t3 bg-nodri-card border border-nodri-border px-2 py-0.5 rounded-full">{checkOk}/{CHECKLIST.length}</span>
-                </div>
-                <div className="w-full bg-nodri-border rounded-full h-1.5 mb-4">
-                  <div className="bg-nodri-cyan h-1.5 rounded-full transition-all" style={{width:`${(checkOk/CHECKLIST.length)*100}%`}}/>
-                </div>
-                <div className="space-y-1.5">
-                  {CHECKLIST.map(item=>{
-                    const checked = !!form[item.key]
-                    return (
-                      <button key={item.key} onClick={()=>set(item.key,!checked)}
-                        className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-nodri-card/50 transition-colors">
-                        {checked ? <CheckSquare size={14} className="text-nodri-green shrink-0"/> : <Square size={14} className={`shrink-0 ${item.obrig?'text-red-400':'text-nodri-t3'}`}/>}
-                        <span className={`text-[11px] text-left leading-tight ${checked?'text-nodri-t1':item.obrig?'text-red-300':'text-nodri-t3'}`}>
-                          {item.label}{item.obrig&&!checked&&<span className="text-red-400 ml-1">*</span>}
-                        </span>
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
+              <PendenciasLateral profissionalId={id}/>
             </div>
           </div>
         )}
