@@ -421,6 +421,7 @@ export default function CalculadoraCusto() {
   const [totalReservaAcum, setTotalReservaAcum] = useState(0) // total acumulado de todos os meses
   const [mediaCustoOp, setMediaCustoOp] = useState(0) // média do custo operacional % de todos os meses
   const [qtdMesesMedia, setQtdMesesMedia] = useState(0) // quantos meses foram usados na média
+  const [modoCustoOp, setModoCustoOp] = useState<'dani'|'real'>('real') // modo de cálculo do custo operacional
   const [vlrProdEstoque,setVlrProdEstoque]= useState('')
 
   // ── Ponto de Equilíbrio ──────────────────────────────────────────────────
@@ -682,12 +683,13 @@ export default function CalculadoraCusto() {
   const PEM2Lucro_   = area_ > 0 ? PELucro_ / area_ : 0
 
   // ── Calcular Serviços ────────────────────────────────────────────────────
-  // Prioridade:
-  // 1. Valor digitado manualmente no campo
-  // 2. Média histórica de todos os meses salvos (mais estável para precificação)
-  // 3. Valor real do mês atual da aba RD
-  // 4. Custo Indireto Desejado (30% padrão) — quando não há lançamentos
-  const custOpServN = n(custOpServ)/100 || mediaCustoOp || (fatN > 0 && custoOp > 0 ? custoOp/fatN : n(custIndD)/100 || 0.30)
+  // Modo Dani: usa 30% fixo (igual à planilha DV)
+  // Modo Real: usa média histórica dos meses salvos (ou mês atual, ou 30% se sem dados)
+  const custOpServN = n(custOpServ)/100 || (
+    modoCustoOp === 'dani'
+      ? (n(custIndD)/100 || 0.30)
+      : (mediaCustoOp || (fatN > 0 && custoOp > 0 ? custoOp/fatN : n(custIndD)/100 || 0.30))
+  )
 
   function calcServ(s: Servico) {
     const preco = n(s.preco)
@@ -1600,13 +1602,54 @@ Use números reais. Seja direto.`
                   <div className="relative"><input type="number" value={abatProd} onChange={e=>setAbatProd(e.target.value)} className="w-full pr-6 pl-3 py-2 rounded-lg text-sm text-white focus:outline-none" style={{background:'#0a0f1a',border:'1px solid #334155'}}/><span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#64748b'}}>%</span></div>
                 </div>
                 <div>
-                  <div className="flex items-center gap-1.5 mb-1"><label className="text-xs font-bold" style={{color:'#94a3b8'}}>Custo Operacional (%)</label><InfoBtn id="custOpServ"/></div>
+                  <div className="flex items-center gap-1.5 mb-2"><label className="text-xs font-bold" style={{color:'#94a3b8'}}>Custo Operacional (%)</label><InfoBtn id="custOpServ"/></div>
+                  {/* Seletor de modo */}
+                  <div className="grid grid-cols-2 gap-2 mb-2">
+                    <button onClick={()=>setModoCustoOp('dani')}
+                      className="py-2 px-3 rounded-xl text-[10px] font-bold text-left transition-all"
+                      style={{
+                        background: modoCustoOp==='dani' ? '#7c5cfc20' : '#0a0f1a',
+                        border: `1px solid ${modoCustoOp==='dani' ? '#7c5cfc' : '#1e293b'}`,
+                        color: modoCustoOp==='dani' ? '#a78bfa' : '#475569',
+                      }}>
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        <div className="w-3 h-3 rounded-full border-2 flex items-center justify-center" style={{borderColor: modoCustoOp==='dani'?'#7c5cfc':'#334155'}}>
+                          {modoCustoOp==='dani' && <div className="w-1.5 h-1.5 rounded-full" style={{background:'#7c5cfc'}}/>}
+                        </div>
+                        <span>Padrão Dra. Dani</span>
+                      </div>
+                      <p style={{color:'#64748b',paddingLeft:'18px'}}>{n(custIndD)||30}% fixo — igual à planilha</p>
+                    </button>
+                    <button onClick={()=>setModoCustoOp('real')}
+                      className="py-2 px-3 rounded-xl text-[10px] font-bold text-left transition-all"
+                      style={{
+                        background: modoCustoOp==='real' ? '#10b98120' : '#0a0f1a',
+                        border: `1px solid ${modoCustoOp==='real' ? '#10b981' : '#1e293b'}`,
+                        color: modoCustoOp==='real' ? '#10b981' : '#475569',
+                      }}>
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        <div className="w-3 h-3 rounded-full border-2 flex items-center justify-center" style={{borderColor: modoCustoOp==='real'?'#10b981':'#334155'}}>
+                          {modoCustoOp==='real' && <div className="w-1.5 h-1.5 rounded-full" style={{background:'#10b981'}}/>}
+                        </div>
+                        <span>Meu salão (real)</span>
+                      </div>
+                      <p style={{color:'#64748b',paddingLeft:'18px'}}>
+                        {mediaCustoOp>0
+                          ? `${(mediaCustoOp*100).toFixed(1)}% — média de ${qtdMesesMedia} ${qtdMesesMedia===1?'mês':'meses'}`
+                          : fatN>0&&custoOp>0
+                            ? `${(custoOp/fatN*100).toFixed(1)}% — mês atual`
+                            : 'Preencha a aba RD'}
+                      </p>
+                    </button>
+                  </div>
                   <p className="text-[10px] mb-1" style={{color:'#475569'}}>
-                    {mediaCustoOp > 0
-                      ? <>Média de <strong style={{color:'#10b981'}}>{qtdMesesMedia} {qtdMesesMedia===1?'mês':'meses'}</strong> salvos: <strong style={{color:'#10b981'}}>{(mediaCustoOp*100).toFixed(1)}%</strong></>
-                      : fatN>0&&custoOp>0
-                        ? <>Mês atual: <strong style={{color:'#a78bfa'}}>{(custoOp/fatN*100).toFixed(1)}%</strong> (salve mais meses para calcular a média)</>
-                        : <>Padrão: <strong style={{color:'#a78bfa'}}>{n(custIndD)||30}%</strong> (preencha a aba RD para usar seu valor real)</>}
+                    {modoCustoOp==='dani'
+                      ? <>Usando <strong style={{color:'#a78bfa'}}>{n(custIndD)||30}%</strong> — igual à planilha da Dra. Dani</>
+                      : mediaCustoOp > 0
+                        ? <>Usando média de <strong style={{color:'#10b981'}}>{qtdMesesMedia} {qtdMesesMedia===1?'mês':'meses'}</strong>: <strong style={{color:'#10b981'}}>{(mediaCustoOp*100).toFixed(1)}%</strong></>
+                        : fatN>0&&custoOp>0
+                          ? <>Usando mês atual: <strong style={{color:'#10b981'}}>{(custoOp/fatN*100).toFixed(1)}%</strong></>
+                          : <>Preencha a aba RD para usar seu valor real</>}
                   </p>
                   <div className="relative">
                     <input type="number" value={custOpServ}
