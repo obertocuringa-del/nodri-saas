@@ -22,21 +22,21 @@ const INFO: Record<string, {titulo: string, oque: string, como: string, exemplo:
   custIndD: {
     titulo: '⚙️ Custo Indireto Desejado (%)',
     oque: 'É o máximo que você quer gastar com contas fixas (aluguel, água, luz, etc.) em relação ao que entra.',
-    como: 'A especialista Dra. Dani Venâncio recomenda 30%. Isso significa: de cada R$ 100 que entra, no máximo R$ 30 devem ir para custos fixos.',
+    como: 'A especialista Especialistas recomendam 30%. Isso significa: de cada R$ 100 que entra, no máximo R$ 30 devem ir para custos fixos.',
     exemplo: 'Faturamento R$ 50.000 × 30% = R$ 15.000 máximo em custos fixos.',
     porque: 'Se gastar mais que isso em custos fixos, sobra pouco para pagar os profissionais e ter lucro.',
   },
   custDirD: {
     titulo: '📌 Custo Direto Desejado (%)',
     oque: 'É o máximo que você quer gastar com o que é pago diretamente pelos serviços: imposto, produtos usados, comissões e taxa do cartão.',
-    como: 'A Dra. Dani recomenda 55%. Significa que R$ 55 de cada R$ 100 vão para esses custos.',
+    como: 'O recomendado é 55%. Significa que R$ 55 de cada R$ 100 vão para esses custos.',
     exemplo: 'Faturamento R$ 50.000 × 55% = R$ 27.500 em custos diretos.',
     porque: 'Controlar esse percentual garante que cada serviço prestado realmente vale a pena financeiramente.',
   },
   lucroD: {
     titulo: '🏆 Lucro Desejado (%)',
     oque: 'É a porcentagem do faturamento que você quer guardar como lucro do negócio, depois de pagar tudo.',
-    como: 'A Dra. Dani recomenda 15%. Se faturar R$ 50.000, o objetivo é lucrar R$ 7.500.',
+    como: 'O recomendado é 15%. Se faturar R$ 50.000, o objetivo é lucrar R$ 7.500.',
     exemplo: 'R$ 50.000 × 15% = R$ 7.500 de lucro líquido no mês.',
     porque: 'Sem meta de lucro, o salão trabalha muito e não sobra nada. Esse número é o seu salário como dono do negócio.',
   },
@@ -169,7 +169,7 @@ const INFO: Record<string, {titulo: string, oque: string, como: string, exemplo:
   abatProd: {
     titulo: '🧴 Abatimento do Produto (%)',
     oque: 'É o quanto do custo do produto é descontado da base de cálculo do rateio do profissional.',
-    como: 'A Dra. Dani usa 100% — significa que o custo do produto é totalmente abatido antes de calcular a comissão.',
+    como: 'O recomendado é 100% — significa que o custo do produto é totalmente abatido antes de calcular a comissão.',
     exemplo: 'Serviço R$ 100, produto R$ 20, rateio 50%: com 100% abatimento → comissão sobre R$ 80 = R$ 40.',
     porque: 'Sem abater o produto, o profissional recebe comissão sobre o custo do material também — o que é injusto para o salão.',
   },
@@ -239,14 +239,14 @@ const INFO: Record<string, {titulo: string, oque: string, como: string, exemplo:
   margemPE: {
     titulo: '📊 Margem Operacional (%)',
     oque: 'É a porcentagem que sobra do faturamento depois de pagar os custos diretos (produto, comissão, imposto, cartão).',
-    como: 'Se preencheu Receitas e Despesas, é calculado automaticamente. A Dra. Dani trabalha com referência de 44-45%.',
+    como: 'Se preencheu Receitas e Despesas, é calculado automaticamente. A referência do mercado é 44-45%.',
     exemplo: 'Faturamento R$ 50.000 - Custos diretos R$ 27.500 = R$ 22.500 de margem = 45%.',
     porque: 'É essa margem que precisa cobrir todos os custos fixos e ainda gerar lucro.',
   },
   metaLucroPE: {
     titulo: '🎯 Meta de Lucro (%)',
     oque: 'O percentual de lucro que você quer alcançar no mês.',
-    como: 'Use a mesma meta da aba Receitas e Despesas (padrão Dra. Dani: 15%).',
+    como: 'Use a mesma meta da aba Receitas e Despesas (recomendado: 15%).',
     exemplo: 'Meta 15% × R$ 50.000 = R$ 7.500 de lucro desejado.',
     porque: 'Com essa meta, o sistema calcula quanto você PRECISA faturar para alcançar o lucro desejado.',
   },
@@ -623,7 +623,7 @@ export default function CalculadoraCusto() {
     setCustDirD(automatico)
   }, [custIndD, lucroD])
 
-  // ── Provisões automáticas a partir dos Salários (fórmulas planilha DV) ──
+  // ── Provisões automáticas a partir dos Salários (fórmulas metodologia recomendada) ──
   // 13º = Salários ÷ 12 (0.083333)
   // Férias = Salários ÷ 36 (0.027778) — apenas o 1/3 constitucional mensal
   // FGTS Rescisório = Salários × 4% (0.04)
@@ -683,7 +683,7 @@ export default function CalculadoraCusto() {
   const PEM2Lucro_   = area_ > 0 ? PELucro_ / area_ : 0
 
   // ── Calcular Serviços ────────────────────────────────────────────────────
-  // Modo Dani: usa 30% fixo (igual à planilha DV)
+  // Modo Recomendado: usa 30% fixo (igual à metodologia recomendada)
   // Modo Real: usa média histórica dos meses salvos (ou mês atual, ou 30% se sem dados)
   const custOpServN = n(custOpServ)/100 || (
     modoCustoOp === 'dani'
@@ -700,7 +700,7 @@ export default function CalculadoraCusto() {
     const taxC  = n(taxaCartao) / 100
     const abat  = n(abatProd) / 100
 
-    // Fórmula correta planilha DV (verificada na célula E14 — PIGMENTAÇÃO):
+    // Fórmula correta metodologia recomendada (verificada na célula E14 — PIGMENTAÇÃO):
     // Rateio R$ = (Preço × Rateio%) - (Preço × Taxa_Cartão) - (Produto × Abatimento%)
     // O valor TOTAL do cartão é descontado do rateio (não só a fração proporcional ao rateio%)
     // Planilha usa =C14*G14 (preço×taxa), não =C14*D14*G14 (preço×rateio%×taxa)
@@ -859,7 +859,7 @@ Use números reais. Seja direto.`
               <Calculator size={22} style={{color:'#7c5cfc'}}/>Calculadoras do Salão
             </h1>
             <p className="text-xs mt-0.5" style={{color:'#64748b'}}>
-              Baseado na metodologia Dra. Dani Venâncio — dados interligados entre as calculadoras
+              Metodologia profissional de gestão financeira — dados interligados entre as calculadoras
             </p>
           </div>
         </div>
@@ -976,9 +976,9 @@ Use números reais. Seja direto.`
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    {l:'Custo Indireto Desejado',v:custIndD,set:setCustIndD,c:'#f59e0b',dica:'Padrão DV: 30%',auto:false,info:'custIndD'},
+                    {l:'Custo Indireto Desejado',v:custIndD,set:setCustIndD,c:'#f59e0b',dica:'Recomendado: 30%',auto:false,info:'custIndD'},
                     {l:'Custo Direto Desejado',v:custDirD,set:null,c:'#ef4444',dica:'Calculado: 100% − Indireto − Lucro',auto:true,info:'custDirD'},
-                    {l:'Lucro Desejado',v:lucroD,set:setLucroD,c:'#10b981',dica:'Padrão DV: 15%',auto:false,info:'lucroD'},
+                    {l:'Lucro Desejado',v:lucroD,set:setLucroD,c:'#10b981',dica:'Recomendado: 15%',auto:false,info:'lucroD'},
                   ].map((f:any)=>(
                     <div key={f.l}>
                       <div className="flex items-center gap-1 mb-1">
@@ -1011,7 +1011,7 @@ Use números reais. Seja direto.`
                 <div>
                   <div className="flex items-center gap-2 mb-1"><label className="text-xs font-bold" style={{color:'#94a3b8'}}>📉 Total a ser Depreciado (R$)</label><InfoBtn id="totalDeprec"/></div>
                   <p className="text-xs mb-1" style={{color:'#475569'}}>
-                    Equipamentos, móveis, reformas — dividido por 84 meses (7 anos) — padrão planilha DV
+                    Equipamentos, móveis, reformas — dividido por 84 meses (7 anos) — padrão recomendado
                     {n(totalDeprec)>0 && <span style={{color:'#a78bfa'}}> → {fmtR(depMensal)}/mês</span>}
                   </p>
                   <div className="relative">
@@ -1225,7 +1225,7 @@ Use números reais. Seja direto.`
 
                 {/* Verificação vs desejado */}
                 <div className="rounded-xl p-4 border" style={{background:'#111827',borderColor:'#1e293b'}}>
-                  <p className="text-xs font-bold mb-3" style={{color:'#94a3b8'}}>📊 Realizado vs Desejado (Metodologia DV)</p>
+                  <p className="text-xs font-bold mb-3" style={{color:'#94a3b8'}}>📊 Realizado vs Desejado (Metodologia Recomendada)</p>
                   <div className="grid grid-cols-3 gap-3">
                     {[
                       // Para CUSTOS: quanto MENOS, melhor. Ok = abaixo ou igual à meta
@@ -1593,12 +1593,12 @@ Use números reais. Seja direto.`
               <div className="grid grid-cols-4 gap-4 mb-4">
                 <div>
                   <div className="flex items-center gap-1.5 mb-1"><label className="text-xs font-bold" style={{color:'#94a3b8'}}>Taxa do Cartão (%)</label><InfoBtn id="taxaCartaoServ"/></div>
-                  <p className="text-[10px] mb-1" style={{color:'#475569'}}>Média das maquininhas. Padrão DV: 5%</p>
+                  <p className="text-[10px] mb-1" style={{color:'#475569'}}>Média das maquininhas. Recomendado: 5%</p>
                   <div className="relative"><input type="number" value={taxaCartao} onChange={e=>setTaxaCartao(e.target.value)} className="w-full pr-6 pl-3 py-2 rounded-lg text-sm text-white focus:outline-none" style={{background:'#0a0f1a',border:'1px solid #334155'}}/><span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#64748b'}}>%</span></div>
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5 mb-1"><label className="text-xs font-bold" style={{color:'#94a3b8'}}>Abatimento do Produto (%)</label><InfoBtn id="abatProd"/></div>
-                  <p className="text-[10px] mb-1" style={{color:'#475569'}}>% do produto abatido do rateio. Padrão DV: 100%</p>
+                  <p className="text-[10px] mb-1" style={{color:'#475569'}}>% do produto abatido do rateio. Recomendado: 100%</p>
                   <div className="relative"><input type="number" value={abatProd} onChange={e=>setAbatProd(e.target.value)} className="w-full pr-6 pl-3 py-2 rounded-lg text-sm text-white focus:outline-none" style={{background:'#0a0f1a',border:'1px solid #334155'}}/><span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#64748b'}}>%</span></div>
                 </div>
                 <div>
@@ -1616,7 +1616,7 @@ Use números reais. Seja direto.`
                         <div className="w-3 h-3 rounded-full border-2 flex items-center justify-center" style={{borderColor: modoCustoOp==='dani'?'#7c5cfc':'#334155'}}>
                           {modoCustoOp==='dani' && <div className="w-1.5 h-1.5 rounded-full" style={{background:'#7c5cfc'}}/>}
                         </div>
-                        <span>Padrão Dra. Dani</span>
+                        <span>Padrão Recomendado</span>
                       </div>
                       <p style={{color:'#64748b',paddingLeft:'18px'}}>{n(custIndD)||30}% fixo — igual à planilha</p>
                     </button>
@@ -1644,7 +1644,7 @@ Use números reais. Seja direto.`
                   </div>
                   <p className="text-[10px] mb-1" style={{color:'#475569'}}>
                     {modoCustoOp==='dani'
-                      ? <>Usando <strong style={{color:'#a78bfa'}}>{n(custIndD)||30}%</strong> — igual à planilha da Dra. Dani</>
+                      ? <>Usando <strong style={{color:'#a78bfa'}}>{n(custIndD)||30}%</strong> — padrão recomendado do mercado</>
                       : mediaCustoOp > 0
                         ? <>Usando média de <strong style={{color:'#10b981'}}>{qtdMesesMedia} {qtdMesesMedia===1?'mês':'meses'}</strong>: <strong style={{color:'#10b981'}}>{(mediaCustoOp*100).toFixed(1)}%</strong></>
                         : fatN>0&&custoOp>0
@@ -1754,7 +1754,7 @@ Use números reais. Seja direto.`
             </div>
 
             <div className="rounded-xl p-4 text-xs space-y-1" style={{background:'#111827',border:'1px solid #1e293b',color:'#64748b'}}>
-              <p className="font-bold mb-1" style={{color:'#94a3b8'}}>💡 Fórmula exata (Planilha Dra. Dani Venâncio):</p>
+              <p className="font-bold mb-1" style={{color:'#94a3b8'}}>💡 💡 Fórmula do cálculo:</p>
               <p>• <strong style={{color:'#e2e8f0'}}>Rateio R$</strong> = (Preço × Rateio%) − (Preço × Taxa_Cartão%) − (Produto × Abatimento%)</p>
               <p>• <strong style={{color:'#e2e8f0'}}>Imposto</strong>: Salão Parceiro → (Preço − Rateio) × Imp%. Normal → Preço × Imp%</p>
               <p>• <strong style={{color:'#e2e8f0'}}>Resultado</strong> = Preço − Total Despesas − Custo Operacional</p>
@@ -2071,7 +2071,7 @@ Use números reais. Seja direto.`
                 {/* Realizado vs Meta */}
                 <div className="rounded-2xl border overflow-hidden" style={{background:'#111827',borderColor:'#1e293b'}}>
                   <div className="px-5 py-3 border-b" style={{background:'#0d1525',borderColor:'#1e293b'}}>
-                    <p className="font-bold text-sm" style={{color:'#e2e8f0'}}>🎯 Realizado vs Meta (Metodologia DV)</p>
+                    <p className="font-bold text-sm" style={{color:'#e2e8f0'}}>🎯 Realizado vs Meta (Metodologia Recomendada)</p>
                   </div>
                   <div className="p-5 space-y-4">
                     {[
