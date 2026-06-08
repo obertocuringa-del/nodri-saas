@@ -442,36 +442,34 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
           {/* NOTIFICATION BANNER */}
           {notificacoes.length > 0 && !notifDismissed && (() => {
             const notif = notificacoes[notifIndex % notificacoes.length]
+            const tipo = (notif as any).tipo || 'info'
+            const borderColor = tipo === 'success' ? '#22c55e' : tipo === 'warning' ? '#eab308' : tipo === 'danger' ? '#ef4444' : '#6366f1'
+            const iconColor = borderColor
             return (
-              <div className="mx-5 mt-3 rounded-xl overflow-hidden" style={{ boxShadow: '0 4px 32px rgba(99,102,241,0.25)' }}>
-                <div className="px-4 py-3 flex items-center gap-3" style={{ background: '#ffffff' }}>
-                  <div className="relative shrink-0">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
-                      <Bell size={18} color="#fff" />
-                    </div>
-                    <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full border-2" style={{ background: '#ef4444', borderColor: '#fff', animation: 'pulseDot 1.5s ease infinite' }} />
-                  </div>
+              <div className="mx-5 mt-3 rounded-lg flex overflow-hidden"
+                style={{ background: 'var(--nodri-card, #111318)', border: '1px solid rgba(255,255,255,0.06)', borderLeft: `3px solid ${borderColor}` }}>
+                <div className="flex items-center gap-3 px-4 py-2.5 flex-1 min-w-0">
+                  <Bell size={14} style={{ color: iconColor, shrink: 0 }} className="shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span style={{ fontSize: '10px', fontWeight: 800, color: '#6366f1', textTransform: 'uppercase', letterSpacing: '1.5px' }}>Aviso do Sistema</span>
-                      <span style={{ background: '#6366f1', color: '#fff', fontSize: '8px', fontWeight: 700, padding: '2px 7px', borderRadius: '4px' }}>NOVO</span>
-                      {notificacoes.length > 1 && <span style={{ fontSize: '9px', color: '#8b5cf6', fontWeight: 600 }}>{(notifIndex % notificacoes.length) + 1}/{notificacoes.length}</span>}
-                      <span style={{ fontSize: '10px', color: '#94a3b8', marginLeft: 'auto' }}>{new Date(notif.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })}</span>
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: iconColor }}>Aviso do Sistema</span>
+                      <span className="text-[10px] text-nodri-t3 ml-auto">{new Date(notif.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })}</span>
                     </div>
-                    <div style={{ fontSize: '13px', fontWeight: 500, color: '#0f172a', lineHeight: 1.45 }}>{notif.mensagem}</div>
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {notificacoes.length > 1 && (
-                      <button onClick={() => setNotifIndex(i => i + 1)}
-                        style={{ width: '28px', height: '28px', borderRadius: '6px', border: '1px solid #e2e8f0', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '16px', color: '#6366f1' }}>›</button>
-                    )}
-                    <button onClick={() => setNotifDismissed(true)}
-                      style={{ width: '28px', height: '28px', borderRadius: '6px', border: '1px solid #e2e8f0', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                      <X size={13} color="#64748b" />
-                    </button>
+                    <p className="text-[12px] text-nodri-t1 leading-snug truncate">{notif.mensagem}</p>
                   </div>
                 </div>
-                <div style={{ height: '3px', background: 'linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899, #06b6d4, #6366f1)', backgroundSize: '300% 100%', animation: 'shimmer 3s linear infinite' }} />
+                <div className="flex items-center gap-1 px-2 shrink-0">
+                  {notificacoes.length > 1 && (
+                    <button onClick={() => setNotifIndex(i => i + 1)}
+                      className="flex items-center gap-1 px-2 py-1 rounded text-[10px] text-nodri-t3 hover:text-nodri-t1 transition-all">
+                      {(notifIndex % notificacoes.length) + 1}/{notificacoes.length}
+                    </button>
+                  )}
+                  <button onClick={() => setNotifDismissed(true)}
+                    className="p-1.5 rounded text-nodri-t3 hover:text-nodri-t1 transition-all">
+                    <X size={13} />
+                  </button>
+                </div>
               </div>
             )
           })()}
