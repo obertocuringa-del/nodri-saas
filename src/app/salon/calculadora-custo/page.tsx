@@ -640,10 +640,11 @@ export default function CalculadoraCusto() {
   const PEM2Lucro_   = area_ > 0 ? PELucro_ / area_ : 0
 
   // ── Calcular Serviços ────────────────────────────────────────────────────
-  // Planilha DV usa "Percentual Fixo" = Custo Indireto Desejado (30%) como padrão nos serviços
-  // Se o usuário digitou manualmente → usa o digitado
-  // Senão → usa o Custo Indireto Desejado configurado (padrão 30%)
-  const custOpServN = n(custOpServ)/100 || n(custIndD)/100 || 0.30
+  // Prioridade:
+  // 1. Valor digitado manualmente no campo
+  // 2. Valor real calculado da aba RD (seus lançamentos reais)
+  // 3. Custo Indireto Desejado (30% padrão) — quando não há lançamentos
+  const custOpServN = n(custOpServ)/100 || (fatN > 0 && custoOp > 0 ? custoOp/fatN : n(custIndD)/100 || 0.30)
 
   function calcServ(s: Servico) {
     const preco = n(s.preco)
@@ -1558,7 +1559,9 @@ Use números reais. Seja direto.`
                 <div>
                   <div className="flex items-center gap-1.5 mb-1"><label className="text-xs font-bold" style={{color:'#94a3b8'}}>Custo Operacional (%)</label><InfoBtn id="custOpServ"/></div>
                   <p className="text-[10px] mb-1" style={{color:'#475569'}}>
-                    Padrão: <strong style={{color:'#a78bfa'}}>{n(custIndD)||30}% (Custo Indireto Desejado)</strong> — igual à planilha DV
+                    {fatN>0&&custoOp>0
+                      ? <>Calculado dos seus lançamentos: <strong style={{color:'#10b981'}}>{(custoOp/fatN*100).toFixed(1)}%</strong></>
+                      : <>Padrão: <strong style={{color:'#a78bfa'}}>{n(custIndD)||30}%</strong> (preencha a aba RD para usar seu valor real)</>}
                   </p>
                   <div className="relative">
                     <input type="number" value={custOpServ}
