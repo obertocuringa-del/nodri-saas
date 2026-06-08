@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Trash2, Edit2, Link2, BarChart2, Check, X, ChevronDown, ChevronUp, ArrowLeft, Eye, EyeOff, GripVertical, Copy, Menu } from 'lucide-react'
+import { Plus, Trash2, Edit2, Link2, BarChart2, Check, X, ChevronDown, ChevronUp, ArrowLeft, Eye, EyeOff, GripVertical, Copy, Menu, Star, ClipboardList, FileText, Settings, Link, Pencil } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 type TipoPergunta = 'escala' | 'multipla_escolha' | 'texto' | 'sim_nao' | 'grid'
@@ -45,6 +45,13 @@ const TIPO_ICONS: Record<TipoPergunta, string> = {
 export default function FeedbackPage() {
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 1024)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
   const [formularios, setFormularios] = useState<Formulario[]>([])
   const [selected, setSelected] = useState<Formulario | null>(null)
   const [perguntas, setPerguntas] = useState<Pergunta[]>([])
@@ -224,7 +231,7 @@ export default function FeedbackPage() {
         </button>
         <div className="w-px h-4 bg-nodri-border" />
         <div className="flex items-center gap-2">
-          <span className="text-xl">⭐</span>
+          <Star size={18} className="text-nodri-amber" />
           <div>
             <div className="font-syne font-bold text-sm text-nodri-t1">Feedback de Cliente</div>
             <div className="hidden sm:block text-[10px] text-nodri-t3">Colete e analise avaliações dos seus clientes</div>
@@ -234,19 +241,31 @@ export default function FeedbackPage() {
 
       <div className="flex h-[calc(100vh-57px)]">
         {/* Overlay mobile */}
-        {sidebarOpen && <div className="fixed inset-0 bg-black/60 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
+        {isMobile && sidebarOpen && <div className="fixed inset-0 bg-black/60 z-40" onClick={() => setSidebarOpen(false)} />}
 
         {/* SIDEBAR - Lista de formulários */}
-        <div className={`w-64 shrink-0 border-r border-nodri-border bg-nodri-surface flex flex-col overflow-y-auto
-          lg:static lg:translate-x-0
-          fixed top-[57px] bottom-0 left-0 z-50 transition-transform duration-300
-          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+        <div style={{
+          position: isMobile ? 'fixed' : 'relative',
+          top: isMobile ? 57 : undefined,
+          bottom: isMobile ? 0 : undefined,
+          left: 0,
+          zIndex: isMobile ? 50 : undefined,
+          transform: isMobile && !sidebarOpen ? 'translateX(-100%)' : 'translateX(0)',
+          transition: 'transform 0.3s ease',
+          width: 256,
+          flexShrink: 0,
+          borderRight: '1px solid var(--nodri-border)',
+          display: 'flex',
+          flexDirection: 'column',
+          overflowY: 'auto',
+          background: 'var(--nodri-surface)',
+        }}>
           <div className="p-3 border-b border-nodri-border">
             <div className="text-[10px] font-bold text-nodri-t3 uppercase tracking-wider">Formulários</div>
           </div>
           {formularios.length === 0 ? (
             <div className="p-4 text-center">
-              <div className="text-3xl mb-2">📋</div>
+              <div className="flex justify-center mb-2"><ClipboardList size={30} className="text-nodri-t3" /></div>
               <p className="text-[11px] text-nodri-t3 mb-3">Nenhum formulário ainda.</p>
               <button onClick={criarFormulario} disabled={saving}
                 className="text-[11px] px-3 py-1.5 rounded-lg text-nodri-cyan border border-nodri-cyan/30 hover:bg-nodri-cyan/10 transition-colors">
@@ -289,7 +308,7 @@ export default function FeedbackPage() {
         {!selected ? (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
-              <div className="text-6xl mb-4">⭐</div>
+              <div className="flex justify-center mb-4"><Star size={56} className="text-nodri-amber" /></div>
               <h2 className="text-nodri-t1 font-syne font-bold text-lg mb-2">Sistema de Feedback</h2>
               <p className="text-nodri-t2 text-sm mb-6 max-w-sm">Crie formulários personalizados e envie o link para seus clientes responderem</p>
               <button onClick={criarFormulario} disabled={saving}
@@ -326,7 +345,7 @@ export default function FeedbackPage() {
                 {(['perguntas', 'link', 'config'] as const).map(t => (
                   <button key={t} onClick={() => setTab(t)}
                     className={`px-4 py-2 text-[11px] font-medium capitalize border-b-2 transition-all ${tab === t ? 'border-nodri-cyan text-nodri-cyan' : 'border-transparent text-nodri-t3 hover:text-nodri-t1'}`}>
-                    {t === 'perguntas' ? '📝 Perguntas' : t === 'link' ? '🔗 Link para Clientes' : '⚙️ Configurações'}
+                    {t === 'perguntas' ? <><Pencil size={11} className="inline mr-1" />Perguntas</> : t === 'link' ? <><Link size={11} className="inline mr-1" />Link para Clientes</> : <><Settings size={11} className="inline mr-1" />Configurações</>}
                   </button>
                 ))}
               </div>
@@ -477,7 +496,7 @@ export default function FeedbackPage() {
                     ))}
                     {perguntas.length === 0 && !showNova && (
                       <div className="text-center py-8 text-nodri-t3 text-sm">
-                        <div className="text-3xl mb-2">📝</div>
+                        <div className="flex justify-center mb-2"><FileText size={30} className="text-nodri-t3" /></div>
                         <p>Nenhuma pergunta ainda.</p>
                         <p className="text-[11px] mt-1">Clique em "Adicionar Pergunta" para começar.</p>
                       </div>
@@ -514,7 +533,7 @@ export default function FeedbackPage() {
                     </div>
                   </div>
                   <div className="p-4 rounded-xl border" style={{ borderColor: 'rgba(255,200,0,0.2)', background: 'rgba(255,200,0,0.04)' }}>
-                    <div className="text-[10px] font-bold text-yellow-400 mb-2">💡 Dica de uso</div>
+                    <div className="text-[10px] font-bold text-yellow-400 mb-2">Dica de uso</div>
                     <ul className="text-[11px] text-nodri-t2 space-y-1.5">
                       <li>• Envie o link logo após o atendimento via WhatsApp</li>
                       <li>• Adicione o link na bio do seu Instagram</li>

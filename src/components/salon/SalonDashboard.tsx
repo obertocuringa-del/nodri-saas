@@ -1,7 +1,7 @@
 ﻿'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Bell, Settings, CheckCircle, X, Zap, Play, Search, ChevronDown, ArrowRight, LogOut, Menu } from 'lucide-react'
+import { Bell, Settings, CheckCircle, X, Zap, Play, Search, ChevronDown, ArrowRight, LogOut, Menu, Wrench, Lock, Eye } from 'lucide-react'
 import ChatWidget from './ChatWidget'
 import toast from 'react-hot-toast'
 import type { ModuloComStatus, Notificacao } from '@/types'
@@ -239,7 +239,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
   function handleAbrir(modulo: ModuloComStatus) {
     // Em manutenção — bloqueia mesmo que habilitado
     if (modulo.em_manutencao) {
-      toast(modulo.msg_manutencao || '🔧 Módulo em manutenção. Voltaremos em breve!', {
+      toast(modulo.msg_manutencao || 'Módulo em manutenção. Voltaremos em breve!', {
         icon: '🔧',
         style: { background: '#1a0000', color: '#ff4444', border: '1px solid #ff4444', fontWeight: 'bold' },
         duration: 4000,
@@ -252,7 +252,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
       return
     }
     if (!modulo.habilitado) {
-      toast('Entre em contato para ativar este módulo.', { icon: '🔒' })
+      toast('Entre em contato para ativar este módulo.')
       return
     }
     const slug = MODULO_SLUG[modulo.nome] || modulo.nome.toLowerCase().replace(/ /g, '-')
@@ -274,7 +274,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
         <div className="flex items-center justify-between px-4 py-2 text-[12px] font-bold z-[60] sticky top-0"
           style={{ background: '#854d0e', color: '#fef3c7', borderBottom: '2px solid #ca8a04' }}>
           <div className="flex items-center gap-2">
-            <span>👁️ Você está acessando como cliente:</span>
+            <span className="flex items-center gap-1"><Eye size={13} /> Você está acessando como cliente:</span>
             <span className="px-2 py-0.5 rounded font-black" style={{ background: '#ca8a04', color: '#1c1917' }}>{impersonandoNome}</span>
             <span style={{ color: '#fde68a', fontWeight: 'normal' }}>— Sessão temporária (2h)</span>
           </div>
@@ -518,9 +518,9 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                 {/* Badge de status */}
                 {emManutencao ? (
                   <div className="flex items-center gap-1">
-                    <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded"
+                    <span className="flex items-center gap-1 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded"
                       style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.4)' }}>
-                      🔧 MANUTENÇÃO
+                      <Wrench size={9} /> MANUTENÇÃO
                     </span>
                   </div>
                 ) : (
@@ -554,7 +554,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                     border: '1px solid rgba(139,92,246,0.3)',
                   }}>
                   {emManutencao
-                    ? <>🔧 Indisponível</>
+                    ? <><Wrench size={9} /> Indisponível</>
                     : modulo.habilitado
                       ? <><Play size={9} fill="#f1f5f9" /> Abrir</>
                       : <><Zap size={9} /> Ativar</>}
@@ -566,7 +566,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
         </div>
           {modulosFiltrados.length === 0 && (
             <div className="text-center py-16" style={{ color: '#475569' }}>
-              <div className="text-4xl mb-3">🔍</div>
+              <div className="flex justify-center mb-3"><Search size={32} className="text-nodri-t3" /></div>
               <p className="text-sm">Nenhum módulo encontrado</p>
             </div>
           )}

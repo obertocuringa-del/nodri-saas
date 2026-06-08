@@ -1,7 +1,7 @@
 ﻿'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Plus, Trash2, Edit2, Check, X, Copy, Eye, BarChart2, Users, ClipboardList, Upload, Lock, Settings2, Menu } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Edit2, Check, X, Copy, Eye, BarChart2, Users, ClipboardList, Upload, Lock, Settings2, Menu, Link, Pencil, Clock } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 interface Formulario { id: string; titulo: string; token: string; ativo: boolean; criado_em: string }
@@ -11,6 +11,13 @@ interface Ocorrido { id: string; descricao: string; ativo: boolean }
 export default function FeedbackProfissionalPage() {
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 1024)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
   const [formularios, setFormularios] = useState<Formulario[]>([])
   const [selected, setSelected] = useState<Formulario | null>(null)
   const [tab, setTab] = useState<'registrar' | 'profissionais' | 'ocorridos' | 'link'>('registrar')
@@ -222,7 +229,7 @@ export default function FeedbackProfissionalPage() {
         </button>
         <div className="w-px h-4 bg-nodri-border" />
         <div className="flex items-center gap-2">
-          <span className="text-xl">👥</span>
+          <Users size={18} className="text-nodri-purple" />
           <div>
             <div className="font-syne font-bold text-sm text-nodri-t1">Feedback Profissional</div>
             <div className="hidden sm:block text-[10px] text-nodri-t3">Avalie o desempenho da sua equipe</div>
@@ -232,19 +239,31 @@ export default function FeedbackProfissionalPage() {
 
       <div className="flex h-[calc(100vh-57px)]">
         {/* Overlay mobile */}
-        {sidebarOpen && <div className="fixed inset-0 bg-black/60 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
+        {isMobile && sidebarOpen && <div className="fixed inset-0 bg-black/60 z-40" onClick={() => setSidebarOpen(false)} />}
 
         {/* SIDEBAR */}
-        <div className={`w-64 shrink-0 border-r border-nodri-border bg-nodri-surface flex flex-col overflow-y-auto
-          lg:static lg:translate-x-0
-          fixed top-[57px] bottom-0 left-0 z-50 transition-transform duration-300
-          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+        <div style={{
+          position: isMobile ? 'fixed' : 'relative',
+          top: isMobile ? 57 : undefined,
+          bottom: isMobile ? 0 : undefined,
+          left: 0,
+          zIndex: isMobile ? 50 : undefined,
+          transform: isMobile && !sidebarOpen ? 'translateX(-100%)' : 'translateX(0)',
+          transition: 'transform 0.3s ease',
+          width: 256,
+          flexShrink: 0,
+          borderRight: '1px solid var(--nodri-border)',
+          display: 'flex',
+          flexDirection: 'column',
+          overflowY: 'auto',
+          background: 'var(--nodri-surface)',
+        }}>
           <div className="p-3 border-b border-nodri-border">
             <div className="text-[10px] font-bold text-nodri-t3 uppercase tracking-wider">Formulários</div>
           </div>
           {formularios.length === 0 ? (
             <div className="p-4 text-center">
-              <div className="text-3xl mb-2">👥</div>
+              <div className="flex justify-center mb-2"><Users size={30} className="text-nodri-t3" /></div>
               <p className="text-[11px] text-nodri-t3 mb-3">Nenhum formulário.</p>
               <button onClick={criarFormulario} className="text-[11px] px-3 py-1.5 rounded-lg text-nodri-cyan border border-nodri-cyan/30">
                 Criar formulário
@@ -315,7 +334,7 @@ export default function FeedbackProfissionalPage() {
         {!selected ? (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
-              <div className="text-6xl mb-4">👥</div>
+              <div className="flex justify-center mb-4"><Users size={56} className="text-nodri-purple" /></div>
               <h2 className="text-nodri-t1 font-syne font-bold text-lg mb-2">Feedback Profissional</h2>
               <p className="text-nodri-t2 text-sm mb-6 max-w-sm">Registre ocorrências e avalie o desempenho da sua equipe</p>
               <button
@@ -348,10 +367,10 @@ export default function FeedbackProfissionalPage() {
               </div>
               <div className="flex gap-0 overflow-x-auto">
                 {([
-                  { id: 'registrar', label: '✏️ Registrar Feedback' },
-                  { id: 'profissionais', label: `👥 Profissionais (${profissionais.length})` },
-                  { id: 'ocorridos', label: `📋 Ocorridos (${ocorridos.length})` },
-                  { id: 'link', label: '🔗 Link' },
+                  { id: 'registrar', label: <><Pencil size={11} className="inline mr-1" />Registrar Feedback</> },
+                  { id: 'profissionais', label: <><Users size={11} className="inline mr-1" />Profissionais ({profissionais.length})</> },
+                  { id: 'ocorridos', label: <><ClipboardList size={11} className="inline mr-1" />Ocorridos ({ocorridos.length})</> },
+                  { id: 'link', label: <><Link size={11} className="inline mr-1" />Link</> },
                 ] as const).map(t => (
                   <button
                     key={t.id}
@@ -386,7 +405,7 @@ export default function FeedbackProfissionalPage() {
                             style={formTipo === 'positivo'
                               ? { background: 'rgba(34,197,94,.15)', color: '#4ade80', border: '2px solid rgba(34,197,94,.4)' }
                               : { background: 'rgba(255,255,255,.03)', color: '#64748b', border: '1px solid rgba(255,255,255,.08)' }}>
-                            ✅ Positivo
+                            <Check size={12} className="inline mr-1" /> Positivo
                           </button>
                           <button
                             onClick={() => setFormTipo('negativo')}
@@ -394,7 +413,7 @@ export default function FeedbackProfissionalPage() {
                             style={formTipo === 'negativo'
                               ? { background: 'rgba(239,68,68,.12)', color: '#f87171', border: '2px solid rgba(239,68,68,.35)' }
                               : { background: 'rgba(255,255,255,.03)', color: '#64748b', border: '1px solid rgba(255,255,255,.08)' }}>
-                            ❌ Negativo
+                            <X size={12} className="inline mr-1" /> Negativo
                           </button>
                         </div>
                       </div>
@@ -447,7 +466,7 @@ export default function FeedbackProfissionalPage() {
                         disabled={formLoading || !formProf || !formOcorr}
                         className="w-full py-3 rounded-xl text-[13px] font-bold transition-all disabled:opacity-40"
                         style={{ background: 'linear-gradient(135deg,rgba(124,92,252,.3),rgba(244,63,142,.2))', color: '#c084fc', border: '1px solid rgba(139,92,246,.4)' }}>
-                        {formLoading ? '⏳ Registrando...' : '✓ Registrar Feedback'}
+                        {formLoading ? <><Clock size={12} className="inline mr-1" />Registrando...</> : <><Check size={12} className="inline mr-1" />Registrar Feedback</>}
                       </button>
                     </div>
                   </div>
@@ -549,7 +568,7 @@ export default function FeedbackProfissionalPage() {
               {tab === 'link' && (
                 <div className="max-w-lg space-y-4">
                   <div className="p-5 rounded-2xl border" style={{ background: '#0d1117', borderColor: 'rgba(139,92,246,.25)' }}>
-                    <div className="text-[11px] font-bold text-purple-400 mb-3">🔗 Link do Formulário para Registro</div>
+                    <div className="text-[11px] font-bold text-purple-400 mb-3 flex items-center gap-1.5"><Link size={12} /> Link do Formulário para Registro</div>
                     <p className="text-[11px] text-nodri-t3 mb-4">
                       Compartilhe com coordenadores, gerentes ou líderes para registrar ocorrências dos profissionais.
                     </p>
@@ -574,7 +593,7 @@ export default function FeedbackProfissionalPage() {
                     </a>
                   </div>
                   <div className="p-4 rounded-xl border" style={{ borderColor: 'rgba(255,200,0,.2)', background: 'rgba(255,200,0,.04)' }}>
-                    <div className="text-[10px] font-bold text-yellow-400 mb-2">💡 Como usar</div>
+                    <div className="text-[10px] font-bold text-yellow-400 mb-2">Como usar</div>
                     <ul className="text-[11px] text-nodri-t2 space-y-1.5">
                       <li>• Envie o link para coordenadores registrarem diariamente</li>
                       <li>• Profissionais e ocorridos aparecem em lista suspensa</li>

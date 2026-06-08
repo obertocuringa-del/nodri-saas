@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Plus, Search, UserCheck, UserX, Edit2, Trash2, Upload, X, ChevronRight, Users, FileText, Briefcase, Clock, Award, BookOpen, FileSignature, AlertCircle, TrendingUp, Building2, Menu } from 'lucide-react'
+import { ArrowLeft, Plus, Search, UserCheck, UserX, Edit2, Trash2, Upload, X, ChevronRight, Users, FileText, Briefcase, Clock, Award, BookOpen, FileSignature, AlertCircle, TrendingUp, Building2, Menu, Mail } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 interface Profissional {
@@ -70,6 +70,13 @@ export default function ProfissionaisPage() {
   const router = useRouter()
   const [secao, setSecao] = useState('lista')
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 1024)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
   const [profissionais, setProfissionais] = useState<Profissional[]>([])
   const [loading, setLoading] = useState(true)
   const [busca, setBusca] = useState('')
@@ -233,16 +240,25 @@ export default function ProfissionaisPage() {
           <ArrowLeft size={15} /> Voltar
         </a>
         <span style={{ color: '#1e293b' }}>|</span>
-        <span style={{ color: '#e2e8f0', fontWeight: 700, fontSize: '14px' }}>👥 Profissionais</span>
+        <span style={{ color: '#e2e8f0', fontWeight: 700, fontSize: '14px', display: 'flex', alignItems: 'center', gap: 6 }}><Users size={14} /> Profissionais</span>
       </div>
 
       <div style={{ display: 'flex', flex: 1 }}>
 
         {/* Overlay mobile */}
-        {sidebarOpen && <div className="fixed inset-0 bg-black/60 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
+        {isMobile && sidebarOpen && <div className="fixed inset-0 bg-black/60 z-40" onClick={() => setSidebarOpen(false)} />}
 
         {/* SIDEBAR */}
-        <aside className={`shrink-0 lg:static lg:translate-x-0 fixed top-[49px] bottom-0 left-0 z-50 transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`} style={{ width: '230px', minWidth: '230px', background: '#0d1117', borderRight: '1px solid #1e293b', padding: '12px 8px', overflowY: 'auto' }}>
+        <aside style={{
+          position: isMobile ? 'fixed' : 'relative',
+          top: isMobile ? 49 : undefined,
+          bottom: isMobile ? 0 : undefined,
+          left: 0,
+          zIndex: isMobile ? 50 : undefined,
+          transform: isMobile && !sidebarOpen ? 'translateX(-100%)' : 'translateX(0)',
+          transition: 'transform 0.3s ease',
+          width: '230px', minWidth: '230px', background: '#0d1117', borderRight: '1px solid #1e293b', padding: '12px 8px', overflowY: 'auto', flexShrink: 0,
+        }}>
           {SIDEBAR_ITEMS.map(item => {
             const Icon = item.icon
             const ativo = secao === item.id
@@ -324,7 +340,7 @@ export default function ProfissionaisPage() {
                         </span>
                       </div>
                       {p.habilidades && <p style={{ color: '#475569', fontSize: '11px', margin: '0 0 12px', lineHeight: 1.5 }}>{p.habilidades.slice(0, 80)}{p.habilidades.length > 80 ? '...' : ''}</p>}
-                      {p.email && <p style={{ color: '#475569', fontSize: '11px', margin: '0 0 12px' }}>📧 {p.email}</p>}
+                      {p.email && <p style={{ color: '#475569', fontSize: '11px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: 4 }}><Mail size={11} /> {p.email}</p>}
                       <div style={{ display: 'flex', gap: '6px' }} onClick={e => e.stopPropagation()}>
                         <button onClick={() => router.push(`/salon/profissionais/${p.id}`)}
                           style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', background: '#1e293b', border: '1px solid #334155', borderRadius: '6px', padding: '6px', color: '#94a3b8', fontSize: '11px', cursor: 'pointer' }}>

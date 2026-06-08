@@ -2,6 +2,7 @@
 
 import { useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
+import { CheckCircle, X, CreditCard, ClipboardList } from 'lucide-react'
 
 const PLANOS_INFO: Record<string, { preco: number; cor: string }> = {
   'Básico':       { preco: 100, cor: '#3498db' },
@@ -186,7 +187,7 @@ function CadastroInner() {
               </div>
               {cupomStatus && (
                 <div style={{ marginTop: 6, fontSize: 12, color: cupomStatus.valido ? '#2ecc71' : '#e74c3c' }}>
-                  {cupomStatus.valido ? `✅ ${cupomStatus.mensagem}` : `❌ ${cupomStatus.mensagem}`}
+                  {cupomStatus.valido ? <><CheckCircle size={12} className="inline mr-1" />{cupomStatus.mensagem}</> : <><X size={12} className="inline mr-1" />{cupomStatus.mensagem}</>}
                 </div>
               )}
             </div>
@@ -213,7 +214,7 @@ function CadastroInner() {
               {/* Cartão */}
               {cardBtn(() => pagar('cartao'), loading && metodo === 'cartao', (
                 <>
-                  <div style={{ fontSize: 30 }}>💳</div>
+                  <CreditCard size={30} color="#aaa" />
                   <div style={{ flex: 1 }}>
                     <div style={{ color: 'white', fontWeight: 700, fontSize: 14, marginBottom: 3 }}>Cartão de Crédito / Débito</div>
                     <div style={{ color: '#888', fontSize: 12 }}>Visa, Mastercard, Elo — via Mercado Pago</div>
@@ -225,7 +226,7 @@ function CadastroInner() {
               {/* PIX */}
               {cardBtn(() => pagar('pix'), loading && metodo === 'pix', (
                 <>
-                  <div style={{ width: 38, height: 38, background: '#00b894', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>🟩</div>
+                  <div style={{ width: 38, height: 38, background: '#00b894', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: 'white', fontWeight: 700, fontSize: 14 }}>PIX</div>
                   <div style={{ flex: 1 }}>
                     <div style={{ color: 'white', fontWeight: 700, fontSize: 14, marginBottom: 3 }}>PIX</div>
                     <div style={{ color: '#888', fontSize: 12 }}>Aprovação imediata — escaneie o QR Code ou copie a chave</div>
@@ -266,12 +267,12 @@ function CadastroInner() {
               </div>
               <button onClick={copiarChave}
                 style={{ background: copiado ? '#27ae60' : '#222', border: `1px solid ${copiado ? '#27ae60' : '#444'}`, borderRadius: 10, padding: '10px 28px', color: copiado ? 'white' : '#ddd', cursor: 'pointer', fontSize: 14, fontWeight: 600, transition: 'all 0.2s' }}>
-                {copiado ? '✅ Chave copiada!' : '📋 Copiar Chave PIX'}
+                {copiado ? <><CheckCircle size={14} style={{display:'inline',marginRight:4}} />Chave copiada!</> : <><ClipboardList size={14} style={{display:'inline',marginRight:4}} />Copiar Chave PIX</>}
               </button>
             </div>
 
             <div style={{ background: '#0a2a1a', border: '1px solid #1a4a2a', borderRadius: 10, padding: '12px 16px', fontSize: 12, color: '#2ecc71' }}>
-              ✅ Após o pagamento você receberá um email de confirmação em <strong>{form.email}</strong>
+              <CheckCircle size={13} style={{display:'inline',marginRight:4}} />Após o pagamento você receberá um email de confirmação em <strong>{form.email}</strong>
             </div>
 
             <div style={{ marginTop: 16, fontSize: 11, color: '#555' }}>

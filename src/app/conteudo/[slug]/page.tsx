@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Home, Loader2, Download, ExternalLink } from 'lucide-react'
+import { ArrowLeft, Home, Loader2, Download, ExternalLink, FileText, BarChart3, CheckCircle, HelpCircle, Construction, Video } from 'lucide-react'
 
 function getYoutubeEmbed(url: string) {
   if (!url) return ''
@@ -63,7 +63,7 @@ function RenderBloco({ bloco }: { bloco: any }) {
         <div style={style}>
           <a href={bloco.conteudo.url} target="_blank" rel="noopener noreferrer"
             className="flex items-center gap-3 p-4 nodri-card border border-nodri-border hover:border-nodri-cyan/40 transition-all group">
-            <span className="text-3xl">📄</span>
+            <FileText size={30} className="text-nodri-t2 shrink-0" />
             <div className="flex-1">
               <div className="text-[13px] font-medium text-nodri-t1 group-hover:text-nodri-cyan transition-colors">{bloco.conteudo.nome || 'Abrir PDF'}</div>
               <div className="text-[10px] text-nodri-t3">Clique para abrir</div>
@@ -79,7 +79,7 @@ function RenderBloco({ bloco }: { bloco: any }) {
         <div style={style}>
           <a href={bloco.conteudo.url} download
             className="flex items-center gap-3 p-4 nodri-card border border-nodri-border hover:border-nodri-green/40 transition-all group">
-            <span className="text-3xl">📊</span>
+            <BarChart3 size={30} className="text-nodri-green shrink-0" />
             <div className="flex-1">
               <div className="text-[13px] font-medium text-nodri-t1 group-hover:text-nodri-green transition-colors">{bloco.conteudo.nome || 'Baixar planilha'}</div>
               <div className="text-[10px] text-nodri-t3">Clique para baixar</div>
@@ -104,7 +104,7 @@ function RenderBloco({ bloco }: { bloco: any }) {
       const itens = bloco.conteudo?.itens || []
       return (
         <div style={style} className="nodri-card p-5">
-          <h3 className="font-syne font-bold text-[12px] text-nodri-cyan mb-3 uppercase tracking-wider">✅ Checklist</h3>
+          <h3 className="font-syne font-bold text-[12px] text-nodri-cyan mb-3 uppercase tracking-wider flex items-center gap-1.5"><CheckCircle size={13} /> Checklist</h3>
           <div className="space-y-2">
             {itens.map((item: string, i: number) => (
               <label key={i} className="flex items-center gap-3 cursor-pointer group">
@@ -122,7 +122,7 @@ function RenderBloco({ bloco }: { bloco: any }) {
       const faqItens = bloco.conteudo?.itens || []
       return (
         <div style={style} className="nodri-card p-5">
-          <h3 className="font-syne font-bold text-[12px] text-nodri-cyan mb-3 uppercase tracking-wider">❓ Perguntas Frequentes</h3>
+          <h3 className="font-syne font-bold text-[12px] text-nodri-cyan mb-3 uppercase tracking-wider flex items-center gap-1.5"><HelpCircle size={13} /> Perguntas Frequentes</h3>
           <div className="space-y-2">
             {faqItens.map((item: any, i: number) => (
               <div key={i} className="border border-nodri-border rounded-lg overflow-hidden">
@@ -168,7 +168,7 @@ export default function ConteudoPage() {
   if (dados?.conteudo?.oculto) return (
     <div className="min-h-screen bg-nodri-dark flex items-center justify-center">
       <div className="text-center">
-        <div className="text-5xl mb-4">🚧</div>
+        <div className="flex justify-center mb-4"><Construction size={48} className="text-nodri-amber" /></div>
         <h2 className="font-syne font-bold text-lg mb-2">Página em construção</h2>
         <p className="text-nodri-t3 text-sm">Este conteúdo está sendo preparado.</p>
         <button onClick={() => router.back()} className="mt-4 text-nodri-cyan text-sm hover:underline">← Voltar</button>
@@ -227,7 +227,7 @@ export default function ConteudoPage() {
             )}
             {!dados?.existe && !embedUrl && (
               <div className="nodri-card p-10 text-center">
-                <div className="text-4xl mb-3">🎬</div>
+                <div className="flex justify-center mb-3"><Video size={36} className="text-nodri-t3" /></div>
                 <p className="text-nodri-t2 text-sm">Conteúdo sendo preparado pelo administrador.</p>
               </div>
             )}

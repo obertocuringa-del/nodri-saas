@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { Mail, CreditCard, Loader2, LogOut, Copy, TrendingUp, DollarSign, Users, Award } from 'lucide-react'
+import { Mail, CreditCard, Loader2, LogOut, Copy, TrendingUp, DollarSign, Users, Award, Tag, Trophy } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function PainelAfiliadoPage() {
@@ -136,7 +136,7 @@ export default function PainelAfiliadoPage() {
 
         {/* Cupom e Link */}
         <div className="nodri-card p-5 space-y-4">
-          <div className="font-syne font-bold text-[13px] text-nodri-cyan">🎫 Seus Dados de Afiliado</div>
+          <div className="font-syne font-bold text-[13px] text-nodri-cyan flex items-center gap-1.5"><Tag size={13} /> Seus Dados de Afiliado</div>
           <div>
             <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1.5 block">Cupom Exclusivo</label>
             <div className="flex items-center gap-2 bg-nodri-surface border-2 border-dashed border-nodri-cyan rounded-xl px-4 py-3">
@@ -165,7 +165,7 @@ export default function PainelAfiliadoPage() {
         {/* Ranking */}
         {ranking.length > 0 && (
           <div className="nodri-card p-5">
-            <div className="font-syne font-bold text-[13px] text-nodri-amber mb-4">🏆 Ranking de Afiliados</div>
+            <div className="font-syne font-bold text-[13px] text-nodri-amber mb-4 flex items-center gap-1.5"><Trophy size={13} /> Ranking de Afiliados</div>
             <div className="space-y-2">
               {ranking.slice(0, 10).map((af: any, i: number) => (
                 <div key={af.id} className={`flex items-center gap-3 p-2.5 rounded-lg ${af.id === afiliado?.id ? 'bg-nodri-cyan/5 border border-nodri-cyan/20' : 'bg-nodri-surface'}`}>
@@ -184,7 +184,7 @@ export default function PainelAfiliadoPage() {
         {/* Pix */}
         {Number(afiliado?.valor_acumulado) > 0 && (
           <div className="bg-nodri-amber/10 border border-nodri-amber/30 rounded-xl p-4 text-[12px] text-nodri-amber">
-            💰 Você tem <strong>R${Number(afiliado?.valor_acumulado).toFixed(2)}</strong> de comissão pendente. O pagamento será enviado via Pix para <strong>{afiliado?.chave_pix}</strong> em breve.
+            <DollarSign size={13} className="inline mr-1" /> Você tem <strong>R${Number(afiliado?.valor_acumulado).toFixed(2)}</strong> de comissão pendente. O pagamento será enviado via Pix para <strong>{afiliado?.chave_pix}</strong> em breve.
           </div>
         )}
       </div>

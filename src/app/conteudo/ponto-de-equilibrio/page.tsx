@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Calculator } from 'lucide-react'
+import { ArrowLeft, Calculator, ClipboardList } from 'lucide-react'
 
 export default function PontoEquilibrioPage() {
   const router = useRouter()
@@ -50,7 +50,7 @@ export default function PontoEquilibrioPage() {
         </div>
 
         <div className="nodri-card p-5">
-          <h2 className="font-syne font-bold text-[13px] text-nodri-cyan mb-4">📋 Custos Fixos Mensais</h2>
+          <h2 className="font-syne font-bold text-[13px] text-nodri-cyan mb-4 flex items-center gap-1.5"><ClipboardList size={13} /> Custos Fixos Mensais</h2>
           <div className="grid grid-cols-2 gap-3 mb-4">
             {campos.map(c => (
               <div key={c.key}>

@@ -1,7 +1,7 @@
 ﻿'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { LogOut, Bell, Plus, Shield, Building, CreditCard, Puzzle, Users, BarChart3, Settings, RefreshCw, X, Send, Edit, Lock, Unlock, Loader2, ChevronDown, Check, Link, Save, Trash2, ExternalLink, Eye, EyeOff, AlertTriangle, Search, Play, Zap, Tag, FolderOpen, Wrench, LogIn } from 'lucide-react'
+import { LogOut, Bell, Plus, Shield, Building, CreditCard, Puzzle, Users, BarChart3, Settings, RefreshCw, X, Send, Edit, Lock, Unlock, Loader2, ChevronDown, Check, Link, Save, Trash2, ExternalLink, Eye, EyeOff, AlertTriangle, Search, Play, Zap, Tag, FolderOpen, Wrench, LogIn, Bot, GraduationCap, ClipboardList, DollarSign, Home, CheckCircle, AlertCircle, Clock, ShoppingBag, Key } from 'lucide-react'
 import toast from 'react-hot-toast'
 import type { Salao, Modulo, Notificacao, Plano, Cupom } from '@/types'
 import EditorSubmenus from './EditorSubmenus'
@@ -224,7 +224,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
     const data = await res.json()
     if (res.ok) {
       setSaloes(prev => prev.map(s => s.id === salao.id ? { ...s, ...data } : s))
-      toast.success(acao === 'bloquear' ? '🔴 Salão bloqueado!' : '✅ Salão liberado!')
+      toast.success(acao === 'bloquear' ? 'Salão bloqueado!' : 'Salão liberado!')
       if (editSalao?.id === salao.id) setEditForm(p => ({ ...p, status: data.status }))
     } else toast.error('Erro ao alterar status')
   }
@@ -238,7 +238,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
     if (res.ok) {
       setSaloes(prev => prev.map(s => s.id === salao.id ? { ...s, ia_ativa: !s.ia_ativa } : s))
       if (editSalao?.id === salao.id) setEditSalao(prev => prev ? { ...prev, ia_ativa: !prev.ia_ativa } : prev)
-      toast.success(salao.ia_ativa ? 'IA desativada' : 'IA ativada! ✅')
+      toast.success(salao.ia_ativa ? 'IA desativada' : 'IA ativada!')
     } else {
       toast.error('Erro ao alterar status da IA')
     }
@@ -253,7 +253,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
     const data = await res.json()
     if (res.ok) {
       setSaloes(prev => prev.map(s => s.id === salaoId ? { ...s, ...data } : s))
-      toast.success('✅ Acesso liberado com nova data de vencimento!')
+      toast.success('Acesso liberado com nova data de vencimento!')
     } else toast.error('Erro ao liberar acesso')
   }
 
@@ -374,7 +374,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
         // usa o valor real retornado pelo banco
         const estadoReal = !!data.em_manutencao
         setLocalModulos(prev => prev.map(m => m.id === modulo.id ? { ...m, em_manutencao: estadoReal } : m))
-        toast.success(!estadoReal ? `✅ "${modulo.nome}" liberado!` : `🔧 "${modulo.nome}" em manutenção`)
+        toast.success(!estadoReal ? `"${modulo.nome}" liberado!` : `"${modulo.nome}" em manutenção`)
       } else {
         toast.error(`Erro: ${data.error || 'Falha ao alterar'}`)
       }
@@ -548,7 +548,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
     const data = await res.json()
     if (res.ok) {
       setLocalModulos(prev => prev.map(mod => mod.id === m.id ? { ...mod, ativo: data.ativo } : mod))
-      toast.success(m.ativo ? '🔧 Módulo em manutenção!' : '✅ Manutenção encerrada!')
+      toast.success(m.ativo ? 'Módulo em manutenção!' : 'Manutenção encerrada!')
     } else toast.error('Erro ao alterar módulo')
   }
 
@@ -565,10 +565,10 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
     expira.setDate(expira.getDate() + 7)
     const hoje = new Date()
     const dias = Math.ceil((expira.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24))
-    if (dias <= 0) return <span className="text-nodri-red font-semibold">🔴 Expirado</span>
-    if (dias <= 2) return <span className="text-nodri-red font-semibold">⚠️ {dias}d restante</span>
-    if (dias <= 4) return <span className="text-nodri-amber font-semibold">⏳ {dias}d restantes</span>
-    return <span className="text-nodri-green font-semibold">⏳ {dias}d restantes</span>
+    if (dias <= 0) return <span className="text-nodri-red font-semibold flex items-center gap-1"><AlertCircle size={11} /> Expirado</span>
+    if (dias <= 2) return <span className="text-nodri-red font-semibold flex items-center gap-1"><AlertCircle size={11} /> {dias}d restante</span>
+    if (dias <= 4) return <span className="text-nodri-amber font-semibold flex items-center gap-1"><Clock size={11} /> {dias}d restantes</span>
+    return <span className="text-nodri-green font-semibold flex items-center gap-1"><Clock size={11} /> {dias}d restantes</span>
   }
 
   function PagamentosSection() {
@@ -593,7 +593,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
       const data = await res.json()
       if (res.ok) {
         setPags(prev => prev.map(p => p.id === id ? { ...p, ...data } : p))
-        toast.success(status === 'pago' ? '✅ Pago! Acesso liberado automaticamente.' : `Status atualizado para ${status}`)
+        toast.success(status === 'pago' ? 'Pago! Acesso liberado automaticamente.' : `Status atualizado para ${status}`)
       } else toast.error('Erro ao atualizar')
       setUpdatingId(null)
     }
@@ -607,14 +607,14 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
       <div className="space-y-4">
         <div className="grid grid-cols-4 gap-3">
           {[
-            { label: 'Total de pagamentos', value: pags.length, icon: '💳' },
-            { label: 'Pagos', value: pags.filter(p => p.status === 'pago').length, icon: '✅' },
-            { label: 'Pendentes', value: pags.filter(p => p.status === 'pendente').length, icon: '⏳' },
-            { label: 'Receita confirmada', value: `R$${totalPago.toFixed(2)}`, icon: '💰' },
+            { label: 'Total de pagamentos', value: pags.length, icon: <CreditCard size={16} /> },
+            { label: 'Pagos', value: pags.filter(p => p.status === 'pago').length, icon: <CheckCircle size={16} /> },
+            { label: 'Pendentes', value: pags.filter(p => p.status === 'pendente').length, icon: <Clock size={16} /> },
+            { label: 'Receita confirmada', value: `R$${totalPago.toFixed(2)}`, icon: <DollarSign size={16} /> },
           ].map(s => (
             <div key={s.label} className="nodri-card p-3">
               <div className="text-[9px] text-nodri-t3 uppercase tracking-widest mb-1">{s.label}</div>
-              <div className="font-syne font-bold text-lg">{s.icon} {s.value}</div>
+              <div className="font-syne font-bold text-lg flex items-center gap-1.5 text-nodri-t2">{s.icon} <span className="text-nodri-t1">{s.value}</span></div>
             </div>
           ))}
         </div>
@@ -653,7 +653,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                     {p.status !== 'pago' && (
                       <button onClick={() => atualizarStatus(p.id, 'pago', p.salao_id)} disabled={updatingId === p.id}
                         className="px-2 py-1 bg-nodri-green/10 border border-nodri-green/30 text-nodri-green text-[10px] font-bold rounded hover:bg-nodri-green/20 disabled:opacity-50">
-                        {updatingId === p.id ? <Loader2 size={10} className="animate-spin" /> : '✅ Pago'}
+                        {updatingId === p.id ? <Loader2 size={10} className="animate-spin" /> : <><CheckCircle size={10} className="inline mr-0.5" />Pago</>}
                       </button>
                     )}
                     {p.status === 'pendente' && (
@@ -689,7 +689,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
       setSavingConfig(true)
       await fetch('/api/afiliados/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ percentual: descontoCliente }) })
       setSavingConfig(false)
-      toast.success('✅ Desconto do cliente atualizado!')
+      toast.success('Desconto do cliente atualizado!')
     }
 
     async function toggleAtivo(af: any) {
@@ -700,7 +700,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
       })
       if (res.ok) {
         setAfiliados(prev => prev.map(a => a.id === af.id ? { ...a, ativo: !a.ativo } : a))
-        toast.success(af.ativo ? '🔴 Afiliado bloqueado!' : '✅ Afiliado desbloqueado!')
+        toast.success(af.ativo ? 'Afiliado bloqueado!' : 'Afiliado desbloqueado!')
       } else toast.error('Erro ao alterar status')
     }
 
@@ -709,7 +709,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
       const res = await fetch(`/api/afiliados?id=${af.id}`, { method: 'DELETE' })
       if (res.ok) {
         setAfiliados(prev => prev.filter(a => a.id !== af.id))
-        toast.success('🗑️ Afiliado excluído!')
+        toast.success('Afiliado excluído!')
       } else toast.error('Erro ao excluir')
     }
 
@@ -722,7 +722,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
       })
       if (res.ok) {
         setAfiliados(prev => prev.map(a => a.id === af.id ? { ...a, valor_pago: (a.valor_pago || 0) + (a.valor_acumulado || 0), valor_acumulado: 0 } : a))
-        toast.success('✅ Pagamento registrado!')
+        toast.success('Pagamento registrado!')
       }
       setSavingComissao(null)
     }
@@ -844,7 +844,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                   {(af.valor_acumulado || 0) > 0 && (
                     <button onClick={() => marcarPago(af)} disabled={savingComissao === af.id}
                       className="mt-3 w-full py-2 bg-nodri-green/10 border border-nodri-green/30 text-nodri-green text-[12px] font-bold rounded-lg hover:bg-nodri-green/20 transition-all flex items-center justify-center gap-2">
-                      {savingComissao === af.id ? <Loader2 size={12} className="animate-spin" /> : '✅'}
+                      {savingComissao === af.id ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle size={12} />}
                       Marcar R${(af.valor_acumulado || 0).toFixed(2)} como pago (Pix: {af.chave_pix})
                     </button>
                   )}
@@ -918,8 +918,8 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
     { id: 'updates', icon: <RefreshCw size={14} />, label: 'Atualizações' },
     { id: 'relatorios', icon: <BarChart3 size={14} />, label: 'Relatórios' },
     { id: 'config', icon: <Settings size={14} />, label: 'Configurações' },
-    { id: 'ia', icon: <span className="text-[12px]">🤖</span>, label: 'IA' },
-    { id: 'academia', icon: <span className="text-[12px]">🎓</span>, label: 'Academia' },
+    { id: 'ia', icon: <Bot size={14} />, label: 'IA' },
+    { id: 'academia', icon: <GraduationCap size={14} />, label: 'Academia' },
   ]
 
   return (
@@ -961,7 +961,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
         <div className="px-5 py-3 border-b border-nodri-border bg-nodri-surface flex items-center gap-3 sticky top-0 z-20">
           <div>
             <div className="font-syne font-bold text-[15px]">
-              {activeSection === 'planos' ? 'Gestão de Planos' : activeSection === 'modulos' ? 'Gestão de Módulos' : activeSection === 'ia' ? '🤖 IA NODRI' : 'Painel Admin Master'}
+              {activeSection === 'planos' ? 'Gestão de Planos' : activeSection === 'modulos' ? 'Gestão de Módulos' : activeSection === 'ia' ? 'IA NODRI' : 'Painel Admin Master'}
             </div>
             <div className="text-[11px] text-nodri-t2">
               {activeSection === 'planos' ? 'Planos, Landing Page e Cupons de Desconto' : activeSection === 'modulos' ? 'Criar, editar e gerenciar módulos do sistema' : activeSection === 'ia' ? 'Configuração global da IA e controle por salão' : 'Controle total de salões, licenças e módulos'}
@@ -1001,7 +1001,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
               <div className="nodri-card p-4">
                 <div className="flex items-center justify-between mb-1">
                   <div className="font-syne font-bold text-[13px] text-nodri-cyan flex items-center gap-2">
-                    <Puzzle size={14} /> 🔧 Manutenção de Módulos
+                    <Puzzle size={14} /> <Wrench size={13} className="inline" /> Manutenção de Módulos
                   </div>
                   {localModulos.some(m => m.em_manutencao) && (
                     <button onClick={async () => {
@@ -1012,10 +1012,10 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                         })
                       }
                       setLocalModulos(prev => prev.map(m => ({ ...m, em_manutencao: false })))
-                      toast.success('✅ Manutenção encerrada em todos os módulos!')
+                      toast.success('Manutenção encerrada em todos os módulos!')
                     }}
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-nodri-green/10 border border-nodri-green/30 text-nodri-green text-[11px] font-bold rounded-lg hover:bg-nodri-green/20 transition-all">
-                      ✅ Encerrar Todos
+                      <CheckCircle size={12} /> Encerrar Todos
                     </button>
                   )}
                 </div>
@@ -1033,7 +1033,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                       <div className="flex gap-1 mt-2">
                         <button onClick={() => toggleManutencao(m)}
                           className={`flex-1 py-1 text-[9px] font-bold rounded border transition-all ${!m.em_manutencao ? 'border-nodri-red/30 text-nodri-red bg-nodri-red/5 hover:bg-nodri-red/15' : 'border-nodri-green/30 text-nodri-green bg-nodri-green/5 hover:bg-nodri-green/15'}`}>
-                          {!m.em_manutencao ? '🔧 Manutenção' : '✅ Encerrar'}
+                          {!m.em_manutencao ? <><Wrench size={9} /> Manutenção</> : <><CheckCircle size={9} /> Encerrar</>}
                         </button>
                         <button onClick={() => openEditModulo(m)} title="Editar" className="p-1 border border-nodri-border rounded text-nodri-t3 hover:text-nodri-cyan hover:border-nodri-cyan/30 transition-all"><Edit size={10} /></button>
                         <button onClick={() => deleteModulo(m.id)} title="Excluir" className="p-1 border border-nodri-red/30 rounded text-nodri-red hover:bg-nodri-red/10 transition-all"><Trash2 size={10} /></button>
@@ -1049,12 +1049,12 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
               {/* Stats */}
               <div className="grid grid-cols-3 gap-3">
                 {[
-                  { label: 'Total de Módulos', value: localModulos.length, icon: '⚙️' },
-                  { label: 'Ativos', value: localModulos.filter(m => !m.em_manutencao).length, icon: '✅' },
-                  { label: 'Em Manutenção', value: localModulos.filter(m => !!m.em_manutencao).length, icon: '🔧' },
+                  { label: 'Total de Módulos', value: localModulos.length, icon: <Settings size={22} /> },
+                  { label: 'Ativos', value: localModulos.filter(m => !m.em_manutencao).length, icon: <CheckCircle size={22} /> },
+                  { label: 'Em Manutenção', value: localModulos.filter(m => !!m.em_manutencao).length, icon: <Wrench size={22} /> },
                 ].map(s => (
                   <div key={s.label} className="nodri-card p-4 text-center">
-                    <div className="text-2xl mb-1">{s.icon}</div>
+                    <div className="flex justify-center mb-1 text-nodri-t2">{s.icon}</div>
                     <div className="font-syne font-bold text-xl">{s.value}</div>
                     <div className="text-[10px] text-nodri-t3 uppercase tracking-wider mt-1">{s.label}</div>
                   </div>
@@ -1080,7 +1080,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
           {/* ACADEMIA */}
           {activeSection === 'academia' && (
             <div className="flex flex-col items-center justify-center py-16 gap-4">
-              <span className="text-6xl">🎓</span>
+              <GraduationCap size={64} className="text-nodri-cyan" />
               <h2 className="text-xl font-bold text-white">Academia NODRI</h2>
               <p className="text-gray-400 text-sm text-center max-w-xs">Gerencie os artigos da Academia: crie, edite, oculte e organize o conteúdo por categoria.</p>
               <a href="/admin/academia" className="bg-amber-500 hover:bg-amber-400 text-black font-semibold px-6 py-2.5 rounded-xl text-sm transition-colors">
@@ -1096,15 +1096,15 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
               <div className="flex gap-2 mb-5">
                 <button onClick={() => setPlanosTab('planos')}
                   className={`px-4 py-2 rounded-lg text-[12px] font-bold transition-all ${planosTab === 'planos' ? 'bg-nodri-cyan text-black' : 'bg-nodri-card border border-nodri-border text-nodri-t2 hover:text-nodri-t1'}`}>
-                  📋 Planos
+                  <ClipboardList size={13} className="inline mr-1" /> Planos
                 </button>
                 <button onClick={() => { setPlanosTab('landing'); if (!landingConfig) loadLandingConfig() }}
                   className={`px-4 py-2 rounded-lg text-[12px] font-bold transition-all ${planosTab === 'landing' ? 'bg-nodri-cyan text-black' : 'bg-nodri-card border border-nodri-border text-nodri-t2 hover:text-nodri-t1'}`}>
-                  🎨 Editor Landing Page
+                  <Edit size={13} className="inline mr-1" /> Editor Landing Page
                 </button>
                 <button onClick={() => { setPlanosTab('cupons'); if (cupons.length === 0) loadCupons() }}
                   className={`px-4 py-2 rounded-lg text-[12px] font-bold transition-all ${planosTab === 'cupons' ? 'bg-nodri-cyan text-black' : 'bg-nodri-card border border-nodri-border text-nodri-t2 hover:text-nodri-t1'}`}>
-                  🎫 Cupons de Desconto
+                  <Tag size={13} className="inline mr-1" /> Cupons de Desconto
                 </button>
               </div>
 
@@ -1123,7 +1123,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                       </div>
                       <div className="flex items-center gap-6">
                         <div className="text-right"><div className="font-syne font-bold text-[15px]">R${plano.preco}</div><div className="text-[9px] text-nodri-t3">/mês</div></div>
-                        <div className="text-right"><div className="text-[11px] font-medium">👥 {plano.max_usuarios} usuário(s)</div></div>
+                        <div className="text-right"><div className="text-[11px] font-medium flex items-center gap-1"><Users size={11} /> {plano.max_usuarios} usuário(s)</div></div>
                         <div className="flex gap-1.5">
                           <button onClick={() => openEditPlano(plano)} className="p-1.5 rounded-md border border-nodri-purple/40 text-nodri-purple bg-nodri-purple/7 hover:bg-nodri-purple/15 transition-all"><Edit size={11} /></button>
                           <button onClick={() => deletePlano(plano.id)} className="p-1.5 rounded-md border border-nodri-red/35 text-nodri-red bg-nodri-red/7 hover:bg-nodri-red/15 transition-all"><Trash2 size={11} /></button>
@@ -1147,7 +1147,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                     <>
                       {/* HERO */}
                       <div className="nodri-card p-4">
-                        <div className="font-syne font-bold text-[12px] mb-3 text-nodri-cyan">🏠 Seção Hero (topo)</div>
+                        <div className="font-syne font-bold text-[12px] mb-3 text-nodri-cyan flex items-center gap-1.5"><Home size={13} /> Seção Hero (topo)</div>
                         <div className="grid gap-3">
                           <div className="grid grid-cols-2 gap-3">
                             <div>
@@ -1186,7 +1186,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                       {/* BENEFÍCIOS */}
                       <div className="nodri-card p-4">
                         <div className="flex items-center justify-between mb-3">
-                          <div className="font-syne font-bold text-[12px] text-nodri-cyan">✨ Seção Benefícios</div>
+                          <div className="font-syne font-bold text-[12px] text-nodri-cyan">Seção Benefícios</div>
                           <button onClick={() => setLandingConfig({ ...landingConfig, beneficios: [...landingConfig.beneficios, { emoji: '⭐', titulo: 'Novo benefício', desc: 'Descrição' }] })}
                             className="flex items-center gap-1 text-[11px] bg-nodri-cyan text-black px-2.5 py-1 rounded-lg font-bold hover:brightness-110">
                             <Plus size={11} /> Adicionar
@@ -1218,7 +1218,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                       {/* PLANOS */}
                       <div className="nodri-card p-4">
                         <div className="flex items-center justify-between mb-3">
-                          <div className="font-syne font-bold text-[12px] text-nodri-cyan">💰 Seção Planos</div>
+                          <div className="font-syne font-bold text-[12px] text-nodri-cyan flex items-center gap-1.5"><DollarSign size={13} /> Seção Planos</div>
                           <button onClick={() => setLandingConfig({ ...landingConfig, landing_planos: [...landingConfig.landing_planos, { nome: 'Novo Plano', preco: 0, cor: '#3498db', destaque: false, modulos: ['Módulo 1'] }] })}
                             className="flex items-center gap-1 text-[11px] bg-nodri-cyan text-black px-2.5 py-1 rounded-lg font-bold hover:brightness-110">
                             <Plus size={11} /> Adicionar
@@ -1274,7 +1274,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
 
                       {/* TRABALHE CONOSCO */}
                       <div className="nodri-card p-4">
-                        <div className="font-syne font-bold text-[12px] mb-3 text-nodri-cyan">🤝 Seção Trabalhe Conosco (Afiliados)</div>
+                        <div className="font-syne font-bold text-[12px] mb-3 text-nodri-cyan flex items-center gap-1.5"><Users size={13} /> Seção Trabalhe Conosco (Afiliados)</div>
                         <div className="grid gap-3">
                           <div>
                             <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Título</label>
@@ -1315,7 +1315,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
 
                       {/* RODAPÉ */}
                       <div className="nodri-card p-4">
-                        <div className="font-syne font-bold text-[12px] mb-3 text-nodri-cyan">🔻 Rodapé</div>
+                        <div className="font-syne font-bold text-[12px] mb-3 text-nodri-cyan">Rodapé</div>
                         <div className="grid grid-cols-2 gap-3">
                           <div>
                             <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Nome/Logo</label>
@@ -1397,7 +1397,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                   {/* Lista de cupons */}
                   <div className="nodri-card p-4">
                     <div className="flex items-center justify-between mb-4">
-                      <div className="font-syne font-bold text-[12px] text-nodri-cyan">📋 Cupons Criados</div>
+                      <div className="font-syne font-bold text-[12px] text-nodri-cyan flex items-center gap-1.5"><ClipboardList size={13} /> Cupons Criados</div>
                       <button onClick={loadCupons} className="text-[10px] text-nodri-t3 hover:text-nodri-t1 flex items-center gap-1">
                         <RefreshCw size={10} /> Atualizar
                       </button>
@@ -1458,7 +1458,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                     const desc = (document.getElementById('upd-desc') as HTMLTextAreaElement)?.value
                     if (!titulo) { toast.error('Digite o título'); return }
                     const res = await fetch('/api/notifications', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ titulo, mensagem: desc || titulo, para_todos: true, tipo: 'info' }) })
-                    if (res.ok) { toast.success('✅ Atualização enviada para todos os clientes!'); (document.getElementById('upd-titulo') as HTMLInputElement).value = ''; (document.getElementById('upd-desc') as HTMLTextAreaElement).value = '' }
+                    if (res.ok) { toast.success('Atualização enviada para todos os clientes!'); (document.getElementById('upd-titulo') as HTMLInputElement).value = ''; (document.getElementById('upd-desc') as HTMLTextAreaElement).value = '' }
                     else toast.error('Erro ao enviar')
                   }} className="flex items-center gap-2 bg-nodri-cyan text-black px-5 py-2.5 rounded-lg font-bold text-[12px] hover:brightness-110">
                     <Send size={13} /> Enviar para Todos os Clientes
@@ -1473,22 +1473,22 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
             <div className="space-y-4">
               <div className="grid grid-cols-3 gap-3">
                 {[
-                  { label: 'Total de Salões', value: saloes.length, icon: '🏢' },
-                  { label: 'Ativos', value: saloes.filter(s => s.status === 'ativo').length, icon: '✅' },
-                  { label: 'Bloqueados', value: saloes.filter(s => s.status === 'bloqueado').length, icon: '🔴' },
-                  { label: 'Vencidos', value: saloes.filter(s => s.status === 'vencido').length, icon: '⚠️' },
-                  { label: 'Trial', value: saloes.filter(s => s.status === 'trial').length, icon: '⏳' },
-                  { label: 'Receita Mensal', value: `R$${saloes.filter(s => s.status === 'ativo' && s.plano).reduce((acc, s) => acc + (s.plano?.preco || 0), 0).toFixed(2)}`, icon: '💰' },
+                  { label: 'Total de Salões', value: saloes.length, icon: <Building size={22} /> },
+                  { label: 'Ativos', value: saloes.filter(s => s.status === 'ativo').length, icon: <CheckCircle size={22} /> },
+                  { label: 'Bloqueados', value: saloes.filter(s => s.status === 'bloqueado').length, icon: <Lock size={22} /> },
+                  { label: 'Vencidos', value: saloes.filter(s => s.status === 'vencido').length, icon: <AlertCircle size={22} /> },
+                  { label: 'Trial', value: saloes.filter(s => s.status === 'trial').length, icon: <Clock size={22} /> },
+                  { label: 'Receita Mensal', value: `R$${saloes.filter(s => s.status === 'ativo' && s.plano).reduce((acc, s) => acc + (s.plano?.preco || 0), 0).toFixed(2)}`, icon: <DollarSign size={22} /> },
                 ].map(r => (
                   <div key={r.label} className="nodri-card p-4 text-center">
-                    <div className="text-2xl mb-2">{r.icon}</div>
+                    <div className="flex justify-center mb-2 text-nodri-t2">{r.icon}</div>
                     <div className="font-syne font-bold text-xl">{r.value}</div>
                     <div className="text-[10px] text-nodri-t3 uppercase tracking-wider mt-1">{r.label}</div>
                   </div>
                 ))}
               </div>
               <div className="nodri-card p-4">
-                <div className="font-syne font-bold text-[13px] mb-3 text-nodri-cyan">📊 Salões por Plano</div>
+                <div className="font-syne font-bold text-[13px] mb-3 text-nodri-cyan flex items-center gap-1.5"><BarChart3 size={14} /> Salões por Plano</div>
                 {['basico', 'profissional', 'premium'].map(slug => {
                   const count = saloes.filter(s => s.plano?.slug === slug).length
                   const pct = saloes.length ? Math.round((count / saloes.length) * 100) : 0
@@ -1513,7 +1513,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
           {activeSection === 'ia' && (
             <div className="space-y-5 max-w-xl">
               <div className="nodri-card p-5">
-                <div className="font-syne font-bold text-[13px] text-nodri-cyan mb-4">🤖 Configuração da IA NODRI</div>
+                <div className="font-syne font-bold text-[13px] text-nodri-cyan mb-4 flex items-center gap-1.5"><Bot size={14} /> Configuração da IA NODRI</div>
                 {iaConfigLoading ? (
                   <div className="flex items-center justify-center py-8"><Loader2 size={20} className="animate-spin text-nodri-cyan" /></div>
                 ) : (
@@ -1541,7 +1541,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                     <div>
                       <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Modelo</label>
                       <select className="nodri-input w-full" value={iaConfig.modelo} onChange={e => setIaConfig(p => ({ ...p, modelo: e.target.value }))}>
-                        <option value="claude-haiku-4-5">🏆 Claude Haiku — Recomendado (R$0,25/mi tokens)</option>
+                        <option value="claude-haiku-4-5">Claude Haiku — Recomendado (R$0,25/mi tokens)</option>
                         <option value="claude-sonnet-4-5">Claude Sonnet — Alta qualidade (R$1,50/mi tokens)</option>
                         <option value="claude-opus-4-5">Claude Opus — Máxima qualidade (R$7,50/mi tokens)</option>
                         <option value="gemini-1.5-flash">Gemini 1.5 Flash — Opção Google</option>
@@ -1558,7 +1558,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                           onClick={() => setIaConfig(p => ({ ...p, instrucoes_base: `Seja sempre cordial e use o nome do profissional ao cumprimentar.\nFoco principal: aumentar faturamento e fidelização de clientes.\nSempre sugira pelo menos uma ação prática ao final de cada resposta.\nUse linguagem simples e direta, sem termos técnicos desnecessários.` }))}
                           className="text-[10px] px-3 py-1 rounded bg-nodri-border hover:bg-nodri-cyan/20 text-nodri-t2 hover:text-nodri-cyan transition-all flex items-center gap-1"
                         >
-                          📋 Carregar Prompt Padrão
+                          <ClipboardList size={11} className="inline mr-1" /> Carregar Prompt Padrão
                         </button>
                         <span className="text-[9px] text-nodri-t3">ou escreva do zero abaixo</span>
                       </div>
@@ -1596,7 +1596,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
 
               {/* Keys Tavily — Busca na Internet */}
               <div className="nodri-card p-5">
-                <div className="font-syne font-bold text-[13px] text-nodri-cyan mb-1">🌐 Busca na Internet (Tavily)</div>
+                <div className="font-syne font-bold text-[13px] text-nodri-cyan mb-1 flex items-center gap-1.5"><Search size={14} /> Busca na Internet (Tavily)</div>
                 <p className="text-[10px] text-nodri-t3 mb-4">Keys para a IA buscar técnicas de procedimentos e tendências de beleza na internet. O sistema rotaciona automaticamente quando uma key esgota.</p>
 
                 {/* Lista de keys cadastradas */}
@@ -1662,7 +1662,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
           {activeSection === 'config' && (
             <div className="space-y-4 max-w-xl">
               <div className="nodri-card p-5">
-                <div className="font-syne font-bold text-[13px] text-nodri-cyan mb-4">⚙️ Configurações do Sistema</div>
+                <div className="font-syne font-bold text-[13px] text-nodri-cyan mb-4 flex items-center gap-1.5"><Settings size={14} /> Configurações do Sistema</div>
                 <div className="space-y-4">
                   <div>
                     <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">WhatsApp de Suporte</label>
@@ -1688,7 +1688,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
 
               {/* PROGRAMA COMPLEMENTAR */}
               <div className="nodri-card p-5">
-                <div className="font-syne font-bold text-[13px] text-nodri-cyan mb-1">💾 Programa Complementar</div>
+                <div className="font-syne font-bold text-[13px] text-nodri-cyan mb-1 flex items-center gap-1.5"><Settings size={14} /> Programa Complementar</div>
                 <p className="text-[10px] text-nodri-t3 mb-4">Configure o botão de download exibido para todos os salões na tela principal.</p>
                 <div className="space-y-3">
                   <div>
@@ -1710,11 +1710,11 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                         await fetch('/api/config/programa', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(nova) })
                         setConfigPrograma(nova)
                         setSavingPrograma(false)
-                        toast.success(novoEstado ? '⚡ Atualização disponibilizada para todos os salões!' : '✅ Botão voltou ao modo normal')
+                        toast.success(novoEstado ? 'Atualização disponibilizada para todos os salões!' : 'Botão voltou ao modo normal')
                       }}
                       disabled={savingPrograma}
                       className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[11px] font-bold transition-all ${configPrograma.atualizacao_ativa ? 'bg-green-500/15 border border-green-500/40 text-green-400 hover:bg-green-500/25' : 'bg-nodri-surface border border-nodri-border text-nodri-t2 hover:border-nodri-cyan/40 hover:text-nodri-cyan'}`}>
-                      {configPrograma.atualizacao_ativa ? '⚡ Atualização ATIVA — Clique para desativar' : '🚀 Disponibilizar Atualização do Sistema'}
+                      {configPrograma.atualizacao_ativa ? <><Zap size={12} /> Atualização ATIVA — Clique para desativar</> : <><RefreshCw size={12} /> Disponibilizar Atualização do Sistema</>}
                     </button>
                     <button
                       onClick={async () => {
@@ -1724,7 +1724,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                           const text = await res.text()
                           const data = text ? JSON.parse(text) : {}
                           if (!res.ok) { toast.error('Erro ao salvar: ' + (data.error || res.status)) }
-                          else { toast.success('💾 Links salvos!') }
+                          else { toast.success('Links salvos!') }
                         } catch (e: any) {
                           toast.error('Erro: ' + e.message)
                         }
@@ -1816,7 +1816,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                   <div className="relative mb-2" ref={dropdownRef}>
                     <button onClick={() => setShowDestinatarios(!showDestinatarios)}
                       className="w-full flex items-center justify-between px-3 py-2 bg-nodri-card border border-nodri-border rounded-lg text-[11px] hover:border-nodri-cyan/30 transition-all">
-                      <span className={notifDestinatarios.length === 0 ? 'text-nodri-t3' : 'text-nodri-t1'}>{notifDestinatarios.length === 0 ? '📢 Todos os salões' : `✅ ${notifDestinatarios.length} salão(ões) selecionado(s)`}</span>
+                      <span className={notifDestinatarios.length === 0 ? 'text-nodri-t3' : 'text-nodri-t1'}>{notifDestinatarios.length === 0 ? 'Todos os salões' : `${notifDestinatarios.length} salão(ões) selecionado(s)`}</span>
                       <ChevronDown size={12} className={`text-nodri-t3 transition-transform ${showDestinatarios ? 'rotate-180' : ''}`} />
                     </button>
                     {showDestinatarios && (
@@ -1824,7 +1824,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                         <div onClick={() => { setNotifDestinatarios([]); setShowDestinatarios(false) }}
                           className={`flex items-center gap-2 px-3 py-2.5 cursor-pointer hover:bg-nodri-surface transition-colors ${notifDestinatarios.length === 0 ? 'text-nodri-cyan' : 'text-nodri-t2'}`}>
                           <div className={`w-4 h-4 rounded border flex items-center justify-center ${notifDestinatarios.length === 0 ? 'bg-nodri-cyan border-nodri-cyan' : 'border-nodri-border'}`}>{notifDestinatarios.length === 0 && <Check size={10} className="text-black" />}</div>
-                          <span className="text-[11.5px] font-medium">📢 Todos os salões</span>
+                          <span className="text-[11.5px] font-medium">Todos os salões</span>
                         </div>
                         {saloes.map(s => (
                           <div key={s.id} onClick={() => toggleDestinatario(s.id)} className="flex items-center gap-2 px-3 py-2.5 cursor-pointer hover:bg-nodri-surface transition-colors">
@@ -1837,10 +1837,10 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                   </div>
                   <div className="flex gap-2">
                     <select value={notifTipo} onChange={e => setNotifTipo(e.target.value as any)} className="nodri-input w-28 text-[11px] shrink-0">
-                      <option value="info">ℹ️ Info</option>
-                      <option value="success">✅ Sucesso</option>
-                      <option value="warning">⚠️ Aviso</option>
-                      <option value="danger">🚨 Urgente</option>
+                      <option value="info">Info</option>
+                      <option value="success">Sucesso</option>
+                      <option value="warning">Aviso</option>
+                      <option value="danger">Urgente</option>
                     </select>
                     <input type="text" value={notifMsg} onChange={e => setNotifMsg(e.target.value)}
                       placeholder="Ex: Boa tarde, teve atualização do whats app..."
@@ -1909,7 +1909,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
           <div className="nodri-card w-full max-w-md p-6 animate-slide-up">
             <div className="flex items-center justify-between mb-5">
               <div className="font-syne font-bold text-[14px] flex items-center gap-2">
-                <span>🛍️</span> Dados da Compra
+                <ShoppingBag size={16} /> Dados da Compra
               </div>
               <button onClick={() => setSelectedCompra(null)} className="text-nodri-t3 hover:text-nodri-t1"><X size={16} /></button>
             </div>
@@ -1948,7 +1948,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                   toast.success('Dados copiados!')
                 }}
                 className="flex-1 flex items-center justify-center gap-1.5 py-2.5 border border-nodri-border text-nodri-t2 rounded-lg text-[12px] hover:text-nodri-t1 hover:border-nodri-cyan/30 transition-all">
-                📋 Copiar Dados
+                <ClipboardList size={13} className="inline mr-1" /> Copiar Dados
               </button>
               <button
                 onClick={() => {
@@ -2050,10 +2050,10 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
               <button onClick={() => setEditSalao(null)} className="text-nodri-t3 hover:text-nodri-t1"><X size={16} /></button>
             </div>
             <div className="flex border-b border-nodri-border">
-              {[{ id: 'dados', label: '📋 Dados' }, { id: 'acesso', label: '🔑 Acesso' }, { id: 'perigo', label: '⚠️ Perigo' }].map(t => (
+              {[{ id: 'dados', label: 'Dados', icon: <ClipboardList size={12} className="inline mr-1" /> }, { id: 'acesso', label: 'Acesso', icon: <Key size={12} className="inline mr-1" /> }, { id: 'perigo', label: 'Perigo', icon: <AlertCircle size={12} className="inline mr-1" /> }].map(t => (
                 <button key={t.id} onClick={() => setEditTab(t.id as any)}
                   className={`flex-1 py-2.5 text-[11.5px] font-medium border-b-2 transition-all ${editTab === t.id ? 'border-nodri-cyan text-nodri-cyan' : 'border-transparent text-nodri-t2 hover:text-nodri-t1'}`}>
-                  {t.label}
+                  {t.icon}{t.label}
                 </button>
               ))}
             </div>
@@ -2080,17 +2080,17 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                     </div>
                     <div><label className="nodri-label block mb-1">Status</label>
                       <select className="nodri-input" value={editForm.status} onChange={e => setEditForm(p => ({...p, status: e.target.value}))}>
-                        <option value="ativo">✅ Ativo</option>
-                        <option value="bloqueado">🔴 Bloqueado</option>
-                        <option value="vencido">⚠️ Vencido</option>
-                        <option value="trial">🔵 Trial</option>
+                        <option value="ativo">Ativo</option>
+                        <option value="bloqueado">Bloqueado</option>
+                        <option value="vencido">Vencido</option>
+                        <option value="trial">Trial</option>
                       </select>
                     </div>
                     <div><label className="nodri-label block mb-1">Observações</label><textarea className="nodri-input resize-none h-16" value={editForm.observacoes} onChange={e => setEditForm(p => ({...p, observacoes: e.target.value}))} /></div>
                     {/* Toggle IA */}
                     <div className="flex items-center justify-between p-3 bg-nodri-surface rounded-xl border border-nodri-border">
                       <div>
-                        <div className="text-[12px] font-semibold text-nodri-t1">🤖 IA NODRI</div>
+                        <div className="text-[12px] font-semibold text-nodri-t1 flex items-center gap-1"><Bot size={12} /> IA NODRI</div>
                         <div className="text-[10px] text-nodri-t3">Liberar acesso à IA para este salão</div>
                       </div>
                       <button type="button" onClick={() => toggleIA(editSalao)}
@@ -2135,14 +2135,14 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                       <p className="text-[11px] text-nodri-t2 mb-3">{editSalao.status === 'bloqueado' ? 'O salão está bloqueado. Clique para reativar o acesso.' : 'Bloquear impede o cliente de acessar o sistema. Pode ser desfeito.'}</p>
                       <button type="button" onClick={() => toggleBloqueio(editSalao)}
                         className={`px-4 py-2 rounded-lg text-[11.5px] font-bold transition-all ${editSalao.status === 'bloqueado' ? 'bg-nodri-green text-black hover:brightness-110' : 'border border-nodri-amber text-nodri-amber hover:bg-nodri-amber/10'}`}>
-                        {editSalao.status === 'bloqueado' ? '✅ Desbloquear Salão' : '🔒 Bloquear Salão'}
+                        {editSalao.status === 'bloqueado' ? <><CheckCircle size={12} className="inline mr-1" /> Desbloquear Salão</> : <><Lock size={12} className="inline mr-1" /> Bloquear Salão</>}
                       </button>
                     </div>
                     <div className="nodri-card p-4 border-nodri-red/30 bg-nodri-red/3">
                       <div className="font-syne font-bold text-[12px] mb-1 flex items-center gap-2 text-nodri-red"><Trash2 size={13} /> Excluir Salão Permanentemente</div>
                       <p className="text-[11px] text-nodri-t2 mb-3">Esta ação é irreversível. Todos os dados do salão serão apagados.</p>
                       {!showDeleteConfirm ? (
-                        <button type="button" onClick={() => setShowDeleteConfirm(true)} className="px-4 py-2 rounded-lg text-[11.5px] font-bold border border-nodri-red text-nodri-red hover:bg-nodri-red/10 transition-all">🗑️ Excluir este salão</button>
+                        <button type="button" onClick={() => setShowDeleteConfirm(true)} className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[11.5px] font-bold border border-nodri-red text-nodri-red hover:bg-nodri-red/10 transition-all"><Trash2 size={12} /> Excluir este salão</button>
                       ) : (
                         <div className="space-y-2">
                           <p className="text-[11px] text-nodri-red">Digite o nome do salão para confirmar: <strong>{editSalao.nome}</strong></p>
@@ -2224,12 +2224,12 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                 return (
                   <div key={m.id} onClick={() => toggleModulo(m.id)}
                     className={`p-2 rounded-lg border text-center cursor-pointer transition-all ${on ? 'border-nodri-cyan bg-nodri-cyan/10' : 'border-nodri-border bg-nodri-surface hover:border-nodri-cyan/30'}`}>
-                    <div className="text-base mb-1">⚙️</div>
+                    <div className="flex justify-center mb-1"><Settings size={14} className="text-nodri-t3" /></div>
                     <div className="text-[8.5px] font-bold uppercase leading-tight text-nodri-t1 mb-1.5">{m.nome.split(' ').slice(0,2).join(' ')}</div>
                     <div className={`w-6 h-3 rounded-full mx-auto relative transition-colors ${on ? 'bg-nodri-cyan' : 'bg-nodri-border'}`}>
                       <div className={`absolute top-0.5 w-2 h-2 bg-white rounded-full transition-all ${on ? 'left-3.5' : 'left-0.5'}`} />
                     </div>
-                    {on && <div className="text-[7px] text-nodri-cyan font-semibold mt-1">✓</div>}
+                    {on && <div className="flex justify-center mt-1"><Check size={8} className="text-nodri-cyan" /></div>}
                   </div>
                 )
               })}
