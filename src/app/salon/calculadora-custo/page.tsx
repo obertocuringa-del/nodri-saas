@@ -540,6 +540,9 @@ export default function CalculadoraCusto() {
 
   // ── Calcular Serviços ────────────────────────────────────────────────────
   const [servicos,    setServicos]    = useState<Servico[]>([{id:1,nome:'',preco:'',rateioP:'50',produto:'',imposto:'5'}])
+  const [buscaServico, setBuscaServico] = useState('')
+  const [buscaProduto, setBuscaProduto] = useState('')
+  const [ordenarPorLucro, setOrdenarPorLucro] = useState(true)
   const [proxServ,    setProxServ]    = useState(2)
   const [taxaCartao,  setTaxaCartao]  = useState('5')
   const [abatProd,    setAbatProd]    = useState('100')
@@ -1888,6 +1891,23 @@ Use números reais. Seja direto.`
               </div>
             </div>
 
+            {/* Barra de busca e ordenação */}
+            <div className="flex items-center gap-3 p-3 rounded-xl" style={{background:'#111827',border:'1px solid #1e293b'}}>
+              <div className="flex-1 relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#64748b'}}>🔍</span>
+                <input value={buscaServico} onChange={e=>setBuscaServico(e.target.value)}
+                  placeholder="Buscar serviço pelo nome..."
+                  className="w-full pl-8 pr-3 py-2 rounded-lg text-xs text-white focus:outline-none"
+                  style={{background:'#0a0f1a',border:'1px solid #334155'}}/>
+              </div>
+              <button onClick={()=>setOrdenarPorLucro(v=>!v)}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all"
+                style={{background:ordenarPorLucro?'#10b98120':'#1e293b',color:ordenarPorLucro?'#10b981':'#64748b',border:`1px solid ${ordenarPorLucro?'#10b981':'#334155'}`}}>
+                {ordenarPorLucro ? '📈 Mais lucrativo primeiro' : '🔤 Ordem original'}
+              </button>
+              {buscaServico && <button onClick={()=>setBuscaServico('')} className="text-xs px-2 py-1 rounded" style={{color:'#64748b'}}>✕ limpar</button>}
+            </div>
+
             {/* Tabela de serviços */}
             <div className="rounded-2xl border overflow-hidden" style={{background:'#111827',borderColor:'#1e293b'}}>
               <div className="grid gap-2 px-5 py-3 text-[10px] font-bold uppercase tracking-wider border-b"
@@ -1899,7 +1919,17 @@ Use números reais. Seja direto.`
                 <div className="flex items-center gap-1">Imposto (%)<InfoBtn id="impostoServico"/></div>
                 <div></div>
               </div>
-              {servicos.map(s=>{
+              {[...servicos]
+                .filter(s=>!buscaServico||s.nome.toLowerCase().includes(buscaServico.toLowerCase()))
+                .sort((a,b)=>{
+                  if(!ordenarPorLucro) return 0
+                  const ca=calcServ(a), cb=calcServ(b)
+                  if(!ca&&!cb) return 0
+                  if(!ca) return 1
+                  if(!cb) return -1
+                  return cb.resultPct-ca.resultPct
+                })
+                .map(s=>{
                 const c=calcServ(s)
                 return(
                   <div key={s.id}>
@@ -1988,7 +2018,33 @@ Use números reais. Seja direto.`
             <div className="rounded-xl p-3 text-xs" style={{background:'#7c5cfc15',border:'1px solid #7c5cfc30',color:'#a78bfa'}}>
               ✨ Calcule o custo exato de cada insumo por serviço. Use o total em <strong>💇 Calcular Serviços</strong> → campo "Produto (R$)".
             </div>
-            {servicosProd.map(sp=>{
+
+            {/* Busca + ordenação */}
+            <div className="flex items-center gap-3 p-3 rounded-xl" style={{background:'#111827',border:'1px solid #1e293b'}}>
+              <div className="flex-1 relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#64748b'}}>🔍</span>
+                <input value={buscaProduto} onChange={e=>setBuscaProduto(e.target.value)}
+                  placeholder="Buscar serviço pelo nome..."
+                  className="w-full pl-8 pr-3 py-2 rounded-lg text-xs text-white focus:outline-none"
+                  style={{background:'#0a0f1a',border:'1px solid #334155'}}/>
+              </div>
+              <button onClick={()=>setOrdenarPorLucro(v=>!v)}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all"
+                style={{background:ordenarPorLucro?'#10b98120':'#1e293b',color:ordenarPorLucro?'#10b981':'#64748b',border:`1px solid ${ordenarPorLucro?'#10b981':'#334155'}`}}>
+                {ordenarPorLucro ? '📈 Menor custo primeiro' : '🔤 Ordem original'}
+              </button>
+              {buscaProduto && <button onClick={()=>setBuscaProduto('')} className="text-xs px-2 py-1 rounded" style={{color:'#64748b'}}>✕ limpar</button>}
+            </div>
+
+            {[...servicosProd]
+              .filter(sp=>!buscaProduto||sp.nomeServico.toLowerCase().includes(buscaProduto.toLowerCase()))
+              .sort((a,b)=>{
+                if(!ordenarPorLucro) return 0
+                const totA=a.ingredientes.reduce((s,i)=>s+custoIngred(i),0)
+                const totB=b.ingredientes.reduce((s,i)=>s+custoIngred(i),0)
+                return totA-totB // menor custo primeiro = mais lucrativo
+              })
+              .map(sp=>{
               const total=sp.ingredientes.reduce((s,i)=>s+custoIngred(i),0)
               return(
                 <div key={sp.id} className="rounded-2xl border overflow-hidden" style={{background:'#111827',borderColor:'#1e293b'}}>
