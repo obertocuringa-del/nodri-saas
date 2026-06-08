@@ -471,7 +471,7 @@ export default function CalculadoraCusto() {
   const [carregando, setCarregando] = useState(false)
 
   // Aba ativa
-  const [aba, setAba] = useState<'rd'|'pe'|'servicos'|'catservico'|'produto'|'catproduto'|'cadeira'|'metro'|'graficos'>('rd')
+  const [aba, setAba] = useState<'rd'|'pe'|'servicos'|'produto'|'catproduto'|'cadeira'|'metro'|'graficos'>('rd')
 
   // ── Receitas e Despesas ──────────────────────────────────────────────────
   const [fat,      setFat]      = useState('')
@@ -524,6 +524,8 @@ export default function CalculadoraCusto() {
   // Accordion aberto
   const [acordeaoProd, setAcordeaoProd] = useState<string|null>(null)
   const [acordeaoServ, setAcordeaoServ] = useState<string|null>(null)
+  // Autocomplete: chave = "sId-iIdx", valor = texto digitado para sugestões
+  const [autocompleteKey, setAutocompleteKey] = useState<string|null>(null)
   // Atualizar (feedback visual)
   const [atualizando, setAtualizando] = useState(false)
   const [vlrProdEstoque,setVlrProdEstoque]= useState('')
@@ -971,7 +973,6 @@ Use números reais. Seja direto.`
     {id:'rd',        label:'Receitas e Despesas', icon:'📊'},
     {id:'pe',        label:'Ponto de Equilíbrio', icon:'⚖️'},
     {id:'servicos',  label:'Calcular Serviços',   icon:'💇'},
-    {id:'catservico',label:'Catálogo Serviços',   icon:'📋'},
     {id:'produto',   label:'Custo de Produto',    icon:'🧴'},
     {id:'catproduto',label:'Catálogo Produtos',   icon:'📦'},
     {id:'cadeira',   label:'Aluguel de Cadeira',  icon:'💺'},
@@ -1098,7 +1099,7 @@ Use números reais. Seja direto.`
         </div>
 
         {/* Abas */}
-        <div className="grid grid-cols-9 gap-1 mb-6 p-1 rounded-xl" style={{background:'#111827'}}>
+        <div className="grid grid-cols-8 gap-1 mb-6 p-1 rounded-xl" style={{background:'#111827'}}>
           {ABAS.map(a=>(
             <button key={a.id} onClick={()=>setAba(a.id as any)}
               className="py-2 px-1 rounded-lg text-[10px] font-bold transition-all text-center"
@@ -2013,8 +2014,57 @@ Use números reais. Seja direto.`
                     return(
                       <div key={idx} className="grid gap-2 px-5 py-2 items-center hover:bg-white/2"
                         style={{borderBottom:'1px solid #1e293b10',gridTemplateColumns:'2fr 0.7fr 1fr 1fr 1fr 1fr 20px'}}>
-                        <input value={ing.nome} onChange={e=>atualizarIngrediente(sp.id,idx,'nome',e.target.value)} placeholder="Ex: Tinta Color"
-                          className="px-3 py-1.5 rounded-lg text-xs text-white focus:outline-none" style={{background:'#0a0f1a',border:'1px solid #1e293b'}}/>
+                        {/* Campo com autocomplete do catálogo */}
+                        <div className="relative">
+                          <input value={ing.nome}
+                            onChange={e=>{
+                              atualizarIngrediente(sp.id,idx,'nome',e.target.value)
+                              setAutocompleteKey(`${sp.id}-${idx}`)
+                            }}
+                            onFocus={()=>setAutocompleteKey(`${sp.id}-${idx}`)}
+                            onBlur={()=>setTimeout(()=>setAutocompleteKey(null),200)}
+                            placeholder="Ex: Tinta Color (buscar catálogo)"
+                            className="w-full px-3 py-1.5 rounded-lg text-xs text-white focus:outline-none"
+                            style={{background:'#0a0f1a',border:`1px solid ${autocompleteKey===`${sp.id}-${idx}`?'#7c5cfc':'#1e293b'}`}}/>
+                          {/* Dropdown sugestões */}
+                          {autocompleteKey===`${sp.id}-${idx}` && produtosCatalogo.length > 0 && (
+                            <div className="absolute top-full left-0 right-0 z-50 rounded-xl border overflow-hidden shadow-2xl mt-1"
+                              style={{background:'#111827',borderColor:'#334155',maxHeight:'200px',overflowY:'auto'}}>
+                              {/* Botão ver todos */}
+                              <div className="px-3 py-1.5 border-b text-[10px] font-bold" style={{borderColor:'#1e293b',color:'#64748b'}}>
+                                📦 {produtosCatalogo.filter(p=>!ing.nome||p.nome.toLowerCase().includes(ing.nome.toLowerCase())).length} produto(s) — clique para selecionar
+                              </div>
+                              {produtosCatalogo
+                                .filter(p=>!ing.nome||p.nome.toLowerCase().includes(ing.nome.toLowerCase()))
+                                .map(p=>(
+                                <button key={p.id}
+                                  onMouseDown={()=>{
+                                    // Ao selecionar, preenche todos os campos automaticamente
+                                    setServicoProd(prev=>prev.map(s=>s.id===sp.id?{...s,ingredientes:s.ingredientes.map((i,iIdx)=>
+                                      iIdx===idx?{...i,nome:p.nome,unidade:p.unidade,qtdEmb:String(p.qtd_embalagem),preco:String(p.preco)}:i
+                                    )}:s))
+                                    setAutocompleteKey(null)
+                                  }}
+                                  className="w-full text-left px-3 py-2 hover:bg-white/5 flex items-center justify-between"
+                                  style={{borderBottom:'1px solid #1e293b10'}}>
+                                  <div>
+                                    <span className="text-xs font-bold text-white">{p.nome}</span>
+                                    {p.marca&&<span className="text-[10px] ml-2 px-1.5 py-0.5 rounded" style={{background:'#f59e0b20',color:'#f59e0b'}}>{p.marca}</span>}
+                                  </div>
+                                  <span className="text-[10px]" style={{color:'#10b981'}}>R$ {p.preco} / {p.qtd_embalagem}{p.unidade}</span>
+                                </button>
+                              ))}
+                              {produtosCatalogo.filter(p=>!ing.nome||p.nome.toLowerCase().includes(ing.nome.toLowerCase())).length===0&&(
+                                <div className="px-3 py-3 text-center">
+                                  <p className="text-xs" style={{color:'#475569'}}>Nenhum produto encontrado</p>
+                                  <button onMouseDown={()=>setAba('catproduto')} className="text-xs mt-1 font-bold" style={{color:'#7c5cfc'}}>
+                                    + Cadastrar no Catálogo
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
                         <select value={ing.unidade} onChange={e=>atualizarIngrediente(sp.id,idx,'unidade',e.target.value)}
                           className="px-2 py-1.5 rounded-lg text-xs text-white focus:outline-none" style={{background:'#0a0f1a',border:'1px solid #1e293b'}}>
                           {['ml','g','und','L','kg'].map(u=><option key={u} value={u}>{u}</option>)}
@@ -2398,8 +2448,8 @@ Use números reais. Seja direto.`
           </div>
         )}
 
-        {/* ════ ABA CATÁLOGO DE SERVIÇOS ════ */}
-        {aba==='catservico' && (
+        {/* ════ ABA CATÁLOGO DE SERVIÇOS (removida) ════ */}
+        {false && (
           <div className="space-y-4">
             {/* Formulário cadastro */}
             <div className="rounded-2xl p-5 border" style={{background:'#111827',borderColor:'#7c5cfc40'}}>
