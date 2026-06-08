@@ -418,6 +418,7 @@ export default function CalculadoraCusto() {
   // Campos extras
   const [extrasDespInd, setExtrasDespInd] = useState<DespesaItem[]>([])
   const [reservaEmerg,  setReservaEmerg]  = useState('')
+  const [totalReservaAcum, setTotalReservaAcum] = useState(0) // total acumulado de todos os meses
   const [vlrProdEstoque,setVlrProdEstoque]= useState('')
 
   // ── Ponto de Equilíbrio ──────────────────────────────────────────────────
@@ -515,11 +516,21 @@ export default function CalculadoraCusto() {
     if (d.servicosProd) setServicoProd(d.servicosProd)
   }
 
-  // Carrega lista de meses com dados
+  // Carrega lista de meses com dados e soma reserva acumulada
   useEffect(() => {
     fetch('/api/salon/calculadora', { credentials: 'include' })
       .then(r => r.json())
-      .then(d => { if (d.historico) setMesesComDados(d.historico.map((h:any)=>({ano:h.ano,mes:h.mes}))) })
+      .then(d => {
+        if (d.historico) {
+          setMesesComDados(d.historico.map((h:any)=>({ano:h.ano,mes:h.mes})))
+          // Soma o valor de reserva de todos os meses salvos
+          const totalAcum = d.historico.reduce((soma:number, h:any) => {
+            const v = parseFloat(h.dados?.reservaEmerg || '0') || 0
+            return soma + v
+          }, 0)
+          setTotalReservaAcum(totalAcum)
+        }
+      })
       .catch(() => {})
   }, [])
 
@@ -549,6 +560,15 @@ export default function CalculadoraCusto() {
           const existe = prev.some(m=>m.ano===anoSel&&m.mes===mesSel)
           return existe ? prev : [...prev, {ano:anoSel,mes:mesSel}]
         })
+        // Recalcula total acumulado de reserva após salvar
+        fetch('/api/salon/calculadora', { credentials: 'include' })
+          .then(r => r.json())
+          .then(d => {
+            if (d.historico) {
+              const total = d.historico.reduce((s:number,h:any) => s + (parseFloat(h.dados?.reservaEmerg||'0')||0), 0)
+              setTotalReservaAcum(total)
+            }
+          }).catch(()=>{})
         setTimeout(() => setSavedMsg(''), 3000)
       }
     } finally { setSalvando(false) }
@@ -1194,7 +1214,7 @@ Use números reais. Seja direto.`
                 {/* Extras */}
                 <div className="grid grid-cols-2 gap-3">
                   {[
-                    {l:'🚨 Reserva de Emergência',v:reservaEmerg,set:setReservaEmerg,dica:'Valor atual em reserva de emergência',info:'reservaEmerg'},
+                    {l:'🚨 Quanto guardei de reserva ESTE MÊS',v:reservaEmerg,set:setReservaEmerg,dica:'O que você separou/guardou especificamente este mês',info:'reservaEmerg'},
                     {l:'📦 Valor de Produtos em Estoque',v:vlrProdEstoque,set:setVlrProdEstoque,dica:'Valor total do estoque atual',info:'vlrProdEstoque'},
                   ].map((f:any)=>(
                     <div key={f.l} className="rounded-xl p-4 border" style={{background:'#111827',borderColor:'#1e293b'}}>
@@ -1315,12 +1335,26 @@ Use números reais. Seja direto.`
                         </p>
                       </div>
                       <div className="rounded-xl p-4" style={{background:'#0a0f1a',border:'1px solid #1e293b'}}>
-                        <p className="text-xs mb-1" style={{color:'#64748b'}}>🏦 Reserva de Emergência Ideal</p>
-                        <p className="text-xl font-bold" style={{color:'#06b6d4'}}>{fmtR(capGiro)}</p>
-                        <p className="text-[10px] mt-1" style={{color:'#475569'}}>3 meses de custos guardados para emergências.</p>
-                        <p className="text-[10px] mt-1 font-bold" style={{color:n(reservaEmerg)>=capGiro&&capGiro>0?'#10b981':'#f59e0b'}}>
-                          {capGiro===0?'—':n(reservaEmerg)>=capGiro?'✅ Reserva adequada':`Você tem ${fmtR(n(reservaEmerg))} — falta ${fmtR(capGiro-n(reservaEmerg))}`}
-                        </p>
+                        <p className="text-xs mb-1" style={{color:'#64748b'}}>🏦 Reserva de Emergência</p>
+                        <div className="flex items-end gap-2 mt-1">
+                          <p className="text-xl font-bold" style={{color:'#06b6d4'}}>{fmtR(totalReservaAcum)}</p>
+                          <p className="text-[10px] mb-0.5" style={{color:'#475569'}}>acumulado</p>
+                        </div>
+                        <p className="text-[10px] mt-1" style={{color:'#475569'}}>Meta ideal: {fmtR(capGiro)} (3 meses de custos)</p>
+                        {/* Barra de progresso */}
+                        {capGiro > 0 && (
+                          <div className="mt-2">
+                            <div className="w-full rounded-full h-2" style={{background:'#1e293b'}}>
+                              <div className="h-2 rounded-full transition-all" style={{width:`${Math.min((totalReservaAcum/capGiro)*100,100)}%`,background:'#06b6d4'}}/>
+                            </div>
+                            <p className="text-[10px] mt-1 font-bold" style={{color:totalReservaAcum>=capGiro?'#10b981':'#06b6d4'}}>
+                              {totalReservaAcum>=capGiro
+                                ? '✅ Reserva completa!'
+                                : `${((totalReservaAcum/capGiro)*100).toFixed(0)}% da meta — falta ${fmtR(capGiro-totalReservaAcum)}`}
+                            </p>
+                          </div>
+                        )}
+                        {n(reservaEmerg)>0&&<p className="text-[10px] mt-1" style={{color:'#334155'}}>Este mês você guardou: {fmtR(n(reservaEmerg))}</p>}
                       </div>
                     </div>
                   </div>
@@ -1364,7 +1398,20 @@ Use números reais. Seja direto.`
                         {fatN < pe && pe > 0 && resultOp >= 0 && <div className="flex gap-2 p-3 rounded-xl" style={{background:'#f59e0b15',border:'1px solid #f59e0b30'}}><span>⚠️</span><p className="text-xs" style={{color:'#fbbf24'}}>Você está abaixo do ponto de equilíbrio. Tente aumentar o faturamento em {fmtR(pe-fatN)} ou reduzir os custos fixos.</p></div>}
                         {pe > 0 && fatN >= pe && fatN < peLucro && <div className="flex gap-2 p-3 rounded-xl" style={{background:'#7c5cfc15',border:'1px solid #7c5cfc30'}}><span>📈</span><p className="text-xs" style={{color:'#a78bfa'}}>Você cobre os custos, mas ainda não atingiu sua meta de lucro. Falta {fmtR(peLucro-fatN)} de faturamento. Adicione mais clientes ou suba o ticket médio.</p></div>}
                         {peLucro > 0 && fatN >= peLucro && <div className="flex gap-2 p-3 rounded-xl" style={{background:'#10b98115',border:'1px solid #10b98130'}}><span>🏆</span><p className="text-xs" style={{color:'#6ee7b7'}}>Excelente! Você superou a meta de lucro. Agora pense em guardar parte do lucro na reserva de emergência e considere reinvestir no salão.</p></div>}
-                        {n(reservaEmerg) < capGiro && capGiro > 0 && <div className="flex gap-2 p-3 rounded-xl" style={{background:'#06b6d415',border:'1px solid #06b6d430'}}><span>💰</span><p className="text-xs" style={{color:'#67e8f9'}}>Sua reserva de emergência está abaixo do ideal. Tente guardar pelo menos {fmtR(capGiro/12)}/mês até atingir {fmtR(capGiro)}.</p></div>}
+                        {totalReservaAcum < capGiro && capGiro > 0 && (
+                          <div className="flex gap-2 p-3 rounded-xl" style={{background:'#06b6d415',border:'1px solid #06b6d430'}}>
+                            <span>💰</span>
+                            <div>
+                              <p className="text-xs font-bold mb-1" style={{color:'#67e8f9'}}>Reserva de Emergência: {fmtR(totalReservaAcum)} de {fmtR(capGiro)}</p>
+                              <p className="text-xs" style={{color:'#67e8f9'}}>
+                                {totalReservaAcum === 0
+                                  ? `Você ainda não tem reserva. Comece guardando pelo menos ${fmtR(Math.ceil(capGiro/12))}/mês. Use o campo "Quanto guardei de reserva este mês" abaixo.`
+                                  : `Você já tem ${fmtR(totalReservaAcum)} acumulado — ótimo! Falta ${fmtR(capGiro-totalReservaAcum)}. Continue guardando ${fmtR(Math.ceil((capGiro-totalReservaAcum)/12))}/mês.`}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                        {totalReservaAcum >= capGiro && capGiro > 0 && <div className="flex gap-2 p-3 rounded-xl" style={{background:'#10b98115',border:'1px solid #10b98130'}}><span>🏦</span><p className="text-xs" style={{color:'#6ee7b7'}}>✅ Sua reserva de emergência está completa! Você tem {fmtR(totalReservaAcum)} guardados — equivalente a {((totalReservaAcum/capGiro)*3).toFixed(1)} meses de custos.</p></div>}
                         <div className="flex gap-2 p-3 rounded-xl" style={{background:'#7c5cfc15',border:'1px solid #7c5cfc30'}}><span>📅</span><p className="text-xs" style={{color:'#a78bfa'}}>Salve os dados deste mês clicando em <strong>"Salvar {MESES_NOMES[mesSel]}"</strong> no topo para comparar com os próximos meses.</p></div>
                       </div>
                     </div>
