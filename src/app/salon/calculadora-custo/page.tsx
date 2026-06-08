@@ -651,11 +651,13 @@ export default function CalculadoraCusto() {
     const taxC  = n(taxaCartao) / 100
     const abat  = n(abatProd) / 100
 
-    // Fórmula exata da planilha DV:
-    // Rateio R$ = (Preço × Rateio%) - IF(taxaAntesRateio, Preço×Rateio%×Taxa, 0) - IF(prodAntesRateio, Produto×Abatimento, 0)
+    // Fórmula correta planilha DV (verificada na célula E14 — PIGMENTAÇÃO):
+    // Rateio R$ = (Preço × Rateio%) - (Preço × Taxa_Cartão) - (Produto × Abatimento%)
+    // O valor TOTAL do cartão é descontado do rateio (não só a fração proporcional ao rateio%)
+    // Planilha usa =C14*G14 (preço×taxa), não =C14*D14*G14 (preço×rateio%×taxa)
     const baseRateio = preco * rP
-    const abatTaxa   = taxaAntesRateio ? baseRateio * taxC : 0
-    const abatProdR  = prodAntesRateio  ? prod * abat      : 0
+    const abatTaxa   = taxaAntesRateio ? preco * taxC : 0
+    const abatProdR  = prodAntesRateio  ? prod * abat : 0
     const rateioR    = baseRateio - abatTaxa - abatProdR
 
     const cartaoR    = preco * taxC
@@ -1659,10 +1661,10 @@ Use números reais. Seja direto.`
 
             <div className="rounded-xl p-4 text-xs space-y-1" style={{background:'#111827',border:'1px solid #1e293b',color:'#64748b'}}>
               <p className="font-bold mb-1" style={{color:'#94a3b8'}}>💡 Fórmula exata (Planilha Dra. Dani Venâncio):</p>
-              <p>• <strong style={{color:'#e2e8f0'}}>Rateio R$</strong> = (Preço × Rateio%) − (Preço × Rateio% × Taxa_Cartão%) − (Produto × Abatimento%)</p>
+              <p>• <strong style={{color:'#e2e8f0'}}>Rateio R$</strong> = (Preço × Rateio%) − (Preço × Taxa_Cartão%) − (Produto × Abatimento%)</p>
               <p>• <strong style={{color:'#e2e8f0'}}>Imposto</strong>: Salão Parceiro → (Preço − Rateio) × Imp%. Normal → Preço × Imp%</p>
               <p>• <strong style={{color:'#e2e8f0'}}>Resultado</strong> = Preço − Total Despesas − Custo Operacional</p>
-              <p style={{color:'#a78bfa'}}>Exemplo: Preço R$100 | Rateio 50% | Produto R$10 | Cartão 5% | Imposto 5% → Rateio R$37,50 | Resultado R$14,38</p>
+              <p style={{color:'#a78bfa'}}>Verificado com PIGMENTAÇÃO da planilha: Preço R$280 | Rateio 44% | Produto R$70 | Cartão 5% | Imposto 5% → Rateio R$39,20 | Total R$135,24 | Resultado R$60,76</p>
             </div>
           </div>
         )}
