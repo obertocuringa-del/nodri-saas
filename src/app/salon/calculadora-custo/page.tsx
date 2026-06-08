@@ -419,6 +419,8 @@ export default function CalculadoraCusto() {
   const [extrasDespInd, setExtrasDespInd] = useState<DespesaItem[]>([])
   const [reservaEmerg,  setReservaEmerg]  = useState('')
   const [totalReservaAcum, setTotalReservaAcum] = useState(0) // total acumulado de todos os meses
+  const [mediaCustoOp, setMediaCustoOp] = useState(0) // média do custo operacional % de todos os meses
+  const [qtdMesesMedia, setQtdMesesMedia] = useState(0) // quantos meses foram usados na média
   const [vlrProdEstoque,setVlrProdEstoque]= useState('')
 
   // ── Ponto de Equilíbrio ──────────────────────────────────────────────────
@@ -516,19 +518,43 @@ export default function CalculadoraCusto() {
     if (d.servicosProd) setServicoProd(d.servicosProd)
   }
 
-  // Carrega lista de meses com dados e soma reserva acumulada
+  // Carrega lista de meses com dados, soma reserva e calcula média do custo operacional
   useEffect(() => {
     fetch('/api/salon/calculadora', { credentials: 'include' })
       .then(r => r.json())
       .then(d => {
         if (d.historico) {
           setMesesComDados(d.historico.map((h:any)=>({ano:h.ano,mes:h.mes})))
-          // Soma o valor de reserva de todos os meses salvos
+
+          // Soma reserva acumulada
           const totalAcum = d.historico.reduce((soma:number, h:any) => {
-            const v = parseFloat(h.dados?.reservaEmerg || '0') || 0
-            return soma + v
+            return soma + (parseFloat(h.dados?.reservaEmerg || '0') || 0)
           }, 0)
           setTotalReservaAcum(totalAcum)
+
+          // Calcula média do Custo Operacional % de todos os meses com faturamento
+          const mesesValidos = d.historico.filter((h:any) => {
+            const fat = parseFloat(h.dados?.fat || '0') || 0
+            return fat > 0
+          })
+
+          if (mesesValidos.length > 0) {
+            const somaRatios = mesesValidos.reduce((soma:number, h:any) => {
+              const dados = h.dados || {}
+              const fatN = parseFloat(dados.fat || '0') || 0
+              // Recalcula custoOp do mês: indiretas + provisão + depreciação
+              const totInd = (dados.despInd || []).reduce((s:number, d:any) => s + (parseFloat(d.valor||'0')||0), 0)
+                           + (dados.extrasDespInd || []).reduce((s:number, d:any) => s + (parseFloat(d.valor||'0')||0), 0)
+              const totProv = (parseFloat(dados.sal13||'0')||0) + (parseFloat(dados.ferias||'0')||0) + (parseFloat(dados.fgtsR||'0')||0)
+              const dep = (parseFloat(dados.totalDeprec||'0')||0) / 84
+              const custoOpMes = totInd + totProv + dep
+              return soma + (fatN > 0 ? custoOpMes / fatN : 0)
+            }, 0)
+
+            const media = somaRatios / mesesValidos.length
+            setMediaCustoOp(media)
+            setQtdMesesMedia(mesesValidos.length)
+          }
         }
       })
       .catch(() => {})
@@ -560,13 +586,29 @@ export default function CalculadoraCusto() {
           const existe = prev.some(m=>m.ano===anoSel&&m.mes===mesSel)
           return existe ? prev : [...prev, {ano:anoSel,mes:mesSel}]
         })
-        // Recalcula total acumulado de reserva após salvar
+        // Recalcula totais após salvar
         fetch('/api/salon/calculadora', { credentials: 'include' })
           .then(r => r.json())
           .then(d => {
             if (d.historico) {
+              // Reserva acumulada
               const total = d.historico.reduce((s:number,h:any) => s + (parseFloat(h.dados?.reservaEmerg||'0')||0), 0)
               setTotalReservaAcum(total)
+              // Média custo operacional
+              const validos = d.historico.filter((h:any) => (parseFloat(h.dados?.fat||'0')||0) > 0)
+              if (validos.length > 0) {
+                const soma = validos.reduce((s:number,h:any) => {
+                  const dados = h.dados||{}
+                  const f = parseFloat(dados.fat||'0')||0
+                  const ind = (dados.despInd||[]).reduce((x:number,di:any)=>x+(parseFloat(di.valor||'0')||0),0)
+                           + (dados.extrasDespInd||[]).reduce((x:number,di:any)=>x+(parseFloat(di.valor||'0')||0),0)
+                  const prov = (parseFloat(dados.sal13||'0')||0)+(parseFloat(dados.ferias||'0')||0)+(parseFloat(dados.fgtsR||'0')||0)
+                  const dep = (parseFloat(dados.totalDeprec||'0')||0)/84
+                  return s + (f>0?(ind+prov+dep)/f:0)
+                }, 0)
+                setMediaCustoOp(soma/validos.length)
+                setQtdMesesMedia(validos.length)
+              }
             }
           }).catch(()=>{})
         setTimeout(() => setSavedMsg(''), 3000)
@@ -642,9 +684,10 @@ export default function CalculadoraCusto() {
   // ── Calcular Serviços ────────────────────────────────────────────────────
   // Prioridade:
   // 1. Valor digitado manualmente no campo
-  // 2. Valor real calculado da aba RD (seus lançamentos reais)
-  // 3. Custo Indireto Desejado (30% padrão) — quando não há lançamentos
-  const custOpServN = n(custOpServ)/100 || (fatN > 0 && custoOp > 0 ? custoOp/fatN : n(custIndD)/100 || 0.30)
+  // 2. Média histórica de todos os meses salvos (mais estável para precificação)
+  // 3. Valor real do mês atual da aba RD
+  // 4. Custo Indireto Desejado (30% padrão) — quando não há lançamentos
+  const custOpServN = n(custOpServ)/100 || mediaCustoOp || (fatN > 0 && custoOp > 0 ? custoOp/fatN : n(custIndD)/100 || 0.30)
 
   function calcServ(s: Servico) {
     const preco = n(s.preco)
@@ -1559,9 +1602,11 @@ Use números reais. Seja direto.`
                 <div>
                   <div className="flex items-center gap-1.5 mb-1"><label className="text-xs font-bold" style={{color:'#94a3b8'}}>Custo Operacional (%)</label><InfoBtn id="custOpServ"/></div>
                   <p className="text-[10px] mb-1" style={{color:'#475569'}}>
-                    {fatN>0&&custoOp>0
-                      ? <>Calculado dos seus lançamentos: <strong style={{color:'#10b981'}}>{(custoOp/fatN*100).toFixed(1)}%</strong></>
-                      : <>Padrão: <strong style={{color:'#a78bfa'}}>{n(custIndD)||30}%</strong> (preencha a aba RD para usar seu valor real)</>}
+                    {mediaCustoOp > 0
+                      ? <>Média de <strong style={{color:'#10b981'}}>{qtdMesesMedia} {qtdMesesMedia===1?'mês':'meses'}</strong> salvos: <strong style={{color:'#10b981'}}>{(mediaCustoOp*100).toFixed(1)}%</strong></>
+                      : fatN>0&&custoOp>0
+                        ? <>Mês atual: <strong style={{color:'#a78bfa'}}>{(custoOp/fatN*100).toFixed(1)}%</strong> (salve mais meses para calcular a média)</>
+                        : <>Padrão: <strong style={{color:'#a78bfa'}}>{n(custIndD)||30}%</strong> (preencha a aba RD para usar seu valor real)</>}
                   </p>
                   <div className="relative">
                     <input type="number" value={custOpServ}
