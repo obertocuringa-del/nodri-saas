@@ -537,7 +537,7 @@ export default function CalculadoraCusto() {
   const [simDespesa, setSimDespesa]  = useState('')
 
   // ── Calcular Serviços ────────────────────────────────────────────────────
-  const [servicos,    setServicos]    = useState<Servico[]>([{id:1,nome:'',preco:'',rateioP:'',produto:'',imposto:''}])
+  const [servicos,    setServicos]    = useState<Servico[]>([{id:1,nome:'',preco:'',rateioP:'50',produto:'',imposto:'5'}])
   const [proxServ,    setProxServ]    = useState(2)
   const [taxaCartao,  setTaxaCartao]  = useState('5')
   const [abatProd,    setAbatProd]    = useState('100')
@@ -1957,7 +1957,7 @@ Use números reais. Seja direto.`
                 )
               })}
               <div className="px-5 py-3 border-t" style={{borderColor:'#1e293b'}}>
-                <button onClick={()=>{setServicos(p=>[...p,{id:proxServ,nome:'',preco:'',rateioP:'',produto:'',imposto:''}]);setProxServ(p=>p+1)}}
+                <button onClick={()=>{setServicos(p=>[...p,{id:proxServ,nome:'',preco:'',rateioP:'50',produto:'',imposto:'5'}]);setProxServ(p=>p+1)}}
                   className="flex items-center gap-2 text-sm px-4 py-2 rounded-lg"
                   style={{background:'#7c5cfc20',color:'#7c5cfc',border:'1px dashed #7c5cfc40'}}>
                   <Plus size={14}/> Adicionar serviço
