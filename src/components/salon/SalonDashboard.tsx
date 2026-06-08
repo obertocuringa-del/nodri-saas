@@ -226,8 +226,9 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
 
   // Módulos que abrem página web em vez de lançar programa local
   const MODULO_WEB: Record<string, string> = {
-    'Academia NODRI':    '/salon/academia',
-    'Custo Operacional': '/salon/calculadora-custo',
+    'Academia NODRI':          '/salon/academia',
+    'Custo Operacional':       '/salon/calculadora-custo',
+    'CALCULADORA / FINANCEIRA': '/salon/calculadora-custo',
   }
 
   function handleAbrir(modulo: ModuloComStatus) {
