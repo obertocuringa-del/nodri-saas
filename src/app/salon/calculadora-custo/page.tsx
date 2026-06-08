@@ -2500,7 +2500,7 @@ Use números reais. Seja direto.`
                       <div className="flex items-center gap-4">
                         <span className="text-xs" style={{color:'#a78bfa'}}>Rateio: {s.rateio_pct}%</span>
                         <span className="text-xs" style={{color:'#f59e0b'}}>Imposto: {s.imposto_pct}%</span>
-                        <button onClick={e=>{e.stopPropagation();editarServico(s);setAba('catservico')}} className="text-xs px-2 py-1 rounded" style={{background:'#7c5cfc20',color:'#a78bfa'}}>✏️ Editar</button>
+                        <button onClick={e=>{e.stopPropagation();editarServico(s)}} className="text-xs px-2 py-1 rounded" style={{background:'#7c5cfc20',color:'#a78bfa'}}>✏️ Editar</button>
                         <button onClick={e=>{e.stopPropagation();excluirServico(s.id)}} className="text-xs px-2 py-1 rounded" style={{background:'#ef444420',color:'#f87171'}}>🗑️</button>
                       </div>
                     </div>
