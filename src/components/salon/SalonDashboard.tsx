@@ -449,7 +449,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               <div className="mx-5 mt-3 rounded-lg flex overflow-hidden"
                 style={{ background: 'var(--nodri-card, #111318)', border: '1px solid rgba(255,255,255,0.06)', borderLeft: `3px solid ${borderColor}` }}>
                 <div className="flex items-center gap-3 px-4 py-2.5 flex-1 min-w-0">
-                  <Bell size={14} style={{ color: iconColor, shrink: 0 }} className="shrink-0" />
+                  <Bell size={14} style={{ color: iconColor }} className="shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
                       <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: iconColor }}>Aviso do Sistema</span>
