@@ -925,15 +925,8 @@ export default function RelatoriosPage() {
                 const m = localStorage.getItem(META_KEY)
                 if (m) {
                   const md = JSON.parse(m)
-                  if (md.tipo === 'pct') {
-                    // calcula sobre o ano anterior ao período atual
-                    const anoAnt = p1Ano - 1
-                    const resumoAnoAnt = dados.resumo_mensal.filter(r => r.ano === anoAnt)
-                    const fatAnoAnt = resumoAnoAnt.reduce((s, r) => s + r.faturamento_total, 0)
-                    metaTotalProf = fatAnoAnt > 0 ? fatAnoAnt * (1 + (md.pct || 0) / 100) : (md.valor || 0)
-                  } else {
-                    metaTotalProf = md.valor || 0
-                  }
+                  // md.valor já é sempre o valor final calculado (seja fixo ou % sobre ano anterior)
+                  metaTotalProf = md.valor || 0
                 }
               } catch { }
               if (metaTotalProf === 0) metaAviso = 'Meta total não configurada. Configure na aba Metas.'
@@ -974,11 +967,8 @@ export default function RelatoriosPage() {
                 : []
               const totalRef = ppRef.reduce((s, p) => s + p.valor_a_pagar, 0)
 
-              // 5. prof_pagamentos do mês atual
-              const hoje2 = new Date()
-              const anoAtual = hoje2.getFullYear()
-              const mesAtual = hoje2.getMonth() + 1
-              const ppAtual = dados.prof_pagamentos.filter(p => p.ano === anoAtual && p.mes === mesAtual)
+              // 5. prof_pagamentos do período selecionado (p1Ano/p1Mes)
+              const ppAtual = dados.prof_pagamentos.filter(p => p.ano === p1Ano && p.mes === p1Mes)
 
               // 6. Calcula peso e meta individual para cada profissional ativo
               interface MetaProf { prof: ProfCadastrado; peso: number; meta: number; realizado: number; fonte: string; estavaRef: boolean }
