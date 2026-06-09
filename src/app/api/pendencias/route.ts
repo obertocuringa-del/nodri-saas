@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
 
     let query = supabaseAdmin
       .from('pendencias_profissionais')
-      .select('id, profissional_id, mensagem, data_limite, resolvido, resolvido_em, criado_em, profissionais(nome_completo, apelido)')
+      .select('id, profissional_id, mensagem, data_limite, resolvido, resolvido_em, criado_em')
       .eq('salao_id', salaoId)
       .order('criado_em', { ascending: false })
 
