@@ -231,7 +231,7 @@ function TabelaComp({ title, items, label1, label2 }: { title: string; items: It
 export default function RelatoriosPage() {
   const [dados, setDados] = useState<DadosBase | null>(null)
   const [profsCadastrados, setProfsCadastrados] = useState<ProfCadastrado[]>([])
-  const [aba, setAba] = useState<'geral' | 'metas' | 'profissionais' | 'feedbacks'>('geral')
+  const [aba, setAba] = useState<'geral' | 'metas' | 'profissionais' | 'feedbacks' | 'meta_prof'>('geral')
   const [loading, setLoading] = useState(false)
   const [showImport, setShowImport] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -679,7 +679,7 @@ export default function RelatoriosPage() {
 
           {/* ABAS */}
           <div style={{ padding: '12px 20px 0', display: 'flex', gap: 4, borderBottom: '1px solid #1e293b' }}>
-            {([['geral', 'Geral'], ['metas', 'Metas']] as const).map(([id, lbl]) => (
+            {([['geral', 'Geral'], ['metas', 'Metas'], ['meta_prof', 'Meta Prof.']] as const).map(([id, lbl]) => (
               <button key={id} onClick={() => setAba(id as any)}
                 style={{ padding: '8px 18px', border: 'none', borderRadius: '8px 8px 0 0', fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s', background: aba === id ? '#0a0f1a' : 'transparent', color: aba === id ? '#e2e8f0' : '#475569', borderBottom: aba === id ? '2px solid #7c5cfc' : '2px solid transparent', marginBottom: -1 }}>
                 {lbl}
@@ -913,6 +913,244 @@ export default function RelatoriosPage() {
                 )}
               </div>
             )}
+
+            {/* ════════ ABA META PROFISSIONAIS ════════ */}
+            {aba === 'meta_prof' && (() => {
+              const MESES_PT_FULL = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+
+              // 1. Carrega meta total do localStorage
+              let metaTotalProf = 0
+              let metaAviso = ''
+              try {
+                const m = localStorage.getItem(META_KEY)
+                if (m) {
+                  const md = JSON.parse(m)
+                  if (md.tipo === 'pct') {
+                    // calcula sobre o ano anterior ao período atual
+                    const anoAnt = p1Ano - 1
+                    const resumoAnoAnt = dados.resumo_mensal.filter(r => r.ano === anoAnt)
+                    const fatAnoAnt = resumoAnoAnt.reduce((s, r) => s + r.faturamento_total, 0)
+                    metaTotalProf = fatAnoAnt > 0 ? fatAnoAnt * (1 + (md.pct || 0) / 100) : (md.valor || 0)
+                  } else {
+                    metaTotalProf = md.valor || 0
+                  }
+                }
+              } catch { }
+              if (metaTotalProf === 0) metaAviso = 'Meta total não configurada. Configure na aba Metas.'
+
+              // 2. Profissionais ativos via profsCadastrados (já carregado)
+              const profsAtivos = profsCadastrados.filter(p => p.nome_completo)
+              const totalProfsAtivos = profsAtivos.length || 1
+
+              // 3. Encontra período de referência em dadosBase.periodos
+              // Precisamos de periodos com resumo_mensal e prof_pagamentos — usamos dados.resumo_mensal e dados.prof_pagamentos
+              // Agrupa prof_pagamentos por período
+              const periodosFat: { ano: number; mes: number; fat: number }[] = []
+              dados.resumo_mensal.forEach(rm => {
+                periodosFat.push({ ano: rm.ano, mes: rm.mes, fat: rm.faturamento_total })
+              })
+
+              let periodoRef: { ano: number; mes: number; fat: number } | null = null
+              let metaBatida = false
+              if (metaTotalProf > 0) {
+                // Encontra período onde fat >= meta (mais próximo ou acima)
+                const acima = periodosFat.filter(p => p.fat >= metaTotalProf)
+                if (acima.length > 0) {
+                  // O mais recente que bateu
+                  periodoRef = acima.reduce((a, b) => (a.ano * 100 + a.mes > b.ano * 100 + b.mes ? a : b))
+                  metaBatida = true
+                } else {
+                  // Nenhum bateu — usa o de maior faturamento
+                  periodoRef = periodosFat.reduce((a, b) => a.fat > b.fat ? a : b)
+                  metaBatida = false
+                }
+              } else if (periodosFat.length > 0) {
+                periodoRef = periodosFat.reduce((a, b) => a.fat > b.fat ? a : b)
+              }
+
+              // 4. prof_pagamentos do período de referência
+              const ppRef = periodoRef
+                ? dados.prof_pagamentos.filter(p => p.ano === periodoRef!.ano && p.mes === periodoRef!.mes)
+                : []
+              const totalRef = ppRef.reduce((s, p) => s + p.valor_a_pagar, 0)
+
+              // 5. prof_pagamentos do mês atual
+              const hoje2 = new Date()
+              const anoAtual = hoje2.getFullYear()
+              const mesAtual = hoje2.getMonth() + 1
+              const ppAtual = dados.prof_pagamentos.filter(p => p.ano === anoAtual && p.mes === mesAtual)
+
+              // 6. Calcula peso e meta individual para cada profissional ativo
+              interface MetaProf { prof: ProfCadastrado; peso: number; meta: number; realizado: number; fonte: string; estavaRef: boolean }
+              const resultado: MetaProf[] = profsAtivos.map(prof => {
+                const apelidoProf = norm(prof.apelido || prof.nome_completo)
+                const nomeProf = norm(prof.nome_completo)
+
+                // Tenta match no período de referência
+                const ppProfRef = ppRef.find(p => {
+                  const pNorm = norm(p.profissional)
+                  return pNorm === apelidoProf || pNorm === nomeProf ||
+                    (apelidoProf.length >= 3 && pNorm.includes(apelidoProf)) ||
+                    (apelidoProf.length >= 3 && apelidoProf.includes(pNorm))
+                })
+
+                let peso = 0
+                let fonte = ''
+                let estavaRef = false
+
+                if (ppProfRef && totalRef > 0) {
+                  peso = ppProfRef.valor_a_pagar / totalRef
+                  estavaRef = true
+                  fonte = ''
+                } else {
+                  // Profissional novo — busca média de mesmo cargo no período de referência
+                  const cargoprof = norm(prof.cargo || '')
+                  const ppMesmoCargo = ppRef.filter(p => norm(p.categoria) === cargoprof && cargoprof.length > 0)
+                  if (ppMesmoCargo.length > 0 && totalRef > 0) {
+                    const mediaPeso = ppMesmoCargo.reduce((s, p) => s + p.valor_a_pagar / totalRef, 0) / ppMesmoCargo.length
+                    peso = mediaPeso
+                    const mesRefLabel = periodoRef ? `${MESES_PT_FULL[periodoRef.mes]}/${periodoRef.ano}` : ''
+                    fonte = `Profissional novo — média de ${prof.cargo || 'categoria'} em ${mesRefLabel}`
+                  } else {
+                    // Distribuição igual
+                    peso = 1 / totalProfsAtivos
+                    fonte = 'Distribuição igual (sem histórico por categoria)'
+                  }
+                }
+
+                // Realizado no mês atual
+                const ppProfAtual = ppAtual.find(p => {
+                  const pNorm = norm(p.profissional)
+                  return pNorm === apelidoProf || pNorm === nomeProf ||
+                    (apelidoProf.length >= 3 && pNorm.includes(apelidoProf)) ||
+                    (apelidoProf.length >= 3 && apelidoProf.includes(pNorm))
+                })
+                const realizado2 = ppProfAtual?.valor_a_pagar || 0
+
+                return { prof, peso, meta: 0, realizado: realizado2, fonte, estavaRef }
+              })
+
+              // 7. Normaliza pesos para somar 100%
+              const somaPesos = resultado.reduce((s, r) => s + r.peso, 0)
+              resultado.forEach(r => {
+                r.peso = somaPesos > 0 ? r.peso / somaPesos : 1 / totalProfsAtivos
+                r.meta = metaTotalProf * r.peso
+              })
+
+              // 8. Ordena por meta decrescente
+              resultado.sort((a, b) => b.meta - a.meta)
+              const somaMetasIndividuais = resultado.reduce((s, r) => s + r.meta, 0)
+
+              const periodoRefLabel = periodoRef ? `${MESES_PT_FULL[periodoRef.mes]}/${periodoRef.ano}` : '—'
+
+              return (
+                <div>
+                  {/* Card header com meta total e período de referência */}
+                  <div style={{ background: '#0a0f1a', border: '1px solid #1e293b', borderRadius: 12, padding: 20, marginBottom: 16 }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontSize: 11, color: '#475569', fontWeight: 600, marginBottom: 4 }}>META TOTAL DO SALÃO</div>
+                        <div style={{ fontSize: 22, fontWeight: 800, color: '#7c5cfc' }}>{metaTotalProf > 0 ? moeda(metaTotalProf) : '—'}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 11, color: '#475569', fontWeight: 600, marginBottom: 4 }}>PERÍODO DE REFERÊNCIA</div>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: '#e2e8f0' }}>{periodoRefLabel}</div>
+                      </div>
+                      <div style={{ marginLeft: 'auto' }}>
+                        {metaTotalProf > 0 && periodoRef && (
+                          metaBatida ? (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#10b98120', border: '1px solid #10b98140', color: '#10b981', fontSize: 12, fontWeight: 700, padding: '6px 14px', borderRadius: 20 }}>
+                              Meta já foi batida em {periodoRefLabel}
+                            </span>
+                          ) : (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#f59e0b20', border: '1px solid #f59e0b40', color: '#f59e0b', fontSize: 12, fontWeight: 700, padding: '6px 14px', borderRadius: 20 }}>
+                              Meta nunca batida — mais próximo: {periodoRefLabel}
+                            </span>
+                          )
+                        )}
+                        {metaAviso && (
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#ef444420', border: '1px solid #ef444440', color: '#ef4444', fontSize: 12, fontWeight: 700, padding: '6px 14px', borderRadius: 20 }}>
+                            {metaAviso}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Tabela de metas por profissional */}
+                  <div style={{ background: '#0a0f1a', border: '1px solid #1e293b', borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                      <thead>
+                        <tr style={{ background: '#060d18' }}>
+                          {['PROFISSIONAL', 'CARGO', 'META', 'REALIZADO', '%'].map((h, hi) => (
+                            <th key={h} style={{ padding: '12px 16px', fontSize: 11, color: '#64748b', fontWeight: 700, textAlign: hi >= 2 ? 'right' : 'left', borderBottom: '1px solid #1e293b', whiteSpace: 'nowrap' }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {resultado.flatMap((r, i) => {
+                          const pct = r.meta > 0 ? Math.min((r.realizado / r.meta) * 100, 100) : 0
+                          const barCor = pct >= 80 ? '#10b981' : pct >= 50 ? '#f59e0b' : '#ef4444'
+                          const nomeMostra = r.prof.apelido || r.prof.nome_completo
+                          const rows: any[] = []
+                          rows.push(
+                            <tr key={`row-${i}`} style={{ borderBottom: (r.estavaRef || r.fonte) ? 'none' : '1px solid #0d1520', background: i % 2 === 0 ? 'transparent' : '#060d1808' }}>
+                              <td style={{ padding: '10px 16px', color: '#e2e8f0', fontWeight: 600, fontSize: 13 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg, #7c5cfc, #f43f8e)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 11, flexShrink: 0 }}>
+                                    {(nomeMostra[0] || '?').toUpperCase()}
+                                  </div>
+                                  {nomeMostra.toUpperCase()}
+                                </div>
+                              </td>
+                              <td style={{ padding: '10px 16px', color: '#64748b', fontSize: 12 }}>{r.prof.cargo || '—'}</td>
+                              <td style={{ padding: '10px 16px', textAlign: 'right', color: '#7c5cfc', fontWeight: 700 }}>{moeda(r.meta)}</td>
+                              <td style={{ padding: '10px 16px', textAlign: 'right', color: r.realizado > 0 ? '#10b981' : '#334155', fontWeight: r.realizado > 0 ? 700 : 400 }}>{moeda(r.realizado)}</td>
+                              <td style={{ padding: '10px 16px', textAlign: 'right', minWidth: 120 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-end' }}>
+                                  <span style={{ color: barCor, fontWeight: 700, fontSize: 13, minWidth: 38, textAlign: 'right' }}>{pct.toFixed(0)}%</span>
+                                  <div style={{ width: 60, height: 6, background: '#1e293b', borderRadius: 10, overflow: 'hidden' }}>
+                                    <div style={{ height: '100%', width: `${pct}%`, background: barCor, borderRadius: 10, transition: 'width 0.4s ease' }} />
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )
+                          if (r.estavaRef || r.fonte) {
+                            rows.push(
+                              <tr key={`badge-${i}`} style={{ borderBottom: '1px solid #0d1520', background: i % 2 === 0 ? 'transparent' : '#060d1808' }}>
+                                <td colSpan={5} style={{ padding: '2px 16px 8px 56px' }}>
+                                  {r.estavaRef && periodoRef && (
+                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 600, color: metaBatida ? '#10b981' : '#f59e0b', background: metaBatida ? '#10b98115' : '#f59e0b15', border: `1px solid ${metaBatida ? '#10b98130' : '#f59e0b30'}`, padding: '2px 8px', borderRadius: 20 }}>
+                                      {metaBatida ? `Voce ja bateu em ${periodoRefLabel}` : `Mais proximo: ${periodoRefLabel}`}
+                                    </span>
+                                  )}
+                                  {r.fonte && (
+                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 600, color: '#06b6d4', background: '#06b6d415', border: '1px solid #06b6d430', padding: '2px 8px', borderRadius: 20, marginLeft: r.estavaRef ? 6 : 0 }}>
+                                      {r.fonte}
+                                    </span>
+                                  )}
+                                </td>
+                              </tr>
+                            )
+                          }
+                          return rows
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Rodapé */}
+                  <div style={{ background: '#0a0f1a', border: '1px solid #1e293b', borderRadius: 10, padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 12, color: '#475569', fontWeight: 600 }}>Soma das metas individuais:</span>
+                    <span style={{ fontSize: 14, fontWeight: 800, color: '#7c5cfc' }}>{moeda(somaMetasIndividuais)}</span>
+                    {metaTotalProf > 0 && Math.abs(somaMetasIndividuais - metaTotalProf) > 1 && (
+                      <span style={{ fontSize: 11, color: '#f59e0b', marginLeft: 8 }}>(diferença de {moeda(Math.abs(somaMetasIndividuais - metaTotalProf))} por arredondamento)</span>
+                    )}
+                  </div>
+                </div>
+              )
+            })()}
 
             {/* ════════ ABA PROFISSIONAIS ════════ */}
             {aba === 'profissionais' && (() => {
