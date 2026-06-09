@@ -1017,20 +1017,29 @@ export default function RelatoriosPage() {
                 }
               })
 
-              // Pico histórico por profissional — também exclui meses atípicos
-              // (exceto se o mês selecionado for o pico)
+              // Pico para CÁLCULO — exclui meses atípicos (usado na redistribuição)
               const picoHistoricoMap = new Map<string, { valor: number; ano: number; mes: number }>()
+              // Pico REAL — inclui todos os meses (usado apenas no badge informativo)
+              const picoRealMap = new Map<string, { valor: number; ano: number; mes: number }>()
               profsAtivos.forEach(prof => {
                 const ap = norm(prof.apelido || prof.nome_completo)
                 const nm = norm(prof.nome_completo)
                 const atipicos = mesesAtipicosMap.get(prof.id) || new Set<string>()
-                const matches = dados.prof_pagamentos.filter(p => {
-                  if (!matchNome(norm(p.profissional), ap, nm) || p.valor_a_pagar <= 0) return false
+                const todos = dados.prof_pagamentos.filter(p => matchNome(norm(p.profissional), ap, nm) && p.valor_a_pagar > 0)
+
+                // Pico real (todos os meses, para o badge)
+                if (todos.length > 0) {
+                  const picoReal = todos.reduce((a, b) => a.valor_a_pagar > b.valor_a_pagar ? a : b)
+                  picoRealMap.set(prof.id, { valor: picoReal.valor_a_pagar, ano: picoReal.ano, mes: picoReal.mes })
+                }
+
+                // Pico de cálculo (sem atípicos, para redistribuição)
+                const normais = todos.filter(p => {
                   const isMesSelecionado = p.ano === p1Ano && p.mes === p1Mes
                   return isMesSelecionado || !atipicos.has(`${p.ano}-${p.mes}`)
                 })
-                if (matches.length > 0) {
-                  const pico = matches.reduce((a, b) => a.valor_a_pagar > b.valor_a_pagar ? a : b)
+                if (normais.length > 0) {
+                  const pico = normais.reduce((a, b) => a.valor_a_pagar > b.valor_a_pagar ? a : b)
                   picoHistoricoMap.set(prof.id, { valor: pico.valor_a_pagar, ano: pico.ano, mes: pico.mes })
                 }
               })
@@ -1089,7 +1098,8 @@ export default function RelatoriosPage() {
                   const mesesProf = new Set(dados.prof_pagamentos.filter(p => matchNome(norm(p.profissional), apelidoProf, nomeProf) && p.valor_a_pagar > 0).map(p => `${p.ano}-${p.mes}`)).size
                   fonte = `Média de ${mesesProf} mês${mesesProf !== 1 ? 'es' : ''} histórico${mesesProf !== 1 ? 's' : ''}`
                   pico = picoHistoricoMap.get(prof.id) || null
-                  if (pico) picoLabel = `Seu maior faturamento foi ${moeda(pico.valor)} em ${MESES_PT_FULL[pico.mes]}/${pico.ano}`
+                  const picoReal = picoRealMap.get(prof.id) || pico
+                  if (picoReal) picoLabel = `Seu maior faturamento foi ${moeda(picoReal.valor)} em ${MESES_PT_FULL[picoReal.mes]}/${picoReal.ano}`
                 } else if (mediaCargoPorHistorico.has(cargo)) {
                   mediaProf = mediaCargoPorHistorico.get(cargo)!
                   fonte = `Média histórica de ${prof.cargo || 'categoria'}`
