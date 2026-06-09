@@ -992,18 +992,36 @@ export default function RelatoriosPage() {
                 }
               })
 
+              // Pico histórico por profissional: maior valor_a_pagar em um único mês
+              const picoHistoricoMap = new Map<string, { valor: number; ano: number; mes: number }>()
+              profsAtivos.forEach(prof => {
+                const ap = norm(prof.apelido || prof.nome_completo)
+                const nm = norm(prof.nome_completo)
+                const matches = dados.prof_pagamentos.filter(p => matchNome(norm(p.profissional), ap, nm) && p.valor_a_pagar > 0)
+                if (matches.length > 0) {
+                  const pico = matches.reduce((a, b) => a.valor_a_pagar > b.valor_a_pagar ? a : b)
+                  picoHistoricoMap.set(prof.id, { valor: pico.valor_a_pagar, ano: pico.ano, mes: pico.mes })
+                }
+              })
+
               // Média histórica por cargo (para profissionais sem histórico)
               const mediaCargoPorHistorico = new Map<string, number>()
+              // Pico por cargo: maior pico individual dentro da categoria
+              const picoCargoPorHistorico = new Map<string, { valor: number; ano: number; mes: number }>()
               const cargosTodos = [...new Set(profsAtivos.map(p => norm(p.cargo || '')))]
               cargosTodos.forEach(cargo => {
                 if (!cargo) return
                 const vals: number[] = []
+                let picoCargo: { valor: number; ano: number; mes: number } | null = null
                 profsAtivos.forEach(prof => {
                   if (norm(prof.cargo || '') !== cargo) return
                   const val = mediaHistoricaMap.get(prof.id)
                   if (val !== undefined && val > 0) vals.push(val)
+                  const pico = picoHistoricoMap.get(prof.id)
+                  if (pico && (!picoCargo || pico.valor > picoCargo.valor)) picoCargo = pico
                 })
                 if (vals.length > 0) mediaCargoPorHistorico.set(cargo, vals.reduce((s, v) => s + v, 0) / vals.length)
+                if (picoCargo) picoCargoPorHistorico.set(cargo, picoCargo)
               })
               const mediaGeralHistorica = mediaHistoricaMap.size > 0
                 ? [...mediaHistoricaMap.values()].reduce((s, v) => s + v, 0) / mediaHistoricaMap.size
@@ -1023,7 +1041,7 @@ export default function RelatoriosPage() {
               const periodoRefLabel = periodoRef ? `${MESES_PT_FULL[periodoRef.mes]}/${periodoRef.ano}` : '—'
 
               // 7. Monta resultado com média histórica como peso
-              interface MetaProf { prof: ProfCadastrado; peso: number; meta: number; realizado: number; fonte: string; estavaRef: boolean }
+              interface MetaProf { prof: ProfCadastrado; peso: number; meta: number; realizado: number; fonte: string; estavaRef: boolean; pico: { valor: number; ano: number; mes: number } | null; picoLabel: string }
               const resultado: MetaProf[] = profsAtivos.map(prof => {
                 const apelidoProf = norm(prof.apelido || prof.nome_completo)
                 const nomeProf = norm(prof.nome_completo)
@@ -1031,15 +1049,21 @@ export default function RelatoriosPage() {
 
                 let mediaProf = 0
                 let fonte = ''
+                let pico: { valor: number; ano: number; mes: number } | null = null
+                let picoLabel = ''
                 const estavaRef = profsNoPeriodoRef.has(prof.id)
 
                 if (mediaHistoricaMap.has(prof.id)) {
                   mediaProf = mediaHistoricaMap.get(prof.id)!
                   const mesesProf = new Set(dados.prof_pagamentos.filter(p => matchNome(norm(p.profissional), apelidoProf, nomeProf) && p.valor_a_pagar > 0).map(p => `${p.ano}-${p.mes}`)).size
                   fonte = `Média de ${mesesProf} mês${mesesProf !== 1 ? 'es' : ''} histórico${mesesProf !== 1 ? 's' : ''}`
+                  pico = picoHistoricoMap.get(prof.id) || null
+                  if (pico) picoLabel = `Seu maior faturamento foi ${moeda(pico.valor)} em ${MESES_PT_FULL[pico.mes]}/${pico.ano}`
                 } else if (mediaCargoPorHistorico.has(cargo)) {
                   mediaProf = mediaCargoPorHistorico.get(cargo)!
                   fonte = `Média histórica de ${prof.cargo || 'categoria'}`
+                  pico = picoCargoPorHistorico.get(cargo) || null
+                  if (pico) picoLabel = `Maior média de ${prof.cargo || 'categoria'} foi ${moeda(pico.valor)} em ${MESES_PT_FULL[pico.mes]}/${pico.ano}`
                 } else {
                   mediaProf = mediaGeralHistorica
                   fonte = 'Média histórica geral'
@@ -1049,7 +1073,7 @@ export default function RelatoriosPage() {
                 const ppProfAtual = ppAtual.find(p => matchNome(norm(p.profissional), apelidoProf, nomeProf))
                 const realizado2 = ppProfAtual?.valor_a_pagar || 0
 
-                return { prof, peso: mediaProf, meta: 0, realizado: realizado2, fonte, estavaRef }
+                return { prof, peso: mediaProf, meta: 0, realizado: realizado2, fonte, estavaRef, pico, picoLabel }
               })
 
               // 8. Normaliza e aplica metaEmComissoes
@@ -1137,18 +1161,23 @@ export default function RelatoriosPage() {
                               </td>
                             </tr>
                           )
-                          if (r.estavaRef || r.fonte) {
+                          if (r.estavaRef || r.fonte || r.picoLabel) {
                             rows.push(
                               <tr key={`badge-${i}`} style={{ borderBottom: '1px solid #0d1520', background: i % 2 === 0 ? 'transparent' : '#060d1808' }}>
-                                <td colSpan={5} style={{ padding: '2px 16px 8px 56px' }}>
+                                <td colSpan={5} style={{ padding: '2px 16px 8px 56px', display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
                                   {r.estavaRef && periodoRef && (
                                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 600, color: metaBatida ? '#10b981' : '#f59e0b', background: metaBatida ? '#10b98115' : '#f59e0b15', border: `1px solid ${metaBatida ? '#10b98130' : '#f59e0b30'}`, padding: '2px 8px', borderRadius: 20 }}>
                                       {metaBatida ? `Voce ja bateu em ${periodoRefLabel}` : `Mais proximo: ${periodoRefLabel}`}
                                     </span>
                                   )}
                                   {r.fonte && (
-                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 600, color: '#06b6d4', background: '#06b6d415', border: '1px solid #06b6d430', padding: '2px 8px', borderRadius: 20, marginLeft: r.estavaRef ? 6 : 0 }}>
+                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 600, color: '#06b6d4', background: '#06b6d415', border: '1px solid #06b6d430', padding: '2px 8px', borderRadius: 20 }}>
                                       {r.fonte}
+                                    </span>
+                                  )}
+                                  {r.picoLabel && (
+                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 600, color: '#a78bfa', background: '#a78bfa15', border: '1px solid #a78bfa30', padding: '2px 8px', borderRadius: 20 }}>
+                                      {r.picoLabel}
                                     </span>
                                   )}
                                 </td>
