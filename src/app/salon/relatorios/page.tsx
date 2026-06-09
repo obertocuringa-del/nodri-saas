@@ -1088,7 +1088,7 @@ export default function RelatoriosPage() {
               const somaMetasIndividuais = resultado.reduce((s, r) => s + r.meta, 0)
 
               // ── REDISTRIBUIÇÃO ──────────────────────────────────────────────
-              // Passo 1: identifica doadores (meta > pico histórico)
+              // Redistribuição de metas
               interface RedistRow {
                 prof: ProfCadastrado
                 metaOriginal: number
@@ -1098,43 +1098,50 @@ export default function RelatoriosPage() {
                 motivo: string
               }
 
+              // Média da categoria por meta (usa mediaCargoPorHistorico já calculado acima,
+              // convertido para valor de meta proporcional)
+              const mediaCargoEmMeta = new Map<string, number>()
+              cargosTodos.forEach(cargo => {
+                const vals = resultado.filter(r => norm(r.prof.cargo || '') === cargo)
+                if (vals.length > 0) {
+                  mediaCargoEmMeta.set(cargo, vals.reduce((s, r) => s + r.meta, 0) / vals.length)
+                }
+              })
+
               let surplus = 0
               const metasAjustadas = resultado.map(r => ({ ...r, metaAdj: r.meta }))
 
-              // Identificar doadores
+              // Passo 1 — Doadores: meta > pico histórico E meta >= média da categoria
+              // (não reduzimos quem está abaixo da média, mesmo que meta > pico)
               metasAjustadas.forEach(r => {
-                if (r.pico && r.metaAdj > r.pico.valor) {
+                const cargo = norm(r.prof.cargo || '')
+                const mediaCategoria = mediaCargoEmMeta.get(cargo) || 0
+                if (r.pico && r.metaAdj > r.pico.valor && r.metaAdj >= mediaCategoria * 0.9) {
                   surplus += r.metaAdj - r.pico.valor
                   r.metaAdj = r.pico.valor
                 }
               })
 
-              // Identificar receptores e seus pesos
-              const isNovato = (r: typeof resultado[0]) => {
-                // menos de 6 meses: detecta pelo texto da fonte "Média de X mês"
-                const match = r.fonte.match(/Média de (\d+) mês/)
-                if (match) return parseInt(match[1]) < 6
-                return false
-              }
-
-              const receptores = metasAjustadas.filter(r => {
-                const temCapacidade = r.pico && r.pico.valor > r.metaAdj * 1.05
-                const novato = isNovato(r)
-                return temCapacidade || novato
-              })
-
+              // Passo 2 — Receptores prioritários:
+              // A) Abaixo da média da categoria (principal critério — BELA, ILDETE, CINTIA)
+              // B) Com pico histórico acima da meta atual (capacidade comprovada)
               const pesoReceptor = (r: typeof metasAjustadas[0]) => {
-                if (r.pico && r.pico.valor > r.metaAdj * 1.05) return r.pico.valor - r.metaAdj
-                return r.metaAdj * 0.3
+                const cargo = norm(r.prof.cargo || '')
+                const mediaCategoria = mediaCargoEmMeta.get(cargo) || r.metaAdj
+                // Prioridade máxima: quanto está abaixo da média da categoria
+                const abaixoDaMedia = Math.max(0, mediaCategoria - r.metaAdj)
+                // Prioridade secundária: capacidade extra comprovada pelo pico
+                const capacidadeExtra = r.pico && r.pico.valor > r.metaAdj * 1.05 ? r.pico.valor - r.metaAdj : 0
+                return abaixoDaMedia + capacidadeExtra * 0.5
               }
 
+              const receptores = metasAjustadas.filter(r => pesoReceptor(r) > 0)
               const somaPesosReceptores = receptores.reduce((s, r) => s + pesoReceptor(r), 0)
 
-              // Distribui surplus
+              // Passo 3 — Distribui surplus proporcionalmente
               if (somaPesosReceptores > 0 && surplus > 0) {
                 receptores.forEach(r => {
-                  const adicional = surplus * (pesoReceptor(r) / somaPesosReceptores)
-                  r.metaAdj += adicional
+                  r.metaAdj += surplus * (pesoReceptor(r) / somaPesosReceptores)
                 })
               }
 
@@ -1148,10 +1155,14 @@ export default function RelatoriosPage() {
                   motivo = `Meta acima do pico histórico (${r.pico ? moeda(r.pico.valor) : '—'})`
                 } else if (diff > 0.5) {
                   tipo = 'receptor'
-                  if (r.pico && r.pico.valor > r.meta * 1.05) {
+                  const cargo = norm(r.prof.cargo || '')
+                  const mediaCateg = mediaCargoEmMeta.get(cargo) || 0
+                  if (r.meta < mediaCateg * 0.9) {
+                    motivo = `Abaixo da média de ${r.prof.cargo || 'categoria'} (média: ${moeda(mediaCateg)})`
+                  } else if (r.pico && r.pico.valor > r.meta * 1.05) {
                     motivo = `Capacidade acima da meta (pico: ${moeda(r.pico.valor)})`
                   } else {
-                    motivo = 'Profissional novo — receberá redistribuição'
+                    motivo = 'Redistribuição proporcional à capacidade'
                   }
                 }
                 return {
