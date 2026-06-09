@@ -1141,7 +1141,11 @@ export default function RelatoriosPage() {
 
               // ── REDISTRIBUIÇÃO ──
               // Experiente (≥6m): teto = melhor mês NÃO atípico (picoHistoricoMap)
-              // Novato (<6m):     teto = média dos picos não atípicos da categoria × (meses/12)
+              // Novato (<6m):     teto inicial = pico_médio_categoria × (meses/12)
+              //                   teto máximo  = pico_médio_categoria × (0.5 + meses/12×0.5)
+              //                   (nunca chega a 100% da categoria antes de 6 meses)
+              // Fallback de surplus: apenas para quem está abaixo da média da categoria
+              // Soma final sempre = metaEmComissoes
 
               const getMeses = (fonte: string): number => {
                 const match = fonte.match(/Média de (\d+) mês/)
@@ -1150,7 +1154,7 @@ export default function RelatoriosPage() {
 
               const isNovatoR = (fonte: string) => getMeses(fonte) < 6
 
-              // Média dos picos não atípicos por cargo (para calcular teto dos novatos)
+              // Pico médio não atípico por cargo
               const picoCargMap = new Map<string, number>()
               cargosTodos.forEach(cargo => {
                 const picos: number[] = []
@@ -1162,23 +1166,48 @@ export default function RelatoriosPage() {
                 if (picos.length > 0) picoCargMap.set(cargo, picos.reduce((s, v) => s + v, 0) / picos.length)
               })
 
-              const calcTeto = (r: typeof resultado[0]): number => {
+              // Média de metas iniciais por cargo — usada para identificar potencial no fallback
+              const catMediaMetaMap = new Map<string, number>()
+              cargosTodos.forEach(cargo => {
+                const profs = resultado.filter(r => norm(r.prof.cargo || '') === cargo)
+                if (profs.length > 0)
+                  catMediaMetaMap.set(cargo, profs.reduce((s, r) => s + r.meta, 0) / profs.length)
+              })
+
+              // Teto inicial (conservador)
+              const calcTetoInicial = (r: typeof resultado[0]): number => {
                 const meses = getMeses(r.fonte)
                 const cargo = norm(r.prof.cargo || '')
                 if (isNovatoR(r.fonte)) {
-                  // Novato: média dos picos da categoria × proporção do tempo de casa
                   const picoCat = picoCargMap.get(cargo) || r.meta
                   return picoCat * Math.min(1, meses / 12)
                 }
-                // Experiente: melhor mês não atípico
                 const pico = picoHistoricoMap.get(r.prof.id)
                 return pico ? pico.valor : r.meta
               }
 
-              let surplus = 0
-              const metasAjustadas = resultado.map(r => ({ ...r, metaAdj: r.meta, teto: calcTeto(r) }))
+              // Teto máximo: novato sobe gradualmente (50% + meses/12×50%) — nunca 100% antes de 6m
+              const calcTetoMaximo = (r: typeof resultado[0]): number => {
+                const meses = getMeses(r.fonte)
+                const cargo = norm(r.prof.cargo || '')
+                if (isNovatoR(r.fonte)) {
+                  const picoCat = picoCargMap.get(cargo) || r.meta
+                  const fator = Math.min(0.5 + (meses / 12) * 0.5, 1)
+                  return picoCat * fator
+                }
+                const pico = picoHistoricoMap.get(r.prof.id)
+                return pico ? pico.valor * 1.05 : r.meta
+              }
 
-              // Passo 1 — Doadores
+              let surplus = 0
+              const metasAjustadas = resultado.map(r => ({
+                ...r,
+                metaAdj: r.meta,
+                teto: calcTetoInicial(r),
+                tetoMax: calcTetoMaximo(r),
+              }))
+
+              // Passo 1 — Doadores: meta > teto inicial
               metasAjustadas.forEach(r => {
                 if (r.metaAdj > r.teto + 0.5) {
                   surplus += r.metaAdj - r.teto
@@ -1186,19 +1215,50 @@ export default function RelatoriosPage() {
                 }
               })
 
-              // Passo 2 — Receptores: distribui surplus proporcional ao espaço até o teto
-              const getEspaco = (r: typeof metasAjustadas[0]) => Math.max(0, r.teto - r.metaAdj)
+              // Helper: distribui surplus para receptores até o teto informado
+              const distribuiSurplus = (pool: number, teto: (r: typeof metasAjustadas[0]) => number) => {
+                if (pool <= 0.5) return 0
+                const receptores = metasAjustadas.filter(r => teto(r) - r.metaAdj > 0.5)
+                const somaEspacos = receptores.reduce((s, r) => s + (teto(r) - r.metaAdj), 0)
+                if (somaEspacos <= 0) return pool
+                let distribuido = 0
+                receptores.forEach(r => {
+                  const espaco = teto(r) - r.metaAdj
+                  const adicional = Math.min(pool * (espaco / somaEspacos), espaco)
+                  r.metaAdj += adicional
+                  distribuido += adicional
+                })
+                return pool - distribuido
+              }
+
+              // Passo 2 — Distribui até o teto inicial
+              surplus = distribuiSurplus(surplus, r => r.teto)
+
+              // Passo 3 — Se sobrou, distribui para o teto máximo (potencial de crescimento)
+              surplus = distribuiSurplus(surplus, r => r.tetoMax)
+
+              // Passo 4 — Fallback: surplus restante vai APENAS para quem está abaixo
+              //           da média da sua categoria (têm potencial provado pelo histórico).
+              //           Se ninguém estiver abaixo da média, distribui proporcionalmente a todos.
               if (surplus > 0.5) {
-                const receptores = metasAjustadas.filter(r => getEspaco(r) > 0.5)
-                const somaEspacos = receptores.reduce((s, r) => s + getEspaco(r), 0)
-                if (somaEspacos > 0) {
-                  receptores.forEach(r => {
-                    r.metaAdj = Math.min(r.metaAdj + surplus * (getEspaco(r) / somaEspacos), r.teto)
-                  })
-                } else {
-                  const soma = metasAjustadas.reduce((s, r) => s + r.metaAdj, 0)
-                  metasAjustadas.forEach(r => { r.metaAdj += surplus * (r.metaAdj / soma) })
+                const comPotencial = metasAjustadas.filter(r => {
+                  const cargo = norm(r.prof.cargo || '')
+                  const mediaCategoria = catMediaMetaMap.get(cargo) || 0
+                  return r.metaAdj < mediaCategoria - 0.5
+                })
+                const destinos = comPotencial.length > 0 ? comPotencial : metasAjustadas
+                const somaBase = destinos.reduce((s, r) => s + r.metaAdj, 0)
+                if (somaBase > 0) {
+                  destinos.forEach(r => { r.metaAdj += surplus * (r.metaAdj / somaBase) })
                 }
+                surplus = 0
+              }
+
+              // Garante que a soma total bate com metaEmComissoes (ajuste de centavos)
+              const somaFinal = metasAjustadas.reduce((s, r) => s + r.metaAdj, 0)
+              const diffCentavos = metaEmComissoes - somaFinal
+              if (Math.abs(diffCentavos) > 0.01 && somaFinal > 0) {
+                metasAjustadas.forEach(r => { r.metaAdj += diffCentavos * (r.metaAdj / somaFinal) })
               }
 
               // Monta resultado redistribuição
