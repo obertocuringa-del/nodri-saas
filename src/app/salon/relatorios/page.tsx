@@ -1140,10 +1140,8 @@ export default function RelatoriosPage() {
               }
 
               // ── REDISTRIBUIÇÃO ──
-              // Teto = melhor mês NÃO atípico já registrado (picoHistoricoMap)
-              // Novatos (<6m): teto = picoHistoricoMap × 1.1
-              // Doadores: meta > teto → reduz ao teto, libera surplus
-              // Receptores: teto > meta → recebe surplus proporcional ao espaço disponível
+              // Experiente (≥6m): teto = melhor mês NÃO atípico (picoHistoricoMap)
+              // Novato (<6m):     teto = média dos picos não atípicos da categoria × (meses/12)
 
               const getMeses = (fonte: string): number => {
                 const match = fonte.match(/Média de (\d+) mês/)
@@ -1152,10 +1150,29 @@ export default function RelatoriosPage() {
 
               const isNovatoR = (fonte: string) => getMeses(fonte) < 6
 
+              // Média dos picos não atípicos por cargo (para calcular teto dos novatos)
+              const picoCargMap = new Map<string, number>()
+              cargosTodos.forEach(cargo => {
+                const picos: number[] = []
+                resultado.forEach(r => {
+                  if (norm(r.prof.cargo || '') !== cargo) return
+                  const p = picoHistoricoMap.get(r.prof.id)
+                  if (p && p.valor > 0) picos.push(p.valor)
+                })
+                if (picos.length > 0) picoCargMap.set(cargo, picos.reduce((s, v) => s + v, 0) / picos.length)
+              })
+
               const calcTeto = (r: typeof resultado[0]): number => {
-                const pico = picoHistoricoMap.get(r.prof.id) // melhor mês não-atípico
-                if (!pico) return r.meta // sem histórico filtrado: mantém meta
-                return isNovatoR(r.fonte) ? pico.valor * 1.1 : pico.valor
+                const meses = getMeses(r.fonte)
+                const cargo = norm(r.prof.cargo || '')
+                if (isNovatoR(r.fonte)) {
+                  // Novato: média dos picos da categoria × proporção do tempo de casa
+                  const picoCat = picoCargMap.get(cargo) || r.meta
+                  return picoCat * Math.min(1, meses / 12)
+                }
+                // Experiente: melhor mês não atípico
+                const pico = picoHistoricoMap.get(r.prof.id)
+                return pico ? pico.valor : r.meta
               }
 
               let surplus = 0
@@ -1197,7 +1214,9 @@ export default function RelatoriosPage() {
                 } else if (diff > 0.5) {
                   tipo = 'receptor'
                   if (isNovatoR(r.fonte)) {
-                    motivo = `Novato ${meses}m — teto = pico × 1.1 (${moeda(r.teto)})`
+                    const cargo = norm(r.prof.cargo || '')
+                    const picoCat = picoCargMap.get(cargo) || 0
+                    motivo = `Novato ${meses}m — teto = pico médio ${r.prof.cargo || 'categoria'} × ${Math.round(meses/12*100)}% (${moeda(r.teto)})`
                   } else {
                     motivo = `Teto = melhor mês normal (${pico ? moeda(pico.valor) : '—'}) — recebeu surplus`
                   }
