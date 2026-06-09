@@ -1139,81 +1139,65 @@ export default function RelatoriosPage() {
                 motivo: string
               }
 
-              // Média da categoria por meta (usa mediaCargoPorHistorico já calculado acima,
-              // convertido para valor de meta proporcional)
-              const mediaCargoEmMeta = new Map<string, number>()
+              // Extrai número de meses históricos da fonte
+              const getMeses = (fonte: string): number => {
+                const match = fonte.match(/Média de (\d+) mês/)
+                return match ? parseInt(match[1]) : 999
+              }
+
+              // Média histórica real por cargo (usando mediaHistoricaMap dos profissionais com histórico)
+              const mediaCargoHistorica = new Map<string, number>()
               cargosTodos.forEach(cargo => {
-                const vals = resultado.filter(r => norm(r.prof.cargo || '') === cargo)
-                if (vals.length > 0) {
-                  mediaCargoEmMeta.set(cargo, vals.reduce((s, r) => s + r.meta, 0) / vals.length)
-                }
+                const vals: number[] = []
+                resultado.forEach(r => {
+                  if (norm(r.prof.cargo || '') === cargo && mediaHistoricaMap.has(r.prof.id)) {
+                    vals.push(mediaHistoricaMap.get(r.prof.id)!)
+                  }
+                })
+                if (vals.length > 0) mediaCargoHistorica.set(cargo, vals.reduce((s, v) => s + v, 0) / vals.length)
               })
+
+              // Teto de cada profissional:
+              // Experiente: média histórica individual × 1.1 (meta desafiadora mas realista)
+              // Novato: média do cargo × (meses/12) — proporcional ao tempo de casa
+              const calcTeto = (r: typeof resultado[0]) => {
+                const cargo = norm(r.prof.cargo || '')
+                const meses = getMeses(r.fonte)
+                const mediaCateg = mediaCargoHistorica.get(cargo) || r.meta
+                if (meses < 12) {
+                  // Novato: peso proporcional ao tempo de casa (máx 90% da média da categoria)
+                  const peso = Math.min(0.9, meses / 12)
+                  return mediaCateg * peso
+                }
+                // Experiente: média histórica individual + 10% de stretch
+                const mediaIndiv = mediaHistoricaMap.get(r.prof.id) || r.meta
+                return mediaIndiv * 1.1
+              }
 
               let surplus = 0
-              const metasAjustadas = resultado.map(r => ({ ...r, metaAdj: r.meta }))
+              const metasAjustadas = resultado.map(r => ({ ...r, metaAdj: r.meta, teto: calcTeto(r) }))
 
-              // Passo 1 — Doadores: meta > pico histórico E meta >= média da categoria
-              // (não reduzimos quem está abaixo da média, mesmo que meta > pico)
+              // Passo 1 — Doadores: meta > teto
               metasAjustadas.forEach(r => {
-                const cargo = norm(r.prof.cargo || '')
-                const mediaCategoria = mediaCargoEmMeta.get(cargo) || 0
-                if (r.pico && r.metaAdj > r.pico.valor && r.metaAdj >= mediaCategoria * 0.9) {
-                  surplus += r.metaAdj - r.pico.valor
-                  r.metaAdj = r.pico.valor
+                if (r.metaAdj > r.teto + 0.5) {
+                  surplus += r.metaAdj - r.teto
+                  r.metaAdj = r.teto
                 }
               })
 
-              // Define se profissional é "novato" (< 6 meses de histórico)
-              const isNovato = (r: typeof metasAjustadas[0]) => {
-                const match = r.fonte.match(/Média de (\d+) mês/)
-                return match ? parseInt(match[1]) < 6 : false
-              }
-
-              // Teto máximo que cada receptor pode receber:
-              // - Novato (< 6 meses): limitado ao pico × 1.1 (10% acima do melhor já feito)
-              // - Com histórico: pode ir até a média da categoria
-              const tetoReceptor = (r: typeof metasAjustadas[0]) => {
-                const cargo = norm(r.prof.cargo || '')
-                const mediaCategoria = mediaCargoEmMeta.get(cargo) || r.metaAdj
-                if (isNovato(r) && r.pico) return r.pico.valor * 1.1
-                return mediaCategoria
-              }
-
-              // Passo 2 — Receptores: têm espaço entre meta atual e teto
-              const pesoReceptor = (r: typeof metasAjustadas[0]) => {
-                const teto = tetoReceptor(r)
-                const espacoDisponivel = Math.max(0, teto - r.metaAdj)
-                // Secundário: capacidade extra comprovada pelo pico (para quem tem histórico)
-                const capacidadeExtra = !isNovato(r) && r.pico && r.pico.valor > r.metaAdj * 1.05
-                  ? (r.pico.valor - r.metaAdj) * 0.3
-                  : 0
-                return espacoDisponivel + capacidadeExtra
-              }
-
-              const receptores = metasAjustadas.filter(r => pesoReceptor(r) > 0)
-              const somaPesosReceptores = receptores.reduce((s, r) => s + pesoReceptor(r), 0)
-
-              // Passo 3 — Distribui surplus respeitando o teto de cada receptor
-              if (somaPesosReceptores > 0 && surplus > 0) {
-                // Primeira rodada: distribui proporcionalmente
-                receptores.forEach(r => {
-                  const adicional = surplus * (pesoReceptor(r) / somaPesosReceptores)
-                  const teto = tetoReceptor(r)
-                  const adicionalReal = Math.min(adicional, teto - r.metaAdj)
-                  r.metaAdj += Math.max(0, adicionalReal)
-                })
-                // Se sobrou surplus por causa dos tetos, redistribui entre quem ainda tem espaço
-                const surplusRestante = surplus - receptores.reduce((s, r) => s + (r.metaAdj - r.meta), 0)
-                if (surplusRestante > 1) {
-                  const receptoresComEspaco = receptores.filter(r => r.metaAdj < tetoReceptor(r) - 0.5)
-                  const somaPesos2 = receptoresComEspaco.reduce((s, r) => s + pesoReceptor(r), 0)
-                  if (somaPesos2 > 0) {
-                    receptoresComEspaco.forEach(r => {
-                      const adicional = surplusRestante * (pesoReceptor(r) / somaPesos2)
-                      const teto = tetoReceptor(r)
-                      r.metaAdj = Math.min(r.metaAdj + adicional, teto)
-                    })
-                  }
+              // Passo 2 — Receptores: têm espaço entre meta e teto
+              const getEspaco = (r: typeof metasAjustadas[0]) => Math.max(0, r.teto - r.metaAdj)
+              if (surplus > 0.5) {
+                const receptores = metasAjustadas.filter(r => getEspaco(r) > 0.5)
+                const somaEspacos = receptores.reduce((s, r) => s + getEspaco(r), 0)
+                if (somaEspacos > 0) {
+                  receptores.forEach(r => {
+                    const proporcao = getEspaco(r) / somaEspacos
+                    r.metaAdj = Math.min(r.metaAdj + surplus * proporcao, r.teto)
+                  })
+                } else {
+                  const somaMetas = metasAjustadas.reduce((s, r) => s + r.metaAdj, 0)
+                  metasAjustadas.forEach(r => { r.metaAdj += surplus * (r.metaAdj / somaMetas) })
                 }
               }
 
@@ -1222,21 +1206,24 @@ export default function RelatoriosPage() {
                 const diff = r.metaAdj - r.meta
                 let tipo: 'doador' | 'receptor' | 'neutro' = 'neutro'
                 let motivo = 'Sem ajuste necessário'
+                const cargo = norm(r.prof.cargo || '')
+                const meses = getMeses(r.fonte)
+                const mediaIndiv = mediaHistoricaMap.get(r.prof.id)
+                const mediaCateg = mediaCargoHistorica.get(cargo) || 0
                 if (diff < -0.5) {
                   tipo = 'doador'
-                  motivo = `Meta acima do pico histórico (${r.pico ? moeda(r.pico.valor) : '—'})`
+                  if (mediaIndiv) {
+                    motivo = `Meta acima da média histórica individual (${moeda(mediaIndiv * 1.1)})`
+                  } else {
+                    motivo = `Meta acima da média da categoria (${moeda(mediaCateg * 1.1)})`
+                  }
                 } else if (diff > 0.5) {
                   tipo = 'receptor'
-                  const cargo = norm(r.prof.cargo || '')
-                  const mediaCateg = mediaCargoEmMeta.get(cargo) || 0
-                  if (isNovato(r) && r.pico) {
-                    motivo = `Novato — meta limitada ao pico × 1.1 (${moeda(r.pico.valor * 1.1)})`
-                  } else if (r.meta < mediaCateg * 0.9) {
-                    motivo = `Abaixo da média de ${r.prof.cargo || 'categoria'} (média: ${moeda(mediaCateg)})`
-                  } else if (r.pico && r.pico.valor > r.meta * 1.05) {
-                    motivo = `Capacidade acima da meta (pico: ${moeda(r.pico.valor)})`
+                  if (meses < 12) {
+                    const peso = Math.min(0.9, meses / 12)
+                    motivo = `Novato ${meses}m — meta = média de ${r.prof.cargo || 'categoria'} × ${Math.round(peso * 100)}% (${moeda(mediaCateg * peso)})`
                   } else {
-                    motivo = 'Redistribuição proporcional à capacidade'
+                    motivo = `Meta abaixo da média histórica individual (${moeda((mediaIndiv || r.meta) * 1.1)})`
                   }
                 }
                 return {
