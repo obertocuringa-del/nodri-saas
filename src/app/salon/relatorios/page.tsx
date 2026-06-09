@@ -1024,7 +1024,7 @@ export default function RelatoriosPage() {
                 let fonte = ''
                 let estavaRef = false
 
-                if (matchRefMap.has(prof.id)) {
+                if (matchRefMap.has(prof.id) && (matchRefMap.get(prof.id) ?? 0) > 0) {
                   comissaoRef = matchRefMap.get(prof.id)!
                   estavaRef = true
                 } else if (mediaPorCargo.has(cargo)) {
@@ -1158,8 +1158,8 @@ export default function RelatoriosPage() {
                   <div style={{ background: '#0a0f1a', border: '1px solid #1e293b', borderRadius: 10, padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ fontSize: 12, color: '#475569', fontWeight: 600 }}>Soma das metas individuais:</span>
                     <span style={{ fontSize: 14, fontWeight: 800, color: '#7c5cfc' }}>{moeda(somaMetasIndividuais)}</span>
-                    {metaTotalProf > 0 && Math.abs(somaMetasIndividuais - metaTotalProf) > 1 && (
-                      <span style={{ fontSize: 11, color: '#f59e0b', marginLeft: 8 }}>(diferença de {moeda(Math.abs(somaMetasIndividuais - metaTotalProf))} por arredondamento)</span>
+                    {metaEmComissoes > 0 && Math.abs(somaMetasIndividuais - metaEmComissoes) > 1 && (
+                      <span style={{ fontSize: 11, color: '#f59e0b', marginLeft: 8 }}>(diferença de {moeda(Math.abs(somaMetasIndividuais - metaEmComissoes))} por arredondamento)</span>
                     )}
                   </div>
                 </div>
