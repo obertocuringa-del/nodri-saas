@@ -231,7 +231,7 @@ function TabelaComp({ title, items, label1, label2 }: { title: string; items: It
 export default function RelatoriosPage() {
   const [dados, setDados] = useState<DadosBase | null>(null)
   const [profsCadastrados, setProfsCadastrados] = useState<ProfCadastrado[]>([])
-  const [aba, setAba] = useState<'geral' | 'metas' | 'profissionais' | 'feedbacks' | 'meta_prof'>('geral')
+  const [aba, setAba] = useState<'geral' | 'metas' | 'profissionais' | 'feedbacks' | 'meta_prof' | 'redistribuicao'>('geral')
   const [loading, setLoading] = useState(false)
   const [showImport, setShowImport] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -679,7 +679,7 @@ export default function RelatoriosPage() {
 
           {/* ABAS */}
           <div style={{ padding: '12px 20px 0', display: 'flex', gap: 4, borderBottom: '1px solid #1e293b' }}>
-            {([['geral', 'Geral'], ['metas', 'Metas'], ['meta_prof', 'Meta Prof.']] as const).map(([id, lbl]) => (
+            {([['geral', 'Geral'], ['metas', 'Metas'], ['meta_prof', 'Meta Prof.'], ['redistribuicao', 'Redistribuição']] as const).map(([id, lbl]) => (
               <button key={id} onClick={() => setAba(id as any)}
                 style={{ padding: '8px 18px', border: 'none', borderRadius: '8px 8px 0 0', fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s', background: aba === id ? '#0a0f1a' : 'transparent', color: aba === id ? '#e2e8f0' : '#475569', borderBottom: aba === id ? '2px solid #7c5cfc' : '2px solid transparent', marginBottom: -1 }}>
                 {lbl}
@@ -914,8 +914,8 @@ export default function RelatoriosPage() {
               </div>
             )}
 
-            {/* ════════ ABA META PROFISSIONAIS ════════ */}
-            {aba === 'meta_prof' && (() => {
+            {/* ════════ ABA META PROFISSIONAIS + REDISTRIBUIÇÃO ════════ */}
+            {(aba === 'meta_prof' || aba === 'redistribuicao') && (() => {
               const MESES_PT_FULL = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
 
               // 1. Carrega meta total do localStorage
@@ -1086,6 +1086,154 @@ export default function RelatoriosPage() {
               // 9. Ordena por meta decrescente
               resultado.sort((a, b) => b.meta - a.meta)
               const somaMetasIndividuais = resultado.reduce((s, r) => s + r.meta, 0)
+
+              // ── REDISTRIBUIÇÃO ──────────────────────────────────────────────
+              // Passo 1: identifica doadores (meta > pico histórico)
+              interface RedistRow {
+                prof: ProfCadastrado
+                metaOriginal: number
+                metaRedistribuida: number
+                diferenca: number
+                tipo: 'doador' | 'receptor' | 'neutro'
+                motivo: string
+              }
+
+              let surplus = 0
+              const metasAjustadas = resultado.map(r => ({ ...r, metaAdj: r.meta }))
+
+              // Identificar doadores
+              metasAjustadas.forEach(r => {
+                if (r.pico && r.metaAdj > r.pico.valor) {
+                  surplus += r.metaAdj - r.pico.valor
+                  r.metaAdj = r.pico.valor
+                }
+              })
+
+              // Identificar receptores e seus pesos
+              const isNovato = (r: typeof resultado[0]) => {
+                // menos de 6 meses: detecta pelo texto da fonte "Média de X mês"
+                const match = r.fonte.match(/Média de (\d+) mês/)
+                if (match) return parseInt(match[1]) < 6
+                return false
+              }
+
+              const receptores = metasAjustadas.filter(r => {
+                const temCapacidade = r.pico && r.pico.valor > r.metaAdj * 1.05
+                const novato = isNovato(r)
+                return temCapacidade || novato
+              })
+
+              const pesoReceptor = (r: typeof metasAjustadas[0]) => {
+                if (r.pico && r.pico.valor > r.metaAdj * 1.05) return r.pico.valor - r.metaAdj
+                return r.metaAdj * 0.3
+              }
+
+              const somaPesosReceptores = receptores.reduce((s, r) => s + pesoReceptor(r), 0)
+
+              // Distribui surplus
+              if (somaPesosReceptores > 0 && surplus > 0) {
+                receptores.forEach(r => {
+                  const adicional = surplus * (pesoReceptor(r) / somaPesosReceptores)
+                  r.metaAdj += adicional
+                })
+              }
+
+              // Monta resultado redistribuição
+              const redistResultado: RedistRow[] = metasAjustadas.map(r => {
+                const diff = r.metaAdj - r.meta
+                let tipo: 'doador' | 'receptor' | 'neutro' = 'neutro'
+                let motivo = 'Sem ajuste necessário'
+                if (diff < -0.5) {
+                  tipo = 'doador'
+                  motivo = `Meta acima do pico histórico (${r.pico ? moeda(r.pico.valor) : '—'})`
+                } else if (diff > 0.5) {
+                  tipo = 'receptor'
+                  if (r.pico && r.pico.valor > r.meta * 1.05) {
+                    motivo = `Capacidade acima da meta (pico: ${moeda(r.pico.valor)})`
+                  } else {
+                    motivo = 'Profissional novo — receberá redistribuição'
+                  }
+                }
+                return {
+                  prof: r.prof,
+                  metaOriginal: r.meta,
+                  metaRedistribuida: r.metaAdj,
+                  diferenca: diff,
+                  tipo,
+                  motivo,
+                }
+              })
+
+              const totalAjustados = redistResultado.filter(r => r.tipo !== 'neutro').length
+              const somaRedist = redistResultado.reduce((s, r) => s + r.metaRedistribuida, 0)
+
+              if (aba === 'redistribuicao') return (
+                <div>
+                  {/* Card resumo */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10, marginBottom: 16 }}>
+                    {[
+                      { lbl: 'Surplus Total Redistribuído', val: moeda(surplus), cor: '#7c5cfc' },
+                      { lbl: 'Profissionais Ajustados', val: String(totalAjustados), cor: '#06b6d4' },
+                      { lbl: 'Doadores', val: String(redistResultado.filter(r => r.tipo === 'doador').length), cor: '#ef4444' },
+                      { lbl: 'Receptores', val: String(redistResultado.filter(r => r.tipo === 'receptor').length), cor: '#10b981' },
+                    ].map(card => (
+                      <div key={card.lbl} style={{ background: '#0a0f1a', border: `1px solid ${card.cor}30`, borderLeft: `3px solid ${card.cor}`, borderRadius: 10, padding: '14px 16px' }}>
+                        <div style={{ fontSize: 11, color: '#475569', fontWeight: 600, marginBottom: 6 }}>{card.lbl}</div>
+                        <div style={{ fontSize: 22, fontWeight: 800, color: card.cor }}>{card.val}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Tabela */}
+                  <div style={{ background: '#0a0f1a', border: '1px solid #1e293b', borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                      <thead>
+                        <tr style={{ background: '#060d18' }}>
+                          {['PROFISSIONAL', 'CARGO', 'META ORIGINAL', 'META AJUSTADA', 'DIFERENÇA', 'MOTIVO'].map((h, hi) => (
+                            <th key={h} style={{ padding: '12px 16px', fontSize: 11, color: '#64748b', fontWeight: 700, textAlign: hi >= 2 && hi <= 4 ? 'right' : 'left', borderBottom: '1px solid #1e293b', whiteSpace: 'nowrap' }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {redistResultado.map((r, i) => {
+                          const corTipo = r.tipo === 'doador' ? '#ef4444' : r.tipo === 'receptor' ? '#10b981' : '#475569'
+                          const bgTipo = r.tipo === 'doador' ? '#ef444408' : r.tipo === 'receptor' ? '#10b98108' : 'transparent'
+                          const seta = r.tipo === 'doador' ? '↓' : r.tipo === 'receptor' ? '↑' : ''
+                          const nomeMostra = r.prof.apelido || r.prof.nome_completo
+                          return (
+                            <tr key={i} style={{ borderBottom: '1px solid #0d1520', background: i % 2 === 0 ? bgTipo : bgTipo || '#060d1808' }}>
+                              <td style={{ padding: '10px 16px', color: '#e2e8f0', fontWeight: 600, fontSize: 13 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg, #7c5cfc, #f43f8e)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 11, flexShrink: 0 }}>
+                                    {(nomeMostra[0] || '?').toUpperCase()}
+                                  </div>
+                                  {nomeMostra.toUpperCase()}
+                                </div>
+                              </td>
+                              <td style={{ padding: '10px 16px', color: '#64748b', fontSize: 12 }}>{r.prof.cargo || '—'}</td>
+                              <td style={{ padding: '10px 16px', textAlign: 'right', color: '#94a3b8', fontWeight: 600 }}>{moeda(r.metaOriginal)}</td>
+                              <td style={{ padding: '10px 16px', textAlign: 'right', color: corTipo, fontWeight: 700 }}>
+                                {seta && <span style={{ marginRight: 4 }}>{seta}</span>}{moeda(r.metaRedistribuida)}
+                              </td>
+                              <td style={{ padding: '10px 16px', textAlign: 'right', color: r.diferenca > 0.5 ? '#10b981' : r.diferenca < -0.5 ? '#ef4444' : '#475569', fontWeight: 700 }}>
+                                {r.diferenca > 0.5 ? '+' : ''}{r.diferenca < -0.5 || r.diferenca > 0.5 ? moeda(r.diferenca) : '—'}
+                              </td>
+                              <td style={{ padding: '10px 16px', fontSize: 11, color: '#64748b' }}>{r.motivo}</td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Rodapé */}
+                  <div style={{ background: '#0a0f1a', border: '1px solid #1e293b', borderRadius: 10, padding: '12px 20px' }}>
+                    <span style={{ fontSize: 12, color: '#475569', fontStyle: 'italic' }}>
+                      *A soma das metas redistribuídas = <strong style={{ color: '#7c5cfc' }}>{moeda(somaRedist)}</strong> (igual à meta em comissão)
+                    </span>
+                  </div>
+                </div>
+              )
 
               return (
                 <div>
