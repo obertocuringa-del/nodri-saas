@@ -1153,27 +1153,58 @@ export default function RelatoriosPage() {
                 }
               })
 
-              // Passo 2 — Receptores prioritários:
-              // A) Abaixo da média da categoria (principal critério — BELA, ILDETE, CINTIA)
-              // B) Com pico histórico acima da meta atual (capacidade comprovada)
-              const pesoReceptor = (r: typeof metasAjustadas[0]) => {
+              // Define se profissional é "novato" (< 6 meses de histórico)
+              const isNovato = (r: typeof metasAjustadas[0]) => {
+                const match = r.fonte.match(/Média de (\d+) mês/)
+                return match ? parseInt(match[1]) < 6 : false
+              }
+
+              // Teto máximo que cada receptor pode receber:
+              // - Novato (< 6 meses): limitado ao pico × 1.1 (10% acima do melhor já feito)
+              // - Com histórico: pode ir até a média da categoria
+              const tetoReceptor = (r: typeof metasAjustadas[0]) => {
                 const cargo = norm(r.prof.cargo || '')
                 const mediaCategoria = mediaCargoEmMeta.get(cargo) || r.metaAdj
-                // Prioridade máxima: quanto está abaixo da média da categoria
-                const abaixoDaMedia = Math.max(0, mediaCategoria - r.metaAdj)
-                // Prioridade secundária: capacidade extra comprovada pelo pico
-                const capacidadeExtra = r.pico && r.pico.valor > r.metaAdj * 1.05 ? r.pico.valor - r.metaAdj : 0
-                return abaixoDaMedia + capacidadeExtra * 0.5
+                if (isNovato(r) && r.pico) return r.pico.valor * 1.1
+                return mediaCategoria
+              }
+
+              // Passo 2 — Receptores: têm espaço entre meta atual e teto
+              const pesoReceptor = (r: typeof metasAjustadas[0]) => {
+                const teto = tetoReceptor(r)
+                const espacoDisponivel = Math.max(0, teto - r.metaAdj)
+                // Secundário: capacidade extra comprovada pelo pico (para quem tem histórico)
+                const capacidadeExtra = !isNovato(r) && r.pico && r.pico.valor > r.metaAdj * 1.05
+                  ? (r.pico.valor - r.metaAdj) * 0.3
+                  : 0
+                return espacoDisponivel + capacidadeExtra
               }
 
               const receptores = metasAjustadas.filter(r => pesoReceptor(r) > 0)
               const somaPesosReceptores = receptores.reduce((s, r) => s + pesoReceptor(r), 0)
 
-              // Passo 3 — Distribui surplus proporcionalmente
+              // Passo 3 — Distribui surplus respeitando o teto de cada receptor
               if (somaPesosReceptores > 0 && surplus > 0) {
+                // Primeira rodada: distribui proporcionalmente
                 receptores.forEach(r => {
-                  r.metaAdj += surplus * (pesoReceptor(r) / somaPesosReceptores)
+                  const adicional = surplus * (pesoReceptor(r) / somaPesosReceptores)
+                  const teto = tetoReceptor(r)
+                  const adicionalReal = Math.min(adicional, teto - r.metaAdj)
+                  r.metaAdj += Math.max(0, adicionalReal)
                 })
+                // Se sobrou surplus por causa dos tetos, redistribui entre quem ainda tem espaço
+                const surplusRestante = surplus - receptores.reduce((s, r) => s + (r.metaAdj - r.meta), 0)
+                if (surplusRestante > 1) {
+                  const receptoresComEspaco = receptores.filter(r => r.metaAdj < tetoReceptor(r) - 0.5)
+                  const somaPesos2 = receptoresComEspaco.reduce((s, r) => s + pesoReceptor(r), 0)
+                  if (somaPesos2 > 0) {
+                    receptoresComEspaco.forEach(r => {
+                      const adicional = surplusRestante * (pesoReceptor(r) / somaPesos2)
+                      const teto = tetoReceptor(r)
+                      r.metaAdj = Math.min(r.metaAdj + adicional, teto)
+                    })
+                  }
+                }
               }
 
               // Monta resultado redistribuição
@@ -1188,7 +1219,9 @@ export default function RelatoriosPage() {
                   tipo = 'receptor'
                   const cargo = norm(r.prof.cargo || '')
                   const mediaCateg = mediaCargoEmMeta.get(cargo) || 0
-                  if (r.meta < mediaCateg * 0.9) {
+                  if (isNovato(r) && r.pico) {
+                    motivo = `Novato — meta limitada ao pico × 1.1 (${moeda(r.pico.valor * 1.1)})`
+                  } else if (r.meta < mediaCateg * 0.9) {
                     motivo = `Abaixo da média de ${r.prof.cargo || 'categoria'} (média: ${moeda(mediaCateg)})`
                   } else if (r.pico && r.pico.valor > r.meta * 1.05) {
                     motivo = `Capacidade acima da meta (pico: ${moeda(r.pico.valor)})`
