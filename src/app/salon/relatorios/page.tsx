@@ -1139,51 +1139,29 @@ export default function RelatoriosPage() {
                 motivo: string
               }
 
-              // Extrai número de meses históricos da fonte
+              // ── REDISTRIBUIÇÃO ──
+              // Teto = melhor mês NÃO atípico já registrado (picoHistoricoMap)
+              // Novatos (<6m): teto = picoHistoricoMap × 1.1
+              // Doadores: meta > teto → reduz ao teto, libera surplus
+              // Receptores: teto > meta → recebe surplus proporcional ao espaço disponível
+
               const getMeses = (fonte: string): number => {
                 const match = fonte.match(/Média de (\d+) mês/)
                 return match ? parseInt(match[1]) : 999
               }
 
-              // Média histórica real por cargo (usando mediaHistoricaMap dos profissionais com histórico)
-              const mediaCargoHistorica = new Map<string, number>()
-              cargosTodos.forEach(cargo => {
-                const vals: number[] = []
-                resultado.forEach(r => {
-                  if (norm(r.prof.cargo || '') === cargo && mediaHistoricaMap.has(r.prof.id)) {
-                    vals.push(mediaHistoricaMap.get(r.prof.id)!)
-                  }
-                })
-                if (vals.length > 0) mediaCargoHistorica.set(cargo, vals.reduce((s, v) => s + v, 0) / vals.length)
-              })
+              const isNovatoR = (fonte: string) => getMeses(fonte) < 6
 
-              // Total histórico mensal de comissões (base para calcular proporções)
-              const totalComissoesHistMensal = (() => {
-                const mesesUnicos = new Set(dados.prof_pagamentos.map((p: any) => `${p.ano}-${p.mes}`)).size || 1
-                return dados.prof_pagamentos.reduce((s: number, p: any) => s + p.valor_a_pagar, 0) / mesesUnicos
-              })()
-
-              // Teto com credibilidade gradual — mantém a MESMA ESCALA da meta (proporção do pool):
-              // share_individual = média_individual / total_histórico_mensal
-              // share_categoria  = média_categoria  / total_histórico_mensal
-              // share_esperado   = cred × share_ind + (1-cred) × share_cat
-              // teto             = share_esperado × metaEmComissoes × 1.1
-              // — assim teto e meta estão na mesma escala, crescimento da meta é refletido proporcionalmente
-              const calcTeto = (r: typeof resultado[0]) => {
-                const cargo = norm(r.prof.cargo || '')
-                const meses = getMeses(r.fonte)
-                const mediaCateg = mediaCargoHistorica.get(cargo) || (totalComissoesHistMensal / (resultado.length || 1))
-                const mediaIndiv = mediaHistoricaMap.get(r.prof.id) || mediaCateg
-                const cred = Math.min(1, meses / 24)
-                const esperado = cred * mediaIndiv + (1 - cred) * mediaCateg
-                const shareEsperado = totalComissoesHistMensal > 0 ? esperado / totalComissoesHistMensal : 1 / resultado.length
-                return shareEsperado * metaEmComissoes * 1.1
+              const calcTeto = (r: typeof resultado[0]): number => {
+                const pico = picoHistoricoMap.get(r.prof.id) // melhor mês não-atípico
+                if (!pico) return r.meta // sem histórico filtrado: mantém meta
+                return isNovatoR(r.fonte) ? pico.valor * 1.1 : pico.valor
               }
 
               let surplus = 0
               const metasAjustadas = resultado.map(r => ({ ...r, metaAdj: r.meta, teto: calcTeto(r) }))
 
-              // Passo 1 — Doadores: meta > teto
+              // Passo 1 — Doadores
               metasAjustadas.forEach(r => {
                 if (r.metaAdj > r.teto + 0.5) {
                   surplus += r.metaAdj - r.teto
@@ -1191,19 +1169,18 @@ export default function RelatoriosPage() {
                 }
               })
 
-              // Passo 2 — Receptores: têm espaço entre meta e teto
+              // Passo 2 — Receptores: distribui surplus proporcional ao espaço até o teto
               const getEspaco = (r: typeof metasAjustadas[0]) => Math.max(0, r.teto - r.metaAdj)
               if (surplus > 0.5) {
                 const receptores = metasAjustadas.filter(r => getEspaco(r) > 0.5)
                 const somaEspacos = receptores.reduce((s, r) => s + getEspaco(r), 0)
                 if (somaEspacos > 0) {
                   receptores.forEach(r => {
-                    const proporcao = getEspaco(r) / somaEspacos
-                    r.metaAdj = Math.min(r.metaAdj + surplus * proporcao, r.teto)
+                    r.metaAdj = Math.min(r.metaAdj + surplus * (getEspaco(r) / somaEspacos), r.teto)
                   })
                 } else {
-                  const somaMetas = metasAjustadas.reduce((s, r) => s + r.metaAdj, 0)
-                  metasAjustadas.forEach(r => { r.metaAdj += surplus * (r.metaAdj / somaMetas) })
+                  const soma = metasAjustadas.reduce((s, r) => s + r.metaAdj, 0)
+                  metasAjustadas.forEach(r => { r.metaAdj += surplus * (r.metaAdj / soma) })
                 }
               }
 
@@ -1212,18 +1189,18 @@ export default function RelatoriosPage() {
                 const diff = r.metaAdj - r.meta
                 let tipo: 'doador' | 'receptor' | 'neutro' = 'neutro'
                 let motivo = 'Sem ajuste necessário'
-                const cargo = norm(r.prof.cargo || '')
                 const meses = getMeses(r.fonte)
-                const mediaIndiv = mediaHistoricaMap.get(r.prof.id)
-                const mediaCateg = mediaCargoHistorica.get(cargo) || 0
-                const cred = Math.min(1, meses / 24)
-                const credPct = Math.round(cred * 100)
+                const pico = picoHistoricoMap.get(r.prof.id)
                 if (diff < -0.5) {
                   tipo = 'doador'
-                  motivo = `Meta acima do teto (cred. ${credPct}% — teto: ${moeda(r.teto)})`
+                  motivo = `Meta acima do melhor mês normal: ${pico ? moeda(pico.valor) + ' em ' + MESES_PT_FULL[pico.mes] + '/' + pico.ano : '—'}`
                 } else if (diff > 0.5) {
                   tipo = 'receptor'
-                  motivo = `Cred. ${credPct}% — teto: ${moeda(r.teto)} (${Math.round((1-cred)*100)}% categoria + ${credPct}% individual)`
+                  if (isNovatoR(r.fonte)) {
+                    motivo = `Novato ${meses}m — teto = pico × 1.1 (${moeda(r.teto)})`
+                  } else {
+                    motivo = `Teto = melhor mês normal (${pico ? moeda(pico.valor) : '—'}) — recebeu surplus`
+                  }
                 }
                 return {
                   prof: r.prof,
