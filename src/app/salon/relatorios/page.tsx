@@ -975,29 +975,60 @@ export default function RelatoriosPage() {
                   (apelido.length >= 3 && apelido.includes(pNorm))
               }
 
-              // 6. Calcula média mensal histórica de comissão por profissional ativo
-              // Usa TODOS os meses disponíveis, não apenas o período de referência
-              const mediaHistoricaMap = new Map<string, number>() // profId → média mensal comissão
-              const mesesComDados = new Set(dados.prof_pagamentos.map(p => `${p.ano}-${p.mes}`)).size || 1
+              // 6. Calcula média mensal histórica excluindo meses atípicos por profissional
+              // Mês atípico = faturou mais de 30% acima da sua própria média (detectado por 2 passagens)
+              // Exceção: se o período selecionado é aquele mês, não exclui
+              const LIMIAR_ATIPICO = 1.30 // 30% acima da média = atípico
+
+              const mediaHistoricaMap = new Map<string, number>()
+              const mesesAtipicosMap = new Map<string, Set<string>>() // profId → Set de "ano-mes" atípicos
 
               profsAtivos.forEach(prof => {
                 const ap = norm(prof.apelido || prof.nome_completo)
                 const nm = norm(prof.nome_completo)
-                const matches = dados.prof_pagamentos.filter(p => matchNome(norm(p.profissional), ap, nm) && p.valor_a_pagar > 0)
-                if (matches.length > 0) {
-                  // Soma total dividido pelo número de meses em que ele apareceu
-                  const mesesAtivos = new Set(matches.map(p => `${p.ano}-${p.mes}`)).size
-                  const somaComissoes = matches.reduce((s, p) => s + p.valor_a_pagar, 0)
-                  mediaHistoricaMap.set(prof.id, somaComissoes / mesesAtivos)
+                const todos = dados.prof_pagamentos.filter(p => matchNome(norm(p.profissional), ap, nm) && p.valor_a_pagar > 0)
+                if (todos.length === 0) return
+
+                // 1ª passagem: média bruta de todos os meses
+                const mesesUnicos = new Set(todos.map(p => `${p.ano}-${p.mes}`))
+                const somaTotal = todos.reduce((s, p) => s + p.valor_a_pagar, 0)
+                const mediaBruta = somaTotal / mesesUnicos.size
+
+                // Identifica meses atípicos (> 30% acima da média bruta)
+                // Exceto se for o mês selecionado
+                const atipicos = new Set<string>()
+                todos.forEach(p => {
+                  const chave = `${p.ano}-${p.mes}`
+                  const isMesSelecionado = p.ano === p1Ano && p.mes === p1Mes
+                  if (!isMesSelecionado && p.valor_a_pagar > mediaBruta * LIMIAR_ATIPICO) {
+                    atipicos.add(chave)
+                  }
+                })
+                mesesAtipicosMap.set(prof.id, atipicos)
+
+                // 2ª passagem: média sem os meses atípicos
+                const normais = todos.filter(p => !atipicos.has(`${p.ano}-${p.mes}`))
+                if (normais.length > 0) {
+                  const mesesNormais = new Set(normais.map(p => `${p.ano}-${p.mes}`)).size
+                  mediaHistoricaMap.set(prof.id, normais.reduce((s, p) => s + p.valor_a_pagar, 0) / mesesNormais)
+                } else {
+                  // Todos eram atípicos — usa média bruta mesmo
+                  mediaHistoricaMap.set(prof.id, mediaBruta)
                 }
               })
 
-              // Pico histórico por profissional: maior valor_a_pagar em um único mês
+              // Pico histórico por profissional — também exclui meses atípicos
+              // (exceto se o mês selecionado for o pico)
               const picoHistoricoMap = new Map<string, { valor: number; ano: number; mes: number }>()
               profsAtivos.forEach(prof => {
                 const ap = norm(prof.apelido || prof.nome_completo)
                 const nm = norm(prof.nome_completo)
-                const matches = dados.prof_pagamentos.filter(p => matchNome(norm(p.profissional), ap, nm) && p.valor_a_pagar > 0)
+                const atipicos = mesesAtipicosMap.get(prof.id) || new Set<string>()
+                const matches = dados.prof_pagamentos.filter(p => {
+                  if (!matchNome(norm(p.profissional), ap, nm) || p.valor_a_pagar <= 0) return false
+                  const isMesSelecionado = p.ano === p1Ano && p.mes === p1Mes
+                  return isMesSelecionado || !atipicos.has(`${p.ano}-${p.mes}`)
+                })
                 if (matches.length > 0) {
                   const pico = matches.reduce((a, b) => a.valor_a_pagar > b.valor_a_pagar ? a : b)
                   picoHistoricoMap.set(prof.id, { valor: pico.valor_a_pagar, ano: pico.ano, mes: pico.mes })
