@@ -1157,21 +1157,18 @@ export default function RelatoriosPage() {
                 if (vals.length > 0) mediaCargoHistorica.set(cargo, vals.reduce((s, v) => s + v, 0) / vals.length)
               })
 
-              // Teto de cada profissional:
-              // Experiente: média histórica individual × 1.1 (meta desafiadora mas realista)
-              // Novato: média do cargo × (meses/12) — proporcional ao tempo de casa
+              // Teto com fórmula de credibilidade gradual (Bühlmann):
+              // credibilidade = meses / 24 (cap em 1)
+              // teto = (cred × média_individual + (1-cred) × média_categoria) × 1.1
+              // — transição suave de 0 a 24 meses, sem cliffhanger
               const calcTeto = (r: typeof resultado[0]) => {
                 const cargo = norm(r.prof.cargo || '')
                 const meses = getMeses(r.fonte)
                 const mediaCateg = mediaCargoHistorica.get(cargo) || r.meta
-                if (meses < 12) {
-                  // Novato: peso proporcional ao tempo de casa (máx 90% da média da categoria)
-                  const peso = Math.min(0.9, meses / 12)
-                  return mediaCateg * peso
-                }
-                // Experiente: média histórica individual + 10% de stretch
-                const mediaIndiv = mediaHistoricaMap.get(r.prof.id) || r.meta
-                return mediaIndiv * 1.1
+                const mediaIndiv = mediaHistoricaMap.get(r.prof.id) || mediaCateg
+                const cred = Math.min(1, meses / 24)
+                const esperado = cred * mediaIndiv + (1 - cred) * mediaCateg
+                return esperado * 1.1
               }
 
               let surplus = 0
@@ -1210,21 +1207,14 @@ export default function RelatoriosPage() {
                 const meses = getMeses(r.fonte)
                 const mediaIndiv = mediaHistoricaMap.get(r.prof.id)
                 const mediaCateg = mediaCargoHistorica.get(cargo) || 0
+                const cred = Math.min(1, meses / 24)
+                const credPct = Math.round(cred * 100)
                 if (diff < -0.5) {
                   tipo = 'doador'
-                  if (mediaIndiv) {
-                    motivo = `Meta acima da média histórica individual (${moeda(mediaIndiv * 1.1)})`
-                  } else {
-                    motivo = `Meta acima da média da categoria (${moeda(mediaCateg * 1.1)})`
-                  }
+                  motivo = `Meta acima do teto (cred. ${credPct}% — teto: ${moeda(r.teto)})`
                 } else if (diff > 0.5) {
                   tipo = 'receptor'
-                  if (meses < 12) {
-                    const peso = Math.min(0.9, meses / 12)
-                    motivo = `Novato ${meses}m — meta = média de ${r.prof.cargo || 'categoria'} × ${Math.round(peso * 100)}% (${moeda(mediaCateg * peso)})`
-                  } else {
-                    motivo = `Meta abaixo da média histórica individual (${moeda((mediaIndiv || r.meta) * 1.1)})`
-                  }
+                  motivo = `Cred. ${credPct}% — teto: ${moeda(r.teto)} (${Math.round((1-cred)*100)}% categoria + ${credPct}% individual)`
                 }
                 return {
                   prof: r.prof,
