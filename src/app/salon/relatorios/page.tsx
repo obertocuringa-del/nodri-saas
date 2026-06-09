@@ -993,18 +993,40 @@ export default function RelatoriosPage() {
                   estavaRef = true
                   fonte = ''
                 } else {
-                  // Profissional novo — busca média de mesmo cargo no período de referência
+                  // Profissional sem histórico — busca média de mesmo cargo entre quem teve dados no período de referência
                   const cargoprof = norm(prof.cargo || '')
-                  const ppMesmoCargo = ppRef.filter(p => norm(p.categoria) === cargoprof && cargoprof.length > 0)
-                  if (ppMesmoCargo.length > 0 && totalRef > 0) {
-                    const mediaPeso = ppMesmoCargo.reduce((s, p) => s + p.valor_a_pagar / totalRef, 0) / ppMesmoCargo.length
-                    peso = mediaPeso
-                    const mesRefLabel = periodoRef ? `${MESES_PT_FULL[periodoRef.mes]}/${periodoRef.ano}` : ''
-                    fonte = `Profissional novo — média de ${prof.cargo || 'categoria'} em ${mesRefLabel}`
+                  // Pega profissionais cadastrados que tiveram match no ppRef e têm mesmo cargo
+                  const colegasMesmoCargo = resultado
+                    .filter(r => r !== resultado[resultado.length - 1]) // evita referência circular — usa resultado já processado
+                  // Abordagem direta: encontra profissionais ativos com mesmo cargo que tiveram peso > 0
+                  const pesosDoMesmoCargo: number[] = []
+                  profsAtivos.forEach(outroProv => {
+                    if (norm(outroProv.cargo || '') !== cargoprof || cargoprof.length === 0) return
+                    const apelOtro = norm(outroProv.apelido || outroProv.nome_completo)
+                    const nomeOtro = norm(outroProv.nome_completo)
+                    const ppOtro = ppRef.find(p => {
+                      const pNorm = norm(p.profissional)
+                      return pNorm === apelOtro || pNorm === nomeOtro ||
+                        (apelOtro.length >= 3 && pNorm.includes(apelOtro)) ||
+                        (apelOtro.length >= 3 && apelOtro.includes(pNorm))
+                    })
+                    if (ppOtro && totalRef > 0) pesosDoMesmoCargo.push(ppOtro.valor_a_pagar / totalRef)
+                  })
+
+                  const mesRefLabel = periodoRef ? `${MESES_PT_FULL[periodoRef.mes]}/${periodoRef.ano}` : ''
+
+                  if (pesosDoMesmoCargo.length > 0) {
+                    peso = pesosDoMesmoCargo.reduce((s, p) => s + p, 0) / pesosDoMesmoCargo.length
+                    fonte = `Média de ${prof.cargo || 'categoria'} em ${mesRefLabel}`
                   } else {
-                    // Distribuição igual
-                    peso = 1 / totalProfsAtivos
-                    fonte = 'Distribuição igual (sem histórico por categoria)'
+                    // Nenhum colega de mesma categoria — usa média geral do período
+                    const nProfsComDados = profsAtivos.filter(outroProv => {
+                      const ap = norm(outroProv.apelido || outroProv.nome_completo)
+                      const nm = norm(outroProv.nome_completo)
+                      return ppRef.some(p => { const pn = norm(p.profissional); return pn === ap || pn === nm || (ap.length >= 3 && pn.includes(ap)) })
+                    }).length || 1
+                    peso = (1 / nProfsComDados)
+                    fonte = `Média geral em ${mesRefLabel}`
                   }
                 }
 
