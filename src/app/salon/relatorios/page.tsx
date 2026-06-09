@@ -1157,18 +1157,27 @@ export default function RelatoriosPage() {
                 if (vals.length > 0) mediaCargoHistorica.set(cargo, vals.reduce((s, v) => s + v, 0) / vals.length)
               })
 
-              // Teto com fórmula de credibilidade gradual (Bühlmann):
-              // credibilidade = meses / 24 (cap em 1)
-              // teto = (cred × média_individual + (1-cred) × média_categoria) × 1.1
-              // — transição suave de 0 a 24 meses, sem cliffhanger
+              // Total histórico mensal de comissões (base para calcular proporções)
+              const totalComissoesHistMensal = (() => {
+                const mesesUnicos = new Set(dados.prof_pagamentos.map((p: any) => `${p.ano}-${p.mes}`)).size || 1
+                return dados.prof_pagamentos.reduce((s: number, p: any) => s + p.valor_a_pagar, 0) / mesesUnicos
+              })()
+
+              // Teto com credibilidade gradual — mantém a MESMA ESCALA da meta (proporção do pool):
+              // share_individual = média_individual / total_histórico_mensal
+              // share_categoria  = média_categoria  / total_histórico_mensal
+              // share_esperado   = cred × share_ind + (1-cred) × share_cat
+              // teto             = share_esperado × metaEmComissoes × 1.1
+              // — assim teto e meta estão na mesma escala, crescimento da meta é refletido proporcionalmente
               const calcTeto = (r: typeof resultado[0]) => {
                 const cargo = norm(r.prof.cargo || '')
                 const meses = getMeses(r.fonte)
-                const mediaCateg = mediaCargoHistorica.get(cargo) || r.meta
+                const mediaCateg = mediaCargoHistorica.get(cargo) || (totalComissoesHistMensal / (resultado.length || 1))
                 const mediaIndiv = mediaHistoricaMap.get(r.prof.id) || mediaCateg
                 const cred = Math.min(1, meses / 24)
                 const esperado = cred * mediaIndiv + (1 - cred) * mediaCateg
-                return esperado * 1.1
+                const shareEsperado = totalComissoesHistMensal > 0 ? esperado / totalComissoesHistMensal : 1 / resultado.length
+                return shareEsperado * metaEmComissoes * 1.1
               }
 
               let surplus = 0
