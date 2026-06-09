@@ -935,45 +935,35 @@ export default function RelatoriosPage() {
               const profsAtivos = profsCadastrados.filter(p => p.nome_completo)
               const totalProfsAtivos = profsAtivos.length || 1
 
-              // 3. Encontra período de referência em dadosBase.periodos
-              // Precisamos de periodos com resumo_mensal e prof_pagamentos — usamos dados.resumo_mensal e dados.prof_pagamentos
-              // Agrupa prof_pagamentos por período
+              // 3. Todos os períodos disponíveis (para média histórica)
               const periodosFat: { ano: number; mes: number; fat: number }[] = []
               dados.resumo_mensal.forEach(rm => {
                 periodosFat.push({ ano: rm.ano, mes: rm.mes, fat: rm.faturamento_total })
               })
 
+              // Período de referência — apenas para o badge "já bateu"
               let periodoRef: { ano: number; mes: number; fat: number } | null = null
               let metaBatida = false
-              if (metaTotalProf > 0) {
-                // Encontra período onde fat >= meta (mais próximo ou acima)
+              if (metaTotalProf > 0 && periodosFat.length > 0) {
                 const acima = periodosFat.filter(p => p.fat >= metaTotalProf)
                 if (acima.length > 0) {
-                  // O mais recente que bateu
                   periodoRef = acima.reduce((a, b) => (a.ano * 100 + a.mes > b.ano * 100 + b.mes ? a : b))
                   metaBatida = true
                 } else {
-                  // Nenhum bateu — usa o de maior faturamento
                   periodoRef = periodosFat.reduce((a, b) => a.fat > b.fat ? a : b)
-                  metaBatida = false
                 }
               } else if (periodosFat.length > 0) {
                 periodoRef = periodosFat.reduce((a, b) => a.fat > b.fat ? a : b)
               }
 
-              // 4. prof_pagamentos do período de referência
-              const ppRef = periodoRef
-                ? dados.prof_pagamentos.filter(p => p.ano === periodoRef!.ano && p.mes === periodoRef!.mes)
-                : []
-              // totalComissoesRef = soma das comissões pagas no período de referência
-              const totalComissoesRef = ppRef.reduce((s, p) => s + p.valor_a_pagar, 0)
-              // faturamentoBrutoRef = faturamento bruto do salão no período de referência
-              const faturamentoBrutoRef = periodoRef?.fat || totalComissoesRef || 1
-              // fator de escala: quanto as comissões precisam crescer/diminuir para bater a meta
-              // meta é em bruto → convertemos para meta em comissões
+              // 4. Média histórica de comissão por profissional (TODOS os meses)
+              // Ratio histórico: comissões totais / faturamento bruto total (para converter meta bruta → meta comissão)
+              const totalFatHistorico = periodosFat.reduce((s, p) => s + p.fat, 0) || 1
+              const totalComissoesHistorico = dados.prof_pagamentos.reduce((s, p) => s + p.valor_a_pagar, 0)
+              const ratioComissoes = totalComissoesHistorico / totalFatHistorico
               const metaEmComissoes = metaTotalProf > 0
-                ? totalComissoesRef * (metaTotalProf / faturamentoBrutoRef)
-                : totalComissoesRef
+                ? metaTotalProf * ratioComissoes
+                : totalComissoesHistorico / (periodosFat.length || 1)
 
               // 5. prof_pagamentos do período selecionado (p1Ano/p1Mes)
               const ppAtual = dados.prof_pagamentos.filter(p => p.ano === p1Ano && p.mes === p1Mes)
@@ -985,76 +975,93 @@ export default function RelatoriosPage() {
                   (apelido.length >= 3 && apelido.includes(pNorm))
               }
 
-              // Pré-calcula quais profissionais têm match no período de referência
-              const matchRefMap = new Map<string, number>() // profId → valor_a_pagar
+              // 6. Calcula média mensal histórica de comissão por profissional ativo
+              // Usa TODOS os meses disponíveis, não apenas o período de referência
+              const mediaHistoricaMap = new Map<string, number>() // profId → média mensal comissão
+              const mesesComDados = new Set(dados.prof_pagamentos.map(p => `${p.ano}-${p.mes}`)).size || 1
+
               profsAtivos.forEach(prof => {
                 const ap = norm(prof.apelido || prof.nome_completo)
                 const nm = norm(prof.nome_completo)
-                const ppMatch = ppRef.find(p => matchNome(norm(p.profissional), ap, nm))
-                if (ppMatch) matchRefMap.set(prof.id, ppMatch.valor_a_pagar)
+                const matches = dados.prof_pagamentos.filter(p => matchNome(norm(p.profissional), ap, nm) && p.valor_a_pagar > 0)
+                if (matches.length > 0) {
+                  // Soma total dividido pelo número de meses em que ele apareceu
+                  const mesesAtivos = new Set(matches.map(p => `${p.ano}-${p.mes}`)).size
+                  const somaComissoes = matches.reduce((s, p) => s + p.valor_a_pagar, 0)
+                  mediaHistoricaMap.set(prof.id, somaComissoes / mesesAtivos)
+                }
               })
 
-              // Pré-calcula média por cargo entre profissionais que têm match
-              const mediaPorCargo = new Map<string, number>()
+              // Média histórica por cargo (para profissionais sem histórico)
+              const mediaCargoPorHistorico = new Map<string, number>()
               const cargosTodos = [...new Set(profsAtivos.map(p => norm(p.cargo || '')))]
               cargosTodos.forEach(cargo => {
                 if (!cargo) return
                 const vals: number[] = []
                 profsAtivos.forEach(prof => {
                   if (norm(prof.cargo || '') !== cargo) return
-                  const val = matchRefMap.get(prof.id)
-                  if (val !== undefined) vals.push(val)
+                  const val = mediaHistoricaMap.get(prof.id)
+                  if (val !== undefined && val > 0) vals.push(val)
                 })
-                if (vals.length > 0) mediaPorCargo.set(cargo, vals.reduce((s, v) => s + v, 0) / vals.length)
+                if (vals.length > 0) mediaCargoPorHistorico.set(cargo, vals.reduce((s, v) => s + v, 0) / vals.length)
               })
-              const mediaGeral = matchRefMap.size > 0
-                ? [...matchRefMap.values()].reduce((s, v) => s + v, 0) / matchRefMap.size
-                : totalComissoesRef / (profsAtivos.length || 1)
+              const mediaGeralHistorica = mediaHistoricaMap.size > 0
+                ? [...mediaHistoricaMap.values()].reduce((s, v) => s + v, 0) / mediaHistoricaMap.size
+                : metaEmComissoes / (profsAtivos.length || 1)
 
-              const mesRefLabel = periodoRef ? `${MESES_PT_FULL[periodoRef.mes]}/${periodoRef.ano}` : ''
+              // Profissionais que estavam no período de referência (para badge)
+              const profsNoPeriodoRef = new Set<string>()
+              if (periodoRef) {
+                const ppRef = dados.prof_pagamentos.filter(p => p.ano === periodoRef!.ano && p.mes === periodoRef!.mes && p.valor_a_pagar > 0)
+                profsAtivos.forEach(prof => {
+                  const ap = norm(prof.apelido || prof.nome_completo)
+                  const nm = norm(prof.nome_completo)
+                  if (ppRef.find(p => matchNome(norm(p.profissional), ap, nm))) profsNoPeriodoRef.add(prof.id)
+                })
+              }
 
-              // 6. Calcula comissão de referência para cada profissional ativo
+              const periodoRefLabel = periodoRef ? `${MESES_PT_FULL[periodoRef.mes]}/${periodoRef.ano}` : '—'
+
+              // 7. Monta resultado com média histórica como peso
               interface MetaProf { prof: ProfCadastrado; peso: number; meta: number; realizado: number; fonte: string; estavaRef: boolean }
               const resultado: MetaProf[] = profsAtivos.map(prof => {
                 const apelidoProf = norm(prof.apelido || prof.nome_completo)
                 const nomeProf = norm(prof.nome_completo)
                 const cargo = norm(prof.cargo || '')
 
-                let comissaoRef = 0
+                let mediaProf = 0
                 let fonte = ''
-                let estavaRef = false
+                const estavaRef = profsNoPeriodoRef.has(prof.id)
 
-                if (matchRefMap.has(prof.id) && (matchRefMap.get(prof.id) ?? 0) > 0) {
-                  comissaoRef = matchRefMap.get(prof.id)!
-                  estavaRef = true
-                } else if (mediaPorCargo.has(cargo)) {
-                  comissaoRef = mediaPorCargo.get(cargo)!
-                  fonte = `Média de ${prof.cargo || 'categoria'} em ${mesRefLabel}`
+                if (mediaHistoricaMap.has(prof.id)) {
+                  mediaProf = mediaHistoricaMap.get(prof.id)!
+                  const mesesProf = new Set(dados.prof_pagamentos.filter(p => matchNome(norm(p.profissional), apelidoProf, nomeProf) && p.valor_a_pagar > 0).map(p => `${p.ano}-${p.mes}`)).size
+                  fonte = `Média de ${mesesProf} mês${mesesProf !== 1 ? 'es' : ''} histórico${mesesProf !== 1 ? 's' : ''}`
+                } else if (mediaCargoPorHistorico.has(cargo)) {
+                  mediaProf = mediaCargoPorHistorico.get(cargo)!
+                  fonte = `Média histórica de ${prof.cargo || 'categoria'}`
                 } else {
-                  comissaoRef = mediaGeral
-                  fonte = `Média geral em ${mesRefLabel}`
+                  mediaProf = mediaGeralHistorica
+                  fonte = 'Média histórica geral'
                 }
 
-                // Realizado no período selecionado (em comissão)
+                // Realizado no período selecionado
                 const ppProfAtual = ppAtual.find(p => matchNome(norm(p.profissional), apelidoProf, nomeProf))
                 const realizado2 = ppProfAtual?.valor_a_pagar || 0
 
-                return { prof, peso: comissaoRef, meta: 0, realizado: realizado2, fonte, estavaRef }
+                return { prof, peso: mediaProf, meta: 0, realizado: realizado2, fonte, estavaRef }
               })
 
-              // 7. Normaliza pesos e aplica sobre metaEmComissoes
-              // peso aqui = comissaoRef de cada profissional (valor absoluto)
+              // 8. Normaliza e aplica metaEmComissoes
               const somaPesos = resultado.reduce((s, r) => s + r.peso, 0)
               resultado.forEach(r => {
                 const proporcao = somaPesos > 0 ? r.peso / somaPesos : 1 / totalProfsAtivos
                 r.meta = metaEmComissoes * proporcao
               })
 
-              // 8. Ordena por meta decrescente
+              // 9. Ordena por meta decrescente
               resultado.sort((a, b) => b.meta - a.meta)
               const somaMetasIndividuais = resultado.reduce((s, r) => s + r.meta, 0)
-
-              const periodoRefLabel = periodoRef ? `${MESES_PT_FULL[periodoRef.mes]}/${periodoRef.ano}` : '—'
 
               return (
                 <div>
@@ -1064,7 +1071,7 @@ export default function RelatoriosPage() {
                       <div>
                         <div style={{ fontSize: 11, color: '#475569', fontWeight: 600, marginBottom: 4 }}>META TOTAL DO SALÃO (BRUTO)</div>
                         <div style={{ fontSize: 22, fontWeight: 800, color: '#7c5cfc' }}>{metaTotalProf > 0 ? moeda(metaTotalProf) : '—'}</div>
-                        <div style={{ fontSize: 10, color: '#475569', marginTop: 2 }}>Metas individuais = comissão proporcional · {moeda(metaEmComissoes)}</div>
+                        <div style={{ fontSize: 10, color: '#475569', marginTop: 2 }}>Meta em comissão: {moeda(metaEmComissoes)} · Base: média histórica de todos os meses</div>
                       </div>
                       <div>
                         <div style={{ fontSize: 11, color: '#475569', fontWeight: 600, marginBottom: 4 }}>PERÍODO DE REFERÊNCIA</div>
