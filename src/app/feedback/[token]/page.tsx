@@ -45,10 +45,17 @@ export default function FeedbackPublicoPage() {
       .then(data => {
         if (data.error) { setError(data.error); setLoading(false); return }
         setForm(data)
+        if (data.salao_nome) document.title = `Avaliação - ${data.salao_nome}`
         setLoading(false)
       })
       .catch(() => { setError('Erro ao carregar formulário.'); setLoading(false) })
   }, [token])
+
+  useEffect(() => {
+    const btn = document.getElementById('whatsapp-float-btn')
+    if (btn) btn.style.display = 'none'
+    return () => { if (btn) btn.style.display = '' }
+  }, [])
 
   function setResposta(id: string, valor: unknown) {
     setRespostas(prev => ({ ...prev, [id]: valor }))
