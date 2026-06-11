@@ -1809,20 +1809,6 @@ export default function PerfilProfissionalPage() {
                   <div><label className={labelCls}>Contato do Responsável</label><input value={form.contato_responsavel||''} onChange={e=>set('contato_responsavel',e.target.value)} className={inputCls}/></div>
                   <div><label className={labelCls}>Habilidades</label><input value={form.habilidades||''} onChange={e=>set('habilidades',e.target.value)} className={inputCls}/></div>
                 </div>
-                <div className={`mt-1 rounded-xl p-3 flex items-center justify-between ${form.dados_pessoais_completo ? 'bg-green-900/20 border border-green-800/40' : 'bg-red-900/20 border border-red-800/40'}`}>
-                  <div>
-                    <p className="text-[12px] font-semibold text-nodri-t1">Dados Pessoais completo?</p>
-                    <p className={`text-[11px] mt-0.5 ${form.dados_pessoais_completo ? 'text-green-400' : 'text-red-400'}`}>
-                      {form.dados_pessoais_completo ? 'Sim — dados completos' : 'Não — pendência de dados'}
-                    </p>
-                  </div>
-                  <label className="flex items-center gap-2 cursor-pointer" onClick={()=>set('dados_pessoais_completo',!form.dados_pessoais_completo)}>
-                    <div className={`w-10 h-5 rounded-full relative transition-all ${form.dados_pessoais_completo ? 'bg-green-500' : 'bg-red-700'}`}>
-                      <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all ${form.dados_pessoais_completo ? 'left-5' : 'left-0.5'}`}/>
-                    </div>
-                    <span className={`text-[12px] font-bold ${form.dados_pessoais_completo ? 'text-green-400' : 'text-red-400'}`}>{form.dados_pessoais_completo ? 'SIM' : 'NÃO'}</span>
-                  </label>
-                </div>
               </div>
               <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5 space-y-3">
                 <h2 className="font-syne font-bold text-[12px] text-nodri-pink"> Perfil Pessoal</h2>
@@ -1834,20 +1820,6 @@ export default function PerfilProfissionalPage() {
                     </div>
                   ))}
                 </div>
-                <div className={`mt-1 rounded-xl p-3 flex items-center justify-between ${form.perfil_pessoal_completo ? 'bg-green-900/20 border border-green-800/40' : 'bg-red-900/20 border border-red-800/40'}`}>
-                  <div>
-                    <p className="text-[12px] font-semibold text-nodri-t1">Perfil Pessoal completo?</p>
-                    <p className={`text-[11px] mt-0.5 ${form.perfil_pessoal_completo ? 'text-green-400' : 'text-red-400'}`}>
-                      {form.perfil_pessoal_completo ? 'Sim — perfil completo' : 'Não — pendência de perfil'}
-                    </p>
-                  </div>
-                  <label className="flex items-center gap-2 cursor-pointer" onClick={()=>set('perfil_pessoal_completo',!form.perfil_pessoal_completo)}>
-                    <div className={`w-10 h-5 rounded-full relative transition-all ${form.perfil_pessoal_completo ? 'bg-green-500' : 'bg-red-700'}`}>
-                      <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all ${form.perfil_pessoal_completo ? 'left-5' : 'left-0.5'}`}/>
-                    </div>
-                    <span className={`text-[12px] font-bold ${form.perfil_pessoal_completo ? 'text-green-400' : 'text-red-400'}`}>{form.perfil_pessoal_completo ? 'SIM' : 'NÃO'}</span>
-                  </label>
-                </div>
               </div>
               <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5 space-y-3">
                 <h2 className="font-syne font-bold text-[12px] text-nodri-amber"> Dados Profissionais</h2>
@@ -1855,34 +1827,31 @@ export default function PerfilProfissionalPage() {
                   <div><label className={labelCls}>CNPJ *</label><input value={form.cnpj||''} onChange={e=>set('cnpj',e.target.value)} placeholder="00.000.000/0000-00" className={inputCls}/></div>
                   <div><label className={labelCls}>Dados Bancários</label><input value={form.conta_bancaria||''} onChange={e=>set('conta_bancaria',e.target.value)} placeholder="Banco / Ag / Conta" className={inputCls}/></div>
                 </div>
-                <div className={`mt-2 rounded-xl p-3 flex items-center justify-between ${form.tem_contrato ? 'bg-green-900/20 border border-green-800/40' : 'bg-red-900/20 border border-red-800/40'}`}>
-                  <div>
-                    <p className="text-[12px] font-semibold text-nodri-t1">Profissional já possui contrato?</p>
-                    <p className={`text-[11px] mt-0.5 ${form.tem_contrato ? 'text-green-400' : 'text-red-400'}`}>
-                      {form.tem_contrato ? 'Sim — contrato assinado' : 'Não — pendência de contrato'}
-                    </p>
-                  </div>
-                  <label className="flex items-center gap-2 cursor-pointer" onClick={()=>set('tem_contrato',!form.tem_contrato)}>
-                    <div className={`w-10 h-5 rounded-full relative transition-all ${form.tem_contrato ? 'bg-green-500' : 'bg-red-700'}`}>
-                      <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all ${form.tem_contrato ? 'left-5' : 'left-0.5'}`}/>
+              </div>
+              {/* ── CHECKLIST DE ONBOARDING ── */}
+              <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5 space-y-3">
+                <h2 className="font-syne font-bold text-[12px] text-nodri-cyan"> Checklist de Onboarding</h2>
+                {([
+                  ['dados_pessoais_completo',      'Dados Pessoais completo?',       'dados completos',          'pendência de dados pessoais'],
+                  ['perfil_pessoal_completo',       'Perfil Pessoal completo?',        'perfil completo',          'pendência de perfil pessoal'],
+                  ['dados_profissionais_completo',  'Dados Profissionais completo?',   'dados completos',          'pendência de dados profissionais'],
+                  ['tem_contrato',                  'Profissional possui contrato?',   'contrato assinado',        'pendência de contrato'],
+                ] as [keyof typeof form, string, string, string][]).map(([key, label, okMsg, nokMsg]) => (
+                  <div key={key} className={`rounded-xl p-3 flex items-center justify-between ${form[key] ? 'bg-green-900/20 border border-green-800/40' : 'bg-red-900/20 border border-red-800/40'}`}>
+                    <div>
+                      <p className="text-[12px] font-semibold text-nodri-t1">{label}</p>
+                      <p className={`text-[11px] mt-0.5 ${form[key] ? 'text-green-400' : 'text-red-400'}`}>
+                        {form[key] ? `Sim — ${okMsg}` : `Não — ${nokMsg}`}
+                      </p>
                     </div>
-                    <span className={`text-[12px] font-bold ${form.tem_contrato ? 'text-green-400' : 'text-red-400'}`}>{form.tem_contrato ? 'SIM' : 'NÃO'}</span>
-                  </label>
-                </div>
-                <div className={`rounded-xl p-3 flex items-center justify-between ${form.dados_profissionais_completo ? 'bg-green-900/20 border border-green-800/40' : 'bg-red-900/20 border border-red-800/40'}`}>
-                  <div>
-                    <p className="text-[12px] font-semibold text-nodri-t1">Dados Profissionais completo?</p>
-                    <p className={`text-[11px] mt-0.5 ${form.dados_profissionais_completo ? 'text-green-400' : 'text-red-400'}`}>
-                      {form.dados_profissionais_completo ? 'Sim — dados completos' : 'Não — pendência de dados profissionais'}
-                    </p>
+                    <label className="flex items-center gap-2 cursor-pointer" onClick={()=>set(key, !form[key])}>
+                      <div className={`w-10 h-5 rounded-full relative transition-all ${form[key] ? 'bg-green-500' : 'bg-red-700'}`}>
+                        <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all ${form[key] ? 'left-5' : 'left-0.5'}`}/>
+                      </div>
+                      <span className={`text-[12px] font-bold ${form[key] ? 'text-green-400' : 'text-red-400'}`}>{form[key] ? 'SIM' : 'NÃO'}</span>
+                    </label>
                   </div>
-                  <label className="flex items-center gap-2 cursor-pointer" onClick={()=>set('dados_profissionais_completo',!form.dados_profissionais_completo)}>
-                    <div className={`w-10 h-5 rounded-full relative transition-all ${form.dados_profissionais_completo ? 'bg-green-500' : 'bg-red-700'}`}>
-                      <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all ${form.dados_profissionais_completo ? 'left-5' : 'left-0.5'}`}/>
-                    </div>
-                    <span className={`text-[12px] font-bold ${form.dados_profissionais_completo ? 'text-green-400' : 'text-red-400'}`}>{form.dados_profissionais_completo ? 'SIM' : 'NÃO'}</span>
-                  </label>
-                </div>
+                ))}
               </div>
               <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
                 <h2 className="font-syne font-bold text-[12px] text-nodri-purple mb-3">️ Status</h2>
