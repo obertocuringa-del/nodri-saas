@@ -116,7 +116,7 @@ export default function PendenciaPublicaPage() {
               Data limite (opcional)
             </label>
             <input type="date" value={dataLimite} onChange={e => setDataLimite(e.target.value)}
-              style={{ width: '100%', background: '#161b27', border: '1px solid #1e293b', borderRadius: '8px', padding: '10px 12px', fontSize: '13px', color: '#e2e8f0', outline: 'none', boxSizing: 'border-box' }} />
+              style={{ width: '100%', background: '#161b27', border: '1px solid #1e293b', borderRadius: '8px', padding: '10px 12px', fontSize: '13px', color: '#e2e8f0', outline: 'none', boxSizing: 'border-box', colorScheme: 'dark', cursor: 'pointer' }} />
           </div>
 
           {/* Erro */}
