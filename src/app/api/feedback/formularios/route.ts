@@ -108,14 +108,28 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => ({}))
-  const titulo = body.titulo || `Avaliação - ${payload.salaoNome || 'Salão'}`
+  const salaoNome = payload.salaoNome || 'Salão'
+  const titulo = body.titulo || `Avaliação - ${salaoNome}`
   const descricao = body.descricao || 'Sua opinião é muito importante para nós!'
 
+  // Cria primeiro para obter o token gerado pelo banco
   const { data: form, error } = await supabaseAdmin
     .from('feedback_formularios')
     .insert({ salao_id: payload.salaoId, titulo, descricao })
     .select()
     .single()
+
+  if (!error && form) {
+    const slugBase = salaoNome
+      .toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9\s]/g, '')
+      .trim()
+      .replace(/\s+/g, '-')
+    const slug = `${slugBase}-${(form.token as string).slice(0, 4)}`
+    await supabaseAdmin.from('feedback_formularios').update({ slug }).eq('id', form.id)
+    ;(form as Record<string, unknown>).slug = slug
+  }
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

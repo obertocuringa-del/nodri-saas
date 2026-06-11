@@ -21,6 +21,7 @@ interface Formulario {
   titulo: string
   descricao: string
   token: string
+  slug?: string
   ativo: boolean
   criado_em: string
   perguntas?: Pergunta[]
@@ -204,12 +205,12 @@ export default function FeedbackPage() {
 
   const copiarLink = useCallback(() => {
     if (!selected) return
-    const link = `${salaoUrl}/feedback/${selected.token}`
+    const link = selected.slug ? `${salaoUrl}/avaliacao/${selected.slug}` : `${salaoUrl}/feedback/${selected.token}`
     navigator.clipboard.writeText(link)
     toast.success('Link copiado!')
   }, [selected, salaoUrl])
 
-  const linkFeedback = selected ? `${salaoUrl}/feedback/${selected.token}` : ''
+  const linkFeedback = selected ? selected.slug ? `${salaoUrl}/avaliacao/${selected.slug}` : `${salaoUrl}/feedback/${selected.token}` : ''
 
   if (loading) {
     return (
