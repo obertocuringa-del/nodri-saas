@@ -27,6 +27,8 @@ interface Profissional {
   certificados?: string
   ativo: boolean
   tem_contrato?: boolean
+  perfil_pessoal_completo?: boolean
+  dados_pessoais_completo?: boolean
   criado_em: string
 }
 
@@ -343,6 +345,16 @@ export default function ProfissionaisPage() {
                           {p.tem_contrato === false && (
                             <span style={{ fontSize: '9px', padding: '3px 7px', borderRadius: '20px', background: '#ef444420', color: '#ef4444', fontWeight: 700, border: '1px solid #ef444440', whiteSpace: 'nowrap' }}>
                               SEM CONTRATO
+                            </span>
+                          )}
+                          {p.dados_pessoais_completo === false && (
+                            <span style={{ fontSize: '9px', padding: '3px 7px', borderRadius: '20px', background: '#f9731620', color: '#f97316', fontWeight: 700, border: '1px solid #f9731640', whiteSpace: 'nowrap' }}>
+                              DADOS INCOMPLETOS
+                            </span>
+                          )}
+                          {p.perfil_pessoal_completo === false && (
+                            <span style={{ fontSize: '9px', padding: '3px 7px', borderRadius: '20px', background: '#eab30820', color: '#eab308', fontWeight: 700, border: '1px solid #eab30840', whiteSpace: 'nowrap' }}>
+                              PERFIL INCOMPLETO
                             </span>
                           )}
                         </div>

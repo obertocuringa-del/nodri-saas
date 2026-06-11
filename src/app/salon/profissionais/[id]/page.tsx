@@ -15,6 +15,8 @@ interface Profissional {
   perfil_ideal: boolean; horarios_folgas: boolean; distrato: boolean
   contrato_trabalho: boolean; tem_certificados: boolean; plano_carreira: boolean
   tem_contrato: boolean
+  perfil_pessoal_completo: boolean
+  dados_pessoais_completo: boolean
 }
 
 interface MetricaBloco {
@@ -1806,6 +1808,20 @@ export default function PerfilProfissionalPage() {
                   <div><label className={labelCls}>Contato do Responsável</label><input value={form.contato_responsavel||''} onChange={e=>set('contato_responsavel',e.target.value)} className={inputCls}/></div>
                   <div><label className={labelCls}>Habilidades</label><input value={form.habilidades||''} onChange={e=>set('habilidades',e.target.value)} className={inputCls}/></div>
                 </div>
+                <div className={`mt-1 rounded-xl p-3 flex items-center justify-between ${form.dados_pessoais_completo ? 'bg-green-900/20 border border-green-800/40' : 'bg-red-900/20 border border-red-800/40'}`}>
+                  <div>
+                    <p className="text-[12px] font-semibold text-nodri-t1">Dados Pessoais completo?</p>
+                    <p className={`text-[11px] mt-0.5 ${form.dados_pessoais_completo ? 'text-green-400' : 'text-red-400'}`}>
+                      {form.dados_pessoais_completo ? 'Sim — dados completos' : 'Não — pendência de dados'}
+                    </p>
+                  </div>
+                  <label className="flex items-center gap-2 cursor-pointer" onClick={()=>set('dados_pessoais_completo',!form.dados_pessoais_completo)}>
+                    <div className={`w-10 h-5 rounded-full relative transition-all ${form.dados_pessoais_completo ? 'bg-green-500' : 'bg-red-700'}`}>
+                      <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all ${form.dados_pessoais_completo ? 'left-5' : 'left-0.5'}`}/>
+                    </div>
+                    <span className={`text-[12px] font-bold ${form.dados_pessoais_completo ? 'text-green-400' : 'text-red-400'}`}>{form.dados_pessoais_completo ? 'SIM' : 'NÃO'}</span>
+                  </label>
+                </div>
               </div>
               <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5 space-y-3">
                 <h2 className="font-syne font-bold text-[12px] text-nodri-pink"> Perfil Pessoal</h2>
@@ -1816,6 +1832,20 @@ export default function PerfilProfissionalPage() {
                       <input value={(form as any)[k]||''} onChange={e=>set(k as any,e.target.value)} className={inputCls}/>
                     </div>
                   ))}
+                </div>
+                <div className={`mt-1 rounded-xl p-3 flex items-center justify-between ${form.perfil_pessoal_completo ? 'bg-green-900/20 border border-green-800/40' : 'bg-red-900/20 border border-red-800/40'}`}>
+                  <div>
+                    <p className="text-[12px] font-semibold text-nodri-t1">Perfil Pessoal completo?</p>
+                    <p className={`text-[11px] mt-0.5 ${form.perfil_pessoal_completo ? 'text-green-400' : 'text-red-400'}`}>
+                      {form.perfil_pessoal_completo ? 'Sim — perfil completo' : 'Não — pendência de perfil'}
+                    </p>
+                  </div>
+                  <label className="flex items-center gap-2 cursor-pointer" onClick={()=>set('perfil_pessoal_completo',!form.perfil_pessoal_completo)}>
+                    <div className={`w-10 h-5 rounded-full relative transition-all ${form.perfil_pessoal_completo ? 'bg-green-500' : 'bg-red-700'}`}>
+                      <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all ${form.perfil_pessoal_completo ? 'left-5' : 'left-0.5'}`}/>
+                    </div>
+                    <span className={`text-[12px] font-bold ${form.perfil_pessoal_completo ? 'text-green-400' : 'text-red-400'}`}>{form.perfil_pessoal_completo ? 'SIM' : 'NÃO'}</span>
+                  </label>
                 </div>
               </div>
               <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5 space-y-3">
