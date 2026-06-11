@@ -1801,46 +1801,47 @@ export default function PerfilProfissionalPage() {
                   </div>
                 </div>
               )}
-              {!form.is_departamento && <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5 space-y-4">
-                <h2 className="font-syne font-bold text-[12px] text-nodri-cyan"> Dados Pessoais</h2>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="col-span-2"><label className={labelCls}>Nome Completo *</label><input value={form.nome_completo||''} onChange={e=>set('nome_completo',e.target.value)} className={inputCls}/></div>
-                  <div><label className={labelCls}>Apelido</label><input value={form.apelido||''} onChange={e=>set('apelido',e.target.value)} className={inputCls}/></div>
-                  <div><label className={labelCls}>Cargo / Categoria</label>
-                    <select value={form.cargo||''} onChange={e=>set('cargo',e.target.value)} className={inputCls}>
-                      {['Cabeleireiro','Manicure','Pedicure','Assistente','Massoterapeuta','Colorista','Maquiador(a)','Recepcionista'].map(c=>(
-                        <option key={c} value={c}>{c}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div><label className={labelCls}>CPF</label><input value={form.cpf||''} onChange={e=>set('cpf',e.target.value)} placeholder="000.000.000-00" className={inputCls}/></div>
-                  <div><label className={labelCls}>RG</label><input value={form.rg||''} onChange={e=>set('rg',e.target.value)} className={inputCls}/></div>
-                  <div><label className={labelCls}>Data de Aniversário</label><input type="date" value={form.data_aniversario||''} onChange={e=>set('data_aniversario',e.target.value)} className={inputCls}/></div>
-                  <div><label className={labelCls}>Email</label><input type="email" value={form.email||''} onChange={e=>set('email',e.target.value)} className={inputCls}/></div>
-                  <div className="col-span-2"><label className={labelCls}>Endereço</label><input value={form.endereco||''} onChange={e=>set('endereco',e.target.value)} className={inputCls}/></div>
-                  <div><label className={labelCls}>Contato do Responsável</label><input value={form.contato_responsavel||''} onChange={e=>set('contato_responsavel',e.target.value)} className={inputCls}/></div>
-                  <div><label className={labelCls}>Habilidades</label><input value={form.habilidades||''} onChange={e=>set('habilidades',e.target.value)} className={inputCls}/></div>
-                </div>
-              </div>
-              <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5 space-y-3">
-                <h2 className="font-syne font-bold text-[12px] text-nodri-pink"> Perfil Pessoal</h2>
-                <div className="grid grid-cols-2 gap-3">
-                  {[['cor_favorita','Cor Favorita'],['comida_favorita','Comida Favorita'],['animal_favorito','Animal Favorito'],['hobbies','Hobbies'],['um_sonho','Um Sonho']].map(([k,l])=>(
-                    <div key={k} className={k==='hobbies'||k==='um_sonho'?'col-span-2':''}>
-                      <label className={labelCls}>{l}</label>
-                      <input value={(form as any)[k]||''} onChange={e=>set(k as any,e.target.value)} className={inputCls}/>
+              {!form.is_departamento && <>
+                <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5 space-y-4">
+                  <h2 className="font-syne font-bold text-[12px] text-nodri-cyan"> Dados Pessoais</h2>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="col-span-2"><label className={labelCls}>Nome Completo *</label><input value={form.nome_completo||''} onChange={e=>set('nome_completo',e.target.value)} className={inputCls}/></div>
+                    <div><label className={labelCls}>Apelido</label><input value={form.apelido||''} onChange={e=>set('apelido',e.target.value)} className={inputCls}/></div>
+                    <div><label className={labelCls}>Cargo / Categoria</label>
+                      <select value={form.cargo||''} onChange={e=>set('cargo',e.target.value)} className={inputCls}>
+                        {['Cabeleireiro','Manicure','Pedicure','Assistente','Massoterapeuta','Colorista','Maquiador(a)','Recepcionista'].map(c=>(
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
                     </div>
-                  ))}
+                    <div><label className={labelCls}>CPF</label><input value={form.cpf||''} onChange={e=>set('cpf',e.target.value)} placeholder="000.000.000-00" className={inputCls}/></div>
+                    <div><label className={labelCls}>RG</label><input value={form.rg||''} onChange={e=>set('rg',e.target.value)} className={inputCls}/></div>
+                    <div><label className={labelCls}>Data de Aniversário</label><input type="date" value={form.data_aniversario||''} onChange={e=>set('data_aniversario',e.target.value)} className={inputCls}/></div>
+                    <div><label className={labelCls}>Email</label><input type="email" value={form.email||''} onChange={e=>set('email',e.target.value)} className={inputCls}/></div>
+                    <div className="col-span-2"><label className={labelCls}>Endereço</label><input value={form.endereco||''} onChange={e=>set('endereco',e.target.value)} className={inputCls}/></div>
+                    <div><label className={labelCls}>Contato do Responsável</label><input value={form.contato_responsavel||''} onChange={e=>set('contato_responsavel',e.target.value)} className={inputCls}/></div>
+                    <div><label className={labelCls}>Habilidades</label><input value={form.habilidades||''} onChange={e=>set('habilidades',e.target.value)} className={inputCls}/></div>
+                  </div>
                 </div>
-              </div>
-              <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5 space-y-3">
-                <h2 className="font-syne font-bold text-[12px] text-nodri-amber"> Dados Profissionais</h2>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><label className={labelCls}>CNPJ *</label><input value={form.cnpj||''} onChange={e=>set('cnpj',e.target.value)} placeholder="00.000.000/0000-00" className={inputCls}/></div>
-                  <div><label className={labelCls}>Dados Bancários</label><input value={form.conta_bancaria||''} onChange={e=>set('conta_bancaria',e.target.value)} placeholder="Banco / Ag / Conta" className={inputCls}/></div>
+                <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5 space-y-3">
+                  <h2 className="font-syne font-bold text-[12px] text-nodri-pink"> Perfil Pessoal</h2>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[['cor_favorita','Cor Favorita'],['comida_favorita','Comida Favorita'],['animal_favorito','Animal Favorito'],['hobbies','Hobbies'],['um_sonho','Um Sonho']].map(([k,l])=>(
+                      <div key={k} className={k==='hobbies'||k==='um_sonho'?'col-span-2':''}>
+                        <label className={labelCls}>{l}</label>
+                        <input value={(form as any)[k]||''} onChange={e=>set(k as any,e.target.value)} className={inputCls}/>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-              </div>}
+                <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5 space-y-3">
+                  <h2 className="font-syne font-bold text-[12px] text-nodri-amber"> Dados Profissionais</h2>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><label className={labelCls}>CNPJ *</label><input value={form.cnpj||''} onChange={e=>set('cnpj',e.target.value)} placeholder="00.000.000/0000-00" className={inputCls}/></div>
+                    <div><label className={labelCls}>Dados Bancários</label><input value={form.conta_bancaria||''} onChange={e=>set('conta_bancaria',e.target.value)} placeholder="Banco / Ag / Conta" className={inputCls}/></div>
+                  </div>
+                </div>
+              </>}
               {/* ── CHECKLIST DE ONBOARDING (só para não-departamentos) ── */}
               {!form.is_departamento && <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5 space-y-3">
                 <h2 className="font-syne font-bold text-[12px] text-nodri-cyan"> Checklist de Onboarding</h2>
