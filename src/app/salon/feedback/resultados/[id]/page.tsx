@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import {
   ArrowLeft, BarChart2, Brain, Calendar, RefreshCw,
   TrendingUp, TrendingDown, Minus, AlertTriangle, Zap,
-  CheckCircle, Download, FileText, Users, Clock,
+  CheckCircle, Download, FileText, Users, Clock, Trash2,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -46,6 +46,7 @@ interface ResultadosData {
   segmentacao: { novos: { count: number; media: number }; recorrentes: { count: number; media: number } } | null
   piorServico: { nome: string; media: number } | null
   alertaMedia: { ativo: boolean; media: number }
+  respostas_recentes: { id: string; criado_em: string }[]
 }
 
 function BarraH({ valor, max, cor }: { valor: number; max: number; cor?: string }) {
@@ -859,6 +860,44 @@ export default function ResultadosPage() {
                       <div key={i} className="p-3 rounded-xl text-[12px] text-nodri-t1 italic leading-relaxed"
                         style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.05)', borderLeft: '3px solid rgba(139,92,246,.5)' }}>
                         "{c}"
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* GERENCIAR RESPOSTAS */}
+              {data.respostas_recentes?.length > 0 && (
+                <div className="print-card rounded-2xl border overflow-hidden" style={{ background: '#0d1117', borderColor: 'rgba(255,255,255,.07)' }}>
+                  <div className="px-5 py-3 border-b flex items-center gap-2" style={{ borderColor: 'rgba(255,255,255,.06)' }}>
+                    <Trash2 size={14} className="text-red-400" />
+                    <span className="text-[13px] font-medium text-nodri-t1">Gerenciar Respostas</span>
+                    <span className="ml-auto text-[10px] text-nodri-t3">{data.respostas_recentes.length} resposta{data.respostas_recentes.length !== 1 ? 's' : ''}</span>
+                  </div>
+                  <div className="p-4 space-y-2 max-h-72 overflow-y-auto">
+                    {data.respostas_recentes.map((r, i) => (
+                      <div key={r.id} className="flex items-center justify-between px-4 py-2.5 rounded-xl" style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.05)' }}>
+                        <div className="flex items-center gap-3">
+                          <span className="text-[10px] text-nodri-t3 w-5">#{data.respostas_recentes.length - i}</span>
+                          <span className="text-[12px] text-nodri-t2">
+                            {new Date(r.criado_em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                        <button
+                          onClick={async () => {
+                            if (!confirm('Excluir esta resposta? Esta ação não pode ser desfeita.')) return
+                            const res = await fetch(`/api/feedback/respostas/${r.id}`, { method: 'DELETE' })
+                            if (res.ok) {
+                              toast.success('Resposta excluída')
+                              fetchResultados()
+                            } else {
+                              toast.error('Erro ao excluir')
+                            }
+                          }}
+                          className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all hover:opacity-80"
+                          style={{ background: 'rgba(239,68,68,0.12)', color: '#f87171', border: '1px solid rgba(239,68,68,0.25)' }}>
+                          <Trash2 size={11} /> Excluir
+                        </button>
                       </div>
                     ))}
                   </div>

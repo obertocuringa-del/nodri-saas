@@ -211,6 +211,6 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     segmentacao,
     piorServico,
     alertaMedia,
-    respostas_recentes: lista.slice(-5).reverse().map(r => ({ id: r.id, criado_em: r.criado_em })),
+    respostas_recentes: [...lista].reverse().map(r => ({ id: r.id, criado_em: r.criado_em })),
   })
 }
