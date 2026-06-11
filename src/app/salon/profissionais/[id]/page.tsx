@@ -1794,7 +1794,7 @@ export default function PerfilProfissionalPage() {
               {/* Banner de departamento */}
               {form.is_departamento && (
                 <div className="rounded-2xl p-5 flex items-center gap-4" style={{ background: (form.departamento_cor || '#7c5cfc') + '15', border: `1px solid ${form.departamento_cor || '#7c5cfc'}40` }}>
-                  <div className="text-4xl">{form.nome_completo === 'ADMINISTRATIVO' ? '🗂️' : form.nome_completo === 'FINANCEIRO' ? '💰' : '🏢'}</div>
+                  <div className="text-4xl">{form.nome_completo === 'ADMINISTRATIVO' ? '🗂️' : form.nome_completo === 'FINANCEIRO' ? '💰' : form.nome_completo === 'RECEPÇÃO' ? '🛎️' : '🏢'}</div>
                   <div>
                     <p className="font-syne font-bold text-[14px] text-nodri-t1">{form.nome_completo}</p>
                     <p className="text-[11px] text-nodri-t3 mt-0.5">Departamento virtual — gerencie pendências pela aba Pendências ao lado</p>

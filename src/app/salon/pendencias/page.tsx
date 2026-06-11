@@ -246,7 +246,7 @@ export default function PendenciasPage() {
             <div className="grid grid-cols-3 gap-3">
               {departamentos.map(d => {
                 const cor = d.departamento_cor || '#7c5cfc'
-                const icone = d.nome_completo === 'ADMINISTRATIVO' ? '🗂️' : d.nome_completo === 'FINANCEIRO' ? '💰' : '🏢'
+                const icone = d.nome_completo === 'ADMINISTRATIVO' ? '🗂️' : d.nome_completo === 'FINANCEIRO' ? '💰' : d.nome_completo === 'RECEPÇÃO' ? '🛎️' : '🏢'
                 const temPend = (d.pendencias_abertas || 0) > 0
                 return (
                   <div key={d.id}
@@ -283,7 +283,7 @@ export default function PendenciasPage() {
                     <optgroup label="── Departamentos ──">
                       {departamentos.map(p => (
                         <option key={p.id} value={p.id}>
-                          {p.nome_completo === 'ADMINISTRATIVO' ? '🗂️' : p.nome_completo === 'FINANCEIRO' ? '💰' : '🏢'} {p.nome_completo}
+                          {p.nome_completo === 'ADMINISTRATIVO' ? '🗂️' : p.nome_completo === 'FINANCEIRO' ? '💰' : p.nome_completo === 'RECEPÇÃO' ? '🛎️' : '🏢'} {p.nome_completo}
                         </option>
                       ))}
                     </optgroup>

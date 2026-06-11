@@ -322,7 +322,7 @@ export default function ProfissionaisPage() {
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '8px' }}>
                     {departamentos.map(d => {
                       const cor = d.departamento_cor || '#7c5cfc'
-                      const icone = d.nome_completo === 'ADMINISTRATIVO' ? '🗂️' : d.nome_completo === 'FINANCEIRO' ? '💰' : '🏢'
+                      const icone = d.nome_completo === 'ADMINISTRATIVO' ? '🗂️' : d.nome_completo === 'FINANCEIRO' ? '💰' : d.nome_completo === 'RECEPÇÃO' ? '🛎️' : '🏢'
                       const temPend = (d.pendencias_abertas || 0) > 0
                       return (
                         <div key={d.id}
