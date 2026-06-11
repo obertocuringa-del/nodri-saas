@@ -26,6 +26,7 @@ interface Profissional {
   contato_responsavel?: string
   certificados?: string
   ativo: boolean
+  tem_contrato?: boolean
   criado_em: string
 }
 
@@ -319,10 +320,10 @@ export default function ProfissionaisPage() {
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
                   {profFiltrados.map(p => (
-                    <div key={p.id} style={{ background: '#0d1117', border: '1px solid #1e293b', borderRadius: '12px', padding: '16px', transition: 'border-color 0.2s, box-shadow 0.2s', cursor: 'pointer' }}
+                    <div key={p.id} style={{ background: p.tem_contrato === false ? '#1a0a0a' : '#0d1117', border: `1px solid ${p.tem_contrato === false ? '#7f1d1d' : '#1e293b'}`, borderRadius: '12px', padding: '16px', transition: 'border-color 0.2s, box-shadow 0.2s', cursor: 'pointer' }}
                       onClick={() => { try { sessionStorage.setItem('nodri_prof_' + p.id, JSON.stringify(p)) } catch(_){} router.push(`/salon/profissionais/${p.id}`) }}
-                      onMouseEnter={e => { e.currentTarget.style.borderColor = '#7c5cfc80'; e.currentTarget.style.boxShadow = '0 0 0 2px #7c5cfc20' }}
-                      onMouseLeave={e => { e.currentTarget.style.borderColor = '#1e293b'; e.currentTarget.style.boxShadow = 'none' }}>
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = p.tem_contrato === false ? '#ef444480' : '#7c5cfc80'; e.currentTarget.style.boxShadow = p.tem_contrato === false ? '0 0 0 2px #ef444420' : '0 0 0 2px #7c5cfc20' }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = p.tem_contrato === false ? '#7f1d1d' : '#1e293b'; e.currentTarget.style.boxShadow = 'none' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
                         {p.foto_url ? (
                           <img src={p.foto_url} alt={p.nome_completo} style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #7c5cfc40' }} />
@@ -335,9 +336,16 @@ export default function ProfissionaisPage() {
                           <div style={{ color: '#e2e8f0', fontWeight: 600, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.nome_completo}</div>
                           <div style={{ color: '#7c5cfc', fontSize: '11px', marginTop: '2px' }}>{p.cargo || 'Profissional'}</div>
                         </div>
-                        <span style={{ fontSize: '9px', padding: '3px 7px', borderRadius: '20px', background: p.ativo ? '#10b98120' : '#ef444420', color: p.ativo ? '#10b981' : '#ef4444', fontWeight: 700, border: `1px solid ${p.ativo ? '#10b98140' : '#ef444440'}` }}>
-                          {p.ativo ? 'ATIVO' : 'INATIVO'}
-                        </span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', alignItems: 'flex-end' }}>
+                          <span style={{ fontSize: '9px', padding: '3px 7px', borderRadius: '20px', background: p.ativo ? '#10b98120' : '#ef444420', color: p.ativo ? '#10b981' : '#ef4444', fontWeight: 700, border: `1px solid ${p.ativo ? '#10b98140' : '#ef444440'}` }}>
+                            {p.ativo ? 'ATIVO' : 'INATIVO'}
+                          </span>
+                          {p.tem_contrato === false && (
+                            <span style={{ fontSize: '9px', padding: '3px 7px', borderRadius: '20px', background: '#ef444420', color: '#ef4444', fontWeight: 700, border: '1px solid #ef444440', whiteSpace: 'nowrap' }}>
+                              SEM CONTRATO
+                            </span>
+                          )}
+                        </div>
                       </div>
                       {p.habilidades && <p style={{ color: '#475569', fontSize: '11px', margin: '0 0 12px', lineHeight: 1.5 }}>{p.habilidades.slice(0, 80)}{p.habilidades.length > 80 ? '...' : ''}</p>}
                       {p.email && <p style={{ color: '#475569', fontSize: '11px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: 4 }}><Mail size={11} /> {p.email}</p>}

@@ -14,6 +14,7 @@ interface Profissional {
   ficha_entrevista: boolean; processo_contratacao: boolean; materiais_trabalho: boolean
   perfil_ideal: boolean; horarios_folgas: boolean; distrato: boolean
   contrato_trabalho: boolean; tem_certificados: boolean; plano_carreira: boolean
+  tem_contrato: boolean
 }
 
 interface MetricaBloco {
@@ -1822,6 +1823,20 @@ export default function PerfilProfissionalPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div><label className={labelCls}>CNPJ *</label><input value={form.cnpj||''} onChange={e=>set('cnpj',e.target.value)} placeholder="00.000.000/0000-00" className={inputCls}/></div>
                   <div><label className={labelCls}>Dados Bancários</label><input value={form.conta_bancaria||''} onChange={e=>set('conta_bancaria',e.target.value)} placeholder="Banco / Ag / Conta" className={inputCls}/></div>
+                </div>
+                <div className={`mt-2 rounded-xl p-3 flex items-center justify-between ${form.tem_contrato ? 'bg-green-900/20 border border-green-800/40' : 'bg-red-900/20 border border-red-800/40'}`}>
+                  <div>
+                    <p className="text-[12px] font-semibold text-nodri-t1">Profissional já possui contrato?</p>
+                    <p className={`text-[11px] mt-0.5 ${form.tem_contrato ? 'text-green-400' : 'text-red-400'}`}>
+                      {form.tem_contrato ? 'Sim — contrato assinado' : 'Não — pendência de contrato'}
+                    </p>
+                  </div>
+                  <label className="flex items-center gap-2 cursor-pointer" onClick={()=>set('tem_contrato',!form.tem_contrato)}>
+                    <div className={`w-10 h-5 rounded-full relative transition-all ${form.tem_contrato ? 'bg-green-500' : 'bg-red-700'}`}>
+                      <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all ${form.tem_contrato ? 'left-5' : 'left-0.5'}`}/>
+                    </div>
+                    <span className={`text-[12px] font-bold ${form.tem_contrato ? 'text-green-400' : 'text-red-400'}`}>{form.tem_contrato ? 'SIM' : 'NÃO'}</span>
+                  </label>
                 </div>
               </div>
               <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
