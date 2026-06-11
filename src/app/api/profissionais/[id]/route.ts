@@ -31,10 +31,25 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   const body = await req.json()
-  // Converte campos vazios para null
+
+  // Colunas permitidas na tabela profissionais
+  const ALLOWED_COLS = new Set([
+    'nome_completo','apelido','email','cpf','rg','cnpj','cargo','habilidades',
+    'endereco','data_aniversario','foto_url','cor_favorita','comida_favorita',
+    'animal_favorito','hobbies','um_sonho','contato_responsavel','certificados',
+    'conta_bancaria','ativo','data_admissao',
+    'ficha_entrevista','processo_contratacao','materiais_trabalho','perfil_ideal',
+    'horarios_folgas','distrato','contrato_trabalho','tem_certificados','plano_carreira',
+    'tem_contrato',
+  ])
+
+  // Converte campos vazios para null e filtra apenas colunas conhecidas
   const cleaned = Object.fromEntries(
-    Object.entries(body).map(([k, v]) => [k, v === '' ? null : v])
+    Object.entries(body)
+      .filter(([k]) => ALLOWED_COLS.has(k))
+      .map(([k, v]) => [k, v === '' ? null : v])
   )
+
   const { data, error } = await supabaseAdmin
     .from('profissionais')
     .update({ ...cleaned, atualizado_em: new Date().toISOString() })
