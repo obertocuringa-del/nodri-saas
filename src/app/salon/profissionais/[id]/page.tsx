@@ -17,6 +17,7 @@ interface Profissional {
   tem_contrato: boolean
   perfil_pessoal_completo: boolean
   dados_pessoais_completo: boolean
+  dados_profissionais_completo: boolean
 }
 
 interface MetricaBloco {
@@ -1866,6 +1867,20 @@ export default function PerfilProfissionalPage() {
                       <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all ${form.tem_contrato ? 'left-5' : 'left-0.5'}`}/>
                     </div>
                     <span className={`text-[12px] font-bold ${form.tem_contrato ? 'text-green-400' : 'text-red-400'}`}>{form.tem_contrato ? 'SIM' : 'NÃO'}</span>
+                  </label>
+                </div>
+                <div className={`rounded-xl p-3 flex items-center justify-between ${form.dados_profissionais_completo ? 'bg-green-900/20 border border-green-800/40' : 'bg-red-900/20 border border-red-800/40'}`}>
+                  <div>
+                    <p className="text-[12px] font-semibold text-nodri-t1">Dados Profissionais completo?</p>
+                    <p className={`text-[11px] mt-0.5 ${form.dados_profissionais_completo ? 'text-green-400' : 'text-red-400'}`}>
+                      {form.dados_profissionais_completo ? 'Sim — dados completos' : 'Não — pendência de dados profissionais'}
+                    </p>
+                  </div>
+                  <label className="flex items-center gap-2 cursor-pointer" onClick={()=>set('dados_profissionais_completo',!form.dados_profissionais_completo)}>
+                    <div className={`w-10 h-5 rounded-full relative transition-all ${form.dados_profissionais_completo ? 'bg-green-500' : 'bg-red-700'}`}>
+                      <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all ${form.dados_profissionais_completo ? 'left-5' : 'left-0.5'}`}/>
+                    </div>
+                    <span className={`text-[12px] font-bold ${form.dados_profissionais_completo ? 'text-green-400' : 'text-red-400'}`}>{form.dados_profissionais_completo ? 'SIM' : 'NÃO'}</span>
                   </label>
                 </div>
               </div>

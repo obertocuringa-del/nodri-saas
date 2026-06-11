@@ -29,6 +29,7 @@ interface Profissional {
   tem_contrato?: boolean
   perfil_pessoal_completo?: boolean
   dados_pessoais_completo?: boolean
+  dados_profissionais_completo?: boolean
   criado_em: string
 }
 
@@ -355,6 +356,11 @@ export default function ProfissionaisPage() {
                           {p.perfil_pessoal_completo === false && (
                             <span style={{ fontSize: '9px', padding: '3px 7px', borderRadius: '20px', background: '#eab30820', color: '#eab308', fontWeight: 700, border: '1px solid #eab30840', whiteSpace: 'nowrap' }}>
                               PERFIL INCOMPLETO
+                            </span>
+                          )}
+                          {p.dados_profissionais_completo === false && (
+                            <span style={{ fontSize: '9px', padding: '3px 7px', borderRadius: '20px', background: '#a855f720', color: '#a855f7', fontWeight: 700, border: '1px solid #a855f740', whiteSpace: 'nowrap' }}>
+                              PROF. INCOMPLETO
                             </span>
                           )}
                         </div>
