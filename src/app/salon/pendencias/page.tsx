@@ -57,6 +57,10 @@ export default function PendenciasPage() {
   const [editandoData, setEditandoData] = useState<string | null>(null)
   const [novaData, setNovaData] = useState('')
 
+  // Editar mensagem
+  const [editandoMensagem, setEditandoMensagem] = useState<string | null>(null)
+  const [novaMensagemEdit, setNovaMensagemEdit] = useState('')
+
   useEffect(() => {
     Promise.all([
       fetch('/api/pendencias').then(r => r.json()),
@@ -123,6 +127,23 @@ export default function PendenciasPage() {
     }
   }
 
+  async function salvarMensagem(id: string) {
+    if (!novaMensagemEdit.trim()) return
+    const res = await fetch(`/api/pendencias/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mensagem: novaMensagemEdit.trim() }),
+    })
+    if (res.ok) {
+      const atualizada = await res.json()
+      setPendencias(prev => prev.map(p => p.id === id ? { ...p, ...atualizada } : p))
+      setEditandoMensagem(null)
+      toast.success('Anotação atualizada!')
+    } else {
+      toast.error('Erro ao atualizar anotação')
+    }
+  }
+
   async function marcarResolvida(id: string, resolvido: boolean) {
     const res = await fetch(`/api/pendencias/${id}`, {
       method: 'PUT',
@@ -168,15 +189,37 @@ export default function PendenciasPage() {
               </span>
             )}
           </div>
-          <p className="text-[12px] text-nodri-t1 leading-relaxed">{p.mensagem}</p>
+          {/* Mensagem — modo visualização ou edição */}
+          {editandoMensagem === p.id ? (
+            <div className="mt-1 space-y-2">
+              <textarea
+                value={novaMensagemEdit}
+                onChange={e => setNovaMensagemEdit(e.target.value)}
+                rows={3}
+                autoFocus
+                className="w-full bg-nodri-card border border-nodri-cyan/40 rounded-lg px-2 py-1.5 text-[12px] text-nodri-t1 outline-none resize-none"
+              />
+              <div className="flex gap-2">
+                <button onClick={() => salvarMensagem(p.id)} className="text-[10px] px-2 py-1 rounded-lg bg-nodri-cyan text-nodri-dark font-bold">Salvar</button>
+                <button onClick={() => setEditandoMensagem(null)} className="text-[10px] text-nodri-t3 hover:text-nodri-t1">Cancelar</button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-[12px] text-nodri-t1 leading-relaxed">{p.mensagem}</p>
+          )}
           {p.resolvido_em && (
             <p className="text-[9px] text-nodri-t3 mt-1">Resolvida em {new Date(p.resolvido_em).toLocaleDateString('pt-BR')}</p>
           )}
           {/* Editar data inline */}
           {!p.resolvido && editandoData === p.id && (
             <div className="flex items-center gap-2 mt-2">
-              <input type="date" value={novaData} onChange={e => setNovaData(e.target.value)}
-                className="bg-nodri-card border border-nodri-cyan/40 rounded-lg px-2 py-1 text-[11px] text-nodri-t1 outline-none" />
+              <input
+                type="date"
+                value={novaData}
+                onChange={e => setNovaData(e.target.value)}
+                className="bg-nodri-card border border-nodri-cyan/40 rounded-lg px-2 py-1 text-[11px] text-nodri-t1 outline-none cursor-pointer"
+                style={{ colorScheme: 'dark' }}
+              />
               <button onClick={() => salvarData(p.id)} className="text-[10px] px-2 py-1 rounded-lg bg-nodri-cyan text-nodri-dark font-bold">Salvar</button>
               <button onClick={() => setEditandoData(null)} className="text-[10px] text-nodri-t3 hover:text-nodri-t1">Cancelar</button>
             </div>
@@ -191,7 +234,14 @@ export default function PendenciasPage() {
                 Feito
               </button>
               <button
-                onClick={() => { setEditandoData(p.id); setNovaData(p.data_limite || '') }}
+                title="Editar anotação"
+                onClick={() => { setEditandoMensagem(p.id); setNovaMensagemEdit(p.mensagem); setEditandoData(null) }}
+                className="text-[10px] px-2 py-1 rounded-lg bg-nodri-card border border-nodri-border text-nodri-t3 hover:text-nodri-cyan transition-colors">
+                ✏️
+              </button>
+              <button
+                title="Editar data limite"
+                onClick={() => { setEditandoData(p.id); setNovaData(p.data_limite || ''); setEditandoMensagem(null) }}
                 className="text-[10px] px-2 py-1 rounded-lg bg-nodri-card border border-nodri-border text-nodri-t3 hover:text-nodri-t1 transition-colors">
                 <Calendar size={11}/>
               </button>
@@ -311,7 +361,7 @@ export default function PendenciasPage() {
             </div>
             <div>
               <label className={labelCls}>Data Limite (opcional)</label>
-              <input type="date" value={dataLimite} onChange={e => setDataLimite(e.target.value)} className={inputCls}/>
+              <input type="date" value={dataLimite} onChange={e => setDataLimite(e.target.value)} className={inputCls} style={{ colorScheme: 'dark', cursor: 'pointer' }}/>
             </div>
             <button
               onClick={criar}
