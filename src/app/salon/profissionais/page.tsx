@@ -323,10 +323,10 @@ export default function ProfissionaisPage() {
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
                   {profFiltrados.map(p => (
-                    <div key={p.id} style={{ background: p.tem_contrato === false ? '#1a0a0a' : '#0d1117', border: `1px solid ${p.tem_contrato === false ? '#7f1d1d' : '#1e293b'}`, borderRadius: '12px', padding: '16px', transition: 'border-color 0.2s, box-shadow 0.2s', cursor: 'pointer' }}
+                    <div key={p.id} style={{ background: (p.tem_contrato === false || p.perfil_pessoal_completo === false || p.dados_pessoais_completo === false || p.dados_profissionais_completo === false) ? '#1a0a0a' : '#0d1117', border: `1px solid ${(p.tem_contrato === false || p.perfil_pessoal_completo === false || p.dados_pessoais_completo === false || p.dados_profissionais_completo === false) ? '#7f1d1d' : '#1e293b'}`, borderRadius: '12px', padding: '16px', transition: 'border-color 0.2s, box-shadow 0.2s', cursor: 'pointer' }}
                       onClick={() => { try { sessionStorage.setItem('nodri_prof_' + p.id, JSON.stringify(p)) } catch(_){} router.push(`/salon/profissionais/${p.id}`) }}
-                      onMouseEnter={e => { e.currentTarget.style.borderColor = p.tem_contrato === false ? '#ef444480' : '#7c5cfc80'; e.currentTarget.style.boxShadow = p.tem_contrato === false ? '0 0 0 2px #ef444420' : '0 0 0 2px #7c5cfc20' }}
-                      onMouseLeave={e => { e.currentTarget.style.borderColor = p.tem_contrato === false ? '#7f1d1d' : '#1e293b'; e.currentTarget.style.boxShadow = 'none' }}>
+                      onMouseEnter={e => { const hasPending = p.tem_contrato === false || p.perfil_pessoal_completo === false || p.dados_pessoais_completo === false || p.dados_profissionais_completo === false; e.currentTarget.style.borderColor = hasPending ? '#ef444480' : '#7c5cfc80'; e.currentTarget.style.boxShadow = hasPending ? '0 0 0 2px #ef444420' : '0 0 0 2px #7c5cfc20' }}
+                      onMouseLeave={e => { const hasPending = p.tem_contrato === false || p.perfil_pessoal_completo === false || p.dados_pessoais_completo === false || p.dados_profissionais_completo === false; e.currentTarget.style.borderColor = hasPending ? '#7f1d1d' : '#1e293b'; e.currentTarget.style.boxShadow = 'none' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
                         {p.foto_url ? (
                           <img src={p.foto_url} alt={p.nome_completo} style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #7c5cfc40' }} />
@@ -343,24 +343,9 @@ export default function ProfissionaisPage() {
                           <span style={{ fontSize: '9px', padding: '3px 7px', borderRadius: '20px', background: p.ativo ? '#10b98120' : '#ef444420', color: p.ativo ? '#10b981' : '#ef4444', fontWeight: 700, border: `1px solid ${p.ativo ? '#10b98140' : '#ef444440'}` }}>
                             {p.ativo ? 'ATIVO' : 'INATIVO'}
                           </span>
-                          {p.tem_contrato === false && (
+                          {(p.tem_contrato === false || p.perfil_pessoal_completo === false || p.dados_pessoais_completo === false || p.dados_profissionais_completo === false) && (
                             <span style={{ fontSize: '9px', padding: '3px 7px', borderRadius: '20px', background: '#ef444420', color: '#ef4444', fontWeight: 700, border: '1px solid #ef444440', whiteSpace: 'nowrap' }}>
-                              SEM CONTRATO
-                            </span>
-                          )}
-                          {p.dados_pessoais_completo === false && (
-                            <span style={{ fontSize: '9px', padding: '3px 7px', borderRadius: '20px', background: '#f9731620', color: '#f97316', fontWeight: 700, border: '1px solid #f9731640', whiteSpace: 'nowrap' }}>
-                              DADOS INCOMPLETOS
-                            </span>
-                          )}
-                          {p.perfil_pessoal_completo === false && (
-                            <span style={{ fontSize: '9px', padding: '3px 7px', borderRadius: '20px', background: '#eab30820', color: '#eab308', fontWeight: 700, border: '1px solid #eab30840', whiteSpace: 'nowrap' }}>
-                              PERFIL INCOMPLETO
-                            </span>
-                          )}
-                          {p.dados_profissionais_completo === false && (
-                            <span style={{ fontSize: '9px', padding: '3px 7px', borderRadius: '20px', background: '#a855f720', color: '#a855f7', fontWeight: 700, border: '1px solid #a855f740', whiteSpace: 'nowrap' }}>
-                              PROF. INCOMPLETO
+                              ⚠ PENDÊNCIAS
                             </span>
                           )}
                         </div>
