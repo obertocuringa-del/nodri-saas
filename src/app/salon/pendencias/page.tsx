@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Loader2, Trash2, Plus, ArrowLeft, Calendar } from 'lucide-react'
+import { Loader2, Trash2, Plus, ArrowLeft, Calendar, Link2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 
@@ -41,6 +41,7 @@ export default function PendenciasPage() {
   const [pendencias, setPendencias] = useState<Pendencia[]>([])
   const [profissionais, setProfissionais] = useState<Profissional[]>([])
   const [loading, setLoading] = useState(true)
+  const [salaoId, setSalaoId] = useState('')
 
   // Form
   const [profId, setProfId] = useState('')
@@ -56,9 +57,11 @@ export default function PendenciasPage() {
     Promise.all([
       fetch('/api/pendencias').then(r => r.json()),
       fetch('/api/profissionais').then(r => r.json()),
-    ]).then(([pend, profs]) => {
+      fetch('/api/auth/me').then(r => r.json()).catch(() => ({})),
+    ]).then(([pend, profs, me]) => {
       setPendencias(Array.isArray(pend) ? pend : [])
       setProfissionais(Array.isArray(profs) ? profs.filter((p: Profissional) => p.ativo) : [])
+      if (me?.salaoId) setSalaoId(me.salaoId)
       setLoading(false)
     }).catch(() => setLoading(false))
   }, [])
@@ -212,10 +215,21 @@ export default function PendenciasPage() {
           <ArrowLeft size={15} /> Início
         </button>
         <div className="w-px h-4 bg-nodri-border" />
-        <div>
+        <div className="flex-1">
           <h1 className="font-syne font-bold text-[15px] text-nodri-t1">Pendências Profissionais</h1>
           <p className="text-[10px] text-nodri-t3">Gerencie tarefas e compromissos da equipe</p>
         </div>
+        {salaoId && (
+          <button
+            onClick={() => {
+              const link = `${window.location.origin}/pendencia-prof/${salaoId}`
+              navigator.clipboard.writeText(link)
+              toast.success('Link copiado! Envie para os profissionais.')
+            }}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-nodri-cyan/10 border border-nodri-cyan/30 text-nodri-cyan text-[11px] font-semibold hover:bg-nodri-cyan/20 transition-colors">
+            <Link2 size={13}/> Copiar Link do Profissional
+          </button>
+        )}
       </div>
 
       <div className="max-w-3xl mx-auto px-5 py-6 space-y-6">
