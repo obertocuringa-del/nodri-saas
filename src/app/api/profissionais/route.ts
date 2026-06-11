@@ -30,7 +30,24 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data || [])
+
+  // Injeta contagem de pendências abertas para departamentos
+  const lista = data || []
+  const depIds = lista.filter((p: any) => p.is_departamento).map((p: any) => p.id)
+  let pendCounts: Record<string, number> = {}
+  if (depIds.length > 0) {
+    const { data: pends } = await supabaseAdmin
+      .from('pendencias_profissionais')
+      .select('profissional_id')
+      .eq('salao_id', salaoId)
+      .eq('resolvido', false)
+      .in('profissional_id', depIds)
+    ;(pends || []).forEach((p: any) => {
+      pendCounts[p.profissional_id] = (pendCounts[p.profissional_id] || 0) + 1
+    })
+  }
+
+  return NextResponse.json(lista.map((p: any) => ({ ...p, pendencias_abertas: pendCounts[p.id] || 0 })))
 }
 
 export async function POST(req: NextRequest) {

@@ -30,6 +30,9 @@ interface Profissional {
   perfil_pessoal_completo?: boolean
   dados_pessoais_completo?: boolean
   dados_profissionais_completo?: boolean
+  is_departamento?: boolean
+  departamento_cor?: string
+  pendencias_abertas?: number
   criado_em: string
 }
 
@@ -197,9 +200,12 @@ export default function ProfissionaisPage() {
     setSecao('cadastrar')
   }
 
+  const departamentos = profissionais.filter(p => p.is_departamento)
   const profFiltrados = profissionais.filter(p =>
-    p.nome_completo.toLowerCase().includes(busca.toLowerCase()) ||
-    (p.cargo || '').toLowerCase().includes(busca.toLowerCase())
+    !p.is_departamento && (
+      p.nome_completo.toLowerCase().includes(busca.toLowerCase()) ||
+      (p.cargo || '').toLowerCase().includes(busca.toLowerCase())
+    )
   )
 
   const F = (label: string, key: keyof typeof FORM_INITIAL, opts?: { type?: string; placeholder?: string; full?: boolean }) => (
@@ -308,6 +314,40 @@ export default function ProfissionaisPage() {
                 <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar profissional..."
                   style={{ width: '100%', background: '#0d1117', border: '1px solid #1e293b', borderRadius: '8px', padding: '9px 12px 9px 36px', fontSize: '13px', color: '#e2e8f0', outline: 'none' }} />
               </div>
+
+              {/* ── DEPARTAMENTOS VIRTUAIS (fixos no topo) ── */}
+              {!loading && departamentos.length > 0 && (
+                <div style={{ marginBottom: '16px' }}>
+                  <p style={{ fontSize: '10px', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, marginBottom: '8px' }}>Departamentos</p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '8px' }}>
+                    {departamentos.map(d => {
+                      const cor = d.departamento_cor || '#7c5cfc'
+                      const icone = d.nome_completo === 'ADMINISTRATIVO' ? '🗂️' : d.nome_completo === 'FINANCEIRO' ? '💰' : '🏢'
+                      const temPend = (d.pendencias_abertas || 0) > 0
+                      return (
+                        <div key={d.id}
+                          style={{ background: temPend ? '#1a0a0a' : '#0d1117', border: `1px solid ${temPend ? '#7f1d1d' : cor + '40'}`, borderRadius: '10px', padding: '12px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', transition: 'all 0.2s' }}
+                          onClick={() => { try { sessionStorage.setItem('nodri_prof_' + d.id, JSON.stringify(d)) } catch(_){} router.push(`/salon/profissionais/${d.id}`) }}
+                          onMouseEnter={e => { e.currentTarget.style.borderColor = temPend ? '#ef4444' : cor; e.currentTarget.style.boxShadow = `0 0 0 2px ${temPend ? '#ef444420' : cor + '20'}` }}
+                          onMouseLeave={e => { e.currentTarget.style.borderColor = temPend ? '#7f1d1d' : cor + '40'; e.currentTarget.style.boxShadow = 'none' }}>
+                          <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: cor + '20', border: `1px solid ${cor}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>
+                            {icone}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ color: '#e2e8f0', fontWeight: 700, fontSize: '12px' }}>{d.nome_completo}</div>
+                            {temPend
+                              ? <div style={{ color: '#ef4444', fontSize: '10px', marginTop: '2px', fontWeight: 600 }}>⚠ {d.pendencias_abertas} pendência{d.pendencias_abertas! > 1 ? 's' : ''}</div>
+                              : <div style={{ color: '#475569', fontSize: '10px', marginTop: '2px' }}>Sem pendências</div>
+                            }
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <div style={{ borderBottom: '1px solid #1e293b', margin: '16px 0 8px' }}/>
+                  <p style={{ fontSize: '10px', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, marginBottom: '8px' }}>Profissionais</p>
+                </div>
+              )}
 
               {loading ? (
                 <div style={{ textAlign: 'center', color: '#475569', padding: '60px' }}>Carregando...</div>

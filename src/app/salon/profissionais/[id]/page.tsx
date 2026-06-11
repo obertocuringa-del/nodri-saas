@@ -18,6 +18,8 @@ interface Profissional {
   perfil_pessoal_completo: boolean
   dados_pessoais_completo: boolean
   dados_profissionais_completo: boolean
+  is_departamento?: boolean
+  departamento_cor?: string
 }
 
 interface MetricaBloco {
@@ -1758,7 +1760,7 @@ export default function PerfilProfissionalPage() {
             <AlertTriangle size={10}/> {faltando.length} campo(s) obrigatório(s)
           </div>
         )}
-        {tab === 'cadastro' && (
+        {tab === 'cadastro' && !form.is_departamento && (
           <button onClick={salvar} disabled={salvando}
             className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-nodri-cyan text-nodri-dark text-[11px] font-bold hover:brightness-110 disabled:opacity-50">
             {salvando ? <Loader2 size={12} className="animate-spin"/> : <Save size={12}/>} Salvar
@@ -1789,7 +1791,17 @@ export default function PerfilProfissionalPage() {
         {tab === 'cadastro' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-5">
-              <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5 space-y-4">
+              {/* Banner de departamento */}
+              {form.is_departamento && (
+                <div className="rounded-2xl p-5 flex items-center gap-4" style={{ background: (form.departamento_cor || '#7c5cfc') + '15', border: `1px solid ${form.departamento_cor || '#7c5cfc'}40` }}>
+                  <div className="text-4xl">{form.nome_completo === 'ADMINISTRATIVO' ? '🗂️' : form.nome_completo === 'FINANCEIRO' ? '💰' : '🏢'}</div>
+                  <div>
+                    <p className="font-syne font-bold text-[14px] text-nodri-t1">{form.nome_completo}</p>
+                    <p className="text-[11px] text-nodri-t3 mt-0.5">Departamento virtual — gerencie pendências pela aba Pendências ao lado</p>
+                  </div>
+                </div>
+              )}
+              {!form.is_departamento && <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5 space-y-4">
                 <h2 className="font-syne font-bold text-[12px] text-nodri-cyan"> Dados Pessoais</h2>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="col-span-2"><label className={labelCls}>Nome Completo *</label><input value={form.nome_completo||''} onChange={e=>set('nome_completo',e.target.value)} className={inputCls}/></div>
@@ -1828,8 +1840,9 @@ export default function PerfilProfissionalPage() {
                   <div><label className={labelCls}>Dados Bancários</label><input value={form.conta_bancaria||''} onChange={e=>set('conta_bancaria',e.target.value)} placeholder="Banco / Ag / Conta" className={inputCls}/></div>
                 </div>
               </div>
-              {/* ── CHECKLIST DE ONBOARDING ── */}
-              <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5 space-y-3">
+              </div>}
+              {/* ── CHECKLIST DE ONBOARDING (só para não-departamentos) ── */}
+              {!form.is_departamento && <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5 space-y-3">
                 <h2 className="font-syne font-bold text-[12px] text-nodri-cyan"> Checklist de Onboarding</h2>
                 {([
                   ['dados_pessoais_completo',      'Dados Pessoais completo?',       'dados completos',          'pendência de dados pessoais'],
@@ -1852,8 +1865,8 @@ export default function PerfilProfissionalPage() {
                     </label>
                   </div>
                 ))}
-              </div>
-              <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
+              </div>}
+              {!form.is_departamento && <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
                 <h2 className="font-syne font-bold text-[12px] text-nodri-purple mb-3">️ Status</h2>
                 <label className="flex items-center gap-3 cursor-pointer" onClick={()=>set('ativo',!form.ativo)}>
                   <div className={`w-10 h-5 rounded-full relative transition-all ${form.ativo?'bg-nodri-green':'bg-nodri-border'}`}>
@@ -1861,7 +1874,7 @@ export default function PerfilProfissionalPage() {
                   </div>
                   <span className="text-[12px] text-nodri-t1">{form.ativo?'Profissional Ativo':'Profissional Inativo'}</span>
                 </label>
-              </div>
+              </div>}
             </div>
             <div>
               <PendenciasLateral profissionalId={id}/>

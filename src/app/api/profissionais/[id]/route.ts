@@ -41,6 +41,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     'ficha_entrevista','processo_contratacao','materiais_trabalho','perfil_ideal',
     'horarios_folgas','distrato','contrato_trabalho','tem_certificados','plano_carreira',
     'tem_contrato','perfil_pessoal_completo','dados_pessoais_completo','dados_profissionais_completo',
+    'is_departamento','departamento_cor',
   ])
 
   // Converte campos vazios para null e filtra apenas colunas conhecidas
