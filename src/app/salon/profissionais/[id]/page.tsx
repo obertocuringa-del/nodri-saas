@@ -1707,7 +1707,7 @@ export default function PerfilProfissionalPage() {
     })
     setSalvando(false)
     if (res.ok) { const d = await res.json(); setProf(d); setForm(d); toast.success(' Salvo!') }
-    else toast.error('Erro ao salvar')
+    else { const e = await res.json().catch(()=>({})); toast.error('Erro: ' + (e?.error || 'Falha ao salvar')) }
   }
 
   function set(key: keyof Profissional, value: any) { setForm(p=>({...p,[key]:value})) }
