@@ -10,6 +10,9 @@ interface Profissional {
   apelido: string
   cargo: string
   ativo: boolean
+  is_departamento?: boolean
+  departamento_cor?: string
+  pendencias_abertas?: number
 }
 
 interface Pendencia {
@@ -42,6 +45,7 @@ export default function PendenciasPage() {
   const [profissionais, setProfissionais] = useState<Profissional[]>([])
   const [loading, setLoading] = useState(true)
   const [salaoId, setSalaoId] = useState('')
+  const [departamentos, setDepartamentos] = useState<Profissional[]>([])
 
   // Form
   const [profId, setProfId] = useState('')
@@ -60,7 +64,8 @@ export default function PendenciasPage() {
       fetch('/api/auth/me').then(r => r.json()).catch(() => ({})),
     ]).then(([pend, profs, me]) => {
       setPendencias(Array.isArray(pend) ? pend : [])
-      setProfissionais(Array.isArray(profs) ? profs.filter((p: Profissional) => p.ativo) : [])
+      setProfissionais(Array.isArray(profs) ? profs.filter((p: Profissional) => p.ativo && !p.is_departamento) : [])
+      setDepartamentos(Array.isArray(profs) ? profs.filter((p: Profissional) => p.is_departamento) : [])
       if (me?.salaoId) setSalaoId(me.salaoId)
       setLoading(false)
     }).catch(() => setLoading(false))
@@ -233,6 +238,35 @@ export default function PendenciasPage() {
       </div>
 
       <div className="max-w-3xl mx-auto px-5 py-6 space-y-6">
+
+        {/* ── DEPARTAMENTOS ── */}
+        {departamentos.length > 0 && (
+          <div>
+            <p className="text-[10px] text-nodri-t3 uppercase tracking-widest font-bold mb-3">Departamentos</p>
+            <div className="grid grid-cols-3 gap-3">
+              {departamentos.map(d => {
+                const cor = d.departamento_cor || '#7c5cfc'
+                const icone = d.nome_completo === 'ADMINISTRATIVO' ? '🗂️' : d.nome_completo === 'FINANCEIRO' ? '💰' : '🏢'
+                const temPend = (d.pendencias_abertas || 0) > 0
+                return (
+                  <div key={d.id}
+                    onClick={() => router.push(`/salon/profissionais/${d.id}`)}
+                    className="cursor-pointer rounded-2xl p-4 flex flex-col items-center gap-2 text-center transition-all hover:scale-[1.02]"
+                    style={{ background: temPend ? '#1a0505' : cor + '10', border: `1px solid ${temPend ? '#7f1d1d' : cor + '40'}` }}>
+                    <div className="text-3xl">{icone}</div>
+                    <div>
+                      <p className="font-syne font-bold text-[11px] text-nodri-t1">{d.nome_completo}</p>
+                      {temPend
+                        ? <p className="text-[10px] text-red-400 font-semibold mt-0.5">⚠ {d.pendencias_abertas} pendência{d.pendencias_abertas! > 1 ? 's' : ''}</p>
+                        : <p className="text-[10px] mt-0.5" style={{ color: cor }}>✓ Em dia</p>
+                      }
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Formulário */}
         <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
