@@ -350,8 +350,24 @@ export default function ProfissionaisPage() {
                           )}
                         </div>
                       </div>
-                      {p.habilidades && <p style={{ color: '#475569', fontSize: '11px', margin: '0 0 12px', lineHeight: 1.5 }}>{p.habilidades.slice(0, 80)}{p.habilidades.length > 80 ? '...' : ''}</p>}
-                      {p.email && <p style={{ color: '#475569', fontSize: '11px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: 4 }}><Mail size={11} /> {p.email}</p>}
+                      {p.habilidades && <p style={{ color: '#475569', fontSize: '11px', margin: '0 0 8px', lineHeight: 1.5 }}>{p.habilidades.slice(0, 80)}{p.habilidades.length > 80 ? '...' : ''}</p>}
+                      {p.email && <p style={{ color: '#475569', fontSize: '11px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: 4 }}><Mail size={11} /> {p.email}</p>}
+                      {(() => {
+                        const pends = [
+                          p.tem_contrato === false && 'Sem contrato',
+                          p.dados_pessoais_completo === false && 'Dados pessoais incompletos',
+                          p.perfil_pessoal_completo === false && 'Perfil pessoal incompleto',
+                          p.dados_profissionais_completo === false && 'Dados profissionais incompletos',
+                        ].filter(Boolean) as string[]
+                        return pends.length > 0 ? (
+                          <div style={{ marginBottom: '8px', padding: '8px 10px', borderRadius: '8px', background: '#ef444410', border: '1px solid #ef444430' }}>
+                            <p style={{ color: '#ef4444', fontSize: '10px', fontWeight: 700, margin: '0 0 4px' }}>⚠ Pendências:</p>
+                            {pends.map(item => (
+                              <p key={item} style={{ color: '#fca5a5', fontSize: '10px', margin: '1px 0', display: 'flex', alignItems: 'center', gap: 4 }}>• {item}</p>
+                            ))}
+                          </div>
+                        ) : null
+                      })()}
                       <div style={{ display: 'flex', gap: '6px' }} onClick={e => e.stopPropagation()}>
                         <button onClick={() => router.push(`/salon/profissionais/${p.id}`)}
                           style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', background: '#1e293b', border: '1px solid #334155', borderRadius: '6px', padding: '6px', color: '#94a3b8', fontSize: '11px', cursor: 'pointer' }}>
