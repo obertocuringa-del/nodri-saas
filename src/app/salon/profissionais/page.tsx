@@ -35,7 +35,6 @@ interface Profissional {
   pendencias_abertas?: number
   criado_em: string
 }
-}
 
 const SIDEBAR_ITEMS = [
   { id: 'cadastrar',    label: 'Cadastrar Profissional',          icon: Plus,           cor: '#7c5cfc', destaque: true },
