@@ -278,7 +278,23 @@ export default function PendenciasPage() {
               <label className={labelCls}>Profissional *</label>
               <select value={profId} onChange={e => setProfId(e.target.value)} className={inputCls}>
                 <option value="">Selecione...</option>
-                {profissionais.map(p => (
+                {departamentos.length > 0 && (
+                  <>
+                    <optgroup label="── Departamentos ──">
+                      {departamentos.map(p => (
+                        <option key={p.id} value={p.id}>
+                          {p.nome_completo === 'ADMINISTRATIVO' ? '🗂️' : p.nome_completo === 'FINANCEIRO' ? '💰' : '🏢'} {p.nome_completo}
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="── Profissionais ──">
+                      {profissionais.map(p => (
+                        <option key={p.id} value={p.id}>{p.apelido || p.nome_completo} — {p.cargo}</option>
+                      ))}
+                    </optgroup>
+                  </>
+                )}
+                {departamentos.length === 0 && profissionais.map(p => (
                   <option key={p.id} value={p.id}>{p.apelido || p.nome_completo} — {p.cargo}</option>
                 ))}
               </select>
