@@ -31,17 +31,17 @@ export async function GET(req: NextRequest) {
   const { data, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Injeta contagem de pendências abertas para departamentos
+  // Injeta contagem de pendências abertas para TODOS os profissionais
   const lista = data || []
-  const depIds = lista.filter((p: any) => p.is_departamento).map((p: any) => p.id)
+  const todosIds = lista.map((p: any) => p.id)
   let pendCounts: Record<string, number> = {}
-  if (depIds.length > 0) {
+  if (todosIds.length > 0) {
     const { data: pends } = await supabaseAdmin
       .from('pendencias_profissionais')
       .select('profissional_id')
       .eq('salao_id', salaoId)
       .eq('resolvido', false)
-      .in('profissional_id', depIds)
+      .in('profissional_id', todosIds)
     ;(pends || []).forEach((p: any) => {
       pendCounts[p.profissional_id] = (pendCounts[p.profissional_id] || 0) + 1
     })
