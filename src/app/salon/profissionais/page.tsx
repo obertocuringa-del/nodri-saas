@@ -35,6 +35,7 @@ interface Profissional {
   pendencias_abertas?: number
   criado_em: string
 }
+}
 
 const SIDEBAR_ITEMS = [
   { id: 'cadastrar',    label: 'Cadastrar Profissional',          icon: Plus,           cor: '#7c5cfc', destaque: true },
@@ -208,6 +209,17 @@ export default function ProfissionaisPage() {
     )
   )
 
+  // Verifica se profissional tem qualquer pendência (checklist OU pendências abertas)
+  function temPendencia(p: Profissional) {
+    return (
+      !p.tem_contrato ||
+      !p.perfil_pessoal_completo ||
+      !p.dados_pessoais_completo ||
+      !p.dados_profissionais_completo ||
+      (p.pendencias_abertas || 0) > 0
+    )
+  }
+
   const F = (label: string, key: keyof typeof FORM_INITIAL, opts?: { type?: string; placeholder?: string; full?: boolean }) => (
     <div className={opts?.full ? 'col-span-2' : ''}>
       <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '4px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</label>
@@ -363,10 +375,10 @@ export default function ProfissionaisPage() {
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
                   {profFiltrados.map(p => (
-                    <div key={p.id} style={{ background: (p.tem_contrato === false || p.perfil_pessoal_completo === false || p.dados_pessoais_completo === false || p.dados_profissionais_completo === false) ? '#1a0a0a' : '#0d1117', border: `1px solid ${(p.tem_contrato === false || p.perfil_pessoal_completo === false || p.dados_pessoais_completo === false || p.dados_profissionais_completo === false) ? '#7f1d1d' : '#1e293b'}`, borderRadius: '12px', padding: '16px', transition: 'border-color 0.2s, box-shadow 0.2s', cursor: 'pointer' }}
+                    <div key={p.id} style={{ background: temPendencia(p) ? '#1a0a0a' : '#0d1117', border: `1px solid ${temPendencia(p) ? '#7f1d1d' : '#1e293b'}`, borderRadius: '12px', padding: '16px', transition: 'border-color 0.2s, box-shadow 0.2s', cursor: 'pointer' }}
                       onClick={() => { try { sessionStorage.setItem('nodri_prof_' + p.id, JSON.stringify(p)) } catch(_){} router.push(`/salon/profissionais/${p.id}`) }}
-                      onMouseEnter={e => { const hasPending = p.tem_contrato === false || p.perfil_pessoal_completo === false || p.dados_pessoais_completo === false || p.dados_profissionais_completo === false; e.currentTarget.style.borderColor = hasPending ? '#ef444480' : '#7c5cfc80'; e.currentTarget.style.boxShadow = hasPending ? '0 0 0 2px #ef444420' : '0 0 0 2px #7c5cfc20' }}
-                      onMouseLeave={e => { const hasPending = p.tem_contrato === false || p.perfil_pessoal_completo === false || p.dados_pessoais_completo === false || p.dados_profissionais_completo === false; e.currentTarget.style.borderColor = hasPending ? '#7f1d1d' : '#1e293b'; e.currentTarget.style.boxShadow = 'none' }}>
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = temPendencia(p) ? '#ef444480' : '#7c5cfc80'; e.currentTarget.style.boxShadow = temPendencia(p) ? '0 0 0 2px #ef444420' : '0 0 0 2px #7c5cfc20' }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = temPendencia(p) ? '#7f1d1d' : '#1e293b'; e.currentTarget.style.boxShadow = 'none' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
                         {p.foto_url ? (
                           <img src={p.foto_url} alt={p.nome_completo} style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #7c5cfc40' }} />
@@ -383,7 +395,7 @@ export default function ProfissionaisPage() {
                           <span style={{ fontSize: '9px', padding: '3px 7px', borderRadius: '20px', background: p.ativo ? '#10b98120' : '#ef444420', color: p.ativo ? '#10b981' : '#ef4444', fontWeight: 700, border: `1px solid ${p.ativo ? '#10b98140' : '#ef444440'}` }}>
                             {p.ativo ? 'ATIVO' : 'INATIVO'}
                           </span>
-                          {(p.tem_contrato === false || p.perfil_pessoal_completo === false || p.dados_pessoais_completo === false || p.dados_profissionais_completo === false) && (
+                          {temPendencia(p) && (
                             <span style={{ fontSize: '9px', padding: '3px 7px', borderRadius: '20px', background: '#ef444420', color: '#ef4444', fontWeight: 700, border: '1px solid #ef444440', whiteSpace: 'nowrap' }}>
                               ⚠ PENDÊNCIAS
                             </span>
@@ -394,10 +406,11 @@ export default function ProfissionaisPage() {
                       {p.email && <p style={{ color: '#475569', fontSize: '11px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: 4 }}><Mail size={11} /> {p.email}</p>}
                       {(() => {
                         const pends = [
-                          p.tem_contrato === false && 'Sem contrato',
-                          p.dados_pessoais_completo === false && 'Dados pessoais incompletos',
-                          p.perfil_pessoal_completo === false && 'Perfil pessoal incompleto',
-                          p.dados_profissionais_completo === false && 'Dados profissionais incompletos',
+                          !p.tem_contrato && 'Sem contrato',
+                          !p.dados_pessoais_completo && 'Dados pessoais incompletos',
+                          !p.perfil_pessoal_completo && 'Perfil pessoal incompleto',
+                          !p.dados_profissionais_completo && 'Dados profissionais incompletos',
+                          (p.pendencias_abertas || 0) > 0 && `${p.pendencias_abertas} pendência(s) no sistema`,
                         ].filter(Boolean) as string[]
                         return pends.length > 0 ? (
                           <div style={{ marginBottom: '8px', padding: '8px 10px', borderRadius: '8px', background: '#ef444410', border: '1px solid #ef444430' }}>
