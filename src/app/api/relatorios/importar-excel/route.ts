@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
       const anoNum = safeNum(per.ano)
       const mesNum = safeNum(per.mes)
 
-      // Upsert dados gerais (sem prof_servicos para manter payload menor)
+      // Upsert dados gerais
       const { error: e1 } = await supabaseAdmin
         .from('relatorio_periodos')
         .upsert({
@@ -94,27 +94,30 @@ export async function POST(req: NextRequest) {
           produtos:           grpProd2[chave] || [],
           prof_pagamentos:    grpPag[chave]   || [],
           metas:              grpMeta[chave]  || [],
-          prof_ticket:        grpTick[chave]  || [],
-          prof_preferencia:   grpPref[chave]  || [],
-          prof_ocupacao:      grpOcup[chave]  || [],
-          prof_produtos:      grpProd[chave]  || [],
           atualizado_em:      new Date().toISOString(),
         }, { onConflict: 'salao_id,ano,mes' })
 
       if (e1) { erros.push(`upsert ${per.ano}/${per.mes}: ${e1.message}`); continue }
 
-      // UPDATE separado para prof_servicos (pode ser grande)
-      const { error: e2 } = await supabaseAdmin
-        .from('relatorio_periodos')
-        .update({
-          prof_servicos: grpServ[chave] || [],
-          atualizado_em: new Date().toISOString(),
-        })
-        .eq('salao_id', salaoId)
-        .eq('ano', anoNum)
-        .eq('mes', mesNum)
+      // UPDATEs separados por coluna de profissional (garante sobrescrita mesmo de rows antigas)
+      const base = supabaseAdmin.from('relatorio_periodos').update
+      const upd = (col: string, val: any) =>
+        supabaseAdmin.from('relatorio_periodos')
+          .update({ [col]: val, atualizado_em: new Date().toISOString() })
+          .eq('salao_id', salaoId).eq('ano', anoNum).eq('mes', mesNum)
 
-      if (e2) erros.push(`update_servicos ${per.ano}/${per.mes}: ${e2.message}`)
+      const [r2, r3, r4, r5, r6] = await Promise.all([
+        upd('prof_ticket',      grpTick[chave] || []),
+        upd('prof_preferencia', grpPref[chave] || []),
+        upd('prof_ocupacao',    grpOcup[chave] || []),
+        upd('prof_servicos',    grpServ[chave] || []),
+        upd('prof_produtos',    grpProd[chave] || []),
+      ])
+      if (r2.error) erros.push(`ticket ${per.ano}/${per.mes}: ${r2.error.message}`)
+      if (r3.error) erros.push(`preferencia ${per.ano}/${per.mes}: ${r3.error.message}`)
+      if (r4.error) erros.push(`ocupacao ${per.ano}/${per.mes}: ${r4.error.message}`)
+      if (r5.error) erros.push(`servicos ${per.ano}/${per.mes}: ${r5.error.message}`)
+      if (r6.error) erros.push(`produtos ${per.ano}/${per.mes}: ${r6.error.message}`)
 
       salvos++
       salvosExtras++
