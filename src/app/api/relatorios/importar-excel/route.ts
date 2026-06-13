@@ -79,10 +79,19 @@ export async function POST(req: NextRequest) {
       const anoNum = safeNum(per.ano)
       const mesNum = safeNum(per.mes)
 
-      // Upsert dados gerais
-      const { error: e1 } = await supabaseAdmin
+      // Delete + Insert (garante sobrescrita total, evita problema de upsert/update em rows antigas)
+      const { error: eDel } = await supabaseAdmin
         .from('relatorio_periodos')
-        .upsert({
+        .delete()
+        .eq('salao_id', salaoId)
+        .eq('ano', anoNum)
+        .eq('mes', mesNum)
+
+      if (eDel) { erros.push(`delete ${per.ano}/${per.mes}: ${eDel.message}`); continue }
+
+      const { error: eIns } = await supabaseAdmin
+        .from('relatorio_periodos')
+        .insert({
           salao_id:           salaoId,
           ano:                anoNum,
           mes:                mesNum,
@@ -94,30 +103,15 @@ export async function POST(req: NextRequest) {
           produtos:           grpProd2[chave] || [],
           prof_pagamentos:    grpPag[chave]   || [],
           metas:              grpMeta[chave]  || [],
+          prof_ticket:        grpTick[chave]  || [],
+          prof_preferencia:   grpPref[chave]  || [],
+          prof_ocupacao:      grpOcup[chave]  || [],
+          prof_servicos:      grpServ[chave]  || [],
+          prof_produtos:      grpProd[chave]  || [],
           atualizado_em:      new Date().toISOString(),
-        }, { onConflict: 'salao_id,ano,mes' })
+        })
 
-      if (e1) { erros.push(`upsert ${per.ano}/${per.mes}: ${e1.message}`); continue }
-
-      // UPDATEs separados por coluna de profissional (garante sobrescrita mesmo de rows antigas)
-      const base = supabaseAdmin.from('relatorio_periodos').update
-      const upd = (col: string, val: any) =>
-        supabaseAdmin.from('relatorio_periodos')
-          .update({ [col]: val, atualizado_em: new Date().toISOString() })
-          .eq('salao_id', salaoId).eq('ano', anoNum).eq('mes', mesNum)
-
-      const [r2, r3, r4, r5, r6] = await Promise.all([
-        upd('prof_ticket',      grpTick[chave] || []),
-        upd('prof_preferencia', grpPref[chave] || []),
-        upd('prof_ocupacao',    grpOcup[chave] || []),
-        upd('prof_servicos',    grpServ[chave] || []),
-        upd('prof_produtos',    grpProd[chave] || []),
-      ])
-      if (r2.error) erros.push(`ticket ${per.ano}/${per.mes}: ${r2.error.message}`)
-      if (r3.error) erros.push(`preferencia ${per.ano}/${per.mes}: ${r3.error.message}`)
-      if (r4.error) erros.push(`ocupacao ${per.ano}/${per.mes}: ${r4.error.message}`)
-      if (r5.error) erros.push(`servicos ${per.ano}/${per.mes}: ${r5.error.message}`)
-      if (r6.error) erros.push(`produtos ${per.ano}/${per.mes}: ${r6.error.message}`)
+      if (eIns) { erros.push(`insert ${per.ano}/${per.mes}: ${eIns.message}`); continue }
 
       salvos++
       salvosExtras++
