@@ -79,6 +79,7 @@ export async function POST(req: NextRequest) {
       const anoNum = safeNum(per.ano)
       const mesNum = safeNum(per.mes)
 
+      // Upsert dados gerais (sem prof_servicos para manter payload menor)
       const { error: e1 } = await supabaseAdmin
         .from('relatorio_periodos')
         .upsert({
@@ -96,29 +97,24 @@ export async function POST(req: NextRequest) {
           prof_ticket:        grpTick[chave]  || [],
           prof_preferencia:   grpPref[chave]  || [],
           prof_ocupacao:      grpOcup[chave]  || [],
-          prof_servicos:      grpServ[chave]  || [],
           prof_produtos:      grpProd[chave]  || [],
           atualizado_em:      new Date().toISOString(),
         }, { onConflict: 'salao_id,ano,mes' })
 
-      if (e1) { erros.push(`${per.ano}/${per.mes}: ${e1.message}`); continue }
+      if (e1) { erros.push(`upsert ${per.ano}/${per.mes}: ${e1.message}`); continue }
 
-      // UPDATE explícito para garantir que as colunas de métricas sejam salvas
+      // UPDATE separado para prof_servicos (pode ser grande)
       const { error: e2 } = await supabaseAdmin
         .from('relatorio_periodos')
         .update({
-          prof_ticket:      grpTick[chave]  || [],
-          prof_preferencia: grpPref[chave]  || [],
-          prof_ocupacao:    grpOcup[chave]  || [],
-          prof_servicos:    grpServ[chave]  || [],
-          prof_produtos:    grpProd[chave]  || [],
-          atualizado_em:    new Date().toISOString(),
+          prof_servicos: grpServ[chave] || [],
+          atualizado_em: new Date().toISOString(),
         })
         .eq('salao_id', salaoId)
         .eq('ano', anoNum)
         .eq('mes', mesNum)
 
-      if (e2) erros.push(`update ${per.ano}/${per.mes}: ${e2.message}`)
+      if (e2) erros.push(`update_servicos ${per.ano}/${per.mes}: ${e2.message}`)
 
       salvos++
       salvosExtras++
@@ -149,7 +145,7 @@ export async function POST(req: NextRequest) {
       periodos_com_metricas_extras: salvosExtras,
       feedbacks_salvos: feedbacksSalvos,
       total_periodos: periodos.length,
-      erros: erros.length ? erros.slice(0, 5) : undefined,
+      erros: erros.length ? erros : undefined,
     })
 
   } catch (err: any) {
