@@ -76,12 +76,15 @@ export async function POST(req: NextRequest) {
     for (const per of periodos) {
       const chave = `${per.ano}-${per.mes}`
 
+      const anoNum = safeNum(per.ano)
+      const mesNum = safeNum(per.mes)
+
       const { error: e1 } = await supabaseAdmin
         .from('relatorio_periodos')
         .upsert({
           salao_id:           salaoId,
-          ano:                safeNum(per.ano),
-          mes:                safeNum(per.mes),
+          ano:                anoNum,
+          mes:                mesNum,
           data_inicio:        safeStr(per.data_inicio),
           data_fim:           safeStr(per.data_fim),
           resumo_mensal:      grpRes[chave]   || [],
@@ -99,6 +102,24 @@ export async function POST(req: NextRequest) {
         }, { onConflict: 'salao_id,ano,mes' })
 
       if (e1) { erros.push(`${per.ano}/${per.mes}: ${e1.message}`); continue }
+
+      // UPDATE explícito para garantir que as colunas de métricas sejam salvas
+      const { error: e2 } = await supabaseAdmin
+        .from('relatorio_periodos')
+        .update({
+          prof_ticket:      grpTick[chave]  || [],
+          prof_preferencia: grpPref[chave]  || [],
+          prof_ocupacao:    grpOcup[chave]  || [],
+          prof_servicos:    grpServ[chave]  || [],
+          prof_produtos:    grpProd[chave]  || [],
+          atualizado_em:    new Date().toISOString(),
+        })
+        .eq('salao_id', salaoId)
+        .eq('ano', anoNum)
+        .eq('mes', mesNum)
+
+      if (e2) erros.push(`update ${per.ano}/${per.mes}: ${e2.message}`)
+
       salvos++
       salvosExtras++
     }
