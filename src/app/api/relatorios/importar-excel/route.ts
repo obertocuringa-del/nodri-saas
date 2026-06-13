@@ -76,7 +76,6 @@ export async function POST(req: NextRequest) {
     for (const per of periodos) {
       const chave = `${per.ano}-${per.mes}`
 
-      // FASE 1: Upsert com campos que SEMPRE existem (compatível mesmo sem migration 008)
       const { error: e1 } = await supabaseAdmin
         .from('relatorio_periodos')
         .upsert({
@@ -91,27 +90,17 @@ export async function POST(req: NextRequest) {
           produtos:           grpProd2[chave] || [],
           prof_pagamentos:    grpPag[chave]   || [],
           metas:              grpMeta[chave]  || [],
+          prof_ticket:        grpTick[chave]  || [],
+          prof_preferencia:   grpPref[chave]  || [],
+          prof_ocupacao:      grpOcup[chave]  || [],
+          prof_servicos:      grpServ[chave]  || [],
+          prof_produtos:      grpProd[chave]  || [],
           atualizado_em:      new Date().toISOString(),
         }, { onConflict: 'salao_id,ano,mes' })
 
       if (e1) { erros.push(`${per.ano}/${per.mes}: ${e1.message}`); continue }
       salvos++
-
-      // FASE 2: Update com campos EXTRAS (só funciona depois da migration 008)
-      const { error: e2 } = await supabaseAdmin
-        .from('relatorio_periodos')
-        .update({
-          prof_ticket:       grpTick[chave]  || [],
-          prof_preferencia:  grpPref[chave]  || [],
-          prof_ocupacao:     grpOcup[chave]  || [],
-          prof_servicos:     grpServ[chave]  || [],
-          prof_produtos:     grpProd[chave]  || [],
-        })
-        .eq('salao_id', salaoId)
-        .eq('ano', safeNum(per.ano))
-        .eq('mes', safeNum(per.mes))
-
-      if (!e2) salvosExtras++
+      salvosExtras++
     }
 
     // Feedbacks
