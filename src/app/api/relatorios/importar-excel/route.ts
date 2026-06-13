@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
     const grpOcup  = agrupar(profOcup,     ['dias_trabalhados','taxa_ocupacao'])
     const grpServ  = agrupar(profServicos, ['servico','quantidade','valor'])
     const grpProd  = agrupar(profProdutos, ['quantidade'])
-    const grpRes   = agrupar(resumo,       ['faturamento_total','ticket_medio','clientes_atendidos','clientes_novos'], '')
+    const grpRes   = agrupar(resumo,       ['periodo','faturamento_total','ticket_medio','clientes_atendidos','clientes_novos','faturamento_servicos','faturamento_produtos'], '')
     const grpFatD  = agrupar(fatDiario,    ['data','dia_semana','valor'], '')
     const grpSvc   = agrupar(servicos,     ['servico','quantidade'], '')
     const grpProd2 = agrupar(produtos,     ['produto','quantidade'], '')
