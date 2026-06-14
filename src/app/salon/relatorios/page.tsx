@@ -772,6 +772,131 @@ export default function RelatoriosPage() {
             {/* ════════ ABA METAS ════════ */}
             {aba === 'metas' && (
               <div>
+                {/* Gráfico comparativo anual */}
+                {dados && (() => {
+                  const CORES = ['#7c5cfc','#00e5c8','#f43f8e','#f59e0b','#10b981','#3b82f6']
+                  const anosDisp = Array.from(new Set((dados.periodos||[]).map(p=>p.ano))).sort((a,b)=>b-a)
+                  const anosGraf = graficoAnos.length ? graficoAnos : anosDisp.slice(0,2)
+                  const fatMes = (ano:number, mes:number) => somarResumo(filtrarResumo(dados!.resumo_mensal,`${ano}-${String(mes).padStart(2,'0')}-01`,`${ano}-${String(mes).padStart(2,'0')}-31`)).fat_total
+                  const series = anosGraf.map((ano,ci) => ({
+                    ano, cor: CORES[ci % CORES.length],
+                    pts: Array.from({length:12},(_,i)=>({ mes:i+1, fat: fatMes(ano,i+1) }))
+                  }))
+                  const allVals = series.flatMap(s=>s.pts.map(p=>p.fat)).filter(v=>v>0)
+                  if (!allVals.length) return null
+                  const W=700,H=200,PL=70,PR=16,PT=20,PB=40
+                  const maxF = Math.max(...allVals)
+                  const yOf = (f:number) => PT+(1-f/maxF)*(H-PT-PB)
+                  const xOf = (mes:number) => PL+((mes-1)/11)*(W-PL-PR)
+                  return (
+                    <div style={{background:'#0a0f1a',border:'1px solid #1e293b',borderRadius:12,padding:20,marginBottom:16}}>
+                      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:10,marginBottom:14}}>
+                        <h3 style={{color:'#e2e8f0',fontSize:14,fontWeight:700,margin:0}}>Comparativo Anual — Faturamento por Mês</h3>
+                        <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+                          {anosDisp.map(ano => {
+                            const ativo = anosGraf.includes(ano)
+                            const ci = anosGraf.indexOf(ano)
+                            return (
+                              <button key={ano} onClick={()=>setGraficoAnos(ativo ? anosGraf.filter(a=>a!==ano) : [...anosGraf,ano].slice(-4))}
+                                style={{padding:'3px 10px',borderRadius:6,border:`1px solid ${ativo?CORES[ci%CORES.length]:'#1e293b'}`,fontSize:11,fontWeight:700,cursor:'pointer',background:ativo?CORES[ci%CORES.length]+'22':'#111827',color:ativo?CORES[ci%CORES.length]:'#475569'}}>
+                                {ano}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                      <div style={{overflowX:'auto'}}>
+                        <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',minWidth:400,display:'block'}}>
+                          {[0,0.25,0.5,0.75,1].map(t=>{
+                            const y=PT+t*(H-PT-PB),v=maxF*(1-t)
+                            return <g key={t}>
+                              <line x1={PL} y1={y} x2={W-PR} y2={y} stroke="#1e293b" strokeWidth={1}/>
+                              <text x={PL-6} y={y+4} textAnchor="end" fill="#475569" fontSize={9}>{(v/1000).toFixed(0)}k</text>
+                            </g>
+                          })}
+                          {Array.from({length:12},(_,i)=>{
+                            const mes=i+1,x=xOf(mes)
+                            const isDestaque = mes===p1Mes
+                            return <g key={mes}>
+                              {isDestaque && <rect x={x-14} y={PT} width={28} height={H-PT-PB} fill="#ffffff08"/>}
+                              <text x={x} y={H-PB+14} textAnchor="middle" fill={isDestaque?'#e2e8f0':'#475569'} fontSize={9} fontWeight={isDestaque?700:400}>{MESES_FULL[mes].slice(0,3)}</text>
+                            </g>
+                          })}
+                          {series.map(s=>{
+                            const validPts = s.pts.filter(p=>p.fat>0)
+                            if (validPts.length<2) return null
+                            const polyPts = validPts.map(p=>`${xOf(p.mes)},${yOf(p.fat)}`).join(' ')
+                            return <g key={s.ano}>
+                              <polyline points={polyPts} fill="none" stroke={s.cor} strokeWidth={2} strokeLinejoin="round" strokeDasharray={s.ano===p1Ano?'none':'4 2'}/>
+                              {s.pts.map(p=>{
+                                if (!p.fat) return null
+                                const x=xOf(p.mes),y=yOf(p.fat)
+                                const isAtual=p.mes===p1Mes&&s.ano===p1Ano
+                                return <g key={p.mes}>
+                                  <circle cx={x} cy={y} r={isAtual?5:3} fill={s.cor} stroke="#0a0f1a" strokeWidth={1.5}/>
+                                  {isAtual && <text x={x} y={y-10} textAnchor="middle" fill={s.cor} fontSize={9} fontWeight={700}>{moeda(p.fat)}</text>}
+                                </g>
+                              })}
+                            </g>
+                          })}
+                        </svg>
+                      </div>
+                      <div style={{display:'flex',gap:16,marginTop:8,fontSize:11,flexWrap:'wrap'}}>
+                        {series.map(s=>(
+                          <span key={s.ano} style={{color:s.cor,fontWeight:600}}>
+                            {s.ano===p1Ano?'━':'╌'} {s.ano}{s.ano===p1Ano?' (atual)':''}
+                            {' — Total: '}{moeda(s.pts.reduce((a,p)=>a+p.fat,0))}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })()}
+
+                {/* Comparativo Acumulado */}
+                {dados && (() => {
+                  const periodos = (dados?.periodos || []).slice().sort((a,b) => a.ano*100+a.mes-(b.ano*100+b.mes))
+                  const fatDe = (ym: string) => somarResumo(filtrarResumo(dados!.resumo_mensal, ym+'-01', ym+'-31')).fat_total
+                  const totalA = acumA1 && acumA2 ? periodos.filter(p => { const v=p.ano*100+p.mes,v1=+acumA1.replace('-',''),v2=+acumA2.replace('-',''); return v>=Math.min(v1,v2)&&v<=Math.max(v1,v2) }).reduce((s,p)=>s+fatDe(`${p.ano}-${String(p.mes).padStart(2,'0')}`),0) : 0
+                  const totalB = acumB1 && acumB2 ? periodos.filter(p => { const v=p.ano*100+p.mes,v1=+acumB1.replace('-',''),v2=+acumB2.replace('-',''); return v>=Math.min(v1,v2)&&v<=Math.max(v1,v2) }).reduce((s,p)=>s+fatDe(`${p.ano}-${String(p.mes).padStart(2,'0')}`),0) : 0
+                  const diff = totalA - totalB
+                  const pct = totalB > 0 ? (diff/totalB)*100 : null
+                  const optLabel = (ym: string) => { const [y,m] = ym.split('-'); return `${MESES_FULL[+m]}/${y}` }
+                  const sel = (val: string, onChange: (v:string)=>void) => (
+                    <select value={val} onChange={e=>onChange(e.target.value)}
+                      style={{ background: '#111827', border: '1px solid #334155', borderRadius: 6, color: val?'#e2e8f0':'#475569', padding: '5px 8px', fontSize: 11, outline: 'none' }}>
+                      <option value="">Escolha</option>
+                      {periodos.map(p => { const ym=`${p.ano}-${String(p.mes).padStart(2,'0')}`; return <option key={ym} value={ym}>{optLabel(ym)}</option> })}
+                    </select>
+                  )
+                  return (
+                    <div style={{ background: '#0a0f1a', border: '1px solid #1e293b', borderRadius: 12, padding: 20, marginBottom: 16 }}>
+                      <h3 style={{ color: '#e2e8f0', fontSize: 14, fontWeight: 700, margin: '0 0 14px' }}>Comparativo Acumulado</h3>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+                        {([{ label: 'Intervalo A', de: acumA1, ate: acumA2, setDe: setAcumA1, setAte: setAcumA2, total: totalA, cor: '#00e5c8' },
+                           { label: 'Intervalo B', de: acumB1, ate: acumB2, setDe: setAcumB1, setAte: setAcumB2, total: totalB, cor: '#f43f8e' }] as const).map(iv => (
+                          <div key={iv.label} style={{ background: '#111827', border: `1px solid ${iv.cor}30`, borderRadius: 10, padding: 14 }}>
+                            <div style={{ fontSize: 11, color: iv.cor, fontWeight: 700, marginBottom: 8 }}>{iv.label}</div>
+                            <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginBottom: 10 }}>
+                              <span style={{ fontSize: 10, color: '#475569' }}>De</span>{sel(iv.de, iv.setDe)}
+                              <span style={{ fontSize: 10, color: '#475569' }}>até</span>{sel(iv.ate, iv.setAte)}
+                            </div>
+                            <div style={{ fontSize: 11, color: '#475569' }}>Total acumulado</div>
+                            <div style={{ fontSize: 22, fontWeight: 800, color: iv.total > 0 ? iv.cor : '#334155' }}>{iv.total > 0 ? moeda(iv.total) : '—'}</div>
+                          </div>
+                        ))}
+                      </div>
+                      {totalA > 0 && totalB > 0 && (
+                        <div style={{ background: '#060d18', borderRadius: 8, padding: 14, display: 'flex', gap: 24, flexWrap: 'wrap', alignItems: 'center' }}>
+                          <div><div style={{ fontSize: 10, color: '#475569', marginBottom: 2 }}>DIFERENÇA</div><div style={{ fontSize: 18, fontWeight: 800, color: diff>=0?'#10b981':'#ef4444' }}>{diff>=0?'+':''}{moeda(diff)}</div></div>
+                          {pct!==null && <div><div style={{ fontSize: 10, color: '#475569', marginBottom: 2 }}>CRESCIMENTO</div><div style={{ fontSize: 18, fontWeight: 800, color: pct>=0?'#10b981':'#ef4444' }}>{pct>=0?'+':''}{pct.toFixed(1)}%</div></div>}
+                          <div style={{ fontSize: 11, color: '#475569' }}>Intervalo A {pct!==null&&pct>=0?'cresceu':'caiu'} em relação ao Intervalo B</div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })()}
+
                 {/* Configuração da meta */}
                 <div style={{ background: '#0a0f1a', border: '1px solid #1e293b', borderRadius: 12, padding: 20, marginBottom: 16 }}>
                   <h3 style={{ color: '#7c5cfc', fontSize: 14, fontWeight: 700, margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: 8 }}><Settings size={15} /> Configurar Meta</h3>
@@ -948,130 +1073,6 @@ export default function RelatoriosPage() {
                   </div>
                 )}
 
-                {/* Gráfico comparativo anual */}
-                {dados && (() => {
-                  const CORES = ['#7c5cfc','#00e5c8','#f43f8e','#f59e0b','#10b981','#3b82f6']
-                  const anosDisp = Array.from(new Set((dados.periodos||[]).map(p=>p.ano))).sort((a,b)=>b-a)
-                  const anosGraf = graficoAnos.length ? graficoAnos : anosDisp.slice(0,2)
-                  const fatMes = (ano:number, mes:number) => somarResumo(filtrarResumo(dados!.resumo_mensal,`${ano}-${String(mes).padStart(2,'0')}-01`,`${ano}-${String(mes).padStart(2,'0')}-31`)).fat_total
-                  const series = anosGraf.map((ano,ci) => ({
-                    ano, cor: CORES[ci % CORES.length],
-                    pts: Array.from({length:12},(_,i)=>({ mes:i+1, fat: fatMes(ano,i+1) }))
-                  }))
-                  const allVals = series.flatMap(s=>s.pts.map(p=>p.fat)).filter(v=>v>0)
-                  if (!allVals.length) return null
-                  const W=700,H=200,PL=70,PR=16,PT=20,PB=40
-                  const maxF = Math.max(...allVals)
-                  const yOf = (f:number) => PT+(1-f/maxF)*(H-PT-PB)
-                  const xOf = (mes:number) => PL+((mes-1)/11)*(W-PL-PR)
-                  return (
-                    <div style={{background:'#0a0f1a',border:'1px solid #1e293b',borderRadius:12,padding:20,marginBottom:16}}>
-                      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:10,marginBottom:14}}>
-                        <h3 style={{color:'#e2e8f0',fontSize:14,fontWeight:700,margin:0}}>Comparativo Anual — Faturamento por Mês</h3>
-                        <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
-                          {anosDisp.map(ano => {
-                            const ativo = anosGraf.includes(ano)
-                            const ci = anosGraf.indexOf(ano)
-                            return (
-                              <button key={ano} onClick={()=>setGraficoAnos(ativo ? anosGraf.filter(a=>a!==ano) : [...anosGraf,ano].slice(-4))}
-                                style={{padding:'3px 10px',borderRadius:6,border:`1px solid ${ativo?CORES[ci%CORES.length]:'#1e293b'}`,fontSize:11,fontWeight:700,cursor:'pointer',background:ativo?CORES[ci%CORES.length]+'22':'#111827',color:ativo?CORES[ci%CORES.length]:'#475569'}}>
-                                {ano}
-                              </button>
-                            )
-                          })}
-                        </div>
-                      </div>
-                      <div style={{overflowX:'auto'}}>
-                        <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',minWidth:400,display:'block'}}>
-                          {[0,0.25,0.5,0.75,1].map(t=>{
-                            const y=PT+t*(H-PT-PB),v=maxF*(1-t)
-                            return <g key={t}>
-                              <line x1={PL} y1={y} x2={W-PR} y2={y} stroke="#1e293b" strokeWidth={1}/>
-                              <text x={PL-6} y={y+4} textAnchor="end" fill="#475569" fontSize={9}>{(v/1000).toFixed(0)}k</text>
-                            </g>
-                          })}
-                          {Array.from({length:12},(_,i)=>{
-                            const mes=i+1,x=xOf(mes)
-                            const isDestaque = mes===p1Mes
-                            return <g key={mes}>
-                              {isDestaque && <rect x={x-14} y={PT} width={28} height={H-PT-PB} fill="#ffffff08"/>}
-                              <text x={x} y={H-PB+14} textAnchor="middle" fill={isDestaque?'#e2e8f0':'#475569'} fontSize={9} fontWeight={isDestaque?700:400}>{MESES_FULL[mes].slice(0,3)}</text>
-                            </g>
-                          })}
-                          {series.map(s=>{
-                            const validPts = s.pts.filter(p=>p.fat>0)
-                            if (validPts.length<2) return null
-                            const polyPts = validPts.map(p=>`${xOf(p.mes)},${yOf(p.fat)}`).join(' ')
-                            return <g key={s.ano}>
-                              <polyline points={polyPts} fill="none" stroke={s.cor} strokeWidth={2} strokeLinejoin="round" strokeDasharray={s.ano===p1Ano?'none':'4 2'}/>
-                              {s.pts.map(p=>{
-                                if (!p.fat) return null
-                                const x=xOf(p.mes),y=yOf(p.fat)
-                                const isAtual=p.mes===p1Mes&&s.ano===p1Ano
-                                return <g key={p.mes}>
-                                  <circle cx={x} cy={y} r={isAtual?5:3} fill={s.cor} stroke="#0a0f1a" strokeWidth={1.5}/>
-                                  {isAtual && <text x={x} y={y-10} textAnchor="middle" fill={s.cor} fontSize={9} fontWeight={700}>{moeda(p.fat)}</text>}
-                                </g>
-                              })}
-                            </g>
-                          })}
-                        </svg>
-                      </div>
-                      <div style={{display:'flex',gap:16,marginTop:8,fontSize:11,flexWrap:'wrap'}}>
-                        {series.map(s=>(
-                          <span key={s.ano} style={{color:s.cor,fontWeight:600}}>
-                            {s.ano===p1Ano?'━':'╌'} {s.ano}{s.ano===p1Ano?' (atual)':''}
-                            {' — Total: '}{moeda(s.pts.reduce((a,p)=>a+p.fat,0))}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )
-                })()}
-
-                {/* Comparativo Acumulado (sempre visível) */}
-                {dados && (() => {
-                  const periodos = (dados?.periodos || []).slice().sort((a,b) => a.ano*100+a.mes-(b.ano*100+b.mes))
-                  const fatDe = (ym: string) => somarResumo(filtrarResumo(dados!.resumo_mensal, ym+'-01', ym+'-31')).fat_total
-                  const totalA = acumA1 && acumA2 ? periodos.filter(p => { const v=p.ano*100+p.mes,v1=+acumA1.replace('-',''),v2=+acumA2.replace('-',''); return v>=Math.min(v1,v2)&&v<=Math.max(v1,v2) }).reduce((s,p)=>s+fatDe(`${p.ano}-${String(p.mes).padStart(2,'0')}`),0) : 0
-                  const totalB = acumB1 && acumB2 ? periodos.filter(p => { const v=p.ano*100+p.mes,v1=+acumB1.replace('-',''),v2=+acumB2.replace('-',''); return v>=Math.min(v1,v2)&&v<=Math.max(v1,v2) }).reduce((s,p)=>s+fatDe(`${p.ano}-${String(p.mes).padStart(2,'0')}`),0) : 0
-                  const diff = totalA - totalB
-                  const pct = totalB > 0 ? (diff/totalB)*100 : null
-                  const optLabel = (ym: string) => { const [y,m] = ym.split('-'); return `${MESES_FULL[+m]}/${y}` }
-                  const sel = (val: string, onChange: (v:string)=>void) => (
-                    <select value={val} onChange={e=>onChange(e.target.value)}
-                      style={{ background: '#111827', border: '1px solid #334155', borderRadius: 6, color: val?'#e2e8f0':'#475569', padding: '5px 8px', fontSize: 11, outline: 'none' }}>
-                      <option value="">Escolha</option>
-                      {periodos.map(p => { const ym=`${p.ano}-${String(p.mes).padStart(2,'0')}`; return <option key={ym} value={ym}>{optLabel(ym)}</option> })}
-                    </select>
-                  )
-                  return (
-                    <div style={{ background: '#0a0f1a', border: '1px solid #1e293b', borderRadius: 12, padding: 20, marginBottom: 16 }}>
-                      <h3 style={{ color: '#e2e8f0', fontSize: 14, fontWeight: 700, margin: '0 0 14px' }}>Comparativo Acumulado</h3>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
-                        {([{ label: 'Intervalo A', de: acumA1, ate: acumA2, setDe: setAcumA1, setAte: setAcumA2, total: totalA, cor: '#00e5c8' },
-                           { label: 'Intervalo B', de: acumB1, ate: acumB2, setDe: setAcumB1, setAte: setAcumB2, total: totalB, cor: '#f43f8e' }] as const).map(iv => (
-                          <div key={iv.label} style={{ background: '#111827', border: `1px solid ${iv.cor}30`, borderRadius: 10, padding: 14 }}>
-                            <div style={{ fontSize: 11, color: iv.cor, fontWeight: 700, marginBottom: 8 }}>{iv.label}</div>
-                            <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginBottom: 10 }}>
-                              <span style={{ fontSize: 10, color: '#475569' }}>De</span>{sel(iv.de, iv.setDe)}
-                              <span style={{ fontSize: 10, color: '#475569' }}>até</span>{sel(iv.ate, iv.setAte)}
-                            </div>
-                            <div style={{ fontSize: 11, color: '#475569' }}>Total acumulado</div>
-                            <div style={{ fontSize: 22, fontWeight: 800, color: iv.total > 0 ? iv.cor : '#334155' }}>{iv.total > 0 ? moeda(iv.total) : '—'}</div>
-                          </div>
-                        ))}
-                      </div>
-                      {totalA > 0 && totalB > 0 && (
-                        <div style={{ background: '#060d18', borderRadius: 8, padding: 14, display: 'flex', gap: 24, flexWrap: 'wrap', alignItems: 'center' }}>
-                          <div><div style={{ fontSize: 10, color: '#475569', marginBottom: 2 }}>DIFERENÇA</div><div style={{ fontSize: 18, fontWeight: 800, color: diff>=0?'#10b981':'#ef4444' }}>{diff>=0?'+':''}{moeda(diff)}</div></div>
-                          {pct!==null && <div><div style={{ fontSize: 10, color: '#475569', marginBottom: 2 }}>CRESCIMENTO</div><div style={{ fontSize: 18, fontWeight: 800, color: pct>=0?'#10b981':'#ef4444' }}>{pct>=0?'+':''}{pct.toFixed(1)}%</div></div>}
-                          <div style={{ fontSize: 11, color: '#475569' }}>Intervalo A {pct!==null&&pct>=0?'cresceu':'caiu'} em relação ao Intervalo B</div>
-                        </div>
-                      )}
-                    </div>
-                  )
-                })()}
 
               </div>
             )}
