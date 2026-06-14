@@ -257,6 +257,9 @@ export default function RelatoriosPage() {
   const [metaPct, setMetaPct] = useState('5')
   const [metaSalva, setMetaSalva] = useState(0)
 
+  // Gráfico comparativo anual
+  const [graficoAnos, setGraficoAnos] = useState<number[]>([])
+
   // Acumulado — comparação de intervalos
   const [acumA1, setAcumA1] = useState('')
   const [acumA2, setAcumA2] = useState('')
@@ -945,55 +948,82 @@ export default function RelatoriosPage() {
                   </div>
                 )}
 
-                {/* Gráfico de linha — evolução mensal (sempre visível) */}
+                {/* Gráfico comparativo anual */}
                 {dados && (() => {
-                  const hist = (dados?.periodos || [])
-                    .slice().sort((a,b) => a.ano*100+a.mes - (b.ano*100+b.mes))
-                    .map(p => {
-                      const fat = somarResumo(filtrarResumo(dados!.resumo_mensal, `${p.ano}-${String(p.mes).padStart(2,'0')}-01`, `${p.ano}-${String(p.mes).padStart(2,'0')}-31`)).fat_total
-                      return { ano: p.ano, mes: p.mes, fat }
-                    }).filter(p => p.fat > 0)
-                  if (hist.length < 2) return null
-                  const W = 700, H = 180, PL = 70, PR = 16, PT = 16, PB = 36
-                  const maxF = Math.max(...hist.map(p => p.fat))
-                  const minF = Math.min(...hist.map(p => p.fat))
-                  const range = maxF - minF || 1
-                  const xOf = (i: number) => PL + (i / (hist.length - 1)) * (W - PL - PR)
-                  const yOf = (f: number) => PT + (1 - (f - minF) / range) * (H - PT - PB)
-                  const pts = hist.map((p,i) => `${xOf(i)},${yOf(p.fat)}`).join(' ')
-                  const area = `M${xOf(0)},${yOf(hist[0].fat)} ` + hist.map((p,i) => `L${xOf(i)},${yOf(p.fat)}`).join(' ') + ` L${xOf(hist.length-1)},${H-PB} L${xOf(0)},${H-PB} Z`
+                  const CORES = ['#7c5cfc','#00e5c8','#f43f8e','#f59e0b','#10b981','#3b82f6']
+                  const anosDisp = Array.from(new Set((dados.periodos||[]).map(p=>p.ano))).sort((a,b)=>b-a)
+                  const anosGraf = graficoAnos.length ? graficoAnos : anosDisp.slice(0,2)
+                  const fatMes = (ano:number, mes:number) => somarResumo(filtrarResumo(dados!.resumo_mensal,`${ano}-${String(mes).padStart(2,'0')}-01`,`${ano}-${String(mes).padStart(2,'0')}-31`)).fat_total
+                  const series = anosGraf.map((ano,ci) => ({
+                    ano, cor: CORES[ci % CORES.length],
+                    pts: Array.from({length:12},(_,i)=>({ mes:i+1, fat: fatMes(ano,i+1) }))
+                  }))
+                  const allVals = series.flatMap(s=>s.pts.map(p=>p.fat)).filter(v=>v>0)
+                  if (!allVals.length) return null
+                  const W=700,H=200,PL=70,PR=16,PT=20,PB=40
+                  const maxF = Math.max(...allVals)
+                  const yOf = (f:number) => PT+(1-f/maxF)*(H-PT-PB)
+                  const xOf = (mes:number) => PL+((mes-1)/11)*(W-PL-PR)
                   return (
-                    <div style={{ background: '#0a0f1a', border: '1px solid #1e293b', borderRadius: 12, padding: 20, marginBottom: 16 }}>
-                      <h3 style={{ color: '#e2e8f0', fontSize: 14, fontWeight: 700, margin: '0 0 12px' }}>Evolução Mensal do Faturamento</h3>
-                      <div style={{ overflowX: 'auto' }}>
-                        <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', minWidth: 400, display: 'block' }}>
-                          {[0,0.25,0.5,0.75,1].map(t => {
-                            const y = PT + t*(H-PT-PB); const v = maxF - t*range
+                    <div style={{background:'#0a0f1a',border:'1px solid #1e293b',borderRadius:12,padding:20,marginBottom:16}}>
+                      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:10,marginBottom:14}}>
+                        <h3 style={{color:'#e2e8f0',fontSize:14,fontWeight:700,margin:0}}>Comparativo Anual — Faturamento por Mês</h3>
+                        <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+                          {anosDisp.map(ano => {
+                            const ativo = anosGraf.includes(ano)
+                            const ci = anosGraf.indexOf(ano)
+                            return (
+                              <button key={ano} onClick={()=>setGraficoAnos(ativo ? anosGraf.filter(a=>a!==ano) : [...anosGraf,ano].slice(-4))}
+                                style={{padding:'3px 10px',borderRadius:6,border:`1px solid ${ativo?CORES[ci%CORES.length]:'#1e293b'}`,fontSize:11,fontWeight:700,cursor:'pointer',background:ativo?CORES[ci%CORES.length]+'22':'#111827',color:ativo?CORES[ci%CORES.length]:'#475569'}}>
+                                {ano}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                      <div style={{overflowX:'auto'}}>
+                        <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',minWidth:400,display:'block'}}>
+                          {[0,0.25,0.5,0.75,1].map(t=>{
+                            const y=PT+t*(H-PT-PB),v=maxF*(1-t)
                             return <g key={t}>
                               <line x1={PL} y1={y} x2={W-PR} y2={y} stroke="#1e293b" strokeWidth={1}/>
                               <text x={PL-6} y={y+4} textAnchor="end" fill="#475569" fontSize={9}>{(v/1000).toFixed(0)}k</text>
                             </g>
                           })}
-                          <path d={area} fill="#7c5cfc18"/>
-                          <polyline points={pts} fill="none" stroke="#7c5cfc" strokeWidth={2} strokeLinejoin="round"/>
-                          {hist.map((p,i) => {
-                            const x = xOf(i), y = yOf(p.fat)
-                            const isAtual = p.ano===p1Ano && p.mes===p1Mes
-                            const isComp = de2?.startsWith(`${p.ano}-${String(p.mes).padStart(2,'0')}`)
-                            const cor = isAtual ? '#00e5c8' : isComp ? '#f43f8e' : '#7c5cfc'
-                            const showLabel = isAtual || isComp || i===0 || i===hist.length-1 || hist.length<=8
-                            return <g key={i}>
-                              <circle cx={x} cy={y} r={isAtual||isComp?5:3} fill={cor} stroke="#0a0f1a" strokeWidth={1.5}/>
-                              {showLabel && <text x={x} y={H-PB+14} textAnchor="middle" fill={isAtual?'#00e5c8':isComp?'#f43f8e':'#475569'} fontSize={8} fontWeight={isAtual||isComp?700:400}>{MESES_FULL[p.mes].slice(0,3)}/{String(p.ano).slice(2)}</text>}
-                              {(isAtual||isComp) && <text x={x} y={y-10} textAnchor="middle" fill={cor} fontSize={9} fontWeight={700}>{moeda(p.fat)}</text>}
+                          {Array.from({length:12},(_,i)=>{
+                            const mes=i+1,x=xOf(mes)
+                            const isDestaque = mes===p1Mes
+                            return <g key={mes}>
+                              {isDestaque && <rect x={x-14} y={PT} width={28} height={H-PT-PB} fill="#ffffff08"/>}
+                              <text x={x} y={H-PB+14} textAnchor="middle" fill={isDestaque?'#e2e8f0':'#475569'} fontSize={9} fontWeight={isDestaque?700:400}>{MESES_FULL[mes].slice(0,3)}</text>
+                            </g>
+                          })}
+                          {series.map(s=>{
+                            const validPts = s.pts.filter(p=>p.fat>0)
+                            if (validPts.length<2) return null
+                            const polyPts = validPts.map(p=>`${xOf(p.mes)},${yOf(p.fat)}`).join(' ')
+                            return <g key={s.ano}>
+                              <polyline points={polyPts} fill="none" stroke={s.cor} strokeWidth={2} strokeLinejoin="round" strokeDasharray={s.ano===p1Ano?'none':'4 2'}/>
+                              {s.pts.map(p=>{
+                                if (!p.fat) return null
+                                const x=xOf(p.mes),y=yOf(p.fat)
+                                const isAtual=p.mes===p1Mes&&s.ano===p1Ano
+                                return <g key={p.mes}>
+                                  <circle cx={x} cy={y} r={isAtual?5:3} fill={s.cor} stroke="#0a0f1a" strokeWidth={1.5}/>
+                                  {isAtual && <text x={x} y={y-10} textAnchor="middle" fill={s.cor} fontSize={9} fontWeight={700}>{moeda(p.fat)}</text>}
+                                </g>
+                              })}
                             </g>
                           })}
                         </svg>
                       </div>
-                      <div style={{ display: 'flex', gap: 16, marginTop: 8, fontSize: 11, color: '#475569' }}>
-                        <span><span style={{ color: '#00e5c8' }}>●</span> Período atual</span>
-                        <span><span style={{ color: '#f43f8e' }}>●</span> Período de comparação</span>
-                        <span><span style={{ color: '#7c5cfc' }}>●</span> Outros meses</span>
+                      <div style={{display:'flex',gap:16,marginTop:8,fontSize:11,flexWrap:'wrap'}}>
+                        {series.map(s=>(
+                          <span key={s.ano} style={{color:s.cor,fontWeight:600}}>
+                            {s.ano===p1Ano?'━':'╌'} {s.ano}{s.ano===p1Ano?' (atual)':''}
+                            {' — Total: '}{moeda(s.pts.reduce((a,p)=>a+p.fat,0))}
+                          </span>
+                        ))}
                       </div>
                     </div>
                   )
