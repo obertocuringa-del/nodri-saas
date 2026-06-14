@@ -18,6 +18,7 @@ export default function ImportarExcelPage() {
     setResetando(true)
     const res = await fetch('/api/relatorios/reset', { method: 'DELETE' })
     const data = await res.json()
+    localStorage.removeItem('nodri_relatorios_v2')
     setResetando(false)
     if (data.ok) toast.success(`Banco limpo! ${data.deletados} períodos removidos. Agora reimporte os arquivos.`)
     else toast.error('Erro ao resetar: ' + data.error)
@@ -44,8 +45,10 @@ export default function ImportarExcelPage() {
       const res = await fetch('/api/relatorios/importar-excel', { method: 'POST', body: form })
       const data = await res.json()
       setResultado(data)
-      if (data.ok) toast.success(` ${data.periodos_salvos} períodos importados!`)
-      else toast.error('Erro na importação')
+      if (data.ok) {
+        localStorage.removeItem('nodri_relatorios_v2')
+        toast.success(` ${data.periodos_salvos} períodos importados!`)
+      } else toast.error('Erro na importação')
     } catch (e) {
       toast.error('Erro de conexão')
     }
