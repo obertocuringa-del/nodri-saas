@@ -402,8 +402,8 @@ export default function RelatoriosPage() {
     return data
   }
 
-  // ── MÉDIAS POR DIA DA SEMANA: calculadas a partir do mesmo mês do ano anterior ──
-  // Sempre usa ano anterior do mesmo mês (independente do período de comparação selecionado)
+  // ── PESOS POR DIA DA SEMANA ──
+  // Tenta usar o mesmo mês do ano anterior; se não houver dados, usa todo o histórico disponível
   const deP2fixo = `${periodoAuto2}-01`
   const ateP2fixo = `${periodoAuto2}-${ultimoDiaMes(p1Ano - 1, p1Mes)}`
   const fatDiarioP2fixo = dados ? dados.faturamento_diario.filter(r => {
@@ -413,9 +413,13 @@ export default function RelatoriosPage() {
     return v >= dY * 100 + dM && v <= aY * 100 + aM
   }) : []
 
-  // Agrupa valores por dia da semana (ex: todas as segundas de Jun/2025)
+  // Se não há dados do mês específico, usa todo o histórico para calcular os pesos
+  const fatParaPesos = fatDiarioP2fixo.length > 0
+    ? fatDiarioP2fixo
+    : (dados?.faturamento_diario || [])
+
   const valoresPorDiaSemana = new Map<string, number[]>()
-  fatDiarioP2fixo.forEach(d => {
+  fatParaPesos.forEach(d => {
     const key = normalizarData(d.data)
     if (!key) return
     const [dd, mm, yyyy] = key.split('/')
@@ -428,22 +432,13 @@ export default function RelatoriosPage() {
 
   const totalFatP2 = fatDiarioP2fixo.reduce((s, d) => s + d.valor, 0)
 
-  // Média absoluta por dia da semana (ex: média das segundas = R$ 12.000)
-  const mediaPorDiaSemana = new Map<string, number>()
-  valoresPorDiaSemana.forEach((valores, ds) => {
-    const media = valores.reduce((s, v) => s + v, 0) / valores.length
-    mediaPorDiaSemana.set(ds, media)
-  })
-
-  // Peso relativo (para fallback quando não há dados históricos)
+  // Peso relativo por dia da semana (proporção sobre o total)
   const pesoPorDiaSemana = new Map<string, number>()
+  const totalParaPesos = fatParaPesos.reduce((s, d) => s + d.valor, 0)
   valoresPorDiaSemana.forEach((valores, ds) => {
     const media = valores.reduce((s, v) => s + v, 0) / valores.length
-    pesoPorDiaSemana.set(ds, totalFatP2 > 0 ? media / totalFatP2 : 1 / 7)
+    pesoPorDiaSemana.set(ds, totalParaPesos > 0 ? media / totalParaPesos : 1 / 7)
   })
-
-  // Fator de acréscimo: metaTotal / total_P2 (ex: 5% acima → fator = 1.05)
-  const fatorMeta = totalFatP2 > 0 ? metaTotal / totalFatP2 : 1
 
   // ── CALENDÁRIO: gerado com datas de P1 (período atual) ──
   const realizadoMapP1 = new Map<string, number>()
@@ -479,18 +474,14 @@ export default function RelatoriosPage() {
   const hoje = new Date()
   hoje.setHours(23, 59, 59, 0)
 
-  // Soma bruta das médias distribuídas pelos dias de P1 (pode diferir do totalFatP2 por ter mais/menos dias da semana)
-  const somaBrutaP1 = todosDiasCalendario.reduce((s, d) => s + (mediaPorDiaSemana.get(d.diaSemana) || 0), 0)
-  // Fator de normalização: garante que sum(metaDia) = metaTotal exatamente
-  const fatorNorm = somaBrutaP1 > 0 ? metaTotal / somaBrutaP1 : 1
-
-  // META DIÁRIA NORMALIZADA: preserva proporção entre dias da semana e garante soma = metaTotal
+  // META DIÁRIA NORMALIZADA: usa peso relativo do dia da semana e garante soma = metaTotal
   const getMetaDiaNorm = (diaSemana: string): number => {
     if (!metaTotal || todosDiasCalendario.length === 0) return 0
-    const media = mediaPorDiaSemana.get(diaSemana)
-    if (media !== undefined) return media * fatorNorm
-    // fallback sem histórico: distribui igualmente
-    return metaTotal / todosDiasCalendario.length
+    // soma dos pesos de todos os dias do calendário atual
+    const somaPesos = todosDiasCalendario.reduce((s, d) => s + (pesoPorDiaSemana.get(d.diaSemana) || 1/7), 0)
+    if (somaPesos === 0) return metaTotal / todosDiasCalendario.length
+    const pesoDia = pesoPorDiaSemana.get(diaSemana) || 1/7
+    return metaTotal * (pesoDia / somaPesos)
   }
 
   // NECESSIDADE BASE: distribui RESTANTE pelos dias FUTUROS
