@@ -143,6 +143,17 @@ export async function POST(req: NextRequest) {
       feedbacks_salvos: feedbacksSalvos,
       total_periodos: periodos.length,
       erros: erros.length ? erros : undefined,
+      diagnostico: {
+        chaves_ticket: Object.keys(grpTick),
+        chaves_pref: Object.keys(grpPref),
+        chaves_ocup: Object.keys(grpOcup),
+        chaves_pag: Object.keys(grpPag),
+        ticket_junho: (grpTick['2026-6'] || []).length,
+        pref_junho: (grpPref['2026-6'] || []).length,
+        ocup_junho: (grpOcup['2026-6'] || []).length,
+        ticket_amostra: (grpTick['2026-6'] || []).slice(0,2),
+        abas_lidas: { profTicket: profTicket.length, profPref: profPref.length, profOcup: profOcup.length },
+      },
     })
 
   } catch (err: any) {
