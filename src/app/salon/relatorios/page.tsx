@@ -778,11 +778,13 @@ export default function RelatoriosPage() {
                           const ym = `${p.ano}-${String(p.mes).padStart(2, '0')}`
                           const isAtual = p.ano === p1Ano && p.mes === p1Mes
                           if (isAtual) return null
-                          const ativo = p2De === ym + '-01'
+                          const ativo = de2 === ym + '-01' || de2?.startsWith(ym)
+                          const fatP = somarResumo(filtrarResumo(dados!.resumo_mensal, ym + '-01', ym + '-31')).fat_total
                           return (
-                            <button key={ym} onClick={() => { setP2De(ym + '-01'); setP2Ate(ym + '-31') }}
-                              style={{ padding: '4px 12px', borderRadius: 6, border: `1px solid ${ativo ? '#7c5cfc' : '#1e293b'}`, fontSize: 11, fontWeight: 600, cursor: 'pointer', background: ativo ? '#7c5cfc22' : '#111827', color: ativo ? '#7c5cfc' : '#64748b' }}>
-                              {MESES_FULL[p.mes]}/{p.ano}
+                            <button key={ym} onClick={() => { setModo('custom'); setP2De(ym + '-01'); setP2Ate(ym + '-31') }}
+                              style={{ padding: '5px 12px', borderRadius: 6, border: `1px solid ${ativo ? '#7c5cfc' : '#1e293b'}`, fontSize: 11, fontWeight: 600, cursor: 'pointer', background: ativo ? '#7c5cfc22' : '#111827', color: ativo ? '#7c5cfc' : '#64748b', lineHeight: 1.4 }}>
+                              <div>{MESES_FULL[p.mes]}/{p.ano}</div>
+                              {fatP > 0 && <div style={{ fontSize: 10, color: ativo ? '#a78bfa' : '#475569', fontWeight: 500 }}>{moeda(fatP)}</div>}
                             </button>
                           )
                         })}
