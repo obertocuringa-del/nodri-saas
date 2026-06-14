@@ -402,9 +402,20 @@ export default function RelatoriosPage() {
     return data
   }
 
-  // ── PESOS: calculados a partir do P2 (período anterior) ──
+  // ── MÉDIAS POR DIA DA SEMANA: calculadas a partir do mesmo mês do ano anterior ──
+  // Sempre usa ano anterior do mesmo mês (independente do período de comparação selecionado)
+  const deP2fixo = `${periodoAuto2}-01`
+  const ateP2fixo = `${periodoAuto2}-${ultimoDiaMes(p1Ano - 1, p1Mes)}`
+  const fatDiarioP2fixo = dados ? dados.faturamento_diario.filter(r => {
+    const v = r.ano * 100 + r.mes
+    const [dY, dM] = deP2fixo.split('-').map(Number)
+    const [aY, aM] = ateP2fixo.split('-').map(Number)
+    return v >= dY * 100 + dM && v <= aY * 100 + aM
+  }) : []
+
+  // Agrupa valores por dia da semana (ex: todas as segundas de Jun/2025)
   const valoresPorDiaSemana = new Map<string, number[]>()
-  fatDiarioP2.forEach(d => {
+  fatDiarioP2fixo.forEach(d => {
     const key = normalizarData(d.data)
     if (!key) return
     const [dd, mm, yyyy] = key.split('/')
@@ -415,35 +426,31 @@ export default function RelatoriosPage() {
     valoresPorDiaSemana.set(ds, lista)
   })
 
-  const totalFatP2 = fatDiarioP2.reduce((s, d) => s + d.valor, 0)
+  const totalFatP2 = fatDiarioP2fixo.reduce((s, d) => s + d.valor, 0)
 
-  // média do dia da semana / total (exatamente como Python: np.mean(valores) / total_anterior)
+  // Média absoluta por dia da semana (ex: média das segundas = R$ 12.000)
+  const mediaPorDiaSemana = new Map<string, number>()
+  valoresPorDiaSemana.forEach((valores, ds) => {
+    const media = valores.reduce((s, v) => s + v, 0) / valores.length
+    mediaPorDiaSemana.set(ds, media)
+  })
+
+  // Peso relativo (para fallback quando não há dados históricos)
   const pesoPorDiaSemana = new Map<string, number>()
   valoresPorDiaSemana.forEach((valores, ds) => {
     const media = valores.reduce((s, v) => s + v, 0) / valores.length
     pesoPorDiaSemana.set(ds, totalFatP2 > 0 ? media / totalFatP2 : 1 / 7)
   })
 
+  // Fator de acréscimo: metaTotal / total_P2 (ex: 5% acima → fator = 1.05)
+  const fatorMeta = totalFatP2 > 0 ? metaTotal / totalFatP2 : 1
+
   // ── CALENDÁRIO: gerado com datas de P1 (período atual) ──
-  // Realizado P1 (mês atual) por "dd/mm/yyyy"
   const realizadoMapP1 = new Map<string, number>()
   fatDiarioP1.forEach(d => {
     const key = normalizarData(d.data)
     if (key) realizadoMapP1.set(key, d.valor)
   })
-
-  // Base P2 (mês anterior/comparação) por número do dia "dd" → valor
-  // Usado para Necessidade Base e cálculo da META diária
-  const baseMapP2 = new Map<string, number>()
-  fatDiarioP2.forEach(d => {
-    const key = normalizarData(d.data)  // "dd/mm/yyyy"
-    if (key) {
-      const dd = key.split('/')[0]  // só o dia
-      baseMapP2.set(dd, (baseMapP2.get(dd) || 0) + d.valor)
-    }
-  })
-  // Fator de acréscimo: metaTotal / total_P2 (ex: 5% acima → fator = 1.05)
-  const fatorMeta = r2.fat_total > 0 ? metaTotal / r2.fat_total : 1
 
   // Gera TODOS os dias do período P1, do dia 1 ao último dia do mês (sem overflow)
   const todosDiasCalendario = (() => {
@@ -1128,7 +1135,7 @@ export default function RelatoriosPage() {
                     {todosDiasCalendario.length > 0 && (
                       <div style={{ background: '#0a0f1a', border: '1px solid #1e293b', borderRadius: 12, padding: 20 }}>
                         <h3 style={{ color: '#e2e8f0', fontSize: 14, fontWeight: 700, margin: '0 0 4px' }}>FATURAMENTO DIÁRIO E METAS — {label1.toUpperCase()}</h3>
-                        <p style={{ color: '#475569', fontSize: 11, margin: '0 0 16px' }}>Período atual. META e SUPER META calculadas por peso do dia da semana com base em {label2}.</p>
+                        <p style={{ color: '#475569', fontSize: 11, margin: '0 0 16px' }}>Necessidade Base = média por dia da semana em <strong style={{color:'#7c5cfc'}}>{MESES_FULL[p1Mes]}/{p1Ano - 1}</strong>. META = Necessidade Base × fator configurado.</p>
                         <div style={{ overflowX: 'auto' }}>
                           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 700 }}>
                             <thead>
@@ -1148,11 +1155,10 @@ export default function RelatoriosPage() {
                             </thead>
                             <tbody>
                               {todosDiasCalendario.map((d, i) => {
-                                const dd = d.data.split('/')[0]
-                                const baseP2    = baseMapP2.get(dd) || 0          // valor do mesmo dia no P2
-                                const metaDia   = baseP2 > 0 ? baseP2 * fatorMeta : getMetaDiaFixa(d.diaSemana)
+                                // Necessidade Base = média do mesmo dia da semana no mesmo mês do ano anterior
+                                const necessidade  = mediaPorDiaSemana.get(d.diaSemana) || 0
+                                const metaDia      = necessidade > 0 ? necessidade * fatorMeta : getMetaDiaFixa(d.diaSemana)
                                 const superMetaDia = metaDia > 0 ? metaDia * 1.3 : 0
-                                const necessidade  = baseP2  // Necessidade Base = valor real do P2
                                 // Status com todos os 4 estados do Python
                                 const [dd2, mm2, yyyy2] = d.data.split('/')
                                 const dataDia  = new Date(`${yyyy2}-${mm2}-${dd2}T12:00:00`)
