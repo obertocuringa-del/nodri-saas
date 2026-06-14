@@ -1143,16 +1143,17 @@ export default function RelatoriosPage() {
                             </thead>
                             <tbody>
                               {todosDiasCalendario.map((d, i) => {
-                                // Necessidade Base = média normalizada do mesmo dia da semana (Jun/ano anterior)
-                                // soma de todos os dias = metaTotal exatamente
-                                const necessidade  = getMetaDiaNorm(d.diaSemana)
-                                const metaDia      = necessidade
-                                const superMetaDia = metaDia > 0 ? metaDia * 1.3 : 0
-                                // Status com todos os 4 estados do Python
                                 const [dd2, mm2, yyyy2] = d.data.split('/')
                                 const dataDia  = new Date(`${yyyy2}-${mm2}-${dd2}T12:00:00`)
                                 const isHoje   = dataDia.toDateString() === new Date().toDateString()
                                 const isFuturo = dataDia > hoje
+                                // Necessidade Base = plano fixo por dia da semana (soma total = metaTotal)
+                                const necessidade  = getMetaDiaNorm(d.diaSemana)
+                                // META: dias passados/hoje = plano fixo; dias futuros = redistribuição do restante
+                                const metaDia = isFuturo
+                                  ? getMetaDia(d.data, d.diaSemana)   // distribui restante pelos dias futuros
+                                  : necessidade                         // plano original
+                                const superMetaDia = metaDia > 0 ? metaDia * 1.3 : 0
                                 let status: string; let statusCor: string; let statusBg: string
                                 if (d.valor > 0) {
                                   status = 'REALIZADO';     statusCor = '#10b981'; statusBg = '#10b98115'
@@ -1170,7 +1171,9 @@ export default function RelatoriosPage() {
                                     <td style={{ padding: '8px 12px', textAlign: 'right', color: necessidade > 0 ? '#f59e0b' : '#334155', fontWeight: necessidade > 0 ? 700 : 400 }}>{necessidade > 0 ? moeda(necessidade) : <span style={{color:'#1e293b'}}>—</span>}</td>
                                     <td style={{ padding: '8px 12px', textAlign: 'center', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap', background: statusBg, color: statusCor }}>{status}</td>
                                     <td style={{ padding: '8px 12px', textAlign: 'right', color: d.valor > 0 ? '#10b981' : '#334155', fontWeight: 700 }}>{moeda(d.valor)}</td>
-                                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#3b82f6', fontWeight: 700 }}>{moeda(metaDia)}</td>
+                                    <td style={{ padding: '8px 12px', textAlign: 'right', color: isFuturo && metaDia > necessidade ? '#ef4444' : '#3b82f6', fontWeight: 700 }}>
+                                      {moeda(metaDia)}{isFuturo && metaDia > necessidade ? <span style={{fontSize:9,marginLeft:4,color:'#ef4444'}}>↑</span> : null}
+                                    </td>
                                     <td style={{ padding: '8px 12px', textAlign: 'right', color: '#7c5cfc', fontWeight: 700 }}>{moeda(superMetaDia)}</td>
                                   </tr>
                                 )
