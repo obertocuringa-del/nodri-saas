@@ -425,12 +425,25 @@ export default function RelatoriosPage() {
   })
 
   // ── CALENDÁRIO: gerado com datas de P1 (período atual) ──
-  // Realizado vem de P1
+  // Realizado P1 (mês atual) por "dd/mm/yyyy"
   const realizadoMapP1 = new Map<string, number>()
   fatDiarioP1.forEach(d => {
     const key = normalizarData(d.data)
     if (key) realizadoMapP1.set(key, d.valor)
   })
+
+  // Base P2 (mês anterior/comparação) por número do dia "dd" → valor
+  // Usado para Necessidade Base e cálculo da META diária
+  const baseMapP2 = new Map<string, number>()
+  fatDiarioP2.forEach(d => {
+    const key = normalizarData(d.data)  // "dd/mm/yyyy"
+    if (key) {
+      const dd = key.split('/')[0]  // só o dia
+      baseMapP2.set(dd, (baseMapP2.get(dd) || 0) + d.valor)
+    }
+  })
+  // Fator de acréscimo: metaTotal / total_P2 (ex: 5% acima → fator = 1.05)
+  const fatorMeta = r2.fat_total > 0 ? metaTotal / r2.fat_total : 1
 
   // Gera TODOS os dias do período P1, do dia 1 ao último dia do mês (sem overflow)
   const todosDiasCalendario = (() => {
@@ -1135,9 +1148,11 @@ export default function RelatoriosPage() {
                             </thead>
                             <tbody>
                               {todosDiasCalendario.map((d, i) => {
-                                const necessidade   = getMetaDia(d.data, d.diaSemana)   // só dias futuros
-                                const metaDia       = getMetaDiaFixa(d.diaSemana)        // todos os dias
-                                const superMetaDia  = metaDia > 0 ? metaDia * 1.3 : 0
+                                const dd = d.data.split('/')[0]
+                                const baseP2    = baseMapP2.get(dd) || 0          // valor do mesmo dia no P2
+                                const metaDia   = baseP2 > 0 ? baseP2 * fatorMeta : getMetaDiaFixa(d.diaSemana)
+                                const superMetaDia = metaDia > 0 ? metaDia * 1.3 : 0
+                                const necessidade  = baseP2  // Necessidade Base = valor real do P2
                                 // Status com todos os 4 estados do Python
                                 const [dd2, mm2, yyyy2] = d.data.split('/')
                                 const dataDia  = new Date(`${yyyy2}-${mm2}-${dd2}T12:00:00`)
@@ -1157,7 +1172,7 @@ export default function RelatoriosPage() {
                                   <tr key={i} style={{ borderBottom: '1px solid #0d1520', background: i % 2 === 0 ? 'transparent' : '#060d1808' }}>
                                     <td style={{ padding: '8px 12px', color: '#94a3b8', whiteSpace: 'nowrap' }}>{d.data}</td>
                                     <td style={{ padding: '8px 12px', color: '#64748b',  whiteSpace: 'nowrap' }}>{d.diaSemana}</td>
-                                    <td style={{ padding: '8px 12px', textAlign: 'right', color: necessidade > 0 ? '#f59e0b' : '#334155', fontWeight: necessidade > 0 ? 700 : 400 }}>{necessidade > 0 ? moeda(necessidade) : '—'}</td>
+                                    <td style={{ padding: '8px 12px', textAlign: 'right', color: necessidade > 0 ? '#f59e0b' : '#334155', fontWeight: necessidade > 0 ? 700 : 400 }}>{necessidade > 0 ? moeda(necessidade) : <span style={{color:'#1e293b'}}>—</span>}</td>
                                     <td style={{ padding: '8px 12px', textAlign: 'center', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap', background: statusBg, color: statusCor }}>{status}</td>
                                     <td style={{ padding: '8px 12px', textAlign: 'right', color: d.valor > 0 ? '#10b981' : '#334155', fontWeight: 700 }}>{moeda(d.valor)}</td>
                                     <td style={{ padding: '8px 12px', textAlign: 'right', color: '#3b82f6', fontWeight: 700 }}>{moeda(metaDia)}</td>
