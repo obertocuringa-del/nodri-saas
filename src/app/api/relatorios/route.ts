@@ -42,12 +42,12 @@ export async function GET() {
   }
 
   for (const p of (periodos || [])) {
-    base.resumo_mensal.push(...(p.resumo_mensal || []))
-    base.faturamento_diario.push(...(p.faturamento_diario || []))
-    base.servicos.push(...(p.servicos || []))
-    base.produtos.push(...(p.produtos || []))
-    base.prof_pagamentos.push(...(p.prof_pagamentos || []))
-    base.metas.push(...(p.metas || []))
+    base.resumo_mensal.push(...(p.resumo_mensal || []).map((r: any) => ({ ...r, ano: p.ano, mes: p.mes })))
+    base.faturamento_diario.push(...(p.faturamento_diario || []).map((r: any) => ({ ...r, ano: p.ano, mes: p.mes })))
+    base.servicos.push(...(p.servicos || []).map((r: any) => ({ ...r, ano: p.ano, mes: p.mes })))
+    base.produtos.push(...(p.produtos || []).map((r: any) => ({ ...r, ano: p.ano, mes: p.mes })))
+    base.prof_pagamentos.push(...(p.prof_pagamentos || []).map((r: any) => ({ ...r, ano: p.ano, mes: p.mes })))
+    base.metas.push(...(p.metas || []).map((r: any) => ({ ...r, ano: p.ano, mes: p.mes })))
     base.periodos.push({ ano: p.ano, mes: p.mes, data_inicio: p.data_inicio, data_fim: p.data_fim })
   }
 
