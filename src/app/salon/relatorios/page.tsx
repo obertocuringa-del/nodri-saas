@@ -459,29 +459,29 @@ export default function RelatoriosPage() {
   const hoje = new Date()
   hoje.setHours(23, 59, 59, 0)
 
-  // META FIXA por dia: distribui metaTotal por TODOS os dias do mês com peso
+  // peso do dia da semana — usa histórico do P2 se disponível, senão igual (1/7)
+  const getPeso = (ds: string) => pesoPorDiaSemana.get(ds) || 1/7
+
+  // META FIXA: distribui metaTotal por TODOS os dias do mês com peso
   const getMetaDiaFixa = (diaSemana: string): number => {
-    if (!metaTotal || !totalFatP2) return 0
-    // soma dos pesos de todos os dias do calendário
+    if (!metaTotal || todosDiasCalendario.length === 0) return 0
     const contagemTotal = new Map<string, number>()
     todosDiasCalendario.forEach(d => {
       contagemTotal.set(d.diaSemana, (contagemTotal.get(d.diaSemana) || 0) + 1)
     })
     let pesoTotal = 0
-    contagemTotal.forEach((_, ds) => { pesoTotal += (pesoPorDiaSemana.get(ds) || 1/7) })
+    contagemTotal.forEach((_, ds) => { pesoTotal += getPeso(ds) })
     if (pesoTotal === 0) return 0
-    const pesoDia = pesoPorDiaSemana.get(diaSemana) || 1/7
     const count = contagemTotal.get(diaSemana) || 1
-    return metaTotal * (pesoDia / pesoTotal) / count
+    return metaTotal * (getPeso(diaSemana) / pesoTotal) / count
   }
 
-  // NECESSIDADE BASE: distribui o RESTANTE pelos dias FUTUROS com peso
+  // NECESSIDADE BASE: distribui RESTANTE pelos dias FUTUROS
   const getMetaDia = (dataStr: string, diaSemana: string): number => {
-    if (!metaTotal || !totalFatP2) return 0
+    if (!metaTotal || restante <= 0) return 0
     const [dd, mm, yyyy] = dataStr.split('/')
     const dt = new Date(`${yyyy}-${mm}-${dd}T12:00:00`)
     if (dt <= hoje) return 0
-
     const diasFuturos = todosDiasCalendario.filter(d => {
       const [dd2, mm2, yyyy2] = d.data.split('/')
       return new Date(`${yyyy2}-${mm2}-${dd2}T12:00:00`) > hoje
@@ -491,13 +491,10 @@ export default function RelatoriosPage() {
       contagemFuturo.set(d.diaSemana, (contagemFuturo.get(d.diaSemana) || 0) + 1)
     })
     let pesoTotalRestante = 0
-    contagemFuturo.forEach((_, ds) => {
-      pesoTotalRestante += (pesoPorDiaSemana.get(ds) || 1/7)
-    })
+    contagemFuturo.forEach((_, ds) => { pesoTotalRestante += getPeso(ds) })
     if (pesoTotalRestante === 0) return 0
-    const pesoDia = pesoPorDiaSemana.get(diaSemana) || 1/7
     const countDiaSemana = contagemFuturo.get(diaSemana) || 1
-    return restante * (pesoDia / pesoTotalRestante) / countDiaSemana
+    return restante * (getPeso(diaSemana) / pesoTotalRestante) / countDiaSemana
   }
 
   const diasTotais = todosDiasCalendario.length
