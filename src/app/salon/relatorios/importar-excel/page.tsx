@@ -156,6 +156,15 @@ export default function ImportarExcelPage() {
                 <p className="text-[11px] text-nodri-t3 mt-3">
                    Agora acesse o perfil de qualquer profissional → aba Faturamento para ver os dados!
                 </p>
+                {resultado.diagnostico && (
+                  <div className="mt-3 text-[10px] text-nodri-t2 bg-nodri-dark rounded-xl p-3 font-mono">
+                    <div className="text-nodri-cyan font-bold mb-1">Diagnóstico:</div>
+                    <div>Ticket lido: <span className={resultado.diagnostico.ticket_junho > 0 ? 'text-nodri-green' : 'text-nodri-red'}>{resultado.diagnostico.ticket_junho} itens jun/2026</span></div>
+                    <div>Preferência: {resultado.diagnostico.pref_junho} | Ocupação: {resultado.diagnostico.ocup_junho}</div>
+                    <div>Abas lidas: ticket={resultado.diagnostico.abas_lidas?.profTicket} pref={resultado.diagnostico.abas_lidas?.profPref} ocup={resultado.diagnostico.abas_lidas?.profOcup}</div>
+                    <div>Chaves ticket: {JSON.stringify(resultado.diagnostico.chaves_ticket)}</div>
+                  </div>
+                )}
               </>
             ) : (
               <div className="flex items-start gap-2">
