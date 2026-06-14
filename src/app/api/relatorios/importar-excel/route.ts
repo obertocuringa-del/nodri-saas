@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     if (!file) return NextResponse.json({ error: 'Arquivo não enviado' }, { status: 400 })
 
     const buffer = Buffer.from(await file.arrayBuffer())
-    const wb = XLSX.read(buffer, { type: 'buffer' })
+    const wb = XLSX.read(buffer, { type: 'buffer', cellDates: false, raw: true })
 
     const periodos      = sheetToArray(wb, 'PERIODOS')
     const resumo        = sheetToArray(wb, 'RESUMO_MENSAL')
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     function agrupar(rows: any[], cols: string[], profCol = 'profissional') {
       const m: Record<string, any[]> = {}
       for (const r of rows) {
-        const k = `${r.ano}-${r.mes}`
+        const k = `${parseInt(r.ano)}-${parseInt(r.mes)}`
         if (!m[k]) m[k] = []
         const item: any = {}
         if (profCol && r[profCol] !== undefined) item[profCol] = safeStr(r[profCol])
@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
     const erros: string[] = []
 
     for (const per of periodos) {
-      const chave = `${per.ano}-${per.mes}`
+      const chave = `${parseInt(per.ano)}-${parseInt(per.mes)}`
 
       const anoNum = safeNum(per.ano)
       const mesNum = safeNum(per.mes)
