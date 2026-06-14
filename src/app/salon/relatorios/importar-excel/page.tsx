@@ -11,6 +11,17 @@ export default function ImportarExcelPage() {
   const [carregando, setCarregando] = useState(false)
   const [resultado, setResultado] = useState<any>(null)
   const [arrastando, setArrastando] = useState(false)
+  const [resetando, setResetando] = useState(false)
+
+  async function resetarTudo() {
+    if (!confirm('Apagar TODOS os dados de relatório do banco? Você precisará reimportar tudo.')) return
+    setResetando(true)
+    const res = await fetch('/api/relatorios/reset', { method: 'DELETE' })
+    const data = await res.json()
+    setResetando(false)
+    if (data.ok) toast.success(`Banco limpo! ${data.deletados} períodos removidos. Agora reimporte os arquivos.`)
+    else toast.error('Erro ao resetar: ' + data.error)
+  }
 
   function selecionarArquivo(f: File) {
     if (!f.name.endsWith('.xlsx') && !f.name.endsWith('.xls')) {
@@ -96,6 +107,13 @@ export default function ImportarExcelPage() {
             </div>
           )}
         </div>
+
+        {/* Botão Reset */}
+        <button onClick={resetarTudo} disabled={resetando}
+          className="w-full mt-4 py-2 rounded-xl border border-nodri-red/40 text-nodri-red text-[12px] font-semibold
+            hover:bg-nodri-red/10 transition-all disabled:opacity-40 flex items-center justify-center gap-2">
+          {resetando ? <><Loader2 size={14} className="animate-spin" /> Limpando banco...</> : '🗑 Limpar todos os dados antes de reimportar'}
+        </button>
 
         {/* Botão */}
         <button onClick={enviar} disabled={!arquivo || carregando}
