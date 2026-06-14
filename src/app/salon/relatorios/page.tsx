@@ -766,10 +766,33 @@ export default function RelatoriosPage() {
                 {/* Configuração da meta */}
                 <div style={{ background: '#0a0f1a', border: '1px solid #1e293b', borderRadius: 12, padding: 20, marginBottom: 16 }}>
                   <h3 style={{ color: '#7c5cfc', fontSize: 14, fontWeight: 700, margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: 8 }}><Settings size={15} /> Configurar Meta</h3>
+
+                  {/* Seletor de período de comparação */}
+                  <div style={{ marginBottom: 14 }}>
+                    <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600, marginBottom: 6 }}>PERÍODO DE COMPARAÇÃO (base para % e "vs")</div>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                      {(dados?.periodos || [])
+                        .slice()
+                        .sort((a, b) => b.ano * 100 + b.mes - (a.ano * 100 + a.mes))
+                        .map(p => {
+                          const ym = `${p.ano}-${String(p.mes).padStart(2, '0')}`
+                          const isAtual = p.ano === p1Ano && p.mes === p1Mes
+                          if (isAtual) return null
+                          const ativo = p2De === ym + '-01'
+                          return (
+                            <button key={ym} onClick={() => { setP2De(ym + '-01'); setP2Ate(ym + '-31') }}
+                              style={{ padding: '4px 12px', borderRadius: 6, border: `1px solid ${ativo ? '#7c5cfc' : '#1e293b'}`, fontSize: 11, fontWeight: 600, cursor: 'pointer', background: ativo ? '#7c5cfc22' : '#111827', color: ativo ? '#7c5cfc' : '#64748b' }}>
+                              {MESES_FULL[p.mes]}/{p.ano}
+                            </button>
+                          )
+                        })}
+                    </div>
+                  </div>
+
                   <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap', alignItems: 'center' }}>
                     <div style={{ display: 'flex', background: '#111827', borderRadius: 7, border: '1px solid #1e293b', padding: 2, gap: 2 }}>
                       <button onClick={() => setMetaTipo('valor')} style={{ padding: '5px 14px', borderRadius: 5, border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer', background: metaTipo === 'valor' ? '#7c5cfc' : 'transparent', color: metaTipo === 'valor' ? 'white' : '#64748b' }}>Valor fixo</button>
-                      <button onClick={() => setMetaTipo('pct')} style={{ padding: '5px 14px', borderRadius: 5, border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer', background: metaTipo === 'pct' ? '#7c5cfc' : 'transparent', color: metaTipo === 'pct' ? 'white' : '#64748b' }}>% sobre ano anterior</button>
+                      <button onClick={() => setMetaTipo('pct')} style={{ padding: '5px 14px', borderRadius: 5, border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer', background: metaTipo === 'pct' ? '#7c5cfc' : 'transparent', color: metaTipo === 'pct' ? 'white' : '#64748b' }}>% sobre período selecionado</button>
                     </div>
                     {metaTipo === 'valor' ? (
                       <input value={metaValor} onChange={e => setMetaValor(e.target.value)} placeholder="Ex: 250000"
@@ -778,7 +801,7 @@ export default function RelatoriosPage() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         <input value={metaPct} onChange={e => setMetaPct(e.target.value)} placeholder="5"
                           style={{ background: '#111827', border: '1px solid #1e293b', borderRadius: 6, padding: '6px 12px', fontSize: 13, color: '#e2e8f0', outline: 'none', width: 80 }} />
-                        <span style={{ color: '#64748b', fontSize: 13 }}>% acima de {moeda(r2.fat_total)} = <strong style={{ color: '#7c5cfc' }}>{moeda(r2.fat_total * (1 + parseFloat(metaPct || '0') / 100))}</strong></span>
+                        <span style={{ color: '#64748b', fontSize: 13 }}>% acima de {moeda(r2.fat_total)} ({p2De ? p2De.slice(0,7) : 'período selecionado'}) = <strong style={{ color: '#7c5cfc' }}>{moeda(r2.fat_total * (1 + parseFloat(metaPct || '0') / 100))}</strong></span>
                       </div>
                     )}
                     <button onClick={salvarMeta} style={{ background: 'linear-gradient(135deg, #7c5cfc, #f43f8e)', color: 'white', border: 'none', borderRadius: 8, padding: '7px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
