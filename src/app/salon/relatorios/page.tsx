@@ -459,37 +459,45 @@ export default function RelatoriosPage() {
   const hoje = new Date()
   hoje.setHours(23, 59, 59, 0)
 
-  // ── META por dia: distribui restante pelos dias futuros com peso ──
-  // (mesmo algoritmo do Python calcular_metas_periodo_atual)
+  // META FIXA por dia: distribui metaTotal por TODOS os dias do mês com peso
+  const getMetaDiaFixa = (diaSemana: string): number => {
+    if (!metaTotal || !totalFatP2) return 0
+    // soma dos pesos de todos os dias do calendário
+    const contagemTotal = new Map<string, number>()
+    todosDiasCalendario.forEach(d => {
+      contagemTotal.set(d.diaSemana, (contagemTotal.get(d.diaSemana) || 0) + 1)
+    })
+    let pesoTotal = 0
+    contagemTotal.forEach((_, ds) => { pesoTotal += (pesoPorDiaSemana.get(ds) || 1/7) })
+    if (pesoTotal === 0) return 0
+    const pesoDia = pesoPorDiaSemana.get(diaSemana) || 1/7
+    const count = contagemTotal.get(diaSemana) || 1
+    return metaTotal * (pesoDia / pesoTotal) / count
+  }
+
+  // NECESSIDADE BASE: distribui o RESTANTE pelos dias FUTUROS com peso
   const getMetaDia = (dataStr: string, diaSemana: string): number => {
     if (!metaTotal || !totalFatP2) return 0
     const [dd, mm, yyyy] = dataStr.split('/')
     const dt = new Date(`${yyyy}-${mm}-${dd}T12:00:00`)
-    if (dt <= hoje) return 0  // dia passado ou realizado — sem necessidade
+    if (dt <= hoje) return 0
 
-    // Dias futuros do calendário P1
     const diasFuturos = todosDiasCalendario.filter(d => {
       const [dd2, mm2, yyyy2] = d.data.split('/')
       return new Date(`${yyyy2}-${mm2}-${dd2}T12:00:00`) > hoje
     })
-
-    // Agrupa dias futuros por dia da semana e conta ocorrências
     const contagemFuturo = new Map<string, number>()
     diasFuturos.forEach(d => {
       contagemFuturo.set(d.diaSemana, (contagemFuturo.get(d.diaSemana) || 0) + 1)
     })
-
-    // Peso total dos dias restantes
     let pesoTotalRestante = 0
     contagemFuturo.forEach((_, ds) => {
-      pesoTotalRestante += (pesoPorDiaSemana.get(ds) || 1 / 7)
+      pesoTotalRestante += (pesoPorDiaSemana.get(ds) || 1/7)
     })
     if (pesoTotalRestante === 0) return 0
-
-    const pesoDia = pesoPorDiaSemana.get(diaSemana) || 1 / 7
+    const pesoDia = pesoPorDiaSemana.get(diaSemana) || 1/7
     const countDiaSemana = contagemFuturo.get(diaSemana) || 1
-    const valorParaEsteDiaSemana = restante * (pesoDia / pesoTotalRestante)
-    return valorParaEsteDiaSemana / countDiaSemana
+    return restante * (pesoDia / pesoTotalRestante) / countDiaSemana
   }
 
   const diasTotais = todosDiasCalendario.length
@@ -1130,10 +1138,9 @@ export default function RelatoriosPage() {
                             </thead>
                             <tbody>
                               {todosDiasCalendario.map((d, i) => {
-                                // META: calculada pelos pesos do P2, aplicada nos dias FUTUROS do P1
-                                const metaDia      = getMetaDia(d.data, d.diaSemana)
-                                // SUPER META = × 1.3 (igual ao Python linha 3407)
-                                const superMetaDia = metaDia > 0 ? metaDia * 1.3 : 0
+                                const necessidade   = getMetaDia(d.data, d.diaSemana)   // só dias futuros
+                                const metaDia       = getMetaDiaFixa(d.diaSemana)        // todos os dias
+                                const superMetaDia  = metaDia > 0 ? metaDia * 1.3 : 0
                                 // Status com todos os 4 estados do Python
                                 const [dd2, mm2, yyyy2] = d.data.split('/')
                                 const dataDia  = new Date(`${yyyy2}-${mm2}-${dd2}T12:00:00`)
@@ -1153,11 +1160,11 @@ export default function RelatoriosPage() {
                                   <tr key={i} style={{ borderBottom: '1px solid #0d1520', background: i % 2 === 0 ? 'transparent' : '#060d1808' }}>
                                     <td style={{ padding: '8px 12px', color: '#94a3b8', whiteSpace: 'nowrap' }}>{d.data}</td>
                                     <td style={{ padding: '8px 12px', color: '#64748b',  whiteSpace: 'nowrap' }}>{d.diaSemana}</td>
-                                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#334155' }}>{moeda(metaDia)}</td>
+                                    <td style={{ padding: '8px 12px', textAlign: 'right', color: necessidade > 0 ? '#f59e0b' : '#334155', fontWeight: necessidade > 0 ? 700 : 400 }}>{necessidade > 0 ? moeda(necessidade) : '—'}</td>
                                     <td style={{ padding: '8px 12px', textAlign: 'center', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap', background: statusBg, color: statusCor }}>{status}</td>
                                     <td style={{ padding: '8px 12px', textAlign: 'right', color: d.valor > 0 ? '#10b981' : '#334155', fontWeight: 700 }}>{moeda(d.valor)}</td>
-                                    <td style={{ padding: '8px 12px', textAlign: 'right', color: metaDia > 0 ? '#3b82f6' : '#334155', fontWeight: metaDia > 0 ? 700 : 400 }}>{moeda(metaDia)}</td>
-                                    <td style={{ padding: '8px 12px', textAlign: 'right', color: superMetaDia > 0 ? '#ef4444' : '#334155', fontWeight: superMetaDia > 0 ? 700 : 400 }}>{moeda(superMetaDia)}</td>
+                                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#3b82f6', fontWeight: 700 }}>{moeda(metaDia)}</td>
+                                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#7c5cfc', fontWeight: 700 }}>{moeda(superMetaDia)}</td>
                                   </tr>
                                 )
                               })}
