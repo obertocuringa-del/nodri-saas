@@ -508,10 +508,10 @@ export default function RelatoriosPage() {
       contagemFuturo.set(d.diaSemana, (contagemFuturo.get(d.diaSemana) || 0) + 1)
     })
     let pesoTotalRestante = 0
-    contagemFuturo.forEach((_, ds) => { pesoTotalRestante += getPeso(ds) })
+    contagemFuturo.forEach((_, ds) => { pesoTotalRestante += (pesoPorDiaSemana.get(ds) || 1/7) })
     if (pesoTotalRestante === 0) return 0
     const countDiaSemana = contagemFuturo.get(diaSemana) || 1
-    return restante * (getPeso(diaSemana) / pesoTotalRestante) / countDiaSemana
+    return restante * ((pesoPorDiaSemana.get(diaSemana) || 1/7) / pesoTotalRestante) / countDiaSemana
   }
 
   const diasTotais = todosDiasCalendario.length
