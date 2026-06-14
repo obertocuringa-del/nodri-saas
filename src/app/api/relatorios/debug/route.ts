@@ -33,5 +33,13 @@ export async function GET(req: NextRequest) {
     prof_pagamentos_count: (data?.prof_pagamentos || []).length,
     prof_ticket_amostra: (data?.prof_ticket || []).slice(0, 3),
     prof_pagamentos_amostra: (data?.prof_pagamentos || []).slice(0, 3),
+    colunas_existem: {
+      prof_ticket: 'prof_ticket' in (data || {}),
+      prof_preferencia: 'prof_preferencia' in (data || {}),
+      prof_ocupacao: 'prof_ocupacao' in (data || {}),
+      prof_servicos: 'prof_servicos' in (data || {}),
+      prof_produtos: 'prof_produtos' in (data || {}),
+    },
+    prof_ticket_raw: data?.prof_ticket,
   })
 }
