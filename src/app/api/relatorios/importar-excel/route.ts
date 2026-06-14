@@ -153,6 +153,11 @@ export async function POST(req: NextRequest) {
         ocup_junho: (grpOcup['2026-6'] || []).length,
         ticket_amostra: (grpTick['2026-6'] || []).slice(0,2),
         abas_lidas: { profTicket: profTicket.length, profPref: profPref.length, profOcup: profOcup.length },
+        profTicket_row0: profTicket[0] ? JSON.parse(JSON.stringify(profTicket[0])) : null,
+        profPag_row0: profPag[0] ? JSON.parse(JSON.stringify(profPag[0])) : null,
+        profTicket_keys: profTicket[0] ? Object.keys(profTicket[0]) : [],
+        profPag_keys: profPag[0] ? Object.keys(profPag[0]) : [],
+        todas_chaves_ticket: Object.keys(grpTick),
       },
     })
 
