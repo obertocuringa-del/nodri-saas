@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { ArrowLeft, Upload, TrendingUp, TrendingDown, Minus, Calendar, FileSpreadsheet, ChevronUp, ChevronDown, ChevronsUpDown, Target, BarChart2, Settings } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -229,6 +230,7 @@ function TabelaComp({ title, items, label1, label2 }: { title: string; items: It
 
 // ─── COMPONENTE PRINCIPAL ────────────────────────────────────────────────────
 export default function RelatoriosPage() {
+  const router = useRouter()
   const [dados, setDados] = useState<DadosBase | null>(null)
   const [profsCadastrados, setProfsCadastrados] = useState<ProfCadastrado[]>([])
   const [aba, setAba] = useState<'geral' | 'metas' | 'profissionais' | 'feedbacks' | 'meta_prof' | 'redistribuicao'>('geral')
@@ -649,7 +651,7 @@ export default function RelatoriosPage() {
               </div>
             )}
 
-            <button onClick={() => setShowImport(true)} style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#1e293b', border: '1px solid #334155', borderRadius: 6, padding: '5px 12px', color: '#7c5cfc', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>
+            <button onClick={() => router.push('/salon/relatorios/importar-excel')} style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#1e293b', border: '1px solid #334155', borderRadius: 6, padding: '5px 12px', color: '#7c5cfc', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>
               <Upload size={13} /> Importar
             </button>
           </div>
@@ -665,7 +667,7 @@ export default function RelatoriosPage() {
             <p style={{ color: '#64748b', fontSize: 14, lineHeight: 1.7, margin: '0 0 20px' }}>
               Faça upload do <strong style={{ color: '#94a3b8' }}>base_dados_nodri.xlsx</strong> gerado pelo sistema Nodri para visualizar os relatórios completos.
             </p>
-            <button onClick={() => setShowImport(true)} style={{ background: 'linear-gradient(135deg, #7c5cfc, #f43f8e)', color: 'white', border: 'none', borderRadius: 10, padding: '12px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <button onClick={() => router.push('/salon/relatorios/importar-excel')} style={{ background: 'linear-gradient(135deg, #7c5cfc, #f43f8e)', color: 'white', border: 'none', borderRadius: 10, padding: '12px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
               <Upload size={16} /> Importar Planilha
             </button>
             <p style={{ color: '#334155', fontSize: 11, marginTop: 10 }}>Dados salvos localmente no navegador. A importação é por período — não apaga outros meses.</p>
