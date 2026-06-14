@@ -911,13 +911,15 @@ export default function RelatoriosPage() {
                                 const anoComp = series.find(x=>x.ano!==s.ano&&s.ano===p1Ano)
                                 const fatComp = anoComp?.pts.find(x=>x.mes===p.mes)?.fat||0
                                 const pctVar = fatComp>0 ? ((p.fat-fatComp)/fatComp)*100 : null
+                                const showVal = bh > 18  // só mostra valor se a barra tiver altura suficiente
                                 return <g key={p.mes}>
                                   <rect x={bx} y={by} width={bW} height={bh} fill={`url(#bg${s.ano})`} rx={3}/>
+                                  {/* valor em cima de cada barra */}
+                                  {showVal && <text x={bx+bW/2} y={by-4} textAnchor="middle" fill={s.cor} fontSize={8} fontWeight={600} opacity={0.85}>{(p.fat/1000).toFixed(0)}k</text>}
                                   {isAtual && (
                                     <>
                                       <rect x={bx-1} y={by-1} width={bW+2} height={bh+1} fill="none" stroke={s.cor} strokeWidth={1.5} rx={3}/>
-                                      <text x={bx+bW/2} y={by-6} textAnchor="middle" fill={s.cor} fontSize={9} fontWeight={800}>{(p.fat/1000).toFixed(0)}k</text>
-                                      {pctVar!==null && <text x={bx+bW/2} y={by-16} textAnchor="middle" fill={pctVar>=0?'#10b981':'#ef4444'} fontSize={8} fontWeight={700}>{pctVar>=0?'+':''}{pctVar.toFixed(0)}%</text>}
+                                      {pctVar!==null && <text x={bx+bW/2} y={by-(showVal?16:6)} textAnchor="middle" fill={pctVar>=0?'#10b981':'#ef4444'} fontSize={8} fontWeight={700}>{pctVar>=0?'+':''}{pctVar.toFixed(0)}%</text>}
                                     </>
                                   )}
                                 </g>
@@ -935,8 +937,29 @@ export default function RelatoriosPage() {
                         </svg>
                       </div>
 
-                      {/* legenda + stats */}
-                      <div style={{display:'flex',gap:16,marginTop:10,flexWrap:'wrap',alignItems:'flex-start'}}>
+                      {/* legenda das linhas */}
+                      <div style={{display:'flex',gap:16,marginTop:12,marginBottom:12,flexWrap:'wrap',padding:'10px 14px',background:'#060d18',borderRadius:8,border:'1px solid #1e293b'}}>
+                        <div style={{fontSize:10,color:'#64748b',fontWeight:700,width:'100%',marginBottom:4}}>O QUE SIGNIFICA CADA ELEMENTO DO GRÁFICO:</div>
+                        <div style={{display:'flex',alignItems:'center',gap:6}}>
+                          <div style={{width:28,height:12,borderRadius:2,background:'linear-gradient(180deg,#7c5cfc,#7c5cfc66)'}}/>
+                          <span style={{fontSize:10,color:'#94a3b8'}}><strong style={{color:'#e2e8f0'}}>Barras coloridas</strong> — faturamento real de cada mês por ano</span>
+                        </div>
+                        <div style={{display:'flex',alignItems:'center',gap:6}}>
+                          <svg width={28} height={12}><line x1={0} y1={6} x2={28} y2={6} stroke="#7c5cfc" strokeWidth={1.5} strokeDasharray="5 3"/></svg>
+                          <span style={{fontSize:10,color:'#94a3b8'}}><strong style={{color:'#e2e8f0'}}>Linha tracejada colorida</strong> — tendência do ano (sobe = crescendo, desce = caindo)</span>
+                        </div>
+                        <div style={{display:'flex',alignItems:'center',gap:6}}>
+                          <svg width={28} height={12}><line x1={0} y1={6} x2={28} y2={6} stroke="#94a3b8" strokeWidth={1} strokeDasharray="4 3" opacity={0.5}/></svg>
+                          <span style={{fontSize:10,color:'#94a3b8'}}><strong style={{color:'#e2e8f0'}}>Linha cinza tracejada (μ)</strong> — média mensal de todos os anos combinados</span>
+                        </div>
+                        <div style={{display:'flex',alignItems:'center',gap:6}}>
+                          <div style={{width:28,height:12,borderRadius:2,background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.1)'}}/>
+                          <span style={{fontSize:10,color:'#94a3b8'}}><strong style={{color:'#e2e8f0'}}>Faixa cinza suave</strong> — zona normal (±1 desvio padrão). Barras fora da faixa = meses excepcionais</span>
+                        </div>
+                      </div>
+
+                      {/* stats */}
+                      <div style={{display:'flex',gap:16,marginTop:0,flexWrap:'wrap',alignItems:'flex-start'}}>
                         {series.map(s=>{
                           const vals = s.pts.filter(p=>p.fat>0).map(p=>p.fat)
                           const med = vals.length ? vals.reduce((a,v)=>a+v,0)/vals.length : 0
