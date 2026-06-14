@@ -772,7 +772,7 @@ export default function RelatoriosPage() {
             {/* ════════ ABA METAS ════════ */}
             {aba === 'metas' && (
               <div>
-                {/* Gráfico comparativo anual */}
+                {/* Gráfico comparativo anual — barras agrupadas + tendência + desvio padrão */}
                 {dados && (() => {
                   const CORES = ['#7c5cfc','#00e5c8','#f43f8e','#f59e0b','#10b981','#3b82f6']
                   const anosDisp = Array.from(new Set((dados.periodos||[]).map(p=>p.ano))).sort((a,b)=>b-a)
@@ -784,70 +784,174 @@ export default function RelatoriosPage() {
                   }))
                   const allVals = series.flatMap(s=>s.pts.map(p=>p.fat)).filter(v=>v>0)
                   if (!allVals.length) return null
-                  const W=700,H=200,PL=70,PR=16,PT=20,PB=40
-                  const maxF = Math.max(...allVals)
-                  const yOf = (f:number) => PT+(1-f/maxF)*(H-PT-PB)
-                  const xOf = (mes:number) => PL+((mes-1)/11)*(W-PL-PR)
+
+                  // dimensões
+                  const W=760, H=260, PL=64, PR=20, PT=28, PB=44
+                  const cW = (W-PL-PR) / 12  // largura por mês
+                  const nS = series.length
+                  const bW = Math.min(18, (cW*0.85)/nS)  // largura de cada barra
+                  const maxF = Math.max(...allVals) * 1.08
+                  const yOf = (f:number) => PT + (1 - f/maxF) * (H-PT-PB)
+                  const xMes = (mes:number) => PL + ((mes-1) + 0.5) * cW  // centro do grupo
+
+                  // regressão linear simples por série
+                  function linReg(pts: {mes:number,fat:number}[]) {
+                    const v = pts.filter(p=>p.fat>0)
+                    if (v.length < 2) return null
+                    const n = v.length
+                    const sx = v.reduce((a,p)=>a+p.mes,0), sy = v.reduce((a,p)=>a+p.fat,0)
+                    const sxy = v.reduce((a,p)=>a+p.mes*p.fat,0), sx2 = v.reduce((a,p)=>a+p.mes*p.mes,0)
+                    const m = (n*sxy - sx*sy)/(n*sx2 - sx*sx)
+                    const b = (sy - m*sx)/n
+                    return (x:number) => m*x + b
+                  }
+
+                  // desvio padrão — calculado sobre todos os meses com dados (todos os anos)
+                  const allValsGlobal = allVals
+                  const media = allValsGlobal.reduce((a,v)=>a+v,0)/allValsGlobal.length
+                  const dp = Math.sqrt(allValsGlobal.reduce((a,v)=>a+(v-media)**2,0)/allValsGlobal.length)
+                  const bandTop = yOf(Math.min(media+dp, maxF))
+                  const bandBot = yOf(Math.max(media-dp, 0))
+
                   return (
                     <div style={{background:'#0a0f1a',border:'1px solid #1e293b',borderRadius:12,padding:20,marginBottom:16}}>
-                      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:10,marginBottom:14}}>
-                        <h3 style={{color:'#e2e8f0',fontSize:14,fontWeight:700,margin:0}}>Comparativo Anual — Faturamento por Mês</h3>
-                        <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+                      {/* header */}
+                      <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',flexWrap:'wrap',gap:10,marginBottom:14}}>
+                        <div>
+                          <h3 style={{color:'#e2e8f0',fontSize:14,fontWeight:700,margin:'0 0 4px'}}>Comparativo Anual — Faturamento por Mês</h3>
+                          <div style={{display:'flex',gap:14,fontSize:10,color:'#475569',flexWrap:'wrap'}}>
+                            <span><span style={{display:'inline-block',width:10,height:3,background:'#ffffff30',marginRight:4,verticalAlign:'middle'}}/>Faixa ±1 DP (desvio padrão)</span>
+                            <span><span style={{display:'inline-block',width:10,height:1,background:'#94a3b8',marginRight:4,borderTop:'1px dashed #94a3b8',verticalAlign:'middle'}}/>Média global</span>
+                            <span><span style={{display:'inline-block',width:14,height:1,borderTop:'2px solid #fff',marginRight:4,verticalAlign:'middle'}}/>Tendência</span>
+                          </div>
+                        </div>
+                        <div style={{display:'flex',gap:5,flexWrap:'wrap'}}>
                           {anosDisp.map(ano => {
                             const ativo = anosGraf.includes(ano)
                             const ci = anosGraf.indexOf(ano)
                             return (
                               <button key={ano} onClick={()=>setGraficoAnos(ativo ? anosGraf.filter(a=>a!==ano) : [...anosGraf,ano].slice(-4))}
-                                style={{padding:'3px 10px',borderRadius:6,border:`1px solid ${ativo?CORES[ci%CORES.length]:'#1e293b'}`,fontSize:11,fontWeight:700,cursor:'pointer',background:ativo?CORES[ci%CORES.length]+'22':'#111827',color:ativo?CORES[ci%CORES.length]:'#475569'}}>
+                                style={{padding:'3px 10px',borderRadius:6,border:`1px solid ${ativo?CORES[ci%CORES.length]:'#1e293b'}`,fontSize:11,fontWeight:700,cursor:'pointer',background:ativo?CORES[ci%CORES.length]+'22':'#111827',color:ativo?CORES[ci%CORES.length]:'#475569',transition:'all .15s'}}>
                                 {ano}
                               </button>
                             )
                           })}
                         </div>
                       </div>
+
                       <div style={{overflowX:'auto'}}>
-                        <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',minWidth:400,display:'block'}}>
+                        <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',minWidth:480,display:'block'}}>
+                          <defs>
+                            {series.map(s=>(
+                              <linearGradient key={s.ano} id={`bg${s.ano}`} x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor={s.cor} stopOpacity="0.9"/>
+                                <stop offset="100%" stopColor={s.cor} stopOpacity="0.4"/>
+                              </linearGradient>
+                            ))}
+                          </defs>
+
+                          {/* grade horizontal */}
                           {[0,0.25,0.5,0.75,1].map(t=>{
-                            const y=PT+t*(H-PT-PB),v=maxF*(1-t)
+                            const y=PT+t*(H-PT-PB), v=maxF*(1-t)
                             return <g key={t}>
                               <line x1={PL} y1={y} x2={W-PR} y2={y} stroke="#1e293b" strokeWidth={1}/>
-                              <text x={PL-6} y={y+4} textAnchor="end" fill="#475569" fontSize={9}>{(v/1000).toFixed(0)}k</text>
+                              <text x={PL-6} y={y+4} textAnchor="end" fill="#475569" fontSize={9}>{v>=1000?(v/1000).toFixed(0)+'k':v.toFixed(0)}</text>
                             </g>
                           })}
+
+                          {/* faixa desvio padrão */}
+                          <rect x={PL} y={bandTop} width={W-PL-PR} height={Math.max(0,bandBot-bandTop)} fill="#ffffff" fillOpacity={0.04} rx={2}/>
+                          {/* linha média */}
+                          <line x1={PL} y1={yOf(media)} x2={W-PR} y2={yOf(media)} stroke="#94a3b8" strokeWidth={1} strokeDasharray="4 3" opacity={0.5}/>
+                          <text x={W-PR+2} y={yOf(media)+3} fill="#94a3b8" fontSize={8}>μ</text>
+
+                          {/* rótulos meses */}
                           {Array.from({length:12},(_,i)=>{
-                            const mes=i+1,x=xOf(mes)
+                            const mes=i+1, x=xMes(mes)
                             const isDestaque = mes===p1Mes
                             return <g key={mes}>
-                              {isDestaque && <rect x={x-14} y={PT} width={28} height={H-PT-PB} fill="#ffffff08"/>}
+                              {isDestaque && <rect x={x-cW/2} y={PT} width={cW} height={H-PT-PB} fill="#ffffff05" rx={2}/>}
                               <text x={x} y={H-PB+14} textAnchor="middle" fill={isDestaque?'#e2e8f0':'#475569'} fontSize={9} fontWeight={isDestaque?700:400}>{MESES_FULL[mes].slice(0,3)}</text>
                             </g>
                           })}
-                          {series.map(s=>{
+
+                          {/* barras + tendência por série */}
+                          {series.map((s, si) => {
+                            const reg = linReg(s.pts)
                             const validPts = s.pts.filter(p=>p.fat>0)
-                            if (validPts.length<2) return null
-                            const polyPts = validPts.map(p=>`${xOf(p.mes)},${yOf(p.fat)}`).join(' ')
+                            // pontos da linha de tendência (nos meses com dados)
+                            const trendPts = reg && validPts.length>=2
+                              ? validPts.map(p=>({ mes:p.mes, y: yOf(Math.max(0,reg(p.mes))) }))
+                              : null
+
                             return <g key={s.ano}>
-                              <polyline points={polyPts} fill="none" stroke={s.cor} strokeWidth={2} strokeLinejoin="round" strokeDasharray={s.ano===p1Ano?'none':'4 2'}/>
-                              {s.pts.map(p=>{
+                              {/* barras */}
+                              {s.pts.map(p => {
                                 if (!p.fat) return null
-                                const x=xOf(p.mes),y=yOf(p.fat)
-                                const isAtual=p.mes===p1Mes&&s.ano===p1Ano
+                                const cx = xMes(p.mes)
+                                const offset = (si - (nS-1)/2) * (bW+2)
+                                const bx = cx + offset - bW/2
+                                const by = yOf(p.fat)
+                                const bh = H - PB - by
+                                const isAtual = p.mes===p1Mes && s.ano===p1Ano
+                                // % vs mesmo mês ano anterior (primeiro ano comparado)
+                                const anoComp = series.find(x=>x.ano!==s.ano&&s.ano===p1Ano)
+                                const fatComp = anoComp?.pts.find(x=>x.mes===p.mes)?.fat||0
+                                const pctVar = fatComp>0 ? ((p.fat-fatComp)/fatComp)*100 : null
                                 return <g key={p.mes}>
-                                  <circle cx={x} cy={y} r={isAtual?5:3} fill={s.cor} stroke="#0a0f1a" strokeWidth={1.5}/>
-                                  {isAtual && <text x={x} y={y-10} textAnchor="middle" fill={s.cor} fontSize={9} fontWeight={700}>{moeda(p.fat)}</text>}
+                                  <rect x={bx} y={by} width={bW} height={bh} fill={`url(#bg${s.ano})`} rx={3}/>
+                                  {isAtual && (
+                                    <>
+                                      <rect x={bx-1} y={by-1} width={bW+2} height={bh+1} fill="none" stroke={s.cor} strokeWidth={1.5} rx={3}/>
+                                      <text x={bx+bW/2} y={by-6} textAnchor="middle" fill={s.cor} fontSize={9} fontWeight={800}>{(p.fat/1000).toFixed(0)}k</text>
+                                      {pctVar!==null && <text x={bx+bW/2} y={by-16} textAnchor="middle" fill={pctVar>=0?'#10b981':'#ef4444'} fontSize={8} fontWeight={700}>{pctVar>=0?'+':''}{pctVar.toFixed(0)}%</text>}
+                                    </>
+                                  )}
                                 </g>
                               })}
+                              {/* linha de tendência */}
+                              {trendPts && trendPts.length>=2 && (
+                                <polyline
+                                  points={trendPts.map(p=>`${xMes(p.mes)},${p.y}`).join(' ')}
+                                  fill="none" stroke={s.cor} strokeWidth={1.5} strokeDasharray="6 3" opacity={0.7}
+                                  strokeLinejoin="round" strokeLinecap="round"
+                                />
+                              )}
                             </g>
                           })}
                         </svg>
                       </div>
-                      <div style={{display:'flex',gap:16,marginTop:8,fontSize:11,flexWrap:'wrap'}}>
-                        {series.map(s=>(
-                          <span key={s.ano} style={{color:s.cor,fontWeight:600}}>
-                            {s.ano===p1Ano?'━':'╌'} {s.ano}{s.ano===p1Ano?' (atual)':''}
-                            {' — Total: '}{moeda(s.pts.reduce((a,p)=>a+p.fat,0))}
-                          </span>
-                        ))}
+
+                      {/* legenda + stats */}
+                      <div style={{display:'flex',gap:16,marginTop:10,flexWrap:'wrap',alignItems:'flex-start'}}>
+                        {series.map(s=>{
+                          const vals = s.pts.filter(p=>p.fat>0).map(p=>p.fat)
+                          const med = vals.length ? vals.reduce((a,v)=>a+v,0)/vals.length : 0
+                          const dpS = vals.length>1 ? Math.sqrt(vals.reduce((a,v)=>a+(v-med)**2,0)/vals.length) : 0
+                          const total = s.pts.reduce((a,p)=>a+p.fat,0)
+                          return (
+                            <div key={s.ano} style={{background:'#111827',border:`1px solid ${s.cor}30`,borderRadius:8,padding:'8px 12px',minWidth:160}}>
+                              <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:4}}>
+                                <span style={{width:10,height:10,borderRadius:2,background:s.cor,display:'inline-block'}}/>
+                                <span style={{color:s.cor,fontSize:12,fontWeight:800}}>{s.ano}{s.ano===p1Ano?' (atual)':''}</span>
+                              </div>
+                              <div style={{fontSize:10,color:'#64748b',lineHeight:1.8}}>
+                                <div>Total: <span style={{color:'#e2e8f0',fontWeight:700}}>{moeda(total)}</span></div>
+                                <div>Média/mês: <span style={{color:'#e2e8f0'}}>{moeda(med)}</span></div>
+                                <div>Desvio padrão: <span style={{color:'#f59e0b'}}>{moeda(dpS)}</span></div>
+                                <div>Meses c/ dados: <span style={{color:'#e2e8f0'}}>{vals.length}/12</span></div>
+                              </div>
+                            </div>
+                          )
+                        })}
+                        <div style={{background:'#111827',border:'1px solid #1e293b',borderRadius:8,padding:'8px 12px',minWidth:160}}>
+                          <div style={{fontSize:10,color:'#64748b',marginBottom:4,fontWeight:700}}>TODOS OS ANOS</div>
+                          <div style={{fontSize:10,color:'#64748b',lineHeight:1.8}}>
+                            <div>Média global: <span style={{color:'#94a3b8',fontWeight:700}}>{moeda(media)}</span></div>
+                            <div>DP global: <span style={{color:'#f59e0b'}}>{moeda(dp)}</span></div>
+                            <div style={{color:'#475569',fontSize:9,marginTop:2}}>Faixa normal: {moeda(Math.max(0,media-dp))} – {moeda(media+dp)}</div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   )
