@@ -479,21 +479,18 @@ export default function RelatoriosPage() {
   const hoje = new Date()
   hoje.setHours(23, 59, 59, 0)
 
-  // peso do dia da semana — usa histórico do P2 se disponível, senão igual (1/7)
-  const getPeso = (ds: string) => pesoPorDiaSemana.get(ds) || 1/7
+  // Soma bruta das médias distribuídas pelos dias de P1 (pode diferir do totalFatP2 por ter mais/menos dias da semana)
+  const somaBrutaP1 = todosDiasCalendario.reduce((s, d) => s + (mediaPorDiaSemana.get(d.diaSemana) || 0), 0)
+  // Fator de normalização: garante que sum(metaDia) = metaTotal exatamente
+  const fatorNorm = somaBrutaP1 > 0 ? metaTotal / somaBrutaP1 : 1
 
-  // META FIXA: distribui metaTotal por TODOS os dias do mês com peso
-  const getMetaDiaFixa = (diaSemana: string): number => {
+  // META DIÁRIA NORMALIZADA: preserva proporção entre dias da semana e garante soma = metaTotal
+  const getMetaDiaNorm = (diaSemana: string): number => {
     if (!metaTotal || todosDiasCalendario.length === 0) return 0
-    const contagemTotal = new Map<string, number>()
-    todosDiasCalendario.forEach(d => {
-      contagemTotal.set(d.diaSemana, (contagemTotal.get(d.diaSemana) || 0) + 1)
-    })
-    let pesoTotal = 0
-    contagemTotal.forEach((_, ds) => { pesoTotal += getPeso(ds) })
-    if (pesoTotal === 0) return 0
-    const count = contagemTotal.get(diaSemana) || 1
-    return metaTotal * (getPeso(diaSemana) / pesoTotal) / count
+    const media = mediaPorDiaSemana.get(diaSemana)
+    if (media !== undefined) return media * fatorNorm
+    // fallback sem histórico: distribui igualmente
+    return metaTotal / todosDiasCalendario.length
   }
 
   // NECESSIDADE BASE: distribui RESTANTE pelos dias FUTUROS
@@ -1155,9 +1152,10 @@ export default function RelatoriosPage() {
                             </thead>
                             <tbody>
                               {todosDiasCalendario.map((d, i) => {
-                                // Necessidade Base = média do mesmo dia da semana no mesmo mês do ano anterior
-                                const necessidade  = mediaPorDiaSemana.get(d.diaSemana) || 0
-                                const metaDia      = necessidade > 0 ? necessidade * fatorMeta : getMetaDiaFixa(d.diaSemana)
+                                // Necessidade Base = média normalizada do mesmo dia da semana (Jun/ano anterior)
+                                // soma de todos os dias = metaTotal exatamente
+                                const necessidade  = getMetaDiaNorm(d.diaSemana)
+                                const metaDia      = necessidade
                                 const superMetaDia = metaDia > 0 ? metaDia * 1.3 : 0
                                 // Status com todos os 4 estados do Python
                                 const [dd2, mm2, yyyy2] = d.data.split('/')
