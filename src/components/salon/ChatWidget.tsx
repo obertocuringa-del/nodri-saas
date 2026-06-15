@@ -103,7 +103,7 @@ function renderMarkdown(texto: string): string {
 
 export default function ChatWidget() {
   const [aberto, setAberto] = useState(false)
-  const [telaCheia, setTelaCheia] = useState(true)
+  const [telaCheia, setTelaCheia] = useState(false)
   const [mensagens, setMensagens] = useState<Mensagem[]>([])
   const [input, setInput] = useState('')
   const [carregando, setCarregando] = useState(false)
@@ -234,34 +234,29 @@ export default function ChatWidget() {
 
   const sugestoes = ['Como está o salão?', 'Quem faturou mais?', 'Ver ocorrências', 'Análise da equipe']
 
-  // ── Dimensões do chat
-  const chatStyle: React.CSSProperties = telaCheia
-    ? { position: 'fixed', inset: 0, width: '100vw', height: '100vh', borderRadius: 0, zIndex: 10001 }
-    : { position: 'fixed', width: '420px', maxWidth: 'calc(100vw - 24px)', height: '580px', bottom: '162px', right: '24px', borderRadius: '20px', zIndex: 10000 }
+  const fechar = () => { setAberto(false); setTelaCheia(false) }
 
   return (
     <>
-      {/* Botão flutuante */}
-      {!telaCheia && (
+      {/* Botão flutuante — sempre visível quando chat fechado */}
+      {!aberto && (
         <button
-          onClick={() => setAberto(v => !v)}
+          onClick={() => { setAberto(true); setTelaCheia(true) }}
           className="fixed flex items-center justify-center transition-all duration-300 hover:scale-110"
-          style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', width: 56, height: 56, borderRadius: '50%', bottom: 90, right: 24, zIndex: 10000, border: 'none', cursor: 'pointer', boxShadow: '0 4px 24px rgba(245,158,11,0.4)' }}
+          style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', width: 56, height: 56, borderRadius: '50%', bottom: 90, right: 24, zIndex: 10000, border: 'none', cursor: 'pointer', boxShadow: '0 4px 24px rgba(245,158,11,0.4)', position: 'fixed' }}
           title="NODRI IA"
         >
-          {aberto ? <ChevronDown size={24} color="#000" /> : <MessageCircle size={24} color="#000" />}
-          {!aberto && (
-            <span style={{ position: 'absolute', top: -2, right: -2, width: 14, height: 14, background: '#22c55e', borderRadius: '50%', border: '2px solid #000' }} />
-          )}
+          <MessageCircle size={24} color="#000" />
+          <span style={{ position: 'absolute', top: -2, right: -2, width: 14, height: 14, background: '#22c55e', borderRadius: '50%', border: '2px solid #000' }} />
         </button>
       )}
 
-      {/* Janela do chat */}
-      {(aberto || telaCheia) && (
-        <div style={{ ...chatStyle, display: 'flex', flexDirection: 'column', background: '#0d1117', border: '1px solid #21262d', overflow: 'hidden', boxShadow: '0 24px 80px rgba(0,0,0,0.6)' }}>
+      {/* Janela do chat — sempre tela cheia */}
+      {aberto && (
+        <div style={{ position: 'fixed', inset: 0, width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', background: '#0d1117', border: 'none', overflow: 'hidden', zIndex: 10001 }}>
 
           {/* Header */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: telaCheia ? '14px 24px' : '12px 16px', background: '#161b22', borderBottom: '1px solid #21262d', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 24px', background: '#161b22', borderBottom: '1px solid #21262d', flexShrink: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg,#f59e0b,#d97706)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, color: '#000', flexShrink: 0 }}>N</div>
               <div>
@@ -272,26 +267,20 @@ export default function ChatWidget() {
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <button onClick={imprimir} title="Imprimir conversa" style={{ padding: '6px 8px', background: 'transparent', border: 'none', borderRadius: 8, cursor: 'pointer', color: '#8b949e', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12 }}>
-                <Printer size={14} /> {telaCheia && <span>Imprimir</span>}
+              <button onClick={imprimir} title="Imprimir conversa" style={{ padding: '6px 12px', background: 'transparent', border: '1px solid #30363d', borderRadius: 8, cursor: 'pointer', color: '#8b949e', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+                <Printer size={14} /><span>Imprimir</span>
               </button>
-              <button onClick={limpar} title="Nova conversa" style={{ padding: '6px 8px', background: 'transparent', border: 'none', borderRadius: 8, cursor: 'pointer', color: '#8b949e', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12 }}>
-                <Trash2 size={14} /> {telaCheia && <span>Limpar</span>}
+              <button onClick={limpar} title="Nova conversa" style={{ padding: '6px 12px', background: 'transparent', border: '1px solid #30363d', borderRadius: 8, cursor: 'pointer', color: '#8b949e', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+                <Trash2 size={14} /><span>Limpar</span>
               </button>
-              <button onClick={() => setTelaCheia(v => !v)} title={telaCheia ? 'Minimizar' : 'Tela cheia'} style={{ padding: '6px 8px', background: 'transparent', border: 'none', borderRadius: 8, cursor: 'pointer', color: '#8b949e', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12 }}>
-                {telaCheia ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-                {telaCheia && <span>Minimizar</span>}
+              <button onClick={fechar} title="Fechar" style={{ padding: '6px 12px', background: 'transparent', border: '1px solid #30363d', borderRadius: 8, cursor: 'pointer', color: '#8b949e', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+                <X size={14} /><span>Fechar</span>
               </button>
-              {!telaCheia && (
-                <button onClick={() => setAberto(false)} style={{ padding: '6px 8px', background: 'transparent', border: 'none', borderRadius: 8, cursor: 'pointer', color: '#8b949e' }}>
-                  <X size={14} />
-                </button>
-              )}
             </div>
           </div>
 
           {/* Mensagens */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: telaCheia ? '24px max(24px, calc(50% - 380px))' : '16px', display: 'flex', flexDirection: 'column', gap: 0 }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '24px max(24px, calc(50% - 400px))', display: 'flex', flexDirection: 'column', gap: 0 }}>
             {mensagens.map((msg, i) => (
               <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start', marginBottom: 20 }}>
                 {/* Rótulo */}
@@ -359,7 +348,7 @@ export default function ChatWidget() {
 
           {/* Sugestões */}
           {mensagens.length <= 1 && (
-            <div style={{ padding: telaCheia ? '0 max(24px, calc(50% - 380px)) 12px' : '0 16px 10px', display: 'flex', gap: 8, flexWrap: 'wrap', flexShrink: 0 }}>
+            <div style={{ padding: '0 max(24px, calc(50% - 400px)) 12px', display: 'flex', gap: 8, flexWrap: 'wrap', flexShrink: 0 }}>
               {sugestoes.map(s => (
                 <button key={s} onClick={() => enviar(s)}
                   style={{ fontSize: 12, background: '#161b22', border: '1px solid #30363d', color: '#8b949e', padding: '6px 14px', borderRadius: 20, cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap' }}
@@ -373,7 +362,7 @@ export default function ChatWidget() {
           )}
 
           {/* Input */}
-          <div style={{ padding: telaCheia ? '16px max(24px, calc(50% - 380px))' : '12px 16px', borderTop: '1px solid #21262d', background: '#161b22', flexShrink: 0 }}>
+          <div style={{ padding: '16px max(24px, calc(50% - 400px))', borderTop: '1px solid #21262d', background: '#161b22', flexShrink: 0 }}>
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, background: '#0d1117', border: '1px solid #30363d', borderRadius: 14, padding: '10px 14px', transition: 'border-color 0.2s' }}
               onFocus={() => {}} >
               <textarea
