@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { ArrowLeft, Save, Loader2, TrendingUp, TrendingDown, BarChart2,
   MessageSquare, CheckSquare, Square, AlertTriangle } from 'lucide-react'
+import ChatWidget from '@/components/salon/ChatWidget'
 import toast from 'react-hot-toast'
 
 interface Profissional {
@@ -1946,7 +1947,7 @@ export default function PerfilProfissionalPage() {
         {/*  PENDÊNCIAS  */}
         {/*  IA  */}
         {tab === 'ia' && (
-          <AbaIA profissionalId={id} nomeProfissional={prof.apelido||prof.nome_completo}/>
+          <ChatWidget profissionalId={id} modoEmbarcado={true} />
         )}
 
         {/*  OCORRÊNCIAS (antigo Desempenho)  */}

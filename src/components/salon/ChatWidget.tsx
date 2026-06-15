@@ -117,8 +117,8 @@ function salvarPrompts(prompts: Prompt[]) {
   localStorage.setItem(PROMPTS_KEY, JSON.stringify(prompts))
 }
 
-export default function ChatWidget() {
-  const [aberto, setAberto] = useState(false)
+export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissionalId?: string; modoEmbarcado?: boolean } = {}) {
+  const [aberto, setAberto] = useState(!!modoEmbarcado)
   const [telaCheia, setTelaCheia] = useState(false)
   const [mensagens, setMensagens] = useState<Mensagem[]>([])
   const [input, setInput] = useState('')
@@ -166,11 +166,13 @@ export default function ChatWidget() {
     if (aberto && !iniciado) {
       setMensagens([{
         role: 'assistant',
-        content: 'Olá! Sou a NODRI IA, sua diretora executiva virtual. Tenho acesso completo aos dados do seu salão. Como posso te ajudar hoje?'
+        content: profissionalId
+          ? 'Olá! Sou a NODRI IA. Tenho acesso aos seus dados aqui no sistema. Como posso te ajudar hoje?'
+          : 'Olá! Sou a NODRI IA, sua diretora executiva virtual. Tenho acesso completo aos dados do seu salão. Como posso te ajudar hoje?'
       }])
       setIniciado(true)
     }
-  }, [aberto, iniciado])
+  }, [aberto, iniciado, profissionalId])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -197,7 +199,7 @@ export default function ChatWidget() {
         body: JSON.stringify({
           mensagens: novasMensagens.filter(m => m.role !== 'assistant' || novasMensagens.indexOf(m) > 0),
           conversa_id: conversaId,
-          modo: 'gestor'
+          ...(profissionalId ? { profissional_id: profissionalId } : { modo: 'gestor' }),
         })
       })
 
@@ -281,14 +283,23 @@ export default function ChatWidget() {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar() }
   }
 
-  const sugestoes = ['Como está o salão?', 'Quem faturou mais?', 'Ver ocorrências', 'Análise da equipe']
+  const sugestoes = profissionalId
+    ? ['Quais são minhas metas?', 'Ver meu faturamento', 'Minhas ocorrências', 'Como estou na categoria?']
+    : ['Como está o salão?', 'Quem faturou mais?', 'Ver ocorrências', 'Análise da equipe']
 
-  const fechar = () => { setAberto(false); setTelaCheia(false) }
+  const fechar = () => {
+    if (!modoEmbarcado) { setAberto(false); setTelaCheia(false) }
+  }
+
+  // Estilos do container: fixo quando floating, relativo quando embutido
+  const containerStyle: React.CSSProperties = modoEmbarcado
+    ? { position: 'relative', width: '100%', height: 'calc(100vh - 56px)', display: 'flex', flexDirection: 'column', background: '#0d1117', overflow: 'hidden' }
+    : { position: 'fixed', inset: 0, width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', background: '#0d1117', border: 'none', overflow: 'hidden', zIndex: 10001 }
 
   return (
     <>
-      {/* Botão flutuante — sempre visível quando chat fechado */}
-      {!aberto && (
+      {/* Botão flutuante — apenas no modo normal (não embutido) */}
+      {!modoEmbarcado && !aberto && (
         <button
           onClick={() => { setAberto(true); setTelaCheia(true) }}
           className="fixed flex items-center justify-center transition-all duration-300 hover:scale-110"
@@ -300,9 +311,9 @@ export default function ChatWidget() {
         </button>
       )}
 
-      {/* Janela do chat — sempre tela cheia */}
+      {/* Janela do chat */}
       {aberto && (
-        <div style={{ position: 'fixed', inset: 0, width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', background: '#0d1117', border: 'none', overflow: 'hidden', zIndex: 10001 }}>
+        <div style={containerStyle}>
 
           {/* Header */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 24px', background: '#161b22', borderBottom: '1px solid #21262d', flexShrink: 0 }}>
@@ -322,9 +333,11 @@ export default function ChatWidget() {
               <button onClick={limpar} title="Nova conversa" style={{ padding: '6px 12px', background: 'transparent', border: '1px solid #30363d', borderRadius: 8, cursor: 'pointer', color: '#8b949e', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
                 <Trash2 size={14} /><span>Limpar</span>
               </button>
-              <button onClick={fechar} title="Fechar" style={{ padding: '6px 12px', background: 'transparent', border: '1px solid #30363d', borderRadius: 8, cursor: 'pointer', color: '#8b949e', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
-                <X size={14} /><span>Fechar</span>
-              </button>
+              {!modoEmbarcado && (
+                <button onClick={fechar} title="Fechar" style={{ padding: '6px 12px', background: 'transparent', border: '1px solid #30363d', borderRadius: 8, cursor: 'pointer', color: '#8b949e', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+                  <X size={14} /><span>Fechar</span>
+                </button>
+              )}
             </div>
           </div>
 
