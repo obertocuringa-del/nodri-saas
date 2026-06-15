@@ -1671,6 +1671,53 @@ export default function RelatoriosPage() {
 
               return (
                 <div>
+                  {/* ── Painel explicativo do cálculo ── */}
+                  <details style={{ marginBottom: 16 }}>
+                    <summary style={{ cursor: 'pointer', fontSize: 12, fontWeight: 700, color: '#7c5cfc', letterSpacing: 0.5, listStyle: 'none', display: 'flex', alignItems: 'center', gap: 6, userSelect: 'none' }}>
+                      <span style={{ fontSize: 16 }}>ℹ</span> Como são calculadas as metas individuais? <span style={{ fontSize: 10, color: '#475569' }}>(clique para expandir)</span>
+                    </summary>
+                    <div style={{ marginTop: 10, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 8 }}>
+                      {[
+                        {
+                          n: '1', cor: '#7c5cfc',
+                          titulo: 'Meta bruta → comissão',
+                          desc: 'A meta total do salão (bruto) é convertida para comissão usando o ratio histórico: total de comissões pagas ÷ total faturado.',
+                        },
+                        {
+                          n: '2', cor: '#06b6d4',
+                          titulo: 'Média histórica por profissional',
+                          desc: 'Calcula-se a média mensal de comissão recebida por cada profissional, excluindo meses atípicos (acima de 30% da sua própria média).',
+                        },
+                        {
+                          n: '3', cor: '#10b981',
+                          titulo: 'Distribuição proporcional',
+                          desc: 'O total de comissão a distribuir é repartido proporcionalmente à média histórica de cada profissional. Quem historicamente ganha mais, recebe meta maior.',
+                        },
+                        {
+                          n: '4', cor: '#f59e0b',
+                          titulo: 'Fallbacks automáticos',
+                          desc: 'Se um profissional não tem histórico, usa-se a média do cargo. Se não há cargo, usa-se a média geral de todos os profissionais.',
+                        },
+                        {
+                          n: '5', cor: '#f43f8e',
+                          titulo: 'Realizado vs. meta',
+                          desc: 'O valor "Realizado" é o que o profissional efetivamente recebeu em comissão no período selecionado (p1), conforme os registros de pagamento.',
+                        },
+                      ].map(step => (
+                        <div key={step.n} style={{ background: '#060d18', border: `1px solid ${step.cor}30`, borderLeft: `3px solid ${step.cor}`, borderRadius: 10, padding: '12px 14px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                            <span style={{ width: 20, height: 20, borderRadius: '50%', background: `${step.cor}25`, border: `1px solid ${step.cor}60`, color: step.cor, fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{step.n}</span>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: step.cor }}>{step.titulo}</span>
+                          </div>
+                          <p style={{ margin: 0, fontSize: 11, color: '#94a3b8', lineHeight: 1.6 }}>{step.desc}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ marginTop: 8, padding: '8px 12px', background: '#7c5cfc10', border: '1px solid #7c5cfc30', borderRadius: 8, fontSize: 11, color: '#94a3b8', lineHeight: 1.6 }}>
+                      <strong style={{ color: '#7c5cfc' }}>Fórmula resumida:</strong> Meta individual = (média histórica do profissional ÷ soma das médias de todos) × meta total em comissão
+                    </div>
+                  </details>
+
                   {/* Card header com meta total e período de referência */}
                   <div style={{ background: '#0a0f1a', border: '1px solid #1e293b', borderRadius: 12, padding: 20, marginBottom: 16 }}>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'center' }}>
