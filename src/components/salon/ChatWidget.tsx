@@ -101,6 +101,22 @@ function renderMarkdown(texto: string): string {
   return html
 }
 
+interface Prompt {
+  id: string
+  titulo: string
+  script: string
+}
+
+const PROMPTS_KEY = 'nodri_prompts_salvos'
+
+function carregarPrompts(): Prompt[] {
+  try { return JSON.parse(localStorage.getItem(PROMPTS_KEY) || '[]') } catch { return [] }
+}
+
+function salvarPrompts(prompts: Prompt[]) {
+  localStorage.setItem(PROMPTS_KEY, JSON.stringify(prompts))
+}
+
 export default function ChatWidget() {
   const [aberto, setAberto] = useState(false)
   const [telaCheia, setTelaCheia] = useState(false)
@@ -112,6 +128,39 @@ export default function ChatWidget() {
   const [copiados, setCopiados] = useState<Set<number>>(new Set())
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+
+  // Biblioteca de prompts
+  const [prompts, setPrompts] = useState<Prompt[]>([])
+  const [modalAberto, setModalAberto] = useState(false)
+  const [editando, setEditando] = useState<Prompt | null>(null)
+  const [formTitulo, setFormTitulo] = useState('')
+  const [formScript, setFormScript] = useState('')
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+
+  useEffect(() => { setPrompts(carregarPrompts()) }, [])
+
+  const abrirNovo = () => { setEditando(null); setFormTitulo(''); setFormScript(''); setModalAberto(true) }
+  const abrirEditar = (p: Prompt) => { setEditando(p); setFormTitulo(p.titulo); setFormScript(p.script); setModalAberto(true) }
+  const fecharModal = () => { setModalAberto(false); setEditando(null) }
+
+  const salvarPrompt = () => {
+    if (!formTitulo.trim() || !formScript.trim()) return
+    const novos = editando
+      ? prompts.map(p => p.id === editando.id ? { ...p, titulo: formTitulo.trim(), script: formScript.trim() } : p)
+      : [...prompts, { id: Date.now().toString(), titulo: formTitulo.trim(), script: formScript.trim() }]
+    setPrompts(novos)
+    salvarPrompts(novos)
+    fecharModal()
+  }
+
+  const excluirPrompt = (id: string) => {
+    const novos = prompts.filter(p => p.id !== id)
+    setPrompts(novos)
+    salvarPrompts(novos)
+    setConfirmDelete(null)
+  }
+
+  const usarPrompt = (p: Prompt) => { enviar(p.script) }
 
   useEffect(() => {
     if (aberto && !iniciado) {
@@ -256,7 +305,7 @@ export default function ChatWidget() {
         <div style={{ position: 'fixed', inset: 0, width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', background: '#0d1117', border: 'none', overflow: 'hidden', zIndex: 10001 }}>
 
           {/* Header */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 24px', background: '#161b22', borderBottom: '1px solid #21262d', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 24px', background: '#161b22', borderBottom: '1px solid #21262d', flexShrink: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg,#f59e0b,#d97706)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, color: '#000', flexShrink: 0 }}>N</div>
               <div>
@@ -278,6 +327,49 @@ export default function ChatWidget() {
               </button>
             </div>
           </div>
+
+          {/* Layout: sidebar + chat */}
+          <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+
+          {/* ── Sidebar Esquerda — Biblioteca de Prompts ── */}
+          <div style={{ width: 260, flexShrink: 0, background: '#161b22', borderRight: '1px solid #21262d', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            {/* Cabeçalho sidebar */}
+            <div style={{ padding: '14px 14px 10px', borderBottom: '1px solid #21262d', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#8b949e', textTransform: 'uppercase', letterSpacing: 1 }}>Perguntas Salvas</span>
+              <button onClick={abrirNovo} title="Nova pergunta"
+                style={{ width: 26, height: 26, borderRadius: 6, background: '#f59e0b', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 18, color: '#000', lineHeight: 1 }}>+</button>
+            </div>
+            {/* Lista */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '8px 8px' }}>
+              {prompts.length === 0 && (
+                <div style={{ padding: '16px 8px', textAlign: 'center' }}>
+                  <p style={{ color: '#484f58', fontSize: 12, lineHeight: 1.6, margin: 0 }}>Nenhuma pergunta salva ainda.<br/>Clique no <strong style={{ color: '#f59e0b' }}>+</strong> para criar.</p>
+                </div>
+              )}
+              {prompts.map(p => (
+                <div key={p.id}
+                  style={{ borderRadius: 8, padding: '8px 10px', marginBottom: 4, background: '#0d1117', border: '1px solid #21262d', display: 'flex', alignItems: 'center', gap: 6, group: 'true' } as any}>
+                  <button onClick={() => usarPrompt(p)} title={p.script}
+                    style={{ flex: 1, background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', color: '#c9d1d9', fontSize: 12, lineHeight: 1.4, padding: 0, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                    {p.titulo}
+                  </button>
+                  <button onClick={() => abrirEditar(p)} title="Editar"
+                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#484f58', padding: '2px 4px', fontSize: 13, lineHeight: 1, flexShrink: 0 }}>✏</button>
+                  {confirmDelete === p.id
+                    ? <span style={{ display: 'flex', gap: 2 }}>
+                        <button onClick={() => excluirPrompt(p.id)} style={{ background: '#ef4444', border: 'none', borderRadius: 4, cursor: 'pointer', color: '#fff', fontSize: 10, padding: '2px 5px' }}>Sim</button>
+                        <button onClick={() => setConfirmDelete(null)} style={{ background: '#21262d', border: 'none', borderRadius: 4, cursor: 'pointer', color: '#8b949e', fontSize: 10, padding: '2px 5px' }}>Não</button>
+                      </span>
+                    : <button onClick={() => setConfirmDelete(p.id)} title="Excluir"
+                        style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#484f58', padding: '2px 4px', fontSize: 13, lineHeight: 1, flexShrink: 0 }}>✕</button>
+                  }
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ── Área do chat ── */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
           {/* Mensagens */}
           <div style={{ flex: 1, overflowY: 'auto', padding: '24px max(24px, calc(50% - 400px))', display: 'flex', flexDirection: 'column', gap: 0 }}>
@@ -393,6 +485,48 @@ export default function ChatWidget() {
             <p style={{ fontSize: 11, color: '#484f58', margin: '6px 0 0', textAlign: 'center' }}>
               NODRI IA pode cometer erros. Verifique informações importantes.
             </p>
+          </div>
+          </div>{/* fim área chat */}
+          </div>{/* fim layout */}
+        </div>
+      )}
+
+      {/* ── Modal Nova/Editar Pergunta ── */}
+      {modalAberto && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 10002, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <div style={{ background: '#161b22', border: '1px solid #30363d', borderRadius: 16, padding: 28, width: '100%', maxWidth: 520, display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h3 style={{ margin: 0, color: '#e6edf3', fontSize: 16, fontWeight: 700 }}>
+                {editando ? 'Editar Pergunta' : 'Nova Pergunta'}
+              </h3>
+              <button onClick={fecharModal} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#8b949e', fontSize: 20, lineHeight: 1 }}>×</button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: '#8b949e', textTransform: 'uppercase', letterSpacing: .5 }}>Título (aparece na lista)</label>
+              <input value={formTitulo} onChange={e => setFormTitulo(e.target.value)}
+                placeholder="Ex: Análise da equipe completa"
+                style={{ background: '#0d1117', border: '1px solid #30363d', borderRadius: 8, padding: '10px 14px', color: '#e6edf3', fontSize: 14, outline: 'none', fontFamily: 'inherit' }} />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: '#8b949e', textTransform: 'uppercase', letterSpacing: .5 }}>Script completo (enviado ao chat)</label>
+              <textarea value={formScript} onChange={e => setFormScript(e.target.value)} rows={6}
+                placeholder="Ex: Faça uma análise completa da equipe com faturamento, ocorrências e ranking de cada profissional no período atual. Apresente em tabela e destaque pontos de atenção."
+                style={{ background: '#0d1117', border: '1px solid #30363d', borderRadius: 8, padding: '10px 14px', color: '#e6edf3', fontSize: 13, outline: 'none', fontFamily: 'inherit', resize: 'vertical', lineHeight: 1.6 }} />
+              <p style={{ margin: 0, fontSize: 11, color: '#484f58' }}>O script é o texto completo enviado à IA. O título é só um atalho para você identificar.</p>
+            </div>
+
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button onClick={fecharModal}
+                style={{ padding: '9px 20px', background: 'transparent', border: '1px solid #30363d', borderRadius: 8, cursor: 'pointer', color: '#8b949e', fontSize: 14 }}>
+                Cancelar
+              </button>
+              <button onClick={salvarPrompt} disabled={!formTitulo.trim() || !formScript.trim()}
+                style={{ padding: '9px 20px', background: formTitulo.trim() && formScript.trim() ? 'linear-gradient(135deg,#f59e0b,#d97706)' : '#21262d', border: 'none', borderRadius: 8, cursor: formTitulo.trim() && formScript.trim() ? 'pointer' : 'default', color: formTitulo.trim() && formScript.trim() ? '#000' : '#484f58', fontWeight: 700, fontSize: 14 }}>
+                {editando ? 'Salvar alterações' : 'Criar pergunta'}
+              </button>
+            </div>
           </div>
         </div>
       )}
