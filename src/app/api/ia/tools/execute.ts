@@ -101,7 +101,10 @@ export async function executarFerramenta(nome: string, args: any, salaoId: strin
           })
           Object.entries(contagem)
             .sort((a,b) => b[1].qtd - a[1].qtd)
-            .forEach(([tipo, v]) => linhas.push(`  ${tipo}: ${v.qtd}x`))
+            .forEach(([tipo, v]) => {
+              const ultimas = v.datas.slice(0, 5).join(', ')
+              linhas.push(`  ${tipo}: ${v.qtd}x (últimas datas: ${ultimas})`)
+            })
         } else {
           linhas.push('\nNenhuma ocorrência registrada para este profissional.')
         }
