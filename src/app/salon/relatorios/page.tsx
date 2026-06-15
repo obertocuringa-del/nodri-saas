@@ -1240,7 +1240,7 @@ export default function RelatoriosPage() {
 
               // 2. Profissionais ativos via profsCadastrados (já carregado)
               // Cargos administrativos não recebem meta de produção — sua parcela é redistribuída aos demais
-              const CARGOS_SEM_META = ['administrativo', 'financeiro', 'gerencia', 'gerência', 'recepcao', 'recepção']
+              const CARGOS_SEM_META = ['ADMINISTRATIVO', 'FINANCEIRO', 'GERENCIA', 'RECEPCAO']
               const profsAtivos = profsCadastrados.filter(p => p.nome_completo && !CARGOS_SEM_META.includes(norm(p.cargo || '')))
               const totalProfsAtivos = profsAtivos.length || 1
 
