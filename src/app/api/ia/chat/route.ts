@@ -189,12 +189,12 @@ function formatarDadosSalao(dados: any, profissionalId?: string): string {
       for (const item of (per.prof_ocupacao || [])) {
         const nome = item.profissional || ''; if (!nome) continue
         if (!ocupMap[nome]) ocupMap[nome] = {}
-        ocupMap[nome][chave] = Number(item.ocupacao || 0)
+        ocupMap[nome][chave] = Number(item.taxa_ocupacao || 0)
       }
       for (const item of (per.prof_preferencia || [])) {
         const nome = item.profissional || ''; if (!nome) continue
         if (!prefMap[nome]) prefMap[nome] = {}
-        prefMap[nome][chave] = Number(item.preferencia || 0)
+        prefMap[nome][chave] = Number(item.clientes_preferencia || 0)
       }
     }
 
@@ -254,11 +254,25 @@ function formatarDadosSalao(dados: any, profissionalId?: string): string {
       })
       if (ocorrencias.length) {
         linhas.push(`## DETALHE DE FEEDBACKS — ${nomeProf.toUpperCase()}`)
+        const neg = ocorrencias.filter((f: any) => f.tipo === 'negativo')
+        const pos = ocorrencias.filter((f: any) => f.tipo === 'positivo')
+        linhas.push(`Total: ${ocorrencias.length} (${neg.length} negativos, ${pos.length} positivos)`)
+        // Agrupa por tipo com contagem e últimas 5 datas — evita enviar centenas de linhas no prompt
+        const contagemDetalhe: Record<string, { qtd: number; datas: string[]; descricoes: string[] }> = {}
         ocorrencias.forEach((f: any) => {
-          const data = f.criado_em ? new Date(f.criado_em).toLocaleDateString('pt-BR') : ''
-          const tipoLabel = f.tipo === 'negativo' ? '🚨' : '✅'
-          linhas.push(`  ${tipoLabel} ${data} — ${f.ocorrido_descricao || ''}${f.descricao ? ': ' + f.descricao : ''}`)
+          const tipo = f.ocorrido_descricao || f.tipo || 'Outro'
+          if (!contagemDetalhe[tipo]) contagemDetalhe[tipo] = { qtd: 0, datas: [], descricoes: [] }
+          contagemDetalhe[tipo].qtd++
+          if (f.criado_em) contagemDetalhe[tipo].datas.push(new Date(f.criado_em).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }))
+          if (f.descricao && contagemDetalhe[tipo].descricoes.length < 2) contagemDetalhe[tipo].descricoes.push(f.descricao.slice(0, 100))
         })
+        Object.entries(contagemDetalhe)
+          .sort((a, b) => b[1].qtd - a[1].qtd)
+          .forEach(([tipo, v]) => {
+            const ultimas = v.datas.slice(0, 5).join(', ')
+            linhas.push(`  • ${tipo}: ${v.qtd}x (últimas: ${ultimas})`)
+            v.descricoes.forEach(d => linhas.push(`    → "${d}"`))
+          })
       } else {
         linhas.push(`## DETALHE DE FEEDBACKS — ${nomeProf.toUpperCase()}`)
         linhas.push('Nenhum feedback/ocorrência registrado para este profissional.')
@@ -282,7 +296,7 @@ function formatarDadosSalao(dados: any, profissionalId?: string): string {
       linhas.push(`NPS: ${nps} (Promotores: ${promotores}, Neutros: ${neutros}, Detratores: ${detratores})`)
     }
     dados.feedbacks_clientes.forEach((f: any) => {
-      const data = f.criado_em ? new Date(f.criado_em).toLocaleDateString('pt-BR') : ''
+      const data = f.criado_em ? new Date(f.criado_em).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : ''
       if (f.nota_geral || f.comentario) {
         linhas.push(`- [${data}] Nota: ${f.nota_geral || '?'} — ${f.comentario || ''}`)
       }
@@ -472,7 +486,6 @@ export async function POST(req: NextRequest) {
       { data: periodos },
       { data: feedbacksProf },
       { data: feedbacksClientes },
-      { data: feedbacksClientesDetalhados },
       { data: pendencias },
       { data: pendenciasResolvidas },
       { data: metricasMensais },
@@ -482,8 +495,7 @@ export async function POST(req: NextRequest) {
       supabaseAdmin.from('profissionais').select('*').eq('salao_id', salaoId),
       supabaseAdmin.from('relatorio_periodos').select('ano, mes, prof_pagamentos, prof_servicos, prof_ticket, prof_preferencia, prof_ocupacao, prof_produtos, resumo_mensal, faturamento_diario, servicos, produtos').eq('salao_id', salaoId).order('ano').order('mes'),
       supabaseAdmin.from('feedback_prof_respostas').select('profissional_id, profissional_nome, tipo, ocorrido_descricao, descricao, criado_em').eq('salao_id', salaoId).order('criado_em', { ascending: false }),
-      supabaseAdmin.from('feedback_respostas').select('nota_geral, comentario, criado_em').eq('salao_id', salaoId).order('criado_em', { ascending: false }),
-      supabaseAdmin.from('feedback_respostas').select('dados, criado_em').eq('salao_id', salaoId).order('criado_em', { ascending: false }),
+      supabaseAdmin.from('feedback_respostas').select('nota_geral, comentario, dados, criado_em').eq('salao_id', salaoId).order('criado_em', { ascending: false }),
       supabaseAdmin.from('pendencias_profissionais').select('profissional_id, mensagem, data_limite, resolvido, resolvido_em').eq('salao_id', salaoId).eq('resolvido', false),
       supabaseAdmin.from('pendencias_profissionais').select('profissional_id, mensagem, data_limite, resolvido_em').eq('salao_id', salaoId).eq('resolvido', true).order('resolvido_em', { ascending: false }),
       supabaseAdmin.from('prof_metricas_mensais').select('profissional_id, ano, mes, faturamento, ticket_medio, clientes_preferencia, clientes_sem_preferencia, dias_trabalhados, taxa_ocupacao, total_servicos, total_produtos, servicos_detalhados').eq('salao_id', salaoId).order('ano').order('mes'),
@@ -511,7 +523,7 @@ export async function POST(req: NextRequest) {
       periodos_raw: periodos || [],
       feedbacks_prof: feedbacksProf || [],
       feedbacks_clientes: feedbacksClientes || [],
-      feedbacks_clientes_detalhados: feedbacksClientesDetalhados || [],
+      feedbacks_clientes_detalhados: feedbacksClientes || [],
       pendencias: pendencias || [],
       pendencias_resolvidas: pendenciasResolvidas || [],
       metricas_mensais: metricasMensais || [],
@@ -521,34 +533,24 @@ export async function POST(req: NextRequest) {
 
     // 5. Dados especÃ­ficos do profissional
     if (profissional_id) {
-      const [{ data: dadosProf }, { data: periodosProf }, { data: feedbacksProfCompleto }] = await Promise.all([
+      const [{ data: dadosProf }, { data: periodosProf }, { data: ocorrsDoProf }] = await Promise.all([
         supabaseAdmin.from('profissionais').select('*').eq('id', profissional_id).maybeSingle(),
         supabaseAdmin.from('prof_pagamentos').select('*').eq('profissional_id', profissional_id).order('ano').order('mes'),
-        // Busca TODAS as ocorrências do profissional em foco sem limite de data
+        // Busca apenas as ocorrências do profissional em foco (por profissional_id — sem depender de nome)
         supabaseAdmin.from('feedback_prof_respostas')
           .select('profissional_id, profissional_nome, tipo, ocorrido_descricao, descricao, criado_em')
           .eq('salao_id', salaoId)
+          .eq('profissional_id', profissional_id)
           .order('criado_em', { ascending: false }),
       ])
       dadosSalao.prof_especifico = {
         dados: dadosProf,
         periodos: periodosProf || [],
       }
-      // Substitui feedbacks_prof pelo conjunto completo do salão + todas do profissional em foco
-      if (feedbacksProfCompleto) {
-        // Garante que todas as ocorrências do profissional estão incluídas
-        const nomeProfFoco = dadosProf?.nome_completo || ''
-        const apelidoFoco = dadosProf?.apelido || ''
-        const ocorrsProf = feedbacksProfCompleto.filter((f: any) => {
-          const n = (f.profissional_nome || '').toLowerCase()
-          return n === nomeProfFoco.toLowerCase()
-            || (apelidoFoco && n === apelidoFoco.toLowerCase())
-            || n.includes(nomeProfFoco.split(' ')[0].toLowerCase())
-        })
-        // Merge: ocorrências do profissional (todas) + outras do limit(100)
-        const idsProf = new Set(ocorrsProf.map((f: any) => f.criado_em))
-        const outrasOcorrs = (feedbacksProf || []).filter((f: any) => !idsProf.has(f.criado_em))
-        dadosSalao.feedbacks_prof = [...ocorrsProf, ...outrasOcorrs]
+      // No modo profissional: feedbacks_prof contém apenas os dados do profissional em foco
+      // Isso evita que dados de outros profissionais cheguem no contexto da IA
+      if (ocorrsDoProf) {
+        dadosSalao.feedbacks_prof = ocorrsDoProf
       }
     }
 

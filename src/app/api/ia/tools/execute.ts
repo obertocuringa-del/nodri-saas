@@ -97,7 +97,7 @@ export async function executarFerramenta(nome: string, args: any, salaoId: strin
             const tipo = f.ocorrido_descricao || f.tipo || 'Outro'
             if (!contagem[tipo]) contagem[tipo] = { qtd: 0, datas: [] }
             contagem[tipo].qtd++
-            if (f.criado_em) contagem[tipo].datas.push(new Date(f.criado_em).toLocaleDateString('pt-BR'))
+            if (f.criado_em) contagem[tipo].datas.push(new Date(f.criado_em).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }))
           })
           Object.entries(contagem)
             .sort((a,b) => b[1].qtd - a[1].qtd)
@@ -320,7 +320,7 @@ export async function executarFerramenta(nome: string, args: any, salaoId: strin
           'Comentários recentes:'
         ]
         feedbacks.filter((f: any) => f.comentario).slice(0, 10).forEach((f: any) => {
-          const data = new Date(f.criado_em).toLocaleDateString('pt-BR')
+          const data = new Date(f.criado_em).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
           linhas.push(`  [${data}] Nota ${f.nota_geral}: ${f.comentario}`)
         })
 
