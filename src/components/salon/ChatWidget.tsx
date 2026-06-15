@@ -88,7 +88,7 @@ function renderMarkdown(texto: string): string {
 
 export default function ChatWidget() {
   const [aberto, setAberto] = useState(false)
-  const [telaCheia, setTelaCheia] = useState(false)
+  const [telaCheia, setTelaCheia] = useState(true)
   const [mensagens, setMensagens] = useState<Mensagem[]>([])
   const [input, setInput] = useState('')
   const [carregando, setCarregando] = useState(false)
