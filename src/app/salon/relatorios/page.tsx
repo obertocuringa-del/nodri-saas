@@ -1401,12 +1401,19 @@ export default function RelatoriosPage() {
                 const estavaRef = profsNoPeriodoRef.has(prof.id)
 
                 if (mediaHistoricaMap.has(prof.id)) {
-                  mediaProf = mediaHistoricaMap.get(prof.id)!
                   const mesesProf = new Set(dados.prof_pagamentos.filter(p => matchNome(norm(p.profissional), apelidoProf, nomeProf) && p.valor_a_pagar > 0).map(p => `${p.ano}-${p.mes}`)).size
-                  fonte = `Média de ${mesesProf} mês${mesesProf !== 1 ? 'es' : ''} histórico${mesesProf !== 1 ? 's' : ''}`
                   pico = picoHistoricoMap.get(prof.id) || null
                   const picoReal = picoRealMap.get(prof.id) || pico
                   if (picoReal) picoLabel = `Seu maior faturamento foi ${moeda(picoReal.valor)} em ${MESES_PT_FULL[picoReal.mes]}/${picoReal.ano}`
+                  if (mesesProf < 6 && mediaCargoPorHistorico.has(cargo)) {
+                    // Novato (<6 meses): usa média da categoria para não penalizar pelo período de ramp-up
+                    mediaProf = mediaCargoPorHistorico.get(cargo)!
+                    fonte = `Média da categoria (${mesesProf} mês${mesesProf !== 1 ? 'es' : ''} histórico${mesesProf !== 1 ? 's' : ''} — novato)`
+                    pico = picoCargoPorHistorico.get(cargo) || pico
+                  } else {
+                    mediaProf = mediaHistoricaMap.get(prof.id)!
+                    fonte = `Média de ${mesesProf} mês${mesesProf !== 1 ? 'es' : ''} histórico${mesesProf !== 1 ? 's' : ''}`
+                  }
                 } else if (mediaCargoPorHistorico.has(cargo)) {
                   mediaProf = mediaCargoPorHistorico.get(cargo)!
                   fonte = `Média histórica de ${prof.cargo || 'categoria'}`
