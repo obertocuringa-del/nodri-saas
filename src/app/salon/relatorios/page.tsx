@@ -612,6 +612,44 @@ export default function RelatoriosPage() {
     localStorage.setItem(META_KEY, JSON.stringify({ valor: val, tipo: metaTipo }))
     setMetaSalva(val)
     toast.success(`Meta salva: ${moeda(val)}`)
+    // Salva config no banco para a IA acessar
+    fetch('/api/ia/metas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ano: p1Ano, mes: p1Mes, meta_tipo: metaTipo, meta_valor: val, meta_pct: parseFloat(metaPct || '0') }),
+    }).catch(() => {})
+  }
+
+  async function salvarMetasProfsParaIA(
+    ano: number, mes: number,
+    metaEmComissoes: number,
+    resultado: any[],
+    redistResultado: any[]
+  ) {
+    const metas_profissionais = resultado.map(r => {
+      const redist = redistResultado.find((rd: any) => rd.prof.id === r.prof.id)
+      return {
+        prof_id: r.prof.id,
+        nome: r.prof.nome_completo,
+        cargo: r.prof.cargo,
+        meta_original: Math.round(r.meta * 100) / 100,
+        meta_redistribuida: redist ? Math.round(redist.metaRedistribuida * 100) / 100 : Math.round(r.meta * 100) / 100,
+        realizado: Math.round(r.realizado * 100) / 100,
+        fonte: r.fonte,
+        tipo_redistribuicao: redist?.tipo || 'neutro',
+        motivo_redistribuicao: redist?.motivo || '',
+      }
+    })
+    try {
+      await fetch('/api/ia/metas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ano, mes, meta_em_comissoes: Math.round(metaEmComissoes * 100) / 100, metas_profissionais }),
+      })
+      toast.success('Metas salvas para a IA!')
+    } catch {
+      toast.error('Erro ao salvar metas para a IA')
+    }
   }
 
   // Anos disponíveis para o seletor
@@ -1620,8 +1658,19 @@ export default function RelatoriosPage() {
               const totalAjustados = redistResultado.filter(r => r.tipo !== 'neutro').length
               const somaRedist = redistResultado.reduce((s, r) => s + r.metaRedistribuida, 0)
 
+              // Botão salvar para IA (disponível em ambas as abas)
+              const btnSalvarIA = (
+                <button
+                  onClick={() => salvarMetasProfsParaIA(p1Ano, p1Mes, metaEmComissoes, resultado, redistResultado)}
+                  style={{ background: 'linear-gradient(135deg, #7c5cfc, #f43f8e)', color: 'white', border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer', marginBottom: 16 }}
+                >
+                  💾 Salvar metas para a IA
+                </button>
+              )
+
               if (aba === 'redistribuicao') return (
                 <div>
+                  {btnSalvarIA}
                   {/* Card resumo */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10, marginBottom: 16 }}>
                     {[
@@ -1690,6 +1739,7 @@ export default function RelatoriosPage() {
 
               return (
                 <div>
+                  {btnSalvarIA}
                   {/* ── Painel explicativo do cálculo ── */}
                   <details style={{ marginBottom: 16 }}>
                     <summary style={{ cursor: 'pointer', fontSize: 12, fontWeight: 700, color: '#7c5cfc', letterSpacing: 0.5, listStyle: 'none', display: 'flex', alignItems: 'center', gap: 6, userSelect: 'none' }}>

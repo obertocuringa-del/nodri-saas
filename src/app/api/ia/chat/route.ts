@@ -343,6 +343,50 @@ function formatarDadosSalao(dados: any, profissionalId?: string): string {
     linhas.push('')
   }
 
+  // Metas do salão e por profissional (salvas pelo gestor)
+  if (dados.metas_salao?.length) {
+    const MESES_M = ['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+    linhas.push('## METAS DO SALÃO (configuradas pelo gestor)')
+    for (const m of dados.metas_salao) {
+      const per = `${MESES_M[m.mes]}/${m.ano}`
+      linhas.push(`### Metas de ${per}`)
+      linhas.push(`  Meta bruta total: R$${Number(m.meta_valor||0).toFixed(2)} | Meta em comissões: R$${Number(m.meta_em_comissoes||0).toFixed(2)}`)
+      if (m.metas_profissionais?.length) {
+        linhas.push(`  META POR PROFISSIONAL (${per}):`)
+        linhas.push(`  Nome | Cargo | Meta Original | Meta Redistribuída | Realizado | Tipo`)
+        for (const mp of m.metas_profissionais) {
+          const realPct = mp.meta_redistribuida > 0 ? ` (${Math.round(mp.realizado/mp.meta_redistribuida*100)}% atingido)` : ''
+          linhas.push(`  ${mp.nome} (${mp.cargo}): Meta=${fmtR(mp.meta_original)}, Meta Redistribuída=${fmtR(mp.meta_redistribuida)}, Realizado=${fmtR(mp.realizado)}${realPct}, Tipo=${mp.tipo_redistribuicao}`)
+          if (mp.motivo_redistribuicao && mp.tipo_redistribuicao !== 'neutro') {
+            linhas.push(`    → ${mp.motivo_redistribuicao}`)
+          }
+          if (mp.fonte) linhas.push(`    → Base de cálculo: ${mp.fonte}`)
+        }
+      }
+      linhas.push('')
+    }
+    // Se há profissional em foco, destacar especificamente a meta dele
+    if (profissionalId) {
+      const profDados = dados.prof_especifico?.dados
+      if (profDados) {
+        const nomeProf = profDados.nome_completo
+        linhas.push(`## META ESPECÍFICA — ${nomeProf.toUpperCase()}`)
+        for (const m of dados.metas_salao) {
+          const per = `${MESES_M[m.mes]}/${m.ano}`
+          const metaProf = (m.metas_profissionais || []).find((mp: any) =>
+            mp.prof_id === profissionalId || mp.nome === nomeProf
+          )
+          if (metaProf) {
+            const atingido = metaProf.meta_redistribuida > 0 ? Math.round(metaProf.realizado/metaProf.meta_redistribuida*100) : 0
+            linhas.push(`  ${per}: Meta=${fmtR(metaProf.meta_redistribuida)}, Realizado=${fmtR(metaProf.realizado)}, Atingimento=${atingido}%`)
+            if (metaProf.fonte) linhas.push(`  Base: ${metaProf.fonte}`)
+          }
+        }
+        linhas.push('')
+      }
+    }
+  }
+
   // Dados especÃ­ficos do profissional
   if (profissionalId && dados.prof_especifico) {
     const pe = dados.prof_especifico
@@ -433,6 +477,7 @@ export async function POST(req: NextRequest) {
       { data: pendenciasResolvidas },
       { data: metricasMensais },
       { data: formulariosFeedback },
+      { data: metasSalao },
     ] = await Promise.all([
       supabaseAdmin.from('profissionais').select('*').eq('salao_id', salaoId),
       supabaseAdmin.from('relatorio_periodos').select('ano, mes, prof_pagamentos, prof_servicos, prof_ticket, prof_preferencia, prof_ocupacao, prof_produtos, resumo_mensal, faturamento_diario, servicos, produtos').eq('salao_id', salaoId).order('ano').order('mes'),
@@ -443,6 +488,7 @@ export async function POST(req: NextRequest) {
       supabaseAdmin.from('pendencias_profissionais').select('profissional_id, mensagem, data_limite, resolvido_em').eq('salao_id', salaoId).eq('resolvido', true).order('resolvido_em', { ascending: false }),
       supabaseAdmin.from('prof_metricas_mensais').select('profissional_id, ano, mes, faturamento, ticket_medio, clientes_preferencia, clientes_sem_preferencia, dias_trabalhados, taxa_ocupacao, total_servicos, total_produtos, servicos_detalhados').eq('salao_id', salaoId).order('ano').order('mes'),
       supabaseAdmin.from('feedback_formularios').select('id, titulo, token, ativo').eq('salao_id', salaoId),
+      supabaseAdmin.from('ia_metas_salao').select('ano, mes, meta_tipo, meta_valor, meta_pct, meta_em_comissoes, metas_profissionais, atualizado_em').eq('salao_id', salaoId).order('ano', { ascending: false }).order('mes', { ascending: false }).limit(3),
     ])
 
     // Extrai faturamento por profissional dos períodos
@@ -470,6 +516,7 @@ export async function POST(req: NextRequest) {
       pendencias_resolvidas: pendenciasResolvidas || [],
       metricas_mensais: metricasMensais || [],
       formularios_feedback: formulariosFeedback || [],
+      metas_salao: metasSalao || [],
     }
 
     // 5. Dados especÃ­ficos do profissional
