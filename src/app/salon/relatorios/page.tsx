@@ -1710,6 +1710,11 @@ export default function RelatoriosPage() {
                           titulo: 'Realizado vs. meta',
                           desc: 'O valor "Realizado" é o que o profissional efetivamente recebeu em comissão no período selecionado (p1), conforme os registros de pagamento.',
                         },
+                        {
+                          n: '★', cor: '#f59e0b',
+                          titulo: 'Regra novato (<6 meses)',
+                          desc: 'Profissionais com menos de 6 meses de histórico usam a média da sua categoria (cargo) como base, evitando que o período de adaptação gere uma meta artificialmente baixa. Ao completar 6 meses, migra automaticamente para a média pessoal.',
+                        },
                       ].map(step => (
                         <div key={step.n} style={{ background: '#060d18', border: `1px solid ${step.cor}30`, borderLeft: `3px solid ${step.cor}`, borderRadius: 10, padding: '12px 14px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
