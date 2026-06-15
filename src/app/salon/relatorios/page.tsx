@@ -876,7 +876,7 @@ export default function RelatoriosPage() {
                           <rect x={PL} y={bandTop} width={W-PL-PR} height={Math.max(0,bandBot-bandTop)} fill="#ffffff" fillOpacity={0.04} rx={2}/>
                           {/* linha média */}
                           <line x1={PL} y1={yOf(media)} x2={W-PR} y2={yOf(media)} stroke="#94a3b8" strokeWidth={1} strokeDasharray="4 3" opacity={0.5}/>
-                          <text x={W-PR+2} y={yOf(media)+3} fill="#94a3b8" fontSize={8}>μ</text>
+                          <text x={W-PR+2} y={yOf(media)+3} fill="#94a3b8" fontSize={8}>μ {(media/1000).toFixed(0)}k</text>
 
                           {/* rótulos meses */}
                           {Array.from({length:12},(_,i)=>{
@@ -925,13 +925,23 @@ export default function RelatoriosPage() {
                                 </g>
                               })}
                               {/* linha de tendência */}
-                              {trendPts && trendPts.length>=2 && (
-                                <polyline
-                                  points={trendPts.map(p=>`${xMes(p.mes)},${p.y}`).join(' ')}
-                                  fill="none" stroke={s.cor} strokeWidth={1.5} strokeDasharray="6 3" opacity={0.7}
-                                  strokeLinejoin="round" strokeLinecap="round"
-                                />
-                              )}
+                              {trendPts && trendPts.length>=2 && (() => {
+                                const ultimo = trendPts[trendPts.length-1]
+                                const primeiro = trendPts[0]
+                                const valUltimo = Math.max(0, reg!(ultimo.mes))
+                                const valPrimeiro = Math.max(0, reg!(primeiro.mes))
+                                return <>
+                                  <polyline
+                                    points={trendPts.map(p=>`${xMes(p.mes)},${p.y}`).join(' ')}
+                                    fill="none" stroke={s.cor} strokeWidth={1.5} strokeDasharray="6 3" opacity={0.7}
+                                    strokeLinejoin="round" strokeLinecap="round"
+                                  />
+                                  {/* valor no início da tendência */}
+                                  <text x={xMes(primeiro.mes)} y={primeiro.y-5} textAnchor="middle" fill={s.cor} fontSize={7.5} fontWeight={700} opacity={0.85}>{(valPrimeiro/1000).toFixed(0)}k</text>
+                                  {/* valor no fim da tendência */}
+                                  <text x={xMes(ultimo.mes)} y={ultimo.y-5} textAnchor="middle" fill={s.cor} fontSize={7.5} fontWeight={700} opacity={0.85}>{(valUltimo/1000).toFixed(0)}k</text>
+                                </>
+                              })()}
                             </g>
                           })}
                         </svg>
