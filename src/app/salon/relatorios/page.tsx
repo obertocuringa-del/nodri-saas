@@ -615,6 +615,7 @@ export default function RelatoriosPage() {
     // Salva config no banco para a IA acessar
     fetch('/api/ia/metas', {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ano: p1Ano, mes: p1Mes, meta_tipo: metaTipo, meta_valor: val, meta_pct: parseFloat(metaPct || '0') }),
     }).catch(() => {})
@@ -643,6 +644,7 @@ export default function RelatoriosPage() {
     try {
       await fetch('/api/ia/metas', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ano, mes, meta_em_comissoes: Math.round(metaEmComissoes * 100) / 100, metas_profissionais }),
       })

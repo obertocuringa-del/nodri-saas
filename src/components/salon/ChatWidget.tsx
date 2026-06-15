@@ -244,7 +244,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
       setCarregando(false)
       setTimeout(() => inputRef.current?.focus(), 100)
     }
-  }, [input, carregando, mensagens, conversaId])
+  }, [input, carregando, mensagens, conversaId, profissionalId])
 
   const limpar = () => {
     setMensagens([{ role: 'assistant', content: 'Olá! Sou a NODRI IA. Como posso te ajudar?' }])
