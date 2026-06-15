@@ -8,80 +8,95 @@ interface Mensagem {
   content: string
 }
 
-// Renderiza markdown completo: tabelas, listas, títulos, código, negrito, itálico
 function renderMarkdown(texto: string): string {
   if (!texto) return '<span style="opacity:0.4">...</span>'
 
+  // Extrai blocos especiais antes de escapar HTML
+  const blocos: string[] = []
   let html = texto
 
-  // Escapa HTML
+  // Blocos de código — preserva antes de escapar
+  html = html.replace(/```[\w]*\n?([\s\S]*?)```/g, (_, code) => {
+    const idx = blocos.length
+    blocos.push(`<pre style="background:#0d1117;border:1px solid #30363d;border-radius:10px;padding:14px 16px;overflow-x:auto;font-size:12.5px;line-height:1.7;margin:12px 0"><code style="color:#e6edf3;font-family:'Fira Mono',monospace">${code.trim().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</code></pre>`)
+    return `\x00BLOCO${idx}\x00`
+  })
+
+  // Escapa HTML restante
   html = html.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
-  // Blocos de código
-  html = html.replace(/```[\w]*\n?([\s\S]*?)```/g, (_, code) =>
-    `<pre style="background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:12px;overflow-x:auto;font-size:12px;line-height:1.6;margin:8px 0"><code style="color:#e6edf3;font-family:monospace">${code.trim()}</code></pre>`
-  )
-  html = html.replace(/`([^`]+)`/g, '<code style="background:#0d1117;border:1px solid #30363d;border-radius:4px;padding:2px 6px;font-size:12px;font-family:monospace;color:#79c0ff">$1</code>')
+  // Código inline
+  html = html.replace(/`([^`]+)`/g, '<code style="background:#1c2128;border:1px solid #30363d;border-radius:5px;padding:2px 7px;font-size:12.5px;font-family:monospace;color:#79c0ff">$1</code>')
 
-  // Tabelas
-  html = html.replace(/(\|.+\|\n)+/g, (block) => {
+  // Tabelas — zebra striping e hover
+  html = html.replace(/(\|.+\|\n?)+/g, (block) => {
     const rows = block.trim().split('\n').filter(r => r.trim())
-    const isSep = (r: string) => /^\|[-| :]+\|$/.test(r.trim())
-    let table = '<div style="overflow-x:auto;margin:10px 0"><table style="width:100%;border-collapse:collapse;font-size:13px">'
+    const isSep = (r: string) => /^\|[\s\-:|]+\|$/.test(r.trim())
+    let table = '<div style="overflow-x:auto;margin:14px 0;border-radius:10px;border:1px solid #30363d;overflow:hidden"><table style="width:100%;border-collapse:collapse;font-size:13px">'
     let isHead = true
+    let rowIdx = 0
     for (const row of rows) {
       if (isSep(row)) { isHead = false; continue }
       const cells = row.split('|').filter((_, i, a) => i > 0 && i < a.length - 1)
-      const tag = isHead ? 'th' : 'td'
-      const style = isHead
-        ? 'padding:8px 12px;border:1px solid #30363d;background:#161b22;color:#e6edf3;font-weight:600;text-align:left;font-size:12px'
-        : 'padding:8px 12px;border:1px solid #21262d;color:#c9d1d9;font-size:12px'
-      const trStyle = isHead ? '' : 'style="background:#0d1117"'
-      table += `<tr ${trStyle}>${cells.map(c => `<${tag} style="${style}">${c.trim()}</${tag}>`).join('')}</tr>`
+      if (isHead) {
+        table += `<thead><tr>${cells.map(c => `<th style="padding:10px 14px;background:#1c2128;color:#e6edf3;font-weight:600;text-align:left;font-size:12px;border-bottom:2px solid #f59e0b;white-space:nowrap">${c.trim()}</th>`).join('')}</tr></thead><tbody>`
+      } else {
+        const bg = rowIdx % 2 === 0 ? '#0d1117' : '#111827'
+        table += `<tr style="background:${bg}">${cells.map(c => `<td style="padding:9px 14px;border-bottom:1px solid #21262d;color:#c9d1d9;font-size:13px">${c.trim()}</td>`).join('')}</tr>`
+        rowIdx++
+      }
     }
-    table += '</table></div>'
+    table += '</tbody></table></div>'
     return table
   })
 
-  // Títulos
-  html = html.replace(/^### (.+)$/gm, '<h3 style="font-size:14px;font-weight:700;color:#e6edf3;margin:14px 0 6px;padding-bottom:4px;border-bottom:1px solid #21262d">$1</h3>')
-  html = html.replace(/^## (.+)$/gm, '<h2 style="font-size:16px;font-weight:700;color:#e6edf3;margin:16px 0 8px;padding-bottom:6px;border-bottom:1px solid #30363d">$1</h2>')
-  html = html.replace(/^# (.+)$/gm, '<h1 style="font-size:18px;font-weight:700;color:#e6edf3;margin:16px 0 10px">$1</h1>')
-
   // Linhas separadoras
-  html = html.replace(/^---+$/gm, '<hr style="border:none;border-top:1px solid #21262d;margin:12px 0"/>')
-  html = html.replace(/^═{3,}$/gm, '<hr style="border:none;border-top:2px solid #30363d;margin:16px 0"/>')
+  html = html.replace(/^---+$/gm, '<hr style="border:none;border-top:1px solid #21262d;margin:16px 0"/>')
+  html = html.replace(/^═{3,}$/gm, '<hr style="border:none;border-top:2px solid #30363d;margin:20px 0"/>')
+
+  // Títulos com visual destacado
+  html = html.replace(/^#### (.+)$/gm, '<p style="font-size:13px;font-weight:700;color:#8b949e;margin:12px 0 4px;text-transform:uppercase;letter-spacing:.5px">$1</p>')
+  html = html.replace(/^### (.+)$/gm, '<h3 style="font-size:15px;font-weight:700;color:#e6edf3;margin:18px 0 8px;display:flex;align-items:center;gap:8px"><span style="width:3px;height:16px;background:#f59e0b;border-radius:2px;display:inline-block;flex-shrink:0"></span>$1</h3>')
+  html = html.replace(/^## (.+)$/gm, '<h2 style="font-size:17px;font-weight:700;color:#e6edf3;margin:22px 0 10px;padding-bottom:8px;border-bottom:2px solid #f59e0b44">$1</h2>')
+  html = html.replace(/^# (.+)$/gm, '<h1 style="font-size:20px;font-weight:700;color:#e6edf3;margin:22px 0 12px">$1</h1>')
+
+  // Linhas com emoji no início (seções da IA: 📊 **Título**)
+  html = html.replace(/^([\u{1F300}-\u{1FFFF}\u{2600}-\u{27BF}])\s*\*\*(.+?)\*\*/gmu, (_, emoji, titulo) =>
+    `<div style="display:flex;align-items:center;gap:10px;margin:18px 0 10px;padding:10px 14px;background:#1c2128;border-radius:10px;border-left:3px solid #f59e0b"><span style="font-size:20px;flex-shrink:0">${emoji}</span><span style="color:#e6edf3;font-weight:700;font-size:15px">${titulo}</span></div>`
+  )
+  html = html.replace(/^([\u{1F300}-\u{1FFFF}\u{2600}-\u{27BF}])\s+(.+)$/gmu, (_, emoji, rest) =>
+    `<div style="display:flex;gap:10px;align-items:flex-start;margin:8px 0"><span style="font-size:17px;flex-shrink:0;line-height:1.5">${emoji}</span><span style="color:#c9d1d9;line-height:1.7">${rest}</span></div>`
+  )
 
   // Listas não-ordenadas
-  html = html.replace(/((?:^[ \t]*[-•]\s.+\n?)+)/gm, (block) => {
-    const items = block.trim().split('\n').map(l => l.replace(/^[ \t]*[-•]\s/, '').trim())
-    return '<ul style="margin:8px 0 8px 4px;padding:0;list-style:none">' +
-      items.map(i => `<li style="display:flex;gap:8px;align-items:flex-start;padding:3px 0;color:#c9d1d9;line-height:1.6"><span style="color:#f59e0b;flex-shrink:0;margin-top:2px">•</span><span>${i}</span></li>`).join('') +
+  html = html.replace(/((?:^[ \t]*[*\-•]\s.+\n?)+)/gm, (block) => {
+    const items = block.trim().split('\n').map(l => l.replace(/^[ \t]*[*\-•]\s/, '').trim()).filter(Boolean)
+    return '<ul style="margin:10px 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px">' +
+      items.map(i => `<li style="display:flex;gap:10px;align-items:flex-start;color:#c9d1d9;line-height:1.7"><span style="color:#f59e0b;flex-shrink:0;font-size:16px;line-height:1.4">›</span><span>${i}</span></li>`).join('') +
       '</ul>'
   })
 
   // Listas ordenadas
   html = html.replace(/((?:^\d+\.\s.+\n?)+)/gm, (block) => {
-    const items = block.trim().split('\n').map(l => l.replace(/^\d+\.\s/, '').trim())
-    return '<ol style="margin:8px 0 8px 4px;padding:0;list-style:none;counter-reset:item">' +
-      items.map((item, idx) => `<li style="display:flex;gap:8px;align-items:flex-start;padding:3px 0;color:#c9d1d9;line-height:1.6"><span style="color:#f59e0b;flex-shrink:0;font-weight:700;min-width:20px">${idx + 1}.</span><span>${item}</span></li>`).join('') +
+    const items = block.trim().split('\n').map(l => l.replace(/^\d+\.\s/, '').trim()).filter(Boolean)
+    return '<ol style="margin:10px 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px">' +
+      items.map((item, idx) => `<li style="display:flex;gap:10px;align-items:flex-start;color:#c9d1d9;line-height:1.7"><span style="color:#f59e0b;flex-shrink:0;font-weight:700;font-size:13px;min-width:22px;background:#1c2128;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;margin-top:2px">${idx+1}</span><span>${item}</span></li>`).join('') +
       '</ol>'
   })
 
   // Negrito e itálico
-  html = html.replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em style="color:#e6edf3">$1</em></strong>')
+  html = html.replace(/\*\*\*(.*?)\*\*\*/g, '<strong style="color:#fff"><em>$1</em></strong>')
   html = html.replace(/\*\*(.*?)\*\*/g, '<strong style="color:#e6edf3;font-weight:600">$1</strong>')
+  html = html.replace(/__(.*?)__/g, '<strong style="color:#e6edf3;font-weight:600">$1</strong>')
   html = html.replace(/\*(.*?)\*/g, '<em style="color:#adbac7">$1</em>')
 
-  // Emojis com seção destacada (linha começa com emoji + texto)
-  html = html.replace(/^([\u{1F300}-\u{1FFFF}]|[☀-⟿])\s+(.+)$/gmu, (_, emoji, rest) =>
-    `<div style="display:flex;gap:8px;align-items:flex-start;margin:10px 0"><span style="font-size:18px;flex-shrink:0">${emoji}</span><span style="color:#e6edf3;font-weight:500">${rest}</span></div>`
-  )
-
-  // Quebras de linha
-  html = html.replace(/\n\n/g, '</p><p style="margin:8px 0;color:#c9d1d9;line-height:1.7">')
+  // Quebras de linha → parágrafos
+  html = html.replace(/\n\n+/g, '</p><p style="margin:10px 0;color:#c9d1d9;line-height:1.8">')
   html = html.replace(/\n/g, '<br/>')
-  html = `<p style="margin:0;color:#c9d1d9;line-height:1.7">${html}</p>`
+  html = `<p style="margin:0;color:#c9d1d9;line-height:1.8;font-size:14px">${html}</p>`
+
+  // Restaura blocos de código
+  blocos.forEach((b, i) => { html = html.replace(`\x00BLOCO${i}\x00`, b) })
 
   return html
 }
