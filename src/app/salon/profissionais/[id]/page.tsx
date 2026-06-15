@@ -1660,7 +1660,7 @@ export default function PerfilProfissionalPage() {
   const [form, setForm] = useState<Partial<Profissional>>({})
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
-  const [tab, setTab] = useState<'cadastro'|'desempenho'|'faturamento'|'pendencias'|'ia'>('cadastro')
+  const [tab, setTab] = useState<'cadastro'|'desempenho'|'faturamento'|'ia'>('cadastro')
 
   const hoje = new Date()
   const mesAtual    = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,'0')}`
@@ -1774,7 +1774,6 @@ export default function PerfilProfissionalPage() {
           ['cadastro',' Dados Cadastrais'],
           ['faturamento',' Faturamento'],
           ['desempenho',' Ocorrências'],
-          ['pendencias',' Pendências'],
           ['ia',' IA'],
         ] as const).map(([t,l])=>(
           <button key={t} onClick={()=>setTab(t)}
@@ -1945,10 +1944,6 @@ export default function PerfilProfissionalPage() {
         )}
 
         {/*  PENDÊNCIAS  */}
-        {tab === 'pendencias' && (
-          <AbaPendencias profissionalId={id}/>
-        )}
-
         {/*  IA  */}
         {tab === 'ia' && (
           <AbaIA profissionalId={id} nomeProfissional={prof.apelido||prof.nome_completo}/>
