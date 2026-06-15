@@ -372,7 +372,7 @@ export default function ChatWidget() {
                 onKeyDown={onKeyDown}
                 placeholder="Pergunte algo sobre seu salão... (Enter para enviar, Shift+Enter para nova linha)"
                 disabled={carregando}
-                style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: '#e6edf3', fontSize: 14, lineHeight: 1.6, resize: 'none', minHeight: 24, maxHeight: 140, fontFamily: 'inherit', placeholder: '#8b949e' }}
+                style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: '#e6edf3', fontSize: 14, lineHeight: 1.6, resize: 'none', minHeight: 24, maxHeight: 140, fontFamily: 'inherit' }}
                 rows={1}
               />
               <button
