@@ -50,6 +50,25 @@ export async function POST(req: NextRequest) {
         atualizado_em: new Date().toISOString(),
       }, { onConflict: 'salao_id,ano,mes' })
 
+    // Grava também a meta individual de cada profissional (não altera o cálculo
+    // de redistribuição, apenas persiste o valor já calculado para uso na aba "Metas")
+    if (Array.isArray(metas_profissionais) && metas_profissionais.length > 0) {
+      const linhas = metas_profissionais
+        .filter((m: any) => m?.prof_id)
+        .map((m: any) => ({
+          salao_id: salaoId,
+          profissional_id: m.prof_id,
+          ano, mes,
+          meta_redistribuida: m.meta_redistribuida ?? m.meta_original ?? 0,
+          atualizado_em: new Date().toISOString(),
+        }))
+      if (linhas.length > 0) {
+        await supabaseAdmin
+          .from('metas_profissionais')
+          .upsert(linhas, { onConflict: 'profissional_id,ano,mes' })
+      }
+    }
+
     return NextResponse.json({ ok: true })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })

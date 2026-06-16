@@ -1662,7 +1662,7 @@ export default function PerfilProfissionalPage() {
   const [form, setForm] = useState<Partial<Profissional>>({})
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
-  const [tab, setTab] = useState<'cadastro'|'desempenho'|'faturamento'|'ia'>('cadastro')
+  const [tab, setTab] = useState<'cadastro'|'desempenho'|'faturamento'|'metas'|'ia'>('cadastro')
   const [servicosSalao, setServicosSalao] = useState<{id:string;categoria:string;nome:string;preco_fixo:number|null;preco_min:number|null;comissao_valor:number|null}[]>([])
   const [selectorAberto, setSelectorAberto] = useState(false)
   const selectorRef = useRef<HTMLDivElement>(null)
@@ -1722,6 +1722,61 @@ export default function PerfilProfissionalPage() {
   useEffect(() => {
     if (tab === 'desempenho' || tab === 'faturamento') buscarMetricas()
   }, [tab])
+
+  // ── Metas ──
+  const [metaInfo, setMetaInfo] = useState<{ ano:number; mes:number; meta_redistribuida:number; meta_manual:number|null; meta_final:number; realizado:number; plano:any } | null>(null)
+  const [loadMeta, setLoadMeta] = useState(false)
+  const [metaManualInput, setMetaManualInput] = useState('')
+  const [salvandoMeta, setSalvandoMeta] = useState(false)
+  const [gerandoEstrategia, setGerandoEstrategia] = useState(false)
+
+  const buscarMeta = useCallback(async () => {
+    setLoadMeta(true)
+    try {
+      const res = await fetch(`/api/profissionais/${id}/metas`)
+      if (res.ok) {
+        const d = await res.json()
+        setMetaInfo(d)
+        setMetaManualInput(d.meta_manual != null ? String(d.meta_manual) : '')
+      }
+    } catch(_) {}
+    setLoadMeta(false)
+  }, [id])
+
+  useEffect(() => {
+    if (tab === 'metas') buscarMeta()
+  }, [tab])
+
+  async function salvarMetaManual() {
+    if (!metaInfo) return
+    setSalvandoMeta(true)
+    try {
+      const res = await fetch(`/api/profissionais/${id}/metas`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ano: metaInfo.ano, mes: metaInfo.mes, meta_manual: metaManualInput })
+      })
+      if (res.ok) { toast.success('Meta atualizada!'); await buscarMeta() }
+      else toast.error('Erro ao salvar meta')
+    } catch { toast.error('Erro ao salvar meta') }
+    setSalvandoMeta(false)
+  }
+
+  async function gerarEstrategia() {
+    if (!metaInfo) return
+    setGerandoEstrategia(true)
+    try {
+      const res = await fetch(`/api/profissionais/${id}/estrategia-meta`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ano: metaInfo.ano, mes: metaInfo.mes })
+      })
+      const d = await res.json()
+      if (res.ok) {
+        await buscarMeta()
+        toast.success('Estratégia gerada!')
+      } else toast.error(d?.error || 'Erro ao gerar estratégia')
+    } catch { toast.error('Erro ao gerar estratégia') }
+    setGerandoEstrategia(false)
+  }
 
   async function salvar() {
     setSalvando(true)
@@ -1793,6 +1848,7 @@ export default function PerfilProfissionalPage() {
           ['cadastro',' Dados Cadastrais'],
           ['faturamento',' Faturamento'],
           ['desempenho',' Ocorrências'],
+          ['metas',' Metas'],
           ['ia',' IA'],
         ] as const).map(([t,l])=>(
           <button key={t} onClick={()=>setTab(t)}
@@ -2041,6 +2097,71 @@ export default function PerfilProfissionalPage() {
         {/*  IA  */}
         {tab === 'ia' && (
           <ChatWidget profissionalId={id} modoEmbarcado={true} />
+        )}
+
+        {/*  METAS  */}
+        {tab === 'metas' && (
+          <div className="space-y-6 max-w-3xl">
+            {loadMeta && <div className="flex justify-center py-10"><Loader2 size={24} className="animate-spin text-nodri-cyan"/></div>}
+            {!loadMeta && metaInfo && (() => {
+              const pct = metaInfo.meta_final > 0 ? Math.min((metaInfo.realizado / metaInfo.meta_final) * 100, 100) : 0
+              return (
+                <>
+                  <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h2 className="font-syne font-bold text-[13px] text-nodri-cyan">Meta de {MESES[metaInfo.mes-1]}/{metaInfo.ano}</h2>
+                      <span className="text-[11px] text-nodri-t3">{metaInfo.meta_manual != null ? 'Meta manual ativa' : 'Meta automática (redistribuição)'}</span>
+                    </div>
+
+                    <div>
+                      <div className="flex items-end justify-between mb-1">
+                        <span className="text-[20px] font-bold text-nodri-t1">{fmt$(metaInfo.realizado)}</span>
+                        <span className="text-[12px] text-nodri-t3">meta: {fmt$(metaInfo.meta_final)}</span>
+                      </div>
+                      <div className="w-full h-3 rounded-full bg-nodri-border/40 overflow-hidden">
+                        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: pct >= 100 ? '#22c55e' : 'linear-gradient(135deg, #7c5cfc, #00e5c8)' }} />
+                      </div>
+                      <p className="text-[11px] text-nodri-t3 mt-1">{pct.toFixed(0)}% da meta atingida</p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 pt-2 border-t border-nodri-border/50">
+                      <div>
+                        <label className={labelCls}>Meta redistribuída (automática)</label>
+                        <p className="text-[13px] text-nodri-t2 mt-1">{fmt$(metaInfo.meta_redistribuida)}</p>
+                      </div>
+                      <div>
+                        <label className={labelCls}>Meta manual (opcional)</label>
+                        <div className="flex gap-2 mt-1">
+                          <input type="number" value={metaManualInput} onChange={e=>setMetaManualInput(e.target.value)}
+                            placeholder="Deixe vazio para usar a automática" className={inputCls} />
+                          <button onClick={salvarMetaManual} disabled={salvandoMeta}
+                            className="px-3 py-2 rounded-lg bg-nodri-cyan text-nodri-dark text-[11px] font-bold hover:brightness-110 disabled:opacity-50 whitespace-nowrap">
+                            {salvandoMeta ? <Loader2 size={12} className="animate-spin"/> : 'Salvar'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button onClick={gerarEstrategia} disabled={gerandoEstrategia}
+                      style={{ background: 'linear-gradient(135deg, #7c5cfc, #f43f8e)' }}
+                      className="flex items-center gap-2 text-white px-4 py-2.5 rounded-xl text-[12px] font-bold disabled:opacity-50">
+                      {gerandoEstrategia ? <Loader2 size={14} className="animate-spin"/> : null}
+                      {metaInfo.plano ? '🎯 Recalcular Metas' : '🎯 Criar Estratégia para Bater a Meta'}
+                    </button>
+                  </div>
+
+                  {metaInfo.plano?.plano_texto && (
+                    <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
+                      <h3 className="font-syne font-bold text-[12px] text-nodri-cyan mb-3">Planejamento Estratégico</h3>
+                      <div className="text-[12px] text-nodri-t2 whitespace-pre-wrap leading-relaxed">{metaInfo.plano.plano_texto}</div>
+                    </div>
+                  )}
+                </>
+              )
+            })()}
+          </div>
         )}
 
         {/*  OCORRÊNCIAS (antigo Desempenho)  */}
