@@ -150,6 +150,25 @@ export async function calcularIndicadoresMeta(profissionalId: string, salaoId: s
     ocupacaoAtual, ocupacaoMediaHistorico, ticketAtual, ticketMedioHistorico, diasRestantes, faltam, taxaMediaCrescimento,
   })
 
+  // "Efeito dominó": se o principal gargalo fosse resolvido (ocupação ou ticket voltando à
+  // própria média histórica do profissional), qual seria a nova chance de bater a meta?
+  // Reaproveita o mesmo motor de cálculo (calcAlcancabilidade) — não é um número inventado,
+  // é a meta recalculada com o histórico real dele mesmo.
+  let probabilidade_se_resolver_gargalo: number | null = null
+  if (principal_gargalo.includes('ocupação') && ocupacaoAtual > 0 && ocupacaoMediaHistorico > ocupacaoAtual) {
+    const fator = ocupacaoMediaHistorico / ocupacaoAtual
+    const ajustada = calcAlcancabilidade({
+      metaFinal, maiorHistorico, realizado: realizado * fator, diasTranscorridos, totalDiasMes: ultimoDiaMes, taxaMediaCrescimento,
+    })
+    probabilidade_se_resolver_gargalo = ajustada.probabilidade
+  } else if (principal_gargalo.includes('ticket') && ticketAtual > 0 && ticketMedioHistorico > ticketAtual) {
+    const fator = ticketMedioHistorico / ticketAtual
+    const ajustada = calcAlcancabilidade({
+      metaFinal, maiorHistorico, realizado: realizado * fator, diasTranscorridos, totalDiasMes: ultimoDiaMes, taxaMediaCrescimento,
+    })
+    probabilidade_se_resolver_gargalo = ajustada.probabilidade
+  }
+
   return {
     realizado,
     faltam,
@@ -161,10 +180,32 @@ export async function calcularIndicadoresMeta(profissionalId: string, salaoId: s
     ocupacao_media_historico: Math.round(ocupacaoMediaHistorico * 100) / 100,
     taxa_media_crescimento: taxaMediaCrescimento,
     principal_gargalo,
+    probabilidade_se_resolver_gargalo,
     alcancabilidade,
     // dados brutos reaproveitados pelo Score NODRI/benchmarking — evita reconsultar o banco
     _historico: historico,
   }
+}
+
+// Identifica, com regras simples e dados reais (sem IA), o motivo provável por trás do
+// principal gargalo — ex.: ocupação baixa causada por atrasos/faltas recentes.
+export function identificarCausaRaiz(p: {
+  ocupacaoAtual: number; ocupacaoMediaHistorico: number
+  ticketAtual: number; ticketMedioHistorico: number
+  atrasos: number; faltas: number
+}): string {
+  const { ocupacaoAtual, ocupacaoMediaHistorico, ticketAtual, ticketMedioHistorico, atrasos, faltas } = p
+  const ocupacaoBaixa = ocupacaoMediaHistorico > 0 && ocupacaoAtual < ocupacaoMediaHistorico - 5
+  if (ocupacaoBaixa && (atrasos + faltas) >= 5) {
+    return 'A ocupação caiu porque os atrasos/faltas recentes reduziram a confiança da recepção em distribuir novos clientes para este profissional'
+  }
+  if (ocupacaoBaixa) {
+    return 'A ocupação está abaixo da média histórica dele mesmo, sem relação direta com atrasos/faltas — provável queda de demanda ou divulgação'
+  }
+  if (ticketMedioHistorico > 0 && ticketAtual < ticketMedioHistorico * 0.95) {
+    return 'O ticket médio caiu em relação ao histórico dele mesmo — sinal de menos venda de serviços/produtos de maior valor por atendimento'
+  }
+  return 'Não há gargalo estrutural claro nos dados — o foco deve ser manter o ritmo atual'
 }
 
 // ── Score NODRI, Benchmarking e Potencial Oculto ──────────────────────────
@@ -332,8 +373,12 @@ export async function calcularBenchmarking(salaoId: string, cargo: string, profi
 }
 
 // Identifica, com números reais, o serviço habilitado mais subutilizado de maior valor —
-// e estima quanto ele poderia faturar a mais se ampliasse esse serviço para 20% do volume
-export async function calcularPotencialOculto(salaoId: string, profissionalId: string, servicosHabilitados: string[]) {
+// e estima quanto ele poderia faturar a mais, dentro de um volume realista de execução
+// (limitado pelos dias restantes do mês, nunca um número fora da capacidade de agenda).
+export async function calcularPotencialOculto(
+  salaoId: string, profissionalId: string, servicosHabilitados: string[],
+  diasRestantes: number, faltam: number,
+) {
   if (!Array.isArray(servicosHabilitados) || servicosHabilitados.length === 0) return null
 
   const { data: prof } = await supabaseAdmin
@@ -386,8 +431,16 @@ export async function calcularPotencialOculto(salaoId: string, profissionalId: s
   if (candidatos.length === 0) return null
   const escolhido = candidatos[0]
   const qtdMeta = Math.round(totalAtendimentos * 0.2)
-  const qtdAdicional = Math.max(qtdMeta - escolhido.qtd, 0)
-  if (qtdAdicional === 0) return null
+  const qtdDesejada = Math.max(qtdMeta - escolhido.qtd, 0)
+  if (qtdDesejada === 0) return null
+
+  // Capa pela capacidade real de agenda nos dias restantes do mês — sem isso o cálculo
+  // pode sugerir um volume absurdo (ex.: 124 atendimentos de um serviço de alto valor),
+  // que nenhum profissional executa de fato. Estimamos no máximo 1 a cada 5 dias restantes.
+  const capacidadeMaxima = Math.max(1, Math.ceil(Math.max(diasRestantes, 1) / 5))
+  const qtdAdicional = Math.min(qtdDesejada, capacidadeMaxima)
+
+  const estimativaReceita = Math.round(qtdAdicional * escolhido.preco * 100) / 100
 
   return {
     servico: escolhido.nome,
@@ -395,6 +448,7 @@ export async function calcularPotencialOculto(salaoId: string, profissionalId: s
     participacao_atual_pct: Math.round(escolhido.participacao * 100),
     preco_medio: escolhido.preco,
     estimativa_atendimentos_adicionais: qtdAdicional,
-    estimativa_receita_adicional: Math.round(qtdAdicional * escolhido.preco * 100) / 100,
+    estimativa_receita_adicional: estimativaReceita,
+    cobertura_pct_do_que_falta: faltam > 0 ? Math.round((estimativaReceita / faltam) * 100) : null,
   }
 }

@@ -5,6 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import {
   calcularIndicadoresMeta, calcularScoreNodri, calcularBenchmarking,
   calcularPotencialOculto, buscarResumoComportamental, buscarFidelizacaoAtual,
+  identificarCausaRaiz,
 } from '@/lib/metasAnalitico'
 import Anthropic from '@anthropic-ai/sdk'
 
@@ -119,14 +120,24 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   // Indicadores 100% determinísticos (mesmo motor de cálculo usado na aba Metas) —
   // a IA recebe esses números prontos e NÃO deve recalculá-los, apenas interpretar.
   const indicadores = await calcularIndicadoresMeta(params.id, salaoId, ano, mes, metaFinal)
-  const { realizado, faltam, dias_restantes: diasRestantes, necessario_por_dia, ticket_atual, ocupacao_atual, ticket_medio_historico, taxa_media_crescimento, principal_gargalo, alcancabilidade } = indicadores
+  const {
+    realizado, faltam, dias_restantes: diasRestantes, necessario_por_dia, ticket_atual, ocupacao_atual,
+    ticket_medio_historico, ocupacao_media_historico, taxa_media_crescimento, principal_gargalo,
+    probabilidade_se_resolver_gargalo, alcancabilidade,
+  } = indicadores
 
   const [comportamental, fidelizacao, benchmarking, potencialOculto] = await Promise.all([
     buscarResumoComportamental(salaoId, nomeBase),
     buscarFidelizacaoAtual(salaoId, params.id, ano, mes).catch(() => ({ clientesPreferencia: 0, clientesSemPreferencia: 0 })),
     calcularBenchmarking(salaoId, prof.cargo, params.id, ano, mes),
-    calcularPotencialOculto(salaoId, params.id, prof.servicos_habilitados || []),
+    calcularPotencialOculto(salaoId, params.id, prof.servicos_habilitados || [], diasRestantes, faltam),
   ])
+
+  const causaRaiz = identificarCausaRaiz({
+    ocupacaoAtual: ocupacao_atual, ocupacaoMediaHistorico: ocupacao_media_historico,
+    ticketAtual: ticket_atual, ticketMedioHistorico: ticket_medio_historico,
+    atrasos: comportamental.atrasos, faltas: comportamental.faltas,
+  })
 
   const scoreNodri = calcularScoreNodri({
     chanceDeBaterMetaPct: alcancabilidade.probabilidade,
@@ -158,6 +169,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     taxa_ocupacao_atual: ocupacao_atual,
     chance_de_bater_meta_pct: alcancabilidade.probabilidade,
     principal_gargalo,
+    causa_raiz_do_gargalo: causaRaiz,
+    efeito_dominó_se_resolver_gargalo: probabilidade_se_resolver_gargalo != null
+      ? `se resolver "${principal_gargalo}", a chance de bater a meta sobe de ${alcancabilidade.probabilidade}% para ${probabilidade_se_resolver_gargalo}%`
+      : 'sem dado histórico suficiente para projetar o efeito de resolver o gargalo',
     score_nodri: scoreNodri,
     benchmarking: benchmarking || 'sem colegas suficientes na mesma categoria para comparar',
     potencial_oculto: potencialOculto || 'sem dado suficiente de serviços para identificar oportunidade específica',
@@ -176,7 +191,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     },
   }, null, 2)
 
-  const prompt = `Você é a NODRI IA atuando simultaneamente como Diretora Executiva, Gestora Comercial, Gestora Financeira, Especialista em Performance, Mentora de Desenvolvimento Profissional e Consultora de Experiência do Cliente. Seu objetivo não é apenas calcular números — é identificar o caminho mais provável, realista e executável para este profissional atingir ou superar sua meta.
+  const prompt = `Você é a NODRI IA, mentora de performance de um salão de beleza. Você não escreve relatório corporativo — você fala como um mentor experiente que olhou os números e foi direto ao ponto com o profissional. Frases curtas, tom humano, sem enrolação teórica.
+
+REGRAS CRÍTICAS:
+1. Os números abaixo em "DADOS NUMÉRICOS JÁ CALCULADOS PELO SISTEMA" são fatos. NÃO recalcule, NÃO corrija, NÃO estime valores diferentes destes.
+2. NUNCA sugira uma quantidade de atendimentos, serviços ou volume de trabalho fora da capacidade real de agenda do profissional nos dias restantes do mês — os números de "potencial_oculto" já vêm limitados a um volume realista, use exatamente esses.
+3. Limite TODA lista de ações a no máximo 3 itens. Não gere 8 ou 10 sugestões — escolha as 3 que mais movem o resultado e descarte o resto.
+4. Se um campo vier como "sem dado suficiente" ou similar, diga isso com transparência em vez de inventar um número.
+5. Nunca invente serviços ou preços fora da lista de SERVIÇOS QUE REALIZA.
 
 PROFISSIONAL: ${prof.nome_completo} (${prof.apelido || ''}) — Cargo: ${prof.cargo}
 HABILIDADES (texto livre): ${prof.habilidades || 'não informado'}
@@ -187,47 +209,51 @@ ${servicosTexto}
 FEEDBACKS DE CLIENTES (texto livre, contexto qualitativo):
 ${feedbacksTexto}
 
-DADOS NUMÉRICOS JÁ CALCULADOS PELO SISTEMA (regra crítica: estes números são fatos. NÃO recalcule, NÃO corrija, NÃO estime valores diferentes destes — apenas interprete e construa a estratégia em cima deles. Se um campo vier como "sem dado suficiente", diga isso com transparência em vez de inventar um número):
+DADOS NUMÉRICOS JÁ CALCULADOS PELO SISTEMA:
 ${contratoJson}
 
-Gere a resposta EXATAMENTE na estrutura abaixo, em markdown, direta e sem teoria, usando R$ sempre que possível e nunca inventando serviços/preços fora da lista acima:
+Gere a resposta EXATAMENTE na estrutura abaixo, em markdown, usando R$ sempre que possível:
 
 ## 🎯 Resumo Executivo
-(meta, faturado, falta, dias restantes, chance de atingir, principal oportunidade, principal risco — em frases curtas e diretas)
+(2-3 frases diretas: meta, faturado, falta, dias restantes, chance de atingir — tom de mentor, não de relatório)
 
 ## 📊 Score NODRI
 (mostre o total e a classificação vindos de score_nodri, e comente em 1 frase cada um dos 6 componentes: financeiro, comercial, fidelização, qualidade, comprometimento, evolução)
 
 ## 🔍 Raio-X 360°
-(para cada eixo — Financeiro, Comercial, Técnico, Comportamental, Experiência do Cliente — liste 1 ponto forte e 1 ponto fraco, baseado nos dados reais fornecidos, especialmente feedbacks e comportamental)
+(para cada eixo — Financeiro, Comercial, Técnico, Comportamental, Experiência do Cliente — 1 ponto forte e 1 ponto fraco, direto, baseado nos dados reais)
+
+## 🧠 Causa Raiz
+(use "causa_raiz_do_gargalo" e explique em 2-3 frases, no estilo: "o problema não é X, o problema é Y, e a causa disso é Z" — conecte os pontos, não apenas repita o dado)
+
+## ⚡ Efeito Dominó
+(use "efeito_dominó_se_resolver_gargalo": explique o que acontece em cadeia se o principal_gargalo for resolvido — ex.: resolve atraso → sobe ocupação → sobe faturamento → sobe chance de bater meta. Se vier "sem dado suficiente", diga isso e explique por que ainda assim vale resolver o gargalo)
 
 ## 🔮 Inteligência Preditiva
-(apresente os 3 cenários de "cenarios" — conservador, realista, otimista — explicando o que cada um significa na prática)
+(apresente os 3 cenários de "cenarios" — conservador, realista, otimista — em 1 frase cada)
 
 ## 💎 Potencial Oculto
-(se "potencial_oculto" tiver dado, explique a oportunidade com os números reais fornecidos; se vier como "sem dado suficiente", diga isso claramente e sugira como o profissional pode começar a gerar esse dado)
+(se "potencial_oculto" tiver dado, explique a oportunidade usando EXATAMENTE os números fornecidos, incluindo quanto isso cobre do valor que falta — "cobertura_pct_do_que_falta". Se vier "sem dado suficiente", diga isso e sugira como começar a gerar esse dado)
 
 ## 🏆 Benchmarking
-(se "benchmarking" tiver dado, mostre a posição do profissional entre os colegas do mesmo cargo; se vier como mensagem de "sem colegas suficientes", diga isso claramente)
+(se tiver dado, mostre a posição entre os colegas do mesmo cargo em 1-2 frases; se não, diga que não há colegas suficientes para comparar)
 
-## 💰 Estratégia para Bater a Meta
-(como aumentar faturamento, ticket médio e ocupação usando APENAS os serviços e habilidades reais deste profissional, e atacando o "principal_gargalo" identificado)
+## 🎯 As 3 Ações Que Mais Impactam a Meta
+(exatamente 3 ações, ordenadas por impacto, usando apenas os serviços/habilidades reais do profissional — não liste mais que isso)
+
+## 💰 Caminho Mais Curto Para Bater a Meta
+(combine o potencial_oculto + resolver o principal_gargalo num único parágrafo objetivo: "se ele fizer X e resolver Y, isso cobre Z% do que falta" — use os números reais de cobertura_pct_do_que_falta e necessario_por_dia)
 
 ## 📅 Plano de Execução
 ### Diário
-(ações simples e executáveis, com meta de faturamento por dia baseada em "necessario_por_dia")
+(o que fazer todo dia, com a meta de faturamento diário de "necessario_por_dia")
 ### Semanal
-(prioridades da semana)
-### Quinzenal
-(checkpoint de meio de mês — o que avaliar e ajustar)
+(no máximo 3 prioridades da semana)
 ### Mensal
-(visão consolidada e resultado esperado)
-
-## 🧠 Plano de Evolução Profissional
-(com base no comportamental e feedbacks: hábitos a corrigir, competências a desenvolver, treinamentos recomendados)
+(resultado esperado no fim do mês)
 
 ## 🚨 Alertas Críticos
-(os 3 maiores riscos para bater a meta, baseados nos dados reais)
+(os 2-3 maiores riscos para bater a meta, baseados nos dados reais)
 
 ## 🏆 Missão dos Próximos 30 Dias
 (resumo simples: meta principal, meta diária, comportamento obrigatório, serviço prioritário, resultado esperado)`
