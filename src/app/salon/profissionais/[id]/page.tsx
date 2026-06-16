@@ -1807,7 +1807,7 @@ export default function PerfilProfissionalPage() {
     realizado:number; faltam:number; dias_restantes:number; necessario_por_dia:number
     ticket_atual:number; ocupacao_atual:number; ticket_medio_historico:number; ocupacao_media_historico:number
     taxa_media_crescimento:number|null; principal_gargalo:string
-    alcancabilidade: { probabilidade:number|null; label:string; cor:string; maior_historico:number }
+    alcancabilidade: { probabilidade:number|null; label:string; cor:string; maior_historico:number; maior_historico_mes?:number|null; maior_historico_ano?:number|null }
     plano:any
   } | null>(null)
   const [loadMeta, setLoadMeta] = useState(false)

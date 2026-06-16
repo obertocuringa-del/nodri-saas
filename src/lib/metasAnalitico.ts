@@ -59,13 +59,13 @@ function identificarGargalo(p: {
 const STOPWORDS_NOME = new Set(['da', 'de', 'do', 'das', 'dos', 'e'])
 
 function criarMatchProf(nomeCompleto: string, apelido: string) {
-  const tokens = nomeCompleto.split(/\s+/).filter((t) => t && !STOPWORDS_NOME.has(t)).slice(0, 2)
+  const tokens = nomeCompleto.split(/\s+/).filter((t: string) => t && !STOPWORDS_NOME.has(t)).slice(0, 2)
   return (item: any): boolean => {
     const n = (item.profissional || item.profissional_original || '').toLowerCase().trim()
     if (!n) return false
     if (n === nomeCompleto) return true
     if (apelido && (n === apelido || n.includes(apelido) || apelido.includes(n))) return true
-    const nTokens = n.split(/\s+/).filter((t) => t && !STOPWORDS_NOME.has(t))
+    const nTokens = n.split(/\s+/).filter((t: string) => t && !STOPWORDS_NOME.has(t))
     if (tokens.length === 0 || nTokens.length === 0) return false
     const matchCount = tokens.filter((t: string) => nTokens.some((nt: string) => nt.startsWith(t) || t.startsWith(nt))).length
     return matchCount >= Math.min(tokens.length, 2)
