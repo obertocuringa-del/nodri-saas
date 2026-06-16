@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
-import { calcularIndicadoresMeta } from '@/lib/metasAnalitico'
+import {
+  calcularIndicadoresMeta, calcularScoreNodri, calcularBenchmarking,
+  calcularPotencialOculto, buscarResumoComportamental, buscarFidelizacaoAtual,
+} from '@/lib/metasAnalitico'
 import Anthropic from '@anthropic-ai/sdk'
 
 async function getSalaoId() {
@@ -111,7 +114,33 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   // Indicadores 100% determinísticos (mesmo motor de cálculo usado na aba Metas) —
   // a IA recebe esses números prontos e NÃO deve recalculá-los, apenas interpretar.
   const indicadores = await calcularIndicadoresMeta(params.id, salaoId, ano, mes, metaFinal)
-  const { realizado, faltam, dias_restantes: diasRestantes, necessario_por_dia, ticket_atual, ocupacao_atual, principal_gargalo, alcancabilidade } = indicadores
+  const { realizado, faltam, dias_restantes: diasRestantes, necessario_por_dia, ticket_atual, ocupacao_atual, ticket_medio_historico, taxa_media_crescimento, principal_gargalo, alcancabilidade } = indicadores
+
+  const [comportamental, fidelizacao, benchmarking, potencialOculto] = await Promise.all([
+    buscarResumoComportamental(salaoId, nomeBase),
+    buscarFidelizacaoAtual(salaoId, params.id, ano, mes).catch(() => ({ clientesPreferencia: 0, clientesSemPreferencia: 0 })),
+    calcularBenchmarking(salaoId, prof.cargo, params.id, ano, mes),
+    calcularPotencialOculto(salaoId, params.id, prof.servicos_habilitados || []),
+  ])
+
+  const scoreNodri = calcularScoreNodri({
+    chanceDeBaterMetaPct: alcancabilidade.probabilidade,
+    ticketAtual: ticket_atual,
+    ticketMedioHistorico: ticket_medio_historico,
+    ocupacaoAtual: ocupacao_atual,
+    clientesPreferencia: fidelizacao.clientesPreferencia,
+    clientesSemPreferencia: fidelizacao.clientesSemPreferencia,
+    positivos: comportamental.positivos,
+    negativos: comportamental.negativos,
+    atrasos: comportamental.atrasos,
+    faltas: comportamental.faltas,
+    taxaMediaCrescimento: taxa_media_crescimento,
+  })
+
+  // Cenários de projeção (determinísticos, a partir do ritmo atual + ajuste de execução do plano)
+  const projecaoConservadora = Math.round((alcancabilidade.projecao_ritmo_atual || realizado) * 100) / 100
+  const projecaoRealista = Math.round(((alcancabilidade.projecao_ritmo_atual || realizado) * 1.1) * 100) / 100
+  const projecaoOtimista = Math.round((metaFinal * 1.05) * 100) / 100
 
   const contratoJson = JSON.stringify({
     meta: Math.round(metaFinal * 100) / 100,
@@ -120,12 +149,29 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     dias_restantes: diasRestantes,
     necessario_por_dia: Math.round(necessario_por_dia * 100) / 100,
     ticket_medio_atual: ticket_atual,
+    ticket_medio_historico,
     taxa_ocupacao_atual: ocupacao_atual,
     chance_de_bater_meta_pct: alcancabilidade.probabilidade,
     principal_gargalo,
+    score_nodri: scoreNodri,
+    benchmarking: benchmarking || 'sem colegas suficientes na mesma categoria para comparar',
+    potencial_oculto: potencialOculto || 'sem dado suficiente de serviços para identificar oportunidade específica',
+    comportamental: {
+      feedbacks_positivos: comportamental.positivos,
+      feedbacks_negativos: comportamental.negativos,
+      atrasos_recentes: comportamental.atrasos,
+      faltas_recentes: comportamental.faltas,
+      principais_elogios: comportamental.top_elogios,
+      principais_reclamacoes: comportamental.top_reclamacoes,
+    },
+    cenarios: {
+      conservador: projecaoConservadora,
+      realista: projecaoRealista,
+      otimista: projecaoOtimista,
+    },
   }, null, 2)
 
-  const prompt = `Você é um especialista em gestão de salões de beleza e produtividade de profissionais. Crie um planejamento estratégico SIMPLES e REALISTA para o profissional abaixo bater a meta do mês.
+  const prompt = `Você é a NODRI IA atuando simultaneamente como Diretora Executiva, Gestora Comercial, Gestora Financeira, Especialista em Performance, Mentora de Desenvolvimento Profissional e Consultora de Experiência do Cliente. Seu objetivo não é apenas calcular números — é identificar o caminho mais provável, realista e executável para este profissional atingir ou superar sua meta.
 
 PROFISSIONAL: ${prof.nome_completo} (${prof.apelido || ''}) — Cargo: ${prof.cargo}
 HABILIDADES (texto livre): ${prof.habilidades || 'não informado'}
@@ -133,33 +179,62 @@ HABILIDADES (texto livre): ${prof.habilidades || 'não informado'}
 SERVIÇOS QUE REALIZA (com preço e comissão líquida por serviço):
 ${servicosTexto}
 
-FEEDBACKS DE CLIENTES:
+FEEDBACKS DE CLIENTES (texto livre, contexto qualitativo):
 ${feedbacksTexto}
 
-DADOS NUMÉRICOS JÁ CALCULADOS (não recalcule nada disso, apenas use e interprete estes valores exatamente como estão):
+DADOS NUMÉRICOS JÁ CALCULADOS PELO SISTEMA (regra crítica: estes números são fatos. NÃO recalcule, NÃO corrija, NÃO estime valores diferentes destes — apenas interprete e construa a estratégia em cima deles. Se um campo vier como "sem dado suficiente", diga isso com transparência em vez de inventar um número):
 ${contratoJson}
 
-Gere um plano de ação ALCANÇÁVEL, focado no resultado, considerando os serviços que ele realmente sabe fazer e o valor de comissão de cada um (priorize serviços com maior comissão quando fizer sentido) e o "principal_gargalo" indicado acima. Estruture a resposta EXATAMENTE assim, em markdown, sem rodeios nem teoria:
+Gere a resposta EXATAMENTE na estrutura abaixo, em markdown, direta e sem teoria, usando R$ sempre que possível e nunca inventando serviços/preços fora da lista acima:
 
-## Resumo da Meta
-(1-2 frases objetivas sobre a situação atual e o que precisa ser feito)
+## 🎯 Resumo Executivo
+(meta, faturado, falta, dias restantes, chance de atingir, principal oportunidade, principal risco — em frases curtas e diretas)
 
-## Plano Diário
-(o que fazer todo dia — ex: quantos atendimentos, quais serviços priorizar, meta de faturamento por dia)
+## 📊 Score NODRI
+(mostre o total e a classificação vindos de score_nodri, e comente em 1 frase cada um dos 6 componentes: financeiro, comercial, fidelização, qualidade, comprometimento, evolução)
 
-## Plano Semanal
-(metas e ações por semana até o fim do mês)
+## 🔍 Raio-X 360°
+(para cada eixo — Financeiro, Comercial, Técnico, Comportamental, Experiência do Cliente — liste 1 ponto forte e 1 ponto fraco, baseado nos dados reais fornecidos, especialmente feedbacks e comportamental)
 
-## Plano Quinzenal
+## 🔮 Inteligência Preditiva
+(apresente os 3 cenários de "cenarios" — conservador, realista, otimista — explicando o que cada um significa na prática)
+
+## 💎 Potencial Oculto
+(se "potencial_oculto" tiver dado, explique a oportunidade com os números reais fornecidos; se vier como "sem dado suficiente", diga isso claramente e sugira como o profissional pode começar a gerar esse dado)
+
+## 🏆 Benchmarking
+(se "benchmarking" tiver dado, mostre a posição do profissional entre os colegas do mesmo cargo; se vier como mensagem de "sem colegas suficientes", diga isso claramente)
+
+## 💰 Estratégia para Bater a Meta
+(como aumentar faturamento, ticket médio e ocupação usando APENAS os serviços e habilidades reais deste profissional, e atacando o "principal_gargalo" identificado)
+
+## 📅 Plano de Execução
+### Diário
+(ações simples e executáveis, com meta de faturamento por dia baseada em "necessario_por_dia")
+### Semanal
+(prioridades da semana)
+### Quinzenal
 (checkpoint de meio de mês — o que avaliar e ajustar)
+### Mensal
+(visão consolidada e resultado esperado)
 
-## Plano Mensal
-(visão consolidada do mês e o resultado esperado)
+## 🎯 Foco da Semana
+(exatamente 3 prioridades, curtas e objetivas)
 
-## Orientações Práticas
-(3 a 5 dicas concretas e específicas para esse profissional, baseadas nas habilidades, comissões e feedbacks dele)
+## 🧠 Plano de Evolução Profissional
+(com base no comportamental e feedbacks: hábitos a corrigir, competências a desenvolver, treinamentos recomendados)
 
-Seja direto, use valores em R$ sempre que possível, e não invente serviços ou preços que não estão na lista acima.`
+## 🚨 Alertas Críticos
+(os 3 maiores riscos para bater a meta, baseados nos dados reais)
+
+## 🚀 Oportunidades de Alto Impacto
+(as 3 ações com maior potencial de resultado)
+
+## 👔 Visão do Gestor
+"Se eu fosse o gestor hoje, minhas prioridades seriam:" (liste 3 prioridades objetivas)
+
+## 🏆 Missão dos Próximos 30 Dias
+(resumo simples: meta principal, meta diária, comportamento obrigatório, serviço prioritário, resultado esperado)`
 
   let plano_texto = ''
   try {

@@ -162,5 +162,239 @@ export async function calcularIndicadoresMeta(profissionalId: string, salaoId: s
     taxa_media_crescimento: taxaMediaCrescimento,
     principal_gargalo,
     alcancabilidade,
+    // dados brutos reaproveitados pelo Score NODRI/benchmarking — evita reconsultar o banco
+    _historico: historico,
+  }
+}
+
+// ── Score NODRI, Benchmarking e Potencial Oculto ──────────────────────────
+// Tudo aqui é determinístico, calculado a partir de dados reais do banco.
+// Nenhum desses números é decidido pela IA — ela só recebe o resultado pronto.
+
+function clamp(v: number, min: number, max: number) { return Math.max(min, Math.min(max, v)) }
+
+function classificarScore(total: number): string {
+  if (total >= 95) return '🏆 Elite'
+  if (total >= 85) return '🔵 Alta Performance'
+  if (total >= 70) return '🟢 Bom'
+  if (total >= 50) return '🟡 Atenção'
+  return '🔴 Crítico'
+}
+
+// Conta ocorrências de feedback (positivas/negativas) e sinaliza atrasos/faltas recorrentes
+export async function buscarResumoComportamental(salaoId: string, nomeBase: string) {
+  if (!nomeBase) return { positivos: 0, negativos: 0, atrasos: 0, faltas: 0, top_elogios: [] as string[], top_reclamacoes: [] as string[] }
+
+  const { data: respostas } = await supabaseAdmin
+    .from('feedback_prof_respostas')
+    .select('tipo, ocorrido_descricao, descricao, criado_em')
+    .eq('salao_id', salaoId)
+    .ilike('profissional_nome', `%${nomeBase}%`)
+    .order('criado_em', { ascending: false })
+    .limit(60)
+
+  const lista = respostas || []
+  const positivos = lista.filter((r: any) => (r.tipo || '').toLowerCase().includes('positiv'))
+  const negativos = lista.filter((r: any) => (r.tipo || '').toLowerCase().includes('negativ'))
+  const contemPalavra = (txt: string, palavras: string[]) => palavras.some(p => txt.toLowerCase().includes(p))
+  const atrasos = negativos.filter((r: any) => contemPalavra(r.ocorrido_descricao || r.descricao || '', ['atraso', 'atrasou'])).length
+  const faltas = negativos.filter((r: any) => contemPalavra(r.ocorrido_descricao || r.descricao || '', ['falta', 'faltou', 'ausência', 'ausencia'])).length
+
+  const top = (arr: any[]) => Array.from(new Set(arr.map((r: any) => r.ocorrido_descricao || r.descricao).filter(Boolean))).slice(0, 5) as string[]
+
+  return { positivos: positivos.length, negativos: negativos.length, atrasos, faltas, top_elogios: top(positivos), top_reclamacoes: top(negativos) }
+}
+
+// Clientes com/sem preferência no período (usado na dimensão Fidelização do Score NODRI)
+export async function buscarFidelizacaoAtual(salaoId: string, profissionalId: string, ano: number, mes: number) {
+  const { data: prof } = await supabaseAdmin
+    .from('profissionais')
+    .select('nome_completo, apelido')
+    .eq('id', profissionalId)
+    .single()
+  if (!prof) return { clientesPreferencia: 0, clientesSemPreferencia: 0 }
+
+  const matchProf = criarMatchProf((prof.nome_completo || '').toLowerCase().trim(), (prof.apelido || '').toLowerCase().trim())
+
+  const { data: periodo } = await supabaseAdmin
+    .from('relatorio_periodos')
+    .select('prof_preferencia')
+    .eq('salao_id', salaoId)
+    .eq('ano', ano).eq('mes', mes)
+    .maybeSingle()
+
+  let clientesPreferencia = 0, clientesSemPreferencia = 0
+  for (const item of (periodo?.prof_preferencia || [])) {
+    if (matchProf(item)) {
+      clientesPreferencia += Number(item.clientes_preferencia || 0)
+      clientesSemPreferencia += Number(item.clientes_sem_preferencia || 0)
+    }
+  }
+  return { clientesPreferencia, clientesSemPreferencia }
+}
+
+// Calcula o Score NODRI (0-100) ponderando 6 dimensões, todas a partir de dados reais
+export function calcularScoreNodri(p: {
+  chanceDeBaterMetaPct: number | null
+  ticketAtual: number; ticketMedioHistorico: number
+  ocupacaoAtual: number
+  clientesPreferencia: number; clientesSemPreferencia: number
+  positivos: number; negativos: number
+  atrasos: number; faltas: number
+  taxaMediaCrescimento: number | null
+}) {
+  const financeiro = p.chanceDeBaterMetaPct ?? 50
+
+  const ticketScore = p.ticketMedioHistorico > 0
+    ? clamp(Math.round((p.ticketAtual / p.ticketMedioHistorico) * 100), 0, 100)
+    : 50
+  const ocupacaoScore = clamp(Math.round(p.ocupacaoAtual), 0, 100)
+  const comercial = Math.round((ticketScore + ocupacaoScore) / 2)
+
+  const totalClientes = p.clientesPreferencia + p.clientesSemPreferencia
+  const fidelizacao = totalClientes > 0 ? clamp(Math.round((p.clientesPreferencia / totalClientes) * 100), 0, 100) : 50
+
+  const totalFeedbacks = p.positivos + p.negativos
+  const qualidade = totalFeedbacks > 0 ? clamp(Math.round((p.positivos / totalFeedbacks) * 100), 0, 100) : 60
+
+  const comprometimento = clamp(100 - (p.atrasos * 10 + p.faltas * 15), 0, 100)
+
+  const evolucao = clamp(Math.round(50 + (p.taxaMediaCrescimento ?? 0) * 100), 0, 100)
+
+  const total = Math.round(
+    financeiro * 0.25 + comercial * 0.20 + fidelizacao * 0.15 +
+    qualidade * 0.15 + comprometimento * 0.15 + evolucao * 0.10
+  )
+
+  return {
+    total,
+    classificacao: classificarScore(total),
+    componentes: { financeiro, comercial, fidelizacao, qualidade, comprometimento, evolucao },
+  }
+}
+
+// Ranking do profissional frente aos colegas do mesmo cargo, no mesmo salão/período
+export async function calcularBenchmarking(salaoId: string, cargo: string, profissionalId: string, ano: number, mes: number) {
+  const { data: colegas } = await supabaseAdmin
+    .from('profissionais')
+    .select('id, nome_completo, apelido')
+    .eq('salao_id', salaoId)
+    .eq('cargo', cargo)
+    .eq('ativo', true)
+
+  if (!colegas || colegas.length < 2) return null // benchmarking não faz sentido sozinho
+
+  const { data: periodos } = await supabaseAdmin
+    .from('relatorio_periodos')
+    .select('ano, mes, prof_pagamentos, prof_ticket, prof_ocupacao')
+    .eq('salao_id', salaoId)
+    .eq('ano', ano).eq('mes', mes)
+    .maybeSingle()
+
+  if (!periodos) return null
+
+  const linhas = colegas.map((c: any) => {
+    const nomeCompleto = (c.nome_completo || '').toLowerCase().trim()
+    const apelido = (c.apelido || '').toLowerCase().trim()
+    const matchProf = criarMatchProf(nomeCompleto, apelido)
+
+    let faturamento = 0
+    for (const item of (periodos.prof_pagamentos || [])) {
+      if (matchProf(item)) faturamento += Number(item.valor_a_pagar || 0) + Number(item.desconto || 0)
+    }
+    let ticket = 0, ticketCount = 0
+    for (const item of (periodos.prof_ticket || [])) {
+      if (matchProf(item)) { ticket += Number(item.ticket_medio || 0); ticketCount++ }
+    }
+    let ocupSum = 0, ocupCount = 0
+    for (const item of (periodos.prof_ocupacao || [])) {
+      if (matchProf(item)) { ocupSum += Number(item.taxa_ocupacao || 0); ocupCount++ }
+    }
+    return {
+      id: c.id,
+      faturamento,
+      ticket_medio: ticketCount > 0 ? ticket / ticketCount : 0,
+      taxa_ocupacao: ocupCount > 0 ? ocupSum / ocupCount : 0,
+    }
+  })
+
+  const posicao = (campo: 'faturamento' | 'ticket_medio' | 'taxa_ocupacao') => {
+    const ordenado = [...linhas].sort((a, b) => b[campo] - a[campo])
+    return ordenado.findIndex(l => l.id === profissionalId) + 1
+  }
+
+  return {
+    total_profissionais_categoria: linhas.length,
+    ranking_faturamento: posicao('faturamento'),
+    ranking_ticket_medio: posicao('ticket_medio'),
+    ranking_ocupacao: posicao('taxa_ocupacao'),
+  }
+}
+
+// Identifica, com números reais, o serviço habilitado mais subutilizado de maior valor —
+// e estima quanto ele poderia faturar a mais se ampliasse esse serviço para 20% do volume
+export async function calcularPotencialOculto(salaoId: string, profissionalId: string, servicosHabilitados: string[]) {
+  if (!Array.isArray(servicosHabilitados) || servicosHabilitados.length === 0) return null
+
+  const { data: prof } = await supabaseAdmin
+    .from('profissionais')
+    .select('nome_completo, apelido')
+    .eq('id', profissionalId)
+    .single()
+  if (!prof) return null
+
+  const matchProf = criarMatchProf((prof.nome_completo || '').toLowerCase().trim(), (prof.apelido || '').toLowerCase().trim())
+
+  const { data: periodos } = await supabaseAdmin
+    .from('relatorio_periodos')
+    .select('prof_servicos')
+    .eq('salao_id', salaoId)
+    .order('ano', { ascending: false }).order('mes', { ascending: false })
+    .limit(6)
+
+  const contagem: Record<string, number> = {}
+  let totalAtendimentos = 0
+  for (const row of (periodos || [])) {
+    for (const item of (row.prof_servicos || [])) {
+      if (!matchProf(item)) continue
+      const nome = item.servico || ''
+      contagem[nome] = (contagem[nome] || 0) + Number(item.quantidade || 0)
+      totalAtendimentos += Number(item.quantidade || 0)
+    }
+  }
+  if (totalAtendimentos === 0) return null
+
+  const { data: servicosCatalogo } = await supabaseAdmin
+    .from('salao_servicos')
+    .select('nome, preco_min, preco_fixo')
+    .in('id', servicosHabilitados)
+    .eq('ativo', true)
+
+  if (!servicosCatalogo || servicosCatalogo.length === 0) return null
+
+  // Entre os serviços habilitados, acha o de maior preço com menos de 20% de participação no volume
+  const candidatos = servicosCatalogo
+    .map((s: any) => {
+      const preco = Number(s.preco_fixo || s.preco_min || 0)
+      const qtd = contagem[s.nome] || 0
+      const participacao = totalAtendimentos > 0 ? qtd / totalAtendimentos : 0
+      return { nome: s.nome, preco, qtd, participacao }
+    })
+    .filter(c => c.preco > 0 && c.participacao < 0.2)
+    .sort((a, b) => b.preco - a.preco)
+
+  if (candidatos.length === 0) return null
+  const escolhido = candidatos[0]
+  const qtdMeta = Math.round(totalAtendimentos * 0.2)
+  const qtdAdicional = Math.max(qtdMeta - escolhido.qtd, 0)
+  if (qtdAdicional === 0) return null
+
+  return {
+    servico: escolhido.nome,
+    qtd_realizada_ultimos_meses: escolhido.qtd,
+    participacao_atual_pct: Math.round(escolhido.participacao * 100),
+    preco_medio: escolhido.preco,
+    estimativa_atendimentos_adicionais: qtdAdicional,
+    estimativa_receita_adicional: Math.round(qtdAdicional * escolhido.preco * 100) / 100,
   }
 }
