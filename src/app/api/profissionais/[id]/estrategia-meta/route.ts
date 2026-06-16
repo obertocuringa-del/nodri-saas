@@ -231,51 +231,66 @@ ${feedbacksTexto}
 DADOS NUMÉRICOS JÁ CALCULADOS PELO SISTEMA:
 ${contratoJson}
 
-Gere a resposta EXATAMENTE na estrutura abaixo, em markdown, usando R$ sempre que possível:
+Gere a resposta EXATAMENTE na estrutura abaixo, em markdown, usando R$ sempre que possível. Use **negrito** (markdown de verdade) para destacar números e palavras-chave. Use tabelas markdown (| Coluna | Coluna |) sempre que o conteúdo for tabular (Score, Benchmarking). Use os marcadores "✅ Pontos Fortes" e "⚠️ Pontos de Atenção" exatamente assim, como subtítulos dentro de cada eixo do Raio-X.
+
+## 🚀 PLANEJAMENTO ESTRATÉGICO DE META — ${prof.nome_completo.toUpperCase()}
 
 ## 🎯 Resumo Executivo
-(2-3 frases diretas: meta, faturado, falta, dias restantes, chance de atingir — tom de mentor, não de relatório)
+(liste: Meta Mensal, Faturamento Atual, Valor Restante, Dias Restantes — cada um em uma linha com **negrito** no valor)
+
+### 📈 Cenário Atual
+(probabilidade atual, principal oportunidade, principal gargalo, principal risco — uma linha cada)
+
+### 📌 Diagnóstico Rápido
+(2-3 frases tom de mentor conectando esses pontos — não repita os números, interprete-os)
 
 ## 📊 Score NODRI
-(mostre o total e a classificação vindos de score_nodri, e comente em 1 frase cada um dos 6 componentes: financeiro, comercial, fidelização, qualidade, comprometimento, evolução)
+**${scoreNodri.total}/100 — ${scoreNodri.classificacao}**
+
+Monte uma tabela markdown com colunas "Indicador" e "Nota" para os 6 componentes (financeiro, comercial, fidelização, qualidade, comprometimento, evolução), depois 2-3 frases de interpretação.
 
 ## 🔍 Raio-X 360°
-(para cada eixo — Financeiro, Comercial, Técnico, Comportamental, Experiência do Cliente — 1 ponto forte e 1 ponto fraco, direto, baseado nos dados reais; no eixo Comercial, considere também "venda_produtos" comparando o mês atual com a média histórica)
+(para cada eixo — 💰 Financeiro, 🛒 Comercial, ✂️ Técnico, 👥 Comportamental, ❤️ Experiência do Cliente — escreva o nome do eixo como subtítulo, depois "✅ Pontos Fortes" com 1-2 bullets e "⚠️ Pontos de Atenção" com 1-2 bullets, baseado nos dados reais; no eixo Comercial considere "venda_produtos"; no eixo Comportamental considere "pendencias_abertas" se houver)
 
 ## 🧠 Causa Raiz
-(use "causa_raiz_do_gargalo" e, se houver, "pendencias_abertas" vencidas — explique em 2-3 frases, no estilo: "o problema não é X, o problema é Y, e a causa disso é Z" — conecte os pontos, não apenas repita o dado)
+(use "causa_raiz_do_gargalo" e, se houver, "pendencias_abertas" vencidas — no estilo: "O problema principal não é X. Também não é Y. O verdadeiro gargalo é Z." — conecte os pontos, não repita o dado)
 
 ## ⚡ Efeito Dominó
-(use "efeito_dominó_se_resolver_gargalo": explique o que acontece em cadeia se o principal_gargalo for resolvido — ex.: resolve atraso → sobe ocupação → sobe faturamento → sobe chance de bater meta. Se vier "sem dado suficiente", diga isso e explique por que ainda assim vale resolver o gargalo)
+(use "efeito_dominó_se_resolver_gargalo" — monte uma tabela markdown com "Situação" e "Probabilidade de atingir a meta" (Atual vs. Com melhora operacional), depois explique a cadeia de causa-efeito em bullets com ➡️. Se vier "sem dado suficiente", diga isso e explique por que ainda vale resolver o gargalo)
 
 ## 🔮 Inteligência Preditiva
-(apresente os 3 cenários de "cenarios" — conservador, realista, otimista — em 1 frase cada)
+(para cada cenário de "cenarios" — conservador, realista, otimista — um parágrafo curto)
 
 ## 💎 Potencial Oculto
-(se "potencial_oculto" tiver dado, explique a oportunidade usando EXATAMENTE os números fornecidos, incluindo quanto isso cobre do valor que falta — "cobertura_pct_do_que_falta". Se vier "sem dado suficiente", diga isso e sugira como começar a gerar esse dado)
+(se "potencial_oculto" tiver dado, destaque o nome do serviço, valor médio, quantidade sugerida, receita estimada e "cobertura_pct_do_que_falta", usando EXATAMENTE os números fornecidos. Se vier "sem dado suficiente", diga isso e sugira como começar a gerar esse dado)
 
 ## 🏆 Benchmarking
-(se tiver dado, mostre a posição entre os colegas do mesmo cargo em 1-2 frases; se não, diga que não há colegas suficientes para comparar)
+(monte uma tabela markdown com "Indicador" e "Posição" para faturamento/ticket médio/ocupação, se houver dado; se não, diga que não há colegas suficientes para comparar. Termine com 1 frase de diagnóstico: o problema é valor por atendimento ou quantidade de atendimentos?)
 
-## 🎯 As 3 Ações Que Mais Impactam a Meta
-(exatamente 3 ações, ordenadas por impacto, usando apenas os serviços/habilidades reais do profissional — não liste mais que isso)
+## 🎯 As 3 Ações Com Maior Impacto
+(exatamente 3 ações numeradas, cada uma com "Meta:" e "Impacto:" em linhas separadas, usando apenas serviços/habilidades reais do profissional)
 
 ## 💰 Caminho Mais Curto Para Bater a Meta
-(combine o potencial_oculto + resolver o principal_gargalo num único parágrafo objetivo: "se ele fizer X e resolver Y, isso cobre Z% do que falta" — use os números reais de cobertura_pct_do_que_falta e necessario_por_dia)
+(combine potencial_oculto + resolver o principal_gargalo: quanto isso cobre do valor que falta, e quanto resta por dia depois disso — usando "cobertura_pct_do_que_falta" e "necessario_por_dia")
 
 ## 📅 Plano de Execução
-### Diário
-(o que fazer todo dia, com a meta de faturamento diário de "necessario_por_dia")
-### Semanal
+### 📍 Diário
+(meta de faturamento diário de "necessario_por_dia" + 2-3 compromissos objetivos)
+### 📍 Semanal
 (no máximo 3 prioridades da semana)
-### Mensal
+### 📍 Mensal
 (resultado esperado no fim do mês)
 
 ## 🚨 Alertas Críticos
-(os 2-3 maiores riscos para bater a meta, baseados nos dados reais; se houver "pendencias_abertas" vencidas, isso deve ser o primeiro alerta)
+(os 2-3 maiores riscos, cada um com um emoji 🔴 antes do título; se houver "pendencias_abertas" vencidas, isso deve ser o primeiro alerta)
 
 ## 🏆 Missão dos Próximos 30 Dias
-(resumo simples: meta principal, meta diária, comportamento obrigatório, serviço prioritário, resultado esperado)`
+(Meta Principal, Meta Diária, Comportamento Obrigatório, Serviço Prioritário, Resultado Esperado — cada um em uma linha com **negrito**)
+
+## 👔 Visão do Gestor
+"Se eu estivesse acompanhando este profissional hoje, minhas prioridades seriam:" seguido de no máximo 3 prioridades numeradas
+
+🤖 Insight NODRI: (1 frase final, direta, com o insight mais valioso de tudo que foi analisado — o tipo de frase que faz o gestor pensar "essa IA realmente entendeu a situação")`
 
   let plano_texto = ''
   try {

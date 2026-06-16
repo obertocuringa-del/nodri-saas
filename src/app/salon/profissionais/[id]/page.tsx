@@ -6,6 +6,84 @@ import { ArrowLeft, Save, Loader2, TrendingUp, TrendingDown, BarChart2,
 import ChatWidget from '@/components/salon/ChatWidget'
 import toast from 'react-hot-toast'
 
+// Converte o markdown gerado pela IA num HTML estilizado (títulos, negrito real,
+// tabelas, listas e badges de status) — reaproveitado no chat e na Estratégia de Meta.
+function renderPlanoHtml(texto: string): string {
+  const linhas = texto.split('\n')
+  const out: string[] = []
+  let dentroTabela = false
+  let linhasTabela: string[] = []
+
+  const flushTabela = () => {
+    if (linhasTabela.length === 0) return
+    const linhasValidas = linhasTabela.filter(l => !/^\s*\|?\s*-{2,}/.test(l.replace(/\|/g, '')))
+    const rows = linhasValidas.map(l => l.split('|').map(c => c.trim()).filter((_, i, arr) => !(i === 0 && arr[0] === '') && !(i === arr.length - 1 && arr[arr.length - 1] === '')))
+    if (rows.length > 0) {
+      const [head, ...body] = rows
+      out.push('<table style="width:100%;border-collapse:collapse;margin:8px 0;font-size:11px">')
+      out.push('<thead><tr>' + head.map(c => `<th style="text-align:left;padding:6px 8px;color:#00e5c8;border-bottom:1px solid rgba(0,229,200,0.25)">${c}</th>`).join('') + '</tr></thead>')
+      out.push('<tbody>' + body.map(r => '<tr>' + r.map(c => `<td style="padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.06)">${c}</td>`).join('') + '</tr>').join('') + '</tbody>')
+      out.push('</table>')
+    }
+    linhasTabela = []
+    dentroTabela = false
+  }
+
+  for (const linhaRaw of linhas) {
+    const linha = linhaRaw.trimEnd()
+
+    if (/^\s*\|.*\|\s*$/.test(linha)) {
+      dentroTabela = true
+      linhasTabela.push(linha)
+      continue
+    }
+    if (dentroTabela) flushTabela()
+
+    if (!linha.trim()) { out.push('<div style="margin:6px 0"></div>'); continue }
+
+    let l = linha
+      .replace(/\*\*([^*]+)\*\*/g, '<strong style="color:#f1f5f9">$1</strong>')
+      .replace(/^[•\-]\s+(.+)$/, '$1')
+
+    // Títulos ## / ###
+    const tituloMatch = linha.match(/^(#{1,3})\s+(.+)$/)
+    if (tituloMatch) {
+      const nivel = tituloMatch[1].length
+      const texto2 = tituloMatch[2].replace(/\*\*([^*]+)\*\*/g, '$1')
+      if (nivel === 1) {
+        out.push(`<div style="font-weight:800;font-size:15px;color:#fff;margin:14px 0 8px;padding-bottom:6px;border-bottom:2px solid rgba(0,229,200,0.35)">${texto2}</div>`)
+      } else {
+        out.push(`<div style="font-weight:700;font-size:13px;color:#00e5c8;margin:12px 0 6px">${texto2}</div>`)
+      }
+      continue
+    }
+
+    // Linhas com status (✅ / ⚠️ / 🔴 / 🟢) tratadas como mini-título
+    if (/^(✅|⚠️|🔴|🟢|🟡|🔵|🏆|💎|🧠|⚡|🔮|🚨|📌|📊|📅|📍|👔|🤖)\s*[A-ZÀ-Ú]/.test(linha) && linha.length < 60) {
+      out.push(`<div style="font-weight:700;font-size:12px;color:#e2e8f0;margin:8px 0 4px">${l}</div>`)
+      continue
+    }
+
+    // Linhas numeradas
+    const numMatch = linha.match(/^(\d+)[️⃣.]\s*(.+)$/) || linha.match(/^(\d+)\.\s+(.+)$/)
+    if (numMatch) {
+      out.push(`<div style="display:flex;gap:6px;margin:3px 0"><span style="color:#7c5cfc;font-weight:700;flex-shrink:0">${numMatch[1]}.</span><span>${numMatch[2].replace(/\*\*([^*]+)\*\*/g, '<strong style="color:#f1f5f9">$1</strong>')}</span></div>`)
+      continue
+    }
+
+    // Bullets
+    if (/^[•\-\*]\s+/.test(linha)) {
+      out.push(`<div style="display:flex;gap:6px;margin:2px 0"><span style="color:#00e5c8;flex-shrink:0">•</span><span>${l}</span></div>`)
+      continue
+    }
+
+    out.push(`<div style="margin:2px 0">${l}</div>`)
+  }
+  if (dentroTabela) flushTabela()
+
+  return out.join('')
+}
+
 interface Profissional {
   id: string; nome_completo: string; apelido: string; cargo: string; ativo: boolean
   cpf: string; rg: string; data_aniversario: string; email: string; endereco: string
@@ -2229,7 +2307,7 @@ export default function PerfilProfissionalPage() {
                           💾 Salvar Estratégia
                         </button>
                       </div>
-                      <div className="text-[12px] text-nodri-t2 whitespace-pre-wrap leading-relaxed">{rascunhoEstrategia.plano_texto}</div>
+                      <div className="text-[12px] text-nodri-t2 leading-relaxed" dangerouslySetInnerHTML={{ __html: renderPlanoHtml(rascunhoEstrategia.plano_texto) }}/>
                     </div>
                   )}
 
@@ -2237,7 +2315,7 @@ export default function PerfilProfissionalPage() {
                   {!rascunhoEstrategia && metaInfo.plano?.plano_texto && (
                     <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
                       <h3 className="font-syne font-bold text-[12px] text-nodri-cyan mb-3">Planejamento Estratégico (salvo)</h3>
-                      <div className="text-[12px] text-nodri-t2 whitespace-pre-wrap leading-relaxed">{metaInfo.plano.plano_texto}</div>
+                      <div className="text-[12px] text-nodri-t2 leading-relaxed" dangerouslySetInnerHTML={{ __html: renderPlanoHtml(metaInfo.plano.plano_texto) }}/>
                     </div>
                   )}
                 </>
