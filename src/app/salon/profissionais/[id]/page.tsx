@@ -1687,9 +1687,11 @@ export default function PerfilProfissionalPage() {
       const cached = sessionStorage.getItem('nodri_prof_' + id)
       if (cached) {
         const d = JSON.parse(cached)
-        setProf(d); setForm(d); setLoading(false); return
+        setProf(d); setForm(d); setLoading(false)
       }
     } catch(_) {}
+    // Sempre busca dados frescos do servidor, mesmo havendo cache (cache pode estar
+    // desatualizado em relação a campos salvos depois, ex: servicos_habilitados)
     fetch(`/api/profissionais/${id}`)
       .then(r => r.json())
       .then(d => { if (d?.id) { setProf(d); setForm(d) }; setLoading(false) })
