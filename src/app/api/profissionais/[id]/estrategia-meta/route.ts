@@ -29,10 +29,15 @@ async function chamarIA(apiKey: string, modelo: string, prompt: string): Promise
   const r = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }] }),
+    body: JSON.stringify({
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      // Prompt ficou bem mais longo (15 seções); sem isso o modelo 2.5 gasta o
+      // orçamento de tokens "pensando" e retorna texto vazio (finishReason MAX_TOKENS).
+      generationConfig: { maxOutputTokens: 8192, thinkingConfig: { thinkingBudget: 0 } },
+    }),
   })
   const j = await r.json()
-  return j?.candidates?.[0]?.content?.parts?.[0]?.text || ''
+  return j?.candidates?.[0]?.content?.parts?.map((p: any) => p.text).filter(Boolean).join('') || ''
 }
 
 // POST — gera (ou regenera) o planejamento estratégico para bater a meta do mês
