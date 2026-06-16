@@ -370,6 +370,37 @@ export async function executarFerramenta(nome: string, args: any, salaoId: strin
         return linhas.join('\n')
       }
 
+      case 'buscar_servicos_salao': {
+        const { data: servicos } = await supabaseAdmin
+          .from('salao_servicos')
+          .select('categoria, nome, preco_min, preco_fixo, observacao')
+          .eq('salao_id', salaoId)
+          .eq('ativo', true)
+          .order('categoria')
+          .order('nome')
+
+        if (!servicos?.length) return 'Tabela de serviços não cadastrada para este salão.'
+
+        const porCategoria: Record<string, string[]> = {}
+        servicos.forEach((s: any) => {
+          if (!porCategoria[s.categoria]) porCategoria[s.categoria] = []
+          let preco = ''
+          if (s.preco_fixo) preco = `R$ ${Number(s.preco_fixo).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+          else if (s.preco_min) preco = `A partir de R$ ${Number(s.preco_min).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+          const obs = s.observacao ? ` (${s.observacao})` : ''
+          porCategoria[s.categoria].push(`  • ${s.nome}: ${preco}${obs}`)
+        })
+
+        const linhas = ['TABELA DE SERVIÇOS E PREÇOS DO SALÃO:\n']
+        Object.entries(porCategoria).forEach(([cat, items]) => {
+          linhas.push(`📂 ${cat.toUpperCase()}`)
+          linhas.push(...items)
+          linhas.push('')
+        })
+
+        return linhas.join('\n')
+      }
+
       case 'buscar_internet': {
         // Busca keys Tavily no banco (rotação automática)
         const { data: keysData } = await supabaseAdmin
@@ -482,6 +513,16 @@ export const FERRAMENTAS_GEMINI = [
           type: 'OBJECT',
           properties: {
             tema: { type: 'STRING', description: 'Tema ou palavra-chave para buscar. Ex: "feedback", "estoque", "reativação", "comissão", "conflito".' }
+          }
+        }
+      },
+      {
+        name: 'buscar_servicos_salao',
+        description: 'Busca a tabela de serviços e preços do salão. Usar quando o gestor perguntar sobre preços, quiser criar promoção, montar combo, calcular receita potencial, sugerir upsell, criar campanha comercial ou qualquer ação que envolva os serviços e valores do salão. Retorna todos os serviços organizados por categoria com preços reais.',
+        parameters: {
+          type: 'OBJECT',
+          properties: {
+            categoria: { type: 'STRING', description: 'Filtrar por categoria específica (opcional). Ex: "Unhas", "Coloração", "Massagem". Deixar vazio para retornar todos os serviços.' }
           }
         }
       },
