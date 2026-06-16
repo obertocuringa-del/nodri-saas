@@ -38,7 +38,16 @@ async function chamarIA(apiKey: string, modelo: string, prompt: string): Promise
     }),
   })
   const j = await r.json()
-  return j?.candidates?.[0]?.content?.parts?.map((p: any) => p.text).filter(Boolean).join('') || ''
+
+  if (j?.error) throw new Error(`Gemini: ${j.error.message || JSON.stringify(j.error)}`)
+  if (j?.promptFeedback?.blockReason) throw new Error(`Gemini bloqueou o prompt: ${j.promptFeedback.blockReason}`)
+
+  const texto = j?.candidates?.[0]?.content?.parts?.map((p: any) => p.text).filter(Boolean).join('') || ''
+  if (!texto) {
+    const finishReason = j?.candidates?.[0]?.finishReason || 'desconhecido'
+    throw new Error(`Gemini não retornou texto (finishReason: ${finishReason})`)
+  }
+  return texto
 }
 
 // POST — gera (ou regenera) o planejamento estratégico para bater a meta do mês
