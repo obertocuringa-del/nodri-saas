@@ -5,6 +5,8 @@ import { supabaseAdmin } from '@/lib/supabase'
 function calcAlcancabilidade(p: {
   metaFinal: number
   maiorHistorico: number
+  maiorHistoricoMes?: number | null
+  maiorHistoricoAno?: number | null
   realizado: number
   diasTranscorridos: number
   totalDiasMes: number
@@ -13,7 +15,7 @@ function calcAlcancabilidade(p: {
   const { metaFinal, maiorHistorico, realizado, diasTranscorridos, totalDiasMes, taxaMediaCrescimento } = p
 
   if (!maiorHistorico && diasTranscorridos === 0) {
-    return { probabilidade: null as number | null, label: 'Histórico insuficiente para avaliar', cor: '#9ca3af', maior_historico: 0, projecao_ritmo_atual: 0 }
+    return { probabilidade: null as number | null, label: 'Histórico insuficiente para avaliar', cor: '#9ca3af', maior_historico: 0, maior_historico_mes: null, maior_historico_ano: null, projecao_ritmo_atual: 0 }
   }
 
   const ritmoAtualProjetado = diasTranscorridos > 0 ? (realizado / diasTranscorridos) * totalDiasMes : realizado
@@ -31,7 +33,7 @@ function calcAlcancabilidade(p: {
   else if (probabilidade >= 35) { label = '⚠️ Meta ambiciosa'; cor = '#f59e0b' }
   else { label = '⚠️ Meta pouco realista'; cor = '#ef4444' }
 
-  return { probabilidade, label, cor, maior_historico: maiorHistorico, projecao_ritmo_atual: Math.round(ritmoComTendencia * 100) / 100 }
+  return { probabilidade, label, cor, maior_historico: maiorHistorico, maior_historico_mes: p.maiorHistoricoMes ?? null, maior_historico_ano: p.maiorHistoricoAno ?? null, projecao_ritmo_atual: Math.round(ritmoComTendencia * 100) / 100 }
 }
 
 // Identifica o principal fator limitando a meta, por regras simples (sem IA)
@@ -115,7 +117,8 @@ export async function calcularIndicadoresMeta(profissionalId: string, salaoId: s
   const metricaMes = historico.find((r) => r.ano === ano && r.mes === mes) || null
 
   const historicoValido = historico.filter((r) => Number(r.faturamento) > 0)
-  const maiorHistorico = historicoValido.reduce((max: number, r) => Math.max(max, Number(r.faturamento || 0)), 0)
+  const maiorRegistro = historicoValido.reduce((melhor: any, r) => (!melhor || Number(r.faturamento) > Number(melhor.faturamento) ? r : melhor), null as any)
+  const maiorHistorico = Number(maiorRegistro?.faturamento || 0)
 
   const ultimosMeses = historicoValido.slice(-4)
   let taxaMediaCrescimento: number | null = null
@@ -149,7 +152,8 @@ export async function calcularIndicadoresMeta(profissionalId: string, salaoId: s
   const necessarioPorDia = diasRestantes > 0 ? faltam / diasRestantes : faltam
 
   const alcancabilidade = calcAlcancabilidade({
-    metaFinal, maiorHistorico, realizado, diasTranscorridos, totalDiasMes: ultimoDiaMes, taxaMediaCrescimento,
+    metaFinal, maiorHistorico, maiorHistoricoMes: maiorRegistro?.mes ?? null, maiorHistoricoAno: maiorRegistro?.ano ?? null,
+    realizado, diasTranscorridos, totalDiasMes: ultimoDiaMes, taxaMediaCrescimento,
   })
 
   const principal_gargalo = identificarGargalo({

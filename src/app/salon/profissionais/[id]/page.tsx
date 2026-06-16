@@ -2273,7 +2273,12 @@ export default function PerfilProfissionalPage() {
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-[13px] font-semibold" style={{ color: metaInfo.alcancabilidade.cor }}>{metaInfo.alcancabilidade.label}</p>
-                          <p className="text-[11px] text-nodri-t3 mt-0.5">Maior faturamento histórico: {fmt$(metaInfo.alcancabilidade.maior_historico)}</p>
+                          <p className="text-[11px] text-nodri-t3 mt-0.5">
+                            Maior faturamento histórico: {fmt$(metaInfo.alcancabilidade.maior_historico)}
+                            {metaInfo.alcancabilidade.maior_historico_mes && metaInfo.alcancabilidade.maior_historico_ano && (
+                              <span> ({MESES[metaInfo.alcancabilidade.maior_historico_mes - 1]}/{metaInfo.alcancabilidade.maior_historico_ano})</span>
+                            )}
+                          </p>
                         </div>
                         <div className="text-[22px] font-syne font-bold" style={{ color: metaInfo.alcancabilidade.cor }}>
                           {metaInfo.alcancabilidade.probabilidade}%
