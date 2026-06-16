@@ -223,20 +223,11 @@ Gere a resposta EXATAMENTE na estrutura abaixo, em markdown, direta e sem teoria
 ### Mensal
 (visão consolidada e resultado esperado)
 
-## 🎯 Foco da Semana
-(exatamente 3 prioridades, curtas e objetivas)
-
 ## 🧠 Plano de Evolução Profissional
 (com base no comportamental e feedbacks: hábitos a corrigir, competências a desenvolver, treinamentos recomendados)
 
 ## 🚨 Alertas Críticos
 (os 3 maiores riscos para bater a meta, baseados nos dados reais)
-
-## 🚀 Oportunidades de Alto Impacto
-(as 3 ações com maior potencial de resultado)
-
-## 👔 Visão do Gestor
-"Se eu fosse o gestor hoje, minhas prioridades seriam:" (liste 3 prioridades objetivas)
 
 ## 🏆 Missão dos Próximos 30 Dias
 (resumo simples: meta principal, meta diária, comportamento obrigatório, serviço prioritário, resultado esperado)`
