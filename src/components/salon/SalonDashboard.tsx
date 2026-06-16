@@ -373,6 +373,10 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               style={{ color: '#f97316' }}>
               Pendências
             </a>
+            <a href="/salon/servicos"
+              className="w-full flex items-center px-3 py-2 rounded-md text-[11px] font-medium tracking-wide text-nodri-purple hover:bg-nodri-purple/8 transition-colors uppercase">
+              Serviços
+            </a>
           </nav>
 
           {/* Rodapé da sidebar */}
