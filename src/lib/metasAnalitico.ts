@@ -480,22 +480,28 @@ export async function calcularPotencialOculto(
 
   const { data: servicosCatalogo } = await supabaseAdmin
     .from('salao_servicos')
-    .select('nome, preco_min, preco_fixo')
+    .select('nome, preco_min, preco_fixo, comissao_valor')
     .in('id', servicosHabilitados)
     .eq('ativo', true)
 
   if (!servicosCatalogo || servicosCatalogo.length === 0) return null
 
-  // Entre os serviços habilitados, acha o de maior preço com menos de 20% de participação no volume
+  // Entre os serviços habilitados, acha o de maior COMISSÃO (não preço cheio) com menos de
+  // 20% de participação no volume — a meta do profissional é alimentada por valor_a_pagar
+  // (a comissão dele), então a projeção de receita extra precisa estar na mesma unidade,
+  // senão fica irreal (ele não embolsa o preço cheio do serviço, só a comissão).
   const candidatos = servicosCatalogo
     .map((s: any) => {
       const preco = Number(s.preco_fixo || s.preco_min || 0)
+      const comissao = Number(s.comissao_valor || 0)
       const qtd = contagem[s.nome] || 0
       const participacao = totalAtendimentos > 0 ? qtd / totalAtendimentos : 0
-      return { nome: s.nome, preco, qtd, participacao }
+      return { nome: s.nome, preco, comissao, qtd, participacao }
     })
-    .filter(c => c.preco > 0 && c.participacao < 0.2)
-    .sort((a, b) => b.preco - a.preco)
+    // só considera serviços com comissão cadastrada — sem isso não há como estimar
+    // de forma realista quanto o profissional efetivamente ganharia
+    .filter(c => c.comissao > 0 && c.participacao < 0.2)
+    .sort((a, b) => b.comissao - a.comissao)
 
   if (candidatos.length === 0) return null
   const escolhido = candidatos[0]
@@ -509,13 +515,14 @@ export async function calcularPotencialOculto(
   const capacidadeMaxima = Math.max(1, Math.ceil(Math.max(diasRestantes, 1) / 5))
   const qtdAdicional = Math.min(qtdDesejada, capacidadeMaxima)
 
-  const estimativaReceita = Math.round(qtdAdicional * escolhido.preco * 100) / 100
+  const estimativaReceita = Math.round(qtdAdicional * escolhido.comissao * 100) / 100
 
   return {
     servico: escolhido.nome,
     qtd_realizada_ultimos_meses: escolhido.qtd,
     participacao_atual_pct: Math.round(escolhido.participacao * 100),
     preco_medio: escolhido.preco,
+    comissao_por_atendimento: escolhido.comissao,
     estimativa_atendimentos_adicionais: qtdAdicional,
     estimativa_receita_adicional: estimativaReceita,
     cobertura_pct_do_que_falta: faltam > 0 ? Math.round((estimativaReceita / faltam) * 100) : null,

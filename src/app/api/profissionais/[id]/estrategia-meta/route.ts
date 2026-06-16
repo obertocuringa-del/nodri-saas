@@ -262,7 +262,7 @@ Monte uma tabela markdown com colunas "Indicador" e "Nota" para os 6 componentes
 (para cada cenário de "cenarios" — conservador, realista, otimista — um parágrafo curto)
 
 ## 💎 Potencial Oculto
-(se "potencial_oculto" tiver dado, destaque o nome do serviço, valor médio, quantidade sugerida, receita estimada e "cobertura_pct_do_que_falta", usando EXATAMENTE os números fornecidos. Se vier "sem dado suficiente", diga isso e sugira como começar a gerar esse dado)
+(se "potencial_oculto" tiver dado, destaque o nome do serviço, quantidade sugerida e receita estimada e "cobertura_pct_do_que_falta", usando EXATAMENTE os números fornecidos. A "receita estimada" já é a COMISSÃO do profissional nesse serviço — não o preço cheio cobrado do cliente — então não chame de "faturamento do salão", chame de "quanto isso adiciona ao que você ganha". Se vier "sem dado suficiente", diga isso e sugira como começar a gerar esse dado)
 
 ## 🏆 Benchmarking
 (monte uma tabela markdown com "Indicador" e "Posição" para faturamento/ticket médio/ocupação, se houver dado; se não, diga que não há colegas suficientes para comparar. Termine com 1 frase de diagnóstico: o problema é valor por atendimento ou quantidade de atendimentos?)
