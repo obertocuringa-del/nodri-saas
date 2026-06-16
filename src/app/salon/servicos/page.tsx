@@ -59,7 +59,7 @@ export default function ServicosPage() {
   }
 
   function iniciarNovo() {
-    setForm({ categoria: CATEGORIAS[0], nome: '', preco_tipo: 'fixo', preco: '', observacao: '' })
+    setForm({ categoria: CATEGORIAS[0], nome: '', preco_tipo: 'fixo', preco: '', comissao_valor: '', observacao: '' })
     setEditando(null)
     setNovo(true)
   }
