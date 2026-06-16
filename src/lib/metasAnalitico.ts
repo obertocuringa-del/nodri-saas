@@ -193,9 +193,13 @@ export function identificarCausaRaiz(p: {
   ocupacaoAtual: number; ocupacaoMediaHistorico: number
   ticketAtual: number; ticketMedioHistorico: number
   atrasos: number; faltas: number
+  pendenciasVencidas?: number
 }): string {
-  const { ocupacaoAtual, ocupacaoMediaHistorico, ticketAtual, ticketMedioHistorico, atrasos, faltas } = p
+  const { ocupacaoAtual, ocupacaoMediaHistorico, ticketAtual, ticketMedioHistorico, atrasos, faltas, pendenciasVencidas = 0 } = p
   const ocupacaoBaixa = ocupacaoMediaHistorico > 0 && ocupacaoAtual < ocupacaoMediaHistorico - 5
+  if (pendenciasVencidas > 0 && ocupacaoBaixa) {
+    return 'Há pendências do gestor com prazo vencido e ainda não resolvidas, o que está diretamente travando o desempenho — resolver isso é pré-requisito para qualquer outra ação'
+  }
   if (ocupacaoBaixa && (atrasos + faltas) >= 5) {
     return 'A ocupação caiu porque os atrasos/faltas recentes reduziram a confiança da recepção em distribuir novos clientes para este profissional'
   }
@@ -272,6 +276,61 @@ export async function buscarFidelizacaoAtual(salaoId: string, profissionalId: st
     }
   }
   return { clientesPreferencia, clientesSemPreferencia }
+}
+
+// Pendências reais registradas pelo gestor para o profissional (ex.: treinamento pendente,
+// ajuste de comportamento) — usado pra identificar causa raiz e alertas com mais precisão.
+export async function buscarPendencias(salaoId: string, profissionalId: string) {
+  const { data } = await supabaseAdmin
+    .from('pendencias_profissionais')
+    .select('mensagem, data_limite, resolvido, criado_em')
+    .eq('salao_id', salaoId)
+    .eq('profissional_id', profissionalId)
+    .eq('resolvido', false)
+    .order('criado_em', { ascending: false })
+    .limit(10)
+
+  const hoje = new Date()
+  return (data || []).map((p: any) => {
+    const venceu = p.data_limite ? new Date(p.data_limite) < hoje : false
+    return { mensagem: p.mensagem, data_limite: p.data_limite, vencida: venceu }
+  })
+}
+
+// Venda de produtos (mês atual vs. média histórica) — fonte: relatorio_periodos.prof_produtos,
+// mesmo padrão de match por nome usado no resto do motor.
+export async function buscarVendaProdutos(salaoId: string, profissionalId: string, ano: number, mes: number) {
+  const { data: prof } = await supabaseAdmin
+    .from('profissionais')
+    .select('nome_completo, apelido')
+    .eq('id', profissionalId)
+    .single()
+  if (!prof) return { quantidade_atual: 0, media_historica: 0 }
+
+  const matchProf = criarMatchProf((prof.nome_completo || '').toLowerCase().trim(), (prof.apelido || '').toLowerCase().trim())
+
+  const { data: periodos } = await supabaseAdmin
+    .from('relatorio_periodos')
+    .select('ano, mes, prof_produtos')
+    .eq('salao_id', salaoId)
+    .order('ano').order('mes')
+
+  let quantidadeAtual = 0
+  const historicoQtd: number[] = []
+  for (const row of (periodos || [])) {
+    let qtd = 0
+    for (const item of (row.prof_produtos || [])) {
+      if (matchProf(item)) qtd += Number(item.quantidade || 0)
+    }
+    if (row.ano === ano && row.mes === mes) quantidadeAtual = qtd
+    if (qtd > 0) historicoQtd.push(qtd)
+  }
+
+  const mediaHistorica = historicoQtd.length > 0
+    ? Math.round((historicoQtd.reduce((s, q) => s + q, 0) / historicoQtd.length) * 10) / 10
+    : 0
+
+  return { quantidade_atual: quantidadeAtual, media_historica: mediaHistorica }
 }
 
 // Calcula o Score NODRI (0-100) ponderando 6 dimensões, todas a partir de dados reais
