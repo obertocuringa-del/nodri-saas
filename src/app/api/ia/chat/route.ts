@@ -2663,7 +2663,7 @@ ${dadosFormatados}`
       const anthropic = new Anthropic({ apiKey: config.api_key })
       const stream = await anthropic.messages.create({
         model: modelo,
-        max_tokens: 2048,
+        max_tokens: 8192,
         system: systemPrompt,
         messages: mensagensLimitadas.map((m: any) => ({ role: m.role, content: m.content })),
         stream: true,
