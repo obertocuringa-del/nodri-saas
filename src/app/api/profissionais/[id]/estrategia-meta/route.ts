@@ -170,13 +170,36 @@ Seja direto, use valores em R$ sempre que possível, e não invente serviços ou
 
   if (!plano_texto) return NextResponse.json({ error: 'A IA não retornou conteúdo.' }, { status: 500 })
 
-  const { data: salvo, error } = await supabaseAdmin
+  // Gera apenas o rascunho — não salva ainda. O usuário decide salvar com o botão "Salvar Estratégia".
+  return NextResponse.json({
+    ano, mes,
+    meta_referencia: metaFinal,
+    plano_texto,
+    realizado,
+    faltam,
+  })
+}
+
+// PUT — salva (persiste) o plano que já foi gerado e revisado
+export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+  const salaoId = await getSalaoId()
+  if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+
+  const body = await req.json().catch(() => ({}))
+  const hoje = new Date()
+  const ano = parseInt(body.ano) || hoje.getFullYear()
+  const mes = parseInt(body.mes) || (hoje.getMonth() + 1)
+  const { plano_texto, meta_referencia } = body
+
+  if (!plano_texto) return NextResponse.json({ error: 'plano_texto obrigatório' }, { status: 400 })
+
+  const { data, error } = await supabaseAdmin
     .from('planejamentos_metas')
     .upsert({
       salao_id: salaoId,
       profissional_id: params.id,
       ano, mes,
-      meta_referencia: metaFinal,
+      meta_referencia: meta_referencia || 0,
       plano_texto,
       atualizado_em: new Date().toISOString(),
     }, { onConflict: 'profissional_id,ano,mes' })
@@ -184,5 +207,5 @@ Seja direto, use valores em R$ sempre que possível, e não invente serviços ou
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ ...salvo, realizado, faltam })
+  return NextResponse.json(data)
 }

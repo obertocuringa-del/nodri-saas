@@ -1724,11 +1724,18 @@ export default function PerfilProfissionalPage() {
   }, [tab])
 
   // ── Metas ──
-  const [metaInfo, setMetaInfo] = useState<{ ano:number; mes:number; meta_redistribuida:number; meta_manual:number|null; meta_final:number; realizado:number; plano:any } | null>(null)
+  const [metaInfo, setMetaInfo] = useState<{
+    ano:number; mes:number; meta_redistribuida:number; meta_manual:number|null; meta_final:number
+    realizado:number; faltam:number; dias_restantes:number; necessario_por_dia:number
+    alcancabilidade: { probabilidade:number|null; label:string; cor:string; maior_historico:number }
+    plano:any
+  } | null>(null)
   const [loadMeta, setLoadMeta] = useState(false)
   const [metaManualInput, setMetaManualInput] = useState('')
   const [salvandoMeta, setSalvandoMeta] = useState(false)
   const [gerandoEstrategia, setGerandoEstrategia] = useState(false)
+  const [salvandoEstrategia, setSalvandoEstrategia] = useState(false)
+  const [rascunhoEstrategia, setRascunhoEstrategia] = useState<{ plano_texto:string; meta_referencia:number } | null>(null)
 
   const buscarMeta = useCallback(async () => {
     setLoadMeta(true)
@@ -1764,6 +1771,7 @@ export default function PerfilProfissionalPage() {
   async function gerarEstrategia() {
     if (!metaInfo) return
     setGerandoEstrategia(true)
+    setRascunhoEstrategia(null)
     try {
       const res = await fetch(`/api/profissionais/${id}/estrategia-meta`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -1771,11 +1779,28 @@ export default function PerfilProfissionalPage() {
       })
       const d = await res.json()
       if (res.ok) {
-        await buscarMeta()
-        toast.success('Estratégia gerada!')
+        setRascunhoEstrategia({ plano_texto: d.plano_texto, meta_referencia: d.meta_referencia })
+        toast.success('Estratégia gerada! Revise e salve.')
       } else toast.error(d?.error || 'Erro ao gerar estratégia')
     } catch { toast.error('Erro ao gerar estratégia') }
     setGerandoEstrategia(false)
+  }
+
+  async function salvarEstrategia() {
+    if (!metaInfo || !rascunhoEstrategia) return
+    setSalvandoEstrategia(true)
+    try {
+      const res = await fetch(`/api/profissionais/${id}/estrategia-meta`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ano: metaInfo.ano, mes: metaInfo.mes, ...rascunhoEstrategia })
+      })
+      if (res.ok) {
+        setRascunhoEstrategia(null)
+        await buscarMeta()
+        toast.success('Estratégia salva!')
+      } else toast.error('Erro ao salvar estratégia')
+    } catch { toast.error('Erro ao salvar estratégia') }
+    setSalvandoEstrategia(false)
   }
 
   async function salvar() {
@@ -2143,18 +2168,67 @@ export default function PerfilProfissionalPage() {
                     </div>
                   </div>
 
+                  {/* Indicadores */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {[
+                      { l: 'Meta Mensal', v: fmt$(metaInfo.meta_final), cor: '#7c5cfc' },
+                      { l: 'Faltam', v: fmt$(metaInfo.faltam), cor: metaInfo.faltam > 0 ? '#f59e0b' : '#22c55e' },
+                      { l: 'Dias Restantes', v: String(metaInfo.dias_restantes), cor: '#00e5c8' },
+                      { l: 'Necessário/Dia', v: fmt$(metaInfo.necessario_por_dia), cor: '#f43f8e' },
+                    ].map(item => (
+                      <div key={item.l} className="bg-nodri-card border border-nodri-border rounded-xl p-3">
+                        <div className="text-[9px] text-nodri-t3 uppercase tracking-wider mb-1">{item.l}</div>
+                        <div className="font-syne font-bold text-[15px]" style={{ color: item.cor }}>{item.v}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Índice de alcançabilidade */}
+                  <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
+                    <h3 className="font-syne font-bold text-[12px] text-nodri-cyan mb-2">Meta Alcançável?</h3>
+                    {metaInfo.alcancabilidade.probabilidade === null ? (
+                      <p className="text-[12px] text-nodri-t3">{metaInfo.alcancabilidade.label}</p>
+                    ) : (
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-[13px] font-semibold" style={{ color: metaInfo.alcancabilidade.cor }}>{metaInfo.alcancabilidade.label}</p>
+                          <p className="text-[11px] text-nodri-t3 mt-0.5">Maior faturamento histórico: {fmt$(metaInfo.alcancabilidade.maior_historico)}</p>
+                        </div>
+                        <div className="text-[22px] font-syne font-bold" style={{ color: metaInfo.alcancabilidade.cor }}>
+                          {metaInfo.alcancabilidade.probabilidade}%
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="flex items-center gap-2">
                     <button onClick={gerarEstrategia} disabled={gerandoEstrategia}
                       style={{ background: 'linear-gradient(135deg, #7c5cfc, #f43f8e)' }}
                       className="flex items-center gap-2 text-white px-4 py-2.5 rounded-xl text-[12px] font-bold disabled:opacity-50">
                       {gerandoEstrategia ? <Loader2 size={14} className="animate-spin"/> : null}
-                      {metaInfo.plano ? '🎯 Recalcular Metas' : '🎯 Criar Estratégia para Bater a Meta'}
+                      {metaInfo.plano ? '🔄 Recalcular Estratégia' : '🚀 Criar Estratégia para Bater a Meta'}
                     </button>
                   </div>
 
-                  {metaInfo.plano?.plano_texto && (
+                  {/* Rascunho recém-gerado, aguardando confirmação */}
+                  {rascunhoEstrategia && (
+                    <div className="bg-nodri-surface border border-nodri-cyan/40 rounded-2xl p-5 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-syne font-bold text-[12px] text-nodri-cyan">Novo Planejamento (rascunho)</h3>
+                        <button onClick={salvarEstrategia} disabled={salvandoEstrategia}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-nodri-cyan text-nodri-dark text-[11px] font-bold hover:brightness-110 disabled:opacity-50">
+                          {salvandoEstrategia ? <Loader2 size={12} className="animate-spin"/> : <Save size={12}/>}
+                          💾 Salvar Estratégia
+                        </button>
+                      </div>
+                      <div className="text-[12px] text-nodri-t2 whitespace-pre-wrap leading-relaxed">{rascunhoEstrategia.plano_texto}</div>
+                    </div>
+                  )}
+
+                  {/* Plano salvo (oficial) */}
+                  {!rascunhoEstrategia && metaInfo.plano?.plano_texto && (
                     <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
-                      <h3 className="font-syne font-bold text-[12px] text-nodri-cyan mb-3">Planejamento Estratégico</h3>
+                      <h3 className="font-syne font-bold text-[12px] text-nodri-cyan mb-3">Planejamento Estratégico (salvo)</h3>
                       <div className="text-[12px] text-nodri-t2 whitespace-pre-wrap leading-relaxed">{metaInfo.plano.plano_texto}</div>
                     </div>
                   )}
