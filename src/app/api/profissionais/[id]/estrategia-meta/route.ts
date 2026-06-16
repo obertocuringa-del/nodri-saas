@@ -173,6 +173,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const projecaoOtimista = Math.round((metaFinal * 1.05) * 100) / 100
 
   const contratoJson = JSON.stringify({
+    aviso_unidades: 'meta, faturado, falta, necessario_por_dia e os valores dentro de potencial_oculto estão todos em COMISSÃO (o que o profissional efetivamente recebe, não o preço cheio cobrado do cliente). ticket_medio_atual e ticket_medio_historico estão em VALOR CHEIO da venda (preço cobrado do cliente). São unidades diferentes — nunca some ou compare diretamente um com o outro.',
     meta: Math.round(metaFinal * 100) / 100,
     faturado: Math.round(realizado * 100) / 100,
     falta: Math.round(faltam * 100) / 100,
@@ -218,6 +219,7 @@ REGRAS CRÍTICAS:
 3. Limite TODA lista de ações a no máximo 3 itens. Não gere 8 ou 10 sugestões — escolha as 3 que mais movem o resultado e descarte o resto.
 4. Se um campo vier como "sem dado suficiente" ou similar, diga isso com transparência em vez de inventar um número.
 5. Nunca invente serviços ou preços fora da lista de SERVIÇOS QUE REALIZA.
+6. ATENÇÃO ÀS UNIDADES (leia "aviso_unidades" nos dados): meta/faturado/falta/necessario_por_dia/potencial_oculto são valores de COMISSÃO (quanto o profissional ganha). ticket_medio é o valor CHEIO da venda ao cliente. São números em escalas diferentes — nunca trate como a mesma coisa, nunca some um com o outro, e ao falar de "quanto isso adiciona à meta" use sempre o valor de comissão, nunca o preço cheio do serviço.
 
 PROFISSIONAL: ${prof.nome_completo} (${prof.apelido || ''}) — Cargo: ${prof.cargo}
 HABILIDADES (texto livre): ${prof.habilidades || 'não informado'}
