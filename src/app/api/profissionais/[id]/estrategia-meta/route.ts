@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
+import { calcularIndicadoresMeta } from '@/lib/metasAnalitico'
 import Anthropic from '@anthropic-ai/sdk'
 
 async function getSalaoId() {
@@ -107,21 +108,22 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }
   }
 
-  // Faturamento realizado no mês corrente (mesma fonte usada nas métricas do profissional)
-  const { data: metricaMes } = await supabaseAdmin
-    .from('prof_metricas_mensais')
-    .select('faturamento')
-    .eq('profissional_id', params.id)
-    .eq('salao_id', salaoId)
-    .eq('ano', ano)
-    .eq('mes', mes)
-    .maybeSingle()
-  const realizado = Number(metricaMes?.faturamento || 0)
-  const faltam = Math.max(metaFinal - realizado, 0)
+  // Indicadores 100% determinísticos (mesmo motor de cálculo usado na aba Metas) —
+  // a IA recebe esses números prontos e NÃO deve recalculá-los, apenas interpretar.
+  const indicadores = await calcularIndicadoresMeta(params.id, salaoId, ano, mes, metaFinal)
+  const { realizado, faltam, dias_restantes: diasRestantes, necessario_por_dia, ticket_atual, ocupacao_atual, principal_gargalo, alcancabilidade } = indicadores
 
-  const hojeNum = hoje.getDate()
-  const ultimoDiaMes = new Date(ano, mes, 0).getDate()
-  const diasRestantes = Math.max(ultimoDiaMes - hojeNum, 1)
+  const contratoJson = JSON.stringify({
+    meta: Math.round(metaFinal * 100) / 100,
+    faturado: Math.round(realizado * 100) / 100,
+    falta: Math.round(faltam * 100) / 100,
+    dias_restantes: diasRestantes,
+    necessario_por_dia: Math.round(necessario_por_dia * 100) / 100,
+    ticket_medio_atual: ticket_atual,
+    taxa_ocupacao_atual: ocupacao_atual,
+    chance_de_bater_meta_pct: alcancabilidade.probabilidade,
+    principal_gargalo,
+  }, null, 2)
 
   const prompt = `Você é um especialista em gestão de salões de beleza e produtividade de profissionais. Crie um planejamento estratégico SIMPLES e REALISTA para o profissional abaixo bater a meta do mês.
 
@@ -134,12 +136,10 @@ ${servicosTexto}
 FEEDBACKS DE CLIENTES:
 ${feedbacksTexto}
 
-META DO MÊS: R$ ${metaFinal.toFixed(2)}
-JÁ FATURADO ESTE MÊS: R$ ${realizado.toFixed(2)}
-FALTA FATURAR: R$ ${faltam.toFixed(2)}
-DIAS RESTANTES NO MÊS: ${diasRestantes}
+DADOS NUMÉRICOS JÁ CALCULADOS (não recalcule nada disso, apenas use e interprete estes valores exatamente como estão):
+${contratoJson}
 
-Gere um plano de ação ALCANÇÁVEL, focado no resultado, considerando os serviços que ele realmente sabe fazer e o valor de comissão de cada um (priorize serviços com maior comissão quando fizer sentido). Estruture a resposta EXATAMENTE assim, em markdown, sem rodeios nem teoria:
+Gere um plano de ação ALCANÇÁVEL, focado no resultado, considerando os serviços que ele realmente sabe fazer e o valor de comissão de cada um (priorize serviços com maior comissão quando fizer sentido) e o "principal_gargalo" indicado acima. Estruture a resposta EXATAMENTE assim, em markdown, sem rodeios nem teoria:
 
 ## Resumo da Meta
 (1-2 frases objetivas sobre a situação atual e o que precisa ser feito)

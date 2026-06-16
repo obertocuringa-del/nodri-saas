@@ -1727,6 +1727,8 @@ export default function PerfilProfissionalPage() {
   const [metaInfo, setMetaInfo] = useState<{
     ano:number; mes:number; meta_redistribuida:number; meta_manual:number|null; meta_final:number
     realizado:number; faltam:number; dias_restantes:number; necessario_por_dia:number
+    ticket_atual:number; ocupacao_atual:number; ticket_medio_historico:number; ocupacao_media_historico:number
+    taxa_media_crescimento:number|null; principal_gargalo:string
     alcancabilidade: { probabilidade:number|null; label:string; cor:string; maior_historico:number }
     plano:any
   } | null>(null)
@@ -2198,6 +2200,11 @@ export default function PerfilProfissionalPage() {
                           {metaInfo.alcancabilidade.probabilidade}%
                         </div>
                       </div>
+                    )}
+                    {metaInfo.principal_gargalo && metaInfo.principal_gargalo !== 'nenhum gargalo crítico identificado' && (
+                      <p className="text-[11px] text-nodri-t3 mt-3 pt-3 border-t border-nodri-border">
+                        ⚠️ Principal gargalo: <span className="text-nodri-t2">{metaInfo.principal_gargalo}</span>
+                      </p>
                     )}
                   </div>
 
