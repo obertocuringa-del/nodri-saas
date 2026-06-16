@@ -2171,9 +2171,10 @@ export default function PerfilProfissionalPage() {
                   </div>
 
                   {/* Indicadores */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                     {[
                       { l: 'Meta Mensal', v: fmt$(metaInfo.meta_final), cor: '#7c5cfc' },
+                      { l: 'Realizado', v: fmt$(metaInfo.realizado), cor: '#22c55e' },
                       { l: 'Faltam', v: fmt$(metaInfo.faltam), cor: metaInfo.faltam > 0 ? '#f59e0b' : '#22c55e' },
                       { l: 'Dias Restantes', v: String(metaInfo.dias_restantes), cor: '#00e5c8' },
                       { l: 'Necessário/Dia', v: fmt$(metaInfo.necessario_por_dia), cor: '#f43f8e' },

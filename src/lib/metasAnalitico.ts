@@ -49,27 +49,67 @@ function identificarGargalo(p: {
   return 'nenhum gargalo crítico identificado'
 }
 
+// Mesmo critério de match de nome usado em /api/profissionais/[id]/metricas — compara
+// os 2 primeiros tokens do nome cadastrado contra o nome registrado no relatório importado.
+function criarMatchProf(nomeCompleto: string, apelido: string) {
+  const tokens = nomeCompleto.split(/\s+/).filter(Boolean).slice(0, 2)
+  return (item: any): boolean => {
+    const n = (item.profissional || item.profissional_original || '').toLowerCase().trim()
+    if (!n) return false
+    if (n === nomeCompleto) return true
+    if (apelido && (n === apelido || n.includes(apelido) || apelido.includes(n))) return true
+    const nTokens = n.split(/\s+/).filter(Boolean)
+    const matchCount = tokens.filter((t: string) => nTokens.some((nt: string) => nt.startsWith(t) || t.startsWith(nt))).length
+    return matchCount >= Math.min(tokens.length, 2)
+  }
+}
+
 // Calcula todos os indicadores analíticos da meta de um profissional num mês —
 // usado tanto pela aba Metas (exibição) quanto pelo gerador de estratégia (contrato p/ IA).
+// Fonte do faturamento real e do histórico: relatorio_periodos (mesma fonte usada em
+// Relatórios > Redistribuição/Meta Prof.) — NÃO prof_metricas_mensais, que fica vazia
+// para a maioria dos profissionais e fazia o "maior histórico" aparecer zerado.
 export async function calcularIndicadoresMeta(profissionalId: string, salaoId: string, ano: number, mes: number, metaFinal: number) {
-  const { data: metricaMes } = await supabaseAdmin
-    .from('prof_metricas_mensais')
-    .select('faturamento, ticket_medio, taxa_ocupacao')
-    .eq('profissional_id', profissionalId)
-    .eq('salao_id', salaoId)
-    .eq('ano', ano)
-    .eq('mes', mes)
-    .maybeSingle()
+  const { data: prof } = await supabaseAdmin
+    .from('profissionais')
+    .select('nome_completo, apelido')
+    .eq('id', profissionalId)
+    .single()
 
-  const { data: historico } = await supabaseAdmin
-    .from('prof_metricas_mensais')
-    .select('ano, mes, faturamento, ticket_medio, taxa_ocupacao')
-    .eq('profissional_id', profissionalId)
+  const nomeCompleto = (prof?.nome_completo || '').toLowerCase().trim()
+  const apelido = (prof?.apelido || '').toLowerCase().trim()
+  const matchProf = criarMatchProf(nomeCompleto, apelido)
+
+  const { data: periodos } = await supabaseAdmin
+    .from('relatorio_periodos')
+    .select('ano, mes, prof_pagamentos, prof_ticket, prof_ocupacao')
     .eq('salao_id', salaoId)
     .order('ano').order('mes')
 
-  const historicoValido = (historico || []).filter((r: any) => Number(r.faturamento) > 0)
-  const maiorHistorico = historicoValido.reduce((max: number, r: any) => Math.max(max, Number(r.faturamento || 0)), 0)
+  const historico = (periodos || []).map((row: any) => {
+    let faturamento = 0
+    for (const item of (row.prof_pagamentos || [])) {
+      if (matchProf(item)) faturamento += Number(item.valor_a_pagar || 0) + Number(item.desconto || 0)
+    }
+    let ticket = 0, ticketCount = 0
+    for (const item of (row.prof_ticket || [])) {
+      if (matchProf(item)) { ticket += Number(item.ticket_medio || 0); ticketCount++ }
+    }
+    let ocupSum = 0, ocupCount = 0
+    for (const item of (row.prof_ocupacao || [])) {
+      if (matchProf(item)) { ocupSum += Number(item.taxa_ocupacao || 0); ocupCount++ }
+    }
+    return {
+      ano: row.ano, mes: row.mes, faturamento,
+      ticket_medio: ticketCount > 0 ? ticket / ticketCount : 0,
+      taxa_ocupacao: ocupCount > 0 ? ocupSum / ocupCount : 0,
+    }
+  })
+
+  const metricaMes = historico.find((r) => r.ano === ano && r.mes === mes) || null
+
+  const historicoValido = historico.filter((r) => Number(r.faturamento) > 0)
+  const maiorHistorico = historicoValido.reduce((max: number, r) => Math.max(max, Number(r.faturamento || 0)), 0)
 
   const ultimosMeses = historicoValido.slice(-4)
   let taxaMediaCrescimento: number | null = null
