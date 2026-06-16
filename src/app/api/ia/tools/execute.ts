@@ -32,8 +32,30 @@ export async function executarFerramenta(nome: string, args: any, salaoId: strin
           supabaseAdmin.from('pendencias_profissionais').select('mensagem, data_limite, resolvido').eq('salao_id', salaoId).eq('profissional_id', prof.id),
         ])
 
+        // Busca serviços habilitados do profissional
+        let servicosHabilitadosTexto = ''
+        if (prof.servicos_habilitados?.length) {
+          const { data: servsSalao } = await supabaseAdmin
+            .from('salao_servicos')
+            .select('id, nome, categoria, preco_fixo, preco_min, comissao_valor')
+            .eq('salao_id', salaoId)
+            .in('id', prof.servicos_habilitados)
+          if (servsSalao?.length) {
+            const porCat: Record<string, string[]> = {}
+            servsSalao.forEach((s: any) => {
+              if (!porCat[s.categoria]) porCat[s.categoria] = []
+              const preco = s.preco_fixo ? `R$ ${Number(s.preco_fixo).toFixed(2)}` : s.preco_min ? `a partir de R$ ${Number(s.preco_min).toFixed(2)}` : ''
+              const comissao = s.comissao_valor ? ` (comissão: R$ ${Number(s.comissao_valor).toFixed(2)})` : ''
+              porCat[s.categoria].push(`${s.nome} — ${preco}${comissao}`)
+            })
+            servicosHabilitadosTexto = '\nSERVIÇOS HABILITADOS:\n' + Object.entries(porCat).map(([cat, items]) => `  ${cat}:\n` + items.map(i => `    • ${i}`).join('\n')).join('\n')
+          }
+        }
+
         const linhas: string[] = [`PROFISSIONAL: ${prof.nome_completo} (${prof.cargo})`]
         linhas.push(`Apelido: ${prof.apelido || '-'} | CNPJ: ${prof.cnpj || 'não cadastrado'}`)
+        if (prof.habilidades) linhas.push(`Habilidades: ${prof.habilidades}`)
+        if (servicosHabilitadosTexto) linhas.push(servicosHabilitadosTexto)
         linhas.push('')
 
         // Match de nome — mesma lógica da tela
@@ -387,8 +409,9 @@ export async function executarFerramenta(nome: string, args: any, salaoId: strin
           let preco = ''
           if (s.preco_fixo) preco = `R$ ${Number(s.preco_fixo).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
           else if (s.preco_min) preco = `A partir de R$ ${Number(s.preco_min).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+          const comissao = s.comissao_valor ? ` | comissão: R$ ${Number(s.comissao_valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : ''
           const obs = s.observacao ? ` (${s.observacao})` : ''
-          porCategoria[s.categoria].push(`  • ${s.nome}: ${preco}${obs}`)
+          porCategoria[s.categoria].push(`  • ${s.nome} [id:${s.id}]: ${preco}${comissao}${obs}`)
         })
 
         const linhas = ['TABELA DE SERVIÇOS E PREÇOS DO SALÃO:\n']

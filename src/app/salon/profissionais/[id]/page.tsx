@@ -10,6 +10,7 @@ interface Profissional {
   id: string; nome_completo: string; apelido: string; cargo: string; ativo: boolean
   cpf: string; rg: string; data_aniversario: string; email: string; endereco: string
   cnpj: string; conta_bancaria: string; habilidades: string; foto_url: string
+  servicos_habilitados: string[]
   contato_responsavel: string; cor_favorita: string; comida_favorita: string
   animal_favorito: string; hobbies: string; um_sonho: string; certificados: string
   ficha_entrevista: boolean; processo_contratacao: boolean; materiais_trabalho: boolean
@@ -1662,6 +1663,9 @@ export default function PerfilProfissionalPage() {
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
   const [tab, setTab] = useState<'cadastro'|'desempenho'|'faturamento'|'ia'>('cadastro')
+  const [servicosSalao, setServicosSalao] = useState<{id:string;categoria:string;nome:string;preco_fixo:number|null;preco_min:number|null;comissao_valor:number|null}[]>([])
+  const [selectorAberto, setSelectorAberto] = useState(false)
+  const selectorRef = useRef<HTMLDivElement>(null)
 
   const hoje = new Date()
   const mesAtual    = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,'0')}`
@@ -1691,6 +1695,18 @@ export default function PerfilProfissionalPage() {
       .then(d => { if (d?.id) { setProf(d); setForm(d) }; setLoading(false) })
       .catch(() => setLoading(false))
   }, [id])
+
+  useEffect(() => {
+    fetch('/api/servicos').then(r => r.json()).then(d => { if (Array.isArray(d)) setServicosSalao(d.filter((s:any) => s.ativo)) })
+  }, [])
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (selectorRef.current && !selectorRef.current.contains(e.target as Node)) setSelectorAberto(false)
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const buscarMetricas = useCallback(async () => {
     setLoadMet(true)
@@ -1820,7 +1836,82 @@ export default function PerfilProfissionalPage() {
                     <div><label className={labelCls}>Email</label><input type="email" value={form.email||''} onChange={e=>set('email',e.target.value)} className={inputCls}/></div>
                     <div className="col-span-2"><label className={labelCls}>Endereço</label><input value={form.endereco||''} onChange={e=>set('endereco',e.target.value)} className={inputCls}/></div>
                     <div><label className={labelCls}>Contato do Responsável</label><input value={form.contato_responsavel||''} onChange={e=>set('contato_responsavel',e.target.value)} className={inputCls}/></div>
-                    <div><label className={labelCls}>Habilidades</label><input value={form.habilidades||''} onChange={e=>set('habilidades',e.target.value)} className={inputCls}/></div>
+                    <div><label className={labelCls}>Habilidades (texto livre)</label><input value={form.habilidades||''} onChange={e=>set('habilidades',e.target.value)} className={inputCls}/></div>
+                  </div>
+
+                  {/* Seletor de Serviços Habilitados */}
+                  <div className="mt-3">
+                    <label className={labelCls}>Serviços que Realiza</label>
+                    <div className="relative" ref={selectorRef}>
+                      <button
+                        type="button"
+                        onClick={() => setSelectorAberto(o => !o)}
+                        className="w-full bg-nodri-card border border-nodri-border rounded-lg px-3 py-2 text-[12px] text-left flex items-center justify-between outline-none focus:border-nodri-cyan/40 transition-colors text-nodri-t1"
+                      >
+                        <span className={form.servicos_habilitados?.length ? 'text-nodri-t1' : 'text-nodri-t3'}>
+                          {form.servicos_habilitados?.length
+                            ? `${form.servicos_habilitados.length} serviço(s) selecionado(s)`
+                            : 'Clique para selecionar serviços...'}
+                        </span>
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className={`transition-transform ${selectorAberto ? 'rotate-180' : ''}`}><path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                      </button>
+
+                      {selectorAberto && (
+                        <div className="absolute z-50 mt-1 w-full bg-nodri-surface border border-nodri-border rounded-xl shadow-xl max-h-72 overflow-y-auto">
+                          {(() => {
+                            const cats = [...new Set(servicosSalao.map(s => s.categoria))].sort()
+                            const selecionados = form.servicos_habilitados || []
+                            return cats.map(cat => (
+                              <div key={cat}>
+                                <div className="px-3 py-1.5 text-[10px] font-bold text-nodri-t3 uppercase tracking-wider bg-nodri-bg/60 sticky top-0">{cat}</div>
+                                {servicosSalao.filter(s => s.categoria === cat).map(s => {
+                                  const marcado = selecionados.includes(s.id)
+                                  return (
+                                    <button
+                                      key={s.id}
+                                      type="button"
+                                      onClick={() => {
+                                        const novo = marcado
+                                          ? selecionados.filter(x => x !== s.id)
+                                          : [...selecionados, s.id]
+                                        set('servicos_habilitados', novo as any)
+                                      }}
+                                      className={`w-full flex items-center justify-between px-3 py-2 text-[11px] hover:bg-nodri-card transition-colors ${marcado ? 'text-nodri-cyan' : 'text-nodri-t1'}`}
+                                    >
+                                      <span className="flex items-center gap-2">
+                                        <span className={`w-3.5 h-3.5 rounded border flex items-center justify-center flex-shrink-0 ${marcado ? 'bg-nodri-cyan border-nodri-cyan' : 'border-nodri-border'}`}>
+                                          {marcado && <svg width="8" height="8" viewBox="0 0 8 8"><path d="M1 4l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round"/></svg>}
+                                        </span>
+                                        {s.nome}
+                                      </span>
+                                      {s.comissao_valor && (
+                                        <span className="text-[10px] text-green-400 ml-2">R$ {Number(s.comissao_valor).toLocaleString('pt-BR', {minimumFractionDigits:2})}</span>
+                                      )}
+                                    </button>
+                                  )
+                                })}
+                              </div>
+                            ))
+                          })()}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Tags dos selecionados */}
+                    {(form.servicos_habilitados?.length ?? 0) > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {(form.servicos_habilitados || []).map(sid => {
+                          const s = servicosSalao.find(x => x.id === sid)
+                          if (!s) return null
+                          return (
+                            <span key={sid} className="flex items-center gap-1 bg-nodri-cyan/10 border border-nodri-cyan/30 text-nodri-cyan text-[10px] px-2 py-0.5 rounded-full">
+                              {s.nome}
+                              <button type="button" onClick={() => set('servicos_habilitados', (form.servicos_habilitados||[]).filter(x=>x!==sid) as any)} className="hover:text-white">×</button>
+                            </span>
+                          )
+                        })}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5 space-y-3">

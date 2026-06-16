@@ -10,6 +10,7 @@ interface Servico {
   nome: string
   preco_fixo: number | null
   preco_min: number | null
+  comissao_valor: number | null
   observacao: string | null
   ativo: boolean
 }
@@ -37,7 +38,7 @@ export default function ServicosPage() {
   const [categoriasAbertas, setCategoriasAbertas] = useState<Record<string, boolean>>({})
   const [editando, setEditando] = useState<Servico | null>(null)
   const [novo, setNovo] = useState(false)
-  const [form, setForm] = useState({ categoria: '', nome: '', preco_tipo: 'fixo', preco: '', observacao: '' })
+  const [form, setForm] = useState({ categoria: '', nome: '', preco_tipo: 'fixo', preco: '', comissao_valor: '', observacao: '' })
   const [salvando, setSalvando] = useState(false)
   const [deletando, setDeletando] = useState<string | null>(null)
 
@@ -71,6 +72,7 @@ export default function ServicosPage() {
       nome: s.nome,
       preco_tipo: s.preco_fixo ? 'fixo' : 'min',
       preco: String(s.preco_fixo || s.preco_min || ''),
+      comissao_valor: String(s.comissao_valor || ''),
       observacao: s.observacao || ''
     })
   }
@@ -85,13 +87,14 @@ export default function ServicosPage() {
     setSalvando(true)
     const preco_fixo = form.preco_tipo === 'fixo' ? parseFloat(form.preco) || null : null
     const preco_min = form.preco_tipo === 'min' ? parseFloat(form.preco) || null : null
+    const comissao_valor = parseFloat(form.comissao_valor) || null
 
     try {
       if (novo) {
         const res = await fetch('/api/servicos', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...form, preco_fixo, preco_min })
+          body: JSON.stringify({ ...form, preco_fixo, preco_min, comissao_valor })
         })
         if (!res.ok) throw new Error()
         toast.success('Serviço adicionado!')
@@ -99,7 +102,7 @@ export default function ServicosPage() {
         const res = await fetch('/api/servicos', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: editando.id, ...form, preco_fixo, preco_min, ativo: editando.ativo })
+          body: JSON.stringify({ id: editando.id, ...form, preco_fixo, preco_min, comissao_valor, ativo: editando.ativo })
         })
         if (!res.ok) throw new Error()
         toast.success('Serviço atualizado!')
@@ -177,7 +180,7 @@ export default function ServicosPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <div>
                 <label className={labelCls}>Tipo de Preço</label>
                 <select value={form.preco_tipo} onChange={e => setForm(f => ({ ...f, preco_tipo: e.target.value }))} className={inputCls}>
@@ -188,6 +191,10 @@ export default function ServicosPage() {
               <div>
                 <label className={labelCls}>Valor (R$)</label>
                 <input type="number" value={form.preco} onChange={e => setForm(f => ({ ...f, preco: e.target.value }))} className={inputCls} placeholder="0,00" step="0.01" />
+              </div>
+              <div>
+                <label className={labelCls}>Comissão Líquida (R$)</label>
+                <input type="number" value={form.comissao_valor} onChange={e => setForm(f => ({ ...f, comissao_valor: e.target.value }))} className={inputCls} placeholder="0,00" step="0.01" />
               </div>
             </div>
 
@@ -240,6 +247,11 @@ export default function ServicosPage() {
                             {s.observacao && <p className="text-[10px] text-nodri-t3">{s.observacao}</p>}
                           </div>
                           <span className="text-[12px] font-medium text-nodri-cyan whitespace-nowrap">{fmtPreco(s)}</span>
+                          {s.comissao_valor && (
+                            <span className="text-[10px] text-green-400 whitespace-nowrap">
+                              comissão R$ {Number(s.comissao_valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </span>
+                          )}
                           <div className="flex items-center gap-1">
                             <button
                               onClick={() => toggleAtivo(s)}
