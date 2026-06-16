@@ -253,10 +253,40 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
   }
 
   const copiarMensagem = (texto: string, idx: number) => {
-    navigator.clipboard.writeText(texto).then(() => {
-      setCopiados(prev => new Set(prev).add(idx))
-      setTimeout(() => setCopiados(prev => { const s = new Set(prev); s.delete(idx); return s }), 2000)
-    })
+    // Copia HTML formatado (para colar no Word com formatação) + texto puro como fallback
+    const html = renderMarkdown(texto)
+    const htmlLimpo = `
+      <html><body style="font-family:Calibri,Arial,sans-serif;font-size:11pt;color:#111;line-height:1.6">
+        <style>
+          table{border-collapse:collapse;width:100%;margin:12px 0}
+          th{background:#1a1a2e;color:#fff;padding:8px 12px;text-align:left;font-size:10pt}
+          td{padding:7px 12px;border:1px solid #ddd;font-size:10pt}
+          tr:nth-child(even) td{background:#f9f9f9}
+          h1{font-size:16pt;color:#1a1a2e;border-bottom:2px solid #f59e0b;padding-bottom:4px}
+          h2{font-size:14pt;color:#1a1a2e;border-bottom:1px solid #f59e0b;padding-bottom:3px}
+          h3{font-size:12pt;color:#1a1a2e}
+          ul{margin:8px 0;padding-left:20px}
+          li{margin:4px 0}
+          hr{border:none;border-top:1px solid #ddd;margin:12px 0}
+        </style>
+        ${html}
+      </body></html>`
+
+    try {
+      const blob = new Blob([htmlLimpo], { type: 'text/html' })
+      const blobText = new Blob([texto], { type: 'text/plain' })
+      const item = new ClipboardItem({ 'text/html': blob, 'text/plain': blobText })
+      navigator.clipboard.write([item]).then(() => {
+        setCopiados(prev => new Set(prev).add(idx))
+        setTimeout(() => setCopiados(prev => { const s = new Set(prev); s.delete(idx); return s }), 2000)
+      })
+    } catch {
+      // Fallback: copia texto puro se ClipboardItem não for suportado
+      navigator.clipboard.writeText(texto).then(() => {
+        setCopiados(prev => new Set(prev).add(idx))
+        setTimeout(() => setCopiados(prev => { const s = new Set(prev); s.delete(idx); return s }), 2000)
+      })
+    }
   }
 
   const imprimir = () => {
