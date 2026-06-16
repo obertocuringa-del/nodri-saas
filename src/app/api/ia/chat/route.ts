@@ -244,13 +244,18 @@ function formatarDadosSalao(dados: any, profissionalId?: string): string {
 
     // 2. Detalhe COMPLETO do profissional em foco (se houver)
     if (nomeProf) {
+      // Match por nome completo/apelido exato, ou nome + sobrenome (não só o primeiro
+      // nome) para não misturar feedbacks de dois profissionais com nome em comum
+      const STOPWORDS_NOME = new Set(['da', 'de', 'do', 'das', 'dos', 'e'])
+      const tokensFoco = nomeProf.toLowerCase().trim().split(/\s+/).filter((t: string) => t && !STOPWORDS_NOME.has(t)).slice(0, 2)
       const ocorrencias = dados.feedbacks_prof.filter((f: any) => {
         const nomeBanco = (f.profissional_nome || '').toLowerCase().trim()
         const nomeFoco = nomeProf.toLowerCase().trim()
-        return nomeBanco === nomeFoco
-          || (apelido && nomeBanco === apelido)
-          || nomeBanco.includes(nomeFoco.split(' ')[0])
-          || nomeFoco.includes(nomeBanco.split(' ')[0])
+        if (nomeBanco === nomeFoco) return true
+        if (apelido && nomeBanco === apelido) return true
+        if (tokensFoco.length < 2) return false
+        const tokensBanco = nomeBanco.split(/\s+/).filter((t: string) => t && !STOPWORDS_NOME.has(t))
+        return tokensFoco.every((t: string) => tokensBanco.some((nt: string) => nt.startsWith(t) || t.startsWith(nt)))
       })
       if (ocorrencias.length) {
         linhas.push(`## DETALHE DE FEEDBACKS — ${nomeProf.toUpperCase()}`)

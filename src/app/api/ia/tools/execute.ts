@@ -2,6 +2,9 @@ import { supabaseAdmin } from '@/lib/supabase'
 
 const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 const fmtR = (v: number) => `R$${(v||0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+// Preposições não podem ser usadas como token de match de nome, senão "Daniel da Rocha"
+// casa com qualquer nome que contenha "da" — ver mesma correção em metasAnalitico.ts
+const STOPWORDS_NOME = new Set(['da', 'de', 'do', 'das', 'dos', 'e'])
 
 // Encontra profissional por nome/apelido
 function encontrarProfissional(nome: string, profissionais: any[]) {
@@ -58,16 +61,18 @@ export async function executarFerramenta(nome: string, args: any, salaoId: strin
         if (servicosHabilitadosTexto) linhas.push(servicosHabilitadosTexto)
         linhas.push('')
 
-        // Match de nome — mesma lógica da tela
+        // Match de nome — mesma lógica da tela (preposições filtradas para evitar
+        // que "da"/"de"/"do" casem indevidamente com outro profissional, ver metasAnalitico.ts)
         const nomeCompleto = prof.nome_completo.toLowerCase().trim()
         const apelidoProf = (prof.apelido || '').toLowerCase().trim()
-        const tokens = nomeCompleto.split(/\s+/).filter(Boolean).slice(0, 2)
+        const tokens = nomeCompleto.split(/\s+/).filter((t: string) => t && !STOPWORDS_NOME.has(t)).slice(0, 2)
         function matchProfNome(item: any): boolean {
           const n = (item.profissional || item.profissional_original || '').toLowerCase().trim()
           if (!n) return false
           if (n === nomeCompleto) return true
           if (apelidoProf && (n === apelidoProf || n.includes(apelidoProf) || apelidoProf.includes(n))) return true
-          const nTokens = n.split(/\s+/).filter(Boolean)
+          const nTokens = n.split(/\s+/).filter((t: string) => t && !STOPWORDS_NOME.has(t))
+          if (tokens.length === 0 || nTokens.length === 0) return false
           const matchCount = tokens.filter((t: string) => nTokens.some((nt: string) => nt.startsWith(t) || t.startsWith(nt))).length
           return matchCount >= Math.min(tokens.length, 2)
         }
@@ -279,15 +284,21 @@ export async function executarFerramenta(nome: string, args: any, salaoId: strin
           else ocorrPosMap[n] = (ocorrPosMap[n] || 0) + 1
         }
 
-        // Cruza profissionais com dados aggregados
+        // Cruza profissionais com dados aggregados — exige nome E sobrenome batendo
+        // (não só o primeiro nome) para não misturar dois profissionais com nome em comum
         function resolverNome(p: any) {
           const nome = p.nome_completo
           const apelido = p.apelido || ''
-          // Tenta match exato, depois por apelido, depois por primeiro nome
+          // Tenta match exato, depois por apelido
           if (fatMap[nome]) return nome
           if (apelido && fatMap[apelido]) return apelido
-          const primeiro = nome.split(' ')[0]
-          return Object.keys(fatMap).find(k => k.toLowerCase().includes(primeiro.toLowerCase())) || nome
+          const tokensNome = nome.toLowerCase().split(/\s+/).filter((t: string) => t && !STOPWORDS_NOME.has(t)).slice(0, 2)
+          if (tokensNome.length < 2) return nome
+          const achado = Object.keys(fatMap).find((k) => {
+            const kTokens = k.toLowerCase().split(/\s+/).filter((t: string) => t && !STOPWORDS_NOME.has(t))
+            return tokensNome.every((t: string) => kTokens.some((kt: string) => kt.startsWith(t) || t.startsWith(kt)))
+          })
+          return achado || nome
         }
 
         const cargo = args.cargo?.toLowerCase() || ''

@@ -184,10 +184,13 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     .order('ano').order('mes')
 
   // Match de nome: compara primeiros tokens do nome do profissional
+  // Preposições não podem ser usadas como token, senão "Daniel da Rocha" casa com
+  // qualquer nome que contenha "da" — ver mesma correção em metasAnalitico.ts
+  const STOPWORDS_NOME = new Set(['da', 'de', 'do', 'das', 'dos', 'e'])
   const nomeCompleto = (prof?.nome_completo || '').toLowerCase().trim()
   const apelido = (prof?.apelido || '').toLowerCase().trim()
-  // Pega os 2 primeiros tokens do nome para matching robusto
-  const tokens = nomeCompleto.split(/\s+/).filter(Boolean).slice(0, 2)
+  // Pega os 2 primeiros tokens (sem preposição) do nome para matching robusto
+  const tokens = nomeCompleto.split(/\s+/).filter((t: string) => t && !STOPWORDS_NOME.has(t)).slice(0, 2)
 
   function matchProf(item: any): boolean {
     const n = (item.profissional || item.profissional_original || '').toLowerCase().trim()
@@ -196,8 +199,9 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     if (n === nomeCompleto) return true
     // Match por apelido
     if (apelido && (n === apelido || n.includes(apelido) || apelido.includes(n))) return true
-    // Match pelos primeiros 2 tokens do nome
-    const nTokens = n.split(/\s+/).filter(Boolean)
+    // Match pelos primeiros 2 tokens do nome (sem preposição)
+    const nTokens = n.split(/\s+/).filter((t: string) => t && !STOPWORDS_NOME.has(t))
+    if (tokens.length === 0 || nTokens.length === 0) return false
     const matchCount = tokens.filter((t: string) => nTokens.some((nt: string) => nt.startsWith(t) || t.startsWith(nt))).length
     return matchCount >= Math.min(tokens.length, 2)
   }
