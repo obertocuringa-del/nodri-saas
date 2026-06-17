@@ -2022,8 +2022,8 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
         }
         svg.removeAttribute('width')
         svg.removeAttribute('height')
-        ;(svg as HTMLElement).style.width = '100%'
-        ;(svg as HTMLElement).style.height = 'auto'
+        ;(svg as unknown as HTMLElement).style.width = '100%'
+        ;(svg as unknown as HTMLElement).style.height = 'auto'
       })
       // Recharts wrapper com width inline
       doc.querySelectorAll<HTMLElement>('.recharts-wrapper, .recharts-responsive-container').forEach(el => {
