@@ -289,24 +289,107 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
     }
   }
 
+  const CSS_IMPRESSAO = `
+    @page { size: A4; margin: 18mm 16mm 20mm 16mm; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10.5pt; color: #1a1a2e; line-height: 1.55; background: #fff; }
+    .header { display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #7c5cfc; padding-bottom: 10px; margin-bottom: 16px; }
+    .header-brand { font-size: 18pt; font-weight: 900; color: #7c5cfc; letter-spacing: -0.5px; }
+    .header-brand span { color: #00e5c8; }
+    .header-meta { text-align: right; font-size: 8.5pt; color: #555; line-height: 1.4; }
+    .header-meta strong { display: block; font-size: 10pt; color: #1a1a2e; }
+    h1, h2, h3 { font-weight: 800; color: #1a1a2e; }
+    h1 { font-size: 13pt; border-bottom: 2px solid #7c5cfc; padding-bottom: 5px; margin-bottom: 10px; color: #7c5cfc; }
+    h2 { font-size: 11pt; background: linear-gradient(90deg,#f3f0ff,transparent); padding: 4px 8px; border-left: 4px solid #7c5cfc; margin: 12px 0 6px; color: #3d2070; }
+    h3 { font-size: 10pt; color: #3d2070; margin: 8px 0 4px; }
+    table { width: 100%; border-collapse: collapse; font-size: 9.5pt; margin: 6px 0 10px; }
+    th { background: #7c5cfc; color: #fff; padding: 5px 8px; text-align: left; font-weight: 700; font-size: 9pt; }
+    td { padding: 4px 8px; border-bottom: 1px solid #e8e8f0; vertical-align: top; }
+    tr:nth-child(even) td { background: #f8f7ff; }
+    ul, ol { padding-left: 18px; margin: 4px 0 8px; }
+    li { margin-bottom: 3px; }
+    strong { font-weight: 700; color: #1a1a2e; }
+    p { margin: 4px 0 8px; }
+    hr { border: none; border-top: 1px solid #e8e8f0; margin: 10px 0; }
+    .footer { margin-top: 28px; border-top: 2px solid #e8e8f0; padding-top: 18px; }
+    .signature-area { display: flex; gap: 32px; margin-top: 10px; }
+    .signature-block { flex: 1; }
+    .signature-line { border-bottom: 1.5px solid #555; margin-bottom: 5px; height: 32px; }
+    .signature-label { font-size: 8.5pt; color: #555; text-align: center; }
+    .footer-note { font-size: 7.5pt; color: #999; text-align: center; margin-top: 14px; }
+    @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+  `
+
+  const imprimirMensagem = (conteudo: string) => {
+    const hoje = new Date()
+    const dataStr = `${hoje.getDate()} de ${['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][hoje.getMonth()]} de ${hoje.getFullYear()}`
+    // Converte markdown para HTML semântico para impressão
+    const htmlConteudo = conteudo
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>')
+      .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+      .replace(/^#{1}\s+(.+)$/gm,'<h1>$1</h1>')
+      .replace(/^#{2}\s+(.+)$/gm,'<h2>$1</h2>')
+      .replace(/^#{3}\s+(.+)$/gm,'<h3>$1</h3>')
+      .replace(/^---+$/gm,'<hr/>')
+      .replace(/(\|.+\|\n?)+/g, (block) => {
+        const rows = block.trim().split('\n').filter(r => r.trim())
+        const isSep = (r: string) => /^\|[\s\-:|]+\|$/.test(r.trim())
+        let t = '<table>'
+        let head = true
+        for (const row of rows) {
+          if (isSep(row)) { head = false; t += '<tbody>'; continue }
+          const cells = row.split('|').filter((_,i,a) => i > 0 && i < a.length - 1)
+          t += head ? `<thead><tr>${cells.map(c=>`<th>${c.trim()}</th>`).join('')}</tr></thead>` : `<tr>${cells.map(c=>`<td>${c.trim()}</td>`).join('')}</tr>`
+        }
+        return t + '</tbody></table>'
+      })
+      .replace(/^[•\-\*]\s+(.+)$/gm,'<li>$1</li>')
+      .replace(/(<li>.*<\/li>\n?)+/g, m => `<ul>${m}</ul>`)
+      .replace(/^□\s+(.+)$/gm,'<li style="list-style:none">☐ $1</li>')
+      .replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br/>')
+    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>NODRI IA</title><style>${CSS_IMPRESSAO}</style></head><body>
+      <div class="header"><div class="header-brand">NOD<span>RI</span></div>
+      <div class="header-meta"><strong>NODRI IA — Análise</strong>Emitido em ${dataStr}<br/><span style="color:#7c5cfc;font-weight:700">Documento Confidencial</span></div></div>
+      <div>${htmlConteudo}</div>
+      <div class="footer">
+        <div class="signature-area">
+          <div class="signature-block"><div class="signature-line"></div><div class="signature-label">Assinatura do Profissional</div></div>
+          <div class="signature-block"><div class="signature-line"></div><div class="signature-label">Assinatura do Gestor</div></div>
+          <div class="signature-block"><div class="signature-line"></div><div class="signature-label">Data de Ciência<br/>${dataStr}</div></div>
+        </div>
+        <div class="footer-note">Gerado automaticamente pela NODRI IA com base nos dados operacionais do salão.</div>
+      </div>
+      <script>window.onload=function(){window.print()}</script></body></html>`
+    const iframe = document.createElement('iframe')
+    iframe.style.cssText = 'position:fixed;width:0;height:0;border:0;left:-9999px;top:-9999px;'
+    document.body.appendChild(iframe)
+    const doc = iframe.contentDocument || iframe.contentWindow?.document
+    if (!doc) { document.body.removeChild(iframe); return }
+    doc.open(); doc.write(html); doc.close()
+    setTimeout(() => { iframe.contentWindow?.print(); setTimeout(() => document.body.removeChild(iframe), 1000) }, 400)
+  }
+
   const imprimir = () => {
-    const janela = window.open('', '_blank')
-    if (!janela) return
+    const hoje = new Date()
+    const dataStr = `${hoje.getDate()} de ${['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][hoje.getMonth()]} de ${hoje.getFullYear()}`
     const conteudo = mensagens.map(m =>
       m.role === 'user'
         ? `<div style="margin:16px 0;padding:12px 16px;background:#f3f4f6;border-radius:12px;border-left:4px solid #f59e0b"><strong>Você:</strong><br/>${m.content}</div>`
         : `<div style="margin:16px 0;padding:12px 16px;background:#fff;border-radius:12px;border-left:4px solid #1a1a2e"><strong>NODRI IA:</strong><br/>${renderMarkdown(m.content)}</div>`
     ).join('')
-    janela.document.write(`<!DOCTYPE html><html><head><title>NODRI IA — Conversa</title>
-      <style>body{font-family:Arial,sans-serif;max-width:800px;margin:40px auto;color:#111;font-size:14px;line-height:1.6}
-      h1{color:#1a1a2e;border-bottom:2px solid #f59e0b;padding-bottom:8px}
-      table{border-collapse:collapse;width:100%}th,td{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f3f4f6}
-      pre{background:#f3f4f6;padding:12px;border-radius:6px;overflow-x:auto}code{font-family:monospace}
-      @media print{body{margin:20px}}</style></head>
-      <body><h1>NODRI IA — Relatório de Conversa</h1>
-      <p style="color:#666;font-size:12px">${new Date().toLocaleString('pt-BR')}</p>${conteudo}</body></html>`)
-    janela.document.close()
-    setTimeout(() => janela.print(), 500)
+    const html = `<!DOCTYPE html><html><head><title>NODRI IA — Conversa</title>
+      <style>${CSS_IMPRESSAO}body{max-width:800px;margin:40px auto}</style></head>
+      <body><div class="header"><div class="header-brand">NOD<span>RI</span></div>
+      <div class="header-meta"><strong>Conversa NODRI IA</strong>${dataStr}</div></div>
+      ${conteudo}</body></html>`
+    const iframe = document.createElement('iframe')
+    iframe.style.cssText = 'position:fixed;width:0;height:0;border:0;left:-9999px;top:-9999px;'
+    document.body.appendChild(iframe)
+    const doc = iframe.contentDocument || iframe.contentWindow?.document
+    if (!doc) { document.body.removeChild(iframe); return }
+    doc.open(); doc.write(html); doc.close()
+    setTimeout(() => { iframe.contentWindow?.print(); setTimeout(() => document.body.removeChild(iframe), 1000) }, 400)
   }
 
   const onKeyDown = (e: React.KeyboardEvent) => {
@@ -460,6 +543,14 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
                     >
                       {copiados.has(i) ? <Check size={12} /> : <Copy size={12} />}
                       {copiados.has(i) ? 'Copiado!' : 'Copiar'}
+                    </button>
+                    <button
+                      onClick={() => imprimirMensagem(msg.content)}
+                      title="Imprimir esta mensagem"
+                      style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', background: 'transparent', border: '1px solid #21262d', borderRadius: 6, cursor: 'pointer', color: '#8b949e', fontSize: 11, transition: 'all 0.2s' }}
+                    >
+                      <Printer size={12} />
+                      Imprimir
                     </button>
                   </div>
                 )}
