@@ -112,13 +112,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const nomeBase = prof.apelido || prof.nome_completo?.split(' ')[0] || ''
   let feedbacksTexto = 'Sem feedbacks registrados.'
   if (nomeBase) {
+    const trintaDiasAtras = new Date(); trintaDiasAtras.setDate(trintaDiasAtras.getDate() - 30)
     const { data: respostas } = await supabaseAdmin
       .from('feedback_prof_respostas')
       .select('tipo, ocorrido_descricao, descricao, criado_em')
       .eq('salao_id', salaoId)
       .ilike('profissional_nome', `%${nomeBase}%`)
+      .gte('criado_em', trintaDiasAtras.toISOString())
       .order('criado_em', { ascending: false })
-      .limit(90)
     if (respostas && respostas.length > 0) {
       const positivos = respostas.filter((r: any) => (r.tipo || '').toLowerCase().includes('positiv'))
       const negativos = respostas.filter((r: any) => (r.tipo || '').toLowerCase().includes('negativ'))
@@ -147,19 +148,18 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         .map(([desc, qtd]) => `  - ${desc}: ${qtd}x`)
         .join('\n')
 
-      // Tendência: últimos 30 dias vs 30-60 dias atrás
+      // Tendência: primeira quinzena vs segunda quinzena do mês
       const agora = new Date()
-      const corte30 = new Date(agora); corte30.setDate(agora.getDate() - 30)
-      const corte60 = new Date(agora); corte60.setDate(agora.getDate() - 60)
-      const negRecentes = negativos.filter((r: any) => new Date(r.criado_em) >= corte30).length
-      const negAnteriores = negativos.filter((r: any) => new Date(r.criado_em) >= corte60 && new Date(r.criado_em) < corte30).length
-      const tendencia = negRecentes > negAnteriores ? '📈 piorando' : negRecentes < negAnteriores ? '📉 melhorando' : '➡️ estável'
+      const corte15 = new Date(agora); corte15.setDate(agora.getDate() - 15)
+      const negSegundaQ = negativos.filter((r: any) => new Date(r.criado_em) >= corte15).length
+      const negPrimeiraQ = negativos.filter((r: any) => new Date(r.criado_em) < corte15).length
+      const tendencia = negSegundaQ > negPrimeiraQ ? '📈 piorando' : negSegundaQ < negPrimeiraQ ? '📉 melhorando' : '➡️ estável'
 
       feedbacksTexto = [
         `POSITIVOS (${positivos.length} total):`,
         positivosAgrupados || '  - sem registros detalhados',
         ``,
-        `NEGATIVOS (${negativos.length} total) — Tendência últimos 30 dias: ${tendencia} (${negAnteriores} → ${negRecentes}):`,
+        `NEGATIVOS (${negativos.length} total no mês) — Tendência: ${tendencia} (1ª quinzena: ${negPrimeiraQ} → 2ª quinzena: ${negSegundaQ}):`,
         negativosAgrupados || '  - sem reclamações registradas',
       ].join('\n')
     }
