@@ -302,24 +302,13 @@ Gere a resposta na estrutura abaixo. Use **negrito** real (não literal **). Use
 
 ---
 
-## 📊 SCORE NODRI — ${scoreNodri.total}/100 (${scoreNodri.classificacao})
-
-| Indicador | Nota | Status |
-|---|---|---|
-(preencha com os 6 componentes de score_nodri, adicionando na coluna Status: ✅ se nota ≥ 60, ⚠️ se entre 30-59, 🔴 se < 30)
-
-**Pontos Fortes:** (liste apenas os indicadores com nota ≥ 60)
-**Pontos Críticos:** (liste apenas os indicadores com nota < 50, explicando em 1 frase o impacto real no faturamento)
-
----
-
 ## 🔍 RAIO-X 360°
 
 Para cada eixo abaixo, escreva APENAS o que os dados reais mostram. Não repita entre eixos.
 
 **💰 Financeiro**
-✅ O que está funcionando: (1 ponto — se não há nenhum, diga "sem ponto forte identificado nos dados")
-⚠️ O que está prejudicando: (1-2 pontos baseados nos dados reais)
+✅ O que está funcionando: use benchmarking para mostrar a posição dela no ranking de faturamento dos últimos 12 meses entre os colegas de cargo — ex: "Ficou em 2º lugar em março/2026 com R$ X". Se sem dado, diga isso.
+⚠️ O que está prejudicando: (1-2 pontos baseados nos dados reais do mês atual)
 
 **🛒 Comercial**
 ✅ O que está funcionando: (considere venda_produtos e frequência de serviços)
@@ -330,8 +319,8 @@ Para cada eixo abaixo, escreva APENAS o que os dados reais mostram. Não repita 
 ⚠️ O que está prejudicando: (atrasos, faltas, feedbacks negativos — com números reais)
 
 **❤️ Experiência do Cliente**
-✅ O que está funcionando: (fidelização, elogios reais)
-⚠️ O que está prejudicando: (reclamações reais, impacto na retenção)
+✅ O que está funcionando: use fidelizacao — clientes com preferência mostram base fiel; interprete o que isso significa.
+⚠️ O que está prejudicando: use fidelizacao.retencao_mes_anterior se disponível — mostre quantos clientes novos vieram no mês anterior e quantos retornaram neste mês. Se sem dado, use os feedbacks negativos mais frequentes como impacto na retenção.
 
 ---
 
@@ -434,15 +423,6 @@ Exatamente 3, ordenadas por impacto financeiro estimado. Cada uma:
 ## 📱 PRESENÇA DIGITAL E POSICIONAMENTO
 
 (Escreva 3-4 orientações práticas e diretas para este cargo/perfil — sem inventar dados de redes sociais que não existem no sistema. Foco em: como usar o próprio resultado do trabalho para atrair clientes, como pedir indicações, como fortalecer relacionamento com clientes fiéis.)
-
----
-
-## 👔 VISÃO DO GESTOR
-
-"Se eu estivesse acompanhando ${prof.nome_completo} hoje, minhas 3 prioridades seriam:"
-1. (prioridade mais urgente — com número ou prazo)
-2. (segunda prioridade)
-3. (terceira prioridade)
 
 ---
 

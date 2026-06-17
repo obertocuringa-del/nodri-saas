@@ -651,13 +651,27 @@ export async function calcularDinheiroPerdido(
 
   const servicoMaisVendido = Object.entries(freqServicos).sort((a, b) => b[1] - a[1])[0]?.[0] || null
 
-  // Comissão do serviço mais vendido
+  // Comissão do serviço mais vendido — se vier zerada, usa o serviço habilitado com maior comissão como fallback
   let comissaoServicoMaisVendido = 0
-  if (servicoMaisVendido && Array.isArray(prof.servicos_habilitados) && prof.servicos_habilitados.length > 0) {
-    const { data: cat } = await supabaseAdmin
-      .from('salao_servicos').select('comissao_valor').eq('nome', servicoMaisVendido)
-      .in('id', prof.servicos_habilitados).maybeSingle()
-    comissaoServicoMaisVendido = Number(cat?.comissao_valor || 0)
+  let nomeServicoParaCalculo = servicoMaisVendido
+  if (Array.isArray(prof.servicos_habilitados) && prof.servicos_habilitados.length > 0) {
+    if (servicoMaisVendido) {
+      const { data: cat } = await supabaseAdmin
+        .from('salao_servicos').select('comissao_valor').eq('nome', servicoMaisVendido)
+        .in('id', prof.servicos_habilitados).maybeSingle()
+      comissaoServicoMaisVendido = Number(cat?.comissao_valor || 0)
+    }
+    if (comissaoServicoMaisVendido === 0) {
+      // Fallback: pega o serviço habilitado com maior comissão cadastrada
+      const { data: melhor } = await supabaseAdmin
+        .from('salao_servicos').select('nome, comissao_valor')
+        .in('id', prof.servicos_habilitados).gt('comissao_valor', 0)
+        .order('comissao_valor', { ascending: false }).limit(1).maybeSingle()
+      if (melhor) {
+        comissaoServicoMaisVendido = Number(melhor.comissao_valor)
+        nomeServicoParaCalculo = melhor.nome
+      }
+    }
   }
 
   // Comissão média de produto (histórico do próprio profissional)
@@ -670,8 +684,8 @@ export async function calcularDinheiroPerdido(
       produtosVendidos++
     }
   }
-  // Fallback: se sem histórico de produto, usa R$ 10,00 como comissão média (centro do range 1,30–20,00)
-  const comissaoProduto = produtosVendidos > 0 ? comissaoMediaProduto / produtosVendidos : 10
+  // Fallback: se sem histórico de produto, usa R$ 5,00 como comissão média (centro do range 0,50–20,00)
+  const comissaoProduto = produtosVendidos > 0 ? comissaoMediaProduto / produtosVendidos : 5
 
   const perdaAtrasos = atrasos > 0 && comissaoServicoMaisVendido > 0
     ? Math.round(atrasos * comissaoServicoMaisVendido * 100) / 100
@@ -687,7 +701,7 @@ export async function calcularDinheiroPerdido(
   const totalPerdido = Math.round(((perdaAtrasos || 0) + (perdaFaltas || 0) + (perdaProdutos || 0)) * 100) / 100
 
   return {
-    servico_mais_vendido: servicoMaisVendido,
+    servico_mais_vendido: nomeServicoParaCalculo,
     comissao_servico_mais_vendido: comissaoServicoMaisVendido,
     atrasos,
     perda_atrasos: perdaAtrasos,
