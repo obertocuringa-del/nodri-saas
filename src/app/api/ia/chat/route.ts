@@ -406,18 +406,41 @@ function formatarDadosSalao(dados: any, profissionalId?: string): string {
     }
   }
 
-  // Dados especÃ­ficos do profissional
+  // Dados específicos do profissional
   if (profissionalId && dados.prof_especifico) {
     const pe = dados.prof_especifico
     linhas.push('## PROFISSIONAL EM FOCO')
     if (pe.dados) {
       const d = pe.dados
-      linhas.push(`Nome: ${d.nome_completo}, Cargo: ${d.cargo}, CNPJ: ${d.cnpj || 'nÃ£o cadastrado'}`)
+      linhas.push(`Nome: ${d.nome_completo}, Cargo: ${d.cargo}, CNPJ: ${d.cnpj || 'não cadastrado'}`)
     }
     if (pe.periodos?.length) {
-      linhas.push('Ãšltimos perÃ­odos:')
+      linhas.push('Últimos períodos:')
       pe.periodos.slice(-6).forEach((r: any) => {
         linhas.push(`  - ${r.ano}/${String(r.mes).padStart(2,'0')}: Fat R$${(r.faturamento||0).toFixed(2)}`)
+      })
+    }
+
+    // Serviços habilitados com preço e comissão
+    if (pe.servicos_com_comissao?.length) {
+      linhas.push('')
+      linhas.push('## SERVIÇOS HABILITADOS — PREÇO E COMISSÃO')
+      linhas.push('⚠️ REGRA CRÍTICA: Nos cenários de meta, use SEMPRE o valor da COMISSÃO (não o preço do serviço).')
+      linhas.push('A meta do profissional é baseada em comissão recebida, não em faturamento bruto do salão.')
+      linhas.push('')
+      linhas.push('Serviço | Categoria | Preço Venda | Comissão')
+      const porCat: Record<string, any[]> = {}
+      pe.servicos_com_comissao.forEach((s: any) => {
+        if (!porCat[s.categoria]) porCat[s.categoria] = []
+        porCat[s.categoria].push(s)
+      })
+      Object.entries(porCat).forEach(([cat, servicos]) => {
+        linhas.push(`### ${cat}`)
+        servicos.forEach((s: any) => {
+          const preco = s.preco > 0 ? `R$${Number(s.preco).toFixed(2)}` : 'variável'
+          const comissao = s.comissao > 0 ? `R$${Number(s.comissao).toFixed(2)}` : 'não cadastrada'
+          linhas.push(`  ${s.nome}: Preço ${preco} → Comissão ${comissao}`)
+        })
       })
     }
     linhas.push('')
@@ -536,24 +559,39 @@ export async function POST(req: NextRequest) {
       metas_salao: metasSalao || [],
     }
 
-    // 5. Dados especÃ­ficos do profissional
+    // 5. Dados específicos do profissional
     if (profissional_id) {
-      const [{ data: dadosProf }, { data: periodosProf }, { data: ocorrsDoProf }] = await Promise.all([
+      const [{ data: dadosProf }, { data: periodosProf }, { data: ocorrsDoProf }, { data: servicosSalao }] = await Promise.all([
         supabaseAdmin.from('profissionais').select('*').eq('id', profissional_id).maybeSingle(),
         supabaseAdmin.from('prof_pagamentos').select('*').eq('profissional_id', profissional_id).order('ano').order('mes'),
-        // Busca apenas as ocorrências do profissional em foco (por profissional_id — sem depender de nome)
         supabaseAdmin.from('feedback_prof_respostas')
           .select('profissional_id, profissional_nome, tipo, ocorrido_descricao, descricao, criado_em')
           .eq('salao_id', salaoId)
           .eq('profissional_id', profissional_id)
           .order('criado_em', { ascending: false }),
+        supabaseAdmin.from('salao_servicos')
+          .select('nome, categoria, preco_fixo, preco_min, comissao_valor, ativo')
+          .eq('salao_id', salaoId)
+          .eq('ativo', true)
+          .order('categoria').order('nome'),
       ])
+
+      // Cruza habilidades do profissional com comissões cadastradas
+      const habilidades: string[] = dadosProf?.habilidades || []
+      const servicosComComissao = (servicosSalao || [])
+        .filter((s: any) => habilidades.includes(s.nome))
+        .map((s: any) => ({
+          nome: s.nome,
+          categoria: s.categoria,
+          preco: s.preco_fixo || s.preco_min || 0,
+          comissao: s.comissao_valor || 0,
+        }))
+
       dadosSalao.prof_especifico = {
         dados: dadosProf,
         periodos: periodosProf || [],
+        servicos_com_comissao: servicosComComissao,
       }
-      // No modo profissional: feedbacks_prof contém apenas os dados do profissional em foco
-      // Isso evita que dados de outros profissionais cheguem no contexto da IA
       if (ocorrsDoProf) {
         dadosSalao.feedbacks_prof = ocorrsDoProf
       }

@@ -86,12 +86,14 @@ export async function POST(req: NextRequest) {
       { data: ocorrencias },
       { data: pendencias },
       { data: configSalao },
+      { data: servicosSalao },
     ] = await Promise.all([
       supabaseAdmin.from('profissionais').select('*').eq('id', profissional_id).maybeSingle(),
       supabaseAdmin.from('relatorio_periodos').select('ano, mes, prof_pagamentos, prof_servicos, prof_ticket, prof_preferencia, prof_ocupacao').eq('salao_id', salaoId).gte('ano', anoInicio).order('ano').order('mes'),
       supabaseAdmin.from('feedback_prof_respostas').select('profissional_nome, tipo, ocorrido_descricao, descricao, criado_em').eq('salao_id', salaoId).order('criado_em', { ascending: false }).limit(200),
       supabaseAdmin.from('pendencias_profissionais').select('mensagem, data_limite, resolvido').eq('salao_id', salaoId).eq('profissional_id', profissional_id),
       supabaseAdmin.from('ia_configuracao').select('contexto_adicional').eq('salao_id', salaoId).maybeSingle(),
+      supabaseAdmin.from('salao_servicos').select('nome, categoria, preco_fixo, preco_min, comissao_valor').eq('salao_id', salaoId).eq('ativo', true).order('categoria').order('nome'),
     ])
 
     if (!prof) return NextResponse.json({ error: 'Profissional não encontrado' }, { status: 404 })
@@ -164,6 +166,29 @@ export async function POST(req: NextRequest) {
       linhas.push('## PENDÊNCIAS EM ABERTO')
       pendAbertas.forEach((p: any) => {
         linhas.push(`  - ${p.mensagem}${p.data_limite ? ` [Vence: ${p.data_limite}]` : ''}`)
+      })
+      linhas.push('')
+    }
+
+    // Serviços habilitados com comissão
+    const habilidades: string[] = prof.habilidades || []
+    const servicosHabilitados = (servicosSalao || []).filter((s: any) => habilidades.includes(s.nome))
+    if (servicosHabilitados.length > 0) {
+      linhas.push('## SERVIÇOS HABILITADOS — PREÇO E COMISSÃO')
+      linhas.push('⚠️ REGRA CRÍTICA: A meta deste profissional é em COMISSÃO. Nos cenários use sempre o valor da comissão, não o preço de venda.')
+      linhas.push('')
+      const porCat: Record<string, any[]> = {}
+      servicosHabilitados.forEach((s: any) => {
+        if (!porCat[s.categoria]) porCat[s.categoria] = []
+        porCat[s.categoria].push(s)
+      })
+      Object.entries(porCat).forEach(([cat, servs]) => {
+        linhas.push(`### ${cat}`)
+        servs.forEach((s: any) => {
+          const preco = s.preco_fixo || s.preco_min || 0
+          const comissao = s.comissao_valor || 0
+          linhas.push(`  ${s.nome}: Preço R$${Number(preco).toFixed(2)} → Comissão R$${Number(comissao).toFixed(2)}`)
+        })
       })
       linhas.push('')
     }
