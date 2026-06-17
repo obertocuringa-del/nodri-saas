@@ -435,6 +435,83 @@ export async function executarFerramenta(nome: string, args: any, salaoId: strin
         return linhas.join('\n')
       }
 
+      case 'buscar_faturamento_por_dia_semana': {
+        const anosAtras = Math.min(Math.max(parseInt(args.anos_atras) || 2, 1), 5)
+        const diaFiltro = (args.dia_semana || '').toLowerCase().trim() // ex: "domingo", "sábado"
+
+        const dataCorte = new Date()
+        dataCorte.setFullYear(dataCorte.getFullYear() - anosAtras)
+        const anoCorte = dataCorte.getFullYear()
+        const mesCorte = dataCorte.getMonth() + 1
+
+        const { data: periodos } = await supabaseAdmin
+          .from('relatorio_periodos')
+          .select('ano, mes, faturamento_diario')
+          .eq('salao_id', salaoId)
+          .or(`ano.gt.${anoCorte},and(ano.eq.${anoCorte},mes.gte.${mesCorte})`)
+          .order('ano').order('mes')
+
+        // Agrupa por dia da semana
+        const totaisPorDia: Record<string, { total: number; ocorrencias: number; dias: string[] }> = {}
+        for (const p of (periodos || [])) {
+          for (const item of (p.faturamento_diario || [])) {
+            const dia = (item.dia_semana || '').toLowerCase().trim()
+            if (!dia) continue
+            if (diaFiltro && !dia.includes(diaFiltro) && !diaFiltro.includes(dia)) continue
+            if (!totaisPorDia[dia]) totaisPorDia[dia] = { total: 0, ocorrencias: 0, dias: [] }
+            totaisPorDia[dia].total += Number(item.valor || 0)
+            totaisPorDia[dia].ocorrencias++
+            if (item.data) totaisPorDia[dia].dias.push(item.data)
+          }
+        }
+
+        if (Object.keys(totaisPorDia).length === 0) return 'Nenhum dado de faturamento diário encontrado para o período solicitado.'
+
+        const fmtR = (v: number) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+        const linhas: string[] = [`FATURAMENTO POR DIA DA SEMANA — últimos ${anosAtras} ano(s):\n`]
+
+        const ordem = ['segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado', 'domingo']
+        const diasOrdenados = Object.entries(totaisPorDia).sort((a, b) => {
+          const ia = ordem.findIndex(d => a[0].includes(d))
+          const ib = ordem.findIndex(d => b[0].includes(d))
+          return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib)
+        })
+
+        for (const [dia, dados] of diasOrdenados) {
+          const media = dados.ocorrencias > 0 ? dados.total / dados.ocorrencias : 0
+          linhas.push(`📅 ${dia.charAt(0).toUpperCase() + dia.slice(1)}`)
+          linhas.push(`  Total acumulado: ${fmtR(dados.total)}`)
+          linhas.push(`  Quantidade de dias: ${dados.ocorrencias}`)
+          linhas.push(`  Média por dia: ${fmtR(media)}`)
+          linhas.push('')
+        }
+
+        // Se filtrou por dia específico, mostra histórico mês a mês
+        if (diaFiltro && Object.keys(totaisPorDia).length === 1) {
+          const [, dados] = Object.entries(totaisPorDia)[0]
+          if (dados.dias.length > 0) {
+            linhas.push(`DETALHE POR DATA (${diaFiltro}s):`)
+            // Agrupa por ano/mês para mostrar totais mensais
+            const porMes: Record<string, number> = {}
+            for (const p of (periodos || [])) {
+              let totalMes = 0
+              for (const item of (p.faturamento_diario || [])) {
+                const dia = (item.dia_semana || '').toLowerCase().trim()
+                if (diaFiltro && (dia.includes(diaFiltro) || diaFiltro.includes(dia))) {
+                  totalMes += Number(item.valor || 0)
+                }
+              }
+              if (totalMes > 0) porMes[`${String(p.mes).padStart(2,'0')}/${p.ano}`] = totalMes
+            }
+            Object.entries(porMes).forEach(([periodo, val]) => {
+              linhas.push(`  ${periodo}: ${fmtR(val)}`)
+            })
+          }
+        }
+
+        return linhas.join('\n')
+      }
+
       case 'buscar_internet': {
         // Busca keys Tavily no banco (rotação automática)
         const { data: keysData } = await supabaseAdmin
@@ -557,6 +634,17 @@ export const FERRAMENTAS_GEMINI = [
           type: 'OBJECT',
           properties: {
             categoria: { type: 'STRING', description: 'Filtrar por categoria específica (opcional). Ex: "Unhas", "Coloração", "Massagem". Deixar vazio para retornar todos os serviços.' }
+          }
+        }
+      },
+      {
+        name: 'buscar_faturamento_por_dia_semana',
+        description: 'Busca o faturamento REAL do salão agrupado por dia da semana (segunda, terça, quarta, quinta, sexta, sábado, domingo) com base nos dados diários registrados no sistema. Usar quando o gestor perguntar sobre faturamento de um dia específico da semana, comparar dias, ver se vale abrir no domingo, análise de performance por dia da semana. Retorna total acumulado, quantidade de dias e média por dia para cada dia da semana.',
+        parameters: {
+          type: 'OBJECT',
+          properties: {
+            dia_semana: { type: 'STRING', description: 'Dia da semana para filtrar. Ex: "domingo", "sábado", "segunda". Deixar vazio para retornar todos os dias.' },
+            anos_atras: { type: 'STRING', description: 'Quantos anos de histórico buscar. Padrão: 2. Máximo: 5.' }
           }
         }
       },
