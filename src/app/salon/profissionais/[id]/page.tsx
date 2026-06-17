@@ -115,10 +115,17 @@ ${renderParaImpressao(planoTexto)}
 </body>
 </html>`
 
-  const win = window.open('', '_blank', 'width=900,height=700')
-  if (!win) return
-  win.document.write(html)
-  win.document.close()
+  // Usa iframe oculto para evitar bloqueio de popup do navegador
+  const iframe = document.createElement('iframe')
+  iframe.style.cssText = 'position:fixed;width:0;height:0;border:0;left:-9999px;top:-9999px;'
+  document.body.appendChild(iframe)
+  const doc = iframe.contentDocument || iframe.contentWindow?.document
+  if (!doc) { document.body.removeChild(iframe); return }
+  doc.open(); doc.write(html); doc.close()
+  setTimeout(() => {
+    iframe.contentWindow?.print()
+    setTimeout(() => document.body.removeChild(iframe), 1000)
+  }, 400)
 }
 
 // Versão de renderização específica para impressão (HTML mais semântico, sem cores neon)
