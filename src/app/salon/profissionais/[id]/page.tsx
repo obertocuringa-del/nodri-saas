@@ -1906,7 +1906,7 @@ function AbaIA({ profissionalId, nomeProfissional }: { profissionalId: string; n
             </div>
             {m.role === 'assistant' && m.content && !enviando && (
               <button
-                onClick={() => imprimirEstrategia(m.content, prof?.nome_completo || 'Profissional')}
+                onClick={() => imprimirEstrategia(m.content, nomeProfissional || 'Profissional')}
                 className="mt-1 flex items-center gap-1 px-2 py-1 rounded-lg text-nodri-t3 hover:text-nodri-cyan text-[10px] hover:bg-nodri-cyan/5 transition-colors"
               >
                 🖨️ Imprimir
