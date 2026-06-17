@@ -96,8 +96,15 @@ export async function executarFerramenta(nome: string, args: any, salaoId: strin
           for (const item of (per.prof_ocupacao || [])) {
             if (matchProfNome(item)) { dias += Number(item.dias_trabalhados||0); ocup += Number(item.taxa_ocupacao||0); ocupCount++; temDados = true }
           }
+          const servicosDoProf: { nome: string; qtd: number; valor: number }[] = []
           for (const item of (per.prof_servicos || [])) {
-            if (matchProfNome(item)) { servTotal += Number(item.quantidade||0); temDados = true }
+            if (matchProfNome(item)) {
+              servTotal += Number(item.quantidade||0)
+              temDados = true
+              if (item.servico) {
+                servicosDoProf.push({ nome: item.servico, qtd: Number(item.quantidade||0), valor: Number(item.valor||0) })
+              }
+            }
           }
           for (const item of (per.prof_produtos || [])) {
             if (matchProfNome(item)) { prodTotal += Number(item.quantidade||0); temDados = true }
@@ -106,6 +113,15 @@ export async function executarFerramenta(nome: string, args: any, salaoId: strin
             const ticketFinal = ticketCount > 0 ? ticket/ticketCount : (servTotal > 0 ? fat/servTotal : 0)
             const ocupFinal = ocupCount > 0 ? ocup/ocupCount : 0
             linhas.push(`  ${chave}: Faturamento=${fmtR(fat)}, Ticket=${fmtR(ticketFinal)}, Ocupação=${ocupFinal.toFixed(1)}%, Dias=${dias}, ComPreferência=${pref}, SemPreferência=${semPref}, Serviços=${servTotal}, Produtos=${prodTotal}`)
+            if (servicosDoProf.length > 0) {
+              linhas.push(`    SERVIÇOS REALIZADOS em ${chave}:`)
+              servicosDoProf
+                .sort((a, b) => b.qtd - a.qtd)
+                .forEach(s => {
+                  const val = s.valor > 0 ? ` — ${fmtR(s.valor)}` : ''
+                  linhas.push(`      • ${s.nome}: ${s.qtd}x${val}`)
+                })
+            }
           }
         }
 
