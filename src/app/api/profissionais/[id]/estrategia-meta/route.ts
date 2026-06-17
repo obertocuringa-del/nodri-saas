@@ -6,6 +6,7 @@ import {
   calcularIndicadoresMeta, calcularScoreNodri, calcularBenchmarking,
   calcularPotencialOculto, buscarResumoComportamental, buscarFidelizacaoAtual,
   identificarCausaRaiz, buscarPendencias, buscarVendaProdutos,
+  calcularSimuladorMeta, calcularDinheiroPerdido, calcularOportunidadesOcultas,
 } from '@/lib/metasAnalitico'
 import Anthropic from '@anthropic-ai/sdk'
 
@@ -34,7 +35,7 @@ async function chamarIA(apiKey: string, modelo: string, prompt: string): Promise
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       // Prompt ficou bem mais longo (15 seções); sem isso o modelo 2.5 gasta o
       // orçamento de tokens "pensando" e retorna texto vazio (finishReason MAX_TOKENS).
-      generationConfig: { maxOutputTokens: 8192, thinkingConfig: { thinkingBudget: 0 } },
+      generationConfig: { maxOutputTokens: 16000, thinkingConfig: { thinkingBudget: 0 } },
     }),
   })
   const j = await r.json()
@@ -155,25 +156,29 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   const scoreNodri = calcularScoreNodri({
     chanceDeBaterMetaPct: alcancabilidade.probabilidade,
-    ticketAtual: ticket_atual,
-    ticketMedioHistorico: ticket_medio_historico,
+    ticketAtual: ticket_atual, ticketMedioHistorico: ticket_medio_historico,
     ocupacaoAtual: ocupacao_atual,
     clientesPreferencia: fidelizacao.clientesPreferencia,
     clientesSemPreferencia: fidelizacao.clientesSemPreferencia,
-    positivos: comportamental.positivos,
-    negativos: comportamental.negativos,
-    atrasos: comportamental.atrasos,
-    faltas: comportamental.faltas,
+    positivos: comportamental.positivos, negativos: comportamental.negativos,
+    atrasos: comportamental.atrasos, faltas: comportamental.faltas,
     taxaMediaCrescimento: taxa_media_crescimento,
   })
 
-  // Cenários de projeção (determinísticos, a partir do ritmo atual + ajuste de execução do plano)
+  const mediaFaturamentoDiario = diasRestantes > 0 ? realizado / Math.max(1, 30 - diasRestantes) : 0
+
+  const [simuladorMeta, dinheiroPerdido, oportunidadesOcultas] = await Promise.all([
+    calcularSimuladorMeta(salaoId, params.id, prof.servicos_habilitados || [], faltam, diasRestantes),
+    calcularDinheiroPerdido(salaoId, params.id, comportamental.atrasos, comportamental.faltas, mediaFaturamentoDiario),
+    calcularOportunidadesOcultas(salaoId, params.id, prof.cargo, prof.servicos_habilitados || [], ano, mes),
+  ])
+
   const projecaoConservadora = Math.round((alcancabilidade.projecao_ritmo_atual || realizado) * 100) / 100
   const projecaoRealista = Math.round(((alcancabilidade.projecao_ritmo_atual || realizado) * 1.1) * 100) / 100
   const projecaoOtimista = Math.round((metaFinal * 1.05) * 100) / 100
 
   const contratoJson = JSON.stringify({
-    aviso_unidades: 'meta, faturado, falta, necessario_por_dia e os valores dentro de potencial_oculto estão todos em COMISSÃO (o que o profissional efetivamente recebe, não o preço cheio cobrado do cliente). ticket_medio_atual e ticket_medio_historico estão em VALOR CHEIO da venda (preço cobrado do cliente). São unidades diferentes — nunca some ou compare diretamente um com o outro.',
+    aviso_unidades: 'meta/faturado/falta/necessario_por_dia/simulador/dinheiro_perdido estão em COMISSÃO. ticket_medio está em VALOR CHEIO (preço cobrado do cliente). Nunca some ou compare diretamente.',
     meta: Math.round(metaFinal * 100) / 100,
     faturado: Math.round(realizado * 100) / 100,
     falta: Math.round(faltam * 100) / 100,
@@ -185,12 +190,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     chance_de_bater_meta_pct: alcancabilidade.probabilidade,
     principal_gargalo,
     causa_raiz_do_gargalo: causaRaiz,
-    efeito_dominó_se_resolver_gargalo: probabilidade_se_resolver_gargalo != null
-      ? `se resolver "${principal_gargalo}", a chance de bater a meta sobe de ${alcancabilidade.probabilidade}% para ${probabilidade_se_resolver_gargalo}%`
-      : 'sem dado histórico suficiente para projetar o efeito de resolver o gargalo',
+    efeito_se_resolver_gargalo: probabilidade_se_resolver_gargalo != null
+      ? `chance sobe de ${alcancabilidade.probabilidade}% para ${probabilidade_se_resolver_gargalo}%`
+      : 'sem dado histórico suficiente',
     score_nodri: scoreNodri,
-    benchmarking: benchmarking || 'sem colegas suficientes na mesma categoria para comparar',
-    potencial_oculto: potencialOculto || 'sem dado suficiente de serviços para identificar oportunidade específica',
+    benchmarking: benchmarking || 'sem colegas suficientes para comparar',
+    oportunidades_ocultas: oportunidadesOcultas.length > 0 ? oportunidadesOcultas : 'sem dado suficiente',
+    simulador_meta: simuladorMeta || 'sem comissões cadastradas para simular',
+    dinheiro_perdido: dinheiroPerdido || 'sem dado suficiente',
     comportamental: {
       feedbacks_positivos: comportamental.positivos,
       feedbacks_negativos: comportamental.negativos,
@@ -199,100 +206,209 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       principais_elogios: comportamental.top_elogios,
       principais_reclamacoes: comportamental.top_reclamacoes,
     },
-    pendencias_abertas: pendencias.length > 0 ? pendencias : 'nenhuma pendência aberta registrada pelo gestor',
+    fidelizacao: {
+      clientes_preferencia: fidelizacao.clientesPreferencia,
+      clientes_sem_preferencia: fidelizacao.clientesSemPreferencia,
+    },
+    pendencias_abertas: pendencias.length > 0 ? pendencias : 'nenhuma',
     venda_produtos: {
       quantidade_mes_atual: vendaProdutos.quantidade_atual,
       media_historica_mensal: vendaProdutos.media_historica,
     },
-    cenarios: {
-      conservador: projecaoConservadora,
-      realista: projecaoRealista,
-      otimista: projecaoOtimista,
-    },
+    cenarios: { conservador: projecaoConservadora, realista: projecaoRealista, otimista: projecaoOtimista },
   }, null, 2)
 
-  const prompt = `Você é a NODRI IA, mentora de performance de um salão de beleza. Você não escreve relatório corporativo — você fala como um mentor experiente que olhou os números e foi direto ao ponto com o profissional. Frases curtas, tom humano, sem enrolação teórica.
+  const prompt = `Você é a NODRI IA, mentora de alta performance de salão de beleza. Tom: mentor direto, humano, sem enrolação. Frases curtas. Nunca escreva relatório corporativo. NUNCA repita a mesma informação em duas seções diferentes.
 
 REGRAS CRÍTICAS:
-1. Os números abaixo em "DADOS NUMÉRICOS JÁ CALCULADOS PELO SISTEMA" são fatos. NÃO recalcule, NÃO corrija, NÃO estime valores diferentes destes.
-2. NUNCA sugira uma quantidade de atendimentos, serviços ou volume de trabalho fora da capacidade real de agenda do profissional nos dias restantes do mês — os números de "potencial_oculto" já vêm limitados a um volume realista, use exatamente esses.
-3. Limite TODA lista de ações a no máximo 3 itens. Não gere 8 ou 10 sugestões — escolha as 3 que mais movem o resultado e descarte o resto.
-4. Se um campo vier como "sem dado suficiente" ou similar, diga isso com transparência em vez de inventar um número.
-5. Nunca invente serviços ou preços fora da lista de SERVIÇOS QUE REALIZA.
-6. ATENÇÃO ÀS UNIDADES (leia "aviso_unidades" nos dados): meta/faturado/falta/necessario_por_dia/potencial_oculto são valores de COMISSÃO (quanto o profissional ganha). ticket_medio é o valor CHEIO da venda ao cliente. São números em escalas diferentes — nunca trate como a mesma coisa, nunca some um com o outro, e ao falar de "quanto isso adiciona à meta" use sempre o valor de comissão, nunca o preço cheio do serviço.
+1. Todos os números em "DADOS DO SISTEMA" são fatos calculados — NÃO recalcule, NÃO corrija, NÃO estime diferente.
+2. Use EXATAMENTE os números de simulador_meta e dinheiro_perdido — esses vieram do banco de dados, não os altere.
+3. Listas de ações: máximo 3 itens. Escolha os 3 de maior impacto e descarte o resto.
+4. Campo "sem dado suficiente" → diga isso, não invente.
+5. Use apenas serviços da lista SERVIÇOS DO PROFISSIONAL. Nunca invente serviço ou preço.
+6. UNIDADES: meta/faturado/falta/necessario_por_dia/simulador/dinheiro_perdido = COMISSÃO do profissional. ticket_medio = VALOR CHEIO cobrado do cliente. São escalas diferentes — nunca some um com o outro.
+7. Não repita dados do Resumo Executivo nas seções seguintes — cada seção acrescenta, nunca repete.
 
-PROFISSIONAL: ${prof.nome_completo} (${prof.apelido || ''}) — Cargo: ${prof.cargo}
-HABILIDADES (texto livre): ${prof.habilidades || 'não informado'}
+PROFISSIONAL: ${prof.nome_completo} (${prof.apelido || ''}) | Cargo: ${prof.cargo}
+HABILIDADES: ${prof.habilidades || 'não informado'}
 
-SERVIÇOS QUE REALIZA (com preço e comissão líquida por serviço):
+SERVIÇOS DO PROFISSIONAL (preço cheio | comissão líquida):
 ${servicosTexto}
 
-FEEDBACKS DE CLIENTES (texto livre, contexto qualitativo):
+FEEDBACKS DE CLIENTES:
 ${feedbacksTexto}
 
-DADOS NUMÉRICOS JÁ CALCULADOS PELO SISTEMA:
+DADOS DO SISTEMA (calculados pelo backend — use como verdade absoluta):
 ${contratoJson}
 
-Gere a resposta EXATAMENTE na estrutura abaixo, em markdown, usando R$ sempre que possível. Use **negrito** (markdown de verdade) para destacar números e palavras-chave. Use tabelas markdown (| Coluna | Coluna |) sempre que o conteúdo for tabular (Score, Benchmarking). Use os marcadores "✅ Pontos Fortes" e "⚠️ Pontos de Atenção" exatamente assim, como subtítulos dentro de cada eixo do Raio-X.
+---
+Gere a resposta na estrutura abaixo. Use **negrito** real (não literal **). Use tabelas markdown onde indicado. Siga a ordem e os títulos exatamente.
 
-## 🚀 PLANEJAMENTO ESTRATÉGICO DE META — ${prof.nome_completo.toUpperCase()}
+# PLANEJAMENTO ESTRATÉGICO DE META
+## ${prof.nome_completo.toUpperCase()} | ${prof.cargo} | NODRI IA
 
-## 🎯 Resumo Executivo
-(liste: Meta Mensal, Faturamento Atual, Valor Restante, Dias Restantes — cada um em uma linha com **negrito** no valor)
+---
 
-### 📈 Cenário Atual
-(probabilidade atual, principal oportunidade, principal gargalo, principal risco — uma linha cada)
+## 🎯 RESUMO EXECUTIVO
 
-### 📌 Diagnóstico Rápido
-(2-3 frases tom de mentor conectando esses pontos — não repita os números, interprete-os)
+| Item | Valor |
+|---|---|
+| Meta Mensal | R$ {meta} |
+| Faturamento Atual | R$ {faturado} |
+| Valor Restante | R$ {falta} |
+| Dias Restantes | {dias_restantes} dias |
+| Meta Diária Necessária | R$ {necessario_por_dia} |
+| Probabilidade de Atingir | {chance_de_bater_meta_pct}% |
 
-## 📊 Score NODRI
-**${scoreNodri.total}/100 — ${scoreNodri.classificacao}**
+**Diagnóstico em uma frase:** (escreva 1 frase direta explicando o que precisa acontecer para atingir a meta — sem repetir os números da tabela, interprete a situação)
 
-Monte uma tabela markdown com colunas "Indicador" e "Nota" para os 6 componentes (financeiro, comercial, fidelização, qualidade, comprometimento, evolução), depois 2-3 frases de interpretação.
+---
 
-## 🔍 Raio-X 360°
-(para cada eixo — 💰 Financeiro, 🛒 Comercial, ✂️ Técnico, 👥 Comportamental, ❤️ Experiência do Cliente — escreva o nome do eixo como subtítulo, depois "✅ Pontos Fortes" com 1-2 bullets e "⚠️ Pontos de Atenção" com 1-2 bullets, baseado nos dados reais; no eixo Comercial considere "venda_produtos"; no eixo Comportamental considere "pendencias_abertas" se houver)
+## 📊 SCORE NODRI — ${scoreNodri.total}/100 (${scoreNodri.classificacao})
 
-## 🧠 Causa Raiz
-(use "causa_raiz_do_gargalo" e, se houver, "pendencias_abertas" vencidas — no estilo: "O problema principal não é X. Também não é Y. O verdadeiro gargalo é Z." — conecte os pontos, não repita o dado)
+| Indicador | Nota | Status |
+|---|---|---|
+(preencha com os 6 componentes de score_nodri, adicionando na coluna Status: ✅ se nota ≥ 60, ⚠️ se entre 30-59, 🔴 se < 30)
 
-## ⚡ Efeito Dominó
-(use "efeito_dominó_se_resolver_gargalo" — monte uma tabela markdown com "Situação" e "Probabilidade de atingir a meta" (Atual vs. Com melhora operacional), depois explique a cadeia de causa-efeito em bullets com ➡️. Se vier "sem dado suficiente", diga isso e explique por que ainda vale resolver o gargalo)
+**Pontos Fortes:** (liste apenas os indicadores com nota ≥ 60)
+**Pontos Críticos:** (liste apenas os indicadores com nota < 50, explicando em 1 frase o impacto real no faturamento)
 
-## 🔮 Inteligência Preditiva
-(para cada cenário de "cenarios" — conservador, realista, otimista — um parágrafo curto)
+---
 
-## 💎 Potencial Oculto
-(se "potencial_oculto" tiver dado, destaque o nome do serviço, quantidade sugerida e receita estimada e "cobertura_pct_do_que_falta", usando EXATAMENTE os números fornecidos. A "receita estimada" já é a COMISSÃO do profissional nesse serviço — não o preço cheio cobrado do cliente — então não chame de "faturamento do salão", chame de "quanto isso adiciona ao que você ganha". Se vier "sem dado suficiente", diga isso e sugira como começar a gerar esse dado)
+## 🔍 RAIO-X 360°
 
-## 🏆 Benchmarking
-(monte uma tabela markdown com "Indicador" e "Posição" para faturamento/ticket médio/ocupação, se houver dado; se não, diga que não há colegas suficientes para comparar. Termine com 1 frase de diagnóstico: o problema é valor por atendimento ou quantidade de atendimentos?)
+Para cada eixo abaixo, escreva APENAS o que os dados reais mostram. Não repita entre eixos.
 
-## 🎯 As 3 Ações Com Maior Impacto
-(exatamente 3 ações numeradas, cada uma com "Meta:" e "Impacto:" em linhas separadas, usando apenas serviços/habilidades reais do profissional)
+**💰 Financeiro**
+✅ O que está funcionando: (1 ponto — se não há nenhum, diga "sem ponto forte identificado nos dados")
+⚠️ O que está prejudicando: (1-2 pontos baseados nos dados reais)
 
-## 💰 Caminho Mais Curto Para Bater a Meta
-(combine potencial_oculto + resolver o principal_gargalo: quanto isso cobre do valor que falta, e quanto resta por dia depois disso — usando "cobertura_pct_do_que_falta" e "necessario_por_dia")
+**🛒 Comercial**
+✅ O que está funcionando: (considere venda_produtos e frequência de serviços)
+⚠️ O que está prejudicando: (1-2 pontos)
 
-## 📅 Plano de Execução
-### 📍 Diário
-(meta de faturamento diário de "necessario_por_dia" + 2-3 compromissos objetivos)
-### 📍 Semanal
-(no máximo 3 prioridades da semana)
-### 📍 Mensal
-(resultado esperado no fim do mês)
+**👥 Comportamental**
+✅ O que está funcionando: (considere pendencias_abertas e pontos positivos do comportamental)
+⚠️ O que está prejudicando: (atrasos, faltas, feedbacks negativos — com números reais)
 
-## 🚨 Alertas Críticos
-(os 2-3 maiores riscos, cada um com um emoji 🔴 antes do título; se houver "pendencias_abertas" vencidas, isso deve ser o primeiro alerta)
+**❤️ Experiência do Cliente**
+✅ O que está funcionando: (fidelização, elogios reais)
+⚠️ O que está prejudicando: (reclamações reais, impacto na retenção)
 
-## 🏆 Missão dos Próximos 30 Dias
-(Meta Principal, Meta Diária, Comportamento Obrigatório, Serviço Prioritário, Resultado Esperado — cada um em uma linha com **negrito**)
+---
 
-## 👔 Visão do Gestor
-"Se eu estivesse acompanhando este profissional hoje, minhas prioridades seriam:" seguido de no máximo 3 prioridades numeradas
+## 🧠 CAUSA RAIZ
 
-🤖 Insight NODRI: (1 frase final, direta, com o insight mais valioso de tudo que foi analisado — o tipo de frase que faz o gestor pensar "essa IA realmente entendeu a situação")`
+Escreva no estilo: "O problema não é [X]. Também não é [Y]. O verdadeiro gargalo é [Z] — e é por isso que [consequência em cadeia]."
+Use causa_raiz_do_gargalo e conecte com os dados de comportamental e fidelizacao.
+
+---
+
+## 💰 SIMULADOR DE META
+
+**Faltam R$ {falta} — veja como atingir:**
+
+Para cada cenário em simulador_meta, monte uma tabela:
+
+| Serviço | Comissão por Atend. | Quantidade | Subtotal |
+|---|---|---|---|
+(preencha com os dados exatos de cada cenário)
+**Total do cenário: R$ X** ✅ Meta atingida / ⚠️ Parcialmente coberta
+
+Escreva 1 frase de recomendação indicando qual cenário é mais realista dado o histórico do profissional.
+
+---
+
+## 💎 OPORTUNIDADES OCULTAS + BENCHMARKING
+
+**Posição entre colegas:**
+| Indicador | Posição |
+|---|---|
+(use dados de benchmarking)
+
+**Serviços com potencial não explorado:**
+(use oportunidades_ocultas — para cada item: nome do serviço, frequência própria vs colegas, potencial perdido em R$/mês. Se sem dado, diga isso.)
+
+1 frase final: o problema deste profissional é valor por atendimento ou volume de atendimentos?
+
+---
+
+## 💸 DINHEIRO PERDIDO ESTE MÊS
+
+Use EXATAMENTE os números de dinheiro_perdido. Monte assim:
+
+🔴 **Atrasos:** {atrasos} atrasos × comissão do serviço mais vendido ({servico_mais_vendido} = R$ {comissao_servico_mais_vendido}) = **R$ {perda_atrasos} perdidos**
+
+🔴 **Faltas:** {faltas} faltas × média diária (R$ {media_faturamento_diario}) = **R$ {perda_faltas} perdidos**
+
+🔴 **Produtos não vendidos:** {clientes_sem_produto_estimado} clientes (~10% dos {clientes_atendidos_mes} atendidos) × R$ {comissao_media_produto} comissão média = **R$ {perda_produtos} deixados na mesa**
+
+**💰 Total potencial perdido: R$ {total_perdido}**
+
+(Se algum campo vier nulo, omita aquela linha e explique brevemente por que não foi possível calcular)
+
+---
+
+## ❤️ RETENÇÃO E FIDELIZAÇÃO
+
+Use dados de fidelizacao e comportamental.
+- Clientes com preferência: {clientes_preferencia} | Sem preferência: {clientes_sem_preferencia}
+- (1-2 frases interpretando o que isso significa para a estabilidade do faturamento)
+- 3 ações práticas de pós-venda e retenção específicas para este profissional (baseadas nos feedbacks reais)
+
+---
+
+## 🎯 AS 3 AÇÕES QUE MAIS MOVEM O RESULTADO
+
+Exatamente 3, ordenadas por impacto financeiro estimado. Cada uma:
+**1. [Nome da ação]**
+- Meta: (o que fazer, quantidade, prazo)
+- Impacto: (quanto adiciona em comissão ou qual gargalo resolve — use números reais)
+
+---
+
+## 📅 PLANO DE EXECUÇÃO
+
+**📍 Diário** — Meta: R$ {necessario_por_dia} de comissão
+- (2-3 comportamentos obrigatórios diários)
+
+**📍 Semanal**
+- (3 prioridades da semana — diferentes das diárias)
+
+**📍 Mensal**
+- Meta: R$ {meta} de comissão total
+- (resultado esperado em ocupação e comportamento)
+
+---
+
+## 📋 CHECKLIST DOS PRÓXIMOS 30 DIAS
+
+□ Não faltar nenhum dia
+□ Não atrasar nenhum atendimento
+□ Não sair antes do horário
+□ Fazer pós-venda para pelo menos 10 clientes
+□ Oferecer serviço adicional em todo atendimento
+□ Vender pelo menos 1 produto por dia
+□ (adicione 1-2 itens específicos para este profissional baseados nos dados reais)
+
+---
+
+## 📱 PRESENÇA DIGITAL E POSICIONAMENTO
+
+(Escreva 3-4 orientações práticas e diretas para este cargo/perfil — sem inventar dados de redes sociais que não existem no sistema. Foco em: como usar o próprio resultado do trabalho para atrair clientes, como pedir indicações, como fortalecer relacionamento com clientes fiéis.)
+
+---
+
+## 👔 VISÃO DO GESTOR
+
+"Se eu estivesse acompanhando ${prof.nome_completo} hoje, minhas 3 prioridades seriam:"
+1. (prioridade mais urgente — com número ou prazo)
+2. (segunda prioridade)
+3. (terceira prioridade)
+
+---
+
+🤖 **Insight NODRI:** (1 frase final — o insight mais valioso, do tipo que faz o gestor pensar "essa IA entendeu a situação de verdade")`
 
   let plano_texto = ''
   try {

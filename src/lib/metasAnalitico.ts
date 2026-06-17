@@ -528,3 +528,252 @@ export async function calcularPotencialOculto(
     cobertura_pct_do_que_falta: faltam > 0 ? Math.round((estimativaReceita / faltam) * 100) : null,
   }
 }
+
+// Calcula combinações realistas de serviços para atingir o valor restante da meta.
+// Usa comissão real de cada serviço + frequência histórica do próprio profissional.
+// Gera até 4 cenários: focado no mais frequente, focado no de maior comissão, mix otimizado, e agressivo.
+export async function calcularSimuladorMeta(
+  salaoId: string, profissionalId: string, servicosHabilitados: string[],
+  faltam: number, diasRestantes: number,
+) {
+  if (faltam <= 0 || !Array.isArray(servicosHabilitados) || servicosHabilitados.length === 0) return null
+
+  const { data: prof } = await supabaseAdmin
+    .from('profissionais').select('nome_completo, apelido').eq('id', profissionalId).single()
+  if (!prof) return null
+  const matchProf = criarMatchProf((prof.nome_completo || '').toLowerCase().trim(), (prof.apelido || '').toLowerCase().trim())
+
+  const { data: servicosCatalogo } = await supabaseAdmin
+    .from('salao_servicos').select('id, nome, comissao_valor').in('id', servicosHabilitados).eq('ativo', true)
+  if (!servicosCatalogo || servicosCatalogo.length === 0) return null
+
+  // Frequência histórica dos últimos 6 meses
+  const { data: periodos } = await supabaseAdmin
+    .from('relatorio_periodos').select('prof_servicos')
+    .eq('salao_id', salaoId).order('ano', { ascending: false }).order('mes', { ascending: false }).limit(6)
+
+  const freqMap: Record<string, number> = {}
+  for (const row of (periodos || [])) {
+    for (const item of (row.prof_servicos || [])) {
+      if (!matchProf(item)) continue
+      const nome = item.servico || ''
+      freqMap[nome] = (freqMap[nome] || 0) + Number(item.quantidade || 0)
+    }
+  }
+
+  // Monta lista de serviços com comissão + frequência média mensal
+  const servicos = servicosCatalogo
+    .map((s: any) => ({
+      nome: s.nome,
+      comissao: Number(s.comissao_valor || 0),
+      freq_media_mensal: Math.round((freqMap[s.nome] || 0) / 6),
+    }))
+    .filter(s => s.comissao > 0)
+    .sort((a, b) => b.comissao - a.comissao)
+
+  if (servicos.length === 0) return null
+
+  const capacidadeDiaria = Math.max(1, Math.floor(diasRestantes * 0.6))
+
+  // Monta um cenário dado um serviço âncora (preenche o restante com o mais frequente)
+  const montarCenario = (ancora: typeof servicos[0], label: string) => {
+    const qtdAncora = Math.min(Math.ceil(faltam / ancora.comissao), capacidadeDiaria)
+    const coberto = qtdAncora * ancora.comissao
+    const resto = Math.max(0, faltam - coberto)
+    const linhas: { servico: string; comissao: number; quantidade: number; subtotal: number }[] = [
+      { servico: ancora.nome, comissao: ancora.comissao, quantidade: qtdAncora, subtotal: Math.round(coberto * 100) / 100 },
+    ]
+    if (resto > 0 && servicos.length > 1) {
+      const complemento = servicos.find(s => s.nome !== ancora.nome && s.comissao > 0)
+      if (complemento) {
+        const qtdComp = Math.min(Math.ceil(resto / complemento.comissao), Math.floor(capacidadeDiaria * 0.4))
+        linhas.push({ servico: complemento.nome, comissao: complemento.comissao, quantidade: qtdComp, subtotal: Math.round(qtdComp * complemento.comissao * 100) / 100 })
+      }
+    }
+    const total = Math.round(linhas.reduce((s, l) => s + l.subtotal, 0) * 100) / 100
+    return { label, linhas, total, bate_meta: total >= faltam }
+  }
+
+  const cenarios = []
+  // Cenário 1: focado no mais frequente
+  const maisFrequente = [...servicos].sort((a, b) => b.freq_media_mensal - a.freq_media_mensal)[0]
+  cenarios.push(montarCenario(maisFrequente, 'Focado no serviço mais frequente'))
+  // Cenário 2: focado na maior comissão
+  if (servicos[0].nome !== maisFrequente.nome) {
+    cenarios.push(montarCenario(servicos[0], 'Focado no serviço de maior comissão'))
+  }
+  // Cenário 3: mix otimizado (divide igualmente entre os 3 maiores)
+  const top3 = servicos.slice(0, Math.min(3, servicos.length))
+  if (top3.length >= 2) {
+    const qtdPorServico = Math.ceil(faltam / top3.length / (top3.reduce((s, sv) => s + sv.comissao, 0) / top3.length))
+    const linhasMix = top3.map(sv => ({
+      servico: sv.nome, comissao: sv.comissao,
+      quantidade: Math.min(qtdPorServico, Math.floor(capacidadeDiaria / top3.length)),
+      subtotal: Math.round(Math.min(qtdPorServico, Math.floor(capacidadeDiaria / top3.length)) * sv.comissao * 100) / 100,
+    }))
+    const totalMix = Math.round(linhasMix.reduce((s, l) => s + l.subtotal, 0) * 100) / 100
+    cenarios.push({ label: 'Mix otimizado (distribuído)', linhas: linhasMix, total: totalMix, bate_meta: totalMix >= faltam })
+  }
+
+  return { faltam: Math.round(faltam * 100) / 100, cenarios }
+}
+
+// Calcula o impacto financeiro das perdas operacionais do mês:
+// atrasos (serviço mais vendido perdido), faltas (média diária perdida),
+// e produtos não vendidos (10% dos clientes atendidos × comissão média de produto).
+export async function calcularDinheiroPerdido(
+  salaoId: string, profissionalId: string,
+  atrasos: number, faltas: number,
+  mediaFaturamentoDiario: number,
+) {
+  const { data: prof } = await supabaseAdmin
+    .from('profissionais').select('nome_completo, apelido, servicos_habilitados').eq('id', profissionalId).single()
+  if (!prof) return null
+  const matchProf = criarMatchProf((prof.nome_completo || '').toLowerCase().trim(), (prof.apelido || '').toLowerCase().trim())
+
+  // Serviço mais vendido historicamente (últimos 6 meses)
+  const { data: periodos } = await supabaseAdmin
+    .from('relatorio_periodos').select('prof_servicos, prof_produtos')
+    .eq('salao_id', salaoId).order('ano', { ascending: false }).order('mes', { ascending: false }).limit(6)
+
+  const freqServicos: Record<string, number> = {}
+  let totalClientesAtendidos = 0
+  for (const row of (periodos || [])) {
+    for (const item of (row.prof_servicos || [])) {
+      if (!matchProf(item)) continue
+      const nome = item.servico || ''
+      freqServicos[nome] = (freqServicos[nome] || 0) + Number(item.quantidade || 0)
+      totalClientesAtendidos += Number(item.quantidade || 0)
+    }
+  }
+  const nMeses = 6
+  const clientesMesAtual = Math.round(totalClientesAtendidos / nMeses)
+
+  const servicoMaisVendido = Object.entries(freqServicos).sort((a, b) => b[1] - a[1])[0]?.[0] || null
+
+  // Comissão do serviço mais vendido
+  let comissaoServicoMaisVendido = 0
+  if (servicoMaisVendido && Array.isArray(prof.servicos_habilitados) && prof.servicos_habilitados.length > 0) {
+    const { data: cat } = await supabaseAdmin
+      .from('salao_servicos').select('comissao_valor').eq('nome', servicoMaisVendido)
+      .in('id', prof.servicos_habilitados).maybeSingle()
+    comissaoServicoMaisVendido = Number(cat?.comissao_valor || 0)
+  }
+
+  // Comissão média de produto (histórico do próprio profissional)
+  let comissaoMediaProduto = 0
+  let produtosVendidos = 0
+  for (const row of (periodos || [])) {
+    for (const item of (row.prof_produtos || [])) {
+      if (!matchProf(item)) continue
+      comissaoMediaProduto += Number(item.comissao_produto || item.valor_produto || 0)
+      produtosVendidos++
+    }
+  }
+  // Fallback: se sem histórico de produto, usa R$ 10,00 como comissão média (centro do range 1,30–20,00)
+  const comissaoProduto = produtosVendidos > 0 ? comissaoMediaProduto / produtosVendidos : 10
+
+  const perdaAtrasos = atrasos > 0 && comissaoServicoMaisVendido > 0
+    ? Math.round(atrasos * comissaoServicoMaisVendido * 100) / 100
+    : null
+  const perdaFaltas = faltas > 0 && mediaFaturamentoDiario > 0
+    ? Math.round(faltas * mediaFaturamentoDiario * 100) / 100
+    : null
+  const clientesSemProduto = Math.round(clientesMesAtual * 0.1)
+  const perdaProdutos = clientesSemProduto > 0
+    ? Math.round(clientesSemProduto * comissaoProduto * 100) / 100
+    : null
+
+  const totalPerdido = Math.round(((perdaAtrasos || 0) + (perdaFaltas || 0) + (perdaProdutos || 0)) * 100) / 100
+
+  return {
+    servico_mais_vendido: servicoMaisVendido,
+    comissao_servico_mais_vendido: comissaoServicoMaisVendido,
+    atrasos,
+    perda_atrasos: perdaAtrasos,
+    faltas,
+    perda_faltas: perdaFaltas,
+    media_faturamento_diario: Math.round(mediaFaturamentoDiario * 100) / 100,
+    clientes_atendidos_mes: clientesMesAtual,
+    clientes_sem_produto_estimado: clientesSemProduto,
+    comissao_media_produto: Math.round(comissaoProduto * 100) / 100,
+    perda_produtos: perdaProdutos,
+    total_perdido: totalPerdido,
+  }
+}
+
+// Identifica serviços que o profissional realiza pouco mas que têm boa comissão
+// e compara com a média dos colegas do mesmo cargo — mostra o potencial perdido em R$.
+export async function calcularOportunidadesOcultas(
+  salaoId: string, profissionalId: string, cargo: string,
+  servicosHabilitados: string[], ano: number, mes: number,
+) {
+  if (!Array.isArray(servicosHabilitados) || servicosHabilitados.length === 0) return []
+
+  const { data: prof } = await supabaseAdmin
+    .from('profissionais').select('nome_completo, apelido').eq('id', profissionalId).single()
+  if (!prof) return []
+  const matchProf = criarMatchProf((prof.nome_completo || '').toLowerCase().trim(), (prof.apelido || '').toLowerCase().trim())
+
+  // Colegas do mesmo cargo
+  const { data: colegas } = await supabaseAdmin
+    .from('profissionais').select('id, nome_completo, apelido')
+    .eq('salao_id', salaoId).eq('cargo', cargo).eq('ativo', true).neq('id', profissionalId)
+
+  const { data: servicosCatalogo } = await supabaseAdmin
+    .from('salao_servicos').select('nome, comissao_valor').in('id', servicosHabilitados).eq('ativo', true)
+
+  const { data: periodos } = await supabaseAdmin
+    .from('relatorio_periodos').select('prof_servicos')
+    .eq('salao_id', salaoId).order('ano', { ascending: false }).order('mes', { ascending: false }).limit(6)
+
+  // Frequência do próprio profissional por serviço (média mensal)
+  const freqProf: Record<string, number> = {}
+  for (const row of (periodos || [])) {
+    for (const item of (row.prof_servicos || [])) {
+      if (!matchProf(item)) continue
+      const nome = item.servico || ''
+      freqProf[nome] = (freqProf[nome] || 0) + Number(item.quantidade || 0)
+    }
+  }
+
+  // Frequência média dos colegas por serviço (média mensal por colega)
+  const freqColegas: Record<string, number[]> = {}
+  for (const colega of (colegas || [])) {
+    const matchColega = criarMatchProf((colega.nome_completo || '').toLowerCase().trim(), (colega.apelido || '').toLowerCase().trim())
+    for (const row of (periodos || [])) {
+      for (const item of (row.prof_servicos || [])) {
+        if (!matchColega(item)) continue
+        const nome = item.servico || ''
+        if (!freqColegas[nome]) freqColegas[nome] = []
+        const idx = freqColegas[nome].length
+        freqColegas[nome][idx] = (freqColegas[nome][idx] || 0) + Number(item.quantidade || 0)
+      }
+    }
+  }
+
+  const oportunidades = (servicosCatalogo || [])
+    .map((s: any) => {
+      const comissao = Number(s.comissao_valor || 0)
+      if (comissao <= 0) return null
+      const freqProfMensal = Math.round((freqProf[s.nome] || 0) / 6)
+      const mediaColegasMensal = freqColegas[s.nome]?.length
+        ? Math.round(freqColegas[s.nome].reduce((a: number, b: number) => a + b, 0) / freqColegas[s.nome].length / 6)
+        : 0
+      const gap = Math.max(0, mediaColegasMensal - freqProfMensal)
+      if (gap === 0) return null
+      return {
+        servico: s.nome,
+        comissao_por_atendimento: comissao,
+        freq_propria_mensal: freqProfMensal,
+        freq_media_colegas_mensal: mediaColegasMensal,
+        gap_mensal: gap,
+        potencial_perdido_mes: Math.round(gap * comissao * 100) / 100,
+      }
+    })
+    .filter(Boolean)
+    .sort((a: any, b: any) => b.potencial_perdido_mes - a.potencial_perdido_mes)
+    .slice(0, 4)
+
+  return oportunidades
+}
