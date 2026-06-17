@@ -126,7 +126,6 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
   const [conversaId, setConversaId] = useState<string | null>(null)
   const [iniciado, setIniciado] = useState(false)
   const [copiados, setCopiados] = useState<Set<number>>(new Set())
-  const [mostrarTodasPerguntas, setMostrarTodasPerguntas] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
@@ -429,7 +428,6 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
   ]
 
   const sugestoesAtivas = profissionalId ? sugestoesProfissional : sugestoesGestor
-  const sugestoesvisiveis = mostrarTodasPerguntas ? sugestoesAtivas : sugestoesAtivas.slice(0, 4)
 
   const fechar = () => {
     if (!modoEmbarcado) { setAberto(false); setTelaCheia(false) }
