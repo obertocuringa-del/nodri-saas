@@ -1992,6 +1992,11 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
 .print-content .grid-cols-4, .print-content [class*="grid-cols-4"] { grid-template-columns: repeat(4, 1fr); }
 .print-content [class*="animate-spin"] { display: none !important; }
 .print-content [class*="overflow-x-auto"] { overflow: visible !important; }
+.print-content canvas { display: none !important; }
+.print-content .recharts-wrapper,
+.print-content .recharts-responsive-container { display: none !important; }
+.print-content svg.recharts-surface { display: none !important; }
+.print-content svg:not([class*="lucide"]) { max-width: 100% !important; height: auto !important; }
 .footer { position: fixed; bottom: 0; left: 0; right: 0; border-top: 1px solid #ddd; padding-top: 6px; display: flex; justify-content: space-between; font-size: 7.5pt; color: #888; }
 </style></head><body>
 <div class="header">
