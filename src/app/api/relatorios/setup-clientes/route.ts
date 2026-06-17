@@ -70,9 +70,13 @@ export async function POST(req: NextRequest) {
 
   const erros: string[] = []
   for (const sql of sqls) {
-    const { error } = await supabaseAdmin.rpc('exec_sql', { sql }).single().catch(() => ({ error: { message: 'rpc indisponível' } }))
-    if (error && !error.message?.includes('already exists')) {
-      erros.push(error.message)
+    try {
+      const { error } = await supabaseAdmin.rpc('exec_sql', { sql }).single()
+      if (error && !error.message?.includes('already exists')) {
+        erros.push(error.message)
+      }
+    } catch {
+      erros.push('rpc indisponível')
     }
   }
 
