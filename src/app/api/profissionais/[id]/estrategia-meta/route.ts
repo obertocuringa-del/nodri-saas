@@ -108,7 +108,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }
   }
 
-  // Feedbacks (positivos e negativos) do profissional — mesmo padrão usado em /metricas
+  // Feedbacks do profissional — agrupados por categoria com contagem e tendência
   const nomeBase = prof.apelido || prof.nome_completo?.split(' ')[0] || ''
   let feedbacksTexto = 'Sem feedbacks registrados.'
   if (nomeBase) {
@@ -118,12 +118,50 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       .eq('salao_id', salaoId)
       .ilike('profissional_nome', `%${nomeBase}%`)
       .order('criado_em', { ascending: false })
-      .limit(30)
+      .limit(90)
     if (respostas && respostas.length > 0) {
       const positivos = respostas.filter((r: any) => (r.tipo || '').toLowerCase().includes('positiv'))
       const negativos = respostas.filter((r: any) => (r.tipo || '').toLowerCase().includes('negativ'))
-      const resumo = (arr: any[]) => arr.slice(0, 5).map((r: any) => r.ocorrido_descricao || r.descricao).filter(Boolean).join(' | ') || 'sem registros detalhados'
-      feedbacksTexto = `Positivos recentes (${positivos.length}): ${resumo(positivos)}\nNegativos recentes (${negativos.length}): ${resumo(negativos)}`
+
+      // Agrupa negativos por descrição com contagem
+      const contagemNeg: Record<string, number> = {}
+      for (const r of negativos) {
+        const desc = (r.ocorrido_descricao || r.descricao || '').trim()
+        if (desc) contagemNeg[desc] = (contagemNeg[desc] || 0) + 1
+      }
+      const negativosAgrupados = Object.entries(contagemNeg)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 8)
+        .map(([desc, qtd]) => `  - ${desc}: ${qtd}x`)
+        .join('\n')
+
+      // Agrupa positivos por descrição com contagem
+      const contagemPos: Record<string, number> = {}
+      for (const r of positivos) {
+        const desc = (r.ocorrido_descricao || r.descricao || '').trim()
+        if (desc) contagemPos[desc] = (contagemPos[desc] || 0) + 1
+      }
+      const positivosAgrupados = Object.entries(contagemPos)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([desc, qtd]) => `  - ${desc}: ${qtd}x`)
+        .join('\n')
+
+      // Tendência: últimos 30 dias vs 30-60 dias atrás
+      const agora = new Date()
+      const corte30 = new Date(agora); corte30.setDate(agora.getDate() - 30)
+      const corte60 = new Date(agora); corte60.setDate(agora.getDate() - 60)
+      const negRecentes = negativos.filter((r: any) => new Date(r.criado_em) >= corte30).length
+      const negAnteriores = negativos.filter((r: any) => new Date(r.criado_em) >= corte60 && new Date(r.criado_em) < corte30).length
+      const tendencia = negRecentes > negAnteriores ? '📈 piorando' : negRecentes < negAnteriores ? '📉 melhorando' : '➡️ estável'
+
+      feedbacksTexto = [
+        `POSITIVOS (${positivos.length} total):`,
+        positivosAgrupados || '  - sem registros detalhados',
+        ``,
+        `NEGATIVOS (${negativos.length} total) — Tendência últimos 30 dias: ${tendencia} (${negAnteriores} → ${negRecentes}):`,
+        negativosAgrupados || '  - sem reclamações registradas',
+      ].join('\n')
     }
   }
 
@@ -354,7 +392,7 @@ Use EXATAMENTE os números de dinheiro_perdido. Monte assim:
 Use dados de fidelizacao e comportamental.
 - Clientes com preferência: {clientes_preferencia} | Sem preferência: {clientes_sem_preferencia}
 - (1-2 frases interpretando o que isso significa para a estabilidade do faturamento)
-- 3 ações práticas de pós-venda e retenção específicas para este profissional (baseadas nos feedbacks reais)
+- Para cada reclamação negativa com ≥ 2 ocorrências nos FEEDBACKS DE CLIENTES, escreva 1 ação prática de melhoria específica. Máximo 5 ações. Se não há reclamações repetidas, sugira 2 ações de fidelização baseadas nos elogios positivos.
 
 ---
 
