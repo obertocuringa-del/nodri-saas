@@ -103,6 +103,8 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
   const [busca, setBusca] = useState('')
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
   const [configPrograma, setConfigPrograma] = useState<{ link: string; link_atualizacao: string; atualizacao_ativa: boolean } | null>(null)
+  const [alertasIA, setAlertasIA] = useState<{ tipo: string; titulo: string; mensagem: string; icone: string }[]>([])
+  const [alertasDismissed, setAlertasDismissed] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     fetch('/api/config/programa')
@@ -110,6 +112,13 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
       .then(d => {
         if (d && typeof d === 'object' && !Array.isArray(d)) setConfigPrograma(d)
       })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    fetch('/api/ia/alertas')
+      .then(r => r.json())
+      .then(d => { if (d.alertas) setAlertasIA(d.alertas) })
       .catch(() => {})
   }, [])
   const TABS_FIXAS = ['Todos os Módulos', 'Manual do Usuário', 'Dicas Nodri', 'Feedback de Cliente', 'Feedback Profissional']
@@ -576,6 +585,35 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
             </div>
           )}
           </div>
+
+          {/* Painel de alertas proativos da IA */}
+          {alertasIA.filter(a => !alertasDismissed.has(a.titulo)).length > 0 && (
+            <div style={{ padding: '0 24px 24px' }}>
+              <div style={{ background: '#161b22', border: '1px solid #21262d', borderRadius: 12, overflow: 'hidden' }}>
+                <div style={{ padding: '12px 16px', borderBottom: '1px solid #21262d', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: '#f59e0b' }}>⚡ NODRI IA — Alertas do dia</span>
+                  <span style={{ fontSize: 11, color: '#484f58', marginLeft: 'auto' }}>atualizado agora</span>
+                </div>
+                <div style={{ padding: '8px 16px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {alertasIA.filter(a => !alertasDismissed.has(a.titulo)).map(alerta => (
+                    <div key={alerta.titulo} style={{
+                      display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 12px', borderRadius: 8,
+                      background: alerta.tipo === 'critico' ? 'rgba(239,68,68,0.08)' : alerta.tipo === 'atencao' ? 'rgba(245,158,11,0.08)' : 'rgba(34,197,94,0.08)',
+                      border: `1px solid ${alerta.tipo === 'critico' ? 'rgba(239,68,68,0.25)' : alerta.tipo === 'atencao' ? 'rgba(245,158,11,0.25)' : 'rgba(34,197,94,0.25)'}`,
+                    }}>
+                      <span style={{ fontSize: 18, flexShrink: 0, lineHeight: 1.3 }}>{alerta.icone}</span>
+                      <div style={{ flex: 1 }}>
+                        <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#e6edf3' }}>{alerta.titulo}</p>
+                        <p style={{ margin: '2px 0 0', fontSize: 12, color: '#8b949e', lineHeight: 1.5 }}>{alerta.mensagem}</p>
+                      </div>
+                      <button onClick={() => setAlertasDismissed(prev => new Set([...prev, alerta.titulo]))}
+                        style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#484f58', fontSize: 16, lineHeight: 1, flexShrink: 0, padding: '0 4px' }}>✕</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </main>
       </div>
       <ChatWidget />

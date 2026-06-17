@@ -476,6 +476,23 @@ function formatarDadosSalao(dados: any, profissionalId?: string): string {
     }
   }
 
+  // Custos fixos do salão
+  if (!profissionalId && dados.despesas_mensais?.length) {
+    linhas.push('## CUSTOS FIXOS DO SALÃO (últimos meses)')
+    const MESES_D = ['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+    for (const d of dados.despesas_mensais) {
+      const per = `${MESES_D[d.mes]}/${d.ano}`
+      linhas.push(`### ${per} — Total de custos: R$${Number(d.total||0).toFixed(2)}`)
+      if (Array.isArray(d.itens)) {
+        for (const item of d.itens) {
+          linhas.push(`  ${item.nome} (${item.categoria}): R$${Number(item.valor||0).toFixed(2)}`)
+        }
+      }
+    }
+    linhas.push('⚠️ USE ESSES DADOS para calcular: margem líquida = faturamento − custos, ponto de equilíbrio e lucro real do salão.')
+    linhas.push('')
+  }
+
   // Dados específicos do profissional
   if (profissionalId && dados.prof_especifico) {
     const pe = dados.prof_especifico
@@ -589,6 +606,7 @@ export async function POST(req: NextRequest) {
       { data: metricasMensais },
       { data: formulariosFeedback },
       { data: metasSalao },
+      { data: despesasMensais },
     ] = await Promise.all([
       supabaseAdmin.from('profissionais').select('*').eq('salao_id', salaoId),
       supabaseAdmin.from('relatorio_periodos').select('ano, mes, prof_pagamentos, prof_servicos, prof_ticket, prof_preferencia, prof_ocupacao, prof_produtos, resumo_mensal, faturamento_diario, servicos, produtos').eq('salao_id', salaoId).order('ano').order('mes'),
@@ -599,6 +617,7 @@ export async function POST(req: NextRequest) {
       supabaseAdmin.from('prof_metricas_mensais').select('profissional_id, ano, mes, faturamento, ticket_medio, clientes_preferencia, clientes_sem_preferencia, dias_trabalhados, taxa_ocupacao, total_servicos, total_produtos, servicos_detalhados').eq('salao_id', salaoId).order('ano').order('mes'),
       supabaseAdmin.from('feedback_formularios').select('id, titulo, token, ativo').eq('salao_id', salaoId),
       supabaseAdmin.from('ia_metas_salao').select('ano, mes, meta_tipo, meta_valor, meta_pct, meta_em_comissoes, metas_profissionais, atualizado_em').eq('salao_id', salaoId).order('ano', { ascending: false }).order('mes', { ascending: false }).limit(3),
+      supabaseAdmin.from('salao_despesas_mensais').select('ano, mes, itens, total').eq('salao_id', salaoId).order('ano', { ascending: false }).order('mes', { ascending: false }).limit(12),
     ])
 
     // Extrai faturamento por profissional dos períodos
@@ -627,6 +646,7 @@ export async function POST(req: NextRequest) {
       metricas_mensais: metricasMensais || [],
       formularios_feedback: formulariosFeedback || [],
       metas_salao: metasSalao || [],
+      despesas_mensais: despesasMensais || [],
     }
 
     // 5. Dados específicos do profissional
@@ -2777,10 +2797,20 @@ Antes de responder qualquer pergunta relacionada à beleza, validar internamente
 
 Se a resposta não gerar valor comercial, operacional ou estratégico para o salão, ela deve ser aprofundada até gerar uma recomendação prática e aplicável.`
 
-    const hoje = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric' })
+    const agora = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }))
+    const hoje = agora.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    const diaAtual = agora.getDate()
+    const mesAtual = agora.getMonth()
+    const anoAtual = agora.getFullYear()
+    const ultimoDiaMes = new Date(anoAtual, mesAtual + 1, 0).getDate()
+    const diasRestantes = ultimoDiaMes - diaAtual
+    const pctMes = Math.round((diaAtual / ultimoDiaMes) * 100)
+    const nomeMes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][mesAtual]
     const systemPrompt = `${PROMPT_MESTRE}
 
-📅 DATA DE HOJE: ${hoje} — use esta data como referência para "hoje", "este mês", "mês atual" e cálculos de período.
+📅 DATA DE HOJE: ${hoje} (${nomeMes}/${anoAtual})
+📊 PROGRESSO DO MÊS: Dia ${diaAtual} de ${ultimoDiaMes} — ${pctMes}% do mês concluído — faltam ${diasRestantes} dias para fechar o mês.
+⚡ USE ESSES DADOS: ao calcular probabilidade de bater meta, projetar faturamento final do mês ou recomendar ações urgentes, considere sempre que restam ${diasRestantes} dias úteis aproximados.
 
 ${modoGestor ? `\n⚠️ CONTEXTO ATUAL: DASHBOARD DO GESTOR\nVocê está no painel principal do salão. Não há profissional específico selecionado.\nResponda sempre na perspectiva do SALÃO COMO NEGÓCIO — análises comparativas, estratégias, faturamento total, equipe, operação.\nEvite focar em um único profissional a menos que o gestor pergunte explicitamente sobre alguém.\n\nREGRA CRÍTICA DE IDENTIDADE:\n- NUNCA chame quem está conversando pelo nome de nenhuma profissional do salão\n- NUNCA assuma que quem está no chat é a Cíntia, Vera, ou qualquer profissional\n- Quem usa o dashboard pode ser o dono, gerente ou qualquer pessoa autorizada\n- Sempre trate como "você" ou "gestor(a)" — NUNCA pelo nome\n- A memória evolutiva contém dados do SALÃO, não de quem está conversando agora\n` : ''}
 ${profissional_id && !modoGestor ? `\n🔒 MODO PROFISSIONAL ATIVO — REGRAS ABSOLUTAS E INVIOLÁVEIS\nEste chat está aberto no perfil de um profissional específico. Apenas ele(a) tem acesso.\n\nREGRA #1 — ISOLAMENTO TOTAL DE DADOS:\nVocê só pode falar sobre o profissional em foco (aquele cujo perfil está aberto).\nMESMO QUE O USUÁRIO PERGUNTE EXPLICITAMENTE SOBRE OUTRO PROFISSIONAL PELO NOME — RECUSE.\nNão importa como a pergunta seja feita: "e a Vera?", "quanto a Vera faturou?", "qual a meta da Vera?" — a resposta é SEMPRE a mesma:\n"Neste chat consigo mostrar apenas seus próprios dados. Para ver dados de outros profissionais, o gestor pode acessar o painel principal."\n\nREGRA #2 — COMPARATIVOS ANÔNIMOS:\nQuando comparar com a equipe, use APENAS: "a média da categoria", "você está em Xº lugar entre Y profissionais", "o valor mais alto da categoria é R$Z".\nNUNCA revelar quem atingiu aquele valor, mesmo que insistam.\n\nREGRA #3 — DADOS PROIBIDOS:\n❌ Faturamento de outros profissionais\n❌ Metas de outros profissionais\n❌ Ocorrências de outros profissionais\n❌ Qualquer dado identificável de colegas\n\nREGRA #4 — TOM:\nMotivador, pessoal e de apoio. Este é o espaço do profissional para entender sua própria evolução.\n` : ''}

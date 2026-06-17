@@ -126,8 +126,30 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
   const [conversaId, setConversaId] = useState<string | null>(null)
   const [iniciado, setIniciado] = useState(false)
   const [copiados, setCopiados] = useState<Set<number>>(new Set())
+  const [gravandoVoz, setGravandoVoz] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const recognitionRef = useRef<any>(null)
+
+  const iniciarVoz = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    if (!SpeechRecognition) { alert('Seu navegador não suporta reconhecimento de voz. Use Chrome.'); return }
+    if (gravandoVoz) { recognitionRef.current?.stop(); return }
+    const rec = new SpeechRecognition()
+    rec.lang = 'pt-BR'
+    rec.continuous = false
+    rec.interimResults = false
+    rec.onstart = () => setGravandoVoz(true)
+    rec.onend = () => setGravandoVoz(false)
+    rec.onerror = () => setGravandoVoz(false)
+    rec.onresult = (e: any) => {
+      const texto = e.results[0][0].transcript
+      setInput(prev => prev ? prev + ' ' + texto : texto)
+      setTimeout(() => inputRef.current?.focus(), 50)
+    }
+    recognitionRef.current = rec
+    rec.start()
+  }
 
   // Biblioteca de prompts
   const [prompts, setPrompts] = useState<Prompt[]>([])
@@ -639,6 +661,13 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
                 style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: '#e6edf3', fontSize: 14, lineHeight: 1.6, resize: 'none', minHeight: 24, maxHeight: 140, fontFamily: 'inherit' }}
                 rows={1}
               />
+              <button
+                onClick={iniciarVoz}
+                title={gravandoVoz ? 'Parar gravação' : 'Falar com a IA'}
+                style={{ width: 36, height: 36, borderRadius: 10, background: gravandoVoz ? 'linear-gradient(135deg,#ef4444,#dc2626)' : '#21262d', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.2s' }}
+              >
+                <span style={{ fontSize: 16 }}>{gravandoVoz ? '⏹' : '🎤'}</span>
+              </button>
               <button
                 onClick={() => enviar()}
                 disabled={!input.trim() || carregando}
