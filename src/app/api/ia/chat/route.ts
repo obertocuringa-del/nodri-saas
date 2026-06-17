@@ -111,8 +111,9 @@ function formatarDadosSalao(dados: any, profissionalId?: string): string {
   const fmtR = (v: number) => `R$${(v||0).toFixed(2)}`
   const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 
-  // Profissionais
-  if (dados.profissionais?.length) {
+  // Modo profissional: NÃO exibe dados de outros profissionais
+  // Apenas lista nomes para referência de comparação quando necessário
+  if (!profissionalId && dados.profissionais?.length) {
     linhas.push('## PROFISSIONAIS DO SALÃO')
     dados.profissionais.forEach((p: any) => {
       linhas.push(`- ${p.nome_completo} (${p.cargo}) — ${p.ativo ? 'Ativo' : 'Inativo'}`)
@@ -120,8 +121,57 @@ function formatarDadosSalao(dados: any, profissionalId?: string): string {
     linhas.push('')
   }
 
+  if (profissionalId && dados.profissionais?.length) {
+    linhas.push('## PROFISSIONAIS DO SALÃO (referência para comparativos)')
+    linhas.push(dados.profissionais.map((p: any) => p.nome_completo).join(', '))
+    linhas.push('⚠️ REGRA: Você está no perfil de um profissional específico. NÃO exiba dados financeiros, ocorrências ou métricas de outros profissionais. Para comparativos, use a ferramenta buscar_comparativo_profissionais.')
+    linhas.push('')
+  }
+
   // Dados financeiros de relatorio_periodos (JSONB)
   if (dados.periodos_raw?.length) {
+    // Modo profissional: mostra apenas o profissional em foco
+    if (profissionalId) {
+      const profNome = dados.prof_especifico?.dados?.nome_completo || ''
+      const profApelido = dados.prof_especifico?.dados?.apelido || ''
+      const STOPWORDS = new Set(['da','de','do','das','dos','e'])
+      const tokens = profNome.toLowerCase().split(/\s+/).filter((t: string) => t && !STOPWORDS.has(t)).slice(0, 2)
+      function matchProf(item: any): boolean {
+        const n = (item.profissional || '').toLowerCase().trim()
+        if (!n) return false
+        if (n === profNome.toLowerCase()) return true
+        if (profApelido && n === profApelido.toLowerCase()) return true
+        const nTokens = n.split(/\s+/).filter((t: string) => t && !STOPWORDS.has(t))
+        return tokens.length >= 2 && tokens.every((t: string) => nTokens.some((nt: string) => nt.startsWith(t) || t.startsWith(nt)))
+      }
+      linhas.push(`## DADOS FINANCEIROS — ${profNome.toUpperCase()}`)
+      for (const per of dados.periodos_raw) {
+        const chave = `${MESES[per.mes-1]}/${String(per.ano).slice(2)}`
+        let fat = 0, serv = 0, tick = 0, tickCount = 0, ocup = 0, ocupCount = 0, pref = 0
+        let temDados = false
+        for (const item of (per.prof_pagamentos || [])) {
+          if (matchProf(item)) { fat += Number(item.valor_a_pagar||0) + Number(item.desconto||0); temDados = true }
+        }
+        for (const item of (per.prof_servicos || [])) {
+          if (matchProf(item)) { serv += Number(item.quantidade||0); temDados = true }
+        }
+        for (const item of (per.prof_ticket || [])) {
+          if (matchProf(item)) { tick += Number(item.ticket_medio||0); tickCount++; temDados = true }
+        }
+        for (const item of (per.prof_ocupacao || [])) {
+          if (matchProf(item)) { ocup += Number(item.taxa_ocupacao||0); ocupCount++; temDados = true }
+        }
+        for (const item of (per.prof_preferencia || [])) {
+          if (matchProf(item)) { pref += Number(item.clientes_preferencia||0); temDados = true }
+        }
+        if (temDados) {
+          const tickFinal = tickCount > 0 ? tick/tickCount : (serv > 0 ? fat/serv : 0)
+          const ocupFinal = ocupCount > 0 ? ocup/ocupCount : 0
+          linhas.push(`  ${chave}: Fat ${fmtR(fat)}, ${serv} serviços, Ticket ${fmtR(tickFinal)}, Ocupação ${ocupFinal.toFixed(1)}%, Preferências ${pref}`)
+        }
+      }
+      linhas.push('')
+    } else {
     linhas.push('## DADOS FINANCEIROS POR PROFISSIONAL')
     // Agrega faturamento por profissional/mês
     const fatMap: Record<string, Record<string, number>> = {}
@@ -215,14 +265,28 @@ function formatarDadosSalao(dados: any, profissionalId?: string): string {
       })
     }
     linhas.push('')
+    } // fim else (modo gestor)
   }
 
-  // Ocorrências / Feedbacks Profissionais — SEMPRE envia todos agrupados por profissional
+  // Ocorrências / Feedbacks Profissionais
   if (dados.feedbacks_prof?.length) {
     const nomeProf = dados.prof_especifico?.dados?.nome_completo || dados.prof_especifico?.dados?.apelido
     const apelido = (dados.prof_especifico?.dados?.apelido || '').toLowerCase().trim()
 
-    // 1. Resumo GERAL — todas as ocorrências agrupadas por profissional
+    if (profissionalId) {
+      // Modo profissional: só mostra ocorrências do profissional em foco (já filtrado na query)
+      linhas.push(`## OCORRÊNCIAS — ${(nomeProf || '').toUpperCase()}`)
+      const contagem: Record<string, number> = {}
+      dados.feedbacks_prof.forEach((f: any) => {
+        contagem[f.ocorrido_descricao || f.tipo] = (contagem[f.ocorrido_descricao || f.tipo] || 0) + 1
+      })
+      const neg = dados.feedbacks_prof.filter((f: any) => f.tipo === 'negativo').length
+      const pos = dados.feedbacks_prof.filter((f: any) => f.tipo === 'positivo').length
+      linhas.push(`Total: ${dados.feedbacks_prof.length} (${neg} negativos, ${pos} positivos)`)
+      Object.entries(contagem).sort((a,b) => b[1]-a[1]).forEach(([tipo, qtd]) => linhas.push(`  - ${tipo}: ${qtd}x`))
+      linhas.push('')
+    } else {
+    // Modo gestor: resumo geral de todos os profissionais
     linhas.push('## FEEDBACKS / OCORRÊNCIAS DE TODOS OS PROFISSIONAIS')
     const porProf: Record<string, any[]> = {}
     dados.feedbacks_prof.forEach((f: any) => {
@@ -284,10 +348,11 @@ function formatarDadosSalao(dados: any, profissionalId?: string): string {
       }
       linhas.push('')
     }
+    } // fim else (modo gestor feedbacks)
   }
 
-  // Feedbacks de clientes — nota + comentário
-  if (dados.feedbacks_clientes?.length) {
+  // Feedbacks de clientes — nota + comentário (só no modo gestor)
+  if (!profissionalId && dados.feedbacks_clientes?.length) {
     linhas.push('## FEEDBACKS DE CLIENTES (AVALIAÇÕES)')
     linhas.push(`Total de avaliações: ${dados.feedbacks_clientes.length}`)
     const notas = dados.feedbacks_clientes.map((f: any) => Number(f.nota_geral)).filter((n: number) => !isNaN(n) && n > 0)
@@ -309,55 +374,59 @@ function formatarDadosSalao(dados: any, profissionalId?: string): string {
     linhas.push('')
   }
 
-  // Métricas mensais detalhadas por profissional (prof_metricas_mensais)
+  // Métricas mensais detalhadas — filtradas por profissional quando em modo profissional
   if (dados.metricas_mensais?.length) {
     const MESES_M = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
-    linhas.push('## MÉTRICAS DETALHADAS POR PROFISSIONAL')
-    // Agrupa por profissional
-    const metPorProf: Record<string, any[]> = {}
-    dados.metricas_mensais.forEach((m: any) => {
-      const prof = dados.profissionais?.find((p: any) => p.id === m.profissional_id)
-      const nome = prof?.nome_completo || m.profissional_id
-      if (!metPorProf[nome]) metPorProf[nome] = []
-      metPorProf[nome].push(m)
-    })
-    Object.entries(metPorProf).forEach(([nome, meses]) => {
-      linhas.push(`### ${nome}`)
-      meses.forEach((m: any) => {
-        const chave = `${MESES_M[m.mes-1]}/${String(m.ano).slice(2)}`
-        linhas.push(`  ${chave}: Fat R$${Number(m.faturamento||0).toFixed(2)}, ${m.total_servicos} serviços, Ticket R$${Number(m.ticket_medio||0).toFixed(2)}, Ocupação ${m.taxa_ocupacao}%, Dias ${m.dias_trabalhados}, Pref ${m.clientes_preferencia} / Sem-pref ${m.clientes_sem_preferencia}, Produtos ${m.total_produtos}`)
-        // Detalhe dos serviços realizados
-        if (m.servicos_detalhados?.length) {
-          const top = [...m.servicos_detalhados]
-            .sort((a: any, b: any) => b.valor - a.valor)
-            .slice(0, 5)
-          top.forEach((s: any) => linhas.push(`    • ${s.nome || s.servico}: R$${Number(s.valor||0).toFixed(2)} (${s.quantidade || 1}x)`))
-        }
+    const metricasFiltradas = profissionalId
+      ? dados.metricas_mensais.filter((m: any) => m.profissional_id === profissionalId)
+      : dados.metricas_mensais
+    if (metricasFiltradas.length) {
+      linhas.push(profissionalId ? '## MÉTRICAS DETALHADAS' : '## MÉTRICAS DETALHADAS POR PROFISSIONAL')
+      const metPorProf: Record<string, any[]> = {}
+      metricasFiltradas.forEach((m: any) => {
+        const prof = dados.profissionais?.find((p: any) => p.id === m.profissional_id)
+        const nome = prof?.nome_completo || m.profissional_id
+        if (!metPorProf[nome]) metPorProf[nome] = []
+        metPorProf[nome].push(m)
       })
-    })
-    linhas.push('')
+      Object.entries(metPorProf).forEach(([nome, meses]) => {
+        if (!profissionalId) linhas.push(`### ${nome}`)
+        meses.forEach((m: any) => {
+          const chave = `${MESES_M[m.mes-1]}/${String(m.ano).slice(2)}`
+          linhas.push(`  ${chave}: Fat R$${Number(m.faturamento||0).toFixed(2)}, ${m.total_servicos} serviços, Ticket R$${Number(m.ticket_medio||0).toFixed(2)}, Ocupação ${m.taxa_ocupacao}%, Dias ${m.dias_trabalhados}, Pref ${m.clientes_preferencia} / Sem-pref ${m.clientes_sem_preferencia}, Produtos ${m.total_produtos}`)
+          if (m.servicos_detalhados?.length) {
+            const top = [...m.servicos_detalhados].sort((a: any, b: any) => b.valor - a.valor).slice(0, 5)
+            top.forEach((s: any) => linhas.push(`    • ${s.nome || s.servico}: R$${Number(s.valor||0).toFixed(2)} (${s.quantidade || 1}x)`))
+          }
+        })
+      })
+      linhas.push('')
+    }
   }
 
-  // Pendências em aberto
-  if (dados.pendencias?.length) {
+  // Pendências — filtradas por profissional no modo profissional
+  const pendFiltradas = profissionalId
+    ? (dados.pendencias || []).filter((p: any) => p.profissional_id === profissionalId)
+    : dados.pendencias || []
+  if (pendFiltradas.length) {
     linhas.push('## PENDÊNCIAS EM ABERTO')
-    dados.pendencias.forEach((p: any) => {
+    pendFiltradas.forEach((p: any) => {
       const prof = dados.profissionais?.find((pr: any) => pr.id === p.profissional_id)
       const nome = prof?.nome_completo || 'Desconhecido'
       const venc = p.data_limite ? ` [Vence: ${p.data_limite}]` : ''
-      linhas.push(`- ${nome}: ${p.mensagem}${venc}`)
+      linhas.push(`- ${profissionalId ? '' : nome + ': '}${p.mensagem}${venc}`)
     })
     linhas.push('')
   }
 
-  // Pendências resolvidas (histórico)
-  if (dados.pendencias_resolvidas?.length) {
+  const pendResFiltradas = profissionalId
+    ? (dados.pendencias_resolvidas || []).filter((p: any) => p.profissional_id === profissionalId)
+    : dados.pendencias_resolvidas || []
+  if (pendResFiltradas.length) {
     linhas.push('## PENDÊNCIAS RESOLVIDAS (HISTÓRICO)')
-    dados.pendencias_resolvidas.forEach((p: any) => {
-      const prof = dados.profissionais?.find((pr: any) => pr.id === p.profissional_id)
-      const nome = prof?.nome_completo || 'Desconhecido'
+    pendResFiltradas.forEach((p: any) => {
       const resolvida = p.resolvido_em ? ` [Resolvida em: ${new Date(p.resolvido_em).toLocaleDateString('pt-BR')}]` : ''
-      linhas.push(`- ${nome}: ${p.mensagem}${resolvida}`)
+      linhas.push(`- ${p.mensagem}${resolvida}`)
     })
     linhas.push('')
   }
