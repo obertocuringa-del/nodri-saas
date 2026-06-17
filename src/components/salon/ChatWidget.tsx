@@ -127,6 +127,8 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
   const [iniciado, setIniciado] = useState(false)
   const [copiados, setCopiados] = useState<Set<number>>(new Set())
   const [gravandoVoz, setGravandoVoz] = useState(false)
+  const [sidebarChatAberta, setSidebarChatAberta] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const recognitionRef = useRef<any>(null)
@@ -150,6 +152,13 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
     recognitionRef.current = rec
     rec.start()
   }
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 1024)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
   // Biblioteca de prompts
   const [prompts, setPrompts] = useState<Prompt[]>([])
@@ -480,8 +489,17 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
         <div style={containerStyle}>
 
           {/* Header */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 24px', background: '#161b22', borderBottom: '1px solid #21262d', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#161b22', borderBottom: '1px solid #21262d', flexShrink: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              {/* Botão menu mobile */}
+              {isMobile && (
+                <button onClick={() => setSidebarChatAberta(v => !v)}
+                  style={{ width: 34, height: 34, background: sidebarChatAberta ? '#f59e0b' : '#21262d', border: 'none', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'background 0.2s' }}
+                  title="Perguntas salvas"
+                >
+                  <span style={{ fontSize: 16, color: sidebarChatAberta ? '#000' : '#8b949e' }}>☰</span>
+                </button>
+              )}
               <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg,#f59e0b,#d97706)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, color: '#000', flexShrink: 0 }}>N</div>
               <div>
                 <p style={{ color: '#e6edf3', fontWeight: 700, fontSize: telaCheia ? 16 : 14, margin: 0 }}>NODRI IA</p>
@@ -506,10 +524,25 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
           </div>
 
           {/* Layout: sidebar + chat */}
-          <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+          <div style={{ flex: 1, display: 'flex', overflow: 'hidden', position: 'relative' }}>
+
+          {/* Overlay mobile para fechar sidebar ao clicar fora */}
+          {isMobile && sidebarChatAberta && (
+            <div onClick={() => setSidebarChatAberta(false)}
+              style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 30 }}
+            />
+          )}
 
           {/* ── Sidebar Esquerda — Biblioteca de Prompts ── */}
-          <div style={{ width: 260, flexShrink: 0, background: '#161b22', borderRight: '1px solid #21262d', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div style={isMobile ? {
+            width: 260, flexShrink: 0, background: '#161b22', borderRight: '1px solid #21262d',
+            display: 'flex', flexDirection: 'column', overflow: 'hidden',
+            position: 'absolute', top: 0, left: sidebarChatAberta ? 0 : -260, bottom: 0, zIndex: 40,
+            transition: 'left 0.25s ease',
+          } : {
+            width: 260, flexShrink: 0, background: '#161b22', borderRight: '1px solid #21262d',
+            display: 'flex', flexDirection: 'column', overflow: 'hidden',
+          }}>
             {/* Cabeçalho sidebar */}
             <div style={{ padding: '14px 14px 10px', borderBottom: '1px solid #21262d', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span style={{ fontSize: 12, fontWeight: 700, color: '#8b949e', textTransform: 'uppercase', letterSpacing: 1 }}>Perguntas Salvas</span>
@@ -526,7 +559,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
               {prompts.map(p => (
                 <div key={p.id}
                   style={{ borderRadius: 8, padding: '8px 10px', marginBottom: 4, background: '#0d1117', border: '1px solid #21262d', display: 'flex', alignItems: 'center', gap: 6, group: 'true' } as any}>
-                  <button onClick={() => usarPrompt(p)} title={p.script}
+                  <button onClick={() => { usarPrompt(p); if (isMobile) setSidebarChatAberta(false) }} title={p.script}
                     style={{ flex: 1, background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', color: '#c9d1d9', fontSize: 12, lineHeight: 1.4, padding: 0, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
                     {p.titulo}
                   </button>
@@ -551,7 +584,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
                 {sugestoesAtivas.map(s => (
                   <div key={s.titulo}
                     style={{ borderRadius: 8, padding: '7px 10px', marginBottom: 4, background: '#0d1117', border: '1px solid #21262d', cursor: 'pointer', transition: 'border-color 0.2s' }}
-                    onClick={() => { setInput(s.prompt); setTimeout(() => inputRef.current?.focus(), 50) }}
+                    onClick={() => { setInput(s.prompt); setTimeout(() => inputRef.current?.focus(), 50); if (isMobile) setSidebarChatAberta(false) }}
                     onMouseEnter={e => (e.currentTarget.style.borderColor = '#f59e0b')}
                     onMouseLeave={e => (e.currentTarget.style.borderColor = '#21262d')}
                   >
