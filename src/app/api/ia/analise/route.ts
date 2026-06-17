@@ -202,6 +202,18 @@ export async function POST(req: NextRequest) {
 ${instrucoes ? `INSTRUÇÕES DO PROPRIETÁRIO:\n${instrucoes}\n` : ''}
 ${contexto ? `CONTEXTO DO SALÃO:\n${contexto}\n` : ''}
 
+REGRA DE CONSISTÊNCIA DOS DADOS — OBRIGATÓRIA:
+Antes de qualquer conclusão, valide se existem dados suficientes para sustentá-la.
+• PROIBIDO afirmar que um serviço é pouco ou muito vendido sem ter o detalhamento de serviços realizados
+• PROIBIDO comparar desempenho por serviço sem histórico de serviços realizados
+• PROIBIDO fazer suposições disfarçadas de análise
+• Quando não houver dado disponível: informe a limitação claramente, não compense com suposição
+
+FORMATO OBRIGATÓRIO — diferenciar sempre:
+📊 FATO — baseado em dado real
+💡 HIPÓTESE — possibilidade não confirmada
+🎯 RECOMENDAÇÃO — ação sugerida
+
 Com base nos dados abaixo, gere um DIAGNÓSTICO COMPLETO e DEFINITIVO deste profissional.
 
 Este diagnóstico será armazenado como seu CONHECIMENTO BASE sobre ${nomeProf}. Toda vez que alguém perguntar algo sobre ela, você já saberá a resposta sem precisar recalcular.
