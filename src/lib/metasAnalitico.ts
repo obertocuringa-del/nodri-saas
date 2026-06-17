@@ -866,5 +866,18 @@ export async function calcularOportunidadesOcultas(
       freq_media_mensal_categoria: Math.round(total / Math.max(1, (colegas || []).length) / 6),
     }))
 
-  return { oportunidades_habilitadas: oportunidades, servicos_para_aprender: servicosParaAprender }
+  // Serviços que ela TEM habilitados com comissão, ordenados do menos vendido — potencial próprio
+  const servicosMenosVendidos = (servicosCatalogo || [])
+    .map((s: any) => {
+      const comissao = Number(s.comissao_valor || 0)
+      if (comissao <= 0) return null
+      const chave = s.nome.toLowerCase().trim()
+      const freqMensal = Math.round((freqProf[chave] || 0) / 6)
+      return { servico: s.nome, comissao_por_atendimento: comissao, freq_mensal_propria: freqMensal }
+    })
+    .filter(Boolean)
+    .sort((a: any, b: any) => a.freq_mensal_propria - b.freq_mensal_propria) // menos vendido primeiro
+    .slice(0, 5)
+
+  return { oportunidades_habilitadas: oportunidades, servicos_para_aprender: servicosParaAprender, servicos_menos_vendidos: servicosMenosVendidos }
 }

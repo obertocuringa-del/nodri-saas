@@ -319,7 +319,7 @@ Para cada eixo abaixo, escreva APENAS o que os dados reais mostram. Não repita 
 ⚠️ O que está prejudicando: (1-2 pontos)
 
 **👥 Comportamental**
-✅ O que está funcionando: (considere pendencias_abertas e pontos positivos do comportamental)
+✅ O que está funcionando: use comportamental.principais_elogios — liste os elogios reais dos clientes. Se houver elogios, cite pelo menos 2. Se pendencias_abertas for vazio, mencione isso como positivo. Se não há nenhum dado positivo, diga "sem registros positivos neste período".
 ⚠️ O que está prejudicando: (atrasos, faltas, feedbacks negativos — com números reais)
 
 **❤️ Experiência do Cliente**
@@ -333,9 +333,9 @@ Para cada eixo abaixo, escreva APENAS o que os dados reais mostram. Não repita 
 Escreva no estilo: "O problema não é [X]. Também não é [Y]. O verdadeiro gargalo é [Z] — e é por isso que [consequência em cadeia]."
 Use causa_raiz_do_gargalo e conecte com os dados abaixo:
 
-**Análise de Fidelização (12 meses):** use fidelizacao.tendencia.historico_12_meses para mostrar a evolução mês a mês de clientes com preferência vs sem preferência. Identifique se a base de preferência está crescendo, estável ou caindo. Calcule a taxa média de conversão (novos_fidelizados / sem_preferencia do mês anterior) e interprete o padrão.
+**Análise 1 — Tendência de fidelização (12 meses):** use fidelizacao.tendencia.historico_12_meses. Monte uma análise cronológica: quantos clientes sem preferência ela recebeu cada mês e quantos viraram preferência no mês seguinte. Mostre se a base de clientes fiéis está crescendo, estável ou caindo. Lembre: clientes_preferencia é acumulativo (base fiel), clientes_sem_preferencia são novos a cada mês. A taxa de conversão ideal é sem_preferencia_mes_N → aumento_de_preferencia_mes_N+1.
 
-**Serviços subutilizados:** use oportunidades_ocultas.oportunidades_habilitadas para citar o serviço de maior potencial perdido — "ela sabe fazer X mas realiza apenas Y atendimentos/mês enquanto colegas fazem Z".
+**Análise 2 — Serviços que ela sabe fazer mas vende pouco:** use oportunidades_ocultas.servicos_menos_vendidos. Liste os 3 serviços habilitados com menor frequência mensal própria. Para cada um escreva: "{serviço}: realiza apenas {freq_mensal_propria} atendimentos/mês com comissão de R$ {comissao_por_atendimento} — se realizasse 3× mais, adicionaria R$ X/mês". Não compare com colegas — foco no potencial próprio inexplorado.
 
 ---
 
