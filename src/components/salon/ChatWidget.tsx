@@ -126,6 +126,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
   const [conversaId, setConversaId] = useState<string | null>(null)
   const [iniciado, setIniciado] = useState(false)
   const [copiados, setCopiados] = useState<Set<number>>(new Set())
+  const [mostrarTodasPerguntas, setMostrarTodasPerguntas] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
@@ -160,7 +161,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
     setConfirmDelete(null)
   }
 
-  const usarPrompt = (p: Prompt) => { enviar(p.script) }
+  const usarPrompt = (p: Prompt) => { setInput(p.script); setTimeout(() => inputRef.current?.focus(), 50) }
 
   useEffect(() => {
     if (aberto && !iniciado) {
@@ -396,9 +397,39 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar() }
   }
 
-  const sugestoes = profissionalId
-    ? ['Quais são minhas metas?', 'Ver meu faturamento', 'Minhas ocorrências', 'Como estou na categoria?']
-    : ['Como está o salão?', 'Quem faturou mais?', 'Ver ocorrências', 'Análise da equipe']
+  const sugestoesProfissional = [
+    { titulo: 'Minhas metas', prompt: 'Quem já bateu a meta esse mês, quem ainda pode bater, quem está longe e quem definitivamente não vai bater? Me dá o ranking completo com o que ainda dá tempo de fazer.' },
+    { titulo: 'Meu faturamento', prompt: 'Me mostre meu histórico de faturamento mês a mês, meu ticket médio, quantidade de serviços realizados e minha tendência atual.' },
+    { titulo: 'Minhas ocorrências', prompt: 'Quais são minhas ocorrências registradas? Mostre tipos, datas e quantidades. O que elas indicam sobre meu perfil?' },
+    { titulo: 'Minha posição na equipe', prompt: 'Como estou posicionado em relação à equipe? Mostre minha posição em faturamento, ticket médio e ocupação sem revelar nomes dos colegas.' },
+  ]
+
+  const sugestoesGestor = [
+    { titulo: '💰 Melhor profissional', prompt: 'Qual profissional trouxe mais resultado financeiro nos últimos 3 meses e por quê?\n\nAnalise todos os profissionais dos últimos 90 dias.\n\nConsidere: faturamento total, comissão gerada, ticket médio, quantidade de atendimentos, ocupação.\n\nApresente um ranking completo. Identifique o profissional que trouxe o maior resultado financeiro e explique detalhadamente os fatores que contribuíram para seu desempenho.\n\nMostre: valor faturado, percentual de participação no faturamento do salão, principais serviços vendidos, principais diferenciais em relação aos demais.\n\nNão utilize opiniões. Baseie-se exclusivamente nos dados encontrados no sistema.' },
+    { titulo: '📊 Serviços subaproveitados', prompt: 'Quais serviços têm o maior ticket médio e estão sendo pouco vendidos?\n\nAnalise todos os serviços cadastrados. Identifique: ticket médio, frequência de venda, receita gerada, comissão gerada.\n\nMonte um ranking dos serviços com maior ticket médio e baixa participação nas vendas.\n\nCalcule: potencial de faturamento perdido, potencial de comissão perdida.\n\nInforme quais serviços deveriam receber prioridade comercial nas próximas semanas.' },
+    { titulo: '📅 Comparativo anual', prompt: 'Comparando este mês com o mesmo mês do ano passado, o salão cresceu ou regrediu?\n\nCompare: faturamento, ticket médio, quantidade de clientes, clientes recorrentes, ocupação.\n\nCalcule crescimento ou redução percentual. Explique os principais fatores responsáveis pela variação.' },
+    { titulo: '📆 Faturamento por dia', prompt: 'Qual é o faturamento médio por dia da semana e qual dia é mais fraco?\n\nAnalise os últimos 12 meses. Calcule: faturamento médio por dia da semana, ticket médio por dia, quantidade média de clientes, ocupação média.\n\nIdentifique: melhor dia, pior dia, oportunidades de melhoria.' },
+    { titulo: '💡 Simulação +10% ticket', prompt: 'Se eu aumentar 10% no ticket médio de cada profissional, quanto a mais entraria por mês?\n\nCalcule: ticket médio atual, faturamento atual, projeção com aumento de 10%.\n\nApresente: impacto por profissional, impacto total no salão. Mostre quais profissionais possuem maior potencial de crescimento.' },
+    { titulo: '⚠️ Abaixo do potencial', prompt: 'Qual profissional está abaixo do potencial e o que está travando o desempenho dele?\n\nAnalise: histórico de faturamento, ocupação, ticket médio, retenção, ocorrências, evolução.\n\nIdentifique o profissional com maior diferença entre potencial e resultado atual. Explique o que está limitando seu crescimento e quanto ele poderia faturar se corrigisse os principais gargalos.' },
+    { titulo: '📈 Ranking de ocupação', prompt: 'Quem tem a maior taxa de ocupação e quem tem a menor?\n\nAnalise toda a equipe. Mostre ranking de ocupação e diferença entre os extremos. Explique os fatores que diferenciam os profissionais com maior e menor ocupação.' },
+    { titulo: '📉 Quedas de faturamento', prompt: 'Algum profissional teve queda de faturamento nos últimos 2 meses?\n\nCompare os últimos dois meses. Identifique: quem teve queda, valor perdido, percentual de queda. Investigue possíveis causas utilizando todos os dados disponíveis.' },
+    { titulo: '🚨 Ocorrências da equipe', prompt: 'Qual profissional possui o maior número de ocorrências negativas?\n\nAnalise: atrasos, faltas, saídas antecipadas, advertências, feedbacks negativos. Apresente ranking completo. Explique quais tipos de ocorrências são mais recorrentes.' },
+    { titulo: '🔴 Desempenho crítico', prompt: 'Se eu precisasse desligar um profissional por desempenho, quem seria o principal candidato?\n\nAnalise: faturamento, ocupação, retenção, ocorrências, evolução, impacto para o negócio.\n\nIdentifique o profissional com desempenho mais crítico. Justifique tecnicamente. Apresente também os riscos dessa decisão.' },
+    { titulo: '🗓️ Meses mais fracos', prompt: 'Quais meses do ano historicamente são os mais fracos?\n\nAnalise todos os anos disponíveis. Identifique meses mais fortes e mais fracos. Apresente tendências históricas. Sugira ações preventivas.' },
+    { titulo: '🔍 Serviço que sumiu', prompt: 'Existe algum serviço que era muito vendido e desapareceu do histórico?\n\nAnalise toda a série histórica. Identifique serviços que perderam relevância e o percentual da queda. Investigue possíveis causas.' },
+    { titulo: '🔄 Retorno de clientes', prompt: 'Qual é o intervalo médio de retorno dos clientes?\n\nCalcule: retorno médio geral, retorno por categoria, retorno por profissional. Compare com o intervalo considerado ideal. Identifique riscos de perda de clientes.' },
+    { titulo: '🕐 Horários ociosos', prompt: 'Existem horários ou dias com baixa ocupação?\n\nAnalise: horários, dias, meses. Identifique períodos ociosos. Sugira oportunidades promocionais.' },
+    { titulo: '🚀 Como crescer 20%', prompt: 'Se eu quiser aumentar 20% no faturamento, qual é o caminho mais rápido?\n\nAnalise: ticket médio, ocupação, serviços, profissionais.\n\nApresente um plano estratégico priorizado. Mostre: impacto esperado, tempo estimado, dificuldade de execução.' },
+    { titulo: '🎯 Serviços para impulsionar', prompt: 'Quais serviços devo impulsionar nas próximas semanas?\n\nAnalise: histórico de vendas, sazonalidade, ticket médio, comissão, tendência de crescimento. Monte ranking dos serviços prioritários.' },
+    { titulo: '💤 Capacidade ociosa', prompt: 'Existe algum profissional com capacidade ociosa?\n\nAnalise: ocupação, potencial produtivo. Mostre quem poderia atender mais clientes. Estime o faturamento adicional possível.' },
+    { titulo: '🛑 O que parar de fazer', prompt: 'O que os dados mostram que eu deveria parar de fazer imediatamente?\n\nAnalise: serviços pouco rentáveis, horários improdutivos, processos ineficientes. Liste os itens que estão consumindo recursos sem gerar resultado.' },
+    { titulo: '🟢 Diagnóstico geral', prompt: 'Me dê um diagnóstico geral do salão.\n\nAnalise toda a operação. Separe em:\n🟢 O que está funcionando bem\n🟡 O que precisa melhorar\n🔴 O que exige ação imediata\n\nPriorize os riscos por impacto financeiro.' },
+    { titulo: '⚫ Maior ameaça', prompt: 'Qual é a maior ameaça ao negócio hoje?\n\nAnalise: financeiro, comercial, operacional, recursos humanos, retenção de clientes, dependência de profissionais.\n\nIdentifique a ameaça mais relevante. Explique: probabilidade, impacto, consequências, plano de mitigação.' },
+    { titulo: '🏆 Ranking de metas', prompt: 'Quem já bateu a meta esse mês, quem ainda pode bater, quem está longe e quem definitivamente não vai bater?\n\nAnalise todos os profissionais. Classifique em:\n🟢 Meta atingida\n🔵 Alta probabilidade de atingir\n🟡 Possibilidade moderada\n🔴 Baixa probabilidade\n⚫ Praticamente impossível atingir\n\nMonte ranking completo. Para cada profissional informe: meta, resultado atual, percentual atingido, valor faltante, probabilidade estimada, principais ações para aumentar as chances de sucesso.' },
+  ]
+
+  const sugestoesAtivas = profissionalId ? sugestoesProfissional : sugestoesGestor
+  const sugestoesvisiveis = mostrarTodasPerguntas ? sugestoesAtivas : sugestoesAtivas.slice(0, 4)
 
   const fechar = () => {
     if (!modoEmbarcado) { setAberto(false); setTelaCheia(false) }
@@ -491,6 +522,25 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
                   }
                 </div>
               ))}
+
+              {/* Seção de perguntas inteligentes fixas */}
+              <div style={{ marginTop: prompts.length > 0 ? 12 : 0, paddingTop: prompts.length > 0 ? 12 : 0, borderTop: prompts.length > 0 ? '1px solid #21262d' : 'none' }}>
+                <p style={{ fontSize: 10, fontWeight: 700, color: '#484f58', textTransform: 'uppercase', letterSpacing: 1, margin: '0 2px 8px' }}>
+                  {profissionalId ? 'Análises rápidas' : 'Análises inteligentes'}
+                </p>
+                {sugestoesAtivas.map(s => (
+                  <div key={s.titulo}
+                    style={{ borderRadius: 8, padding: '7px 10px', marginBottom: 4, background: '#0d1117', border: '1px solid #21262d', cursor: 'pointer', transition: 'border-color 0.2s' }}
+                    onClick={() => { setInput(s.prompt); setTimeout(() => inputRef.current?.focus(), 50) }}
+                    onMouseEnter={e => (e.currentTarget.style.borderColor = '#f59e0b')}
+                    onMouseLeave={e => (e.currentTarget.style.borderColor = '#21262d')}
+                  >
+                    <span style={{ fontSize: 12, color: '#8b949e', lineHeight: 1.4, display: 'block', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                      {s.titulo}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -572,20 +622,6 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
             <div ref={bottomRef} />
           </div>
 
-          {/* Sugestões */}
-          {mensagens.length <= 1 && (
-            <div style={{ padding: '0 max(24px, calc(50% - 400px)) 12px', display: 'flex', gap: 8, flexWrap: 'wrap', flexShrink: 0 }}>
-              {sugestoes.map(s => (
-                <button key={s} onClick={() => enviar(s)}
-                  style={{ fontSize: 12, background: '#161b22', border: '1px solid #30363d', color: '#8b949e', padding: '6px 14px', borderRadius: 20, cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap' }}
-                  onMouseEnter={e => { (e.target as HTMLButtonElement).style.borderColor = '#f59e0b'; (e.target as HTMLButtonElement).style.color = '#f59e0b' }}
-                  onMouseLeave={e => { (e.target as HTMLButtonElement).style.borderColor = '#30363d'; (e.target as HTMLButtonElement).style.color = '#8b949e' }}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          )}
 
           {/* Input */}
           <div style={{ padding: '16px max(24px, calc(50% - 400px))', borderTop: '1px solid #21262d', background: '#161b22', flexShrink: 0 }}>
