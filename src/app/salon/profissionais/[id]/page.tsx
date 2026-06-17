@@ -1979,7 +1979,6 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
 .header-meta { text-align: right; font-size: 8.5pt; color: #555; line-height: 1.4; }
 .print-content { color: #1a1a2e; }
 .print-content * { color: inherit !important; background: transparent !important; border-color: #ccc !important; }
-.print-content svg { display: none !important; }
 .print-content button { display: none !important; }
 .print-content input, .print-content select { border: 1px solid #ccc !important; padding: 2px 4px !important; font-size: 9pt !important; }
 .print-content label { font-size: 8pt !important; font-weight: 600 !important; display: block !important; margin-bottom: 2px !important; }
@@ -1993,10 +1992,9 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
 .print-content [class*="animate-spin"] { display: none !important; }
 .print-content [class*="overflow-x-auto"] { overflow: visible !important; }
 .print-content canvas { display: none !important; }
-.print-content .recharts-wrapper,
-.print-content .recharts-responsive-container { display: none !important; }
-.print-content svg.recharts-surface { display: none !important; }
-.print-content svg:not([class*="lucide"]) { max-width: 100% !important; height: auto !important; }
+.print-content .recharts-responsive-container { width: 100% !important; }
+.print-content .recharts-wrapper { width: 100% !important; page-break-inside: avoid; }
+.print-content svg { max-width: 100% !important; width: 100% !important; height: auto !important; display: block !important; }
 .footer { position: fixed; bottom: 0; left: 0; right: 0; border-top: 1px solid #ddd; padding-top: 6px; display: flex; justify-content: space-between; font-size: 7.5pt; color: #888; }
 </style></head><body>
 <div class="header">
@@ -2008,15 +2006,33 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
 </body></html>`
 
     const iframe = document.createElement('iframe')
-    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;'
+    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:210mm;height:297mm;'
     document.body.appendChild(iframe)
     const doc = iframe.contentDocument || iframe.contentWindow?.document
     if (!doc) { document.body.removeChild(iframe); return }
     doc.open(); doc.write(html); doc.close()
+
+    // Converte SVGs de dimensões fixas para viewBox responsivo
     setTimeout(() => {
+      doc.querySelectorAll('svg').forEach(svg => {
+        const w = svg.getAttribute('width')
+        const h = svg.getAttribute('height')
+        if (w && h && !svg.getAttribute('viewBox')) {
+          svg.setAttribute('viewBox', `0 0 ${w} ${h}`)
+        }
+        svg.removeAttribute('width')
+        svg.removeAttribute('height')
+        ;(svg as HTMLElement).style.width = '100%'
+        ;(svg as HTMLElement).style.height = 'auto'
+      })
+      // Recharts wrapper com width inline
+      doc.querySelectorAll<HTMLElement>('.recharts-wrapper, .recharts-responsive-container').forEach(el => {
+        el.style.width = '100%'
+        el.style.maxWidth = '100%'
+      })
       iframe.contentWindow?.print()
       setTimeout(() => document.body.removeChild(iframe), 1000)
-    }, 300)
+    }, 400)
   }
 
   const hoje = new Date()
