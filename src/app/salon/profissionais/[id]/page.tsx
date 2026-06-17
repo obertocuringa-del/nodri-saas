@@ -1955,6 +1955,64 @@ export default function PerfilProfissionalPage() {
   const [servicosSalao, setServicosSalao] = useState<{id:string;categoria:string;nome:string;preco_fixo:number|null;preco_min:number|null;comissao_valor:number|null}[]>([])
   const [selectorAberto, setSelectorAberto] = useState(false)
   const selectorRef = useRef<HTMLDivElement>(null)
+  const refCadastro    = useRef<HTMLDivElement>(null)
+  const refFaturamento = useRef<HTMLDivElement>(null)
+  const refOcorrencias = useRef<HTMLDivElement>(null)
+
+  function imprimirAba(ref: React.RefObject<HTMLDivElement | null>, titulo: string) {
+    if (!ref.current) return
+    const nomeProf = prof?.apelido || prof?.nome_completo || 'Profissional'
+    const MESES_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
+    const agora = new Date()
+    const dataStr = `${agora.getDate()} de ${MESES_PT[agora.getMonth()]} de ${agora.getFullYear()}`
+    const conteudo = ref.current.innerHTML
+
+    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+<title>${titulo} — ${nomeProf}</title>
+<style>
+@page { size: A4; margin: 18mm 16mm 20mm 16mm; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a2e; background: #fff; line-height: 1.5; }
+.header { display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #7c5cfc; padding-bottom: 10px; margin-bottom: 16px; }
+.header-brand { font-size: 18pt; font-weight: 900; color: #7c5cfc; letter-spacing: -0.5px; }
+.header-brand span { color: #00e5c8; }
+.header-meta { text-align: right; font-size: 8.5pt; color: #555; line-height: 1.4; }
+.print-content { color: #1a1a2e; }
+.print-content * { color: inherit !important; background: transparent !important; border-color: #ccc !important; }
+.print-content svg { display: none !important; }
+.print-content button { display: none !important; }
+.print-content input, .print-content select { border: 1px solid #ccc !important; padding: 2px 4px !important; font-size: 9pt !important; }
+.print-content label { font-size: 8pt !important; font-weight: 600 !important; display: block !important; margin-bottom: 2px !important; }
+.print-content table { width: 100%; border-collapse: collapse; font-size: 9pt; }
+.print-content th, .print-content td { border: 1px solid #ddd; padding: 4px 6px; text-align: left; }
+.print-content th { background: #f4f4f4 !important; font-weight: 700; }
+.print-content .rounded-2xl, .print-content .rounded-xl, .print-content .rounded-lg { border: 1px solid #ddd; border-radius: 4px; padding: 10px; margin-bottom: 10px; page-break-inside: avoid; }
+.print-content .grid { display: grid; gap: 8px; }
+.print-content .grid-cols-2 { grid-template-columns: 1fr 1fr; }
+.print-content .grid-cols-4, .print-content [class*="grid-cols-4"] { grid-template-columns: repeat(4, 1fr); }
+.print-content [class*="animate-spin"] { display: none !important; }
+.print-content [class*="overflow-x-auto"] { overflow: visible !important; }
+.footer { position: fixed; bottom: 0; left: 0; right: 0; border-top: 1px solid #ddd; padding-top: 6px; display: flex; justify-content: space-between; font-size: 7.5pt; color: #888; }
+</style></head><body>
+<div class="header">
+  <div class="header-brand">NOD<span>RI</span></div>
+  <div class="header-meta"><strong>${titulo} — ${nomeProf}</strong><br/>Gerado em: ${dataStr}</div>
+</div>
+<div class="print-content">${conteudo}</div>
+<div class="footer"><span>NODRI — Sistema de Gestão de Salão</span><span>${nomeProf} · ${dataStr}</span></div>
+</body></html>`
+
+    const iframe = document.createElement('iframe')
+    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;'
+    document.body.appendChild(iframe)
+    const doc = iframe.contentDocument || iframe.contentWindow?.document
+    if (!doc) { document.body.removeChild(iframe); return }
+    doc.open(); doc.write(html); doc.close()
+    setTimeout(() => {
+      iframe.contentWindow?.print()
+      setTimeout(() => document.body.removeChild(iframe), 1000)
+    }, 300)
+  }
 
   const hoje = new Date()
   const mesAtual    = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,'0')}`
@@ -2179,7 +2237,14 @@ export default function PerfilProfissionalPage() {
 
         {/*  CADASTRO  */}
         {tab === 'cadastro' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div>
+          <div className="flex justify-end mb-4">
+            <button onClick={() => imprimirAba(refCadastro, 'Dados Cadastrais')}
+              className="flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold rounded-lg border border-nodri-border text-nodri-t2 hover:border-nodri-cyan hover:text-nodri-cyan transition-colors">
+              🖨️ Imprimir
+            </button>
+          </div>
+          <div ref={refCadastro} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-5">
               {/* Banner de departamento */}
               {form.is_departamento && (
@@ -2346,11 +2411,19 @@ export default function PerfilProfissionalPage() {
               <PendenciasLateral profissionalId={id}/>
             </div>
           </div>
+          </div>
         )}
 
         {/*  FATURAMENTO  */}
         {tab === 'faturamento' && (
-          <div className="space-y-6">
+          <div>
+          <div className="flex justify-end mb-4">
+            <button onClick={() => imprimirAba(refFaturamento, 'Faturamento')}
+              className="flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold rounded-lg border border-nodri-border text-nodri-t2 hover:border-nodri-cyan hover:text-nodri-cyan transition-colors">
+              🖨️ Imprimir
+            </button>
+          </div>
+          <div ref={refFaturamento} className="space-y-6">
             <FiltroComparacao {...{modoFiltro,setModoFiltro,p1i,setP1i,p1f,setP1f,p2i,setP2i,p2f,setP2f,onAplicar:buscarMetricas,loading:loadMet}}/>
             {loadMet && <div className="flex justify-center py-10"><Loader2 size={24} className="animate-spin text-nodri-cyan"/></div>}
             {metricas && !loadMet && <>
@@ -2406,6 +2479,7 @@ export default function PerfilProfissionalPage() {
                 </div>
               )}
             </>}
+          </div>
           </div>
         )}
 
@@ -2554,7 +2628,14 @@ export default function PerfilProfissionalPage() {
 
         {/*  OCORRÊNCIAS (antigo Desempenho)  */}
         {tab === 'desempenho' && (
-          <div className="space-y-6">
+          <div>
+          <div className="flex justify-end mb-4">
+            <button onClick={() => imprimirAba(refOcorrencias, 'Ocorrências')}
+              className="flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold rounded-lg border border-nodri-border text-nodri-t2 hover:border-nodri-cyan hover:text-nodri-cyan transition-colors">
+              🖨️ Imprimir
+            </button>
+          </div>
+          <div ref={refOcorrencias} className="space-y-6">
             <FiltroComparacao {...{modoFiltro,setModoFiltro,p1i,setP1i,p1f,setP1f,p2i,setP2i,p2f,setP2f,onAplicar:buscarMetricas,loading:loadMet}}/>
             {loadMet && <div className="flex justify-center py-10"><Loader2 size={24} className="animate-spin text-nodri-cyan"/></div>}
             {metricas && !loadMet && <>
@@ -2672,6 +2753,7 @@ export default function PerfilProfissionalPage() {
                 </div>
               )}
             </>}
+          </div>
           </div>
         )}
       </div>
