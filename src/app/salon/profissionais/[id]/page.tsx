@@ -8,6 +8,202 @@ import toast from 'react-hot-toast'
 
 // Converte o markdown gerado pela IA num HTML estilizado (títulos, negrito real,
 // tabelas, listas e badges de status) — reaproveitado no chat e na Estratégia de Meta.
+function imprimirEstrategia(planoTexto: string, nomeProf: string) {
+  const MESES_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
+  const hoje = new Date()
+  const dataStr = `${hoje.getDate()} de ${MESES_PT[hoje.getMonth()]} de ${hoje.getFullYear()}`
+
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Planejamento Estratégico — ${nomeProf}</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 20mm 16mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10.5pt; color: #1a1a2e; line-height: 1.55; background: #fff; }
+
+  /* Cabeçalho */
+  .header { display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #7c5cfc; padding-bottom: 10px; margin-bottom: 16px; }
+  .header-brand { font-size: 18pt; font-weight: 900; color: #7c5cfc; letter-spacing: -0.5px; }
+  .header-brand span { color: #00e5c8; }
+  .header-meta { text-align: right; font-size: 8.5pt; color: #555; line-height: 1.4; }
+  .header-meta strong { display: block; font-size: 10pt; color: #1a1a2e; }
+
+  /* Seções */
+  .section { margin-bottom: 14px; break-inside: avoid; }
+  h1, h2, h3 { font-weight: 800; color: #1a1a2e; }
+  h1 { font-size: 13pt; border-bottom: 2px solid #7c5cfc; padding-bottom: 5px; margin-bottom: 10px; color: #7c5cfc; }
+  h2 { font-size: 11pt; background: linear-gradient(90deg,#f3f0ff,transparent); padding: 4px 8px; border-left: 4px solid #7c5cfc; margin: 12px 0 6px; color: #3d2070; }
+  h3 { font-size: 10pt; color: #3d2070; margin: 8px 0 4px; }
+
+  /* Tabelas */
+  table { width: 100%; border-collapse: collapse; font-size: 9.5pt; margin: 6px 0 10px; }
+  th { background: #7c5cfc; color: #fff; padding: 5px 8px; text-align: left; font-weight: 700; font-size: 9pt; }
+  td { padding: 4px 8px; border-bottom: 1px solid #e8e8f0; vertical-align: top; }
+  tr:nth-child(even) td { background: #f8f7ff; }
+  tr:last-child td { border-bottom: none; }
+
+  /* Bullets e listas */
+  ul, ol { padding-left: 18px; margin: 4px 0 8px; }
+  li { margin-bottom: 3px; }
+  .bullet-cyan::before { content: "●"; color: #00e5c8; margin-right: 6px; font-size: 8pt; }
+  .bullet-red::before { content: "🔴"; margin-right: 4px; }
+  .bullet-check::before { content: "□"; margin-right: 6px; font-size: 11pt; color: #555; }
+
+  /* Negrito e destaques */
+  strong { font-weight: 700; color: #1a1a2e; }
+  .highlight-box { background: #f3f0ff; border: 1px solid #c4b5fd; border-radius: 6px; padding: 8px 12px; margin: 6px 0; }
+  .alert-box { background: #fff5f5; border-left: 4px solid #ef4444; padding: 6px 10px; margin: 4px 0; border-radius: 0 4px 4px 0; }
+  .success-box { background: #f0fdf4; border-left: 4px solid #22c55e; padding: 6px 10px; margin: 4px 0; border-radius: 0 4px 4px 0; }
+  .insight-box { background: linear-gradient(135deg,#f3f0ff,#e0f7f4); border: 2px solid #7c5cfc; border-radius: 8px; padding: 10px 14px; margin: 12px 0; font-style: italic; font-weight: 600; color: #3d2070; font-size: 10.5pt; }
+
+  /* Rodapé e assinatura */
+  .footer { margin-top: 28px; border-top: 2px solid #e8e8f0; padding-top: 18px; }
+  .signature-area { display: flex; gap: 32px; margin-top: 10px; }
+  .signature-block { flex: 1; }
+  .signature-line { border-bottom: 1.5px solid #555; margin-bottom: 5px; height: 32px; }
+  .signature-label { font-size: 8.5pt; color: #555; text-align: center; }
+  .footer-note { font-size: 7.5pt; color: #999; text-align: center; margin-top: 14px; }
+
+  /* Emoji-títulos inline */
+  .emoji-title { font-weight: 700; font-size: 10pt; color: #3d2070; margin: 8px 0 4px; display: block; }
+  .pos-tag { display: inline-block; background: #dcfce7; color: #166534; border-radius: 4px; padding: 1px 6px; font-size: 8pt; font-weight: 700; margin-left: 4px; }
+  .neg-tag { display: inline-block; background: #fee2e2; color: #991b1b; border-radius: 4px; padding: 1px 6px; font-size: 8pt; font-weight: 700; margin-left: 4px; }
+
+  @media print {
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .no-print { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-brand">NOD<span>RI</span></div>
+  <div class="header-meta">
+    <strong>Planejamento Estratégico de Meta</strong>
+    ${nomeProf}<br>
+    Emitido em ${dataStr}<br>
+    <span style="color:#7c5cfc;font-weight:700">NODRI IA — Documento Confidencial</span>
+  </div>
+</div>
+
+<div id="conteudo">
+${renderParaImpressao(planoTexto)}
+</div>
+
+<div class="footer">
+  <div class="signature-area">
+    <div class="signature-block">
+      <div class="signature-line"></div>
+      <div class="signature-label">Assinatura do Profissional<br><strong>${nomeProf}</strong></div>
+    </div>
+    <div class="signature-block">
+      <div class="signature-line"></div>
+      <div class="signature-label">Assinatura do Gestor / Responsável<br>&nbsp;</div>
+    </div>
+    <div class="signature-block">
+      <div class="signature-line"></div>
+      <div class="signature-label">Data de Ciência<br>${dataStr}</div>
+    </div>
+  </div>
+  <div class="footer-note">Este documento foi gerado automaticamente pela NODRI IA com base nos dados operacionais do salão. Os valores de comissão são estimativas baseadas no histórico registrado no sistema.</div>
+</div>
+
+<script>window.onload = function(){ window.print(); }</script>
+</body>
+</html>`
+
+  const win = window.open('', '_blank', 'width=900,height=700')
+  if (!win) return
+  win.document.write(html)
+  win.document.close()
+}
+
+// Versão de renderização específica para impressão (HTML mais semântico, sem cores neon)
+function renderParaImpressao(texto: string): string {
+  const linhas = texto.split('\n')
+  const out: string[] = []
+  let dentroTabela = false
+  let linhasTabela: string[] = []
+
+  const flushTabela = () => {
+    if (linhasTabela.length === 0) return
+    const validas = linhasTabela.filter(l => !/^\s*\|?\s*-{2,}/.test(l.replace(/\|/g, '')))
+    const rows = validas.map(l => l.split('|').map(c => c.trim()).filter((_, i, arr) => !(i === 0 && arr[0] === '') && !(i === arr.length - 1 && arr[arr.length - 1] === '')))
+    if (rows.length > 0) {
+      const [head, ...body] = rows
+      out.push('<table>')
+      out.push('<thead><tr>' + head.map(c => `<th>${c}</th>`).join('') + '</tr></thead>')
+      out.push('<tbody>' + body.map(r => '<tr>' + r.map(c => `<td>${applyInline(c)}</td>`).join('') + '</tr>').join('') + '</tbody>')
+      out.push('</table>')
+    }
+    linhasTabela = []; dentroTabela = false
+  }
+
+  const applyInline = (t: string) => t
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+
+  for (const raw of linhas) {
+    const linha = raw.trimEnd()
+    if (/^\s*\|.*\|\s*$/.test(linha)) { dentroTabela = true; linhasTabela.push(linha); continue }
+    if (dentroTabela) flushTabela()
+    if (!linha.trim()) { out.push('<div style="margin:5px 0"></div>'); continue }
+
+    // Títulos com #
+    const hMatch = linha.match(/^(#{1,3})\s+(.+)$/)
+    if (hMatch) {
+      const nivel = hMatch[1].length
+      const txt = applyInline(hMatch[2])
+      out.push(`<h${nivel} class="section">${txt}</h${nivel}>`)
+      continue
+    }
+
+    // Checklist □
+    if (/^□\s/.test(linha)) {
+      out.push(`<div style="margin:3px 0"><span class="bullet-check"></span>${applyInline(linha.replace(/^□\s/, ''))}</div>`)
+      continue
+    }
+
+    // Bullets 🔴
+    if (/^🔴/.test(linha)) {
+      out.push(`<div class="alert-box">${applyInline(linha.replace(/^🔴\s*/, ''))}</div>`)
+      continue
+    }
+
+    // ✅
+    if (/^✅/.test(linha)) {
+      out.push(`<div class="success-box">${applyInline(linha.replace(/^✅\s*/, ''))}</div>`)
+      continue
+    }
+
+    // Insight NODRI
+    if (/^🤖/.test(linha)) {
+      out.push(`<div class="insight-box">${applyInline(linha)}</div>`)
+      continue
+    }
+
+    // Bullets •, -, *
+    if (/^[•\-\*]\s+/.test(linha) || /^\d+\.\s/.test(linha)) {
+      const isNum = /^\d+\./.test(linha)
+      const content = applyInline(linha.replace(/^[•\-\*\d\.]\s+/, ''))
+      out.push(`<div style="display:flex;gap:6px;margin:2px 0 2px 8px"><span style="color:#7c5cfc;flex-shrink:0">${isNum ? linha.match(/^(\d+)/)?.[1]+'.' : '•'}</span><span>${content}</span></div>`)
+      continue
+    }
+
+    // Linha emoji-título curta (⚠️, 📍, etc.)
+    if (/^(⚠️|📍|📌|📊|📅|💰|💎|🧠|⚡|🔮|🛒|👥|❤️|✂️|🎯|🏆|👔|💸|❤|📋|📱|🚀)/.test(linha) && linha.length < 80) {
+      out.push(`<span class="emoji-title">${applyInline(linha)}</span>`)
+      continue
+    }
+
+    out.push(`<div style="margin:2px 0">${applyInline(linha)}</div>`)
+  }
+  if (dentroTabela) flushTabela()
+  return out.join('\n')
+}
+
 function renderPlanoHtml(texto: string): string {
   const linhas = texto.split('\n')
   const out: string[] = []
@@ -2306,11 +2502,17 @@ export default function PerfilProfissionalPage() {
                     <div className="bg-nodri-surface border border-nodri-cyan/40 rounded-2xl p-5 space-y-3">
                       <div className="flex items-center justify-between">
                         <h3 className="font-syne font-bold text-[12px] text-nodri-cyan">Novo Planejamento (rascunho)</h3>
-                        <button onClick={salvarEstrategia} disabled={salvandoEstrategia}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-nodri-cyan text-nodri-dark text-[11px] font-bold hover:brightness-110 disabled:opacity-50">
-                          {salvandoEstrategia ? <Loader2 size={12} className="animate-spin"/> : <Save size={12}/>}
-                          💾 Salvar Estratégia
-                        </button>
+                        <div className="flex gap-2">
+                          <button onClick={() => imprimirEstrategia(rascunhoEstrategia.plano_texto, prof?.nome_completo || '')}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-nodri-cyan/40 text-nodri-cyan text-[11px] font-bold hover:bg-nodri-cyan/10">
+                            🖨️ Imprimir
+                          </button>
+                          <button onClick={salvarEstrategia} disabled={salvandoEstrategia}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-nodri-cyan text-nodri-dark text-[11px] font-bold hover:brightness-110 disabled:opacity-50">
+                            {salvandoEstrategia ? <Loader2 size={12} className="animate-spin"/> : <Save size={12}/>}
+                            💾 Salvar
+                          </button>
+                        </div>
                       </div>
                       <div className="text-[12px] text-nodri-t2 leading-relaxed" dangerouslySetInnerHTML={{ __html: renderPlanoHtml(rascunhoEstrategia.plano_texto) }}/>
                     </div>
@@ -2319,7 +2521,13 @@ export default function PerfilProfissionalPage() {
                   {/* Plano salvo (oficial) */}
                   {!rascunhoEstrategia && metaInfo.plano?.plano_texto && (
                     <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
-                      <h3 className="font-syne font-bold text-[12px] text-nodri-cyan mb-3">Planejamento Estratégico (salvo)</h3>
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="font-syne font-bold text-[12px] text-nodri-cyan">Planejamento Estratégico (salvo)</h3>
+                        <button onClick={() => imprimirEstrategia(metaInfo.plano!.plano_texto, prof?.nome_completo || '')}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-nodri-cyan/40 text-nodri-cyan text-[11px] font-bold hover:bg-nodri-cyan/10">
+                          🖨️ Imprimir
+                        </button>
+                      </div>
                       <div className="text-[12px] text-nodri-t2 leading-relaxed" dangerouslySetInnerHTML={{ __html: renderPlanoHtml(metaInfo.plano.plano_texto) }}/>
                     </div>
                   )}
