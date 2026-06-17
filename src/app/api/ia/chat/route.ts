@@ -122,9 +122,10 @@ function formatarDadosSalao(dados: any, profissionalId?: string): string {
   }
 
   if (profissionalId && dados.profissionais?.length) {
-    linhas.push('## PROFISSIONAIS DO SALÃO (referência para comparativos)')
-    linhas.push(dados.profissionais.map((p: any) => p.nome_completo).join(', '))
-    linhas.push('⚠️ REGRA: Você está no perfil de um profissional específico. NÃO exiba dados financeiros, ocorrências ou métricas de outros profissionais. Para comparativos, use a ferramenta buscar_comparativo_profissionais.')
+    linhas.push('⚠️ REGRA DE PRIVACIDADE — MODO PROFISSIONAL:')
+    linhas.push('Você pode mostrar comparativos e rankings, MAS nunca revele o nome de outros profissionais.')
+    linhas.push('Substitua por: "1º colocado", "2º colocado", "colega A", "colega B", ou "outro profissional da categoria".')
+    linhas.push('O profissional em foco pode saber sua posição no ranking, mas não sabe o nome de quem está à frente ou atrás.')
     linhas.push('')
   }
 
