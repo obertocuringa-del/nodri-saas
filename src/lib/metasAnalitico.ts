@@ -675,8 +675,10 @@ export async function calcularDinheiroPerdido(
       produtosVendidos++
     }
   }
-  // Fallback: se sem histórico de produto, usa R$ 5,00 como comissão média (centro do range 0,50–20,00)
-  const comissaoProduto = produtosVendidos > 0 ? comissaoMediaProduto / produtosVendidos : 5
+  // Fallback: R$5 quando sem histórico OU quando histórico existe mas comissão veio zerada
+  const comissaoProduto = (produtosVendidos > 0 && comissaoMediaProduto > 0)
+    ? comissaoMediaProduto / produtosVendidos
+    : 5
 
   const perdaAtrasos = atrasos > 0 && comissaoServicoMaisVendido > 0
     ? Math.round(atrasos * comissaoServicoMaisVendido * 100) / 100
@@ -781,8 +783,8 @@ export async function calcularOportunidadesOcultas(
     .sort((a: any, b: any) => b.potencial_perdido_mes - a.potencial_perdido_mes)
     .slice(0, 4)
 
-  // Serviços top da categoria que ela NÃO tem habilitados — candidatos a aprender
-  const nomesHabilitados = new Set((servicosCatalogo || []).map((s: any) => s.nome))
+  // Serviços top da categoria que ela NÃO tem habilitados — comparação case-insensitive
+  const nomesHabilitados = new Set((servicosCatalogo || []).map((s: any) => s.nome.toLowerCase().trim()))
   const freqCategoria: Record<string, number> = {}
   for (const colega of (colegas || [])) {
     const matchColega = criarMatchProf((colega.nome_completo || '').toLowerCase().trim(), (colega.apelido || '').toLowerCase().trim())
@@ -790,7 +792,7 @@ export async function calcularOportunidadesOcultas(
       for (const item of (row.prof_servicos || [])) {
         if (!matchColega(item)) continue
         const nome = item.servico || ''
-        if (!nomesHabilitados.has(nome)) {
+        if (!nomesHabilitados.has(nome.toLowerCase().trim())) {
           freqCategoria[nome] = (freqCategoria[nome] || 0) + Number(item.quantidade || 0)
         }
       }

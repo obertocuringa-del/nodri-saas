@@ -309,7 +309,7 @@ Gere a resposta na estrutura abaixo. Use **negrito** real (não literal **). Use
 Para cada eixo abaixo, escreva APENAS o que os dados reais mostram. Não repita entre eixos.
 
 **💰 Financeiro**
-✅ O que está funcionando: use benchmarking para mostrar a posição dela no ranking de faturamento dos últimos 12 meses entre os colegas de cargo — ex: "Ficou em 2º lugar em março/2026 com R$ X". Se sem dado, diga isso.
+✅ O que está funcionando: use benchmarking para mostrar a posição atual entre os colegas de cargo. O campo benchmarking tem ranking_faturamento, ranking_ticket_medio, ranking_ocupacao e total_profissionais_categoria. Escreva como "Ocupa o Xº lugar de Y profissionais em faturamento este mês". Se benchmarking for null ou "sem colegas", diga "sem colegas suficientes para comparar".
 ⚠️ O que está prejudicando: (1-2 pontos baseados nos dados reais do mês atual)
 
 **🛒 Comercial**
