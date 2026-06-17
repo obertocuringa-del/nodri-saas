@@ -573,23 +573,13 @@ export async function calcularSimuladorMeta(
 
   if (servicos.length === 0) return null
 
-  const capacidadeDiaria = Math.max(1, Math.floor(diasRestantes * 0.6))
-
-  // Monta um cenário dado um serviço âncora (preenche o restante com o mais frequente)
+  // Monta cenário âncora: quantidade exata para cobrir faltam integralmente (sem cap artificial)
   const montarCenario = (ancora: typeof servicos[0], label: string) => {
-    const qtdAncora = Math.min(Math.ceil(faltam / ancora.comissao), capacidadeDiaria)
-    const coberto = qtdAncora * ancora.comissao
-    const resto = Math.max(0, faltam - coberto)
+    const qtdAncora = Math.ceil(faltam / ancora.comissao)
+    const subtotalAncora = Math.round(qtdAncora * ancora.comissao * 100) / 100
     const linhas: { servico: string; comissao: number; quantidade: number; subtotal: number }[] = [
-      { servico: ancora.nome, comissao: ancora.comissao, quantidade: qtdAncora, subtotal: Math.round(coberto * 100) / 100 },
+      { servico: ancora.nome, comissao: ancora.comissao, quantidade: qtdAncora, subtotal: subtotalAncora },
     ]
-    if (resto > 0 && servicos.length > 1) {
-      const complemento = servicos.find(s => s.nome !== ancora.nome && s.comissao > 0)
-      if (complemento) {
-        const qtdComp = Math.min(Math.ceil(resto / complemento.comissao), Math.floor(capacidadeDiaria * 0.4))
-        linhas.push({ servico: complemento.nome, comissao: complemento.comissao, quantidade: qtdComp, subtotal: Math.round(qtdComp * complemento.comissao * 100) / 100 })
-      }
-    }
     const total = Math.round(linhas.reduce((s, l) => s + l.subtotal, 0) * 100) / 100
     return { label, linhas, total, bate_meta: total >= faltam }
   }
@@ -598,21 +588,22 @@ export async function calcularSimuladorMeta(
   // Cenário 1: focado no mais frequente
   const maisFrequente = [...servicos].sort((a, b) => b.freq_media_mensal - a.freq_media_mensal)[0]
   cenarios.push(montarCenario(maisFrequente, 'Focado no serviço mais frequente'))
-  // Cenário 2: focado na maior comissão
+  // Cenário 2: focado na maior comissão (só se diferente do mais frequente)
   if (servicos[0].nome !== maisFrequente.nome) {
     cenarios.push(montarCenario(servicos[0], 'Focado no serviço de maior comissão'))
   }
-  // Cenário 3: mix otimizado (divide igualmente entre os 3 maiores)
+  // Cenário 3: mix distribuído — quantidade igual por serviço, suficiente para cobrir faltam
   const top3 = servicos.slice(0, Math.min(3, servicos.length))
   if (top3.length >= 2) {
-    const qtdPorServico = Math.ceil(faltam / top3.length / (top3.reduce((s, sv) => s + sv.comissao, 0) / top3.length))
+    const somaComissoes = top3.reduce((s, sv) => s + sv.comissao, 0)
+    const qtdPorServico = Math.ceil(faltam / somaComissoes)
     const linhasMix = top3.map(sv => ({
       servico: sv.nome, comissao: sv.comissao,
-      quantidade: Math.min(qtdPorServico, Math.floor(capacidadeDiaria / top3.length)),
-      subtotal: Math.round(Math.min(qtdPorServico, Math.floor(capacidadeDiaria / top3.length)) * sv.comissao * 100) / 100,
+      quantidade: qtdPorServico,
+      subtotal: Math.round(qtdPorServico * sv.comissao * 100) / 100,
     }))
     const totalMix = Math.round(linhasMix.reduce((s, l) => s + l.subtotal, 0) * 100) / 100
-    cenarios.push({ label: 'Mix otimizado (distribuído)', linhas: linhasMix, total: totalMix, bate_meta: totalMix >= faltam })
+    cenarios.push({ label: 'Mix distribuído (top 3 serviços)', linhas: linhasMix, total: totalMix, bate_meta: totalMix >= faltam })
   }
 
   return { faltam: Math.round(faltam * 100) / 100, cenarios }
@@ -766,6 +757,7 @@ export async function calcularOportunidadesOcultas(
     }
   }
 
+  // Serviços que ela TEM habilitados mas vende menos que colegas
   const oportunidades = (servicosCatalogo || [])
     .map((s: any) => {
       const comissao = Number(s.comissao_valor || 0)
@@ -789,5 +781,28 @@ export async function calcularOportunidadesOcultas(
     .sort((a: any, b: any) => b.potencial_perdido_mes - a.potencial_perdido_mes)
     .slice(0, 4)
 
-  return oportunidades
+  // Serviços top da categoria que ela NÃO tem habilitados — candidatos a aprender
+  const nomesHabilitados = new Set((servicosCatalogo || []).map((s: any) => s.nome))
+  const freqCategoria: Record<string, number> = {}
+  for (const colega of (colegas || [])) {
+    const matchColega = criarMatchProf((colega.nome_completo || '').toLowerCase().trim(), (colega.apelido || '').toLowerCase().trim())
+    for (const row of (periodos || [])) {
+      for (const item of (row.prof_servicos || [])) {
+        if (!matchColega(item)) continue
+        const nome = item.servico || ''
+        if (!nomesHabilitados.has(nome)) {
+          freqCategoria[nome] = (freqCategoria[nome] || 0) + Number(item.quantidade || 0)
+        }
+      }
+    }
+  }
+  const servicosParaAprender = Object.entries(freqCategoria)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([nome, total]) => ({
+      servico: nome,
+      freq_media_mensal_categoria: Math.round(total / Math.max(1, (colegas || []).length) / 6),
+    }))
+
+  return { oportunidades_habilitadas: oportunidades, servicos_para_aprender: servicosParaAprender }
 }

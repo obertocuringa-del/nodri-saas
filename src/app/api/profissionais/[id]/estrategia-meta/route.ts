@@ -233,7 +233,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       : 'sem dado histórico suficiente',
     score_nodri: scoreNodri,
     benchmarking: benchmarking || 'sem colegas suficientes para comparar',
-    oportunidades_ocultas: oportunidadesOcultas.length > 0 ? oportunidadesOcultas : 'sem dado suficiente',
+    oportunidades_ocultas: (oportunidadesOcultas as any)?.oportunidades_habilitadas?.length > 0 || (oportunidadesOcultas as any)?.servicos_para_aprender?.length > 0
+      ? oportunidadesOcultas
+      : 'sem dado suficiente',
     simulador_meta: simuladorMeta || 'sem comissões cadastradas para simular',
     dinheiro_perdido: dinheiroPerdido || 'sem dado suficiente',
     comportamental: {
@@ -353,8 +355,11 @@ Escreva 1 frase de recomendação indicando qual cenário é mais realista dado 
 |---|---|
 (use dados de benchmarking)
 
-**Serviços com potencial não explorado:**
-(use oportunidades_ocultas — para cada item: nome do serviço, frequência própria vs colegas, potencial perdido em R$/mês. Se sem dado, diga isso.)
+**Serviços habilitados com potencial não explorado** (ela já sabe fazer mas vende menos que as colegas):
+(use oportunidades_ocultas.oportunidades_habilitadas — para cada item: nome do serviço, frequência própria vs colegas, potencial perdido em R$/mês. Se sem dado, diga isso.)
+
+**Serviços da categoria que ela ainda não oferece** (as colegas vendem, ela não tem):
+(use oportunidades_ocultas.servicos_para_aprender — para cada item: nome do serviço e frequência média mensal das colegas. Escreva em tom de incentivo: "esse serviço é muito procurado pelas colegas de {cargo} — vale a pena buscar essa habilidade". Se sem dado, diga isso.)
 
 1 frase final: o problema deste profissional é valor por atendimento ou volume de atendimentos?
 
