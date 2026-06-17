@@ -288,6 +288,65 @@ export async function buscarFidelizacaoAtual(salaoId: string, profissionalId: st
   return { clientesPreferencia, clientesSemPreferencia }
 }
 
+// Analisa tendência de fidelização: compara dois meses consecutivos e histórico 12 meses.
+// Mostra quantos clientes "sem preferência" do mês anterior viraram "preferência" no mês atual.
+export async function buscarTendenciaFidelizacao(
+  salaoId: string, profissionalId: string, ano: number, mes: number,
+) {
+  const { data: prof } = await supabaseAdmin
+    .from('profissionais').select('nome_completo, apelido').eq('id', profissionalId).single()
+  if (!prof) return null
+  const matchProf = criarMatchProf((prof.nome_completo || '').toLowerCase().trim(), (prof.apelido || '').toLowerCase().trim())
+
+  // Busca últimos 13 meses para ter mês anterior + 12 meses de histórico
+  const { data: periodos } = await supabaseAdmin
+    .from('relatorio_periodos')
+    .select('ano, mes, prof_preferencia')
+    .eq('salao_id', salaoId)
+    .order('ano', { ascending: false }).order('mes', { ascending: false })
+    .limit(13)
+
+  const extrairMes = (p: any) => {
+    let pref = 0, semPref = 0
+    for (const item of (p?.prof_preferencia || [])) {
+      if (matchProf(item)) {
+        pref += Number(item.clientes_preferencia || 0)
+        semPref += Number(item.clientes_sem_preferencia || 0)
+      }
+    }
+    return { ano: p.ano, mes: p.mes, preferencia: pref, sem_preferencia: semPref }
+  }
+
+  const historico = (periodos || []).map(extrairMes).reverse() // ordem cronológica
+
+  // Mês atual e anterior
+  const mesAtual = historico.find(h => h.ano === ano && h.mes === mes)
+  const idxAtual = historico.findIndex(h => h.ano === ano && h.mes === mes)
+  const mesAnterior = idxAtual > 0 ? historico[idxAtual - 1] : null
+
+  // Clientes novos fidelizados = crescimento de preferência entre os dois meses
+  const novosFidelizados = mesAnterior && mesAtual
+    ? Math.max(0, mesAtual.preferencia - mesAnterior.preferencia)
+    : null
+
+  // Taxa de conversão: dos sem-preferência do mês anterior, quantos viraram preferência
+  const taxaConversao = mesAnterior && mesAnterior.sem_preferencia > 0 && novosFidelizados !== null
+    ? Math.round((novosFidelizados / mesAnterior.sem_preferencia) * 100)
+    : null
+
+  return {
+    mes_atual: mesAtual ? { preferencia: mesAtual.preferencia, sem_preferencia: mesAtual.sem_preferencia } : null,
+    mes_anterior: mesAnterior ? { preferencia: mesAnterior.preferencia, sem_preferencia: mesAnterior.sem_preferencia } : null,
+    novos_fidelizados: novosFidelizados,
+    taxa_conversao_pct: taxaConversao,
+    historico_12_meses: historico.slice(-12).map(h => ({
+      periodo: `${String(h.mes).padStart(2,'0')}/${h.ano}`,
+      preferencia: h.preferencia,
+      sem_preferencia: h.sem_preferencia,
+    })),
+  }
+}
+
 // Pendências reais registradas pelo gestor para o profissional (ex.: treinamento pendente,
 // ajuste de comportamento) — usado pra identificar causa raiz e alertas com mais precisão.
 export async function buscarPendencias(salaoId: string, profissionalId: string) {
@@ -734,24 +793,24 @@ export async function calcularOportunidadesOcultas(
     .from('relatorio_periodos').select('prof_servicos')
     .eq('salao_id', salaoId).order('ano', { ascending: false }).order('mes', { ascending: false }).limit(6)
 
-  // Frequência do próprio profissional por serviço (média mensal)
+  // Frequência do próprio profissional por serviço — normalizado lowercase para cruzar com catálogo
   const freqProf: Record<string, number> = {}
   for (const row of (periodos || [])) {
     for (const item of (row.prof_servicos || [])) {
       if (!matchProf(item)) continue
-      const nome = item.servico || ''
+      const nome = (item.servico || '').toLowerCase().trim()
       freqProf[nome] = (freqProf[nome] || 0) + Number(item.quantidade || 0)
     }
   }
 
-  // Frequência média dos colegas por serviço (média mensal por colega)
+  // Frequência média dos colegas por serviço — normalizado lowercase
   const freqColegas: Record<string, number[]> = {}
   for (const colega of (colegas || [])) {
     const matchColega = criarMatchProf((colega.nome_completo || '').toLowerCase().trim(), (colega.apelido || '').toLowerCase().trim())
     for (const row of (periodos || [])) {
       for (const item of (row.prof_servicos || [])) {
         if (!matchColega(item)) continue
-        const nome = item.servico || ''
+        const nome = (item.servico || '').toLowerCase().trim()
         if (!freqColegas[nome]) freqColegas[nome] = []
         const idx = freqColegas[nome].length
         freqColegas[nome][idx] = (freqColegas[nome][idx] || 0) + Number(item.quantidade || 0)
@@ -759,14 +818,15 @@ export async function calcularOportunidadesOcultas(
     }
   }
 
-  // Serviços que ela TEM habilitados mas vende menos que colegas
+  // Serviços que ela TEM habilitados mas vende menos que colegas — lookup normalizado
   const oportunidades = (servicosCatalogo || [])
     .map((s: any) => {
       const comissao = Number(s.comissao_valor || 0)
       if (comissao <= 0) return null
-      const freqProfMensal = Math.round((freqProf[s.nome] || 0) / 6)
-      const mediaColegasMensal = freqColegas[s.nome]?.length
-        ? Math.round(freqColegas[s.nome].reduce((a: number, b: number) => a + b, 0) / freqColegas[s.nome].length / 6)
+      const chave = s.nome.toLowerCase().trim()
+      const freqProfMensal = Math.round((freqProf[chave] || 0) / 6)
+      const mediaColegasMensal = freqColegas[chave]?.length
+        ? Math.round(freqColegas[chave].reduce((a: number, b: number) => a + b, 0) / freqColegas[chave].length / 6)
         : 0
       const gap = Math.max(0, mediaColegasMensal - freqProfMensal)
       if (gap === 0) return null
@@ -781,7 +841,7 @@ export async function calcularOportunidadesOcultas(
     })
     .filter(Boolean)
     .sort((a: any, b: any) => b.potencial_perdido_mes - a.potencial_perdido_mes)
-    .slice(0, 4)
+    .slice(0, 5)
 
   // Serviços top da categoria que ela NÃO tem habilitados — comparação case-insensitive
   const nomesHabilitados = new Set((servicosCatalogo || []).map((s: any) => s.nome.toLowerCase().trim()))

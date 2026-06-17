@@ -6,7 +6,7 @@ import {
   calcularIndicadoresMeta, calcularScoreNodri, calcularBenchmarking,
   calcularPotencialOculto, buscarResumoComportamental, buscarFidelizacaoAtual,
   identificarCausaRaiz, buscarPendencias, buscarVendaProdutos,
-  calcularSimuladorMeta, calcularDinheiroPerdido, calcularOportunidadesOcultas,
+  calcularSimuladorMeta, calcularDinheiroPerdido, calcularOportunidadesOcultas, buscarTendenciaFidelizacao,
 } from '@/lib/metasAnalitico'
 import Anthropic from '@anthropic-ai/sdk'
 
@@ -205,10 +205,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   const mediaFaturamentoDiario = diasRestantes > 0 ? realizado / Math.max(1, 30 - diasRestantes) : 0
 
-  const [simuladorMeta, dinheiroPerdido, oportunidadesOcultas] = await Promise.all([
+  const [simuladorMeta, dinheiroPerdido, oportunidadesOcultas, tendenciaFidelizacao] = await Promise.all([
     calcularSimuladorMeta(salaoId, params.id, prof.servicos_habilitados || [], faltam, diasRestantes),
     calcularDinheiroPerdido(salaoId, params.id, comportamental.atrasos, comportamental.faltas, mediaFaturamentoDiario),
     calcularOportunidadesOcultas(salaoId, params.id, prof.cargo, prof.servicos_habilitados || [], ano, mes),
+    buscarTendenciaFidelizacao(salaoId, params.id, ano, mes),
   ])
 
   const projecaoConservadora = Math.round((alcancabilidade.projecao_ritmo_atual || realizado) * 100) / 100
@@ -249,6 +250,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     fidelizacao: {
       clientes_preferencia: fidelizacao.clientesPreferencia,
       clientes_sem_preferencia: fidelizacao.clientesSemPreferencia,
+      tendencia: tendenciaFidelizacao || 'sem histórico suficiente',
     },
     pendencias_abertas: pendencias.length > 0 ? pendencias : 'nenhuma',
     venda_produtos: {
@@ -321,15 +323,19 @@ Para cada eixo abaixo, escreva APENAS o que os dados reais mostram. Não repita 
 ⚠️ O que está prejudicando: (atrasos, faltas, feedbacks negativos — com números reais)
 
 **❤️ Experiência do Cliente**
-✅ O que está funcionando: use fidelizacao — clientes com preferência mostram base fiel; interprete o que isso significa.
-⚠️ O que está prejudicando: use fidelizacao.retencao_mes_anterior se disponível — mostre quantos clientes novos vieram no mês anterior e quantos retornaram neste mês. Se sem dado, use os feedbacks negativos mais frequentes como impacto na retenção.
+✅ O que está funcionando: use fidelizacao.tendencia.mes_atual.preferencia para mostrar a base fiel atual.
+⚠️ O que está prejudicando: use fidelizacao.tendencia para comparar dois meses. Escreva: "No mês anterior recebeu {mes_anterior.sem_preferencia} clientes sem preferência. Destes, apenas {novos_fidelizados} viraram preferência neste mês (taxa de conversão: {taxa_conversao_pct}%)." Se sem dado, diga isso claramente.
 
 ---
 
 ## 🧠 CAUSA RAIZ
 
 Escreva no estilo: "O problema não é [X]. Também não é [Y]. O verdadeiro gargalo é [Z] — e é por isso que [consequência em cadeia]."
-Use causa_raiz_do_gargalo e conecte com os dados de comportamental e fidelizacao.
+Use causa_raiz_do_gargalo e conecte com os dados abaixo:
+
+**Análise de Fidelização (12 meses):** use fidelizacao.tendencia.historico_12_meses para mostrar a evolução mês a mês de clientes com preferência vs sem preferência. Identifique se a base de preferência está crescendo, estável ou caindo. Calcule a taxa média de conversão (novos_fidelizados / sem_preferencia do mês anterior) e interprete o padrão.
+
+**Serviços subutilizados:** use oportunidades_ocultas.oportunidades_habilitadas para citar o serviço de maior potencial perdido — "ela sabe fazer X mas realiza apenas Y atendimentos/mês enquanto colegas fazem Z".
 
 ---
 
@@ -386,7 +392,8 @@ Use EXATAMENTE os números de dinheiro_perdido. Monte assim:
 Use dados de fidelizacao e comportamental.
 - Clientes com preferência: {clientes_preferencia} | Sem preferência: {clientes_sem_preferencia}
 - (1-2 frases interpretando o que isso significa para a estabilidade do faturamento)
-- Para cada reclamação negativa com ≥ 2 ocorrências nos FEEDBACKS DE CLIENTES, escreva 1 ação prática de melhoria específica. Máximo 5 ações. Se não há reclamações repetidas, sugira 2 ações de fidelização baseadas nos elogios positivos.
+- Use fidelizacao.tendencia: mostre quantos clientes sem preferência do mês anterior não retornaram (sem_preferencia_anterior - novos_fidelizados = perdidos). Interprete o impacto financeiro: clientes perdidos × ticket_medio_atual = receita recorrente que sumiu.
+- Para cada reclamação negativa com ≥ 2 ocorrências nos FEEDBACKS DE CLIENTES, escreva 1 ação prática de melhoria. Máximo 4 ações.
 
 ---
 
