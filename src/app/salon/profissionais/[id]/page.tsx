@@ -1869,7 +1869,7 @@ function AbaIA({ profissionalId, nomeProfissional }: { profissionalId: string; n
           </div>
         )}
         {mensagens.map((m, i) => (
-          <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+          <div key={i} className={`flex flex-col ${m.role === 'user' ? 'items-end' : 'items-start'}`}>
             <div className={`rounded-2xl px-4 py-3 text-[12px] leading-relaxed ${
               m.role === 'user'
                 ? 'max-w-[75%] bg-nodri-cyan text-nodri-dark font-medium rounded-br-md'
@@ -1904,6 +1904,14 @@ function AbaIA({ profissionalId, nomeProfissional }: { profissionalId: string; n
                 m.content
               )}
             </div>
+            {m.role === 'assistant' && m.content && !enviando && (
+              <button
+                onClick={() => imprimirEstrategia(m.content, prof?.nome_completo || 'Profissional')}
+                className="mt-1 flex items-center gap-1 px-2 py-1 rounded-lg text-nodri-t3 hover:text-nodri-cyan text-[10px] hover:bg-nodri-cyan/5 transition-colors"
+              >
+                🖨️ Imprimir
+              </button>
+            )}
           </div>
         ))}
         {enviando && (
