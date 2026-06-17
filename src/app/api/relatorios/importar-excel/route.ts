@@ -18,6 +18,135 @@ function sheetToArray(wb: XLSX.WorkBook, name: string): any[] {
   return XLSX.utils.sheet_to_json(ws, { defval: null })
 }
 
+async function recalcularPerfisClientes(salaoId: string) {
+  try {
+    // Busca todos os atendimentos raw dos últimos 3 anos
+    const treAnosAtras = new Date()
+    treAnosAtras.setFullYear(treAnosAtras.getFullYear() - 3)
+    const anoMin = treAnosAtras.getFullYear()
+
+    const { data: rows } = await supabaseAdmin
+      .from('atendimentos_raw')
+      .select('cliente, servico, total, data_comanda, ano, mes')
+      .eq('salao_id', salaoId)
+      .gte('ano', anoMin)
+      .neq('cliente', '')
+
+    if (!rows || rows.length === 0) return
+
+    const hoje = new Date()
+    const perfis: Record<string, any> = {}
+    const resumoMensal: Record<string, any> = {}
+
+    for (const r of rows) {
+      const nome = (r.cliente || '').trim()
+      if (!nome || nome === 'nan') continue
+
+      // Perfil lifetime
+      if (!perfis[nome]) {
+        perfis[nome] = { ltv: 0, visitas: 0, datas: [], servicos: new Set(), primeira: null, ultima: null }
+      }
+      const p = perfis[nome]
+      p.ltv += Number(r.total || 0)
+      p.visitas += 1
+      if (r.servico) p.servicos.add(r.servico)
+
+      const dataStr = r.data_comanda || `01/${String(r.mes).padStart(2,'0')}/${r.ano}`
+      const partes = dataStr.split('/')
+      let dataVisita: Date | null = null
+      if (partes.length === 3) {
+        dataVisita = new Date(`${partes[2]}-${partes[1]}-${partes[0]}`)
+        if (!isNaN(dataVisita.getTime())) {
+          p.datas.push(dataVisita)
+          if (!p.primeira || dataVisita < p.primeira) p.primeira = dataVisita
+          if (!p.ultima || dataVisita > p.ultima) p.ultima = dataVisita
+        }
+      }
+
+      // Resumo mensal
+      const chave = `${nome}__${r.ano}__${r.mes}`
+      if (!resumoMensal[chave]) {
+        resumoMensal[chave] = { cliente_nome: nome, ano: r.ano, mes: r.mes, visitas: 0, gasto: 0, servicos: [] }
+      }
+      resumoMensal[chave].visitas += 1
+      resumoMensal[chave].gasto += Number(r.total || 0)
+      if (r.servico && !resumoMensal[chave].servicos.includes(r.servico)) {
+        resumoMensal[chave].servicos.push(r.servico)
+      }
+    }
+
+    // Calcular intervalo médio e score RFM
+    const perfisParaSalvar = Object.entries(perfis).map(([nome, p]: [string, any]) => {
+      const datas = p.datas.sort((a: Date, b: Date) => a.getTime() - b.getTime())
+      let intervaloMedio = 0
+      if (datas.length >= 2) {
+        const intervalos = []
+        for (let i = 1; i < datas.length; i++) {
+          intervalos.push((datas[i].getTime() - datas[i-1].getTime()) / (1000*60*60*24))
+        }
+        intervaloMedio = Math.round(intervalos.reduce((s: number, v: number) => s + v, 0) / intervalos.length)
+      }
+
+      const diasUltima = p.ultima
+        ? Math.round((hoje.getTime() - p.ultima.getTime()) / (1000*60*60*24))
+        : 999
+
+      // Score RFM simples
+      let status = 'ativo'
+      let scoreRfm = 'regular'
+      if (diasUltima > (intervaloMedio > 0 ? intervaloMedio * 2 : 90)) {
+        status = 'risco'
+        scoreRfm = 'em_risco'
+      }
+      if (diasUltima > (intervaloMedio > 0 ? intervaloMedio * 3.5 : 180)) {
+        status = 'perdido'
+        scoreRfm = 'perdido'
+      }
+      if (p.visitas >= 10 && p.ltv >= 1000) scoreRfm = 'vip'
+      if (p.visitas <= 1) scoreRfm = 'novo'
+
+      return {
+        salao_id: salaoId,
+        cliente_nome: nome,
+        ltv_total: Math.round(p.ltv * 100) / 100,
+        total_visitas: p.visitas,
+        primeira_visita: p.primeira ? p.primeira.toISOString().split('T')[0] : null,
+        ultima_visita: p.ultima ? p.ultima.toISOString().split('T')[0] : null,
+        intervalo_medio_dias: intervaloMedio,
+        servicos_feitos: Array.from(p.servicos),
+        score_rfm: scoreRfm,
+        status,
+        dias_desde_ultima_visita: diasUltima,
+        atualizado_em: new Date().toISOString(),
+      }
+    })
+
+    // Salvar perfis (upsert)
+    const CHUNK = 200
+    for (let i = 0; i < perfisParaSalvar.length; i += CHUNK) {
+      await supabaseAdmin.from('clientes_perfil')
+        .upsert(perfisParaSalvar.slice(i, i + CHUNK), { onConflict: 'salao_id,cliente_nome' })
+    }
+
+    // Salvar resumo mensal
+    const resumoArray = Object.values(resumoMensal).map((r: any) => ({
+      salao_id: salaoId,
+      cliente_nome: r.cliente_nome,
+      ano: r.ano,
+      mes: r.mes,
+      visitas: r.visitas,
+      gasto_total: Math.round(r.gasto * 100) / 100,
+      servicos: r.servicos,
+    }))
+    for (let i = 0; i < resumoArray.length; i += CHUNK) {
+      await supabaseAdmin.from('clientes_resumo_mensal')
+        .upsert(resumoArray.slice(i, i + CHUNK), { onConflict: 'salao_id,cliente_nome,ano,mes' })
+    }
+  } catch (e) {
+    console.error('Erro ao recalcular perfis clientes:', e)
+  }
+}
+
 export async function POST(req: NextRequest) {
   const salaoId = await getSalaoId()
   if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
@@ -30,19 +159,20 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(await file.arrayBuffer())
     const wb = XLSX.read(buffer, { type: 'buffer', cellDates: false, raw: true })
 
-    const periodos      = sheetToArray(wb, 'PERIODOS')
-    const resumo        = sheetToArray(wb, 'RESUMO_MENSAL')
-    const fatDiario     = sheetToArray(wb, 'FATURAMENTO_DIARIO')
-    const servicos      = sheetToArray(wb, 'SERVICOS')
-    const produtos      = sheetToArray(wb, 'PRODUTOS')
-    const profPag       = sheetToArray(wb, 'PROF_PAGAMENTOS')
-    const profTicket    = sheetToArray(wb, 'PROF_TICKET')
-    const profPref      = sheetToArray(wb, 'PROF_PREFERENCIA')
-    const profOcup      = sheetToArray(wb, 'PROF_OCUPACAO')
-    const profServicos  = sheetToArray(wb, 'PROF_SERVICOS')
-    const profProdutos  = sheetToArray(wb, 'PROF_PRODUTOS')
-    const metas         = sheetToArray(wb, 'METAS')
-    const feedbacks     = sheetToArray(wb, 'FEEDBACK')
+    const periodos          = sheetToArray(wb, 'PERIODOS')
+    const resumo            = sheetToArray(wb, 'RESUMO_MENSAL')
+    const fatDiario         = sheetToArray(wb, 'FATURAMENTO_DIARIO')
+    const servicos          = sheetToArray(wb, 'SERVICOS')
+    const produtos          = sheetToArray(wb, 'PRODUTOS')
+    const profPag           = sheetToArray(wb, 'PROF_PAGAMENTOS')
+    const profTicket        = sheetToArray(wb, 'PROF_TICKET')
+    const profPref          = sheetToArray(wb, 'PROF_PREFERENCIA')
+    const profOcup          = sheetToArray(wb, 'PROF_OCUPACAO')
+    const profServicos      = sheetToArray(wb, 'PROF_SERVICOS')
+    const profProdutos      = sheetToArray(wb, 'PROF_PRODUTOS')
+    const metas             = sheetToArray(wb, 'METAS')
+    const feedbacks         = sheetToArray(wb, 'FEEDBACK')
+    const atendimentosRaw   = sheetToArray(wb, 'ATENDIMENTOS_RAW')
 
     function agrupar(rows: any[], cols: string[], profCol = 'profissional') {
       const m: Record<string, any[]> = {}
@@ -117,6 +247,47 @@ export async function POST(req: NextRequest) {
       salvosExtras++
     }
 
+    // ── ATENDIMENTOS_RAW ────────────────────────────────────────────────────
+    let rawSalvos = 0
+    if (atendimentosRaw.length > 0) {
+      // Agrupa por salao+ano+mes para delete+insert eficiente
+      const periodoRaw = new Set(atendimentosRaw.map((r: any) => `${safeNum(r.ano)}-${safeNum(r.mes)}`))
+      for (const chave of periodoRaw) {
+        const [anoS, mesS] = chave.split('-')
+        await supabaseAdmin.from('atendimentos_raw')
+          .delete().eq('salao_id', salaoId).eq('ano', parseInt(anoS)).eq('mes', parseInt(mesS))
+      }
+
+      const CHUNK = 500
+      for (let i = 0; i < atendimentosRaw.length; i += CHUNK) {
+        const chunk = atendimentosRaw.slice(i, i + CHUNK).map((r: any) => ({
+          salao_id:     salaoId,
+          ano:          safeNum(r.ano),
+          mes:          safeNum(r.mes),
+          profissional: safeStr(r.profissional),
+          data_comanda: safeStr(r.data_comanda),
+          dia_semana:   safeStr(r.dia_semana),
+          num_comanda:  safeStr(r.num_comanda),
+          servico:      safeStr(r.servico),
+          categoria:    safeStr(r.categoria),
+          cliente:      safeStr(r.cliente),
+          cpf:          safeStr(r.cpf),
+          telefone:     safeStr(r.telefone),
+          celular:      safeStr(r.celular),
+          qtd:          safeNum(r.qtd),
+          valor:        safeNum(r.valor),
+          desconto:     safeNum(r.desconto),
+          total:        safeNum(r.total),
+          pacote:       safeStr(r.pacote),
+        }))
+        await supabaseAdmin.from('atendimentos_raw').insert(chunk)
+        rawSalvos += chunk.length
+      }
+
+      // Recalcular perfil de clientes a partir dos dados acumulados
+      await recalcularPerfisClientes(salaoId)
+    }
+
     // Feedbacks
     let feedbacksSalvos = 0
     if (feedbacks.length) {
@@ -141,6 +312,7 @@ export async function POST(req: NextRequest) {
       periodos_salvos: salvos,
       periodos_com_metricas_extras: salvosExtras,
       feedbacks_salvos: feedbacksSalvos,
+      atendimentos_raw_salvos: rawSalvos,
       total_periodos: periodos.length,
       erros: erros.length ? erros : undefined,
       diagnostico: {
