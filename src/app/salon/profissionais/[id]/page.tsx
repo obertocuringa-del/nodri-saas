@@ -3261,10 +3261,16 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
                 )
               }
 
+              const qtdOutraCategoria = cp.outra_manicure?.length || 0
+              const qtdOutroServico = cp.outro_servico?.length || 0
+              const qtdSaiuSalao = cp.saiu_salao?.length || 0
+              const perdaTotalSalao = (qtdOutroServico + qtdSaiuSalao) * ticketVisita
+              const perdaTotalProf = (qtdOutraCategoria + qtdSaiuSalao) * comissaoMedia
+
               return (
                 <>
                   {/* Resumo cards */}
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-4 gap-4">
                     {subTabs.map(st => {
                       const qtd = st.count
                       const isOutraCategoria = st.id === 'outra-categoria'
@@ -3320,6 +3326,30 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
                       )
                     })}
                   </div>
+
+                  {/* Card totalizador */}
+                  {(perdaTotalSalao > 0 || perdaTotalProf > 0) && (
+                    <div className="rounded-2xl p-4 border-2 border-nodri-border bg-nodri-surface">
+                      <div className="text-[11px] text-nodri-t3 mb-1">📊 Impacto total estimado</div>
+                      <div className="font-syne font-black text-[28px] text-white">{cp.total}</div>
+                      <div className="text-[10px] text-nodri-t3 mb-3">clientes perdidos</div>
+                      <div className="border-t border-nodri-border pt-2 space-y-1">
+                        {perdaTotalSalao > 0 && (
+                          <div className="flex justify-between text-[10px]">
+                            <span className="text-nodri-t3">💸 Perda total do salão</span>
+                            <span className="text-orange-400 font-bold">{fmt(perdaTotalSalao)}</span>
+                          </div>
+                        )}
+                        {perdaTotalProf > 0 && (
+                          <div className="flex justify-between text-[10px]">
+                            <span className="text-nodri-t3">💔 Perda total sua</span>
+                            <span className="text-red-400 font-bold">{fmt(perdaTotalProf)}</span>
+                          </div>
+                        )}
+                        <div className="text-[9px] text-nodri-t3 mt-1">visita {fmt(ticketVisita)} · comissão {fmt(comissaoMedia)}</div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Sub-tabs nav */}
                   <div className="flex border-b border-nodri-border">
