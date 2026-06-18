@@ -214,39 +214,35 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     const ultimaComProf = geral.ultimaDataComProf
     const ultimaGeral = geral.ultimaData
     if (!ultimaComProf) continue
-    if (!ultimaGeral) continue // sem histórico geral → dado inconsistente, ignora
+    if (!ultimaGeral) continue
 
-    // Só é "perdido" se a última visita NO SALÃO foi APÓS a última visita COM ESTE PROF
     const ultimaGeralMs = ultimaGeral.getTime()
     const ultimaComProfMs = ultimaComProf.getTime()
-    if (ultimaGeralMs <= ultimaComProfMs) continue // última visita foi com este prof → não perdido
-
-    const diasAusente = ultimaGeral
-      ? Math.floor((hoje.getTime() - ultimaGeral.getTime()) / 86400000)
-      : 999
-
+    const diasAusente = Math.floor((hoje.getTime() - ultimaGeral.getTime()) / 86400000)
     const ultimosServicosComProf = Array.from(hist.servicos).slice(0, 3).join(', ')
     const dataUltima = ultimaComProf.toLocaleDateString('pt-BR')
-    const dataUltimaGeral = ultimaGeral ? ultimaGeral.toLocaleDateString('pt-BR') : '—'
+    const dataUltimaGeral = ultimaGeral.toLocaleDateString('pt-BR')
     const celular = hist.celular || geral.celular || ''
-
-    // Verifica se voltou ao salão DEPOIS de sair deste profissional
     const visitasDepois = geral.visitasDepois
 
-    // Sub 2: Saiu do salão — NÃO voltou ao salão depois de sair deste prof E ausente 90+ dias
-    if (!visitasDepois.length && diasAusente >= DIAS_SAIU) {
-      sub2.push({
-        cliente: cli,
-        celular,
-        ultimo_servico_com_prof: ultimosServicosComProf,
-        ultima_visita_com_prof: dataUltima,
-        ultima_visita_salao: dataUltimaGeral,
-        dias_ausente: diasAusente,
-      })
+    // Caso A: última visita ao salão FOI com este profissional (nunca voltou depois)
+    if (ultimaGeralMs <= ultimaComProfMs) {
+      // Só classifica como "Saiu do salão" se ausente 90+ dias — senão pode ainda voltar
+      if (diasAusente >= DIAS_SAIU) {
+        sub2.push({
+          cliente: cli,
+          celular,
+          ultimo_servico_com_prof: ultimosServicosComProf,
+          ultima_visita_com_prof: dataUltima,
+          ultima_visita_salao: dataUltimaGeral,
+          dias_ausente: diasAusente,
+        })
+      }
       continue
     }
 
-    // Se não voltou ao salão mas ainda não atingiu 90 dias → não classifica ainda
+    // Caso B: voltou ao salão DEPOIS de sair deste profissional
+    // Se não há visitas rastreáveis depois → dado inconsistente, ignora
     if (!visitasDepois.length) continue
 
     // Profissionais únicos após a saída
