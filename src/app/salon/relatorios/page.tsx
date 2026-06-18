@@ -239,6 +239,15 @@ export default function RelatoriosPage() {
   const [analiseResumo, setAnaliseResumo] = useState<any>(null)
   const [analiseDetalhe, setAnaliseDetalhe] = useState<any[]>([])
   const [analiseLoading, setAnaliseLoading] = useState(false)
+  // Cross-sell por categoria
+  const [csCategoria, setCsCategoria] = useState<string | null>(null)
+  const [csServico, setCsServico] = useState<string | null>(null)
+  const [csCategorias, setCsCategorias] = useState<any[]>([])
+  const [csServicos, setCsServicos] = useState<any[]>([])
+  const [csClientes, setCsClientes] = useState<any[]>([])
+  const [csLoadingCat, setCsLoadingCat] = useState(false)
+  const [csLoadingSvc, setCsLoadingSvc] = useState(false)
+  const [csLoadingCli, setCsLoadingCli] = useState(false)
   const [loading, setLoading] = useState(false)
   const [showImport, setShowImport] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -675,6 +684,22 @@ export default function RelatoriosPage() {
   async function carregarAnalise(tipo: string) {
     setAnaliseLoading(true)
     setAnaliseDetalhe([])
+    if (tipo === 'crosssell') {
+      setCsCategoria(null); setCsServico(null); setCsServicos([]); setCsClientes([])
+      setCsLoadingCat(true)
+      try {
+        const res = await fetch('/api/relatorios/crosssell?tipo=categorias')
+        const data = await res.json()
+        setCsCategorias(Array.isArray(data) ? data : [])
+      } catch {}
+      setCsLoadingCat(false)
+      if (!analiseResumo) {
+        const res2 = await fetch('/api/relatorios/analise-clientes?tipo=resumo')
+        setAnaliseResumo(await res2.json())
+      }
+      setAnaliseLoading(false)
+      return
+    }
     try {
       if (tipo === 'rfm') {
         const [resResumo, resRfm] = await Promise.all([
@@ -696,6 +721,40 @@ export default function RelatoriosPage() {
       }
     } catch { /* silencioso */ }
     setAnaliseLoading(false)
+  }
+
+  async function selecionarCategoria(cat: string) {
+    setCsCategoria(cat); setCsServico(null); setCsClientes([])
+    setCsLoadingSvc(true)
+    try {
+      const res = await fetch(`/api/relatorios/crosssell?tipo=servicos&categoria=${encodeURIComponent(cat)}`)
+      setCsServicos(await res.json())
+    } catch {}
+    setCsLoadingSvc(false)
+  }
+
+  async function selecionarServico(svc: string) {
+    setCsServico(svc); setCsClientes([])
+    setCsLoadingCli(true)
+    try {
+      const res = await fetch(`/api/relatorios/crosssell?tipo=nunca-fez&servico=${encodeURIComponent(svc)}`)
+      const data = await res.json()
+      setCsClientes(data.clientes || [])
+    } catch {}
+    setCsLoadingCli(false)
+  }
+
+  function exportarCsExcel() {
+    if (!csClientes.length) return
+    const linhas = [['Nome', 'Celular'], ...csClientes.map(c => [c.cliente, c.celular])]
+    const csv = linhas.map(l => l.map(v => `"${(v||'').replace(/"/g,'""')}"`).join(',')).join('\n')
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `nunca-fez-${csServico?.replace(/\s+/g,'-')}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   // ── RENDER ──
@@ -2153,20 +2212,88 @@ export default function RelatoriosPage() {
                     )}
 
                     {/* CROSS-SELL */}
-                    {subAnalise === 'crosssell' && analiseDetalhe.length > 0 && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                        <div style={{ fontSize: 13, color: '#475569', marginBottom: 4 }}>Clientes que fazem serviço A mas nunca experimentaram serviço B — oportunidade de indicação.</div>
-                        {(analiseDetalhe as any[]).map((op: any, i: number) => (
-                          <div key={i} style={{ background: '#0a0f1a', border: '1px solid #1e293b', borderRadius: 10, padding: '14px 16px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                              <span style={{ fontSize: 12, color: '#10b981', fontWeight: 700 }}>{op.servico_tem}</span>
-                              <ChevronRight size={12} color="#475569" />
-                              <span style={{ fontSize: 12, color: '#f59e0b', fontWeight: 700 }}>{op.servico_nao_tem}</span>
-                              <span style={{ marginLeft: 'auto', fontSize: 11, background: '#1e293b', color: '#94a3b8', padding: '2px 8px', borderRadius: 20 }}>{op.clientes} clientes</span>
+                    {subAnalise === 'crosssell' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+                        {/* Breadcrumb */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#475569' }}>
+                          <span style={{ cursor: csCategoria ? 'pointer' : 'default', color: csCategoria ? '#7c5cfc' : '#e2e8f0', fontWeight: 600 }}
+                            onClick={() => { setCsCategoria(null); setCsServico(null); setCsClientes([]); setCsServicos([]) }}>
+                            Categorias
+                          </span>
+                          {csCategoria && <><ChevronRight size={12} /><span style={{ cursor: csServico ? 'pointer' : 'default', color: csServico ? '#7c5cfc' : '#e2e8f0', fontWeight: 600 }}
+                            onClick={() => { setCsServico(null); setCsClientes([]) }}>{csCategoria}</span></>}
+                          {csServico && <><ChevronRight size={12} /><span style={{ color: '#e2e8f0', fontWeight: 600 }}>{csServico}</span></>}
+                        </div>
+
+                        {/* Nível 1: Cards de categoria */}
+                        {!csCategoria && (
+                          csLoadingCat
+                            ? <div style={{ color: '#475569', fontSize: 13 }}>Carregando categorias...</div>
+                            : <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 10 }}>
+                                {csCategorias.map((cat: any) => (
+                                  <div key={cat.categoria} onClick={() => selecionarCategoria(cat.categoria)}
+                                    style={{ background: '#0a0f1a', border: '1px solid #1e293b', borderRadius: 12, padding: '16px 14px', cursor: 'pointer', transition: 'border .15s' }}
+                                    onMouseEnter={e => (e.currentTarget.style.borderColor = '#7c5cfc')}
+                                    onMouseLeave={e => (e.currentTarget.style.borderColor = '#1e293b')}>
+                                    <div style={{ fontSize: 13, fontWeight: 700, color: '#e2e8f0', marginBottom: 8 }}>{cat.categoria}</div>
+                                    <div style={{ fontSize: 11, color: '#475569' }}>{cat.total_servicos} serviços</div>
+                                    <div style={{ fontSize: 11, color: '#7c5cfc' }}>{cat.total_clientes} clientes</div>
+                                  </div>
+                                ))}
+                              </div>
+                        )}
+
+                        {/* Nível 2: Serviços da categoria */}
+                        {csCategoria && !csServico && (
+                          csLoadingSvc
+                            ? <div style={{ color: '#475569', fontSize: 13 }}>Carregando serviços...</div>
+                            : <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 10 }}>
+                                {csServicos.map((svc: any) => (
+                                  <div key={svc.servico} onClick={() => selecionarServico(svc.servico)}
+                                    style={{ background: '#0a0f1a', border: '1px solid #1e293b', borderRadius: 12, padding: '14px 14px', cursor: 'pointer' }}
+                                    onMouseEnter={e => (e.currentTarget.style.borderColor = '#10b981')}
+                                    onMouseLeave={e => (e.currentTarget.style.borderColor = '#1e293b')}>
+                                    <div style={{ fontSize: 12, fontWeight: 700, color: '#e2e8f0', marginBottom: 6 }}>{svc.servico}</div>
+                                    <div style={{ fontSize: 11, color: '#10b981' }}>{svc.total_clientes} já fizeram</div>
+                                  </div>
+                                ))}
+                              </div>
+                        )}
+
+                        {/* Nível 3: Clientes que nunca fizeram */}
+                        {csServico && (
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                              <div style={{ fontSize: 13, color: '#94a3b8' }}>
+                                <span style={{ color: '#f59e0b', fontWeight: 700 }}>{csClientes.length}</span> clientes nunca fizeram <span style={{ color: '#e2e8f0', fontWeight: 600 }}>{csServico}</span>
+                              </div>
+                              {csClientes.length > 0 && (
+                                <button onClick={exportarCsExcel}
+                                  style={{ background: '#10b981', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                                  ⬇ Exportar Excel (nome + celular)
+                                </button>
+                              )}
                             </div>
-                            <div style={{ fontSize: 10, color: '#475569' }}>Ex: {(op.clientes_lista || []).join(', ')}</div>
+                            {csLoadingCli
+                              ? <div style={{ color: '#475569', fontSize: 13 }}>Carregando clientes...</div>
+                              : <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 500, overflowY: 'auto' }}>
+                                  {/* Header */}
+                                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px 80px 100px', gap: 8, padding: '6px 12px', fontSize: 10, color: '#475569', fontWeight: 700, textTransform: 'uppercase' }}>
+                                    <span>Cliente</span><span>Celular</span><span>Visitas</span><span>Última visita</span>
+                                  </div>
+                                  {csClientes.map((c: any, i: number) => (
+                                    <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 140px 80px 100px', gap: 8, padding: '10px 12px', background: '#0a0f1a', border: '1px solid #1e293b', borderRadius: 8, fontSize: 12 }}>
+                                      <span style={{ color: '#e2e8f0', fontWeight: 600 }}>{c.cliente}</span>
+                                      <span style={{ color: '#7c5cfc' }}>{c.celular || '—'}</span>
+                                      <span style={{ color: '#94a3b8' }}>{c.total_visitas}x</span>
+                                      <span style={{ color: '#475569' }}>{c.ultima_visita || '—'}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                            }
                           </div>
-                        ))}
+                        )}
                       </div>
                     )}
 
