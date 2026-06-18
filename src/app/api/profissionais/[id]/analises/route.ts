@@ -18,7 +18,7 @@ function matchProf(item: any, tokens: string[], apelido: string, nomeCompleto: s
   if (n === nomeCompleto) return true
   if (apelido && (n === apelido || n.includes(apelido) || apelido.includes(n))) return true
   const nTokens = n.split(/\s+/).filter((t: string) => t && !STOPWORDS.has(t))
-  const matchCount = tokens.filter(t => nTokens.some(nt => nt.startsWith(t) || t.startsWith(nt))).length
+  const matchCount = tokens.filter(t => nTokens.some((nt: string) => nt.startsWith(t) || t.startsWith(nt))).length
   return matchCount >= Math.min(tokens.length, 2)
 }
 
