@@ -58,11 +58,10 @@ async function recalcularPerfisClientes(salaoId: string) {
       }
       const p = perfis[nome]
       p.ltv += Number(r.total || 0)
-      // Conta visitas únicas por comanda (cada dia/comanda = 1 visita)
-      const chaveCom = `${r.data_comanda}__${r.num_comanda || ''}`
-      if (!p.comandas) p.comandas = new Set()
-      p.comandas.add(chaveCom)
-      p.visitas = p.comandas.size
+      // Conta visitas únicas por dia (cliente no salão = 1 visita por data)
+      if (!p.dias) p.dias = new Set()
+      p.dias.add(r.data_comanda)
+      p.visitas = p.dias.size
       if (r.servico) p.servicos.add(r.servico)
 
       const dataStr = r.data_comanda || `01/${String(r.mes).padStart(2,'0')}/${r.ano}`
