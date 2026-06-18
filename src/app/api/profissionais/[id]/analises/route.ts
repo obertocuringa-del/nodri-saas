@@ -204,9 +204,15 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       from += 1000
     }
 
-    const SERVICOS_EXCLUIDOS_BUNDLE = ['HIGIENIZAÇÃO', 'HIGIENIZAÇÃO ESPECIAL']
+    const SERVICOS_EXCLUIDOS_BUNDLE = [
+      'HIGIENIZAÇÃO', 'HIGIENIZAÇÃO ESPECIAL',
+      'MANICURE', 'PEDICURE', 'UNHA', 'UNHAS', 'ESMALT', 'NAIL',
+      'GEL', 'ACRIGEL', 'FIBRA', 'ALONGAMENTO DE UNHA', 'BLINDAGEM',
+      'FRANCESINHA', 'CUTÍCULA', 'CUTICULA', 'MANUTENÇÃO DE GEL',
+    ]
     function isExcluidoBundle(s: string) {
-      return SERVICOS_EXCLUIDOS_BUNDLE.some(ex => s.toUpperCase().includes(ex))
+      const u = s.toUpperCase()
+      return SERVICOS_EXCLUIDOS_BUNDLE.some(ex => u.includes(ex))
     }
 
     // Agrupa por comanda: cliente + data + num_comanda
