@@ -2301,53 +2301,42 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
         )}
       </div>
 
-      {/* Banner de Alertas */}
+      {/* Alertas — card compacto pulsando + dropdown */}
       {!loadAlertas && alertasAtivos.length > 0 && (
-        <div className="border-b border-nodri-border bg-orange-950/30 px-5 py-3 space-y-2">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-[11px] font-bold text-orange-400 uppercase tracking-wider">
-              ⚠️ {alertasAtivos.length} cliente{alertasAtivos.length > 1 ? 's' : ''} sem visita há 60+ dias
+        <div className="relative border-b border-nodri-border bg-nodri-surface px-5 py-2 flex items-center gap-3">
+          <button onClick={() => setMostrarHistoricoAlertas(v => !v)}
+            className="flex items-center gap-2 bg-orange-900/40 border border-orange-700/50 rounded-xl px-3 py-1.5 hover:bg-orange-900/60 transition-all">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"/>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"/>
             </span>
-            {alertasHistorico.length > 0 && (
-              <button onClick={() => setMostrarHistoricoAlertas(v => !v)}
-                className="text-[10px] text-nodri-t3 hover:text-nodri-t2 underline">
-                {mostrarHistoricoAlertas ? 'Ocultar histórico' : `Ver histórico (${alertasHistorico.length})`}
-              </button>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {alertasAtivos.map((a, i) => (
-              <div key={i} className="flex items-center gap-2 bg-orange-900/40 border border-orange-800/50 rounded-xl px-3 py-1.5">
-                <div>
-                  <span className="text-[11px] font-semibold text-orange-200">{a.cliente_nome}</span>
-                  <span className="text-[10px] text-orange-400 ml-2">{a.dias_ausente}d ausente</span>
-                  {a.ultimo_servico && <span className="text-[10px] text-orange-500 ml-1">· {a.ultimo_servico}</span>}
-                </div>
-                <button onClick={() => arquivarAlerta(a)}
-                  title="Arquivar alerta"
-                  className="text-orange-500 hover:text-orange-200 ml-1 leading-none text-[14px]">✕</button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+            <span className="text-[11px] font-bold text-orange-300">
+              ⚠️ Alertas do dia ({alertasAtivos.length})
+            </span>
+          </button>
 
-      {/* Histórico de alertas arquivados */}
-      {mostrarHistoricoAlertas && alertasHistorico.length > 0 && (
-        <div className="border-b border-nodri-border bg-nodri-surface px-5 py-3">
-          <p className="text-[11px] font-bold text-nodri-t3 uppercase tracking-wider mb-2">Histórico de alertas arquivados</p>
-          <div className="space-y-1 max-h-40 overflow-y-auto">
-            {alertasHistorico.map((a: any, i: number) => (
-              <div key={i} className="flex items-center gap-3 text-[11px] text-nodri-t3">
-                <span className="text-nodri-t2 font-semibold">{a.cliente_nome}</span>
-                <span>{a.dias_ausente}d ausente</span>
-                {a.ultimo_servico && <span>· {a.ultimo_servico}</span>}
-                <span className="ml-auto text-nodri-t3">
-                  visto em {new Date(a.arquivado_em).toLocaleDateString('pt-BR')}
-                </span>
+          {/* Dropdown */}
+          {mostrarHistoricoAlertas && (
+            <div className="absolute top-full left-5 mt-1 z-50 w-[480px] max-h-80 overflow-y-auto bg-nodri-surface border border-nodri-border rounded-2xl shadow-xl">
+              <div className="flex items-center justify-between px-4 py-2 border-b border-nodri-border">
+                <span className="text-[11px] font-bold text-orange-400">{alertasAtivos.length} clientes ausentes há 60+ dias</span>
+                <button onClick={() => setMostrarHistoricoAlertas(false)} className="text-nodri-t3 hover:text-nodri-t1 text-[14px]">✕</button>
               </div>
-            ))}
-          </div>
+              <div className="divide-y divide-nodri-border">
+                {alertasAtivos.map((a, i) => (
+                  <div key={i} className="flex items-center justify-between px-4 py-2 hover:bg-nodri-bg/30">
+                    <div>
+                      <span className="text-[11px] font-semibold text-nodri-t1">{a.cliente_nome}</span>
+                      <span className="text-[10px] text-orange-400 ml-2">{a.dias_ausente}d ausente</span>
+                      {a.ultimo_servico && <span className="text-[10px] text-nodri-t3 ml-1">· {a.ultimo_servico}</span>}
+                    </div>
+                    <button onClick={() => arquivarAlerta(a)} title="Arquivar"
+                      className="text-nodri-t3 hover:text-red-400 ml-3 text-[13px] shrink-0">✕</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -3277,13 +3266,47 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
                   <div className="grid grid-cols-3 gap-4">
                     {subTabs.map(st => {
                       const qtd = st.count
+                      const isOutraCategoria = st.id === 'outra-categoria'
+                      const isOutroServico = st.id === 'outro-servico'
+                      const isSaiuSalao = st.id === 'saiu-salao'
+
                       return (
                         <button key={st.id} onClick={() => setSubTabPerdidos(st.id)}
                           className={`rounded-2xl p-4 text-left transition-all border-2 ${subTabPerdidos===st.id?'border-nodri-cyan bg-nodri-surface':'border-nodri-border bg-nodri-surface hover:border-nodri-t3'}`}>
                           <div className="text-[11px] text-nodri-t3 mb-1">{st.label}</div>
                           <div className="font-syne font-black text-[28px]" style={{color: st.cor}}>{qtd}</div>
                           <div className="text-[10px] text-nodri-t3 mb-3">clientes</div>
-                          {ticketMedio > 0 && (
+
+                          {/* Outra Manicure: só Perda sua (comissão × qtd) */}
+                          {isOutraCategoria && comissaoMedia > 0 && (
+                            <div className="border-t border-nodri-border pt-2 space-y-1">
+                              <div className="flex justify-between text-[10px]">
+                                <span className="text-nodri-t3">💔 Perda sua</span>
+                                <span className="text-red-400 font-bold">{fmt(qtd * comissaoMedia)}</span>
+                              </div>
+                              <div className="text-[9px] text-nodri-t3 mt-1">por visita · comissão {fmt(comissaoMedia)}</div>
+                            </div>
+                          )}
+
+                          {/* Outro serviço: Perda do salão (ticket perfil × qtd) + Perda sua (comissão × qtd) */}
+                          {isOutroServico && ticketMedio > 0 && (
+                            <div className="border-t border-nodri-border pt-2 space-y-1">
+                              <div className="flex justify-between text-[10px]">
+                                <span className="text-nodri-t3">💸 Perda do salão</span>
+                                <span className="text-orange-400 font-bold">{fmt(qtd * ticketMedio)}</span>
+                              </div>
+                              {comissaoMedia > 0 && (
+                                <div className="flex justify-between text-[10px]">
+                                  <span className="text-nodri-t3">💔 Perda sua</span>
+                                  <span className="text-red-400 font-bold">{fmt(qtd * comissaoMedia)}</span>
+                                </div>
+                              )}
+                              <div className="text-[9px] text-nodri-t3 mt-1">por visita · ticket {fmt(ticketMedio)}</div>
+                            </div>
+                          )}
+
+                          {/* Saíram do salão: Perda do salão (ticket perfil × qtd) + Perda sua (comissão × qtd) */}
+                          {isSaiuSalao && ticketMedio > 0 && (
                             <div className="border-t border-nodri-border pt-2 space-y-1">
                               <div className="flex justify-between text-[10px]">
                                 <span className="text-nodri-t3">💸 Perda do salão</span>
