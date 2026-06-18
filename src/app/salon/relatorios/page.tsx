@@ -235,7 +235,10 @@ export default function RelatoriosPage() {
   const [profsCadastrados, setProfsCadastrados] = useState<ProfCadastrado[]>([])
   const [aba, setAba] = useState<'geral' | 'metas' | 'profissionais' | 'feedbacks' | 'meta_prof' | 'redistribuicao' | 'analise'>('geral')
   const [dropdownAberto, setDropdownAberto] = useState(false)
-  const [subAnalise, setSubAnalise] = useState<'rfm' | 'risco' | 'perdidos' | 'vip' | 'crosssell' | 'frequencia'>('rfm')
+  const [subAnalise, setSubAnalise] = useState<'risco' | 'perdidos' | 'vip' | 'regular' | 'novo' | 'crosssell' | 'frequencia' | 'diasemana'>('risco')
+  const [freqModal, setFreqModal] = useState<{ label: string; min: number; max: number } | null>(null)
+  const [freqClientes, setFreqClientes] = useState<any[]>([])
+  const [freqLoading, setFreqLoading] = useState(false)
   const [analiseResumo, setAnaliseResumo] = useState<any>(null)
   const [analiseDetalhe, setAnaliseDetalhe] = useState<any[]>([])
   const [analiseLoading, setAnaliseLoading] = useState(false)
@@ -681,9 +684,33 @@ export default function RelatoriosPage() {
   const mesesDisp = dados ? Array.from(new Set(dados.resumo_mensal.filter(r => r.ano === p1Ano).map(r => r.mes))).sort((a, b) => a - b) : []
 
   // ── ANÁLISE DE CLIENTES ──
+  async function abrirFreqModal(faixa: { label: string; min: number; max: number }) {
+    setFreqModal(faixa)
+    setFreqLoading(true)
+    setFreqClientes([])
+    try {
+      const res = await fetch(`/api/relatorios/analise-clientes?tipo=frequencia-clientes&min=${faixa.min}&max=${faixa.max}`)
+      const data = await res.json()
+      setFreqClientes(Array.isArray(data) ? data : [])
+    } catch {}
+    setFreqLoading(false)
+  }
+
+  function exportarListaExcel(lista: any[], nomeArq: string) {
+    if (!lista.length) return
+    const linhas = [['Nome', 'Celular', 'Última Visita', 'Visitas', 'Serviços'],
+      ...lista.map(c => [c.cliente_nome, c.celular || '', c.ultima_visita || '', c.total_visitas, (c.servicos_feitos || []).join(', ')])]
+    const csv = linhas.map(l => l.map(v => `"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n')
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a'); a.href = url; a.download = nomeArq + '.csv'; a.click()
+    URL.revokeObjectURL(url)
+  }
+
   async function carregarAnalise(tipo: string) {
     setAnaliseLoading(true)
     setAnaliseDetalhe([])
+    if (tipo === 'diasemana') { setAnaliseLoading(false); return }
     if (tipo === 'crosssell') {
       setCsCategoria(null); setCsServico(null); setCsServicos([]); setCsClientes([])
       setCsLoadingCat(true)
@@ -859,19 +886,21 @@ export default function RelatoriosPage() {
               {dropdownAberto && (
                 <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', top: '100%', left: 0, zIndex: 100, background: '#0a0f1a', border: '1px solid #1e293b', borderRadius: 10, minWidth: 230, boxShadow: '0 8px 32px #0009', marginTop: 4 }}>
                   {[
-                    { id: 'rfm', icon: <Star size={13} />, label: 'Segmentação RFM', desc: 'VIP, em risco, perdidos' },
-                    { id: 'risco', icon: <AlertTriangle size={13} />, label: 'Clientes em Risco', desc: 'Prestes a abandonar' },
-                    { id: 'perdidos', icon: <Users size={13} />, label: 'Clientes Perdidos', desc: 'Não voltam há muito tempo' },
-                    { id: 'vip', icon: <Star size={13} />, label: 'Ranking VIP', desc: 'Maiores LTV do salão' },
-                    { id: 'crosssell', icon: <ChevronRight size={13} />, label: 'Oportunidades Cross-sell', desc: 'Quem pode comprar mais' },
-                    { id: 'frequencia', icon: <RefreshCw size={13} />, label: 'Frequência de Retorno', desc: 'Com que frequência voltam' },
+                    { id: 'risco', icon: <AlertTriangle size={13} />, label: 'Em Risco', desc: 'Prestes a abandonar' },
+                    { id: 'perdidos', icon: <Users size={13} />, label: 'Perdidos', desc: 'Não voltam há muito tempo' },
+                    { id: 'vip', icon: <Star size={13} />, label: 'VIP', desc: 'Maiores LTV do salão' },
+                    { id: 'regular', icon: <RefreshCw size={13} />, label: 'Regular', desc: 'Clientes recorrentes ativos' },
+                    { id: 'novo', icon: <Users size={13} />, label: 'Novo', desc: 'Vieram apenas 1 vez' },
+                    { id: 'crosssell', icon: <ChevronRight size={13} />, label: 'Cross-sell', desc: 'Quem pode comprar mais' },
+                    { id: 'frequencia', icon: <RefreshCw size={13} />, label: 'Frequência', desc: 'Com que frequência voltam' },
+                    { id: 'diasemana', icon: <BarChart2 size={13} />, label: 'Dia da Semana', desc: 'Melhores dias do salão' },
                   ].map(item => (
                     <button key={item.id} onClick={() => {
                       setAba('analise')
                       setSubAnalise(item.id as any)
                       setDropdownAberto(false)
                       carregarAnalise(item.id)
-                    }} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 14px', border: 'none', background: subAnalise === item.id && aba === 'analise' ? '#1e293b' : 'transparent', color: '#e2e8f0', cursor: 'pointer', textAlign: 'left', borderRadius: item.id === 'rfm' ? '10px 10px 0 0' : item.id === 'frequencia' ? '0 0 10px 10px' : 0 }}>
+                    }} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 14px', border: 'none', background: subAnalise === item.id && aba === 'analise' ? '#1e293b' : 'transparent', color: '#e2e8f0', cursor: 'pointer', textAlign: 'left', borderRadius: item.id === 'risco' ? '10px 10px 0 0' : item.id === 'diasemana' ? '0 0 10px 10px' : 0 }}>
                       <span style={{ color: '#f59e0b' }}>{item.icon}</span>
                       <div>
                         <div style={{ fontSize: 12, fontWeight: 600 }}>{item.label}</div>
@@ -2079,12 +2108,14 @@ export default function RelatoriosPage() {
                 {/* Sub-menu */}
                 <div style={{ display: 'flex', gap: 6, marginBottom: 20, flexWrap: 'wrap' }}>
                   {[
-                    { id: 'rfm', label: 'Segmentação RFM' },
                     { id: 'risco', label: 'Em Risco' },
                     { id: 'perdidos', label: 'Perdidos' },
                     { id: 'vip', label: 'VIP' },
+                    { id: 'regular', label: 'Regular' },
+                    { id: 'novo', label: 'Novo' },
                     { id: 'crosssell', label: 'Cross-sell' },
                     { id: 'frequencia', label: 'Frequência' },
+                    { id: 'diasemana', label: 'Dia da Semana' },
                   ].map(s => (
                     <button key={s.id} onClick={() => { setSubAnalise(s.id as any); carregarAnalise(s.id) }}
                       style={{ padding: '6px 14px', border: 'none', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', background: subAnalise === s.id ? '#f59e0b' : '#1e293b', color: subAnalise === s.id ? '#020817' : '#94a3b8' }}>
@@ -2105,80 +2136,61 @@ export default function RelatoriosPage() {
 
                 {!analiseLoading && analiseResumo && !analiseResumo.vazio && (
                   <>
-                    {/* Cards resumo sempre visíveis */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 10, marginBottom: 20 }}>
-                      {[
-                        { lbl: 'Total Clientes', val: analiseResumo.total, cor: '#7c5cfc' },
-                        { lbl: 'VIP', val: analiseResumo.vip, cor: '#f59e0b' },
-                        { lbl: 'Em Risco', val: analiseResumo.em_risco, cor: '#f97316' },
-                        { lbl: 'Perdidos', val: analiseResumo.perdidos, cor: '#ef4444' },
-                        { lbl: 'Novos', val: analiseResumo.novos, cor: '#06b6d4' },
-                        { lbl: 'LTV Médio', val: moeda(analiseResumo.ltv_medio || 0), cor: '#10b981' },
-                      ].map(card => (
-                        <div key={card.lbl} style={{ background: '#0a0f1a', border: `1px solid ${card.cor}30`, borderLeft: `3px solid ${card.cor}`, borderRadius: 10, padding: '12px 14px' }}>
-                          <div style={{ fontSize: 10, color: '#475569', fontWeight: 600, marginBottom: 4 }}>{card.lbl}</div>
-                          <div style={{ fontSize: 20, fontWeight: 800, color: card.cor }}>{card.val}</div>
+                    {/* ── Descrição da aba ── */}
+                    {(() => {
+                      const infos: Record<string, { cor: string; titulo: string; desc: string; param: string }> = {
+                        risco:     { cor: '#f97316', titulo: 'Clientes Em Risco de Abandono', desc: 'Clientes que pararam de vir com frequência acima do normal delas. Contate agora antes de perdê-las.', param: 'Parâmetro: ausência > MAX(intervalo médio × 2, 30 dias)' },
+                        perdidos:  { cor: '#ef4444', titulo: 'Clientes Perdidos', desc: 'Clientes que sumiram há muito tempo. Campanha de reativação pode recuperar parte delas.', param: 'Parâmetro: ausência > MAX(intervalo médio × 3.5, 60 dias)' },
+                        vip:       { cor: '#f59e0b', titulo: 'Clientes VIP', desc: 'As clientes mais valiosas do salão por volume de visitas e gasto total. Merecem tratamento especial.', param: 'Parâmetro: 10+ visitas E LTV ≥ R$ 1.000' },
+                        regular:   { cor: '#10b981', titulo: 'Clientes Regulares', desc: 'Clientes recorrentes ativas — a base sólida do salão. Não são VIP ainda mas voltam com consistência.', param: 'Parâmetro: score_rfm = regular (ativo, mais de 1 visita, não VIP)' },
+                        novo:      { cor: '#06b6d4', titulo: 'Clientes Novas', desc: 'Vieram apenas 1 vez. Grande potencial de fidelização — uma mensagem de retorno pode converter muitas.', param: 'Parâmetro: apenas 1 visita registrada' },
+                        crosssell: { cor: '#7c5cfc', titulo: 'Oportunidades Cross-sell', desc: 'Clientes que frequentam o salão mas nunca fizeram determinado serviço. Oportunidade direta de venda.', param: 'Parâmetro: cliente ativo sem registro do serviço selecionado' },
+                        frequencia:{ cor: '#7c5cfc', titulo: 'Frequência de Retorno', desc: 'Distribuição do intervalo médio entre visitas. Clique em qualquer barra para ver os clientes daquele grupo.', param: 'Parâmetro: média dos intervalos entre comandas de cada cliente' },
+                        diasemana: { cor: '#f59e0b', titulo: 'Performance por Dia da Semana', desc: 'Quais dias da semana geram mais faturamento e mais clientes. Use para otimizar escala e promoções.', param: 'Parâmetro: faturamento diário agrupado por dia da semana (período selecionado)' },
+                      }
+                      const info = infos[subAnalise]
+                      if (!info) return null
+                      return (
+                        <div style={{ background: '#0a0f1a', border: `1px solid ${info.cor}30`, borderLeft: `3px solid ${info.cor}`, borderRadius: 10, padding: '12px 16px', marginBottom: 16 }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: info.cor, marginBottom: 4 }}>{info.titulo}</div>
+                          <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 4 }}>{info.desc}</div>
+                          <div style={{ fontSize: 10, color: '#475569', fontStyle: 'italic' }}>{info.param}</div>
                         </div>
-                      ))}
-                    </div>
+                      )
+                    })()}
 
-                    {/* RFM — distribuição por score */}
-                    {subAnalise === 'rfm' && analiseDetalhe.length > 0 && (
-                      <div style={{ background: '#0a0f1a', border: '1px solid #1e293b', borderRadius: 12, padding: 20 }}>
-                        <h3 style={{ color: '#f59e0b', fontSize: 14, fontWeight: 700, marginBottom: 16 }}>Distribuição por Score RFM</h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                          {(analiseDetalhe as any[]).map((item: any) => {
-                            const total = (analiseDetalhe as any[]).reduce((s: number, i: any) => s + (i.qtd as number), 0)
-                            const pct = total > 0 ? Math.round((item.qtd / total) * 100) : 0
-                            const cores: Record<string, string> = { vip: '#f59e0b', regular: '#10b981', em_risco: '#f97316', perdido: '#ef4444', novo: '#06b6d4' }
-                            const cor = cores[item.score] || '#475569'
-                            return (
-                              <div key={item.score}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                                  <span style={{ fontSize: 12, color: cor, fontWeight: 700, textTransform: 'uppercase' }}>{item.score}</span>
-                                  <span style={{ fontSize: 12, color: '#94a3b8' }}>{item.qtd} clientes ({pct}%)</span>
-                                </div>
-                                <div style={{ background: '#1e293b', borderRadius: 4, height: 8 }}>
-                                  <div style={{ background: cor, width: `${pct}%`, height: '100%', borderRadius: 4, transition: '0.4s' }} />
-                                </div>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* RISCO e PERDIDOS — tabela */}
+                    {/* RISCO e PERDIDOS — tabela com exportar */}
                     {(subAnalise === 'risco' || subAnalise === 'perdidos') && analiseDetalhe.length > 0 && (
                       <div style={{ background: '#0a0f1a', border: '1px solid #1e293b', borderRadius: 12, overflow: 'hidden' }}>
-                        <div style={{ padding: '14px 16px', borderBottom: '1px solid #1e293b' }}>
+                        <div style={{ padding: '12px 16px', borderBottom: '1px solid #1e293b', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                           <h3 style={{ color: subAnalise === 'risco' ? '#f97316' : '#ef4444', fontSize: 14, fontWeight: 700, margin: 0 }}>
-                            {subAnalise === 'risco' ? 'Clientes Em Risco de Abandono' : 'Clientes Perdidos'}
+                            {analiseDetalhe.length} clientes {subAnalise === 'risco' ? 'em risco' : 'perdidas'}
                           </h3>
+                          <button onClick={() => exportarListaExcel(analiseDetalhe, subAnalise)}
+                            style={{ background: '#10b981', color: '#fff', border: 'none', borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                            ⬇ Exportar Excel
+                          </button>
                         </div>
                         <div style={{ overflowX: 'auto' }}>
                           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <thead>
-                              <tr style={{ background: '#1e293b' }}>
-                                {['Cliente', 'LTV Total', 'Visitas', 'Última Visita', 'Dias Ausente', 'Intervalo Médio', subAnalise === 'perdidos' ? 'Celular' : 'Serviços'].map(h => (
-                                  <th key={h} style={{ padding: '8px 12px', fontSize: 11, color: '#475569', fontWeight: 600, textAlign: 'left' }}>{h}</th>
+                              <tr style={{ background: '#111827' }}>
+                                {['Cliente', 'Celular', 'LTV Total', 'Visitas', 'Última Visita', 'Dias Ausente', 'Intervalo Médio', 'Serviços'].map(h => (
+                                  <th key={h} style={{ padding: '8px 12px', fontSize: 11, color: '#475569', fontWeight: 600, textAlign: 'left', whiteSpace: 'nowrap' }}>{h}</th>
                                 ))}
                               </tr>
                             </thead>
                             <tbody>
                               {(analiseDetalhe as any[]).map((c: any, i: number) => (
-                                <tr key={i} style={{ borderBottom: '1px solid #1e293b10' }}>
-                                  <td style={{ padding: '10px 12px', fontSize: 12, color: '#e2e8f0', fontWeight: 600 }}>{c.cliente_nome}</td>
-                                  <td style={{ padding: '10px 12px', fontSize: 12, color: '#10b981', fontWeight: 700 }}>{moeda(c.ltv_total)}</td>
-                                  <td style={{ padding: '10px 12px', fontSize: 12, color: '#94a3b8' }}>{c.total_visitas}x</td>
-                                  <td style={{ padding: '10px 12px', fontSize: 11, color: '#64748b' }}>{c.ultima_visita}</td>
-                                  <td style={{ padding: '10px 12px', fontSize: 12, color: subAnalise === 'risco' ? '#f97316' : '#ef4444', fontWeight: 700 }}>{c.dias_desde_ultima_visita}d</td>
-                                  <td style={{ padding: '10px 12px', fontSize: 11, color: '#64748b' }}>{c.intervalo_medio_dias ? `${c.intervalo_medio_dias}d` : '—'}</td>
-                                  <td style={{ padding: '10px 12px', fontSize: 11, color: '#94a3b8' }}>
-                                    {subAnalise === 'perdidos'
-                                      ? (c.celular || '—')
-                                      : (c.servicos_feitos?.slice(0, 2).join(', ') || '—')}
-                                  </td>
+                                <tr key={i} style={{ borderBottom: '1px solid #1e293b20', background: i % 2 === 0 ? 'transparent' : '#060d1808' }}>
+                                  <td style={{ padding: '9px 12px', fontSize: 12, color: '#e2e8f0', fontWeight: 600 }}>{c.cliente_nome}</td>
+                                  <td style={{ padding: '9px 12px', fontSize: 11, color: '#7c5cfc' }}>{c.celular || '—'}</td>
+                                  <td style={{ padding: '9px 12px', fontSize: 12, color: '#10b981', fontWeight: 700 }}>{moeda(c.ltv_total)}</td>
+                                  <td style={{ padding: '9px 12px', fontSize: 12, color: '#94a3b8' }}>{c.total_visitas}x</td>
+                                  <td style={{ padding: '9px 12px', fontSize: 11, color: '#64748b' }}>{c.ultima_visita}</td>
+                                  <td style={{ padding: '9px 12px', fontSize: 12, color: subAnalise === 'risco' ? '#f97316' : '#ef4444', fontWeight: 700 }}>{c.dias_desde_ultima_visita}d</td>
+                                  <td style={{ padding: '9px 12px', fontSize: 11, color: '#64748b' }}>{c.intervalo_medio_dias ? `${c.intervalo_medio_dias}d` : '—'}</td>
+                                  <td style={{ padding: '9px 12px', fontSize: 10, color: '#475569', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{(c.servicos_feitos || []).slice(0, 3).join(', ') || '—'}</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -2189,17 +2201,19 @@ export default function RelatoriosPage() {
 
                     {/* VIP */}
                     {subAnalise === 'vip' && analiseDetalhe.length > 0 && (
-                      <div style={{ background: '#0a0f1a', border: '1px solid #f59e0b30', borderRadius: 12, overflow: 'hidden' }}>
-                        <div style={{ padding: '14px 16px', borderBottom: '1px solid #1e293b' }}>
-                          <h3 style={{ color: '#f59e0b', fontSize: 14, fontWeight: 700, margin: 0 }}>Clientes VIP — Maiores LTV</h3>
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
+                          <button onClick={() => exportarListaExcel(analiseDetalhe, 'vip')}
+                            style={{ background: '#f59e0b', color: '#020817', border: 'none', borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>⬇ Exportar Excel</button>
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ background: '#0a0f1a', border: '1px solid #f59e0b30', borderRadius: 12, overflow: 'hidden' }}>
                           {(analiseDetalhe as any[]).map((c: any, i: number) => (
-                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderBottom: '1px solid #1e293b10' }}>
+                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderBottom: '1px solid #1e293b20' }}>
                               <div style={{ width: 28, height: 28, borderRadius: '50%', background: i === 0 ? '#f59e0b' : i === 1 ? '#94a3b8' : i === 2 ? '#cd7c4f' : '#1e293b', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: i < 3 ? '#020817' : '#475569', flexShrink: 0 }}>#{i+1}</div>
                               <div style={{ flex: 1 }}>
                                 <div style={{ fontSize: 13, fontWeight: 600, color: '#e2e8f0' }}>{c.cliente_nome}</div>
-                                <div style={{ fontSize: 10, color: '#475569' }}>{c.total_visitas} visitas · a cada {c.intervalo_medio_dias || '?'}d · última: {c.ultima_visita}</div>
+                                <div style={{ fontSize: 10, color: '#475569' }}>{c.total_visitas} visitas · a cada {c.intervalo_medio_dias || '?'}d · última: {c.ultima_visita} · {c.celular || 'sem celular'}</div>
+                                <div style={{ fontSize: 10, color: '#334155', marginTop: 2 }}>{(c.servicos_feitos || []).slice(0, 4).join(' · ')}</div>
                               </div>
                               <div style={{ textAlign: 'right', flexShrink: 0 }}>
                                 <div style={{ fontSize: 15, fontWeight: 800, color: '#f59e0b' }}>{moeda(c.ltv_total)}</div>
@@ -2207,6 +2221,70 @@ export default function RelatoriosPage() {
                               </div>
                             </div>
                           ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* REGULAR */}
+                    {subAnalise === 'regular' && analiseDetalhe.length > 0 && (
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                          <span style={{ fontSize: 13, color: '#94a3b8' }}><span style={{ color: '#10b981', fontWeight: 700 }}>{analiseDetalhe.length}</span> clientes regulares</span>
+                          <button onClick={() => exportarListaExcel(analiseDetalhe, 'regular')}
+                            style={{ background: '#10b981', color: '#fff', border: 'none', borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>⬇ Exportar Excel</button>
+                        </div>
+                        <div style={{ background: '#0a0f1a', border: '1px solid #1e293b', borderRadius: 12, overflow: 'hidden' }}>
+                          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                            <thead><tr style={{ background: '#111827' }}>
+                              {['Cliente', 'Celular', 'LTV Total', 'Visitas', 'Última Visita', 'Frequência', 'Serviços'].map(h => (
+                                <th key={h} style={{ padding: '8px 12px', fontSize: 11, color: '#475569', fontWeight: 600, textAlign: 'left', whiteSpace: 'nowrap' }}>{h}</th>
+                              ))}
+                            </tr></thead>
+                            <tbody>
+                              {(analiseDetalhe as any[]).map((c: any, i: number) => (
+                                <tr key={i} style={{ borderBottom: '1px solid #1e293b20', background: i % 2 === 0 ? 'transparent' : '#060d1808' }}>
+                                  <td style={{ padding: '9px 12px', fontSize: 12, color: '#e2e8f0', fontWeight: 600 }}>{c.cliente_nome}</td>
+                                  <td style={{ padding: '9px 12px', fontSize: 11, color: '#7c5cfc' }}>{c.celular || '—'}</td>
+                                  <td style={{ padding: '9px 12px', fontSize: 12, color: '#10b981', fontWeight: 700 }}>{moeda(c.ltv_total)}</td>
+                                  <td style={{ padding: '9px 12px', fontSize: 12, color: '#94a3b8' }}>{c.total_visitas}x</td>
+                                  <td style={{ padding: '9px 12px', fontSize: 11, color: '#64748b' }}>{c.ultima_visita}</td>
+                                  <td style={{ padding: '9px 12px', fontSize: 11, color: '#06b6d4' }}>{c.intervalo_medio_dias ? `a cada ${c.intervalo_medio_dias}d` : '—'}</td>
+                                  <td style={{ padding: '9px 12px', fontSize: 10, color: '#475569', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{(c.servicos_feitos || []).slice(0, 3).join(', ') || '—'}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* NOVO */}
+                    {subAnalise === 'novo' && analiseDetalhe.length > 0 && (
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                          <span style={{ fontSize: 13, color: '#94a3b8' }}><span style={{ color: '#06b6d4', fontWeight: 700 }}>{analiseDetalhe.length}</span> clientes novas — vieram apenas 1 vez</span>
+                          <button onClick={() => exportarListaExcel(analiseDetalhe, 'novos')}
+                            style={{ background: '#06b6d4', color: '#020817', border: 'none', borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>⬇ Exportar Excel</button>
+                        </div>
+                        <div style={{ background: '#0a0f1a', border: '1px solid #1e293b', borderRadius: 12, overflow: 'hidden' }}>
+                          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                            <thead><tr style={{ background: '#111827' }}>
+                              {['Cliente', 'Celular', 'LTV', 'Data da Visita', 'Serviços Realizados'].map(h => (
+                                <th key={h} style={{ padding: '8px 12px', fontSize: 11, color: '#475569', fontWeight: 600, textAlign: 'left', whiteSpace: 'nowrap' }}>{h}</th>
+                              ))}
+                            </tr></thead>
+                            <tbody>
+                              {(analiseDetalhe as any[]).map((c: any, i: number) => (
+                                <tr key={i} style={{ borderBottom: '1px solid #1e293b20', background: i % 2 === 0 ? 'transparent' : '#060d1808' }}>
+                                  <td style={{ padding: '9px 12px', fontSize: 12, color: '#e2e8f0', fontWeight: 600 }}>{c.cliente_nome}</td>
+                                  <td style={{ padding: '9px 12px', fontSize: 11, color: '#7c5cfc' }}>{c.celular || '—'}</td>
+                                  <td style={{ padding: '9px 12px', fontSize: 12, color: '#10b981', fontWeight: 700 }}>{moeda(c.ltv_total)}</td>
+                                  <td style={{ padding: '9px 12px', fontSize: 11, color: '#64748b' }}>{c.ultima_visita}</td>
+                                  <td style={{ padding: '9px 12px', fontSize: 10, color: '#94a3b8' }}>{(c.servicos_feitos || []).join(', ') || '—'}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
                         </div>
                       </div>
                     )}
@@ -2297,19 +2375,20 @@ export default function RelatoriosPage() {
                       </div>
                     )}
 
-                    {/* FREQUÊNCIA */}
+                    {/* FREQUÊNCIA — barras clicáveis */}
                     {subAnalise === 'frequencia' && analiseDetalhe.length > 0 && (
                       <div style={{ background: '#0a0f1a', border: '1px solid #1e293b', borderRadius: 12, padding: 20 }}>
-                        <h3 style={{ color: '#7c5cfc', fontSize: 14, fontWeight: 700, marginBottom: 16 }}>Frequência de Retorno dos Clientes</h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                           {(analiseDetalhe as any[]).map((f: any) => (
-                            <div key={f.label}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                                <span style={{ fontSize: 12, color: '#e2e8f0', fontWeight: 600 }}>{f.label}</span>
-                                <span style={{ fontSize: 12, color: '#94a3b8' }}>{f.count} clientes ({f.pct}%)</span>
+                            <div key={f.label} onClick={() => abrirFreqModal(f)} style={{ cursor: 'pointer' }}
+                              onMouseEnter={e => (e.currentTarget.style.opacity = '0.8')}
+                              onMouseLeave={e => (e.currentTarget.style.opacity = '1')}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+                                <span style={{ fontSize: 13, color: '#e2e8f0', fontWeight: 600 }}>{f.label}</span>
+                                <span style={{ fontSize: 12, color: '#94a3b8' }}>{f.count} clientes ({f.pct}%) <span style={{ fontSize: 10, color: '#475569' }}>▶ clique para ver</span></span>
                               </div>
-                              <div style={{ background: '#1e293b', borderRadius: 4, height: 10 }}>
-                                <div style={{ background: 'linear-gradient(90deg, #7c5cfc, #06b6d4)', width: `${f.pct}%`, height: '100%', borderRadius: 4, transition: '0.4s' }} />
+                              <div style={{ background: '#1e293b', borderRadius: 6, height: 12 }}>
+                                <div style={{ background: 'linear-gradient(90deg, #7c5cfc, #06b6d4)', width: `${f.pct}%`, height: '100%', borderRadius: 6, transition: '0.4s' }} />
                               </div>
                             </div>
                           ))}
@@ -2317,7 +2396,56 @@ export default function RelatoriosPage() {
                       </div>
                     )}
 
-                    {!analiseLoading && analiseDetalhe.length === 0 && (
+                    {/* DIA DA SEMANA */}
+                    {subAnalise === 'diasemana' && dados && (() => {
+                      const fatP1 = dados.faturamento_diario.filter(r => {
+                        const v = r.ano * 100 + r.mes
+                        const [dY, dM] = de1.split('-').map(Number)
+                        const [aY, aM] = ate1.split('-').map(Number)
+                        return v >= dY * 100 + dM && v <= aY * 100 + aM
+                      })
+                      const diasPT = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo']
+                      const fatPorDia: Record<string, { fat: number; count: number }> = {}
+                      for (const r of fatP1) {
+                        const d = r.dia_semana || ''
+                        if (!fatPorDia[d]) fatPorDia[d] = { fat: 0, count: 0 }
+                        fatPorDia[d].fat += r.valor
+                        fatPorDia[d].count++
+                      }
+                      const lista = diasPT.map(d => ({ dia: d, fat: fatPorDia[d]?.fat || 0, count: fatPorDia[d]?.count || 0, ticket: fatPorDia[d]?.count ? (fatPorDia[d].fat / fatPorDia[d].count) : 0 }))
+                      const maxFat = Math.max(...lista.map(l => l.fat), 1)
+                      return (
+                        <div style={{ background: '#0a0f1a', border: '1px solid #1e293b', borderRadius: 12, overflow: 'hidden' }}>
+                          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                            <thead><tr style={{ background: '#111827' }}>
+                              {['Dia', 'Faturamento', 'Dias com movimento', 'Ticket médio do dia', 'Proporção'].map(h => (
+                                <th key={h} style={{ padding: '10px 14px', fontSize: 11, color: '#475569', fontWeight: 600, textAlign: h === 'Dia' ? 'left' : 'right', whiteSpace: 'nowrap' }}>{h}</th>
+                              ))}
+                            </tr></thead>
+                            <tbody>
+                              {lista.sort((a, b) => b.fat - a.fat).map((r, i) => (
+                                <tr key={r.dia} style={{ borderBottom: '1px solid #1e293b20', background: i % 2 === 0 ? 'transparent' : '#060d1808' }}>
+                                  <td style={{ padding: '10px 14px', fontSize: 13, color: '#e2e8f0', fontWeight: 600 }}>{r.dia}</td>
+                                  <td style={{ padding: '10px 14px', fontSize: 13, color: '#10b981', fontWeight: 700, textAlign: 'right' }}>{moeda(r.fat)}</td>
+                                  <td style={{ padding: '10px 14px', fontSize: 12, color: '#94a3b8', textAlign: 'right' }}>{r.count}x</td>
+                                  <td style={{ padding: '10px 14px', fontSize: 12, color: '#06b6d4', textAlign: 'right' }}>{moeda(r.ticket)}</td>
+                                  <td style={{ padding: '10px 14px', textAlign: 'right', minWidth: 120 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-end' }}>
+                                      <span style={{ fontSize: 11, color: '#64748b' }}>{maxFat > 0 ? Math.round(r.fat / maxFat * 100) : 0}%</span>
+                                      <div style={{ width: 80, height: 6, background: '#1e293b', borderRadius: 4, overflow: 'hidden' }}>
+                                        <div style={{ height: '100%', width: `${maxFat > 0 ? r.fat / maxFat * 100 : 0}%`, background: 'linear-gradient(90deg,#f59e0b,#f43f8e)', borderRadius: 4 }} />
+                                      </div>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )
+                    })()}
+
+                    {!analiseLoading && analiseDetalhe.length === 0 && subAnalise !== 'diasemana' && (
                       <div style={{ textAlign: 'center', padding: 40, color: '#475569', fontSize: 13 }}>Nenhum dado para esta análise ainda.</div>
                     )}
                   </>
@@ -2354,6 +2482,58 @@ export default function RelatoriosPage() {
               </div>
             )}
 
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL FREQUÊNCIA CLIENTES ── */}
+      {freqModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: 20 }}>
+          <div style={{ background: '#0a0f1a', border: '1px solid #1e293b', borderRadius: 16, padding: 0, maxWidth: 900, width: '100%', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+            {/* Header */}
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #1e293b', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#e2e8f0' }}>Clientes com frequência: {freqModal.label}</div>
+                {!freqLoading && <div style={{ fontSize: 12, color: '#475569', marginTop: 2 }}>{freqClientes.length} clientes nessa faixa</div>}
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {freqClientes.length > 0 && (
+                  <button onClick={() => exportarListaExcel(freqClientes, `frequencia-${freqModal.label.replace(/\s/g,'-')}`)}
+                    style={{ background: '#10b981', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>⬇ Exportar Excel (nome + celular)</button>
+                )}
+                <button onClick={() => setFreqModal(null)} style={{ background: '#1e293b', border: 'none', borderRadius: 8, padding: '6px 12px', color: '#94a3b8', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>✕</button>
+              </div>
+            </div>
+            {/* Conteúdo */}
+            <div style={{ overflowY: 'auto', flex: 1 }}>
+              {freqLoading ? (
+                <div style={{ padding: 40, textAlign: 'center', color: '#475569' }}>Carregando clientes...</div>
+              ) : (
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                  <thead style={{ position: 'sticky', top: 0 }}>
+                    <tr style={{ background: '#111827' }}>
+                      {['#', 'Cliente', 'Celular', 'LTV Total', 'Visitas', 'Última Visita', 'Frequência', 'Serviços'].map(h => (
+                        <th key={h} style={{ padding: '9px 12px', fontSize: 11, color: '#475569', fontWeight: 600, textAlign: h === '#' || h === 'Visitas' || h === 'LTV Total' || h === 'Frequência' ? 'right' : 'left', whiteSpace: 'nowrap' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {freqClientes.map((c: any, i: number) => (
+                      <tr key={i} style={{ borderBottom: '1px solid #1e293b20', background: i % 2 === 0 ? 'transparent' : '#060d1808' }}>
+                        <td style={{ padding: '9px 12px', color: '#334155', textAlign: 'right' }}>{i + 1}</td>
+                        <td style={{ padding: '9px 12px', color: '#e2e8f0', fontWeight: 600 }}>{c.cliente_nome}</td>
+                        <td style={{ padding: '9px 12px', color: '#7c5cfc' }}>{c.celular || '—'}</td>
+                        <td style={{ padding: '9px 12px', color: '#10b981', fontWeight: 700, textAlign: 'right' }}>{moeda(c.ltv_total)}</td>
+                        <td style={{ padding: '9px 12px', color: '#94a3b8', textAlign: 'right' }}>{c.total_visitas}x</td>
+                        <td style={{ padding: '9px 12px', color: '#64748b' }}>{c.ultima_visita}</td>
+                        <td style={{ padding: '9px 12px', color: '#06b6d4', textAlign: 'right' }}>{c.intervalo_medio_dias ? `${c.intervalo_medio_dias}d` : '—'}</td>
+                        <td style={{ padding: '9px 12px', color: '#475569', maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{(c.servicos_feitos || []).join(', ') || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
           </div>
         </div>
       )}
