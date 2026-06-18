@@ -1951,9 +1951,12 @@ export default function PerfilProfissionalPage() {
   const [form, setForm] = useState<Partial<Profissional>>({})
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
-  const [tab, setTab] = useState<'cadastro'|'desempenho'|'faturamento'|'metas'|'ia'|'dependencia'|'oportunidades'|'bundle'>('cadastro')
+  const [tab, setTab] = useState<'cadastro'|'desempenho'|'faturamento'|'metas'|'ia'|'dependencia'|'oportunidades'|'bundle'|'clientes-perdidos'>('cadastro')
   const [analiseData, setAnaliseData] = useState<{dependencia:any;oportunidades:any;bundle:any}>({dependencia:null,oportunidades:null,bundle:null})
   const [loadAnalise, setLoadAnalise] = useState<{dependencia:boolean;oportunidades:boolean;bundle:boolean}>({dependencia:false,oportunidades:false,bundle:false})
+  const [clientesPerdidos, setClientesPerdidos] = useState<any>(null)
+  const [loadClientesPerdidos, setLoadClientesPerdidos] = useState(false)
+  const [subTabPerdidos, setSubTabPerdidos] = useState<'outro-servico'|'saiu-salao'|'outra-categoria'>('outra-categoria')
   const [servicosSalao, setServicosSalao] = useState<{id:string;categoria:string;nome:string;preco_fixo:number|null;preco_min:number|null;comissao_valor:number|null}[]>([])
   const [selectorAberto, setSelectorAberto] = useState(false)
   const selectorRef = useRef<HTMLDivElement>(null)
@@ -2139,6 +2142,17 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
       .finally(() => setLoadAnalise(prev => ({...prev,[tipo]:false})))
   }, [tab, id])
 
+  useEffect(() => {
+    if (tab !== 'clientes-perdidos') return
+    if (clientesPerdidos) return
+    setLoadClientesPerdidos(true)
+    fetch(`/api/profissionais/${id}/clientes-perdidos`)
+      .then(r => r.json())
+      .then(d => setClientesPerdidos(d))
+      .catch(() => {})
+      .finally(() => setLoadClientesPerdidos(false))
+  }, [tab, id])
+
   async function salvarMetaManual() {
     if (!metaInfo) return
     setSalvandoMeta(true)
@@ -2262,6 +2276,7 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
           ['dependencia','👑 Dependência'],
           ['oportunidades',' Oportunidades'],
           ['bundle',' Bundles'],
+          ['clientes-perdidos','⚠️ Clientes Perdidos'],
           ['ia',' IA'],
         ] as const).map(([t,l])=>(
           <button key={t} onClick={()=>setTab(t)}
@@ -3092,6 +3107,127 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
                       </div>
                     ))}
                   </div>
+                </>
+              )
+            })()}
+          </div>
+        )}
+
+        {/*  CLIENTES PERDIDOS */}
+        {tab === 'clientes-perdidos' && (
+          <div className="space-y-5">
+            {loadClientesPerdidos && (
+              <div className="flex flex-col items-center justify-center py-16 gap-3">
+                <Loader2 size={28} className="animate-spin text-nodri-cyan"/>
+                <p className="text-[12px] text-nodri-t3">Analisando histórico de clientes... pode levar alguns segundos.</p>
+              </div>
+            )}
+            {!loadClientesPerdidos && clientesPerdidos && (() => {
+              const cp = clientesPerdidos
+              const cargo = prof?.cargo || 'profissional'
+
+              function exportarExcel(lista: any[], filename: string) {
+                const linhas = ['sep=;\nCliente;Celular']
+                for (const r of lista) linhas.push(`${r.cliente};${r.celular || ''}`)
+                const blob = new Blob([linhas.join('\n')], { type: 'text/csv;charset=utf-8;' })
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement('a'); a.href = url; a.download = filename; a.click()
+                URL.revokeObjectURL(url)
+              }
+
+              const subTabs = [
+                { id: 'outra-categoria' as const, label: `🚨 Outra ${cargo}`, count: cp.outra_manicure?.length || 0, cor: '#ef4444' },
+                { id: 'outro-servico' as const, label: '↔️ Outro serviço', count: cp.outro_servico?.length || 0, cor: '#f59e0b' },
+                { id: 'saiu-salao' as const, label: '👻 Saíram do salão', count: cp.saiu_salao?.length || 0, cor: '#6b7280' },
+              ]
+
+              const listaAtual = subTabPerdidos === 'outra-categoria'
+                ? (cp.outra_manicure || [])
+                : subTabPerdidos === 'outro-servico'
+                ? (cp.outro_servico || [])
+                : (cp.saiu_salao || [])
+
+              return (
+                <>
+                  {/* Resumo cards */}
+                  <div className="grid grid-cols-3 gap-4">
+                    {subTabs.map(st => (
+                      <button key={st.id} onClick={() => setSubTabPerdidos(st.id)}
+                        className={`rounded-2xl p-4 text-left transition-all border-2 ${subTabPerdidos===st.id?'border-nodri-cyan bg-nodri-surface':'border-nodri-border bg-nodri-surface hover:border-nodri-t3'}`}>
+                        <div className="text-[11px] text-nodri-t3 mb-1">{st.label}</div>
+                        <div className="font-syne font-black text-[28px]" style={{color: st.cor}}>{st.count}</div>
+                        <div className="text-[10px] text-nodri-t3">clientes</div>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Sub-tabs nav */}
+                  <div className="flex border-b border-nodri-border">
+                    {subTabs.map(st => (
+                      <button key={st.id} onClick={() => setSubTabPerdidos(st.id)}
+                        className={`px-4 py-2 text-[11px] font-semibold border-b-2 transition-all ${subTabPerdidos===st.id?'border-nodri-cyan text-nodri-cyan':'border-transparent text-nodri-t3 hover:text-nodri-t2'}`}>
+                        {st.label} ({st.count})
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Tabela */}
+                  {listaAtual.length === 0 ? (
+                    <div className="text-center py-14 text-nodri-t3">
+                      <span className="text-4xl">✅</span>
+                      <p className="text-[13px] mt-3">Nenhum cliente nesta categoria.</p>
+                    </div>
+                  ) : (
+                    <div className="bg-nodri-surface border border-nodri-border rounded-2xl overflow-hidden">
+                      <div className="flex items-center justify-between px-4 py-3 border-b border-nodri-border">
+                        <span className="text-[12px] font-semibold text-nodri-t2">{listaAtual.length} clientes</span>
+                        <button onClick={() => exportarExcel(listaAtual, `clientes-perdidos-${subTabPerdidos}.csv`)}
+                          className="text-[11px] bg-nodri-cyan text-nodri-bg px-3 py-1 rounded-lg font-semibold hover:opacity-80">
+                          Exportar Excel
+                        </button>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-[11px]">
+                          <thead>
+                            <tr className="border-b border-nodri-border">
+                              <th className="text-left px-4 py-2 text-nodri-t3 font-semibold">Cliente</th>
+                              <th className="text-left px-4 py-2 text-nodri-t3 font-semibold">Último serviço aqui</th>
+                              <th className="text-left px-4 py-2 text-nodri-t3 font-semibold">Última vez</th>
+                              {subTabPerdidos === 'outra-categoria' && <th className="text-left px-4 py-2 text-nodri-t3 font-semibold">Migrou para</th>}
+                              {subTabPerdidos === 'outro-servico' && <th className="text-left px-4 py-2 text-nodri-t3 font-semibold">Vai agora com</th>}
+                              {subTabPerdidos === 'saiu-salao' && <th className="text-left px-4 py-2 text-nodri-t3 font-semibold">Dias ausente</th>}
+                              <th className="text-left px-4 py-2 text-nodri-t3 font-semibold">Faz agora</th>
+                              <th className="text-left px-4 py-2 text-nodri-t3 font-semibold">Celular</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {listaAtual.map((r: any, i: number) => (
+                              <tr key={i} className={`border-b border-nodri-border last:border-0 ${i%2===0?'bg-transparent':'bg-nodri-bg/30'}`}>
+                                <td className="px-4 py-2 font-semibold text-nodri-t2">{r.cliente}</td>
+                                <td className="px-4 py-2 text-nodri-t3">{r.ultimo_servico_com_prof || '—'}</td>
+                                <td className="px-4 py-2 text-nodri-t3 whitespace-nowrap">{r.ultima_visita_com_prof}</td>
+                                {subTabPerdidos === 'outra-categoria' && (
+                                  <td className="px-4 py-2 text-red-400 font-semibold">{r.migrou_para || '—'}</td>
+                                )}
+                                {subTabPerdidos === 'outro-servico' && (
+                                  <td className="px-4 py-2 text-nodri-t2">{r.vai_agora_com || '—'}</td>
+                                )}
+                                {subTabPerdidos === 'saiu-salao' && (
+                                  <td className="px-4 py-2">
+                                    <span className={`font-bold ${r.dias_ausente>180?'text-red-400':r.dias_ausente>120?'text-orange-400':'text-yellow-400'}`}>
+                                      {r.dias_ausente}d
+                                    </span>
+                                  </td>
+                                )}
+                                <td className="px-4 py-2 text-nodri-t3">{r.faz_agora || '—'}</td>
+                                <td className="px-4 py-2 text-nodri-t3">{r.celular || '—'}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
                 </>
               )
             })()}
