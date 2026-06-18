@@ -3279,8 +3279,8 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
 
               return (
                 <>
-                  {/* Resumo cards 2×2 */}
-                  <div className="grid grid-cols-2 gap-3">
+                  {/* Resumo cards 2×2 mobile / 4 desktop */}
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                     {subTabs.map(st => {
                       const qtd = st.count
                       const isOutraCategoria = st.id === 'outra-categoria'
@@ -3335,7 +3335,7 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
 
                     {/* Card totalizador — ocupa as 2 colunas */}
                     {(perdaTotalSalao > 0 || perdaTotalProf > 0) && (
-                      <div className="col-span-2 rounded-xl p-3 border-2 border-nodri-border bg-nodri-surface">
+                      <div className="col-span-2 lg:col-span-4 rounded-xl p-3 border-2 border-nodri-border bg-nodri-surface">
                         <div className="flex items-center justify-between mb-1">
                           <div>
                             <div className="text-[10px] text-nodri-t3">📊 Impacto total estimado</div>
