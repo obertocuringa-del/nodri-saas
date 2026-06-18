@@ -2736,10 +2736,23 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
                 const fatDia = (metricas.fat_p2?.faturamento||0) / Math.max(metricas.fat_p2?.dias_trabalhados||1, 1)
                 const faltas = metricas.ocorrencias?.find(o => o.tipo?.toLowerCase().includes('falta'))?.total || 0
                 const atrasos = metricas.ocorrencias?.find(o => o.tipo?.toLowerCase().includes('atraso'))?.total || 0
+                // Média ponderada real: comissão de cada serviço × quantas vezes foi feito
+                const mix = metricas.mix_receita || []
+                let totalQtdMix = 0, totalComissaoPonderada = 0
+                for (const item of mix) {
+                  const serv = servicosSalao.find(s => s.nome.toUpperCase() === item.servico.toUpperCase())
+                  if (serv?.comissao_valor) {
+                    totalQtdMix += item.quantidade
+                    totalComissaoPonderada += serv.comissao_valor * item.quantidade
+                  }
+                }
+                // Fallback: média simples dos habilitados se não houver histórico
                 const habilitados = servicosSalao.filter(s => (prof.servicos_habilitados||[]).includes(s.id))
-                const comissaoMedia = habilitados.length > 0
-                  ? habilitados.reduce((sum, s) => sum + (s.comissao_valor||0), 0) / habilitados.length
-                  : 0
+                const comissaoMedia = totalQtdMix > 0
+                  ? totalComissaoPonderada / totalQtdMix
+                  : habilitados.length > 0
+                    ? habilitados.reduce((sum, s) => sum + (s.comissao_valor||0), 0) / habilitados.length
+                    : 0
                 const perdaFaltas = fatDia * faltas
                 const perdaAtrasos = comissaoMedia * atrasos
                 if (faltas === 0 && atrasos === 0) return null
