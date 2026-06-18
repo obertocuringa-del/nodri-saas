@@ -2466,20 +2466,26 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
                       )}
                     </div>
 
-                    {/* Tags dos selecionados */}
-                    {(form.servicos_habilitados?.length ?? 0) > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mt-2">
-                        {(form.servicos_habilitados || []).map(sid => {
-                          const s = servicosSalao.find(x => x.id === sid)
-                          if (!s) return null
-                          return (
-                            <span key={sid} className="flex items-center gap-1 bg-nodri-cyan/10 border border-nodri-cyan/30 text-nodri-cyan text-[10px] px-2 py-0.5 rounded-full">
-                              {s.nome}
-                              <button type="button" onClick={() => set('servicos_habilitados', (form.servicos_habilitados||[]).filter(x=>x!==sid) as any)} className="hover:text-white">×</button>
-                            </span>
-                          )
-                        })}
-                      </div>
+                    {/* Lista suspensa dos selecionados */}
+                    {(form.servicos_habilitados?.length ?? 0) > 0 && !selectorAberto && (
+                      <details className="mt-1">
+                        <summary className="text-[10px] text-nodri-cyan cursor-pointer select-none list-none flex items-center gap-1">
+                          <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                          ver {form.servicos_habilitados.length} serviço(s) selecionado(s)
+                        </summary>
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {(form.servicos_habilitados || []).map(sid => {
+                            const s = servicosSalao.find(x => x.id === sid)
+                            if (!s) return null
+                            return (
+                              <span key={sid} className="flex items-center gap-1 bg-nodri-cyan/10 border border-nodri-cyan/30 text-nodri-cyan text-[10px] px-2 py-0.5 rounded-full">
+                                {s.nome}
+                                <button type="button" onClick={() => set('servicos_habilitados', (form.servicos_habilitados||[]).filter(x=>x!==sid) as any)} className="hover:text-white">×</button>
+                              </span>
+                            )
+                          })}
+                        </div>
+                      </details>
                     )}
                   </div>
                 </div>
@@ -2616,7 +2622,9 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
         {/*  PENDÊNCIAS  */}
         {/*  IA  */}
         {tab === 'ia' && (
-          <ChatWidget profissionalId={id} modoEmbarcado={true} />
+          <div className="-mx-3 sm:-mx-5 -mt-4 sm:-mt-6">
+            <ChatWidget profissionalId={id} modoEmbarcado={true} />
+          </div>
         )}
 
         {/*  METAS  */}
@@ -2875,7 +2883,7 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
               })()}
 
               {/* Resumo de feedbacks no período */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-2">
                 {[
                   { l: 'Total P1', v: metricas.feedbacks_p1_total, cor: '#7c5cfc' },
                   { l: 'Total P2', v: metricas.feedbacks_p2_total, cor: '#00e5c8' },
@@ -2884,9 +2892,9 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
                       ? (((metricas.feedbacks_p2_total-metricas.feedbacks_p1_total)/metricas.feedbacks_p1_total)*100).toFixed(1)+'%'
                       : '—' },
                 ].map(item=>(
-                  <div key={item.l} className="bg-nodri-card border border-nodri-border rounded-xl p-4">
-                    <div className="text-[9px] text-nodri-t3 uppercase tracking-wider mb-1">{item.l}</div>
-                    <div className="font-syne font-bold text-[22px]" style={{color:item.cor}}>
+                  <div key={item.l} className="bg-nodri-card border border-nodri-border rounded-xl p-2.5">
+                    <div className="text-[9px] text-nodri-t3 uppercase tracking-wider mb-0.5">{item.l}</div>
+                    <div className="font-syne font-bold text-[16px]" style={{color:item.cor}}>
                       {item.v !== null ? item.v : item.txt}
                     </div>
                   </div>
@@ -3006,9 +3014,9 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
                         <h2 className="font-syne font-black text-[18px] text-nodri-t1">👑 Relatório de Dependência</h2>
                         <p className="text-[11px] text-nodri-t3 mt-1">Se este profissional sair amanhã, qual o impacto real no salão?</p>
                       </div>
-                      <div className="text-right shrink-0 ml-4">
-                        <div className="font-syne font-black text-[48px] leading-none" style={{color:cor}}>-{d.pct_faturamento}%</div>
-                        <div className="text-[12px] font-bold mt-1 uppercase" style={{color:cor}}>{d.nivel_risco}</div>
+                      <div className="text-right shrink-0 ml-2">
+                        <div className="font-syne font-black text-[32px] sm:text-[48px] leading-none" style={{color:cor}}>-{d.pct_faturamento}%</div>
+                        <div className="text-[11px] font-bold mt-1 uppercase" style={{color:cor}}>{d.nivel_risco}</div>
                       </div>
                     </div>
                     <div className="w-full bg-nodri-border rounded-full h-3 overflow-hidden">
@@ -3271,8 +3279,8 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
 
               return (
                 <>
-                  {/* Resumo cards */}
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* Resumo cards 2×2 */}
+                  <div className="grid grid-cols-2 gap-3">
                     {subTabs.map(st => {
                       const qtd = st.count
                       const isOutraCategoria = st.id === 'outra-categoria'
@@ -3281,77 +3289,77 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
 
                       return (
                         <button key={st.id} onClick={() => setSubTabPerdidos(st.id)}
-                          className={`rounded-2xl p-4 text-left transition-all border-2 ${subTabPerdidos===st.id?'border-nodri-cyan bg-nodri-surface':'border-nodri-border bg-nodri-surface hover:border-nodri-t3'}`}>
-                          <div className="text-[11px] text-nodri-t3 mb-1">{st.label}</div>
-                          <div className="font-syne font-black text-[28px]" style={{color: st.cor}}>{qtd}</div>
-                          <div className="text-[10px] text-nodri-t3 mb-3">clientes</div>
+                          className={`rounded-xl p-3 text-left transition-all border-2 ${subTabPerdidos===st.id?'border-nodri-cyan bg-nodri-surface':'border-nodri-border bg-nodri-surface hover:border-nodri-t3'}`}>
+                          <div className="text-[10px] text-nodri-t3 mb-0.5 leading-tight">{st.label}</div>
+                          <div className="font-syne font-black text-[22px] leading-none" style={{color: st.cor}}>{qtd}</div>
+                          <div className="text-[9px] text-nodri-t3 mb-2">clientes</div>
 
-                          {/* Outra Manicure: só Perda sua (comissão × qtd) */}
                           {isOutraCategoria && comissaoMedia > 0 && (
-                            <div className="border-t border-nodri-border pt-2 space-y-1">
-                              <div className="flex justify-between text-[10px]">
+                            <div className="border-t border-nodri-border pt-1.5 space-y-0.5">
+                              <div className="flex justify-between text-[9px]">
                                 <span className="text-nodri-t3">💔 Perda sua</span>
                                 <span className="text-red-400 font-bold">{fmt(qtd * comissaoMedia)}</span>
                               </div>
-                              <div className="text-[9px] text-nodri-t3 mt-1">por visita · comissão {fmt(comissaoMedia)}</div>
+                              <div className="text-[8px] text-nodri-t3">comissão {fmt(comissaoMedia)}</div>
                             </div>
                           )}
 
-                          {/* Outro serviço: só Perda do salão (cliente ainda gera receita, mas com outro prof) */}
                           {isOutroServico && ticketVisita > 0 && (
-                            <div className="border-t border-nodri-border pt-2 space-y-1">
-                              <div className="flex justify-between text-[10px]">
+                            <div className="border-t border-nodri-border pt-1.5 space-y-0.5">
+                              <div className="flex justify-between text-[9px]">
                                 <span className="text-nodri-t3">💸 Perda do salão</span>
                                 <span className="text-orange-400 font-bold">{fmt(qtd * ticketVisita)}</span>
                               </div>
-                              <div className="text-[9px] text-nodri-t3 mt-1">por visita · ticket {fmt(ticketVisita)}</div>
+                              <div className="text-[8px] text-nodri-t3">ticket {fmt(ticketVisita)}</div>
                             </div>
                           )}
 
-                          {/* Saíram do salão: Perda do salão (ticket visita × qtd) + Perda sua (comissão × qtd) */}
                           {isSaiuSalao && ticketVisita > 0 && (
-                            <div className="border-t border-nodri-border pt-2 space-y-1">
-                              <div className="flex justify-between text-[10px]">
+                            <div className="border-t border-nodri-border pt-1.5 space-y-0.5">
+                              <div className="flex justify-between text-[9px]">
                                 <span className="text-nodri-t3">💸 Perda do salão</span>
                                 <span className="text-orange-400 font-bold">{fmt(qtd * ticketVisita)}</span>
                               </div>
                               {comissaoMedia > 0 && (
-                                <div className="flex justify-between text-[10px]">
+                                <div className="flex justify-between text-[9px]">
                                   <span className="text-nodri-t3">💔 Perda sua</span>
                                   <span className="text-red-400 font-bold">{fmt(qtd * comissaoMedia)}</span>
                                 </div>
                               )}
-                              <div className="text-[9px] text-nodri-t3 mt-1">visita {fmt(ticketVisita)} · comissão {fmt(comissaoMedia)}</div>
+                              <div className="text-[8px] text-nodri-t3">visita {fmt(ticketVisita)}</div>
                             </div>
                           )}
                         </button>
                       )
                     })}
-                  </div>
 
-                  {/* Card totalizador */}
-                  {(perdaTotalSalao > 0 || perdaTotalProf > 0) && (
-                    <div className="rounded-2xl p-4 border-2 border-nodri-border bg-nodri-surface">
-                      <div className="text-[11px] text-nodri-t3 mb-1">📊 Impacto total estimado</div>
-                      <div className="font-syne font-black text-[28px] text-white">{cp.total}</div>
-                      <div className="text-[10px] text-nodri-t3 mb-3">clientes perdidos</div>
-                      <div className="border-t border-nodri-border pt-2 space-y-1">
-                        {perdaTotalSalao > 0 && (
-                          <div className="flex justify-between text-[10px]">
-                            <span className="text-nodri-t3">💸 Perda total do salão</span>
-                            <span className="text-orange-400 font-bold">{fmt(perdaTotalSalao)}</span>
+                    {/* Card totalizador — ocupa as 2 colunas */}
+                    {(perdaTotalSalao > 0 || perdaTotalProf > 0) && (
+                      <div className="col-span-2 rounded-xl p-3 border-2 border-nodri-border bg-nodri-surface">
+                        <div className="flex items-center justify-between mb-1">
+                          <div>
+                            <div className="text-[10px] text-nodri-t3">📊 Impacto total estimado</div>
+                            <div className="font-syne font-black text-[22px] leading-none text-white">{cp.total}</div>
+                            <div className="text-[9px] text-nodri-t3">clientes perdidos</div>
                           </div>
-                        )}
-                        {perdaTotalProf > 0 && (
-                          <div className="flex justify-between text-[10px]">
-                            <span className="text-nodri-t3">💔 Perda total sua</span>
-                            <span className="text-red-400 font-bold">{fmt(perdaTotalProf)}</span>
+                          <div className="text-right space-y-1">
+                            {perdaTotalSalao > 0 && (
+                              <div className="text-[10px]">
+                                <span className="text-nodri-t3 mr-1">💸 Perda do salão</span>
+                                <span className="text-orange-400 font-bold">{fmt(perdaTotalSalao)}</span>
+                              </div>
+                            )}
+                            {perdaTotalProf > 0 && (
+                              <div className="text-[10px]">
+                                <span className="text-nodri-t3 mr-1">💔 Perda sua</span>
+                                <span className="text-red-400 font-bold">{fmt(perdaTotalProf)}</span>
+                              </div>
+                            )}
                           </div>
-                        )}
-                        <div className="text-[9px] text-nodri-t3 mt-1">visita {fmt(ticketVisita)} · comissão {fmt(comissaoMedia)}</div>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
 
                   {/* Sub-tabs nav */}
                   <div className="overflow-x-auto border-b border-nodri-border">

@@ -466,8 +466,8 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
 
   // Estilos do container: fixo quando floating, relativo quando embutido
   const containerStyle: React.CSSProperties = modoEmbarcado
-    ? { position: 'relative', width: '100%', height: 'calc(100vh - 56px)', display: 'flex', flexDirection: 'column', background: '#0d1117', overflow: 'hidden' }
-    : { position: 'fixed', inset: 0, width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', background: '#0d1117', border: 'none', overflow: 'hidden', zIndex: 10001 }
+    ? { position: 'relative', width: '100%', height: isMobile ? 'calc(100dvh - 120px)' : 'calc(100vh - 108px)', minHeight: 400, display: 'flex', flexDirection: 'column', background: '#0d1117', overflow: 'hidden' }
+    : { position: 'fixed', inset: 0, width: '100vw', height: isMobile ? '100dvh' : '100vh', display: 'flex', flexDirection: 'column', background: '#0d1117', border: 'none', overflow: 'hidden', zIndex: 10001 }
 
   return (
     <>
@@ -509,15 +509,15 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <button onClick={imprimir} title="Imprimir conversa" style={{ padding: '6px 12px', background: 'transparent', border: '1px solid #30363d', borderRadius: 8, cursor: 'pointer', color: '#8b949e', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
-                <Printer size={14} /><span>Imprimir</span>
+              <button onClick={imprimir} title="Imprimir conversa" style={{ padding: '6px 8px', background: 'transparent', border: '1px solid #30363d', borderRadius: 8, cursor: 'pointer', color: '#8b949e', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+                <Printer size={14} /><span className="hidden sm:inline">Imprimir</span>
               </button>
-              <button onClick={limpar} title="Nova conversa" style={{ padding: '6px 12px', background: 'transparent', border: '1px solid #30363d', borderRadius: 8, cursor: 'pointer', color: '#8b949e', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
-                <Trash2 size={14} /><span>Limpar</span>
+              <button onClick={limpar} title="Limpar conversa" style={{ padding: '6px 8px', background: 'transparent', border: '1px solid #30363d', borderRadius: 8, cursor: 'pointer', color: '#8b949e', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+                <Trash2 size={14} /><span className="hidden sm:inline">Limpar</span>
               </button>
               {!modoEmbarcado && (
-                <button onClick={fechar} title="Fechar" style={{ padding: '6px 12px', background: 'transparent', border: '1px solid #30363d', borderRadius: 8, cursor: 'pointer', color: '#8b949e', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
-                  <X size={14} /><span>Fechar</span>
+                <button onClick={fechar} title="Fechar" style={{ padding: '6px 8px', background: 'transparent', border: '1px solid #30363d', borderRadius: 8, cursor: 'pointer', color: '#8b949e', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+                  <X size={14} /><span className="hidden sm:inline">Fechar</span>
                 </button>
               )}
             </div>
@@ -601,7 +601,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
           {/* Mensagens */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '24px max(24px, calc(50% - 400px))', display: 'flex', flexDirection: 'column', gap: 0 }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '16px 12px' : '24px max(24px, calc(50% - 400px))', display: 'flex', flexDirection: 'column', gap: 0 }}>
             {mensagens.map((msg, i) => (
               <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start', marginBottom: 20 }}>
                 {/* Rótulo */}
@@ -677,7 +677,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
 
 
           {/* Input */}
-          <div style={{ padding: '16px max(24px, calc(50% - 400px))', borderTop: '1px solid #21262d', background: '#161b22', flexShrink: 0 }}>
+          <div style={{ padding: isMobile ? '10px 12px' : '16px max(24px, calc(50% - 400px))', borderTop: '1px solid #21262d', background: '#161b22', flexShrink: 0 }}>
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, background: '#0d1117', border: '1px solid #30363d', borderRadius: 14, padding: '10px 14px', transition: 'border-color 0.2s' }}
               onFocus={() => {}} >
               <textarea

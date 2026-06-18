@@ -250,18 +250,20 @@ export default function ServicosPage() {
                   {aberta && (
                     <div className="border-t border-nodri-border divide-y divide-nodri-border/40">
                       {itens.map(s => (
-                        <div key={s.id} className={`flex items-center gap-3 px-4 py-2.5 ${!s.ativo ? 'opacity-40' : ''}`}>
+                        <div key={s.id} className={`flex items-start gap-2 px-3 py-2.5 ${!s.ativo ? 'opacity-40' : ''}`}>
                           <div className="flex-1 min-w-0">
-                            <p className="text-[12px] text-nodri-t1 truncate">{s.nome}</p>
-                            {s.observacao && <p className="text-[10px] text-nodri-t3">{s.observacao}</p>}
+                            <p className="text-[12px] text-nodri-t1 truncate font-medium">{s.nome}</p>
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
+                              <span className="text-[11px] font-medium text-nodri-cyan whitespace-nowrap">{fmtPreco(s)}</span>
+                              {s.comissao_valor && (
+                                <span className="text-[10px] text-green-400 whitespace-nowrap">
+                                  comissão R$ {Number(s.comissao_valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </span>
+                              )}
+                              {s.observacao && <p className="text-[10px] text-nodri-t3 w-full truncate">{s.observacao}</p>}
+                            </div>
                           </div>
-                          <span className="text-[12px] font-medium text-nodri-cyan whitespace-nowrap">{fmtPreco(s)}</span>
-                          {s.comissao_valor && (
-                            <span className="text-[10px] text-green-400 whitespace-nowrap">
-                              comissão R$ {Number(s.comissao_valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                            </span>
-                          )}
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1 shrink-0">
                             <button
                               onClick={() => toggleAtivo(s)}
                               title={s.ativo ? 'Desativar' : 'Ativar'}
