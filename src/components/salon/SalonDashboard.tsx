@@ -624,8 +624,8 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                 {/* Dropdown */}
                 {mostrarAlertasIA && (
                   <div style={{
-                    position: 'absolute', top: '100%', left: 24, zIndex: 50,
-                    width: 460, maxHeight: 420, overflowY: 'auto',
+                    position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50,
+                    maxWidth: 460, maxHeight: 420, overflowY: 'auto',
                     background: '#161b22', border: '0.5px solid #21262d',
                     borderRadius: 14, boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
                     marginTop: 6,

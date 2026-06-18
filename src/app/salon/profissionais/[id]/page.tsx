@@ -2317,7 +2317,7 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
 
           {/* Dropdown */}
           {mostrarHistoricoAlertas && (
-            <div className="absolute top-full left-5 mt-1 z-50 w-[480px] max-h-80 overflow-y-auto bg-nodri-surface border border-nodri-border rounded-2xl shadow-xl">
+            <div className="absolute top-full left-0 right-0 mt-1 z-50 max-w-[480px] max-h-80 overflow-y-auto bg-nodri-surface border border-nodri-border rounded-2xl shadow-xl">
               <div className="flex items-center justify-between px-4 py-2 border-b border-nodri-border">
                 <span className="text-[11px] font-bold text-orange-400">{alertasAtivos.length} clientes ausentes há 60+ dias</span>
                 <button onClick={() => setMostrarHistoricoAlertas(false)} className="text-nodri-t3 hover:text-nodri-t1 text-[14px]">✕</button>
@@ -2341,27 +2341,29 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
       )}
 
       {/* Tabs */}
-      <div className="bg-nodri-surface border-b border-nodri-border px-5 flex">
+      <div className="bg-nodri-surface border-b border-nodri-border overflow-x-auto">
+        <div className="flex px-2 min-w-max">
         {([
-          ['cadastro',' Dados Cadastrais'],
-          ['faturamento',' Faturamento'],
-          ['desempenho',' Ocorrências'],
-          ['metas',' Metas'],
-          ['dependencia','👑 Dependência'],
-          ['oportunidades',' Oportunidades'],
-          ['bundle',' Bundles'],
-          ['clientes-perdidos','⚠️ Clientes Perdidos'],
-          ['ia',' IA'],
+          ['cadastro','Cadastro'],
+          ['faturamento','Faturamento'],
+          ['desempenho','Ocorrências'],
+          ['metas','Metas'],
+          ['dependencia','👑 Depend.'],
+          ['oportunidades','Oport.'],
+          ['bundle','Bundles'],
+          ['clientes-perdidos','⚠️ Perdidos'],
+          ['ia','IA'],
         ] as const).map(([t,l])=>(
           <button key={t} onClick={()=>setTab(t)}
-            className={`px-4 py-3 text-[12px] font-semibold border-b-2 transition-all
+            className={`px-3 py-3 text-[11px] font-semibold border-b-2 transition-all whitespace-nowrap
               ${tab===t ? 'border-nodri-cyan text-nodri-cyan' : 'border-transparent text-nodri-t3 hover:text-nodri-t2'}`}>
             {l}
           </button>
         ))}
+        </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-5 py-6">
+      <div className="max-w-5xl mx-auto px-3 sm:px-5 py-4 sm:py-6">
 
         {/*  CADASTRO  */}
         {tab === 'cadastro' && (
@@ -3270,7 +3272,7 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
               return (
                 <>
                   {/* Resumo cards */}
-                  <div className="grid grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     {subTabs.map(st => {
                       const qtd = st.count
                       const isOutraCategoria = st.id === 'outra-categoria'
@@ -3352,13 +3354,15 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
                   )}
 
                   {/* Sub-tabs nav */}
-                  <div className="flex border-b border-nodri-border">
+                  <div className="overflow-x-auto border-b border-nodri-border">
+                    <div className="flex min-w-max">
                     {subTabs.map(st => (
                       <button key={st.id} onClick={() => setSubTabPerdidos(st.id)}
-                        className={`px-4 py-2 text-[11px] font-semibold border-b-2 transition-all ${subTabPerdidos===st.id?'border-nodri-cyan text-nodri-cyan':'border-transparent text-nodri-t3 hover:text-nodri-t2'}`}>
+                        className={`px-4 py-2 text-[11px] font-semibold border-b-2 transition-all whitespace-nowrap ${subTabPerdidos===st.id?'border-nodri-cyan text-nodri-cyan':'border-transparent text-nodri-t3 hover:text-nodri-t2'}`}>
                         {st.label} ({st.count})
                       </button>
                     ))}
+                    </div>
                   </div>
 
                   {/* Tabela */}

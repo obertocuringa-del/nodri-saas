@@ -170,7 +170,7 @@ export default function ServicosPage() {
           <div className="bg-nodri-card border border-nodri-border rounded-xl p-4 mb-6 space-y-3">
             <h2 className="text-[13px] font-semibold text-nodri-t1">{novo ? 'Novo Serviço' : 'Editar Serviço'}</h2>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className={labelCls}>Categoria</label>
                 <select value={form.categoria} onChange={e => setForm(f => ({ ...f, categoria: e.target.value }))} className={inputCls}>
@@ -183,7 +183,7 @@ export default function ServicosPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className={labelCls}>Tipo de Preço</label>
                 <select value={form.preco_tipo} onChange={e => setForm(f => ({ ...f, preco_tipo: e.target.value }))} className={inputCls}>

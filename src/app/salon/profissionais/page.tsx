@@ -304,7 +304,7 @@ export default function ProfissionaisPage() {
         </aside>
 
         {/* CONTEÚDO PRINCIPAL */}
-        <main style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
+        <main style={{ flex: 1, padding: isMobile ? '12px' : '24px', overflowY: 'auto' }}>
 
           {/* ── LISTA ── */}
           {secao === 'lista' && (
@@ -372,7 +372,7 @@ export default function ProfissionaisPage() {
                   </button>
                 </div>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
                   {profFiltrados.map(p => (
                     <div key={p.id} style={{ background: temPendencia(p) ? '#1a0a0a' : '#0d1117', border: `1px solid ${temPendencia(p) ? '#7f1d1d' : '#1e293b'}`, borderRadius: '12px', padding: '16px', transition: 'border-color 0.2s, box-shadow 0.2s', cursor: 'pointer' }}
                       onClick={() => { try { sessionStorage.setItem('nodri_prof_' + p.id, JSON.stringify(p)) } catch(_){} router.push(`/salon/profissionais/${p.id}`) }}
