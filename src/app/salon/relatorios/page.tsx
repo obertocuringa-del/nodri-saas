@@ -2162,10 +2162,18 @@ export default function RelatoriosPage() {
                     {/* RISCO e PERDIDOS — tabela com exportar */}
                     {(subAnalise === 'risco' || subAnalise === 'perdidos') && analiseDetalhe.length > 0 && (
                       <div style={{ background: '#0a0f1a', border: '1px solid #1e293b', borderRadius: 12, overflow: 'hidden' }}>
-                        <div style={{ padding: '12px 16px', borderBottom: '1px solid #1e293b', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <h3 style={{ color: subAnalise === 'risco' ? '#f97316' : '#ef4444', fontSize: 14, fontWeight: 700, margin: 0 }}>
-                            {analiseDetalhe.length} clientes {subAnalise === 'risco' ? 'em risco' : 'perdidas'}
-                          </h3>
+                        <div style={{ padding: '12px 16px', borderBottom: '1px solid #1e293b', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+                          <div>
+                            <h3 style={{ color: subAnalise === 'risco' ? '#f97316' : '#ef4444', fontSize: 14, fontWeight: 700, margin: 0 }}>
+                              {analiseDetalhe.length} clientes {subAnalise === 'risco' ? 'em risco' : 'perdidas'}
+                            </h3>
+                            {subAnalise === 'perdidos' && analiseResumo?.ltv_total_perdidos > 0 && (
+                              <div style={{ fontSize: 12, color: '#ef4444', fontWeight: 700, marginTop: 4 }}>
+                                💸 Dinheiro perdido: <span style={{ fontSize: 15 }}>{moeda(analiseResumo.ltv_total_perdidos)}</span>
+                                <span style={{ fontSize: 10, color: '#64748b', marginLeft: 6 }}>soma do LTV de todos os clientes perdidos</span>
+                              </div>
+                            )}
+                          </div>
                           <button onClick={() => exportarListaExcel(analiseDetalhe, subAnalise)}
                             style={{ background: '#10b981', color: '#fff', border: 'none', borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
                             ⬇ Exportar Excel

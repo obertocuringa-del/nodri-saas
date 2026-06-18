@@ -1951,7 +1951,9 @@ export default function PerfilProfissionalPage() {
   const [form, setForm] = useState<Partial<Profissional>>({})
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
-  const [tab, setTab] = useState<'cadastro'|'desempenho'|'faturamento'|'metas'|'ia'>('cadastro')
+  const [tab, setTab] = useState<'cadastro'|'desempenho'|'faturamento'|'metas'|'ia'|'dependencia'|'oportunidades'|'bundle'>('cadastro')
+  const [analiseData, setAnaliseData] = useState<{dependencia:any;oportunidades:any;bundle:any}>({dependencia:null,oportunidades:null,bundle:null})
+  const [loadAnalise, setLoadAnalise] = useState<{dependencia:boolean;oportunidades:boolean;bundle:boolean}>({dependencia:false,oportunidades:false,bundle:false})
   const [servicosSalao, setServicosSalao] = useState<{id:string;categoria:string;nome:string;preco_fixo:number|null;preco_min:number|null;comissao_valor:number|null}[]>([])
   const [selectorAberto, setSelectorAberto] = useState(false)
   const selectorRef = useRef<HTMLDivElement>(null)
@@ -2124,6 +2126,19 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
     if (tab === 'metas') buscarMeta()
   }, [tab])
 
+  useEffect(() => {
+    const analises: Array<'dependencia'|'oportunidades'|'bundle'> = ['dependencia','oportunidades','bundle']
+    if (!analises.includes(tab as any)) return
+    const tipo = tab as 'dependencia'|'oportunidades'|'bundle'
+    if (analiseData[tipo]) return
+    setLoadAnalise(prev => ({...prev,[tipo]:true}))
+    fetch(`/api/profissionais/${id}/analises?tipo=${tipo}`)
+      .then(r => r.json())
+      .then(d => setAnaliseData(prev => ({...prev,[tipo]:d})))
+      .catch(() => {})
+      .finally(() => setLoadAnalise(prev => ({...prev,[tipo]:false})))
+  }, [tab, id])
+
   async function salvarMetaManual() {
     if (!metaInfo) return
     setSalvandoMeta(true)
@@ -2244,6 +2259,9 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
           ['faturamento',' Faturamento'],
           ['desempenho',' Ocorrências'],
           ['metas',' Metas'],
+          ['dependencia','👑 Dependência'],
+          ['oportunidades',' Oportunidades'],
+          ['bundle',' Bundles'],
           ['ia',' IA'],
         ] as const).map(([t,l])=>(
           <button key={t} onClick={()=>setTab(t)}
@@ -2598,6 +2616,58 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
                     )}
                   </div>
 
+                  {/* Breakdown de serviços para bater a meta */}
+                  {metaInfo.faltam > 0 && (() => {
+                    const habilitados = servicosSalao
+                      .filter(s => (prof.servicos_habilitados||[]).includes(s.id) && (s.comissao_valor||0) > 0)
+                      .sort((a, b) => (b.comissao_valor||0) - (a.comissao_valor||0))
+                    if (!habilitados.length) return null
+                    const faltam = metaInfo.faltam
+                    const sugestoes = habilitados.slice(0, 5).map(s => ({
+                      nome: s.nome,
+                      comissao: s.comissao_valor || 0,
+                      qtd: Math.ceil(faltam / (s.comissao_valor || 1)),
+                    }))
+                    // Mix equilibrado: distribui faltam entre top 3 serviços
+                    const top3 = habilitados.slice(0, 3)
+                    const totalComissao = top3.reduce((s, x) => s + (x.comissao_valor||0), 0)
+                    const mixQtds = top3.map(s => ({
+                      nome: s.nome,
+                      comissao: s.comissao_valor || 0,
+                      qtd: totalComissao > 0 ? Math.ceil((faltam * (s.comissao_valor||0) / totalComissao) / (s.comissao_valor||1)) : 0,
+                    }))
+                    return (
+                      <div className="bg-nodri-surface border border-nodri-cyan/25 rounded-2xl p-5">
+                        <h3 className="font-syne font-bold text-[12px] text-nodri-cyan mb-1"> Como bater a meta — Guia de Serviços</h3>
+                        <p className="text-[10px] text-nodri-t3 mb-4">Faltam {fmt$(faltam)} · Quantidade baseada na comissão recebida, não no valor bruto</p>
+                        <div className="space-y-3 mb-4">
+                          <div className="text-[10px] text-nodri-t3 font-semibold uppercase tracking-wider">Mix equilibrado (top 3)</div>
+                          {mixQtds.map(item => (
+                            <div key={item.nome} className="flex items-center justify-between p-3 bg-nodri-card rounded-xl border border-nodri-border">
+                              <div>
+                                <span className="text-[12px] text-nodri-t1 font-semibold">{item.nome}</span>
+                                <span className="ml-2 text-[10px] text-nodri-t3">{fmt$(item.comissao)}/comissão</span>
+                              </div>
+                              <span className="font-syne font-bold text-[18px] text-nodri-cyan">{item.qtd}×</span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="border-t border-nodri-border pt-3">
+                          <div className="text-[10px] text-nodri-t3 font-semibold uppercase tracking-wider mb-2">Alternativas (somente um serviço)</div>
+                          <div className="grid grid-cols-2 gap-2">
+                            {sugestoes.map(item => (
+                              <div key={item.nome} className="p-2.5 bg-nodri-card rounded-lg border border-nodri-border text-center">
+                                <div className="text-[10px] text-nodri-t3 truncate">{item.nome}</div>
+                                <div className="font-bold text-[16px] text-nodri-cyan">{item.qtd}×</div>
+                                <div className="text-[9px] text-nodri-t3">{fmt$(item.comissao)}/comissão</div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })()}
+
                   <div className="flex items-center gap-2">
                     <button onClick={gerarEstrategia} disabled={gerandoEstrategia}
                       style={{ background: 'linear-gradient(135deg, #7c5cfc, #f43f8e)' }}
@@ -2660,6 +2730,45 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
             <FiltroComparacao {...{modoFiltro,setModoFiltro,p1i,setP1i,p1f,setP1f,p2i,setP2i,p2f,setP2f,onAplicar:buscarMetricas,loading:loadMet}}/>
             {loadMet && <div className="flex justify-center py-10"><Loader2 size={24} className="animate-spin text-nodri-cyan"/></div>}
             {metricas && !loadMet && <>
+
+              {/* Impacto Financeiro — Faltas e Atrasos */}
+              {(() => {
+                const fatDia = (metricas.fat_p2?.faturamento||0) / Math.max(metricas.fat_p2?.dias_trabalhados||1, 1)
+                const faltas = metricas.ocorrencias?.find(o => o.tipo?.toLowerCase().includes('falta'))?.total || 0
+                const atrasos = metricas.ocorrencias?.find(o => o.tipo?.toLowerCase().includes('atraso'))?.total || 0
+                const habilitados = servicosSalao.filter(s => (prof.servicos_habilitados||[]).includes(s.id))
+                const comissaoMedia = habilitados.length > 0
+                  ? habilitados.reduce((sum, s) => sum + (s.comissao_valor||0), 0) / habilitados.length
+                  : 0
+                const perdaFaltas = fatDia * faltas
+                const perdaAtrasos = comissaoMedia * atrasos
+                if (faltas === 0 && atrasos === 0) return null
+                return (
+                  <div className="bg-nodri-surface border border-red-500/20 rounded-2xl p-5">
+                    <h3 className="font-syne font-bold text-[13px] mb-4 text-red-400"> Impacto Financeiro das Ocorrências</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-nodri-card border border-red-500/15 rounded-xl p-4">
+                        <div className="text-[9px] text-nodri-t3 uppercase tracking-wider mb-1"> Dinheiro perdido por faltas</div>
+                        <div className="font-syne font-bold text-[22px] text-red-400">{fmt$(perdaFaltas)}</div>
+                        <p className="text-[10px] text-nodri-t3 mt-1">{faltas} falta(s) × {fmt$(fatDia)}/dia</p>
+                        <p className="text-[9px] text-nodri-t3/60 mt-0.5">Média diária do período atual</p>
+                      </div>
+                      <div className="bg-nodri-card border border-orange-500/15 rounded-xl p-4">
+                        <div className="text-[9px] text-nodri-t3 uppercase tracking-wider mb-1"> Dinheiro perdido por atrasos</div>
+                        <div className="font-syne font-bold text-[22px] text-orange-400">{fmt$(perdaAtrasos)}</div>
+                        <p className="text-[10px] text-nodri-t3 mt-1">{atrasos} atraso(s) × {fmt$(comissaoMedia)} comissão</p>
+                        <p className="text-[9px] text-nodri-t3/60 mt-0.5">Cada atraso = 1 cliente perdido</p>
+                      </div>
+                    </div>
+                    {(perdaFaltas + perdaAtrasos) > 0 && (
+                      <div className="mt-3 p-3 bg-red-500/5 rounded-xl border border-red-500/10">
+                        <span className="text-[11px] text-red-400 font-bold"> Total estimado: {fmt$(perdaFaltas + perdaAtrasos)}</span>
+                        <span className="text-[10px] text-nodri-t3 ml-2">de receita não gerada no período</span>
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
 
               {/* Resumo de feedbacks no período */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -2777,6 +2886,205 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
           </div>
           </div>
         )}
+
+        {/* 👑 DEPENDÊNCIA */}
+        {tab === 'dependencia' && (
+          <div className="space-y-5 max-w-3xl">
+            {loadAnalise.dependencia && <div className="flex justify-center py-10"><Loader2 size={24} className="animate-spin text-nodri-cyan"/></div>}
+            {!loadAnalise.dependencia && analiseData.dependencia && (() => {
+              const d = analiseData.dependencia
+              const cor = d.cor_risco || '#10b981'
+              return (
+                <>
+                  <div className="rounded-2xl p-6 border" style={{background:`${cor}08`, borderColor:`${cor}40`}}>
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <h2 className="font-syne font-black text-[18px] text-nodri-t1">👑 Relatório de Dependência</h2>
+                        <p className="text-[11px] text-nodri-t3 mt-1">Se este profissional sair amanhã, qual o impacto real no salão?</p>
+                      </div>
+                      <div className="text-right shrink-0 ml-4">
+                        <div className="font-syne font-black text-[48px] leading-none" style={{color:cor}}>-{d.pct_faturamento}%</div>
+                        <div className="text-[12px] font-bold mt-1 uppercase" style={{color:cor}}>{d.nivel_risco}</div>
+                      </div>
+                    </div>
+                    <div className="w-full bg-nodri-border rounded-full h-3 overflow-hidden">
+                      <div className="h-3 rounded-full transition-all" style={{width:`${Math.min(d.pct_faturamento*2,100)}%`, background:`linear-gradient(90deg,${cor},${cor}88)`}}/>
+                    </div>
+                    <p className="text-[12px] mt-3 font-semibold" style={{color:cor}}>{d.mensagem}</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {[
+                      {l:'% do Faturamento',v:`${d.pct_faturamento}%`,c:cor},
+                      {l:'Faturamento Gerado',v:fmt$(d.fat_prof),c:'#00e5c8'},
+                      {l:'Clientes Exclusivos',v:d.clientes_exclusivos,c:'#f59e0b'},
+                      {l:'Impacto Mensal Est.',v:fmt$(d.impacto_mensal),c:'#f43f8e'},
+                    ].map(item=>(
+                      <div key={item.l} className="bg-nodri-card border border-nodri-border rounded-xl p-3">
+                        <div className="text-[9px] text-nodri-t3 uppercase tracking-wider mb-1">{item.l}</div>
+                        <div className="font-syne font-bold text-[16px]" style={{color:item.c}}>{item.v}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {d.historico?.length > 0 && (
+                    <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
+                      <h3 className="font-syne font-bold text-[13px] mb-4"> % do Faturamento — Últimos 12 meses</h3>
+                      <div className="overflow-x-auto">
+                        <div className="flex items-end gap-2" style={{minWidth:`${d.historico.length*50}px`,height:'100px'}}>
+                          {d.historico.map((h:any) => (
+                            <div key={`${h.ano}-${h.mes}`} className="flex flex-col items-center gap-1 flex-1 min-w-[40px]">
+                              <div className="flex-1 w-full flex items-end justify-center">
+                                <div className="w-full rounded-t" style={{height:`${Math.max(h.pct*2.5,3)}%`,background:cor,opacity:0.8}} title={`${h.pct}%`}/>
+                              </div>
+                              <span style={{fontSize:'8px',color:'#64748b'}}>{MESES[h.mes-1]}</span>
+                              <span style={{fontSize:'8px',color:cor,fontWeight:700}}>{h.pct}%</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
+                    <h3 className="font-syne font-bold text-[13px] mb-3"> O que fazer?</h3>
+                    {d.nivel_risco === 'critico' && <p className="text-[12px] text-red-400 leading-relaxed">⚠️ Risco crítico. Recomenda-se redistribuir clientes, treinar substituto e criar estratégia de retenção imediata.</p>}
+                    {d.nivel_risco === 'alto' && <p className="text-[12px] text-orange-400 leading-relaxed">️ Risco alto. Considere desenvolver outro profissional com habilidades similares e registrar os clientes preferenciais.</p>}
+                    {d.nivel_risco === 'medio' && <p className="text-[12px] text-yellow-400 leading-relaxed"> Risco moderado. Monitore a satisfação deste profissional e garanta que os clientes conheçam outros profissionais do salão.</p>}
+                    {d.nivel_risco === 'baixo' && <p className="text-[12px] text-green-400 leading-relaxed"> Baixo risco. O salão está bem distribuído — parabéns!</p>}
+                  </div>
+                </>
+              )
+            })()}
+          </div>
+        )}
+
+        {/*  OPORTUNIDADES */}
+        {tab === 'oportunidades' && (
+          <div className="space-y-5 max-w-3xl">
+            {loadAnalise.oportunidades && <div className="flex justify-center py-10"><Loader2 size={24} className="animate-spin text-nodri-cyan"/></div>}
+            {!loadAnalise.oportunidades && analiseData.oportunidades && (() => {
+              const d = analiseData.oportunidades
+              return (
+                <>
+                  {d.mais_vende?.length > 0 && (
+                    <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
+                      <h3 className="font-syne font-bold text-[13px] mb-4"> Serviços que Mais Vende</h3>
+                      <div className="space-y-2">
+                        {d.mais_vende.map((item:any,i:number) => (
+                          <div key={item.servico} className="flex items-center gap-3 p-3 bg-nodri-card rounded-xl border border-nodri-border">
+                            <span className="font-syne font-black text-[20px] text-nodri-cyan w-7 text-center">{i+1}</span>
+                            <div className="flex-1">
+                              <div className="text-[12px] text-nodri-t1 font-semibold">{item.servico}</div>
+                              <div className="text-[10px] text-nodri-t3">{item.quantidade} realizações · {item.pct}% do total</div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-[12px] font-bold text-nodri-green">{fmt$(item.valor)}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {d.deveria_vender?.length > 0 && (
+                    <div className="bg-nodri-surface border border-amber-500/20 rounded-2xl p-5">
+                      <h3 className="font-syne font-bold text-[13px] mb-1 text-amber-400"> Serviços que Deveria Vender</h3>
+                      <p className="text-[10px] text-nodri-t3 mb-4">Habilitado mas faz raramente ou nunca oferece</p>
+                      <div className="space-y-2">
+                        {d.deveria_vender.map((item:any) => (
+                          <div key={item.servico} className="flex items-center gap-3 p-3 bg-nodri-card rounded-xl border border-amber-500/15">
+                            <span className="text-[18px]">{item.qtd_historico === 0 ? '' : '️'}</span>
+                            <div className="flex-1">
+                              <div className="text-[12px] text-nodri-t1 font-semibold">{item.servico}</div>
+                              <div className="text-[10px] text-nodri-t3">{item.motivo}</div>
+                            </div>
+                            {item.comissao > 0 && (
+                              <div className="text-[11px] font-bold text-amber-400">{fmt$(item.comissao)}</div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {d.nunca_oferece?.length > 0 && (
+                    <div className="bg-nodri-surface border border-red-500/15 rounded-2xl p-5">
+                      <h3 className="font-syne font-bold text-[13px] mb-1 text-red-400"> Serviços que Nunca Oferece</h3>
+                      <p className="text-[10px] text-nodri-t3 mb-4">Habilitado mas sem nenhum registro histórico</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {d.nunca_oferece.map((item:any) => (
+                          <div key={item.servico} className="p-3 bg-nodri-card rounded-xl border border-red-500/10">
+                            <div className="text-[11px] text-nodri-t1 font-semibold">{item.servico}</div>
+                            {item.comissao > 0 && <div className="text-[10px] text-red-400 mt-0.5">{fmt$(item.comissao)}/comissão</div>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {!d.mais_vende?.length && !d.deveria_vender?.length && !d.nunca_oferece?.length && (
+                    <div className="text-center py-16 text-nodri-t3">
+                      <span className="text-4xl"></span>
+                      <p className="text-[13px] mt-3">Nenhum dado disponível. Verifique os serviços habilitados.</p>
+                    </div>
+                  )}
+                </>
+              )
+            })()}
+          </div>
+        )}
+
+        {/*  BUNDLE */}
+        {tab === 'bundle' && (
+          <div className="space-y-5 max-w-3xl">
+            {loadAnalise.bundle && <div className="flex justify-center py-10"><Loader2 size={24} className="animate-spin text-nodri-cyan"/></div>}
+            {!loadAnalise.bundle && analiseData.bundle && (() => {
+              const d = analiseData.bundle
+              if (!d.pares?.length) return (
+                <div className="text-center py-16 text-nodri-t3">
+                  <span className="text-4xl"></span>
+                  <p className="text-[13px] mt-3">Dados insuficientes para análise de bundles.</p>
+                  {d.total_comandas > 0 && <p className="text-[11px] mt-2">{d.total_comandas} comandas analisadas</p>}
+                </div>
+              )
+              return (
+                <>
+                  <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-4">
+                    <p className="text-[11px] text-nodri-t3"> Análise de {d.total_comandas} comandas · Pares com ≥20% de co-ocorrência</p>
+                  </div>
+                  <div className="space-y-3">
+                    {d.pares.map((par:any,i:number) => (
+                      <div key={i} className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-[12px] text-nodri-cyan font-bold">{par.servico_a}</span>
+                              <span className="text-nodri-t3">+</span>
+                              <span className="text-[12px] text-nodri-pink font-bold">{par.servico_b}</span>
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <div className="font-syne font-black text-[24px]" style={{color: par.pct>=70?'#22c55e':par.pct>=40?'#f59e0b':'#00e5c8'}}>{par.pct}%</div>
+                            <div className="text-[9px] text-nodri-t3">co-ocorrência</div>
+                          </div>
+                        </div>
+                        <div className="w-full bg-nodri-border rounded-full h-2 overflow-hidden mb-2">
+                          <div className="h-2 rounded-full" style={{width:`${par.pct}%`,background:`linear-gradient(90deg,#00e5c8,#7c5cfc)`}}/>
+                        </div>
+                        <p className="text-[10px] text-nodri-t3">
+                          {par.count} clientes fazem os dois serviços juntos
+                        </p>
+                        <p className="text-[10px] text-nodri-cyan mt-1 font-semibold"> Ofereça <strong>{par.servico_b}</strong> para quem veio para <strong>{par.servico_a}</strong></p>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )
+            })()}
+          </div>
+        )}
+
       </div>
     </div>
   )

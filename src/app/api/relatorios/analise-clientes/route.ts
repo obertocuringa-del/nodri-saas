@@ -60,7 +60,8 @@ export async function GET(req: NextRequest) {
       const ativos   = perfis.filter(p => p.status === 'ativo').length
       const ltv_medio = Math.round(perfis.reduce((s, p) => s + (p.ltv_total || 0), 0) / total)
       const ltv_total = Math.round(perfis.reduce((s, p) => s + (p.ltv_total || 0), 0))
-      return NextResponse.json({ total, vip, em_risco, perdidos, novos, ativos, ltv_medio, ltv_total })
+      const ltv_total_perdidos = Math.round(perfis.filter(p => p.status === 'perdido').reduce((s, p) => s + (p.ltv_total || 0), 0))
+      return NextResponse.json({ total, vip, em_risco, perdidos, novos, ativos, ltv_medio, ltv_total, ltv_total_perdidos })
     }
 
     // ── Em Risco ─────────────────────────────────────────────────────────
