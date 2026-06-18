@@ -103,10 +103,16 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   // Comissão média ponderada pelos serviços mais vendidos
   const habilitadosIds: string[] = Array.isArray(prof.servicos_habilitados) ? prof.servicos_habilitados : []
   const { data: servicosSalao } = await supabaseAdmin
-    .from('servicos')
-    .select('id, nome, comissao_valor')
+    .from('salao_servicos')
+    .select('id, nome, comissao_valor, ciclo_retorno_dias')
     .eq('salao_id', salaoId)
     .eq('ativo', true)
+
+  // Mapa nome → ciclo de retorno em dias
+  const cicloPorServico: Record<string, number> = {}
+  for (const s of (servicosSalao || [])) {
+    if (s.ciclo_retorno_dias) cicloPorServico[s.nome.toUpperCase()] = s.ciclo_retorno_dias
+  }
 
   let totalQtdComissao = 0, totalComissaoPonderada = 0
   const top10 = Object.entries(mixServicos).sort((a, b) => b[1].qtd - a[1].qtd).slice(0, 10)
@@ -137,7 +143,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
   const hoje = new Date()
   const DIAS_SAIU = 90
-  const DIAS_MINIMO_PERDIDO = 7 // ciclo semanal: 7+ dias sem retornar = perdido
+  const DIAS_MINIMO_PADRAO = 7 // fallback quando serviço não tem ciclo cadastrado
 
   // Por cliente: histórico com ESTE profissional e com outros
   const clienteComProf: Record<string, {
@@ -246,9 +252,12 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     // Se não há visitas rastreáveis depois → dado inconsistente, ignora
     if (!visitasDepois.length) continue
 
-    // Período mínimo: se última visita com este prof foi há menos de 7 dias → cedo demais
+    // Período mínimo baseado no ciclo do último serviço feito com este prof
+    // Fallback: 7 dias se serviço não tiver ciclo cadastrado
+    const ultimoServico = Array.from(hist.servicos).slice(-1)[0] || ''
+    const cicloServico = cicloPorServico[ultimoServico.toUpperCase()] || DIAS_MINIMO_PADRAO
     const diasDesdeUltimaComProf = Math.floor((hoje.getTime() - ultimaComProfMs) / 86400000)
-    if (diasDesdeUltimaComProf < DIAS_MINIMO_PERDIDO) continue
+    if (diasDesdeUltimaComProf < cicloServico) continue
 
     // Profissionais únicos após a saída
     const profsDepoisMap: Record<string, { cargo: string; servicos: Set<string>; count: number }> = {}

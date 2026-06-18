@@ -12,6 +12,7 @@ interface Servico {
   preco_min: number | null
   comissao_valor: number | null
   observacao: string | null
+  ciclo_retorno_dias: number | null
   ativo: boolean
 }
 
@@ -38,7 +39,7 @@ export default function ServicosPage() {
   const [categoriasAbertas, setCategoriasAbertas] = useState<Record<string, boolean>>({})
   const [editando, setEditando] = useState<Servico | null>(null)
   const [novo, setNovo] = useState(false)
-  const [form, setForm] = useState({ categoria: '', nome: '', preco_tipo: 'fixo', preco: '', comissao_valor: '', observacao: '' })
+  const [form, setForm] = useState({ categoria: '', nome: '', preco_tipo: 'fixo', preco: '', comissao_valor: '', observacao: '', ciclo_retorno_dias: '' })
   const [salvando, setSalvando] = useState(false)
   const [deletando, setDeletando] = useState<string | null>(null)
 
@@ -59,7 +60,7 @@ export default function ServicosPage() {
   }
 
   function iniciarNovo() {
-    setForm({ categoria: CATEGORIAS[0], nome: '', preco_tipo: 'fixo', preco: '', comissao_valor: '', observacao: '' })
+    setForm({ categoria: CATEGORIAS[0], nome: '', preco_tipo: 'fixo', preco: '', comissao_valor: '', observacao: '', ciclo_retorno_dias: '' })
     setEditando(null)
     setNovo(true)
   }
@@ -73,7 +74,8 @@ export default function ServicosPage() {
       preco_tipo: s.preco_fixo ? 'fixo' : 'min',
       preco: String(s.preco_fixo || s.preco_min || ''),
       comissao_valor: String(s.comissao_valor || ''),
-      observacao: s.observacao || ''
+      observacao: s.observacao || '',
+      ciclo_retorno_dias: String(s.ciclo_retorno_dias || '')
     })
   }
 
@@ -88,13 +90,14 @@ export default function ServicosPage() {
     const preco_fixo = form.preco_tipo === 'fixo' ? parseFloat(form.preco) || null : null
     const preco_min = form.preco_tipo === 'min' ? parseFloat(form.preco) || null : null
     const comissao_valor = parseFloat(form.comissao_valor) || null
+    const ciclo_retorno_dias = parseInt(form.ciclo_retorno_dias) || null
 
     try {
       if (novo) {
         const res = await fetch('/api/servicos', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...form, preco_fixo, preco_min, comissao_valor })
+          body: JSON.stringify({ ...form, preco_fixo, preco_min, comissao_valor, ciclo_retorno_dias })
         })
         if (!res.ok) throw new Error()
         toast.success('Serviço adicionado!')
@@ -102,7 +105,7 @@ export default function ServicosPage() {
         const res = await fetch('/api/servicos', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: editando.id, ...form, preco_fixo, preco_min, comissao_valor, ativo: editando.ativo })
+          body: JSON.stringify({ id: editando.id, ...form, preco_fixo, preco_min, comissao_valor, ciclo_retorno_dias, ativo: editando.ativo })
         })
         if (!res.ok) throw new Error()
         toast.success('Serviço atualizado!')
@@ -201,6 +204,12 @@ export default function ServicosPage() {
             <div>
               <label className={labelCls}>Observação (opcional)</label>
               <input value={form.observacao} onChange={e => setForm(f => ({ ...f, observacao: e.target.value }))} className={inputCls} placeholder="Ex: variações disponíveis" />
+            </div>
+
+            <div>
+              <label className={labelCls}>Ciclo de retorno (dias)</label>
+              <input type="number" min="1" value={form.ciclo_retorno_dias} onChange={e => setForm(f => ({ ...f, ciclo_retorno_dias: e.target.value }))} className={inputCls} placeholder="Ex: 7 para manicure, 90 para realinhamento" />
+              <p className="text-[10px] text-nodri-t3 mt-1">Usado na análise de clientes perdidos — tempo mínimo para considerar a cliente como perdida</p>
             </div>
 
             <div className="flex gap-2 pt-1">

@@ -29,13 +29,13 @@ export async function POST(req: NextRequest) {
   if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   const body = await req.json()
-  const { categoria, nome, preco_fixo, preco_min, comissao_valor, observacao } = body
+  const { categoria, nome, preco_fixo, preco_min, comissao_valor, observacao, ciclo_retorno_dias } = body
 
   if (!categoria || !nome) return NextResponse.json({ error: 'Categoria e nome são obrigatórios' }, { status: 400 })
 
   const { data, error } = await supabaseAdmin
     .from('salao_servicos')
-    .insert({ salao_id: salaoId, categoria, nome, preco_fixo: preco_fixo || null, preco_min: preco_min || null, comissao_valor: comissao_valor || null, observacao: observacao || null })
+    .insert({ salao_id: salaoId, categoria, nome, preco_fixo: preco_fixo || null, preco_min: preco_min || null, comissao_valor: comissao_valor || null, observacao: observacao || null, ciclo_retorno_dias: ciclo_retorno_dias || null })
     .select()
     .single()
 
@@ -48,11 +48,11 @@ export async function PUT(req: NextRequest) {
   if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   const body = await req.json()
-  const { id, categoria, nome, preco_fixo, preco_min, comissao_valor, observacao, ativo } = body
+  const { id, categoria, nome, preco_fixo, preco_min, comissao_valor, observacao, ciclo_retorno_dias, ativo } = body
 
   const { data, error } = await supabaseAdmin
     .from('salao_servicos')
-    .update({ categoria, nome, preco_fixo: preco_fixo || null, preco_min: preco_min || null, comissao_valor: comissao_valor || null, observacao: observacao || null, ativo, atualizado_em: new Date().toISOString() })
+    .update({ categoria, nome, preco_fixo: preco_fixo || null, preco_min: preco_min || null, comissao_valor: comissao_valor || null, observacao: observacao || null, ciclo_retorno_dias: ciclo_retorno_dias || null, ativo, atualizado_em: new Date().toISOString() })
     .eq('id', id)
     .eq('salao_id', salaoId)
     .select()
