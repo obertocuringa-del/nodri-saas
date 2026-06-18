@@ -19,11 +19,19 @@ export async function GET(req: NextRequest) {
 
   try {
     if (tipo === 'resumo') {
-      const { data: perfis } = await supabaseAdmin
-        .from('clientes_perfil').select('status, score_rfm, ltv_total, total_visitas, dias_desde_ultima_visita')
-        .eq('salao_id', salaoId)
+      let perfis: any[] = []
+      let from = 0
+      while (true) {
+        const { data } = await supabaseAdmin
+          .from('clientes_perfil').select('status, score_rfm, ltv_total, total_visitas, dias_desde_ultima_visita')
+          .eq('salao_id', salaoId).range(from, from + 999)
+        if (!data || data.length === 0) break
+        perfis = perfis.concat(data)
+        if (data.length < 1000) break
+        from += 1000
+      }
 
-      if (!perfis || perfis.length === 0) return NextResponse.json({ vazio: true })
+      if (perfis.length === 0) return NextResponse.json({ vazio: true })
 
       const total = perfis.length
       const vip      = perfis.filter(p => p.score_rfm === 'vip').length
@@ -86,12 +94,19 @@ export async function GET(req: NextRequest) {
     }
 
     if (tipo === 'rfm') {
-      const { data } = await supabaseAdmin
-        .from('clientes_perfil')
-        .select('score_rfm, status')
-        .eq('salao_id', salaoId)
+      let rfmData: any[] = []
+      let from = 0
+      while (true) {
+        const { data } = await supabaseAdmin
+          .from('clientes_perfil').select('score_rfm, status')
+          .eq('salao_id', salaoId).range(from, from + 999)
+        if (!data || data.length === 0) break
+        rfmData = rfmData.concat(data)
+        if (data.length < 1000) break
+        from += 1000
+      }
       const contagem: Record<string, number> = {}
-      for (const p of (data || [])) {
+      for (const p of rfmData) {
         contagem[p.score_rfm] = (contagem[p.score_rfm] || 0) + 1
       }
       return NextResponse.json(contagem)
@@ -143,11 +158,18 @@ export async function GET(req: NextRequest) {
     }
 
     if (tipo === 'frequencia') {
-      const { data } = await supabaseAdmin
-        .from('clientes_perfil')
-        .select('intervalo_medio_dias, total_visitas, score_rfm')
-        .eq('salao_id', salaoId)
-        .neq('intervalo_medio_dias', 0)
+      let freqData: any[] = []
+      let from = 0
+      while (true) {
+        const { data } = await supabaseAdmin
+          .from('clientes_perfil').select('intervalo_medio_dias, total_visitas, score_rfm')
+          .eq('salao_id', salaoId).neq('intervalo_medio_dias', 0).range(from, from + 999)
+        if (!data || data.length === 0) break
+        freqData = freqData.concat(data)
+        if (data.length < 1000) break
+        from += 1000
+      }
+      const data = freqData
 
       if (!data) return NextResponse.json([])
 
