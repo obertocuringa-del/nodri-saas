@@ -137,6 +137,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
   const hoje = new Date()
   const DIAS_SAIU = 90
+  const DIAS_MINIMO_PERDIDO = 7 // ciclo semanal: 7+ dias sem retornar = perdido
 
   // Por cliente: histórico com ESTE profissional e com outros
   const clienteComProf: Record<string, {
@@ -244,6 +245,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     // Caso B: voltou ao salão DEPOIS de sair deste profissional
     // Se não há visitas rastreáveis depois → dado inconsistente, ignora
     if (!visitasDepois.length) continue
+
+    // Período mínimo: se última visita com este prof foi há menos de 7 dias → cedo demais
+    const diasDesdeUltimaComProf = Math.floor((hoje.getTime() - ultimaComProfMs) / 86400000)
+    if (diasDesdeUltimaComProf < DIAS_MINIMO_PERDIDO) continue
 
     // Profissionais únicos após a saída
     const profsDepoisMap: Record<string, { cargo: string; servicos: Set<string>; count: number }> = {}
