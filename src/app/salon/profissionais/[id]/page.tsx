@@ -3286,21 +3286,19 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
 
               return (
                 <>
-                  {/* Resumo cards 2×2 mobile / 4 desktop */}
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  {/* 4 cards sempre em 2×2 */}
+                  <div className="grid grid-cols-2 gap-3">
                     {subTabs.map(st => {
                       const qtd = st.count
                       const isOutraCategoria = st.id === 'outra-categoria'
                       const isOutroServico = st.id === 'outro-servico'
                       const isSaiuSalao = st.id === 'saiu-salao'
-
                       return (
                         <button key={st.id} onClick={() => setSubTabPerdidos(st.id)}
                           className={`rounded-xl p-3 text-left transition-all border-2 ${subTabPerdidos===st.id?'border-nodri-cyan bg-nodri-surface':'border-nodri-border bg-nodri-surface hover:border-nodri-t3'}`}>
                           <div className="text-[10px] text-nodri-t3 mb-0.5 leading-tight">{st.label}</div>
                           <div className="font-syne font-black text-[22px] leading-none" style={{color: st.cor}}>{qtd}</div>
                           <div className="text-[9px] text-nodri-t3 mb-2">clientes</div>
-
                           {isOutraCategoria && comissaoMedia > 0 && (
                             <div className="border-t border-nodri-border pt-1.5 space-y-0.5">
                               <div className="flex justify-between text-[9px]">
@@ -3310,7 +3308,6 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
                               <div className="text-[8px] text-nodri-t3">comissão {fmt(comissaoMedia)}</div>
                             </div>
                           )}
-
                           {isOutroServico && ticketVisita > 0 && (
                             <div className="border-t border-nodri-border pt-1.5 space-y-0.5">
                               <div className="flex justify-between text-[9px]">
@@ -3320,7 +3317,6 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
                               <div className="text-[8px] text-nodri-t3">ticket {fmt(ticketVisita)}</div>
                             </div>
                           )}
-
                           {isSaiuSalao && ticketVisita > 0 && (
                             <div className="border-t border-nodri-border pt-1.5 space-y-0.5">
                               <div className="flex justify-between text-[9px]">
@@ -3340,29 +3336,25 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
                       )
                     })}
 
-                    {/* Card totalizador — ocupa as 2 colunas */}
+                    {/* 4º card: totalizador — ocupa a célula restante */}
                     {(perdaTotalSalao > 0 || perdaTotalProf > 0) && (
-                      <div className="col-span-2 lg:col-span-4 rounded-xl p-3 border-2 border-nodri-border bg-nodri-surface">
-                        <div className="flex items-center justify-between mb-1">
-                          <div>
-                            <div className="text-[10px] text-nodri-t3">📊 Impacto total estimado</div>
-                            <div className="font-syne font-black text-[22px] leading-none text-white">{cp.total}</div>
-                            <div className="text-[9px] text-nodri-t3">clientes perdidos</div>
-                          </div>
-                          <div className="text-right space-y-1">
-                            {perdaTotalSalao > 0 && (
-                              <div className="text-[10px]">
-                                <span className="text-nodri-t3 mr-1">💸 Perda do salão</span>
-                                <span className="text-orange-400 font-bold">{fmt(perdaTotalSalao)}</span>
-                              </div>
-                            )}
-                            {perdaTotalProf > 0 && (
-                              <div className="text-[10px]">
-                                <span className="text-nodri-t3 mr-1">💔 Perda sua</span>
-                                <span className="text-red-400 font-bold">{fmt(perdaTotalProf)}</span>
-                              </div>
-                            )}
-                          </div>
+                      <div className="rounded-xl p-3 border-2 border-nodri-border bg-nodri-surface">
+                        <div className="text-[10px] text-nodri-t3 mb-0.5">📊 Impacto total</div>
+                        <div className="font-syne font-black text-[22px] leading-none text-white">{cp.total}</div>
+                        <div className="text-[9px] text-nodri-t3 mb-2">clientes perdidos</div>
+                        <div className="border-t border-nodri-border pt-1.5 space-y-0.5">
+                          {perdaTotalSalao > 0 && (
+                            <div className="flex justify-between text-[9px]">
+                              <span className="text-nodri-t3">💸 Perda salão</span>
+                              <span className="text-orange-400 font-bold">{fmt(perdaTotalSalao)}</span>
+                            </div>
+                          )}
+                          {perdaTotalProf > 0 && (
+                            <div className="flex justify-between text-[9px]">
+                              <span className="text-nodri-t3">💔 Perda sua</span>
+                              <span className="text-red-400 font-bold">{fmt(perdaTotalProf)}</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
