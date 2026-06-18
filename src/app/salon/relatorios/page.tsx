@@ -698,8 +698,8 @@ export default function RelatoriosPage() {
 
   function exportarListaExcel(lista: any[], nomeArq: string) {
     if (!lista.length) return
-    const linhas = [['Nome', 'Celular', 'Última Visita', 'Visitas', 'Serviços'],
-      ...lista.map(c => [c.cliente_nome, c.celular || '', c.ultima_visita || '', c.total_visitas, (c.servicos_feitos || []).join(', ')])]
+    const linhas = [['Cliente', 'Celular'],
+      ...lista.map(c => [c.cliente_nome, c.celular || ''])]
     const csv = linhas.map(l => l.map(v => `"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n')
     const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
