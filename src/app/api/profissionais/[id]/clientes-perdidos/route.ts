@@ -188,6 +188,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
     const ultimosServicosComProf = Array.from(hist.servicos).slice(0, 3).join(', ')
     const dataUltima = ultimaComProf.toLocaleDateString('pt-BR')
+    const dataUltimaGeral = ultimaGeral ? ultimaGeral.toLocaleDateString('pt-BR') : '—'
     const celular = hist.celular || geral.celular || ''
 
     // Sub 2: Saiu do salão (última visita no salão há mais de DIAS_SAIU)
@@ -197,6 +198,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         celular,
         ultimo_servico_com_prof: ultimosServicosComProf,
         ultima_visita_com_prof: dataUltima,
+        ultima_visita_salao: dataUltimaGeral,
         dias_ausente: diasAusente,
       })
       continue
@@ -257,6 +259,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         celular,
         ultimo_servico_com_prof: ultimosServicosComProf,
         ultima_visita_com_prof: dataUltima,
+        ultima_visita_salao: dataUltimaGeral,
         migrou_para: profMesmoCargo,
         faz_agora: servicosAgora,
       })
@@ -266,6 +269,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         celular,
         ultimo_servico_com_prof: ultimosServicosComProf,
         ultima_visita_com_prof: dataUltima,
+        ultima_visita_salao: dataUltimaGeral,
         vai_agora_com: nomesProfsDepois,
         faz_agora: servicosAgora,
       })

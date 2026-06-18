@@ -3192,7 +3192,8 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
                             <tr className="border-b border-nodri-border">
                               <th className="text-left px-4 py-2 text-nodri-t3 font-semibold">Cliente</th>
                               <th className="text-left px-4 py-2 text-nodri-t3 font-semibold">Último serviço aqui</th>
-                              <th className="text-left px-4 py-2 text-nodri-t3 font-semibold">Última vez</th>
+                              <th className="text-left px-4 py-2 text-nodri-t3 font-semibold">Última vez aqui</th>
+                              <th className="text-left px-4 py-2 text-nodri-t3 font-semibold">Última no salão</th>
                               {subTabPerdidos === 'outra-categoria' && <th className="text-left px-4 py-2 text-nodri-t3 font-semibold">Migrou para</th>}
                               {subTabPerdidos === 'outro-servico' && <th className="text-left px-4 py-2 text-nodri-t3 font-semibold">Vai agora com</th>}
                               {subTabPerdidos === 'saiu-salao' && <th className="text-left px-4 py-2 text-nodri-t3 font-semibold">Dias ausente</th>}
@@ -3206,6 +3207,7 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
                                 <td className="px-4 py-2 font-semibold text-nodri-t2">{r.cliente}</td>
                                 <td className="px-4 py-2 text-nodri-t3">{r.ultimo_servico_com_prof || '—'}</td>
                                 <td className="px-4 py-2 text-nodri-t3 whitespace-nowrap">{r.ultima_visita_com_prof}</td>
+                                <td className="px-4 py-2 text-nodri-cyan whitespace-nowrap font-semibold">{r.ultima_visita_salao || '—'}</td>
                                 {subTabPerdidos === 'outra-categoria' && (
                                   <td className="px-4 py-2 text-red-400 font-semibold">{r.migrou_para || '—'}</td>
                                 )}
