@@ -105,6 +105,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
   const [configPrograma, setConfigPrograma] = useState<{ link: string; link_atualizacao: string; atualizacao_ativa: boolean } | null>(null)
   const [alertasIA, setAlertasIA] = useState<{ tipo: string; titulo: string; mensagem: string; icone: string; pct?: number; diasRestantes?: number }[]>([])
   const [alertasDismissed, setAlertasDismissed] = useState<Set<string>>(new Set())
+  const [mostrarAlertasIA, setMostrarAlertasIA] = useState(false)
 
   useEffect(() => {
     fetch('/api/config/programa')
@@ -586,74 +587,91 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
           )}
           </div>
 
-          {/* Painel de alertas proativos da IA — novo design */}
-          {alertasIA.filter(a => !alertasDismissed.has(a.titulo)).length > 0 && (
-            <div style={{ padding: '0 24px 28px' }}>
-              {/* Cabeçalho */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-                <span style={{ fontSize: 18, color: '#f59e0b', lineHeight: 1 }}>⚡</span>
-                <span style={{ fontSize: 15, fontWeight: 600, color: '#e6edf3' }}>NODRI IA — Alertas do dia</span>
-                <span style={{ fontSize: 11, fontWeight: 500, background: 'rgba(245,158,11,0.15)', color: '#f59e0b', padding: '2px 10px', borderRadius: 99 }}>
-                  {alertasIA.filter(a => !alertasDismissed.has(a.titulo)).length} alertas
-                </span>
-                <span style={{ fontSize: 12, color: '#484f58', marginLeft: 'auto' }}>atualizado agora</span>
-              </div>
+          {/* Alertas do dia — card único pulsando com dropdown */}
+          {alertasIA.filter(a => !alertasDismissed.has(a.titulo)).length > 0 && (() => {
+            const ativos = alertasIA.filter(a => !alertasDismissed.has(a.titulo))
+            const temCritico = ativos.some(a => a.tipo === 'critico')
+            const pulseColor = temCritico ? '#ef4444' : '#f59e0b'
 
-              {/* Grid de cards */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10 }}>
-                {alertasIA.filter(a => !alertasDismissed.has(a.titulo)).map(alerta => {
-                  const isCritico = alerta.tipo === 'critico'
-                  const isInfo = alerta.tipo === 'info'
-                  const accentColor = isCritico ? '#ef4444' : isInfo ? '#22c55e' : '#f59e0b'
-                  const pillBg = isCritico ? 'rgba(239,68,68,0.12)' : isInfo ? 'rgba(34,197,94,0.12)' : 'rgba(245,158,11,0.12)'
-                  const pillColor = isCritico ? '#f87171' : isInfo ? '#4ade80' : '#fbbf24'
-                  const pillLabel = isCritico ? 'Crítico' : isInfo ? 'Meta batida' : 'Risco'
-                  const fillColor = isCritico ? '#ef4444' : isInfo ? '#22c55e' : '#f59e0b'
+            return (
+              <div style={{ padding: '0 24px 28px', position: 'relative' }}>
+                {/* Card pulsando */}
+                <button
+                  onClick={() => setMostrarAlertasIA(v => !v)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    background: '#161b22', border: `1.5px solid ${pulseColor}40`,
+                    borderRadius: 12, padding: '10px 16px', cursor: 'pointer',
+                    boxShadow: mostrarAlertasIA ? `0 0 0 3px ${pulseColor}20` : 'none',
+                    transition: 'box-shadow 0.2s',
+                  }}>
+                  {/* Ponto pulsando */}
+                  <span style={{ position: 'relative', display: 'inline-flex', width: 10, height: 10, flexShrink: 0 }}>
+                    <span style={{
+                      position: 'absolute', inset: 0, borderRadius: '50%',
+                      background: pulseColor, opacity: 0.6,
+                      animation: 'ping 1.5s cubic-bezier(0,0,0.2,1) infinite',
+                    }}/>
+                    <span style={{ position: 'relative', borderRadius: '50%', width: 10, height: 10, background: pulseColor }}/>
+                  </span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#e6edf3' }}>⚡ Alertas do dia</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, background: `${pulseColor}20`, color: pulseColor, padding: '2px 10px', borderRadius: 99 }}>
+                    {ativos.length}
+                  </span>
+                  <span style={{ fontSize: 12, color: '#484f58', marginLeft: 4 }}>{mostrarAlertasIA ? '▲' : '▼'}</span>
+                </button>
 
-                  return (
-                    <div key={alerta.titulo} style={{
-                      background: '#161b22',
-                      border: '0.5px solid #21262d',
-                      borderLeft: `3px solid ${accentColor}`,
-                      borderRadius: '0 10px 10px 0',
-                      padding: '12px 14px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 8,
-                    }}>
-                      {/* Topo: nome + status pill + fechar */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: '#e6edf3', flex: 1, lineHeight: 1.3 }}>{alerta.titulo}</span>
-                        <span style={{ fontSize: 11, fontWeight: 500, background: pillBg, color: pillColor, padding: '2px 8px', borderRadius: 99, flexShrink: 0 }}>{pillLabel}</span>
-                        <button
-                          onClick={() => setAlertasDismissed(prev => new Set([...prev, alerta.titulo]))}
-                          style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#484f58', fontSize: 14, lineHeight: 1, padding: '0 0 0 4px', flexShrink: 0 }}
-                        >✕</button>
-                      </div>
-
-                      {/* Barra de progresso (só para alertas de meta com pct) */}
-                      {alerta.pct !== undefined && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <div style={{ flex: 1, height: 5, background: '#21262d', borderRadius: 99, overflow: 'hidden' }}>
-                            <div style={{ width: `${Math.min(alerta.pct, 100)}%`, height: '100%', background: fillColor, borderRadius: 99 }} />
-                          </div>
-                          <span style={{ fontSize: 12, fontWeight: 500, color: '#8b949e', minWidth: 32, textAlign: 'right' }}>{alerta.pct}%</span>
-                        </div>
-                      )}
-
-                      {/* Rodapé: dias restantes ou mensagem */}
-                      <div style={{ fontSize: 12, color: '#8b949e', display: 'flex', alignItems: 'center', gap: 5 }}>
-                        {alerta.diasRestantes !== undefined
-                          ? <><span>📅</span> {alerta.diasRestantes} dias restantes</>
-                          : alerta.mensagem
-                        }
-                      </div>
+                {/* Dropdown */}
+                {mostrarAlertasIA && (
+                  <div style={{
+                    position: 'absolute', top: '100%', left: 24, zIndex: 50,
+                    width: 460, maxHeight: 420, overflowY: 'auto',
+                    background: '#161b22', border: '0.5px solid #21262d',
+                    borderRadius: 14, boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+                    marginTop: 6,
+                  }}>
+                    <div style={{ padding: '10px 16px', borderBottom: '0.5px solid #21262d', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: '#8b949e' }}>{ativos.length} alertas ativos</span>
+                      <button onClick={() => setMostrarAlertasIA(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#484f58', fontSize: 16 }}>✕</button>
                     </div>
-                  )
-                })}
+                    {ativos.map(alerta => {
+                      const isCritico = alerta.tipo === 'critico'
+                      const isInfo = alerta.tipo === 'info'
+                      const accentColor = isCritico ? '#ef4444' : isInfo ? '#22c55e' : '#f59e0b'
+                      const pillBg = isCritico ? 'rgba(239,68,68,0.12)' : isInfo ? 'rgba(34,197,94,0.12)' : 'rgba(245,158,11,0.12)'
+                      const pillColor = isCritico ? '#f87171' : isInfo ? '#4ade80' : '#fbbf24'
+                      const pillLabel = isCritico ? 'Crítico' : isInfo ? 'Meta batida' : 'Risco'
+                      return (
+                        <div key={alerta.titulo} style={{
+                          padding: '10px 16px', borderBottom: '0.5px solid #21262d',
+                          borderLeft: `3px solid ${accentColor}`, display: 'flex', flexDirection: 'column', gap: 6,
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: '#e6edf3', flex: 1 }}>{alerta.titulo}</span>
+                            <span style={{ fontSize: 10, background: pillBg, color: pillColor, padding: '1px 7px', borderRadius: 99, flexShrink: 0 }}>{pillLabel}</span>
+                            <button onClick={() => setAlertasDismissed(prev => new Set([...prev, alerta.titulo]))}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#484f58', fontSize: 13, padding: '0 0 0 4px' }}>✕</button>
+                          </div>
+                          {alerta.pct !== undefined && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <div style={{ flex: 1, height: 4, background: '#21262d', borderRadius: 99, overflow: 'hidden' }}>
+                                <div style={{ width: `${Math.min(alerta.pct, 100)}%`, height: '100%', background: accentColor, borderRadius: 99 }}/>
+                              </div>
+                              <span style={{ fontSize: 11, color: '#8b949e', minWidth: 28, textAlign: 'right' }}>{alerta.pct}%</span>
+                            </div>
+                          )}
+                          <div style={{ fontSize: 11, color: '#8b949e' }}>
+                            {alerta.diasRestantes !== undefined ? `📅 ${alerta.diasRestantes} dias restantes` : alerta.mensagem}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+                <style>{`@keyframes ping{75%,100%{transform:scale(2);opacity:0}}`}</style>
               </div>
-            </div>
-          )}
+            )
+          })()}
         </main>
       </div>
       <ChatWidget />
