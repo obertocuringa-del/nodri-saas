@@ -100,6 +100,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const totalValor = Object.values(mixServicos).reduce((s, v) => s + v.valor, 0)
   const ticketMedio = totalQtd > 0 ? totalValor / totalQtd : 0
 
+  // Ticket por visita/comanda: totalValor ÷ comandas únicas (calculado depois de carregar rows)
+
   // Comissão média ponderada pelos serviços mais vendidos
   const habilitadosIds: string[] = Array.isArray(prof.servicos_habilitados) ? prof.servicos_habilitados : []
   const { data: servicosSalao } = await supabaseAdmin
@@ -140,6 +142,15 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     if (data.length < 1000) break
     from += 1000
   }
+
+  // Conta comandas únicas deste profissional para calcular ticket por visita
+  const comandasUnicas = new Set<string>()
+  for (const r of rows) {
+    if (isProfissional(r.profissional || '', prof.nome_completo, prof.apelido || '') && r.data_comanda) {
+      comandasUnicas.add(r.data_comanda)
+    }
+  }
+  const ticketVisita = comandasUnicas.size > 0 ? totalValor / comandasUnicas.size : ticketMedio
 
   const hoje = new Date()
   const DIAS_SAIU = 90
@@ -333,6 +344,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     outra_manicure: sub3.sort(sortData),
     total: sub1.length + sub2.length + sub3.length,
     ticket_medio: Math.round(ticketMedio * 100) / 100,
+    ticket_visita: Math.round(ticketVisita * 100) / 100,
     comissao_media: Math.round(comissaoMedia * 100) / 100,
   })
 }

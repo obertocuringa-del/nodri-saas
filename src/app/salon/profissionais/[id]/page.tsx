@@ -3200,6 +3200,7 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
               const cp = clientesPerdidos
               const cargo = prof?.cargo || 'profissional'
               const ticketMedio = cp.ticket_medio || 0
+              const ticketVisita = cp.ticket_visita || ticketMedio
               const comissaoMedia = cp.comissao_media || 0
               const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
@@ -3288,37 +3289,37 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
                             </div>
                           )}
 
-                          {/* Outro serviço: Perda do salão (ticket perfil × qtd) + Perda sua (comissão × qtd) */}
-                          {isOutroServico && ticketMedio > 0 && (
+                          {/* Outro serviço: Perda do salão (ticket visita × qtd) + Perda sua (ticket serviço × qtd) */}
+                          {isOutroServico && ticketVisita > 0 && (
                             <div className="border-t border-nodri-border pt-2 space-y-1">
                               <div className="flex justify-between text-[10px]">
                                 <span className="text-nodri-t3">💸 Perda do salão</span>
-                                <span className="text-orange-400 font-bold">{fmt(qtd * ticketMedio)}</span>
+                                <span className="text-orange-400 font-bold">{fmt(qtd * ticketVisita)}</span>
                               </div>
-                              {comissaoMedia > 0 && (
+                              {ticketMedio > 0 && (
                                 <div className="flex justify-between text-[10px]">
                                   <span className="text-nodri-t3">💔 Perda sua</span>
-                                  <span className="text-red-400 font-bold">{fmt(qtd * comissaoMedia)}</span>
+                                  <span className="text-red-400 font-bold">{fmt(qtd * ticketMedio)}</span>
                                 </div>
                               )}
-                              <div className="text-[9px] text-nodri-t3 mt-1">por visita · ticket {fmt(ticketMedio)}</div>
+                              <div className="text-[9px] text-nodri-t3 mt-1">visita {fmt(ticketVisita)} · serviço {fmt(ticketMedio)}</div>
                             </div>
                           )}
 
-                          {/* Saíram do salão: Perda do salão (ticket perfil × qtd) + Perda sua (comissão × qtd) */}
-                          {isSaiuSalao && ticketMedio > 0 && (
+                          {/* Saíram do salão: Perda do salão (ticket visita × qtd) + Perda sua (ticket serviço × qtd) */}
+                          {isSaiuSalao && ticketVisita > 0 && (
                             <div className="border-t border-nodri-border pt-2 space-y-1">
                               <div className="flex justify-between text-[10px]">
                                 <span className="text-nodri-t3">💸 Perda do salão</span>
-                                <span className="text-orange-400 font-bold">{fmt(qtd * ticketMedio)}</span>
+                                <span className="text-orange-400 font-bold">{fmt(qtd * ticketVisita)}</span>
                               </div>
-                              {comissaoMedia > 0 && (
+                              {ticketMedio > 0 && (
                                 <div className="flex justify-between text-[10px]">
                                   <span className="text-nodri-t3">💔 Perda sua</span>
-                                  <span className="text-red-400 font-bold">{fmt(qtd * comissaoMedia)}</span>
+                                  <span className="text-red-400 font-bold">{fmt(qtd * ticketMedio)}</span>
                                 </div>
                               )}
-                              <div className="text-[9px] text-nodri-t3 mt-1">por visita · ticket {fmt(ticketMedio)}</div>
+                              <div className="text-[9px] text-nodri-t3 mt-1">visita {fmt(ticketVisita)} · serviço {fmt(ticketMedio)}</div>
                             </div>
                           )}
                         </button>
