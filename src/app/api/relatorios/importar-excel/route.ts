@@ -209,39 +209,44 @@ export async function POST(req: NextRequest) {
       const anoNum = safeNum(per.ano)
       const mesNum = safeNum(per.mes)
 
-      // Delete + Insert (garante sobrescrita total, evita problema de upsert/update em rows antigas)
-      const { error: eDel } = await supabaseAdmin
+      // Busca o que já existe no banco para preservar campos não enviados
+      const { data: existente } = await supabaseAdmin
         .from('relatorio_periodos')
-        .delete()
+        .select('*')
         .eq('salao_id', salaoId)
         .eq('ano', anoNum)
         .eq('mes', mesNum)
+        .maybeSingle()
 
-      if (eDel) { erros.push(`delete ${per.ano}/${per.mes}: ${eDel.message}`); continue }
+      // Só sobrescreve um campo se o Excel trouxe dados (array não vazio)
+      const merge = (novoArr: any[], campoExistente: any) =>
+        (novoArr && novoArr.length > 0) ? novoArr : (campoExistente || [])
 
-      const { error: eIns } = await supabaseAdmin
+      const payload: any = {
+        salao_id:           salaoId,
+        ano:                anoNum,
+        mes:                mesNum,
+        data_inicio:        safeStr(per.data_inicio) || existente?.data_inicio || '',
+        data_fim:           safeStr(per.data_fim)    || existente?.data_fim    || '',
+        resumo_mensal:      merge(grpRes[chave],   existente?.resumo_mensal),
+        faturamento_diario: merge(grpFatD[chave],  existente?.faturamento_diario),
+        servicos:           merge(grpSvc[chave],   existente?.servicos),
+        produtos:           merge(grpProd2[chave], existente?.produtos),
+        prof_pagamentos:    merge(grpPag[chave],   existente?.prof_pagamentos),
+        metas:              merge(grpMeta[chave],  existente?.metas),
+        prof_ticket:        merge(grpTick[chave],  existente?.prof_ticket),
+        prof_preferencia:   merge(grpPref[chave],  existente?.prof_preferencia),
+        prof_ocupacao:      merge(grpOcup[chave],  existente?.prof_ocupacao),
+        prof_servicos:      merge(grpServ[chave],  existente?.prof_servicos),
+        prof_produtos:      merge(grpProd[chave],  existente?.prof_produtos),
+        atualizado_em:      new Date().toISOString(),
+      }
+
+      const { error: eUps } = await supabaseAdmin
         .from('relatorio_periodos')
-        .insert({
-          salao_id:           salaoId,
-          ano:                anoNum,
-          mes:                mesNum,
-          data_inicio:        safeStr(per.data_inicio),
-          data_fim:           safeStr(per.data_fim),
-          resumo_mensal:      grpRes[chave]   || [],
-          faturamento_diario: grpFatD[chave]  || [],
-          servicos:           grpSvc[chave]   || [],
-          produtos:           grpProd2[chave] || [],
-          prof_pagamentos:    grpPag[chave]   || [],
-          metas:              grpMeta[chave]  || [],
-          prof_ticket:        grpTick[chave]  || [],
-          prof_preferencia:   grpPref[chave]  || [],
-          prof_ocupacao:      grpOcup[chave]  || [],
-          prof_servicos:      grpServ[chave]  || [],
-          prof_produtos:      grpProd[chave]  || [],
-          atualizado_em:      new Date().toISOString(),
-        })
+        .upsert(payload, { onConflict: 'salao_id,ano,mes' })
 
-      if (eIns) { erros.push(`insert ${per.ano}/${per.mes}: ${eIns.message}`); continue }
+      if (eUps) { erros.push(`upsert ${per.ano}/${per.mes}: ${eUps.message}`); continue }
 
       salvos++
       salvosExtras++
