@@ -204,15 +204,22 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       from += 1000
     }
 
-    const SERVICOS_EXCLUIDOS_BUNDLE = [
-      'HIGIENIZAÇÃO', 'HIGIENIZAÇÃO ESPECIAL',
+    const cargoLower = (prof.cargo || '').toLowerCase()
+    const ehUnha = cargoLower.includes('manicure') || cargoLower.includes('pedicure') || cargoLower.includes('nail')
+
+    // Sempre excluído (higienização não forma bundle útil com nada)
+    const SEMPRE_EXCLUIDOS = ['HIGIENIZAÇÃO', 'HIGIENIZAÇÃO ESPECIAL']
+    // Excluído apenas para cabeleireiros — para manicures, unhas SÃO os bundles
+    const EXCLUIDOS_CABELO = [
       'MANICURE', 'PEDICURE', 'UNHA', 'UNHAS', 'ESMALT', 'NAIL',
       'GEL', 'ACRIGEL', 'FIBRA', 'ALONGAMENTO DE UNHA', 'BLINDAGEM',
       'FRANCESINHA', 'CUTÍCULA', 'CUTICULA', 'MANUTENÇÃO DE GEL',
     ]
     function isExcluidoBundle(s: string) {
       const u = s.toUpperCase()
-      return SERVICOS_EXCLUIDOS_BUNDLE.some(ex => u.includes(ex))
+      if (SEMPRE_EXCLUIDOS.some(ex => u.includes(ex))) return true
+      if (!ehUnha && EXCLUIDOS_CABELO.some(ex => u.includes(ex))) return true
+      return false
     }
 
     // Agrupa por comanda: cliente + data + num_comanda
