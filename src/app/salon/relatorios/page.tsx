@@ -700,7 +700,7 @@ export default function RelatoriosPage() {
     if (!lista.length) return
     const linhas = [['Cliente', 'Celular'],
       ...lista.map(c => [c.cliente_nome, c.celular || ''])]
-    const csv = linhas.map(l => l.map(v => `"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n')
+    const csv = 'sep=;\n' + linhas.map(l => l.map(v => `"${String(v||'').replace(/"/g,'""')}"`).join(';')).join('\n')
     const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a'); a.href = url; a.download = nomeArq + '.csv'; a.click()
@@ -773,8 +773,8 @@ export default function RelatoriosPage() {
 
   function exportarCsExcel() {
     if (!csClientes.length) return
-    const linhas = [['Nome', 'Celular'], ...csClientes.map(c => [c.cliente, c.celular])]
-    const csv = linhas.map(l => l.map(v => `"${(v||'').replace(/"/g,'""')}"`).join(',')).join('\n')
+    const linhas = [['Cliente', 'Celular'], ...csClientes.map(c => [c.cliente, c.celular])]
+    const csv = 'sep=;\n' + linhas.map(l => l.map(v => `"${(v||'').replace(/"/g,'""')}"`).join(';')).join('\n')
     const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
