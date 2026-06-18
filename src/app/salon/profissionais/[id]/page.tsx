@@ -2833,7 +2833,14 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
               {/* Impacto Financeiro — Faltas e Atrasos */}
               {(() => {
                 const fatDia = (metricas.fat_p2?.faturamento||0) / Math.max(metricas.fat_p2?.dias_trabalhados||1, 1)
-                const faltas = metricas.ocorrencias?.find(o => o.tipo?.toLowerCase().includes('falta'))?.total || 0
+                // Conta apenas faltas ao trabalho — exclui "treinamento", "reunião", "curso" etc.
+                const EXCLUIR_FALTA = ['treinamento', 'reunião', 'reuniao', 'curso', 'capacitação', 'capacitacao', 'palestra', 'evento']
+                const faltas = metricas.ocorrencias
+                  ?.filter(o => {
+                    const t = o.tipo?.toLowerCase() || ''
+                    return t.includes('falta') && !EXCLUIR_FALTA.some(ex => t.includes(ex))
+                  })
+                  .reduce((s, o) => s + o.total, 0) || 0
                 const atrasos = metricas.ocorrencias?.find(o => o.tipo?.toLowerCase().includes('atraso'))?.total || 0
                 // Média ponderada real: comissão de cada serviço × quantas vezes foi feito
                 const mix = metricas.mix_receita || []
