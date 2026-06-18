@@ -2471,7 +2471,7 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
                       <details className="mt-1">
                         <summary className="text-[10px] text-nodri-cyan cursor-pointer select-none list-none flex items-center gap-1">
                           <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
-                          ver {form.servicos_habilitados.length} serviço(s) selecionado(s)
+                          ver {form.servicos_habilitados?.length ?? 0} serviço(s) selecionado(s)
                         </summary>
                         <div className="flex flex-wrap gap-1.5 mt-2">
                           {(form.servicos_habilitados || []).map(sid => {
