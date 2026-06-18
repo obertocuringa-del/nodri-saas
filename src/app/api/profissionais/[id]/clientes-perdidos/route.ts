@@ -214,18 +214,12 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     const ultimaComProf = geral.ultimaDataComProf
     const ultimaGeral = geral.ultimaData
     if (!ultimaComProf) continue
+    if (!ultimaGeral) continue // sem histórico geral → dado inconsistente, ignora
 
-    // Verifica se voltou ao profissional depois (não é perdido)
-    const voltouComProf = geral.visitasDepois.length === 0
-      ? false
-      : false // visitasDepois já filtra visitas do próprio prof
-
-    // Checa se ainda veio com este prof depois (visitou SEM ter visitasDepois)
-    // Só é "perdido" se a última visita NO SALÃO foi após a última visita COM ESTE PROF
-    const ultimaGeralMs = ultimaGeral?.getTime() || 0
+    // Só é "perdido" se a última visita NO SALÃO foi APÓS a última visita COM ESTE PROF
+    const ultimaGeralMs = ultimaGeral.getTime()
     const ultimaComProfMs = ultimaComProf.getTime()
-    const aindaVemComEsteProf = ultimaGeralMs <= ultimaComProfMs
-    if (aindaVemComEsteProf) continue // ainda atende com este prof
+    if (ultimaGeralMs <= ultimaComProfMs) continue // última visita foi com este prof → não perdido
 
     const diasAusente = ultimaGeral
       ? Math.floor((hoje.getTime() - ultimaGeral.getTime()) / 86400000)
@@ -275,28 +269,21 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       .slice(0, 3).join(', ')
 
     // Verifica se algum prof depois tem o mesmo cargo
-    const temMesmoCargo = profsOrdenados.some(([, v]) => {
-      const c = v.cargo.toLowerCase()
-      return c && (
-        c === cargoPrincipal ||
-        (cargoPrincipal.includes('manicure') && c.includes('manicure')) ||
-        (cargoPrincipal.includes('pedicure') && c.includes('pedicure')) ||
-        (cargoPrincipal.includes('cabeleir') && c.includes('cabeleir')) ||
-        (cargoPrincipal.includes('colorist') && c.includes('colorist'))
-      )
-    })
+    // Guard: só compara cargo se cargoPrincipal não for vazio
+    function mesmoCargo(c: string): boolean {
+      if (!cargoPrincipal || !c) return false
+      if (c === cargoPrincipal) return true
+      if (cargoPrincipal.includes('manicure') && c.includes('manicure')) return true
+      if (cargoPrincipal.includes('pedicure') && c.includes('pedicure')) return true
+      if (cargoPrincipal.includes('cabeleir') && c.includes('cabeleir')) return true
+      if (cargoPrincipal.includes('colorist') && c.includes('colorist')) return true
+      return false
+    }
+
+    const temMesmoCargo = profsOrdenados.some(([, v]) => mesmoCargo(v.cargo.toLowerCase()))
 
     const profMesmoCargo = profsOrdenados
-      .filter(([, v]) => {
-        const c = v.cargo.toLowerCase()
-        return c && (
-          c === cargoPrincipal ||
-          (cargoPrincipal.includes('manicure') && c.includes('manicure')) ||
-          (cargoPrincipal.includes('pedicure') && c.includes('pedicure')) ||
-          (cargoPrincipal.includes('cabeleir') && c.includes('cabeleir')) ||
-          (cargoPrincipal.includes('colorist') && c.includes('colorist'))
-        )
-      })
+      .filter(([, v]) => mesmoCargo(v.cargo.toLowerCase()))
       .map(([nome, v]) => `${nome} (${v.cargo})`)
       .join(', ')
 
