@@ -77,7 +77,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   // Calcula ticket médio e comissão média do profissional
   const { data: periodos } = await supabaseAdmin
     .from('relatorio_periodos')
-    .select('prof_servicos')
+    .select('prof_servicos, prof_ticket')
     .eq('salao_id', salaoId)
 
   const nomeCompleto = (prof.nome_completo || '').toLowerCase()
@@ -100,7 +100,16 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const totalValor = Object.values(mixServicos).reduce((s, v) => s + v.valor, 0)
   const ticketMedio = totalQtd > 0 ? totalValor / totalQtd : 0
 
-  // Ticket por visita/comanda: totalValor ÷ comandas únicas (calculado depois de carregar rows)
+  // Ticket por visita: mesmo cálculo do perfil — média de prof_ticket[prof].ticket_medio
+  let ticketVisitaSum = 0, ticketVisitaCount = 0
+  for (const row of (periodos || [])) {
+    for (const item of (row.prof_ticket || [])) {
+      if (!isProfissional(item.profissional || '', nomeCompleto, apelido)) continue
+      ticketVisitaSum += Number(item.ticket_medio || 0)
+      ticketVisitaCount++
+    }
+  }
+  const ticketVisitaCalc = ticketVisitaCount > 0 ? ticketVisitaSum / ticketVisitaCount : ticketMedio
 
   // Comissão média ponderada pelos serviços mais vendidos
   const habilitadosIds: string[] = Array.isArray(prof.servicos_habilitados) ? prof.servicos_habilitados : []
@@ -142,15 +151,6 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     if (data.length < 1000) break
     from += 1000
   }
-
-  // Conta comandas únicas deste profissional para calcular ticket por visita
-  const comandasUnicas = new Set<string>()
-  for (const r of rows) {
-    if (isProfissional(r.profissional || '', prof.nome_completo, prof.apelido || '') && r.data_comanda) {
-      comandasUnicas.add(r.data_comanda)
-    }
-  }
-  const ticketVisita = comandasUnicas.size > 0 ? totalValor / comandasUnicas.size : ticketMedio
 
   const hoje = new Date()
   const DIAS_SAIU = 90
@@ -344,7 +344,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     outra_manicure: sub3.sort(sortData),
     total: sub1.length + sub2.length + sub3.length,
     ticket_medio: Math.round(ticketMedio * 100) / 100,
-    ticket_visita: Math.round(ticketVisita * 100) / 100,
+    ticket_visita: Math.round(ticketVisitaCalc * 100) / 100,
     comissao_media: Math.round(comissaoMedia * 100) / 100,
   })
 }
