@@ -1959,6 +1959,10 @@ export default function PerfilProfissionalPage() {
   const [subTabPerdidos, setSubTabPerdidos] = useState<'outro-servico'|'saiu-salao'|'outra-categoria'>('outra-categoria')
   const [sortKeyPerdidos, setSortKeyPerdidos] = useState<'ultima_visita_com_prof'|'ultima_visita_salao'|'dias_ausente'|'cliente'>('ultima_visita_com_prof')
   const [sortAscPerdidos, setSortAscPerdidos] = useState(false)
+  const [alertasAtivos, setAlertasAtivos] = useState<any[]>([])
+  const [alertasHistorico, setAlertasHistorico] = useState<any[]>([])
+  const [loadAlertas, setLoadAlertas] = useState(false)
+  const [mostrarHistoricoAlertas, setMostrarHistoricoAlertas] = useState(false)
   const [servicosSalao, setServicosSalao] = useState<{id:string;categoria:string;nome:string;preco_fixo:number|null;preco_min:number|null;comissao_valor:number|null}[]>([])
   const [selectorAberto, setSelectorAberto] = useState(false)
   const selectorRef = useRef<HTMLDivElement>(null)
@@ -2155,6 +2159,35 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
       .finally(() => setLoadClientesPerdidos(false))
   }, [tab, id])
 
+  useEffect(() => {
+    if (!id) return
+    setLoadAlertas(true)
+    fetch(`/api/profissionais/${id}/alertas`)
+      .then(r => r.json())
+      .then(d => {
+        setAlertasAtivos(d.ativos || [])
+        setAlertasHistorico(d.historico || [])
+      })
+      .catch(() => {})
+      .finally(() => setLoadAlertas(false))
+  }, [id])
+
+  async function arquivarAlerta(alerta: any) {
+    setAlertasAtivos(prev => prev.filter(a => a.cliente_nome !== alerta.cliente_nome))
+    try {
+      await fetch(`/api/profissionais/${id}/alertas`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(alerta),
+      })
+      setAlertasHistorico(prev => [{
+        ...alerta,
+        arquivado_em: new Date().toISOString(),
+        data_alerta: new Date().toISOString().split('T')[0],
+      }, ...prev])
+    } catch (_) {}
+  }
+
   async function salvarMetaManual() {
     if (!metaInfo) return
     setSalvandoMeta(true)
@@ -2267,6 +2300,56 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
           </button>
         )}
       </div>
+
+      {/* Banner de Alertas */}
+      {!loadAlertas && alertasAtivos.length > 0 && (
+        <div className="border-b border-nodri-border bg-orange-950/30 px-5 py-3 space-y-2">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[11px] font-bold text-orange-400 uppercase tracking-wider">
+              ⚠️ {alertasAtivos.length} cliente{alertasAtivos.length > 1 ? 's' : ''} sem visita há 60+ dias
+            </span>
+            {alertasHistorico.length > 0 && (
+              <button onClick={() => setMostrarHistoricoAlertas(v => !v)}
+                className="text-[10px] text-nodri-t3 hover:text-nodri-t2 underline">
+                {mostrarHistoricoAlertas ? 'Ocultar histórico' : `Ver histórico (${alertasHistorico.length})`}
+              </button>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {alertasAtivos.map((a, i) => (
+              <div key={i} className="flex items-center gap-2 bg-orange-900/40 border border-orange-800/50 rounded-xl px-3 py-1.5">
+                <div>
+                  <span className="text-[11px] font-semibold text-orange-200">{a.cliente_nome}</span>
+                  <span className="text-[10px] text-orange-400 ml-2">{a.dias_ausente}d ausente</span>
+                  {a.ultimo_servico && <span className="text-[10px] text-orange-500 ml-1">· {a.ultimo_servico}</span>}
+                </div>
+                <button onClick={() => arquivarAlerta(a)}
+                  title="Arquivar alerta"
+                  className="text-orange-500 hover:text-orange-200 ml-1 leading-none text-[14px]">✕</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Histórico de alertas arquivados */}
+      {mostrarHistoricoAlertas && alertasHistorico.length > 0 && (
+        <div className="border-b border-nodri-border bg-nodri-surface px-5 py-3">
+          <p className="text-[11px] font-bold text-nodri-t3 uppercase tracking-wider mb-2">Histórico de alertas arquivados</p>
+          <div className="space-y-1 max-h-40 overflow-y-auto">
+            {alertasHistorico.map((a: any, i: number) => (
+              <div key={i} className="flex items-center gap-3 text-[11px] text-nodri-t3">
+                <span className="text-nodri-t2 font-semibold">{a.cliente_nome}</span>
+                <span>{a.dias_ausente}d ausente</span>
+                {a.ultimo_servico && <span>· {a.ultimo_servico}</span>}
+                <span className="ml-auto text-nodri-t3">
+                  visto em {new Date(a.arquivado_em).toLocaleDateString('pt-BR')}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="bg-nodri-surface border-b border-nodri-border px-5 flex">
