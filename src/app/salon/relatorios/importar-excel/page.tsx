@@ -12,6 +12,24 @@ export default function ImportarExcelPage() {
   const [resultado, setResultado] = useState<any>(null)
   const [arrastando, setArrastando] = useState(false)
   const [resetando, setResetando] = useState(false)
+  const [reconstruindo, setReconstruindo] = useState(false)
+  const [resultadoReconstrucao, setResultadoReconstrucao] = useState<any>(null)
+
+  async function reconstruirDoRaw() {
+    if (!confirm('Reconstruir faturamento, clientes e serviços a partir dos atendimentos brutos?')) return
+    setReconstruindo(true)
+    setResultadoReconstrucao(null)
+    try {
+      const res = await fetch('/api/relatorios/reconstruir-do-raw', { method: 'POST' })
+      const data = await res.json()
+      setResultadoReconstrucao(data)
+      if (data.ok) toast.success(`${data.meses_reconstruidos} meses reconstruídos com sucesso!`)
+      else toast.error('Erro: ' + data.error)
+    } catch {
+      toast.error('Erro de conexão')
+    }
+    setReconstruindo(false)
+  }
 
   async function resetarTudo() {
     if (!confirm('Apagar TODOS os dados de relatório do banco? Você precisará reimportar tudo.')) return
@@ -110,6 +128,30 @@ export default function ImportarExcelPage() {
             </div>
           )}
         </div>
+
+        {/* Botão Reconstruir do Raw */}
+        <button onClick={reconstruirDoRaw} disabled={reconstruindo}
+          className="w-full mt-4 py-3 rounded-xl bg-nodri-amber/15 border border-nodri-amber/40 text-nodri-amber text-[13px] font-syne font-bold
+            hover:bg-nodri-amber/25 transition-all disabled:opacity-40 flex items-center justify-center gap-2">
+          {reconstruindo ? <><Loader2 size={16} className="animate-spin" /> Reconstruindo dados...</> : '🔧 Reconstruir dados a partir dos atendimentos brutos'}
+        </button>
+
+        {resultadoReconstrucao && (
+          <div className={`mt-3 p-4 rounded-xl border text-[12px] ${resultadoReconstrucao.ok ? 'bg-nodri-amber/8 border-nodri-amber/25' : 'bg-nodri-red/8 border-nodri-red/25'}`}>
+            {resultadoReconstrucao.ok ? (
+              <div>
+                <div className="font-bold text-nodri-amber mb-2">✅ {resultadoReconstrucao.meses_reconstruidos} meses reconstruídos!</div>
+                {resultadoReconstrucao.detalhes?.map((d: any) => (
+                  <div key={d.chave} className="text-nodri-t2 text-[11px]">
+                    {d.erro ? `❌ ${d.chave}: ${d.erro}` : `✓ ${d.chave} — ${d.atendimentos} atend. | R$ ${d.faturamento?.toLocaleString('pt-BR')} | ${d.clientes} clientes`}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-nodri-red">{resultadoReconstrucao.error}</div>
+            )}
+          </div>
+        )}
 
         {/* Botão Reset */}
         <button onClick={resetarTudo} disabled={resetando}
