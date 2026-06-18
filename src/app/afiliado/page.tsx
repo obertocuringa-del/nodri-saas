@@ -89,7 +89,7 @@ export default function PainelAfiliadoPage() {
             style={{ background: 'linear-gradient(135deg,#00e5c8,#7c5cfc)' }}>N</div>
           <div>
             <div className="font-syne font-bold text-sm">NODRI Afiliados</div>
-            <div className="text-[9px] text-nodri-cyan">Olá, {afiliado?.nome?.split(' ')[0]}!</div>
+            <div className="text-[11px] text-nodri-cyan">Olá, {afiliado?.nome?.split(' ')[0]}!</div>
           </div>
         </div>
         <button onClick={() => setEtapa('login')} className="flex items-center gap-1.5 text-nodri-t3 text-xs hover:text-nodri-red transition-colors">
@@ -100,7 +100,7 @@ export default function PainelAfiliadoPage() {
       <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
 
         {/* Cards principais */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3">
           {[
             { icon: <TrendingUp size={16} className="text-nodri-cyan" />, label: 'Total de Vendas', value: afiliado?.total_vendas || 0 },
             { icon: <Users size={16} className="text-nodri-blue" />, label: 'Cliques no Link', value: afiliado?.total_cliques || 0 },
@@ -110,27 +110,27 @@ export default function PainelAfiliadoPage() {
             <div key={c.label} className="nodri-card p-4 text-center">
               <div className="flex justify-center mb-2">{c.icon}</div>
               <div className="font-syne font-black text-xl">{c.value}</div>
-              <div className="text-[10px] text-nodri-t3 mt-1">{c.label}</div>
+              <div className="text-[11px] text-nodri-t3 mt-1">{c.label}</div>
             </div>
           ))}
         </div>
 
         {/* Financeiro */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="nodri-card p-5 text-center">
-            <div className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1">A Receber</div>
+            <div className="text-[11px] text-nodri-t3 uppercase tracking-wider mb-1">A Receber</div>
             <div className="font-syne font-black text-2xl text-nodri-amber">R${Number(afiliado?.valor_acumulado || 0).toFixed(2)}</div>
-            <div className="text-[10px] text-nodri-t3 mt-1">Comissão pendente</div>
+            <div className="text-[11px] text-nodri-t3 mt-1">Comissão pendente</div>
           </div>
           <div className="nodri-card p-5 text-center">
-            <div className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1">Já Recebido</div>
+            <div className="text-[11px] text-nodri-t3 uppercase tracking-wider mb-1">Já Recebido</div>
             <div className="font-syne font-black text-2xl text-nodri-green">R${Number(afiliado?.valor_pago || 0).toFixed(2)}</div>
-            <div className="text-[10px] text-nodri-t3 mt-1">Total pago</div>
+            <div className="text-[11px] text-nodri-t3 mt-1">Total pago</div>
           </div>
           <div className="nodri-card p-5 text-center">
-            <div className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1">Sua Comissão</div>
+            <div className="text-[11px] text-nodri-t3 uppercase tracking-wider mb-1">Sua Comissão</div>
             <div className="font-syne font-black text-2xl text-nodri-cyan">{afiliado?.comissao_percentual || 40}%</div>
-            <div className="text-[10px] text-nodri-t3 mt-1">Por venda</div>
+            <div className="text-[11px] text-nodri-t3 mt-1">Por venda</div>
           </div>
         </div>
 
@@ -138,7 +138,7 @@ export default function PainelAfiliadoPage() {
         <div className="nodri-card p-5 space-y-4">
           <div className="font-syne font-bold text-[13px] text-nodri-cyan flex items-center gap-1.5"><Tag size={13} /> Seus Dados de Afiliado</div>
           <div>
-            <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1.5 block">Cupom Exclusivo</label>
+            <label className="text-[11px] text-nodri-t3 uppercase tracking-wider mb-1.5 block">Cupom Exclusivo</label>
             <div className="flex items-center gap-2 bg-nodri-surface border-2 border-dashed border-nodri-cyan rounded-xl px-4 py-3">
               <span className="flex-1 font-mono font-black text-lg text-nodri-cyan tracking-widest">{afiliado?.cupom}</span>
               <button onClick={() => copiar(afiliado?.cupom, 'Cupom')}
@@ -148,7 +148,7 @@ export default function PainelAfiliadoPage() {
             </div>
           </div>
           <div>
-            <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1.5 block">Link de Divulgação</label>
+            <label className="text-[11px] text-nodri-t3 uppercase tracking-wider mb-1.5 block">Link de Divulgação</label>
             <div className="flex items-center gap-2 bg-nodri-surface border border-nodri-border rounded-xl px-3 py-2.5">
               <span className="flex-1 font-mono text-[11px] text-nodri-purple break-all">{afiliado?.link}</span>
               <button onClick={() => copiar(afiliado?.link, 'Link')}

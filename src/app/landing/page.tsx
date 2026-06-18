@@ -48,7 +48,7 @@ export default function LandingPage() {
     <div style={{ fontFamily: 'Segoe UI, sans-serif', background: '#0f0f0f', minHeight: '100vh', color: 'white' }}>
 
       {/* HERO */}
-      <section style={{ textAlign: 'center', padding: '80px 20px 60px' }}>
+      <section style={{ textAlign: 'center', padding: 'clamp(40px,8vw,80px) 20px clamp(30px,6vw,60px)' }}>
         <div style={{ background: 'linear-gradient(135deg, #7c5cfc, #f43f8e)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontSize: 48, fontWeight: 900, marginBottom: 16 }}>
           {cfg.hero_logo}
         </div>
@@ -62,7 +62,7 @@ export default function LandingPage() {
       {/* BENEFÍCIOS */}
       <section style={{ padding: '60px 20px', maxWidth: 1000, margin: '0 auto' }}>
         <h2 style={{ textAlign: 'center', fontSize: 28, fontWeight: 700, marginBottom: 40 }}>{cfg.beneficios_titulo}</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: 24 }}>
           {(cfg.beneficios || []).map((b: any, i: number) => (
             <div key={i} style={{ background: '#1a1a1a', borderRadius: 16, padding: 28, border: '1px solid #333' }}>
               <div style={{ fontSize: 36, marginBottom: 12 }}>{b.emoji}</div>
@@ -77,7 +77,7 @@ export default function LandingPage() {
       <section id="planos" style={{ padding: '60px 20px', maxWidth: 1100, margin: '0 auto' }}>
         <h2 style={{ textAlign: 'center', fontSize: 32, fontWeight: 700, marginBottom: 12 }}>{cfg.planos_titulo}</h2>
         <p style={{ textAlign: 'center', color: '#aaa', marginBottom: 48 }}>{cfg.planos_subtitulo}</p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: 24 }}>
           {(cfg.landing_planos || []).map((plano: any, i: number) => (
             <div key={i} style={{
               background: '#1a1a1a', borderRadius: 20, padding: 32,

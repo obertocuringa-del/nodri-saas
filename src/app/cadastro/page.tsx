@@ -175,7 +175,7 @@ function CadastroInner() {
             {/* Cupom */}
             <div style={{ marginBottom: 24 }}>
               <label style={lbl}>Código de desconto (opcional)</label>
-              <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 <input style={{ ...inp, flex: 1 }} placeholder="Ex: NODRI20"
                   value={form.cupom}
                   onChange={e => { setForm(p => ({ ...p, cupom: e.target.value.toUpperCase() })); setCupomStatus(null) }}

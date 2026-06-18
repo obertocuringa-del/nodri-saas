@@ -54,7 +54,7 @@ export default function PontoEquilibrioPage() {
           <div className="grid grid-cols-2 gap-3 mb-4">
             {campos.map(c => (
               <div key={c.key}>
-                <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">{c.label}</label>
+                <label className="text-[11px] text-nodri-t3 uppercase tracking-wider mb-1 block">{c.label}</label>
                 <input type="number" min="0" value={(form as any)[c.key]}
                   onChange={e => setForm(p => ({ ...p, [c.key]: e.target.value }))}
                   placeholder="0" className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[13px] outline-none focus:border-nodri-cyan transition-colors" />
@@ -63,13 +63,13 @@ export default function PontoEquilibrioPage() {
           </div>
           <div className="grid grid-cols-2 gap-3 mb-5 pt-4 border-t border-nodri-border">
             <div>
-              <label className="text-[10px] text-nodri-cyan uppercase tracking-wider mb-1 block font-bold">Ticket Médio por Atendimento (R$) *</label>
+              <label className="text-[11px] text-nodri-cyan uppercase tracking-wider mb-1 block font-bold">Ticket Médio por Atendimento (R$) *</label>
               <input type="number" min="0" value={form.ticketMedio}
                 onChange={e => setForm(p => ({ ...p, ticketMedio: e.target.value }))}
                 placeholder="Ex: 80" className="w-full bg-nodri-surface border border-nodri-cyan/30 rounded-lg px-3 py-2 text-[13px] outline-none focus:border-nodri-cyan transition-colors" />
             </div>
             <div>
-              <label className="text-[10px] text-nodri-cyan uppercase tracking-wider mb-1 block font-bold">% Comissão dos Profissionais</label>
+              <label className="text-[11px] text-nodri-cyan uppercase tracking-wider mb-1 block font-bold">% Comissão dos Profissionais</label>
               <input type="number" min="0" max="100" value={form.comissao}
                 onChange={e => setForm(p => ({ ...p, comissao: e.target.value }))}
                 placeholder="Ex: 40" className="w-full bg-nodri-surface border border-nodri-cyan/30 rounded-lg px-3 py-2 text-[13px] outline-none focus:border-nodri-cyan transition-colors" />
@@ -84,30 +84,30 @@ export default function PontoEquilibrioPage() {
         {resultado && (
           <div className="space-y-3">
             <div className="bg-nodri-red/10 border border-nodri-red/30 rounded-xl p-4">
-              <div className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1">Total de custos fixos mensais</div>
+              <div className="text-[11px] text-nodri-t3 uppercase tracking-wider mb-1">Total de custos fixos mensais</div>
               <div className="font-syne font-black text-2xl text-nodri-red">R$ {resultado.custoFixo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="nodri-card p-4 text-center border-2 border-nodri-amber/30">
-                <div className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1">Atendimentos/mês para equilibrar</div>
+                <div className="text-[11px] text-nodri-t3 uppercase tracking-wider mb-1">Atendimentos/mês para equilibrar</div>
                 <div className="font-syne font-black text-3xl text-nodri-amber">{resultado.atendimentosMes}</div>
-                <div className="text-[10px] text-nodri-t3 mt-1">atendimentos</div>
+                <div className="text-[11px] text-nodri-t3 mt-1">atendimentos</div>
               </div>
               <div className="nodri-card p-4 text-center border-2 border-nodri-amber/30">
-                <div className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1">Atendimentos/dia (26 dias)</div>
+                <div className="text-[11px] text-nodri-t3 uppercase tracking-wider mb-1">Atendimentos/dia (26 dias)</div>
                 <div className="font-syne font-black text-3xl text-nodri-amber">{resultado.atendimentosDia}</div>
-                <div className="text-[10px] text-nodri-t3 mt-1">atendimentos/dia</div>
+                <div className="text-[11px] text-nodri-t3 mt-1">atendimentos/dia</div>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="nodri-card p-4 text-center border-2 border-nodri-green/30">
-                <div className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1">Faturamento mínimo/mês</div>
+                <div className="text-[11px] text-nodri-t3 uppercase tracking-wider mb-1">Faturamento mínimo/mês</div>
                 <div className="font-syne font-black text-2xl text-nodri-green">R$ {resultado.faturamentoMes.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
               </div>
               <div className="nodri-card p-4 text-center border-2 border-nodri-green/30">
-                <div className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1">Faturamento mínimo/dia</div>
+                <div className="text-[11px] text-nodri-t3 uppercase tracking-wider mb-1">Faturamento mínimo/dia</div>
                 <div className="font-syne font-black text-2xl text-nodri-green">R$ {resultado.faturamentoDia.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
               </div>
             </div>

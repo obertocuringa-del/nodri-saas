@@ -47,7 +47,7 @@ export default function RenovarLicencaPage() {
         </div>
 
         {/* Planos */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           {PLANOS.map(plano => (
             <div key={plano.slug}
               className={`nodri-card p-6 flex flex-col transition-all ${plano.destaque ? 'border-2' : ''}`}

@@ -535,9 +535,9 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
 
           {/* ── Sidebar Esquerda — Biblioteca de Prompts ── */}
           <div style={isMobile ? {
-            width: 260, flexShrink: 0, background: '#161b22', borderRight: '1px solid #21262d',
+            width: '85vw', maxWidth: 260, flexShrink: 0, background: '#161b22', borderRight: '1px solid #21262d',
             display: 'flex', flexDirection: 'column', overflow: 'hidden',
-            position: 'absolute', top: 0, left: sidebarChatAberta ? 0 : -260, bottom: 0, zIndex: 40,
+            position: 'absolute', top: 0, left: sidebarChatAberta ? 0 : '-85vw', bottom: 0, zIndex: 40,
             transition: 'left 0.25s ease',
           } : {
             width: 260, flexShrink: 0, background: '#161b22', borderRight: '1px solid #21262d',

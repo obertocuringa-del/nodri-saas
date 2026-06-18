@@ -605,7 +605,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
 
     return (
       <div className="space-y-4">
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
             { label: 'Total de pagamentos', value: pags.length, icon: <CreditCard size={16} /> },
             { label: 'Pagos', value: pags.filter(p => p.status === 'pago').length, icon: <CheckCircle size={16} /> },
@@ -779,7 +779,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
         </div>
 
         {/* Cards resumo */}
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
             { label: 'Afiliados cadastrados', value: afiliados.length },
             { label: 'Total de vendas', value: totalVendas },
@@ -817,7 +817,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-4 gap-3 mt-3">
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-3">
                     <div className="bg-nodri-card rounded-lg p-2.5 text-center">
                       <div className="text-[9px] text-nodri-t3 uppercase">Vendas</div>
                       <div className="font-bold text-[15px]">{af.total_vendas || 0}</div>
@@ -1020,7 +1020,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                   )}
                 </div>
                 <p className="text-[11px] text-nodri-t3 mb-4">Ative o modo manutenção para bloquear temporariamente um módulo para todos os salões</p>
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                   {localModulos.map(m => (
                     <div key={m.id} className={`p-3 border rounded-xl transition-all ${m.em_manutencao ? 'border-nodri-red/40 bg-nodri-red/5' : 'border-nodri-border bg-nodri-surface'}`}>
                       <div className="flex items-start justify-between mb-2 gap-1">
@@ -1439,7 +1439,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
           {/* ATUALIZAÇÕES */}
           {activeSection === 'updates' && (
             <div className="space-y-4">
-              <div className="nodri-card p-6">
+              <div className="nodri-card p-4 sm:p-6">
                 <div className="font-syne font-bold text-[14px] text-nodri-cyan mb-4 flex items-center gap-2">
                   <RefreshCw size={14} /> Central de Atualizações
                 </div>
@@ -1744,7 +1744,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
           {/* DASHBOARD */}
           {activeSection !== 'planos' && activeSection !== 'conteudo' && activeSection !== 'afiliados' && activeSection !== 'logs' && activeSection !== 'updates' && activeSection !== 'relatorios' && activeSection !== 'config' && activeSection !== 'modulos' && activeSection !== 'pagamentos' && (
             <>
-              <div className="grid grid-cols-4 gap-3 mb-5">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
                 {[
                   { label: 'Salões cadastrados', value: saloes.length, change: 'total' },
                   { label: 'Licenças ativas', value: saloes.filter(s => s.status === 'ativo').length, change: 'ativas agora' },
@@ -1906,7 +1906,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
       {/* MODAL COMPRA DETALHE */}
       {selectedCompra && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-          <div className="nodri-card w-full max-w-md p-6 animate-slide-up">
+          <div className="nodri-card w-full max-w-md p-4 sm:p-6 animate-slide-up">
             <div className="flex items-center justify-between mb-5">
               <div className="font-syne font-bold text-[14px] flex items-center gap-2">
                 <ShoppingBag size={16} /> Dados da Compra
@@ -1973,7 +1973,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
       {/* MODAL NOVO/EDITAR PLANO */}
       {showNovoPlano && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-          <div className="nodri-card w-full max-w-md p-6 animate-slide-up">
+          <div className="nodri-card w-full max-w-md p-4 sm:p-6 animate-slide-up">
             <div className="flex items-center justify-between mb-5">
               <div className="font-syne font-bold text-[14px] flex items-center gap-2"><CreditCard size={16} className="text-nodri-cyan" /> {editPlano ? 'Editar Plano' : 'Novo Plano'}</div>
               <button onClick={() => { setShowNovoPlano(false); setEditPlano(null) }} className="text-nodri-t3 hover:text-nodri-t1"><X size={16} /></button>
@@ -2002,7 +2002,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
       {/* MODAL NOVO SALÃO */}
       {showNovoSalao && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-          <div className="nodri-card w-full max-w-lg p-6 animate-slide-up">
+          <div className="nodri-card w-full max-w-lg p-4 sm:p-6 animate-slide-up">
             <div className="flex items-center justify-between mb-5">
               <div className="font-syne font-bold text-[14px] flex items-center gap-2"><Building size={16} className="text-nodri-cyan" /> Cadastrar Novo Salão</div>
               <button onClick={() => setShowNovoSalao(false)} className="text-nodri-t3 hover:text-nodri-t1"><X size={16} /></button>
@@ -2042,7 +2042,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
       {editSalao && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
           <div className="nodri-card w-full max-w-lg animate-slide-up overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-nodri-border">
+            <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-nodri-border">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-lg flex items-center justify-center text-[14px] font-bold text-white" style={{ background: 'linear-gradient(135deg, #7c5cfc, #f43f8e)' }}>{editSalao.nome[0]}</div>
                 <div><div className="font-syne font-bold text-[13px]">{editSalao.nome}</div><div className="text-[10px] text-nodri-t3">{editSalao.email}</div></div>
@@ -2176,7 +2176,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
       {/* MODAL NOVO/EDITAR MÓDULO */}
       {showNovoModulo && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-          <div className="nodri-card w-full max-w-lg p-6 animate-slide-up">
+          <div className="nodri-card w-full max-w-lg p-4 sm:p-6 animate-slide-up">
             <div className="flex items-center justify-between mb-5">
               <div className="font-syne font-bold text-[14px] flex items-center gap-2"><Puzzle size={16} className="text-nodri-cyan" /> {editModulo ? 'Editar Módulo' : 'Novo Módulo'}</div>
               <button onClick={() => { setShowNovoModulo(false); setEditModulo(null) }} className="text-nodri-t3 hover:text-nodri-t1"><X size={16} /></button>
