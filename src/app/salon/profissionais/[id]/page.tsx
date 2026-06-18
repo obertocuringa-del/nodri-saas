@@ -3289,20 +3289,14 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
                             </div>
                           )}
 
-                          {/* Outro serviço: Perda do salão (ticket visita × qtd) + Perda sua (comissão × qtd) */}
+                          {/* Outro serviço: só Perda do salão (cliente ainda gera receita, mas com outro prof) */}
                           {isOutroServico && ticketVisita > 0 && (
                             <div className="border-t border-nodri-border pt-2 space-y-1">
                               <div className="flex justify-between text-[10px]">
                                 <span className="text-nodri-t3">💸 Perda do salão</span>
                                 <span className="text-orange-400 font-bold">{fmt(qtd * ticketVisita)}</span>
                               </div>
-                              {comissaoMedia > 0 && (
-                                <div className="flex justify-between text-[10px]">
-                                  <span className="text-nodri-t3">💔 Perda sua</span>
-                                  <span className="text-red-400 font-bold">{fmt(qtd * comissaoMedia)}</span>
-                                </div>
-                              )}
-                              <div className="text-[9px] text-nodri-t3 mt-1">visita {fmt(ticketVisita)} · comissão {fmt(comissaoMedia)}</div>
+                              <div className="text-[9px] text-nodri-t3 mt-1">por visita · ticket {fmt(ticketVisita)}</div>
                             </div>
                           )}
 
