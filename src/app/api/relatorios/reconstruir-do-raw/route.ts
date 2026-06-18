@@ -10,15 +10,25 @@ export async function POST(req: NextRequest) {
   if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   try {
-    // Busca todos os atendimentos raw do salão
-    const { data: rows, error: eRaw } = await supabaseAdmin
-      .from('atendimentos_raw')
-      .select('*')
-      .eq('salao_id', salaoId)
-      .order('ano').order('mes').order('data_comanda')
+    // Busca todos os atendimentos raw com paginação (Supabase limita 1000 por request)
+    let rows: any[] = []
+    let from = 0
+    const PAGE = 1000
+    while (true) {
+      const { data, error } = await supabaseAdmin
+        .from('atendimentos_raw')
+        .select('*')
+        .eq('salao_id', salaoId)
+        .order('ano').order('mes').order('data_comanda')
+        .range(from, from + PAGE - 1)
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      if (!data || data.length === 0) break
+      rows = rows.concat(data)
+      if (data.length < PAGE) break
+      from += PAGE
+    }
 
-    if (eRaw) return NextResponse.json({ error: eRaw.message }, { status: 500 })
-    if (!rows || rows.length === 0) return NextResponse.json({ error: 'Nenhum atendimento raw encontrado' }, { status: 404 })
+    if (rows.length === 0) return NextResponse.json({ error: 'Nenhum atendimento raw encontrado' }, { status: 404 })
 
     // Agrupa por ano+mes
     const meses: Record<string, typeof rows> = {}

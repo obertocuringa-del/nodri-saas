@@ -20,17 +20,27 @@ function sheetToArray(wb: XLSX.WorkBook, name: string): any[] {
 
 async function recalcularPerfisClientes(salaoId: string) {
   try {
-    // Busca todos os atendimentos raw dos últimos 3 anos
     const treAnosAtras = new Date()
     treAnosAtras.setFullYear(treAnosAtras.getFullYear() - 3)
     const anoMin = treAnosAtras.getFullYear()
 
-    const { data: rows } = await supabaseAdmin
-      .from('atendimentos_raw')
-      .select('cliente, servico, total, data_comanda, ano, mes')
-      .eq('salao_id', salaoId)
-      .gte('ano', anoMin)
-      .neq('cliente', '')
+    // Busca todos os registros com paginação (Supabase limita 1000 por request)
+    let rows: any[] = []
+    let from = 0
+    const PAGE = 1000
+    while (true) {
+      const { data, error } = await supabaseAdmin
+        .from('atendimentos_raw')
+        .select('cliente, servico, total, data_comanda, ano, mes')
+        .eq('salao_id', salaoId)
+        .gte('ano', anoMin)
+        .neq('cliente', '')
+        .range(from, from + PAGE - 1)
+      if (error || !data || data.length === 0) break
+      rows = rows.concat(data)
+      if (data.length < PAGE) break
+      from += PAGE
+    }
 
     if (!rows || rows.length === 0) return
 
