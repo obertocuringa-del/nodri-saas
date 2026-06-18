@@ -3192,7 +3192,7 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
                             <tr className="border-b border-nodri-border">
                               <th className="text-left px-4 py-2 text-nodri-t3 font-semibold">Cliente</th>
                               <th className="text-left px-4 py-2 text-nodri-t3 font-semibold">Último serviço aqui</th>
-                              <th className="text-left px-4 py-2 text-nodri-t3 font-semibold">Última vez aqui</th>
+                              <th className="text-left px-4 py-2 text-nodri-t3 font-semibold">Última vez com você</th>
                               <th className="text-left px-4 py-2 text-nodri-t3 font-semibold">Última no salão</th>
                               {subTabPerdidos === 'outra-categoria' && <th className="text-left px-4 py-2 text-nodri-t3 font-semibold">Migrou para</th>}
                               {subTabPerdidos === 'outro-servico' && <th className="text-left px-4 py-2 text-nodri-t3 font-semibold">Vai agora com</th>}
