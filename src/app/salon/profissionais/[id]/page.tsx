@@ -1957,6 +1957,8 @@ export default function PerfilProfissionalPage() {
   const [clientesPerdidos, setClientesPerdidos] = useState<any>(null)
   const [loadClientesPerdidos, setLoadClientesPerdidos] = useState(false)
   const [subTabPerdidos, setSubTabPerdidos] = useState<'outro-servico'|'saiu-salao'|'outra-categoria'>('outra-categoria')
+  const [sortKeyPerdidos, setSortKeyPerdidos] = useState<'ultima_visita_com_prof'|'ultima_visita_salao'|'dias_ausente'|'cliente'>('ultima_visita_com_prof')
+  const [sortAscPerdidos, setSortAscPerdidos] = useState(false)
   const [servicosSalao, setServicosSalao] = useState<{id:string;categoria:string;nome:string;preco_fixo:number|null;preco_min:number|null;comissao_valor:number|null}[]>([])
   const [selectorAberto, setSelectorAberto] = useState(false)
   const selectorRef = useRef<HTMLDivElement>(null)
@@ -3125,6 +3127,9 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
             {!loadClientesPerdidos && clientesPerdidos && (() => {
               const cp = clientesPerdidos
               const cargo = prof?.cargo || 'profissional'
+              const ticketMedio = cp.ticket_medio || 0
+              const comissaoMedia = cp.comissao_media || 0
+              const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
               function exportarExcel(lista: any[], filename: string) {
                 const linhas = ['sep=;\nCliente;Celular']
@@ -3141,24 +3146,78 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
                 { id: 'saiu-salao' as const, label: '👻 Saíram do salão', count: cp.saiu_salao?.length || 0, cor: '#6b7280' },
               ]
 
-              const listaAtual = subTabPerdidos === 'outra-categoria'
+              const listaBase = subTabPerdidos === 'outra-categoria'
                 ? (cp.outra_manicure || [])
                 : subTabPerdidos === 'outro-servico'
                 ? (cp.outro_servico || [])
                 : (cp.saiu_salao || [])
 
+              // Ordenação
+              type SortKey = 'ultima_visita_com_prof' | 'ultima_visita_salao' | 'dias_ausente' | 'cliente'
+              const sortKey = sortKeyPerdidos
+              const sortAsc = sortAscPerdidos
+
+              function toggleSort(key: SortKey) {
+                if (sortKeyPerdidos === key) setSortAscPerdidos(a => !a)
+                else { setSortKeyPerdidos(key); setSortAscPerdidos(false) }
+              }
+
+              function parseBR(d: string): number {
+                if (!d || d === '—') return 0
+                const p = d.split('/')
+                if (p.length !== 3) return 0
+                return new Date(`${p[2]}-${p[1]}-${p[0]}`).getTime()
+              }
+
+              const listaAtual = [...listaBase].sort((a: any, b: any) => {
+                let cmp = 0
+                if (sortKey === 'ultima_visita_com_prof') cmp = parseBR(a.ultima_visita_com_prof) - parseBR(b.ultima_visita_com_prof)
+                else if (sortKey === 'ultima_visita_salao') cmp = parseBR(a.ultima_visita_salao) - parseBR(b.ultima_visita_salao)
+                else if (sortKey === 'dias_ausente') cmp = (a.dias_ausente || 0) - (b.dias_ausente || 0)
+                else cmp = a.cliente.localeCompare(b.cliente)
+                return sortAsc ? cmp : -cmp
+              })
+
+              function ThSort({ label, col }: { label: string; col: SortKey }) {
+                const active = sortKey === col
+                return (
+                  <th onClick={() => toggleSort(col)}
+                    className="text-left px-4 py-2 text-nodri-t3 font-semibold cursor-pointer select-none hover:text-nodri-t2 whitespace-nowrap">
+                    {label} {active ? (sortAsc ? '↑' : '↓') : <span className="opacity-30">↕</span>}
+                  </th>
+                )
+              }
+
               return (
                 <>
                   {/* Resumo cards */}
                   <div className="grid grid-cols-3 gap-4">
-                    {subTabs.map(st => (
-                      <button key={st.id} onClick={() => setSubTabPerdidos(st.id)}
-                        className={`rounded-2xl p-4 text-left transition-all border-2 ${subTabPerdidos===st.id?'border-nodri-cyan bg-nodri-surface':'border-nodri-border bg-nodri-surface hover:border-nodri-t3'}`}>
-                        <div className="text-[11px] text-nodri-t3 mb-1">{st.label}</div>
-                        <div className="font-syne font-black text-[28px]" style={{color: st.cor}}>{st.count}</div>
-                        <div className="text-[10px] text-nodri-t3">clientes</div>
-                      </button>
-                    ))}
+                    {subTabs.map(st => {
+                      const qtd = st.count
+                      return (
+                        <button key={st.id} onClick={() => setSubTabPerdidos(st.id)}
+                          className={`rounded-2xl p-4 text-left transition-all border-2 ${subTabPerdidos===st.id?'border-nodri-cyan bg-nodri-surface':'border-nodri-border bg-nodri-surface hover:border-nodri-t3'}`}>
+                          <div className="text-[11px] text-nodri-t3 mb-1">{st.label}</div>
+                          <div className="font-syne font-black text-[28px]" style={{color: st.cor}}>{qtd}</div>
+                          <div className="text-[10px] text-nodri-t3 mb-3">clientes</div>
+                          {ticketMedio > 0 && (
+                            <div className="border-t border-nodri-border pt-2 space-y-1">
+                              <div className="flex justify-between text-[10px]">
+                                <span className="text-nodri-t3">💸 Perda do salão</span>
+                                <span className="text-orange-400 font-bold">{fmt(qtd * ticketMedio)}</span>
+                              </div>
+                              {comissaoMedia > 0 && (
+                                <div className="flex justify-between text-[10px]">
+                                  <span className="text-nodri-t3">💔 Perda sua</span>
+                                  <span className="text-red-400 font-bold">{fmt(qtd * comissaoMedia)}</span>
+                                </div>
+                              )}
+                              <div className="text-[9px] text-nodri-t3 mt-1">por visita · ticket {fmt(ticketMedio)}</div>
+                            </div>
+                          )}
+                        </button>
+                      )
+                    })}
                   </div>
 
                   {/* Sub-tabs nav */}
@@ -3190,13 +3249,13 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
                         <table className="w-full text-[11px]">
                           <thead>
                             <tr className="border-b border-nodri-border">
-                              <th className="text-left px-4 py-2 text-nodri-t3 font-semibold">Cliente</th>
+                              <ThSort label="Cliente" col="cliente" />
                               <th className="text-left px-4 py-2 text-nodri-t3 font-semibold">Último serviço aqui</th>
-                              <th className="text-left px-4 py-2 text-nodri-t3 font-semibold">Última vez com você</th>
-                              <th className="text-left px-4 py-2 text-nodri-t3 font-semibold">Última no salão</th>
+                              <ThSort label="Última vez com você" col="ultima_visita_com_prof" />
+                              <ThSort label="Última no salão" col="ultima_visita_salao" />
                               {subTabPerdidos === 'outra-categoria' && <th className="text-left px-4 py-2 text-nodri-t3 font-semibold">Migrou para</th>}
                               {subTabPerdidos === 'outro-servico' && <th className="text-left px-4 py-2 text-nodri-t3 font-semibold">Vai agora com</th>}
-                              {subTabPerdidos === 'saiu-salao' && <th className="text-left px-4 py-2 text-nodri-t3 font-semibold">Dias ausente</th>}
+                              {subTabPerdidos === 'saiu-salao' && <ThSort label="Dias ausente" col="dias_ausente" />}
                               <th className="text-left px-4 py-2 text-nodri-t3 font-semibold">Faz agora</th>
                               <th className="text-left px-4 py-2 text-nodri-t3 font-semibold">Celular</th>
                             </tr>

@@ -53,7 +53,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
   const { data: prof } = await supabaseAdmin
     .from('profissionais')
-    .select('id, nome_completo, apelido, cargo')
+    .select('id, nome_completo, apelido, cargo, servicos_habilitados')
     .eq('id', params.id)
     .eq('salao_id', salaoId)
     .single()
@@ -73,6 +73,51 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }))
 
   const cargoPrincipal = (prof.cargo || '').toLowerCase()
+
+  // Calcula ticket médio e comissão média do profissional
+  const { data: periodos } = await supabaseAdmin
+    .from('relatorio_periodos')
+    .select('prof_servicos')
+    .eq('salao_id', salaoId)
+
+  const nomeCompleto = (prof.nome_completo || '').toLowerCase()
+  const apelido = (prof.apelido || '').toLowerCase()
+
+  // Acumula serviços do profissional para ticket médio e mix
+  const mixServicos: Record<string, { qtd: number; valor: number }> = {}
+  for (const row of (periodos || [])) {
+    for (const item of (row.prof_servicos || [])) {
+      if (!isProfissional(item.profissional || '', nomeCompleto, apelido)) continue
+      const s = (item.servico || '').trim().toUpperCase()
+      if (!s) continue
+      if (!mixServicos[s]) mixServicos[s] = { qtd: 0, valor: 0 }
+      mixServicos[s].qtd += Number(item.quantidade || 0)
+      mixServicos[s].valor += Number(item.valor || 0)
+    }
+  }
+
+  const totalQtd = Object.values(mixServicos).reduce((s, v) => s + v.qtd, 0)
+  const totalValor = Object.values(mixServicos).reduce((s, v) => s + v.valor, 0)
+  const ticketMedio = totalQtd > 0 ? totalValor / totalQtd : 0
+
+  // Comissão média ponderada pelos serviços mais vendidos
+  const habilitadosIds: string[] = Array.isArray(prof.servicos_habilitados) ? prof.servicos_habilitados : []
+  const { data: servicosSalao } = await supabaseAdmin
+    .from('servicos')
+    .select('id, nome, comissao_valor')
+    .eq('salao_id', salaoId)
+    .eq('ativo', true)
+
+  let totalQtdComissao = 0, totalComissaoPonderada = 0
+  const top10 = Object.entries(mixServicos).sort((a, b) => b[1].qtd - a[1].qtd).slice(0, 10)
+  for (const [nome, v] of top10) {
+    const serv = (servicosSalao || []).find((s: any) => s.nome.toUpperCase() === nome && habilitadosIds.includes(s.id))
+    if (serv?.comissao_valor) {
+      totalQtdComissao += v.qtd
+      totalComissaoPonderada += serv.comissao_valor * v.qtd
+    }
+  }
+  const comissaoMedia = totalQtdComissao > 0 ? totalComissaoPonderada / totalQtdComissao : 0
 
   // Busca todos os atendimentos do salão com paginação
   let rows: any[] = []
@@ -288,5 +333,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     saiu_salao: sub2.sort((a, b) => b.dias_ausente - a.dias_ausente),
     outra_manicure: sub3.sort(sortData),
     total: sub1.length + sub2.length + sub3.length,
+    ticket_medio: Math.round(ticketMedio * 100) / 100,
+    comissao_media: Math.round(comissaoMedia * 100) / 100,
   })
 }
