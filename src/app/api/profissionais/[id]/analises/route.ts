@@ -204,12 +204,17 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       from += 1000
     }
 
+    const SERVICOS_EXCLUIDOS_BUNDLE = ['HIGIENIZAÇÃO', 'HIGIENIZAÇÃO ESPECIAL']
+    function isExcluidoBundle(s: string) {
+      return SERVICOS_EXCLUIDOS_BUNDLE.some(ex => s.toUpperCase().includes(ex))
+    }
+
     // Agrupa por comanda: cliente + data + num_comanda
     const comandas: Record<string, Set<string>> = {}
     for (const r of rows) {
       const key = `${r.cliente}||${r.data_comanda}||${r.num_comanda}`
       if (!comandas[key]) comandas[key] = new Set()
-      if (r.servico) comandas[key].add(r.servico.trim().toUpperCase())
+      if (r.servico && !isExcluidoBundle(r.servico)) comandas[key].add(r.servico.trim().toUpperCase())
     }
 
     // Conta co-ocorrências de pares de serviços
