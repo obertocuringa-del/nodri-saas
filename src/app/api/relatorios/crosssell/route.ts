@@ -18,6 +18,7 @@ async function buscarTodosRaw(salaoId: string) {
       .from('atendimentos_raw')
       .select('cliente, servico, categoria, data_comanda, celular, telefone')
       .eq('salao_id', salaoId)
+      .order('ano').order('mes').order('data_comanda')
       .range(from, from + 999)
     if (!data || data.length === 0) break
     rows = rows.concat(data)

@@ -24,7 +24,7 @@ async function recalcularPerfisClientes(salaoId: string) {
     treAnosAtras.setFullYear(treAnosAtras.getFullYear() - 3)
     const anoMin = treAnosAtras.getFullYear()
 
-    // Busca todos os registros com paginação (Supabase limita 1000 por request)
+    // Busca todos os registros com paginação ordenada (sem order fixo o Supabase pula registros)
     let rows: any[] = []
     let from = 0
     const PAGE = 1000
@@ -35,6 +35,7 @@ async function recalcularPerfisClientes(salaoId: string) {
         .eq('salao_id', salaoId)
         .gte('ano', anoMin)
         .neq('cliente', '')
+        .order('ano').order('mes').order('data_comanda')
         .range(from, from + PAGE - 1)
       if (error || !data || data.length === 0) break
       rows = rows.concat(data)
