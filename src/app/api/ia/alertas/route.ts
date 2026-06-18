@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
       supabaseAdmin.from('pendencias_profissionais').select('profissional_id, mensagem, data_limite').eq('salao_id', salaoId).eq('resolvido', false),
     ])
 
-    const alertas: { tipo: 'critico' | 'atencao' | 'info'; titulo: string; mensagem: string; icone: string }[] = []
+    const alertas: { tipo: 'critico' | 'atencao' | 'info'; titulo: string; mensagem: string; icone: string; pct?: number; diasRestantes?: number }[] = []
 
     // Alertas de meta por profissional
     if (metas?.metas_profissionais?.length) {
@@ -44,11 +44,11 @@ export async function GET(req: NextRequest) {
         const projecaoPct = projecao / meta
 
         if (pct >= 1) {
-          alertas.push({ tipo: 'info', icone: '🏆', titulo: `${mp.nome} bateu a meta!`, mensagem: `Atingiu ${Math.round(pct * 100)}% (R$${realizado.toFixed(0)} de R$${meta.toFixed(0)}).` })
+          alertas.push({ tipo: 'info', icone: '🏆', titulo: `${mp.nome} bateu a meta!`, mensagem: `Atingiu ${Math.round(pct * 100)}% (R$${realizado.toFixed(0)} de R$${meta.toFixed(0)}).`, pct: Math.round(pct * 100), diasRestantes })
         } else if (projecaoPct < 0.7 && diasRestantes <= 10) {
-          alertas.push({ tipo: 'critico', icone: '🚨', titulo: `${mp.nome} não vai bater a meta`, mensagem: `Projeção: ${Math.round(projecaoPct * 100)}% da meta. Faltam ${diasRestantes} dias. Precisa de R$${(meta - realizado).toFixed(0)} ainda.` })
+          alertas.push({ tipo: 'critico', icone: '🚨', titulo: `${mp.nome} não vai bater a meta`, mensagem: `Projeção: ${Math.round(projecaoPct * 100)}% da meta. Faltam ${diasRestantes} dias. Precisa de R$${(meta - realizado).toFixed(0)} ainda.`, pct: Math.round(pct * 100), diasRestantes })
         } else if (projecaoPct < 0.85) {
-          alertas.push({ tipo: 'atencao', icone: '⚠️', titulo: `${mp.nome} em risco de não bater`, mensagem: `Atingiu ${Math.round(pct * 100)}% com ${diasRestantes} dias restantes. Precisa acelerar.` })
+          alertas.push({ tipo: 'atencao', icone: '⚠️', titulo: `${mp.nome} em risco de não bater`, mensagem: `Atingiu ${Math.round(pct * 100)}% com ${diasRestantes} dias restantes. Precisa acelerar.`, pct: Math.round(pct * 100), diasRestantes })
         }
       }
     }
