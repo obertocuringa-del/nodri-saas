@@ -236,8 +236,11 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     const dataUltimaGeral = ultimaGeral ? ultimaGeral.toLocaleDateString('pt-BR') : '—'
     const celular = hist.celular || geral.celular || ''
 
-    // Sub 2: Saiu do salão (última visita no salão há mais de DIAS_SAIU)
-    if (diasAusente >= DIAS_SAIU) {
+    // Verifica se voltou ao salão DEPOIS de sair deste profissional
+    const visitasDepois = geral.visitasDepois
+
+    // Sub 2: Saiu do salão — NÃO voltou ao salão depois de sair deste prof E ausente 90+ dias
+    if (!visitasDepois.length && diasAusente >= DIAS_SAIU) {
       sub2.push({
         cliente: cli,
         celular,
@@ -249,8 +252,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       continue
     }
 
-    // Ainda ativo no salão — verifica com quem vai agora
-    const visitasDepois = geral.visitasDepois
+    // Se não voltou ao salão mas ainda não atingiu 90 dias → não classifica ainda
     if (!visitasDepois.length) continue
 
     // Profissionais únicos após a saída
