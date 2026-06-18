@@ -101,19 +101,24 @@ async function recalcularPerfisClientes(salaoId: string) {
         ? Math.round((hoje.getTime() - p.ultima.getTime()) / (1000*60*60*24))
         : 999
 
-      // Score RFM simples
+      // Score RFM
+      const isVip = p.visitas >= 10 && p.ltv >= 1000
+      // Limiar mínimo: VIP precisa de 30 dias ausente para ser risco, outros usam 2x o intervalo
+      const limiarRisco  = isVip ? Math.max(intervaloMedio * 2, 30) : (intervaloMedio > 0 ? intervaloMedio * 2 : 90)
+      const limiarPerdido = isVip ? Math.max(intervaloMedio * 4, 60) : (intervaloMedio > 0 ? intervaloMedio * 3.5 : 180)
+
       let status = 'ativo'
-      let scoreRfm = 'regular'
-      if (diasUltima > (intervaloMedio > 0 ? intervaloMedio * 2 : 90)) {
+      let scoreRfm = isVip ? 'vip' : 'regular'
+
+      if (diasUltima > limiarRisco) {
         status = 'risco'
-        scoreRfm = 'em_risco'
+        if (!isVip) scoreRfm = 'em_risco'
       }
-      if (diasUltima > (intervaloMedio > 0 ? intervaloMedio * 3.5 : 180)) {
+      if (diasUltima > limiarPerdido) {
         status = 'perdido'
-        scoreRfm = 'perdido'
+        scoreRfm = isVip ? 'vip' : 'perdido'
       }
-      if (p.visitas >= 10 && p.ltv >= 1000) scoreRfm = 'vip'
-      if (p.visitas <= 1) scoreRfm = 'novo'
+      if (p.visitas <= 1) { scoreRfm = 'novo'; status = 'ativo' }
 
       return {
         salao_id: salaoId,
