@@ -108,8 +108,8 @@ async function recalcularPerfisClientes(salaoId: string) {
       // Score RFM
       const isVip = p.visitas >= 10 && p.ltv >= 1000
       // Limiar mínimo: VIP precisa de 30 dias ausente para ser risco, outros usam 2x o intervalo
-      const limiarRisco  = isVip ? Math.max(intervaloMedio * 2, 30) : (intervaloMedio > 0 ? intervaloMedio * 2 : 90)
-      const limiarPerdido = isVip ? Math.max(intervaloMedio * 4, 60) : (intervaloMedio > 0 ? intervaloMedio * 3.5 : 180)
+      const limiarRisco  = isVip ? Math.max(intervaloMedio * 2, 45) : Math.max(intervaloMedio * 2, 30)
+      const limiarPerdido = isVip ? Math.max(intervaloMedio * 4, 90) : Math.max(intervaloMedio * 3.5, 60)
 
       let status = 'ativo'
       let scoreRfm = isVip ? 'vip' : 'regular'
