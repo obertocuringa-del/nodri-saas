@@ -3289,37 +3289,37 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
                             </div>
                           )}
 
-                          {/* Outro serviço: Perda do salão (ticket visita × qtd) + Perda sua (ticket serviço × qtd) */}
+                          {/* Outro serviço: Perda do salão (ticket visita × qtd) + Perda sua (comissão × qtd) */}
                           {isOutroServico && ticketVisita > 0 && (
                             <div className="border-t border-nodri-border pt-2 space-y-1">
                               <div className="flex justify-between text-[10px]">
                                 <span className="text-nodri-t3">💸 Perda do salão</span>
                                 <span className="text-orange-400 font-bold">{fmt(qtd * ticketVisita)}</span>
                               </div>
-                              {ticketMedio > 0 && (
+                              {comissaoMedia > 0 && (
                                 <div className="flex justify-between text-[10px]">
                                   <span className="text-nodri-t3">💔 Perda sua</span>
-                                  <span className="text-red-400 font-bold">{fmt(qtd * ticketMedio)}</span>
+                                  <span className="text-red-400 font-bold">{fmt(qtd * comissaoMedia)}</span>
                                 </div>
                               )}
-                              <div className="text-[9px] text-nodri-t3 mt-1">visita {fmt(ticketVisita)} · serviço {fmt(ticketMedio)}</div>
+                              <div className="text-[9px] text-nodri-t3 mt-1">visita {fmt(ticketVisita)} · comissão {fmt(comissaoMedia)}</div>
                             </div>
                           )}
 
-                          {/* Saíram do salão: Perda do salão (ticket visita × qtd) + Perda sua (ticket serviço × qtd) */}
+                          {/* Saíram do salão: Perda do salão (ticket visita × qtd) + Perda sua (comissão × qtd) */}
                           {isSaiuSalao && ticketVisita > 0 && (
                             <div className="border-t border-nodri-border pt-2 space-y-1">
                               <div className="flex justify-between text-[10px]">
                                 <span className="text-nodri-t3">💸 Perda do salão</span>
                                 <span className="text-orange-400 font-bold">{fmt(qtd * ticketVisita)}</span>
                               </div>
-                              {ticketMedio > 0 && (
+                              {comissaoMedia > 0 && (
                                 <div className="flex justify-between text-[10px]">
                                   <span className="text-nodri-t3">💔 Perda sua</span>
-                                  <span className="text-red-400 font-bold">{fmt(qtd * ticketMedio)}</span>
+                                  <span className="text-red-400 font-bold">{fmt(qtd * comissaoMedia)}</span>
                                 </div>
                               )}
-                              <div className="text-[9px] text-nodri-t3 mt-1">visita {fmt(ticketVisita)} · serviço {fmt(ticketMedio)}</div>
+                              <div className="text-[9px] text-nodri-t3 mt-1">visita {fmt(ticketVisita)} · comissão {fmt(comissaoMedia)}</div>
                             </div>
                           )}
                         </button>
