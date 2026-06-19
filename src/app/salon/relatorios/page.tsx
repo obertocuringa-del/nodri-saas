@@ -254,6 +254,8 @@ export default function RelatoriosPage() {
   const [loading, setLoading] = useState(false)
   const [showImport, setShowImport] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+  const [realizadoPorId, setRealizadoPorId] = useState<Record<string, number>>({})
+
   // Fecha dropdown ao clicar fora
   useEffect(() => {
     if (!dropdownAberto) return
@@ -268,6 +270,15 @@ export default function RelatoriosPage() {
   // Período 1 (atual) — selecionado por mês/ano
   const [p1Mes, setP1Mes] = useState(new Date().getMonth() + 1)
   const [p1Ano, setP1Ano] = useState(new Date().getFullYear())
+
+  useEffect(() => {
+    if (!profsCadastrados.length) return
+    const ids = profsCadastrados.map(p => p.id).join(',')
+    fetch(`/api/relatorios/metricas-prof?ano=${p1Ano}&mes=${p1Mes}&ids=${ids}`)
+      .then(r => r.ok ? r.json() : {})
+      .then((d: Record<string, number>) => setRealizadoPorId(d))
+      .catch(() => {})
+  }, [p1Ano, p1Mes, profsCadastrados])
 
   // Período custom
   const [p1De, setP1De] = useState('')
@@ -1915,11 +1926,13 @@ export default function RelatoriosPage() {
                               </td>
                               <td style={{ padding: '10px 16px', fontSize: 11, color: '#64748b' }}>{r.motivo}</td>
                               <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 700 }}>
-                                {r.realizado > 0 ? (() => {
-                                  const pct = r.metaRedistribuida > 0 ? Math.round(r.realizado / r.metaRedistribuida * 100) : 0
+                                {(() => {
+                                  const fat = realizadoPorId[r.prof.id] ?? r.realizado
+                                  if (fat === 0) return <span style={{ color: '#475569' }}>—</span>
+                                  const pct = r.metaRedistribuida > 0 ? Math.round(fat / r.metaRedistribuida * 100) : 0
                                   const cor = pct >= 100 ? '#10b981' : pct >= 70 ? '#f59e0b' : '#ef4444'
-                                  return <span style={{ color: cor }}>{moeda(r.realizado)} <span style={{ fontSize: 10, opacity: 0.8 }}>({pct}%)</span></span>
-                                })() : <span style={{ color: '#475569' }}>—</span>}
+                                  return <span style={{ color: cor }}>{moeda(fat)} <span style={{ fontSize: 10, opacity: 0.8 }}>({pct}%)</span></span>
+                                })()}
                               </td>
                             </tr>
                           )

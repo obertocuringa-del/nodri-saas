@@ -10,8 +10,6 @@ async function getSalaoId() {
   return payload?.salaoId || null
 }
 
-// Retorna { [profissional_id]: faturamento } para o mês/ano pedido
-// Fonte: prof_metricas_mensais — mais confiável que prof_pagamentos (usa ID direto, sem matching de texto)
 export async function GET(req: NextRequest) {
   const salaoId = await getSalaoId()
   if (!salaoId) return NextResponse.json({}, { status: 401 })
@@ -19,12 +17,15 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const ano = parseInt(searchParams.get('ano') || '0')
   const mes = parseInt(searchParams.get('mes') || '0')
-  if (!ano || !mes) return NextResponse.json({})
+  const ids = searchParams.get('ids') || ''
+  if (!ano || !mes || !ids) return NextResponse.json({})
+
+  const profIds = ids.split(',').filter(Boolean)
 
   const { data } = await supabaseAdmin
     .from('prof_metricas_mensais')
     .select('profissional_id, faturamento')
-    .eq('salao_id', salaoId)
+    .in('profissional_id', profIds)
     .eq('ano', ano)
     .eq('mes', mes)
 
