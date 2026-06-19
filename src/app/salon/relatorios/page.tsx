@@ -54,6 +54,7 @@ interface DadosBase {
   metas: MetaRow[]
   feedbacks: Feedback[]
   periodos: { ano: number; mes: number; data_inicio: string; data_fim: string }[]
+  metricas_prof?: { profissional_id: string; ano: number; mes: number; faturamento: number }[]
 }
 
 interface ItemComp { nome: string; p1: number; p2: number; diff: number; pct: number }
@@ -254,7 +255,6 @@ export default function RelatoriosPage() {
   const [loading, setLoading] = useState(false)
   const [showImport, setShowImport] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
-  const [realizadoPorProfId, setRealizadoPorProfId] = useState<Record<string, number>>({})
 
   // Fecha dropdown ao clicar fora
   useEffect(() => {
@@ -271,13 +271,6 @@ export default function RelatoriosPage() {
   const [p1Mes, setP1Mes] = useState(new Date().getMonth() + 1)
   const [p1Ano, setP1Ano] = useState(new Date().getFullYear())
 
-  // Realizado por profissional via prof_metricas_mensais (mais confiável que prof_pagamentos)
-  useEffect(() => {
-    fetch(`/api/relatorios/metricas-prof?ano=${p1Ano}&mes=${p1Mes}`)
-      .then(r => r.ok ? r.json() : (console.warn('[metricas-prof] API error'), {}))
-      .then((d: Record<string, number>) => { console.log('[metricas-prof]', d); setRealizadoPorProfId(d) })
-      .catch((e) => console.warn('[metricas-prof] fetch failed', e))
-  }, [p1Ano, p1Mes])
 
   // Período custom
   const [p1De, setP1De] = useState('')
@@ -1676,12 +1669,12 @@ export default function RelatoriosPage() {
                 }
 
                 // Realizado no período selecionado — usa prof_metricas_mensais (por ID, mais confiável)
-                // Realizado: usa prof_metricas_mensais por ID (mais confiável)
-                // Fallback: soma TODOS os registros de prof_pagamentos do profissional (não só o primeiro)
-                const realizadoMetricas = realizadoPorProfId[prof.id]
+                // Realizado: usa prof_metricas_mensais por ID (mais confiável que prof_pagamentos)
+                // Fallback: soma todos os registros de prof_pagamentos do profissional
+                const metricaAtual = (dados.metricas_prof || []).find(m => m.profissional_id === prof.id && m.ano === p1Ano && m.mes === p1Mes)
                 const ppProfAtual = ppAtual.filter(p => matchNome(norm(p.profissional), apelidoProf, nomeProf))
-                const realizado2 = realizadoMetricas !== undefined
-                  ? realizadoMetricas
+                const realizado2 = metricaAtual !== undefined
+                  ? metricaAtual.faturamento
                   : ppProfAtual.reduce((s, p) => s + p.valor_a_pagar, 0)
 
                 return { prof, peso: mediaProf, meta: 0, realizado: realizado2, fonte, estavaRef, pico, picoLabel }

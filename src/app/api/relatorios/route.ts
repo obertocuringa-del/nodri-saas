@@ -15,17 +15,11 @@ export async function GET() {
   const salaoId = await getSalaoId()
   if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
-  const { data: periodos, error: e1 } = await supabaseAdmin
-    .from('relatorio_periodos')
-    .select('*')
-    .eq('salao_id', salaoId)
-    .order('ano').order('mes')
-
-  const { data: feedbacks, error: e2 } = await supabaseAdmin
-    .from('relatorio_feedbacks')
-    .select('*')
-    .eq('salao_id', salaoId)
-    .order('data_feedback')
+  const [{ data: periodos, error: e1 }, { data: feedbacks, error: e2 }, { data: metricasProf }] = await Promise.all([
+    supabaseAdmin.from('relatorio_periodos').select('*').eq('salao_id', salaoId).order('ano').order('mes'),
+    supabaseAdmin.from('relatorio_feedbacks').select('*').eq('salao_id', salaoId).order('data_feedback'),
+    supabaseAdmin.from('prof_metricas_mensais').select('profissional_id, ano, mes, faturamento').eq('salao_id', salaoId),
+  ])
 
   if (e1 || e2) return NextResponse.json({ error: 'Erro ao buscar dados' }, { status: 500 })
 
@@ -39,6 +33,7 @@ export async function GET() {
     metas: [],
     feedbacks: [],
     periodos: [],
+    metricas_prof: [] as Array<{ profissional_id: string; ano: number; mes: number; faturamento: number }>,
   }
 
   for (const p of (periodos || [])) {
@@ -50,6 +45,13 @@ export async function GET() {
     base.metas.push(...(p.metas || []).map((r: any) => ({ ...r, ano: p.ano, mes: p.mes })))
     base.periodos.push({ ano: p.ano, mes: p.mes, data_inicio: p.data_inicio, data_fim: p.data_fim })
   }
+
+  base.metricas_prof = (metricasProf || []).map((r: any) => ({
+    profissional_id: r.profissional_id,
+    ano: Number(r.ano),
+    mes: Number(r.mes),
+    faturamento: Number(r.faturamento || 0),
+  }))
 
   base.feedbacks = (feedbacks || []).map((f: any) => ({
     ano: f.ano, mes: f.mes,
