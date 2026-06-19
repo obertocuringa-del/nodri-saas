@@ -318,6 +318,7 @@ export default function RelatoriosPage() {
 
         if (resRel.ok) {
           const d = await resRel.json() as DadosBase
+          console.log('[relatorios] metricas_prof count:', d.metricas_prof?.length, d.metricas_prof?.slice(0,3))
           if (d.resumo_mensal?.length) {
             setDados(d)
             localStorage.setItem(STORAGE_KEY, JSON.stringify(d))
