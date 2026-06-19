@@ -86,7 +86,6 @@ export async function GET(req: NextRequest) {
         .eq('salao_id', salaoId)
         .eq('status', 'perdido')
         .order('ltv_total', { ascending: false })
-        .limit(100)
       const lista = data || []
       const cel = await fetchCelulares(salaoId, lista.map(d => d.cliente_nome))
       return NextResponse.json(lista.map(d => ({ ...d, celular: cel[d.cliente_nome] || '' })))
