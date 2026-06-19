@@ -117,7 +117,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       clientes_exclusivos: clientesExclusivos,
       nivel_risco: nivelRisco,
       cor_risco: corRisco,
-      impacto_mensal: Math.round((fatTotal / Math.max((periodos || []).length, 1)) * (pct / 100) * 100) / 100,
+      impacto_mensal: Math.round((fatPorMes.slice(-3).reduce((s, m) => s + m.fat_prof, 0) / Math.max(Math.min(fatPorMes.length, 3), 1)) * 100) / 100,
       historico: fatPorMes.slice(-12),
       mensagem: pct >= 30
         ? `Risco CRÍTICO: ${pct}% do faturamento depende deste profissional`

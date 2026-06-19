@@ -3022,12 +3022,12 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
                         <p className="text-[11px] text-nodri-t3 mt-1">Se este profissional sair amanhã, qual o impacto real no salão?</p>
                       </div>
                       <div className="text-right shrink-0 ml-2">
-                        <div className="font-syne font-black text-[32px] sm:text-[48px] leading-none" style={{color:cor}}>-{d.pct_faturamento}%</div>
+                        <div className="font-syne font-black text-[32px] sm:text-[48px] leading-none" style={{color:cor}}>{d.pct_faturamento}%</div>
                         <div className="text-[11px] font-bold mt-1 uppercase" style={{color:cor}}>{d.nivel_risco}</div>
                       </div>
                     </div>
                     <div className="w-full bg-nodri-border rounded-full h-3 overflow-hidden">
-                      <div className="h-3 rounded-full transition-all" style={{width:`${Math.min(d.pct_faturamento*2,100)}%`, background:`linear-gradient(90deg,${cor},${cor}88)`}}/>
+                      <div className="h-3 rounded-full transition-all" style={{width:`${Math.min(d.pct_faturamento*(100/30),100)}%`, background:`linear-gradient(90deg,${cor},${cor}88)`}}/>
                     </div>
                     <p className="text-[12px] mt-3 font-semibold" style={{color:cor}}>{d.mensagem}</p>
                   </div>
