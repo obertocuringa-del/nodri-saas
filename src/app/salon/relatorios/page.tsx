@@ -1890,8 +1890,8 @@ export default function RelatoriosPage() {
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                       <thead>
                         <tr style={{ background: '#060d18' }}>
-                          {['PROFISSIONAL', 'CARGO', 'META ORIGINAL', 'META AJUSTADA', 'DIFERENÇA', 'MOTIVO'].map((h, hi) => (
-                            <th key={h} style={{ padding: '12px 16px', fontSize: 11, color: '#64748b', fontWeight: 700, textAlign: hi >= 2 && hi <= 4 ? 'right' : 'left', borderBottom: '1px solid #1e293b', whiteSpace: 'nowrap' }}>{h}</th>
+                          {['PROFISSIONAL', 'CARGO', 'META ORIGINAL', 'META AJUSTADA', 'DIFERENÇA', 'MOTIVO', 'REALIZADO'].map((h, hi) => (
+                            <th key={h} style={{ padding: '12px 16px', fontSize: 11, color: hi === 6 ? '#10b981' : '#64748b', fontWeight: 700, textAlign: hi >= 2 && hi <= 4 || hi === 6 ? 'right' : 'left', borderBottom: '1px solid #1e293b', whiteSpace: 'nowrap' }}>{h}</th>
                           ))}
                         </tr>
                       </thead>
@@ -1920,6 +1920,15 @@ export default function RelatoriosPage() {
                                 {r.diferenca > 0.5 ? '+' : ''}{r.diferenca < -0.5 || r.diferenca > 0.5 ? moeda(r.diferenca) : '—'}
                               </td>
                               <td style={{ padding: '10px 16px', fontSize: 11, color: '#64748b' }}>{r.motivo}</td>
+                              <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 700 }}>
+                                {(() => {
+                                  const m = (dados.metricas_prof || []).find(x => x.profissional_id === r.prof.id && x.ano === p1Ano && x.mes === p1Mes)
+                                  if (!m) return <span style={{ color: '#475569' }}>—</span>
+                                  const pct = r.metaRedistribuida > 0 ? Math.round(m.faturamento / r.metaRedistribuida * 100) : 0
+                                  const cor = pct >= 100 ? '#10b981' : pct >= 70 ? '#f59e0b' : '#ef4444'
+                                  return <span style={{ color: cor }}>{moeda(m.faturamento)} <span style={{ fontSize: 10, opacity: 0.8 }}>({pct}%)</span></span>
+                                })()}
+                              </td>
                             </tr>
                           )
                         })}
