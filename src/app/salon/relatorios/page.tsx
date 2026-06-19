@@ -1318,6 +1318,33 @@ export default function RelatoriosPage() {
                       ))}
                     </div>
 
+                    {/* Alerta: meta inalcançável */}
+                    {(() => {
+                      if (restante <= 0) return null
+                      const hoje2 = new Date()
+                      hoje2.setHours(12, 0, 0, 0)
+                      const diasRestantes = todosDiasCalendario.filter(d => {
+                        const [dd2, mm2, yyyy2] = d.data.split('/')
+                        return new Date(`${yyyy2}-${mm2}-${dd2}T12:00:00`) >= hoje2
+                      })
+                      if (diasRestantes.length === 0) return null
+                      const mediaNecessaria = restante / diasRestantes.length
+                      const mediaHistorica = realizado / Math.max(todosDiasCalendario.length - diasRestantes.length, 1)
+                      if (mediaHistorica <= 0 || mediaNecessaria <= mediaHistorica * 1.8) return null
+                      const vezes = (mediaNecessaria / mediaHistorica).toFixed(1)
+                      return (
+                        <div style={{ background: '#1a0a0a', border: '1px solid #ef444460', borderLeft: '3px solid #ef4444', borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                          <span style={{ fontSize: 18, lineHeight: 1 }}>⚠️</span>
+                          <div>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: '#ef4444', marginBottom: 3 }}>Meta do mês praticamente inalcançável</div>
+                            <div style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.6 }}>
+                              Faltam <strong style={{ color: '#f59e0b' }}>{moeda(restante)}</strong> em <strong style={{ color: '#e2e8f0' }}>{diasRestantes.length} dia(s)</strong> — necessário <strong style={{ color: '#ef4444' }}>{moeda(mediaNecessaria)}/dia</strong> vs histórico de <strong style={{ color: '#94a3b8' }}>{moeda(mediaHistorica)}/dia</strong> ({vezes}× acima da média).
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })()}
+
                     {/* Barra de progresso */}
                     <div style={{ background: '#0a0f1a', border: '1px solid #1e293b', borderRadius: 12, padding: 20, marginBottom: 16 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
