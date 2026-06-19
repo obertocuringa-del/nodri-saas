@@ -54,7 +54,6 @@ interface DadosBase {
   metas: MetaRow[]
   feedbacks: Feedback[]
   periodos: { ano: number; mes: number; data_inicio: string; data_fim: string }[]
-  metricas_prof?: { profissional_id: string; ano: number; mes: number; faturamento: number }[]
 }
 
 interface ItemComp { nome: string; p1: number; p2: number; diff: number; pct: number }
@@ -318,7 +317,6 @@ export default function RelatoriosPage() {
 
         if (resRel.ok) {
           const d = await resRel.json() as DadosBase
-          console.log('[relatorios] metricas_prof count:', d.metricas_prof?.length, d.metricas_prof?.slice(0,3))
           if (d.resumo_mensal?.length) {
             setDados(d)
             localStorage.setItem(STORAGE_KEY, JSON.stringify(d))
@@ -1923,11 +1921,13 @@ export default function RelatoriosPage() {
                               <td style={{ padding: '10px 16px', fontSize: 11, color: '#64748b' }}>{r.motivo}</td>
                               <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 700 }}>
                                 {(() => {
-                                  const m = (dados.metricas_prof || []).find(x => x.profissional_id === r.prof.id && x.ano === p1Ano && x.mes === p1Mes)
-                                  if (!m) return <span style={{ color: '#475569' }}>—</span>
-                                  const pct = r.metaRedistribuida > 0 ? Math.round(m.faturamento / r.metaRedistribuida * 100) : 0
+                                  const ap = norm(r.prof.apelido || r.prof.nome_completo)
+                                  const nm = norm(r.prof.nome_completo)
+                                  const fat = ppAtual.filter(p => matchNome(norm(p.profissional), ap, nm)).reduce((s, p) => s + p.valor_a_pagar, 0)
+                                  if (fat === 0) return <span style={{ color: '#475569' }}>—</span>
+                                  const pct = r.metaRedistribuida > 0 ? Math.round(fat / r.metaRedistribuida * 100) : 0
                                   const cor = pct >= 100 ? '#10b981' : pct >= 70 ? '#f59e0b' : '#ef4444'
-                                  return <span style={{ color: cor }}>{moeda(m.faturamento)} <span style={{ fontSize: 10, opacity: 0.8 }}>({pct}%)</span></span>
+                                  return <span style={{ color: cor }}>{moeda(fat)} <span style={{ fontSize: 10, opacity: 0.8 }}>({pct}%)</span></span>
                                 })()}
                               </td>
                             </tr>
