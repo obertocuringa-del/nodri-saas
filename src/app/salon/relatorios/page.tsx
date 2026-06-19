@@ -1667,14 +1667,9 @@ export default function RelatoriosPage() {
                   fonte = 'Média histórica geral'
                 }
 
-                // Realizado no período selecionado — usa prof_metricas_mensais (por ID, mais confiável)
-                // Realizado: usa prof_metricas_mensais por ID (mais confiável que prof_pagamentos)
-                // Fallback: soma todos os registros de prof_pagamentos do profissional
-                const metricaAtual = (dados.metricas_prof || []).find(m => m.profissional_id === prof.id && m.ano === p1Ano && m.mes === p1Mes)
+                // Realizado: soma todos os registros de prof_pagamentos do profissional no período
                 const ppProfAtual = ppAtual.filter(p => matchNome(norm(p.profissional), apelidoProf, nomeProf))
-                const realizado2 = metricaAtual !== undefined
-                  ? metricaAtual.faturamento
-                  : ppProfAtual.reduce((s, p) => s + p.valor_a_pagar, 0)
+                const realizado2 = ppProfAtual.reduce((s, p) => s + p.valor_a_pagar, 0)
 
                 return { prof, peso: mediaProf, meta: 0, realizado: realizado2, fonte, estavaRef, pico, picoLabel }
               })
