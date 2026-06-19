@@ -254,6 +254,7 @@ export default function RelatoriosPage() {
   const [loading, setLoading] = useState(false)
   const [showImport, setShowImport] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+  const [realizadoPorProfId, setRealizadoPorProfId] = useState<Record<string, number>>({})
 
   // Fecha dropdown ao clicar fora
   useEffect(() => {
@@ -269,6 +270,14 @@ export default function RelatoriosPage() {
   // Período 1 (atual) — selecionado por mês/ano
   const [p1Mes, setP1Mes] = useState(new Date().getMonth() + 1)
   const [p1Ano, setP1Ano] = useState(new Date().getFullYear())
+
+  // Realizado por profissional via prof_metricas_mensais (mais confiável que prof_pagamentos)
+  useEffect(() => {
+    fetch(`/api/relatorios/metricas-prof?ano=${p1Ano}&mes=${p1Mes}`)
+      .then(r => r.ok ? r.json() : {})
+      .then((d: Record<string, number>) => setRealizadoPorProfId(d))
+      .catch(() => {})
+  }, [p1Ano, p1Mes])
 
   // Período custom
   const [p1De, setP1De] = useState('')
@@ -1666,9 +1675,11 @@ export default function RelatoriosPage() {
                   fonte = 'Média histórica geral'
                 }
 
-                // Realizado no período selecionado
+                // Realizado no período selecionado — usa prof_metricas_mensais (por ID, mais confiável)
+                // Fallback para prof_pagamentos se não houver dado na tabela de métricas
+                const realizadoMetricas = realizadoPorProfId[prof.id]
                 const ppProfAtual = ppAtual.find(p => matchNome(norm(p.profissional), apelidoProf, nomeProf))
-                const realizado2 = ppProfAtual?.valor_a_pagar || 0
+                const realizado2 = realizadoMetricas !== undefined ? realizadoMetricas : (ppProfAtual?.valor_a_pagar || 0)
 
                 return { prof, peso: mediaProf, meta: 0, realizado: realizado2, fonte, estavaRef, pico, picoLabel }
               })
