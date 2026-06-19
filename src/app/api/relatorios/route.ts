@@ -15,11 +15,12 @@ export async function GET() {
   const salaoId = await getSalaoId()
   if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
-  const [{ data: periodos, error: e1 }, { data: feedbacks, error: e2 }, { data: metricasProf }] = await Promise.all([
-    supabaseAdmin.from('relatorio_periodos').select('*').eq('salao_id', salaoId).order('ano').order('mes'),
-    supabaseAdmin.from('relatorio_feedbacks').select('*').eq('salao_id', salaoId).order('data_feedback'),
-    supabaseAdmin.from('prof_metricas_mensais').select('profissional_id, ano, mes, faturamento').eq('salao_id', salaoId),
-  ])
+  const { data: periodos, error: e1 } = await supabaseAdmin
+    .from('relatorio_periodos').select('*').eq('salao_id', salaoId).order('ano').order('mes')
+  const { data: feedbacks, error: e2 } = await supabaseAdmin
+    .from('relatorio_feedbacks').select('*').eq('salao_id', salaoId).order('data_feedback')
+  const { data: metricasProf } = await supabaseAdmin
+    .from('prof_metricas_mensais').select('profissional_id, ano, mes, faturamento').eq('salao_id', salaoId)
 
   if (e1 || e2) return NextResponse.json({ error: 'Erro ao buscar dados' }, { status: 500 })
 
