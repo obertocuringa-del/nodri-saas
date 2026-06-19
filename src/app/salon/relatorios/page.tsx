@@ -274,9 +274,9 @@ export default function RelatoriosPage() {
   // Realizado por profissional via prof_metricas_mensais (mais confiável que prof_pagamentos)
   useEffect(() => {
     fetch(`/api/relatorios/metricas-prof?ano=${p1Ano}&mes=${p1Mes}`)
-      .then(r => r.ok ? r.json() : {})
-      .then((d: Record<string, number>) => setRealizadoPorProfId(d))
-      .catch(() => {})
+      .then(r => r.ok ? r.json() : (console.warn('[metricas-prof] API error'), {}))
+      .then((d: Record<string, number>) => { console.log('[metricas-prof]', d); setRealizadoPorProfId(d) })
+      .catch((e) => console.warn('[metricas-prof] fetch failed', e))
   }, [p1Ano, p1Mes])
 
   // Período custom
@@ -1676,10 +1676,13 @@ export default function RelatoriosPage() {
                 }
 
                 // Realizado no período selecionado — usa prof_metricas_mensais (por ID, mais confiável)
-                // Fallback para prof_pagamentos se não houver dado na tabela de métricas
+                // Realizado: usa prof_metricas_mensais por ID (mais confiável)
+                // Fallback: soma TODOS os registros de prof_pagamentos do profissional (não só o primeiro)
                 const realizadoMetricas = realizadoPorProfId[prof.id]
-                const ppProfAtual = ppAtual.find(p => matchNome(norm(p.profissional), apelidoProf, nomeProf))
-                const realizado2 = realizadoMetricas !== undefined ? realizadoMetricas : (ppProfAtual?.valor_a_pagar || 0)
+                const ppProfAtual = ppAtual.filter(p => matchNome(norm(p.profissional), apelidoProf, nomeProf))
+                const realizado2 = realizadoMetricas !== undefined
+                  ? realizadoMetricas
+                  : ppProfAtual.reduce((s, p) => s + p.valor_a_pagar, 0)
 
                 return { prof, peso: mediaProf, meta: 0, realizado: realizado2, fonte, estavaRef, pico, picoLabel }
               })
