@@ -256,13 +256,6 @@ export default function RelatoriosPage() {
   const fileRef = useRef<HTMLInputElement>(null)
   const [realizadoPorId, setRealizadoPorId] = useState<Record<string, number>>({})
 
-  useEffect(() => {
-    fetch(`/api/relatorios/metricas-prof?ano=${p1Ano}&mes=${p1Mes}`)
-      .then(r => r.ok ? r.json() : {})
-      .then((d: Record<string, number>) => setRealizadoPorId(d))
-      .catch(() => {})
-  }, [p1Ano, p1Mes])
-
   // Fecha dropdown ao clicar fora
   useEffect(() => {
     if (!dropdownAberto) return
@@ -278,6 +271,12 @@ export default function RelatoriosPage() {
   const [p1Mes, setP1Mes] = useState(new Date().getMonth() + 1)
   const [p1Ano, setP1Ano] = useState(new Date().getFullYear())
 
+  useEffect(() => {
+    fetch(`/api/relatorios/metricas-prof?ano=${p1Ano}&mes=${p1Mes}`)
+      .then(r => r.ok ? r.json() : {})
+      .then((d: Record<string, number>) => setRealizadoPorId(d))
+      .catch(() => {})
+  }, [p1Ano, p1Mes])
 
   // Período custom
   const [p1De, setP1De] = useState('')
