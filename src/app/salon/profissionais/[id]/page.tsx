@@ -1141,8 +1141,13 @@ function GraficoFaturamento({ historico }: { historico: HistoricoItem[] }) {
 }
 
 // Gráfico SVG comparativo anual para aba Dependência
-function GraficoDependencia({ historico }: { historico: Array<{ano:number;mes:number;fat_prof:number;fat_total:number;pct:number}> }) {
+function GraficoDependencia({ historico, onAnosChange }: { historico: Array<{ano:number;mes:number;fat_prof:number;fat_total:number;pct:number}>; onAnosChange?: (anos: number[]) => void }) {
   const [anosAtivos, setAnosAtivos] = useState<number[]>([])
+  function toggleAno(ano: number, atual: number[]) {
+    const next = atual.includes(ano) ? atual.filter(a=>a!==ano) : [...atual, ano].slice(-4)
+    setAnosAtivos(next)
+    onAnosChange?.(next)
+  }
   if (!historico?.length) return null
 
   const anosDisp = Array.from(new Set(historico.map(h => h.ano))).sort((a,b) => b-a)
@@ -1201,7 +1206,7 @@ function GraficoDependencia({ historico }: { historico: Array<{ano:number;mes:nu
             const cor = CORES_GRAF[ci%CORES_GRAF.length]
             return (
               <button key={ano} type="button"
-                onClick={() => setAnosAtivos(ativo ? anosGraf.filter(a=>a!==ano) : [...anosGraf,ano].slice(-4))}
+                onClick={() => toggleAno(ano, anosGraf)}
                 style={{padding:'3px 10px',borderRadius:6,border:`1px solid ${ativo?cor:'#e0ddd8'}`,fontSize:11,fontWeight:700,cursor:'pointer',background:ativo?cor+'22':'#f5f4f0',color:ativo?cor:'#6b6860',transition:'all .15s'}}>
                 {ano}{ano===anoAtual?' (atual)':''}
               </button>
@@ -2218,6 +2223,7 @@ export default function PerfilProfissionalPage() {
   const [salvando, setSalvando] = useState(false)
   const [tab, setTab] = useState<'cadastro'|'desempenho'|'faturamento'|'metas'|'ia'|'dependencia'|'oportunidades'|'bundle'|'clientes-perdidos'>('cadastro')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [anosDepAtivos, setAnosDepAtivos] = useState<number[]>([])
   const [analiseData, setAnaliseData] = useState<{dependencia:any;oportunidades:any;bundle:any}>({dependencia:null,oportunidades:null,bundle:null})
   const [loadAnalise, setLoadAnalise] = useState<{dependencia:boolean;oportunidades:boolean;bundle:boolean}>({dependencia:false,oportunidades:false,bundle:false})
   const anoAtual = new Date().getFullYear()
@@ -3683,43 +3689,41 @@ ${histRows?`<div class="sec"><div class="sec-title">Histórico Mensal</div><tabl
                     <p className="text-[12px] mt-3 font-semibold" style={{color:cor}}>{d.mensagem}</p>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    {[
-                      {l:'% do Faturamento',v:`${d.pct_faturamento}%`,c:cor},
-                      {l:'Faturamento Gerado',v:fmt$(d.fat_prof),c:'#5b4fcf'},
-                      {l:'Clientes Exclusivos',v:d.clientes_exclusivos,c:'#f59e0b'},
-                      {l:'Impacto Mensal Est.',v:fmt$(d.impacto_mensal),c:'#f43f8e'},
-                    ].map(item=>(
-                      <div key={item.l} className="bg-nodri-card border border-nodri-border rounded-xl p-3">
-                        <div className="text-[9px] text-nodri-t3 uppercase tracking-wider mb-1">{item.l}</div>
-                        <div className="font-syne font-bold text-[16px]" style={{color:item.c}}>{item.v}</div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Gráfico SVG comparativo anual */}
-                  {d.historico_completo?.length > 0 && (
-                    <GraficoDependencia historico={d.historico_completo}/>
-                  )}
-
-                  {/* Gráfico % mensal (últimos 12 meses) */}
-                  {d.historico?.length > 0 && (
-                    <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
-                      <h3 className="font-syne font-bold text-[13px] mb-4"> % do Faturamento — Últimos 12 meses</h3>
-                      <div className="overflow-x-auto">
-                        <div className="flex items-end gap-2" style={{minWidth:`${d.historico.length*50}px`,height:'100px'}}>
-                          {d.historico.map((h:any) => (
-                            <div key={`${h.ano}-${h.mes}`} className="flex flex-col items-center gap-1 flex-1 min-w-[40px]">
-                              <div className="flex-1 w-full flex items-end justify-center">
-                                <div className="w-full rounded-t" style={{height:`${Math.max(h.pct*2.5,3)}%`,background:cor,opacity:0.8}} title={`${h.pct}%`}/>
-                              </div>
-                              <span style={{fontSize:'8px',color:'#767069'}}>{MESES[h.mes-1]}</span>
-                              <span style={{fontSize:'8px',color:cor,fontWeight:700}}>{h.pct}%</span>
+                  {(() => {
+                    const hist = d.historico_completo || []
+                    const anosDisp2 = Array.from(new Set(hist.map((h:any)=>h.ano))).sort((a:any,b:any)=>b-a) as number[]
+                    const anosFiltro = anosDepAtivos.length ? anosDepAtivos : anosDisp2.slice(0,2)
+                    const histFiltrado = hist.filter((h:any) => anosFiltro.includes(h.ano))
+                    const fatProfFilt = histFiltrado.reduce((s:number,h:any)=>s+h.fat_prof,0)
+                    const fatTotalFilt = histFiltrado.reduce((s:number,h:any)=>s+h.fat_total,0)
+                    const pctFilt = fatTotalFilt > 0 ? Math.round(fatProfFilt/fatTotalFilt*1000)/10 : d.pct_faturamento
+                    const corFilt = pctFilt >= 30 ? '#ef4444' : pctFilt >= 20 ? '#f97316' : pctFilt >= 10 ? '#f59e0b' : '#10b981'
+                    const last3 = histFiltrado.slice(-3)
+                    const impactoFilt = last3.length ? Math.round(last3.reduce((s:number,h:any)=>s+h.fat_prof,0)/last3.length*100)/100 : d.impacto_mensal
+                    const labelAnos = anosFiltro.join(' + ')
+                    return (
+                      <>
+                        <p className="text-[10px] text-nodri-t3">Período: {labelAnos}</p>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                          {[
+                            {l:'% do Faturamento',v:`${pctFilt}%`,c:corFilt},
+                            {l:'Faturamento Gerado',v:fmt$(fatProfFilt),c:'#5b4fcf'},
+                            {l:'Clientes Exclusivos',v:d.clientes_exclusivos,c:'#f59e0b'},
+                            {l:'Impacto Mensal Est.',v:fmt$(impactoFilt),c:'#f43f8e'},
+                          ].map(item=>(
+                            <div key={item.l} className="bg-nodri-card border border-nodri-border rounded-xl p-3">
+                              <div className="text-[9px] text-nodri-t3 uppercase tracking-wider mb-1">{item.l}</div>
+                              <div className="font-syne font-bold text-[16px]" style={{color:item.c}}>{item.v}</div>
                             </div>
                           ))}
                         </div>
-                      </div>
-                    </div>
+                      </>
+                    )
+                  })()}
+
+                  {/* Gráfico SVG comparativo anual */}
+                  {d.historico_completo?.length > 0 && (
+                    <GraficoDependencia historico={d.historico_completo} onAnosChange={setAnosDepAtivos}/>
                   )}
 
                   <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
