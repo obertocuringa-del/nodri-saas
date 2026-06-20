@@ -2165,7 +2165,6 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
     if (tab !== 'clientes-perdidos') return
     if (clientesPerdidos) return
     buscarClientesPerdidos(perdidosDataInicio, perdidosDataFim)
-      .finally(() => setLoadClientesPerdidos(false))
   }, [tab, id])
 
   useEffect(() => {
