@@ -2080,80 +2080,203 @@ export default function PerfilProfissionalPage() {
   const refFaturamento = useRef<HTMLDivElement>(null)
   const refOcorrencias = useRef<HTMLDivElement>(null)
 
-  function imprimirAba(ref: React.RefObject<HTMLDivElement | null>, titulo: string) {
-    if (!ref.current) return
-    const nomeProf = prof?.apelido || prof?.nome_completo || 'Profissional'
-    const MESES_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
-    const agora = new Date()
-    const dataStr = `${agora.getDate()} de ${MESES_PT[agora.getMonth()]} de ${agora.getFullYear()}`
-    const conteudo = ref.current.innerHTML
-
-    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
-<title>${titulo} — ${nomeProf}</title>
-<style>
-@page { size: A4; margin: 18mm 16mm 20mm 16mm; }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a2e; background: #fff; line-height: 1.5; }
-.header { display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #5b4fcf; padding-bottom: 10px; margin-bottom: 16px; }
-.header-brand { font-size: 18pt; font-weight: 900; color: #5b4fcf; letter-spacing: -0.5px; }
-.header-brand span { color: #5b4fcf; }
-.header-meta { text-align: right; font-size: 8.5pt; color: #555; line-height: 1.4; }
-.print-content { color: #1a1a2e; }
-.print-content * { color: inherit !important; background: transparent !important; border-color: #ccc !important; }
-.print-content button { display: none !important; }
-.print-content input, .print-content select { border: 1px solid #ccc !important; padding: 2px 4px !important; font-size: 9pt !important; }
-.print-content label { font-size: 8pt !important; font-weight: 600 !important; display: block !important; margin-bottom: 2px !important; }
-.print-content table { width: 100%; border-collapse: collapse; font-size: 9pt; }
-.print-content th, .print-content td { border: 1px solid #ddd; padding: 4px 6px; text-align: left; }
-.print-content th { background: #f4f4f4 !important; font-weight: 700; }
-.print-content .rounded-2xl, .print-content .rounded-xl, .print-content .rounded-lg { border: 1px solid #ddd; border-radius: 4px; padding: 10px; margin-bottom: 10px; page-break-inside: avoid; }
-.print-content .grid { display: grid; gap: 8px; }
-.print-content .grid-cols-2 { grid-template-columns: 1fr 1fr; }
-.print-content .grid-cols-4, .print-content [class*="grid-cols-4"] { grid-template-columns: repeat(4, 1fr); }
-.print-content [class*="animate-spin"] { display: none !important; }
-.print-content [class*="overflow-x-auto"] { overflow: visible !important; }
-.print-content canvas { display: none !important; }
-.print-content .recharts-responsive-container { width: 100% !important; }
-.print-content .recharts-wrapper { width: 100% !important; page-break-inside: avoid; }
-.print-content svg { max-width: 100% !important; width: 100% !important; height: auto !important; display: block !important; }
-.footer { position: fixed; bottom: 0; left: 0; right: 0; border-top: 1px solid #ddd; padding-top: 6px; display: flex; justify-content: space-between; font-size: 7.5pt; color: #888; }
-</style></head><body>
-<div class="header">
-  <div class="header-brand">NOD<span>RI</span></div>
-  <div class="header-meta"><strong>${titulo} — ${nomeProf}</strong><br/>Gerado em: ${dataStr}</div>
-</div>
-<div class="print-content">${conteudo}</div>
-<div class="footer"><span>NODRI — Sistema de Gestão de Salão</span><span>${nomeProf} · ${dataStr}</span></div>
-</body></html>`
-
+  // ── Utilidade compartilhada de impressão ──────────────────────────────────
+  function abrirImpressao(html: string) {
     const iframe = document.createElement('iframe')
     iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:210mm;height:297mm;'
     document.body.appendChild(iframe)
     const doc = iframe.contentDocument || iframe.contentWindow?.document
     if (!doc) { document.body.removeChild(iframe); return }
     doc.open(); doc.write(html); doc.close()
+    setTimeout(() => { iframe.contentWindow?.print(); setTimeout(() => document.body.removeChild(iframe), 2000) }, 600)
+  }
 
-    // Converte SVGs de dimensões fixas para viewBox responsivo
-    setTimeout(() => {
-      doc.querySelectorAll('svg').forEach(svg => {
-        const w = svg.getAttribute('width')
-        const h = svg.getAttribute('height')
-        if (w && h && !svg.getAttribute('viewBox')) {
-          svg.setAttribute('viewBox', `0 0 ${w} ${h}`)
-        }
-        svg.removeAttribute('width')
-        svg.removeAttribute('height')
-        ;(svg as unknown as HTMLElement).style.width = '100%'
-        ;(svg as unknown as HTMLElement).style.height = 'auto'
-      })
-      // Recharts wrapper com width inline
-      doc.querySelectorAll<HTMLElement>('.recharts-wrapper, .recharts-responsive-container').forEach(el => {
-        el.style.width = '100%'
-        el.style.maxWidth = '100%'
-      })
-      iframe.contentWindow?.print()
-      setTimeout(() => document.body.removeChild(iframe), 1000)
-    }, 400)
+  function printBase(titulo: string) {
+    const MESES_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
+    const agora = new Date()
+    const nomeProf = prof?.apelido || prof?.nome_completo || 'Profissional'
+    const dataStr = `${agora.getDate()} de ${MESES_PT[agora.getMonth()]} de ${agora.getFullYear()}`
+    const css = `@page{size:A4;margin:14mm 13mm 16mm 13mm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;font-size:9.5pt;color:#1a1a2e;background:#fff;line-height:1.5}.hd{display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid #5b4fcf;padding-bottom:8px;margin-bottom:16px}.brand{font-size:18pt;font-weight:900;color:#5b4fcf}.meta{text-align:right;font-size:8pt;color:#555}.sec{margin-bottom:16px;break-inside:avoid}.sec-title{background:#5b4fcf;color:#fff;padding:5px 10px;border-radius:5px 5px 0 0;font-weight:700;font-size:9.5pt}.tbl{width:100%;border-collapse:collapse;border:1px solid #ddd;border-top:none}.tbl td,.tbl th{padding:5px 9px;border-bottom:1px solid #eee;font-size:9pt}.tbl th{background:#f5f4f0;font-weight:700;color:#555}.tbl tr:nth-child(even) td{background:#f9f9ff}.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}.card{border:1px solid #ddd;border-radius:6px;padding:8px 10px;break-inside:avoid}.card-lbl{font-size:7.5pt;color:#767069;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}.card-val{font-size:14pt;font-weight:800;color:#1a1a2e}.card-sub{font-size:8pt;color:#555;margin-top:2px}.footer{position:fixed;bottom:0;left:0;right:0;border-top:1px solid #ddd;padding:4px 13mm;display:flex;justify-content:space-between;font-size:7pt;color:#999;background:#fff}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}`
+    return { nomeProf, dataStr, css, MESES_PT,
+      wrap: (corpo: string) => `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${titulo} — ${nomeProf}</title><style>${css}</style></head><body><div class="hd"><div class="brand">NODRI</div><div class="meta"><strong>${titulo} — ${nomeProf}</strong><br>Cargo: ${prof?.cargo||'—'} · Gerado em: ${dataStr}</div></div>${corpo}<div class="footer"><span>NODRI — Sistema de Gestão de Salão</span><span>${nomeProf} · ${dataStr}</span></div></body></html>`
+    }
+  }
+
+  // ── Impressão Faturamento ──────────────────────────────────────────────────
+  function imprimirFaturamento() {
+    if (!metricas) return
+    const { MESES_PT, wrap } = printBase('Faturamento')
+    const f$ = (v:number) => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0)
+    const fN = (v:number) => (v||0).toLocaleString('pt-BR',{maximumFractionDigits:1})
+    const fP = (v:number) => (v||0).toFixed(1)+'%'
+    const periodo = `P1: ${p1i} → ${p1f}   |   P2: ${p2i} → ${p2f}`
+
+    const cardRow = (lbl:string, vAtual:string, vAnt:string, delta:number|null, cor='#1a1a2e') =>
+      `<div class="card"><div class="card-lbl">${lbl}</div><div class="card-val" style="color:${cor};font-size:13pt">${vAtual}</div><div class="card-sub">Ant: ${vAnt}${delta!==null?` &nbsp;<span style="color:${delta>=0?'#166534':'#991b1b'};font-weight:700">${delta>=0?'+':''}${delta.toFixed(1)}%</span>`:''}</div></div>`
+
+    const pct = (a:number,b:number) => b>0?((a-b)/b)*100:null
+    const fat2=p2?.faturamento||0,fat1=p1?.faturamento||0
+    const tk2=p2?.ticket_medio||0,tk1=p1?.ticket_medio||0
+    const pr2=p2?.clientes_preferencia||0,pr1=p1?.clientes_preferencia||0
+    const sp2=p2?.clientes_sem_preferencia||0,sp1=p1?.clientes_sem_preferencia||0
+    const di2=p2?.dias_trabalhados||0,di1=p1?.dias_trabalhados||0
+    const oc2=p2?.taxa_ocupacao||0,oc1=p1?.taxa_ocupacao||0
+    const sv2=p2?.total_servicos||0,sv1=p1?.total_servicos||0
+    const pd2=p2?.total_produtos||0,pd1=p1?.total_produtos||0
+
+    const cardsHtml = `<div style="margin-bottom:8px;font-size:8pt;color:#767069">${periodo}</div><div class="cards">
+      ${cardRow('Faturamento',f$(fat2),f$(fat1),pct(fat2,fat1),'#5b4fcf')}
+      ${cardRow('Ticket Médio',f$(tk2),f$(tk1),pct(tk2,tk1),'#5b4fcf')}
+      ${cardRow('Preferência',fN(pr2),fN(pr1),pct(pr2,pr1))}
+      ${cardRow('Sem Pref.',fN(sp2),fN(sp1),pct(sp2,sp1))}
+      ${cardRow('Dias Trab.',fN(di2),fN(di1),pct(di2,di1))}
+      ${cardRow('Ocupação',fP(oc2),fP(oc1),pct(oc2,oc1))}
+      ${cardRow('Serviços',fN(sv2),fN(sv1),pct(sv2,sv1))}
+      ${cardRow('Produtos',fN(pd2),fN(pd1),pct(pd2,pd1))}
+    </div>`
+
+    // Fidelização
+    let fidelHtml = ''
+    if (fidel) {
+      fidelHtml = `<div class="sec"><div class="sec-title">Análise de Fidelização</div><table class="tbl">
+        <tr><td style="width:50%">Total de novos clientes</td><td><strong>${fidel.total_novos}</strong></td></tr>
+        <tr><td>Fidelizados (voltaram)</td><td><strong style="color:#166534">${fidel.fidelizados}</strong></td></tr>
+        <tr><td>Perdidos (não voltaram)</td><td><strong style="color:#991b1b">${fidel.perdidos}</strong></td></tr>
+        <tr><td>Taxa de fidelização</td><td><strong>${fidel.taxa_fidelizacao}%</strong></td></tr>
+        <tr><td>Taxa de perda</td><td><strong style="color:${fidel.taxa_perda>50?'#991b1b':'#1a1a2e'}">${fidel.taxa_perda}%</strong></td></tr>
+        <tr><td>Valor perdido estimado</td><td><strong style="color:#991b1b">${f$(fidel.valor_perdido)}</strong></td></tr>
+      </table></div>`
+    }
+
+    // Comparativo categoria
+    let catHtml = ''
+    if (categoriaMedia?.media && categoriaMedia.atual) {
+      const m=categoriaMedia.media, a=categoriaMedia.atual
+      catHtml = `<div class="sec"><div class="sec-title">vs Média da Categoria — ${categoriaMedia.cargo} (${categoriaMedia.prof_com_dados} prof. com dados)</div><table class="tbl">
+        <tr><th>Métrica</th><th>Este Profissional</th><th>Média da Categoria</th><th>Diferença</th></tr>
+        ${[['Faturamento',f$(a.faturamento||0),f$(m.faturamento||0),m.faturamento>0?(((a.faturamento||0)-(m.faturamento||0))/(m.faturamento||1)*100).toFixed(1)+'%':'—'],
+           ['Ticket Médio',f$(a.ticket_medio||0),f$(m.ticket_medio||0),m.ticket_medio>0?(((a.ticket_medio||0)-(m.ticket_medio||0))/(m.ticket_medio||1)*100).toFixed(1)+'%':'—'],
+           ['Ocupação',fP(a.taxa_ocupacao||0),fP(m.taxa_ocupacao||0),m.taxa_ocupacao>0?(((a.taxa_ocupacao||0)-(m.taxa_ocupacao||0))/(m.taxa_ocupacao||1)*100).toFixed(1)+'%':'—'],
+           ['Serviços',fN(a.total_servicos||0),fN(m.total_servicos||0),m.total_servicos>0?(((a.total_servicos||0)-(m.total_servicos||0))/(m.total_servicos||1)*100).toFixed(1)+'%':'—'],
+        ].map(([l,v1,v2,d])=>`<tr><td>${l}</td><td><strong>${v1}</strong></td><td>${v2}</td><td style="color:${d.startsWith('-')?'#991b1b':'#166534'};font-weight:700">${d}</td></tr>`).join('')}
+      </table></div>`
+    }
+
+    // Mix de receita
+    let mixHtml = ''
+    if (metricas.mix_receita?.length) {
+      mixHtml = `<div class="sec"><div class="sec-title">Mix de Receita — Top Serviços</div><table class="tbl">
+        <tr><th>Serviço</th><th>Qtd</th><th>Valor</th><th>%</th></tr>
+        ${metricas.mix_receita.map(s=>`<tr><td>${s.servico}</td><td>${s.quantidade}</td><td>${f$(s.valor)}</td><td>${s.pct}%</td></tr>`).join('')}
+      </table></div>`
+    }
+
+    // Sazonalidade
+    let sazonHtml = ''
+    if (metricas.sazonalidade?.filter((s:any)=>s.count>0).length) {
+      sazonHtml = `<div class="sec"><div class="sec-title">Sazonalidade — Médias Históricas por Mês</div><table class="tbl">
+        <tr><th>Mês</th><th>Média</th><th>Máximo</th><th>Mínimo</th><th>Anos</th></tr>
+        ${metricas.sazonalidade.filter((s:any)=>s.count>0).map((s:any)=>`<tr><td>${MESES_PT[s.mes-1]}</td><td><strong>${f$(s.media)}</strong></td><td>${f$(s.max)}</td><td>${f$(s.min)}</td><td>${s.count}x</td></tr>`).join('')}
+      </table></div>`
+    }
+
+    // Histórico
+    let histHtml = ''
+    if (metricas.historico_completo?.length) {
+      histHtml = `<div class="sec"><div class="sec-title">Histórico Mensal de Faturamento</div><table class="tbl">
+        <tr><th>Mês/Ano</th><th>Faturamento</th><th>Serviços</th><th>Dias Trab.</th></tr>
+        ${metricas.historico_completo.slice(-24).map((h:any)=>`<tr><td>${MESES_PT[h.mes-1]}/${h.ano}</td><td><strong>${f$(h.faturamento)}</strong></td><td>${h.total_servicos}</td><td>${h.dias_trabalhados}</td></tr>`).join('')}
+      </table></div>`
+    }
+
+    abrirImpressao(wrap(cardsHtml + fidelHtml + catHtml + mixHtml + sazonHtml + histHtml))
+  }
+
+  // ── Impressão Ocorrências ─────────────────────────────────────────────────
+  function imprimirOcorrencias() {
+    if (!metricas) return
+    const { wrap } = printBase('Ocorrências')
+    const f$ = (v:number) => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0)
+    const periodo = `P1: ${p1i} → ${p1f}   |   P2: ${p2i} → ${p2f}`
+
+    const resumoHtml = `<div style="margin-bottom:8px;font-size:8pt;color:#767069">${periodo}</div>
+    <div class="cards" style="grid-template-columns:repeat(3,1fr)">
+      <div class="card"><div class="card-lbl">Ocorrências P1</div><div class="card-val" style="color:#5b4fcf">${metricas.feedbacks_p1_total||0}</div></div>
+      <div class="card"><div class="card-lbl">Ocorrências P2</div><div class="card-val" style="color:#5b4fcf">${metricas.feedbacks_p2_total||0}</div></div>
+      <div class="card"><div class="card-lbl">Variação</div><div class="card-val" style="color:${(metricas.feedbacks_p2_total||0)<=(metricas.feedbacks_p1_total||0)?'#166534':'#991b1b'}">${metricas.feedbacks_p1_total>0?(((metricas.feedbacks_p2_total-metricas.feedbacks_p1_total)/metricas.feedbacks_p1_total)*100).toFixed(1)+'%':'—'}</div></div>
+    </div>`
+
+    let compHtml = ''
+    if (metricas.ocorrencias_comparativo?.length) {
+      compHtml = `<div class="sec"><div class="sec-title">Comparativo de Ocorrências — P1 vs P2</div><table class="tbl">
+        <tr><th>Ocorrência</th><th style="text-align:center">P1 Qtd</th><th style="text-align:center">P2 Qtd</th><th style="text-align:center">Variação</th><th style="text-align:center">P1 %</th><th style="text-align:center">P2 %</th></tr>
+        ${metricas.ocorrencias_comparativo.map((o:any)=>{
+          const t1=metricas.feedbacks_p1_total||1,t2=metricas.feedbacks_p2_total||1
+          const v=o.variacao!==null?`${o.variacao>=0?'+':''}${o.variacao}%`:(o.p1===0&&o.p2>0?'NOVO':'—')
+          const cor=o.variacao!==null?(o.variacao<=0?'#166534':'#991b1b'):'#1a1a2e'
+          return `<tr><td><strong>${o.tipo}</strong></td><td style="text-align:center">${o.p1||'–'}</td><td style="text-align:center;font-weight:700">${o.p2||'–'}</td><td style="text-align:center;color:${cor};font-weight:700">${v}</td><td style="text-align:center;color:#767069">${t1>0?((o.p1/t1)*100).toFixed(1):0}%</td><td style="text-align:center;color:#767069">${t2>0?((o.p2/t2)*100).toFixed(1):0}%</td></tr>`
+        }).join('')}
+      </table></div>`
+    }
+
+    let listaHtml = ''
+    if (metricas.feedbacks?.length) {
+      listaHtml = `<div class="sec"><div class="sec-title">Registro de Ocorrências (P2)</div><table class="tbl">
+        <tr><th>Data</th><th>Tipo</th><th>O que Houve</th><th>Comentário</th></tr>
+        ${metricas.feedbacks.filter((f:any)=>f.tipo!=='positivo').slice(0,40).map((f:any)=>`<tr><td style="white-space:nowrap">${f.data_feedback||f.criado_em?.slice(0,10)||'—'}</td><td>${f.tipo||'—'}</td><td>${f.oque_houve||f.ocorrido_descricao||'—'}</td><td style="font-size:8pt;color:#555">${f.comentario||f.descricao||''}</td></tr>`).join('')}
+      </table></div>`
+    }
+
+    abrirImpressao(wrap(resumoHtml + compHtml + listaHtml))
+  }
+
+  // ── Impressão Metas ───────────────────────────────────────────────────────
+  function imprimirMetas() {
+    if (!metaInfo) return
+    const { MESES_PT, wrap } = printBase('Metas')
+    const f$ = (v:number) => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0)
+    const pct = metaInfo.meta_final>0?Math.min((metaInfo.realizado/metaInfo.meta_final)*100,100):0
+    const barW = Math.round(pct)
+
+    const progressBar = `<div style="margin:10px 0 4px;background:#e8e6e0;border-radius:4px;height:14px;overflow:hidden"><div style="height:14px;width:${barW}%;background:${pct>=100?'#22c55e':'#5b4fcf'};border-radius:4px"></div></div><div style="font-size:8pt;color:#767069;margin-bottom:12px">${pct.toFixed(1)}% da meta atingida</div>`
+
+    const resumo = `<div class="sec"><div class="sec-title">Meta de ${MESES_PT[metaInfo.mes-1]}/${metaInfo.ano}</div><table class="tbl">
+      <tr><td style="width:55%">Meta Mensal</td><td><strong style="color:#5b4fcf;font-size:12pt">${f$(metaInfo.meta_final)}</strong></td></tr>
+      <tr><td>Realizado</td><td><strong style="color:#166534;font-size:12pt">${f$(metaInfo.realizado)}</strong></td></tr>
+      <tr><td>Progresso</td><td>${progressBar}</td></tr>
+      <tr><td>Faltam</td><td><strong style="color:${metaInfo.faltam>0?'#b45309':'#166534'}">${f$(metaInfo.faltam)}</strong></td></tr>
+      <tr><td>Dias Restantes</td><td><strong>${metaInfo.dias_restantes}</strong></td></tr>
+      <tr><td>Necessário por Dia</td><td><strong style="color:#be185d">${f$(metaInfo.necessario_por_dia)}</strong></td></tr>
+      <tr><td>Meta redistribuída (automática)</td><td>${f$(metaInfo.meta_redistribuida)}</td></tr>
+      <tr><td>Meta manual</td><td>${metaInfo.meta_manual!=null?f$(metaInfo.meta_manual):'Não definida'}</td></tr>
+      <tr><td>Tipo</td><td>${metaInfo.meta_manual!=null?'Manual':'Automática (redistribuição)'}</td></tr>
+    </table></div>`
+
+    const alcance = `<div class="sec"><div class="sec-title">Meta Alcançável?</div><table class="tbl">
+      <tr><td style="width:55%">Probabilidade</td><td><strong style="color:#5b4fcf;font-size:13pt">${metaInfo.alcancabilidade.probabilidade!==null?metaInfo.alcancabilidade.probabilidade+'%':'—'}</strong></td></tr>
+      <tr><td>Diagnóstico</td><td><strong>${metaInfo.alcancabilidade.label}</strong></td></tr>
+      <tr><td>Maior faturamento histórico</td><td><strong>${f$(metaInfo.alcancabilidade.maior_historico)}</strong>${metaInfo.alcancabilidade.maior_historico_mes&&metaInfo.alcancabilidade.maior_historico_ano?' ('+MESES_PT[metaInfo.alcancabilidade.maior_historico_mes-1]+'/'+metaInfo.alcancabilidade.maior_historico_ano+')':''}</td></tr>
+      ${metaInfo.principal_gargalo&&metaInfo.principal_gargalo!=='nenhum gargalo crítico identificado'?`<tr><td>Principal gargalo</td><td style="color:#991b1b;font-weight:700">${metaInfo.principal_gargalo}</td></tr>`:''}
+    </table></div>`
+
+    const habilitados = servicosSalao.filter(s=>(prof.servicos_habilitados||[]).includes(s.id)&&(s.comissao_valor||0)>0).sort((a,b)=>(b.comissao_valor||0)-(a.comissao_valor||0))
+    let guiaHtml = ''
+    if (metaInfo.faltam>0 && habilitados.length) {
+      const top5 = habilitados.slice(0,5).map(s=>({nome:s.nome,comissao:s.comissao_valor||0,qtd:Math.ceil(metaInfo.faltam/(s.comissao_valor||1))}))
+      guiaHtml = `<div class="sec"><div class="sec-title">Como Bater a Meta — Faltam ${f$(metaInfo.faltam)}</div><table class="tbl">
+        <tr><th>Serviço</th><th style="text-align:center">Comissão/un.</th><th style="text-align:center">Qtd necessária</th></tr>
+        ${top5.map(s=>`<tr><td><strong>${s.nome}</strong></td><td style="text-align:center">${f$(s.comissao)}</td><td style="text-align:center;color:#5b4fcf;font-weight:800;font-size:12pt">${s.qtd}×</td></tr>`).join('')}
+      </table></div>`
+    }
+
+    abrirImpressao(wrap(resumo + alcance + guiaHtml))
+  }
+
+  // ── imprimirAba legado (mantido para outros usos) ──────────────────────────
+  function imprimirAba(ref: React.RefObject<HTMLDivElement | null>, titulo: string) {
+    if (!ref.current) return
+    const { wrap } = printBase(titulo)
+    abrirImpressao(wrap(`<div style="font-size:9pt;color:#1a1a2e">${ref.current.innerHTML}</div>`))
   }
 
   const hoje = new Date()
@@ -2818,7 +2941,7 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
         {tab === 'faturamento' && (
           <div>
           <div className="flex justify-end mb-4">
-            <button onClick={() => imprimirAba(refFaturamento, 'Faturamento')}
+            <button onClick={imprimirFaturamento}
               className="flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold rounded-lg border border-nodri-border text-nodri-t2 hover:border-nodri-cyan hover:text-nodri-cyan transition-colors">
               🖨️ Imprimir
             </button>
@@ -2926,6 +3049,12 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
         {/*  METAS  */}
         {tab === 'metas' && (
           <div className="space-y-6 max-w-3xl">
+            <div className="flex justify-end">
+              <button onClick={imprimirMetas}
+                className="flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold rounded-lg border border-nodri-border text-nodri-t2 hover:border-nodri-cyan hover:text-nodri-cyan transition-colors">
+                🖨️ Imprimir
+              </button>
+            </div>
             {loadMeta && <div className="flex justify-center py-10"><Loader2 size={24} className="animate-spin text-nodri-cyan"/></div>}
             {!loadMeta && metaInfo && (() => {
               const pct = metaInfo.meta_final > 0 ? Math.min((metaInfo.realizado / metaInfo.meta_final) * 100, 100) : 0
@@ -3116,7 +3245,7 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
         {tab === 'desempenho' && (
           <div>
           <div className="flex justify-end mb-4">
-            <button onClick={() => imprimirAba(refOcorrencias, 'Ocorrências')}
+            <button onClick={imprimirOcorrencias}
               className="flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold rounded-lg border border-nodri-border text-nodri-t2 hover:border-nodri-cyan hover:text-nodri-cyan transition-colors">
               🖨️ Imprimir
             </button>
