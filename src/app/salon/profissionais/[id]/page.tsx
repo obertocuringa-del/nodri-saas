@@ -1140,7 +1140,165 @@ function GraficoFaturamento({ historico }: { historico: HistoricoItem[] }) {
   )
 }
 
-//  Eficiência 
+// Gráfico SVG comparativo anual para aba Dependência
+function GraficoDependencia({ historico }: { historico: Array<{ano:number;mes:number;fat_prof:number;fat_total:number;pct:number}> }) {
+  const [anosAtivos, setAnosAtivos] = useState<number[]>([])
+  if (!historico?.length) return null
+
+  const anosDisp = Array.from(new Set(historico.map(h => h.ano))).sort((a,b) => b-a)
+  const anosGraf = anosAtivos.length ? anosAtivos : anosDisp.slice(0,2)
+
+  const getVal = (ano:number, mes:number) => historico.find(x => x.ano===ano && x.mes===mes)?.fat_prof || 0
+
+  const series = anosGraf.map((ano,ci) => ({
+    ano, cor: CORES_GRAF[ci % CORES_GRAF.length],
+    pts: Array.from({length:12},(_,i) => ({ mes:i+1, fat: getVal(ano,i+1) }))
+  }))
+
+  const allVals = series.flatMap(s => s.pts.map(p => p.fat)).filter(v => v>0)
+  if (!allVals.length) return null
+
+  const W=760, H=260, PL=60, PR=24, PT=28, PB=44
+  const cW = (W-PL-PR)/12
+  const nS = series.length
+  const bW = Math.min(20, (cW*0.85)/nS)
+  const maxF = Math.max(...allVals) * 1.1
+  const yOf = (f:number) => PT + (1 - f/maxF) * (H-PT-PB)
+  const xMes = (mes:number) => PL + ((mes-1)+0.5)*cW
+
+  function linReg(pts: {mes:number;fat:number}[]) {
+    const v = pts.filter(p=>p.fat>0)
+    if (v.length<2) return null
+    const n=v.length, sx=v.reduce((a,p)=>a+p.mes,0), sy=v.reduce((a,p)=>a+p.fat,0)
+    const sxy=v.reduce((a,p)=>a+p.mes*p.fat,0), sx2=v.reduce((a,p)=>a+p.mes*p.mes,0)
+    const m=(n*sxy-sx*sy)/(n*sx2-sx*sx), b=(sy-m*sx)/n
+    return (x:number)=>m*x+b
+  }
+
+  const media = allVals.reduce((a,v)=>a+v,0)/allVals.length
+  const dp = Math.sqrt(allVals.reduce((a,v)=>a+(v-media)**2,0)/allVals.length)
+  const bandTop = yOf(Math.min(media+dp, maxF))
+  const bandBot = yOf(Math.max(media-dp, 0))
+  const anoAtual = new Date().getFullYear()
+  const mesAtual = new Date().getMonth()+1
+  const fmt$ = (v:number) => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v)
+
+  return (
+    <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
+      <div className="flex items-start justify-between flex-wrap gap-3 mb-4">
+        <div>
+          <h3 className="font-syne font-bold text-[13px] text-nodri-t1 mb-1">Faturamento do Profissional — Comparativo Anual</h3>
+          <div className="flex flex-wrap gap-3 text-[9px] text-nodri-t3">
+            <span className="flex items-center gap-1"><span className="inline-block w-3 h-1 rounded" style={{background:'#5b4fcf'}}/> Barras = faturamento real</span>
+            <span className="flex items-center gap-1"><svg width="14" height="8"><line x1="0" y1="4" x2="14" y2="4" stroke="#5b4fcf" strokeWidth="1.5" strokeDasharray="4 2"/></svg> Tendência</span>
+            <span className="flex items-center gap-1"><svg width="14" height="8"><line x1="0" y1="4" x2="14" y2="4" stroke="#767069" strokeWidth="1" strokeDasharray="3 2"/></svg> Média (μ)</span>
+          </div>
+        </div>
+        <div className="flex gap-1.5 flex-wrap">
+          {anosDisp.map(ano => {
+            const ativo = anosGraf.includes(ano)
+            const ci = anosGraf.indexOf(ano)
+            const cor = CORES_GRAF[ci%CORES_GRAF.length]
+            return (
+              <button key={ano} type="button"
+                onClick={() => setAnosAtivos(ativo ? anosGraf.filter(a=>a!==ano) : [...anosGraf,ano].slice(-4))}
+                style={{padding:'3px 10px',borderRadius:6,border:`1px solid ${ativo?cor:'#e0ddd8'}`,fontSize:11,fontWeight:700,cursor:'pointer',background:ativo?cor+'22':'#f5f4f0',color:ativo?cor:'#6b6860',transition:'all .15s'}}>
+                {ano}{ano===anoAtual?' (atual)':''}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+      <div className="overflow-x-auto">
+        <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',minWidth:480,display:'block'}}>
+          <defs>
+            {series.map(s=>(
+              <linearGradient key={s.ano} id={`gdp${s.ano}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={s.cor} stopOpacity="0.9"/>
+                <stop offset="100%" stopColor={s.cor} stopOpacity="0.35"/>
+              </linearGradient>
+            ))}
+          </defs>
+          {[0,0.25,0.5,0.75,1].map(t=>{
+            const y=PT+t*(H-PT-PB), v=maxF*(1-t)
+            return <g key={t}>
+              <line x1={PL} y1={y} x2={W-PR} y2={y} stroke="#e8e6e0" strokeWidth={1}/>
+              <text x={PL-5} y={y+4} textAnchor="end" fill="#767069" fontSize={9}>{v>=1000?(v/1000).toFixed(0)+'k':v.toFixed(0)}</text>
+            </g>
+          })}
+          <rect x={PL} y={bandTop} width={W-PL-PR} height={Math.max(0,bandBot-bandTop)} fill="#e8e6e0" fillOpacity={0.4} rx={2}/>
+          <line x1={PL} y1={yOf(media)} x2={W-PR} y2={yOf(media)} stroke="#767069" strokeWidth={1} strokeDasharray="4 3" opacity={0.6}/>
+          <text x={W-PR+2} y={yOf(media)+4} fill="#767069" fontSize={8}>μ {(media/1000).toFixed(0)}k</text>
+          {Array.from({length:12},(_,i)=>{
+            const mes=i+1, x=xMes(mes)
+            const isDest=mes===mesAtual
+            return <g key={mes}>
+              {isDest&&<rect x={x-cW/2} y={PT} width={cW} height={H-PT-PB} fill="#5b4fcf" fillOpacity={0.04} rx={2}/>}
+              <text x={x} y={H-PB+14} textAnchor="middle" fill={isDest?'#1a1a1a':'#767069'} fontSize={9} fontWeight={isDest?700:400}>{MESES_ABREV[mes-1]}</text>
+            </g>
+          })}
+          {series.map((s,si)=>{
+            const reg=linReg(s.pts)
+            const validPts=s.pts.filter(p=>p.fat>0)
+            const trendPts=reg&&validPts.length>=2?validPts.map(p=>({mes:p.mes,y:yOf(Math.max(0,reg(p.mes)))})):null
+            return <g key={s.ano}>
+              {s.pts.map(p=>{
+                if(!p.fat) return null
+                const cx=xMes(p.mes)
+                const offset=(si-(nS-1)/2)*(bW+2)
+                const bx=cx+offset-bW/2
+                const by=yOf(p.fat), bh=H-PB-by
+                const isAtual=p.mes===mesAtual&&s.ano===anoAtual
+                const anoComp=series.find(x=>x.ano!==s.ano)
+                const fatComp=anoComp?.pts.find(x=>x.mes===p.mes)?.fat||0
+                const pct=fatComp>0?((p.fat-fatComp)/fatComp)*100:null
+                return <g key={p.mes}>
+                  <rect x={bx} y={by} width={bW} height={bh} fill={`url(#gdp${s.ano})`} rx={3}/>
+                  {bh>16&&<text x={bx+bW/2} y={by-3} textAnchor="middle" fill={s.cor} fontSize={8} fontWeight={600} opacity={0.9}>{(p.fat/1000).toFixed(0)}k</text>}
+                  {isAtual&&<rect x={bx-1} y={by-1} width={bW+2} height={bh+1} fill="none" stroke={s.cor} strokeWidth={1.5} rx={3}/>}
+                  {isAtual&&pct!==null&&<text x={bx+bW/2} y={by-(bh>16?18:6)} textAnchor="middle" fill={pct>=0?'#10b981':'#ef4444'} fontSize={8} fontWeight={700}>{pct>=0?'+':''}{pct.toFixed(0)}%</text>}
+                </g>
+              })}
+              {trendPts&&trendPts.length>=2&&(
+                <polyline points={trendPts.map(p=>`${xMes(p.mes)},${p.y}`).join(' ')} fill="none" stroke={s.cor} strokeWidth={1.5} strokeDasharray="6 3" opacity={0.75} strokeLinejoin="round" strokeLinecap="round"/>
+              )}
+            </g>
+          })}
+        </svg>
+      </div>
+      <div className="flex flex-wrap gap-3 mt-4">
+        {series.map(s=>{
+          const vals=s.pts.filter(p=>p.fat>0).map(p=>p.fat)
+          const total=vals.reduce((a,v)=>a+v,0)
+          const med=vals.length?total/vals.length:0
+          return (
+            <div key={s.ano} className="rounded-xl p-3" style={{background:'#f8f7f5',border:`1px solid ${s.cor}30`,minWidth:150}}>
+              <div className="flex items-center gap-1.5 mb-2">
+                <span className="w-2.5 h-2.5 rounded-sm" style={{background:s.cor}}/>
+                <span className="text-[12px] font-bold" style={{color:s.cor}}>{s.ano}{s.ano===anoAtual?' (atual)':''}</span>
+              </div>
+              <div className="text-[9px] text-nodri-t3 space-y-0.5">
+                <div>Total: <span className="text-nodri-t1 font-semibold">{fmt$(total)}</span></div>
+                <div>Média/mês: <span className="text-nodri-t1">{fmt$(med)}</span></div>
+                <div>Meses c/ dados: <span className="text-nodri-t1">{vals.length}/12</span></div>
+              </div>
+            </div>
+          )
+        })}
+        <div className="rounded-xl p-3" style={{background:'#f8f7f5',border:'1px solid #e8e6e0',minWidth:150}}>
+          <div className="text-[9px] font-bold text-nodri-t3 uppercase mb-2">Todos os Anos</div>
+          <div className="text-[9px] text-nodri-t3 space-y-0.5">
+            <div>Média global: <span className="text-nodri-t1 font-semibold">{fmt$(media)}</span></div>
+            <div>DP: <span style={{color:'#b45309'}}>{fmt$(dp)}</span></div>
+            <div style={{fontSize:'8px'}}>Faixa normal: {fmt$(Math.max(0,media-dp))} – {fmt$(media+dp)}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+//  Eficiência
 function BlocoEficiencia({ p1, p2 }: { p1: MetricaBloco; p2: MetricaBloco }) {
   const fmt$ = (v: number) => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0)
   const f = (v:number) => v.toLocaleString('pt-BR',{maximumFractionDigits:1})
@@ -3434,6 +3592,44 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
         {/* 👑 DEPENDÊNCIA */}
         {tab === 'dependencia' && (
           <div className="space-y-5 max-w-3xl">
+            <div className="flex justify-end">
+              <button onClick={() => {
+                const d = analiseData.dependencia
+                if (!d) return
+                const { nomeProf, dataStr, css, MESES_PT, wrap } = printBase('Dependência')
+                const cor = d.cor_risco || '#10b981'
+                const nivelLabel = d.nivel_risco==='critico'?'CRÍTICO':d.nivel_risco==='alto'?'ALTO':d.nivel_risco==='medio'?'MODERADO':'BAIXO'
+                const histRows = (d.historico||[]).map((h:any)=>`<tr><td>${MESES_PT[h.mes-1]} ${h.ano}</td><td>${h.pct}%</td><td>R$ ${(h.fat_prof||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td><td>R$ ${(h.fat_total||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td></tr>`).join('')
+                const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Dependência — ${nomeProf}</title>${css}</head><body>
+<div class="header"><div class="header-brand">NODRI</div><div class="header-meta"><strong>Relatório de Dependência</strong>${nomeProf}<br>${dataStr}<br><span style="color:#5b4fcf;font-weight:700">Documento Confidencial</span></div></div>
+<div class="sec"><div class="sec-title">Resumo de Risco</div>
+<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px">
+  <div style="flex:1;min-width:120px;background:${cor}10;border:1px solid ${cor}40;border-radius:8px;padding:12px;text-align:center">
+    <div style="font-size:32pt;font-weight:900;color:${cor}">${d.pct_faturamento}%</div>
+    <div style="font-size:9pt;font-weight:700;color:${cor};text-transform:uppercase">${nivelLabel}</div>
+    <div style="font-size:8pt;color:#555;margin-top:4px">${d.mensagem}</div>
+  </div>
+  <div style="flex:3;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    <div style="background:#f8f7f5;border-radius:6px;padding:10px"><div style="font-size:7pt;color:#888;text-transform:uppercase">Faturamento Gerado</div><div style="font-size:13pt;font-weight:700;color:#5b4fcf">R$ ${(d.fat_prof||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div style="font-size:7pt;color:#888">valor líquido pago</div></div>
+    <div style="background:#f8f7f5;border-radius:6px;padding:10px"><div style="font-size:7pt;color:#888;text-transform:uppercase">Clientes Exclusivos</div><div style="font-size:13pt;font-weight:700;color:#f59e0b">${d.clientes_exclusivos}</div></div>
+    <div style="background:#f8f7f5;border-radius:6px;padding:10px"><div style="font-size:7pt;color:#888;text-transform:uppercase">Impacto Mensal Est.</div><div style="font-size:13pt;font-weight:700;color:#f43f8e">R$ ${(d.impacto_mensal||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div>
+    <div style="background:#f8f7f5;border-radius:6px;padding:10px"><div style="font-size:7pt;color:#888;text-transform:uppercase">Faturamento Total Salão</div><div style="font-size:13pt;font-weight:700;color:#1a1a1a">R$ ${(d.fat_total||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div>
+  </div>
+</div></div>
+${histRows?`<div class="sec"><div class="sec-title">Histórico Mensal</div><table class="tbl"><thead><tr><th>Mês</th><th>% Faturamento</th><th>Fat. Prof.</th><th>Fat. Salão</th></tr></thead><tbody>${histRows}</tbody></table></div>`:''}
+<div class="sec"><div class="sec-title">Recomendação</div><p style="font-size:10pt;line-height:1.6">${
+  d.nivel_risco==='critico'?'⚠️ Risco CRÍTICO. Recomenda-se redistribuir clientes, treinar substituto e criar estratégia de retenção imediata.':
+  d.nivel_risco==='alto'?'🔶 Risco ALTO. Considere desenvolver outro profissional com habilidades similares e registrar os clientes preferenciais.':
+  d.nivel_risco==='medio'?'🟡 Risco MODERADO. Monitore a satisfação deste profissional e garanta que os clientes conheçam outros profissionais.':
+  '✅ Baixo risco. O salão está bem distribuído — parabéns!'
+}</p></div>
+${wrap}</body></html>`
+                abrirImpressao(html)
+              }}
+                className="flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold rounded-lg border border-nodri-border text-nodri-t2 hover:border-nodri-cyan hover:text-nodri-cyan transition-colors">
+                🖨️ Imprimir
+              </button>
+            </div>
             {loadAnalise.dependencia && <div className="flex justify-center py-10"><Loader2 size={24} className="animate-spin text-nodri-cyan"/></div>}
             {!loadAnalise.dependencia && analiseData.dependencia && (() => {
               const d = analiseData.dependencia
@@ -3471,6 +3667,12 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                     ))}
                   </div>
 
+                  {/* Gráfico SVG comparativo anual */}
+                  {d.historico_completo?.length > 0 && (
+                    <GraficoDependencia historico={d.historico_completo}/>
+                  )}
+
+                  {/* Gráfico % mensal (últimos 12 meses) */}
                   {d.historico?.length > 0 && (
                     <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
                       <h3 className="font-syne font-bold text-[13px] mb-4"> % do Faturamento — Últimos 12 meses</h3>
@@ -3506,6 +3708,27 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
         {/*  OPORTUNIDADES */}
         {tab === 'oportunidades' && (
           <div className="space-y-5 max-w-3xl">
+            <div className="flex justify-end">
+              <button onClick={() => {
+                const d = analiseData.oportunidades
+                if (!d) return
+                const { nomeProf, dataStr, css, wrap } = printBase('Oportunidades')
+                const fmt$ = (v:number) => `R$ ${(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}`
+                const maisVendeRows = (d.mais_vende||[]).map((item:any,i:number)=>`<tr><td>${i+1}º</td><td><strong>${item.servico}</strong></td><td>${item.quantidade}</td><td>${item.pct}%</td><td>${fmt$(item.valor)}</td></tr>`).join('')
+                const deveriaRows = (d.deveria_vender||[]).map((item:any)=>`<tr><td><strong>${item.servico}</strong></td><td>${item.motivo}</td><td>${item.comissao>0?fmt$(item.comissao):'-'}</td></tr>`).join('')
+                const nuncaRows = (d.nunca_oferece||[]).map((item:any)=>`<tr><td><strong>${item.servico}</strong></td><td>${item.comissao>0?fmt$(item.comissao):'-'}</td></tr>`).join('')
+                const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Oportunidades — ${nomeProf}</title>${css}</head><body>
+<div class="header"><div class="header-brand">NODRI</div><div class="header-meta"><strong>Relatório de Oportunidades</strong>${nomeProf}<br>${dataStr}<br><span style="color:#5b4fcf;font-weight:700">Documento Confidencial</span></div></div>
+${maisVendeRows?`<div class="sec"><div class="sec-title">🏆 Serviços que Mais Vende</div><table class="tbl"><thead><tr><th>#</th><th>Serviço</th><th>Qtd</th><th>%</th><th>Valor</th></tr></thead><tbody>${maisVendeRows}</tbody></table></div>`:''}
+${deveriaRows?`<div class="sec"><div class="sec-title">🎯 Serviços que Deveria Vender</div><table class="tbl"><thead><tr><th>Serviço</th><th>Motivo</th><th>Comissão</th></tr></thead><tbody>${deveriaRows}</tbody></table></div>`:''}
+${nuncaRows?`<div class="sec"><div class="sec-title">🔴 Serviços que Nunca Oferece</div><table class="tbl"><thead><tr><th>Serviço</th><th>Comissão potencial</th></tr></thead><tbody>${nuncaRows}</tbody></table></div>`:''}
+${wrap}</body></html>`
+                abrirImpressao(html)
+              }}
+                className="flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold rounded-lg border border-nodri-border text-nodri-t2 hover:border-nodri-cyan hover:text-nodri-cyan transition-colors">
+                🖨️ Imprimir
+              </button>
+            </div>
             {loadAnalise.oportunidades && <div className="flex justify-center py-10"><Loader2 size={24} className="animate-spin text-nodri-cyan"/></div>}
             {!loadAnalise.oportunidades && analiseData.oportunidades && (() => {
               const d = analiseData.oportunidades
@@ -3582,6 +3805,25 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
         {/*  BUNDLE */}
         {tab === 'bundle' && (
           <div className="space-y-5 max-w-3xl">
+            <div className="flex justify-end">
+              <button onClick={() => {
+                const d = analiseData.bundle
+                if (!d) return
+                const { nomeProf, dataStr, css, wrap } = printBase('Bundles')
+                const paresRows = (d.pares||[]).map((par:any,i:number)=>`<tr><td>${i+1}º</td><td><strong>${par.servico_a}</strong></td><td><strong>${par.servico_b}</strong></td><td style="font-weight:700;color:${par.pct>=70?'#22c55e':par.pct>=40?'#f59e0b':'#5b4fcf'}">${par.pct}%</td><td>${par.count} clientes</td></tr>`).join('')
+                const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Bundles — ${nomeProf}</title>${css}</head><body>
+<div class="header"><div class="header-brand">NODRI</div><div class="header-meta"><strong>Análise de Bundles</strong>${nomeProf}<br>${dataStr}<br><span style="color:#5b4fcf;font-weight:700">Documento Confidencial</span></div></div>
+<div class="sec"><div class="sec-title">🔗 Pares de Serviços com Alta Co-ocorrência</div>
+<p style="font-size:9pt;color:#666;margin-bottom:10px">Análise de ${d.total_comandas||0} comandas · Pares com ≥20% de co-ocorrência</p>
+${paresRows?`<table class="tbl"><thead><tr><th>#</th><th>Serviço A</th><th>Serviço B</th><th>Co-ocorrência</th><th>Clientes</th></tr></thead><tbody>${paresRows}</tbody></table>
+<p style="font-size:9pt;color:#5b4fcf;font-weight:600;margin-top:12px">💡 Estratégia: Ofereça o Serviço B para clientes que vieram para o Serviço A</p>`:'<p style="color:#888">Dados insuficientes para análise de bundles.</p>'}
+</div>${wrap}</body></html>`
+                abrirImpressao(html)
+              }}
+                className="flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold rounded-lg border border-nodri-border text-nodri-t2 hover:border-nodri-cyan hover:text-nodri-cyan transition-colors">
+                🖨️ Imprimir
+              </button>
+            </div>
             {loadAnalise.bundle && <div className="flex justify-center py-10"><Loader2 size={24} className="animate-spin text-nodri-cyan"/></div>}
             {!loadAnalise.bundle && analiseData.bundle && (() => {
               const d = analiseData.bundle
