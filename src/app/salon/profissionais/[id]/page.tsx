@@ -755,7 +755,7 @@ function BlocoDiagnostico({ prof, form, metricas, p1, p2, fidel }: {
   return (
     <div className="space-y-5">
       {/* Score Geral */}
-      <div className="rounded-2xl p-6 border" style={{background:'#ffffff', borderColor:`${corGeral}88``}}>
+      <div className="rounded-2xl p-6 border" style={{background:'#ffffff', borderColor:`${corGeral}88`}}>
         <div className="flex items-start justify-between mb-4">
           <div>
             <h2 className="font-syne font-black text-[18px] text-nodri-t1"> Diagnóstico Geral</h2>
@@ -1275,7 +1275,7 @@ function BlocoDiagnosticoResumido({ prof, form, metricas, p1, p2, fidel }: {
   return (
     <div className="space-y-5">
       {/* Score Geral */}
-      <div className="rounded-2xl p-6 border" style={{background:'#ffffff', borderColor:`${corGeral}88``}}>
+      <div className="rounded-2xl p-6 border" style={{background:'#ffffff', borderColor:`${corGeral}88`}}>
         <div className="flex items-start justify-between mb-4">
           <div>
             <h2 className="font-syne font-black text-[18px] text-nodri-t1"> Diagnóstico Rápido</h2>
