@@ -90,7 +90,7 @@ if (typeof document !== 'undefined') {
     @keyframes shimmer { 0% { background-position: 0% 0 } 100% { background-position: 300% 0 } }
     @keyframes pulseDot { 0%,100% { transform: scale(1); opacity: 1 } 50% { transform: scale(1.4); opacity: 0.6 } }
     @keyframes nodriPulseBtn { 0%,100% { box-shadow: 0 0 0 0 rgba(234,179,8,0); opacity:1 } 50% { box-shadow: 0 0 0 5px rgba(234,179,8,0.25); opacity:0.85 } }
-    .nodri-salon-bg { background-color: #000000 !important; }
+    .nodri-salon-bg { background-color: #f5f4f0 !important; }
   `
   if (!document.getElementById('nodri-animations')) { style.id = 'nodri-animations'; document.head.appendChild(style) }
 }
@@ -464,7 +464,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
             const iconColor = borderColor
             return (
               <div className="mx-5 mt-3 rounded-lg flex overflow-hidden"
-                style={{ background: 'var(--nodri-card, #f5f4f0)', border: '1px solid rgba(255,255,255,0.06)', borderLeft: `3px solid ${borderColor}` }}>
+                style={{ background: '#ffffff', border: '1px solid #e0ddd8', borderLeft: `3px solid ${borderColor}` }}>
                 <div className="flex items-center gap-3 px-4 py-2.5 flex-1 min-w-0">
                   <Bell size={14} style={{ color: iconColor }} className="shrink-0" />
                   <div className="flex-1 min-w-0">

@@ -333,7 +333,7 @@ export default function FeedbackPage() {
                 <div className="flex items-center gap-1.5">
                   <button onClick={toggleAtivo}
                     className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] border transition-all"
-                    style={{ borderColor: 'rgba(255,255,255,0.1)', color: '#767069' }}>
+                    style={{ borderColor: '#e0ddd8', color: '#767069' }}>
                     {selected.ativo ? <><EyeOff size={10} /> Desativar</> : <><Eye size={10} /> Ativar</>}
                   </button>
                   <button onClick={excluirFormulario}
@@ -420,7 +420,7 @@ export default function FeedbackPage() {
                   <div className="space-y-2">
                     {perguntas.map((p, i) => (
                       <div key={p.id} className="rounded-xl border transition-all"
-                        style={{ background: '#ffffff', borderColor: editando?.id === p.id ? 'rgba(6,182,212,0.4)' : 'rgba(255,255,255,0.06)' }}>
+                        style={{ background: '#ffffff', borderColor: editando?.id === p.id ? 'rgba(6,182,212,0.4)' : '#f5f4f0' }}>
                         {editando?.id === p.id ? (
                           <div className="p-4 space-y-3">
                             <div>
@@ -473,7 +473,7 @@ export default function FeedbackPage() {
                                 {p.obrigatoria && <span className="text-red-400 text-[10px]">*</span>}
                               </div>
                               <div className="flex items-center gap-2">
-                                <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.06)', color: '#767069' }}>
+                                <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: '#f5f4f0', color: '#767069' }}>
                                   {TIPO_LABELS[p.tipo]}
                                 </span>
                                 {p.opcoes.length > 0 && (
@@ -517,7 +517,7 @@ export default function FeedbackPage() {
                     <p className="text-[11px] text-nodri-t3 mb-4">
                       Envie este link para seus clientes via WhatsApp, Instagram ou qualquer outro canal. Ao abrir, eles verão um formulário elegante para responder.
                     </p>
-                    <div className="flex items-center gap-2 p-3 rounded-xl border" style={{ background: '#f5f4f0', borderColor: 'rgba(255,255,255,0.08)' }}>
+                    <div className="flex items-center gap-2 p-3 rounded-xl border" style={{ background: '#f5f4f0', borderColor: '#f5f4f0' }}>
                       <span className="flex-1 text-[11px] text-nodri-cyan break-all">{linkFeedback}</span>
                       <button onClick={copiarLink}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold shrink-0 transition-all"
@@ -548,7 +548,7 @@ export default function FeedbackPage() {
               {/* TAB: CONFIGURAÇÕES */}
               {tab === 'config' && (
                 <div className="max-w-lg space-y-4">
-                  <div className="p-4 rounded-xl border" style={{ background: '#ffffff', borderColor: 'rgba(255,255,255,0.07)' }}>
+                  <div className="p-4 rounded-xl border" style={{ background: '#ffffff', borderColor: '#f5f4f0' }}>
                     <div className="text-[11px] font-bold text-nodri-t1 mb-3">Informações do Formulário</div>
                     <div className="space-y-3">
                       <div>

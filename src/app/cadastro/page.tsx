@@ -12,10 +12,10 @@ const PLANOS_INFO: Record<string, { preco: number; cor: string }> = {
 
 const inp: React.CSSProperties = {
   width: '100%', background: '#ffffff', border: '1px solid #e8e6e0',
-  borderRadius: 10, padding: '12px 14px', color: 'white', fontSize: 14,
+  borderRadius: 10, padding: '12px 14px', color: '#1a1a1a', fontSize: 14,
   outline: 'none', boxSizing: 'border-box',
 }
-const lbl: React.CSSProperties = { fontSize: 12, color: '#888', marginBottom: 6, display: 'block' }
+const lbl: React.CSSProperties = { fontSize: 12, color: '#6b6860', marginBottom: 6, display: 'block' }
 
 function CadastroInner() {
   const searchParams = useSearchParams()
@@ -106,7 +106,7 @@ function CadastroInner() {
   )
 
   return (
-    <div style={{ fontFamily: 'Segoe UI, sans-serif', background: '#f5f4f0', minHeight: '100vh', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
+    <div style={{ fontFamily: 'Segoe UI, sans-serif', background: '#f5f4f0', minHeight: '100vh', color: '#1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
       <div style={{ width: '100%', maxWidth: 540 }}>
 
         {/* Header */}
@@ -134,7 +134,7 @@ function CadastroInner() {
 
         {/*  ETAPA 1: FORMULÁRIO  */}
         {etapa === 'form' && (
-          <div style={{ background: '#111', border: '1px solid #222', borderRadius: 16, padding: 28 }}>
+          <div style={{ background: '#ffffff', border: '1px solid #e0ddd8', borderRadius: 16, padding: 28 }}>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
               <div>
@@ -181,7 +181,7 @@ function CadastroInner() {
                   onChange={e => { setForm(p => ({ ...p, cupom: e.target.value.toUpperCase() })); setCupomStatus(null) }}
                   onKeyDown={e => e.key === 'Enter' && validarCupom()} />
                 <button onClick={validarCupom} disabled={validandoCupom || !form.cupom.trim()}
-                  style={{ background: '#222', border: '1px solid #444', borderRadius: 10, padding: '0 16px', color: '#aaa', cursor: 'pointer', fontSize: 13, whiteSpace: 'nowrap', opacity: validandoCupom ? 0.6 : 1 }}>
+                  style={{ background: '#f5f4f0', border: '1px solid #e0ddd8', borderRadius: 10, padding: '0 16px', color: '#6b6860', cursor: 'pointer', fontSize: 13, whiteSpace: 'nowrap', opacity: validandoCupom ? 0.6 : 1 }}>
                   {validandoCupom ? '...' : 'Aplicar'}
                 </button>
               </div>
@@ -207,7 +207,7 @@ function CadastroInner() {
 
         {/*  ETAPA 2: ESCOLHA DE PAGAMENTO  */}
         {etapa === 'pagamento' && (
-          <div style={{ background: '#111', border: '1px solid #222', borderRadius: 16, padding: 28 }}>
+          <div style={{ background: '#ffffff', border: '1px solid #e0ddd8', borderRadius: 16, padding: 28 }}>
             <h3 style={{ margin: '0 0 20px', fontSize: 15, fontWeight: 700 }}>Como deseja pagar?</h3>
             <div style={{ display: 'grid', gap: 12 }}>
 
@@ -216,7 +216,7 @@ function CadastroInner() {
                 <>
                   <CreditCard size={30} color="#aaa" />
                   <div style={{ flex: 1 }}>
-                    <div style={{ color: 'white', fontWeight: 700, fontSize: 14, marginBottom: 3 }}>Cartão de Crédito / Débito</div>
+                    <div style={{ color: '#1a1a1a', fontWeight: 700, fontSize: 14, marginBottom: 3 }}>Cartão de Crédito / Débito</div>
                     <div style={{ color: '#888', fontSize: 12 }}>Visa, Mastercard, Elo — via Mercado Pago</div>
                   </div>
                   {loading && metodo === 'cartao' && <span style={{ color: '#888', fontSize: 12 }}>Aguarde...</span>}
@@ -228,7 +228,7 @@ function CadastroInner() {
                 <>
                   <div style={{ width: 38, height: 38, background: '#00b894', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: 'white', fontWeight: 700, fontSize: 14 }}>PIX</div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ color: 'white', fontWeight: 700, fontSize: 14, marginBottom: 3 }}>PIX</div>
+                    <div style={{ color: '#1a1a1a', fontWeight: 700, fontSize: 14, marginBottom: 3 }}>PIX</div>
                     <div style={{ color: '#888', fontSize: 12 }}>Aprovação imediata — escaneie o QR Code ou copie a chave</div>
                   </div>
                   {loading && metodo === 'pix' && <span style={{ color: '#888', fontSize: 12 }}>Gerando...</span>}
@@ -246,9 +246,9 @@ function CadastroInner() {
 
         {/*  ETAPA 3: PIX QR CODE  */}
         {etapa === 'pix' && pixData && (
-          <div style={{ background: '#111', border: '1px solid #222', borderRadius: 16, padding: 28, textAlign: 'center' }}>
-            <div style={{ fontSize: 13, color: '#aaa', marginBottom: 20 }}>
-              Pague <strong style={{ color: 'white' }}>R${precoFinal}</strong> para ativar o Plano <strong style={{ color: planoInfo.cor }}>{planoNome}</strong>
+          <div style={{ background: '#ffffff', border: '1px solid #e0ddd8', borderRadius: 16, padding: 28, textAlign: 'center' }}>
+            <div style={{ fontSize: 13, color: '#6b6860', marginBottom: 20 }}>
+              Pague <strong style={{ color: '#1a1a1a' }}>R${precoFinal}</strong> para ativar o Plano <strong style={{ color: planoInfo.cor }}>{planoNome}</strong>
             </div>
 
             {/* QR Code */}
@@ -266,7 +266,7 @@ function CadastroInner() {
                 {pixData.qr_code.slice(0, 120)}...
               </div>
               <button onClick={copiarChave}
-                style={{ background: copiado ? '#27ae60' : '#222', border: `1px solid ${copiado ? '#27ae60' : '#444'}`, borderRadius: 10, padding: '10px 28px', color: copiado ? 'white' : '#ddd', cursor: 'pointer', fontSize: 14, fontWeight: 600, transition: 'all 0.2s' }}>
+                style={{ background: copiado ? '#15803d' : '#5b4fcf', border: 'none', borderRadius: 10, padding: '10px 28px', color: '#ffffff', cursor: 'pointer', fontSize: 14, fontWeight: 600, transition: 'all 0.2s' }}>
                 {copiado ? <><CheckCircle size={14} style={{display:'inline',marginRight:4}} />Chave copiada!</> : <><ClipboardList size={14} style={{display:'inline',marginRight:4}} />Copiar Chave PIX</>}
               </button>
             </div>

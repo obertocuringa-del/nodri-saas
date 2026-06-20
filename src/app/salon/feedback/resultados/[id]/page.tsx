@@ -53,7 +53,7 @@ function BarraH({ valor, max, cor }: { valor: number; max: number; cor?: string 
   const pct = max > 0 ? Math.round((valor / max) * 100) : 0
   return (
     <div className="flex items-center gap-2">
-      <div className="flex-1 h-2 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
+      <div className="flex-1 h-2 rounded-full" style={{ background: '#e8e6e0' }}>
         <div className="h-2 rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: cor || '#22d3ee' }} />
       </div>
       <span className="text-[10px] text-nodri-t3 w-8 text-right">{pct}%</span>
@@ -387,7 +387,7 @@ export default function ResultadosPage() {
                     ))}
                   </div>
                   {data.segmentacao.novos.count > 0 && data.segmentacao.recorrentes.count > 0 && (
-                    <div className="mt-3 p-3 rounded-xl text-[11px]" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,.05)' }}>
+                    <div className="mt-3 p-3 rounded-xl text-[11px]" style={{ background: '#f8f7f5', border: '1px solid #e0ddd8' }}>
                       {data.segmentacao.novos.media > data.segmentacao.recorrentes.media
                         ? <span className="text-nodri-t2"> Clientes novos avaliam melhor que recorrentes — atenção à experiência de longo prazo e fidelização.</span>
                         : data.segmentacao.recorrentes.media > data.segmentacao.novos.media

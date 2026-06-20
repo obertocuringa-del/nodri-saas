@@ -45,15 +45,15 @@ export default function LandingPage() {
   }, [])
 
   return (
-    <div style={{ fontFamily: 'Segoe UI, sans-serif', background: '#f5f4f0', minHeight: '100vh', color: 'white' }}>
+    <div style={{ fontFamily: 'Segoe UI, sans-serif', background: '#f5f4f0', minHeight: '100vh', color: '#1a1a1a' }}>
 
       {/* HERO */}
       <section style={{ textAlign: 'center', padding: 'clamp(40px,8vw,80px) 20px clamp(30px,6vw,60px)' }}>
         <div style={{ background: 'linear-gradient(135deg, #5b4fcf, #f43f8e)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontSize: 48, fontWeight: 900, marginBottom: 16 }}>
           {cfg.hero_logo}
         </div>
-        <h1 style={{ fontSize: 32, fontWeight: 700, marginBottom: 16, color: 'white' }}>{cfg.hero_titulo}</h1>
-        <p style={{ fontSize: 18, color: '#aaa', maxWidth: 600, margin: '0 auto 40px', lineHeight: 1.6 }}>{cfg.hero_subtitulo}</p>
+        <h1 style={{ fontSize: 32, fontWeight: 700, marginBottom: 16, color: '#1a1a1a' }}>{cfg.hero_titulo}</h1>
+        <p style={{ fontSize: 18, color: '#6b6860', maxWidth: 600, margin: '0 auto 40px', lineHeight: 1.6 }}>{cfg.hero_subtitulo}</p>
         <a href="#planos" style={{ background: `linear-gradient(135deg, ${cfg.hero_cor_botao}, #f43f8e)`, color: 'white', padding: '16px 40px', borderRadius: 12, fontSize: 18, fontWeight: 700, textDecoration: 'none', display: 'inline-block' }}>
           {cfg.hero_botao}
         </a>
@@ -67,7 +67,7 @@ export default function LandingPage() {
             <div key={i} style={{ background: '#ffffff', borderRadius: 16, padding: 28, border: '1px solid #e8e6e0' }}>
               <div style={{ fontSize: 36, marginBottom: 12 }}>{b.emoji}</div>
               <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>{b.titulo}</h3>
-              <p style={{ color: '#aaa', lineHeight: 1.6, fontSize: 14 }}>{b.desc}</p>
+              <p style={{ color: '#6b6860', lineHeight: 1.6, fontSize: 14 }}>{b.desc}</p>
             </div>
           ))}
         </div>
@@ -76,7 +76,7 @@ export default function LandingPage() {
       {/* PLANOS */}
       <section id="planos" style={{ padding: '60px 20px', maxWidth: 1100, margin: '0 auto' }}>
         <h2 style={{ textAlign: 'center', fontSize: 32, fontWeight: 700, marginBottom: 12 }}>{cfg.planos_titulo}</h2>
-        <p style={{ textAlign: 'center', color: '#aaa', marginBottom: 48 }}>{cfg.planos_subtitulo}</p>
+        <p style={{ textAlign: 'center', color: '#6b6860', marginBottom: 48 }}>{cfg.planos_subtitulo}</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: 24 }}>
           {(cfg.landing_planos || []).map((plano: any, i: number) => (
             <div key={i} style={{
@@ -90,12 +90,12 @@ export default function LandingPage() {
                 </div>
               )}
               <div style={{ color: plano.cor, fontSize: 22, fontWeight: 700, marginBottom: 8 }}>{plano.nome}</div>
-              <div style={{ fontSize: 48, fontWeight: 900, marginBottom: 4 }}>
-                R${plano.preco}<span style={{ fontSize: 16, color: '#aaa', fontWeight: 400 }}>/mês</span>
+              <div style={{ fontSize: 48, fontWeight: 900, marginBottom: 4, color: '#1a1a1a' }}>
+                R${plano.preco}<span style={{ fontSize: 16, color: '#6b6860', fontWeight: 400 }}>/mês</span>
               </div>
               <div style={{ borderTop: '1px solid #e8e6e0', marginTop: 24, paddingTop: 24 }}>
                 {(plano.modulos || []).map((m: string, j: number) => (
-                  <div key={j} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, color: '#ddd', fontSize: 14 }}>
+                  <div key={j} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, color: '#3a3835', fontSize: 14 }}>
                     <span style={{ color: plano.cor }}>✓</span> {m}
                   </div>
                 ))}
@@ -110,7 +110,7 @@ export default function LandingPage() {
       </section>
 
       {/* TRABALHE CONOSCO */}
-      <section style={{ background: 'linear-gradient(135deg,#ffffff,#161820)', padding: '60px 20px', textAlign: 'center', borderTop: '1px solid #e8e6e0' }}>
+      <section style={{ background: 'linear-gradient(135deg,#f0eefb,#fce7f3)', padding: '60px 20px', textAlign: 'center', borderTop: '1px solid #e0ddd8' }}>
         <div style={{ maxWidth: 600, margin: '0 auto' }}>
           <div style={{ fontSize: 40, marginBottom: 16 }}></div>
           <h2 style={{ fontSize: 28, fontWeight: 900, color: '#5b4fcf', marginBottom: 12 }}>{cfg.afiliados_titulo}</h2>
@@ -122,14 +122,14 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
-          <a href="/trabalhe-conosco" style={{ display: 'inline-block', marginTop: 8, background: 'linear-gradient(135deg,#5b4fcf,#5b4fcf)', color: '#000', fontWeight: 900, fontSize: 15, padding: '14px 40px', borderRadius: 12, textDecoration: 'none' }}>
+          <a href="/trabalhe-conosco" style={{ display: 'inline-block', marginTop: 8, background: 'linear-gradient(135deg,#5b4fcf,#f43f8e)', color: '#ffffff', fontWeight: 900, fontSize: 15, padding: '14px 40px', borderRadius: 12, textDecoration: 'none' }}>
             {cfg.afiliados_botao}
           </a>
         </div>
       </section>
 
       {/* FOOTER */}
-      <footer style={{ textAlign: 'center', padding: '40px 20px', color: '#555', borderTop: '1px solid #222' }}>
+      <footer style={{ textAlign: 'center', padding: '40px 20px', color: '#6b6860', borderTop: '1px solid #e0ddd8', background: '#ffffff' }}>
         <div style={{ fontSize: 20, fontWeight: 700, color: '#b45309', marginBottom: 8 }}>{cfg.footer_logo}</div>
         <p>{cfg.footer_texto}</p>
         <p style={{ marginTop: 8 }}>{cfg.footer_email}</p>

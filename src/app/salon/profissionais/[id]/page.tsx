@@ -225,7 +225,7 @@ function renderPlanoHtml(texto: string): string {
       const [head, ...body] = rows
       out.push('<table style="width:100%;border-collapse:collapse;margin:8px 0;font-size:11px">')
       out.push('<thead><tr>' + head.map(c => `<th style="text-align:left;padding:6px 8px;color:#5b4fcf;border-bottom:1px solid rgba(0,229,200,0.25)">${c}</th>`).join('') + '</tr></thead>')
-      out.push('<tbody>' + body.map(r => '<tr>' + r.map(c => `<td style="padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.06)">${c}</td>`).join('') + '</tr>').join('') + '</tbody>')
+      out.push('<tbody>' + body.map(r => '<tr>' + r.map(c => `<td style="padding:6px 8px;border-bottom:1px solid #f5f4f0">${c}</td>`).join('') + '</tr>').join('') + '</tbody>')
       out.push('</table>')
     }
     linhasTabela = []
@@ -755,7 +755,7 @@ function BlocoDiagnostico({ prof, form, metricas, p1, p2, fidel }: {
   return (
     <div className="space-y-5">
       {/* Score Geral */}
-      <div className="rounded-2xl p-6 border" style={{background:'rgba(255,255,255,0.02)', borderColor:`${corGeral}44`}}>
+      <div className="rounded-2xl p-6 border" style={{background:'#ffffff', borderColor:`${corGeral}88``}}>
         <div className="flex items-start justify-between mb-4">
           <div>
             <h2 className="font-syne font-black text-[18px] text-nodri-t1"> Diagnóstico Geral</h2>
@@ -1275,7 +1275,7 @@ function BlocoDiagnosticoResumido({ prof, form, metricas, p1, p2, fidel }: {
   return (
     <div className="space-y-5">
       {/* Score Geral */}
-      <div className="rounded-2xl p-6 border" style={{background:'rgba(255,255,255,0.02)', borderColor:`${corGeral}44`}}>
+      <div className="rounded-2xl p-6 border" style={{background:'#ffffff', borderColor:`${corGeral}88``}}>
         <div className="flex items-start justify-between mb-4">
           <div>
             <h2 className="font-syne font-black text-[18px] text-nodri-t1"> Diagnóstico Rápido</h2>
@@ -1387,7 +1387,7 @@ function PendenciasLateral({ profissionalId }: { profissionalId: string }) {
 
   return (
     <div className="rounded-2xl border sticky top-20 space-y-3 p-4"
-      style={{ background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.06)' }}>
+      style={{ background:'#ffffff', borderColor:'#e0ddd8' }}>
       <div className="flex items-center justify-between">
         <h2 className="font-syne font-bold text-[12px] text-nodri-cyan"> Pendências</h2>
         {abertas.length > 0 && (
@@ -1411,7 +1411,7 @@ function PendenciasLateral({ profissionalId }: { profissionalId: string }) {
         <div className="space-y-2">
           {abertas.map(p => (
             <div key={p.id} className="rounded-xl p-3 border space-y-1.5"
-              style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
+              style={{ background:'#ffffff', borderColor:'#e0ddd8' }}>
               <p className="text-[11px] text-nodri-t1 leading-snug">{p.mensagem}</p>
               <div className="flex items-center justify-between gap-2">
                 {p.data_limite && (
@@ -1882,13 +1882,13 @@ function AbaIA({ profissionalId, nomeProfissional }: { profissionalId: string; n
                     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
                     .replace(/^#{1,3}\s+(.+)$/gm, '<div style="font-weight:700;font-size:13px;color:#5b4fcf;margin:12px 0 6px;border-bottom:1px solid rgba(0,229,200,0.2);padding-bottom:4px">$1</div>')
                     // Linhas separadoras
-                    .replace(/^={3,}.*={3,}$/gm, '<hr style="border-color:rgba(255,255,255,0.08);margin:10px 0"/>')
-                    .replace(/^---+$/gm, '<hr style="border-color:rgba(255,255,255,0.08);margin:10px 0"/>')
+                    .replace(/^={3,}.*={3,}$/gm, '<hr style="border-color:#e0ddd8;margin:10px 0"/>')
+                    .replace(/^---+$/gm, '<hr style="border-color:#e0ddd8;margin:10px 0"/>')
                     // Tabelas markdown simples
                     .replace(/\|(.+)\|/g, (match) => {
                       if (match.includes('---')) return ''
                       const cols = match.split('|').filter(c => c.trim())
-                      return '<div style="display:flex;gap:8px;margin:2px 0">' + cols.map(c => `<span style="flex:1;padding:3px 6px;background:rgba(255,255,255,0.04);border-radius:4px;font-size:11px">${c.trim()}</span>`).join('') + '</div>'
+                      return '<div style="display:flex;gap:8px;margin:2px 0">' + cols.map(c => `<span style="flex:1;padding:3px 6px;background:#f5f4f0;border-radius:4px;font-size:11px">${c.trim()}</span>`).join('') + '</div>'
                     })
                     // Listas com bullets
                     .replace(/^[•\-\*]\s+(.+)$/gm, '<div style="display:flex;gap:6px;margin:2px 0"><span style="color:#5b4fcf;flex-shrink:0">•</span><span>$1</span></div>')

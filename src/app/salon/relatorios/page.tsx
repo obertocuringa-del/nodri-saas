@@ -70,7 +70,7 @@ function calcPct(p1: number, p2: number) { return p2 === 0 ? (p1 > 0 ? 100 : 0) 
 
 function corPct(p: number): { bg: string; text: string; border: string; Icon: any } {
   if (p >= 15) return { bg: '#10b98112', text: '#10b981', border: '#10b98130', Icon: TrendingUp }
-  if (p >= 5)  return { bg: '#06b6d412', text: '#06b6d4', border: '#06b6d430', Icon: TrendingUp }
+  if (p >= 5)  return { bg: '#0891b212', text: '#0891b2', border: '#0891b230', Icon: TrendingUp }
   if (p >= -5) return { bg: '#f59e0b12', text: '#f59e0b', border: '#f59e0b30', Icon: Minus }
   if (p >= -15)return { bg: '#f9731612', text: '#f97316', border: '#f9731630', Icon: TrendingDown }
   return { bg: '#ef444412', text: '#ef4444', border: '#ef444430', Icon: TrendingDown }
@@ -205,7 +205,7 @@ function TabelaComp({ title, items, label1, label2 }: { title: string; items: It
             {exibidos.map((item, i) => {
               const { bg, text, border } = corPct(item.pct)
               return (
-                <tr key={i} style={{ borderBottom: '1px solid #faf9f7', background: i % 2 === 0 ? 'transparent' : '#f5f4f010' }}>
+                <tr key={i} style={{ borderBottom: '1px solid #e8e6e0', background: i % 2 === 0 ? '#ffffff' : '#f8f7f5' }}>
                   <td style={{ padding: '9px 12px', color: '#3a3835', fontWeight: 500, maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.nome}>{item.nome}</td>
                   <td style={{ padding: '9px 12px', textAlign: 'right', color: '#1a1a1a', fontWeight: 700 }}>{item.p1}</td>
                   <td style={{ padding: '9px 12px', textAlign: 'right', color: '#767069' }}>{item.p2}</td>
@@ -1000,7 +1000,7 @@ export default function RelatoriosPage() {
               <div>
                 {/* Gráfico comparativo anual — barras agrupadas + tendência + desvio padrão */}
                 {dados && (() => {
-                  const CORES = ['#5b4fcf','#5b4fcf','#f43f8e','#f59e0b','#10b981','#3b82f6']
+                  const CORES = ['#5b4fcf','#f43f8e','#f59e0b','#10b981','#3b82f6','#a855f7']
                   const anosDisp = Array.from(new Set((dados.periodos||[]).map(p=>p.ano))).sort((a,b)=>b-a)
                   const anosGraf = graficoAnos.length ? graficoAnos : anosDisp.slice(0,2)
                   const fatMes = (ano:number, mes:number) => somarResumo(filtrarResumo(dados!.resumo_mensal,`${ano}-${String(mes).padStart(2,'0')}-01`,`${ano}-${String(mes).padStart(2,'0')}-31`)).fat_total
@@ -1176,7 +1176,7 @@ export default function RelatoriosPage() {
                           <span style={{fontSize:10,color:'#767069'}}><strong style={{color:'#1a1a1a'}}>Linha cinza tracejada (μ)</strong> — média mensal de todos os anos combinados</span>
                         </div>
                         <div style={{display:'flex',alignItems:'center',gap:6}}>
-                          <div style={{width:28,height:12,borderRadius:2,background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.1)'}}/>
+                          <div style={{width:28,height:12,borderRadius:2,background:'#e8e6e0',border:'1px solid #d0cdc7'}}/>
                           <span style={{fontSize:10,color:'#767069'}}><strong style={{color:'#1a1a1a'}}>Faixa cinza suave</strong> — zona normal (±1 desvio padrão). Barras fora da faixa = meses excepcionais</span>
                         </div>
                       </div>
@@ -1438,7 +1438,7 @@ export default function RelatoriosPage() {
                                   status = 'NAO REALIZADO'; statusCor = '#ef4444'; statusBg = '#ef444415'
                                 }
                                 return (
-                                  <tr key={i} style={{ borderBottom: '1px solid #faf9f7', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
+                                  <tr key={i} style={{ borderBottom: '1px solid #e8e6e0', background: i % 2 === 0 ? '#ffffff' : '#f8f7f5' }}>
                                     <td style={{ padding: '8px 12px', color: '#767069', whiteSpace: 'nowrap' }}>{d.data}</td>
                                     <td style={{ padding: '8px 12px', color: '#767069',  whiteSpace: 'nowrap' }}>{d.diaSemana}</td>
                                     <td style={{ padding: '8px 12px', textAlign: 'right', color: necessidade > 0 ? '#f59e0b' : '#dedad4', fontWeight: necessidade > 0 ? 700 : 400 }}>{necessidade > 0 ? moeda(necessidade) : <span style={{color:'#767069'}}>—</span>}</td>
@@ -2079,7 +2079,7 @@ export default function RelatoriosPage() {
                           )
                           if (r.estavaRef || r.fonte || r.picoLabel) {
                             rows.push(
-                              <tr key={`badge-${i}`} style={{ borderBottom: '1px solid #faf9f7', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
+                              <tr key={`badge-${i}`} style={{ borderBottom: '1px solid #e8e6e0', background: i % 2 === 0 ? '#ffffff' : '#f8f7f5' }}>
                                 <td colSpan={5} style={{ padding: '2px 16px 8px 56px', display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
                                   {r.estavaRef && periodoRef && (
                                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 600, color: metaBatida ? '#10b981' : '#f59e0b', background: metaBatida ? '#10b98115' : '#f59e0b15', border: `1px solid ${metaBatida ? '#10b98130' : '#f59e0b30'}`, padding: '2px 8px', borderRadius: 20 }}>
