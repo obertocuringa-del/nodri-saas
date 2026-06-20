@@ -2538,6 +2538,13 @@ ${section('Horários e Disponibilidade',
   row('Horário de Trabalho', sched.h_inicio && sched.h_fim ? `${sched.h_inicio} às ${sched.h_fim}` : 'Não informado')+
   row('Observação de Horário', sched.h_obs||'')
 )}
+${section('Perfil Pessoal',
+  row('Cor Favorita', form.cor_favorita||'')+
+  row('Comida Favorita', form.comida_favorita||'')+
+  row('Animal Favorito', form.animal_favorito||'')+
+  row('Hobbies', form.hobbies||'')+
+  row('Um Sonho', form.um_sonho||'')
+)}
 ${section('Dados Profissionais',
   row('CNPJ', form.cnpj||'')+
   row('Dados Bancários', form.conta_bancaria||'')
