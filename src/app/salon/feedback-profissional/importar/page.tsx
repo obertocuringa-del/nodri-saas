@@ -82,7 +82,7 @@ export default function ImportarPage() {
         </div>
 
         {/* FORMULÁRIO */}
-        <div className="p-5 rounded-2xl border" style={{ background: '#0d1117', borderColor: 'rgba(255,255,255,.07)' }}>
+        <div className="p-5 rounded-2xl border" style={{ background: '#ffffff', borderColor: 'rgba(255,255,255,.07)' }}>
           <div className="space-y-4">
 
             {/* Selecionar formulário */}

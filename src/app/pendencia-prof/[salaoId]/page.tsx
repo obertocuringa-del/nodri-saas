@@ -50,13 +50,13 @@ export default function PendenciaPublicaPage() {
   }
 
   if (loading) return (
-    <div style={{ minHeight: '100vh', background: '#0a0e17', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ minHeight: '100vh', background: '#f5f4f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <Loader2 size={28} style={{ color: '#06b6d4', animation: 'spin 1s linear infinite' }} />
     </div>
   )
 
   if (enviado) return (
-    <div style={{ minHeight: '100vh', background: '#0a0e17', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+    <div style={{ minHeight: '100vh', background: '#f5f4f0', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
       <div style={{ textAlign: 'center', maxWidth: '400px' }}>
         <CheckCircle2 size={56} style={{ color: '#10b981', margin: '0 auto 16px', display: 'block' }} />
         <h2 style={{ color: '#1a1a1a', fontSize: '20px', fontWeight: 700, margin: '0 0 8px' }}>Pendência enviada!</h2>
@@ -70,7 +70,7 @@ export default function PendenciaPublicaPage() {
   )
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0a0e17', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+    <div style={{ minHeight: '100vh', background: '#f5f4f0', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
       <div style={{ width: '100%', maxWidth: '480px' }}>
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
@@ -82,7 +82,7 @@ export default function PendenciaPublicaPage() {
         </div>
 
         {/* Form */}
-        <div style={{ background: '#0d1117', border: '1px solid #ffffff', borderRadius: '16px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ background: '#ffffff', border: '1px solid #e8e6e0', borderRadius: '16px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
           {/* Profissional */}
           <div>
@@ -90,7 +90,7 @@ export default function PendenciaPublicaPage() {
               Seu nome *
             </label>
             <select value={profId} onChange={e => setProfId(e.target.value)}
-              style={{ width: '100%', background: '#161b27', border: '1px solid #ffffff', borderRadius: '8px', padding: '10px 12px', fontSize: '13px', color: profId ? '#1a1a1a' : '#6b6860', outline: 'none' }}>
+              style={{ width: '100%', background: '#161b27', border: '1px solid #e8e6e0', borderRadius: '8px', padding: '10px 12px', fontSize: '13px', color: profId ? '#1a1a1a' : '#6b6860', outline: 'none' }}>
               <option value="">Selecione seu nome...</option>
               {profissionais.map(p => (
                 <option key={p.id} value={p.id}>
@@ -107,7 +107,7 @@ export default function PendenciaPublicaPage() {
             </label>
             <textarea value={mensagem} onChange={e => setMensagem(e.target.value)} rows={4}
               placeholder="Descreva sua pendência ou solicitação..."
-              style={{ width: '100%', background: '#161b27', border: '1px solid #ffffff', borderRadius: '8px', padding: '10px 12px', fontSize: '13px', color: '#1a1a1a', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
+              style={{ width: '100%', background: '#161b27', border: '1px solid #e8e6e0', borderRadius: '8px', padding: '10px 12px', fontSize: '13px', color: '#1a1a1a', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
           </div>
 
           {/* Data limite */}
@@ -116,7 +116,7 @@ export default function PendenciaPublicaPage() {
               Data limite (opcional)
             </label>
             <input type="date" value={dataLimite} onChange={e => setDataLimite(e.target.value)}
-              style={{ width: '100%', background: '#161b27', border: '1px solid #ffffff', borderRadius: '8px', padding: '10px 12px', fontSize: '13px', color: '#1a1a1a', outline: 'none', boxSizing: 'border-box', colorScheme: 'dark', cursor: 'pointer' }} />
+              style={{ width: '100%', background: '#161b27', border: '1px solid #e8e6e0', borderRadius: '8px', padding: '10px 12px', fontSize: '13px', color: '#1a1a1a', outline: 'none', boxSizing: 'border-box', colorScheme: 'dark', cursor: 'pointer' }} />
           </div>
 
           {/* Erro */}

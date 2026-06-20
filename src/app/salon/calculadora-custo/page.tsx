@@ -317,7 +317,7 @@ function InfoBtn({ id, className }: { id: string; className?: string }) {
       {aberto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.7)'}}>
           <div className="rounded-2xl border max-w-md w-full shadow-2xl" style={{background:'#faf9f7',borderColor:'#5b4fcf50'}}>
-            <div className="flex items-center justify-between px-5 py-4 border-b" style={{borderColor:'#ffffff'}}>
+            <div className="flex items-center justify-between px-5 py-4 border-b" style={{borderColor:'#e8e6e0'}}>
               <h3 className="font-bold text-sm text-white">{info.titulo}</h3>
               <button onClick={() => setAberto(false)} className="p-1 rounded-lg hover:bg-white/10" style={{color:'#9e9b94'}}><X size={16}/></button>
             </div>
@@ -368,7 +368,7 @@ function AvisoDefault({ ativo, padrao, onPreencher, onManter }: {
       {aberto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.7)'}}>
           <div className="rounded-2xl border max-w-sm w-full shadow-2xl" style={{background:'#faf9f7',borderColor:'#f59e0b50'}}>
-            <div className="px-5 py-4 border-b" style={{borderColor:'#ffffff'}}>
+            <div className="px-5 py-4 border-b" style={{borderColor:'#e8e6e0'}}>
               <h3 className="font-bold text-sm text-white flex items-center gap-2">Campo usando valor padrão</h3>
             </div>
             <div className="p-5 space-y-3">
@@ -403,7 +403,7 @@ function AvisoDefault({ ativo, padrao, onPreencher, onManter }: {
 // ─── Componente GuiaPassos ───────────────────────────────────────────────────
 function GuiaPassos({ passos }: { passos: {titulo: string, desc: string, ok: boolean, cor: string}[] }) {
   return (
-    <div className="rounded-2xl p-4 border mb-4" style={{background:'#0d1525',borderColor:'#5b4fcf30'}}>
+    <div className="rounded-2xl p-4 border mb-4" style={{background:'#ffffff',borderColor:'#5b4fcf30'}}>
       <p className="text-xs font-bold mb-3" style={{color:'#5b4fcf'}}>Como preencher — siga os passos em ordem:</p>
       <div className="grid gap-2" style={{gridTemplateColumns:`repeat(${passos.length}, 1fr)`}}>
         {passos.map((p, i) => (
@@ -1160,7 +1160,7 @@ Use números reais. Seja direto.`
         </div>
 
         {/* Seletor de mês + Salvar */}
-        <div className="flex items-center gap-3 mb-6 p-3 rounded-xl border" style={{background:'#faf9f7',borderColor:'#ffffff'}}>
+        <div className="flex items-center gap-3 mb-6 p-3 rounded-xl border" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
           <History size={15} style={{color:'#5b4fcf',flexShrink:0}}/>
           <span className="text-xs font-bold" style={{color:'#9e9b94'}}>Período:</span>
 
@@ -1231,7 +1231,7 @@ Use números reais. Seja direto.`
           <div className="space-y-4">
 
             {/* Guia passo a passo */}
-            <div className="rounded-2xl p-4 border" style={{background:'#0d1525',borderColor:'#5b4fcf30'}}>
+            <div className="rounded-2xl p-4 border" style={{background:'#ffffff',borderColor:'#5b4fcf30'}}>
               <p className="text-xs font-bold mb-3" style={{color:'#5b4fcf'}}>📋 Como preencher — siga os 4 passos em ordem:</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {[
@@ -1301,7 +1301,7 @@ Use números reais. Seja direto.`
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#9e9b94'}}>R$</span>
                     <input type="number" value={invInicial} onChange={e=>setInvInicial(e.target.value)} placeholder="Ex: 100000"
                       className="w-full pl-9 pr-3 py-2 rounded-xl text-white text-sm focus:outline-none"
-                      style={{background:'#f5f4f0',border:'1px solid #ffffff'}}/>
+                      style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
                   </div>
                 </div>
                 <div>
@@ -1314,15 +1314,15 @@ Use números reais. Seja direto.`
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#9e9b94'}}>R$</span>
                     <input type="number" value={totalDeprec} onChange={e=>setTotalDeprec(e.target.value)} placeholder="Ex: 10000"
                       className="w-full pl-9 pr-3 py-2 rounded-xl text-white text-sm focus:outline-none"
-                      style={{background:'#f5f4f0',border:'1px solid #ffffff'}}/>
+                      style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Despesas Indiretas */}
-            <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#ffffff'}}>
-              <button onClick={()=>setSecIndiretas(p=>!p)} className="w-full flex items-center justify-between px-5 py-3 border-b hover:bg-white/2 transition-colors" style={{background:'#0d1525',borderColor:'#ffffff'}}>
+            <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
+              <button onClick={()=>setSecIndiretas(p=>!p)} className="w-full flex items-center justify-between px-5 py-3 border-b hover:bg-white/2 transition-colors" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
                 <div className="flex items-center gap-2">
                   {secIndiretas ? <ChevronUp size={14} style={{color:'#f59e0b'}}/> : <ChevronDown size={14} style={{color:'#f59e0b'}}/>}
                   <span className="font-bold text-sm" style={{color:'#f59e0b'}}>📋 Despesas Indiretas (Fixas)</span>
@@ -1342,7 +1342,7 @@ Use números reais. Seja direto.`
                   Clique no cabeçalho para expandir e preencher as despesas fixas mensais.
                 </div>
               )}
-              {secIndiretas && <><div className="grid grid-cols-12 gap-2 px-5 py-2 text-[10px] font-bold uppercase tracking-wider border-b" style={{color:'#6b6860',borderColor:'#ffffff20'}}>
+              {secIndiretas && <><div className="grid grid-cols-12 gap-2 px-5 py-2 text-[10px] font-bold uppercase tracking-wider border-b" style={{color:'#6b6860',borderColor:'#e8e6e020'}}>
                 <div className="col-span-5">Despesa</div>
                 <div className="col-span-3">Valor Mensal (R$)</div>
                 <div className="col-span-2">% Fat.</div>
@@ -1352,7 +1352,7 @@ Use números reais. Seja direto.`
                 const v=n(d.valor), pctV=fatN>0?(v/fatN*100):0
                 const cor=pctV>20?'#ef4444':pctV>10?'#f59e0b':'#10b981'
                 return(
-                  <div key={i} className="grid grid-cols-12 gap-2 px-5 py-2 items-center hover:bg-white/2" style={{borderBottom:'1px solid #ffffff10'}}>
+                  <div key={i} className="grid grid-cols-12 gap-2 px-5 py-2 items-center hover:bg-white/2" style={{borderBottom:'1px solid #e8e6e010'}}>
                     <div className="col-span-5 flex items-center gap-1.5">
                       <span className="text-xs" style={{color:'#3a3835'}}>{d.nome}</span>
                       <InfoBtn id={d.nome==='Aluguel'?'aluguel':d.nome==='Energia Elétrica'?'energia':d.nome==='Água'?'agua':d.nome==='Contabilidade'?'contabilidade':''}/>
@@ -1376,7 +1376,7 @@ Use números reais. Seja direto.`
               })}
               {/* Extras */}
               {extrasDespInd.map((d,i)=>(
-                <div key={i} className="grid grid-cols-12 gap-2 px-5 py-2 items-center" style={{borderBottom:'1px solid #ffffff10'}}>
+                <div key={i} className="grid grid-cols-12 gap-2 px-5 py-2 items-center" style={{borderBottom:'1px solid #e8e6e010'}}>
                   <div className="col-span-5 relative">
                     <input value={d.nome} onChange={e=>{const nd=[...extrasDespInd];nd[i]={...nd[i],nome:e.target.value};setExtrasDespInd(nd);setAutocomplDespesa(`ind-${i}`)}}
                       onFocus={()=>setAutocomplDespesa(`ind-${i}`)} onBlur={()=>setTimeout(()=>setAutocomplDespesa(null),200)}
@@ -1387,7 +1387,7 @@ Use números reais. Seja direto.`
                       <div className="absolute top-full left-0 right-0 z-50 rounded-lg border shadow-xl" style={{background:'#faf9f7',borderColor:'#dedad4'}}>
                         {sugestoesDespesa(d.nome,'indireta').map((s,si)=>(
                           <button key={si} onMouseDown={()=>{const nd=[...extrasDespInd];nd[i]={...nd[i],nome:s.nome};setExtrasDespInd(nd);setAutocomplDespesa(null)}}
-                            className="w-full text-left px-3 py-1.5 text-xs hover:bg-white/5 text-white" style={{borderBottom:'1px solid #ffffff10'}}>{s.nome}</button>
+                            className="w-full text-left px-3 py-1.5 text-xs hover:bg-white/5 text-white" style={{borderBottom:'1px solid #e8e6e010'}}>{s.nome}</button>
                         ))}
                       </div>
                     )}
@@ -1406,7 +1406,7 @@ Use números reais. Seja direto.`
                   </div>
                 </div>
               ))}
-              <div className="px-5 py-3 border-t" style={{borderColor:'#ffffff'}}>
+              <div className="px-5 py-3 border-t" style={{borderColor:'#e8e6e0'}}>
                 <button onClick={()=>setExtrasDespInd(p=>[...p,{nome:'',valor:'',dica:''}])}
                   className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg"
                   style={{background:'#f59e0b20',color:'#f59e0b',border:'1px dashed #f59e0b40'}}>
@@ -1416,8 +1416,8 @@ Use números reais. Seja direto.`
             </div>
 
             {/* Provisão */}
-            <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#ffffff'}}>
-              <button onClick={()=>setSecProvisao(p=>!p)} className="w-full flex items-center justify-between px-5 py-3 border-b hover:bg-white/2 transition-colors" style={{background:'#0d1525',borderColor:'#ffffff'}}>
+            <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
+              <button onClick={()=>setSecProvisao(p=>!p)} className="w-full flex items-center justify-between px-5 py-3 border-b hover:bg-white/2 transition-colors" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
                 <div className="flex items-center gap-2">
                   {secProvisao ? <ChevronUp size={14} style={{color:'#7c6fe0'}}/> : <ChevronDown size={14} style={{color:'#7c6fe0'}}/>}
                   <div className="text-left">
@@ -1443,7 +1443,7 @@ Use números reais. Seja direto.`
                       <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#9e9b94'}}>R$</span>
                       <input type="number" value={f.v} onChange={e=>f.set(e.target.value)} placeholder="0"
                         className="w-full pl-8 pr-2 py-2 rounded-lg text-sm text-white focus:outline-none"
-                        style={{background:'#f5f4f0',border:'1px solid #ffffff'}}/>
+                        style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
                     </div>
                   </div>
                 ))}
@@ -1458,8 +1458,8 @@ Use números reais. Seja direto.`
             </div>
 
             {/* Despesas Diretas */}
-            <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#ffffff'}}>
-              <button onClick={()=>setSecDiretas(p=>!p)} className="w-full flex items-center justify-between px-5 py-3 border-b hover:bg-white/2 transition-colors" style={{background:'#0d1525',borderColor:'#ffffff'}}>
+            <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
+              <button onClick={()=>setSecDiretas(p=>!p)} className="w-full flex items-center justify-between px-5 py-3 border-b hover:bg-white/2 transition-colors" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
                 <div className="flex items-center gap-2">
                   {secDiretas ? <ChevronUp size={14} style={{color:'#ef4444'}}/> : <ChevronDown size={14} style={{color:'#ef4444'}}/>}
                   <span className="font-bold text-sm" style={{color:'#ef4444'}}>📌 Despesas Diretas (Variáveis)</span>
@@ -1484,7 +1484,7 @@ Use números reais. Seja direto.`
                       <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#9e9b94'}}>R$</span>
                       <input type="number" value={f.v} onChange={e=>f.set(e.target.value)} placeholder="0"
                         className="w-full pl-8 pr-2 py-2 rounded-lg text-sm text-white focus:outline-none"
-                        style={{background:'#f5f4f0',border:'1px solid #ffffff'}}/>
+                        style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
                     </div>
                   </div>
                 ))}
@@ -1501,7 +1501,7 @@ Use números reais. Seja direto.`
                           <div className="absolute top-full left-0 right-0 z-50 rounded-lg border shadow-xl" style={{background:'#faf9f7',borderColor:'#dedad4'}}>
                             {sugestoesDespesa(d.nome,'direta').map((s,si)=>(
                               <button key={si} onMouseDown={()=>{const nd=[...extrasDiretas];nd[i]={...nd[i],nome:s.nome};setExtrasDiretas(nd);setAutocomplDespesa(null)}}
-                                className="w-full text-left px-3 py-1.5 text-xs hover:bg-white/5 text-white" style={{borderBottom:'1px solid #ffffff10'}}>{s.nome}</button>
+                                className="w-full text-left px-3 py-1.5 text-xs hover:bg-white/5 text-white" style={{borderBottom:'1px solid #e8e6e010'}}>{s.nome}</button>
                             ))}
                           </div>
                         )}
@@ -1516,7 +1516,7 @@ Use números reais. Seja direto.`
                   </div>
                 ))}
               </div>
-              <div className="px-5 py-3 border-t" style={{borderColor:'#ffffff'}}>
+              <div className="px-5 py-3 border-t" style={{borderColor:'#e8e6e0'}}>
                 <button onClick={()=>setExtrasDiretas(p=>[...p,{nome:'',valor:'',dica:''}])}
                   className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg"
                   style={{background:'#ef444420',color:'#ef4444',border:'1px dashed #ef444440'}}>
@@ -1526,8 +1526,8 @@ Use números reais. Seja direto.`
             </div>
 
             {/* Outras Despesas */}
-            <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#ffffff'}}>
-              <button onClick={()=>setSecOutras(p=>!p)} className="w-full flex items-center justify-between px-5 py-3 border-b hover:bg-white/2 transition-colors" style={{background:'#0d1525',borderColor:'#ffffff'}}>
+            <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
+              <button onClick={()=>setSecOutras(p=>!p)} className="w-full flex items-center justify-between px-5 py-3 border-b hover:bg-white/2 transition-colors" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
                 <div className="flex items-center gap-2">
                   {secOutras ? <ChevronUp size={14} style={{color:'#06b6d4'}}/> : <ChevronDown size={14} style={{color:'#06b6d4'}}/>}
                   <span className="font-bold text-sm" style={{color:'#06b6d4'}}>💸 Outras Despesas / Gasto de Capital</span>
@@ -1551,7 +1551,7 @@ Use números reais. Seja direto.`
                       <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#9e9b94'}}>R$</span>
                       <input type="number" value={f.v} onChange={e=>f.set(e.target.value)} placeholder="0"
                         className="w-full pl-8 pr-2 py-2 rounded-lg text-sm text-white focus:outline-none"
-                        style={{background:'#f5f4f0',border:'1px solid #ffffff'}}/>
+                        style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
                     </div>
                   </div>
                 ))}
@@ -1568,7 +1568,7 @@ Use números reais. Seja direto.`
                           <div className="absolute top-full left-0 right-0 z-50 rounded-lg border shadow-xl" style={{background:'#faf9f7',borderColor:'#dedad4'}}>
                             {sugestoesDespesa(d.nome,'outras').map((s,si)=>(
                               <button key={si} onMouseDown={()=>{const nd=[...extrasOutras];nd[i]={...nd[i],nome:s.nome};setExtrasOutras(nd);setAutocomplDespesa(null)}}
-                                className="w-full text-left px-3 py-1.5 text-xs hover:bg-white/5 text-white" style={{borderBottom:'1px solid #ffffff10'}}>{s.nome}</button>
+                                className="w-full text-left px-3 py-1.5 text-xs hover:bg-white/5 text-white" style={{borderBottom:'1px solid #e8e6e010'}}>{s.nome}</button>
                             ))}
                           </div>
                         )}
@@ -1583,7 +1583,7 @@ Use números reais. Seja direto.`
                   </div>
                 ))}
               </div>
-              <div className="px-5 py-3 border-t" style={{borderColor:'#ffffff'}}>
+              <div className="px-5 py-3 border-t" style={{borderColor:'#e8e6e0'}}>
                 <button onClick={()=>setExtrasOutras(p=>[...p,{nome:'',valor:'',dica:''}])}
                   className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg"
                   style={{background:'#06b6d420',color:'#06b6d4',border:'1px dashed #06b6d440'}}>
@@ -1618,7 +1618,7 @@ Use números reais. Seja direto.`
                     {l:'Resultado Operacional',v:resultOp,pct:pctStr(resultOp,fatN),c:corRes(resultOp),dica:'Margem − Custo Operacional'},
                     {l:'Resultado Financeiro',v:resultFin,pct:pctStr(resultFin,fatN),c:corRes(resultFin),dica:'Resultado Op. − Outras Despesas + Depreciação'},
                   ].map((c,i)=>(
-                    <div key={i} className="rounded-xl p-4 border" style={{background:'#0d1525',borderColor:'#ffffff'}}>
+                    <div key={i} className="rounded-xl p-4 border" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
                       <p className="text-xs mb-0.5" style={{color:'#9e9b94'}}>{c.l}</p>
                       <p className="text-[10px] mb-2" style={{color:'#dedad4'}}>{c.dica}</p>
                       <p className="text-2xl font-bold" style={{color:c.c}}>{fmtR(c.v)}</p>
@@ -1633,7 +1633,7 @@ Use números reais. Seja direto.`
                     {l:'Rentabilidade',v:`${(rentab*100).toFixed(2)}%`,c:corRes(rentab),dica:'Resultado Op. / Investimento Inicial'},
                     {l:'Capital de Giro Mínimo',v:fmtR(capGiro),c:'#06b6d4',dica:'Custo Operacional × 3 meses'},
                   ].map((c,i)=>(
-                    <div key={i} className="rounded-xl p-4 border text-center" style={{background:'#0d1525',borderColor:'#ffffff'}}>
+                    <div key={i} className="rounded-xl p-4 border text-center" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
                       <p className="text-[10px] mb-1" style={{color:'#9e9b94'}}>{c.l}</p>
                       <p className="text-lg font-bold" style={{color:c.c}}>{c.v}</p>
                       <p className="text-[9px] mt-1" style={{color:'#dedad4'}}>{c.dica}</p>
@@ -1642,7 +1642,7 @@ Use números reais. Seja direto.`
                 </div>
 
                 {/* Verificação vs desejado */}
-                <div className="rounded-xl p-4 border" style={{background:'#faf9f7',borderColor:'#ffffff'}}>
+                <div className="rounded-xl p-4 border" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
                   <p className="text-xs font-bold mb-3" style={{color:'#9e9b94'}}>📊 Realizado vs Desejado (Metodologia Recomendada)</p>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {[
@@ -1686,7 +1686,7 @@ Use números reais. Seja direto.`
                     {l:'🚨 Quanto guardei de reserva ESTE MÊS',v:reservaEmerg,set:setReservaEmerg,dica:'O que você separou/guardou especificamente este mês',info:'reservaEmerg'},
                     {l:'📦 Valor de Produtos em Estoque',v:vlrProdEstoque,set:setVlrProdEstoque,dica:'Valor total do estoque atual',info:'vlrProdEstoque'},
                   ].map((f:any)=>(
-                    <div key={f.l} className="rounded-xl p-4 border" style={{background:'#faf9f7',borderColor:'#ffffff'}}>
+                    <div key={f.l} className="rounded-xl p-4 border" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
                       <div className="flex items-center gap-1.5 mb-1">
                         <label className="text-xs font-bold" style={{color:'#9e9b94'}}>{f.l}</label>
                         <InfoBtn id={f.info}/>
@@ -1696,7 +1696,7 @@ Use números reais. Seja direto.`
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#9e9b94'}}>R$</span>
                         <input type="number" value={f.v} onChange={e=>f.set(e.target.value)} placeholder="0"
                           className="w-full pl-9 pr-3 py-2 rounded-lg text-sm text-white focus:outline-none"
-                          style={{background:'#f5f4f0',border:'1px solid #ffffff'}}/>
+                          style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
                       </div>
                     </div>
                   ))}
@@ -1704,7 +1704,7 @@ Use números reais. Seja direto.`
 
                 {/* ══ RESUMO FINANCEIRO COMPLETO ══ */}
                 <div className="rounded-2xl border overflow-hidden" style={{borderColor:'#5b4fcf50'}}>
-                  <div className="px-5 py-4 border-b" style={{background:'linear-gradient(135deg,#0d1525,#faf9f7)',borderColor:'#ffffff'}}>
+                  <div className="px-5 py-4 border-b" style={{background:'linear-gradient(135deg,#ffffff,#faf9f7)',borderColor:'#e8e6e0'}}>
                     <h2 className="font-bold text-base text-white flex items-center gap-2">📊 Resumo da Situação Financeira — {MESES_NOMES[mesSel]}/{anoSel}</h2>
                     <p className="text-xs mt-1" style={{color:'#9e9b94'}}>Tudo que você precisa saber sobre a saúde financeira do seu salão neste mês.</p>
                   </div>
@@ -1735,7 +1735,7 @@ Use números reais. Seja direto.`
                   })()}
 
                   {/* O que entrou e o que saiu */}
-                  <div className="p-5 border-b" style={{borderColor:'#ffffff'}}>
+                  <div className="p-5 border-b" style={{borderColor:'#e8e6e0'}}>
                     <p className="text-xs font-bold mb-4" style={{color:'#9e9b94'}}>💰 PARA ONDE FOI O SEU DINHEIRO</p>
                     <div className="space-y-3">
                       {/* Barra de faturamento */}
@@ -1777,10 +1777,10 @@ Use números reais. Seja direto.`
                   </div>
 
                   {/* Números-chave em linguagem simples */}
-                  <div className="p-5 border-b" style={{borderColor:'#ffffff'}}>
+                  <div className="p-5 border-b" style={{borderColor:'#e8e6e0'}}>
                     <p className="text-xs font-bold mb-4" style={{color:'#9e9b94'}}>🎯 OS NÚMEROS QUE VOCÊ PRECISA SABER</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="rounded-xl p-4" style={{background:'#f5f4f0',border:'1px solid #ffffff'}}>
+                      <div className="rounded-xl p-4" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}>
                         <p className="text-xs mb-1" style={{color:'#9e9b94'}}>⚖️ Ponto de Equilíbrio</p>
                         <p className="text-xl font-bold" style={{color:'#10b981'}}>{fmtR(pe)}</p>
                         <p className="text-[10px] mt-1" style={{color:'#6b6860'}}>É o mínimo que você precisa faturar para não ter prejuízo.</p>
@@ -1788,7 +1788,7 @@ Use números reais. Seja direto.`
                           {pe===0?'Preencha as despesas acima':fatN>=pe?`✅ Você está ${fmtR(fatN-pe)} ACIMA do equilíbrio`:`🚨 Falta ${fmtR(pe-fatN)} para cobrir todos os custos`}
                         </p>
                       </div>
-                      <div className="rounded-xl p-4" style={{background:'#f5f4f0',border:'1px solid #ffffff'}}>
+                      <div className="rounded-xl p-4" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}>
                         <p className="text-xs mb-1" style={{color:'#9e9b94'}}>🎯 Para ter {lucroD}% de Lucro</p>
                         <p className="text-xl font-bold" style={{color:'#7c6fe0'}}>{fmtR(peLucro)}</p>
                         <p className="text-[10px] mt-1" style={{color:'#6b6860'}}>Faturamento necessário para atingir sua meta de lucro.</p>
@@ -1796,14 +1796,14 @@ Use números reais. Seja direto.`
                           {peLucro===0?'—':fatN>=peLucro?`✅ Meta atingida!`:`Falta ${fmtR(peLucro-fatN)} para a meta`}
                         </p>
                       </div>
-                      <div className="rounded-xl p-4" style={{background:'#f5f4f0',border:'1px solid #ffffff'}}>
+                      <div className="rounded-xl p-4" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}>
                         <p className="text-xs mb-1" style={{color:'#9e9b94'}}>💼 Retorno sobre Investimento</p>
                         <p className="text-xl font-bold" style={{color:rentab>0?'#10b981':'#ef4444'}}>{n(invInicial)>0?(rentab*100).toFixed(2)+'%':'—'}</p>
                         <p className="text-[10px] mt-1" style={{color:'#6b6860'}}>
                           {n(invInicial)>0?`Para cada R$100 investidos, você recuperou R$${(rentab*100).toFixed(2)}.`:'Informe o Investimento Inicial para calcular.'}
                         </p>
                       </div>
-                      <div className="rounded-xl p-4" style={{background:'#f5f4f0',border:'1px solid #ffffff'}}>
+                      <div className="rounded-xl p-4" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}>
                         <p className="text-xs mb-1" style={{color:'#9e9b94'}}>🏦 Reserva de Emergência</p>
                         <div className="flex items-end gap-2 mt-1">
                           <p className="text-xl font-bold" style={{color:'#06b6d4'}}>{fmtR(totalReservaAcum)}</p>
@@ -1829,7 +1829,7 @@ Use números reais. Seja direto.`
                   </div>
 
                   {/* Diagnóstico dos custos */}
-                  <div className="p-5 border-b" style={{borderColor:'#ffffff'}}>
+                  <div className="p-5 border-b" style={{borderColor:'#e8e6e0'}}>
                     <p className="text-xs font-bold mb-3" style={{color:'#9e9b94'}}>🔍 DIAGNÓSTICO DOS SEUS CUSTOS</p>
                     <div className="space-y-2">
                       {[
@@ -1948,7 +1948,7 @@ Use números reais. Seja direto.`
                       {f.tipo==='R$'&&<span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#9e9b94'}}>R$</span>}
                       <input type="number" value={f.v} onChange={e=>f.set(e.target.value)} placeholder={f.ph}
                         className={`w-full ${f.tipo==='R$'?'pl-7':'pl-3'} ${f.tipo&&f.tipo!=='R$'?'pr-7':'pr-3'} py-2 rounded-lg text-xs text-white focus:outline-none`}
-                        style={{background:'#f5f4f0',border:'1px solid #ffffff'}}/>
+                        style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
                       {f.tipo&&f.tipo!=='R$'&&<span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#9e9b94'}}>{f.tipo}</span>}
                     </div>
                   </div>
@@ -1964,7 +1964,7 @@ Use números reais. Seja direto.`
                     {l:'⚖️ Ponto de Equilíbrio',v:fmtR(PE_),sub:'Faturamento mínimo para cobrir todos os custos',c:'#10b981'},
                     {l:`🎯 PE p/ Lucro de ${n(metaLucroPE)||n(lucroD)}%`,v:fmtR(PELucro_),sub:'Para cobrir custos E ter o lucro desejado',c:'#7c6fe0'},
                   ].map((c,i)=>(
-                    <div key={i} className="rounded-2xl p-5 border" style={{background:'#0d1525',borderColor:`${c.c}30`}}>
+                    <div key={i} className="rounded-2xl p-5 border" style={{background:'#ffffff',borderColor:`${c.c}30`}}>
                       <p className="text-xs font-bold mb-1" style={{color:c.c}}>{c.l}</p>
                       <p className="text-3xl font-bold mt-2" style={{color:c.c}}>{c.v}</p>
                       <p className="text-xs mt-2" style={{color:'#6b6860'}}>{c.sub}</p>
@@ -1974,7 +1974,7 @@ Use números reais. Seja direto.`
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="rounded-2xl p-4 border" style={{background:'#faf9f7',borderColor:'#ffffff'}}>
+                  <div className="rounded-2xl p-4 border" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
                     <p className="text-xs font-bold mb-3" style={{color:'#06b6d4'}}>👤 PE por Profissional ({profs_} profissionais)</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {[
@@ -1989,7 +1989,7 @@ Use números reais. Seja direto.`
                       ))}
                     </div>
                   </div>
-                  <div className="rounded-2xl p-4 border" style={{background:'#faf9f7',borderColor:'#ffffff'}}>
+                  <div className="rounded-2xl p-4 border" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
                     <p className="text-xs font-bold mb-3" style={{color:'#f59e0b'}}>📐 PE por M² ({n(areaM2)||100} m²)</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {[
@@ -2006,7 +2006,7 @@ Use números reais. Seja direto.`
                   </div>
                 </div>
 
-                <div className="rounded-xl p-4 text-xs space-y-1" style={{background:'#faf9f7',border:'1px solid #ffffff',color:'#9e9b94'}}>
+                <div className="rounded-xl p-4 text-xs space-y-1" style={{background:'#faf9f7',border:'1px solid #e8e6e0',color:'#9e9b94'}}>
                   <p className="font-bold mb-1" style={{color:'#9e9b94'}}>💡 Como funciona:</p>
                   <p>• <strong style={{color:'#1a1a1a'}}>PE</strong> = Custo Operacional ÷ Margem Operacional% — faturamento mínimo para não ter prejuízo</p>
                   <p>• <strong style={{color:'#1a1a1a'}}>PE c/ Lucro</strong> = Custo Op ÷ (Margem% − Meta Lucro%) — para cobrir E lucrar</p>
@@ -2032,7 +2032,7 @@ Use números reais. Seja direto.`
               {titulo:'Ver Resultado',desc:'Resultado líquido de cada serviço aparece automaticamente',ok:servicos.some(s=>n(s.preco)>0&&n(s.rateioP)>0),cor:'#5b4fcf'},
             ]}/>
             <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#5b4fcf40'}}>
-              <button onClick={()=>setSecConfigServ(p=>!p)} className="w-full flex items-center justify-between px-5 py-3 hover:bg-white/2 transition-colors" style={{background:'#0d1525'}}>
+              <button onClick={()=>setSecConfigServ(p=>!p)} className="w-full flex items-center justify-between px-5 py-3 hover:bg-white/2 transition-colors" style={{background:'#ffffff'}}>
                 <div className="flex items-center gap-2">
                   {secConfigServ ? <ChevronUp size={14} style={{color:'#5b4fcf'}}/> : <ChevronDown size={14} style={{color:'#5b4fcf'}}/>}
                   <span className="font-bold text-sm" style={{color:'#5b4fcf'}}>⚙️ Configurações do Cálculo</span>
@@ -2138,7 +2138,7 @@ Use números reais. Seja direto.`
             </div>
 
             {/* Barra de busca e ordenação */}
-            <div className="flex items-center gap-3 p-3 rounded-xl" style={{background:'#faf9f7',border:'1px solid #ffffff'}}>
+            <div className="flex items-center gap-3 p-3 rounded-xl" style={{background:'#faf9f7',border:'1px solid #e8e6e0'}}>
               <div className="flex-1 relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#9e9b94'}}>🔍</span>
                 <input value={buscaServico} onChange={e=>setBuscaServico(e.target.value)}
@@ -2155,9 +2155,9 @@ Use números reais. Seja direto.`
             </div>
 
             {/* Tabela de serviços */}
-            <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#ffffff'}}>
+            <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
               <div className="grid gap-2 px-5 py-3 text-[10px] font-bold uppercase tracking-wider border-b"
-                style={{background:'#0d1525',borderColor:'#ffffff',color:'#6b6860',gridTemplateColumns:'2fr 1fr 1fr 1fr 1fr 20px'}}>
+                style={{background:'#ffffff',borderColor:'#e8e6e0',color:'#6b6860',gridTemplateColumns:'2fr 1fr 1fr 1fr 1fr 20px'}}>
                 <div>Serviço</div>
                 <div className="flex items-center gap-1">Preço (R$)<InfoBtn id="precoServico"/></div>
                 <div className="flex items-center gap-1">Rateio (%)<InfoBtn id="rateioServico"/></div>
@@ -2181,7 +2181,7 @@ Use números reais. Seja direto.`
                   <div key={s.id}>
                     <div className="grid gap-2 px-5 py-3 items-center" style={{gridTemplateColumns:'2fr 1fr 1fr 1fr 1fr 20px'}}>
                       <input value={s.nome} onChange={e=>setServicos(p=>p.map(x=>x.id===s.id?{...x,nome:e.target.value}:x))}
-                        placeholder="Ex: Coloração longo" className="px-3 py-2 rounded-lg text-sm text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #ffffff'}}/>
+                        placeholder="Ex: Coloração longo" className="px-3 py-2 rounded-lg text-sm text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
                       {[
                         {k:'preco' as const,ph:'0',pre:'R$',aviso:false,padrao:''},
                         {k:'rateioP' as const,ph:'50',suf:'%',aviso:!(s as any).rateioP,padrao:'50% (padrão)'},
@@ -2206,8 +2206,8 @@ Use números reais. Seja direto.`
                       <button onClick={()=>setServicos(p=>p.filter(x=>x.id!==s.id))} style={{color:'#6b6860'}}><Trash2 size={13}/></button>
                     </div>
                     {c&&(
-                      <div className="mx-4 mb-3 rounded-xl overflow-hidden border" style={{borderColor:'#ffffff'}}>
-                        <div className="grid grid-cols-4 divide-x text-center py-2" style={{background:'#f5f4f0',borderColor:'#ffffff'}}>
+                      <div className="mx-4 mb-3 rounded-xl overflow-hidden border" style={{borderColor:'#e8e6e0'}}>
+                        <div className="grid grid-cols-4 divide-x text-center py-2" style={{background:'#f5f4f0',borderColor:'#e8e6e0'}}>
                           {[
                             {l:'💸 Total de Despesas',sub:'Tudo que custa realizar este serviço',v:fmtR(c.total),p:`${(c.totalPct*100).toFixed(1)}%`,co:'#f59e0b'},
                             {l:'📊 Margem Operacional',sub:'O que sobrou após pagar comissão, produto, cartão e imposto',v:fmtR(c.margOp),p:`${(c.margOpPct*100).toFixed(1)}%`,co:'#06b6d4'},
@@ -2222,7 +2222,7 @@ Use números reais. Seja direto.`
                             </div>
                           ))}
                         </div>
-                        <div className="grid grid-cols-4 text-center py-1.5 border-t text-[10px]" style={{background:'#faf9f7',borderColor:'#ffffff',color:'#9e9b94'}}>
+                        <div className="grid grid-cols-4 text-center py-1.5 border-t text-[10px]" style={{background:'#faf9f7',borderColor:'#e8e6e0',color:'#9e9b94'}}>
                           <div>Rateio: {fmtR(c.rateioR)}</div>
                           <div>Produto: {fmtR(c.prod)} | Cartão: {fmtR(c.cartaoR)}</div>
                           <div>Imposto: {fmtR(c.impostR)}</div>
@@ -2233,7 +2233,7 @@ Use números reais. Seja direto.`
                   </div>
                 )
               })}
-              <div className="px-5 py-3 border-t" style={{borderColor:'#ffffff'}}>
+              <div className="px-5 py-3 border-t" style={{borderColor:'#e8e6e0'}}>
                 <button onClick={()=>{setServicos(p=>[...p,{id:proxServ,nome:'',preco:'',rateioP:'50',produto:'',imposto:'5'}]);setProxServ(p=>p+1)}}
                   className="flex items-center gap-2 text-sm px-4 py-2 rounded-lg"
                   style={{background:'#5b4fcf20',color:'#5b4fcf',border:'1px dashed #5b4fcf40'}}>
@@ -2242,7 +2242,7 @@ Use números reais. Seja direto.`
               </div>
             </div>
 
-            <div className="rounded-xl p-4 text-xs space-y-1" style={{background:'#faf9f7',border:'1px solid #ffffff',color:'#9e9b94'}}>
+            <div className="rounded-xl p-4 text-xs space-y-1" style={{background:'#faf9f7',border:'1px solid #e8e6e0',color:'#9e9b94'}}>
               <p className="font-bold mb-1" style={{color:'#9e9b94'}}>💡 💡 Fórmula do cálculo:</p>
               <p>• <strong style={{color:'#1a1a1a'}}>Rateio R$</strong> = (Preço × Rateio%) − (Preço × Taxa_Cartão%) − (Produto × Abatimento%)</p>
               <p>• <strong style={{color:'#1a1a1a'}}>Imposto</strong>: Salão Parceiro → (Preço − Rateio) × Imp%. Normal → Preço × Imp%</p>
@@ -2266,7 +2266,7 @@ Use números reais. Seja direto.`
             </div>
 
             {/* Busca + ordenação */}
-            <div className="flex items-center gap-3 p-3 rounded-xl" style={{background:'#faf9f7',border:'1px solid #ffffff'}}>
+            <div className="flex items-center gap-3 p-3 rounded-xl" style={{background:'#faf9f7',border:'1px solid #e8e6e0'}}>
               <div className="flex-1 relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#9e9b94'}}>🔍</span>
                 <input value={buscaProduto} onChange={e=>setBuscaProduto(e.target.value)}
@@ -2293,8 +2293,8 @@ Use números reais. Seja direto.`
               .map(sp=>{
               const total=sp.ingredientes.reduce((s,i)=>s+custoIngred(i),0)
               return(
-                <div key={sp.id} className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#ffffff'}}>
-                  <div className="px-5 py-4 flex items-center gap-3 border-b" style={{background:'#0d1525',borderColor:'#ffffff'}}>
+                <div key={sp.id} className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
+                  <div className="px-5 py-4 flex items-center gap-3 border-b" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
                     <span className="text-lg">🧴</span>
                     <input value={sp.nomeServico}
                       onChange={e=>setServicoProd(p=>p.map(s=>s.id===sp.id?{...s,nomeServico:e.target.value}:s))}
@@ -2304,7 +2304,7 @@ Use números reais. Seja direto.`
                     {total>0&&<div className="text-right flex-shrink-0"><p className="text-[10px]" style={{color:'#9e9b94'}}>Custo total</p><p className="font-bold text-lg" style={{color:'#f59e0b'}}>{fmtR(total)}</p></div>}
                   </div>
                   <div className="grid gap-2 px-5 py-2 text-[10px] font-bold uppercase tracking-wider border-b"
-                    style={{background:'#f5f4f0',borderColor:'#ffffff',color:'#6b6860',gridTemplateColumns:'2fr 0.7fr 1fr 1fr 1fr 1fr 20px'}}>
+                    style={{background:'#f5f4f0',borderColor:'#e8e6e0',color:'#6b6860',gridTemplateColumns:'2fr 0.7fr 1fr 1fr 1fr 1fr 20px'}}>
                     <div>Produto/Insumo</div><div>Un.</div>
                     <div className="flex items-center gap-1">Qtd embalagem<InfoBtn id="qtdEmb"/></div>
                     <div className="flex items-center gap-1">Preço embalagem<InfoBtn id="precoEmb"/></div>
@@ -2315,7 +2315,7 @@ Use números reais. Seja direto.`
                     const custo=custoIngred(ing)
                     return(
                       <div key={idx} className="grid gap-2 px-5 py-2 items-center hover:bg-white/2"
-                        style={{borderBottom:'1px solid #ffffff10',gridTemplateColumns:'2fr 0.7fr 1fr 1fr 1fr 1fr 20px'}}>
+                        style={{borderBottom:'1px solid #e8e6e010',gridTemplateColumns:'2fr 0.7fr 1fr 1fr 1fr 1fr 20px'}}>
                         {/* Campo com autocomplete do catálogo */}
                         <div className="relative">
                           <input value={ing.nome}
@@ -2333,7 +2333,7 @@ Use números reais. Seja direto.`
                             <div className="absolute top-full left-0 right-0 z-50 rounded-xl border overflow-hidden shadow-2xl mt-1"
                               style={{background:'#faf9f7',borderColor:'#dedad4',maxHeight:'200px',overflowY:'auto'}}>
                               {/* Botão ver todos */}
-                              <div className="px-3 py-1.5 border-b text-[10px] font-bold" style={{borderColor:'#ffffff',color:'#9e9b94'}}>
+                              <div className="px-3 py-1.5 border-b text-[10px] font-bold" style={{borderColor:'#e8e6e0',color:'#9e9b94'}}>
                                 📦 {produtosCatalogo.filter(p=>!ing.nome||p.nome.toLowerCase().includes(ing.nome.toLowerCase())).length} produto(s) — clique para selecionar
                               </div>
                               {produtosCatalogo
@@ -2348,7 +2348,7 @@ Use números reais. Seja direto.`
                                     setAutocompleteKey(null)
                                   }}
                                   className="w-full text-left px-3 py-2 hover:bg-white/5 flex items-center justify-between"
-                                  style={{borderBottom:'1px solid #ffffff10'}}>
+                                  style={{borderBottom:'1px solid #e8e6e010'}}>
                                   <div>
                                     <span className="text-xs font-bold text-white">{p.nome}</span>
                                     {p.marca&&<span className="text-[10px] ml-2 px-1.5 py-0.5 rounded" style={{background:'#f59e0b20',color:'#f59e0b'}}>{p.marca}</span>}
@@ -2368,24 +2368,24 @@ Use números reais. Seja direto.`
                           )}
                         </div>
                         <select value={ing.unidade} onChange={e=>atualizarIngrediente(sp.id,idx,'unidade',e.target.value)}
-                          className="px-2 py-1.5 rounded-lg text-xs text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #ffffff'}}>
+                          className="px-2 py-1.5 rounded-lg text-xs text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}>
                           {['ml','g','und','L','kg'].map(u=><option key={u} value={u}>{u}</option>)}
                         </select>
                         <input type="number" value={ing.qtdEmb} onChange={e=>atualizarIngrediente(sp.id,idx,'qtdEmb',e.target.value)}
-                          placeholder="Ex: 60" className="px-3 py-1.5 rounded-lg text-xs text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #ffffff'}}/>
+                          placeholder="Ex: 60" className="px-3 py-1.5 rounded-lg text-xs text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
                         <div className="relative">
                           <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#9e9b94'}}>R$</span>
                           <input type="number" value={ing.preco} onChange={e=>atualizarIngrediente(sp.id,idx,'preco',e.target.value)}
-                            placeholder="0" className="w-full pl-7 pr-2 py-1.5 rounded-lg text-xs text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #ffffff'}}/>
+                            placeholder="0" className="w-full pl-7 pr-2 py-1.5 rounded-lg text-xs text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
                         </div>
                         <input type="number" value={ing.qtdUsa} onChange={e=>atualizarIngrediente(sp.id,idx,'qtdUsa',e.target.value)}
-                          placeholder="Ex: 90" className="px-3 py-1.5 rounded-lg text-xs text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #ffffff'}}/>
+                          placeholder="Ex: 90" className="px-3 py-1.5 rounded-lg text-xs text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
                         <div className="text-xs font-bold text-center" style={{color:custo>0?'#f59e0b':'#dedad4'}}>{custo>0?fmtR(custo):'—'}</div>
                         <button onClick={()=>removerIngrediente(sp.id,idx)} style={{color:'#6b6860'}}><Trash2 size={12}/></button>
                       </div>
                     )
                   })}
-                  <div className="px-5 py-3 flex items-center justify-between border-t" style={{borderColor:'#ffffff'}}>
+                  <div className="px-5 py-3 flex items-center justify-between border-t" style={{borderColor:'#e8e6e0'}}>
                     <button onClick={()=>adicionarIngrediente(sp.id)} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg"
                       style={{background:'#f59e0b20',color:'#f59e0b',border:'1px dashed #f59e0b40'}}>
                       <Plus size={12}/> Adicionar produto
@@ -2400,7 +2400,7 @@ Use números reais. Seja direto.`
               style={{background:'#5b4fcf20',color:'#5b4fcf',border:'1px dashed #5b4fcf40'}}>
               <Plus size={15}/> Adicionar outro serviço
             </button>
-            <div className="rounded-xl p-4 text-xs space-y-1" style={{background:'#faf9f7',border:'1px solid #ffffff',color:'#9e9b94'}}>
+            <div className="rounded-xl p-4 text-xs space-y-1" style={{background:'#faf9f7',border:'1px solid #e8e6e0',color:'#9e9b94'}}>
               <p className="font-bold mb-1" style={{color:'#9e9b94'}}>💡 Fórmula:</p>
               <p>• Custo por uso = (Preço da embalagem ÷ Qtd da embalagem) × Qtd usada no serviço</p>
               <p style={{color:'#7c6fe0'}}>Ex: Tinta R$35,27 / 60g × 90g usados = <strong>R$52,91 de custo</strong></p>
@@ -2417,7 +2417,7 @@ Use números reais. Seja direto.`
               {titulo:'Ver Aluguel Sugerido',desc:'Valor mínimo e sugerido por cadeira aparecem automaticamente',ok:custPorCad>0,cor:'#5b4fcf'},
             ]}/>
             {custoOp>0&&<div className="rounded-xl p-3 text-xs" style={{background:'#5b4fcf15',border:'1px solid #5b4fcf30',color:'#7c6fe0'}}>✨ Custo operacional da aba Receitas e Despesas: <strong>{fmtR(custoOp)}</strong> — preenchido automaticamente</div>}
-            <div className="rounded-2xl p-6 border" style={{background:'#faf9f7',borderColor:'#ffffff'}}>
+            <div className="rounded-2xl p-6 border" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
               <h2 className="font-bold text-base mb-1" style={{color:'#f59e0b'}}>💺 Aluguel de Cadeira</h2>
               <p className="text-xs mb-5" style={{color:'#9e9b94'}}>Quanto cobrar de aluguel por cadeira para cobrir custos e ter lucro.</p>
               <div className="space-y-4">
@@ -2443,7 +2443,7 @@ Use números reais. Seja direto.`
                   <div className="flex items-center gap-1.5 mb-1"><label className="text-xs font-bold" style={{color:'#9e9b94'}}>Número de Cadeiras / Postos</label><InfoBtn id="numCad"/></div>
                   <p className="text-xs mb-2" style={{color:'#6b6860'}}>Quantas cadeiras ou postos de atendimento tem o salão?</p>
                   <input type="number" value={numCad} onChange={e=>setNumCad(e.target.value)} placeholder="Ex: 10"
-                    className="w-full px-4 py-3 rounded-xl text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #ffffff'}}/>
+                    className="w-full px-4 py-3 rounded-xl text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
                 </div>
               </div>
               {custPorCad>0&&(
@@ -2478,7 +2478,7 @@ Use números reais. Seja direto.`
               {titulo:'Ver Resultado por M²',desc:'Faturamento necessário por metro quadrado aparece automaticamente',ok:fatPorM2>0,cor:'#5b4fcf'},
             ]}/>
             {pe>0&&<div className="rounded-xl p-3 text-xs" style={{background:'#5b4fcf15',border:'1px solid #5b4fcf30',color:'#7c6fe0'}}>✨ Ponto de equilíbrio da aba Receitas e Despesas: <strong>{fmtR(pe)}</strong> — preenchido automaticamente como faturamento mínimo</div>}
-            <div className="rounded-2xl p-6 border" style={{background:'#faf9f7',borderColor:'#ffffff'}}>
+            <div className="rounded-2xl p-6 border" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
               <h2 className="font-bold text-base mb-1" style={{color:'#06b6d4'}}>📐 Faturamento por M²</h2>
               <p className="text-xs mb-5" style={{color:'#9e9b94'}}>Quanto cada metro quadrado do salão precisa gerar para ser rentável.</p>
               <div className="space-y-4">
@@ -2499,7 +2499,7 @@ Use números reais. Seja direto.`
                 <div>
                   <div className="flex items-center gap-1.5 mb-1"><label className="text-xs font-bold" style={{color:'#9e9b94'}}>Metragem Total do Salão (m²)</label><InfoBtn id="mTotal"/></div>
                   <input type="number" value={mTotal} onChange={e=>setMTotal(e.target.value)} placeholder="Ex: 80"
-                    className="w-full px-4 py-3 rounded-xl text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #ffffff'}}/>
+                    className="w-full px-4 py-3 rounded-xl text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
                 </div>
               </div>
               {fatPorM2>0&&(
@@ -2515,7 +2515,7 @@ Use números reais. Seja direto.`
                       <p className="text-3xl font-bold" style={{color:'#10b981'}}>{fmtR(fatSugM2)}/m²</p>
                     </div>
                   </div>
-                  <div className="rounded-xl p-4 border" style={{background:'#f5f4f0',borderColor:'#ffffff'}}>
+                  <div className="rounded-xl p-4 border" style={{background:'#f5f4f0',borderColor:'#e8e6e0'}}>
                     <div className="flex items-center gap-1.5 mb-3"><p className="text-xs font-bold" style={{color:'#9e9b94'}}>📏 Calcular para um espaço específico:</p><InfoBtn id="mSala"/></div>
                     <div className="flex gap-2 items-center">
                       <input type="number" value={mSala} onChange={e=>setMSala(e.target.value)} placeholder="Ex: 15 m²"
@@ -2540,7 +2540,7 @@ Use números reais. Seja direto.`
           <div className="space-y-5">
 
             {!fatN ? (
-              <div className="rounded-2xl p-10 text-center border" style={{background:'#faf9f7',borderColor:'#ffffff'}}>
+              <div className="rounded-2xl p-10 text-center border" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
                 <p className="text-4xl mb-3">📊</p>
                 <p className="font-bold text-white mb-1">Nenhum dado ainda</p>
                 <p className="text-sm" style={{color:'#9e9b94'}}>Preencha o Faturamento e as Despesas na aba <strong style={{color:'#7c6fe0'}}>Receitas e Despesas</strong> para ver os gráficos.</p>
@@ -2573,8 +2573,8 @@ Use números reais. Seja direto.`
                 )}
 
                 {/* Visão geral — barras horizontais de distribuição */}
-                <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#ffffff'}}>
-                  <div className="px-5 py-3 border-b" style={{background:'#0d1525',borderColor:'#ffffff'}}>
+                <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
+                  <div className="px-5 py-3 border-b" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
                     <p className="font-bold text-sm" style={{color:'#1a1a1a'}}>💰 Distribuição do Faturamento</p>
                     <p className="text-xs mt-0.5" style={{color:'#9e9b94'}}>Para onde vai cada R$ que entra no salão</p>
                   </div>
@@ -2606,7 +2606,7 @@ Use números reais. Seja direto.`
                       )
                     })}
                     {/* Barra total */}
-                    <div className="pt-2 border-t" style={{borderColor:'#ffffff'}}>
+                    <div className="pt-2 border-t" style={{borderColor:'#e8e6e0'}}>
                       <div className="flex items-center justify-between text-xs font-bold">
                         <span style={{color:'#9e9b94'}}>📊 Faturamento Total</span>
                         <span style={{color:'#1a1a1a'}}>{fmtR(fatN)}</span>
@@ -2616,8 +2616,8 @@ Use números reais. Seja direto.`
                 </div>
 
                 {/* Ranking de despesas — maiores custos */}
-                <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#ffffff'}}>
-                  <div className="px-5 py-3 border-b" style={{background:'#0d1525',borderColor:'#ffffff'}}>
+                <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
+                  <div className="px-5 py-3 border-b" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
                     <p className="font-bold text-sm" style={{color:'#1a1a1a'}}>🩸 Ranking — O que mais consome seu caixa</p>
                     <p className="text-xs mt-0.5" style={{color:'#9e9b94'}}>Ordenado do maior para o menor</p>
                   </div>
@@ -2631,7 +2631,7 @@ Use números reais. Seja direto.`
                       const cores: Record<string,string> = {indireta:'#f59e0b', provisao:'#7c6fe0', direta:'#ef4444'}
                       const cor = cores[d.tipo] || '#9e9b94'
                       return (
-                        <div key={idx} className="rounded-xl p-3" style={{background:'#f5f4f0',border:'1px solid #ffffff'}}>
+                        <div key={idx} className="rounded-xl p-3" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}>
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
                               <span className="text-xs font-bold w-5 text-center" style={{color:'#6b6860'}}>#{idx+1}</span>
@@ -2661,8 +2661,8 @@ Use números reais. Seja direto.`
                 </div>
 
                 {/* Realizado vs Meta */}
-                <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#ffffff'}}>
-                  <div className="px-5 py-3 border-b" style={{background:'#0d1525',borderColor:'#ffffff'}}>
+                <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
+                  <div className="px-5 py-3 border-b" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
                     <p className="font-bold text-sm" style={{color:'#1a1a1a'}}>🎯 Realizado vs Meta (Metodologia Recomendada)</p>
                   </div>
                   <div className="p-5 space-y-4">
@@ -2729,8 +2729,8 @@ Use números reais. Seja direto.`
                     </div>
                   )
                   return (
-                    <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#ffffff'}}>
-                      <div className="px-5 py-3 border-b" style={{background:'#0d1525',borderColor:'#ffffff'}}>
+                    <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
+                      <div className="px-5 py-3 border-b" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
                         <p className="font-bold text-sm" style={{color:'#ef4444'}}>🚨 Alertas — Ação Necessária</p>
                       </div>
                       <div className="p-4 space-y-2">
@@ -2747,8 +2747,8 @@ Use números reais. Seja direto.`
 
                 {/* Comparativo Mês a Mês */}
                 {historicoMeses.length > 1 && (
-                  <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#ffffff'}}>
-                    <div className="px-5 py-3 border-b" style={{background:'#0d1525',borderColor:'#ffffff'}}>
+                  <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
+                    <div className="px-5 py-3 border-b" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
                       <p className="font-bold text-sm" style={{color:'#1a1a1a'}}>📅 Evolução Mensal — últimos {historicoMeses.length} meses</p>
                       <p className="text-xs mt-0.5" style={{color:'#9e9b94'}}>Comparativo de Faturamento, Custo e Resultado mês a mês</p>
                     </div>
@@ -2788,7 +2788,7 @@ Use números reais. Seja direto.`
                         const varFat = ant.fat>0?((ult.fat-ant.fat)/ant.fat*100):0
                         const varRes = ant.resultado!==0?((ult.resultado-ant.resultado)/Math.abs(ant.resultado)*100):0
                         return (
-                          <div className="grid grid-cols-2 gap-3 pt-2 border-t" style={{borderColor:'#ffffff'}}>
+                          <div className="grid grid-cols-2 gap-3 pt-2 border-t" style={{borderColor:'#e8e6e0'}}>
                             <div className="rounded-xl p-3" style={{background:'#f5f4f0'}}>
                               <p className="text-[10px]" style={{color:'#9e9b94'}}>Variação Faturamento (vs mês anterior)</p>
                               <p className="text-lg font-bold" style={{color:varFat>=0?'#10b981':'#ef4444'}}>{varFat>=0?'+':''}{varFat.toFixed(1)}%</p>
@@ -2804,7 +2804,7 @@ Use números reais. Seja direto.`
                   </div>
                 )}
                 {historicoMeses.length <= 1 && (
-                  <div className="rounded-xl p-4 text-center" style={{background:'#faf9f7',border:'1px solid #ffffff'}}>
+                  <div className="rounded-xl p-4 text-center" style={{background:'#faf9f7',border:'1px solid #e8e6e0'}}>
                     <p className="text-2xl mb-1">📅</p>
                     <p className="text-sm font-bold" style={{color:'#9e9b94'}}>Comparativo mensal disponível com 2+ meses salvos</p>
                     <p className="text-xs mt-1" style={{color:'#9e9b94'}}>Salve os dados deste mês e do próximo para ver a evolução</p>
@@ -2858,8 +2858,8 @@ Use números reais. Seja direto.`
               </div>
             </div>
             {/* Lista */}
-            <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#ffffff'}}>
-              <div className="flex items-center justify-between px-5 py-3 border-b" style={{background:'#0d1525',borderColor:'#ffffff'}}>
+            <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
+              <div className="flex items-center justify-between px-5 py-3 border-b" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
                 <span className="font-bold text-sm text-white">📋 Serviços Cadastrados ({servicosCatalogo.length})</span>
                 <input value={buscarServico} onChange={e=>setBuscarServico(e.target.value)} placeholder="🔍 Buscar serviço..."
                   className="px-3 py-1.5 rounded-lg text-xs text-white focus:outline-none w-48" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/>
@@ -2867,7 +2867,7 @@ Use números reais. Seja direto.`
               {servicosCatalogo.filter(s=>s.nome.toLowerCase().includes(buscarServico.toLowerCase())).length===0
                 ? <p className="text-center py-8 text-sm" style={{color:'#6b6860'}}>Nenhum serviço cadastrado ainda</p>
                 : servicosCatalogo.filter(s=>s.nome.toLowerCase().includes(buscarServico.toLowerCase())).map(s=>(
-                  <div key={s.id} className="border-b" style={{borderColor:'#ffffff10'}}>
+                  <div key={s.id} className="border-b" style={{borderColor:'#e8e6e010'}}>
                     <div className="flex items-center justify-between px-5 py-3 cursor-pointer hover:bg-white/2"
                       onClick={()=>setAcordeaoServ(acordeaoServ===s.id?null:s.id)}>
                       <div className="flex items-center gap-3">
@@ -2933,8 +2933,8 @@ Use números reais. Seja direto.`
               </div>
             </div>
             {/* Lista */}
-            <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#ffffff'}}>
-              <div className="flex items-center justify-between px-5 py-3 border-b" style={{background:'#0d1525',borderColor:'#ffffff'}}>
+            <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
+              <div className="flex items-center justify-between px-5 py-3 border-b" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
                 <span className="font-bold text-sm text-white">📦 Produtos Cadastrados ({produtosCatalogo.length})</span>
                 <input value={buscarProduto} onChange={e=>setBuscarProduto(e.target.value)} placeholder="🔍 Buscar produto..."
                   className="px-3 py-1.5 rounded-lg text-xs text-white focus:outline-none w-48" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/>
@@ -2942,7 +2942,7 @@ Use números reais. Seja direto.`
               {produtosCatalogo.filter(p=>p.nome.toLowerCase().includes(buscarProduto.toLowerCase())).length===0
                 ? <p className="text-center py-8 text-sm" style={{color:'#6b6860'}}>Nenhum produto cadastrado ainda</p>
                 : produtosCatalogo.filter(p=>p.nome.toLowerCase().includes(buscarProduto.toLowerCase())).map(p=>(
-                  <div key={p.id} className="border-b" style={{borderColor:'#ffffff10'}}>
+                  <div key={p.id} className="border-b" style={{borderColor:'#e8e6e010'}}>
                     <div className="flex items-center justify-between px-5 py-3 cursor-pointer hover:bg-white/2"
                       onClick={()=>setAcordeaoProd(acordeaoProd===p.id?null:p.id)}>
                       <div className="flex items-center gap-3">
@@ -2978,7 +2978,7 @@ Use números reais. Seja direto.`
       {showCatDespesa && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.75)'}}>
           <div className="rounded-2xl border w-full max-w-2xl shadow-2xl flex flex-col" style={{background:'#faf9f7',borderColor:'#f59e0b50',maxHeight:'90vh'}}>
-            <div className="flex items-center justify-between px-6 py-4 border-b" style={{borderColor:'#ffffff'}}>
+            <div className="flex items-center justify-between px-6 py-4 border-b" style={{borderColor:'#e8e6e0'}}>
               <div>
                 <h2 className="font-bold text-base" style={{color:'#f59e0b'}}>📋 Catálogo de Despesas</h2>
                 <p className="text-xs mt-0.5" style={{color:'#9e9b94'}}>Cadastre suas despesas para usar autocomplete em todos os campos</p>
@@ -2988,7 +2988,7 @@ Use números reais. Seja direto.`
             </div>
 
             {/* Formulário */}
-            <div className="px-6 py-4 border-b" style={{borderColor:'#ffffff',background:'#0d1525'}}>
+            <div className="px-6 py-4 border-b" style={{borderColor:'#e8e6e0',background:'#ffffff'}}>
               <p className="text-xs font-bold mb-3" style={{color:'#9e9b94'}}>{editDespCat ? '✏️ Editando despesa' : '➕ Nova despesa'}</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <div className="col-span-2">
@@ -3051,7 +3051,7 @@ Use números reais. Seja direto.`
                         <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{color:catCor}}>{catLabel}</p>
                         <div className="space-y-1">
                           {itens.map(d=>(
-                            <div key={d.id} className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-white/3" style={{background:'#0d1525',border:'1px solid #ffffff10'}}>
+                            <div key={d.id} className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-white/3" style={{background:'#ffffff',border:'1px solid #e8e6e010'}}>
                               <div>
                                 <span className="text-sm text-white">{d.nome}</span>
                                 {d.observacao && <span className="ml-2 text-[10px]" style={{color:'#6b6860'}}>{d.observacao}</span>}

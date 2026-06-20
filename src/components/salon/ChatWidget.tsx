@@ -18,7 +18,7 @@ function renderMarkdown(texto: string): string {
   // Blocos de código — preserva antes de escapar
   html = html.replace(/```[\w]*\n?([\s\S]*?)```/g, (_, code) => {
     const idx = blocos.length
-    blocos.push(`<pre style="background:#0d1117;border:1px solid #30363d;border-radius:10px;padding:14px 16px;overflow-x:auto;font-size:12.5px;line-height:1.7;margin:12px 0"><code style="color:#1a1a1a;font-family:'Fira Mono',monospace">${code.trim().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</code></pre>`)
+    blocos.push(`<pre style="background:#ffffff;border:1px solid #30363d;border-radius:10px;padding:14px 16px;overflow-x:auto;font-size:12.5px;line-height:1.7;margin:12px 0"><code style="color:#1a1a1a;font-family:'Fira Mono',monospace">${code.trim().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</code></pre>`)
     return `\x00BLOCO${idx}\x00`
   })
 
@@ -41,7 +41,7 @@ function renderMarkdown(texto: string): string {
       if (isHead) {
         table += `<thead><tr>${cells.map(c => `<th style="padding:10px 14px;background:#1c2128;color:#1a1a1a;font-weight:600;text-align:left;font-size:12px;border-bottom:2px solid #f59e0b;white-space:nowrap">${c.trim()}</th>`).join('')}</tr></thead><tbody>`
       } else {
-        const bg = rowIdx % 2 === 0 ? '#0d1117' : '#faf9f7'
+        const bg = rowIdx % 2 === 0 ? '#ffffff' : '#faf9f7'
         table += `<tr style="background:${bg}">${cells.map(c => `<td style="padding:9px 14px;border-bottom:1px solid #21262d;color:#c9d1d9;font-size:13px">${c.trim()}</td>`).join('')}</tr>`
         rowIdx++
       }
@@ -466,8 +466,8 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
 
   // Estilos do container: fixo quando floating, relativo quando embutido
   const containerStyle: React.CSSProperties = modoEmbarcado
-    ? { position: 'relative', width: '100%', height: isMobile ? 'calc(100dvh - 120px)' : 'calc(100vh - 108px)', minHeight: 400, display: 'flex', flexDirection: 'column', background: '#0d1117', overflow: 'hidden' }
-    : { position: 'fixed', inset: 0, width: '100vw', height: isMobile ? '100dvh' : '100vh', display: 'flex', flexDirection: 'column', background: '#0d1117', border: 'none', overflow: 'hidden', zIndex: 10001 }
+    ? { position: 'relative', width: '100%', height: isMobile ? 'calc(100dvh - 120px)' : 'calc(100vh - 108px)', minHeight: 400, display: 'flex', flexDirection: 'column', background: '#ffffff', overflow: 'hidden' }
+    : { position: 'fixed', inset: 0, width: '100vw', height: isMobile ? '100dvh' : '100vh', display: 'flex', flexDirection: 'column', background: '#ffffff', border: 'none', overflow: 'hidden', zIndex: 10001 }
 
   return (
     <>
@@ -558,7 +558,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
               )}
               {prompts.map(p => (
                 <div key={p.id}
-                  style={{ borderRadius: 8, padding: '8px 10px', marginBottom: 4, background: '#0d1117', border: '1px solid #21262d', display: 'flex', alignItems: 'center', gap: 6, group: 'true' } as any}>
+                  style={{ borderRadius: 8, padding: '8px 10px', marginBottom: 4, background: '#ffffff', border: '1px solid #21262d', display: 'flex', alignItems: 'center', gap: 6, group: 'true' } as any}>
                   <button onClick={() => { usarPrompt(p); if (isMobile) setSidebarChatAberta(false) }} title={p.script}
                     style={{ flex: 1, background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', color: '#c9d1d9', fontSize: 12, lineHeight: 1.4, padding: 0, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
                     {p.titulo}
@@ -583,7 +583,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
                 </p>
                 {sugestoesAtivas.map(s => (
                   <div key={s.titulo}
-                    style={{ borderRadius: 8, padding: '7px 10px', marginBottom: 4, background: '#0d1117', border: '1px solid #21262d', cursor: 'pointer', transition: 'border-color 0.2s' }}
+                    style={{ borderRadius: 8, padding: '7px 10px', marginBottom: 4, background: '#ffffff', border: '1px solid #21262d', cursor: 'pointer', transition: 'border-color 0.2s' }}
                     onClick={() => { setInput(s.prompt); setTimeout(() => inputRef.current?.focus(), 50); if (isMobile) setSidebarChatAberta(false) }}
                     onMouseEnter={e => (e.currentTarget.style.borderColor = '#f59e0b')}
                     onMouseLeave={e => (e.currentTarget.style.borderColor = '#21262d')}
@@ -678,7 +678,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
 
           {/* Input */}
           <div style={{ padding: isMobile ? '10px 12px' : '16px max(24px, calc(50% - 400px))', borderTop: '1px solid #21262d', background: '#faf9f7', flexShrink: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, background: '#0d1117', border: '1px solid #30363d', borderRadius: 14, padding: '10px 14px', transition: 'border-color 0.2s' }}
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, background: '#ffffff', border: '1px solid #30363d', borderRadius: 14, padding: '10px 14px', transition: 'border-color 0.2s' }}
               onFocus={() => {}} >
               <textarea
                 ref={inputRef}
@@ -736,14 +736,14 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
               <label style={{ fontSize: 12, fontWeight: 600, color: '#6b6860', textTransform: 'uppercase', letterSpacing: .5 }}>Título (aparece na lista)</label>
               <input value={formTitulo} onChange={e => setFormTitulo(e.target.value)}
                 placeholder="Ex: Análise da equipe completa"
-                style={{ background: '#0d1117', border: '1px solid #30363d', borderRadius: 8, padding: '10px 14px', color: '#1a1a1a', fontSize: 14, outline: 'none', fontFamily: 'inherit' }} />
+                style={{ background: '#ffffff', border: '1px solid #30363d', borderRadius: 8, padding: '10px 14px', color: '#1a1a1a', fontSize: 14, outline: 'none', fontFamily: 'inherit' }} />
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <label style={{ fontSize: 12, fontWeight: 600, color: '#6b6860', textTransform: 'uppercase', letterSpacing: .5 }}>Script completo (enviado ao chat)</label>
               <textarea value={formScript} onChange={e => setFormScript(e.target.value)} rows={6}
                 placeholder="Ex: Faça uma análise completa da equipe com faturamento, ocorrências e ranking de cada profissional no período atual. Apresente em tabela e destaque pontos de atenção."
-                style={{ background: '#0d1117', border: '1px solid #30363d', borderRadius: 8, padding: '10px 14px', color: '#1a1a1a', fontSize: 13, outline: 'none', fontFamily: 'inherit', resize: 'vertical', lineHeight: 1.6 }} />
+                style={{ background: '#ffffff', border: '1px solid #30363d', borderRadius: 8, padding: '10px 14px', color: '#1a1a1a', fontSize: 13, outline: 'none', fontFamily: 'inherit', resize: 'vertical', lineHeight: 1.6 }} />
               <p style={{ margin: 0, fontSize: 11, color: '#e8e6e0' }}>O script é o texto completo enviado à IA. O título é só um atalho para você identificar.</p>
             </div>
 

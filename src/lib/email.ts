@@ -40,7 +40,7 @@ export async function enviarEmailRecuperacaoSenha(email: string, nome: string, t
     to: email,
     subject: '🔐 Recuperação de senha — NODRI',
     html: `
-      <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;background:#0d1117;color:#1a1a1a;border-radius:12px;overflow:hidden">
+      <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;background:#ffffff;color:#1a1a1a;border-radius:12px;overflow:hidden">
         <div style="background:linear-gradient(135deg,#5b4fcf,#5b4fcf);padding:32px;text-align:center">
           <h1 style="margin:0;font-size:28px;color:#000;font-weight:900">NODRI</h1>
           <p style="margin:8px 0 0;color:#000;font-size:13px">Estilo & Beleza</p>
@@ -71,7 +71,7 @@ export async function enviarEmailBoasVindas({
     to: email,
     subject: '🎉 Bem-vindo ao NODRI! Seu acesso está pronto',
     html: `
-      <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;background:#0d1117;color:#1a1a1a;border-radius:12px;overflow:hidden">
+      <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;background:#ffffff;color:#1a1a1a;border-radius:12px;overflow:hidden">
         <div style="background:linear-gradient(135deg,#5b4fcf,#5b4fcf);padding:32px;text-align:center">
           <h1 style="margin:0;font-size:28px;color:#000;font-weight:900">NODRI</h1>
           <p style="margin:8px 0 0;color:#000;font-size:13px">Estilo & Beleza</p>
@@ -129,7 +129,7 @@ export async function enviarEmailPagamento({
     to: email,
     subject: `${config.emoji} ${config.titulo} — NODRI`,
     html: `
-      <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;background:#0d1117;color:#1a1a1a;border-radius:12px;overflow:hidden">
+      <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;background:#ffffff;color:#1a1a1a;border-radius:12px;overflow:hidden">
         <div style="background:${config.cor};padding:24px;text-align:center">
           <h2 style="margin:0;color:#fff;font-size:20px">${config.emoji} ${config.titulo}</h2>
         </div>
@@ -157,7 +157,7 @@ export async function sendEmailAfiliado({ nome, email, cupom, link }: {
     to: email,
     subject: '🤝 Bem-vindo ao Programa de Afiliados NODRI!',
     html: `
-      <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;background:#0d1117;color:#1a1a1a;border-radius:12px;overflow:hidden">
+      <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;background:#ffffff;color:#1a1a1a;border-radius:12px;overflow:hidden">
         <div style="background:linear-gradient(135deg,#5b4fcf,#5b4fcf);padding:32px;text-align:center">
           <h1 style="margin:0;font-size:28px;color:#000;font-weight:900">NODRI</h1>
           <p style="margin:8px 0 0;color:#000;font-size:13px">Programa de Afiliados</p>
@@ -167,11 +167,11 @@ export async function sendEmailAfiliado({ nome, email, cupom, link }: {
           <p style="color:#9e9b94;line-height:1.6">Você foi cadastrado no <strong style="color:#1a1a1a">Programa de Afiliados NODRI</strong>. Agora você pode indicar nosso sistema e ganhar comissão em cada venda!</p>
           <div style="background:#161820;border:1px solid #e8e6e0;border-radius:10px;padding:20px;margin:24px 0">
             <h3 style="color:#5b4fcf;margin-top:0;font-size:14px">🎫 SEU CUPOM EXCLUSIVO:</h3>
-            <div style="background:#0d1117;border:2px dashed #5b4fcf;border-radius:8px;padding:16px;text-align:center;margin:12px 0">
+            <div style="background:#ffffff;border:2px dashed #5b4fcf;border-radius:8px;padding:16px;text-align:center;margin:12px 0">
               <span style="font-family:monospace;font-size:22px;font-weight:900;color:#5b4fcf;letter-spacing:3px">${cupom}</span>
             </div>
             <h3 style="color:#5b4fcf;margin-top:16px;font-size:14px">🔗 SEU LINK DE DIVULGAÇÃO:</h3>
-            <div style="background:#0d1117;border:1px solid #e8e6e0;border-radius:8px;padding:12px">
+            <div style="background:#ffffff;border:1px solid #e8e6e0;border-radius:8px;padding:12px">
               <a href="${link}" style="color:#5b4fcf;font-size:12px;font-family:monospace;word-break:break-all">${link}</a>
             </div>
           </div>
@@ -200,7 +200,7 @@ export async function sendEmailComissao({ nome, email, cupom, valorCompra, valor
     to: email,
     subject: '💰 Nova comissão gerada — NODRI',
     html: `
-      <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;background:#0d1117;color:#1a1a1a;border-radius:12px;overflow:hidden">
+      <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;background:#ffffff;color:#1a1a1a;border-radius:12px;overflow:hidden">
         <div style="background:linear-gradient(135deg,#22c55e,#16a34a);padding:24px;text-align:center">
           <h2 style="margin:0;color:#fff;font-size:20px">💰 Nova Comissão Gerada!</h2>
         </div>

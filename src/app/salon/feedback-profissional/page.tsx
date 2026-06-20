@@ -387,7 +387,7 @@ export default function FeedbackProfissionalPage() {
 
               {tab === 'registrar' && (
                 <div className="max-w-lg mx-auto">
-                  <div className="rounded-2xl border overflow-hidden" style={{ background: '#0d1117', borderColor: 'rgba(255,255,255,.08)' }}>
+                  <div className="rounded-2xl border overflow-hidden" style={{ background: '#ffffff', borderColor: 'rgba(255,255,255,.08)' }}>
                     {/* Header */}
                     <div className="px-6 py-5 border-b" style={{ borderColor: 'rgba(255,255,255,.06)', background: 'linear-gradient(135deg,rgba(124,92,252,.08),rgba(244,63,142,.05))' }}>
                       <div className="text-[13px] font-bold text-nodri-t1 mb-0.5">Registrar Ocorrência</div>
@@ -494,7 +494,7 @@ export default function FeedbackProfissionalPage() {
                   </div>
                   <div className="space-y-1.5">
                     {profissionais.map(p => (
-                      <div key={p.id} className="flex items-center gap-2 p-3 rounded-xl border" style={{ background: '#0d1117', borderColor: 'rgba(255,255,255,.06)' }}>
+                      <div key={p.id} className="flex items-center gap-2 p-3 rounded-xl border" style={{ background: '#ffffff', borderColor: 'rgba(255,255,255,.06)' }}>
                         {editingProf?.id === p.id ? (
                           <>
                             <input
@@ -540,7 +540,7 @@ export default function FeedbackProfissionalPage() {
                   </div>
                   <div className="space-y-1.5">
                     {ocorridos.map(o => (
-                      <div key={o.id} className="flex items-center gap-2 p-3 rounded-xl border" style={{ background: '#0d1117', borderColor: 'rgba(255,255,255,.06)' }}>
+                      <div key={o.id} className="flex items-center gap-2 p-3 rounded-xl border" style={{ background: '#ffffff', borderColor: 'rgba(255,255,255,.06)' }}>
                         {editingOcorr?.id === o.id ? (
                           <>
                             <input
@@ -567,12 +567,12 @@ export default function FeedbackProfissionalPage() {
 
               {tab === 'link' && (
                 <div className="max-w-lg space-y-4">
-                  <div className="p-5 rounded-2xl border" style={{ background: '#0d1117', borderColor: 'rgba(139,92,246,.25)' }}>
+                  <div className="p-5 rounded-2xl border" style={{ background: '#ffffff', borderColor: 'rgba(139,92,246,.25)' }}>
                     <div className="text-[11px] font-bold text-purple-400 mb-3 flex items-center gap-1.5"><Link size={12} /> Link do Formulário para Registro</div>
                     <p className="text-[11px] text-nodri-t3 mb-4">
                       Compartilhe com coordenadores, gerentes ou líderes para registrar ocorrências dos profissionais.
                     </p>
-                    <div className="flex items-center gap-2 p-3 rounded-xl border mb-3" style={{ background: '#060a0f', borderColor: 'rgba(255,255,255,.08)' }}>
+                    <div className="flex items-center gap-2 p-3 rounded-xl border mb-3" style={{ background: '#f5f4f0', borderColor: 'rgba(255,255,255,.08)' }}>
                       <span className="flex-1 text-[11px] text-nodri-cyan break-all">{linkForm}</span>
                       <button
                         onClick={() => { navigator.clipboard.writeText(linkForm); toast.success('Link copiado!') }}

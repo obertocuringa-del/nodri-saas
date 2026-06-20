@@ -227,9 +227,9 @@ export default function ProfissionaisPage() {
         placeholder={opts?.placeholder || label}
         value={form[key]}
         onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-        style={{ width: '100%', background: '#0d1117', border: '1px solid #ffffff', borderRadius: '8px', padding: '9px 12px', fontSize: '13px', color: '#1a1a1a', outline: 'none' }}
+        style={{ width: '100%', background: '#ffffff', border: '1px solid #e8e6e0', borderRadius: '8px', padding: '9px 12px', fontSize: '13px', color: '#1a1a1a', outline: 'none' }}
         onFocus={e => e.target.style.borderColor = '#5b4fcf'}
-        onBlur={e => e.target.style.borderColor = '#ffffff'}
+        onBlur={e => e.target.style.borderColor = '#e8e6e0'}
       />
     </div>
   )
@@ -242,9 +242,9 @@ export default function ProfissionaisPage() {
         placeholder={label}
         value={form[key]}
         onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-        style={{ width: '100%', background: '#0d1117', border: '1px solid #ffffff', borderRadius: '8px', padding: '9px 12px', fontSize: '13px', color: '#1a1a1a', outline: 'none', resize: 'vertical' }}
+        style={{ width: '100%', background: '#ffffff', border: '1px solid #e8e6e0', borderRadius: '8px', padding: '9px 12px', fontSize: '13px', color: '#1a1a1a', outline: 'none', resize: 'vertical' }}
         onFocus={e => e.target.style.borderColor = '#5b4fcf'}
-        onBlur={e => e.target.style.borderColor = '#ffffff'}
+        onBlur={e => e.target.style.borderColor = '#e8e6e0'}
       />
     </div>
   )
@@ -253,7 +253,7 @@ export default function ProfissionaisPage() {
     <div style={{ minHeight: '100vh', background: '#000', display: 'flex', flexDirection: 'column' }}>
 
       {/* TOP BAR */}
-      <div style={{ background: '#0d1117', borderBottom: '1px solid #ffffff', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: '12px', position: 'sticky', top: 0, zIndex: 10 }}>
+      <div style={{ background: '#ffffff', borderBottom: '1px solid #e8e6e0', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: '12px', position: 'sticky', top: 0, zIndex: 10 }}>
         <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-1 rounded" style={{ color: '#9e9b94', background: 'none', border: 'none', cursor: 'pointer' }}>
           <Menu size={18} />
         </button>
@@ -278,7 +278,7 @@ export default function ProfissionaisPage() {
           zIndex: isMobile ? 50 : undefined,
           transform: isMobile && !sidebarOpen ? 'translateX(-100%)' : 'translateX(0)',
           transition: 'transform 0.3s ease',
-          width: '230px', minWidth: '230px', background: '#0d1117', borderRight: '1px solid #ffffff', padding: '12px 8px', overflowY: 'auto', flexShrink: 0,
+          width: '230px', minWidth: '230px', background: '#ffffff', borderRight: '1px solid #e8e6e0', padding: '12px 8px', overflowY: 'auto', flexShrink: 0,
         }}>
           {SIDEBAR_ITEMS.map(item => {
             const Icon = item.icon
@@ -323,7 +323,7 @@ export default function ProfissionaisPage() {
               <div style={{ position: 'relative', marginBottom: '16px' }}>
                 <Search size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#6b6860' }} />
                 <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar profissional..."
-                  style={{ width: '100%', background: '#0d1117', border: '1px solid #ffffff', borderRadius: '8px', padding: '9px 12px 9px 36px', fontSize: '13px', color: '#1a1a1a', outline: 'none' }} />
+                  style={{ width: '100%', background: '#ffffff', border: '1px solid #e8e6e0', borderRadius: '8px', padding: '9px 12px 9px 36px', fontSize: '13px', color: '#1a1a1a', outline: 'none' }} />
               </div>
 
               {/* ── DEPARTAMENTOS VIRTUAIS (fixos no topo) ── */}
@@ -337,7 +337,7 @@ export default function ProfissionaisPage() {
                       const temPend = (d.pendencias_abertas || 0) > 0
                       return (
                         <div key={d.id}
-                          style={{ background: temPend ? '#fff0f0' : '#0d1117', border: `1px solid ${temPend ? '#7f1d1d' : cor + '40'}`, borderRadius: '10px', padding: '12px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', transition: 'all 0.2s' }}
+                          style={{ background: temPend ? '#fff0f0' : '#ffffff', border: `1px solid ${temPend ? '#7f1d1d' : cor + '40'}`, borderRadius: '10px', padding: '12px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', transition: 'all 0.2s' }}
                           onClick={() => { try { sessionStorage.setItem('nodri_prof_' + d.id, JSON.stringify(d)) } catch(_){} router.push(`/salon/profissionais/${d.id}`) }}
                           onMouseEnter={e => { e.currentTarget.style.borderColor = temPend ? '#ef4444' : cor; e.currentTarget.style.boxShadow = `0 0 0 2px ${temPend ? '#ef444420' : cor + '20'}` }}
                           onMouseLeave={e => { e.currentTarget.style.borderColor = temPend ? '#7f1d1d' : cor + '40'; e.currentTarget.style.boxShadow = 'none' }}>
@@ -355,7 +355,7 @@ export default function ProfissionaisPage() {
                       )
                     })}
                   </div>
-                  <div style={{ borderBottom: '1px solid #ffffff', margin: '16px 0 8px' }}/>
+                  <div style={{ borderBottom: '1px solid #e8e6e0', margin: '16px 0 8px' }}/>
                   <p style={{ fontSize: '10px', color: '#6b6860', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, marginBottom: '8px' }}>Profissionais</p>
                 </div>
               )}
@@ -374,7 +374,7 @@ export default function ProfissionaisPage() {
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
                   {profFiltrados.map(p => (
-                    <div key={p.id} style={{ background: temPendencia(p) ? '#fff0f0' : '#0d1117', border: `1px solid ${temPendencia(p) ? '#7f1d1d' : '#ffffff'}`, borderRadius: '12px', padding: '16px', transition: 'border-color 0.2s, box-shadow 0.2s', cursor: 'pointer' }}
+                    <div key={p.id} style={{ background: temPendencia(p) ? '#fff0f0' : '#ffffff', border: `1px solid ${temPendencia(p) ? '#7f1d1d' : '#ffffff'}`, borderRadius: '12px', padding: '16px', transition: 'border-color 0.2s, box-shadow 0.2s', cursor: 'pointer' }}
                       onClick={() => { try { sessionStorage.setItem('nodri_prof_' + p.id, JSON.stringify(p)) } catch(_){} router.push(`/salon/profissionais/${p.id}`) }}
                       onMouseEnter={e => { e.currentTarget.style.borderColor = temPendencia(p) ? '#ef444480' : '#5b4fcf80'; e.currentTarget.style.boxShadow = temPendencia(p) ? '0 0 0 2px #ef444420' : '0 0 0 2px #5b4fcf20' }}
                       onMouseLeave={e => { e.currentTarget.style.borderColor = temPendencia(p) ? '#7f1d1d' : '#ffffff'; e.currentTarget.style.boxShadow = 'none' }}>
@@ -452,7 +452,7 @@ export default function ProfissionaisPage() {
 
               <form onSubmit={salvar}>
                 {/* FOTO */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '24px', padding: '20px', background: '#0d1117', borderRadius: '12px', border: '1px solid #ffffff' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '24px', padding: '20px', background: '#ffffff', borderRadius: '12px', border: '1px solid #e8e6e0' }}>
                   <div onClick={() => fileRef.current?.click()} style={{ width: '80px', height: '80px', borderRadius: '50%', border: '2px dashed #5b4fcf60', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', flexShrink: 0, position: 'relative' }}>
                     {fotoPreview ? <img src={fotoPreview} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="preview" /> : <Upload size={24} color="#5b4fcf80" />}
                     {uploadingFoto && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '10px' }}>...</div>}
@@ -469,7 +469,7 @@ export default function ProfissionaisPage() {
                 </div>
 
                 {/* DADOS PESSOAIS */}
-                <div style={{ background: '#0d1117', borderRadius: '12px', border: '1px solid #ffffff', padding: '20px', marginBottom: '16px' }}>
+                <div style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid #e8e6e0', padding: '20px', marginBottom: '16px' }}>
                   <h3 style={{ color: '#5b4fcf', fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>👤 Dados Pessoais</h3>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     {F('Nome Completo *', 'nome_completo', { full: true })}
@@ -489,7 +489,7 @@ export default function ProfissionaisPage() {
                             placeholder="Digite a nova categoria..."
                             value={form.cargo}
                             onChange={e => setForm(f => ({ ...f, cargo: e.target.value }))}
-                            style={{ flex: 1, background: '#0d1117', border: '1px solid #5b4fcf', borderRadius: '8px', padding: '9px 12px', fontSize: '13px', color: '#1a1a1a', outline: 'none' }}
+                            style={{ flex: 1, background: '#ffffff', border: '1px solid #5b4fcf', borderRadius: '8px', padding: '9px 12px', fontSize: '13px', color: '#1a1a1a', outline: 'none' }}
                             autoFocus
                           />
                           <button type="button" onClick={() => setNovaCategoria(false)}
@@ -502,7 +502,7 @@ export default function ProfissionaisPage() {
                           <select
                             value={form.cargo}
                             onChange={e => setForm(f => ({ ...f, cargo: e.target.value }))}
-                            style={{ flex: 1, background: '#0d1117', border: '1px solid #ffffff', borderRadius: '8px', padding: '9px 12px', fontSize: '13px', color: form.cargo ? '#1a1a1a' : '#9e9b94', outline: 'none' }}>
+                            style={{ flex: 1, background: '#ffffff', border: '1px solid #e8e6e0', borderRadius: '8px', padding: '9px 12px', fontSize: '13px', color: form.cargo ? '#1a1a1a' : '#9e9b94', outline: 'none' }}>
                             <option value="">Selecione a categoria...</option>
                             {categorias.map(c => <option key={c} value={c}>{c}</option>)}
                           </select>
@@ -522,23 +522,23 @@ export default function ProfissionaisPage() {
                 </div>
 
                 {/* DADOS PROFISSIONAIS */}
-                <div style={{ background: '#0d1117', borderRadius: '12px', border: '1px solid #ffffff', padding: '20px', marginBottom: '16px' }}>
+                <div style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid #e8e6e0', padding: '20px', marginBottom: '16px' }}>
                   <h3 style={{ color: '#06b6d4', fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 16px' }}>💼 Dados Profissionais</h3>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     {TA('Habilidades (serviços que consegue fazer)', 'habilidades', 3)}
                     {TA('Certificados de Curso', 'certificados', 3)}
-                    <div style={{ padding: '12px', background: '#060a12', borderRadius: '8px', border: '1px solid #ffffff' }}>
+                    <div style={{ padding: '12px', background: '#f5f4f0', borderRadius: '8px', border: '1px solid #e8e6e0' }}>
                       <label style={{ display: 'block', fontSize: '11px', color: '#9e9b94', marginBottom: '4px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Nome e Telefone do Responsável / Parente</label>
                       <input value={form.contato_responsavel} onChange={e => setForm(f => ({ ...f, contato_responsavel: e.target.value }))}
                         placeholder="Nome, (00) 00000-0000"
-                        style={{ width: '100%', background: '#0d1117', border: '1px solid #ffffff', borderRadius: '6px', padding: '8px 10px', fontSize: '13px', color: '#1a1a1a', outline: 'none' }} />
+                        style={{ width: '100%', background: '#ffffff', border: '1px solid #e8e6e0', borderRadius: '6px', padding: '8px 10px', fontSize: '13px', color: '#1a1a1a', outline: 'none' }} />
                     </div>
                     <div />
                   </div>
                 </div>
 
                 {/* PERSONALIDADE */}
-                <div style={{ background: '#0d1117', borderRadius: '12px', border: '1px solid #ffffff', padding: '20px', marginBottom: '24px' }}>
+                <div style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid #e8e6e0', padding: '20px', marginBottom: '24px' }}>
                   <h3 style={{ color: '#f43f8e', fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 16px' }}>✨ Personalidade</h3>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     {F('Cor Favorita', 'cor_favorita')}
@@ -573,13 +573,13 @@ export default function ProfissionaisPage() {
               </div>
 
               {/* Criar nova categoria */}
-              <div style={{ background: '#0d1117', border: '1px solid #f59e0b40', borderRadius: 12, padding: 16, marginBottom: 20 }}>
+              <div style={{ background: '#ffffff', border: '1px solid #f59e0b40', borderRadius: 12, padding: 16, marginBottom: 20 }}>
                 <p style={{ color: '#9e9b94', fontSize: 12, margin: '0 0 10px', fontWeight: 600 }}>➕ CRIAR NOVA CATEGORIA</p>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <input value={novaCatTexto} onChange={e => setNovaCatTexto(e.target.value)}
                     placeholder="Ex: Depiladora, Esteticista..."
                     onKeyDown={e => { if (e.key === 'Enter' && novaCatTexto.trim()) { toast.success(`Categoria "${novaCatTexto.trim()}" criada! Atribua a um profissional para salvar.`); setNovaCatTexto('') } }}
-                    style={{ flex: 1, background: '#060a12', border: '1px solid #ffffff', borderRadius: 8, padding: '9px 12px', fontSize: 13, color: '#1a1a1a', outline: 'none' }} />
+                    style={{ flex: 1, background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 8, padding: '9px 12px', fontSize: 13, color: '#1a1a1a', outline: 'none' }} />
                   <button onClick={() => { if (novaCatTexto.trim()) { toast.success(`Categoria "${novaCatTexto.trim()}" disponível no formulário de cadastro!`); setNovaCatTexto('') } }}
                     style={{ background: '#f59e0b', border: 'none', borderRadius: 8, padding: '9px 16px', color: 'white', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
                     Criar
@@ -592,12 +592,12 @@ export default function ProfissionaisPage() {
                 {categorias.map(cat => {
                   const qtd = profissionais.filter(p => p.cargo === cat).length
                   return (
-                    <div key={cat} style={{ background: '#0d1117', border: '1px solid #ffffff', borderRadius: 10, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div key={cat} style={{ background: '#ffffff', border: '1px solid #e8e6e0', borderRadius: 10, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
                       {editandoCategoria === cat ? (
                         <>
                           <input value={editandoCategoriaValor} onChange={e => setEditandoCategoriaValor(e.target.value)} autoFocus
                             onKeyDown={e => { if (e.key === 'Enter') editarCategoria(cat, editandoCategoriaValor); if (e.key === 'Escape') setEditandoCategoria(null) }}
-                            style={{ flex: 1, background: '#060a12', border: '1px solid #5b4fcf', borderRadius: 6, padding: '6px 10px', fontSize: 13, color: '#1a1a1a', outline: 'none' }} />
+                            style={{ flex: 1, background: '#f5f4f0', border: '1px solid #5b4fcf', borderRadius: 6, padding: '6px 10px', fontSize: 13, color: '#1a1a1a', outline: 'none' }} />
                           <button onClick={() => editarCategoria(cat, editandoCategoriaValor)}
                             style={{ background: '#10b981', border: 'none', borderRadius: 6, padding: '6px 12px', color: 'white', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Salvar</button>
                           <button onClick={() => setEditandoCategoria(null)}
@@ -637,14 +637,14 @@ export default function ProfissionaisPage() {
           {/* ── SEÇÕES DE CONTEÚDO INFORMATIVO ── */}
           {CONTEUDO_INFO[secao] && (
             <div>
-              <div style={{ background: '#0d1117', border: '1px solid #ffffff', borderRadius: '16px', padding: '32px', maxWidth: '700px' }}>
+              <div style={{ background: '#ffffff', border: '1px solid #e8e6e0', borderRadius: '16px', padding: '32px', maxWidth: '700px' }}>
                 <h2 style={{ color: '#1a1a1a', fontSize: '22px', fontWeight: 700, margin: '0 0 20px' }}>
                   {SIDEBAR_ITEMS.find(s => s.id === secao)?.label}
                 </h2>
                 <p style={{ color: '#9e9b94', fontSize: '15px', lineHeight: '1.8', whiteSpace: 'pre-line', margin: 0 }}>
                   {CONTEUDO_INFO[secao].texto}
                 </p>
-                <div style={{ marginTop: '24px', padding: '16px', background: '#060a12', borderRadius: '10px', border: '1px solid #ffffff' }}>
+                <div style={{ marginTop: '24px', padding: '16px', background: '#f5f4f0', borderRadius: '10px', border: '1px solid #e8e6e0' }}>
                   <p style={{ color: '#9e9b94', fontSize: '12px', margin: 0 }}>
                     💡 <strong style={{ color: '#9e9b94' }}>Dica:</strong> Para personalizar este conteúdo com as informações do seu salão, entre em contato com o suporte Nodri.
                   </p>

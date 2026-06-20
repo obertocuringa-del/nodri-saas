@@ -110,14 +110,14 @@ export default function LandingPage() {
       </section>
 
       {/* TRABALHE CONOSCO */}
-      <section style={{ background: 'linear-gradient(135deg,#0d1117,#161820)', padding: '60px 20px', textAlign: 'center', borderTop: '1px solid #e8e6e0' }}>
+      <section style={{ background: 'linear-gradient(135deg,#ffffff,#161820)', padding: '60px 20px', textAlign: 'center', borderTop: '1px solid #e8e6e0' }}>
         <div style={{ maxWidth: 600, margin: '0 auto' }}>
           <div style={{ fontSize: 40, marginBottom: 16 }}></div>
           <h2 style={{ fontSize: 28, fontWeight: 900, color: '#5b4fcf', marginBottom: 12 }}>{cfg.afiliados_titulo}</h2>
           <p style={{ color: '#9e9b94', fontSize: 15, lineHeight: 1.7, marginBottom: 8 }}>{cfg.afiliados_subtitulo}</p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', margin: '24px 0' }}>
             {(cfg.afiliados_chips || []).map((b: any, i: number) => (
-              <div key={i} style={{ background: '#0d1117', border: '1px solid #e8e6e0', borderRadius: 10, padding: '12px 20px', color: '#1a1a1a', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div key={i} style={{ background: '#ffffff', border: '1px solid #e8e6e0', borderRadius: 10, padding: '12px 20px', color: '#1a1a1a', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span>{b.emoji}</span> {b.texto}
               </div>
             ))}

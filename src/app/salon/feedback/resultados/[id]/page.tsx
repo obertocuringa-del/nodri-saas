@@ -245,7 +245,7 @@ export default function ResultadosPage() {
 
               {/*  CARDS RESUMO  */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="print-card p-4 rounded-xl border" style={{ background: '#0d1117', borderColor: 'rgba(34,197,94,0.2)' }}>
+                <div className="print-card p-4 rounded-xl border" style={{ background: '#ffffff', borderColor: 'rgba(34,197,94,0.2)' }}>
                   <div className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1">Respostas</div>
                   <div className="text-3xl font-black text-green-400">{data.total_respostas}</div>
                 </div>
@@ -253,7 +253,7 @@ export default function ResultadosPage() {
                   const s = data.stats[p.id] as EscalaStat
                   if (!s) return null
                   return (
-                    <div key={p.id} className="print-card p-4 rounded-xl border" style={{ background: '#0d1117', borderColor: 'rgba(139,92,246,.2)' }}>
+                    <div key={p.id} className="print-card p-4 rounded-xl border" style={{ background: '#ffffff', borderColor: 'rgba(139,92,246,.2)' }}>
                       <div className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1">Nota Média</div>
                       <div className="text-3xl font-black text-purple-400">{s.media}<span className="text-sm text-nodri-t3">/10</span></div>
                       <div className="text-[10px] mt-1" style={{ color: s.media >= 8 ? '#4ade80' : s.media >= 7 ? '#facc15' : '#f87171' }}>
@@ -263,14 +263,14 @@ export default function ResultadosPage() {
                   )
                 })}
                 {data.taxaRetorno && (
-                  <div className="print-card p-4 rounded-xl border" style={{ background: '#0d1117', borderColor: 'rgba(6,182,212,.2)' }}>
+                  <div className="print-card p-4 rounded-xl border" style={{ background: '#ffffff', borderColor: 'rgba(6,182,212,.2)' }}>
                     <div className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1">Taxa de Retorno</div>
                     <div className="text-3xl font-black text-cyan-400">{data.taxaRetorno.percentual}%</div>
                     <div className="text-[10px] text-nodri-t3 mt-1">{data.taxaRetorno.positivo}/{data.taxaRetorno.total} clientes</div>
                   </div>
                 )}
                 {data.piorServico && (
-                  <div className="print-card p-4 rounded-xl border" style={{ background: '#0d1117', borderColor: 'rgba(239,68,68,.25)' }}>
+                  <div className="print-card p-4 rounded-xl border" style={{ background: '#ffffff', borderColor: 'rgba(239,68,68,.25)' }}>
                     <div className="text-[10px] text-red-400 uppercase tracking-wider mb-1 flex items-center gap-1">
                       <AlertTriangle size={9} /> Serviço crítico
                     </div>
@@ -287,7 +287,7 @@ export default function ResultadosPage() {
                 return (
                   <div key={p.id} className="print-card grid grid-cols-3 gap-3">
                     <NpsGauge nps={s.nps} />
-                    <div className="p-4 rounded-xl border col-span-2" style={{ background: '#0d1117', borderColor: 'rgba(255,255,255,.07)' }}>
+                    <div className="p-4 rounded-xl border col-span-2" style={{ background: '#ffffff', borderColor: 'rgba(255,255,255,.07)' }}>
                       <div className="text-[10px] text-nodri-t3 mb-2 truncate">{p.titulo}</div>
                       <div className="flex gap-3 mb-3">
                         {[{ label: 'Promotores (9-10)', val: s.promotores, cor: '#4ade80' }, { label: 'Neutros (7-8)', val: s.neutros, cor: '#facc15' }, { label: 'Detratores (0-6)', val: s.detratores, cor: '#f87171' }].map(({ label, val, cor }) => (
@@ -318,7 +318,7 @@ export default function ResultadosPage() {
 
               {/*  TENDÊNCIA SEMANAL  */}
               {data.tendenciaSemanal.length >= 2 && (
-                <div className="print-card rounded-2xl border p-5" style={{ background: '#0d1117', borderColor: 'rgba(255,255,255,.07)' }}>
+                <div className="print-card rounded-2xl border p-5" style={{ background: '#ffffff', borderColor: 'rgba(255,255,255,.07)' }}>
                   <div className="flex items-center gap-2 mb-4">
                     <TrendingUp size={14} className="text-nodri-cyan" />
                     <span className="text-[13px] font-semibold text-nodri-t1">Tendência Semanal — Nota Média</span>
@@ -364,7 +364,7 @@ export default function ResultadosPage() {
 
               {/*  SEGMENTAÇÃO NOVO X RECORRENTE  */}
               {data.segmentacao && (data.segmentacao.novos.count > 0 || data.segmentacao.recorrentes.count > 0) && (
-                <div className="print-card rounded-2xl border p-5" style={{ background: '#0d1117', borderColor: 'rgba(255,255,255,.07)' }}>
+                <div className="print-card rounded-2xl border p-5" style={{ background: '#ffffff', borderColor: 'rgba(255,255,255,.07)' }}>
                   <div className="flex items-center gap-2 mb-4">
                     <Users size={14} className="text-nodri-purple" />
                     <span className="text-[13px] font-semibold text-nodri-t1">Segmentação — Novos vs Recorrentes</span>
@@ -743,7 +743,7 @@ export default function ResultadosPage() {
                   const stat = data.stats[pergunta.id]
                   if (!stat) return null
                   return (
-                    <div key={pergunta.id} className="print-card rounded-2xl border overflow-hidden" style={{ background: '#0d1117', borderColor: 'rgba(255,255,255,.07)' }}>
+                    <div key={pergunta.id} className="print-card rounded-2xl border overflow-hidden" style={{ background: '#ffffff', borderColor: 'rgba(255,255,255,.07)' }}>
                       <div className="px-5 py-3 border-b flex items-center gap-2" style={{ borderColor: 'rgba(255,255,255,.06)' }}>
                         <span className="text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold text-nodri-t3" style={{ background: 'rgba(255,255,255,.06)' }}>{idx + 1}</span>
                         <span className="text-[13px] font-medium text-nodri-t1 flex-1">{pergunta.titulo}</span>
@@ -849,7 +849,7 @@ export default function ResultadosPage() {
 
               {/*  COMENTÁRIOS  */}
               {data.comentarios.length > 0 && (
-                <div className="print-card rounded-2xl border overflow-hidden" style={{ background: '#0d1117', borderColor: 'rgba(255,255,255,.07)' }}>
+                <div className="print-card rounded-2xl border overflow-hidden" style={{ background: '#ffffff', borderColor: 'rgba(255,255,255,.07)' }}>
                   <div className="px-5 py-3 border-b flex items-center gap-2" style={{ borderColor: 'rgba(255,255,255,.06)' }}>
                     <span className="text-lg"></span>
                     <span className="text-[13px] font-medium text-nodri-t1">Comentários dos Clientes</span>
@@ -868,7 +868,7 @@ export default function ResultadosPage() {
 
               {/* GERENCIAR RESPOSTAS */}
               {data.respostas_recentes?.length > 0 && (
-                <div className="print-card rounded-2xl border overflow-hidden" style={{ background: '#0d1117', borderColor: 'rgba(255,255,255,.07)' }}>
+                <div className="print-card rounded-2xl border overflow-hidden" style={{ background: '#ffffff', borderColor: 'rgba(255,255,255,.07)' }}>
                   <div className="px-5 py-3 border-b flex items-center gap-2" style={{ borderColor: 'rgba(255,255,255,.06)' }}>
                     <Trash2 size={14} className="text-red-400" />
                     <span className="text-[13px] font-medium text-nodri-t1">Gerenciar Respostas</span>

@@ -251,7 +251,7 @@ export default function ResultadosProfPage() {
                     { label: 'Negativos', val: data.totalNegativo, cor: '#f87171' },
                     { label: '% Positivo', val: data.total > 0 ? Math.round(data.totalPositivo / data.total * 100) + '%' : '—', cor: data.total > 0 && data.totalPositivo / data.total >= 0.6 ? '#4ade80' : '#f87171' },
                   ].map(({ label, val, cor }) => (
-                    <div key={label} className="pcard p-4 rounded-xl border text-center" style={{ background: '#0d1117', borderColor: `${cor}30` }}>
+                    <div key={label} className="pcard p-4 rounded-xl border text-center" style={{ background: '#ffffff', borderColor: `${cor}30` }}>
                       <div className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1">{label}</div>
                       <div className="text-2xl font-black" style={{ color: cor }}>{val}</div>
                     </div>
@@ -259,7 +259,7 @@ export default function ResultadosProfPage() {
                 </div>
 
                 {/* Filtros */}
-                <div className="flex flex-wrap items-center gap-2 px-4 py-3 rounded-xl border" style={{ background: '#0d1117', borderColor: 'rgba(255,255,255,.07)' }}>
+                <div className="flex flex-wrap items-center gap-2 px-4 py-3 rounded-xl border" style={{ background: '#ffffff', borderColor: 'rgba(255,255,255,.07)' }}>
                   <span className="text-[11px] text-nodri-t3 font-semibold">Filtros:</span>
                   <select value={filtroProfissional} onChange={e => setFiltroProfissional(e.target.value)} className="bg-nodri-card border border-nodri-border rounded-lg px-2 py-1.5 text-[11px] text-nodri-t1 outline-none">
                     <option value="">Todos profissionais</option>
@@ -338,7 +338,7 @@ export default function ResultadosProfPage() {
                     // Usamos o top_problema e negativos do placard como proxy
 
                     return (
-                    <div className="pcard rounded-2xl border overflow-hidden" style={{ background: '#0d1117', borderColor: 'rgba(255,255,255,.07)' }}>
+                    <div className="pcard rounded-2xl border overflow-hidden" style={{ background: '#ffffff', borderColor: 'rgba(255,255,255,.07)' }}>
                       <div className="px-5 py-3 border-b flex items-center gap-2 flex-wrap" style={{ borderColor: 'rgba(255,255,255,.06)' }}>
                         <span className="text-sm"></span>
                         <span className="text-[13px] font-semibold text-nodri-t1">Placar Mensal</span>
@@ -490,7 +490,7 @@ export default function ResultadosProfPage() {
 
                   {/* Histórico de Bloqueios */}
                   {historicoBloqueios && historicoBloqueios.profissionais.length > 0 && (
-                    <div className="pcard rounded-2xl border overflow-hidden" style={{ background: '#0d1117', borderColor: 'rgba(239,68,68,.2)' }}>
+                    <div className="pcard rounded-2xl border overflow-hidden" style={{ background: '#ffffff', borderColor: 'rgba(239,68,68,.2)' }}>
                       <div className="px-5 py-3 border-b flex items-center gap-2" style={{ borderColor: 'rgba(239,68,68,.12)', background: 'rgba(239,68,68,.05)' }}>
                         <span className="text-sm"></span>
                         <span className="text-[13px] font-semibold text-red-300">Histórico de Bloqueios {historicoBloqueios.ano}</span>
@@ -564,7 +564,7 @@ export default function ResultadosProfPage() {
               {abaAtiva === 'ocorrencias' && (
                 <div className="space-y-4">
                   {/* Ocorrências mais frequentes */}
-                  <div className="pcard rounded-2xl border overflow-hidden" style={{ background: '#0d1117', borderColor: 'rgba(255,255,255,.07)' }}>
+                  <div className="pcard rounded-2xl border overflow-hidden" style={{ background: '#ffffff', borderColor: 'rgba(255,255,255,.07)' }}>
                     <div className="px-5 py-3 border-b flex items-center gap-2" style={{ borderColor: 'rgba(255,255,255,.06)' }}>
                       <span className="text-sm"></span>
                       <span className="text-[13px] font-semibold text-nodri-t1">Ocorrências Mais Frequentes</span>
@@ -592,7 +592,7 @@ export default function ResultadosProfPage() {
 
                   {/* Matriz */}
                   {data.matriz.length > 0 && data.topOcorrencias.length > 0 && (
-                    <div className="pcard rounded-2xl border overflow-hidden" style={{ background: '#0d1117', borderColor: 'rgba(255,255,255,.07)' }}>
+                    <div className="pcard rounded-2xl border overflow-hidden" style={{ background: '#ffffff', borderColor: 'rgba(255,255,255,.07)' }}>
                       <div className="px-5 py-3 border-b flex items-center gap-2" style={{ borderColor: 'rgba(255,255,255,.06)' }}>
                         <span className="text-sm"></span>
                         <span className="text-[13px] font-semibold text-nodri-t1">Matriz Profissional × Ocorrência</span>
@@ -659,7 +659,7 @@ export default function ResultadosProfPage() {
               {abaAtiva === 'plano' && (
                 <div className="space-y-4">
                   {data.planoAcao && data.planoAcao.length > 0 ? (
-                    <div className="pcard rounded-2xl border overflow-hidden" style={{ background: '#0d1117', borderColor: 'rgba(139,92,246,.25)' }}>
+                    <div className="pcard rounded-2xl border overflow-hidden" style={{ background: '#ffffff', borderColor: 'rgba(139,92,246,.25)' }}>
                       <div className="px-5 py-3 border-b" style={{ borderColor: 'rgba(139,92,246,.15)', background: 'rgba(139,92,246,.07)' }}>
                         <div className="flex items-center gap-2">
                           <span className="text-base"></span>
@@ -746,7 +746,7 @@ export default function ResultadosProfPage() {
 
                   {/* Dias da Semana com Mais Ocorrências */}
                   {data.diasSemana.some(d => d.total > 0) && (
-                    <div className="pcard rounded-2xl border p-5" style={{ background: '#0d1117', borderColor: 'rgba(255,255,255,.07)' }}>
+                    <div className="pcard rounded-2xl border p-5" style={{ background: '#ffffff', borderColor: 'rgba(255,255,255,.07)' }}>
                       <div className="flex items-center gap-2 mb-4">
                         <span className="text-sm"></span>
                         <span className="text-[13px] font-semibold text-nodri-t1">Dias da Semana com Mais Ocorrências</span>
@@ -777,7 +777,7 @@ export default function ResultadosProfPage() {
 
                   {/* Registros recentes */}
                   {data.respostas_recentes.length > 0 && (
-                    <div className="pcard rounded-2xl border overflow-hidden" style={{ background: '#0d1117', borderColor: 'rgba(255,255,255,.07)' }}>
+                    <div className="pcard rounded-2xl border overflow-hidden" style={{ background: '#ffffff', borderColor: 'rgba(255,255,255,.07)' }}>
                       <div className="px-5 py-3 border-b flex items-center gap-2" style={{ borderColor: 'rgba(255,255,255,.06)' }}>
                         <span className="text-sm"></span>
                         <span className="text-[13px] font-semibold text-nodri-t1">Registros Recentes</span>

@@ -232,12 +232,12 @@ export default function BloqueiosPage() {
           <>
             {/* Períodos */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="pcard p-4 rounded-xl border text-center" style={{ background: '#0d1117', borderColor: 'rgba(250,204,21,.2)' }}>
+              <div className="pcard p-4 rounded-xl border text-center" style={{ background: '#ffffff', borderColor: 'rgba(250,204,21,.2)' }}>
                 <div className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1">Período Atrasos (semana)</div>
                 <div className="text-sm font-bold text-yellow-400">{data.periodo_semana}</div>
                 <div className="text-[10px] text-nodri-t3 mt-1">≥ {regras.atrasos_por_semana} atrasos → bloqueio {regras.dias_bloqueio_atraso} dias</div>
               </div>
-              <div className="pcard p-4 rounded-xl border text-center" style={{ background: '#0d1117', borderColor: 'rgba(239,68,68,.2)' }}>
+              <div className="pcard p-4 rounded-xl border text-center" style={{ background: '#ffffff', borderColor: 'rgba(239,68,68,.2)' }}>
                 <div className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1">Período Faltas (mês)</div>
                 <div className="text-sm font-bold text-red-400">{data.periodo_mes}</div>
                 <div className="text-[10px] text-nodri-t3 mt-1">≥ {regras.faltas_por_mes} faltas → bloqueio {regras.dias_bloqueio_falta} dias</div>
@@ -251,7 +251,7 @@ export default function BloqueiosPage() {
                 { label: 'Disponíveis', val: disponiveis.length, cor: '#4ade80' },
                 { label: 'Bloqueados', val: bloqueados.length, cor: '#f87171' },
               ].map(({ label, val, cor }) => (
-                <div key={label} className="pcard p-4 rounded-xl border text-center" style={{ background: '#0d1117', borderColor: `${cor}30` }}>
+                <div key={label} className="pcard p-4 rounded-xl border text-center" style={{ background: '#ffffff', borderColor: `${cor}30` }}>
                   <div className="text-[10px] text-nodri-t3 uppercase mb-1">{label}</div>
                   <div className="text-2xl font-black" style={{ color: cor }}>{val}</div>
                 </div>
@@ -260,7 +260,7 @@ export default function BloqueiosPage() {
 
             {/* Bloqueados */}
             {bloqueados.length > 0 && (
-              <div className="pcard rounded-2xl border overflow-hidden" style={{ background: '#0d1117', borderColor: 'rgba(239,68,68,.25)' }}>
+              <div className="pcard rounded-2xl border overflow-hidden" style={{ background: '#ffffff', borderColor: 'rgba(239,68,68,.25)' }}>
                 <div className="px-5 py-3 border-b flex items-center gap-2"
                   style={{ borderColor: 'rgba(239,68,68,.15)', background: 'rgba(239,68,68,.06)' }}>
                   <Lock size={14} className="text-red-400" />
@@ -317,7 +317,7 @@ export default function BloqueiosPage() {
             )}
 
             {/* Disponíveis */}
-            <div className="pcard rounded-2xl border overflow-hidden" style={{ background: '#0d1117', borderColor: 'rgba(34,197,94,.2)' }}>
+            <div className="pcard rounded-2xl border overflow-hidden" style={{ background: '#ffffff', borderColor: 'rgba(34,197,94,.2)' }}>
               <div className="px-5 py-3 border-b flex items-center gap-2"
                 style={{ borderColor: 'rgba(34,197,94,.12)', background: 'rgba(34,197,94,.05)' }}>
                 <Unlock size={14} className="text-green-400" />
@@ -381,7 +381,7 @@ export default function BloqueiosPage() {
             </div>
 
             {/* Regras editáveis */}
-            <div className="pcard rounded-2xl border overflow-hidden" style={{ background: '#0d1117', borderColor: 'rgba(139,92,246,.2)' }}>
+            <div className="pcard rounded-2xl border overflow-hidden" style={{ background: '#ffffff', borderColor: 'rgba(139,92,246,.2)' }}>
               <div className="px-5 py-3 border-b flex items-center gap-2"
                 style={{ borderColor: 'rgba(139,92,246,.15)', background: 'rgba(139,92,246,.06)' }}>
                 <Settings size={14} className="text-purple-400" />
@@ -464,7 +464,7 @@ export default function BloqueiosPage() {
               </div>
             </div>
             {/* Regras Customizadas */}
-            <div className="pcard rounded-2xl border overflow-hidden" style={{ background: '#0d1117', borderColor: 'rgba(34,211,238,.2)' }}>
+            <div className="pcard rounded-2xl border overflow-hidden" style={{ background: '#ffffff', borderColor: 'rgba(34,211,238,.2)' }}>
               <div className="px-5 py-3 border-b flex items-center gap-2"
                 style={{ borderColor: 'rgba(34,211,238,.12)', background: 'rgba(34,211,238,.05)' }}>
                 <Plus size={14} className="text-nodri-cyan" />

@@ -174,7 +174,7 @@ function TabelaComp({ title, items, label1, label2 }: { title: string; items: It
 
   const Th = ({ k, children }: { k: SortKey; children: React.ReactNode }) => (
     <th onClick={() => setSort(s => ({ key: k, dir: s.key === k ? (-s.dir as 1 | -1) : -1 }))}
-      style={{ padding: '10px 12px', fontSize: 11, color: '#9e9b94', fontWeight: 600, textAlign: k === 'nome' ? 'left' : 'right', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap', background: '#f5f4f0', borderBottom: '1px solid #ffffff' }}>
+      style={{ padding: '10px 12px', fontSize: 11, color: '#9e9b94', fontWeight: 600, textAlign: k === 'nome' ? 'left' : 'right', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap', background: '#f5f4f0', borderBottom: '1px solid #e8e6e0' }}>
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
         {children}
         {sort.key === k ? (sort.dir === -1 ? <ChevronDown size={11} /> : <ChevronUp size={11} />) : <ChevronsUpDown size={11} style={{ opacity: 0.3 }} />}
@@ -183,12 +183,12 @@ function TabelaComp({ title, items, label1, label2 }: { title: string; items: It
   )
 
   return (
-    <div style={{ background: '#f5f4f0', border: '1px solid #ffffff', borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
-      <div style={{ padding: '16px 16px 12px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid #ffffff' }}>
+    <div style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
+      <div style={{ padding: '16px 16px 12px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid #e8e6e0' }}>
         <h3 style={{ color: '#1a1a1a', fontSize: 14, fontWeight: 700, margin: 0, flex: 1 }}>{title}</h3>
         <span style={{ fontSize: 11, color: '#6b6860' }}>{sorted.length} itens</span>
         <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="filtrar..."
-          style={{ background: '#faf9f7', border: '1px solid #ffffff', borderRadius: 6, padding: '4px 10px', fontSize: 12, color: '#1a1a1a', outline: 'none', width: 140 }} />
+          style={{ background: '#faf9f7', border: '1px solid #e8e6e0', borderRadius: 6, padding: '4px 10px', fontSize: 12, color: '#1a1a1a', outline: 'none', width: 140 }} />
       </div>
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
@@ -205,7 +205,7 @@ function TabelaComp({ title, items, label1, label2 }: { title: string; items: It
             {exibidos.map((item, i) => {
               const { bg, text, border } = corPct(item.pct)
               return (
-                <tr key={i} style={{ borderBottom: '1px solid #0d1520', background: i % 2 === 0 ? 'transparent' : '#f5f4f010' }}>
+                <tr key={i} style={{ borderBottom: '1px solid #faf9f7', background: i % 2 === 0 ? 'transparent' : '#f5f4f010' }}>
                   <td style={{ padding: '9px 12px', color: '#3a3835', fontWeight: 500, maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.nome}>{item.nome}</td>
                   <td style={{ padding: '9px 12px', textAlign: 'right', color: '#1a1a1a', fontWeight: 700 }}>{item.p1}</td>
                   <td style={{ padding: '9px 12px', textAlign: 'right', color: '#9e9b94' }}>{item.p2}</td>
@@ -801,7 +801,7 @@ export default function RelatoriosPage() {
     <div style={{ minHeight: '100vh', background: '#f5f4f0', display: 'flex', flexDirection: 'column', fontFamily: "'Inter', 'Segoe UI', sans-serif", color: '#1a1a1a' }}>
 
       {/* ── TOP BAR ── */}
-      <div style={{ background: '#f5f4f0', borderBottom: '1px solid #ffffff', padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 20, overflowX: 'auto', flexWrap: 'wrap' }}>
+      <div style={{ background: '#f5f4f0', borderBottom: '1px solid #e8e6e0', padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 20, overflowX: 'auto', flexWrap: 'wrap' }}>
         <a href="/salon" style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#6b6860', textDecoration: 'none', fontSize: 13 }}>
           <ArrowLeft size={15} /> Voltar
         </a>
@@ -813,7 +813,7 @@ export default function RelatoriosPage() {
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
 
             {/* Modo de comparação */}
-            <div style={{ display: 'flex', background: '#faf9f7', borderRadius: 7, border: '1px solid #ffffff', padding: 2, gap: 2 }}>
+            <div style={{ display: 'flex', background: '#faf9f7', borderRadius: 7, border: '1px solid #e8e6e0', padding: 2, gap: 2 }}>
               {(['auto', 'custom'] as const).map(m => (
                 <button key={m} onClick={() => setModo(m)} style={{ padding: '4px 12px', borderRadius: 5, border: 'none', fontSize: 11, fontWeight: 600, cursor: 'pointer', background: modo === m ? '#5b4fcf' : 'transparent', color: modo === m ? 'white' : '#9e9b94' }}>
                   {m === 'auto' ? 'Automático' : 'Personalizado'}
@@ -823,10 +823,10 @@ export default function RelatoriosPage() {
 
             {modo === 'auto' ? (
               <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                <select value={p1Mes} onChange={e => setP1Mes(+e.target.value)} style={{ background: '#faf9f7', border: '1px solid #ffffff', borderRadius: 6, color: '#1a1a1a', padding: '5px 8px', fontSize: 12, outline: 'none' }}>
+                <select value={p1Mes} onChange={e => setP1Mes(+e.target.value)} style={{ background: '#faf9f7', border: '1px solid #e8e6e0', borderRadius: 6, color: '#1a1a1a', padding: '5px 8px', fontSize: 12, outline: 'none' }}>
                   {(mesesDisp.length ? mesesDisp : Array.from({ length: 12 }, (_, i) => i + 1)).map(m => <option key={m} value={m}>{MESES_FULL[m]}</option>)}
                 </select>
-                <select value={p1Ano} onChange={e => setP1Ano(+e.target.value)} style={{ background: '#faf9f7', border: '1px solid #ffffff', borderRadius: 6, color: '#1a1a1a', padding: '5px 8px', fontSize: 12, outline: 'none' }}>
+                <select value={p1Ano} onChange={e => setP1Ano(+e.target.value)} style={{ background: '#faf9f7', border: '1px solid #e8e6e0', borderRadius: 6, color: '#1a1a1a', padding: '5px 8px', fontSize: 12, outline: 'none' }}>
                   {anosDisp.map(a => <option key={a} value={a}>{a}</option>)}
                 </select>
                 <span style={{ fontSize: 11, color: '#6b6860' }}>vs {MESES[p1Mes]}/{p1Ano - 1}</span>
@@ -835,16 +835,16 @@ export default function RelatoriosPage() {
               <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   <span style={{ fontSize: 10, color: '#5b4fcf', fontWeight: 700 }}>P1</span>
-                  <input type="date" value={p1De} onChange={e => setP1De(e.target.value)} style={{ background: '#faf9f7', border: '1px solid #ffffff', borderRadius: 6, color: '#1a1a1a', padding: '4px 6px', fontSize: 11, outline: 'none' }} />
+                  <input type="date" value={p1De} onChange={e => setP1De(e.target.value)} style={{ background: '#faf9f7', border: '1px solid #e8e6e0', borderRadius: 6, color: '#1a1a1a', padding: '4px 6px', fontSize: 11, outline: 'none' }} />
                   <span style={{ fontSize: 10, color: '#6b6860' }}>a</span>
-                  <input type="date" value={p1Ate} onChange={e => setP1Ate(e.target.value)} style={{ background: '#faf9f7', border: '1px solid #ffffff', borderRadius: 6, color: '#1a1a1a', padding: '4px 6px', fontSize: 11, outline: 'none' }} />
+                  <input type="date" value={p1Ate} onChange={e => setP1Ate(e.target.value)} style={{ background: '#faf9f7', border: '1px solid #e8e6e0', borderRadius: 6, color: '#1a1a1a', padding: '4px 6px', fontSize: 11, outline: 'none' }} />
                 </div>
                 <span style={{ fontSize: 11, color: '#dedad4' }}>vs</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   <span style={{ fontSize: 10, color: '#06b6d4', fontWeight: 700 }}>P2</span>
-                  <input type="date" value={p2De} onChange={e => setP2De(e.target.value)} style={{ background: '#faf9f7', border: '1px solid #ffffff', borderRadius: 6, color: '#1a1a1a', padding: '4px 6px', fontSize: 11, outline: 'none' }} />
+                  <input type="date" value={p2De} onChange={e => setP2De(e.target.value)} style={{ background: '#faf9f7', border: '1px solid #e8e6e0', borderRadius: 6, color: '#1a1a1a', padding: '4px 6px', fontSize: 11, outline: 'none' }} />
                   <span style={{ fontSize: 10, color: '#6b6860' }}>a</span>
-                  <input type="date" value={p2Ate} onChange={e => setP2Ate(e.target.value)} style={{ background: '#faf9f7', border: '1px solid #ffffff', borderRadius: 6, color: '#1a1a1a', padding: '4px 6px', fontSize: 11, outline: 'none' }} />
+                  <input type="date" value={p2Ate} onChange={e => setP2Ate(e.target.value)} style={{ background: '#faf9f7', border: '1px solid #e8e6e0', borderRadius: 6, color: '#1a1a1a', padding: '4px 6px', fontSize: 11, outline: 'none' }} />
                 </div>
               </div>
             )}
@@ -878,7 +878,7 @@ export default function RelatoriosPage() {
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
 
           {/* ABAS */}
-          <div style={{ padding: '12px 20px 0', display: 'flex', gap: 4, borderBottom: '1px solid #ffffff' }}>
+          <div style={{ padding: '12px 20px 0', display: 'flex', gap: 4, borderBottom: '1px solid #e8e6e0' }}>
             {([['geral', 'Geral'], ['metas', 'Metas'], ['meta_prof', 'Meta Prof.'], ['redistribuicao', 'Redistribuição']] as const).map(([id, lbl]) => (
               <button key={id} onClick={() => setAba(id as any)}
                 style={{ padding: '8px 18px', border: 'none', borderRadius: '8px 8px 0 0', fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s', background: aba === id ? '#f5f4f0' : 'transparent', color: aba === id ? '#1a1a1a' : '#6b6860', borderBottom: aba === id ? '2px solid #5b4fcf' : '2px solid transparent', marginBottom: -1 }}>
@@ -894,7 +894,7 @@ export default function RelatoriosPage() {
                 <BarChart2 size={13} /> Mais Relatórios <ChevronDown size={12} style={{ transform: dropdownAberto ? 'rotate(180deg)' : 'none', transition: '0.15s' }} />
               </button>
               {dropdownAberto && (
-                <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', top: '100%', left: 0, zIndex: 100, background: '#f5f4f0', border: '1px solid #ffffff', borderRadius: 10, minWidth: 230, boxShadow: '0 8px 32px #0009', marginTop: 4 }}>
+                <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', top: '100%', left: 0, zIndex: 100, background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 10, minWidth: 230, boxShadow: '0 8px 32px #0009', marginTop: 4 }}>
                   {[
                     { id: 'risco', icon: <AlertTriangle size={13} />, label: 'Em Risco', desc: 'Prestes a abandonar' },
                     { id: 'perdidos', icon: <Users size={13} />, label: 'Perdidos', desc: 'Não voltam há muito tempo' },
@@ -1040,7 +1040,7 @@ export default function RelatoriosPage() {
                   const bandBot = yOf(Math.max(media-dp, 0))
 
                   return (
-                    <div style={{background:'#f5f4f0',border:'1px solid #ffffff',borderRadius:12,padding:20,marginBottom:16}}>
+                    <div style={{background:'#f5f4f0',border:'1px solid #e8e6e0',borderRadius:12,padding:20,marginBottom:16}}>
                       {/* header */}
                       <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',flexWrap:'wrap',gap:10,marginBottom:14}}>
                         <div>
@@ -1161,7 +1161,7 @@ export default function RelatoriosPage() {
                       </div>
 
                       {/* legenda das linhas */}
-                      <div style={{display:'flex',gap:16,marginTop:12,marginBottom:12,flexWrap:'wrap',padding:'10px 14px',background:'#f5f4f0',borderRadius:8,border:'1px solid #ffffff'}}>
+                      <div style={{display:'flex',gap:16,marginTop:12,marginBottom:12,flexWrap:'wrap',padding:'10px 14px',background:'#f5f4f0',borderRadius:8,border:'1px solid #e8e6e0'}}>
                         <div style={{fontSize:10,color:'#9e9b94',fontWeight:700,width:'100%',marginBottom:4}}>O QUE SIGNIFICA CADA ELEMENTO DO GRÁFICO:</div>
                         <div style={{display:'flex',alignItems:'center',gap:6}}>
                           <div style={{width:28,height:12,borderRadius:2,background:'linear-gradient(180deg,#5b4fcf,#5b4fcf66)'}}/>
@@ -1203,7 +1203,7 @@ export default function RelatoriosPage() {
                             </div>
                           )
                         })}
-                        <div style={{background:'#faf9f7',border:'1px solid #ffffff',borderRadius:8,padding:'8px 12px',minWidth:160}}>
+                        <div style={{background:'#faf9f7',border:'1px solid #e8e6e0',borderRadius:8,padding:'8px 12px',minWidth:160}}>
                           <div style={{fontSize:10,color:'#9e9b94',marginBottom:4,fontWeight:700}}>TODOS OS ANOS</div>
                           <div style={{fontSize:10,color:'#9e9b94',lineHeight:1.8}}>
                             <div>Média global: <span style={{color:'#9e9b94',fontWeight:700}}>{moeda(media)}</span></div>
@@ -1233,7 +1233,7 @@ export default function RelatoriosPage() {
                     </select>
                   )
                   return (
-                    <div style={{ background: '#f5f4f0', border: '1px solid #ffffff', borderRadius: 12, padding: 20, marginBottom: 16 }}>
+                    <div style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 12, padding: 20, marginBottom: 16 }}>
                       <h3 style={{ color: '#1a1a1a', fontSize: 14, fontWeight: 700, margin: '0 0 14px' }}>Comparativo Acumulado</h3>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
                         {([{ label: 'Intervalo A', de: acumA1, ate: acumA2, setDe: setAcumA1, setAte: setAcumA2, total: totalA, cor: '#5b4fcf' },
@@ -1261,7 +1261,7 @@ export default function RelatoriosPage() {
                 })()}
 
                 {/* Configuração da meta */}
-                <div style={{ background: '#f5f4f0', border: '1px solid #ffffff', borderRadius: 12, padding: 20, marginBottom: 16 }}>
+                <div style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 12, padding: 20, marginBottom: 16 }}>
                   <h3 style={{ color: '#5b4fcf', fontSize: 14, fontWeight: 700, margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: 8 }}><Settings size={15} /> Configurar Meta</h3>
 
                   {/* Seletor de período de comparação */}
@@ -1289,17 +1289,17 @@ export default function RelatoriosPage() {
                   </div>
 
                   <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', background: '#faf9f7', borderRadius: 7, border: '1px solid #ffffff', padding: 2, gap: 2 }}>
+                    <div style={{ display: 'flex', background: '#faf9f7', borderRadius: 7, border: '1px solid #e8e6e0', padding: 2, gap: 2 }}>
                       <button onClick={() => setMetaTipo('valor')} style={{ padding: '5px 14px', borderRadius: 5, border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer', background: metaTipo === 'valor' ? '#5b4fcf' : 'transparent', color: metaTipo === 'valor' ? 'white' : '#9e9b94' }}>Valor fixo</button>
                       <button onClick={() => setMetaTipo('pct')} style={{ padding: '5px 14px', borderRadius: 5, border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer', background: metaTipo === 'pct' ? '#5b4fcf' : 'transparent', color: metaTipo === 'pct' ? 'white' : '#9e9b94' }}>% sobre período selecionado</button>
                     </div>
                     {metaTipo === 'valor' ? (
                       <input value={metaValor} onChange={e => setMetaValor(e.target.value)} placeholder="Ex: 250000"
-                        style={{ background: '#faf9f7', border: '1px solid #ffffff', borderRadius: 6, padding: '6px 12px', fontSize: 13, color: '#1a1a1a', outline: 'none', width: 160 }} />
+                        style={{ background: '#faf9f7', border: '1px solid #e8e6e0', borderRadius: 6, padding: '6px 12px', fontSize: 13, color: '#1a1a1a', outline: 'none', width: 160 }} />
                     ) : (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         <input value={metaPct} onChange={e => setMetaPct(e.target.value)} placeholder="5"
-                          style={{ background: '#faf9f7', border: '1px solid #ffffff', borderRadius: 6, padding: '6px 12px', fontSize: 13, color: '#1a1a1a', outline: 'none', width: 80 }} />
+                          style={{ background: '#faf9f7', border: '1px solid #e8e6e0', borderRadius: 6, padding: '6px 12px', fontSize: 13, color: '#1a1a1a', outline: 'none', width: 80 }} />
                         <span style={{ color: '#9e9b94', fontSize: 13 }}>% acima de {moeda(r2.fat_total)} ({p2De ? p2De.slice(0,7) : 'período selecionado'}) = <strong style={{ color: '#5b4fcf' }}>{moeda(r2.fat_total * (1 + parseFloat(metaPct || '0') / 100))}</strong></span>
                       </div>
                     )}
@@ -1356,7 +1356,7 @@ export default function RelatoriosPage() {
                     })()}
 
                     {/* Barra de progresso */}
-                    <div style={{ background: '#f5f4f0', border: '1px solid #ffffff', borderRadius: 12, padding: 20, marginBottom: 16 }}>
+                    <div style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 12, padding: 20, marginBottom: 16 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
                         <span style={{ fontSize: 13, fontWeight: 600, color: '#1a1a1a' }}>Progresso da Meta</span>
                         <span style={{ fontSize: 13, fontWeight: 700, color: progresso >= 100 ? '#10b981' : '#5b4fcf' }}>{progresso.toFixed(1)}%</span>
@@ -1371,7 +1371,7 @@ export default function RelatoriosPage() {
                     </div>
 
                     {/* Tabela comparativo histórico */}
-                    <div style={{ background: '#f5f4f0', border: '1px solid #ffffff', borderRadius: 12, padding: 20, marginBottom: 16 }}>
+                    <div style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 12, padding: 20, marginBottom: 16 }}>
                       <h3 style={{ color: '#1a1a1a', fontSize: 14, fontWeight: 700, margin: '0 0 16px' }}>Comparativo Histórico</h3>
                       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                         <tbody>
@@ -1383,7 +1383,7 @@ export default function RelatoriosPage() {
                             { lbl: 'Meta definida', val: moeda(metaTotal), cor: '#5b4fcf' },
                             { lbl: 'Super Meta (+5%)', val: moeda(superMeta), cor: '#f43f8e' },
                           ].map((row, i) => (
-                            <tr key={i} style={{ borderBottom: '1px solid #ffffff' }}>
+                            <tr key={i} style={{ borderBottom: '1px solid #e8e6e0' }}>
                               <td style={{ padding: '10px 0', color: '#6b6860', fontWeight: 500 }}>{row.lbl}</td>
                               <td style={{ padding: '10px 0', textAlign: 'right', fontWeight: 700, color: row.cor, fontSize: 15 }}>{row.val}</td>
                             </tr>
@@ -1394,7 +1394,7 @@ export default function RelatoriosPage() {
 
                     {/* Calendário — período ATUAL (P1) com REALIZADO; META calculada por pesos do P2 */}
                     {todosDiasCalendario.length > 0 && (
-                      <div style={{ background: '#f5f4f0', border: '1px solid #ffffff', borderRadius: 12, padding: 20 }}>
+                      <div style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 12, padding: 20 }}>
                         <h3 style={{ color: '#1a1a1a', fontSize: 14, fontWeight: 700, margin: '0 0 4px' }}>FATURAMENTO DIÁRIO E METAS — {label1.toUpperCase()}</h3>
                         <p style={{ color: '#6b6860', fontSize: 11, margin: '0 0 16px' }}>Necessidade Base = média por dia da semana em <strong style={{color:'#5b4fcf'}}>{MESES_FULL[p1Mes]}/{p1Ano - 1}</strong>. META = Necessidade Base × fator configurado.</p>
                         <div style={{ overflowX: 'auto' }}>
@@ -1410,7 +1410,7 @@ export default function RelatoriosPage() {
                                   { lbl: 'META',             align: 'right' },
                                   { lbl: 'SUPER META',       align: 'right' },
                                 ].map(h => (
-                                  <th key={h.lbl} style={{ padding: '9px 12px', textAlign: h.align as any, color: '#9e9b94', fontWeight: 700, fontSize: 11, borderBottom: '2px solid #ffffff', whiteSpace: 'nowrap' }}>{h.lbl}</th>
+                                  <th key={h.lbl} style={{ padding: '9px 12px', textAlign: h.align as any, color: '#9e9b94', fontWeight: 700, fontSize: 11, borderBottom: '2px solid #e8e6e0', whiteSpace: 'nowrap' }}>{h.lbl}</th>
                                 ))}
                               </tr>
                             </thead>
@@ -1438,7 +1438,7 @@ export default function RelatoriosPage() {
                                   status = 'NAO REALIZADO'; statusCor = '#ef4444'; statusBg = '#ef444415'
                                 }
                                 return (
-                                  <tr key={i} style={{ borderBottom: '1px solid #0d1520', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
+                                  <tr key={i} style={{ borderBottom: '1px solid #faf9f7', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
                                     <td style={{ padding: '8px 12px', color: '#9e9b94', whiteSpace: 'nowrap' }}>{d.data}</td>
                                     <td style={{ padding: '8px 12px', color: '#9e9b94',  whiteSpace: 'nowrap' }}>{d.diaSemana}</td>
                                     <td style={{ padding: '8px 12px', textAlign: 'right', color: necessidade > 0 ? '#f59e0b' : '#dedad4', fontWeight: necessidade > 0 ? 700 : 400 }}>{necessidade > 0 ? moeda(necessidade) : <span style={{color:'#ffffff'}}>—</span>}</td>
@@ -1454,7 +1454,7 @@ export default function RelatoriosPage() {
                             </tbody>
                           </table>
                         </div>
-                        <p style={{ color: '#dedad4', fontSize: 11, marginTop: 12, padding: '10px 0 0', borderTop: '1px solid #ffffff' }}>
+                        <p style={{ color: '#dedad4', fontSize: 11, marginTop: 12, padding: '10px 0 0', borderTop: '1px solid #e8e6e0' }}>
                           <strong style={{ color: '#6b6860' }}>Nota:</strong> As metas diárias são calculadas respeitando o peso de cada dia da semana com base no histórico do período anterior. A SUPER META é calculada automaticamente como 5% acima da META.
                         </p>
                       </div>
@@ -1891,12 +1891,12 @@ export default function RelatoriosPage() {
                   </div>
 
                   {/* Tabela */}
-                  <div style={{ background: '#f5f4f0', border: '1px solid #ffffff', borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
+                  <div style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                       <thead>
                         <tr style={{ background: '#f5f4f0' }}>
                           {['PROFISSIONAL', 'CARGO', 'META ORIGINAL', 'META AJUSTADA', 'DIFERENÇA', 'MOTIVO', 'REALIZADO'].map((h, hi) => (
-                            <th key={h} style={{ padding: '12px 16px', fontSize: 11, color: hi === 6 ? '#10b981' : '#9e9b94', fontWeight: 700, textAlign: hi >= 2 && hi <= 4 || hi === 6 ? 'right' : 'left', borderBottom: '1px solid #ffffff', whiteSpace: 'nowrap' }}>{h}</th>
+                            <th key={h} style={{ padding: '12px 16px', fontSize: 11, color: hi === 6 ? '#10b981' : '#9e9b94', fontWeight: 700, textAlign: hi >= 2 && hi <= 4 || hi === 6 ? 'right' : 'left', borderBottom: '1px solid #e8e6e0', whiteSpace: 'nowrap' }}>{h}</th>
                           ))}
                         </tr>
                       </thead>
@@ -1907,7 +1907,7 @@ export default function RelatoriosPage() {
                           const seta = r.tipo === 'doador' ? '↓' : r.tipo === 'receptor' ? '↑' : ''
                           const nomeMostra = r.prof.apelido || r.prof.nome_completo
                           return (
-                            <tr key={i} style={{ borderBottom: '1px solid #0d1520', background: i % 2 === 0 ? bgTipo : bgTipo || '#f5f4f008' }}>
+                            <tr key={i} style={{ borderBottom: '1px solid #faf9f7', background: i % 2 === 0 ? bgTipo : bgTipo || '#f5f4f008' }}>
                               <td style={{ padding: '10px 16px', color: '#1a1a1a', fontWeight: 600, fontSize: 13 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                   <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg, #5b4fcf, #f43f8e)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 11, flexShrink: 0 }}>
@@ -1942,7 +1942,7 @@ export default function RelatoriosPage() {
                   </div>
 
                   {/* Rodapé */}
-                  <div style={{ background: '#f5f4f0', border: '1px solid #ffffff', borderRadius: 10, padding: '12px 20px' }}>
+                  <div style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 10, padding: '12px 20px' }}>
                     <span style={{ fontSize: 12, color: '#6b6860', fontStyle: 'italic' }}>
                       *A soma das metas redistribuídas = <strong style={{ color: '#5b4fcf' }}>{moeda(somaRedist)}</strong> (igual à meta em comissão)
                     </span>
@@ -2006,7 +2006,7 @@ export default function RelatoriosPage() {
                   </details>
 
                   {/* Card header com meta total e período de referência */}
-                  <div style={{ background: '#f5f4f0', border: '1px solid #ffffff', borderRadius: 12, padding: 20, marginBottom: 16 }}>
+                  <div style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 12, padding: 20, marginBottom: 16 }}>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'center' }}>
                       <div>
                         <div style={{ fontSize: 11, color: '#6b6860', fontWeight: 600, marginBottom: 4 }}>META TOTAL DO SALÃO (BRUTO)</div>
@@ -2039,12 +2039,12 @@ export default function RelatoriosPage() {
                   </div>
 
                   {/* Tabela de metas por profissional */}
-                  <div style={{ background: '#f5f4f0', border: '1px solid #ffffff', borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
+                  <div style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                       <thead>
                         <tr style={{ background: '#f5f4f0' }}>
                           {['PROFISSIONAL', 'CARGO', 'META', 'REALIZADO', '%'].map((h, hi) => (
-                            <th key={h} style={{ padding: '12px 16px', fontSize: 11, color: '#9e9b94', fontWeight: 700, textAlign: hi >= 2 ? 'right' : 'left', borderBottom: '1px solid #ffffff', whiteSpace: 'nowrap' }}>{h}</th>
+                            <th key={h} style={{ padding: '12px 16px', fontSize: 11, color: '#9e9b94', fontWeight: 700, textAlign: hi >= 2 ? 'right' : 'left', borderBottom: '1px solid #e8e6e0', whiteSpace: 'nowrap' }}>{h}</th>
                           ))}
                         </tr>
                       </thead>
@@ -2055,7 +2055,7 @@ export default function RelatoriosPage() {
                           const nomeMostra = r.prof.apelido || r.prof.nome_completo
                           const rows: any[] = []
                           rows.push(
-                            <tr key={`row-${i}`} style={{ borderBottom: (r.estavaRef || r.fonte) ? 'none' : '1px solid #0d1520', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
+                            <tr key={`row-${i}`} style={{ borderBottom: (r.estavaRef || r.fonte) ? 'none' : '1px solid #faf9f7', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
                               <td style={{ padding: '10px 16px', color: '#1a1a1a', fontWeight: 600, fontSize: 13 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                   <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg, #5b4fcf, #f43f8e)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 11, flexShrink: 0 }}>
@@ -2079,7 +2079,7 @@ export default function RelatoriosPage() {
                           )
                           if (r.estavaRef || r.fonte || r.picoLabel) {
                             rows.push(
-                              <tr key={`badge-${i}`} style={{ borderBottom: '1px solid #0d1520', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
+                              <tr key={`badge-${i}`} style={{ borderBottom: '1px solid #faf9f7', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
                                 <td colSpan={5} style={{ padding: '2px 16px 8px 56px', display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
                                   {r.estavaRef && periodoRef && (
                                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 600, color: metaBatida ? '#10b981' : '#f59e0b', background: metaBatida ? '#10b98115' : '#f59e0b15', border: `1px solid ${metaBatida ? '#10b98130' : '#f59e0b30'}`, padding: '2px 8px', borderRadius: 20 }}>
@@ -2107,7 +2107,7 @@ export default function RelatoriosPage() {
                   </div>
 
                   {/* Rodapé */}
-                  <div style={{ background: '#f5f4f0', border: '1px solid #ffffff', borderRadius: 10, padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 10, padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ fontSize: 12, color: '#6b6860', fontWeight: 600 }}>Soma das metas individuais:</span>
                     <span style={{ fontSize: 14, fontWeight: 800, color: '#5b4fcf' }}>{moeda(somaMetasIndividuais)}</span>
                     {metaEmComissoes > 0 && Math.abs(somaMetasIndividuais - metaEmComissoes) > 1 && (
@@ -2134,7 +2134,7 @@ export default function RelatoriosPage() {
               return (
                 <div>
                   {lista.map((p, i) => (
-                    <div key={i} style={{ background: '#f5f4f0', border: '1px solid #ffffff', borderRadius: 10, padding: '12px 16px', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div key={i} style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 10, padding: '12px 16px', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
                       <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'linear-gradient(135deg, #5b4fcf, #f43f8e)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 13, flexShrink: 0 }}>{(p.nome[0] || '?').toUpperCase()}</div>
                       <div style={{ flex: 1 }}>
                         <div style={{ color: '#1a1a1a', fontWeight: 600, fontSize: 13 }}>{p.nome}</div>
@@ -2209,8 +2209,8 @@ export default function RelatoriosPage() {
 
                     {/* RISCO e PERDIDOS — tabela com exportar */}
                     {(subAnalise === 'risco' || subAnalise === 'perdidos') && analiseDetalhe.length > 0 && (
-                      <div style={{ background: '#f5f4f0', border: '1px solid #ffffff', borderRadius: 12, overflow: 'hidden' }}>
-                        <div style={{ padding: '12px 16px', borderBottom: '1px solid #ffffff', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+                      <div style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 12, overflow: 'hidden' }}>
+                        <div style={{ padding: '12px 16px', borderBottom: '1px solid #e8e6e0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
                           <div>
                             <h3 style={{ color: subAnalise === 'risco' ? '#f97316' : '#ef4444', fontSize: 14, fontWeight: 700, margin: 0 }}>
                               {analiseDetalhe.length} clientes {subAnalise === 'risco' ? 'em risco' : 'perdidas'}
@@ -2238,7 +2238,7 @@ export default function RelatoriosPage() {
                             </thead>
                             <tbody>
                               {(analiseDetalhe as any[]).map((c: any, i: number) => (
-                                <tr key={i} style={{ borderBottom: '1px solid #ffffff20', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
+                                <tr key={i} style={{ borderBottom: '1px solid #e8e6e020', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
                                   <td style={{ padding: '9px 12px', fontSize: 12, color: '#1a1a1a', fontWeight: 600 }}>{c.cliente_nome}</td>
                                   <td style={{ padding: '9px 12px', fontSize: 11, color: '#5b4fcf' }}>{c.celular || '—'}</td>
                                   <td style={{ padding: '9px 12px', fontSize: 12, color: '#10b981', fontWeight: 700 }}>{moeda(c.ltv_total)}</td>
@@ -2264,7 +2264,7 @@ export default function RelatoriosPage() {
                         </div>
                         <div style={{ background: '#f5f4f0', border: '1px solid #f59e0b30', borderRadius: 12, overflow: 'hidden' }}>
                           {(analiseDetalhe as any[]).map((c: any, i: number) => (
-                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderBottom: '1px solid #ffffff20' }}>
+                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderBottom: '1px solid #e8e6e020' }}>
                               <div style={{ width: 28, height: 28, borderRadius: '50%', background: i === 0 ? '#f59e0b' : i === 1 ? '#9e9b94' : i === 2 ? '#cd7c4f' : '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: i < 3 ? '#f5f4f0' : '#6b6860', flexShrink: 0 }}>#{i+1}</div>
                               <div style={{ flex: 1 }}>
                                 <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a1a' }}>{c.cliente_nome}</div>
@@ -2289,7 +2289,7 @@ export default function RelatoriosPage() {
                           <button onClick={() => exportarListaExcel(analiseDetalhe, 'regular')}
                             style={{ background: '#10b981', color: '#fff', border: 'none', borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>⬇ Exportar Excel</button>
                         </div>
-                        <div style={{ background: '#f5f4f0', border: '1px solid #ffffff', borderRadius: 12, overflow: 'hidden' }}>
+                        <div style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 12, overflow: 'hidden' }}>
                           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <thead><tr style={{ background: '#faf9f7' }}>
                               {['Cliente', 'Celular', 'LTV Total', 'Visitas', 'Última Visita', 'Frequência', 'Serviços'].map(h => (
@@ -2298,7 +2298,7 @@ export default function RelatoriosPage() {
                             </tr></thead>
                             <tbody>
                               {(analiseDetalhe as any[]).map((c: any, i: number) => (
-                                <tr key={i} style={{ borderBottom: '1px solid #ffffff20', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
+                                <tr key={i} style={{ borderBottom: '1px solid #e8e6e020', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
                                   <td style={{ padding: '9px 12px', fontSize: 12, color: '#1a1a1a', fontWeight: 600 }}>{c.cliente_nome}</td>
                                   <td style={{ padding: '9px 12px', fontSize: 11, color: '#5b4fcf' }}>{c.celular || '—'}</td>
                                   <td style={{ padding: '9px 12px', fontSize: 12, color: '#10b981', fontWeight: 700 }}>{moeda(c.ltv_total)}</td>
@@ -2322,7 +2322,7 @@ export default function RelatoriosPage() {
                           <button onClick={() => exportarListaExcel(analiseDetalhe, 'novos')}
                             style={{ background: '#06b6d4', color: '#f5f4f0', border: 'none', borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>⬇ Exportar Excel</button>
                         </div>
-                        <div style={{ background: '#f5f4f0', border: '1px solid #ffffff', borderRadius: 12, overflow: 'hidden' }}>
+                        <div style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 12, overflow: 'hidden' }}>
                           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <thead><tr style={{ background: '#faf9f7' }}>
                               {['Cliente', 'Celular', 'LTV', 'Data da Visita', 'Serviços Realizados'].map(h => (
@@ -2331,7 +2331,7 @@ export default function RelatoriosPage() {
                             </tr></thead>
                             <tbody>
                               {(analiseDetalhe as any[]).map((c: any, i: number) => (
-                                <tr key={i} style={{ borderBottom: '1px solid #ffffff20', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
+                                <tr key={i} style={{ borderBottom: '1px solid #e8e6e020', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
                                   <td style={{ padding: '9px 12px', fontSize: 12, color: '#1a1a1a', fontWeight: 600 }}>{c.cliente_nome}</td>
                                   <td style={{ padding: '9px 12px', fontSize: 11, color: '#5b4fcf' }}>{c.celular || '—'}</td>
                                   <td style={{ padding: '9px 12px', fontSize: 12, color: '#10b981', fontWeight: 700 }}>{moeda(c.ltv_total)}</td>
@@ -2367,9 +2367,9 @@ export default function RelatoriosPage() {
                             : <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 10 }}>
                                 {csCategorias.map((cat: any) => (
                                   <div key={cat.categoria} onClick={() => selecionarCategoria(cat.categoria)}
-                                    style={{ background: '#f5f4f0', border: '1px solid #ffffff', borderRadius: 12, padding: '16px 14px', cursor: 'pointer', transition: 'border .15s' }}
+                                    style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 12, padding: '16px 14px', cursor: 'pointer', transition: 'border .15s' }}
                                     onMouseEnter={e => (e.currentTarget.style.borderColor = '#5b4fcf')}
-                                    onMouseLeave={e => (e.currentTarget.style.borderColor = '#ffffff')}>
+                                    onMouseLeave={e => (e.currentTarget.style.borderColor = '#e8e6e0')}>
                                     <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a1a', marginBottom: 8 }}>{cat.categoria}</div>
                                     <div style={{ fontSize: 11, color: '#6b6860' }}>{cat.total_servicos} serviços</div>
                                     <div style={{ fontSize: 11, color: '#5b4fcf' }}>{cat.total_clientes} clientes</div>
@@ -2385,9 +2385,9 @@ export default function RelatoriosPage() {
                             : <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 10 }}>
                                 {csServicos.map((svc: any) => (
                                   <div key={svc.servico} onClick={() => selecionarServico(svc.servico)}
-                                    style={{ background: '#f5f4f0', border: '1px solid #ffffff', borderRadius: 12, padding: '14px 14px', cursor: 'pointer' }}
+                                    style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 12, padding: '14px 14px', cursor: 'pointer' }}
                                     onMouseEnter={e => (e.currentTarget.style.borderColor = '#10b981')}
-                                    onMouseLeave={e => (e.currentTarget.style.borderColor = '#ffffff')}>
+                                    onMouseLeave={e => (e.currentTarget.style.borderColor = '#e8e6e0')}>
                                     <div style={{ fontSize: 12, fontWeight: 700, color: '#1a1a1a', marginBottom: 6 }}>{svc.servico}</div>
                                     <div style={{ fontSize: 11, color: '#10b981' }}>{svc.total_clientes} já fizeram</div>
                                   </div>
@@ -2417,7 +2417,7 @@ export default function RelatoriosPage() {
                                     <span>Cliente</span><span>Celular</span><span>Visitas</span><span>Última visita</span>
                                   </div>
                                   {csClientes.map((c: any, i: number) => (
-                                    <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 140px 80px 100px', gap: 8, padding: '10px 12px', background: '#f5f4f0', border: '1px solid #ffffff', borderRadius: 8, fontSize: 12 }}>
+                                    <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 140px 80px 100px', gap: 8, padding: '10px 12px', background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 8, fontSize: 12 }}>
                                       <span style={{ color: '#1a1a1a', fontWeight: 600 }}>{c.cliente}</span>
                                       <span style={{ color: '#5b4fcf' }}>{c.celular || '—'}</span>
                                       <span style={{ color: '#9e9b94' }}>{c.total_visitas}x</span>
@@ -2433,7 +2433,7 @@ export default function RelatoriosPage() {
 
                     {/* FREQUÊNCIA — barras clicáveis */}
                     {subAnalise === 'frequencia' && analiseDetalhe.length > 0 && (
-                      <div style={{ background: '#f5f4f0', border: '1px solid #ffffff', borderRadius: 12, padding: 20 }}>
+                      <div style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 12, padding: 20 }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                           {(analiseDetalhe as any[]).map((f: any) => (
                             <div key={f.label} onClick={() => abrirFreqModal(f)} style={{ cursor: 'pointer' }}
@@ -2471,7 +2471,7 @@ export default function RelatoriosPage() {
                       const lista = diasPT.map(d => ({ dia: d, fat: fatPorDia[d]?.fat || 0, count: fatPorDia[d]?.count || 0, ticket: fatPorDia[d]?.count ? (fatPorDia[d].fat / fatPorDia[d].count) : 0 }))
                       const maxFat = Math.max(...lista.map(l => l.fat), 1)
                       return (
-                        <div style={{ background: '#f5f4f0', border: '1px solid #ffffff', borderRadius: 12, overflow: 'hidden' }}>
+                        <div style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 12, overflow: 'hidden' }}>
                           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <thead><tr style={{ background: '#faf9f7' }}>
                               {['Dia', 'Faturamento', 'Dias com movimento', 'Ticket médio do dia', 'Proporção'].map(h => (
@@ -2480,7 +2480,7 @@ export default function RelatoriosPage() {
                             </tr></thead>
                             <tbody>
                               {lista.sort((a, b) => b.fat - a.fat).map((r, i) => (
-                                <tr key={r.dia} style={{ borderBottom: '1px solid #ffffff20', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
+                                <tr key={r.dia} style={{ borderBottom: '1px solid #e8e6e020', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
                                   <td style={{ padding: '10px 14px', fontSize: 13, color: '#1a1a1a', fontWeight: 600 }}>{r.dia}</td>
                                   <td style={{ padding: '10px 14px', fontSize: 13, color: '#10b981', fontWeight: 700, textAlign: 'right' }}>{moeda(r.fat)}</td>
                                   <td style={{ padding: '10px 14px', fontSize: 12, color: '#9e9b94', textAlign: 'right' }}>{r.count}x</td>
@@ -2545,9 +2545,9 @@ export default function RelatoriosPage() {
       {/* ── MODAL FREQUÊNCIA CLIENTES ── */}
       {freqModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: 20 }}>
-          <div style={{ background: '#f5f4f0', border: '1px solid #ffffff', borderRadius: 16, padding: 0, maxWidth: 900, width: '100%', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 16, padding: 0, maxWidth: 900, width: '100%', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
             {/* Header */}
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid #ffffff', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #e8e6e0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
               <div>
                 <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a' }}>Clientes com frequência: {freqModal.label}</div>
                 {!freqLoading && <div style={{ fontSize: 12, color: '#6b6860', marginTop: 2 }}>{freqClientes.length} clientes nessa faixa</div>}
@@ -2575,7 +2575,7 @@ export default function RelatoriosPage() {
                   </thead>
                   <tbody>
                     {freqClientes.map((c: any, i: number) => (
-                      <tr key={i} style={{ borderBottom: '1px solid #ffffff20', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
+                      <tr key={i} style={{ borderBottom: '1px solid #e8e6e020', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
                         <td style={{ padding: '9px 12px', color: '#dedad4', textAlign: 'right' }}>{i + 1}</td>
                         <td style={{ padding: '9px 12px', color: '#1a1a1a', fontWeight: 600 }}>{c.cliente_nome}</td>
                         <td style={{ padding: '9px 12px', color: '#5b4fcf' }}>{c.celular || '—'}</td>
@@ -2597,7 +2597,7 @@ export default function RelatoriosPage() {
       {/* ── MODAL IMPORTAR ── */}
       {showImport && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: 20 }}>
-          <div style={{ background: '#f5f4f0', border: '1px solid #ffffff', borderRadius: 16, padding: 32, maxWidth: 480, width: '100%' }}>
+          <div style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 16, padding: 32, maxWidth: 480, width: '100%' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
               <h2 style={{ color: '#1a1a1a', fontSize: 18, fontWeight: 700, margin: 0 }}>Importar Planilha</h2>
               <button onClick={() => setShowImport(false)} style={{ background: 'transparent', border: 'none', color: '#9e9b94', cursor: 'pointer', fontSize: 18 }}>✕</button>
@@ -2605,9 +2605,9 @@ export default function RelatoriosPage() {
             <p style={{ color: '#9e9b94', fontSize: 13, marginBottom: 20, lineHeight: 1.7 }}>
               Selecione o <strong style={{ color: '#9e9b94' }}>base_dados_nodri.xlsx</strong>. Os dados do período importado <strong style={{ color: '#5b4fcf' }}>substituirão apenas aquele período</strong> — outros meses não são afetados.
             </p>
-            <div onClick={() => fileRef.current?.click()} style={{ border: '2px dashed #ffffff', borderRadius: 10, padding: 32, textAlign: 'center', cursor: 'pointer' }}
+            <div onClick={() => fileRef.current?.click()} style={{ border: '2px dashed #e8e6e0', borderRadius: 10, padding: 32, textAlign: 'center', cursor: 'pointer' }}
               onMouseEnter={e => (e.currentTarget.style.borderColor = '#5b4fcf')}
-              onMouseLeave={e => (e.currentTarget.style.borderColor = '#ffffff')}>
+              onMouseLeave={e => (e.currentTarget.style.borderColor = '#e8e6e0')}>
               <Upload size={32} style={{ margin: '0 auto 10px', display: 'block', color: '#5b4fcf' }} />
               <p style={{ color: '#9e9b94', fontSize: 14, fontWeight: 600, margin: '0 0 4px' }}>Clique para selecionar</p>
               <p style={{ color: '#6b6860', fontSize: 12, margin: 0 }}>base_dados_nodri.xlsx</p>
