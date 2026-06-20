@@ -2828,19 +2828,6 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
             {loadMet && <div className="flex justify-center py-10"><Loader2 size={24} className="animate-spin text-nodri-cyan"/></div>}
             {metricas && !loadMet && <>
               {(p1 || p2) ? <>
-                <div>
-                  <p className="text-[11px] text-nodri-t3 uppercase tracking-widest mb-3 font-semibold">Comparativo P1 vs P2</p>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <MetCard label=" Faturamento"      atual={p2?.faturamento||0}              anterior={p1?.faturamento||0}              fmt="m"/>
-                    <MetCard label="️ Ticket Médio"     atual={p2?.ticket_medio||0}             anterior={p1?.ticket_medio||0}             fmt="m"/>
-                    <MetCard label=" Preferência"      atual={p2?.clientes_preferencia||0}     anterior={p1?.clientes_preferencia||0}/>
-                    <MetCard label=" Sem Pref."        atual={p2?.clientes_sem_preferencia||0} anterior={p1?.clientes_sem_preferencia||0}/>
-                    <MetCard label=" Dias Trabalhados" atual={p2?.dias_trabalhados||0}         anterior={p1?.dias_trabalhados||0}/>
-                    <MetCard label=" Ocupação"         atual={p2?.taxa_ocupacao||0}            anterior={p1?.taxa_ocupacao||0}            fmt="p"/>
-                    <MetCard label="️ Serviços"         atual={p2?.total_servicos||0}           anterior={p1?.total_servicos||0}/>
-                    <MetCard label=" Produtos"         atual={p2?.total_produtos||0}           anterior={p1?.total_produtos||0}/>
-                  </div>
-                </div>
                 {fidel && <BlocoFidelizacao f={fidel}/>}
                 {/* Comparativo com média da categoria */}
                 {categoriaMedia?.media && categoriaMedia.atual && (() => {
