@@ -1954,8 +1954,11 @@ export default function PerfilProfissionalPage() {
   const [tab, setTab] = useState<'cadastro'|'desempenho'|'faturamento'|'metas'|'ia'|'dependencia'|'oportunidades'|'bundle'|'clientes-perdidos'>('cadastro')
   const [analiseData, setAnaliseData] = useState<{dependencia:any;oportunidades:any;bundle:any}>({dependencia:null,oportunidades:null,bundle:null})
   const [loadAnalise, setLoadAnalise] = useState<{dependencia:boolean;oportunidades:boolean;bundle:boolean}>({dependencia:false,oportunidades:false,bundle:false})
+  const anoAtual = new Date().getFullYear()
   const [clientesPerdidos, setClientesPerdidos] = useState<any>(null)
   const [loadClientesPerdidos, setLoadClientesPerdidos] = useState(false)
+  const [perdidosDataInicio, setPerdidosDataInicio] = useState(`01/01/${anoAtual - 1}`)
+  const [perdidosDataFim, setPerdidosDataFim] = useState(`31/12/${anoAtual}`)
   const [subTabPerdidos, setSubTabPerdidos] = useState<'outro-servico'|'saiu-salao'|'outra-categoria'>('outra-categoria')
   const [sortKeyPerdidos, setSortKeyPerdidos] = useState<'ultima_visita_com_prof'|'ultima_visita_salao'|'dias_ausente'|'cliente'>('ultima_visita_com_prof')
   const [sortAscPerdidos, setSortAscPerdidos] = useState(false)
@@ -2148,14 +2151,20 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
       .finally(() => setLoadAnalise(prev => ({...prev,[tipo]:false})))
   }, [tab, id])
 
+  function buscarClientesPerdidos(inicio: string, fim: string) {
+    setLoadClientesPerdidos(true)
+    setClientesPerdidos(null)
+    const params = new URLSearchParams({ dataInicio: inicio, dataFim: fim })
+    fetch(`/api/profissionais/${id}/clientes-perdidos?${params}`)
+      .then(r => r.json())
+      .then(d => { setClientesPerdidos(d); setLoadClientesPerdidos(false) })
+      .catch(() => setLoadClientesPerdidos(false))
+  }
+
   useEffect(() => {
     if (tab !== 'clientes-perdidos') return
     if (clientesPerdidos) return
-    setLoadClientesPerdidos(true)
-    fetch(`/api/profissionais/${id}/clientes-perdidos`)
-      .then(r => r.json())
-      .then(d => setClientesPerdidos(d))
-      .catch(() => {})
+    buscarClientesPerdidos(perdidosDataInicio, perdidosDataFim)
       .finally(() => setLoadClientesPerdidos(false))
   }, [tab, id])
 
@@ -3207,10 +3216,50 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
         {/*  CLIENTES PERDIDOS */}
         {tab === 'clientes-perdidos' && (
           <div className="space-y-5">
+
+            {/* Filtro de período */}
+            <div className="rounded-xl p-4 flex flex-wrap items-end gap-3" style={{ background: '#ffffff', border: '1.5px solid #e0ddd8' }}>
+              <div>
+                <div className="text-[10px] font-bold uppercase mb-1" style={{ color: '#767069' }}>De</div>
+                <input type="date"
+                  value={perdidosDataInicio.split('/').reverse().join('-')}
+                  onChange={e => { const [y,m,d] = e.target.value.split('-'); setPerdidosDataInicio(`${d}/${m}/${y}`) }}
+                  className="rounded-lg px-3 py-1.5 text-[12px] outline-none"
+                  style={{ border: '1.5px solid #e0ddd8', background: '#f8f7f5', color: '#1a1a1a' }} />
+              </div>
+              <div>
+                <div className="text-[10px] font-bold uppercase mb-1" style={{ color: '#767069' }}>Até</div>
+                <input type="date"
+                  value={perdidosDataFim.split('/').reverse().join('-')}
+                  onChange={e => { const [y,m,d] = e.target.value.split('-'); setPerdidosDataFim(`${d}/${m}/${y}`) }}
+                  className="rounded-lg px-3 py-1.5 text-[12px] outline-none"
+                  style={{ border: '1.5px solid #e0ddd8', background: '#f8f7f5', color: '#1a1a1a' }} />
+              </div>
+              <button onClick={() => buscarClientesPerdidos(perdidosDataInicio, perdidosDataFim)}
+                className="px-4 py-1.5 rounded-lg text-[12px] font-bold transition-all hover:brightness-110"
+                style={{ background: '#5b4fcf', color: '#ffffff' }}>
+                Buscar
+              </button>
+              <div className="flex gap-2 ml-auto flex-wrap">
+                {[
+                  { label: 'Este ano', de: `01/01/${anoAtual}`, ate: `31/12/${anoAtual}` },
+                  { label: 'Ano passado', de: `01/01/${anoAtual - 1}`, ate: `31/12/${anoAtual - 1}` },
+                  { label: '2 anos', de: `01/01/${anoAtual - 1}`, ate: `31/12/${anoAtual}` },
+                  { label: 'Tudo', de: `01/01/2019`, ate: `31/12/${anoAtual}` },
+                ].map(op => (
+                  <button key={op.label} onClick={() => { setPerdidosDataInicio(op.de); setPerdidosDataFim(op.ate); buscarClientesPerdidos(op.de, op.ate) }}
+                    className="px-3 py-1 rounded-lg text-[11px] font-semibold transition-all"
+                    style={{ background: perdidosDataInicio === op.de && perdidosDataFim === op.ate ? '#5b4fcf' : '#f0eefb', color: perdidosDataInicio === op.de && perdidosDataFim === op.ate ? '#ffffff' : '#5b4fcf' }}>
+                    {op.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {loadClientesPerdidos && (
               <div className="flex flex-col items-center justify-center py-16 gap-3">
-                <Loader2 size={28} className="animate-spin text-nodri-cyan"/>
-                <p className="text-[12px] text-nodri-t3">Analisando histórico de clientes... pode levar alguns segundos.</p>
+                <Loader2 size={28} className="animate-spin" style={{ color: '#5b4fcf' }}/>
+                <p className="text-[12px]" style={{ color: '#767069' }}>Analisando clientes de <strong>{perdidosDataInicio}</strong> até <strong>{perdidosDataFim}</strong>...</p>
               </div>
             )}
             {!loadClientesPerdidos && clientesPerdidos && (() => {

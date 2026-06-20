@@ -51,6 +51,19 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const salaoId = await getSalaoId()
   if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
+  const url = new URL(req.url)
+  const anoAtual = new Date().getFullYear()
+  const dataInicio = url.searchParams.get('dataInicio') || `01/01/${anoAtual - 1}`
+  const dataFim    = url.searchParams.get('dataFim')    || `31/12/${anoAtual}`
+
+  // Converte dd/mm/yyyy → yyyy-mm-dd para filtro no banco
+  function toBR(d: string) {
+    const p = d.split('/')
+    return p.length === 3 ? `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}` : null
+  }
+  const dtInicioISO = toBR(dataInicio)
+  const dtFimISO    = toBR(dataFim)
+
   const { data: prof } = await supabaseAdmin
     .from('profissionais')
     .select('id, nome_completo, apelido, cargo, servicos_habilitados')
@@ -136,16 +149,19 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
   const comissaoMedia = totalQtdComissao > 0 ? totalComissaoPonderada / totalQtdComissao : 0
 
-  // Busca todos os atendimentos do salão com paginação
+  // Busca atendimentos filtrados pelo período selecionado
   let rows: any[] = []
   let from = 0
   while (true) {
-    const { data } = await supabaseAdmin
+    let q = supabaseAdmin
       .from('atendimentos_raw')
       .select('cliente, celular, profissional, data_comanda, servico, categoria')
       .eq('salao_id', salaoId)
       .order('data_comanda')
       .range(from, from + 999)
+    if (dtInicioISO) q = q.gte('data_comanda', dtInicioISO)
+    if (dtFimISO)    q = q.lte('data_comanda', dtFimISO)
+    const { data } = await q
     if (!data || data.length === 0) break
     rows = rows.concat(data)
     if (data.length < 1000) break
@@ -346,5 +362,6 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     ticket_medio: Math.round(ticketMedio * 100) / 100,
     ticket_visita: Math.round(ticketVisitaCalc * 100) / 100,
     comissao_media: Math.round(comissaoMedia * 100) / 100,
+    periodo: { dataInicio, dataFim },
   })
 }
