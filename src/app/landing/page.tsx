@@ -114,7 +114,7 @@ export default function LandingPage() {
         <div style={{ maxWidth: 600, margin: '0 auto' }}>
           <div style={{ fontSize: 40, marginBottom: 16 }}></div>
           <h2 style={{ fontSize: 28, fontWeight: 900, color: '#5b4fcf', marginBottom: 12 }}>{cfg.afiliados_titulo}</h2>
-          <p style={{ color: '#9e9b94', fontSize: 15, lineHeight: 1.7, marginBottom: 8 }}>{cfg.afiliados_subtitulo}</p>
+          <p style={{ color: '#767069', fontSize: 15, lineHeight: 1.7, marginBottom: 8 }}>{cfg.afiliados_subtitulo}</p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', margin: '24px 0' }}>
             {(cfg.afiliados_chips || []).map((b: any, i: number) => (
               <div key={i} style={{ background: '#ffffff', border: '1px solid #e8e6e0', borderRadius: 10, padding: '12px 20px', color: '#1a1a1a', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -130,13 +130,13 @@ export default function LandingPage() {
 
       {/* FOOTER */}
       <footer style={{ textAlign: 'center', padding: '40px 20px', color: '#555', borderTop: '1px solid #222' }}>
-        <div style={{ fontSize: 20, fontWeight: 700, color: '#f39c12', marginBottom: 8 }}>{cfg.footer_logo}</div>
+        <div style={{ fontSize: 20, fontWeight: 700, color: '#b45309', marginBottom: 8 }}>{cfg.footer_logo}</div>
         <p>{cfg.footer_texto}</p>
         <p style={{ marginTop: 8 }}>{cfg.footer_email}</p>
         <div style={{ marginTop: 16, display: 'flex', gap: 20, justifyContent: 'center', flexWrap: 'wrap' }}>
           <a href="/trabalhe-conosco" style={{ color: '#5b4fcf', fontSize: 12, textDecoration: 'none' }}>Trabalhe Conosco</a>
           <a href="/afiliado" style={{ color: '#5b4fcf', fontSize: 12, textDecoration: 'none' }}>Painel do Afiliado</a>
-          <a href={`https://wa.me/${cfg.footer_whatsapp}`} target="_blank" rel="noopener noreferrer" style={{ color: '#25D366', fontSize: 12, textDecoration: 'none' }}>WhatsApp</a>
+          <a href={`https://wa.me/${cfg.footer_whatsapp}`} target="_blank" rel="noopener noreferrer" style={{ color: '#15803d', fontSize: 12, textDecoration: 'none' }}>WhatsApp</a>
           <a href="/login" style={{ color: '#5b4fcf', fontSize: 12, textDecoration: 'none' }}>Área do Cliente</a>
         </div>
       </footer>

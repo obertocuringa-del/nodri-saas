@@ -319,7 +319,7 @@ function InfoBtn({ id, className }: { id: string; className?: string }) {
           <div className="rounded-2xl border max-w-md w-full shadow-2xl" style={{background:'#faf9f7',borderColor:'#5b4fcf50'}}>
             <div className="flex items-center justify-between px-5 py-4 border-b" style={{borderColor:'#e8e6e0'}}>
               <h3 className="font-bold text-sm text-white">{info.titulo}</h3>
-              <button onClick={() => setAberto(false)} className="p-1 rounded-lg hover:bg-white/10" style={{color:'#9e9b94'}}><X size={16}/></button>
+              <button onClick={() => setAberto(false)} className="p-1 rounded-lg hover:bg-white/10" style={{color:'#767069'}}><X size={16}/></button>
             </div>
             <div className="p-5 space-y-4">
               <div className="rounded-xl p-3" style={{background:'#f5f4f0'}}>
@@ -327,7 +327,7 @@ function InfoBtn({ id, className }: { id: string; className?: string }) {
                 <p className="text-xs leading-relaxed" style={{color:'#3a3835'}}>{info.oque}</p>
               </div>
               <div className="rounded-xl p-3" style={{background:'#f5f4f0'}}>
-                <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{color:'#10b981'}}>Como preencher?</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{color:'#059669'}}>Como preencher?</p>
                 <p className="text-xs leading-relaxed" style={{color:'#3a3835'}}>{info.como}</p>
               </div>
               <div className="rounded-xl p-3" style={{background:'#5b4fcf15',border:'1px solid #5b4fcf30'}}>
@@ -335,7 +335,7 @@ function InfoBtn({ id, className }: { id: string; className?: string }) {
                 <p className="text-xs leading-relaxed" style={{color:'#1a1a1a'}}>{info.exemplo}</p>
               </div>
               <div className="rounded-xl p-3" style={{background:'#10b98115',border:'1px solid #10b98130'}}>
-                <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{color:'#10b981'}}>Por que é importante?</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{color:'#059669'}}>Por que é importante?</p>
                 <p className="text-xs leading-relaxed" style={{color:'#3a3835'}}>{info.porque}</p>
               </div>
             </div>
@@ -361,7 +361,7 @@ function AvisoDefault({ ativo, padrao, onPreencher, onManter }: {
       <button
         onClick={e => { e.stopPropagation(); setAberto(true) }}
         className="flex-shrink-0 flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold animate-pulse"
-        style={{background:'#f59e0b20',color:'#f59e0b',border:'1px solid #f59e0b50'}}
+        style={{background:'#f59e0b20',color:'#b45309',border:'1px solid #f59e0b50'}}
         title="Campo usando valor padrão — clique para decidir">
         padrão
       </button>
@@ -373,10 +373,10 @@ function AvisoDefault({ ativo, padrao, onPreencher, onManter }: {
             </div>
             <div className="p-5 space-y-3">
               <div className="rounded-xl p-3" style={{background:'#f59e0b10',border:'1px solid #f59e0b30'}}>
-                <p className="text-xs" style={{color:'#fbbf24'}}>
+                <p className="text-xs" style={{color:'#92400e'}}>
                   Este campo está usando o valor padrão: <strong>{padrao}</strong>
                 </p>
-                <p className="text-xs mt-1" style={{color:'#9e9b94'}}>
+                <p className="text-xs mt-1" style={{color:'#767069'}}>
                   Para um resultado mais preciso, preencha com os dados reais do seu salão.
                 </p>
               </div>
@@ -388,7 +388,7 @@ function AvisoDefault({ ativo, padrao, onPreencher, onManter }: {
                 </button>
                 <button onClick={() => { setAberto(false); onManter() }}
                   className="py-2.5 rounded-xl text-xs font-bold"
-                  style={{background:'#ffffff',color:'#9e9b94',border:'1px solid #dedad4'}}>
+                  style={{background:'#ffffff',color:'#767069',border:'1px solid #dedad4'}}>
                   Manter padrão
                 </button>
               </div>
@@ -415,7 +415,7 @@ function GuiaPassos({ passos }: { passos: {titulo: string, desc: string, ok: boo
               style={{background: p.ok ? p.cor : '#ffffff', color: p.ok ? 'white' : '#6b6860'}}>
               {p.ok ? '✓' : i+1}
             </div>
-            <p className="text-[10px] font-bold mb-1" style={{color: p.ok ? p.cor : '#9e9b94'}}>
+            <p className="text-[10px] font-bold mb-1" style={{color: p.ok ? p.cor : '#767069'}}>
               {p.titulo}
             </p>
             <p className="text-[9px] leading-tight" style={{color:'#6b6860'}}>{p.desc}</p>
@@ -1120,7 +1120,7 @@ Use números reais. Seja direto.`
 
   function semaforoDespesa(nome: string, valor: number): {cor: string, label: string, icone: string} {
     const bench = BENCHMARKS[nome]
-    if (!bench || !fatN) return {cor: '#9e9b94', label: 'Sem benchmark', icone: '⚪'}
+    if (!bench || !fatN) return {cor: '#767069', label: 'Sem benchmark', icone: '⚪'}
     const pct = (valor / fatN) * 100
     if (pct > bench * 1.2) return {cor: '#ef4444', label: `${pct.toFixed(1)}% — Acima do limite (máx ${bench}%)`, icone: '🔴'}
     if (pct > bench * 0.9) return {cor: '#f59e0b', label: `${pct.toFixed(1)}% — No limite (ref ${bench}%)`, icone: '🟡'}
@@ -1148,12 +1148,12 @@ Use números reais. Seja direto.`
 
         {/* Header */}
         <div className="flex items-center gap-3 mb-4">
-          <a href="/salon" className="p-2 rounded-lg hover:bg-white/5" style={{color:'#9e9b94'}}><ArrowLeft size={18}/></a>
+          <a href="/salon" className="p-2 rounded-lg hover:bg-white/5" style={{color:'#767069'}}><ArrowLeft size={18}/></a>
           <div className="flex-1">
             <h1 className="text-xl font-bold text-white flex items-center gap-2">
               <Calculator size={22} style={{color:'#5b4fcf'}}/>Calculadoras do Salão
             </h1>
-            <p className="text-xs mt-0.5" style={{color:'#9e9b94'}}>
+            <p className="text-xs mt-0.5" style={{color:'#767069'}}>
               Metodologia profissional de gestão financeira — dados interligados entre as calculadoras
             </p>
           </div>
@@ -1162,11 +1162,11 @@ Use números reais. Seja direto.`
         {/* Seletor de mês + Salvar */}
         <div className="flex items-center gap-3 mb-6 p-3 rounded-xl border" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
           <History size={15} style={{color:'#5b4fcf',flexShrink:0}}/>
-          <span className="text-xs font-bold" style={{color:'#9e9b94'}}>Período:</span>
+          <span className="text-xs font-bold" style={{color:'#767069'}}>Período:</span>
 
           {/* Navegação mês */}
           <div className="flex items-center gap-1">
-            <button onClick={mesAnterior} className="p-1 rounded hover:bg-white/5" style={{color:'#9e9b94'}}><ChevronLeft size={14}/></button>
+            <button onClick={mesAnterior} className="p-1 rounded hover:bg-white/5" style={{color:'#767069'}}><ChevronLeft size={14}/></button>
             <div className="flex items-center gap-1">
               <select value={mesSel} onChange={e=>setMesSel(Number(e.target.value))}
                 className="text-xs font-bold px-2 py-1 rounded-lg focus:outline-none"
@@ -1182,7 +1182,7 @@ Use números reais. Seja direto.`
                 {[anoSel-1,anoSel,anoSel+1].map(a=><option key={a} value={a}>{a}</option>)}
               </select>
             </div>
-            <button onClick={mesProximo} className="p-1 rounded hover:bg-white/5" style={{color:'#9e9b94'}}><ChevronRight size={14}/></button>
+            <button onClick={mesProximo} className="p-1 rounded hover:bg-white/5" style={{color:'#767069'}}><ChevronRight size={14}/></button>
           </div>
 
           {carregando && <Loader2 size={13} className="animate-spin" style={{color:'#5b4fcf'}}/>}
@@ -1205,7 +1205,7 @@ Use números reais. Seja direto.`
           )}
 
           <div className="ml-auto flex items-center gap-2">
-            {savedMsg && <span className="text-xs flex items-center gap-1" style={{color:'#10b981'}}><CheckCircle size={12}/>{savedMsg}</span>}
+            {savedMsg && <span className="text-xs flex items-center gap-1" style={{color:'#059669'}}><CheckCircle size={12}/>{savedMsg}</span>}
             <button onClick={salvarMes} disabled={salvando}
               className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all disabled:opacity-50"
               style={{background:'#5b4fcf',color:'white'}}>
@@ -1220,7 +1220,7 @@ Use números reais. Seja direto.`
           {ABAS.map(a=>(
             <button key={a.id} onClick={()=>setAba(a.id as any)}
               className="flex-shrink-0 py-2 px-2 sm:px-1 rounded-lg text-[10px] font-bold transition-all text-center min-w-[72px] sm:min-w-0 sm:flex-1"
-              style={{background:aba===a.id?'#5b4fcf':'transparent',color:aba===a.id?'white':'#9e9b94'}}>
+              style={{background:aba===a.id?'#5b4fcf':'transparent',color:aba===a.id?'white':'#767069'}}>
               <div>{a.icon}</div><div className="mt-0.5 leading-tight">{a.label}</div>
             </button>
           ))}
@@ -1245,7 +1245,7 @@ Use números reais. Seja direto.`
                       style={{background:p.ok?p.cor:'#ffffff',color:p.ok?'white':'#6b6860'}}>
                       {p.ok?'✓':p.n}
                     </div>
-                    <p className="text-[10px] font-bold mb-1" style={{color:p.ok?p.cor:'#9e9b94'}}>Passo {p.n}: {p.titulo}</p>
+                    <p className="text-[10px] font-bold mb-1" style={{color:p.ok?p.cor:'#767069'}}>Passo {p.n}: {p.titulo}</p>
                     <p className="text-[9px] leading-tight" style={{color:'#6b6860'}}>{p.desc}</p>
                   </div>
                 ))}
@@ -1258,13 +1258,13 @@ Use números reais. Seja direto.`
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <label className="text-xs font-bold" style={{color:'#9e9b94'}}>💰 Faturamento Mensal (R$)</label>
+                    <label className="text-xs font-bold" style={{color:'#767069'}}>💰 Faturamento Mensal (R$)</label>
                     <InfoBtn id="faturamento"/>
                     <AvisoDefault ativo={!fat||fat==='0'} padrao="não preenchido" onPreencher={()=>{}} onManter={()=>{}}/>
                   </div>
                   <p className="text-xs mb-1" style={{color:'#6b6860'}}>Média dos últimos 12 meses ÷ 12</p>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#9e9b94'}}>R$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>R$</span>
                     <input type="number" value={fat} onChange={e=>setFat(e.target.value)} placeholder="Ex: 50000"
                       className="w-full pl-9 pr-3 py-2.5 rounded-xl text-white text-base font-bold focus:outline-none"
                       style={{background:'#f5f4f0',border:'1px solid #5b4fcf60'}}/>
@@ -1287,7 +1287,7 @@ Use números reais. Seja direto.`
                         <input type="number" value={f.v} onChange={e=>f.set&&f.set(e.target.value)} readOnly={f.auto}
                           className="w-full pr-6 pl-2 py-1.5 rounded-lg text-xs text-white focus:outline-none"
                           style={{background:'#f5f4f0',border:`1px solid ${f.c}40`}}/>
-                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#9e9b94'}}>%</span>
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#767069'}}>%</span>
                       </div>
                     </div>
                   ))}
@@ -1295,23 +1295,23 @@ Use números reais. Seja direto.`
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <div className="flex items-center gap-2 mb-1"><label className="text-xs font-bold" style={{color:'#9e9b94'}}>🏦 Investimento Inicial (R$)</label><InfoBtn id="invInicial"/></div>
+                  <div className="flex items-center gap-2 mb-1"><label className="text-xs font-bold" style={{color:'#767069'}}>🏦 Investimento Inicial (R$)</label><InfoBtn id="invInicial"/></div>
                   <p className="text-xs mb-1" style={{color:'#6b6860'}}>Valor total investido no negócio</p>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#9e9b94'}}>R$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>R$</span>
                     <input type="number" value={invInicial} onChange={e=>setInvInicial(e.target.value)} placeholder="Ex: 100000"
                       className="w-full pl-9 pr-3 py-2 rounded-xl text-white text-sm focus:outline-none"
                       style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
                   </div>
                 </div>
                 <div>
-                  <div className="flex items-center gap-2 mb-1"><label className="text-xs font-bold" style={{color:'#9e9b94'}}>📉 Total a ser Depreciado (R$)</label><InfoBtn id="totalDeprec"/></div>
+                  <div className="flex items-center gap-2 mb-1"><label className="text-xs font-bold" style={{color:'#767069'}}>📉 Total a ser Depreciado (R$)</label><InfoBtn id="totalDeprec"/></div>
                   <p className="text-xs mb-1" style={{color:'#6b6860'}}>
                     Equipamentos, móveis, reformas — dividido por 84 meses (7 anos) — padrão recomendado
                     {n(totalDeprec)>0 && <span style={{color:'#7c6fe0'}}> → {fmtR(depMensal)}/mês</span>}
                   </p>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#9e9b94'}}>R$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>R$</span>
                     <input type="number" value={totalDeprec} onChange={e=>setTotalDeprec(e.target.value)} placeholder="Ex: 10000"
                       className="w-full pl-9 pr-3 py-2 rounded-xl text-white text-sm focus:outline-none"
                       style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
@@ -1324,17 +1324,17 @@ Use números reais. Seja direto.`
             <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
               <button onClick={()=>setSecIndiretas(p=>!p)} className="w-full flex items-center justify-between px-5 py-3 border-b hover:bg-white/2 transition-colors" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
                 <div className="flex items-center gap-2">
-                  {secIndiretas ? <ChevronUp size={14} style={{color:'#f59e0b'}}/> : <ChevronDown size={14} style={{color:'#f59e0b'}}/>}
-                  <span className="font-bold text-sm" style={{color:'#f59e0b'}}>📋 Despesas Indiretas (Fixas)</span>
-                  {!secIndiretas && totInd > 0 && <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{background:'#f59e0b20',color:'#f59e0b'}}>{fmtR(totInd)}</span>}
+                  {secIndiretas ? <ChevronUp size={14} style={{color:'#b45309'}}/> : <ChevronDown size={14} style={{color:'#b45309'}}/>}
+                  <span className="font-bold text-sm" style={{color:'#b45309'}}>📋 Despesas Indiretas (Fixas)</span>
+                  {!secIndiretas && totInd > 0 && <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{background:'#f59e0b20',color:'#b45309'}}>{fmtR(totInd)}</span>}
                 </div>
                 <div className="flex items-center gap-3" onClick={e=>e.stopPropagation()}>
                   <button onClick={()=>setShowCatDespesa(true)}
                     className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg"
-                    style={{background:'#f59e0b20',color:'#f59e0b',border:'1px solid #f59e0b40'}}>
+                    style={{background:'#f59e0b20',color:'#b45309',border:'1px solid #f59e0b40'}}>
                     <Plus size={11}/> Gerenciar Catálogo
                   </button>
-                  <span className="font-bold text-sm" style={{color:'#f59e0b'}}>{fmtR(totInd)}</span>
+                  <span className="font-bold text-sm" style={{color:'#b45309'}}>{fmtR(totInd)}</span>
                 </div>
               </button>
               {!secIndiretas && (
@@ -1359,7 +1359,7 @@ Use números reais. Seja direto.`
                     </div>
                     <div className="col-span-3">
                       <div className="relative">
-                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#9e9b94'}}>R$</span>
+                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#767069'}}>R$</span>
                         <input type="number" value={d.valor}
                           onChange={e=>{const nd=[...despInd];nd[i]={...nd[i],valor:e.target.value};setDespInd(nd)}}
                           placeholder="0"
@@ -1394,7 +1394,7 @@ Use números reais. Seja direto.`
                   </div>
                   <div className="col-span-3">
                     <div className="relative">
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#9e9b94'}}>R$</span>
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#767069'}}>R$</span>
                       <input type="number" value={d.valor} onChange={e=>{const nd=[...extrasDespInd];nd[i]={...nd[i],valor:e.target.value};setExtrasDespInd(nd)}}
                         className="w-full pl-6 pr-2 py-1 rounded-lg text-xs text-white focus:outline-none"
                         style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/>
@@ -1409,7 +1409,7 @@ Use números reais. Seja direto.`
               <div className="px-5 py-3 border-t" style={{borderColor:'#e8e6e0'}}>
                 <button onClick={()=>setExtrasDespInd(p=>[...p,{nome:'',valor:'',dica:''}])}
                   className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg"
-                  style={{background:'#f59e0b20',color:'#f59e0b',border:'1px dashed #f59e0b40'}}>
+                  style={{background:'#f59e0b20',color:'#b45309',border:'1px dashed #f59e0b40'}}>
                   <Plus size={12}/> Adicionar despesa
                 </button>
               </div></>}
@@ -1422,7 +1422,7 @@ Use números reais. Seja direto.`
                   {secProvisao ? <ChevronUp size={14} style={{color:'#7c6fe0'}}/> : <ChevronDown size={14} style={{color:'#7c6fe0'}}/>}
                   <div className="text-left">
                     <span className="font-bold text-sm" style={{color:'#7c6fe0'}}>📅 Provisão Mensal</span>
-                    <p className="text-[10px] mt-0.5" style={{color:'#9e9b94'}}>✨ Automático a partir de <strong style={{color:'#7c6fe0'}}>Salários</strong></p>
+                    <p className="text-[10px] mt-0.5" style={{color:'#767069'}}>✨ Automático a partir de <strong style={{color:'#7c6fe0'}}>Salários</strong></p>
                   </div>
                 </div>
                 <span className="font-bold text-sm" style={{color:'#7c6fe0'}}>{fmtR(totProvisao)}</span>
@@ -1440,7 +1440,7 @@ Use números reais. Seja direto.`
                     </div>
                     <p className="text-[10px] mb-1" style={{color:'#6b6860'}}>{f.dica}</p>
                     <div className="relative">
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#9e9b94'}}>R$</span>
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>R$</span>
                       <input type="number" value={f.v} onChange={e=>f.set(e.target.value)} placeholder="0"
                         className="w-full pl-8 pr-2 py-2 rounded-lg text-sm text-white focus:outline-none"
                         style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
@@ -1449,10 +1449,10 @@ Use números reais. Seja direto.`
                 ))}
               </div>
               {depMensal > 0 && (
-                <div className="px-5 pb-3 flex items-center gap-2 text-xs" style={{color:'#9e9b94'}}>
+                <div className="px-5 pb-3 flex items-center gap-2 text-xs" style={{color:'#767069'}}>
                   <span>📉 Depreciação mensal:</span>
                   <span className="font-bold" style={{color:'#7c6fe0'}}>{fmtR(depMensal)}</span>
-                  <span style={{color:'#9e9b94'}}>(inclusa no Custo Operacional)</span>
+                  <span style={{color:'#767069'}}>(inclusa no Custo Operacional)</span>
                 </div>
               )}</>}
             </div>
@@ -1481,7 +1481,7 @@ Use números reais. Seja direto.`
                     </div>
                     <p className="text-[10px] mb-1" style={{color:'#6b6860'}}>{f.dica}</p>
                     <div className="relative">
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#9e9b94'}}>R$</span>
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>R$</span>
                       <input type="number" value={f.v} onChange={e=>f.set(e.target.value)} placeholder="0"
                         className="w-full pl-8 pr-2 py-2 rounded-lg text-sm text-white focus:outline-none"
                         style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
@@ -1509,7 +1509,7 @@ Use números reais. Seja direto.`
                       <button onClick={()=>setExtrasDiretas(p=>p.filter((_,idx)=>idx!==i))} style={{color:'#6b6860'}}><Trash2 size={12}/></button>
                     </div>
                     <div className="relative">
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#9e9b94'}}>R$</span>
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#767069'}}>R$</span>
                       <input type="number" value={d.valor} onChange={e=>{const nd=[...extrasDiretas];nd[i]={...nd[i],valor:e.target.value};setExtrasDiretas(nd)}}
                         className="w-full pl-6 pr-2 py-1.5 rounded-lg text-xs text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/>
                     </div>
@@ -1529,11 +1529,11 @@ Use números reais. Seja direto.`
             <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
               <button onClick={()=>setSecOutras(p=>!p)} className="w-full flex items-center justify-between px-5 py-3 border-b hover:bg-white/2 transition-colors" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
                 <div className="flex items-center gap-2">
-                  {secOutras ? <ChevronUp size={14} style={{color:'#06b6d4'}}/> : <ChevronDown size={14} style={{color:'#06b6d4'}}/>}
-                  <span className="font-bold text-sm" style={{color:'#06b6d4'}}>💸 Outras Despesas / Gasto de Capital</span>
-                  {!secOutras && totOutras > 0 && <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{background:'#06b6d420',color:'#06b6d4'}}>{fmtR(totOutras)}</span>}
+                  {secOutras ? <ChevronUp size={14} style={{color:'#0891b2'}}/> : <ChevronDown size={14} style={{color:'#0891b2'}}/>}
+                  <span className="font-bold text-sm" style={{color:'#0891b2'}}>💸 Outras Despesas / Gasto de Capital</span>
+                  {!secOutras && totOutras > 0 && <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{background:'#06b6d420',color:'#0891b2'}}>{fmtR(totOutras)}</span>}
                 </div>
-                <span className="font-bold text-sm" style={{color:'#06b6d4'}}>{fmtR(totOutras)}</span>
+                <span className="font-bold text-sm" style={{color:'#0891b2'}}>{fmtR(totOutras)}</span>
               </button>
               {secOutras && <>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-5">
@@ -1543,12 +1543,12 @@ Use números reais. Seja direto.`
                 ].map((f:any)=>(
                   <div key={f.l}>
                     <div className="flex items-center gap-1.5 mb-1">
-                      <label className="text-xs font-bold" style={{color:'#06b6d4'}}>{f.l}</label>
+                      <label className="text-xs font-bold" style={{color:'#0891b2'}}>{f.l}</label>
                       <InfoBtn id={f.info}/>
                     </div>
                     <p className="text-[10px] mb-1" style={{color:'#6b6860'}}>{f.dica}</p>
                     <div className="relative">
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#9e9b94'}}>R$</span>
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>R$</span>
                       <input type="number" value={f.v} onChange={e=>f.set(e.target.value)} placeholder="0"
                         className="w-full pl-8 pr-2 py-2 rounded-lg text-sm text-white focus:outline-none"
                         style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
@@ -1576,7 +1576,7 @@ Use números reais. Seja direto.`
                       <button onClick={()=>setExtrasOutras(p=>p.filter((_,idx)=>idx!==i))} style={{color:'#6b6860'}}><Trash2 size={12}/></button>
                     </div>
                     <div className="relative">
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#9e9b94'}}>R$</span>
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#767069'}}>R$</span>
                       <input type="number" value={d.valor} onChange={e=>{const nd=[...extrasOutras];nd[i]={...nd[i],valor:e.target.value};setExtrasOutras(nd)}}
                         className="w-full pl-6 pr-2 py-1.5 rounded-lg text-xs text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/>
                     </div>
@@ -1586,7 +1586,7 @@ Use números reais. Seja direto.`
               <div className="px-5 py-3 border-t" style={{borderColor:'#e8e6e0'}}>
                 <button onClick={()=>setExtrasOutras(p=>[...p,{nome:'',valor:'',dica:''}])}
                   className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg"
-                  style={{background:'#06b6d420',color:'#06b6d4',border:'1px dashed #06b6d440'}}>
+                  style={{background:'#06b6d420',color:'#0891b2',border:'1px dashed #06b6d440'}}>
                   <Plus size={12}/> Adicionar outra despesa
                 </button>
               </div></>}
@@ -1599,12 +1599,12 @@ Use números reais. Seja direto.`
                 <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#10b98130'}}>
                   <button onClick={()=>setSecResultado(p=>!p)} className="w-full flex items-center justify-between px-5 py-4 hover:bg-white/2 transition-colors">
                     <div className="flex items-center gap-3">
-                      {secResultado ? <ChevronUp size={14} style={{color:'#10b981'}}/> : <ChevronDown size={14} style={{color:'#10b981'}}/>}
-                      <span className="font-bold text-sm" style={{color:'#10b981'}}>📊 Resultado do Mês</span>
+                      {secResultado ? <ChevronUp size={14} style={{color:'#059669'}}/> : <ChevronDown size={14} style={{color:'#059669'}}/>}
+                      <span className="font-bold text-sm" style={{color:'#059669'}}>📊 Resultado do Mês</span>
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="text-right">
-                        <p className="text-[10px]" style={{color:'#9e9b94'}}>Resultado Operacional</p>
+                        <p className="text-[10px]" style={{color:'#767069'}}>Resultado Operacional</p>
                         <p className="text-lg font-bold" style={{color:corRes(resultOp)}}>{fmtR(resultOp)} <span className="text-xs font-normal">({pctStr(resultOp,fatN)})</span></p>
                       </div>
                     </div>
@@ -1619,8 +1619,8 @@ Use números reais. Seja direto.`
                     {l:'Resultado Financeiro',v:resultFin,pct:pctStr(resultFin,fatN),c:corRes(resultFin),dica:'Resultado Op. − Outras Despesas + Depreciação'},
                   ].map((c,i)=>(
                     <div key={i} className="rounded-xl p-4 border" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
-                      <p className="text-xs mb-0.5" style={{color:'#9e9b94'}}>{c.l}</p>
-                      <p className="text-[10px] mb-2" style={{color:'#9e9b94'}}>{c.dica}</p>
+                      <p className="text-xs mb-0.5" style={{color:'#767069'}}>{c.l}</p>
+                      <p className="text-[10px] mb-2" style={{color:'#767069'}}>{c.dica}</p>
                       <p className="text-2xl font-bold" style={{color:c.c}}>{fmtR(c.v)}</p>
                       <p className="text-xs mt-1" style={{color:c.c+'99'}}>{c.pct} do faturamento</p>
                     </div>
@@ -1634,16 +1634,16 @@ Use números reais. Seja direto.`
                     {l:'Capital de Giro Mínimo',v:fmtR(capGiro),c:'#06b6d4',dica:'Custo Operacional × 3 meses'},
                   ].map((c,i)=>(
                     <div key={i} className="rounded-xl p-4 border text-center" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
-                      <p className="text-[10px] mb-1" style={{color:'#9e9b94'}}>{c.l}</p>
+                      <p className="text-[10px] mb-1" style={{color:'#767069'}}>{c.l}</p>
                       <p className="text-lg font-bold" style={{color:c.c}}>{c.v}</p>
-                      <p className="text-[9px] mt-1" style={{color:'#9e9b94'}}>{c.dica}</p>
+                      <p className="text-[9px] mt-1" style={{color:'#767069'}}>{c.dica}</p>
                     </div>
                   ))}
                 </div>
 
                 {/* Verificação vs desejado */}
                 <div className="rounded-xl p-4 border" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
-                  <p className="text-xs font-bold mb-3" style={{color:'#9e9b94'}}>📊 Realizado vs Desejado (Metodologia Recomendada)</p>
+                  <p className="text-xs font-bold mb-3" style={{color:'#767069'}}>📊 Realizado vs Desejado (Metodologia Recomendada)</p>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {[
                       // Para CUSTOS: quanto MENOS, melhor. Ok = abaixo ou igual à meta
@@ -1667,13 +1667,13 @@ Use números reais. Seja direto.`
                       const corBorda = ok ? '#10b98130' : '#ef444430'
                       return(
                         <div key={c.l} className="rounded-lg p-3 border" style={{background:'#f5f4f0',borderColor:corBorda}}>
-                          <p className="text-[10px] mb-1" style={{color:'#9e9b94'}}>{c.l}</p>
+                          <p className="text-[10px] mb-1" style={{color:'#767069'}}>{c.l}</p>
                           <div className="flex items-end gap-2">
                             <span className="text-base font-bold" style={{color:ok?c.c:'#ef4444'}}>{c.real.toFixed(1)}%</span>
                             <span className="text-[10px]" style={{color:'#6b6860'}}>{c.limite}: {c.desej}%</span>
                           </div>
                           <p className="text-[10px] mt-1" style={{color:ok?'#10b981':'#ef4444'}}>{status}</p>
-                          <p className="text-[9px] mt-0.5" style={{color:'#9e9b94'}}>{c.dica}</p>
+                          <p className="text-[9px] mt-0.5" style={{color:'#767069'}}>{c.dica}</p>
                         </div>
                       )
                     })}
@@ -1688,12 +1688,12 @@ Use números reais. Seja direto.`
                   ].map((f:any)=>(
                     <div key={f.l} className="rounded-xl p-4 border" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
                       <div className="flex items-center gap-1.5 mb-1">
-                        <label className="text-xs font-bold" style={{color:'#9e9b94'}}>{f.l}</label>
+                        <label className="text-xs font-bold" style={{color:'#767069'}}>{f.l}</label>
                         <InfoBtn id={f.info}/>
                       </div>
                       <p className="text-[10px] mb-2" style={{color:'#6b6860'}}>{f.dica}</p>
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#9e9b94'}}>R$</span>
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>R$</span>
                         <input type="number" value={f.v} onChange={e=>f.set(e.target.value)} placeholder="0"
                           className="w-full pl-9 pr-3 py-2 rounded-lg text-sm text-white focus:outline-none"
                           style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
@@ -1706,7 +1706,7 @@ Use números reais. Seja direto.`
                 <div className="rounded-2xl border overflow-hidden" style={{borderColor:'#5b4fcf50'}}>
                   <div className="px-5 py-4 border-b" style={{background:'linear-gradient(135deg,#ffffff,#faf9f7)',borderColor:'#e8e6e0'}}>
                     <h2 className="font-bold text-base text-white flex items-center gap-2">📊 Resumo da Situação Financeira — {MESES_NOMES[mesSel]}/{anoSel}</h2>
-                    <p className="text-xs mt-1" style={{color:'#9e9b94'}}>Tudo que você precisa saber sobre a saúde financeira do seu salão neste mês.</p>
+                    <p className="text-xs mt-1" style={{color:'#767069'}}>Tudo que você precisa saber sobre a saúde financeira do seu salão neste mês.</p>
                   </div>
 
                   {/* Semáforo geral */}
@@ -1722,10 +1722,10 @@ Use números reais. Seja direto.`
                           <div className="text-4xl">{icone}</div>
                           <div className="flex-1">
                             <p className="text-lg font-bold" style={{color:cor}}>Situação: {titulo}</p>
-                            <p className="text-sm mt-1" style={{color:'#9e9b94'}}>{msg}</p>
+                            <p className="text-sm mt-1" style={{color:'#767069'}}>{msg}</p>
                           </div>
                           <div className="text-right">
-                            <p className="text-xs" style={{color:'#9e9b94'}}>Lucro do mês</p>
+                            <p className="text-xs" style={{color:'#767069'}}>Lucro do mês</p>
                             <p className="text-2xl font-bold" style={{color:cor}}>{fmtR(resultOp)}</p>
                             <p className="text-xs" style={{color:cor+'99'}}>{lucroReal.toFixed(1)}% do faturamento</p>
                           </div>
@@ -1736,14 +1736,14 @@ Use números reais. Seja direto.`
 
                   {/* O que entrou e o que saiu */}
                   <div className="p-5 border-b" style={{borderColor:'#e8e6e0'}}>
-                    <p className="text-xs font-bold mb-4" style={{color:'#9e9b94'}}>💰 PARA ONDE FOI O SEU DINHEIRO</p>
+                    <p className="text-xs font-bold mb-4" style={{color:'#767069'}}>💰 PARA ONDE FOI O SEU DINHEIRO</p>
                     <div className="space-y-3">
                       {/* Barra de faturamento */}
                       <div className="flex items-center gap-3">
                         <div className="w-32 text-xs text-right" style={{color:'#3a3835'}}>Faturamento</div>
                         <div className="flex-1 rounded-full h-6 relative overflow-hidden" style={{background:'#ffffff'}}>
                           <div className="h-6 rounded-full flex items-center px-3" style={{width:'100%',background:'#10b98130',border:'1px solid #10b98150'}}>
-                            <span className="text-[10px] font-bold" style={{color:'#10b981'}}>{fmtR(fatN)} = 100%</span>
+                            <span className="text-[10px] font-bold" style={{color:'#059669'}}>{fmtR(fatN)} = 100%</span>
                           </div>
                         </div>
                       </div>
@@ -1778,18 +1778,18 @@ Use números reais. Seja direto.`
 
                   {/* Números-chave em linguagem simples */}
                   <div className="p-5 border-b" style={{borderColor:'#e8e6e0'}}>
-                    <p className="text-xs font-bold mb-4" style={{color:'#9e9b94'}}>🎯 OS NÚMEROS QUE VOCÊ PRECISA SABER</p>
+                    <p className="text-xs font-bold mb-4" style={{color:'#767069'}}>🎯 OS NÚMEROS QUE VOCÊ PRECISA SABER</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="rounded-xl p-4" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}>
-                        <p className="text-xs mb-1" style={{color:'#9e9b94'}}>⚖️ Ponto de Equilíbrio</p>
-                        <p className="text-xl font-bold" style={{color:'#10b981'}}>{fmtR(pe)}</p>
+                        <p className="text-xs mb-1" style={{color:'#767069'}}>⚖️ Ponto de Equilíbrio</p>
+                        <p className="text-xl font-bold" style={{color:'#059669'}}>{fmtR(pe)}</p>
                         <p className="text-[10px] mt-1" style={{color:'#6b6860'}}>É o mínimo que você precisa faturar para não ter prejuízo.</p>
                         <p className="text-[10px] mt-1 font-bold" style={{color:fatN>=pe&&pe>0?'#10b981':'#ef4444'}}>
                           {pe===0?'Preencha as despesas acima':fatN>=pe?`✅ Você está ${fmtR(fatN-pe)} ACIMA do equilíbrio`:`🚨 Falta ${fmtR(pe-fatN)} para cobrir todos os custos`}
                         </p>
                       </div>
                       <div className="rounded-xl p-4" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}>
-                        <p className="text-xs mb-1" style={{color:'#9e9b94'}}>🎯 Para ter {lucroD}% de Lucro</p>
+                        <p className="text-xs mb-1" style={{color:'#767069'}}>🎯 Para ter {lucroD}% de Lucro</p>
                         <p className="text-xl font-bold" style={{color:'#7c6fe0'}}>{fmtR(peLucro)}</p>
                         <p className="text-[10px] mt-1" style={{color:'#6b6860'}}>Faturamento necessário para atingir sua meta de lucro.</p>
                         <p className="text-[10px] mt-1 font-bold" style={{color:fatN>=peLucro&&peLucro>0?'#10b981':'#f59e0b'}}>
@@ -1797,16 +1797,16 @@ Use números reais. Seja direto.`
                         </p>
                       </div>
                       <div className="rounded-xl p-4" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}>
-                        <p className="text-xs mb-1" style={{color:'#9e9b94'}}>💼 Retorno sobre Investimento</p>
+                        <p className="text-xs mb-1" style={{color:'#767069'}}>💼 Retorno sobre Investimento</p>
                         <p className="text-xl font-bold" style={{color:rentab>0?'#10b981':'#ef4444'}}>{n(invInicial)>0?(rentab*100).toFixed(2)+'%':'—'}</p>
                         <p className="text-[10px] mt-1" style={{color:'#6b6860'}}>
                           {n(invInicial)>0?`Para cada R$100 investidos, você recuperou R$${(rentab*100).toFixed(2)}.`:'Informe o Investimento Inicial para calcular.'}
                         </p>
                       </div>
                       <div className="rounded-xl p-4" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}>
-                        <p className="text-xs mb-1" style={{color:'#9e9b94'}}>🏦 Reserva de Emergência</p>
+                        <p className="text-xs mb-1" style={{color:'#767069'}}>🏦 Reserva de Emergência</p>
                         <div className="flex items-end gap-2 mt-1">
-                          <p className="text-xl font-bold" style={{color:'#06b6d4'}}>{fmtR(totalReservaAcum)}</p>
+                          <p className="text-xl font-bold" style={{color:'#0891b2'}}>{fmtR(totalReservaAcum)}</p>
                           <p className="text-[10px] mb-0.5" style={{color:'#6b6860'}}>acumulado</p>
                         </div>
                         <p className="text-[10px] mt-1" style={{color:'#6b6860'}}>Meta ideal: {fmtR(capGiro)} (3 meses de custos)</p>
@@ -1823,14 +1823,14 @@ Use números reais. Seja direto.`
                             </p>
                           </div>
                         )}
-                        {n(reservaEmerg)>0&&<p className="text-[10px] mt-1" style={{color:'#9e9b94'}}>Este mês você guardou: {fmtR(n(reservaEmerg))}</p>}
+                        {n(reservaEmerg)>0&&<p className="text-[10px] mt-1" style={{color:'#767069'}}>Este mês você guardou: {fmtR(n(reservaEmerg))}</p>}
                       </div>
                     </div>
                   </div>
 
                   {/* Diagnóstico dos custos */}
                   <div className="p-5 border-b" style={{borderColor:'#e8e6e0'}}>
-                    <p className="text-xs font-bold mb-3" style={{color:'#9e9b94'}}>🔍 DIAGNÓSTICO DOS SEUS CUSTOS</p>
+                    <p className="text-xs font-bold mb-3" style={{color:'#767069'}}>🔍 DIAGNÓSTICO DOS SEUS CUSTOS</p>
                     <div className="space-y-2">
                       {[
                         {nome:'Aluguel',valor:n(despInd.find(d=>d.nome==='Aluguel')?.valor||'0'),limite:10,dica:'O ideal é até 10% do faturamento.'},
@@ -1861,18 +1861,18 @@ Use números reais. Seja direto.`
                   {/* Próximos passos */}
                   {fatN > 0 && (
                     <div className="p-5">
-                      <p className="text-xs font-bold mb-3" style={{color:'#9e9b94'}}>💡 O QUE FAZER AGORA</p>
+                      <p className="text-xs font-bold mb-3" style={{color:'#767069'}}>💡 O QUE FAZER AGORA</p>
                       <div className="space-y-2">
-                        {resultOp < 0 && <div className="flex gap-2 p-3 rounded-xl" style={{background:'#ef444415',border:'1px solid #ef444430'}}><span>🚨</span><p className="text-xs" style={{color:'#fca5a5'}}>Seus gastos estão maiores que sua receita. Revise urgentemente as despesas diretas e veja se é possível aumentar o faturamento.</p></div>}
-                        {fatN < pe && pe > 0 && resultOp >= 0 && <div className="flex gap-2 p-3 rounded-xl" style={{background:'#f59e0b15',border:'1px solid #f59e0b30'}}><span>⚠️</span><p className="text-xs" style={{color:'#fbbf24'}}>Você está abaixo do ponto de equilíbrio. Tente aumentar o faturamento em {fmtR(pe-fatN)} ou reduzir os custos fixos.</p></div>}
+                        {resultOp < 0 && <div className="flex gap-2 p-3 rounded-xl" style={{background:'#ef444415',border:'1px solid #ef444430'}}><span>🚨</span><p className="text-xs" style={{color:'#dc2626'}}>Seus gastos estão maiores que sua receita. Revise urgentemente as despesas diretas e veja se é possível aumentar o faturamento.</p></div>}
+                        {fatN < pe && pe > 0 && resultOp >= 0 && <div className="flex gap-2 p-3 rounded-xl" style={{background:'#f59e0b15',border:'1px solid #f59e0b30'}}><span>⚠️</span><p className="text-xs" style={{color:'#92400e'}}>Você está abaixo do ponto de equilíbrio. Tente aumentar o faturamento em {fmtR(pe-fatN)} ou reduzir os custos fixos.</p></div>}
                         {pe > 0 && fatN >= pe && fatN < peLucro && <div className="flex gap-2 p-3 rounded-xl" style={{background:'#5b4fcf15',border:'1px solid #5b4fcf30'}}><span>📈</span><p className="text-xs" style={{color:'#7c6fe0'}}>Você cobre os custos, mas ainda não atingiu sua meta de lucro. Falta {fmtR(peLucro-fatN)} de faturamento. Adicione mais clientes ou suba o ticket médio.</p></div>}
                         {peLucro > 0 && fatN >= peLucro && <div className="flex gap-2 p-3 rounded-xl" style={{background:'#10b98115',border:'1px solid #10b98130'}}><span>🏆</span><p className="text-xs" style={{color:'#059669'}}>Excelente! Você superou a meta de lucro. Agora pense em guardar parte do lucro na reserva de emergência e considere reinvestir no salão.</p></div>}
                         {totalReservaAcum < capGiro && capGiro > 0 && (
                           <div className="flex gap-2 p-3 rounded-xl" style={{background:'#06b6d415',border:'1px solid #06b6d430'}}>
                             <span>💰</span>
                             <div>
-                              <p className="text-xs font-bold mb-1" style={{color:'#67e8f9'}}>Reserva de Emergência: {fmtR(totalReservaAcum)} de {fmtR(capGiro)}</p>
-                              <p className="text-xs" style={{color:'#67e8f9'}}>
+                              <p className="text-xs font-bold mb-1" style={{color:'#0891b2'}}>Reserva de Emergência: {fmtR(totalReservaAcum)} de {fmtR(capGiro)}</p>
+                              <p className="text-xs" style={{color:'#0891b2'}}>
                                 {totalReservaAcum === 0
                                   ? `Você ainda não tem reserva. Comece guardando pelo menos ${fmtR(Math.ceil(capGiro/12))}/mês. Use o campo "Quanto guardei de reserva este mês" abaixo.`
                                   : `Você já tem ${fmtR(totalReservaAcum)} acumulado — ótimo! Falta ${fmtR(capGiro-totalReservaAcum)}. Continue guardando ${fmtR(Math.ceil((capGiro-totalReservaAcum)/12))}/mês.`}
@@ -1890,7 +1890,7 @@ Use números reais. Seja direto.`
                 {/* Botão Atualizar */}
                 <button onClick={atualizar}
                   className="w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all"
-                  style={{background:atualizando?'#10b98120':'#ffffff',color:atualizando?'#10b981':'#9e9b94',border:`1px solid ${atualizando?'#10b981':'#dedad4'}`}}>
+                  style={{background:atualizando?'#10b98120':'#ffffff',color:atualizando?'#10b981':'#767069',border:`1px solid ${atualizando?'#10b981':'#dedad4'}`}}>
                   {atualizando ? '✅ Tudo atualizado!' : '🔄 Atualizar Resultados'}
                 </button>
 
@@ -1900,10 +1900,10 @@ Use números reais. Seja direto.`
                     <button onClick={analisarIA} className="w-full py-4 font-bold text-sm flex items-center justify-center gap-2 transition-all hover:brightness-110"
                       style={{background:'linear-gradient(135deg,#5b4fcf20,#7c6fe020)',color:'#7c6fe0',border:'none'}}>
                       🤖 Quero a análise completa da NODRI IA
-                      <span className="text-xs font-normal" style={{color:'#9e9b94'}}>— opcional</span>
+                      <span className="text-xs font-normal" style={{color:'#767069'}}>— opcional</span>
                     </button>
                   )}
-                  {loadingIA&&(<div className="p-5 flex items-center gap-3" style={{background:'#faf9f7'}}><Loader2 size={18} className="animate-spin" style={{color:'#5b4fcf'}}/><span className="text-sm" style={{color:'#9e9b94'}}>NODRI IA analisando...</span></div>)}
+                  {loadingIA&&(<div className="p-5 flex items-center gap-3" style={{background:'#faf9f7'}}><Loader2 size={18} className="animate-spin" style={{color:'#5b4fcf'}}/><span className="text-sm" style={{color:'#767069'}}>NODRI IA analisando...</span></div>)}
                   {erroIA&&(<div className="p-5 flex items-center justify-between" style={{background:'#faf9f7'}}><span className="text-sm" style={{color:'#ef4444'}}>⚠️ {erroIA}</span><button onClick={analisarIA} className="text-xs px-3 py-1.5 rounded-lg" style={{background:'#5b4fcf',color:'white'}}>Tentar novamente</button></div>)}
                   {analiseIA&&(<div className="p-6" style={{background:'#faf9f7'}}><h3 className="font-bold text-sm mb-4" style={{color:'#5b4fcf'}}>🤖 Análise da NODRI IA</h3><div className="text-sm leading-relaxed" style={{color:'#3a3835'}} dangerouslySetInnerHTML={{__html:analiseIA.replace(/\*\*(.*?)\*\*/g,'<strong style="color:#1a1a1a">$1</strong>').replace(/\n/g,'<br/>')}}/></div>)}
                 </div>
@@ -1928,7 +1928,7 @@ Use números reais. Seja direto.`
               </div>
             )}
             <div className="rounded-2xl p-5 border" style={{background:'#faf9f7',borderColor:'#10b98140'}}>
-              <h3 className="font-bold text-sm mb-4" style={{color:'#10b981'}}>⚙️ Parâmetros</h3>
+              <h3 className="font-bold text-sm mb-4" style={{color:'#059669'}}>⚙️ Parâmetros</h3>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
                   {l:'Custo Operacional (R$)',v:simDespesa,set:setSimDespesa,ph:custoOp>0?custoOp.toFixed(2):'0',tipo:'R$',info:'custoOpCad'},
@@ -1940,16 +1940,16 @@ Use números reais. Seja direto.`
                 ].map((f:any)=>(
                   <div key={f.l}>
                     <div className="flex items-center gap-1.5 mb-1">
-                      <label className="text-xs font-bold" style={{color:'#9e9b94'}}>{f.l}</label>
+                      <label className="text-xs font-bold" style={{color:'#767069'}}>{f.l}</label>
                       <InfoBtn id={f.info}/>
                       {!f.v && f.ph && <AvisoDefault ativo={true} padrao={`usando ${f.ph} (automático)`} onPreencher={()=>{}} onManter={()=>{}}/>}
                     </div>
                     <div className="relative">
-                      {f.tipo==='R$'&&<span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#9e9b94'}}>R$</span>}
+                      {f.tipo==='R$'&&<span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#767069'}}>R$</span>}
                       <input type="number" value={f.v} onChange={e=>f.set(e.target.value)} placeholder={f.ph}
                         className={`w-full ${f.tipo==='R$'?'pl-7':'pl-3'} ${f.tipo&&f.tipo!=='R$'?'pr-7':'pr-3'} py-2 rounded-lg text-xs text-white focus:outline-none`}
                         style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
-                      {f.tipo&&f.tipo!=='R$'&&<span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#9e9b94'}}>{f.tipo}</span>}
+                      {f.tipo&&f.tipo!=='R$'&&<span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#767069'}}>{f.tipo}</span>}
                     </div>
                   </div>
                 ))}
@@ -1975,39 +1975,39 @@ Use números reais. Seja direto.`
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="rounded-2xl p-4 border" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
-                    <p className="text-xs font-bold mb-3" style={{color:'#06b6d4'}}>👤 PE por Profissional ({profs_} profissionais)</p>
+                    <p className="text-xs font-bold mb-3" style={{color:'#0891b2'}}>👤 PE por Profissional ({profs_} profissionais)</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {[
                         {l:'PE por Profissional',v:fmtR(PEProf_)},
                         {l:'PE c/ Lucro por Prof.',v:fmtR(PEProfLucro_)},
                       ].map((c,i)=>(
                         <div key={i}>
-                          <p className="text-[10px]" style={{color:'#9e9b94'}}>{c.l}</p>
-                          <p className="text-lg font-bold" style={{color:'#06b6d4'}}>{c.v}</p>
-                          <p className="text-[9px]" style={{color:'#9e9b94'}}>cada profissional precisa gerar</p>
+                          <p className="text-[10px]" style={{color:'#767069'}}>{c.l}</p>
+                          <p className="text-lg font-bold" style={{color:'#0891b2'}}>{c.v}</p>
+                          <p className="text-[9px]" style={{color:'#767069'}}>cada profissional precisa gerar</p>
                         </div>
                       ))}
                     </div>
                   </div>
                   <div className="rounded-2xl p-4 border" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
-                    <p className="text-xs font-bold mb-3" style={{color:'#f59e0b'}}>📐 PE por M² ({n(areaM2)||100} m²)</p>
+                    <p className="text-xs font-bold mb-3" style={{color:'#b45309'}}>📐 PE por M² ({n(areaM2)||100} m²)</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {[
                         {l:'PE por M²',v:`${fmtR(PEM2_)}/m²`},
                         {l:'PE c/ Lucro por M²',v:`${fmtR(PEM2Lucro_)}/m²`},
                       ].map((c,i)=>(
                         <div key={i}>
-                          <p className="text-[10px]" style={{color:'#9e9b94'}}>{c.l}</p>
-                          <p className="text-lg font-bold" style={{color:'#f59e0b'}}>{c.v}</p>
-                          <p className="text-[9px]" style={{color:'#9e9b94'}}>cada m² precisa gerar</p>
+                          <p className="text-[10px]" style={{color:'#767069'}}>{c.l}</p>
+                          <p className="text-lg font-bold" style={{color:'#b45309'}}>{c.v}</p>
+                          <p className="text-[9px]" style={{color:'#767069'}}>cada m² precisa gerar</p>
                         </div>
                       ))}
                     </div>
                   </div>
                 </div>
 
-                <div className="rounded-xl p-4 text-xs space-y-1" style={{background:'#faf9f7',border:'1px solid #e8e6e0',color:'#9e9b94'}}>
-                  <p className="font-bold mb-1" style={{color:'#9e9b94'}}>💡 Como funciona:</p>
+                <div className="rounded-xl p-4 text-xs space-y-1" style={{background:'#faf9f7',border:'1px solid #e8e6e0',color:'#767069'}}>
+                  <p className="font-bold mb-1" style={{color:'#767069'}}>💡 Como funciona:</p>
                   <p>• <strong style={{color:'#1a1a1a'}}>PE</strong> = Custo Operacional ÷ Margem Operacional% — faturamento mínimo para não ter prejuízo</p>
                   <p>• <strong style={{color:'#1a1a1a'}}>PE c/ Lucro</strong> = Custo Op ÷ (Margem% − Meta Lucro%) — para cobrir E lucrar</p>
                   <p>• <strong style={{color:'#1a1a1a'}}>PE por Profissional</strong> = PE Total ÷ nº de profissionais — meta individual</p>
@@ -2016,7 +2016,7 @@ Use números reais. Seja direto.`
               </div>
             )}
             <button onClick={atualizar} className="w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all"
-              style={{background:atualizando?'#10b98120':'#ffffff',color:atualizando?'#10b981':'#9e9b94',border:`1px solid ${atualizando?'#10b981':'#dedad4'}`}}>
+              style={{background:atualizando?'#10b98120':'#ffffff',color:atualizando?'#10b981':'#767069',border:`1px solid ${atualizando?'#10b981':'#dedad4'}`}}>
               {atualizando?'✅ Tudo atualizado!':'🔄 Atualizar Resultados'}
             </button>
           </div>
@@ -2044,20 +2044,20 @@ Use números reais. Seja direto.`
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
                 <div>
                   <div className="flex items-center gap-1.5 mb-1">
-                    <label className="text-xs font-bold" style={{color:'#9e9b94'}}>Taxa do Cartão (%)</label>
+                    <label className="text-xs font-bold" style={{color:'#767069'}}>Taxa do Cartão (%)</label>
                     <InfoBtn id="taxaCartaoServ"/>
                     <AvisoDefault ativo={taxaCartao==='5'} padrao="5% (padrão)" onPreencher={()=>{}} onManter={()=>{}}/>
                   </div>
                   <p className="text-[10px] mb-1" style={{color:'#6b6860'}}>Média das maquininhas. Recomendado: 5%</p>
-                  <div className="relative"><input type="number" value={taxaCartao} onChange={e=>setTaxaCartao(e.target.value)} className="w-full pr-6 pl-3 py-2 rounded-lg text-sm text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/><span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#9e9b94'}}>%</span></div>
+                  <div className="relative"><input type="number" value={taxaCartao} onChange={e=>setTaxaCartao(e.target.value)} className="w-full pr-6 pl-3 py-2 rounded-lg text-sm text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/><span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>%</span></div>
                 </div>
                 <div>
-                  <div className="flex items-center gap-1.5 mb-1"><label className="text-xs font-bold" style={{color:'#9e9b94'}}>Abatimento do Produto (%)</label><InfoBtn id="abatProd"/></div>
+                  <div className="flex items-center gap-1.5 mb-1"><label className="text-xs font-bold" style={{color:'#767069'}}>Abatimento do Produto (%)</label><InfoBtn id="abatProd"/></div>
                   <p className="text-[10px] mb-1" style={{color:'#6b6860'}}>% do produto abatido do rateio. Recomendado: 100%</p>
-                  <div className="relative"><input type="number" value={abatProd} onChange={e=>setAbatProd(e.target.value)} className="w-full pr-6 pl-3 py-2 rounded-lg text-sm text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/><span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#9e9b94'}}>%</span></div>
+                  <div className="relative"><input type="number" value={abatProd} onChange={e=>setAbatProd(e.target.value)} className="w-full pr-6 pl-3 py-2 rounded-lg text-sm text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/><span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>%</span></div>
                 </div>
                 <div>
-                  <div className="flex items-center gap-1.5 mb-2"><label className="text-xs font-bold" style={{color:'#9e9b94'}}>Custo Operacional (%)</label><InfoBtn id="custOpServ"/></div>
+                  <div className="flex items-center gap-1.5 mb-2"><label className="text-xs font-bold" style={{color:'#767069'}}>Custo Operacional (%)</label><InfoBtn id="custOpServ"/></div>
                   {/* Seletor de modo */}
                   <div className="grid grid-cols-2 gap-2 mb-2">
                     <button onClick={()=>setModoCustoOp('dani')}
@@ -2073,7 +2073,7 @@ Use números reais. Seja direto.`
                         </div>
                         <span>Padrão Recomendado</span>
                       </div>
-                      <p style={{color:'#9e9b94',paddingLeft:'18px'}}>{n(custIndD)||30}% fixo — igual à planilha</p>
+                      <p style={{color:'#767069',paddingLeft:'18px'}}>{n(custIndD)||30}% fixo — igual à planilha</p>
                     </button>
                     <button onClick={()=>setModoCustoOp('real')}
                       className="py-2 px-3 rounded-xl text-[10px] font-bold text-left transition-all"
@@ -2088,7 +2088,7 @@ Use números reais. Seja direto.`
                         </div>
                         <span>Meu salão (real)</span>
                       </div>
-                      <p style={{color:'#9e9b94',paddingLeft:'18px'}}>
+                      <p style={{color:'#767069',paddingLeft:'18px'}}>
                         {mediaCustoOp>0
                           ? `${(mediaCustoOp*100).toFixed(1)}% — média de ${qtdMesesMedia} ${qtdMesesMedia===1?'mês':'meses'}`
                           : fatN>0&&custoOp>0
@@ -2101,9 +2101,9 @@ Use números reais. Seja direto.`
                     {modoCustoOp==='dani'
                       ? <>Usando <strong style={{color:'#7c6fe0'}}>{n(custIndD)||30}%</strong> — padrão recomendado do mercado</>
                       : mediaCustoOp > 0
-                        ? <>Usando média de <strong style={{color:'#10b981'}}>{qtdMesesMedia} {qtdMesesMedia===1?'mês':'meses'}</strong>: <strong style={{color:'#10b981'}}>{(mediaCustoOp*100).toFixed(1)}%</strong></>
+                        ? <>Usando média de <strong style={{color:'#059669'}}>{qtdMesesMedia} {qtdMesesMedia===1?'mês':'meses'}</strong>: <strong style={{color:'#059669'}}>{(mediaCustoOp*100).toFixed(1)}%</strong></>
                         : fatN>0&&custoOp>0
-                          ? <>Usando mês atual: <strong style={{color:'#10b981'}}>{(custoOp/fatN*100).toFixed(1)}%</strong></>
+                          ? <>Usando mês atual: <strong style={{color:'#059669'}}>{(custoOp/fatN*100).toFixed(1)}%</strong></>
                           : <>Preencha a aba RD para usar seu valor real</>}
                   </p>
                   <div className="relative">
@@ -2112,19 +2112,19 @@ Use números reais. Seja direto.`
                       placeholder={fatN>0&&custoOp>0?(custoOp/fatN*100).toFixed(1):'30'}
                       className="w-full pr-6 pl-3 py-2 rounded-lg text-sm text-white focus:outline-none"
                       style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/>
-                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#9e9b94'}}>%</span>
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>%</span>
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs font-bold block mb-1" style={{color:'#9e9b94'}}>Lei do Salão Parceiro</label>
+                  <label className="text-xs font-bold block mb-1" style={{color:'#767069'}}>Lei do Salão Parceiro</label>
                   <p className="text-[10px] mb-1" style={{color:'#6b6860'}}>Imposto incide sobre a margem, não o preço total</p>
                   <button onClick={()=>setSalaoParceiro(p=>!p)} className="w-full py-2 rounded-lg text-sm font-bold transition-all"
-                    style={{background:salaoParceiro?'#10b981':'#ffffff',color:salaoParceiro?'white':'#9e9b94',border:`1px solid ${salaoParceiro?'#10b981':'#dedad4'}`}}>
+                    style={{background:salaoParceiro?'#10b981':'#ffffff',color:salaoParceiro?'white':'#767069',border:`1px solid ${salaoParceiro?'#10b981':'#dedad4'}`}}>
                     {salaoParceiro?'✅ SIM':'NÃO'}
                   </button>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3 text-xs p-3 rounded-lg" style={{background:'#f5f4f0',color:'#9e9b94'}}>
+              <div className="grid grid-cols-2 gap-3 text-xs p-3 rounded-lg" style={{background:'#f5f4f0',color:'#767069'}}>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input type="checkbox" checked={taxaAntesRateio} onChange={e=>setTaxaAntesRateio(e.target.checked)} className="accent-purple-500"/>
                   <span style={{color:'#3a3835'}}>✅ Taxa do cartão deve ser abatida do valor antes de calcular o rateio</span>
@@ -2140,7 +2140,7 @@ Use números reais. Seja direto.`
             {/* Barra de busca e ordenação */}
             <div className="flex items-center gap-3 p-3 rounded-xl" style={{background:'#faf9f7',border:'1px solid #e8e6e0'}}>
               <div className="flex-1 relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#9e9b94'}}>🔍</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>🔍</span>
                 <input value={buscaServico} onChange={e=>setBuscaServico(e.target.value)}
                   placeholder="Buscar serviço pelo nome..."
                   className="w-full pl-8 pr-3 py-2 rounded-lg text-xs text-white focus:outline-none"
@@ -2148,10 +2148,10 @@ Use números reais. Seja direto.`
               </div>
               <button onClick={()=>setOrdenarPorLucro(v=>!v)}
                 className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all"
-                style={{background:ordenarPorLucro?'#10b98120':'#ffffff',color:ordenarPorLucro?'#10b981':'#9e9b94',border:`1px solid ${ordenarPorLucro?'#10b981':'#dedad4'}`}}>
+                style={{background:ordenarPorLucro?'#10b98120':'#ffffff',color:ordenarPorLucro?'#10b981':'#767069',border:`1px solid ${ordenarPorLucro?'#10b981':'#dedad4'}`}}>
                 {ordenarPorLucro ? '📈 Mais lucrativo primeiro' : '🔤 Ordem original'}
               </button>
-              {buscaServico && <button onClick={()=>setBuscaServico('')} className="text-xs px-2 py-1 rounded" style={{color:'#9e9b94'}}>✕ limpar</button>}
+              {buscaServico && <button onClick={()=>setBuscaServico('')} className="text-xs px-2 py-1 rounded" style={{color:'#767069'}}>✕ limpar</button>}
             </div>
 
             {/* Tabela de serviços */}
@@ -2194,13 +2194,13 @@ Use números reais. Seja direto.`
                               <AvisoDefault ativo={true} padrao={f.padrao} onPreencher={()=>{}} onManter={()=>{}}/>
                             </div>
                           )}
-                          {f.pre&&<span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#9e9b94'}}>{f.pre}</span>}
+                          {f.pre&&<span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#767069'}}>{f.pre}</span>}
                           <input type="number" value={(s as any)[f.k]}
                             onChange={e=>setServicos(p=>p.map(x=>x.id===s.id?{...x,[f.k]:e.target.value}:x))}
                             placeholder={f.ph}
                             className={`w-full ${f.pre?'pl-7':'pl-3'} ${f.suf?'pr-6':'pr-2'} py-2 rounded-lg text-sm text-white focus:outline-none`}
                             style={{background:'#f5f4f0',border:`1px solid ${f.aviso?'#f59e0b40':n((s as any)[f.k])>0?'#5b4fcf40':'#ffffff'}`}}/>
-                          {f.suf&&<span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#9e9b94'}}>{f.suf}</span>}
+                          {f.suf&&<span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#767069'}}>{f.suf}</span>}
                         </div>
                       ))}
                       <button onClick={()=>setServicos(p=>p.filter(x=>x.id!==s.id))} style={{color:'#6b6860'}}><Trash2 size={13}/></button>
@@ -2215,14 +2215,14 @@ Use números reais. Seja direto.`
                             {l:'🏆 Resultado Líquido',sub:'Seu lucro real após pagar absolutamente tudo',v:fmtR(c.resultado),p:`${(c.resultPct*100).toFixed(1)}%`,co:corRes(c.resultado)},
                           ].map((item,i)=>(
                             <div key={i} className="px-2 py-2">
-                              <p className="text-[9px] font-bold mb-0.5" style={{color:'#9e9b94'}}>{item.l}</p>
-                              <p className="text-[8px] mb-1 leading-tight" style={{color:'#9e9b94'}}>{item.sub}</p>
+                              <p className="text-[9px] font-bold mb-0.5" style={{color:'#767069'}}>{item.l}</p>
+                              <p className="text-[8px] mb-1 leading-tight" style={{color:'#767069'}}>{item.sub}</p>
                               <p className="text-sm font-bold" style={{color:item.co}}>{item.v}</p>
                               <p className="text-[10px]" style={{color:item.co+'99'}}>{item.p} do preço</p>
                             </div>
                           ))}
                         </div>
-                        <div className="grid grid-cols-4 text-center py-1.5 border-t text-[10px]" style={{background:'#faf9f7',borderColor:'#e8e6e0',color:'#9e9b94'}}>
+                        <div className="grid grid-cols-4 text-center py-1.5 border-t text-[10px]" style={{background:'#faf9f7',borderColor:'#e8e6e0',color:'#767069'}}>
                           <div>Rateio: {fmtR(c.rateioR)}</div>
                           <div>Produto: {fmtR(c.prod)} | Cartão: {fmtR(c.cartaoR)}</div>
                           <div>Imposto: {fmtR(c.impostR)}</div>
@@ -2242,8 +2242,8 @@ Use números reais. Seja direto.`
               </div>
             </div>
 
-            <div className="rounded-xl p-4 text-xs space-y-1" style={{background:'#faf9f7',border:'1px solid #e8e6e0',color:'#9e9b94'}}>
-              <p className="font-bold mb-1" style={{color:'#9e9b94'}}>💡 💡 Fórmula do cálculo:</p>
+            <div className="rounded-xl p-4 text-xs space-y-1" style={{background:'#faf9f7',border:'1px solid #e8e6e0',color:'#767069'}}>
+              <p className="font-bold mb-1" style={{color:'#767069'}}>💡 💡 Fórmula do cálculo:</p>
               <p>• <strong style={{color:'#1a1a1a'}}>Rateio R$</strong> = (Preço × Rateio%) − (Preço × Taxa_Cartão%) − (Produto × Abatimento%)</p>
               <p>• <strong style={{color:'#1a1a1a'}}>Imposto</strong>: Salão Parceiro → (Preço − Rateio) × Imp%. Normal → Preço × Imp%</p>
               <p>• <strong style={{color:'#1a1a1a'}}>Resultado</strong> = Preço − Total Despesas − Custo Operacional</p>
@@ -2268,7 +2268,7 @@ Use números reais. Seja direto.`
             {/* Busca + ordenação */}
             <div className="flex items-center gap-3 p-3 rounded-xl" style={{background:'#faf9f7',border:'1px solid #e8e6e0'}}>
               <div className="flex-1 relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#9e9b94'}}>🔍</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>🔍</span>
                 <input value={buscaProduto} onChange={e=>setBuscaProduto(e.target.value)}
                   placeholder="Buscar serviço pelo nome..."
                   className="w-full pl-8 pr-3 py-2 rounded-lg text-xs text-white focus:outline-none"
@@ -2276,10 +2276,10 @@ Use números reais. Seja direto.`
               </div>
               <button onClick={()=>setOrdenarPorLucro(v=>!v)}
                 className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all"
-                style={{background:ordenarPorLucro?'#10b98120':'#ffffff',color:ordenarPorLucro?'#10b981':'#9e9b94',border:`1px solid ${ordenarPorLucro?'#10b981':'#dedad4'}`}}>
+                style={{background:ordenarPorLucro?'#10b98120':'#ffffff',color:ordenarPorLucro?'#10b981':'#767069',border:`1px solid ${ordenarPorLucro?'#10b981':'#dedad4'}`}}>
                 {ordenarPorLucro ? '📈 Menor custo primeiro' : '🔤 Ordem original'}
               </button>
-              {buscaProduto && <button onClick={()=>setBuscaProduto('')} className="text-xs px-2 py-1 rounded" style={{color:'#9e9b94'}}>✕ limpar</button>}
+              {buscaProduto && <button onClick={()=>setBuscaProduto('')} className="text-xs px-2 py-1 rounded" style={{color:'#767069'}}>✕ limpar</button>}
             </div>
 
             {[...servicosProd]
@@ -2301,7 +2301,7 @@ Use números reais. Seja direto.`
                       placeholder="Nome do serviço (ex: Coloração Longo)"
                       className="flex-1 bg-transparent text-white font-bold text-sm focus:outline-none"
                       style={{borderBottom:'1px solid #dedad4'}}/>
-                    {total>0&&<div className="text-right flex-shrink-0"><p className="text-[10px]" style={{color:'#9e9b94'}}>Custo total</p><p className="font-bold text-lg" style={{color:'#f59e0b'}}>{fmtR(total)}</p></div>}
+                    {total>0&&<div className="text-right flex-shrink-0"><p className="text-[10px]" style={{color:'#767069'}}>Custo total</p><p className="font-bold text-lg" style={{color:'#b45309'}}>{fmtR(total)}</p></div>}
                   </div>
                   <div className="grid gap-2 px-5 py-2 text-[10px] font-bold uppercase tracking-wider border-b"
                     style={{background:'#f5f4f0',borderColor:'#e8e6e0',color:'#6b6860',gridTemplateColumns:'2fr 0.7fr 1fr 1fr 1fr 1fr 20px'}}>
@@ -2333,7 +2333,7 @@ Use números reais. Seja direto.`
                             <div className="absolute top-full left-0 right-0 z-50 rounded-xl border overflow-hidden shadow-2xl mt-1"
                               style={{background:'#faf9f7',borderColor:'#dedad4',maxHeight:'200px',overflowY:'auto'}}>
                               {/* Botão ver todos */}
-                              <div className="px-3 py-1.5 border-b text-[10px] font-bold" style={{borderColor:'#e8e6e0',color:'#9e9b94'}}>
+                              <div className="px-3 py-1.5 border-b text-[10px] font-bold" style={{borderColor:'#e8e6e0',color:'#767069'}}>
                                 📦 {produtosCatalogo.filter(p=>!ing.nome||p.nome.toLowerCase().includes(ing.nome.toLowerCase())).length} produto(s) — clique para selecionar
                               </div>
                               {produtosCatalogo
@@ -2351,9 +2351,9 @@ Use números reais. Seja direto.`
                                   style={{borderBottom:'1px solid #e8e6e010'}}>
                                   <div>
                                     <span className="text-xs font-bold text-white">{p.nome}</span>
-                                    {p.marca&&<span className="text-[10px] ml-2 px-1.5 py-0.5 rounded" style={{background:'#f59e0b20',color:'#f59e0b'}}>{p.marca}</span>}
+                                    {p.marca&&<span className="text-[10px] ml-2 px-1.5 py-0.5 rounded" style={{background:'#f59e0b20',color:'#b45309'}}>{p.marca}</span>}
                                   </div>
-                                  <span className="text-[10px]" style={{color:'#10b981'}}>R$ {p.preco} / {p.qtd_embalagem}{p.unidade}</span>
+                                  <span className="text-[10px]" style={{color:'#059669'}}>R$ {p.preco} / {p.qtd_embalagem}{p.unidade}</span>
                                 </button>
                               ))}
                               {produtosCatalogo.filter(p=>!ing.nome||p.nome.toLowerCase().includes(ing.nome.toLowerCase())).length===0&&(
@@ -2374,7 +2374,7 @@ Use números reais. Seja direto.`
                         <input type="number" value={ing.qtdEmb} onChange={e=>atualizarIngrediente(sp.id,idx,'qtdEmb',e.target.value)}
                           placeholder="Ex: 60" className="px-3 py-1.5 rounded-lg text-xs text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
                         <div className="relative">
-                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#9e9b94'}}>R$</span>
+                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#767069'}}>R$</span>
                           <input type="number" value={ing.preco} onChange={e=>atualizarIngrediente(sp.id,idx,'preco',e.target.value)}
                             placeholder="0" className="w-full pl-7 pr-2 py-1.5 rounded-lg text-xs text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
                         </div>
@@ -2387,10 +2387,10 @@ Use números reais. Seja direto.`
                   })}
                   <div className="px-5 py-3 flex items-center justify-between border-t" style={{borderColor:'#e8e6e0'}}>
                     <button onClick={()=>adicionarIngrediente(sp.id)} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg"
-                      style={{background:'#f59e0b20',color:'#f59e0b',border:'1px dashed #f59e0b40'}}>
+                      style={{background:'#f59e0b20',color:'#b45309',border:'1px dashed #f59e0b40'}}>
                       <Plus size={12}/> Adicionar produto
                     </button>
-                    {total>0&&<div className="text-xs px-3 py-1.5 rounded-lg font-bold" style={{background:'#f59e0b20',color:'#f59e0b'}}>Total: {fmtR(total)}</div>}
+                    {total>0&&<div className="text-xs px-3 py-1.5 rounded-lg font-bold" style={{background:'#f59e0b20',color:'#b45309'}}>Total: {fmtR(total)}</div>}
                   </div>
                 </div>
               )
@@ -2400,8 +2400,8 @@ Use números reais. Seja direto.`
               style={{background:'#5b4fcf20',color:'#5b4fcf',border:'1px dashed #5b4fcf40'}}>
               <Plus size={15}/> Adicionar outro serviço
             </button>
-            <div className="rounded-xl p-4 text-xs space-y-1" style={{background:'#faf9f7',border:'1px solid #e8e6e0',color:'#9e9b94'}}>
-              <p className="font-bold mb-1" style={{color:'#9e9b94'}}>💡 Fórmula:</p>
+            <div className="rounded-xl p-4 text-xs space-y-1" style={{background:'#faf9f7',border:'1px solid #e8e6e0',color:'#767069'}}>
+              <p className="font-bold mb-1" style={{color:'#767069'}}>💡 Fórmula:</p>
               <p>• Custo por uso = (Preço da embalagem ÷ Qtd da embalagem) × Qtd usada no serviço</p>
               <p style={{color:'#7c6fe0'}}>Ex: Tinta R$35,27 / 60g × 90g usados = <strong>R$52,91 de custo</strong></p>
             </div>
@@ -2418,29 +2418,29 @@ Use números reais. Seja direto.`
             ]}/>
             {custoOp>0&&<div className="rounded-xl p-3 text-xs" style={{background:'#5b4fcf15',border:'1px solid #5b4fcf30',color:'#7c6fe0'}}>✨ Custo operacional da aba Receitas e Despesas: <strong>{fmtR(custoOp)}</strong> — preenchido automaticamente</div>}
             <div className="rounded-2xl p-6 border" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
-              <h2 className="font-bold text-base mb-1" style={{color:'#f59e0b'}}>💺 Aluguel de Cadeira</h2>
-              <p className="text-xs mb-5" style={{color:'#9e9b94'}}>Quanto cobrar de aluguel por cadeira para cobrir custos e ter lucro.</p>
+              <h2 className="font-bold text-base mb-1" style={{color:'#b45309'}}>💺 Aluguel de Cadeira</h2>
+              <p className="text-xs mb-5" style={{color:'#767069'}}>Quanto cobrar de aluguel por cadeira para cobrir custos e ter lucro.</p>
               <div className="space-y-4">
                 <div>
                   <div className="flex items-center gap-1.5 mb-1">
-                    <label className="text-xs font-bold" style={{color:'#9e9b94'}}>Custo Operacional Mensal Total (R$)</label>
+                    <label className="text-xs font-bold" style={{color:'#767069'}}>Custo Operacional Mensal Total (R$)</label>
                     <InfoBtn id="custoOpCad"/>
                     {custoOp>0 && !custoOpCad && <AvisoDefault ativo={true} padrao={`${fmtR(custoOp)} (mês atual — use média para mais precisão)`} onPreencher={()=>{}} onManter={()=>{}}/>}
                   </div>
                   <p className="text-xs mb-2" style={{color:'#6b6860'}}>
                     {mediaCustoOp>0&&fatN>0
-                      ? <>Média de {qtdMesesMedia} meses: <strong style={{color:'#10b981'}}>{fmtR(custoOp*(1))}</strong> — edite para usar a média histórica</>
+                      ? <>Média de {qtdMesesMedia} meses: <strong style={{color:'#059669'}}>{fmtR(custoOp*(1))}</strong> — edite para usar a média histórica</>
                       : custoOp>0?'Usando mês atual — pode editar para colocar a média dos seus meses':'Preencha a aba Receitas e Despesas ou informe manualmente.'}
                   </p>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{color:'#9e9b94'}}>R$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{color:'#767069'}}>R$</span>
                     <input type="number" value={custoOpCad||(custoOp>0?String(Math.round(custoOp)):'')} onChange={e=>setCustoOpCad(e.target.value)}
                       placeholder={custoOp>0?custoOp.toFixed(2):'0,00'} className="w-full pl-10 pr-4 py-3 rounded-xl text-white focus:outline-none"
                       style={{background:'#f5f4f0',border:'1px solid #f59e0b60'}}/>
                   </div>
                 </div>
                 <div>
-                  <div className="flex items-center gap-1.5 mb-1"><label className="text-xs font-bold" style={{color:'#9e9b94'}}>Número de Cadeiras / Postos</label><InfoBtn id="numCad"/></div>
+                  <div className="flex items-center gap-1.5 mb-1"><label className="text-xs font-bold" style={{color:'#767069'}}>Número de Cadeiras / Postos</label><InfoBtn id="numCad"/></div>
                   <p className="text-xs mb-2" style={{color:'#6b6860'}}>Quantas cadeiras ou postos de atendimento tem o salão?</p>
                   <input type="number" value={numCad} onChange={e=>setNumCad(e.target.value)} placeholder="Ex: 10"
                     className="w-full px-4 py-3 rounded-xl text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
@@ -2449,19 +2449,19 @@ Use números reais. Seja direto.`
               {custPorCad>0&&(
                 <div className="mt-6 space-y-3">
                   <div className="rounded-xl p-4 border" style={{background:'#f5f4f0',borderColor:'#f59e0b40'}}>
-                    <p className="text-xs mb-1" style={{color:'#9e9b94'}}>📊 Custo por Cadeira (ponto de equilíbrio)</p>
-                    <p className="text-3xl font-bold" style={{color:'#f59e0b'}}>{fmtR(custPorCad)}</p>
+                    <p className="text-xs mb-1" style={{color:'#767069'}}>📊 Custo por Cadeira (ponto de equilíbrio)</p>
+                    <p className="text-3xl font-bold" style={{color:'#b45309'}}>{fmtR(custPorCad)}</p>
                     <p className="text-xs mt-1" style={{color:'#6b6860'}}>Valor que cada cadeira precisa gerar para cobrir os custos</p>
                   </div>
                   <div className="rounded-xl p-4 border" style={{background:'#f5f4f0',borderColor:'#10b98140'}}>
-                    <div className="flex items-center gap-2 mb-1"><span>⭐</span><p className="text-xs font-bold" style={{color:'#10b981'}}>Aluguel Sugerido por Cadeira</p><span className="text-xs px-2 py-0.5 rounded-full" style={{background:'#10b98120',color:'#10b981'}}>+50% lucro</span></div>
-                    <p className="text-3xl font-bold" style={{color:'#10b981'}}>{fmtR(alugSuger)}</p>
+                    <div className="flex items-center gap-2 mb-1"><span>⭐</span><p className="text-xs font-bold" style={{color:'#059669'}}>Aluguel Sugerido por Cadeira</p><span className="text-xs px-2 py-0.5 rounded-full" style={{background:'#10b98120',color:'#059669'}}>+50% lucro</span></div>
+                    <p className="text-3xl font-bold" style={{color:'#059669'}}>{fmtR(alugSuger)}</p>
                     <p className="text-xs mt-1" style={{color:'#6b6860'}}>Valor recomendado com margem de lucro de 50%</p>
                   </div>
                   <div className="rounded-xl p-4 text-xs space-y-1" style={{background:'#5b4fcf10',border:'1px solid #5b4fcf30',color:'#7c6fe0'}}>
                     <p><strong>💡 Resumo:</strong></p>
                     <p>• {n(numCad)} cadeiras × {fmtR(alugSuger)} = <strong>{fmtR(alugSuger*n(numCad))}/mês arrecadado</strong></p>
-                    <p>• Lucro estimado: <strong style={{color:'#10b981'}}>{fmtR(alugSuger*n(numCad)-custoOpCadN)}/mês</strong></p>
+                    <p>• Lucro estimado: <strong style={{color:'#059669'}}>{fmtR(alugSuger*n(numCad)-custoOpCadN)}/mês</strong></p>
                   </div>
                 </div>
               )}
@@ -2479,25 +2479,25 @@ Use números reais. Seja direto.`
             ]}/>
             {pe>0&&<div className="rounded-xl p-3 text-xs" style={{background:'#5b4fcf15',border:'1px solid #5b4fcf30',color:'#7c6fe0'}}>✨ Ponto de equilíbrio da aba Receitas e Despesas: <strong>{fmtR(pe)}</strong> — preenchido automaticamente como faturamento mínimo</div>}
             <div className="rounded-2xl p-6 border" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
-              <h2 className="font-bold text-base mb-1" style={{color:'#06b6d4'}}>📐 Faturamento por M²</h2>
-              <p className="text-xs mb-5" style={{color:'#9e9b94'}}>Quanto cada metro quadrado do salão precisa gerar para ser rentável.</p>
+              <h2 className="font-bold text-base mb-1" style={{color:'#0891b2'}}>📐 Faturamento por M²</h2>
+              <p className="text-xs mb-5" style={{color:'#767069'}}>Quanto cada metro quadrado do salão precisa gerar para ser rentável.</p>
               <div className="space-y-4">
                 <div>
                   <div className="flex items-center gap-1.5 mb-1">
-                    <label className="text-xs font-bold" style={{color:'#9e9b94'}}>Faturamento Mínimo Necessário (R$)</label>
+                    <label className="text-xs font-bold" style={{color:'#767069'}}>Faturamento Mínimo Necessário (R$)</label>
                     <InfoBtn id="fatMinM2"/>
                     {pe>0 && !fatMinM2 && <AvisoDefault ativo={true} padrao={`${fmtR(pe)} (mês atual — considere usar a média dos seus meses)`} onPreencher={()=>{}} onManter={()=>{}}/>}
                   </div>
                   <p className="text-xs mb-2" style={{color:'#6b6860'}}>{pe>0?'Ponto de equilíbrio do mês atual — pode editar para usar a média dos seus meses':'Preencha a aba Receitas e Despesas ou informe manualmente.'}</p>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{color:'#9e9b94'}}>R$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{color:'#767069'}}>R$</span>
                     <input type="number" value={fatMinM2||(pe>0?String(Math.round(pe)):'')} onChange={e=>setFatMinM2(e.target.value)}
                       placeholder={pe>0?pe.toFixed(2):'0,00'} className="w-full pl-10 pr-4 py-3 rounded-xl text-white focus:outline-none"
                       style={{background:'#f5f4f0',border:'1px solid #06b6d460'}}/>
                   </div>
                 </div>
                 <div>
-                  <div className="flex items-center gap-1.5 mb-1"><label className="text-xs font-bold" style={{color:'#9e9b94'}}>Metragem Total do Salão (m²)</label><InfoBtn id="mTotal"/></div>
+                  <div className="flex items-center gap-1.5 mb-1"><label className="text-xs font-bold" style={{color:'#767069'}}>Metragem Total do Salão (m²)</label><InfoBtn id="mTotal"/></div>
                   <input type="number" value={mTotal} onChange={e=>setMTotal(e.target.value)} placeholder="Ex: 80"
                     className="w-full px-4 py-3 rounded-xl text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
                 </div>
@@ -2506,26 +2506,26 @@ Use números reais. Seja direto.`
                 <div className="mt-6 space-y-3">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="rounded-xl p-4 border" style={{background:'#f5f4f0',borderColor:'#06b6d440'}}>
-                      <p className="text-xs mb-1" style={{color:'#9e9b94'}}>📊 Faturamento por M² (P.E.)</p>
-                      <p className="text-3xl font-bold" style={{color:'#06b6d4'}}>{fmtR(fatPorM2)}/m²</p>
+                      <p className="text-xs mb-1" style={{color:'#767069'}}>📊 Faturamento por M² (P.E.)</p>
+                      <p className="text-3xl font-bold" style={{color:'#0891b2'}}>{fmtR(fatPorM2)}/m²</p>
                       <p className="text-xs mt-1" style={{color:'#6b6860'}}>Meta mínima por m² para cobrir custos</p>
                     </div>
                     <div className="rounded-xl p-4 border" style={{background:'#f5f4f0',borderColor:'#10b98140'}}>
-                      <div className="flex items-center gap-2 mb-1"><span>⭐</span><p className="text-xs font-bold" style={{color:'#10b981'}}>Faturamento Sugerido por M²</p><span className="text-xs px-2 py-0.5 rounded-full" style={{background:'#10b98120',color:'#10b981'}}>+50%</span></div>
-                      <p className="text-3xl font-bold" style={{color:'#10b981'}}>{fmtR(fatSugM2)}/m²</p>
+                      <div className="flex items-center gap-2 mb-1"><span>⭐</span><p className="text-xs font-bold" style={{color:'#059669'}}>Faturamento Sugerido por M²</p><span className="text-xs px-2 py-0.5 rounded-full" style={{background:'#10b98120',color:'#059669'}}>+50%</span></div>
+                      <p className="text-3xl font-bold" style={{color:'#059669'}}>{fmtR(fatSugM2)}/m²</p>
                     </div>
                   </div>
                   <div className="rounded-xl p-4 border" style={{background:'#f5f4f0',borderColor:'#e8e6e0'}}>
-                    <div className="flex items-center gap-1.5 mb-3"><p className="text-xs font-bold" style={{color:'#9e9b94'}}>📏 Calcular para um espaço específico:</p><InfoBtn id="mSala"/></div>
+                    <div className="flex items-center gap-1.5 mb-3"><p className="text-xs font-bold" style={{color:'#767069'}}>📏 Calcular para um espaço específico:</p><InfoBtn id="mSala"/></div>
                     <div className="flex gap-2 items-center">
                       <input type="number" value={mSala} onChange={e=>setMSala(e.target.value)} placeholder="Ex: 15 m²"
                         className="flex-1 px-4 py-2.5 rounded-lg text-white text-sm focus:outline-none" style={{background:'#faf9f7',border:'1px solid #dedad4'}}/>
-                      <span className="text-sm" style={{color:'#9e9b94'}}>m²</span>
+                      <span className="text-sm" style={{color:'#767069'}}>m²</span>
                     </div>
                     {fatSugSala>0&&(
                       <div className="mt-3 p-3 rounded-lg" style={{background:'#10b98115',border:'1px solid #10b98130'}}>
-                        <p className="text-xs" style={{color:'#9e9b94'}}>Faturamento sugerido para {mSala} m²:</p>
-                        <p className="text-2xl font-bold mt-1" style={{color:'#10b981'}}>{fmtR(fatSugSala)}/mês</p>
+                        <p className="text-xs" style={{color:'#767069'}}>Faturamento sugerido para {mSala} m²:</p>
+                        <p className="text-2xl font-bold mt-1" style={{color:'#059669'}}>{fmtR(fatSugSala)}/mês</p>
                       </div>
                     )}
                   </div>
@@ -2543,7 +2543,7 @@ Use números reais. Seja direto.`
               <div className="rounded-2xl p-10 text-center border" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
                 <p className="text-4xl mb-3">📊</p>
                 <p className="font-bold text-white mb-1">Nenhum dado ainda</p>
-                <p className="text-sm" style={{color:'#9e9b94'}}>Preencha o Faturamento e as Despesas na aba <strong style={{color:'#7c6fe0'}}>Receitas e Despesas</strong> para ver os gráficos.</p>
+                <p className="text-sm" style={{color:'#767069'}}>Preencha o Faturamento e as Despesas na aba <strong style={{color:'#7c6fe0'}}>Receitas e Despesas</strong> para ver os gráficos.</p>
               </div>
             ) : (
               <>
@@ -2552,9 +2552,9 @@ Use números reais. Seja direto.`
                   <div className="rounded-2xl p-5 border" style={{background:'#faf9f7',borderColor:`${scoreFinanceiro.cor}30`}}>
                     <div className="flex items-center justify-between mb-4">
                       <div>
-                        <p className="text-xs font-bold mb-0.5" style={{color:'#9e9b94'}}>SCORE DE SAÚDE FINANCEIRA</p>
+                        <p className="text-xs font-bold mb-0.5" style={{color:'#767069'}}>SCORE DE SAÚDE FINANCEIRA</p>
                         <p className="text-2xl font-bold" style={{color:scoreFinanceiro.cor}}>{scoreFinanceiro.icone} {scoreFinanceiro.label}</p>
-                        <p className="text-xs mt-1" style={{color:'#9e9b94'}}>{scoreFinanceiro.sub}</p>
+                        <p className="text-xs mt-1" style={{color:'#767069'}}>{scoreFinanceiro.sub}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-5xl font-bold" style={{color:scoreFinanceiro.cor}}>{scoreFinanceiro.score}</p>
@@ -2566,7 +2566,7 @@ Use números reais. Seja direto.`
                       <div className="h-3 rounded-full transition-all duration-700"
                         style={{width:`${scoreFinanceiro.score}%`, background:`linear-gradient(90deg, #ef4444, #f59e0b, ${scoreFinanceiro.cor})`}}/>
                     </div>
-                    <div className="flex justify-between text-[10px] mt-1" style={{color:'#9e9b94'}}>
+                    <div className="flex justify-between text-[10px] mt-1" style={{color:'#767069'}}>
                       <span>0 — Crítico</span><span>50 — Atenção</span><span>75 — Saudável</span><span>100</span>
                     </div>
                   </div>
@@ -2576,7 +2576,7 @@ Use números reais. Seja direto.`
                 <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
                   <div className="px-5 py-3 border-b" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
                     <p className="font-bold text-sm" style={{color:'#1a1a1a'}}>💰 Distribuição do Faturamento</p>
-                    <p className="text-xs mt-0.5" style={{color:'#9e9b94'}}>Para onde vai cada R$ que entra no salão</p>
+                    <p className="text-xs mt-0.5" style={{color:'#767069'}}>Para onde vai cada R$ que entra no salão</p>
                   </div>
                   <div className="p-5 space-y-3">
                     {[
@@ -2593,7 +2593,7 @@ Use números reais. Seja direto.`
                             <span className="text-xs font-bold" style={{color:'#3a3835'}}>{item.ico} {item.l}</span>
                             <div className="flex items-center gap-3">
                               <span className="text-xs font-bold" style={{color:item.c}}>{fmtR(item.v)}</span>
-                              <span className="text-xs w-12 text-right" style={{color:'#9e9b94'}}>{pct.toFixed(1)}%</span>
+                              <span className="text-xs w-12 text-right" style={{color:'#767069'}}>{pct.toFixed(1)}%</span>
                             </div>
                           </div>
                           <div className="w-full rounded-full h-4 relative" style={{background:'#ffffff'}}>
@@ -2608,7 +2608,7 @@ Use números reais. Seja direto.`
                     {/* Barra total */}
                     <div className="pt-2 border-t" style={{borderColor:'#e8e6e0'}}>
                       <div className="flex items-center justify-between text-xs font-bold">
-                        <span style={{color:'#9e9b94'}}>📊 Faturamento Total</span>
+                        <span style={{color:'#767069'}}>📊 Faturamento Total</span>
                         <span style={{color:'#1a1a1a'}}>{fmtR(fatN)}</span>
                       </div>
                     </div>
@@ -2619,7 +2619,7 @@ Use números reais. Seja direto.`
                 <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
                   <div className="px-5 py-3 border-b" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
                     <p className="font-bold text-sm" style={{color:'#1a1a1a'}}>🩸 Ranking — O que mais consome seu caixa</p>
-                    <p className="text-xs mt-0.5" style={{color:'#9e9b94'}}>Ordenado do maior para o menor</p>
+                    <p className="text-xs mt-0.5" style={{color:'#767069'}}>Ordenado do maior para o menor</p>
                   </div>
                   <div className="p-5 space-y-2">
                     {todasDespesas.length === 0 ? (
@@ -2629,7 +2629,7 @@ Use números reais. Seja direto.`
                       const pctFat = fatN > 0 ? (d.valor/fatN)*100 : 0
                       const sem = semaforoDespesa(d.nome, d.valor)
                       const cores: Record<string,string> = {indireta:'#f59e0b', provisao:'#7c6fe0', direta:'#ef4444'}
-                      const cor = cores[d.tipo] || '#9e9b94'
+                      const cor = cores[d.tipo] || '#767069'
                       return (
                         <div key={idx} className="rounded-xl p-3" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}>
                           <div className="flex items-center justify-between mb-2">
@@ -2701,7 +2701,7 @@ Use números reais. Seja direto.`
                             <div className="h-3 rounded-full transition-all duration-500"
                               style={{width:`${pctBarra}%`, background:ok?`${item.c}80`:'#ef444480', border:`1px solid ${ok?item.c:'#ef4444'}`}}/>
                           </div>
-                          <div className="flex justify-between text-[9px] mt-0.5 mb-1" style={{color:'#9e9b94'}}>
+                          <div className="flex justify-between text-[9px] mt-0.5 mb-1" style={{color:'#767069'}}>
                             <span>0%</span>
                             <span style={{color:'#ffffff60'}}>▲ {item.sub} {item.meta}%</span>
                             <span>{escala.toFixed(0)}%</span>
@@ -2724,8 +2724,8 @@ Use números reais. Seja direto.`
                   if (alertas.length === 0) return (
                     <div className="rounded-2xl p-4 border text-center" style={{background:'#10b98110',borderColor:'#10b98130'}}>
                       <p className="text-2xl mb-1">🎉</p>
-                      <p className="text-sm font-bold" style={{color:'#10b981'}}>Nenhum alerta crítico!</p>
-                      <p className="text-xs mt-1" style={{color:'#9e9b94'}}>Suas despesas estão dentro dos parâmetros saudáveis.</p>
+                      <p className="text-sm font-bold" style={{color:'#059669'}}>Nenhum alerta crítico!</p>
+                      <p className="text-xs mt-1" style={{color:'#767069'}}>Suas despesas estão dentro dos parâmetros saudáveis.</p>
                     </div>
                   )
                   return (
@@ -2750,7 +2750,7 @@ Use números reais. Seja direto.`
                   <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
                     <div className="px-5 py-3 border-b" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
                       <p className="font-bold text-sm" style={{color:'#1a1a1a'}}>📅 Evolução Mensal — últimos {historicoMeses.length} meses</p>
-                      <p className="text-xs mt-0.5" style={{color:'#9e9b94'}}>Comparativo de Faturamento, Custo e Resultado mês a mês</p>
+                      <p className="text-xs mt-0.5" style={{color:'#767069'}}>Comparativo de Faturamento, Custo e Resultado mês a mês</p>
                     </div>
                     <div className="p-5 space-y-4">
                       {/* Faturamento */}
@@ -2762,7 +2762,7 @@ Use números reais. Seja direto.`
                         const maxVal = Math.max(...historicoMeses.map((m:any)=>Math.abs(m[key]||0)),1)
                         return (
                           <div key={key}>
-                            <p className="text-xs font-bold mb-2" style={{color:'#9e9b94'}}>{label}</p>
+                            <p className="text-xs font-bold mb-2" style={{color:'#767069'}}>{label}</p>
                             <div className="flex items-end gap-1" style={{height:'60px'}}>
                               {historicoMeses.map((m:any,i:number)=>{
                                 const val = m[key]||0
@@ -2790,11 +2790,11 @@ Use números reais. Seja direto.`
                         return (
                           <div className="grid grid-cols-2 gap-3 pt-2 border-t" style={{borderColor:'#e8e6e0'}}>
                             <div className="rounded-xl p-3" style={{background:'#f5f4f0'}}>
-                              <p className="text-[10px]" style={{color:'#9e9b94'}}>Variação Faturamento (vs mês anterior)</p>
+                              <p className="text-[10px]" style={{color:'#767069'}}>Variação Faturamento (vs mês anterior)</p>
                               <p className="text-lg font-bold" style={{color:varFat>=0?'#10b981':'#ef4444'}}>{varFat>=0?'+':''}{varFat.toFixed(1)}%</p>
                             </div>
                             <div className="rounded-xl p-3" style={{background:'#f5f4f0'}}>
-                              <p className="text-[10px]" style={{color:'#9e9b94'}}>Variação Resultado (vs mês anterior)</p>
+                              <p className="text-[10px]" style={{color:'#767069'}}>Variação Resultado (vs mês anterior)</p>
                               <p className="text-lg font-bold" style={{color:varRes>=0?'#10b981':'#ef4444'}}>{varRes>=0?'+':''}{varRes.toFixed(1)}%</p>
                             </div>
                           </div>
@@ -2806,8 +2806,8 @@ Use números reais. Seja direto.`
                 {historicoMeses.length <= 1 && (
                   <div className="rounded-xl p-4 text-center" style={{background:'#faf9f7',border:'1px solid #e8e6e0'}}>
                     <p className="text-2xl mb-1">📅</p>
-                    <p className="text-sm font-bold" style={{color:'#9e9b94'}}>Comparativo mensal disponível com 2+ meses salvos</p>
-                    <p className="text-xs mt-1" style={{color:'#9e9b94'}}>Salve os dados deste mês e do próximo para ver a evolução</p>
+                    <p className="text-sm font-bold" style={{color:'#767069'}}>Comparativo mensal disponível com 2+ meses salvos</p>
+                    <p className="text-xs mt-1" style={{color:'#767069'}}>Salve os dados deste mês e do próximo para ver a evolução</p>
                   </div>
                 )}
 
@@ -2832,17 +2832,17 @@ Use números reais. Seja direto.`
             <div className="rounded-2xl p-5 border" style={{background:'#faf9f7',borderColor:'#5b4fcf40'}}>
               <h3 className="font-bold text-sm mb-4" style={{color:'#5b4fcf'}}>{editandoServ?'✏️ Editar Serviço':'➕ Cadastrar Novo Serviço'}</h3>
               <div className="grid grid-cols-2 gap-3 mb-3">
-                <div><label className="text-xs font-bold block mb-1" style={{color:'#9e9b94'}}>Nome do Serviço *</label>
+                <div><label className="text-xs font-bold block mb-1" style={{color:'#767069'}}>Nome do Serviço *</label>
                   <input value={fsNome} onChange={e=>setFsNome(e.target.value)} placeholder="Ex: Coloração Completa"
                     className="w-full px-3 py-2 rounded-xl text-sm text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/></div>
-                <div><label className="text-xs font-bold block mb-1" style={{color:'#9e9b94'}}>Rateio Profissional (%)</label>
+                <div><label className="text-xs font-bold block mb-1" style={{color:'#767069'}}>Rateio Profissional (%)</label>
                   <input type="number" value={fsRateio} onChange={e=>setFsRateio(e.target.value)} placeholder="50"
                     className="w-full px-3 py-2 rounded-xl text-sm text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/></div>
-                <div><label className="text-xs font-bold block mb-1" style={{color:'#9e9b94'}}>Imposto (%)</label>
+                <div><label className="text-xs font-bold block mb-1" style={{color:'#767069'}}>Imposto (%)</label>
                   <input type="number" value={fsImposto} onChange={e=>setFsImposto(e.target.value)} placeholder="5"
                     className="w-full px-3 py-2 rounded-xl text-sm text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/></div>
-                <div><label className="text-xs font-bold block mb-1" style={{color:'#9e9b94'}}>Produto Padrão (R$)</label>
-                  <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#9e9b94'}}>R$</span>
+                <div><label className="text-xs font-bold block mb-1" style={{color:'#767069'}}>Produto Padrão (R$)</label>
+                  <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>R$</span>
                   <input type="number" value={fsProduto} onChange={e=>setFsProduto(e.target.value)} placeholder="0"
                     className="w-full pl-9 pr-3 py-2 rounded-xl text-sm text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/></div></div>
               </div>
@@ -2853,8 +2853,8 @@ Use números reais. Seja direto.`
                   {salvandoCat?'Salvando...':editandoServ?'Salvar alterações':'Cadastrar Serviço'}
                 </button>
                 {editandoServ&&<button onClick={()=>{setEditandoServ(null);setFsNome('');setFsRateio('50');setFsImposto('5');setFsProduto('0')}}
-                  className="px-4 py-2 rounded-xl text-xs" style={{background:'#ffffff',color:'#9e9b94'}}>Cancelar</button>}
-                {msgCat&&<span className="text-xs font-bold" style={{color:'#10b981'}}>{msgCat}</span>}
+                  className="px-4 py-2 rounded-xl text-xs" style={{background:'#ffffff',color:'#767069'}}>Cancelar</button>}
+                {msgCat&&<span className="text-xs font-bold" style={{color:'#059669'}}>{msgCat}</span>}
               </div>
             </div>
             {/* Lista */}
@@ -2871,21 +2871,21 @@ Use números reais. Seja direto.`
                     <div className="flex items-center justify-between px-5 py-3 cursor-pointer hover:bg-white/2"
                       onClick={()=>setAcordeaoServ(acordeaoServ===s.id?null:s.id)}>
                       <div className="flex items-center gap-3">
-                        <span className="text-xs" style={{color:'#9e9b94'}}>{acordeaoServ===s.id?'▼':'▶'}</span>
+                        <span className="text-xs" style={{color:'#767069'}}>{acordeaoServ===s.id?'▼':'▶'}</span>
                         <span className="text-sm font-bold text-white">{s.nome}</span>
                       </div>
                       <div className="flex items-center gap-4">
                         <span className="text-xs" style={{color:'#7c6fe0'}}>Rateio: {s.rateio_pct}%</span>
-                        <span className="text-xs" style={{color:'#f59e0b'}}>Imposto: {s.imposto_pct}%</span>
+                        <span className="text-xs" style={{color:'#b45309'}}>Imposto: {s.imposto_pct}%</span>
                         <button onClick={e=>{e.stopPropagation();editarServico(s)}} className="text-xs px-2 py-1 rounded" style={{background:'#5b4fcf20',color:'#7c6fe0'}}>✏️ Editar</button>
-                        <button onClick={e=>{e.stopPropagation();excluirServico(s.id)}} className="text-xs px-2 py-1 rounded" style={{background:'#ef444420',color:'#f87171'}}>🗑️</button>
+                        <button onClick={e=>{e.stopPropagation();excluirServico(s.id)}} className="text-xs px-2 py-1 rounded" style={{background:'#ef444420',color:'#dc2626'}}>🗑️</button>
                       </div>
                     </div>
                     {acordeaoServ===s.id&&(
                       <div className="px-5 pb-3 grid grid-cols-3 gap-3">
                         {[{l:'Rateio',v:`${s.rateio_pct}%`},{l:'Imposto',v:`${s.imposto_pct}%`},{l:'Produto padrão',v:`R$ ${s.produto_padrao||0}`}].map((i,idx)=>(
                           <div key={idx} className="rounded-lg p-3 text-center" style={{background:'#f5f4f0'}}>
-                            <p className="text-[10px]" style={{color:'#9e9b94'}}>{i.l}</p>
+                            <p className="text-[10px]" style={{color:'#767069'}}>{i.l}</p>
                             <p className="text-sm font-bold" style={{color:'#1a1a1a'}}>{i.v}</p>
                           </div>
                         ))}
@@ -2902,22 +2902,22 @@ Use números reais. Seja direto.`
           <div className="space-y-4">
             {/* Formulário cadastro */}
             <div className="rounded-2xl p-5 border" style={{background:'#faf9f7',borderColor:'#f59e0b40'}}>
-              <h3 className="font-bold text-sm mb-4" style={{color:'#f59e0b'}}>{editandoProd?'✏️ Editar Produto':'➕ Cadastrar Novo Produto'}</h3>
+              <h3 className="font-bold text-sm mb-4" style={{color:'#b45309'}}>{editandoProd?'✏️ Editar Produto':'➕ Cadastrar Novo Produto'}</h3>
               <div className="grid grid-cols-3 gap-3 mb-3">
-                <div className="col-span-2"><label className="text-xs font-bold block mb-1" style={{color:'#9e9b94'}}>Nome do Produto *</label>
+                <div className="col-span-2"><label className="text-xs font-bold block mb-1" style={{color:'#767069'}}>Nome do Produto *</label>
                   <input value={fNome} onChange={e=>setFNome(e.target.value)} placeholder="Ex: Tinta Color Sem Amônia"
                     className="w-full px-3 py-2 rounded-xl text-sm text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/></div>
-                <div><label className="text-xs font-bold block mb-1" style={{color:'#9e9b94'}}>Marca</label>
+                <div><label className="text-xs font-bold block mb-1" style={{color:'#767069'}}>Marca</label>
                   <input value={fMarca} onChange={e=>setFMarca(e.target.value)} placeholder="Ex: Wella"
                     className="w-full px-3 py-2 rounded-xl text-sm text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/></div>
-                <div><label className="text-xs font-bold block mb-1" style={{color:'#9e9b94'}}>Unidade</label>
+                <div><label className="text-xs font-bold block mb-1" style={{color:'#767069'}}>Unidade</label>
                   <select value={fUnid} onChange={e=>setFUnid(e.target.value)} className="w-full px-3 py-2 rounded-xl text-sm text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}>
                     {['ml','g','und','L','kg','outros'].map(u=><option key={u} value={u}>{u}</option>)}</select></div>
-                <div><label className="text-xs font-bold block mb-1" style={{color:'#9e9b94'}}>Qtd da Embalagem</label>
+                <div><label className="text-xs font-bold block mb-1" style={{color:'#767069'}}>Qtd da Embalagem</label>
                   <input type="number" value={fQtd} onChange={e=>setFQtd(e.target.value)} placeholder="Ex: 60"
                     className="w-full px-3 py-2 rounded-xl text-sm text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/></div>
-                <div><label className="text-xs font-bold block mb-1" style={{color:'#9e9b94'}}>Preço da Embalagem (R$)</label>
-                  <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#9e9b94'}}>R$</span>
+                <div><label className="text-xs font-bold block mb-1" style={{color:'#767069'}}>Preço da Embalagem (R$)</label>
+                  <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>R$</span>
                   <input type="number" value={fPreco} onChange={e=>setFPreco(e.target.value)} placeholder="Ex: 35,27"
                     className="w-full pl-9 pr-3 py-2 rounded-xl text-sm text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/></div></div>
               </div>
@@ -2928,8 +2928,8 @@ Use números reais. Seja direto.`
                   {salvandoCat?'Salvando...':editandoProd?'Salvar alterações':'Cadastrar Produto'}
                 </button>
                 {editandoProd&&<button onClick={()=>{setEditandoProd(null);setFNome('');setFMarca('');setFUnid('ml');setFQtd('');setFPreco('')}}
-                  className="px-4 py-2 rounded-xl text-xs" style={{background:'#ffffff',color:'#9e9b94'}}>Cancelar</button>}
-                {msgCat&&<span className="text-xs font-bold" style={{color:'#10b981'}}>{msgCat}</span>}
+                  className="px-4 py-2 rounded-xl text-xs" style={{background:'#ffffff',color:'#767069'}}>Cancelar</button>}
+                {msgCat&&<span className="text-xs font-bold" style={{color:'#059669'}}>{msgCat}</span>}
               </div>
             </div>
             {/* Lista */}
@@ -2946,21 +2946,21 @@ Use números reais. Seja direto.`
                     <div className="flex items-center justify-between px-5 py-3 cursor-pointer hover:bg-white/2"
                       onClick={()=>setAcordeaoProd(acordeaoProd===p.id?null:p.id)}>
                       <div className="flex items-center gap-3">
-                        <span className="text-xs" style={{color:'#9e9b94'}}>{acordeaoProd===p.id?'▼':'▶'}</span>
+                        <span className="text-xs" style={{color:'#767069'}}>{acordeaoProd===p.id?'▼':'▶'}</span>
                         <span className="text-sm font-bold text-white">{p.nome}</span>
-                        {p.marca&&<span className="text-xs px-2 py-0.5 rounded-full" style={{background:'#f59e0b20',color:'#f59e0b'}}>{p.marca}</span>}
+                        {p.marca&&<span className="text-xs px-2 py-0.5 rounded-full" style={{background:'#f59e0b20',color:'#b45309'}}>{p.marca}</span>}
                       </div>
                       <div className="flex items-center gap-4">
-                        <span className="text-xs" style={{color:'#10b981'}}>R$ {p.preco} / {p.qtd_embalagem}{p.unidade}</span>
+                        <span className="text-xs" style={{color:'#059669'}}>R$ {p.preco} / {p.qtd_embalagem}{p.unidade}</span>
                         <button onClick={e=>{e.stopPropagation();editarProduto(p);setAba('catproduto')}} className="text-xs px-2 py-1 rounded" style={{background:'#5b4fcf20',color:'#7c6fe0'}}>✏️ Editar</button>
-                        <button onClick={e=>{e.stopPropagation();excluirProduto(p.id)}} className="text-xs px-2 py-1 rounded" style={{background:'#ef444420',color:'#f87171'}}>🗑️</button>
+                        <button onClick={e=>{e.stopPropagation();excluirProduto(p.id)}} className="text-xs px-2 py-1 rounded" style={{background:'#ef444420',color:'#dc2626'}}>🗑️</button>
                       </div>
                     </div>
                     {acordeaoProd===p.id&&(
                       <div className="px-5 pb-3 grid grid-cols-4 gap-3">
                         {[{l:'Unidade',v:p.unidade},{l:'Qtd Embalagem',v:`${p.qtd_embalagem}${p.unidade}`},{l:'Preço',v:`R$ ${p.preco}`},{l:'Custo/unidade',v:`R$ ${p.qtd_embalagem>0?(p.preco/p.qtd_embalagem).toFixed(4):'-'}`}].map((i,idx)=>(
                           <div key={idx} className="rounded-lg p-3 text-center" style={{background:'#f5f4f0'}}>
-                            <p className="text-[10px]" style={{color:'#9e9b94'}}>{i.l}</p>
+                            <p className="text-[10px]" style={{color:'#767069'}}>{i.l}</p>
                             <p className="text-sm font-bold" style={{color:'#1a1a1a'}}>{i.v}</p>
                           </div>
                         ))}
@@ -2980,25 +2980,25 @@ Use números reais. Seja direto.`
           <div className="rounded-2xl border w-full max-w-2xl shadow-2xl flex flex-col" style={{background:'#faf9f7',borderColor:'#f59e0b50',maxHeight:'90vh'}}>
             <div className="flex items-center justify-between px-6 py-4 border-b" style={{borderColor:'#e8e6e0'}}>
               <div>
-                <h2 className="font-bold text-base" style={{color:'#f59e0b'}}>📋 Catálogo de Despesas</h2>
-                <p className="text-xs mt-0.5" style={{color:'#9e9b94'}}>Cadastre suas despesas para usar autocomplete em todos os campos</p>
+                <h2 className="font-bold text-base" style={{color:'#b45309'}}>📋 Catálogo de Despesas</h2>
+                <p className="text-xs mt-0.5" style={{color:'#767069'}}>Cadastre suas despesas para usar autocomplete em todos os campos</p>
               </div>
               <button onClick={()=>{setShowCatDespesa(false);setEditDespCat(null);setFdNome('');setFdCat('indireta');setFdObs('')}}
-                className="p-2 rounded-lg hover:bg-white/5" style={{color:'#9e9b94'}}><X size={18}/></button>
+                className="p-2 rounded-lg hover:bg-white/5" style={{color:'#767069'}}><X size={18}/></button>
             </div>
 
             {/* Formulário */}
             <div className="px-6 py-4 border-b" style={{borderColor:'#e8e6e0',background:'#ffffff'}}>
-              <p className="text-xs font-bold mb-3" style={{color:'#9e9b94'}}>{editDespCat ? '✏️ Editando despesa' : '➕ Nova despesa'}</p>
+              <p className="text-xs font-bold mb-3" style={{color:'#767069'}}>{editDespCat ? '✏️ Editando despesa' : '➕ Nova despesa'}</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <div className="col-span-2">
-                  <label className="text-[10px] font-bold mb-1 block" style={{color:'#9e9b94'}}>NOME DA DESPESA</label>
+                  <label className="text-[10px] font-bold mb-1 block" style={{color:'#767069'}}>NOME DA DESPESA</label>
                   <input value={fdNome} onChange={e=>setFdNome(e.target.value)} placeholder="Ex: Aluguel, Internet, Salários..."
                     className="w-full px-3 py-2 rounded-lg text-sm text-white focus:outline-none"
                     style={{background:'#faf9f7',border:'1px solid #dedad4'}}/>
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold mb-1 block" style={{color:'#9e9b94'}}>CATEGORIA</label>
+                  <label className="text-[10px] font-bold mb-1 block" style={{color:'#767069'}}>CATEGORIA</label>
                   <select value={fdCat} onChange={e=>setFdCat(e.target.value)}
                     className="w-full px-3 py-2 rounded-lg text-sm text-white focus:outline-none"
                     style={{background:'#faf9f7',border:'1px solid #dedad4'}}>
@@ -3009,7 +3009,7 @@ Use números reais. Seja direto.`
                 </div>
               </div>
               <div className="mt-3">
-                <label className="text-[10px] font-bold mb-1 block" style={{color:'#9e9b94'}}>OBSERVAÇÃO (opcional)</label>
+                <label className="text-[10px] font-bold mb-1 block" style={{color:'#767069'}}>OBSERVAÇÃO (opcional)</label>
                 <input value={fdObs} onChange={e=>setFdObs(e.target.value)} placeholder="Descrição ou dica para esta despesa"
                   className="w-full px-3 py-2 rounded-lg text-sm text-white focus:outline-none"
                   style={{background:'#faf9f7',border:'1px solid #dedad4'}}/>
@@ -3022,13 +3022,13 @@ Use números reais. Seja direto.`
                 </button>
                 {editDespCat && (
                   <button onClick={()=>{setEditDespCat(null);setFdNome('');setFdCat('indireta');setFdObs('')}}
-                    className="px-4 py-2 rounded-lg text-sm" style={{background:'#ffffff',color:'#9e9b94'}}>
+                    className="px-4 py-2 rounded-lg text-sm" style={{background:'#ffffff',color:'#767069'}}>
                     Cancelar
                   </button>
                 )}
                 {despesasCatalogo.length === 0 && (
                   <button onClick={seedDespesas}
-                    className="ml-auto px-4 py-2 rounded-lg text-xs" style={{background:'#ffffff',color:'#9e9b94',border:'1px dashed #dedad4'}}>
+                    className="ml-auto px-4 py-2 rounded-lg text-xs" style={{background:'#ffffff',color:'#767069',border:'1px dashed #dedad4'}}>
                     Pré-popular com despesas padrão
                   </button>
                 )}
@@ -3058,7 +3058,7 @@ Use números reais. Seja direto.`
                               </div>
                               <div className="flex gap-2">
                                 <button onClick={()=>{setEditDespCat(d);setFdNome(d.nome);setFdCat(d.categoria);setFdObs(d.observacao||'')}}
-                                  className="p-1.5 rounded-lg hover:bg-white/5" style={{color:'#f59e0b'}} title="Editar">
+                                  className="p-1.5 rounded-lg hover:bg-white/5" style={{color:'#b45309'}} title="Editar">
                                   <Save size={12}/>
                                 </button>
                                 <button onClick={()=>excluirDespCat(d.id)}

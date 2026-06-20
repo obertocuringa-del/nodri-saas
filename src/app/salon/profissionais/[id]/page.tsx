@@ -481,7 +481,7 @@ function TabelaServicos({ p1, p2, nomeProfissional }: { p1: MetricaBloco | null;
                 return (
                   <tr key={s} className="border-b border-nodri-border/30 hover:bg-nodri-card/40 transition-colors" style={{background:rowBg}}>
                     <td className="py-2.5 px-4 text-nodri-t1 font-medium">{s}</td>
-                    <td className="py-2.5 px-4 text-center font-bold" style={{color: q2>0?'#1a1a1a':'#9e9b94'}}>{q2||'–'}</td>
+                    <td className="py-2.5 px-4 text-center font-bold" style={{color: q2>0?'#1a1a1a':'#767069'}}>{q2||'–'}</td>
                     <td className="py-2.5 px-4 text-center text-nodri-t3">{q1||'–'}</td>
                     <td className="py-2.5 px-4 text-center">
                       {isNovo    && <span className="text-nodri-green font-bold"> 100%</span>}
@@ -719,7 +719,7 @@ function BlocoDiagnostico({ prof, form, metricas, p1, p2, fidel }: {
 
   const allScores = [sFat, sTicket, sOcup, sFidel, sCheck, sOc].filter(Boolean) as {score:number}[]
   const scoreGeral = allScores.length ? Math.round(allScores.reduce((s,v)=>s+v.score,0)/allScores.length*10) : null
-  const corGeral = !scoreGeral ? '#9e9b94' : scoreGeral>=70?'#22c55e':scoreGeral>=45?'#f59e0b':'#ef4444'
+  const corGeral = !scoreGeral ? '#767069' : scoreGeral>=70?'#22c55e':scoreGeral>=45?'#f59e0b':'#ef4444'
   const labelGeral = !scoreGeral ? '—' : scoreGeral>=70?'BOM':scoreGeral>=45?'ATENÇÃO':'CRÍTICO'
 
   // Diagnóstico textual
@@ -1003,7 +1003,7 @@ function GraficoFaturamento({ historico }: { historico: HistoricoItem[] }) {
                     </span>
                   )}
                   {diff !== 0 && prevFat > 0 && (
-                    <span style={{color:'#9e9b94', fontSize:'8px', lineHeight:1.2}}>
+                    <span style={{color:'#767069', fontSize:'8px', lineHeight:1.2}}>
                       {diff>0?'+':''}{(diff/1000).toFixed(1)}k
                     </span>
                   )}
@@ -1022,7 +1022,7 @@ function GraficoFaturamento({ historico }: { historico: HistoricoItem[] }) {
                   {(h.faturamento/1000).toFixed(1)}k
                 </span>
                 {/* Mês */}
-                <span style={{fontSize:'8px', color:'#9e9b94'}}>{MESES[h.mes-1]}/{String(h.ano).slice(2)}</span>
+                <span style={{fontSize:'8px', color:'#767069'}}>{MESES[h.mes-1]}/{String(h.ano).slice(2)}</span>
               </div>
             )
           })}
@@ -1113,7 +1113,7 @@ function BlocoClientesFidelizacao({ historico }: { historico: HistoricoItem[] })
                   <div className="flex-1 rounded-t-sm" style={{height:`${Math.max(prefH,prefH>0?3:0)}%`, background:'#22c55e'}} title={`Fiéis: ${h.clientes_preferencia}`}/>
                   <div className="flex-1 rounded-t-sm" style={{height:`${Math.max(novH,novH>0?3:0)}%`, background:'#06b6d4'}} title={`Novos: ${h.clientes_sem_preferencia}`}/>
                 </div>
-                <span style={{fontSize:'8px',color:'#9e9b94'}}>{MESES[h.mes-1]}/{String(h.ano).slice(2)}</span>
+                <span style={{fontSize:'8px',color:'#767069'}}>{MESES[h.mes-1]}/{String(h.ano).slice(2)}</span>
               </div>
             )
           })}
@@ -1172,7 +1172,7 @@ function BlocoSazonalidade({ s }: { s: SazonalidadeItem[] }) {
       <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
         <h3 className="font-syne font-bold text-[13px]"> Sazonalidade — Médias Históricas por Mês</h3>
         <div className="flex gap-3 text-[10px]">
-          <span style={{color:'#22c55e',fontWeight:700}}> {MESES[melhor.mes-1]} ({fmt$(melhor.media)})</span>
+          <span style={{color:'#15803d',fontWeight:700}}> {MESES[melhor.mes-1]} ({fmt$(melhor.media)})</span>
           <span style={{color:'#ef4444',fontWeight:700}}>️ {MESES[pior.mes-1]} ({fmt$(pior.media)})</span>
         </div>
       </div>
@@ -1192,7 +1192,7 @@ function BlocoSazonalidade({ s }: { s: SazonalidadeItem[] }) {
                   transition:'height 0.3s'
                 }}/>
               </div>
-              <span style={{fontSize:'8px',color:'#9e9b94',fontWeight:600}}>{MESES[item.mes-1]}</span>
+              <span style={{fontSize:'8px',color:'#767069',fontWeight:600}}>{MESES[item.mes-1]}</span>
               {item.count>0&&<span style={{fontSize:'7px',color:'#6b6860'}}>{item.count}x</span>}
             </div>
           )
@@ -1250,7 +1250,7 @@ function BlocoDiagnosticoResumido({ prof, form, metricas, p1, p2, fidel }: {
 
   const allScores = [sFat, sTicket, sOcup, sFidel, sCheck, sOc].filter(Boolean) as {score:number}[]
   const scoreGeral = allScores.length ? Math.round(allScores.reduce((s,v)=>s+v.score,0)/allScores.length*10) : null
-  const corGeral = !scoreGeral ? '#9e9b94' : scoreGeral>=70?'#22c55e':scoreGeral>=45?'#f59e0b':'#ef4444'
+  const corGeral = !scoreGeral ? '#767069' : scoreGeral>=70?'#22c55e':scoreGeral>=45?'#f59e0b':'#ef4444'
   const labelGeral = !scoreGeral ? '—' : scoreGeral>=70?'BOM':scoreGeral>=45?'ATENÇÃO':'CRÍTICO'
 
   const narrativa = gerarNarrativa(
@@ -3056,7 +3056,7 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
                               <div className="flex-1 w-full flex items-end justify-center">
                                 <div className="w-full rounded-t" style={{height:`${Math.max(h.pct*2.5,3)}%`,background:cor,opacity:0.8}} title={`${h.pct}%`}/>
                               </div>
-                              <span style={{fontSize:'8px',color:'#9e9b94'}}>{MESES[h.mes-1]}</span>
+                              <span style={{fontSize:'8px',color:'#767069'}}>{MESES[h.mes-1]}</span>
                               <span style={{fontSize:'8px',color:cor,fontWeight:700}}>{h.pct}%</span>
                             </div>
                           ))}

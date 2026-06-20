@@ -291,7 +291,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
           </div>
           <button onClick={voltarAoAdmin}
             className="flex items-center gap-1.5 px-3 py-1 rounded-lg font-black text-[11px] transition-all hover:brightness-110"
-            style={{ background: '#faf9f7', color: '#fbbf24', border: '1px solid #ca8a04' }}>
+            style={{ background: '#faf9f7', color: '#92400e', border: '1px solid #ca8a04' }}>
             ← Voltar ao Admin
           </button>
         </div>
@@ -380,7 +380,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
             </a>
             <a href="/salon/pendencias"
               className="w-full flex items-center px-3 py-2 rounded-md text-[11px] font-medium tracking-wide uppercase transition-colors"
-              style={{ color: '#f97316' }}>
+              style={{ color: '#c2410c' }}>
               Pendências
             </a>
             <a href="/salon/servicos"
@@ -439,7 +439,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                   {configPrograma.atualizacao_ativa && configPrograma.link_atualizacao && (
                     <a href={configPrograma.link_atualizacao} target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10.5px] font-bold"
-                      style={{ background: 'rgba(234,179,8,0.10)', border: '1px solid rgba(234,179,8,0.45)', color: '#facc15', animation: 'nodriPulseBtn 1.8s ease-in-out infinite' }}>
+                      style={{ background: 'rgba(234,179,8,0.10)', border: '1px solid rgba(234,179,8,0.45)', color: '#b45309', animation: 'nodriPulseBtn 1.8s ease-in-out infinite' }}>
                       Atualização
                     </a>
                   )}

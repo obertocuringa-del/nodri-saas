@@ -206,17 +206,17 @@ export default function ResultadosPage() {
             </div>
             {/* EXPORTAR */}
             <button onClick={exportarCSV} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all"
-              style={{ background: 'rgba(34,197,94,0.1)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.25)' }}>
+              style={{ background: 'rgba(34,197,94,0.1)', color: '#15803d', border: '1px solid rgba(34,197,94,0.25)' }}>
               <Download size={12} /> Excel
             </button>
             <button onClick={exportarPDF} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all"
-              style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.25)' }}>
+              style={{ background: 'rgba(239,68,68,0.1)', color: '#dc2626', border: '1px solid rgba(239,68,68,0.25)' }}>
               <FileText size={12} /> PDF
             </button>
             {/* IA */}
             <button onClick={acionarIA} disabled={iaLoading}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all disabled:opacity-60"
-              style={{ background: 'linear-gradient(135deg,rgba(124,92,252,.25),rgba(244,63,142,.25))', color: '#c084fc', border: '1px solid rgba(139,92,246,.4)' }}>
+              style={{ background: 'linear-gradient(135deg,rgba(124,92,252,.25),rgba(244,63,142,.25))', color: '#5b4fcf', border: '1px solid rgba(139,92,246,.4)' }}>
               <Brain size={13} />{iaLoading ? 'Analisando...' : 'Acionar IA Claude'}
             </button>
           </div>
@@ -895,7 +895,7 @@ export default function ResultadosPage() {
                             }
                           }}
                           className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all hover:opacity-80"
-                          style={{ background: 'rgba(239,68,68,0.12)', color: '#f87171', border: '1px solid rgba(239,68,68,0.25)' }}>
+                          style={{ background: 'rgba(239,68,68,0.12)', color: '#dc2626', border: '1px solid rgba(239,68,68,0.25)' }}>
                           <Trash2 size={11} /> Excluir
                         </button>
                       </div>

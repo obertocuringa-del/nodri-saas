@@ -212,12 +212,12 @@ export default function BloqueiosPage() {
         <div className="ml-auto flex items-center gap-2">
           <button onClick={reprocessarHistorico} disabled={reprocessando}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold disabled:opacity-50"
-            style={{ background: 'rgba(250,204,21,.1)', color: '#facc15', border: '1px solid rgba(250,204,21,.25)' }}>
+            style={{ background: 'rgba(250,204,21,.1)', color: '#b45309', border: '1px solid rgba(250,204,21,.25)' }}>
             <History size={11} /> {reprocessando ? 'Processando...' : 'Reprocessar Histórico'}
           </button>
           <button onClick={fetchData}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold"
-            style={{ background: 'rgba(34,211,238,.1)', color: '#22d3ee', border: '1px solid rgba(34,211,238,.25)' }}>
+            style={{ background: 'rgba(34,211,238,.1)', color: '#0891b2', border: '1px solid rgba(34,211,238,.25)' }}>
             <RefreshCw size={11} /> Atualizar
           </button>
         </div>
@@ -247,7 +247,7 @@ export default function BloqueiosPage() {
             {/* Resumo */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {[
-                { label: 'Total', val: data.profissionais.length, cor: '#9e9b94' },
+                { label: 'Total', val: data.profissionais.length, cor: '#767069' },
                 { label: 'Disponíveis', val: disponiveis.length, cor: '#4ade80' },
                 { label: 'Bloqueados', val: bloqueados.length, cor: '#f87171' },
               ].map(({ label, val, cor }) => (
@@ -272,7 +272,7 @@ export default function BloqueiosPage() {
                     <div key={p.nome} className="rounded-xl p-4 flex items-start gap-3"
                       style={{ background: 'rgba(239,68,68,.05)', border: '1px solid rgba(239,68,68,.2)' }}>
                       <div className="w-9 h-9 rounded-full flex items-center justify-center font-black text-sm shrink-0"
-                        style={{ background: 'rgba(239,68,68,.2)', color: '#f87171', border: '1.5px solid rgba(239,68,68,.4)' }}>
+                        style={{ background: 'rgba(239,68,68,.2)', color: '#dc2626', border: '1.5px solid rgba(239,68,68,.4)' }}>
                         {p.nome.charAt(0)}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -306,7 +306,7 @@ export default function BloqueiosPage() {
                       </div>
                       <button onClick={() => desbloquear(p.nome)} disabled={desbloqueando === p.nome}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold shrink-0 disabled:opacity-50"
-                        style={{ background: 'rgba(34,197,94,.1)', color: '#4ade80', border: '1px solid rgba(34,197,94,.3)' }}>
+                        style={{ background: 'rgba(34,197,94,.1)', color: '#15803d', border: '1px solid rgba(34,197,94,.3)' }}>
                         <ShieldOff size={12} />
                         {desbloqueando === p.nome ? 'Aguarde...' : 'Desbloquear'}
                       </button>
@@ -349,13 +349,13 @@ export default function BloqueiosPage() {
                         <div className="flex flex-col gap-1 pl-9">
                           {p.atrasos_semana > 0 && (
                             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full w-fit"
-                              style={{ background: 'rgba(250,204,21,.12)', color: '#facc15', border: '1px solid rgba(250,204,21,.25)' }}>
+                              style={{ background: 'rgba(250,204,21,.12)', color: '#b45309', border: '1px solid rgba(250,204,21,.25)' }}>
                                {p.atrasos_semana} atraso{p.atrasos_semana > 1 ? 's' : ''}: {p.datas_atrasos.join(', ')}
                             </span>
                           )}
                           {p.faltas_mes > 0 && (
                             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full w-fit"
-                              style={{ background: 'rgba(239,68,68,.12)', color: '#f87171', border: '1px solid rgba(239,68,68,.25)' }}>
+                              style={{ background: 'rgba(239,68,68,.12)', color: '#dc2626', border: '1px solid rgba(239,68,68,.25)' }}>
                                {p.faltas_mes} falta{p.faltas_mes > 1 ? 's' : ''}: {p.datas_faltas.join(', ')}
                             </span>
                           )}
@@ -445,17 +445,17 @@ export default function BloqueiosPage() {
                     <div className="flex items-center gap-2 pt-2">
                       <button onClick={salvarRegras} disabled={salvandoRegras}
                         className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12px] font-bold disabled:opacity-50"
-                        style={{ background: 'rgba(34,197,94,.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,.3)' }}>
+                        style={{ background: 'rgba(34,197,94,.15)', color: '#15803d', border: '1px solid rgba(34,197,94,.3)' }}>
                         <Save size={13} /> {salvandoRegras ? 'Salvando...' : 'Salvar Regras'}
                       </button>
                       <button onClick={restaurarPadrao} disabled={salvandoRegras}
                         className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12px] font-bold disabled:opacity-50"
-                        style={{ background: 'rgba(250,204,21,.1)', color: '#facc15', border: '1px solid rgba(250,204,21,.3)' }}>
+                        style={{ background: 'rgba(250,204,21,.1)', color: '#b45309', border: '1px solid rgba(250,204,21,.3)' }}>
                         <RotateCcw size={13} /> Restaurar Padrão
                       </button>
                       <button onClick={() => setEditAndoRegras(false)}
                         className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12px] font-semibold"
-                        style={{ background: 'rgba(255,255,255,.05)', color: '#9e9b94', border: '1px solid rgba(255,255,255,.1)' }}>
+                        style={{ background: 'rgba(255,255,255,.05)', color: '#767069', border: '1px solid rgba(255,255,255,.1)' }}>
                         Cancelar
                       </button>
                     </div>
@@ -472,7 +472,7 @@ export default function BloqueiosPage() {
                 <span className="text-[10px] text-nodri-t3 ml-1">— crie regras para qualquer ocorrência</span>
                 <button onClick={() => { setAdicionandoRegra(true); setEditandoRegraId(null) }}
                   className="ml-auto flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold"
-                  style={{ background: 'rgba(34,211,238,.1)', color: '#22d3ee', border: '1px solid rgba(34,211,238,.25)' }}>
+                  style={{ background: 'rgba(34,211,238,.1)', color: '#0891b2', border: '1px solid rgba(34,211,238,.25)' }}>
                   <Plus size={11} /> Nova Regra
                 </button>
               </div>
@@ -535,12 +535,12 @@ export default function BloqueiosPage() {
                     <div className="flex gap-2 pt-1">
                       <button onClick={adicionarRegraCustom}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold"
-                        style={{ background: 'rgba(34,197,94,.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,.3)' }}>
+                        style={{ background: 'rgba(34,197,94,.15)', color: '#15803d', border: '1px solid rgba(34,197,94,.3)' }}>
                         <Check size={12} /> Salvar
                       </button>
                       <button onClick={() => setAdicionandoRegra(false)}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px]"
-                        style={{ background: 'rgba(255,255,255,.05)', color: '#9e9b94', border: '1px solid rgba(255,255,255,.1)' }}>
+                        style={{ background: 'rgba(255,255,255,.05)', color: '#767069', border: '1px solid rgba(255,255,255,.1)' }}>
                         <X size={12} /> Cancelar
                       </button>
                     </div>
@@ -580,12 +580,12 @@ export default function BloqueiosPage() {
                         <div className="flex gap-1 items-center">
                           <button onClick={() => salvarEdicaoRegra(rc.id)}
                             className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold"
-                            style={{ background: 'rgba(34,197,94,.15)', color: '#4ade80' }}>
+                            style={{ background: 'rgba(34,197,94,.15)', color: '#15803d' }}>
                             <Check size={10} /> Salvar
                           </button>
                           <button onClick={() => setEditandoRegraId(null)}
                             className="flex items-center gap-1 px-2 py-1 rounded text-[10px]"
-                            style={{ background: 'rgba(255,255,255,.05)', color: '#9e9b94' }}>
+                            style={{ background: 'rgba(255,255,255,.05)', color: '#767069' }}>
                             <X size={10} /> Cancelar
                           </button>
                         </div>
@@ -608,11 +608,11 @@ export default function BloqueiosPage() {
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
                           <button onClick={() => { setEditandoRegraId(rc.id); setEditandoRegraData({}); setAdicionandoRegra(false) }}
-                            className="p-1.5 rounded-lg" style={{ background: 'rgba(250,204,21,.1)', color: '#facc15' }}>
+                            className="p-1.5 rounded-lg" style={{ background: 'rgba(250,204,21,.1)', color: '#b45309' }}>
                             <Edit2 size={11} />
                           </button>
                           <button onClick={() => excluirRegraCustom(rc.id)}
-                            className="p-1.5 rounded-lg" style={{ background: 'rgba(239,68,68,.1)', color: '#f87171' }}>
+                            className="p-1.5 rounded-lg" style={{ background: 'rgba(239,68,68,.1)', color: '#dc2626' }}>
                             <Trash2 size={11} />
                           </button>
                         </div>

@@ -107,7 +107,7 @@ export default function FeedbackProfissionalPublico() {
           </div>
           {form.salao_nome && <p style={{ fontSize: 12, fontWeight: 700, color: COR, letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 6 }}>{form.salao_nome}</p>}
           <h1 style={{ fontSize: 20, fontWeight: 800, color: '#1a1a1a', marginBottom: 4 }}>{form.titulo}</h1>
-          <p style={{ fontSize: 13, color: '#9ca3af' }}>Registre ocorrências de forma rápida e objetiva</p>
+          <p style={{ fontSize: 13, color: '#6b7280' }}>Registre ocorrências de forma rápida e objetiva</p>
           <p style={{ fontSize: 11, color: '#ef4444', marginTop: 8 }}>* Campos obrigatórios</p>
         </div>
 
@@ -117,7 +117,7 @@ export default function FeedbackProfissionalPublico() {
           <div className="card" style={{ background: 'white', borderRadius: 20, padding: 28, marginBottom: 14, boxShadow: '0 2px 20px rgba(0,0,0,0.06)', animationDelay: '0s' }}>
             <p style={{ fontSize: 15, fontWeight: 600, color: '#1a1a1a', marginBottom: 14 }}>Profissional <span style={{ color: '#ef4444' }}>*</span></p>
             <select value={profissionalId} onChange={e => selectProf(e.target.value)}
-              style={{ width: '100%', padding: '14px 16px', borderRadius: 14, border: `2px solid ${profissionalId ? COR : '#f3f4f6'}`, fontSize: 14, color: profissionalId ? '#faf9f7' : '#9ca3af', background: '#f9fafb', fontFamily: 'inherit', cursor: 'pointer' }}>
+              style={{ width: '100%', padding: '14px 16px', borderRadius: 14, border: `2px solid ${profissionalId ? COR : '#f3f4f6'}`, fontSize: 14, color: profissionalId ? '#faf9f7' : '#6b7280', background: '#f9fafb', fontFamily: 'inherit', cursor: 'pointer' }}>
               <option value="">Escolher profissional...</option>
               {form.profissionais.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
             </select>
@@ -147,7 +147,7 @@ export default function FeedbackProfissionalPublico() {
           <div className="card" style={{ background: 'white', borderRadius: 20, padding: 28, marginBottom: 14, boxShadow: '0 2px 20px rgba(0,0,0,0.06)', animationDelay: '.14s' }}>
             <p style={{ fontSize: 15, fontWeight: 600, color: '#1a1a1a', marginBottom: 14 }}>O que houve? <span style={{ color: '#ef4444' }}>*</span></p>
             <select value={ocorridoId} onChange={e => selectOcorrido(e.target.value)}
-              style={{ width: '100%', padding: '14px 16px', borderRadius: 14, border: `2px solid ${ocorridoId ? COR : '#f3f4f6'}`, fontSize: 14, color: ocorridoId ? '#faf9f7' : '#9ca3af', background: '#f9fafb', fontFamily: 'inherit', cursor: 'pointer' }}>
+              style={{ width: '100%', padding: '14px 16px', borderRadius: 14, border: `2px solid ${ocorridoId ? COR : '#f3f4f6'}`, fontSize: 14, color: ocorridoId ? '#faf9f7' : '#6b7280', background: '#f9fafb', fontFamily: 'inherit', cursor: 'pointer' }}>
               <option value="">Escolher ocorrido...</option>
               {form.ocorridos.map(o => <option key={o.id} value={o.id}>{o.descricao}</option>)}
             </select>
@@ -178,7 +178,7 @@ export default function FeedbackProfissionalPublico() {
           </div>
 
           <div style={{ textAlign: 'center', marginTop: 32 }}>
-            <p style={{ fontSize: 11, color: '#6b6860' }}>Formulário criado com <strong style={{ color: '#9ca3af' }}>NODRI</strong> · Gestão de Salões</p>
+            <p style={{ fontSize: 11, color: '#6b6860' }}>Formulário criado com <strong style={{ color: '#6b7280' }}>NODRI</strong> · Gestão de Salões</p>
           </div>
         </div>
       </div>

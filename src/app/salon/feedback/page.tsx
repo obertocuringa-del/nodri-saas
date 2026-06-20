@@ -292,7 +292,7 @@ export default function FeedbackPage() {
           <div className="p-3 border-t border-nodri-border mt-auto space-y-1.5">
             <button onClick={criarFormulario} disabled={saving}
               className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-semibold transition-all"
-              style={{ background: 'rgba(34,197,94,0.12)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.25)' }}>
+              style={{ background: 'rgba(34,197,94,0.12)', color: '#15803d', border: '1px solid rgba(34,197,94,0.25)' }}>
               <Plus size={12} /> Novo Formulário
             </button>
             {selected && (
@@ -333,7 +333,7 @@ export default function FeedbackPage() {
                 <div className="flex items-center gap-1.5">
                   <button onClick={toggleAtivo}
                     className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] border transition-all"
-                    style={{ borderColor: 'rgba(255,255,255,0.1)', color: '#9e9b94' }}>
+                    style={{ borderColor: 'rgba(255,255,255,0.1)', color: '#767069' }}>
                     {selected.ativo ? <><EyeOff size={10} /> Desativar</> : <><Eye size={10} /> Ativar</>}
                   </button>
                   <button onClick={excluirFormulario}
@@ -362,7 +362,7 @@ export default function FeedbackPage() {
                     <div className="text-[11px] text-nodri-t2">{perguntas.length} pergunta{perguntas.length !== 1 ? 's' : ''}</div>
                     <button onClick={() => setShowNova(!showNova)}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all"
-                      style={{ background: 'rgba(34,197,94,0.12)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.25)' }}>
+                      style={{ background: 'rgba(34,197,94,0.12)', color: '#15803d', border: '1px solid rgba(34,197,94,0.25)' }}>
                       <Plus size={12} /> Adicionar Pergunta
                     </button>
                   </div>
@@ -404,7 +404,7 @@ export default function FeedbackPage() {
                         <div className="flex gap-2 pt-1">
                           <button onClick={adicionarPergunta} disabled={saving || !novaPerg.titulo.trim()}
                             className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[11px] font-bold disabled:opacity-50 transition-all"
-                            style={{ background: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)' }}>
+                            style={{ background: 'rgba(34,197,94,0.15)', color: '#15803d', border: '1px solid rgba(34,197,94,0.3)' }}>
                             <Check size={12} /> Adicionar
                           </button>
                           <button onClick={() => setShowNova(false)}
@@ -451,7 +451,7 @@ export default function FeedbackPage() {
                             <div className="flex gap-2">
                               <button onClick={salvarPergunta} disabled={saving}
                                 className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[11px] font-bold transition-all"
-                                style={{ background: 'rgba(6,182,212,0.15)', color: '#22d3ee', border: '1px solid rgba(6,182,212,0.3)' }}>
+                                style={{ background: 'rgba(6,182,212,0.15)', color: '#0891b2', border: '1px solid rgba(6,182,212,0.3)' }}>
                                 <Check size={11} /> Salvar
                               </button>
                               <button onClick={() => setEditando(null)}
@@ -473,7 +473,7 @@ export default function FeedbackPage() {
                                 {p.obrigatoria && <span className="text-red-400 text-[10px]">*</span>}
                               </div>
                               <div className="flex items-center gap-2">
-                                <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.06)', color: '#9e9b94' }}>
+                                <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.06)', color: '#767069' }}>
                                   {TIPO_LABELS[p.tipo]}
                                 </span>
                                 {p.opcoes.length > 0 && (
@@ -528,7 +528,7 @@ export default function FeedbackPage() {
                     <div className="mt-3 flex gap-2">
                       <a href={linkFeedback} target="_blank" rel="noopener noreferrer"
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all"
-                        style={{ background: 'rgba(34,197,94,0.1)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.25)' }}>
+                        style={{ background: 'rgba(34,197,94,0.1)', color: '#15803d', border: '1px solid rgba(34,197,94,0.25)' }}>
                         <Eye size={11} /> Visualizar formulário
                       </a>
                     </div>
@@ -563,7 +563,7 @@ export default function FeedbackPage() {
                       </div>
                       <button onClick={salvarConfig} disabled={saving}
                         className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[11px] font-bold transition-all"
-                        style={{ background: 'rgba(6,182,212,0.15)', color: '#22d3ee', border: '1px solid rgba(6,182,212,0.3)' }}>
+                        style={{ background: 'rgba(6,182,212,0.15)', color: '#0891b2', border: '1px solid rgba(6,182,212,0.3)' }}>
                         <Check size={12} /> {saving ? 'Salvando...' : 'Salvar Configurações'}
                       </button>
                     </div>

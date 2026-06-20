@@ -174,7 +174,7 @@ function TabelaComp({ title, items, label1, label2 }: { title: string; items: It
 
   const Th = ({ k, children }: { k: SortKey; children: React.ReactNode }) => (
     <th onClick={() => setSort(s => ({ key: k, dir: s.key === k ? (-s.dir as 1 | -1) : -1 }))}
-      style={{ padding: '10px 12px', fontSize: 11, color: '#9e9b94', fontWeight: 600, textAlign: k === 'nome' ? 'left' : 'right', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap', background: '#f5f4f0', borderBottom: '1px solid #e8e6e0' }}>
+      style={{ padding: '10px 12px', fontSize: 11, color: '#767069', fontWeight: 600, textAlign: k === 'nome' ? 'left' : 'right', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap', background: '#f5f4f0', borderBottom: '1px solid #e8e6e0' }}>
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
         {children}
         {sort.key === k ? (sort.dir === -1 ? <ChevronDown size={11} /> : <ChevronUp size={11} />) : <ChevronsUpDown size={11} style={{ opacity: 0.3 }} />}
@@ -208,7 +208,7 @@ function TabelaComp({ title, items, label1, label2 }: { title: string; items: It
                 <tr key={i} style={{ borderBottom: '1px solid #faf9f7', background: i % 2 === 0 ? 'transparent' : '#f5f4f010' }}>
                   <td style={{ padding: '9px 12px', color: '#3a3835', fontWeight: 500, maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.nome}>{item.nome}</td>
                   <td style={{ padding: '9px 12px', textAlign: 'right', color: '#1a1a1a', fontWeight: 700 }}>{item.p1}</td>
-                  <td style={{ padding: '9px 12px', textAlign: 'right', color: '#9e9b94' }}>{item.p2}</td>
+                  <td style={{ padding: '9px 12px', textAlign: 'right', color: '#767069' }}>{item.p2}</td>
                   <td style={{ padding: '9px 12px', textAlign: 'right', color: item.diff >= 0 ? '#10b981' : '#ef4444', fontWeight: 600 }}>{item.diff > 0 ? '+' : ''}{item.diff}</td>
                   <td style={{ padding: '9px 12px', textAlign: 'right' }}><Badge pct={item.pct} p1={item.p1} p2={item.p2} /></td>
                 </tr>
@@ -219,7 +219,7 @@ function TabelaComp({ title, items, label1, label2 }: { title: string; items: It
       </div>
       {sorted.length > limite && (
         <div style={{ padding: '10px 16px', textAlign: 'center' }}>
-          <button onClick={() => setLimite(l => l + 30)} style={{ background: '#ffffff', border: '1px solid #dedad4', borderRadius: 6, padding: '6px 16px', color: '#9e9b94', fontSize: 12, cursor: 'pointer' }}>
+          <button onClick={() => setLimite(l => l + 30)} style={{ background: '#ffffff', border: '1px solid #dedad4', borderRadius: 6, padding: '6px 16px', color: '#767069', fontSize: 12, cursor: 'pointer' }}>
             Ver mais ({sorted.length - limite} restantes)
           </button>
         </div>
@@ -805,7 +805,7 @@ export default function RelatoriosPage() {
         <a href="/salon" style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#6b6860', textDecoration: 'none', fontSize: 13 }}>
           <ArrowLeft size={15} /> Voltar
         </a>
-        <span style={{ color: '#c8c5be' }}>|</span>
+        <span style={{ color: '#767069' }}>|</span>
         <BarChart2 size={16} color="#5b4fcf" />
         <span style={{ color: '#1a1a1a', fontWeight: 700, fontSize: 14 }}>Relatórios Gerenciais</span>
 
@@ -815,7 +815,7 @@ export default function RelatoriosPage() {
             {/* Modo de comparação */}
             <div style={{ display: 'flex', background: '#faf9f7', borderRadius: 7, border: '1px solid #e8e6e0', padding: 2, gap: 2 }}>
               {(['auto', 'custom'] as const).map(m => (
-                <button key={m} onClick={() => setModo(m)} style={{ padding: '4px 12px', borderRadius: 5, border: 'none', fontSize: 11, fontWeight: 600, cursor: 'pointer', background: modo === m ? '#5b4fcf' : 'transparent', color: modo === m ? 'white' : '#9e9b94' }}>
+                <button key={m} onClick={() => setModo(m)} style={{ padding: '4px 12px', borderRadius: 5, border: 'none', fontSize: 11, fontWeight: 600, cursor: 'pointer', background: modo === m ? '#5b4fcf' : 'transparent', color: modo === m ? 'white' : '#767069' }}>
                   {m === 'auto' ? 'Automático' : 'Personalizado'}
                 </button>
               ))}
@@ -839,9 +839,9 @@ export default function RelatoriosPage() {
                   <span style={{ fontSize: 10, color: '#6b6860' }}>a</span>
                   <input type="date" value={p1Ate} onChange={e => setP1Ate(e.target.value)} style={{ background: '#faf9f7', border: '1px solid #e8e6e0', borderRadius: 6, color: '#1a1a1a', padding: '4px 6px', fontSize: 11, outline: 'none' }} />
                 </div>
-                <span style={{ fontSize: 11, color: '#9e9b94' }}>vs</span>
+                <span style={{ fontSize: 11, color: '#767069' }}>vs</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <span style={{ fontSize: 10, color: '#06b6d4', fontWeight: 700 }}>P2</span>
+                  <span style={{ fontSize: 10, color: '#0891b2', fontWeight: 700 }}>P2</span>
                   <input type="date" value={p2De} onChange={e => setP2De(e.target.value)} style={{ background: '#faf9f7', border: '1px solid #e8e6e0', borderRadius: 6, color: '#1a1a1a', padding: '4px 6px', fontSize: 11, outline: 'none' }} />
                   <span style={{ fontSize: 10, color: '#6b6860' }}>a</span>
                   <input type="date" value={p2Ate} onChange={e => setP2Ate(e.target.value)} style={{ background: '#faf9f7', border: '1px solid #e8e6e0', borderRadius: 6, color: '#1a1a1a', padding: '4px 6px', fontSize: 11, outline: 'none' }} />
@@ -862,13 +862,13 @@ export default function RelatoriosPage() {
           <div style={{ maxWidth: 440, textAlign: 'center' }}>
             <FileSpreadsheet size={56} style={{ margin: '0 auto 16px', display: 'block', color: '#5b4fcf' }} />
             <h2 style={{ fontSize: 20, fontWeight: 700, margin: '0 0 10px' }}>Importe seus Dados</h2>
-            <p style={{ color: '#9e9b94', fontSize: 14, lineHeight: 1.7, margin: '0 0 20px' }}>
-              Faça upload do <strong style={{ color: '#9e9b94' }}>base_dados_nodri.xlsx</strong> gerado pelo sistema Nodri para visualizar os relatórios completos.
+            <p style={{ color: '#767069', fontSize: 14, lineHeight: 1.7, margin: '0 0 20px' }}>
+              Faça upload do <strong style={{ color: '#767069' }}>base_dados_nodri.xlsx</strong> gerado pelo sistema Nodri para visualizar os relatórios completos.
             </p>
             <button onClick={() => router.push('/salon/relatorios/importar-excel')} style={{ background: 'linear-gradient(135deg, #5b4fcf, #f43f8e)', color: 'white', border: 'none', borderRadius: 10, padding: '12px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
               <Upload size={16} /> Importar Planilha
             </button>
-            <p style={{ color: '#9e9b94', fontSize: 11, marginTop: 10 }}>Dados salvos localmente no navegador. A importação é por período — não apaga outros meses.</p>
+            <p style={{ color: '#767069', fontSize: 11, marginTop: 10 }}>Dados salvos localmente no navegador. A importação é por período — não apaga outros meses.</p>
           </div>
         </div>
       )}
@@ -911,7 +911,7 @@ export default function RelatoriosPage() {
                       setDropdownAberto(false)
                       carregarAnalise(item.id)
                     }} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 14px', border: 'none', background: subAnalise === item.id && aba === 'analise' ? '#ffffff' : 'transparent', color: '#1a1a1a', cursor: 'pointer', textAlign: 'left', borderRadius: item.id === 'risco' ? '10px 10px 0 0' : item.id === 'diasemana' ? '0 0 10px 10px' : 0 }}>
-                      <span style={{ color: '#f59e0b' }}>{item.icon}</span>
+                      <span style={{ color: '#b45309' }}>{item.icon}</span>
                       <div>
                         <div style={{ fontSize: 12, fontWeight: 600 }}>{item.label}</div>
                         <div style={{ fontSize: 10, color: '#6b6860' }}>{item.desc}</div>
@@ -922,10 +922,10 @@ export default function RelatoriosPage() {
               )}
             </div>
 
-            <div style={{ marginLeft: 'auto', padding: '6px 0', fontSize: 11, color: '#9e9b94', alignSelf: 'center' }}>
+            <div style={{ marginLeft: 'auto', padding: '6px 0', fontSize: 11, color: '#767069', alignSelf: 'center' }}>
               <span style={{ color: '#5b4fcf', fontWeight: 600 }}>{label1}</span>
               <span style={{ margin: '0 6px' }}>vs</span>
-              <span style={{ color: '#06b6d4', fontWeight: 600 }}>{label2}</span>
+              <span style={{ color: '#0891b2', fontWeight: 600 }}>{label2}</span>
             </div>
           </div>
 
@@ -953,7 +953,7 @@ export default function RelatoriosPage() {
                           {r2.fat_total > 0 && <span style={{ display: 'flex', alignItems: 'center', gap: 2, fontSize: 11, fontWeight: 700, color: text, background: bg, padding: '1px 6px', borderRadius: 20 }}><Icon size={10} />{p > 0 ? '+' : ''}{p.toFixed(1)}%</span>}
                         </div>
                         <div style={{ fontSize: 20, fontWeight: 800, color: '#3a3835', marginBottom: 2 }}>{card.fmt(card.v1)}</div>
-                        {r2.fat_total > 0 && <div style={{ fontSize: 11, color: '#9e9b94' }}>Ant: {card.fmt(card.v2)}</div>}
+                        {r2.fat_total > 0 && <div style={{ fontSize: 11, color: '#767069' }}>Ant: {card.fmt(card.v2)}</div>}
                       </div>
                     )
                   })}
@@ -962,12 +962,12 @@ export default function RelatoriosPage() {
                 {/* TOP 10 crescimento e queda lado a lado */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
                   <div style={{ background: '#f5f4f0', border: '1px solid #10b98130', borderRadius: 12, padding: 16 }}>
-                    <h3 style={{ color: '#10b981', fontSize: 13, fontWeight: 700, margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: 6 }}><TrendingUp size={14} /> Top 10 Maiores Crescimentos</h3>
+                    <h3 style={{ color: '#059669', fontSize: 13, fontWeight: 700, margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: 6 }}><TrendingUp size={14} /> Top 10 Maiores Crescimentos</h3>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                       {top10Cresc.map((item, i) => (
                         <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ fontSize: 10, color: '#9e9b94', width: 16, flexShrink: 0 }}>#{i + 1}</span>
-                          <span style={{ flex: 1, fontSize: 11, color: '#9e9b94', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.nome}>{item.nome}</span>
+                          <span style={{ fontSize: 10, color: '#767069', width: 16, flexShrink: 0 }}>#{i + 1}</span>
+                          <span style={{ flex: 1, fontSize: 11, color: '#767069', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.nome}>{item.nome}</span>
                           <span style={{ fontSize: 11, color: '#1a1a1a', fontWeight: 700, flexShrink: 0 }}>{item.p1}</span>
                           <Badge pct={item.pct} p1={item.p1} p2={item.p2} />
                         </div>
@@ -979,8 +979,8 @@ export default function RelatoriosPage() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                       {top10Queda.map((item, i) => (
                         <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ fontSize: 10, color: '#9e9b94', width: 16, flexShrink: 0 }}>#{i + 1}</span>
-                          <span style={{ flex: 1, fontSize: 11, color: '#9e9b94', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.nome}>{item.nome}</span>
+                          <span style={{ fontSize: 10, color: '#767069', width: 16, flexShrink: 0 }}>#{i + 1}</span>
+                          <span style={{ flex: 1, fontSize: 11, color: '#767069', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.nome}>{item.nome}</span>
                           <span style={{ fontSize: 11, color: '#1a1a1a', fontWeight: 700, flexShrink: 0 }}>{item.p1}</span>
                           <Badge pct={item.pct} p1={item.p1} p2={item.p2} />
                         </div>
@@ -1047,7 +1047,7 @@ export default function RelatoriosPage() {
                           <h3 style={{color:'#1a1a1a',fontSize:14,fontWeight:700,margin:'0 0 4px'}}>Comparativo Anual — Faturamento por Mês</h3>
                           <div style={{display:'flex',gap:14,fontSize:10,color:'#6b6860',flexWrap:'wrap'}}>
                             <span><span style={{display:'inline-block',width:10,height:3,background:'#ffffff30',marginRight:4,verticalAlign:'middle'}}/>Faixa ±1 DP (desvio padrão)</span>
-                            <span><span style={{display:'inline-block',width:10,height:1,background:'#9e9b94',marginRight:4,borderTop:'1px dashed #9e9b94',verticalAlign:'middle'}}/>Média global</span>
+                            <span><span style={{display:'inline-block',width:10,height:1,background:'#767069',marginRight:4,borderTop:'1px dashed #767069',verticalAlign:'middle'}}/>Média global</span>
                             <span><span style={{display:'inline-block',width:14,height:1,borderTop:'2px solid #fff',marginRight:4,verticalAlign:'middle'}}/>Tendência</span>
                           </div>
                         </div>
@@ -1088,8 +1088,8 @@ export default function RelatoriosPage() {
                           {/* faixa desvio padrão */}
                           <rect x={PL} y={bandTop} width={W-PL-PR} height={Math.max(0,bandBot-bandTop)} fill="#ffffff" fillOpacity={0.04} rx={2}/>
                           {/* linha média */}
-                          <line x1={PL} y1={yOf(media)} x2={W-PR} y2={yOf(media)} stroke="#9e9b94" strokeWidth={1} strokeDasharray="4 3" opacity={0.5}/>
-                          <text x={W-PR+2} y={yOf(media)+3} fill="#9e9b94" fontSize={8}>μ {(media/1000).toFixed(0)}k</text>
+                          <line x1={PL} y1={yOf(media)} x2={W-PR} y2={yOf(media)} stroke="#767069" strokeWidth={1} strokeDasharray="4 3" opacity={0.5}/>
+                          <text x={W-PR+2} y={yOf(media)+3} fill="#767069" fontSize={8}>μ {(media/1000).toFixed(0)}k</text>
 
                           {/* rótulos meses */}
                           {Array.from({length:12},(_,i)=>{
@@ -1162,22 +1162,22 @@ export default function RelatoriosPage() {
 
                       {/* legenda das linhas */}
                       <div style={{display:'flex',gap:16,marginTop:12,marginBottom:12,flexWrap:'wrap',padding:'10px 14px',background:'#f5f4f0',borderRadius:8,border:'1px solid #e8e6e0'}}>
-                        <div style={{fontSize:10,color:'#9e9b94',fontWeight:700,width:'100%',marginBottom:4}}>O QUE SIGNIFICA CADA ELEMENTO DO GRÁFICO:</div>
+                        <div style={{fontSize:10,color:'#767069',fontWeight:700,width:'100%',marginBottom:4}}>O QUE SIGNIFICA CADA ELEMENTO DO GRÁFICO:</div>
                         <div style={{display:'flex',alignItems:'center',gap:6}}>
                           <div style={{width:28,height:12,borderRadius:2,background:'linear-gradient(180deg,#5b4fcf,#5b4fcf66)'}}/>
-                          <span style={{fontSize:10,color:'#9e9b94'}}><strong style={{color:'#1a1a1a'}}>Barras coloridas</strong> — faturamento real de cada mês por ano</span>
+                          <span style={{fontSize:10,color:'#767069'}}><strong style={{color:'#1a1a1a'}}>Barras coloridas</strong> — faturamento real de cada mês por ano</span>
                         </div>
                         <div style={{display:'flex',alignItems:'center',gap:6}}>
                           <svg width={28} height={12}><line x1={0} y1={6} x2={28} y2={6} stroke="#5b4fcf" strokeWidth={1.5} strokeDasharray="5 3"/></svg>
-                          <span style={{fontSize:10,color:'#9e9b94'}}><strong style={{color:'#1a1a1a'}}>Linha tracejada colorida</strong> — tendência do ano (sobe = crescendo, desce = caindo)</span>
+                          <span style={{fontSize:10,color:'#767069'}}><strong style={{color:'#1a1a1a'}}>Linha tracejada colorida</strong> — tendência do ano (sobe = crescendo, desce = caindo)</span>
                         </div>
                         <div style={{display:'flex',alignItems:'center',gap:6}}>
-                          <svg width={28} height={12}><line x1={0} y1={6} x2={28} y2={6} stroke="#9e9b94" strokeWidth={1} strokeDasharray="4 3" opacity={0.5}/></svg>
-                          <span style={{fontSize:10,color:'#9e9b94'}}><strong style={{color:'#1a1a1a'}}>Linha cinza tracejada (μ)</strong> — média mensal de todos os anos combinados</span>
+                          <svg width={28} height={12}><line x1={0} y1={6} x2={28} y2={6} stroke="#767069" strokeWidth={1} strokeDasharray="4 3" opacity={0.5}/></svg>
+                          <span style={{fontSize:10,color:'#767069'}}><strong style={{color:'#1a1a1a'}}>Linha cinza tracejada (μ)</strong> — média mensal de todos os anos combinados</span>
                         </div>
                         <div style={{display:'flex',alignItems:'center',gap:6}}>
                           <div style={{width:28,height:12,borderRadius:2,background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.1)'}}/>
-                          <span style={{fontSize:10,color:'#9e9b94'}}><strong style={{color:'#1a1a1a'}}>Faixa cinza suave</strong> — zona normal (±1 desvio padrão). Barras fora da faixa = meses excepcionais</span>
+                          <span style={{fontSize:10,color:'#767069'}}><strong style={{color:'#1a1a1a'}}>Faixa cinza suave</strong> — zona normal (±1 desvio padrão). Barras fora da faixa = meses excepcionais</span>
                         </div>
                       </div>
 
@@ -1194,20 +1194,20 @@ export default function RelatoriosPage() {
                                 <span style={{width:10,height:10,borderRadius:2,background:s.cor,display:'inline-block'}}/>
                                 <span style={{color:s.cor,fontSize:12,fontWeight:800}}>{s.ano}{s.ano===p1Ano?' (atual)':''}</span>
                               </div>
-                              <div style={{fontSize:10,color:'#9e9b94',lineHeight:1.8}}>
+                              <div style={{fontSize:10,color:'#767069',lineHeight:1.8}}>
                                 <div>Total: <span style={{color:'#1a1a1a',fontWeight:700}}>{moeda(total)}</span></div>
                                 <div>Média/mês: <span style={{color:'#1a1a1a'}}>{moeda(med)}</span></div>
-                                <div>Desvio padrão: <span style={{color:'#f59e0b'}}>{moeda(dpS)}</span></div>
+                                <div>Desvio padrão: <span style={{color:'#b45309'}}>{moeda(dpS)}</span></div>
                                 <div>Meses c/ dados: <span style={{color:'#1a1a1a'}}>{vals.length}/12</span></div>
                               </div>
                             </div>
                           )
                         })}
                         <div style={{background:'#faf9f7',border:'1px solid #e8e6e0',borderRadius:8,padding:'8px 12px',minWidth:160}}>
-                          <div style={{fontSize:10,color:'#9e9b94',marginBottom:4,fontWeight:700}}>TODOS OS ANOS</div>
-                          <div style={{fontSize:10,color:'#9e9b94',lineHeight:1.8}}>
-                            <div>Média global: <span style={{color:'#9e9b94',fontWeight:700}}>{moeda(media)}</span></div>
-                            <div>DP global: <span style={{color:'#f59e0b'}}>{moeda(dp)}</span></div>
+                          <div style={{fontSize:10,color:'#767069',marginBottom:4,fontWeight:700}}>TODOS OS ANOS</div>
+                          <div style={{fontSize:10,color:'#767069',lineHeight:1.8}}>
+                            <div>Média global: <span style={{color:'#767069',fontWeight:700}}>{moeda(media)}</span></div>
+                            <div>DP global: <span style={{color:'#b45309'}}>{moeda(dp)}</span></div>
                             <div style={{color:'#6b6860',fontSize:9,marginTop:2}}>Faixa normal: {moeda(Math.max(0,media-dp))} – {moeda(media+dp)}</div>
                           </div>
                         </div>
@@ -1266,7 +1266,7 @@ export default function RelatoriosPage() {
 
                   {/* Seletor de período de comparação */}
                   <div style={{ marginBottom: 14 }}>
-                    <div style={{ fontSize: 11, color: '#9e9b94', fontWeight: 600, marginBottom: 6 }}>PERÍODO DE COMPARAÇÃO (base para % e "vs")</div>
+                    <div style={{ fontSize: 11, color: '#767069', fontWeight: 600, marginBottom: 6 }}>PERÍODO DE COMPARAÇÃO (base para % e "vs")</div>
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
                       {(dados?.periodos || [])
                         .slice()
@@ -1279,7 +1279,7 @@ export default function RelatoriosPage() {
                           const fatP = somarResumo(filtrarResumo(dados!.resumo_mensal, ym + '-01', ym + '-31')).fat_total
                           return (
                             <button key={ym} onClick={() => { setModo('custom'); setP2De(ym + '-01'); setP2Ate(ym + '-31') }}
-                              style={{ padding: '5px 12px', borderRadius: 6, border: `1px solid ${ativo ? '#5b4fcf' : '#ffffff'}`, fontSize: 11, fontWeight: 600, cursor: 'pointer', background: ativo ? '#5b4fcf22' : '#faf9f7', color: ativo ? '#5b4fcf' : '#9e9b94', lineHeight: 1.4 }}>
+                              style={{ padding: '5px 12px', borderRadius: 6, border: `1px solid ${ativo ? '#5b4fcf' : '#ffffff'}`, fontSize: 11, fontWeight: 600, cursor: 'pointer', background: ativo ? '#5b4fcf22' : '#faf9f7', color: ativo ? '#5b4fcf' : '#767069', lineHeight: 1.4 }}>
                               <div>{MESES_FULL[p.mes]}/{p.ano}</div>
                               {fatP > 0 && <div style={{ fontSize: 10, color: ativo ? '#7c6fe0' : '#6b6860', fontWeight: 500 }}>{moeda(fatP)}</div>}
                             </button>
@@ -1290,8 +1290,8 @@ export default function RelatoriosPage() {
 
                   <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap', alignItems: 'center' }}>
                     <div style={{ display: 'flex', background: '#faf9f7', borderRadius: 7, border: '1px solid #e8e6e0', padding: 2, gap: 2 }}>
-                      <button onClick={() => setMetaTipo('valor')} style={{ padding: '5px 14px', borderRadius: 5, border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer', background: metaTipo === 'valor' ? '#5b4fcf' : 'transparent', color: metaTipo === 'valor' ? 'white' : '#9e9b94' }}>Valor fixo</button>
-                      <button onClick={() => setMetaTipo('pct')} style={{ padding: '5px 14px', borderRadius: 5, border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer', background: metaTipo === 'pct' ? '#5b4fcf' : 'transparent', color: metaTipo === 'pct' ? 'white' : '#9e9b94' }}>% sobre período selecionado</button>
+                      <button onClick={() => setMetaTipo('valor')} style={{ padding: '5px 14px', borderRadius: 5, border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer', background: metaTipo === 'valor' ? '#5b4fcf' : 'transparent', color: metaTipo === 'valor' ? 'white' : '#767069' }}>Valor fixo</button>
+                      <button onClick={() => setMetaTipo('pct')} style={{ padding: '5px 14px', borderRadius: 5, border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer', background: metaTipo === 'pct' ? '#5b4fcf' : 'transparent', color: metaTipo === 'pct' ? 'white' : '#767069' }}>% sobre período selecionado</button>
                     </div>
                     {metaTipo === 'valor' ? (
                       <input value={metaValor} onChange={e => setMetaValor(e.target.value)} placeholder="Ex: 250000"
@@ -1300,7 +1300,7 @@ export default function RelatoriosPage() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         <input value={metaPct} onChange={e => setMetaPct(e.target.value)} placeholder="5"
                           style={{ background: '#faf9f7', border: '1px solid #e8e6e0', borderRadius: 6, padding: '6px 12px', fontSize: 13, color: '#1a1a1a', outline: 'none', width: 80 }} />
-                        <span style={{ color: '#9e9b94', fontSize: 13 }}>% acima de {moeda(r2.fat_total)} ({p2De ? p2De.slice(0,7) : 'período selecionado'}) = <strong style={{ color: '#5b4fcf' }}>{moeda(r2.fat_total * (1 + parseFloat(metaPct || '0') / 100))}</strong></span>
+                        <span style={{ color: '#767069', fontSize: 13 }}>% acima de {moeda(r2.fat_total)} ({p2De ? p2De.slice(0,7) : 'período selecionado'}) = <strong style={{ color: '#5b4fcf' }}>{moeda(r2.fat_total * (1 + parseFloat(metaPct || '0') / 100))}</strong></span>
                       </div>
                     )}
                     <button onClick={salvarMeta} style={{ background: 'linear-gradient(135deg, #5b4fcf, #f43f8e)', color: 'white', border: 'none', borderRadius: 8, padding: '7px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
@@ -1347,8 +1347,8 @@ export default function RelatoriosPage() {
                           <span style={{ fontSize: 18, lineHeight: 1 }}>⚠️</span>
                           <div>
                             <div style={{ fontSize: 12, fontWeight: 700, color: '#ef4444', marginBottom: 3 }}>Meta do mês praticamente inalcançável</div>
-                            <div style={{ fontSize: 11, color: '#9e9b94', lineHeight: 1.6 }}>
-                              Faltam <strong style={{ color: '#f59e0b' }}>{moeda(restante)}</strong> em <strong style={{ color: '#1a1a1a' }}>{diasRestantes.length} dia(s)</strong> — necessário <strong style={{ color: '#ef4444' }}>{moeda(mediaNecessaria)}/dia</strong> vs histórico de <strong style={{ color: '#9e9b94' }}>{moeda(mediaHistorica)}/dia</strong> ({vezes}× acima da média).
+                            <div style={{ fontSize: 11, color: '#767069', lineHeight: 1.6 }}>
+                              Faltam <strong style={{ color: '#b45309' }}>{moeda(restante)}</strong> em <strong style={{ color: '#1a1a1a' }}>{diasRestantes.length} dia(s)</strong> — necessário <strong style={{ color: '#ef4444' }}>{moeda(mediaNecessaria)}/dia</strong> vs histórico de <strong style={{ color: '#767069' }}>{moeda(mediaHistorica)}/dia</strong> ({vezes}× acima da média).
                             </div>
                           </div>
                         </div>
@@ -1376,7 +1376,7 @@ export default function RelatoriosPage() {
                       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                         <tbody>
                           {[
-                            { lbl: 'Ano anterior', val: moeda(r2.fat_total), cor: '#9e9b94' },
+                            { lbl: 'Ano anterior', val: moeda(r2.fat_total), cor: '#767069' },
                             { lbl: 'Atual', val: moeda(realizado), cor: '#1a1a1a' },
                             { lbl: 'Diferença', val: `${realizado - r2.fat_total >= 0 ? '+' : ''}${moeda(realizado - r2.fat_total)}`, cor: realizado >= r2.fat_total ? '#10b981' : '#ef4444' },
                             { lbl: 'Variação', val: `${calcPct(realizado, r2.fat_total) > 0 ? '+' : ''}${calcPct(realizado, r2.fat_total).toFixed(2)}%`, cor: calcPct(realizado, r2.fat_total) >= 0 ? '#10b981' : '#ef4444' },
@@ -1410,7 +1410,7 @@ export default function RelatoriosPage() {
                                   { lbl: 'META',             align: 'right' },
                                   { lbl: 'SUPER META',       align: 'right' },
                                 ].map(h => (
-                                  <th key={h.lbl} style={{ padding: '9px 12px', textAlign: h.align as any, color: '#9e9b94', fontWeight: 700, fontSize: 11, borderBottom: '2px solid #e8e6e0', whiteSpace: 'nowrap' }}>{h.lbl}</th>
+                                  <th key={h.lbl} style={{ padding: '9px 12px', textAlign: h.align as any, color: '#767069', fontWeight: 700, fontSize: 11, borderBottom: '2px solid #e8e6e0', whiteSpace: 'nowrap' }}>{h.lbl}</th>
                                 ))}
                               </tr>
                             </thead>
@@ -1433,15 +1433,15 @@ export default function RelatoriosPage() {
                                 } else if (isHoje) {
                                   status = 'HOJE';          statusCor = '#3b82f6'; statusBg = '#3b82f615'
                                 } else if (isFuturo) {
-                                  status = 'FUTURO';        statusCor = '#9e9b94'; statusBg = '#9e9b9410'
+                                  status = 'FUTURO';        statusCor = '#767069'; statusBg = '#76706910'
                                 } else {
                                   status = 'NAO REALIZADO'; statusCor = '#ef4444'; statusBg = '#ef444415'
                                 }
                                 return (
                                   <tr key={i} style={{ borderBottom: '1px solid #faf9f7', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
-                                    <td style={{ padding: '8px 12px', color: '#9e9b94', whiteSpace: 'nowrap' }}>{d.data}</td>
-                                    <td style={{ padding: '8px 12px', color: '#9e9b94',  whiteSpace: 'nowrap' }}>{d.diaSemana}</td>
-                                    <td style={{ padding: '8px 12px', textAlign: 'right', color: necessidade > 0 ? '#f59e0b' : '#dedad4', fontWeight: necessidade > 0 ? 700 : 400 }}>{necessidade > 0 ? moeda(necessidade) : <span style={{color:'#c8c5be'}}>—</span>}</td>
+                                    <td style={{ padding: '8px 12px', color: '#767069', whiteSpace: 'nowrap' }}>{d.data}</td>
+                                    <td style={{ padding: '8px 12px', color: '#767069',  whiteSpace: 'nowrap' }}>{d.diaSemana}</td>
+                                    <td style={{ padding: '8px 12px', textAlign: 'right', color: necessidade > 0 ? '#f59e0b' : '#dedad4', fontWeight: necessidade > 0 ? 700 : 400 }}>{necessidade > 0 ? moeda(necessidade) : <span style={{color:'#767069'}}>—</span>}</td>
                                     <td style={{ padding: '8px 12px', textAlign: 'center', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap', background: statusBg, color: statusCor }}>{status}</td>
                                     <td style={{ padding: '8px 12px', textAlign: 'right', color: d.valor > 0 ? '#10b981' : '#dedad4', fontWeight: 700 }}>{moeda(d.valor)}</td>
                                     <td style={{ padding: '8px 12px', textAlign: 'right', color: isFuturo && metaDia > necessidade ? '#ef4444' : '#3b82f6', fontWeight: 700 }}>
@@ -1454,7 +1454,7 @@ export default function RelatoriosPage() {
                             </tbody>
                           </table>
                         </div>
-                        <p style={{ color: '#9e9b94', fontSize: 11, marginTop: 12, padding: '10px 0 0', borderTop: '1px solid #e8e6e0' }}>
+                        <p style={{ color: '#767069', fontSize: 11, marginTop: 12, padding: '10px 0 0', borderTop: '1px solid #e8e6e0' }}>
                           <strong style={{ color: '#6b6860' }}>Nota:</strong> As metas diárias são calculadas respeitando o peso de cada dia da semana com base no histórico do período anterior. A SUPER META é calculada automaticamente como 5% acima da META.
                         </p>
                       </div>
@@ -1896,7 +1896,7 @@ export default function RelatoriosPage() {
                       <thead>
                         <tr style={{ background: '#f5f4f0' }}>
                           {['PROFISSIONAL', 'CARGO', 'META ORIGINAL', 'META AJUSTADA', 'DIFERENÇA', 'MOTIVO', 'REALIZADO'].map((h, hi) => (
-                            <th key={h} style={{ padding: '12px 16px', fontSize: 11, color: hi === 6 ? '#10b981' : '#9e9b94', fontWeight: 700, textAlign: hi >= 2 && hi <= 4 || hi === 6 ? 'right' : 'left', borderBottom: '1px solid #e8e6e0', whiteSpace: 'nowrap' }}>{h}</th>
+                            <th key={h} style={{ padding: '12px 16px', fontSize: 11, color: hi === 6 ? '#10b981' : '#767069', fontWeight: 700, textAlign: hi >= 2 && hi <= 4 || hi === 6 ? 'right' : 'left', borderBottom: '1px solid #e8e6e0', whiteSpace: 'nowrap' }}>{h}</th>
                           ))}
                         </tr>
                       </thead>
@@ -1916,15 +1916,15 @@ export default function RelatoriosPage() {
                                   {nomeMostra.toUpperCase()}
                                 </div>
                               </td>
-                              <td style={{ padding: '10px 16px', color: '#9e9b94', fontSize: 12 }}>{r.prof.cargo || '—'}</td>
-                              <td style={{ padding: '10px 16px', textAlign: 'right', color: '#9e9b94', fontWeight: 600 }}>{moeda(r.metaOriginal)}</td>
+                              <td style={{ padding: '10px 16px', color: '#767069', fontSize: 12 }}>{r.prof.cargo || '—'}</td>
+                              <td style={{ padding: '10px 16px', textAlign: 'right', color: '#767069', fontWeight: 600 }}>{moeda(r.metaOriginal)}</td>
                               <td style={{ padding: '10px 16px', textAlign: 'right', color: corTipo, fontWeight: 700 }}>
                                 {seta && <span style={{ marginRight: 4 }}>{seta}</span>}{moeda(r.metaRedistribuida)}
                               </td>
                               <td style={{ padding: '10px 16px', textAlign: 'right', color: r.diferenca > 0.5 ? '#10b981' : r.diferenca < -0.5 ? '#ef4444' : '#6b6860', fontWeight: 700 }}>
                                 {r.diferenca > 0.5 ? '+' : ''}{r.diferenca < -0.5 || r.diferenca > 0.5 ? moeda(r.diferenca) : '—'}
                               </td>
-                              <td style={{ padding: '10px 16px', fontSize: 11, color: '#9e9b94' }}>{r.motivo}</td>
+                              <td style={{ padding: '10px 16px', fontSize: 11, color: '#767069' }}>{r.motivo}</td>
                               <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 700 }}>
                                 {(() => {
                                   const fat = realizadoPorId[r.prof.id] ?? r.realizado
@@ -1996,11 +1996,11 @@ export default function RelatoriosPage() {
                             <span style={{ width: 20, height: 20, borderRadius: '50%', background: `${step.cor}25`, border: `1px solid ${step.cor}60`, color: step.cor, fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{step.n}</span>
                             <span style={{ fontSize: 12, fontWeight: 700, color: step.cor }}>{step.titulo}</span>
                           </div>
-                          <p style={{ margin: 0, fontSize: 11, color: '#9e9b94', lineHeight: 1.6 }}>{step.desc}</p>
+                          <p style={{ margin: 0, fontSize: 11, color: '#767069', lineHeight: 1.6 }}>{step.desc}</p>
                         </div>
                       ))}
                     </div>
-                    <div style={{ marginTop: 8, padding: '8px 12px', background: '#5b4fcf10', border: '1px solid #5b4fcf30', borderRadius: 8, fontSize: 11, color: '#9e9b94', lineHeight: 1.6 }}>
+                    <div style={{ marginTop: 8, padding: '8px 12px', background: '#5b4fcf10', border: '1px solid #5b4fcf30', borderRadius: 8, fontSize: 11, color: '#767069', lineHeight: 1.6 }}>
                       <strong style={{ color: '#5b4fcf' }}>Fórmula resumida:</strong> Meta individual = (média histórica do profissional ÷ soma das médias de todos) × meta total em comissão
                     </div>
                   </details>
@@ -2020,11 +2020,11 @@ export default function RelatoriosPage() {
                       <div style={{ marginLeft: 'auto' }}>
                         {metaTotalProf > 0 && periodoRef && (
                           metaBatida ? (
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#10b98120', border: '1px solid #10b98140', color: '#10b981', fontSize: 12, fontWeight: 700, padding: '6px 14px', borderRadius: 20 }}>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#10b98120', border: '1px solid #10b98140', color: '#059669', fontSize: 12, fontWeight: 700, padding: '6px 14px', borderRadius: 20 }}>
                               Meta já foi batida em {periodoRefLabel}
                             </span>
                           ) : (
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#f59e0b20', border: '1px solid #f59e0b40', color: '#f59e0b', fontSize: 12, fontWeight: 700, padding: '6px 14px', borderRadius: 20 }}>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#f59e0b20', border: '1px solid #f59e0b40', color: '#b45309', fontSize: 12, fontWeight: 700, padding: '6px 14px', borderRadius: 20 }}>
                               Meta nunca batida — mais próximo: {periodoRefLabel}
                             </span>
                           )
@@ -2044,7 +2044,7 @@ export default function RelatoriosPage() {
                       <thead>
                         <tr style={{ background: '#f5f4f0' }}>
                           {['PROFISSIONAL', 'CARGO', 'META', 'REALIZADO', '%'].map((h, hi) => (
-                            <th key={h} style={{ padding: '12px 16px', fontSize: 11, color: '#9e9b94', fontWeight: 700, textAlign: hi >= 2 ? 'right' : 'left', borderBottom: '1px solid #e8e6e0', whiteSpace: 'nowrap' }}>{h}</th>
+                            <th key={h} style={{ padding: '12px 16px', fontSize: 11, color: '#767069', fontWeight: 700, textAlign: hi >= 2 ? 'right' : 'left', borderBottom: '1px solid #e8e6e0', whiteSpace: 'nowrap' }}>{h}</th>
                           ))}
                         </tr>
                       </thead>
@@ -2064,7 +2064,7 @@ export default function RelatoriosPage() {
                                   {nomeMostra.toUpperCase()}
                                 </div>
                               </td>
-                              <td style={{ padding: '10px 16px', color: '#9e9b94', fontSize: 12 }}>{r.prof.cargo || '—'}</td>
+                              <td style={{ padding: '10px 16px', color: '#767069', fontSize: 12 }}>{r.prof.cargo || '—'}</td>
                               <td style={{ padding: '10px 16px', textAlign: 'right', color: '#5b4fcf', fontWeight: 700 }}>{moeda(r.meta)}</td>
                               <td style={{ padding: '10px 16px', textAlign: 'right', color: r.realizado > 0 ? '#10b981' : '#dedad4', fontWeight: r.realizado > 0 ? 700 : 400 }}>{moeda(r.realizado)}</td>
                               <td style={{ padding: '10px 16px', textAlign: 'right', minWidth: 120 }}>
@@ -2087,7 +2087,7 @@ export default function RelatoriosPage() {
                                     </span>
                                   )}
                                   {r.fonte && (
-                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 600, color: '#06b6d4', background: '#06b6d415', border: '1px solid #06b6d430', padding: '2px 8px', borderRadius: 20 }}>
+                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 600, color: '#0891b2', background: '#06b6d415', border: '1px solid #06b6d430', padding: '2px 8px', borderRadius: 20 }}>
                                       {r.fonte}
                                     </span>
                                   )}
@@ -2111,7 +2111,7 @@ export default function RelatoriosPage() {
                     <span style={{ fontSize: 12, color: '#6b6860', fontWeight: 600 }}>Soma das metas individuais:</span>
                     <span style={{ fontSize: 14, fontWeight: 800, color: '#5b4fcf' }}>{moeda(somaMetasIndividuais)}</span>
                     {metaEmComissoes > 0 && Math.abs(somaMetasIndividuais - metaEmComissoes) > 1 && (
-                      <span style={{ fontSize: 11, color: '#f59e0b', marginLeft: 8 }}>(diferença de {moeda(Math.abs(somaMetasIndividuais - metaEmComissoes))} por arredondamento)</span>
+                      <span style={{ fontSize: 11, color: '#b45309', marginLeft: 8 }}>(diferença de {moeda(Math.abs(somaMetasIndividuais - metaEmComissoes))} por arredondamento)</span>
                     )}
                   </div>
                 </div>
@@ -2141,7 +2141,7 @@ export default function RelatoriosPage() {
                         <div style={{ color: '#6b6860', fontSize: 11 }}>{p.categoria}</div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <div style={{ color: '#10b981', fontWeight: 800, fontSize: 15 }}>{moeda(p.valor)}</div>
+                        <div style={{ color: '#059669', fontWeight: 800, fontSize: 15 }}>{moeda(p.valor)}</div>
                         <div style={{ color: '#6b6860', fontSize: 10 }}>a pagar</div>
                       </div>
                     </div>
@@ -2166,7 +2166,7 @@ export default function RelatoriosPage() {
                     { id: 'diasemana', label: 'Dia da Semana' },
                   ].map(s => (
                     <button key={s.id} onClick={() => { setSubAnalise(s.id as any); carregarAnalise(s.id) }}
-                      style={{ padding: '6px 14px', border: 'none', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', background: subAnalise === s.id ? '#f59e0b' : '#ffffff', color: subAnalise === s.id ? '#f5f4f0' : '#9e9b94' }}>
+                      style={{ padding: '6px 14px', border: 'none', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', background: subAnalise === s.id ? '#f59e0b' : '#ffffff', color: subAnalise === s.id ? '#f5f4f0' : '#767069' }}>
                       {s.label}
                     </button>
                   ))}
@@ -2177,7 +2177,7 @@ export default function RelatoriosPage() {
                 {!analiseLoading && analiseResumo?.vazio && (
                   <div style={{ textAlign: 'center', padding: 60, color: '#6b6860' }}>
                     <BarChart2 size={40} style={{ marginBottom: 12, opacity: 0.3 }} />
-                    <div style={{ fontSize: 15, fontWeight: 700, color: '#9e9b94', marginBottom: 8 }}>Nenhum dado de clientes encontrado</div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: '#767069', marginBottom: 8 }}>Nenhum dado de clientes encontrado</div>
                     <div style={{ fontSize: 13 }}>Importe uma planilha com a aba ATENDIMENTOS_RAW para ativar as análises.</div>
                   </div>
                 )}
@@ -2201,7 +2201,7 @@ export default function RelatoriosPage() {
                       return (
                         <div style={{ background: '#f5f4f0', border: `1px solid ${info.cor}30`, borderLeft: `3px solid ${info.cor}`, borderRadius: 10, padding: '12px 16px', marginBottom: 16 }}>
                           <div style={{ fontSize: 13, fontWeight: 700, color: info.cor, marginBottom: 4 }}>{info.titulo}</div>
-                          <div style={{ fontSize: 12, color: '#9e9b94', marginBottom: 4 }}>{info.desc}</div>
+                          <div style={{ fontSize: 12, color: '#767069', marginBottom: 4 }}>{info.desc}</div>
                           <div style={{ fontSize: 10, color: '#6b6860', fontStyle: 'italic' }}>{info.param}</div>
                         </div>
                       )
@@ -2218,7 +2218,7 @@ export default function RelatoriosPage() {
                             {subAnalise === 'perdidos' && analiseResumo?.ltv_total_perdidos > 0 && (
                               <div style={{ fontSize: 12, color: '#ef4444', fontWeight: 700, marginTop: 4 }}>
                                 💸 Dinheiro perdido: <span style={{ fontSize: 15 }}>{moeda(analiseResumo.ltv_total_perdidos)}</span>
-                                <span style={{ fontSize: 10, color: '#9e9b94', marginLeft: 6 }}>soma do LTV de todos os clientes perdidos</span>
+                                <span style={{ fontSize: 10, color: '#767069', marginLeft: 6 }}>soma do LTV de todos os clientes perdidos</span>
                               </div>
                             )}
                           </div>
@@ -2241,11 +2241,11 @@ export default function RelatoriosPage() {
                                 <tr key={i} style={{ borderBottom: '1px solid #e8e6e020', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
                                   <td style={{ padding: '9px 12px', fontSize: 12, color: '#1a1a1a', fontWeight: 600 }}>{c.cliente_nome}</td>
                                   <td style={{ padding: '9px 12px', fontSize: 11, color: '#5b4fcf' }}>{c.celular || '—'}</td>
-                                  <td style={{ padding: '9px 12px', fontSize: 12, color: '#10b981', fontWeight: 700 }}>{moeda(c.ltv_total)}</td>
-                                  <td style={{ padding: '9px 12px', fontSize: 12, color: '#9e9b94' }}>{c.total_visitas}x</td>
-                                  <td style={{ padding: '9px 12px', fontSize: 11, color: '#9e9b94' }}>{c.ultima_visita}</td>
+                                  <td style={{ padding: '9px 12px', fontSize: 12, color: '#059669', fontWeight: 700 }}>{moeda(c.ltv_total)}</td>
+                                  <td style={{ padding: '9px 12px', fontSize: 12, color: '#767069' }}>{c.total_visitas}x</td>
+                                  <td style={{ padding: '9px 12px', fontSize: 11, color: '#767069' }}>{c.ultima_visita}</td>
                                   <td style={{ padding: '9px 12px', fontSize: 12, color: subAnalise === 'risco' ? '#f97316' : '#ef4444', fontWeight: 700 }}>{c.dias_desde_ultima_visita}d</td>
-                                  <td style={{ padding: '9px 12px', fontSize: 11, color: '#9e9b94' }}>{c.intervalo_medio_dias ? `${c.intervalo_medio_dias}d` : '—'}</td>
+                                  <td style={{ padding: '9px 12px', fontSize: 11, color: '#767069' }}>{c.intervalo_medio_dias ? `${c.intervalo_medio_dias}d` : '—'}</td>
                                   <td style={{ padding: '9px 12px', fontSize: 10, color: '#6b6860', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{(c.servicos_feitos || []).slice(0, 3).join(', ') || '—'}</td>
                                 </tr>
                               ))}
@@ -2265,14 +2265,14 @@ export default function RelatoriosPage() {
                         <div style={{ background: '#f5f4f0', border: '1px solid #f59e0b30', borderRadius: 12, overflow: 'hidden' }}>
                           {(analiseDetalhe as any[]).map((c: any, i: number) => (
                             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderBottom: '1px solid #e8e6e020' }}>
-                              <div style={{ width: 28, height: 28, borderRadius: '50%', background: i === 0 ? '#f59e0b' : i === 1 ? '#9e9b94' : i === 2 ? '#cd7c4f' : '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: i < 3 ? '#f5f4f0' : '#6b6860', flexShrink: 0 }}>#{i+1}</div>
+                              <div style={{ width: 28, height: 28, borderRadius: '50%', background: i === 0 ? '#f59e0b' : i === 1 ? '#767069' : i === 2 ? '#cd7c4f' : '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: i < 3 ? '#f5f4f0' : '#6b6860', flexShrink: 0 }}>#{i+1}</div>
                               <div style={{ flex: 1 }}>
                                 <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a1a' }}>{c.cliente_nome}</div>
                                 <div style={{ fontSize: 10, color: '#6b6860' }}>{c.total_visitas} visitas · a cada {c.intervalo_medio_dias || '?'}d · última: {c.ultima_visita} · {c.celular || 'sem celular'}</div>
-                                <div style={{ fontSize: 10, color: '#9e9b94', marginTop: 2 }}>{(c.servicos_feitos || []).slice(0, 4).join(' · ')}</div>
+                                <div style={{ fontSize: 10, color: '#767069', marginTop: 2 }}>{(c.servicos_feitos || []).slice(0, 4).join(' · ')}</div>
                               </div>
                               <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                                <div style={{ fontSize: 15, fontWeight: 800, color: '#f59e0b' }}>{moeda(c.ltv_total)}</div>
+                                <div style={{ fontSize: 15, fontWeight: 800, color: '#b45309' }}>{moeda(c.ltv_total)}</div>
                                 <div style={{ fontSize: 10, color: '#6b6860' }}>LTV total</div>
                               </div>
                             </div>
@@ -2285,7 +2285,7 @@ export default function RelatoriosPage() {
                     {subAnalise === 'regular' && analiseDetalhe.length > 0 && (
                       <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                          <span style={{ fontSize: 13, color: '#9e9b94' }}><span style={{ color: '#10b981', fontWeight: 700 }}>{analiseDetalhe.length}</span> clientes regulares</span>
+                          <span style={{ fontSize: 13, color: '#767069' }}><span style={{ color: '#059669', fontWeight: 700 }}>{analiseDetalhe.length}</span> clientes regulares</span>
                           <button onClick={() => exportarListaExcel(analiseDetalhe, 'regular')}
                             style={{ background: '#10b981', color: '#fff', border: 'none', borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>⬇ Exportar Excel</button>
                         </div>
@@ -2301,10 +2301,10 @@ export default function RelatoriosPage() {
                                 <tr key={i} style={{ borderBottom: '1px solid #e8e6e020', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
                                   <td style={{ padding: '9px 12px', fontSize: 12, color: '#1a1a1a', fontWeight: 600 }}>{c.cliente_nome}</td>
                                   <td style={{ padding: '9px 12px', fontSize: 11, color: '#5b4fcf' }}>{c.celular || '—'}</td>
-                                  <td style={{ padding: '9px 12px', fontSize: 12, color: '#10b981', fontWeight: 700 }}>{moeda(c.ltv_total)}</td>
-                                  <td style={{ padding: '9px 12px', fontSize: 12, color: '#9e9b94' }}>{c.total_visitas}x</td>
-                                  <td style={{ padding: '9px 12px', fontSize: 11, color: '#9e9b94' }}>{c.ultima_visita}</td>
-                                  <td style={{ padding: '9px 12px', fontSize: 11, color: '#06b6d4' }}>{c.intervalo_medio_dias ? `a cada ${c.intervalo_medio_dias}d` : '—'}</td>
+                                  <td style={{ padding: '9px 12px', fontSize: 12, color: '#059669', fontWeight: 700 }}>{moeda(c.ltv_total)}</td>
+                                  <td style={{ padding: '9px 12px', fontSize: 12, color: '#767069' }}>{c.total_visitas}x</td>
+                                  <td style={{ padding: '9px 12px', fontSize: 11, color: '#767069' }}>{c.ultima_visita}</td>
+                                  <td style={{ padding: '9px 12px', fontSize: 11, color: '#0891b2' }}>{c.intervalo_medio_dias ? `a cada ${c.intervalo_medio_dias}d` : '—'}</td>
                                   <td style={{ padding: '9px 12px', fontSize: 10, color: '#6b6860', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{(c.servicos_feitos || []).slice(0, 3).join(', ') || '—'}</td>
                                 </tr>
                               ))}
@@ -2318,7 +2318,7 @@ export default function RelatoriosPage() {
                     {subAnalise === 'novo' && analiseDetalhe.length > 0 && (
                       <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                          <span style={{ fontSize: 13, color: '#9e9b94' }}><span style={{ color: '#06b6d4', fontWeight: 700 }}>{analiseDetalhe.length}</span> clientes novas — vieram apenas 1 vez</span>
+                          <span style={{ fontSize: 13, color: '#767069' }}><span style={{ color: '#0891b2', fontWeight: 700 }}>{analiseDetalhe.length}</span> clientes novas — vieram apenas 1 vez</span>
                           <button onClick={() => exportarListaExcel(analiseDetalhe, 'novos')}
                             style={{ background: '#06b6d4', color: '#ffffff', border: 'none', borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>⬇ Exportar Excel</button>
                         </div>
@@ -2334,9 +2334,9 @@ export default function RelatoriosPage() {
                                 <tr key={i} style={{ borderBottom: '1px solid #e8e6e020', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
                                   <td style={{ padding: '9px 12px', fontSize: 12, color: '#1a1a1a', fontWeight: 600 }}>{c.cliente_nome}</td>
                                   <td style={{ padding: '9px 12px', fontSize: 11, color: '#5b4fcf' }}>{c.celular || '—'}</td>
-                                  <td style={{ padding: '9px 12px', fontSize: 12, color: '#10b981', fontWeight: 700 }}>{moeda(c.ltv_total)}</td>
-                                  <td style={{ padding: '9px 12px', fontSize: 11, color: '#9e9b94' }}>{c.ultima_visita}</td>
-                                  <td style={{ padding: '9px 12px', fontSize: 10, color: '#9e9b94' }}>{(c.servicos_feitos || []).join(', ') || '—'}</td>
+                                  <td style={{ padding: '9px 12px', fontSize: 12, color: '#059669', fontWeight: 700 }}>{moeda(c.ltv_total)}</td>
+                                  <td style={{ padding: '9px 12px', fontSize: 11, color: '#767069' }}>{c.ultima_visita}</td>
+                                  <td style={{ padding: '9px 12px', fontSize: 10, color: '#767069' }}>{(c.servicos_feitos || []).join(', ') || '—'}</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -2389,7 +2389,7 @@ export default function RelatoriosPage() {
                                     onMouseEnter={e => (e.currentTarget.style.borderColor = '#10b981')}
                                     onMouseLeave={e => (e.currentTarget.style.borderColor = '#e8e6e0')}>
                                     <div style={{ fontSize: 12, fontWeight: 700, color: '#1a1a1a', marginBottom: 6 }}>{svc.servico}</div>
-                                    <div style={{ fontSize: 11, color: '#10b981' }}>{svc.total_clientes} já fizeram</div>
+                                    <div style={{ fontSize: 11, color: '#059669' }}>{svc.total_clientes} já fizeram</div>
                                   </div>
                                 ))}
                               </div>
@@ -2399,8 +2399,8 @@ export default function RelatoriosPage() {
                         {csServico && (
                           <div>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                              <div style={{ fontSize: 13, color: '#9e9b94' }}>
-                                <span style={{ color: '#f59e0b', fontWeight: 700 }}>{csClientes.length}</span> clientes nunca fizeram <span style={{ color: '#1a1a1a', fontWeight: 600 }}>{csServico}</span>
+                              <div style={{ fontSize: 13, color: '#767069' }}>
+                                <span style={{ color: '#b45309', fontWeight: 700 }}>{csClientes.length}</span> clientes nunca fizeram <span style={{ color: '#1a1a1a', fontWeight: 600 }}>{csServico}</span>
                               </div>
                               {csClientes.length > 0 && (
                                 <button onClick={exportarCsExcel}
@@ -2420,7 +2420,7 @@ export default function RelatoriosPage() {
                                     <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 140px 80px 100px', gap: 8, padding: '10px 12px', background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 8, fontSize: 12 }}>
                                       <span style={{ color: '#1a1a1a', fontWeight: 600 }}>{c.cliente}</span>
                                       <span style={{ color: '#5b4fcf' }}>{c.celular || '—'}</span>
-                                      <span style={{ color: '#9e9b94' }}>{c.total_visitas}x</span>
+                                      <span style={{ color: '#767069' }}>{c.total_visitas}x</span>
                                       <span style={{ color: '#6b6860' }}>{c.ultima_visita || '—'}</span>
                                     </div>
                                   ))}
@@ -2441,7 +2441,7 @@ export default function RelatoriosPage() {
                               onMouseLeave={e => (e.currentTarget.style.opacity = '1')}>
                               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
                                 <span style={{ fontSize: 13, color: '#1a1a1a', fontWeight: 600 }}>{f.label}</span>
-                                <span style={{ fontSize: 12, color: '#9e9b94' }}>{f.count} clientes ({f.pct}%) <span style={{ fontSize: 10, color: '#6b6860' }}>▶ clique para ver</span></span>
+                                <span style={{ fontSize: 12, color: '#767069' }}>{f.count} clientes ({f.pct}%) <span style={{ fontSize: 10, color: '#6b6860' }}>▶ clique para ver</span></span>
                               </div>
                               <div style={{ background: '#ffffff', borderRadius: 6, height: 12 }}>
                                 <div style={{ background: 'linear-gradient(90deg, #5b4fcf, #06b6d4)', width: `${f.pct}%`, height: '100%', borderRadius: 6, transition: '0.4s' }} />
@@ -2482,12 +2482,12 @@ export default function RelatoriosPage() {
                               {lista.sort((a, b) => b.fat - a.fat).map((r, i) => (
                                 <tr key={r.dia} style={{ borderBottom: '1px solid #e8e6e020', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
                                   <td style={{ padding: '10px 14px', fontSize: 13, color: '#1a1a1a', fontWeight: 600 }}>{r.dia}</td>
-                                  <td style={{ padding: '10px 14px', fontSize: 13, color: '#10b981', fontWeight: 700, textAlign: 'right' }}>{moeda(r.fat)}</td>
-                                  <td style={{ padding: '10px 14px', fontSize: 12, color: '#9e9b94', textAlign: 'right' }}>{r.count}x</td>
-                                  <td style={{ padding: '10px 14px', fontSize: 12, color: '#06b6d4', textAlign: 'right' }}>{moeda(r.ticket)}</td>
+                                  <td style={{ padding: '10px 14px', fontSize: 13, color: '#059669', fontWeight: 700, textAlign: 'right' }}>{moeda(r.fat)}</td>
+                                  <td style={{ padding: '10px 14px', fontSize: 12, color: '#767069', textAlign: 'right' }}>{r.count}x</td>
+                                  <td style={{ padding: '10px 14px', fontSize: 12, color: '#0891b2', textAlign: 'right' }}>{moeda(r.ticket)}</td>
                                   <td style={{ padding: '10px 14px', textAlign: 'right', minWidth: 120 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-end' }}>
-                                      <span style={{ fontSize: 11, color: '#9e9b94' }}>{maxFat > 0 ? Math.round(r.fat / maxFat * 100) : 0}%</span>
+                                      <span style={{ fontSize: 11, color: '#767069' }}>{maxFat > 0 ? Math.round(r.fat / maxFat * 100) : 0}%</span>
                                       <div style={{ width: 80, height: 6, background: '#ffffff', borderRadius: 4, overflow: 'hidden' }}>
                                         <div style={{ height: '100%', width: `${maxFat > 0 ? r.fat / maxFat * 100 : 0}%`, background: 'linear-gradient(90deg,#f59e0b,#f43f8e)', borderRadius: 4 }} />
                                       </div>
@@ -2525,10 +2525,10 @@ export default function RelatoriosPage() {
                           <div key={i} style={{ background: '#f5f4f0', border: `1px solid ${cor}25`, borderLeft: `3px solid ${cor}`, borderRadius: 8, padding: 12 }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                               <span style={{ color: cor, fontSize: 12, fontWeight: 600 }}>{f.profissional}</span>
-                              <span style={{ color: '#9e9b94', fontSize: 10 }}>{f.data}</span>
+                              <span style={{ color: '#767069', fontSize: 10 }}>{f.data}</span>
                             </div>
                             <div style={{ color: '#1a1a1a', fontSize: 11, fontWeight: 600, marginBottom: 3 }}>{f.oque_houve}</div>
-                            {f.comentario && <div style={{ color: '#9e9b94', fontSize: 11, lineHeight: 1.5, fontStyle: 'italic' }}>"{f.comentario}"</div>}
+                            {f.comentario && <div style={{ color: '#767069', fontSize: 11, lineHeight: 1.5, fontStyle: 'italic' }}>"{f.comentario}"</div>}
                           </div>
                         ))}
                       </div>
@@ -2557,7 +2557,7 @@ export default function RelatoriosPage() {
                   <button onClick={() => exportarListaExcel(freqClientes, `frequencia-${freqModal.label.replace(/\s/g,'-')}`)}
                     style={{ background: '#10b981', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>⬇ Exportar Excel (nome + celular)</button>
                 )}
-                <button onClick={() => setFreqModal(null)} style={{ background: '#ffffff', border: 'none', borderRadius: 8, padding: '6px 12px', color: '#9e9b94', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>✕</button>
+                <button onClick={() => setFreqModal(null)} style={{ background: '#ffffff', border: 'none', borderRadius: 8, padding: '6px 12px', color: '#767069', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>✕</button>
               </div>
             </div>
             {/* Conteúdo */}
@@ -2576,13 +2576,13 @@ export default function RelatoriosPage() {
                   <tbody>
                     {freqClientes.map((c: any, i: number) => (
                       <tr key={i} style={{ borderBottom: '1px solid #e8e6e020', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
-                        <td style={{ padding: '9px 12px', color: '#9e9b94', textAlign: 'right' }}>{i + 1}</td>
+                        <td style={{ padding: '9px 12px', color: '#767069', textAlign: 'right' }}>{i + 1}</td>
                         <td style={{ padding: '9px 12px', color: '#1a1a1a', fontWeight: 600 }}>{c.cliente_nome}</td>
                         <td style={{ padding: '9px 12px', color: '#5b4fcf' }}>{c.celular || '—'}</td>
-                        <td style={{ padding: '9px 12px', color: '#10b981', fontWeight: 700, textAlign: 'right' }}>{moeda(c.ltv_total)}</td>
-                        <td style={{ padding: '9px 12px', color: '#9e9b94', textAlign: 'right' }}>{c.total_visitas}x</td>
-                        <td style={{ padding: '9px 12px', color: '#9e9b94' }}>{c.ultima_visita}</td>
-                        <td style={{ padding: '9px 12px', color: '#06b6d4', textAlign: 'right' }}>{c.intervalo_medio_dias ? `${c.intervalo_medio_dias}d` : '—'}</td>
+                        <td style={{ padding: '9px 12px', color: '#059669', fontWeight: 700, textAlign: 'right' }}>{moeda(c.ltv_total)}</td>
+                        <td style={{ padding: '9px 12px', color: '#767069', textAlign: 'right' }}>{c.total_visitas}x</td>
+                        <td style={{ padding: '9px 12px', color: '#767069' }}>{c.ultima_visita}</td>
+                        <td style={{ padding: '9px 12px', color: '#0891b2', textAlign: 'right' }}>{c.intervalo_medio_dias ? `${c.intervalo_medio_dias}d` : '—'}</td>
                         <td style={{ padding: '9px 12px', color: '#6b6860', maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{(c.servicos_feitos || []).join(', ') || '—'}</td>
                       </tr>
                     ))}
@@ -2600,16 +2600,16 @@ export default function RelatoriosPage() {
           <div style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 16, padding: 32, maxWidth: 480, width: '100%' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
               <h2 style={{ color: '#1a1a1a', fontSize: 18, fontWeight: 700, margin: 0 }}>Importar Planilha</h2>
-              <button onClick={() => setShowImport(false)} style={{ background: 'transparent', border: 'none', color: '#9e9b94', cursor: 'pointer', fontSize: 18 }}>✕</button>
+              <button onClick={() => setShowImport(false)} style={{ background: 'transparent', border: 'none', color: '#767069', cursor: 'pointer', fontSize: 18 }}>✕</button>
             </div>
-            <p style={{ color: '#9e9b94', fontSize: 13, marginBottom: 20, lineHeight: 1.7 }}>
-              Selecione o <strong style={{ color: '#9e9b94' }}>base_dados_nodri.xlsx</strong>. Os dados do período importado <strong style={{ color: '#5b4fcf' }}>substituirão apenas aquele período</strong> — outros meses não são afetados.
+            <p style={{ color: '#767069', fontSize: 13, marginBottom: 20, lineHeight: 1.7 }}>
+              Selecione o <strong style={{ color: '#767069' }}>base_dados_nodri.xlsx</strong>. Os dados do período importado <strong style={{ color: '#5b4fcf' }}>substituirão apenas aquele período</strong> — outros meses não são afetados.
             </p>
             <div onClick={() => fileRef.current?.click()} style={{ border: '2px dashed #e8e6e0', borderRadius: 10, padding: 32, textAlign: 'center', cursor: 'pointer' }}
               onMouseEnter={e => (e.currentTarget.style.borderColor = '#5b4fcf')}
               onMouseLeave={e => (e.currentTarget.style.borderColor = '#e8e6e0')}>
               <Upload size={32} style={{ margin: '0 auto 10px', display: 'block', color: '#5b4fcf' }} />
-              <p style={{ color: '#9e9b94', fontSize: 14, fontWeight: 600, margin: '0 0 4px' }}>Clique para selecionar</p>
+              <p style={{ color: '#767069', fontSize: 14, fontWeight: 600, margin: '0 0 4px' }}>Clique para selecionar</p>
               <p style={{ color: '#6b6860', fontSize: 12, margin: 0 }}>base_dados_nodri.xlsx</p>
             </div>
             <input ref={fileRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) importarExcel(f) }} />

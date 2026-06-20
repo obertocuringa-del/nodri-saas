@@ -15,7 +15,7 @@ function calcAlcancabilidade(p: {
   const { metaFinal, maiorHistorico, realizado, diasTranscorridos, totalDiasMes, taxaMediaCrescimento } = p
 
   if (!maiorHistorico && diasTranscorridos === 0) {
-    return { probabilidade: null as number | null, label: 'Histórico insuficiente para avaliar', cor: '#9ca3af', maior_historico: 0, maior_historico_mes: null, maior_historico_ano: null, projecao_ritmo_atual: 0 }
+    return { probabilidade: null as number | null, label: 'Histórico insuficiente para avaliar', cor: '#6b7280', maior_historico: 0, maior_historico_mes: null, maior_historico_ano: null, projecao_ritmo_atual: 0 }
   }
 
   const ritmoAtualProjetado = diasTranscorridos > 0 ? (realizado / diasTranscorridos) * totalDiasMes : realizado

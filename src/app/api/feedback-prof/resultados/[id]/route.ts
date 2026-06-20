@@ -54,7 +54,7 @@ const CATEGORIA_CORES: Record<string, string> = {
   'Conduta e Apresentação': '#facc15',
   'Capacitação': '#60a5fa',
   'Gestão e Operação': '#7c6fe0',
-  'Outros': '#9e9b94',
+  'Outros': '#767069',
 }
 
 // Ações corretivas por categoria e estágio
@@ -280,7 +280,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       positivo: d.positivo,
       negativo: d.negativo,
       percentual_negativo: d.total > 0 ? Math.round((d.negativo / d.total) * 100) : 0,
-      cor: CATEGORIA_CORES[nome] || '#9e9b94',
+      cor: CATEGORIA_CORES[nome] || '#767069',
     }))
     .sort((a, b) => b.negativo - a.negativo)
 

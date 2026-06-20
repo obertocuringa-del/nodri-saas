@@ -118,7 +118,7 @@ export default function FeedbackPublicoPage() {
             animation: 'spin 0.8s linear infinite',
             margin: '0 auto 16px',
           }} />
-          <p style={{ color: '#9ca3af', fontSize: 14 }}>Carregando avaliação...</p>
+          <p style={{ color: '#6b7280', fontSize: 14 }}>Carregando avaliação...</p>
         </div>
         <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
       </div>
@@ -165,7 +165,7 @@ export default function FeedbackPublicoPage() {
             ))}
           </div>
           {form?.salao_nome && (
-            <p style={{ marginTop: 24, color: '#9ca3af', fontSize: 13 }}>
+            <p style={{ marginTop: 24, color: '#6b7280', fontSize: 13 }}>
               — {form.salao_nome}
             </p>
           )}
@@ -280,8 +280,8 @@ export default function FeedbackPublicoPage() {
                     })}
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
-                    <span style={{ fontSize: 11, color: '#9ca3af' }}> Não voltaria</span>
-                    <span style={{ fontSize: 11, color: '#9ca3af' }}> Com certeza voltaria</span>
+                    <span style={{ fontSize: 11, color: '#6b7280' }}> Não voltaria</span>
+                    <span style={{ fontSize: 11, color: '#6b7280' }}> Com certeza voltaria</span>
                   </div>
                 </div>
               )}
@@ -344,7 +344,7 @@ export default function FeedbackPublicoPage() {
                   <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px' }}>
                     <thead>
                       <tr>
-                        <th style={{ textAlign: 'left', paddingBottom: 8, fontSize: 12, fontWeight: 600, color: '#9ca3af', paddingRight: 16 }}></th>
+                        <th style={{ textAlign: 'left', paddingBottom: 8, fontSize: 12, fontWeight: 600, color: '#6b7280', paddingRight: 16 }}></th>
                         <th style={{ textAlign: 'center', paddingBottom: 8, fontSize: 12, fontWeight: 700, color: '#16a34a', width: 60 }}>SIM</th>
                         <th style={{ textAlign: 'center', paddingBottom: 8, fontSize: 12, fontWeight: 700, color: '#dc2626', width: 60 }}>NÃO</th>
                       </tr>
@@ -390,7 +390,7 @@ export default function FeedbackPublicoPage() {
                 <div style={{ overflowX: 'auto' }}>
                   <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginBottom: 6, paddingRight: 4 }}>
                     {[1,2,3,4,5].map(n => (
-                      <div key={n} style={{ width: 36, textAlign: 'center', fontSize: 11, fontWeight: 600, color: '#9ca3af' }}>{n}</div>
+                      <div key={n} style={{ width: 36, textAlign: 'center', fontSize: 11, fontWeight: 600, color: '#6b7280' }}>{n}</div>
                     ))}
                   </div>
                   {pergunta.opcoes.map((item, i) => {
@@ -421,8 +421,8 @@ export default function FeedbackPublicoPage() {
                     )
                   })}
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
-                    <span style={{ fontSize: 11, color: '#9ca3af' }}>1 = Ruim</span>
-                    <span style={{ fontSize: 11, color: '#9ca3af' }}>5 = Excelente</span>
+                    <span style={{ fontSize: 11, color: '#6b7280' }}>1 = Ruim</span>
+                    <span style={{ fontSize: 11, color: '#6b7280' }}>5 = Excelente</span>
                   </div>
                 </div>
               )}
@@ -449,7 +449,7 @@ export default function FeedbackPublicoPage() {
                 <MessageSquare size={18} color={cor} />
               </div>
               <p style={{ fontSize: 15, fontWeight: 600, color: '#1a1a1a' }}>
-                Deixe um comentário <span style={{ fontWeight: 400, color: '#9ca3af', fontSize: 13 }}>(opcional)</span>
+                Deixe um comentário <span style={{ fontWeight: 400, color: '#6b7280', fontSize: 13 }}>(opcional)</span>
               </p>
             </div>
             <textarea
@@ -508,7 +508,7 @@ export default function FeedbackPublicoPage() {
           {/* RODAPÉ */}
           <div style={{ textAlign: 'center', paddingBottom: 32 }}>
             <p style={{ fontSize: 12, color: '#6b6860' }}>
-              Formulário criado com <span style={{ fontWeight: 700, color: '#9ca3af' }}>NODRI</span> · Gestão de Salões de Beleza
+              Formulário criado com <span style={{ fontWeight: 700, color: '#6b7280' }}>NODRI</span> · Gestão de Salões de Beleza
             </p>
           </div>
         </div>

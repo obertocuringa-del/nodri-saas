@@ -128,7 +128,7 @@ function CadastroInner() {
           <div style={{ textAlign: 'right' }}>
             {desconto > 0 && <div style={{ fontSize: 11, color: '#666', textDecoration: 'line-through' }}>R${planoInfo.preco}/mês</div>}
             <div style={{ fontSize: 22, fontWeight: 900 }}>R${precoFinal}<span style={{ fontSize: 12, color: '#888', fontWeight: 400 }}>/mês</span></div>
-            {desconto > 0 && <div style={{ fontSize: 11, color: '#2ecc71', fontWeight: 700 }}>-{desconto}% de desconto</div>}
+            {desconto > 0 && <div style={{ fontSize: 11, color: '#15803d', fontWeight: 700 }}>-{desconto}% de desconto</div>}
           </div>
         </div>
 
@@ -271,7 +271,7 @@ function CadastroInner() {
               </button>
             </div>
 
-            <div style={{ background: '#f0fff4', border: '1px solid #1a4a2a', borderRadius: 10, padding: '12px 16px', fontSize: 12, color: '#2ecc71' }}>
+            <div style={{ background: '#f0fff4', border: '1px solid #1a4a2a', borderRadius: 10, padding: '12px 16px', fontSize: 12, color: '#15803d' }}>
               <CheckCircle size={13} style={{display:'inline',marginRight:4}} />Após o pagamento você receberá um email de confirmação em <strong>{form.email}</strong>
             </div>
 

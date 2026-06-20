@@ -221,7 +221,7 @@ export default function ProfissionaisPage() {
 
   const F = (label: string, key: keyof typeof FORM_INITIAL, opts?: { type?: string; placeholder?: string; full?: boolean }) => (
     <div className={opts?.full ? 'col-span-2' : ''}>
-      <label style={{ display: 'block', fontSize: '11px', color: '#9e9b94', marginBottom: '4px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</label>
+      <label style={{ display: 'block', fontSize: '11px', color: '#767069', marginBottom: '4px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</label>
       <input
         type={opts?.type || 'text'}
         placeholder={opts?.placeholder || label}
@@ -236,7 +236,7 @@ export default function ProfissionaisPage() {
 
   const TA = (label: string, key: keyof typeof FORM_INITIAL, rows = 3) => (
     <div className="col-span-2">
-      <label style={{ display: 'block', fontSize: '11px', color: '#9e9b94', marginBottom: '4px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</label>
+      <label style={{ display: 'block', fontSize: '11px', color: '#767069', marginBottom: '4px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</label>
       <textarea
         rows={rows}
         placeholder={label}
@@ -254,13 +254,13 @@ export default function ProfissionaisPage() {
 
       {/* TOP BAR */}
       <div style={{ background: '#ffffff', borderBottom: '1px solid #e8e6e0', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: '12px', position: 'sticky', top: 0, zIndex: 10 }}>
-        <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-1 rounded" style={{ color: '#9e9b94', background: 'none', border: 'none', cursor: 'pointer' }}>
+        <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-1 rounded" style={{ color: '#767069', background: 'none', border: 'none', cursor: 'pointer' }}>
           <Menu size={18} />
         </button>
-        <a href="/salon" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#9e9b94', textDecoration: 'none', fontSize: '13px' }}>
+        <a href="/salon" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#767069', textDecoration: 'none', fontSize: '13px' }}>
           <ArrowLeft size={15} /> Voltar
         </a>
-        <span style={{ color: '#c8c5be' }}>|</span>
+        <span style={{ color: '#767069' }}>|</span>
         <span style={{ color: '#1a1a1a', fontWeight: 700, fontSize: '14px', display: 'flex', alignItems: 'center', gap: 6 }}><Users size={14} /> Profissionais</span>
       </div>
 
@@ -291,7 +291,7 @@ export default function ProfissionaisPage() {
                   marginBottom: '2px', textAlign: 'left', transition: 'all 0.15s',
                   background: ativo ? `${item.cor}18` : item.destaque ? `${item.cor}10` : 'transparent',
                   borderLeft: ativo ? `3px solid ${item.cor}` : item.destaque ? `3px solid ${item.cor}60` : '3px solid transparent',
-                  color: ativo ? item.cor : item.destaque ? item.cor + 'cc' : '#9e9b94',
+                  color: ativo ? item.cor : item.destaque ? item.cor + 'cc' : '#767069',
                   fontWeight: item.destaque ? 700 : ativo ? 600 : 400,
                   fontSize: '12px',
                 }}>
@@ -312,7 +312,7 @@ export default function ProfissionaisPage() {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
                 <div>
                   <h2 style={{ color: '#1a1a1a', fontSize: '20px', fontWeight: 700, margin: 0 }}>Lista de Profissionais</h2>
-                  <p style={{ color: '#9e9b94', fontSize: '13px', margin: '4px 0 0' }}>{profissionais.filter(p => p.ativo).length} ativos</p>
+                  <p style={{ color: '#767069', fontSize: '13px', margin: '4px 0 0' }}>{profissionais.filter(p => p.ativo).length} ativos</p>
                 </div>
                 <button onClick={() => { setSecao('cadastrar'); setEditando(null); setForm({ ...FORM_INITIAL }) }}
                   style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'linear-gradient(135deg, #5b4fcf, #f43f8e)', color: 'white', border: 'none', borderRadius: '8px', padding: '9px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
@@ -415,14 +415,14 @@ export default function ProfissionaisPage() {
                           <div style={{ marginBottom: '8px', padding: '8px 10px', borderRadius: '8px', background: '#ef444410', border: '1px solid #ef444430' }}>
                             <p style={{ color: '#ef4444', fontSize: '10px', fontWeight: 700, margin: '0 0 4px' }}>⚠ Pendências:</p>
                             {pends.map(item => (
-                              <p key={item} style={{ color: '#fca5a5', fontSize: '10px', margin: '1px 0', display: 'flex', alignItems: 'center', gap: 4 }}>• {item}</p>
+                              <p key={item} style={{ color: '#dc2626', fontSize: '10px', margin: '1px 0', display: 'flex', alignItems: 'center', gap: 4 }}>• {item}</p>
                             ))}
                           </div>
                         ) : null
                       })()}
                       <div style={{ display: 'flex', gap: '6px' }} onClick={e => e.stopPropagation()}>
                         <button onClick={() => router.push(`/salon/profissionais/${p.id}`)}
-                          style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', background: '#ffffff', border: '1px solid #dedad4', borderRadius: '6px', padding: '6px', color: '#9e9b94', fontSize: '11px', cursor: 'pointer' }}>
+                          style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', background: '#ffffff', border: '1px solid #dedad4', borderRadius: '6px', padding: '6px', color: '#767069', fontSize: '11px', cursor: 'pointer' }}>
                           <Edit2 size={12} /> Editar
                         </button>
                         <button onClick={() => excluir(p.id, p.nome_completo)}
@@ -442,7 +442,7 @@ export default function ProfissionaisPage() {
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
                 <button onClick={() => { setSecao('lista'); setEditando(null); setForm({ ...FORM_INITIAL }); setFotoPreview('') }}
-                  style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'transparent', border: 'none', color: '#9e9b94', cursor: 'pointer', fontSize: '13px' }}>
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'transparent', border: 'none', color: '#767069', cursor: 'pointer', fontSize: '13px' }}>
                   <ArrowLeft size={14} /> Voltar
                 </button>
                 <h2 style={{ color: '#1a1a1a', fontSize: '18px', fontWeight: 700, margin: 0 }}>
@@ -459,9 +459,9 @@ export default function ProfissionaisPage() {
                   </div>
                   <div>
                     <p style={{ color: '#1a1a1a', fontWeight: 600, fontSize: '14px', margin: '0 0 4px' }}>Foto de Rosto</p>
-                    <p style={{ color: '#9e9b94', fontSize: '12px', margin: '0 0 8px' }}>JPG ou PNG, máximo 2MB</p>
+                    <p style={{ color: '#767069', fontSize: '12px', margin: '0 0 8px' }}>JPG ou PNG, máximo 2MB</p>
                     <button type="button" onClick={() => fileRef.current?.click()}
-                      style={{ background: '#ffffff', border: '1px solid #dedad4', borderRadius: '6px', padding: '6px 12px', color: '#9e9b94', fontSize: '12px', cursor: 'pointer' }}>
+                      style={{ background: '#ffffff', border: '1px solid #dedad4', borderRadius: '6px', padding: '6px 12px', color: '#767069', fontSize: '12px', cursor: 'pointer' }}>
                       {fotoPreview ? 'Trocar foto' : 'Selecionar foto'}
                     </button>
                   </div>
@@ -481,7 +481,7 @@ export default function ProfissionaisPage() {
                     {F('CNPJ (MEI)', 'cnpj', { placeholder: '00.000.000/0001-00' })}
                     {/* Seletor de categoria inteligente */}
                     <div>
-                      <label style={{ display: 'block', fontSize: '11px', color: '#9e9b94', marginBottom: '4px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Categoria / Cargo</label>
+                      <label style={{ display: 'block', fontSize: '11px', color: '#767069', marginBottom: '4px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Categoria / Cargo</label>
                       {novaCategoria ? (
                         <div style={{ display: 'flex', gap: 6 }}>
                           <input
@@ -493,7 +493,7 @@ export default function ProfissionaisPage() {
                             autoFocus
                           />
                           <button type="button" onClick={() => setNovaCategoria(false)}
-                            style={{ background: '#ffffff', border: '1px solid #dedad4', borderRadius: '8px', padding: '9px 12px', color: '#9e9b94', cursor: 'pointer', fontSize: '12px' }}>
+                            style={{ background: '#ffffff', border: '1px solid #dedad4', borderRadius: '8px', padding: '9px 12px', color: '#767069', cursor: 'pointer', fontSize: '12px' }}>
                             ← Voltar
                           </button>
                         </div>
@@ -502,7 +502,7 @@ export default function ProfissionaisPage() {
                           <select
                             value={form.cargo}
                             onChange={e => setForm(f => ({ ...f, cargo: e.target.value }))}
-                            style={{ flex: 1, background: '#ffffff', border: '1px solid #e8e6e0', borderRadius: '8px', padding: '9px 12px', fontSize: '13px', color: form.cargo ? '#1a1a1a' : '#9e9b94', outline: 'none' }}>
+                            style={{ flex: 1, background: '#ffffff', border: '1px solid #e8e6e0', borderRadius: '8px', padding: '9px 12px', fontSize: '13px', color: form.cargo ? '#1a1a1a' : '#767069', outline: 'none' }}>
                             <option value="">Selecione a categoria...</option>
                             {categorias.map(c => <option key={c} value={c}>{c}</option>)}
                           </select>
@@ -513,7 +513,7 @@ export default function ProfissionaisPage() {
                           </button>
                         </div>
                       )}
-                      <p style={{ color: '#9e9b94', fontSize: '10px', margin: '4px 0 0' }}>
+                      <p style={{ color: '#767069', fontSize: '10px', margin: '4px 0 0' }}>
                         Selecione uma categoria existente ou clique em <strong style={{ color: '#5b4fcf' }}>+</strong> para criar nova
                       </p>
                     </div>
@@ -523,12 +523,12 @@ export default function ProfissionaisPage() {
 
                 {/* DADOS PROFISSIONAIS */}
                 <div style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid #e8e6e0', padding: '20px', marginBottom: '16px' }}>
-                  <h3 style={{ color: '#06b6d4', fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 16px' }}>💼 Dados Profissionais</h3>
+                  <h3 style={{ color: '#0891b2', fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 16px' }}>💼 Dados Profissionais</h3>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     {TA('Habilidades (serviços que consegue fazer)', 'habilidades', 3)}
                     {TA('Certificados de Curso', 'certificados', 3)}
                     <div style={{ padding: '12px', background: '#f5f4f0', borderRadius: '8px', border: '1px solid #e8e6e0' }}>
-                      <label style={{ display: 'block', fontSize: '11px', color: '#9e9b94', marginBottom: '4px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Nome e Telefone do Responsável / Parente</label>
+                      <label style={{ display: 'block', fontSize: '11px', color: '#767069', marginBottom: '4px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Nome e Telefone do Responsável / Parente</label>
                       <input value={form.contato_responsavel} onChange={e => setForm(f => ({ ...f, contato_responsavel: e.target.value }))}
                         placeholder="Nome, (00) 00000-0000"
                         style={{ width: '100%', background: '#ffffff', border: '1px solid #e8e6e0', borderRadius: '6px', padding: '8px 10px', fontSize: '13px', color: '#1a1a1a', outline: 'none' }} />
@@ -557,7 +557,7 @@ export default function ProfissionaisPage() {
                     {saving ? 'Salvando...' : editando ? '💾 Atualizar Profissional' : '✅ Cadastrar Profissional'}
                   </button>
                   <button type="button" onClick={() => { setSecao('lista'); setEditando(null); setForm({ ...FORM_INITIAL }); setFotoPreview('') }}
-                    style={{ background: '#ffffff', border: '1px solid #dedad4', borderRadius: '10px', padding: '13px 20px', color: '#9e9b94', fontSize: '14px', cursor: 'pointer' }}>
+                    style={{ background: '#ffffff', border: '1px solid #dedad4', borderRadius: '10px', padding: '13px 20px', color: '#767069', fontSize: '14px', cursor: 'pointer' }}>
                     Cancelar
                   </button>
                 </div>
@@ -574,7 +574,7 @@ export default function ProfissionaisPage() {
 
               {/* Criar nova categoria */}
               <div style={{ background: '#ffffff', border: '1px solid #f59e0b40', borderRadius: 12, padding: 16, marginBottom: 20 }}>
-                <p style={{ color: '#9e9b94', fontSize: 12, margin: '0 0 10px', fontWeight: 600 }}>➕ CRIAR NOVA CATEGORIA</p>
+                <p style={{ color: '#767069', fontSize: 12, margin: '0 0 10px', fontWeight: 600 }}>➕ CRIAR NOVA CATEGORIA</p>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <input value={novaCatTexto} onChange={e => setNovaCatTexto(e.target.value)}
                     placeholder="Ex: Depiladora, Esteticista..."
@@ -601,7 +601,7 @@ export default function ProfissionaisPage() {
                           <button onClick={() => editarCategoria(cat, editandoCategoriaValor)}
                             style={{ background: '#10b981', border: 'none', borderRadius: 6, padding: '6px 12px', color: 'white', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Salvar</button>
                           <button onClick={() => setEditandoCategoria(null)}
-                            style={{ background: '#ffffff', border: '1px solid #dedad4', borderRadius: 6, padding: '6px 10px', color: '#9e9b94', fontSize: 12, cursor: 'pointer' }}>✕</button>
+                            style={{ background: '#ffffff', border: '1px solid #dedad4', borderRadius: 6, padding: '6px 10px', color: '#767069', fontSize: 12, cursor: 'pointer' }}>✕</button>
                         </>
                       ) : (
                         <>
@@ -610,7 +610,7 @@ export default function ProfissionaisPage() {
                             <span style={{ color: '#6b6860', fontSize: 11, marginLeft: 10 }}>{qtd} profissional{qtd !== 1 ? 'is' : ''}</span>
                           </div>
                           <button onClick={() => { setEditandoCategoria(cat); setEditandoCategoriaValor(cat) }}
-                            style={{ background: '#ffffff', border: '1px solid #dedad4', borderRadius: 6, padding: '5px 10px', color: '#9e9b94', fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+                            style={{ background: '#ffffff', border: '1px solid #dedad4', borderRadius: 6, padding: '5px 10px', color: '#767069', fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
                             ✏️ Editar
                           </button>
                           {qtd === 0 && (
@@ -641,12 +641,12 @@ export default function ProfissionaisPage() {
                 <h2 style={{ color: '#1a1a1a', fontSize: '22px', fontWeight: 700, margin: '0 0 20px' }}>
                   {SIDEBAR_ITEMS.find(s => s.id === secao)?.label}
                 </h2>
-                <p style={{ color: '#9e9b94', fontSize: '15px', lineHeight: '1.8', whiteSpace: 'pre-line', margin: 0 }}>
+                <p style={{ color: '#767069', fontSize: '15px', lineHeight: '1.8', whiteSpace: 'pre-line', margin: 0 }}>
                   {CONTEUDO_INFO[secao].texto}
                 </p>
                 <div style={{ marginTop: '24px', padding: '16px', background: '#f5f4f0', borderRadius: '10px', border: '1px solid #e8e6e0' }}>
-                  <p style={{ color: '#9e9b94', fontSize: '12px', margin: 0 }}>
-                    💡 <strong style={{ color: '#9e9b94' }}>Dica:</strong> Para personalizar este conteúdo com as informações do seu salão, entre em contato com o suporte Nodri.
+                  <p style={{ color: '#767069', fontSize: '12px', margin: 0 }}>
+                    💡 <strong style={{ color: '#767069' }}>Dica:</strong> Para personalizar este conteúdo com as informações do seu salão, entre em contato com o suporte Nodri.
                   </p>
                 </div>
               </div>

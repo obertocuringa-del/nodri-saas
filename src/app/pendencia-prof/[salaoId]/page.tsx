@@ -51,16 +51,16 @@ export default function PendenciaPublicaPage() {
 
   if (loading) return (
     <div style={{ minHeight: '100vh', background: '#f5f4f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <Loader2 size={28} style={{ color: '#06b6d4', animation: 'spin 1s linear infinite' }} />
+      <Loader2 size={28} style={{ color: '#0891b2', animation: 'spin 1s linear infinite' }} />
     </div>
   )
 
   if (enviado) return (
     <div style={{ minHeight: '100vh', background: '#f5f4f0', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
       <div style={{ textAlign: 'center', maxWidth: '400px' }}>
-        <CheckCircle2 size={56} style={{ color: '#10b981', margin: '0 auto 16px', display: 'block' }} />
+        <CheckCircle2 size={56} style={{ color: '#059669', margin: '0 auto 16px', display: 'block' }} />
         <h2 style={{ color: '#1a1a1a', fontSize: '20px', fontWeight: 700, margin: '0 0 8px' }}>Pendência enviada!</h2>
-        <p style={{ color: '#9e9b94', fontSize: '14px', margin: '0 0 24px' }}>Sua solicitação foi registrada com sucesso e será analisada pela equipe.</p>
+        <p style={{ color: '#767069', fontSize: '14px', margin: '0 0 24px' }}>Sua solicitação foi registrada com sucesso e será analisada pela equipe.</p>
         <button onClick={() => { setEnviado(false); setMensagem(''); setDataLimite(''); setProfId('') }}
           style={{ background: 'linear-gradient(135deg, #5b4fcf, #06b6d4)', color: 'white', border: 'none', borderRadius: '10px', padding: '12px 28px', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}>
           Enviar outra
@@ -78,7 +78,7 @@ export default function PendenciaPublicaPage() {
             📋
           </div>
           <h1 style={{ color: '#1a1a1a', fontSize: '20px', fontWeight: 700, margin: '0 0 4px' }}>Registrar Pendência</h1>
-          <p style={{ color: '#9e9b94', fontSize: '13px', margin: 0 }}>{salaoNome}</p>
+          <p style={{ color: '#767069', fontSize: '13px', margin: 0 }}>{salaoNome}</p>
         </div>
 
         {/* Form */}
@@ -86,7 +86,7 @@ export default function PendenciaPublicaPage() {
 
           {/* Profissional */}
           <div>
-            <label style={{ display: 'block', fontSize: '11px', color: '#9e9b94', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px', fontWeight: 600 }}>
+            <label style={{ display: 'block', fontSize: '11px', color: '#767069', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px', fontWeight: 600 }}>
               Seu nome *
             </label>
             <select value={profId} onChange={e => setProfId(e.target.value)}
@@ -102,7 +102,7 @@ export default function PendenciaPublicaPage() {
 
           {/* Mensagem */}
           <div>
-            <label style={{ display: 'block', fontSize: '11px', color: '#9e9b94', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px', fontWeight: 600 }}>
+            <label style={{ display: 'block', fontSize: '11px', color: '#767069', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px', fontWeight: 600 }}>
               Pendência / Solicitação *
             </label>
             <textarea value={mensagem} onChange={e => setMensagem(e.target.value)} rows={4}
@@ -112,7 +112,7 @@ export default function PendenciaPublicaPage() {
 
           {/* Data limite */}
           <div>
-            <label style={{ display: 'block', fontSize: '11px', color: '#9e9b94', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px', fontWeight: 600 }}>
+            <label style={{ display: 'block', fontSize: '11px', color: '#767069', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px', fontWeight: 600 }}>
               Data limite (opcional)
             </label>
             <input type="date" value={dataLimite} onChange={e => setDataLimite(e.target.value)}
@@ -135,7 +135,7 @@ export default function PendenciaPublicaPage() {
           </button>
         </div>
 
-        <p style={{ textAlign: 'center', color: '#9e9b94', fontSize: '11px', marginTop: '16px' }}>
+        <p style={{ textAlign: 'center', color: '#767069', fontSize: '11px', marginTop: '16px' }}>
           Powered by Nodri
         </p>
       </div>

@@ -72,7 +72,7 @@ function renderMarkdown(texto: string): string {
   html = html.replace(/((?:^[ \t]*[*\-•]\s.+\n?)+)/gm, (block) => {
     const items = block.trim().split('\n').map(l => l.replace(/^[ \t]*[*\-•]\s/, '').trim()).filter(Boolean)
     return '<ul style="margin:10px 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px">' +
-      items.map(i => `<li style="display:flex;gap:10px;align-items:flex-start;color:#6b6860;line-height:1.7"><span style="color:#f59e0b;flex-shrink:0;font-size:16px;line-height:1.4">›</span><span>${i}</span></li>`).join('') +
+      items.map(i => `<li style="display:flex;gap:10px;align-items:flex-start;color:#6b6860;line-height:1.7"><span style="color:#b45309;flex-shrink:0;font-size:16px;line-height:1.4">›</span><span>${i}</span></li>`).join('') +
       '</ul>'
   })
 
@@ -80,7 +80,7 @@ function renderMarkdown(texto: string): string {
   html = html.replace(/((?:^\d+\.\s.+\n?)+)/gm, (block) => {
     const items = block.trim().split('\n').map(l => l.replace(/^\d+\.\s/, '').trim()).filter(Boolean)
     return '<ol style="margin:10px 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px">' +
-      items.map((item, idx) => `<li style="display:flex;gap:10px;align-items:flex-start;color:#6b6860;line-height:1.7"><span style="color:#f59e0b;flex-shrink:0;font-weight:700;font-size:13px;min-width:22px;background:#1c2128;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;margin-top:2px">${idx+1}</span><span>${item}</span></li>`).join('') +
+      items.map((item, idx) => `<li style="display:flex;gap:10px;align-items:flex-start;color:#6b6860;line-height:1.7"><span style="color:#b45309;flex-shrink:0;font-weight:700;font-size:13px;min-width:22px;background:#1c2128;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;margin-top:2px">${idx+1}</span><span>${item}</span></li>`).join('') +
       '</ol>'
   })
 
@@ -503,7 +503,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
               <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg,#f59e0b,#d97706)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, color: '#000', flexShrink: 0 }}>N</div>
               <div>
                 <p style={{ color: '#1a1a1a', fontWeight: 700, fontSize: telaCheia ? 16 : 14, margin: 0 }}>NODRI IA</p>
-                <p style={{ color: '#22c55e', fontSize: 11, margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
+                <p style={{ color: '#15803d', fontSize: 11, margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
                   <span style={{ width: 6, height: 6, background: '#22c55e', borderRadius: '50%', display: 'inline-block' }} /> Online
                 </p>
               </div>
@@ -553,7 +553,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
             <div style={{ flex: 1, overflowY: 'auto', padding: '8px 8px' }}>
               {prompts.length === 0 && (
                 <div style={{ padding: '16px 8px', textAlign: 'center' }}>
-                  <p style={{ color: '#6b6860', fontSize: 12, lineHeight: 1.6, margin: 0 }}>Nenhuma pergunta salva ainda.<br/>Clique no <strong style={{ color: '#f59e0b' }}>+</strong> para criar.</p>
+                  <p style={{ color: '#6b6860', fontSize: 12, lineHeight: 1.6, margin: 0 }}>Nenhuma pergunta salva ainda.<br/>Clique no <strong style={{ color: '#b45309' }}>+</strong> para criar.</p>
                 </div>
               )}
               {prompts.map(p => (

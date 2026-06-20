@@ -291,7 +291,7 @@ export default function FeedbackProfissionalPage() {
               onClick={criarFormulario}
               disabled={saving}
               className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-semibold transition-all"
-              style={{ background: 'rgba(34,197,94,.12)', color: '#4ade80', border: '1px solid rgba(34,197,94,.25)' }}
+              style={{ background: 'rgba(34,197,94,.12)', color: '#15803d', border: '1px solid rgba(34,197,94,.25)' }}
             >
               <Plus size={12} /> Novo Formulário
             </button>
@@ -307,7 +307,7 @@ export default function FeedbackProfissionalPage() {
                 <button
                   onClick={() => router.push(`/salon/feedback-profissional/gerenciar/${selected.id}`)}
                   className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-semibold transition-all"
-                  style={{ background: 'rgba(250,204,21,.1)', color: '#facc15', border: '1px solid rgba(250,204,21,.25)' }}
+                  style={{ background: 'rgba(250,204,21,.1)', color: '#b45309', border: '1px solid rgba(250,204,21,.25)' }}
                 >
                   <Settings2 size={12} /> Gerenciar Feedbacks
                 </button>
@@ -316,14 +316,14 @@ export default function FeedbackProfissionalPage() {
             <button
               onClick={() => router.push('/salon/feedback-profissional/bloqueios')}
               className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-semibold transition-all"
-              style={{ background: 'rgba(239,68,68,.12)', color: '#f87171', border: '1px solid rgba(239,68,68,.25)' }}
+              style={{ background: 'rgba(239,68,68,.12)', color: '#dc2626', border: '1px solid rgba(239,68,68,.25)' }}
             >
               <Lock size={12} /> Bloqueios
             </button>
             <button
               onClick={() => router.push('/salon/feedback-profissional/importar')}
               className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-semibold transition-all"
-              style={{ background: 'rgba(6,182,212,.12)', color: '#22d3ee', border: '1px solid rgba(6,182,212,.25)' }}
+              style={{ background: 'rgba(6,182,212,.12)', color: '#0891b2', border: '1px solid rgba(6,182,212,.25)' }}
             >
               <Upload size={12} /> Importar Histórico
             </button>
@@ -357,7 +357,7 @@ export default function FeedbackProfissionalPage() {
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <button onClick={toggleAtivo} className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] border" style={{ borderColor: 'rgba(255,255,255,.1)', color: '#9e9b94' }}>
+                  <button onClick={toggleAtivo} className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] border" style={{ borderColor: 'rgba(255,255,255,.1)', color: '#767069' }}>
                     <Eye size={10} /> {selected.ativo ? 'Desativar' : 'Ativar'}
                   </button>
                   <button onClick={excluirFormulario} className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] border border-red-500/30 text-red-400">
@@ -403,16 +403,16 @@ export default function FeedbackProfissionalPage() {
                             onClick={() => setFormTipo('positivo')}
                             className="py-3 rounded-xl text-[12px] font-bold transition-all"
                             style={formTipo === 'positivo'
-                              ? { background: 'rgba(34,197,94,.15)', color: '#4ade80', border: '2px solid rgba(34,197,94,.4)' }
-                              : { background: 'rgba(255,255,255,.03)', color: '#9e9b94', border: '1px solid rgba(255,255,255,.08)' }}>
+                              ? { background: 'rgba(34,197,94,.15)', color: '#15803d', border: '2px solid rgba(34,197,94,.4)' }
+                              : { background: 'rgba(255,255,255,.03)', color: '#767069', border: '1px solid rgba(255,255,255,.08)' }}>
                             <Check size={12} className="inline mr-1" /> Positivo
                           </button>
                           <button
                             onClick={() => setFormTipo('negativo')}
                             className="py-3 rounded-xl text-[12px] font-bold transition-all"
                             style={formTipo === 'negativo'
-                              ? { background: 'rgba(239,68,68,.12)', color: '#f87171', border: '2px solid rgba(239,68,68,.35)' }
-                              : { background: 'rgba(255,255,255,.03)', color: '#9e9b94', border: '1px solid rgba(255,255,255,.08)' }}>
+                              ? { background: 'rgba(239,68,68,.12)', color: '#dc2626', border: '2px solid rgba(239,68,68,.35)' }
+                              : { background: 'rgba(255,255,255,.03)', color: '#767069', border: '1px solid rgba(255,255,255,.08)' }}>
                             <X size={12} className="inline mr-1" /> Negativo
                           </button>
                         </div>
@@ -465,7 +465,7 @@ export default function FeedbackProfissionalPage() {
                         onClick={registrarFeedback}
                         disabled={formLoading || !formProf || !formOcorr}
                         className="w-full py-3 rounded-xl text-[13px] font-bold transition-all disabled:opacity-40"
-                        style={{ background: 'linear-gradient(135deg,rgba(124,92,252,.3),rgba(244,63,142,.2))', color: '#c084fc', border: '1px solid rgba(139,92,246,.4)' }}>
+                        style={{ background: 'linear-gradient(135deg,rgba(124,92,252,.3),rgba(244,63,142,.2))', color: '#5b4fcf', border: '1px solid rgba(139,92,246,.4)' }}>
                         {formLoading ? <><Clock size={12} className="inline mr-1" />Registrando...</> : <><Check size={12} className="inline mr-1" />Registrar Feedback</>}
                       </button>
                     </div>
@@ -487,7 +487,7 @@ export default function FeedbackProfissionalPage() {
                       onClick={addProf}
                       disabled={saving || !novoProf.trim()}
                       className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[11px] font-bold disabled:opacity-50"
-                      style={{ background: 'rgba(34,197,94,.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,.3)' }}
+                      style={{ background: 'rgba(34,197,94,.15)', color: '#15803d', border: '1px solid rgba(34,197,94,.3)' }}
                     >
                       <Plus size={13} /> Adicionar
                     </button>
@@ -533,7 +533,7 @@ export default function FeedbackProfissionalPage() {
                       onClick={addOcorr}
                       disabled={saving || !novoOcorr.trim()}
                       className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[11px] font-bold disabled:opacity-50"
-                      style={{ background: 'rgba(34,197,94,.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,.3)' }}
+                      style={{ background: 'rgba(34,197,94,.15)', color: '#15803d', border: '1px solid rgba(34,197,94,.3)' }}
                     >
                       <Plus size={13} /> Adicionar
                     </button>
@@ -587,7 +587,7 @@ export default function FeedbackProfissionalPage() {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold w-fit"
-                      style={{ background: 'rgba(34,197,94,.1)', color: '#4ade80', border: '1px solid rgba(34,197,94,.25)' }}
+                      style={{ background: 'rgba(34,197,94,.1)', color: '#15803d', border: '1px solid rgba(34,197,94,.25)' }}
                     >
                       <Eye size={11} /> Visualizar formulário
                     </a>

@@ -212,14 +212,14 @@ export default function ResultadosProfPage() {
           <BarChart2 size={14} className="text-nodri-purple" />
           <span className="font-syne font-bold text-sm text-nodri-t1 hidden sm:block">Resultados — Desempenho da Equipe</span>
           <div className="ml-auto flex items-center gap-2 flex-wrap">
-            <button onClick={exportarCSV} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold" style={{ background: 'rgba(34,197,94,.1)', color: '#4ade80', border: '1px solid rgba(34,197,94,.25)' }}>
+            <button onClick={exportarCSV} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold" style={{ background: 'rgba(34,197,94,.1)', color: '#15803d', border: '1px solid rgba(34,197,94,.25)' }}>
               <Download size={12} /> Excel
             </button>
-            <button onClick={() => window.print()} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold" style={{ background: 'rgba(239,68,68,.1)', color: '#f87171', border: '1px solid rgba(239,68,68,.25)' }}>
+            <button onClick={() => window.print()} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold" style={{ background: 'rgba(239,68,68,.1)', color: '#dc2626', border: '1px solid rgba(239,68,68,.25)' }}>
               <FileText size={12} /> PDF
             </button>
             <button onClick={acionarIA} disabled={iaLoading} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold disabled:opacity-60"
-              style={{ background: 'linear-gradient(135deg,rgba(124,92,252,.25),rgba(244,63,142,.25))', color: '#c084fc', border: '1px solid rgba(139,92,246,.4)' }}>
+              style={{ background: 'linear-gradient(135deg,rgba(124,92,252,.25),rgba(244,63,142,.25))', color: '#5b4fcf', border: '1px solid rgba(139,92,246,.4)' }}>
               <Brain size={13} />{iaLoading ? 'Analisando...' : 'Acionar IA Claude'}
             </button>
           </div>
@@ -246,7 +246,7 @@ export default function ResultadosProfPage() {
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[
-                    { label: 'Total', val: data.total, cor: '#9e9b94' },
+                    { label: 'Total', val: data.total, cor: '#767069' },
                     { label: 'Positivos', val: data.totalPositivo, cor: '#4ade80' },
                     { label: 'Negativos', val: data.totalNegativo, cor: '#f87171' },
                     { label: '% Positivo', val: data.total > 0 ? Math.round(data.totalPositivo / data.total * 100) + '%' : '—', cor: data.total > 0 && data.totalPositivo / data.total >= 0.6 ? '#4ade80' : '#f87171' },
@@ -277,7 +277,7 @@ export default function ResultadosProfPage() {
                     <input type="date" value={fim} onChange={e => setFim(e.target.value)} className="bg-nodri-card text-[11px] text-nodri-t1 outline-none cursor-pointer border-0 rounded" style={{ colorScheme: 'dark' }} />
                   </div>
                   <button onClick={() => { setInicioAplicado(inicio); setFimAplicado(fim); setFiltroProfAplicado(filtroProfissional); setFiltroTipoAplicado(filtroTipo) }}
-                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold" style={{ background: 'rgba(34,211,238,.1)', color: '#22d3ee', border: '1px solid rgba(34,211,238,.25)' }}>
+                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold" style={{ background: 'rgba(34,211,238,.1)', color: '#0891b2', border: '1px solid rgba(34,211,238,.25)' }}>
                     <RefreshCw size={11} /> Aplicar
                   </button>
                 </div>
@@ -289,8 +289,8 @@ export default function ResultadosProfPage() {
                   <button key={aid} onClick={() => setAbaAtiva(aid as Aba)}
                     className="flex items-center gap-1.5 px-4 py-2.5 text-[12px] font-semibold whitespace-nowrap transition-all border-b-2 -mb-px"
                     style={abaAtiva === aid
-                      ? { color: '#22d3ee', borderColor: '#22d3ee' }
-                      : { color: '#9e9b94', borderColor: 'transparent' }}>
+                      ? { color: '#0891b2', borderColor: '#22d3ee' }
+                      : { color: '#767069', borderColor: 'transparent' }}>
                     <Icon size={13} />{label}
                     {aid === 'ia' && ia && <span className="w-1.5 h-1.5 rounded-full bg-purple-400 ml-0.5" />}
                   </button>
@@ -394,7 +394,7 @@ export default function ResultadosProfPage() {
                             ])).sort()
 
                             const deltaNeg = atual && ant ? atual.negativo - ant.negativo : null
-                            const corDelta = deltaNeg == null ? '#9e9b94' : deltaNeg > 0 ? '#f87171' : deltaNeg < 0 ? '#4ade80' : '#9e9b94'
+                            const corDelta = deltaNeg == null ? '#767069' : deltaNeg > 0 ? '#f87171' : deltaNeg < 0 ? '#4ade80' : '#767069'
                             const aberto = expandidoHistorico === `placar-${nome}`
 
                             return (
@@ -405,7 +405,7 @@ export default function ResultadosProfPage() {
                                   onClick={() => setExpandidoHistorico(aberto ? null : `placar-${nome}`)}>
                                   <div className="flex items-center gap-2">
                                     <div className="w-6 h-6 rounded-full flex items-center justify-center font-black text-[10px] shrink-0"
-                                      style={{ background: 'rgba(255,255,255,.08)', color: '#9e9b94' }}>
+                                      style={{ background: 'rgba(255,255,255,.08)', color: '#767069' }}>
                                       {nome.charAt(0)}
                                     </div>
                                     <span className="font-bold text-[12px] text-nodri-t1 truncate">{nome}</span>
@@ -446,8 +446,8 @@ export default function ResultadosProfPage() {
                                       const qtdAnt = ant?.ocorrencias?.find(o => o.desc === desc)?.qtd || 0
                                       const qtdAtual = atual?.ocorrencias?.find(o => o.desc === desc)?.qtd || 0
                                       const diff = qtdAtual - qtdAnt
-                                      const corDiff = diff > 0 ? '#f87171' : diff < 0 ? '#4ade80' : '#9e9b94'
-                                      const corAtual = qtdAtual >= 5 ? '#ef4444' : qtdAtual >= 3 ? '#f97316' : qtdAtual >= 2 ? '#facc15' : '#9e9b94'
+                                      const corDiff = diff > 0 ? '#f87171' : diff < 0 ? '#4ade80' : '#767069'
+                                      const corAtual = qtdAtual >= 5 ? '#ef4444' : qtdAtual >= 3 ? '#f97316' : qtdAtual >= 2 ? '#facc15' : '#767069'
                                       const msgDiff = diff < 0
                                         ? `Parabéns! ${Math.abs(diff)}x menos que o mês anterior`
                                         : diff > 0
@@ -633,7 +633,7 @@ export default function ResultadosProfPage() {
                                     )
                                   })}
                                   <td className="text-center py-1 px-1">
-                                    <span className="font-black text-[12px]" style={{ color: row.total >= 5 ? '#f87171' : row.total >= 3 ? '#fb923c' : '#9e9b94' }}>{row.total}</span>
+                                    <span className="font-black text-[12px]" style={{ color: row.total >= 5 ? '#f87171' : row.total >= 3 ? '#fb923c' : '#767069' }}>{row.total}</span>
                                   </td>
                                 </tr>
                               )
@@ -812,7 +812,7 @@ export default function ResultadosProfPage() {
                       <Brain size={40} className="text-purple-400 mx-auto mb-4 opacity-50" />
                       <p className="text-nodri-t2 text-sm mb-4">Clique no botão para gerar a análise da equipe com IA.</p>
                       <button onClick={acionarIA} className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm mx-auto"
-                        style={{ background: 'linear-gradient(135deg,rgba(124,92,252,.25),rgba(244,63,142,.25))', color: '#c084fc', border: '1px solid rgba(139,92,246,.4)' }}>
+                        style={{ background: 'linear-gradient(135deg,rgba(124,92,252,.25),rgba(244,63,142,.25))', color: '#5b4fcf', border: '1px solid rgba(139,92,246,.4)' }}>
                         <Brain size={16} /> Acionar IA Claude
                       </button>
                     </div>

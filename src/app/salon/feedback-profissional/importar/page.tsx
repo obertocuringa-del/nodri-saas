@@ -178,7 +178,7 @@ export default function ImportarPage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {[
                 { label: 'Importados', val: result.importados, cor: '#4ade80' },
-                { label: 'Ignorados', val: result.ignorados, cor: '#9e9b94' },
+                { label: 'Ignorados', val: result.ignorados, cor: '#767069' },
                 { label: 'Total lidos', val: result.total_linhas, cor: '#60a5fa' },
               ].map(({ label, val, cor }) => (
                 <div key={label} className="p-3 rounded-xl text-center border" style={{ borderColor: `${cor}20`, background: `${cor}08` }}>
@@ -193,7 +193,7 @@ export default function ImportarPage() {
                 <div className="text-[10px] font-bold text-green-400 mb-1.5"> Novos profissionais criados ({result.novosProfissionais.length})</div>
                 <div className="flex flex-wrap gap-1.5">
                   {result.novosProfissionais.map(p => (
-                    <span key={p} className="text-[10px] px-2 py-0.5 rounded-full font-semibold" style={{ background: 'rgba(34,197,94,.12)', color: '#4ade80', border: '1px solid rgba(34,197,94,.25)' }}>{p}</span>
+                    <span key={p} className="text-[10px] px-2 py-0.5 rounded-full font-semibold" style={{ background: 'rgba(34,197,94,.12)', color: '#15803d', border: '1px solid rgba(34,197,94,.25)' }}>{p}</span>
                   ))}
                 </div>
               </div>
@@ -204,7 +204,7 @@ export default function ImportarPage() {
                 <div className="text-[10px] font-bold text-cyan-400 mb-1.5"> Novos ocorridos criados ({result.novosOcorridos.length})</div>
                 <div className="flex flex-wrap gap-1.5">
                   {result.novosOcorridos.map(o => (
-                    <span key={o} className="text-[10px] px-2 py-0.5 rounded-full font-semibold" style={{ background: 'rgba(6,182,212,.12)', color: '#22d3ee', border: '1px solid rgba(6,182,212,.25)' }}>{o}</span>
+                    <span key={o} className="text-[10px] px-2 py-0.5 rounded-full font-semibold" style={{ background: 'rgba(6,182,212,.12)', color: '#0891b2', border: '1px solid rgba(6,182,212,.25)' }}>{o}</span>
                   ))}
                 </div>
               </div>
@@ -226,7 +226,7 @@ export default function ImportarPage() {
               </button>
               <button onClick={() => { setResult(null); setSheetUrl(''); setCsvTexto('') }}
                 className="flex-1 py-2 rounded-xl text-[12px] font-semibold transition-all"
-                style={{ background: 'rgba(34,197,94,.12)', color: '#4ade80', border: '1px solid rgba(34,197,94,.25)' }}>
+                style={{ background: 'rgba(34,197,94,.12)', color: '#15803d', border: '1px solid rgba(34,197,94,.25)' }}>
                 Importar mais dados
               </button>
             </div>
