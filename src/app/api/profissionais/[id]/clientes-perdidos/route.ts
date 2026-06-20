@@ -56,13 +56,14 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const dataInicio = url.searchParams.get('dataInicio') || `01/01/${anoAtual - 1}`
   const dataFim    = url.searchParams.get('dataFim')    || `31/12/${anoAtual}`
 
-  // Converte dd/mm/yyyy → yyyy-mm-dd para filtro no banco
-  function toBR(d: string) {
+  // Extrai ano/mes do formato dd/mm/yyyy para filtrar pelos campos numéricos
+  function parseAnoMes(d: string): { ano: number; mes: number } | null {
     const p = d.split('/')
-    return p.length === 3 ? `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}` : null
+    if (p.length !== 3) return null
+    return { ano: parseInt(p[2]), mes: parseInt(p[1]) }
   }
-  const dtInicioISO = toBR(dataInicio)
-  const dtFimISO    = toBR(dataFim)
+  const inicio = parseAnoMes(dataInicio)
+  const fim    = parseAnoMes(dataFim)
 
   const { data: prof } = await supabaseAdmin
     .from('profissionais')
@@ -149,7 +150,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
   const comissaoMedia = totalQtdComissao > 0 ? totalComissaoPonderada / totalQtdComissao : 0
 
-  // Busca atendimentos filtrados pelo período selecionado
+  // Busca atendimentos filtrados pelo período (ano/mes são numéricos no banco)
   let rows: any[] = []
   let from = 0
   while (true) {
@@ -157,13 +158,20 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       .from('atendimentos_raw')
       .select('cliente, celular, profissional, data_comanda, servico, categoria')
       .eq('salao_id', salaoId)
-      .order('data_comanda')
+      .order('ano').order('mes').order('data_comanda')
       .range(from, from + 999)
-    if (dtInicioISO) q = q.gte('data_comanda', dtInicioISO)
-    if (dtFimISO)    q = q.lte('data_comanda', dtFimISO)
+    if (inicio) q = q.gte('ano', inicio.ano)
+    if (fim)    q = q.lte('ano', fim.ano)
     const { data } = await q
     if (!data || data.length === 0) break
-    rows = rows.concat(data)
+    // Filtra meses exatos nas bordas
+    const filtrado = data.filter((r: any) => {
+      const a = Number(r.ano), m = Number(r.mes)
+      if (inicio && a === inicio.ano && m < inicio.mes) return false
+      if (fim && a === fim.ano && m > fim.mes) return false
+      return true
+    })
+    rows = rows.concat(filtrado)
     if (data.length < 1000) break
     from += 1000
   }
