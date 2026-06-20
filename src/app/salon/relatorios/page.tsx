@@ -174,7 +174,7 @@ function TabelaComp({ title, items, label1, label2 }: { title: string; items: It
 
   const Th = ({ k, children }: { k: SortKey; children: React.ReactNode }) => (
     <th onClick={() => setSort(s => ({ key: k, dir: s.key === k ? (-s.dir as 1 | -1) : -1 }))}
-      style={{ padding: '10px 12px', fontSize: 11, color: '#767069', fontWeight: 600, textAlign: k === 'nome' ? 'left' : 'right', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap', background: '#f5f4f0', borderBottom: '1px solid #e8e6e0' }}>
+      style={{ padding: '10px 12px', fontSize: 11, color: '#767069', fontWeight: 600, textAlign: k === 'nome' ? 'left' : 'right', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap', background: '#ffffff', borderBottom: '1.5px solid #e0ddd8' }}>
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
         {children}
         {sort.key === k ? (sort.dir === -1 ? <ChevronDown size={11} /> : <ChevronUp size={11} />) : <ChevronsUpDown size={11} style={{ opacity: 0.3 }} />}
@@ -183,7 +183,7 @@ function TabelaComp({ title, items, label1, label2 }: { title: string; items: It
   )
 
   return (
-    <div style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
+    <div style={{ background: '#ffffff', border: '1.5px solid #e0ddd8', borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
       <div style={{ padding: '16px 16px 12px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid #e8e6e0' }}>
         <h3 style={{ color: '#1a1a1a', fontSize: 14, fontWeight: 700, margin: 0, flex: 1 }}>{title}</h3>
         <span style={{ fontSize: 11, color: '#6b6860' }}>{sorted.length} itens</span>
@@ -801,7 +801,7 @@ export default function RelatoriosPage() {
     <div style={{ minHeight: '100vh', background: '#f5f4f0', display: 'flex', flexDirection: 'column', fontFamily: "'Inter', 'Segoe UI', sans-serif", color: '#1a1a1a' }}>
 
       {/* ── TOP BAR ── */}
-      <div style={{ background: '#f5f4f0', borderBottom: '1px solid #e8e6e0', padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 20, overflowX: 'auto', flexWrap: 'wrap' }}>
+      <div style={{ background: '#ffffff', borderBottom: '1.5px solid #e0ddd8', padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 20, overflowX: 'auto', flexWrap: 'wrap' }}>
         <a href="/salon" style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#6b6860', textDecoration: 'none', fontSize: 13 }}>
           <ArrowLeft size={15} /> Voltar
         </a>
@@ -894,7 +894,7 @@ export default function RelatoriosPage() {
                 <BarChart2 size={13} /> Mais Relatórios <ChevronDown size={12} style={{ transform: dropdownAberto ? 'rotate(180deg)' : 'none', transition: '0.15s' }} />
               </button>
               {dropdownAberto && (
-                <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', top: '100%', left: 0, zIndex: 100, background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 10, minWidth: 230, boxShadow: '0 8px 32px #0009', marginTop: 4 }}>
+                <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', top: '100%', left: 0, zIndex: 100, background: '#ffffff', border: '1.5px solid #e0ddd8', borderRadius: 10, minWidth: 230, boxShadow: '0 8px 32px #0009', marginTop: 4 }}>
                   {[
                     { id: 'risco', icon: <AlertTriangle size={13} />, label: 'Em Risco', desc: 'Prestes a abandonar' },
                     { id: 'perdidos', icon: <Users size={13} />, label: 'Perdidos', desc: 'Não voltam há muito tempo' },
@@ -947,7 +947,7 @@ export default function RelatoriosPage() {
                     const p = calcPct(card.v1, card.v2)
                     const { bg, text, border, Icon } = corPct(p)
                     return (
-                      <div key={card.lbl} style={{ background: '#f5f4f0', border: `1px solid ${border}`, borderLeft: `3px solid ${text}`, borderRadius: 10, padding: '14px 16px' }}>
+                      <div key={card.lbl} style={{ background: '#ffffff', border: `1.5px solid ${{border}}`, borderLeft: `3px solid ${text}`, borderRadius: 10, padding: '14px 16px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                           <span style={{ fontSize: 11, color: '#6b6860', fontWeight: 600 }}>{card.ico} {card.lbl}</span>
                           {r2.fat_total > 0 && <span style={{ display: 'flex', alignItems: 'center', gap: 2, fontSize: 11, fontWeight: 700, color: text, background: bg, padding: '1px 6px', borderRadius: 20 }}><Icon size={10} />{p > 0 ? '+' : ''}{p.toFixed(1)}%</span>}
@@ -961,7 +961,7 @@ export default function RelatoriosPage() {
 
                 {/* TOP 10 crescimento e queda lado a lado */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
-                  <div style={{ background: '#f5f4f0', border: '1px solid #10b98130', borderRadius: 12, padding: 16 }}>
+                  <div style={{ background: '#f5f4f0', border: '1.5px solid #10b98160', borderRadius: 12, padding: 16 }}>
                     <h3 style={{ color: '#059669', fontSize: 13, fontWeight: 700, margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: 6 }}><TrendingUp size={14} /> Top 10 Maiores Crescimentos</h3>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                       {top10Cresc.map((item, i) => (
@@ -974,7 +974,7 @@ export default function RelatoriosPage() {
                       ))}
                     </div>
                   </div>
-                  <div style={{ background: '#f5f4f0', border: '1px solid #ef444430', borderRadius: 12, padding: 16 }}>
+                  <div style={{ background: '#f5f4f0', border: '1.5px solid #ef444460', borderRadius: 12, padding: 16 }}>
                     <h3 style={{ color: '#ef4444', fontSize: 13, fontWeight: 700, margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: 6 }}><TrendingDown size={14} /> Top 10 Maiores Quedas</h3>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                       {top10Queda.map((item, i) => (
@@ -1233,7 +1233,7 @@ export default function RelatoriosPage() {
                     </select>
                   )
                   return (
-                    <div style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 12, padding: 20, marginBottom: 16 }}>
+                    <div style={{ background: '#ffffff', border: '1.5px solid #e0ddd8', borderRadius: 12, padding: 20, marginBottom: 16 }}>
                       <h3 style={{ color: '#1a1a1a', fontSize: 14, fontWeight: 700, margin: '0 0 14px' }}>Comparativo Acumulado</h3>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
                         {([{ label: 'Intervalo A', de: acumA1, ate: acumA2, setDe: setAcumA1, setAte: setAcumA2, total: totalA, cor: '#5b4fcf' },
@@ -1261,7 +1261,7 @@ export default function RelatoriosPage() {
                 })()}
 
                 {/* Configuração da meta */}
-                <div style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 12, padding: 20, marginBottom: 16 }}>
+                <div style={{ background: '#ffffff', border: '1.5px solid #e0ddd8', borderRadius: 12, padding: 20, marginBottom: 16 }}>
                   <h3 style={{ color: '#5b4fcf', fontSize: 14, fontWeight: 700, margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: 8 }}><Settings size={15} /> Configurar Meta</h3>
 
                   {/* Seletor de período de comparação */}
@@ -1356,7 +1356,7 @@ export default function RelatoriosPage() {
                     })()}
 
                     {/* Barra de progresso */}
-                    <div style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 12, padding: 20, marginBottom: 16 }}>
+                    <div style={{ background: '#ffffff', border: '1.5px solid #e0ddd8', borderRadius: 12, padding: 20, marginBottom: 16 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
                         <span style={{ fontSize: 13, fontWeight: 600, color: '#1a1a1a' }}>Progresso da Meta</span>
                         <span style={{ fontSize: 13, fontWeight: 700, color: progresso >= 100 ? '#10b981' : '#5b4fcf' }}>{progresso.toFixed(1)}%</span>
@@ -1371,7 +1371,7 @@ export default function RelatoriosPage() {
                     </div>
 
                     {/* Tabela comparativo histórico */}
-                    <div style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 12, padding: 20, marginBottom: 16 }}>
+                    <div style={{ background: '#ffffff', border: '1.5px solid #e0ddd8', borderRadius: 12, padding: 20, marginBottom: 16 }}>
                       <h3 style={{ color: '#1a1a1a', fontSize: 14, fontWeight: 700, margin: '0 0 16px' }}>Comparativo Histórico</h3>
                       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                         <tbody>
@@ -1394,7 +1394,7 @@ export default function RelatoriosPage() {
 
                     {/* Calendário — período ATUAL (P1) com REALIZADO; META calculada por pesos do P2 */}
                     {todosDiasCalendario.length > 0 && (
-                      <div style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 12, padding: 20 }}>
+                      <div style={{ background: '#ffffff', border: '1.5px solid #e0ddd8', borderRadius: 12, padding: 20 }}>
                         <h3 style={{ color: '#1a1a1a', fontSize: 14, fontWeight: 700, margin: '0 0 4px' }}>FATURAMENTO DIÁRIO E METAS — {label1.toUpperCase()}</h3>
                         <p style={{ color: '#6b6860', fontSize: 11, margin: '0 0 16px' }}>Necessidade Base = média por dia da semana em <strong style={{color:'#5b4fcf'}}>{MESES_FULL[p1Mes]}/{p1Ano - 1}</strong>. META = Necessidade Base × fator configurado.</p>
                         <div style={{ overflowX: 'auto' }}>
@@ -1891,7 +1891,7 @@ export default function RelatoriosPage() {
                   </div>
 
                   {/* Tabela */}
-                  <div style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
+                  <div style={{ background: '#ffffff', border: '1.5px solid #e0ddd8', borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                       <thead>
                         <tr style={{ background: '#f5f4f0' }}>
@@ -1942,7 +1942,7 @@ export default function RelatoriosPage() {
                   </div>
 
                   {/* Rodapé */}
-                  <div style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 10, padding: '12px 20px' }}>
+                  <div style={{ background: '#ffffff', border: '1.5px solid #e0ddd8', borderRadius: 10, padding: '12px 20px' }}>
                     <span style={{ fontSize: 12, color: '#6b6860', fontStyle: 'italic' }}>
                       *A soma das metas redistribuídas = <strong style={{ color: '#5b4fcf' }}>{moeda(somaRedist)}</strong> (igual à meta em comissão)
                     </span>
@@ -2006,7 +2006,7 @@ export default function RelatoriosPage() {
                   </details>
 
                   {/* Card header com meta total e período de referência */}
-                  <div style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 12, padding: 20, marginBottom: 16 }}>
+                  <div style={{ background: '#ffffff', border: '1.5px solid #e0ddd8', borderRadius: 12, padding: 20, marginBottom: 16 }}>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'center' }}>
                       <div>
                         <div style={{ fontSize: 11, color: '#6b6860', fontWeight: 600, marginBottom: 4 }}>META TOTAL DO SALÃO (BRUTO)</div>
@@ -2039,7 +2039,7 @@ export default function RelatoriosPage() {
                   </div>
 
                   {/* Tabela de metas por profissional */}
-                  <div style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
+                  <div style={{ background: '#ffffff', border: '1.5px solid #e0ddd8', borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                       <thead>
                         <tr style={{ background: '#f5f4f0' }}>
@@ -2107,7 +2107,7 @@ export default function RelatoriosPage() {
                   </div>
 
                   {/* Rodapé */}
-                  <div style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 10, padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ background: '#ffffff', border: '1.5px solid #e0ddd8', borderRadius: 10, padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ fontSize: 12, color: '#6b6860', fontWeight: 600 }}>Soma das metas individuais:</span>
                     <span style={{ fontSize: 14, fontWeight: 800, color: '#5b4fcf' }}>{moeda(somaMetasIndividuais)}</span>
                     {metaEmComissoes > 0 && Math.abs(somaMetasIndividuais - metaEmComissoes) > 1 && (
@@ -2134,7 +2134,7 @@ export default function RelatoriosPage() {
               return (
                 <div>
                   {lista.map((p, i) => (
-                    <div key={i} style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 10, padding: '12px 16px', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div key={i} style={{ background: '#ffffff', border: '1.5px solid #e0ddd8', borderRadius: 10, padding: '12px 16px', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
                       <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'linear-gradient(135deg, #5b4fcf, #f43f8e)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 13, flexShrink: 0 }}>{(p.nome[0] || '?').toUpperCase()}</div>
                       <div style={{ flex: 1 }}>
                         <div style={{ color: '#1a1a1a', fontWeight: 600, fontSize: 13 }}>{p.nome}</div>
@@ -2209,7 +2209,7 @@ export default function RelatoriosPage() {
 
                     {/* RISCO e PERDIDOS — tabela com exportar */}
                     {(subAnalise === 'risco' || subAnalise === 'perdidos') && analiseDetalhe.length > 0 && (
-                      <div style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 12, overflow: 'hidden' }}>
+                      <div style={{ background: '#ffffff', border: '1.5px solid #e0ddd8', borderRadius: 12, overflow: 'hidden' }}>
                         <div style={{ padding: '12px 16px', borderBottom: '1px solid #e8e6e0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
                           <div>
                             <h3 style={{ color: subAnalise === 'risco' ? '#f97316' : '#ef4444', fontSize: 14, fontWeight: 700, margin: 0 }}>
@@ -2262,7 +2262,7 @@ export default function RelatoriosPage() {
                           <button onClick={() => exportarListaExcel(analiseDetalhe, 'vip')}
                             style={{ background: '#f59e0b', color: '#ffffff', border: 'none', borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>⬇ Exportar Excel</button>
                         </div>
-                        <div style={{ background: '#f5f4f0', border: '1px solid #f59e0b30', borderRadius: 12, overflow: 'hidden' }}>
+                        <div style={{ background: '#ffffff', border: '1.5px solid #f59e0b30', borderRadius: 12, overflow: 'hidden' }}>
                           {(analiseDetalhe as any[]).map((c: any, i: number) => (
                             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderBottom: '1px solid #e8e6e020' }}>
                               <div style={{ width: 28, height: 28, borderRadius: '50%', background: i === 0 ? '#f59e0b' : i === 1 ? '#767069' : i === 2 ? '#cd7c4f' : '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: i < 3 ? '#f5f4f0' : '#6b6860', flexShrink: 0 }}>#{i+1}</div>
@@ -2289,7 +2289,7 @@ export default function RelatoriosPage() {
                           <button onClick={() => exportarListaExcel(analiseDetalhe, 'regular')}
                             style={{ background: '#10b981', color: '#fff', border: 'none', borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>⬇ Exportar Excel</button>
                         </div>
-                        <div style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 12, overflow: 'hidden' }}>
+                        <div style={{ background: '#ffffff', border: '1.5px solid #e0ddd8', borderRadius: 12, overflow: 'hidden' }}>
                           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <thead><tr style={{ background: '#faf9f7' }}>
                               {['Cliente', 'Celular', 'LTV Total', 'Visitas', 'Última Visita', 'Frequência', 'Serviços'].map(h => (
@@ -2322,7 +2322,7 @@ export default function RelatoriosPage() {
                           <button onClick={() => exportarListaExcel(analiseDetalhe, 'novos')}
                             style={{ background: '#06b6d4', color: '#ffffff', border: 'none', borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>⬇ Exportar Excel</button>
                         </div>
-                        <div style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 12, overflow: 'hidden' }}>
+                        <div style={{ background: '#ffffff', border: '1.5px solid #e0ddd8', borderRadius: 12, overflow: 'hidden' }}>
                           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <thead><tr style={{ background: '#faf9f7' }}>
                               {['Cliente', 'Celular', 'LTV', 'Data da Visita', 'Serviços Realizados'].map(h => (
@@ -2367,7 +2367,7 @@ export default function RelatoriosPage() {
                             : <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 10 }}>
                                 {csCategorias.map((cat: any) => (
                                   <div key={cat.categoria} onClick={() => selecionarCategoria(cat.categoria)}
-                                    style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 12, padding: '16px 14px', cursor: 'pointer', transition: 'border .15s' }}
+                                    style={{ background: '#ffffff', border: '1.5px solid #e0ddd8', borderRadius: 12, padding: '16px 14px', cursor: 'pointer', transition: 'border .15s' }}
                                     onMouseEnter={e => (e.currentTarget.style.borderColor = '#5b4fcf')}
                                     onMouseLeave={e => (e.currentTarget.style.borderColor = '#e8e6e0')}>
                                     <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a1a', marginBottom: 8 }}>{cat.categoria}</div>
@@ -2385,7 +2385,7 @@ export default function RelatoriosPage() {
                             : <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 10 }}>
                                 {csServicos.map((svc: any) => (
                                   <div key={svc.servico} onClick={() => selecionarServico(svc.servico)}
-                                    style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 12, padding: '14px 14px', cursor: 'pointer' }}
+                                    style={{ background: '#ffffff', border: '1.5px solid #e0ddd8', borderRadius: 12, padding: '14px 14px', cursor: 'pointer' }}
                                     onMouseEnter={e => (e.currentTarget.style.borderColor = '#10b981')}
                                     onMouseLeave={e => (e.currentTarget.style.borderColor = '#e8e6e0')}>
                                     <div style={{ fontSize: 12, fontWeight: 700, color: '#1a1a1a', marginBottom: 6 }}>{svc.servico}</div>
@@ -2417,7 +2417,7 @@ export default function RelatoriosPage() {
                                     <span>Cliente</span><span>Celular</span><span>Visitas</span><span>Última visita</span>
                                   </div>
                                   {csClientes.map((c: any, i: number) => (
-                                    <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 140px 80px 100px', gap: 8, padding: '10px 12px', background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 8, fontSize: 12 }}>
+                                    <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 140px 80px 100px', gap: 8, padding: '10px 12px', background: '#ffffff', border: '1.5px solid #e0ddd8', borderRadius: 8, fontSize: 12 }}>
                                       <span style={{ color: '#1a1a1a', fontWeight: 600 }}>{c.cliente}</span>
                                       <span style={{ color: '#5b4fcf' }}>{c.celular || '—'}</span>
                                       <span style={{ color: '#767069' }}>{c.total_visitas}x</span>
@@ -2433,7 +2433,7 @@ export default function RelatoriosPage() {
 
                     {/* FREQUÊNCIA — barras clicáveis */}
                     {subAnalise === 'frequencia' && analiseDetalhe.length > 0 && (
-                      <div style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 12, padding: 20 }}>
+                      <div style={{ background: '#ffffff', border: '1.5px solid #e0ddd8', borderRadius: 12, padding: 20 }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                           {(analiseDetalhe as any[]).map((f: any) => (
                             <div key={f.label} onClick={() => abrirFreqModal(f)} style={{ cursor: 'pointer' }}
@@ -2471,7 +2471,7 @@ export default function RelatoriosPage() {
                       const lista = diasPT.map(d => ({ dia: d, fat: fatPorDia[d]?.fat || 0, count: fatPorDia[d]?.count || 0, ticket: fatPorDia[d]?.count ? (fatPorDia[d].fat / fatPorDia[d].count) : 0 }))
                       const maxFat = Math.max(...lista.map(l => l.fat), 1)
                       return (
-                        <div style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 12, overflow: 'hidden' }}>
+                        <div style={{ background: '#ffffff', border: '1.5px solid #e0ddd8', borderRadius: 12, overflow: 'hidden' }}>
                           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <thead><tr style={{ background: '#faf9f7' }}>
                               {['Dia', 'Faturamento', 'Dias com movimento', 'Ticket médio do dia', 'Proporção'].map(h => (
@@ -2545,7 +2545,7 @@ export default function RelatoriosPage() {
       {/* ── MODAL FREQUÊNCIA CLIENTES ── */}
       {freqModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: 20 }}>
-          <div style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 16, padding: 0, maxWidth: 900, width: '100%', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ background: '#ffffff', border: '1.5px solid #e0ddd8', borderRadius: 16, padding: 0, maxWidth: 900, width: '100%', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
             {/* Header */}
             <div style={{ padding: '16px 20px', borderBottom: '1px solid #e8e6e0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
               <div>
@@ -2597,7 +2597,7 @@ export default function RelatoriosPage() {
       {/* ── MODAL IMPORTAR ── */}
       {showImport && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: 20 }}>
-          <div style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 16, padding: 32, maxWidth: 480, width: '100%' }}>
+          <div style={{ background: '#ffffff', border: '1.5px solid #e0ddd8', borderRadius: 16, padding: 32, maxWidth: 480, width: '100%' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
               <h2 style={{ color: '#1a1a1a', fontSize: 18, fontWeight: 700, margin: 0 }}>Importar Planilha</h2>
               <button onClick={() => setShowImport(false)} style={{ background: 'transparent', border: 'none', color: '#767069', cursor: 'pointer', fontSize: 18 }}>✕</button>

@@ -334,7 +334,7 @@ function InfoBtn({ id, className }: { id: string; className?: string }) {
                 <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{color:'#7c6fe0'}}>Exemplo prático</p>
                 <p className="text-xs leading-relaxed" style={{color:'#1a1a1a'}}>{info.exemplo}</p>
               </div>
-              <div className="rounded-xl p-3" style={{background:'#10b98115',border:'1px solid #10b98130'}}>
+              <div className="rounded-xl p-3" style={{background:'#10b98115',border:'1.5px solid #10b98160'}}>
                 <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{color:'#059669'}}>Por que é importante?</p>
                 <p className="text-xs leading-relaxed" style={{color:'#3a3835'}}>{info.porque}</p>
               </div>
@@ -1364,7 +1364,7 @@ Use números reais. Seja direto.`
                           onChange={e=>{const nd=[...despInd];nd[i]={...nd[i],valor:e.target.value};setDespInd(nd)}}
                           placeholder="0"
                           className="w-full pl-6 pr-2 py-1 rounded-lg text-xs text-white focus:outline-none"
-                          style={{background:'#f5f4f0',border:`1px solid ${v>0?'#dedad460':'#ffffff'}`}}/>
+                          style={{background: '#ffffff', border: `1.5px solid ${{v>0?'#dedad460':'#ffffff'}}`}}/>
                       </div>
                     </div>
                     <div className="col-span-2 text-xs text-center" style={{color:v>0?cor:'#dedad4'}}>
@@ -1863,10 +1863,10 @@ Use números reais. Seja direto.`
                     <div className="p-5">
                       <p className="text-xs font-bold mb-3" style={{color:'#767069'}}>💡 O QUE FAZER AGORA</p>
                       <div className="space-y-2">
-                        {resultOp < 0 && <div className="flex gap-2 p-3 rounded-xl" style={{background:'#ef444415',border:'1px solid #ef444430'}}><span>🚨</span><p className="text-xs" style={{color:'#dc2626'}}>Seus gastos estão maiores que sua receita. Revise urgentemente as despesas diretas e veja se é possível aumentar o faturamento.</p></div>}
+                        {resultOp < 0 && <div className="flex gap-2 p-3 rounded-xl" style={{background:'#ef444415',border:'1.5px solid #ef444460'}}><span>🚨</span><p className="text-xs" style={{color:'#dc2626'}}>Seus gastos estão maiores que sua receita. Revise urgentemente as despesas diretas e veja se é possível aumentar o faturamento.</p></div>}
                         {fatN < pe && pe > 0 && resultOp >= 0 && <div className="flex gap-2 p-3 rounded-xl" style={{background:'#f59e0b15',border:'1px solid #f59e0b30'}}><span>⚠️</span><p className="text-xs" style={{color:'#92400e'}}>Você está abaixo do ponto de equilíbrio. Tente aumentar o faturamento em {fmtR(pe-fatN)} ou reduzir os custos fixos.</p></div>}
                         {pe > 0 && fatN >= pe && fatN < peLucro && <div className="flex gap-2 p-3 rounded-xl" style={{background:'#5b4fcf15',border:'1px solid #5b4fcf30'}}><span>📈</span><p className="text-xs" style={{color:'#7c6fe0'}}>Você cobre os custos, mas ainda não atingiu sua meta de lucro. Falta {fmtR(peLucro-fatN)} de faturamento. Adicione mais clientes ou suba o ticket médio.</p></div>}
-                        {peLucro > 0 && fatN >= peLucro && <div className="flex gap-2 p-3 rounded-xl" style={{background:'#10b98115',border:'1px solid #10b98130'}}><span>🏆</span><p className="text-xs" style={{color:'#059669'}}>Excelente! Você superou a meta de lucro. Agora pense em guardar parte do lucro na reserva de emergência e considere reinvestir no salão.</p></div>}
+                        {peLucro > 0 && fatN >= peLucro && <div className="flex gap-2 p-3 rounded-xl" style={{background:'#10b98115',border:'1.5px solid #10b98160'}}><span>🏆</span><p className="text-xs" style={{color:'#059669'}}>Excelente! Você superou a meta de lucro. Agora pense em guardar parte do lucro na reserva de emergência e considere reinvestir no salão.</p></div>}
                         {totalReservaAcum < capGiro && capGiro > 0 && (
                           <div className="flex gap-2 p-3 rounded-xl" style={{background:'#06b6d415',border:'1px solid #06b6d430'}}>
                             <span>💰</span>
@@ -1880,7 +1880,7 @@ Use números reais. Seja direto.`
                             </div>
                           </div>
                         )}
-                        {totalReservaAcum >= capGiro && capGiro > 0 && <div className="flex gap-2 p-3 rounded-xl" style={{background:'#10b98115',border:'1px solid #10b98130'}}><span>🏦</span><p className="text-xs" style={{color:'#059669'}}>✅ Sua reserva de emergência está completa! Você tem {fmtR(totalReservaAcum)} guardados — equivalente a {((totalReservaAcum/capGiro)*3).toFixed(1)} meses de custos.</p></div>}
+                        {totalReservaAcum >= capGiro && capGiro > 0 && <div className="flex gap-2 p-3 rounded-xl" style={{background:'#10b98115',border:'1.5px solid #10b98160'}}><span>🏦</span><p className="text-xs" style={{color:'#059669'}}>✅ Sua reserva de emergência está completa! Você tem {fmtR(totalReservaAcum)} guardados — equivalente a {((totalReservaAcum/capGiro)*3).toFixed(1)} meses de custos.</p></div>}
                         <div className="flex gap-2 p-3 rounded-xl" style={{background:'#5b4fcf15',border:'1px solid #5b4fcf30'}}><span>📅</span><p className="text-xs" style={{color:'#7c6fe0'}}>Salve os dados deste mês clicando em <strong>"Salvar {MESES_NOMES[mesSel]}"</strong> no topo para comparar com os próximos meses.</p></div>
                       </div>
                     </div>
@@ -2199,7 +2199,7 @@ Use números reais. Seja direto.`
                             onChange={e=>setServicos(p=>p.map(x=>x.id===s.id?{...x,[f.k]:e.target.value}:x))}
                             placeholder={f.ph}
                             className={`w-full ${f.pre?'pl-7':'pl-3'} ${f.suf?'pr-6':'pr-2'} py-2 rounded-lg text-sm text-white focus:outline-none`}
-                            style={{background:'#f5f4f0',border:`1px solid ${f.aviso?'#f59e0b40':n((s as any)[f.k])>0?'#5b4fcf40':'#ffffff'}`}}/>
+                            style={{background: '#ffffff', border: `1.5px solid ${{f.aviso?'#f59e0b40':n((s as any)[f.k])>0?'#5b4fcf40':'#ffffff'}}`}}/>
                           {f.suf&&<span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#767069'}}>{f.suf}</span>}
                         </div>
                       ))}
@@ -2523,7 +2523,7 @@ Use números reais. Seja direto.`
                       <span className="text-sm" style={{color:'#767069'}}>m²</span>
                     </div>
                     {fatSugSala>0&&(
-                      <div className="mt-3 p-3 rounded-lg" style={{background:'#10b98115',border:'1px solid #10b98130'}}>
+                      <div className="mt-3 p-3 rounded-lg" style={{background:'#10b98115',border:'1.5px solid #10b98160'}}>
                         <p className="text-xs" style={{color:'#767069'}}>Faturamento sugerido para {mSala} m²:</p>
                         <p className="text-2xl font-bold mt-1" style={{color:'#059669'}}>{fmtR(fatSugSala)}/mês</p>
                       </div>

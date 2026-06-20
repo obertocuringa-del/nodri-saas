@@ -333,7 +333,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               { label: 'BLOQUEADOS',       onClick: () => setFiltro('bloqueados'), active: filtro === 'bloqueados' },
             ].map(item => (
               <button key={item.label} onClick={item.onClick}
-                className={`w-full text-left px-3 py-2 rounded-md text-[11px] font-medium tracking-wide transition-colors ${item.active ? 'bg-white/6 text-nodri-t1' : 'text-nodri-t3 hover:text-nodri-t2 hover:bg-white/3'}`}>
+                className={`w-full text-left px-3 py-2 rounded-md text-[11px] font-medium tracking-wide transition-colors ${item.active ? 'bg-black/6 text-nodri-t1' : 'text-nodri-t3 hover:text-nodri-t2 hover:bg-black/4'}`}>
                 {item.label}
               </button>
             ))}
@@ -345,7 +345,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
             {TODAS_CATEGORIAS.map(cat => (
               <div key={cat}>
                 <button onClick={() => setOpenDropdown(openDropdown === cat ? null : cat)}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-[11px] font-medium tracking-wide transition-colors ${openDropdown === cat ? 'bg-white/6 text-nodri-t1' : 'text-nodri-t3 hover:text-nodri-t2 hover:bg-white/3'}`}>
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-[11px] font-medium tracking-wide transition-colors ${openDropdown === cat ? 'bg-black/6 text-nodri-t1' : 'text-nodri-t3 hover:text-nodri-t2 hover:bg-black/4'}`}>
                   <span className="truncate uppercase">{cat}</span>
                   <ChevronDown size={11} className={`shrink-0 transition-transform ml-1 ${openDropdown === cat ? 'rotate-180' : ''}`} />
                 </button>
@@ -356,7 +356,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                         item.title.toLowerCase().replace(/^\d+\.\s*/, '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-')
                       return (
                         <a key={i} href={`/conteudo/${slug}`}
-                          className="flex items-center gap-1.5 px-2 py-1.5 rounded text-[11px] font-medium text-nodri-t3 hover:text-nodri-t1 hover:bg-white/3 transition-colors truncate uppercase">
+                          className="flex items-center gap-1.5 px-2 py-1.5 rounded text-[11px] font-medium text-nodri-t3 hover:text-nodri-t1 hover:bg-black/4 transition-colors truncate uppercase">
                           <ArrowRight size={9} className="shrink-0 opacity-50" />{item.title.replace(/^\d+\.\s*/, '')}
                         </a>
                       )
@@ -391,7 +391,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
 
           {/* Rodapé da sidebar */}
           <div className="p-2 border-t border-nodri-border space-y-1">
-            <div className="flex items-center gap-2 px-2 py-1.5 bg-white/3 rounded-lg border border-nodri-border">
+            <div className="flex items-center gap-2 px-2 py-1.5 bg-nodri-surface rounded-lg border border-nodri-border">
               <div className="w-6 h-6 rounded-md flex items-center justify-center text-[9px] font-bold text-white shrink-0"
                 style={{ background: 'linear-gradient(135deg, #5b4fcf, #f43f8e)' }}>{initials}</div>
               <div className="flex-1 min-w-0">
@@ -427,7 +427,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               </button>
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <h1 className="font-syne font-bold text-[13px] text-nodri-t1 truncate">Módulos</h1>
-                <span className="text-[11px] text-nodri-t2 hidden sm:inline"><span className="text-nodri-cyan font-semibold">{totalAtivos}</span>/{totalModulos}</span>
+                <span className="text-[11px] text-nodri-t2 hidden sm:inline"><span className="text-nodri-cyan font-bold">{totalAtivos}</span>/{totalModulos}</span>
               </div>
               {configPrograma?.link && (
                 <div className="hidden md:flex items-center gap-2">
@@ -450,7 +450,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                 <input type="text" placeholder="Buscar..." value={busca} onChange={e => setBusca(e.target.value)}
                   className="bg-nodri-card border border-nodri-border rounded-lg pl-7 pr-3 py-1.5 text-[11px] outline-none focus:border-nodri-cyan/40 w-28 sm:w-40" />
               </div>
-              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-nodri-cyan/7 border border-nodri-cyan/17 rounded-lg text-[10.5px] text-nodri-cyan font-semibold">
+              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-nodri-cyan/7 border border-nodri-cyan/17 rounded-lg text-[10.5px] text-nodri-cyan font-bold">
                 <CheckCircle size={12} />{totalAtivos}/{totalModulos}
               </div>
             </div>
@@ -498,80 +498,52 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
             const emManutencao = !!modulo.em_manutencao
             return (
             <div key={modulo.id}
-              className="p-4 flex flex-col cursor-pointer transition-all hover:-translate-y-0.5 relative overflow-hidden rounded-xl border"
+              className="p-4 flex flex-col cursor-pointer transition-all hover:-translate-y-0.5 relative overflow-hidden rounded-xl"
               style={{
-                background: emManutencao ? '#fff0f0' : modulo.habilitado ? '#e6f7ef' : '#f5f4f0',
-                borderColor: emManutencao ? 'rgba(239,68,68,0.35)' : modulo.habilitado ? 'rgba(34,197,94,0.2)' : 'rgba(255,255,255,0.04)',
-                opacity: emManutencao ? 0.9 : modulo.habilitado ? 1 : 0.5,
-                boxShadow: modulo.habilitado && !emManutencao ? 'inset 0 0 30px rgba(34,197,94,0.04)' : undefined,
+                background: '#ffffff',
+                border: emManutencao ? '1.5px solid #fca5a5' : modulo.habilitado ? '1.5px solid #e8e6e0' : '1.5px solid #e8e6e0',
+                borderLeft: emManutencao ? '4px solid #ef4444' : modulo.habilitado ? '4px solid #16a34a' : '4px solid #d1d5db',
+                opacity: modulo.habilitado || emManutencao ? 1 : 0.55,
               }}>
 
-              {/* Faixa de manutenção ou ativo no topo */}
-              {emManutencao && (
-                <div className="absolute top-0 left-0 right-0 h-0.5" style={{ background: '#ef4444' }} />
-              )}
-              {modulo.habilitado && !emManutencao && (
-                <div className="absolute top-0 left-0 right-0 h-px" style={{ background: 'rgba(34,197,94,0.4)' }} />
-              )}
-
-              <div className="flex justify-end mb-3">
-                <span className="text-[9px] px-1.5 py-0.5 rounded-full"
-                  style={{ background: 'rgba(255,255,255,0.06)', color: '#6b6860', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-[9px] px-1.5 py-0.5 rounded"
+                  style={{ background: '#f5f4f0', color: '#767069', border: '1px solid #e8e6e0' }}>
                   v{modulo.versao}
                 </span>
+                {emManutencao && <span style={{ fontSize: 9, background: '#fee2e2', color: '#dc2626', border: '1px solid #fca5a5', padding: '1px 6px', borderRadius: 4, fontWeight: 700 }}>MANUTENÇÃO</span>}
               </div>
 
               <div className="font-syne font-bold text-[13px] uppercase tracking-wide leading-snug mb-1.5"
-                style={{ color: emManutencao ? '#f87171' : modulo.habilitado ? '#d1fae5' : '#6b6860' }}>
+                style={{ color: emManutencao ? '#dc2626' : '#1a1a1a' }}>
                 {modulo.nome}
               </div>
-              <p className="text-[10px] leading-relaxed mb-4 flex-1" style={{ color: '#6b6860' }}>
+              <p className="text-[10px] leading-relaxed mb-4 flex-1" style={{ color: '#767069' }}>
                 {modulo.descricao}
               </p>
 
               <div className="flex items-center justify-between gap-2 mt-auto">
-                {/* Badge de status */}
-                {emManutencao ? (
-                  <div className="flex items-center gap-1">
-                    <span className="flex items-center gap-1 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded"
-                      style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.4)' }}>
-                      <Wrench size={9} /> MANUTENÇÃO
-                    </span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full"
-                      style={{
-                        background: modulo.habilitado ? '#059669' : '#ef4444',
-                        boxShadow: modulo.habilitado ? '0 0 6px rgba(110,231,183,0.5)' : 'none'
-                      }} />
-                    <span className="text-[9.5px] font-medium"
-                      style={{ color: modulo.habilitado ? '#059669' : '#ef4444' }}>
-                      {modulo.habilitado ? 'Ativado' : 'Bloqueado'}
-                    </span>
-                  </div>
-                )}
+                <div className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: emManutencao ? '#ef4444' : modulo.habilitado ? '#16a34a' : '#9ca3af' }} />
+                  <span className="text-[9.5px] font-semibold"
+                    style={{ color: emManutencao ? '#dc2626' : modulo.habilitado ? '#15803d' : '#767069' }}>
+                    {emManutencao ? 'Indisponível' : modulo.habilitado ? 'Ativado' : 'Bloqueado'}
+                  </span>
+                </div>
 
-                {/* Botão */}
                 <button onClick={() => handleAbrir(modulo)}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-bold transition-all"
                   style={emManutencao ? {
-                    background: 'rgba(239,68,68,0.1)',
-                    color: '#ef4444',
-                    border: '1px solid rgba(239,68,68,0.3)',
+                    background: '#fee2e2', color: '#dc2626', border: '1px solid #fca5a5',
                   } : modulo.habilitado ? {
-                    background: 'rgba(255,255,255,0.08)',
-                    color: '#3a3835',
-                    border: '1px solid rgba(255,255,255,0.1)',
+                    background: '#5b4fcf', color: '#ffffff', border: 'none',
                   } : {
-                    background: 'transparent',
-                    color: '#8b5cf6',
-                    border: '1px solid rgba(139,92,246,0.3)',
+                    background: '#f0eeff', color: '#5b4fcf', border: '1px solid #c4b5fd',
                   }}>
                   {emManutencao
-                    ? <><Wrench size={9} /> Indisponível</>
+                    ? <><Wrench size={9} /> Ver</>
                     : modulo.habilitado
-                      ? <><Play size={9} fill="#3a3835" /> Abrir</>
+                      ? <><Play size={9} fill="#ffffff" /> Abrir</>
                       : <><Zap size={9} /> Ativar</>}
                 </button>
               </div>
