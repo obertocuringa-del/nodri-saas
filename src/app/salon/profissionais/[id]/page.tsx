@@ -2376,7 +2376,74 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
         {tab === 'cadastro' && (
           <div>
           <div className="flex justify-end mb-4">
-            <button onClick={() => imprimirAba(refCadastro, 'Dados Cadastrais')}
+            <button onClick={() => {
+              const sched = (() => { try { return JSON.parse(form.habilidades||'{}') } catch { return {} } })() as any
+              const resp  = (() => { try { return JSON.parse(form.contato_responsavel||'{}') } catch { return { nome: form.contato_responsavel||'', tel: '' } } })() as any
+              const MESES_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
+              const agora = new Date()
+              const dataStr = `${agora.getDate()} de ${MESES_PT[agora.getMonth()]} de ${agora.getFullYear()}`
+              const nomeProf = prof?.apelido || prof?.nome_completo || 'Profissional'
+              const CHECKLIST_ITEMS = [
+                {key:'dados_pessoais_completo',label:'Dados Pessoais completo?'},
+                {key:'perfil_pessoal_completo',label:'Perfil Pessoal completo?'},
+                {key:'dados_profissionais_completo',label:'Dados Profissionais completo?'},
+                {key:'contrato_trabalho',label:'Profissional possui contrato?'},
+                {key:'ficha_entrevista',label:'Ficha para Entrevista?'},
+                {key:'processo_contratacao',label:'Processo de Contratação?'},
+                {key:'materiais_trabalho',label:'Materiais para Trabalho?'},
+                {key:'perfil_ideal',label:'Perfil Ideal?'},
+                {key:'horarios_folgas',label:'Horários e Folgas?'},
+                {key:'distrato',label:'Distrato?'},
+                {key:'tem_certificados',label:'Certificados?'},
+                {key:'plano_carreira',label:'Plano de Carreira?'},
+              ]
+              const row = (l:string, v:string) => `<tr><td style="width:40%;font-weight:600;color:#555;padding:6px 10px;border-bottom:1px solid #eee">${l}</td><td style="padding:6px 10px;border-bottom:1px solid #eee;color:#1a1a2e">${v||'—'}</td></tr>`
+              const section = (title:string, content:string) => `<div style="margin-bottom:18px;break-inside:avoid"><div style="background:#5b4fcf;color:#fff;padding:6px 12px;border-radius:6px 6px 0 0;font-weight:700;font-size:10pt">${title}</div><table style="width:100%;border-collapse:collapse;border:1px solid #ddd;border-top:none">${content}</table></div>`
+              const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Dados Cadastrais — ${nomeProf}</title>
+<style>@page{size:A4;margin:16mm 14mm 16mm 14mm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;font-size:10pt;color:#1a1a2e;background:#fff;line-height:1.5}.header{display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid #5b4fcf;padding-bottom:10px;margin-bottom:20px}.brand{font-size:20pt;font-weight:900;color:#5b4fcf}.meta{text-align:right;font-size:8.5pt;color:#555}.meta strong{display:block;font-size:10pt;color:#1a1a2e}table tr:nth-child(even) td{background:#f9f9ff}td{font-size:9.5pt}.footer{position:fixed;bottom:0;left:0;right:0;border-top:1px solid #ddd;padding:5px 14mm;display:flex;justify-content:space-between;font-size:7.5pt;color:#999;background:#fff}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style>
+</head><body>
+<div class="header"><div class="brand">NODRI</div><div class="meta"><strong>Dados Cadastrais — ${nomeProf}</strong>Cargo: ${form.cargo||'—'}<br>Gerado em: ${dataStr}</div></div>
+${section('Dados Pessoais',
+  row('Nome Completo', form.nome_completo||'')+
+  row('Apelido', form.apelido||'')+
+  row('Cargo / Categoria', form.cargo||'')+
+  row('CPF', form.cpf||'')+
+  row('RG', form.rg||'')+
+  row('Data de Aniversário', form.data_aniversario ? new Date(form.data_aniversario+'T00:00:00').toLocaleDateString('pt-BR') : '')+
+  row('Email', form.email||'')+
+  row('Endereço', form.endereco||'')
+)}
+${section('Contato do Responsável',
+  row('Nome do Responsável', resp.nome||'')+
+  row('Telefone do Responsável', resp.tel||'')
+)}
+${section('Horários e Disponibilidade',
+  row('Dias de Folga', (sched.dias_folga||[]).join(', ')||'Não informado')+
+  row('Horário de Trabalho', sched.h_inicio && sched.h_fim ? `${sched.h_inicio} às ${sched.h_fim}` : 'Não informado')+
+  row('Observação de Horário', sched.h_obs||'')
+)}
+${section('Dados Profissionais',
+  row('CNPJ', form.cnpj||'')+
+  row('Dados Bancários', form.conta_bancaria||'')
+)}
+${section('Checklist de Onboarding',
+  CHECKLIST_ITEMS.map(c=>{
+    const v = (form as any)[c.key]
+    const sim = v===true||v==='true'
+    return `<tr><td style="padding:6px 10px;border-bottom:1px solid #eee;width:70%;font-size:9.5pt">${c.label}</td><td style="padding:6px 10px;border-bottom:1px solid #eee;font-weight:700;color:${sim?'#166534':'#991b1b'};font-size:9.5pt">${sim?'SIM':'NÃO'}</td></tr>`
+  }).join('')
+)}
+${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional Ativo':'Inativo'))}
+<div class="footer"><span>NODRI — Sistema de Gestão de Salão</span><span>${nomeProf} · ${dataStr}</span></div>
+</body></html>`
+              const iframe = document.createElement('iframe')
+              iframe.style.cssText='position:fixed;top:-9999px;left:-9999px;width:210mm;height:297mm;'
+              document.body.appendChild(iframe)
+              const doc=iframe.contentDocument||iframe.contentWindow?.document
+              if(!doc){document.body.removeChild(iframe);return}
+              doc.open();doc.write(html);doc.close()
+              setTimeout(()=>{iframe.contentWindow?.print();setTimeout(()=>document.body.removeChild(iframe),2000)},600)
+            }}
               className="flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold rounded-lg border border-nodri-border text-nodri-t2 hover:border-nodri-cyan hover:text-nodri-cyan transition-colors">
               🖨️ Imprimir
             </button>
@@ -2411,8 +2478,75 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
                     <div><label className={labelCls}>Data de Aniversário</label><input type="date" value={form.data_aniversario||''} onChange={e=>set('data_aniversario',e.target.value)} className={inputCls}/></div>
                     <div><label className={labelCls}>Email</label><input type="email" value={form.email||''} onChange={e=>set('email',e.target.value)} className={inputCls}/></div>
                     <div className="col-span-2"><label className={labelCls}>Endereço</label><input value={form.endereco||''} onChange={e=>set('endereco',e.target.value)} className={inputCls}/></div>
-                    <div><label className={labelCls}>Contato do Responsável</label><input value={form.contato_responsavel||''} onChange={e=>set('contato_responsavel',e.target.value)} className={inputCls}/></div>
-                    <div><label className={labelCls}>Habilidades (texto livre)</label><input value={form.habilidades||''} onChange={e=>set('habilidades',e.target.value)} className={inputCls}/></div>
+                    {/* Contato do Responsável — nome e telefone separados */}
+                    <div><label className={labelCls}>Nome do Responsável</label>
+                      <input value={(() => { try { return JSON.parse(form.contato_responsavel||'{}').nome||'' } catch { return form.contato_responsavel||'' } })()}
+                        onChange={e => { const cur = (() => { try { return JSON.parse(form.contato_responsavel||'{}') } catch { return {} } })(); set('contato_responsavel', JSON.stringify({...cur, nome: e.target.value})) }}
+                        placeholder="Nome do responsável" className={inputCls}/>
+                    </div>
+                    <div><label className={labelCls}>Telefone do Responsável</label>
+                      <input value={(() => { try { return JSON.parse(form.contato_responsavel||'{}').tel||'' } catch { return '' } })()}
+                        onChange={e => { const cur = (() => { try { return JSON.parse(form.contato_responsavel||'{}') } catch { return {} } })(); set('contato_responsavel', JSON.stringify({...cur, tel: e.target.value})) }}
+                        placeholder="(00) 00000-0000" className={inputCls}/>
+                    </div>
+                  </div>
+
+                  {/* Dias de Folga */}
+                  <div className="mt-3">
+                    <label className={labelCls}>Dias de Folga</label>
+                    {(() => {
+                      const sched = (() => { try { return JSON.parse(form.habilidades||'{}') } catch { return {} } })() as any
+                      const folgas: string[] = sched.dias_folga || []
+                      const dias = ['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo']
+                      return (
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          {dias.map(d => {
+                            const on = folgas.includes(d)
+                            return (
+                              <button key={d} type="button"
+                                onClick={() => {
+                                  const novo = on ? folgas.filter(x=>x!==d) : [...folgas, d]
+                                  set('habilidades', JSON.stringify({...sched, dias_folga: novo}))
+                                }}
+                                className={`px-3 py-1 rounded-lg text-[11px] font-semibold border transition-colors ${on ? 'bg-nodri-cyan text-nodri-dark border-nodri-cyan' : 'bg-nodri-card text-nodri-t2 border-nodri-border hover:border-nodri-cyan'}`}>
+                                {d}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )
+                    })()}
+                  </div>
+
+                  {/* Horário de Trabalho */}
+                  <div className="mt-3">
+                    <label className={labelCls}>Horário de Trabalho</label>
+                    {(() => {
+                      const sched = (() => { try { return JSON.parse(form.habilidades||'{}') } catch { return {} } })() as any
+                      const horas = Array.from({length:18},(_,i)=>`${String(i+6).padStart(2,'0')}:00`)
+                      return (
+                        <div className="grid grid-cols-2 gap-3 mt-1">
+                          <div>
+                            <label className={labelCls}>De</label>
+                            <select value={sched.h_inicio||''} onChange={e=>set('habilidades',JSON.stringify({...sched,h_inicio:e.target.value}))} className={inputCls}>
+                              <option value="">Selecione</option>
+                              {horas.map(h=><option key={h} value={h}>{h}</option>)}
+                            </select>
+                          </div>
+                          <div>
+                            <label className={labelCls}>Até</label>
+                            <select value={sched.h_fim||''} onChange={e=>set('habilidades',JSON.stringify({...sched,h_fim:e.target.value}))} className={inputCls}>
+                              <option value="">Selecione</option>
+                              {horas.map(h=><option key={h} value={h}>{h}</option>)}
+                            </select>
+                          </div>
+                          <div className="col-span-2">
+                            <label className={labelCls}>Observação de Horário</label>
+                            <input value={sched.h_obs||''} onChange={e=>set('habilidades',JSON.stringify({...sched,h_obs:e.target.value}))} placeholder="Ex: Nas terças-feiras entra às 14:00" className={inputCls}/>
+                          </div>
+                        </div>
+                      )
+                    })()}
                   </div>
 
                   {/* Seletor de Serviços Habilitados */}
