@@ -256,6 +256,30 @@ export default function RelatoriosPage() {
   const fileRef = useRef<HTMLInputElement>(null)
   const [realizadoPorId, setRealizadoPorId] = useState<Record<string, number>>({})
 
+  // Filtro de data para Mais Relatórios (Este ano como padrão)
+  const anoAtualRel = new Date().getFullYear()
+  const [analiseDe, setAnaliseDe] = useState(`${anoAtualRel}-01-01`)
+  const [analiseAte, setAnaliseAte] = useState(`${anoAtualRel}-12-31`)
+
+  // Utilitário de impressão para relatórios
+  function abrirImpressaoRel(html: string) {
+    const win = window.open('', '_blank', 'width=900,height=700')
+    if (!win) return
+    win.document.write(html)
+    win.document.close()
+    win.focus()
+    setTimeout(() => { win.print() }, 600)
+  }
+
+  const CSS_REL = `@page{size:A4;margin:14mm 13mm 16mm 13mm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;font-size:9.5pt;color:#1a1a2e;background:#fff;line-height:1.5}.hd{display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid #5b4fcf;padding-bottom:8px;margin-bottom:16px}.brand{font-size:18pt;font-weight:900;color:#5b4fcf}.meta{text-align:right;font-size:8pt;color:#555}.sec{margin-bottom:16px;break-inside:avoid}.sec-title{background:#5b4fcf;color:#fff;padding:5px 10px;border-radius:5px 5px 0 0;font-weight:700;font-size:9.5pt}.tbl{width:100%;border-collapse:collapse;border:1px solid #ddd;border-top:none}.tbl td,.tbl th{padding:5px 9px;border-bottom:1px solid #eee;font-size:9pt}.tbl th{background:#f5f4f0;font-weight:700;color:#555}.tbl tr:nth-child(even) td{background:#f9f9ff}.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}.card{border:1px solid #ddd;border-radius:6px;padding:8px 10px;break-inside:avoid}.card-lbl{font-size:7.5pt;color:#767069;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}.card-val{font-size:14pt;font-weight:800;color:#1a1a2e}.card-sub{font-size:8pt;color:#555;margin-top:2px}.footer{position:fixed;bottom:0;left:0;right:0;border-top:1px solid #ddd;padding:4px 13mm;display:flex;justify-content:space-between;font-size:7pt;color:#999;background:#fff}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}`
+
+  function wrapRel(titulo: string, corpo: string) {
+    const MESES_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
+    const agora = new Date()
+    const dataStr = `${agora.getDate()} de ${MESES_PT[agora.getMonth()]} de ${agora.getFullYear()}`
+    return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${titulo}</title><style>${CSS_REL}</style></head><body><div class="hd"><div class="brand">NODRI</div><div class="meta"><strong>${titulo}</strong><br>Gerado em: ${dataStr}</div></div>${corpo}<div class="footer"><span>NODRI — Sistema de Gestão de Salão</span><span>${titulo} · ${dataStr}</span></div></body></html>`
+  }
+
   // Fecha dropdown ao clicar fora
   useEffect(() => {
     if (!dropdownAberto) return
@@ -934,6 +958,15 @@ export default function RelatoriosPage() {
             {/* ════════ ABA GERAL ════════ */}
             {aba === 'geral' && (
               <div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+                  <button onClick={() => {
+                    const corpo = `<div class="sec"><div class="sec-title">Resumo Geral — ${label1} vs ${label2}</div>
+<table class="tbl"><thead><tr><th>Indicador</th><th style="text-align:right">${label1}</th><th style="text-align:right">${label2}</th><th style="text-align:right">Variação</th></tr></thead><tbody>
+${[['Faturamento Total',r1.fat_total,r2.fat_total],['Ticket Médio',r1.ticket,r2.ticket],['Clientes Atendidos',r1.clientes,r2.clientes],['Clientes Novos',r1.novos,r2.novos],['Fat. Serviços',r1.fat_srv,r2.fat_srv],['Fat. Produtos',r1.fat_prd,r2.fat_prd]].map(([lbl,v1,v2])=>{const p=v2>0?((Number(v1)-Number(v2))/Number(v2)*100):0;const cor=p>=0?'#166534':'#991b1b';return `<tr><td>${lbl}</td><td style="text-align:right;font-weight:700">${typeof v1==='number'&&lbl.toString().includes('Clientes')?Number(v1).toLocaleString('pt-BR'):moeda(Number(v1))}</td><td style="text-align:right;color:#777">${typeof v2==='number'&&lbl.toString().includes('Clientes')?Number(v2).toLocaleString('pt-BR'):moeda(Number(v2))}</td><td style="text-align:right;font-weight:700;color:${cor}">${p>=0?'+':''}${p.toFixed(1)}%</td></tr>`}).join('')}
+</tbody></table></div>`
+                    abrirImpressaoRel(wrapRel('Relatório Geral', corpo))
+                  }} style={{ display:'flex',alignItems:'center',gap:6,padding:'6px 14px',border:'1px solid #e0ddd8',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',background:'#fff',color:'#767069' }}>🖨️ Imprimir</button>
+                </div>
                 {/* KPIs */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 10, marginBottom: 20 }}>
                   {[
@@ -1875,6 +1908,18 @@ export default function RelatoriosPage() {
               if (aba === 'redistribuicao') return (
                 <div>
                   {btnSalvarIA}
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
+                    <button onClick={() => {
+                      const rows = redistResultado.map(r => {
+                        const nom = r.prof.apelido || r.prof.nome_completo
+                        const seta = r.tipo === 'doador' ? '↓' : r.tipo === 'receptor' ? '↑' : ''
+                        const cor = r.tipo === 'doador' ? '#991b1b' : r.tipo === 'receptor' ? '#166534' : '#555'
+                        return `<tr><td><strong>${nom.toUpperCase()}</strong></td><td>${r.prof.cargo||'—'}</td><td style="text-align:right">${moeda(r.metaOriginal)}</td><td style="text-align:right;font-weight:700;color:${cor}">${seta} ${moeda(r.metaRedistribuida)}</td><td style="text-align:right">${r.diferenca>0.5?'+':r.diferenca<-0.5?'':''} ${r.diferenca>0.5||r.diferenca<-0.5?moeda(r.diferenca):'—'}</td><td style="font-size:8pt;color:#555">${r.motivo}</td></tr>`
+                      }).join('')
+                      const corpo = `<div class="cards"><div class="card"><div class="card-lbl">Surplus Redistribuído</div><div class="card-val" style="color:#5b4fcf">${moeda(surplus)}</div></div><div class="card"><div class="card-lbl">Profis. Ajustados</div><div class="card-val">${totalAjustados}</div></div><div class="card"><div class="card-lbl">Doadores / Receptores</div><div class="card-val">${redistResultado.filter(r=>r.tipo==='doador').length} / ${redistResultado.filter(r=>r.tipo==='receptor').length}</div></div></div><div class="sec"><div class="sec-title">Redistribuição de Metas — ${periodoRefLabel}</div><table class="tbl"><thead><tr><th>Profissional</th><th>Cargo</th><th style="text-align:right">Meta Original</th><th style="text-align:right">Meta Ajustada</th><th style="text-align:right">Diferença</th><th>Motivo</th></tr></thead><tbody>${rows}</tbody></table></div>`
+                      abrirImpressaoRel(wrapRel('Redistribuição de Metas', corpo))
+                    }} style={{ display:'flex',alignItems:'center',gap:6,padding:'6px 14px',border:'1px solid #e0ddd8',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',background:'#fff',color:'#767069' }}>🖨️ Imprimir</button>
+                  </div>
                   {/* Card resumo */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10, marginBottom: 16 }}>
                     {[
@@ -1895,8 +1940,8 @@ export default function RelatoriosPage() {
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                       <thead>
                         <tr style={{ background: '#f5f4f0' }}>
-                          {['PROFISSIONAL', 'CARGO', 'META ORIGINAL', 'META AJUSTADA', 'DIFERENÇA', 'MOTIVO', 'REALIZADO'].map((h, hi) => (
-                            <th key={h} style={{ padding: '12px 16px', fontSize: 11, color: hi === 6 ? '#10b981' : '#767069', fontWeight: 700, textAlign: hi >= 2 && hi <= 4 || hi === 6 ? 'right' : 'left', borderBottom: '1px solid #e8e6e0', whiteSpace: 'nowrap' }}>{h}</th>
+                          {['PROFISSIONAL', 'CARGO', 'META ORIGINAL', 'META AJUSTADA', 'DIFERENÇA', 'MOTIVO'].map((h, hi) => (
+                            <th key={h} style={{ padding: '12px 16px', fontSize: 11, color: '#767069', fontWeight: 700, textAlign: hi >= 2 && hi <= 4 ? 'right' : 'left', borderBottom: '1px solid #e8e6e0', whiteSpace: 'nowrap' }}>{h}</th>
                           ))}
                         </tr>
                       </thead>
@@ -1925,15 +1970,6 @@ export default function RelatoriosPage() {
                                 {r.diferenca > 0.5 ? '+' : ''}{r.diferenca < -0.5 || r.diferenca > 0.5 ? moeda(r.diferenca) : '—'}
                               </td>
                               <td style={{ padding: '10px 16px', fontSize: 11, color: '#767069' }}>{r.motivo}</td>
-                              <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 700 }}>
-                                {(() => {
-                                  const fat = realizadoPorId[r.prof.id] ?? r.realizado
-                                  if (fat === 0) return <span style={{ color: '#6b6860' }}>—</span>
-                                  const pct = r.metaRedistribuida > 0 ? Math.round(fat / r.metaRedistribuida * 100) : 0
-                                  const cor = pct >= 100 ? '#10b981' : pct >= 70 ? '#f59e0b' : '#ef4444'
-                                  return <span style={{ color: cor }}>{moeda(fat)} <span style={{ fontSize: 10, opacity: 0.8 }}>({pct}%)</span></span>
-                                })()}
-                              </td>
                             </tr>
                           )
                         })}
@@ -2038,12 +2074,25 @@ export default function RelatoriosPage() {
                     </div>
                   </div>
 
+                  {/* Botão imprimir Meta Prof. */}
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
+                    <button onClick={() => {
+                      const rows = resultado.map(r => {
+                        const pct = r.meta > 0 ? Math.min((r.realizado / r.meta) * 100, 100) : 0
+                        const nom = r.prof.apelido || r.prof.nome_completo
+                        return `<tr><td><strong>${nom.toUpperCase()}</strong></td><td>${r.prof.cargo||'—'}</td><td style="text-align:right;color:#5b4fcf;font-weight:700">${moeda(r.meta)}</td><td style="text-align:right;font-weight:700;color:${pct>=80?'#166534':pct>=50?'#b45309':'#991b1b'}">${pct.toFixed(0)}%</td></tr>`
+                      }).join('')
+                      const corpo = `<div class="sec"><div class="sec-title">Meta por Profissional — ${periodoRefLabel}</div><table class="tbl"><thead><tr><th>Profissional</th><th>Cargo</th><th style="text-align:right">Meta</th><th style="text-align:right">%</th></tr></thead><tbody>${rows}</tbody></table></div>`
+                      abrirImpressaoRel(wrapRel('Meta Prof. — ' + periodoRefLabel, corpo))
+                    }} style={{ display:'flex',alignItems:'center',gap:6,padding:'6px 14px',border:'1px solid #e0ddd8',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',background:'#fff',color:'#767069' }}>🖨️ Imprimir</button>
+                  </div>
+
                   {/* Tabela de metas por profissional */}
                   <div style={{ background: '#ffffff', border: '1.5px solid #e0ddd8', borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                       <thead>
                         <tr style={{ background: '#f5f4f0' }}>
-                          {['PROFISSIONAL', 'CARGO', 'META', 'REALIZADO', '%'].map((h, hi) => (
+                          {['PROFISSIONAL', 'CARGO', 'META', '%'].map((h, hi) => (
                             <th key={h} style={{ padding: '12px 16px', fontSize: 11, color: '#767069', fontWeight: 700, textAlign: hi >= 2 ? 'right' : 'left', borderBottom: '1px solid #e8e6e0', whiteSpace: 'nowrap' }}>{h}</th>
                           ))}
                         </tr>
@@ -2066,7 +2115,6 @@ export default function RelatoriosPage() {
                               </td>
                               <td style={{ padding: '10px 16px', color: '#767069', fontSize: 12 }}>{r.prof.cargo || '—'}</td>
                               <td style={{ padding: '10px 16px', textAlign: 'right', color: '#5b4fcf', fontWeight: 700 }}>{moeda(r.meta)}</td>
-                              <td style={{ padding: '10px 16px', textAlign: 'right', color: r.realizado > 0 ? '#10b981' : '#dedad4', fontWeight: r.realizado > 0 ? 700 : 400 }}>{moeda(r.realizado)}</td>
                               <td style={{ padding: '10px 16px', textAlign: 'right', minWidth: 120 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-end' }}>
                                   <span style={{ color: barCor, fontWeight: 700, fontSize: 13, minWidth: 38, textAlign: 'right' }}>{pct.toFixed(0)}%</span>
@@ -2080,7 +2128,7 @@ export default function RelatoriosPage() {
                           if (r.estavaRef || r.fonte || r.picoLabel) {
                             rows.push(
                               <tr key={`badge-${i}`} style={{ borderBottom: '1px solid #e8e6e0', background: i % 2 === 0 ? '#ffffff' : '#f8f7f5' }}>
-                                <td colSpan={5} style={{ padding: '2px 16px 8px 56px', display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
+                                <td colSpan={4} style={{ padding: '2px 16px 8px 56px', display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
                                   {r.estavaRef && periodoRef && (
                                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 600, color: metaBatida ? '#10b981' : '#f59e0b', background: metaBatida ? '#10b98115' : '#f59e0b15', border: `1px solid ${metaBatida ? '#10b98130' : '#f59e0b30'}`, padding: '2px 8px', borderRadius: 20 }}>
                                       {metaBatida ? `Voce ja bateu em ${periodoRefLabel}` : `Mais proximo: ${periodoRefLabel}`}
@@ -2172,6 +2220,55 @@ export default function RelatoriosPage() {
                   ))}
                 </div>
 
+                {/* Filtro de data + Imprimir — Mais Relatórios */}
+                <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 10, background: '#f8f7f5', border: '1.5px solid #e0ddd8', borderRadius: 10, padding: '10px 14px', margin: '12px 0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: '#767069', textTransform: 'uppercase' }}>De</span>
+                    <input type="date" value={analiseDe} onChange={e => setAnaliseDe(e.target.value)}
+                      style={{ border: '1.5px solid #e0ddd8', borderRadius: 6, padding: '4px 8px', fontSize: 12, background: '#fff', color: '#1a1a1a' }} />
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: '#767069', textTransform: 'uppercase' }}>Até</span>
+                    <input type="date" value={analiseAte} onChange={e => setAnaliseAte(e.target.value)}
+                      style={{ border: '1.5px solid #e0ddd8', borderRadius: 6, padding: '4px 8px', fontSize: 12, background: '#fff', color: '#1a1a1a' }} />
+                  </div>
+                  <button onClick={() => carregarAnalise(subAnalise)}
+                    style={{ background: '#5b4fcf', color: '#fff', border: 'none', borderRadius: 7, padding: '6px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Buscar</button>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    {[['Este ano',`${anoAtualRel}-01-01`,`${anoAtualRel}-12-31`],['Ano passado',`${anoAtualRel-1}-01-01`,`${anoAtualRel-1}-12-31`],['2 anos',`${anoAtualRel-1}-01-01`,`${anoAtualRel}-12-31`],['Tudo','2000-01-01',`${anoAtualRel}-12-31`]].map(([lbl,dI,dF])=>{
+                      const ativo = analiseDe===dI && analiseAte===dF
+                      return <button key={lbl} onClick={()=>{setAnaliseDe(dI);setAnaliseAte(dF)}}
+                        style={{ borderRadius:6,padding:'4px 10px',fontSize:11,fontWeight:700,cursor:'pointer',background:ativo?'#5b4fcf':'#fff',color:ativo?'#fff':'#767069',border:ativo?'1px solid #5b4fcf':'1px solid #e0ddd8' }}>{lbl}</button>
+                    })}
+                  </div>
+                  <div style={{ marginLeft: 'auto' }}>
+                    <button onClick={() => {
+                      const lista = analiseDetalhe as any[]
+                      if (!lista.length) return
+                      const rotulos: Record<string, string[]> = {
+                        risco:    ['Cliente','Celular','LTV Total','Visitas','Última Visita','Dias Ausente','Intervalo Médio'],
+                        perdidos: ['Cliente','Celular','LTV Total','Visitas','Última Visita','Dias Ausente','Intervalo Médio'],
+                        vip:      ['#','Cliente','Celular','LTV Total','Visitas','Última Visita','Frequência'],
+                        regular:  ['Cliente','Celular','LTV Total','Visitas','Última Visita','Frequência'],
+                        novo:     ['Cliente','Celular','LTV','Data da Visita','Serviços'],
+                      }
+                      const colunas = rotulos[subAnalise]
+                      if (!colunas) return
+                      const corpo = `<div class="sec"><div class="sec-title">${{risco:'Em Risco',perdidos:'Perdidos',vip:'VIP',regular:'Regular',novo:'Novas'}[subAnalise]||subAnalise} — ${lista.length} clientes</div>
+<table class="tbl"><thead><tr>${colunas.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>
+${lista.map((c:any,i:number)=>{
+  if(subAnalise==='risco'||subAnalise==='perdidos') return `<tr><td><strong>${c.cliente_nome}</strong></td><td style="color:#5b4fcf">${c.celular||'—'}</td><td style="color:#059669;font-weight:700">R$ ${(c.ltv_total||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td><td>${c.total_visitas}x</td><td>${c.ultima_visita||'—'}</td><td style="font-weight:700;color:${subAnalise==='risco'?'#f97316':'#ef4444'}">${c.dias_desde_ultima_visita}d</td><td>${c.intervalo_medio_dias?c.intervalo_medio_dias+'d':'—'}</td></tr>`
+  if(subAnalise==='vip') return `<tr><td>#${i+1}</td><td><strong>${c.cliente_nome}</strong></td><td style="color:#5b4fcf">${c.celular||'—'}</td><td style="color:#b45309;font-weight:700">R$ ${(c.ltv_total||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td><td>${c.total_visitas}x</td><td>${c.ultima_visita||'—'}</td><td>${c.intervalo_medio_dias?'a cada '+c.intervalo_medio_dias+'d':'—'}</td></tr>`
+  if(subAnalise==='regular') return `<tr><td><strong>${c.cliente_nome}</strong></td><td style="color:#5b4fcf">${c.celular||'—'}</td><td style="color:#059669;font-weight:700">R$ ${(c.ltv_total||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td><td>${c.total_visitas}x</td><td>${c.ultima_visita||'—'}</td><td>${c.intervalo_medio_dias?'a cada '+c.intervalo_medio_dias+'d':'—'}</td></tr>`
+  if(subAnalise==='novo') return `<tr><td><strong>${c.cliente_nome}</strong></td><td style="color:#5b4fcf">${c.celular||'—'}</td><td>R$ ${(c.ltv_total||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td><td>${c.ultima_visita||'—'}</td><td style="font-size:8pt">${(c.servicos_feitos||[]).join(', ')||'—'}</td></tr>`
+  return ''
+}).join('')}
+</tbody></table></div>`
+                      abrirImpressaoRel(wrapRel(({risco:'Em Risco',perdidos:'Perdidos',vip:'VIP',regular:'Regular',novo:'Novas',frequencia:'Frequência',diasemana:'Dia da Semana',crosssell:'Cross-sell'} as any)[subAnalise]||subAnalise, corpo))
+                    }} style={{ display:'flex',alignItems:'center',gap:6,padding:'6px 14px',border:'1px solid #e0ddd8',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',background:'#fff',color:'#767069' }}>🖨️ Imprimir</button>
+                  </div>
+                </div>
+
                 {analiseLoading && <div style={{ color: '#6b6860', fontSize: 13, padding: 40, textAlign: 'center' }}>Carregando análise...</div>}
 
                 {!analiseLoading && analiseResumo?.vazio && (
@@ -2238,7 +2335,7 @@ export default function RelatoriosPage() {
                             </thead>
                             <tbody>
                               {(analiseDetalhe as any[]).map((c: any, i: number) => (
-                                <tr key={i} style={{ borderBottom: '1px solid #e8e6e020', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
+                                <tr key={i} style={{ borderBottom: '1px solid #e8e6e0', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
                                   <td style={{ padding: '9px 12px', fontSize: 12, color: '#1a1a1a', fontWeight: 600 }}>{c.cliente_nome}</td>
                                   <td style={{ padding: '9px 12px', fontSize: 11, color: '#5b4fcf' }}>{c.celular || '—'}</td>
                                   <td style={{ padding: '9px 12px', fontSize: 12, color: '#059669', fontWeight: 700 }}>{moeda(c.ltv_total)}</td>
@@ -2264,7 +2361,7 @@ export default function RelatoriosPage() {
                         </div>
                         <div style={{ background: '#ffffff', border: '1.5px solid #f59e0b30', borderRadius: 12, overflow: 'hidden' }}>
                           {(analiseDetalhe as any[]).map((c: any, i: number) => (
-                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderBottom: '1px solid #e8e6e020' }}>
+                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderBottom: '1px solid #e8e6e0' }}>
                               <div style={{ width: 28, height: 28, borderRadius: '50%', background: i === 0 ? '#f59e0b' : i === 1 ? '#767069' : i === 2 ? '#cd7c4f' : '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: i < 3 ? '#f5f4f0' : '#6b6860', flexShrink: 0 }}>#{i+1}</div>
                               <div style={{ flex: 1 }}>
                                 <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a1a' }}>{c.cliente_nome}</div>
@@ -2298,7 +2395,7 @@ export default function RelatoriosPage() {
                             </tr></thead>
                             <tbody>
                               {(analiseDetalhe as any[]).map((c: any, i: number) => (
-                                <tr key={i} style={{ borderBottom: '1px solid #e8e6e020', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
+                                <tr key={i} style={{ borderBottom: '1px solid #e8e6e0', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
                                   <td style={{ padding: '9px 12px', fontSize: 12, color: '#1a1a1a', fontWeight: 600 }}>{c.cliente_nome}</td>
                                   <td style={{ padding: '9px 12px', fontSize: 11, color: '#5b4fcf' }}>{c.celular || '—'}</td>
                                   <td style={{ padding: '9px 12px', fontSize: 12, color: '#059669', fontWeight: 700 }}>{moeda(c.ltv_total)}</td>
@@ -2331,7 +2428,7 @@ export default function RelatoriosPage() {
                             </tr></thead>
                             <tbody>
                               {(analiseDetalhe as any[]).map((c: any, i: number) => (
-                                <tr key={i} style={{ borderBottom: '1px solid #e8e6e020', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
+                                <tr key={i} style={{ borderBottom: '1px solid #e8e6e0', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
                                   <td style={{ padding: '9px 12px', fontSize: 12, color: '#1a1a1a', fontWeight: 600 }}>{c.cliente_nome}</td>
                                   <td style={{ padding: '9px 12px', fontSize: 11, color: '#5b4fcf' }}>{c.celular || '—'}</td>
                                   <td style={{ padding: '9px 12px', fontSize: 12, color: '#059669', fontWeight: 700 }}>{moeda(c.ltv_total)}</td>
@@ -2480,7 +2577,7 @@ export default function RelatoriosPage() {
                             </tr></thead>
                             <tbody>
                               {lista.sort((a, b) => b.fat - a.fat).map((r, i) => (
-                                <tr key={r.dia} style={{ borderBottom: '1px solid #e8e6e020', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
+                                <tr key={r.dia} style={{ borderBottom: '1px solid #e8e6e0', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
                                   <td style={{ padding: '10px 14px', fontSize: 13, color: '#1a1a1a', fontWeight: 600 }}>{r.dia}</td>
                                   <td style={{ padding: '10px 14px', fontSize: 13, color: '#059669', fontWeight: 700, textAlign: 'right' }}>{moeda(r.fat)}</td>
                                   <td style={{ padding: '10px 14px', fontSize: 12, color: '#767069', textAlign: 'right' }}>{r.count}x</td>
@@ -2575,7 +2672,7 @@ export default function RelatoriosPage() {
                   </thead>
                   <tbody>
                     {freqClientes.map((c: any, i: number) => (
-                      <tr key={i} style={{ borderBottom: '1px solid #e8e6e020', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
+                      <tr key={i} style={{ borderBottom: '1px solid #e8e6e0', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
                         <td style={{ padding: '9px 12px', color: '#767069', textAlign: 'right' }}>{i + 1}</td>
                         <td style={{ padding: '9px 12px', color: '#1a1a1a', fontWeight: 600 }}>{c.cliente_nome}</td>
                         <td style={{ padding: '9px 12px', color: '#5b4fcf' }}>{c.celular || '—'}</td>
