@@ -155,7 +155,7 @@ Seja direto, use números reais, sem enrolação.`
         subject: `📊 Resumo Semanal NODRI — ${agora.toLocaleDateString('pt-BR')}`,
         html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
           <h2 style="color:#f59e0b">NODRI IA — Resumo Semanal</h2>
-          <div style="white-space:pre-wrap;line-height:1.7;color:#333">${resumoTexto.replace(/\n/g, '<br>')}</div>
+          <div style="white-space:pre-wrap;line-height:1.7;color:#e8e6e0">${resumoTexto.replace(/\n/g, '<br>')}</div>
           <hr style="margin:24px 0;border:none;border-top:1px solid #eee">
           <p style="color:#999;font-size:12px">Gerado automaticamente pela NODRI IA • nodri.com.br</p>
         </div>`

@@ -90,7 +90,7 @@ export default function PendenciaPublicaPage() {
               Seu nome *
             </label>
             <select value={profId} onChange={e => setProfId(e.target.value)}
-              style={{ width: '100%', background: '#161b27', border: '1px solid #e8e6e0', borderRadius: '8px', padding: '10px 12px', fontSize: '13px', color: profId ? '#1a1a1a' : '#6b6860', outline: 'none' }}>
+              style={{ width: '100%', background: '#ffffff', border: '1px solid #e8e6e0', borderRadius: '8px', padding: '10px 12px', fontSize: '13px', color: profId ? '#1a1a1a' : '#6b6860', outline: 'none' }}>
               <option value="">Selecione seu nome...</option>
               {profissionais.map(p => (
                 <option key={p.id} value={p.id}>
@@ -107,7 +107,7 @@ export default function PendenciaPublicaPage() {
             </label>
             <textarea value={mensagem} onChange={e => setMensagem(e.target.value)} rows={4}
               placeholder="Descreva sua pendência ou solicitação..."
-              style={{ width: '100%', background: '#161b27', border: '1px solid #e8e6e0', borderRadius: '8px', padding: '10px 12px', fontSize: '13px', color: '#1a1a1a', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
+              style={{ width: '100%', background: '#ffffff', border: '1px solid #e8e6e0', borderRadius: '8px', padding: '10px 12px', fontSize: '13px', color: '#1a1a1a', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
           </div>
 
           {/* Data limite */}
@@ -116,7 +116,7 @@ export default function PendenciaPublicaPage() {
               Data limite (opcional)
             </label>
             <input type="date" value={dataLimite} onChange={e => setDataLimite(e.target.value)}
-              style={{ width: '100%', background: '#161b27', border: '1px solid #e8e6e0', borderRadius: '8px', padding: '10px 12px', fontSize: '13px', color: '#1a1a1a', outline: 'none', boxSizing: 'border-box', colorScheme: 'dark', cursor: 'pointer' }} />
+              style={{ width: '100%', background: '#ffffff', border: '1px solid #e8e6e0', borderRadius: '8px', padding: '10px 12px', fontSize: '13px', color: '#1a1a1a', outline: 'none', boxSizing: 'border-box', colorScheme: 'dark', cursor: 'pointer' }} />
           </div>
 
           {/* Erro */}

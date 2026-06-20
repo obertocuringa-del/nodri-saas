@@ -11,7 +11,7 @@ const PLANOS_INFO: Record<string, { preco: number; cor: string }> = {
 }
 
 const inp: React.CSSProperties = {
-  width: '100%', background: '#1a1a1a', border: '1px solid #333',
+  width: '100%', background: '#ffffff', border: '1px solid #e8e6e0',
   borderRadius: 10, padding: '12px 14px', color: 'white', fontSize: 14,
   outline: 'none', boxSizing: 'border-box',
 }
@@ -98,7 +98,7 @@ function CadastroInner() {
 
   const cardBtn = (onClick: () => void, disabled: boolean, children: React.ReactNode) => (
     <button onClick={onClick} disabled={disabled} style={{
-      background: '#1a1a1a', border: '1px solid #333', borderRadius: 14,
+      background: '#ffffff', border: '1px solid #e8e6e0', borderRadius: 14,
       padding: '18px 20px', cursor: disabled ? 'not-allowed' : 'pointer',
       textAlign: 'left' as const, display: 'flex', alignItems: 'center', gap: 16,
       width: '100%', transition: 'border-color 0.2s', opacity: disabled ? 0.6 : 1,
@@ -106,7 +106,7 @@ function CadastroInner() {
   )
 
   return (
-    <div style={{ fontFamily: 'Segoe UI, sans-serif', background: '#0f0f0f', minHeight: '100vh', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
+    <div style={{ fontFamily: 'Segoe UI, sans-serif', background: '#f5f4f0', minHeight: '100vh', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
       <div style={{ width: '100%', maxWidth: 540 }}>
 
         {/* Header */}
@@ -120,7 +120,7 @@ function CadastroInner() {
         </div>
 
         {/* Resumo do plano */}
-        <div style={{ background: '#1a1a1a', border: `1px solid ${planoInfo.cor}50`, borderRadius: 14, padding: '14px 20px', marginBottom: 22, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ background: '#ffffff', border: `1px solid ${planoInfo.cor}50`, borderRadius: 14, padding: '14px 20px', marginBottom: 22, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <div style={{ fontSize: 11, color: '#666', marginBottom: 2 }}>Plano selecionado</div>
             <div style={{ fontSize: 17, fontWeight: 700, color: planoInfo.cor }}>{planoNome}</div>
@@ -262,7 +262,7 @@ function CadastroInner() {
 
             <div style={{ marginBottom: 16 }}>
               <div style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>Ou copie a chave PIX Copia e Cola:</div>
-              <div style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: 10, padding: '10px 14px', fontSize: 11, color: '#aaa', wordBreak: 'break-all', marginBottom: 10, textAlign: 'left' as const, maxHeight: 64, overflow: 'hidden' }}>
+              <div style={{ background: '#ffffff', border: '1px solid #e8e6e0', borderRadius: 10, padding: '10px 14px', fontSize: 11, color: '#aaa', wordBreak: 'break-all', marginBottom: 10, textAlign: 'left' as const, maxHeight: 64, overflow: 'hidden' }}>
                 {pixData.qr_code.slice(0, 120)}...
               </div>
               <button onClick={copiarChave}
@@ -271,7 +271,7 @@ function CadastroInner() {
               </button>
             </div>
 
-            <div style={{ background: '#0a2a1a', border: '1px solid #1a4a2a', borderRadius: 10, padding: '12px 16px', fontSize: 12, color: '#2ecc71' }}>
+            <div style={{ background: '#f0fff4', border: '1px solid #1a4a2a', borderRadius: 10, padding: '12px 16px', fontSize: 12, color: '#2ecc71' }}>
               <CheckCircle size={13} style={{display:'inline',marginRight:4}} />Após o pagamento você receberá um email de confirmação em <strong>{form.email}</strong>
             </div>
 
@@ -287,7 +287,7 @@ function CadastroInner() {
 
 export default function CadastroPage() {
   return (
-    <Suspense fallback={<div style={{ background: '#0f0f0f', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888' }}>Carregando...</div>}>
+    <Suspense fallback={<div style={{ background: '#f5f4f0', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888' }}>Carregando...</div>}>
       <CadastroInner />
     </Suspense>
   )

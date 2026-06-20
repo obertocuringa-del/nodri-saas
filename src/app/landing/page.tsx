@@ -45,7 +45,7 @@ export default function LandingPage() {
   }, [])
 
   return (
-    <div style={{ fontFamily: 'Segoe UI, sans-serif', background: '#0f0f0f', minHeight: '100vh', color: 'white' }}>
+    <div style={{ fontFamily: 'Segoe UI, sans-serif', background: '#f5f4f0', minHeight: '100vh', color: 'white' }}>
 
       {/* HERO */}
       <section style={{ textAlign: 'center', padding: 'clamp(40px,8vw,80px) 20px clamp(30px,6vw,60px)' }}>
@@ -64,7 +64,7 @@ export default function LandingPage() {
         <h2 style={{ textAlign: 'center', fontSize: 28, fontWeight: 700, marginBottom: 40 }}>{cfg.beneficios_titulo}</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: 24 }}>
           {(cfg.beneficios || []).map((b: any, i: number) => (
-            <div key={i} style={{ background: '#1a1a1a', borderRadius: 16, padding: 28, border: '1px solid #333' }}>
+            <div key={i} style={{ background: '#ffffff', borderRadius: 16, padding: 28, border: '1px solid #e8e6e0' }}>
               <div style={{ fontSize: 36, marginBottom: 12 }}>{b.emoji}</div>
               <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>{b.titulo}</h3>
               <p style={{ color: '#aaa', lineHeight: 1.6, fontSize: 14 }}>{b.desc}</p>
@@ -80,8 +80,8 @@ export default function LandingPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: 24 }}>
           {(cfg.landing_planos || []).map((plano: any, i: number) => (
             <div key={i} style={{
-              background: '#1a1a1a', borderRadius: 20, padding: 32,
-              border: plano.destaque ? `2px solid ${plano.cor}` : '1px solid #333',
+              background: '#ffffff', borderRadius: 20, padding: 32,
+              border: plano.destaque ? `2px solid ${plano.cor}` : '1px solid #e8e6e0',
               position: 'relative', transform: plano.destaque ? 'scale(1.03)' : 'none',
             }}>
               {plano.destaque && (
@@ -93,7 +93,7 @@ export default function LandingPage() {
               <div style={{ fontSize: 48, fontWeight: 900, marginBottom: 4 }}>
                 R${plano.preco}<span style={{ fontSize: 16, color: '#aaa', fontWeight: 400 }}>/mês</span>
               </div>
-              <div style={{ borderTop: '1px solid #333', marginTop: 24, paddingTop: 24 }}>
+              <div style={{ borderTop: '1px solid #e8e6e0', marginTop: 24, paddingTop: 24 }}>
                 {(plano.modulos || []).map((m: string, j: number) => (
                   <div key={j} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, color: '#ddd', fontSize: 14 }}>
                     <span style={{ color: plano.cor }}>✓</span> {m}

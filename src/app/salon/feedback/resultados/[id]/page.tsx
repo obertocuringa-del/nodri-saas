@@ -400,7 +400,7 @@ export default function ResultadosPage() {
 
               {/*  IA ANÁLISE  */}
               {showIa && (
-                <div className="print-card rounded-2xl border overflow-hidden" style={{ borderColor: 'rgba(139,92,246,.3)', background: '#0a0714' }}>
+                <div className="print-card rounded-2xl border overflow-hidden" style={{ borderColor: 'rgba(139,92,246,.3)', background: '#f5f4f0' }}>
                   <div className="px-5 py-3 border-b flex items-center gap-2 no-print" style={{ borderColor: 'rgba(139,92,246,.2)', background: 'rgba(139,92,246,.1)' }}>
                     <Brain size={16} className="text-purple-400" />
                     <span className="font-syne font-bold text-sm text-purple-300">Análise Estratégica — IA Claude</span>

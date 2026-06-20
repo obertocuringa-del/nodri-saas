@@ -169,7 +169,7 @@ export default function ImportarPage() {
 
         {/* RESULTADO */}
         {result && (
-          <div className="p-5 rounded-2xl border space-y-4" style={{ background: '#0a1a0a', borderColor: 'rgba(34,197,94,.25)' }}>
+          <div className="p-5 rounded-2xl border space-y-4" style={{ background: '#f0fff4', borderColor: 'rgba(34,197,94,.25)' }}>
             <div className="flex items-center gap-2">
               <CheckCircle size={20} className="text-green-400" />
               <span className="font-bold text-green-400 text-sm">Importação concluída!</span>

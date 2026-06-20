@@ -42,7 +42,7 @@ function renderMarkdown(texto: string): string {
         table += `<thead><tr>${cells.map(c => `<th style="padding:10px 14px;background:#1c2128;color:#1a1a1a;font-weight:600;text-align:left;font-size:12px;border-bottom:2px solid #f59e0b;white-space:nowrap">${c.trim()}</th>`).join('')}</tr></thead><tbody>`
       } else {
         const bg = rowIdx % 2 === 0 ? '#ffffff' : '#faf9f7'
-        table += `<tr style="background:${bg}">${cells.map(c => `<td style="padding:9px 14px;border-bottom:1px solid #21262d;color:#c9d1d9;font-size:13px">${c.trim()}</td>`).join('')}</tr>`
+        table += `<tr style="background:${bg}">${cells.map(c => `<td style="padding:9px 14px;border-bottom:1px solid #f0ede8;color:#c9d1d9;font-size:13px">${c.trim()}</td>`).join('')}</tr>`
         rowIdx++
       }
     }
@@ -51,7 +51,7 @@ function renderMarkdown(texto: string): string {
   })
 
   // Linhas separadoras
-  html = html.replace(/^---+$/gm, '<hr style="border:none;border-top:1px solid #21262d;margin:16px 0"/>')
+  html = html.replace(/^---+$/gm, '<hr style="border:none;border-top:1px solid #f0ede8;margin:16px 0"/>')
   html = html.replace(/^═{3,}$/gm, '<hr style="border:none;border-top:2px solid #30363d;margin:20px 0"/>')
 
   // Títulos com visual destacado
@@ -489,12 +489,12 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
         <div style={containerStyle}>
 
           {/* Header */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#faf9f7', borderBottom: '1px solid #21262d', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#faf9f7', borderBottom: '1px solid #f0ede8', flexShrink: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               {/* Botão menu mobile */}
               {isMobile && (
                 <button onClick={() => setSidebarChatAberta(v => !v)}
-                  style={{ width: 34, height: 34, background: sidebarChatAberta ? '#f59e0b' : '#21262d', border: 'none', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'background 0.2s' }}
+                  style={{ width: 34, height: 34, background: sidebarChatAberta ? '#f59e0b' : '#f0ede8', border: 'none', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'background 0.2s' }}
                   title="Perguntas salvas"
                 >
                   <span style={{ fontSize: 16, color: sidebarChatAberta ? '#000' : '#6b6860' }}>☰</span>
@@ -535,16 +535,16 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
 
           {/* ── Sidebar Esquerda — Biblioteca de Prompts ── */}
           <div style={isMobile ? {
-            width: 260, flexShrink: 0, background: '#faf9f7', borderRight: '1px solid #21262d',
+            width: 260, flexShrink: 0, background: '#faf9f7', borderRight: '1px solid #f0ede8',
             display: 'flex', flexDirection: 'column', overflow: 'hidden',
             position: 'absolute', top: 0, left: sidebarChatAberta ? 0 : -260, bottom: 0, zIndex: 40,
             transition: 'left 0.25s ease',
           } : {
-            width: 260, flexShrink: 0, background: '#faf9f7', borderRight: '1px solid #21262d',
+            width: 260, flexShrink: 0, background: '#faf9f7', borderRight: '1px solid #f0ede8',
             display: 'flex', flexDirection: 'column', overflow: 'hidden',
           }}>
             {/* Cabeçalho sidebar */}
-            <div style={{ padding: '14px 14px 10px', borderBottom: '1px solid #21262d', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ padding: '14px 14px 10px', borderBottom: '1px solid #f0ede8', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span style={{ fontSize: 12, fontWeight: 700, color: '#6b6860', textTransform: 'uppercase', letterSpacing: 1 }}>Perguntas Salvas</span>
               <button onClick={abrirNovo} title="Nova pergunta"
                 style={{ width: 26, height: 26, borderRadius: 6, background: '#f59e0b', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 18, color: '#000', lineHeight: 1 }}>+</button>
@@ -558,7 +558,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
               )}
               {prompts.map(p => (
                 <div key={p.id}
-                  style={{ borderRadius: 8, padding: '8px 10px', marginBottom: 4, background: '#ffffff', border: '1px solid #21262d', display: 'flex', alignItems: 'center', gap: 6, group: 'true' } as any}>
+                  style={{ borderRadius: 8, padding: '8px 10px', marginBottom: 4, background: '#ffffff', border: '1px solid #f0ede8', display: 'flex', alignItems: 'center', gap: 6, group: 'true' } as any}>
                   <button onClick={() => { usarPrompt(p); if (isMobile) setSidebarChatAberta(false) }} title={p.script}
                     style={{ flex: 1, background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', color: '#c9d1d9', fontSize: 12, lineHeight: 1.4, padding: 0, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
                     {p.titulo}
@@ -568,7 +568,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
                   {confirmDelete === p.id
                     ? <span style={{ display: 'flex', gap: 2 }}>
                         <button onClick={() => excluirPrompt(p.id)} style={{ background: '#ef4444', border: 'none', borderRadius: 4, cursor: 'pointer', color: '#fff', fontSize: 10, padding: '2px 5px' }}>Sim</button>
-                        <button onClick={() => setConfirmDelete(null)} style={{ background: '#21262d', border: 'none', borderRadius: 4, cursor: 'pointer', color: '#6b6860', fontSize: 10, padding: '2px 5px' }}>Não</button>
+                        <button onClick={() => setConfirmDelete(null)} style={{ background: '#f0ede8', border: 'none', borderRadius: 4, cursor: 'pointer', color: '#6b6860', fontSize: 10, padding: '2px 5px' }}>Não</button>
                       </span>
                     : <button onClick={() => setConfirmDelete(p.id)} title="Excluir"
                         style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#e8e6e0', padding: '2px 4px', fontSize: 13, lineHeight: 1, flexShrink: 0 }}>✕</button>
@@ -577,16 +577,16 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
               ))}
 
               {/* Seção de perguntas inteligentes fixas */}
-              <div style={{ marginTop: prompts.length > 0 ? 12 : 0, paddingTop: prompts.length > 0 ? 12 : 0, borderTop: prompts.length > 0 ? '1px solid #21262d' : 'none' }}>
+              <div style={{ marginTop: prompts.length > 0 ? 12 : 0, paddingTop: prompts.length > 0 ? 12 : 0, borderTop: prompts.length > 0 ? '1px solid #f0ede8' : 'none' }}>
                 <p style={{ fontSize: 10, fontWeight: 700, color: '#e8e6e0', textTransform: 'uppercase', letterSpacing: 1, margin: '0 2px 8px' }}>
                   {profissionalId ? 'Análises rápidas' : 'Análises inteligentes'}
                 </p>
                 {sugestoesAtivas.map(s => (
                   <div key={s.titulo}
-                    style={{ borderRadius: 8, padding: '7px 10px', marginBottom: 4, background: '#ffffff', border: '1px solid #21262d', cursor: 'pointer', transition: 'border-color 0.2s' }}
+                    style={{ borderRadius: 8, padding: '7px 10px', marginBottom: 4, background: '#ffffff', border: '1px solid #f0ede8', cursor: 'pointer', transition: 'border-color 0.2s' }}
                     onClick={() => { setInput(s.prompt); setTimeout(() => inputRef.current?.focus(), 50); if (isMobile) setSidebarChatAberta(false) }}
                     onMouseEnter={e => (e.currentTarget.style.borderColor = '#f59e0b')}
-                    onMouseLeave={e => (e.currentTarget.style.borderColor = '#21262d')}
+                    onMouseLeave={e => (e.currentTarget.style.borderColor = '#f0ede8')}
                   >
                     <span style={{ fontSize: 12, color: '#6b6860', lineHeight: 1.4, display: 'block', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
                       {s.titulo}
@@ -613,7 +613,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
                     {msg.role === 'assistant' ? 'NODRI IA' : 'Você'}
                   </span>
                   {msg.role === 'user' && (
-                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#21262d', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: '#6b6860' }}>U</div>
+                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#f0ede8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: '#6b6860' }}>U</div>
                   )}
                 </div>
 
@@ -624,7 +624,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
                   padding: msg.role === 'user' ? '10px 16px' : '14px 18px',
                   borderRadius: msg.role === 'user' ? '18px 18px 4px 18px' : '4px 18px 18px 18px',
                   background: msg.role === 'user' ? 'linear-gradient(135deg,#f59e0b,#d97706)' : '#faf9f7',
-                  border: msg.role === 'assistant' ? '1px solid #21262d' : 'none',
+                  border: msg.role === 'assistant' ? '1px solid #f0ede8' : 'none',
                   fontSize: 14,
                   lineHeight: 1.7,
                   color: msg.role === 'user' ? '#000' : '#c9d1d9',
@@ -642,7 +642,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
                     <button
                       onClick={() => copiarMensagem(msg.content, i)}
                       title="Copiar mensagem"
-                      style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', background: 'transparent', border: '1px solid #21262d', borderRadius: 6, cursor: 'pointer', color: copiados.has(i) ? '#22c55e' : '#6b6860', fontSize: 11, transition: 'all 0.2s' }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', background: 'transparent', border: '1px solid #f0ede8', borderRadius: 6, cursor: 'pointer', color: copiados.has(i) ? '#22c55e' : '#6b6860', fontSize: 11, transition: 'all 0.2s' }}
                     >
                       {copiados.has(i) ? <Check size={12} /> : <Copy size={12} />}
                       {copiados.has(i) ? 'Copiado!' : 'Copiar'}
@@ -650,7 +650,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
                     <button
                       onClick={() => imprimirMensagem(msg.content)}
                       title="Imprimir esta mensagem"
-                      style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', background: 'transparent', border: '1px solid #21262d', borderRadius: 6, cursor: 'pointer', color: '#6b6860', fontSize: 11, transition: 'all 0.2s' }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', background: 'transparent', border: '1px solid #f0ede8', borderRadius: 6, cursor: 'pointer', color: '#6b6860', fontSize: 11, transition: 'all 0.2s' }}
                     >
                       <Printer size={12} />
                       Imprimir
@@ -667,7 +667,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
                   <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg,#f59e0b,#d97706)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12, color: '#000' }}>N</div>
                   <span style={{ fontSize: 12, color: '#6b6860', fontWeight: 600 }}>NODRI IA</span>
                 </div>
-                <div style={{ padding: '14px 18px', background: '#faf9f7', border: '1px solid #21262d', borderRadius: '4px 18px 18px 18px' }}>
+                <div style={{ padding: '14px 18px', background: '#faf9f7', border: '1px solid #f0ede8', borderRadius: '4px 18px 18px 18px' }}>
                   <Loader2 size={16} color="#f59e0b" style={{ animation: 'spin 1s linear infinite' }} />
                 </div>
               </div>
@@ -677,7 +677,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
 
 
           {/* Input */}
-          <div style={{ padding: isMobile ? '10px 12px' : '16px max(24px, calc(50% - 400px))', borderTop: '1px solid #21262d', background: '#faf9f7', flexShrink: 0 }}>
+          <div style={{ padding: isMobile ? '10px 12px' : '16px max(24px, calc(50% - 400px))', borderTop: '1px solid #f0ede8', background: '#faf9f7', flexShrink: 0 }}>
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, background: '#ffffff', border: '1px solid #30363d', borderRadius: 14, padding: '10px 14px', transition: 'border-color 0.2s' }}
               onFocus={() => {}} >
               <textarea
@@ -697,14 +697,14 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
               <button
                 onClick={iniciarVoz}
                 title={gravandoVoz ? 'Parar gravação' : 'Falar com a IA'}
-                style={{ width: 36, height: 36, borderRadius: 10, background: gravandoVoz ? 'linear-gradient(135deg,#ef4444,#dc2626)' : '#21262d', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.2s' }}
+                style={{ width: 36, height: 36, borderRadius: 10, background: gravandoVoz ? 'linear-gradient(135deg,#ef4444,#dc2626)' : '#f0ede8', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.2s' }}
               >
                 <span style={{ fontSize: 16 }}>{gravandoVoz ? '⏹' : '🎤'}</span>
               </button>
               <button
                 onClick={() => enviar()}
                 disabled={!input.trim() || carregando}
-                style={{ width: 36, height: 36, borderRadius: 10, background: input.trim() && !carregando ? 'linear-gradient(135deg,#f59e0b,#d97706)' : '#21262d', border: 'none', cursor: input.trim() && !carregando ? 'pointer' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.2s' }}
+                style={{ width: 36, height: 36, borderRadius: 10, background: input.trim() && !carregando ? 'linear-gradient(135deg,#f59e0b,#d97706)' : '#f0ede8', border: 'none', cursor: input.trim() && !carregando ? 'pointer' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.2s' }}
               >
                 {carregando
                   ? <Loader2 size={16} color="#6b6860" style={{ animation: 'spin 1s linear infinite' }} />
@@ -753,7 +753,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
                 Cancelar
               </button>
               <button onClick={salvarPrompt} disabled={!formTitulo.trim() || !formScript.trim()}
-                style={{ padding: '9px 20px', background: formTitulo.trim() && formScript.trim() ? 'linear-gradient(135deg,#f59e0b,#d97706)' : '#21262d', border: 'none', borderRadius: 8, cursor: formTitulo.trim() && formScript.trim() ? 'pointer' : 'default', color: formTitulo.trim() && formScript.trim() ? '#000' : '#e8e6e0', fontWeight: 700, fontSize: 14 }}>
+                style={{ padding: '9px 20px', background: formTitulo.trim() && formScript.trim() ? 'linear-gradient(135deg,#f59e0b,#d97706)' : '#f0ede8', border: 'none', borderRadius: 8, cursor: formTitulo.trim() && formScript.trim() ? 'pointer' : 'default', color: formTitulo.trim() && formScript.trim() ? '#000' : '#e8e6e0', fontWeight: 700, fontSize: 14 }}>
                 {editando ? 'Salvar alterações' : 'Criar pergunta'}
               </button>
             </div>

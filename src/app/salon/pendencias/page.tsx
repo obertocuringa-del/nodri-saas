@@ -302,7 +302,7 @@ export default function PendenciasPage() {
                   <div key={d.id}
                     onClick={() => router.push(`/salon/profissionais/${d.id}`)}
                     className="cursor-pointer rounded-2xl p-4 flex flex-col items-center gap-2 text-center transition-all hover:scale-[1.02]"
-                    style={{ background: temPend ? '#1a0505' : cor + '10', border: `1px solid ${temPend ? '#7f1d1d' : cor + '40'}` }}>
+                    style={{ background: temPend ? '#fff0f0' : cor + '10', border: `1px solid ${temPend ? '#7f1d1d' : cor + '40'}` }}>
                     <div className="text-3xl">{icone}</div>
                     <div>
                       <p className="font-syne font-bold text-[11px] text-nodri-t1">{d.nome_completo}</p>

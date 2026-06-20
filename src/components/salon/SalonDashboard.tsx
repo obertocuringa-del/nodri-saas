@@ -251,7 +251,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
     if (modulo.em_manutencao) {
       toast(modulo.msg_manutencao || 'Módulo em manutenção. Voltaremos em breve!', {
         icon: '🔧',
-        style: { background: '#1a0000', color: '#ff4444', border: '1px solid #ff4444', fontWeight: 'bold' },
+        style: { background: '#fff0f0', color: '#ff4444', border: '1px solid #ff4444', fontWeight: 'bold' },
         duration: 4000,
       })
       return
@@ -464,7 +464,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
             const iconColor = borderColor
             return (
               <div className="mx-5 mt-3 rounded-lg flex overflow-hidden"
-                style={{ background: 'var(--nodri-card, #111318)', border: '1px solid rgba(255,255,255,0.06)', borderLeft: `3px solid ${borderColor}` }}>
+                style={{ background: 'var(--nodri-card, #f5f4f0)', border: '1px solid rgba(255,255,255,0.06)', borderLeft: `3px solid ${borderColor}` }}>
                 <div className="flex items-center gap-3 px-4 py-2.5 flex-1 min-w-0">
                   <Bell size={14} style={{ color: iconColor }} className="shrink-0" />
                   <div className="flex-1 min-w-0">
@@ -500,7 +500,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
             <div key={modulo.id}
               className="p-4 flex flex-col cursor-pointer transition-all hover:-translate-y-0.5 relative overflow-hidden rounded-xl border"
               style={{
-                background: emManutencao ? '#fff0f0' : modulo.habilitado ? '#0a1f14' : '#111318',
+                background: emManutencao ? '#fff0f0' : modulo.habilitado ? '#e6f7ef' : '#f5f4f0',
                 borderColor: emManutencao ? 'rgba(239,68,68,0.35)' : modulo.habilitado ? 'rgba(34,197,94,0.2)' : 'rgba(255,255,255,0.04)',
                 opacity: emManutencao ? 0.9 : modulo.habilitado ? 1 : 0.5,
                 boxShadow: modulo.habilitado && !emManutencao ? 'inset 0 0 30px rgba(34,197,94,0.04)' : undefined,
@@ -626,11 +626,11 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                   <div style={{
                     position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50,
                     maxWidth: 460, maxHeight: 420, overflowY: 'auto',
-                    background: '#faf9f7', border: '0.5px solid #21262d',
+                    background: '#faf9f7', border: '0.5px solid #f0ede8',
                     borderRadius: 14, boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
                     marginTop: 6,
                   }}>
-                    <div style={{ padding: '10px 16px', borderBottom: '0.5px solid #21262d', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ padding: '10px 16px', borderBottom: '0.5px solid #f0ede8', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ fontSize: 12, fontWeight: 600, color: '#6b6860' }}>{ativos.length} alertas ativos</span>
                       <button onClick={() => setMostrarAlertasIA(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#e8e6e0', fontSize: 16 }}>✕</button>
                     </div>
@@ -643,7 +643,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                       const pillLabel = isCritico ? 'Crítico' : isInfo ? 'Meta batida' : 'Risco'
                       return (
                         <div key={alerta.titulo} style={{
-                          padding: '10px 16px', borderBottom: '0.5px solid #21262d',
+                          padding: '10px 16px', borderBottom: '0.5px solid #f0ede8',
                           borderLeft: `3px solid ${accentColor}`, display: 'flex', flexDirection: 'column', gap: 6,
                         }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -654,7 +654,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                           </div>
                           {alerta.pct !== undefined && (
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                              <div style={{ flex: 1, height: 4, background: '#21262d', borderRadius: 99, overflow: 'hidden' }}>
+                              <div style={{ flex: 1, height: 4, background: '#f0ede8', borderRadius: 99, overflow: 'hidden' }}>
                                 <div style={{ width: `${Math.min(alerta.pct, 100)}%`, height: '100%', background: accentColor, borderRadius: 99 }}/>
                               </div>
                               <span style={{ fontSize: 11, color: '#6b6860', minWidth: 28, textAlign: 'right' }}>{alerta.pct}%</span>
