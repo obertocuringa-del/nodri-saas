@@ -45,7 +45,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   // ── Busca todos os períodos do salão ──
   const { data: periodos } = await supabaseAdmin
     .from('relatorio_periodos')
-    .select('ano, mes, prof_pagamentos, prof_servicos')
+    .select('ano, mes, prof_pagamentos, prof_servicos, resumo_mensal')
     .eq('salao_id', salaoId)
     .order('ano').order('mes')
 
@@ -56,11 +56,14 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     const fatPorMes: Array<{ ano: number; mes: number; fat_prof: number; fat_total: number; pct: number }> = []
 
     for (const row of (periodos || [])) {
-      let totalMes = 0, profMes = 0
-      for (const item of (row.prof_pagamentos || [])) {
-        const v = Number(item.valor_a_pagar || 0)
-        totalMes += v
-        if (matchProf(item, tokens, apelido, nomeCompleto)) profMes += v
+      // Fat total do salão: usa resumo_mensal.faturamento_total (bruto real)
+      const rm = (row.resumo_mensal || []) as Array<{ faturamento_total?: number }>
+      const totalMes = rm.reduce((s, r) => s + Number(r.faturamento_total || 0), 0)
+
+      // Fat do profissional: usa prof_servicos.valor (bruto real dos serviços)
+      let profMes = 0
+      for (const item of (row.prof_servicos || [])) {
+        if (matchProf(item, tokens, apelido, nomeCompleto)) profMes += Number(item.valor || 0)
       }
       fatTotal += totalMes
       fatProf += profMes
@@ -79,30 +82,34 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     // Clientes exclusivos desse profissional (que só foram atendidos por ele)
     let clientesExclusivos = 0
     try {
-      // Conta clientes que só têm registros com este profissional
-      const { data: rawProf } = await supabaseAdmin
-        .from('atendimentos_raw')
-        .select('cliente')
-        .eq('salao_id', salaoId)
-        .ilike('profissional', `%${prof.apelido || prof.nome_completo?.split(' ')[0] || ''}%`)
-      const clientesDoProf = new Set((rawProf || []).map((r: any) => r.cliente).filter(Boolean))
-
-      const { data: rawTodos } = await supabaseAdmin
-        .from('atendimentos_raw')
-        .select('cliente, profissional')
-        .eq('salao_id', salaoId)
-        .in('cliente', Array.from(clientesDoProf).slice(0, 500))
-
-      const clientesPorProf: Record<string, Set<string>> = {}
-      for (const r of (rawTodos || [])) {
-        const cli = r.cliente || ''
-        if (!clientesPorProf[cli]) clientesPorProf[cli] = new Set()
-        const n = (r.profissional || '').toLowerCase()
-        clientesPorProf[cli].add(n)
+      let rawTodos: any[] = []
+      let from = 0
+      while (true) {
+        const { data } = await supabaseAdmin
+          .from('atendimentos_raw')
+          .select('cliente, profissional')
+          .eq('salao_id', salaoId)
+          .range(from, from + 999)
+        if (!data || data.length === 0) break
+        rawTodos = rawTodos.concat(data)
+        if (data.length < 1000) break
+        from += 1000
       }
-      for (const [, profs] of Object.entries(clientesPorProf)) {
-        const matches = Array.from(profs).filter(n => matchProf({ profissional: n }, tokens, apelido, nomeCompleto))
-        if (matches.length > 0 && profs.size === matches.length) clientesExclusivos++
+
+      // Agrupa por cliente: true = atendido por este prof, false = atendido por outro
+      const clienteFlags: Record<string, { temProf: boolean; temOutro: boolean }> = {}
+      for (const r of rawTodos) {
+        const cli = (r.cliente || '').trim()
+        if (!cli) continue
+        if (!clienteFlags[cli]) clienteFlags[cli] = { temProf: false, temOutro: false }
+        if (matchProf({ profissional: r.profissional }, tokens, apelido, nomeCompleto)) {
+          clienteFlags[cli].temProf = true
+        } else {
+          clienteFlags[cli].temOutro = true
+        }
+      }
+      for (const f of Object.values(clienteFlags)) {
+        if (f.temProf && !f.temOutro) clientesExclusivos++
       }
     } catch (_) {}
 

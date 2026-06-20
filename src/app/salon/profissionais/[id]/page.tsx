@@ -2217,6 +2217,7 @@ export default function PerfilProfissionalPage() {
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
   const [tab, setTab] = useState<'cadastro'|'desempenho'|'faturamento'|'metas'|'ia'|'dependencia'|'oportunidades'|'bundle'|'clientes-perdidos'>('cadastro')
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [analiseData, setAnaliseData] = useState<{dependencia:any;oportunidades:any;bundle:any}>({dependencia:null,oportunidades:null,bundle:null})
   const [loadAnalise, setLoadAnalise] = useState<{dependencia:boolean;oportunidades:boolean;bundle:boolean}>({dependencia:false,oportunidades:false,bundle:false})
   const anoAtual = new Date().getFullYear()
@@ -2745,9 +2746,8 @@ export default function PerfilProfissionalPage() {
       )}
 
       {/* Tabs */}
-      <div className="bg-nodri-surface border-b border-nodri-border overflow-x-auto">
-        <div className="flex px-2 min-w-max">
-        {([
+      {(() => {
+        const TABS = [
           ['cadastro','Cadastro'],
           ['faturamento','Faturamento'],
           ['desempenho','Ocorrências'],
@@ -2757,15 +2757,48 @@ export default function PerfilProfissionalPage() {
           ['bundle','Bundles'],
           ['clientes-perdidos','⚠️ Perdidos'],
           ['ia','IA'],
-        ] as const).map(([t,l])=>(
-          <button key={t} onClick={()=>setTab(t)}
-            className={`px-3 py-3 text-[11px] font-semibold border-b-2 transition-all whitespace-nowrap
-              ${tab===t ? 'border-nodri-cyan text-nodri-cyan' : 'border-transparent text-nodri-t3 hover:text-nodri-t2'}`}>
-            {l}
-          </button>
-        ))}
-        </div>
-      </div>
+        ] as const
+        const labelAtivo = TABS.find(([t])=>t===tab)?.[1] ?? 'Menu'
+        return (
+          <>
+            {/* Mobile: dropdown */}
+            <div className="sm:hidden bg-nodri-surface border-b border-nodri-border relative">
+              <button
+                onClick={()=>setMobileMenuOpen(o=>!o)}
+                className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-nodri-cyan"
+              >
+                <span>{labelAtivo}</span>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className={`transition-transform ${mobileMenuOpen?'rotate-180':''}`}>
+                  <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+              {mobileMenuOpen && (
+                <div className="absolute top-full left-0 right-0 z-50 bg-nodri-surface border-b border-nodri-border shadow-lg">
+                  {TABS.map(([t,l])=>(
+                    <button key={t} onClick={()=>{setTab(t);setMobileMenuOpen(false)}}
+                      className={`w-full text-left px-5 py-3 text-sm font-semibold border-l-2 transition-all
+                        ${tab===t ? 'border-nodri-cyan text-nodri-cyan bg-nodri-cyan/5' : 'border-transparent text-nodri-t2 hover:text-nodri-cyan hover:bg-nodri-cyan/5'}`}>
+                      {l}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            {/* Desktop: horizontal scroll */}
+            <div className="hidden sm:block bg-nodri-surface border-b border-nodri-border overflow-x-auto">
+              <div className="flex px-2 min-w-max">
+              {TABS.map(([t,l])=>(
+                <button key={t} onClick={()=>setTab(t)}
+                  className={`px-3 py-3 text-[11px] font-semibold border-b-2 transition-all whitespace-nowrap
+                    ${tab===t ? 'border-nodri-cyan text-nodri-cyan' : 'border-transparent text-nodri-t3 hover:text-nodri-t2'}`}>
+                  {l}
+                </button>
+              ))}
+              </div>
+            </div>
+          </>
+        )
+      })()}
 
       <div className="max-w-5xl mx-auto px-3 sm:px-5 py-4 sm:py-6">
 
@@ -3608,7 +3641,7 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
     <div style="font-size:8pt;color:#555;margin-top:4px">${d.mensagem}</div>
   </div>
   <div style="flex:3;display:grid;grid-template-columns:1fr 1fr;gap:8px">
-    <div class="card"><div class="card-lbl">Faturamento Gerado</div><div class="card-val" style="color:#5b4fcf">R$ ${(d.fat_prof||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div class="card-sub">valor líquido pago</div></div>
+    <div class="card"><div class="card-lbl">Faturamento Gerado</div><div class="card-val" style="color:#5b4fcf">R$ ${(d.fat_prof||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div class="card-sub">faturamento bruto gerado</div></div>
     <div class="card"><div class="card-lbl">Clientes Exclusivos</div><div class="card-val" style="color:#f59e0b">${d.clientes_exclusivos}</div></div>
     <div class="card"><div class="card-lbl">Impacto Mensal Est.</div><div class="card-val" style="color:#f43f8e">R$ ${(d.impacto_mensal||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div>
     <div class="card"><div class="card-lbl">Faturamento Total Salão</div><div class="card-val">R$ ${(d.fat_total||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div>
