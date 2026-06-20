@@ -966,66 +966,174 @@ function FiltroComparacao({ modoFiltro, setModoFiltro, p1i, setP1i, p1f, setP1f,
   )
 }
 
-//  Gráfico de barras verticais com comparativo ano anterior 
+//  Gráfico anual igual ao do salão — com seletor de anos, tendência e banda de desvio padrão
+const CORES_GRAF = ['#5b4fcf','#f43f8e','#f59e0b','#10b981','#3b82f6','#a855f7']
+const MESES_ABREV = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+
 function GraficoFaturamento({ historico }: { historico: HistoricoItem[] }) {
+  const [anosAtivos, setAnosAtivos] = useState<number[]>([])
   if (!historico.length) return null
-  const recente = historico.slice(-12)
-  // mapa de todos os dados para buscar ano anterior
-  const hMap: Record<string, number> = {}
-  historico.forEach(h => { hMap[`${h.ano}-${h.mes}`] = h.faturamento })
-  const max = Math.max(...recente.map(h => {
-    const prev = hMap[`${h.ano-1}-${h.mes}`]||0
-    return Math.max(h.faturamento, prev)
-  }), 1)
+
+  const anosDisp = Array.from(new Set(historico.map(h => h.ano))).sort((a,b) => b-a)
+  const anosGraf = anosAtivos.length ? anosAtivos : anosDisp.slice(0,2)
+
+  const fatMes = (ano:number, mes:number) => {
+    const h = historico.find(x => x.ano===ano && x.mes===mes)
+    return h?.faturamento || 0
+  }
+
+  const series = anosGraf.map((ano,ci) => ({
+    ano, cor: CORES_GRAF[ci % CORES_GRAF.length],
+    pts: Array.from({length:12},(_,i) => ({ mes:i+1, fat: fatMes(ano,i+1) }))
+  }))
+
+  const allVals = series.flatMap(s => s.pts.map(p => p.fat)).filter(v => v>0)
+  if (!allVals.length) return null
+
+  const W=760, H=260, PL=60, PR=24, PT=28, PB=44
+  const cW = (W-PL-PR)/12
+  const nS = series.length
+  const bW = Math.min(20, (cW*0.85)/nS)
+  const maxF = Math.max(...allVals) * 1.1
+  const yOf = (f:number) => PT + (1 - f/maxF) * (H-PT-PB)
+  const xMes = (mes:number) => PL + ((mes-1)+0.5)*cW
+
+  function linReg(pts: {mes:number;fat:number}[]) {
+    const v = pts.filter(p=>p.fat>0)
+    if (v.length<2) return null
+    const n=v.length, sx=v.reduce((a,p)=>a+p.mes,0), sy=v.reduce((a,p)=>a+p.fat,0)
+    const sxy=v.reduce((a,p)=>a+p.mes*p.fat,0), sx2=v.reduce((a,p)=>a+p.mes*p.mes,0)
+    const m=(n*sxy-sx*sy)/(n*sx2-sx*sx), b=(sy-m*sx)/n
+    return (x:number)=>m*x+b
+  }
+
+  const media = allVals.reduce((a,v)=>a+v,0)/allVals.length
+  const dp = Math.sqrt(allVals.reduce((a,v)=>a+(v-media)**2,0)/allVals.length)
+  const bandTop = yOf(Math.min(media+dp, maxF))
+  const bandBot = yOf(Math.max(media-dp, 0))
+  const anoAtual = new Date().getFullYear()
+  const mesAtual = new Date().getMonth()+1
+  const fmt$ = (v:number) => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v)
 
   return (
     <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
-      <h3 className="font-syne font-bold text-[13px] mb-1"> Faturamento Mensal</h3>
-      <div className="flex gap-4 mb-4 text-[9px] text-nodri-t3">
-        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm" style={{background:'linear-gradient(to top,#5b4fcf,#5b4fcf)'}}/> Atual</span>
-        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm opacity-40 bg-purple-400"/> Ano ant.</span>
-      </div>
-      <div className="overflow-x-auto">
-        <div className="flex items-end gap-1.5 pb-1" style={{minWidth: `${recente.length * 60}px`, height:'180px'}}>
-          {recente.map(h => {
-            const prevFat = hMap[`${h.ano-1}-${h.mes}`]||0
-            const pctGrowth = prevFat > 0 ? ((h.faturamento-prevFat)/prevFat)*100 : null
-            const barH = Math.max((h.faturamento/max)*100, h.faturamento>0?3:0)
-            const prevH = Math.max((prevFat/max)*100, prevFat>0?3:0)
-            const diff = h.faturamento - prevFat
+      {/* Header */}
+      <div className="flex items-start justify-between flex-wrap gap-3 mb-4">
+        <div>
+          <h3 className="font-syne font-bold text-[13px] text-nodri-t1 mb-1">Faturamento por Mês — Comparativo Anual</h3>
+          <div className="flex flex-wrap gap-3 text-[9px] text-nodri-t3">
+            <span className="flex items-center gap-1"><span className="inline-block w-3 h-1 rounded" style={{background:'#5b4fcf'}}/> Barras = faturamento real</span>
+            <span className="flex items-center gap-1"><svg width="14" height="8"><line x1="0" y1="4" x2="14" y2="4" stroke="#5b4fcf" strokeWidth="1.5" strokeDasharray="4 2"/></svg> Tendência</span>
+            <span className="flex items-center gap-1"><svg width="14" height="8"><line x1="0" y1="4" x2="14" y2="4" stroke="#767069" strokeWidth="1" strokeDasharray="3 2"/></svg> Média geral (μ)</span>
+          </div>
+        </div>
+        <div className="flex gap-1.5 flex-wrap">
+          {anosDisp.map(ano => {
+            const ativo = anosGraf.includes(ano)
+            const ci = anosGraf.indexOf(ano)
+            const cor = CORES_GRAF[ci%CORES_GRAF.length]
             return (
-              <div key={`${h.ano}-${h.mes}`} className="flex flex-col items-center gap-0.5 flex-1 min-w-[50px]">
-                {/* % e diferença */}
-                <div className="flex flex-col items-center" style={{height:'32px',justifyContent:'flex-end'}}>
-                  {pctGrowth !== null && (
-                    <span style={{color: pctGrowth>=0?'#22c55e':'#ef4444', fontSize:'9px', fontWeight:700, lineHeight:1.2}}>
-                      {pctGrowth>=0?'+':''}{pctGrowth.toFixed(0)}%
-                    </span>
-                  )}
-                  {diff !== 0 && prevFat > 0 && (
-                    <span style={{color:'#767069', fontSize:'8px', lineHeight:1.2}}>
-                      {diff>0?'+':''}{(diff/1000).toFixed(1)}k
-                    </span>
-                  )}
-                </div>
-                {/* Barras */}
-                <div className="flex items-end gap-0.5 flex-1 w-full">
-                  {prevFat > 0 && (
-                    <div className="flex-1 rounded-t-sm opacity-40" style={{height:`${prevH}%`, background:'#5b4fcf', minHeight:'3px'}}
-                      title={`Ano ant: R$ ${prevFat.toLocaleString('pt-BR',{minimumFractionDigits:2})}`}/>
-                  )}
-                  <div className="flex-1 rounded-t-sm" style={{height:`${barH}%`, background:'linear-gradient(to top,#5b4fcf,#5b4fcf)', minHeight: h.faturamento>0?'3px':'0'}}
-                    title={`R$ ${h.faturamento.toLocaleString('pt-BR',{minimumFractionDigits:2})}`}/>
-                </div>
-                {/* Valor */}
-                <span style={{fontSize:'8px', color:'#1a1a1a', fontWeight:600, textAlign:'center', lineHeight:1.2}}>
-                  {(h.faturamento/1000).toFixed(1)}k
-                </span>
-                {/* Mês */}
-                <span style={{fontSize:'8px', color:'#767069'}}>{MESES[h.mes-1]}/{String(h.ano).slice(2)}</span>
-              </div>
+              <button key={ano} type="button"
+                onClick={() => setAnosAtivos(ativo ? anosGraf.filter(a=>a!==ano) : [...anosGraf,ano].slice(-4))}
+                style={{padding:'3px 10px',borderRadius:6,border:`1px solid ${ativo?cor:'#e0ddd8'}`,fontSize:11,fontWeight:700,cursor:'pointer',background:ativo?cor+'22':'#f5f4f0',color:ativo?cor:'#6b6860',transition:'all .15s'}}>
+                {ano}{ano===anoAtual?' (atual)':''}
+              </button>
             )
           })}
+        </div>
+      </div>
+
+      {/* SVG Chart */}
+      <div className="overflow-x-auto">
+        <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',minWidth:480,display:'block'}}>
+          <defs>
+            {series.map(s=>(
+              <linearGradient key={s.ano} id={`gfp${s.ano}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={s.cor} stopOpacity="0.9"/>
+                <stop offset="100%" stopColor={s.cor} stopOpacity="0.35"/>
+              </linearGradient>
+            ))}
+          </defs>
+          {/* grade */}
+          {[0,0.25,0.5,0.75,1].map(t=>{
+            const y=PT+t*(H-PT-PB), v=maxF*(1-t)
+            return <g key={t}>
+              <line x1={PL} y1={y} x2={W-PR} y2={y} stroke="#e8e6e0" strokeWidth={1}/>
+              <text x={PL-5} y={y+4} textAnchor="end" fill="#767069" fontSize={9}>{v>=1000?(v/1000).toFixed(0)+'k':v.toFixed(0)}</text>
+            </g>
+          })}
+          {/* banda DP */}
+          <rect x={PL} y={bandTop} width={W-PL-PR} height={Math.max(0,bandBot-bandTop)} fill="#e8e6e0" fillOpacity={0.4} rx={2}/>
+          {/* linha média */}
+          <line x1={PL} y1={yOf(media)} x2={W-PR} y2={yOf(media)} stroke="#767069" strokeWidth={1} strokeDasharray="4 3" opacity={0.6}/>
+          <text x={W-PR+2} y={yOf(media)+4} fill="#767069" fontSize={8}>μ {(media/1000).toFixed(0)}k</text>
+          {/* meses */}
+          {Array.from({length:12},(_,i)=>{
+            const mes=i+1, x=xMes(mes)
+            const isDest=mes===mesAtual
+            return <g key={mes}>
+              {isDest&&<rect x={x-cW/2} y={PT} width={cW} height={H-PT-PB} fill="#5b4fcf" fillOpacity={0.04} rx={2}/>}
+              <text x={x} y={H-PB+14} textAnchor="middle" fill={isDest?'#1a1a1a':'#767069'} fontSize={9} fontWeight={isDest?700:400}>{MESES_ABREV[mes-1]}</text>
+            </g>
+          })}
+          {/* séries */}
+          {series.map((s,si)=>{
+            const reg=linReg(s.pts)
+            const validPts=s.pts.filter(p=>p.fat>0)
+            const trendPts=reg&&validPts.length>=2?validPts.map(p=>({mes:p.mes,y:yOf(Math.max(0,reg(p.mes)))})):null
+            return <g key={s.ano}>
+              {s.pts.map(p=>{
+                if(!p.fat) return null
+                const cx=xMes(p.mes)
+                const offset=(si-(nS-1)/2)*(bW+2)
+                const bx=cx+offset-bW/2
+                const by=yOf(p.fat), bh=H-PB-by
+                const isAtual=p.mes===mesAtual&&s.ano===anoAtual
+                const anoComp=series.find(x=>x.ano!==s.ano)
+                const fatComp=anoComp?.pts.find(x=>x.mes===p.mes)?.fat||0
+                const pct=fatComp>0?((p.fat-fatComp)/fatComp)*100:null
+                return <g key={p.mes}>
+                  <rect x={bx} y={by} width={bW} height={bh} fill={`url(#gfp${s.ano})`} rx={3}/>
+                  {bh>16&&<text x={bx+bW/2} y={by-3} textAnchor="middle" fill={s.cor} fontSize={8} fontWeight={600} opacity={0.9}>{(p.fat/1000).toFixed(0)}k</text>}
+                  {isAtual&&<rect x={bx-1} y={by-1} width={bW+2} height={bh+1} fill="none" stroke={s.cor} strokeWidth={1.5} rx={3}/>}
+                  {isAtual&&pct!==null&&<text x={bx+bW/2} y={by-(bh>16?18:6)} textAnchor="middle" fill={pct>=0?'#10b981':'#ef4444'} fontSize={8} fontWeight={700}>{pct>=0?'+':''}{pct.toFixed(0)}%</text>}
+                </g>
+              })}
+              {trendPts&&trendPts.length>=2&&(
+                <polyline points={trendPts.map(p=>`${xMes(p.mes)},${p.y}`).join(' ')} fill="none" stroke={s.cor} strokeWidth={1.5} strokeDasharray="6 3" opacity={0.75} strokeLinejoin="round" strokeLinecap="round"/>
+              )}
+            </g>
+          })}
+        </svg>
+      </div>
+
+      {/* Stats por ano */}
+      <div className="flex flex-wrap gap-3 mt-4">
+        {series.map(s=>{
+          const vals=s.pts.filter(p=>p.fat>0).map(p=>p.fat)
+          const total=vals.reduce((a,v)=>a+v,0)
+          const med=vals.length?total/vals.length:0
+          return (
+            <div key={s.ano} className="rounded-xl p-3" style={{background:'#f8f7f5',border:`1px solid ${s.cor}30`,minWidth:150}}>
+              <div className="flex items-center gap-1.5 mb-2">
+                <span className="w-2.5 h-2.5 rounded-sm" style={{background:s.cor}}/>
+                <span className="text-[12px] font-bold" style={{color:s.cor}}>{s.ano}{s.ano===anoAtual?' (atual)':''}</span>
+              </div>
+              <div className="text-[9px] text-nodri-t3 space-y-0.5">
+                <div>Total: <span className="text-nodri-t1 font-semibold">{fmt$(total)}</span></div>
+                <div>Média/mês: <span className="text-nodri-t1">{fmt$(med)}</span></div>
+                <div>Meses c/ dados: <span className="text-nodri-t1">{vals.length}/12</span></div>
+              </div>
+            </div>
+          )
+        })}
+        <div className="rounded-xl p-3" style={{background:'#f8f7f5',border:'1px solid #e8e6e0',minWidth:150}}>
+          <div className="text-[9px] font-bold text-nodri-t3 uppercase mb-2">Todos os Anos</div>
+          <div className="text-[9px] text-nodri-t3 space-y-0.5">
+            <div>Média global: <span className="text-nodri-t1 font-semibold">{fmt$(media)}</span></div>
+            <div>DP: <span style={{color:'#b45309'}}>{fmt$(dp)}</span></div>
+            <div style={{fontSize:'8px'}}>Faixa normal: {fmt$(Math.max(0,media-dp))} – {fmt$(media+dp)}</div>
+          </div>
         </div>
       </div>
     </div>
@@ -2091,12 +2199,20 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  const [categoriaMedia, setCategoriaMedia] = useState<{
+    cargo: string; total_prof_categoria: number; prof_com_dados: number; media: Record<string,number> | null; atual: Record<string,number> | null
+  } | null>(null)
+
   const buscarMetricas = useCallback(async () => {
     setLoadMet(true)
     const qs = new URLSearchParams({ p1_inicio: p1i, p1_fim: p1f, p2_inicio: p2i, p2_fim: p2f })
-    const res = await fetch(`/api/profissionais/${id}/metricas?${qs}`)
-    if (res.ok) setMetricas(await res.json())
+    const [resM, resCat] = await Promise.all([
+      fetch(`/api/profissionais/${id}/metricas?${qs}`),
+      fetch(`/api/profissionais/${id}/categoria-media?p2_inicio=${p2i}&p2_fim=${p2f}`),
+    ])
+    if (resM.ok) setMetricas(await resM.json())
     else toast.error('Erro ao buscar métricas')
+    if (resCat.ok) setCategoriaMedia(await resCat.json())
     setLoadMet(false)
   }, [id, p1i, p1f, p2i, p2f])
 
@@ -2719,6 +2835,59 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                   </div>
                 </div>
                 {fidel && <BlocoFidelizacao f={fidel}/>}
+                {/* Comparativo com média da categoria */}
+                {categoriaMedia?.media && categoriaMedia.atual && (() => {
+                  const m = categoriaMedia.media
+                  const a = categoriaMedia.atual
+                  const fmt$ = (v:number) => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0)
+                  const fmtN = (v:number) => (v||0).toLocaleString('pt-BR',{maximumFractionDigits:1})
+                  const fmtP = (v:number) => (v||0).toFixed(1)+'%'
+                  const deltaCat = (atual:number, med:number) => {
+                    if(!med) return null
+                    const d=((atual-med)/med)*100
+                    return { d, up:d>=0, label:`${d>=0?'+':''}${d.toFixed(1)}%` }
+                  }
+                  const itens = [
+                    {l:' Faturamento',      a:a.faturamento||0,              med:m.faturamento||0,              f:fmt$},
+                    {l:'️ Ticket Médio',     a:a.ticket_medio||0,             med:m.ticket_medio||0,             f:fmt$},
+                    {l:' Preferência',      a:a.clientes_preferencia||0,     med:m.clientes_preferencia||0,     f:fmtN},
+                    {l:' Sem Pref.',        a:a.clientes_sem_preferencia||0, med:m.clientes_sem_preferencia||0, f:fmtN},
+                    {l:' Dias Trabalhados', a:a.dias_trabalhados||0,         med:m.dias_trabalhados||0,         f:fmtN},
+                    {l:'️ Ocupação',         a:a.taxa_ocupacao||0,            med:m.taxa_ocupacao||0,            f:fmtP},
+                    {l:'️ Serviços',         a:a.total_servicos||0,           med:m.total_servicos||0,           f:fmtN},
+                    {l:' Produtos',         a:a.total_produtos||0,           med:m.total_produtos||0,           f:fmtN},
+                  ]
+                  return (
+                    <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
+                      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                        <h3 className="font-syne font-bold text-[13px]"> vs Média da Categoria — {categoriaMedia.cargo}</h3>
+                        <span className="text-[9px] text-nodri-t3 bg-nodri-card border border-nodri-border rounded-lg px-2 py-1">
+                          {categoriaMedia.prof_com_dados} de {categoriaMedia.total_prof_categoria} profissional(is) com dados
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        {itens.map(item => {
+                          const d = deltaCat(item.a, item.med)
+                          const acimaDaMed = d ? d.up : false
+                          return (
+                            <div key={item.l} className="bg-nodri-card border border-nodri-border rounded-xl p-3">
+                              <div className="text-[9px] text-nodri-t3 uppercase tracking-wider mb-1">{item.l}</div>
+                              <div className="font-syne font-bold text-[17px] text-nodri-t1">{item.f(item.a)}</div>
+                              <div className="text-[9px] text-nodri-t3 mt-1">Categoria: {item.f(item.med)}</div>
+                              {d && (
+                                <div className="flex items-center gap-1 mt-1">
+                                  {acimaDaMed ? <TrendingUp size={10} color="#22c55e"/> : <TrendingDown size={10} color="#ef4444"/>}
+                                  <span className="text-[10px] font-bold" style={{color:acimaDaMed?'#22c55e':'#ef4444'}}>{d.label}</span>
+                                  <span className="text-[8px] text-nodri-t3">{acimaDaMed?'acima':'abaixo'} da média</span>
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })()}
                 {/* Gráfico vertical com comparativo */}
                 {metricas.historico_completo?.length > 0 && (
                   <GraficoFaturamento historico={metricas.historico_completo}/>
