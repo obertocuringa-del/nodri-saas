@@ -1452,7 +1452,7 @@ Use números reais. Seja direto.`
                 <div className="px-5 pb-3 flex items-center gap-2 text-xs" style={{color:'#9e9b94'}}>
                   <span>📉 Depreciação mensal:</span>
                   <span className="font-bold" style={{color:'#7c6fe0'}}>{fmtR(depMensal)}</span>
-                  <span style={{color:'#dedad4'}}>(inclusa no Custo Operacional)</span>
+                  <span style={{color:'#9e9b94'}}>(inclusa no Custo Operacional)</span>
                 </div>
               )}</>}
             </div>
@@ -1620,7 +1620,7 @@ Use números reais. Seja direto.`
                   ].map((c,i)=>(
                     <div key={i} className="rounded-xl p-4 border" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
                       <p className="text-xs mb-0.5" style={{color:'#9e9b94'}}>{c.l}</p>
-                      <p className="text-[10px] mb-2" style={{color:'#dedad4'}}>{c.dica}</p>
+                      <p className="text-[10px] mb-2" style={{color:'#9e9b94'}}>{c.dica}</p>
                       <p className="text-2xl font-bold" style={{color:c.c}}>{fmtR(c.v)}</p>
                       <p className="text-xs mt-1" style={{color:c.c+'99'}}>{c.pct} do faturamento</p>
                     </div>
@@ -1636,7 +1636,7 @@ Use números reais. Seja direto.`
                     <div key={i} className="rounded-xl p-4 border text-center" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
                       <p className="text-[10px] mb-1" style={{color:'#9e9b94'}}>{c.l}</p>
                       <p className="text-lg font-bold" style={{color:c.c}}>{c.v}</p>
-                      <p className="text-[9px] mt-1" style={{color:'#dedad4'}}>{c.dica}</p>
+                      <p className="text-[9px] mt-1" style={{color:'#9e9b94'}}>{c.dica}</p>
                     </div>
                   ))}
                 </div>
@@ -1673,7 +1673,7 @@ Use números reais. Seja direto.`
                             <span className="text-[10px]" style={{color:'#6b6860'}}>{c.limite}: {c.desej}%</span>
                           </div>
                           <p className="text-[10px] mt-1" style={{color:ok?'#10b981':'#ef4444'}}>{status}</p>
-                          <p className="text-[9px] mt-0.5" style={{color:'#dedad4'}}>{c.dica}</p>
+                          <p className="text-[9px] mt-0.5" style={{color:'#9e9b94'}}>{c.dica}</p>
                         </div>
                       )
                     })}
@@ -1823,7 +1823,7 @@ Use números reais. Seja direto.`
                             </p>
                           </div>
                         )}
-                        {n(reservaEmerg)>0&&<p className="text-[10px] mt-1" style={{color:'#dedad4'}}>Este mês você guardou: {fmtR(n(reservaEmerg))}</p>}
+                        {n(reservaEmerg)>0&&<p className="text-[10px] mt-1" style={{color:'#9e9b94'}}>Este mês você guardou: {fmtR(n(reservaEmerg))}</p>}
                       </div>
                     </div>
                   </div>
@@ -1984,7 +1984,7 @@ Use números reais. Seja direto.`
                         <div key={i}>
                           <p className="text-[10px]" style={{color:'#9e9b94'}}>{c.l}</p>
                           <p className="text-lg font-bold" style={{color:'#06b6d4'}}>{c.v}</p>
-                          <p className="text-[9px]" style={{color:'#dedad4'}}>cada profissional precisa gerar</p>
+                          <p className="text-[9px]" style={{color:'#9e9b94'}}>cada profissional precisa gerar</p>
                         </div>
                       ))}
                     </div>
@@ -1999,7 +1999,7 @@ Use números reais. Seja direto.`
                         <div key={i}>
                           <p className="text-[10px]" style={{color:'#9e9b94'}}>{c.l}</p>
                           <p className="text-lg font-bold" style={{color:'#f59e0b'}}>{c.v}</p>
-                          <p className="text-[9px]" style={{color:'#dedad4'}}>cada m² precisa gerar</p>
+                          <p className="text-[9px]" style={{color:'#9e9b94'}}>cada m² precisa gerar</p>
                         </div>
                       ))}
                     </div>
@@ -2216,7 +2216,7 @@ Use números reais. Seja direto.`
                           ].map((item,i)=>(
                             <div key={i} className="px-2 py-2">
                               <p className="text-[9px] font-bold mb-0.5" style={{color:'#9e9b94'}}>{item.l}</p>
-                              <p className="text-[8px] mb-1 leading-tight" style={{color:'#dedad4'}}>{item.sub}</p>
+                              <p className="text-[8px] mb-1 leading-tight" style={{color:'#9e9b94'}}>{item.sub}</p>
                               <p className="text-sm font-bold" style={{color:item.co}}>{item.v}</p>
                               <p className="text-[10px]" style={{color:item.co+'99'}}>{item.p} do preço</p>
                             </div>
@@ -2566,7 +2566,7 @@ Use números reais. Seja direto.`
                       <div className="h-3 rounded-full transition-all duration-700"
                         style={{width:`${scoreFinanceiro.score}%`, background:`linear-gradient(90deg, #ef4444, #f59e0b, ${scoreFinanceiro.cor})`}}/>
                     </div>
-                    <div className="flex justify-between text-[10px] mt-1" style={{color:'#dedad4'}}>
+                    <div className="flex justify-between text-[10px] mt-1" style={{color:'#9e9b94'}}>
                       <span>0 — Crítico</span><span>50 — Atenção</span><span>75 — Saudável</span><span>100</span>
                     </div>
                   </div>
@@ -2701,7 +2701,7 @@ Use números reais. Seja direto.`
                             <div className="h-3 rounded-full transition-all duration-500"
                               style={{width:`${pctBarra}%`, background:ok?`${item.c}80`:'#ef444480', border:`1px solid ${ok?item.c:'#ef4444'}`}}/>
                           </div>
-                          <div className="flex justify-between text-[9px] mt-0.5 mb-1" style={{color:'#dedad4'}}>
+                          <div className="flex justify-between text-[9px] mt-0.5 mb-1" style={{color:'#9e9b94'}}>
                             <span>0%</span>
                             <span style={{color:'#ffffff60'}}>▲ {item.sub} {item.meta}%</span>
                             <span>{escala.toFixed(0)}%</span>

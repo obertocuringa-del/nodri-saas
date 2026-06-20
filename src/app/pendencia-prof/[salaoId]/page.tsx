@@ -135,7 +135,7 @@ export default function PendenciaPublicaPage() {
           </button>
         </div>
 
-        <p style={{ textAlign: 'center', color: '#dedad4', fontSize: '11px', marginTop: '16px' }}>
+        <p style={{ textAlign: 'center', color: '#9e9b94', fontSize: '11px', marginTop: '16px' }}>
           Powered by Nodri
         </p>
       </div>

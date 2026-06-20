@@ -260,7 +260,7 @@ export default function ProfissionaisPage() {
         <a href="/salon" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#9e9b94', textDecoration: 'none', fontSize: '13px' }}>
           <ArrowLeft size={15} /> Voltar
         </a>
-        <span style={{ color: '#ffffff' }}>|</span>
+        <span style={{ color: '#c8c5be' }}>|</span>
         <span style={{ color: '#1a1a1a', fontWeight: 700, fontSize: '14px', display: 'flex', alignItems: 'center', gap: 6 }}><Users size={14} /> Profissionais</span>
       </div>
 
@@ -513,7 +513,7 @@ export default function ProfissionaisPage() {
                           </button>
                         </div>
                       )}
-                      <p style={{ color: '#dedad4', fontSize: '10px', margin: '4px 0 0' }}>
+                      <p style={{ color: '#9e9b94', fontSize: '10px', margin: '4px 0 0' }}>
                         Selecione uma categoria existente ou clique em <strong style={{ color: '#5b4fcf' }}>+</strong> para criar nova
                       </p>
                     </div>

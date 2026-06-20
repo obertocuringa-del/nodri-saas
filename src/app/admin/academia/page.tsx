@@ -127,18 +127,18 @@ export default function AdminAcademiaPage() {
   }))
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className="min-h-screen bg-gray-950 text-gray-900">
       {/* Header */}
-      <div className="bg-gray-900 border-b border-gray-800 px-6 py-4">
+      <div className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button onClick={() => router.push('/admin')} className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
-              <ArrowLeft size={18} className="text-gray-400" />
+            <button onClick={() => router.push('/admin')} className="p-2 hover:bg-gray-50 rounded-lg transition-colors">
+              <ArrowLeft size={18} className="text-gray-500" />
             </button>
-            <BookOpen size={20} className="text-amber-400" />
+            <BookOpen size={20} className="text-amber-700" />
             <div>
-              <h1 className="font-bold text-white">Academia NODRI</h1>
-              <p className="text-xs text-gray-400">{artigos.length} artigos · {artigos.filter(a => a.ativo).length} visíveis</p>
+              <h1 className="font-bold text-gray-900">Academia NODRI</h1>
+              <p className="text-xs text-gray-500">{artigos.length} artigos · {artigos.filter(a => a.ativo).length} visíveis</p>
             </div>
           </div>
           <button
@@ -159,13 +159,13 @@ export default function AdminAcademiaPage() {
               value={busca}
               onChange={e => setBusca(e.target.value)}
               placeholder="Buscar artigos..."
-              className="w-full bg-gray-900 border border-gray-700 rounded-xl pl-8 pr-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-amber-500"
+              className="w-full bg-white border border-gray-200 rounded-xl pl-8 pr-3 py-2 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:border-amber-500"
             />
           </div>
           <select
             value={catFiltro}
             onChange={e => setCatFiltro(e.target.value)}
-            className="bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
+            className="bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-amber-500"
           >
             <option value="">Todas as categorias</option>
             {CATEGORIAS.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
@@ -180,16 +180,16 @@ export default function AdminAcademiaPage() {
         ) : (
           <div className="space-y-6">
             {porCategoria.map(cat => (
-              <div key={cat.key} className="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
+              <div key={cat.key} className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
                 {/* Cabeçalho da categoria */}
                 <div
-                  className="flex items-center justify-between px-5 py-3 border-b border-gray-800 cursor-pointer hover:bg-gray-800/50 transition-colors"
+                  className="flex items-center justify-between px-5 py-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50/50 transition-colors"
                   onClick={() => setExpandido(expandido === cat.key ? null : cat.key)}
                 >
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold text-white">{cat.label}</span>
-                    <span className="text-xs bg-gray-700 text-gray-300 px-2 py-0.5 rounded-full">{cat.artigos.length}</span>
-                    <span className="text-xs bg-green-900/40 text-green-400 px-2 py-0.5 rounded-full">{cat.artigos.filter(a => a.ativo).length} visíveis</span>
+                    <span className="font-semibold text-gray-900">{cat.label}</span>
+                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{cat.artigos.length}</span>
+                    <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">{cat.artigos.filter(a => a.ativo).length} visíveis</span>
                   </div>
                   {expandido === cat.key ? <ChevronUp size={16} className="text-gray-500" /> : <ChevronDown size={16} className="text-gray-500" />}
                 </div>
@@ -198,26 +198,26 @@ export default function AdminAcademiaPage() {
                 {(expandido === cat.key || !catFiltro && !busca ? expandido === cat.key : true) && cat.artigos.length > 0 && (
                   <div className="divide-y divide-gray-800">
                     {cat.artigos.map(a => (
-                      <div key={a.id} className={`flex items-center gap-3 px-5 py-3 hover:bg-gray-800/30 transition-colors ${!a.ativo ? 'opacity-50' : ''}`}>
+                      <div key={a.id} className={`flex items-center gap-3 px-5 py-3 hover:bg-gray-50/30 transition-colors ${!a.ativo ? 'opacity-50' : ''}`}>
                         <span className="text-xl flex-shrink-0">{a.emoji}</span>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm text-white truncate">{a.titulo}</p>
+                          <p className="font-medium text-sm text-gray-900 truncate">{a.titulo}</p>
                           {a.resumo && <p className="text-xs text-gray-500 truncate">{a.resumo}</p>}
                         </div>
                         <div className="flex items-center gap-1 flex-shrink-0">
-                          <span className={`text-xs px-2 py-0.5 rounded-full ${a.ativo ? 'bg-green-900/40 text-green-400' : 'bg-gray-800 text-gray-500'}`}>
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${a.ativo ? 'bg-green-100 text-green-700' : 'bg-gray-50 text-gray-500'}`}>
                             {a.ativo ? 'Visível' : 'Oculto'}
                           </span>
                           <button onClick={() => toggleAtivo(a)} title={a.ativo ? 'Ocultar' : 'Mostrar'}
-                            className="p-1.5 hover:bg-gray-700 rounded-lg transition-colors text-gray-400 hover:text-amber-400">
+                            className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-gray-500 hover:text-amber-700">
                             {a.ativo ? <EyeOff size={15} /> : <Eye size={15} />}
                           </button>
                           <button onClick={() => abrirEditar(a)} title="Editar"
-                            className="p-1.5 hover:bg-gray-700 rounded-lg transition-colors text-gray-400 hover:text-blue-400">
+                            className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-gray-500 hover:text-blue-700">
                             <Edit2 size={15} />
                           </button>
                           <button onClick={() => excluir(a.id, a.titulo)} title="Excluir"
-                            className="p-1.5 hover:bg-gray-700 rounded-lg transition-colors text-gray-400 hover:text-red-400">
+                            className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-gray-500 hover:text-red-700">
                             <Trash2 size={15} />
                           </button>
                         </div>
@@ -229,7 +229,7 @@ export default function AdminAcademiaPage() {
                 {/* Botão adicionar na categoria */}
                 <button
                   onClick={() => { setForm({ ...ARTIGO_VAZIO, categoria: cat.key }); setEditId(null); setModal('novo') }}
-                  className="w-full flex items-center gap-2 px-5 py-2.5 text-xs text-gray-500 hover:text-amber-400 hover:bg-gray-800/50 transition-colors"
+                  className="w-full flex items-center gap-2 px-5 py-2.5 text-xs text-gray-500 hover:text-amber-700 hover:bg-gray-50/50 transition-colors"
                 >
                   <Plus size={13} /> Adicionar artigo em {cat.label}
                 </button>
@@ -242,11 +242,11 @@ export default function AdminAcademiaPage() {
       {/* Modal criar/editar */}
       {modal && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-start justify-center p-4 overflow-y-auto">
-          <div className="bg-gray-900 rounded-2xl border border-gray-700 w-full max-w-3xl my-8">
+          <div className="bg-white rounded-2xl border border-gray-200 w-full max-w-3xl my-8">
             {/* Header modal */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
-              <h2 className="font-bold text-white">{modal === 'novo' ? 'Novo Artigo' : 'Editar Artigo'}</h2>
-              <button onClick={() => setModal(null)} className="p-2 hover:bg-gray-800 rounded-lg transition-colors text-gray-400">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+              <h2 className="font-bold text-gray-900">{modal === 'novo' ? 'Novo Artigo' : 'Editar Artigo'}</h2>
+              <button onClick={() => setModal(null)} className="p-2 hover:bg-gray-50 rounded-lg transition-colors text-gray-500">
                 <X size={18} />
               </button>
             </div>
@@ -255,35 +255,35 @@ export default function AdminAcademiaPage() {
               {/* Linha 1: Categoria + Emoji + Ordem */}
               <div className="grid grid-cols-3 gap-3">
                 <div className="col-span-2">
-                  <label className="block text-xs text-gray-400 mb-1">Categoria</label>
+                  <label className="block text-xs text-gray-500 mb-1">Categoria</label>
                   <select
                     value={form.categoria}
                     onChange={e => setForm(f => ({ ...f, categoria: e.target.value }))}
-                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-amber-500"
                   >
                     {CATEGORIAS.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-400 mb-1">Ordem</label>
+                  <label className="block text-xs text-gray-500 mb-1">Ordem</label>
                   <input
                     type="number"
                     value={form.ordem}
                     onChange={e => setForm(f => ({ ...f, ordem: Number(e.target.value) }))}
-                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-amber-500"
                   />
                 </div>
               </div>
 
               {/* Emoji picker */}
               <div>
-                <label className="block text-xs text-gray-400 mb-1">Emoji</label>
+                <label className="block text-xs text-gray-500 mb-1">Emoji</label>
                 <div className="flex flex-wrap gap-1.5">
                   {EMOJIS.map(e => (
                     <button
                       key={e}
                       onClick={() => setForm(f => ({ ...f, emoji: e }))}
-                      className={`w-9 h-9 rounded-lg text-lg flex items-center justify-center transition-all ${form.emoji === e ? 'bg-amber-500/20 ring-2 ring-amber-500' : 'bg-gray-800 hover:bg-gray-700'}`}
+                      className={`w-9 h-9 rounded-lg text-lg flex items-center justify-center transition-all ${form.emoji === e ? 'bg-amber-500/20 ring-2 ring-amber-500' : 'bg-gray-50 hover:bg-gray-100'}`}
                     >
                       {e}
                     </button>
@@ -293,29 +293,29 @@ export default function AdminAcademiaPage() {
 
               {/* Título */}
               <div>
-                <label className="block text-xs text-gray-400 mb-1">Título *</label>
+                <label className="block text-xs text-gray-500 mb-1">Título *</label>
                 <input
                   value={form.titulo}
                   onChange={e => setForm(f => ({ ...f, titulo: e.target.value }))}
                   placeholder="Ex: Como calcular o ponto de equilíbrio"
-                  className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-amber-500"
                 />
               </div>
 
               {/* Resumo */}
               <div>
-                <label className="block text-xs text-gray-400 mb-1">Resumo (aparece na listagem)</label>
+                <label className="block text-xs text-gray-500 mb-1">Resumo (aparece na listagem)</label>
                 <input
                   value={form.resumo}
                   onChange={e => setForm(f => ({ ...f, resumo: e.target.value }))}
                   placeholder="Uma frase que descreve o artigo"
-                  className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-amber-500"
                 />
               </div>
 
               {/* Conteúdo */}
               <div>
-                <label className="block text-xs text-gray-400 mb-1">
+                <label className="block text-xs text-gray-500 mb-1">
                   Conteúdo * <span className="text-gray-600">(suporta ## título, • lista, **negrito**)</span>
                 </label>
                 <textarea
@@ -323,7 +323,7 @@ export default function AdminAcademiaPage() {
                   onChange={e => setForm(f => ({ ...f, conteudo: e.target.value }))}
                   rows={16}
                   placeholder={`## Título da seção\n\nTexto normal do parágrafo.\n\n• Item da lista\n• Outro item\n\n**Texto em negrito**`}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500 font-mono resize-y"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-amber-500 font-mono resize-y"
                 />
               </div>
 
@@ -331,17 +331,17 @@ export default function AdminAcademiaPage() {
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => setForm(f => ({ ...f, ativo: !f.ativo }))}
-                  className={`relative w-10 h-5 rounded-full transition-colors ${form.ativo ? 'bg-green-500' : 'bg-gray-700'}`}
+                  className={`relative w-10 h-5 rounded-full transition-colors ${form.ativo ? 'bg-green-500' : 'bg-gray-100'}`}
                 >
                   <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${form.ativo ? 'left-5' : 'left-0.5'}`} />
                 </button>
-                <span className="text-sm text-gray-300">{form.ativo ? 'Visível para os salões' : 'Oculto (só admin vê)'}</span>
+                <span className="text-sm text-gray-600">{form.ativo ? 'Visível para os salões' : 'Oculto (só admin vê)'}</span>
               </div>
             </div>
 
             {/* Footer modal */}
-            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-800">
-              <button onClick={() => setModal(null)} className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">
+            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200">
+              <button onClick={() => setModal(null)} className="px-4 py-2 text-sm text-gray-500 hover:text-white transition-colors">
                 Cancelar
               </button>
               <button

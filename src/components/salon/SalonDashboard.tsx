@@ -283,11 +283,11 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
       {/* FAIXA DE IMPERSONAÇÃO */}
       {impersonandoNome && (
         <div className="flex items-center justify-between px-4 py-2 text-[12px] font-bold z-[60] sticky top-0"
-          style={{ background: '#854d0e', color: '#fef3c7', borderBottom: '2px solid #ca8a04' }}>
+          style={{ background: '#854d0e', color: '#92400e', borderBottom: '2px solid #ca8a04' }}>
           <div className="flex items-center gap-2">
             <span className="flex items-center gap-1"><Eye size={13} /> Você está acessando como cliente:</span>
-            <span className="px-2 py-0.5 rounded font-black" style={{ background: '#ca8a04', color: '#faf9f7' }}>{impersonandoNome}</span>
-            <span style={{ color: '#fde68a', fontWeight: 'normal' }}>— Sessão temporária (2h)</span>
+            <span className="px-2 py-0.5 rounded font-black" style={{ background: '#ca8a04', color: '#1a1a1a' }}>{impersonandoNome}</span>
+            <span style={{ color: '#92400e', fontWeight: 'normal' }}>— Sessão temporária (2h)</span>
           </div>
           <button onClick={voltarAoAdmin}
             className="flex items-center gap-1.5 px-3 py-1 rounded-lg font-black text-[11px] transition-all hover:brightness-110"
@@ -618,7 +618,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                   <span style={{ fontSize: 11, fontWeight: 600, background: `${pulseColor}20`, color: pulseColor, padding: '2px 10px', borderRadius: 99 }}>
                     {ativos.length}
                   </span>
-                  <span style={{ fontSize: 12, color: '#e8e6e0', marginLeft: 4 }}>{mostrarAlertasIA ? '▲' : '▼'}</span>
+                  <span style={{ fontSize: 12, color: '#6b6860', marginLeft: 4 }}>{mostrarAlertasIA ? '▲' : '▼'}</span>
                 </button>
 
                 {/* Dropdown */}
@@ -632,7 +632,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                   }}>
                     <div style={{ padding: '10px 16px', borderBottom: '0.5px solid #f0ede8', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ fontSize: 12, fontWeight: 600, color: '#6b6860' }}>{ativos.length} alertas ativos</span>
-                      <button onClick={() => setMostrarAlertasIA(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#e8e6e0', fontSize: 16 }}>✕</button>
+                      <button onClick={() => setMostrarAlertasIA(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b6860', fontSize: 16 }}>✕</button>
                     </div>
                     {ativos.map(alerta => {
                       const isCritico = alerta.tipo === 'critico'
@@ -650,7 +650,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                             <span style={{ fontSize: 12, fontWeight: 600, color: '#1a1a1a', flex: 1 }}>{alerta.titulo}</span>
                             <span style={{ fontSize: 10, background: pillBg, color: pillColor, padding: '1px 7px', borderRadius: 99, flexShrink: 0 }}>{pillLabel}</span>
                             <button onClick={() => setAlertasDismissed(prev => new Set([...prev, alerta.titulo]))}
-                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#e8e6e0', fontSize: 13, padding: '0 0 0 4px' }}>✕</button>
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b6860', fontSize: 13, padding: '0 0 0 4px' }}>✕</button>
                           </div>
                           {alerta.pct !== undefined && (
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

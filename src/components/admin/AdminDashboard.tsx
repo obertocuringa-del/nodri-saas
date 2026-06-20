@@ -936,7 +936,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
               className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11.5px] border transition-all ${activeSection === item.id ? 'bg-nodri-cyan/9 text-nodri-cyan border-nodri-cyan/17' : 'text-nodri-t2 border-transparent hover:bg-white/4 hover:text-nodri-t1'}`}>
               {item.icon}<span className="flex-1 text-left">{item.label}</span>
               {item.badge !== undefined && item.badge > 0 && (
-                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${item.badgeRed ? 'bg-nodri-red text-white' : 'bg-nodri-cyan text-black'}`}>{item.badge}</span>
+                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${item.badgeRed ? 'bg-nodri-red text-gray-900' : 'bg-nodri-cyan text-black'}`}>{item.badge}</span>
               )}
             </button>
           ))}
@@ -1028,7 +1028,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                           <div className="font-bold text-[10px] uppercase leading-tight truncate">{m.nome}</div>
                           <div className="text-[9px] text-nodri-t3">v{m.versao}</div>
                         </div>
-                        {m.em_manutencao && <span className="text-[8px] bg-nodri-red text-white px-1.5 py-0.5 rounded font-bold shrink-0">MANUTENÇÃO</span>}
+                        {m.em_manutencao && <span className="text-[8px] bg-nodri-red text-gray-900 px-1.5 py-0.5 rounded font-bold shrink-0">MANUTENÇÃO</span>}
                       </div>
                       <div className="flex gap-1 mt-2">
                         <button onClick={() => toggleManutencao(m)}
@@ -1081,8 +1081,8 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
           {activeSection === 'academia' && (
             <div className="flex flex-col items-center justify-center py-16 gap-4">
               <GraduationCap size={64} className="text-nodri-cyan" />
-              <h2 className="text-xl font-bold text-white">Academia NODRI</h2>
-              <p className="text-gray-400 text-sm text-center max-w-xs">Gerencie os artigos da Academia: crie, edite, oculte e organize o conteúdo por categoria.</p>
+              <h2 className="text-xl font-bold text-gray-900">Academia NODRI</h2>
+              <p className="text-gray-500 text-sm text-center max-w-xs">Gerencie os artigos da Academia: crie, edite, oculte e organize o conteúdo por categoria.</p>
               <a href="/admin/academia" className="bg-amber-500 hover:bg-amber-400 text-black font-semibold px-6 py-2.5 rounded-xl text-sm transition-colors">
                 Abrir Academia
               </a>
@@ -1520,7 +1520,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                   <div className="space-y-4">
                     <div>
                       <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">
-                        API Key Gemini {iaConfig.api_key_salva && <span className="text-green-400 normal-case">(já configurada)</span>}
+                        API Key Gemini {iaConfig.api_key_salva && <span className="text-green-700 normal-case">(já configurada)</span>}
                       </label>
                       <div className="relative">
                         <input
@@ -1606,7 +1606,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                   )}
                   {tavilyKeys.map((key, i) => (
                     <div key={i} className="flex items-center gap-2 bg-nodri-bg2 rounded-lg px-3 py-2">
-                      <span className="text-[10px] text-green-400 font-bold w-16 flex-shrink-0">Key {i + 1}</span>
+                      <span className="text-[10px] text-green-700 font-bold w-16 flex-shrink-0">Key {i + 1}</span>
                       <span className="text-[10px] text-nodri-t2 flex-1 font-mono truncate">{key.slice(0, 12)}...{key.slice(-6)}</span>
                       <button
                         onClick={async () => {
@@ -1619,7 +1619,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                           if (res.ok) { setTavilyKeys(novas); toast.success('Key removida!') }
                           else toast.error('Erro ao remover key')
                         }}
-                        className="text-red-400 hover:text-red-300 text-[10px] flex-shrink-0"
+                        className="text-red-700 hover:text-red-300 text-[10px] flex-shrink-0"
                       ></button>
                     </div>
                   ))}
@@ -1713,7 +1713,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                         toast.success(novoEstado ? 'Atualização disponibilizada para todos os salões!' : 'Botão voltou ao modo normal')
                       }}
                       disabled={savingPrograma}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[11px] font-bold transition-all ${configPrograma.atualizacao_ativa ? 'bg-green-500/15 border border-green-500/40 text-green-400 hover:bg-green-500/25' : 'bg-nodri-surface border border-nodri-border text-nodri-t2 hover:border-nodri-cyan/40 hover:text-nodri-cyan'}`}>
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[11px] font-bold transition-all ${configPrograma.atualizacao_ativa ? 'bg-green-500/15 border border-green-500/40 text-green-700 hover:bg-green-500/25' : 'bg-nodri-surface border border-nodri-border text-nodri-t2 hover:border-nodri-cyan/40 hover:text-nodri-cyan'}`}>
                       {configPrograma.atualizacao_ativa ? <><Zap size={12} /> Atualização ATIVA — Clique para desativar</> : <><RefreshCw size={12} /> Disponibilizar Atualização do Sistema</>}
                     </button>
                     <button
@@ -1764,7 +1764,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                 <div className="flex items-center gap-2 font-syne font-bold text-[12px] mb-3">
                   <Bell size={14} className="text-nodri-cyan" />
                   <span>Central de Notificações</span>
-                  {localNotifs.filter(n => !n.lida).length > 0 && <span className="bg-nodri-red text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">{localNotifs.filter(n => !n.lida).length}</span>}
+                  {localNotifs.filter(n => !n.lida).length > 0 && <span className="bg-nodri-red text-gray-900 text-[9px] font-bold px-1.5 py-0.5 rounded-full">{localNotifs.filter(n => !n.lida).length}</span>}
                 </div>
 
                 <div className="space-y-2 mb-4 max-h-48 overflow-y-auto">
@@ -1871,7 +1871,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                         <tr key={salao.id} className="border-b border-nodri-border/50 hover:bg-white/[0.01] transition-colors">
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2.5">
-                              <div className="w-7 h-7 rounded-md flex items-center justify-center text-[11px] font-bold text-white shrink-0" style={{ background: 'linear-gradient(135deg, #5b4fcf, #f43f8e)' }}>{salao.nome[0]}</div>
+                              <div className="w-7 h-7 rounded-md flex items-center justify-center text-[11px] font-bold text-gray-900 shrink-0" style={{ background: 'linear-gradient(135deg, #5b4fcf, #f43f8e)' }}>{salao.nome[0]}</div>
                               <div><div className="font-medium text-nodri-t1">{salao.nome}</div><div className="text-[10px] text-nodri-t2">{salao.email}</div></div>
                             </div>
                           </td>
@@ -2044,7 +2044,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
           <div className="nodri-card w-full max-w-lg animate-slide-up overflow-hidden">
             <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-nodri-border">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center text-[14px] font-bold text-white" style={{ background: 'linear-gradient(135deg, #5b4fcf, #f43f8e)' }}>{editSalao.nome[0]}</div>
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center text-[14px] font-bold text-gray-900" style={{ background: 'linear-gradient(135deg, #5b4fcf, #f43f8e)' }}>{editSalao.nome[0]}</div>
                 <div><div className="font-syne font-bold text-[13px]">{editSalao.nome}</div><div className="text-[10px] text-nodri-t3">{editSalao.email}</div></div>
               </div>
               <button onClick={() => setEditSalao(null)} className="text-nodri-t3 hover:text-nodri-t1"><X size={16} /></button>
@@ -2150,7 +2150,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                           <div className="flex gap-2">
                             <button type="button" onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText('') }} className="nodri-btn-ghost text-[11px]">Cancelar</button>
                             <button type="button" onClick={deleteSalao} disabled={deletingSalao || deleteConfirmText !== editSalao.nome}
-                              className="flex items-center gap-1.5 bg-nodri-red text-white px-3 py-1.5 rounded-lg text-[11px] font-bold hover:brightness-110 disabled:opacity-40 transition-all">
+                              className="flex items-center gap-1.5 bg-nodri-red text-gray-900 px-3 py-1.5 rounded-lg text-[11px] font-bold hover:brightness-110 disabled:opacity-40 transition-all">
                               {deletingSalao ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />} Excluir Definitivamente
                             </button>
                           </div>

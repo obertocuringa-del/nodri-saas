@@ -805,7 +805,7 @@ export default function RelatoriosPage() {
         <a href="/salon" style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#6b6860', textDecoration: 'none', fontSize: 13 }}>
           <ArrowLeft size={15} /> Voltar
         </a>
-        <span style={{ color: '#ffffff' }}>|</span>
+        <span style={{ color: '#c8c5be' }}>|</span>
         <BarChart2 size={16} color="#5b4fcf" />
         <span style={{ color: '#1a1a1a', fontWeight: 700, fontSize: 14 }}>Relatórios Gerenciais</span>
 
@@ -839,7 +839,7 @@ export default function RelatoriosPage() {
                   <span style={{ fontSize: 10, color: '#6b6860' }}>a</span>
                   <input type="date" value={p1Ate} onChange={e => setP1Ate(e.target.value)} style={{ background: '#faf9f7', border: '1px solid #e8e6e0', borderRadius: 6, color: '#1a1a1a', padding: '4px 6px', fontSize: 11, outline: 'none' }} />
                 </div>
-                <span style={{ fontSize: 11, color: '#dedad4' }}>vs</span>
+                <span style={{ fontSize: 11, color: '#9e9b94' }}>vs</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   <span style={{ fontSize: 10, color: '#06b6d4', fontWeight: 700 }}>P2</span>
                   <input type="date" value={p2De} onChange={e => setP2De(e.target.value)} style={{ background: '#faf9f7', border: '1px solid #e8e6e0', borderRadius: 6, color: '#1a1a1a', padding: '4px 6px', fontSize: 11, outline: 'none' }} />
@@ -868,7 +868,7 @@ export default function RelatoriosPage() {
             <button onClick={() => router.push('/salon/relatorios/importar-excel')} style={{ background: 'linear-gradient(135deg, #5b4fcf, #f43f8e)', color: 'white', border: 'none', borderRadius: 10, padding: '12px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
               <Upload size={16} /> Importar Planilha
             </button>
-            <p style={{ color: '#dedad4', fontSize: 11, marginTop: 10 }}>Dados salvos localmente no navegador. A importação é por período — não apaga outros meses.</p>
+            <p style={{ color: '#9e9b94', fontSize: 11, marginTop: 10 }}>Dados salvos localmente no navegador. A importação é por período — não apaga outros meses.</p>
           </div>
         </div>
       )}
@@ -922,7 +922,7 @@ export default function RelatoriosPage() {
               )}
             </div>
 
-            <div style={{ marginLeft: 'auto', padding: '6px 0', fontSize: 11, color: '#dedad4', alignSelf: 'center' }}>
+            <div style={{ marginLeft: 'auto', padding: '6px 0', fontSize: 11, color: '#9e9b94', alignSelf: 'center' }}>
               <span style={{ color: '#5b4fcf', fontWeight: 600 }}>{label1}</span>
               <span style={{ margin: '0 6px' }}>vs</span>
               <span style={{ color: '#06b6d4', fontWeight: 600 }}>{label2}</span>
@@ -953,7 +953,7 @@ export default function RelatoriosPage() {
                           {r2.fat_total > 0 && <span style={{ display: 'flex', alignItems: 'center', gap: 2, fontSize: 11, fontWeight: 700, color: text, background: bg, padding: '1px 6px', borderRadius: 20 }}><Icon size={10} />{p > 0 ? '+' : ''}{p.toFixed(1)}%</span>}
                         </div>
                         <div style={{ fontSize: 20, fontWeight: 800, color: '#3a3835', marginBottom: 2 }}>{card.fmt(card.v1)}</div>
-                        {r2.fat_total > 0 && <div style={{ fontSize: 11, color: '#dedad4' }}>Ant: {card.fmt(card.v2)}</div>}
+                        {r2.fat_total > 0 && <div style={{ fontSize: 11, color: '#9e9b94' }}>Ant: {card.fmt(card.v2)}</div>}
                       </div>
                     )
                   })}
@@ -966,7 +966,7 @@ export default function RelatoriosPage() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                       {top10Cresc.map((item, i) => (
                         <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ fontSize: 10, color: '#dedad4', width: 16, flexShrink: 0 }}>#{i + 1}</span>
+                          <span style={{ fontSize: 10, color: '#9e9b94', width: 16, flexShrink: 0 }}>#{i + 1}</span>
                           <span style={{ flex: 1, fontSize: 11, color: '#9e9b94', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.nome}>{item.nome}</span>
                           <span style={{ fontSize: 11, color: '#1a1a1a', fontWeight: 700, flexShrink: 0 }}>{item.p1}</span>
                           <Badge pct={item.pct} p1={item.p1} p2={item.p2} />
@@ -979,7 +979,7 @@ export default function RelatoriosPage() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                       {top10Queda.map((item, i) => (
                         <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ fontSize: 10, color: '#dedad4', width: 16, flexShrink: 0 }}>#{i + 1}</span>
+                          <span style={{ fontSize: 10, color: '#9e9b94', width: 16, flexShrink: 0 }}>#{i + 1}</span>
                           <span style={{ flex: 1, fontSize: 11, color: '#9e9b94', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.nome}>{item.nome}</span>
                           <span style={{ fontSize: 11, color: '#1a1a1a', fontWeight: 700, flexShrink: 0 }}>{item.p1}</span>
                           <Badge pct={item.pct} p1={item.p1} p2={item.p2} />
@@ -1441,7 +1441,7 @@ export default function RelatoriosPage() {
                                   <tr key={i} style={{ borderBottom: '1px solid #faf9f7', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
                                     <td style={{ padding: '8px 12px', color: '#9e9b94', whiteSpace: 'nowrap' }}>{d.data}</td>
                                     <td style={{ padding: '8px 12px', color: '#9e9b94',  whiteSpace: 'nowrap' }}>{d.diaSemana}</td>
-                                    <td style={{ padding: '8px 12px', textAlign: 'right', color: necessidade > 0 ? '#f59e0b' : '#dedad4', fontWeight: necessidade > 0 ? 700 : 400 }}>{necessidade > 0 ? moeda(necessidade) : <span style={{color:'#ffffff'}}>—</span>}</td>
+                                    <td style={{ padding: '8px 12px', textAlign: 'right', color: necessidade > 0 ? '#f59e0b' : '#dedad4', fontWeight: necessidade > 0 ? 700 : 400 }}>{necessidade > 0 ? moeda(necessidade) : <span style={{color:'#c8c5be'}}>—</span>}</td>
                                     <td style={{ padding: '8px 12px', textAlign: 'center', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap', background: statusBg, color: statusCor }}>{status}</td>
                                     <td style={{ padding: '8px 12px', textAlign: 'right', color: d.valor > 0 ? '#10b981' : '#dedad4', fontWeight: 700 }}>{moeda(d.valor)}</td>
                                     <td style={{ padding: '8px 12px', textAlign: 'right', color: isFuturo && metaDia > necessidade ? '#ef4444' : '#3b82f6', fontWeight: 700 }}>
@@ -1454,7 +1454,7 @@ export default function RelatoriosPage() {
                             </tbody>
                           </table>
                         </div>
-                        <p style={{ color: '#dedad4', fontSize: 11, marginTop: 12, padding: '10px 0 0', borderTop: '1px solid #e8e6e0' }}>
+                        <p style={{ color: '#9e9b94', fontSize: 11, marginTop: 12, padding: '10px 0 0', borderTop: '1px solid #e8e6e0' }}>
                           <strong style={{ color: '#6b6860' }}>Nota:</strong> As metas diárias são calculadas respeitando o peso de cada dia da semana com base no histórico do período anterior. A SUPER META é calculada automaticamente como 5% acima da META.
                         </p>
                       </div>
@@ -2177,7 +2177,7 @@ export default function RelatoriosPage() {
                 {!analiseLoading && analiseResumo?.vazio && (
                   <div style={{ textAlign: 'center', padding: 60, color: '#6b6860' }}>
                     <BarChart2 size={40} style={{ marginBottom: 12, opacity: 0.3 }} />
-                    <div style={{ fontSize: 15, fontWeight: 700, color: '#dedad4', marginBottom: 8 }}>Nenhum dado de clientes encontrado</div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: '#9e9b94', marginBottom: 8 }}>Nenhum dado de clientes encontrado</div>
                     <div style={{ fontSize: 13 }}>Importe uma planilha com a aba ATENDIMENTOS_RAW para ativar as análises.</div>
                   </div>
                 )}
@@ -2260,7 +2260,7 @@ export default function RelatoriosPage() {
                       <div>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
                           <button onClick={() => exportarListaExcel(analiseDetalhe, 'vip')}
-                            style={{ background: '#f59e0b', color: '#f5f4f0', border: 'none', borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>⬇ Exportar Excel</button>
+                            style={{ background: '#f59e0b', color: '#ffffff', border: 'none', borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>⬇ Exportar Excel</button>
                         </div>
                         <div style={{ background: '#f5f4f0', border: '1px solid #f59e0b30', borderRadius: 12, overflow: 'hidden' }}>
                           {(analiseDetalhe as any[]).map((c: any, i: number) => (
@@ -2269,7 +2269,7 @@ export default function RelatoriosPage() {
                               <div style={{ flex: 1 }}>
                                 <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a1a' }}>{c.cliente_nome}</div>
                                 <div style={{ fontSize: 10, color: '#6b6860' }}>{c.total_visitas} visitas · a cada {c.intervalo_medio_dias || '?'}d · última: {c.ultima_visita} · {c.celular || 'sem celular'}</div>
-                                <div style={{ fontSize: 10, color: '#dedad4', marginTop: 2 }}>{(c.servicos_feitos || []).slice(0, 4).join(' · ')}</div>
+                                <div style={{ fontSize: 10, color: '#9e9b94', marginTop: 2 }}>{(c.servicos_feitos || []).slice(0, 4).join(' · ')}</div>
                               </div>
                               <div style={{ textAlign: 'right', flexShrink: 0 }}>
                                 <div style={{ fontSize: 15, fontWeight: 800, color: '#f59e0b' }}>{moeda(c.ltv_total)}</div>
@@ -2320,7 +2320,7 @@ export default function RelatoriosPage() {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                           <span style={{ fontSize: 13, color: '#9e9b94' }}><span style={{ color: '#06b6d4', fontWeight: 700 }}>{analiseDetalhe.length}</span> clientes novas — vieram apenas 1 vez</span>
                           <button onClick={() => exportarListaExcel(analiseDetalhe, 'novos')}
-                            style={{ background: '#06b6d4', color: '#f5f4f0', border: 'none', borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>⬇ Exportar Excel</button>
+                            style={{ background: '#06b6d4', color: '#ffffff', border: 'none', borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>⬇ Exportar Excel</button>
                         </div>
                         <div style={{ background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 12, overflow: 'hidden' }}>
                           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -2525,7 +2525,7 @@ export default function RelatoriosPage() {
                           <div key={i} style={{ background: '#f5f4f0', border: `1px solid ${cor}25`, borderLeft: `3px solid ${cor}`, borderRadius: 8, padding: 12 }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                               <span style={{ color: cor, fontSize: 12, fontWeight: 600 }}>{f.profissional}</span>
-                              <span style={{ color: '#dedad4', fontSize: 10 }}>{f.data}</span>
+                              <span style={{ color: '#9e9b94', fontSize: 10 }}>{f.data}</span>
                             </div>
                             <div style={{ color: '#1a1a1a', fontSize: 11, fontWeight: 600, marginBottom: 3 }}>{f.oque_houve}</div>
                             {f.comentario && <div style={{ color: '#9e9b94', fontSize: 11, lineHeight: 1.5, fontStyle: 'italic' }}>"{f.comentario}"</div>}
@@ -2576,7 +2576,7 @@ export default function RelatoriosPage() {
                   <tbody>
                     {freqClientes.map((c: any, i: number) => (
                       <tr key={i} style={{ borderBottom: '1px solid #e8e6e020', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
-                        <td style={{ padding: '9px 12px', color: '#dedad4', textAlign: 'right' }}>{i + 1}</td>
+                        <td style={{ padding: '9px 12px', color: '#9e9b94', textAlign: 'right' }}>{i + 1}</td>
                         <td style={{ padding: '9px 12px', color: '#1a1a1a', fontWeight: 600 }}>{c.cliente_nome}</td>
                         <td style={{ padding: '9px 12px', color: '#5b4fcf' }}>{c.celular || '—'}</td>
                         <td style={{ padding: '9px 12px', color: '#10b981', fontWeight: 700, textAlign: 'right' }}>{moeda(c.ltv_total)}</td>

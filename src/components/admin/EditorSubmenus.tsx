@@ -829,7 +829,7 @@ export default function EditorSubmenus() {
             <input placeholder="Ex: Gestão de Clientes" value={novaCategoria}
               onChange={e => setNovaCategoria(e.target.value)} onKeyDown={e => e.key === 'Enter' && adicionarCategoria()}
               className="w-full bg-nodri-surface border border-nodri-border rounded px-2 py-1.5 text-[11px] outline-none focus:border-nodri-purple" />
-            <button onClick={adicionarCategoria} className="w-full bg-nodri-purple text-white text-[10px] font-bold py-1.5 rounded hover:brightness-110">Criar Categoria</button>
+            <button onClick={adicionarCategoria} className="w-full bg-nodri-purple text-gray-900 text-[10px] font-bold py-1.5 rounded hover:brightness-110">Criar Categoria</button>
           </div>
         )}
 
@@ -926,7 +926,7 @@ export default function EditorSubmenus() {
             <h3 className="font-syne font-bold text-[14px] mb-2 text-nodri-red">️ Excluir página?</h3>
             <p className="text-nodri-t2 text-[12px] mb-4">Esta ação não pode ser desfeita.</p>
             <div className="flex gap-3">
-              <button onClick={() => excluirPagina(confirmDelete)} className="flex-1 py-2 bg-nodri-red text-white font-bold rounded-lg text-[12px] hover:brightness-110">Excluir</button>
+              <button onClick={() => excluirPagina(confirmDelete)} className="flex-1 py-2 bg-nodri-red text-gray-900 font-bold rounded-lg text-[12px] hover:brightness-110">Excluir</button>
               <button onClick={() => setConfirmDelete(null)} className="flex-1 py-2 border border-nodri-border text-nodri-t2 rounded-lg text-[12px] hover:text-nodri-t1">Cancelar</button>
             </div>
           </div>

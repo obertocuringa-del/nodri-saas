@@ -42,7 +42,7 @@ function renderMarkdown(texto: string): string {
         table += `<thead><tr>${cells.map(c => `<th style="padding:10px 14px;background:#1c2128;color:#1a1a1a;font-weight:600;text-align:left;font-size:12px;border-bottom:2px solid #f59e0b;white-space:nowrap">${c.trim()}</th>`).join('')}</tr></thead><tbody>`
       } else {
         const bg = rowIdx % 2 === 0 ? '#ffffff' : '#faf9f7'
-        table += `<tr style="background:${bg}">${cells.map(c => `<td style="padding:9px 14px;border-bottom:1px solid #f0ede8;color:#c9d1d9;font-size:13px">${c.trim()}</td>`).join('')}</tr>`
+        table += `<tr style="background:${bg}">${cells.map(c => `<td style="padding:9px 14px;border-bottom:1px solid #f0ede8;color:#6b6860;font-size:13px">${c.trim()}</td>`).join('')}</tr>`
         rowIdx++
       }
     }
@@ -65,14 +65,14 @@ function renderMarkdown(texto: string): string {
     `<div style="display:flex;align-items:center;gap:10px;margin:18px 0 10px;padding:10px 14px;background:#1c2128;border-radius:10px;border-left:3px solid #f59e0b"><span style="font-size:20px;flex-shrink:0">${emoji}</span><span style="color:#1a1a1a;font-weight:700;font-size:15px">${titulo}</span></div>`
   )
   html = html.replace(/^([\u{1F300}-\u{1FFFF}\u{2600}-\u{27BF}])\s+(.+)$/gmu, (_, emoji, rest) =>
-    `<div style="display:flex;gap:10px;align-items:flex-start;margin:8px 0"><span style="font-size:17px;flex-shrink:0;line-height:1.5">${emoji}</span><span style="color:#c9d1d9;line-height:1.7">${rest}</span></div>`
+    `<div style="display:flex;gap:10px;align-items:flex-start;margin:8px 0"><span style="font-size:17px;flex-shrink:0;line-height:1.5">${emoji}</span><span style="color:#6b6860;line-height:1.7">${rest}</span></div>`
   )
 
   // Listas não-ordenadas
   html = html.replace(/((?:^[ \t]*[*\-•]\s.+\n?)+)/gm, (block) => {
     const items = block.trim().split('\n').map(l => l.replace(/^[ \t]*[*\-•]\s/, '').trim()).filter(Boolean)
     return '<ul style="margin:10px 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px">' +
-      items.map(i => `<li style="display:flex;gap:10px;align-items:flex-start;color:#c9d1d9;line-height:1.7"><span style="color:#f59e0b;flex-shrink:0;font-size:16px;line-height:1.4">›</span><span>${i}</span></li>`).join('') +
+      items.map(i => `<li style="display:flex;gap:10px;align-items:flex-start;color:#6b6860;line-height:1.7"><span style="color:#f59e0b;flex-shrink:0;font-size:16px;line-height:1.4">›</span><span>${i}</span></li>`).join('') +
       '</ul>'
   })
 
@@ -80,7 +80,7 @@ function renderMarkdown(texto: string): string {
   html = html.replace(/((?:^\d+\.\s.+\n?)+)/gm, (block) => {
     const items = block.trim().split('\n').map(l => l.replace(/^\d+\.\s/, '').trim()).filter(Boolean)
     return '<ol style="margin:10px 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px">' +
-      items.map((item, idx) => `<li style="display:flex;gap:10px;align-items:flex-start;color:#c9d1d9;line-height:1.7"><span style="color:#f59e0b;flex-shrink:0;font-weight:700;font-size:13px;min-width:22px;background:#1c2128;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;margin-top:2px">${idx+1}</span><span>${item}</span></li>`).join('') +
+      items.map((item, idx) => `<li style="display:flex;gap:10px;align-items:flex-start;color:#6b6860;line-height:1.7"><span style="color:#f59e0b;flex-shrink:0;font-weight:700;font-size:13px;min-width:22px;background:#1c2128;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;margin-top:2px">${idx+1}</span><span>${item}</span></li>`).join('') +
       '</ol>'
   })
 
@@ -91,9 +91,9 @@ function renderMarkdown(texto: string): string {
   html = html.replace(/\*(.*?)\*/g, '<em style="color:#adbac7">$1</em>')
 
   // Quebras de linha → parágrafos
-  html = html.replace(/\n\n+/g, '</p><p style="margin:10px 0;color:#c9d1d9;line-height:1.8">')
+  html = html.replace(/\n\n+/g, '</p><p style="margin:10px 0;color:#6b6860;line-height:1.8">')
   html = html.replace(/\n/g, '<br/>')
-  html = `<p style="margin:0;color:#c9d1d9;line-height:1.8;font-size:14px">${html}</p>`
+  html = `<p style="margin:0;color:#6b6860;line-height:1.8;font-size:14px">${html}</p>`
 
   // Restaura blocos de código
   blocos.forEach((b, i) => { html = html.replace(`\x00BLOCO${i}\x00`, b) })
@@ -553,32 +553,32 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
             <div style={{ flex: 1, overflowY: 'auto', padding: '8px 8px' }}>
               {prompts.length === 0 && (
                 <div style={{ padding: '16px 8px', textAlign: 'center' }}>
-                  <p style={{ color: '#e8e6e0', fontSize: 12, lineHeight: 1.6, margin: 0 }}>Nenhuma pergunta salva ainda.<br/>Clique no <strong style={{ color: '#f59e0b' }}>+</strong> para criar.</p>
+                  <p style={{ color: '#6b6860', fontSize: 12, lineHeight: 1.6, margin: 0 }}>Nenhuma pergunta salva ainda.<br/>Clique no <strong style={{ color: '#f59e0b' }}>+</strong> para criar.</p>
                 </div>
               )}
               {prompts.map(p => (
                 <div key={p.id}
                   style={{ borderRadius: 8, padding: '8px 10px', marginBottom: 4, background: '#ffffff', border: '1px solid #f0ede8', display: 'flex', alignItems: 'center', gap: 6, group: 'true' } as any}>
                   <button onClick={() => { usarPrompt(p); if (isMobile) setSidebarChatAberta(false) }} title={p.script}
-                    style={{ flex: 1, background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', color: '#c9d1d9', fontSize: 12, lineHeight: 1.4, padding: 0, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                    style={{ flex: 1, background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', color: '#6b6860', fontSize: 12, lineHeight: 1.4, padding: 0, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
                     {p.titulo}
                   </button>
                   <button onClick={() => abrirEditar(p)} title="Editar"
-                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#e8e6e0', padding: '2px 4px', fontSize: 13, lineHeight: 1, flexShrink: 0 }}>✏</button>
+                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#6b6860', padding: '2px 4px', fontSize: 13, lineHeight: 1, flexShrink: 0 }}>✏</button>
                   {confirmDelete === p.id
                     ? <span style={{ display: 'flex', gap: 2 }}>
                         <button onClick={() => excluirPrompt(p.id)} style={{ background: '#ef4444', border: 'none', borderRadius: 4, cursor: 'pointer', color: '#fff', fontSize: 10, padding: '2px 5px' }}>Sim</button>
                         <button onClick={() => setConfirmDelete(null)} style={{ background: '#f0ede8', border: 'none', borderRadius: 4, cursor: 'pointer', color: '#6b6860', fontSize: 10, padding: '2px 5px' }}>Não</button>
                       </span>
                     : <button onClick={() => setConfirmDelete(p.id)} title="Excluir"
-                        style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#e8e6e0', padding: '2px 4px', fontSize: 13, lineHeight: 1, flexShrink: 0 }}>✕</button>
+                        style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#6b6860', padding: '2px 4px', fontSize: 13, lineHeight: 1, flexShrink: 0 }}>✕</button>
                   }
                 </div>
               ))}
 
               {/* Seção de perguntas inteligentes fixas */}
               <div style={{ marginTop: prompts.length > 0 ? 12 : 0, paddingTop: prompts.length > 0 ? 12 : 0, borderTop: prompts.length > 0 ? '1px solid #f0ede8' : 'none' }}>
-                <p style={{ fontSize: 10, fontWeight: 700, color: '#e8e6e0', textTransform: 'uppercase', letterSpacing: 1, margin: '0 2px 8px' }}>
+                <p style={{ fontSize: 10, fontWeight: 700, color: '#6b6860', textTransform: 'uppercase', letterSpacing: 1, margin: '0 2px 8px' }}>
                   {profissionalId ? 'Análises rápidas' : 'Análises inteligentes'}
                 </p>
                 {sugestoesAtivas.map(s => (
@@ -712,7 +712,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
                 }
               </button>
             </div>
-            <p style={{ fontSize: 11, color: '#e8e6e0', margin: '6px 0 0', textAlign: 'center' }}>
+            <p style={{ fontSize: 11, color: '#6b6860', margin: '6px 0 0', textAlign: 'center' }}>
               NODRI IA pode cometer erros. Verifique informações importantes.
             </p>
           </div>
@@ -744,7 +744,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
               <textarea value={formScript} onChange={e => setFormScript(e.target.value)} rows={6}
                 placeholder="Ex: Faça uma análise completa da equipe com faturamento, ocorrências e ranking de cada profissional no período atual. Apresente em tabela e destaque pontos de atenção."
                 style={{ background: '#ffffff', border: '1px solid #30363d', borderRadius: 8, padding: '10px 14px', color: '#1a1a1a', fontSize: 13, outline: 'none', fontFamily: 'inherit', resize: 'vertical', lineHeight: 1.6 }} />
-              <p style={{ margin: 0, fontSize: 11, color: '#e8e6e0' }}>O script é o texto completo enviado à IA. O título é só um atalho para você identificar.</p>
+              <p style={{ margin: 0, fontSize: 11, color: '#6b6860' }}>O script é o texto completo enviado à IA. O título é só um atalho para você identificar.</p>
             </div>
 
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
