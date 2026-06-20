@@ -1364,7 +1364,7 @@ Use números reais. Seja direto.`
                           onChange={e=>{const nd=[...despInd];nd[i]={...nd[i],valor:e.target.value};setDespInd(nd)}}
                           placeholder="0"
                           className="w-full pl-6 pr-2 py-1 rounded-lg text-xs text-white focus:outline-none"
-                          style={{background: '#ffffff', border: `1.5px solid ${{v>0?'#dedad460':'#ffffff'}}`}}/>
+                          style={{background: '#ffffff', border: `1.5px solid ${v>0?'#dedad460':'#e8e6e0'}`}}/>
                       </div>
                     </div>
                     <div className="col-span-2 text-xs text-center" style={{color:v>0?cor:'#dedad4'}}>
@@ -2199,7 +2199,7 @@ Use números reais. Seja direto.`
                             onChange={e=>setServicos(p=>p.map(x=>x.id===s.id?{...x,[f.k]:e.target.value}:x))}
                             placeholder={f.ph}
                             className={`w-full ${f.pre?'pl-7':'pl-3'} ${f.suf?'pr-6':'pr-2'} py-2 rounded-lg text-sm text-white focus:outline-none`}
-                            style={{background: '#ffffff', border: `1.5px solid ${{f.aviso?'#f59e0b40':n((s as any)[f.k])>0?'#5b4fcf40':'#ffffff'}}`}}/>
+                            style={{background: '#ffffff', border: `1.5px solid ${f.aviso?'#f59e0b40':n((s as any)[f.k])>0?'#5b4fcf40':'#e8e6e0'}`}}/>
                           {f.suf&&<span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#767069'}}>{f.suf}</span>}
                         </div>
                       ))}
