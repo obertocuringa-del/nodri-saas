@@ -1272,52 +1272,51 @@ function BlocoDiagnosticoResumido({ prof, form, metricas, p1, p2, fidel }: {
   const icoP = {alta:'',media:'',baixa:''}
   const txtP = {alta:'URGENTE',media:'ESTA SEMANA',baixa:'ESTE MÊS'}
 
+  const fmt$loc = (v: number) => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0)
+  const fmtN = (v: number) => (v||0).toLocaleString('pt-BR',{maximumFractionDigits:1})
+  const fmtP = (v: number) => (v||0).toFixed(1)+'%'
+  const delta = (atual: number, ant: number, inv=false) => {
+    if (!ant) return null
+    const d = ((atual-ant)/ant)*100
+    const up = inv ? d<=0 : d>=0
+    return { d, up, label: `${d>=0?'+':''}${d.toFixed(1)}%` }
+  }
+
+  const metricas8 = [
+    { l:' Faturamento',      a:p2?.faturamento||0,              b:p1?.faturamento||0,              f:fmt$loc },
+    { l:'️ Ticket Médio',     a:p2?.ticket_medio||0,             b:p1?.ticket_medio||0,             f:fmt$loc },
+    { l:' Preferência',      a:p2?.clientes_preferencia||0,     b:p1?.clientes_preferencia||0,     f:fmtN },
+    { l:' Sem Pref.',        a:p2?.clientes_sem_preferencia||0, b:p1?.clientes_sem_preferencia||0, f:fmtN, inv:true },
+    { l:' Dias Trabalhados', a:p2?.dias_trabalhados||0,         b:p1?.dias_trabalhados||0,         f:fmtN },
+    { l:'️ Ocupação',         a:p2?.taxa_ocupacao||0,            b:p1?.taxa_ocupacao||0,            f:fmtP },
+    { l:'️ Serviços',         a:p2?.total_servicos||0,           b:p1?.total_servicos||0,           f:fmtN },
+    { l:' Produtos',         a:p2?.total_produtos||0,           b:p1?.total_produtos||0,           f:fmtN },
+  ]
+
   return (
     <div className="space-y-5">
-      {/* Score Geral */}
-      <div className="rounded-2xl p-6 border" style={{background:'#ffffff', borderColor:`${corGeral}88`}}>
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <h2 className="font-syne font-black text-[18px] text-nodri-t1"> Diagnóstico Rápido</h2>
-            <p className="text-[11px] text-nodri-t3 mt-1">Score baseado nos dados do período selecionado</p>
-          </div>
-          <div className="text-right shrink-0 ml-4">
-            <div className="font-syne font-black text-[48px] leading-none" style={{color:corGeral}}>{scoreGeral ?? '—'}</div>
-            <div className="text-[12px] font-bold mt-1" style={{color:corGeral}}>{labelGeral}</div>
-          </div>
-        </div>
-        {scoreGeral !== null && (
-          <div className="w-full bg-nodri-border rounded-full h-3 overflow-hidden">
-            <div className="h-3 rounded-full transition-all" style={{width:`${scoreGeral}%`, background:`linear-gradient(90deg,${corGeral},${corGeral}88)`}}/>
-          </div>
-        )}
-      </div>
-
-      {/* Semáforo por área */}
+      {/* Comparativo por métrica */}
       <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
-        <h3 className="font-syne font-bold text-[13px] mb-4"> Status por Área</h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          {([
-            {l:' Faturamento',  s:sFat,    v: pctFat!==null?`${pctFat>=0?'+':''}${pctFat.toFixed(1)}%`:'Sem dados'},
-            {l:'️ Ticket Médio', s:sTicket, v: pctTicket!==null?`${pctTicket>=0?'+':''}${pctTicket.toFixed(1)}%`:'Sem dados'},
-            {l:'️ Ocupação',     s:sOcup,   v: p2?.taxa_ocupacao!==undefined?`${p2.taxa_ocupacao.toFixed(1)}%`:'Sem dados'},
-            {l:' Fidelização',  s:sFidel,  v: fidel?`${fidel.taxa_fidelizacao}%`:'Sem dados'},
-            {l:' Checklist',    s:sCheck,  v:`${checkOk}/${checkTotal} itens`},
-            {l:'️ Ocorrências',  s:sOc,    v: ocNeg===0?'Nenhuma negativa':`${ocNeg} negativa(s)`},
-          ]).map(item=>(
-            <div key={item.l} className="bg-nodri-card border border-nodri-border rounded-xl p-3 flex items-center justify-between gap-2">
-              <div className="min-w-0">
-                <div className="text-[10px] text-nodri-t3 mb-0.5">{item.l}</div>
-                <div className="text-[11px] font-semibold text-nodri-t1 truncate">{item.v}</div>
+        <h3 className="font-syne font-bold text-[13px] mb-4"> Comparativo por Métrica</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {metricas8.map(item => {
+            const d = delta(item.a, item.b, item.inv)
+            return (
+              <div key={item.l} className="bg-nodri-card border border-nodri-border rounded-xl p-3">
+                <div className="text-[9px] text-nodri-t3 uppercase tracking-wider mb-1">{item.l}</div>
+                <div className="font-syne font-bold text-[17px] text-nodri-t1">{item.f(item.a)}</div>
+                <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                  <span className="text-[9px] text-nodri-t3">Ant: {item.f(item.b)}</span>
+                  {d && (
+                    <span className="text-[10px] font-bold flex items-center gap-0.5" style={{color: d.up?'#22c55e':'#ef4444'}}>
+                      {d.up ? <TrendingUp size={10}/> : <TrendingDown size={10}/>}
+                      {d.label}
+                    </span>
+                  )}
+                </div>
               </div>
-              {item.s && (
-                <span className="text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0"
-                  style={{color:item.s.cor, background:`${item.s.cor}22`, border:`1px solid ${item.s.cor}44`}}>
-                  {item.s.label}
-                </span>
-              )}
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
 
@@ -2598,14 +2597,6 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
                 {/* Mix de Receita */}
                 {metricas.mix_receita?.length > 0 && (
                   <BlocoMixReceita mix={metricas.mix_receita}/>
-                )}
-                {/* Clientes Novos vs Fiéis */}
-                {metricas.historico_completo?.length > 0 && (
-                  <BlocoClientesFidelizacao historico={metricas.historico_completo}/>
-                )}
-                {/* Projeção */}
-                {metricas.projecao && (
-                  <BlocoProjecao p={metricas.projecao}/>
                 )}
                 {/* Sazonalidade */}
                 {metricas.sazonalidade?.length > 0 && (
