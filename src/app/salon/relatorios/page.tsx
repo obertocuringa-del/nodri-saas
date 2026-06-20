@@ -2254,7 +2254,8 @@ ${([['Faturamento Total',r1.fat_total,r2.fat_total],['Ticket Médio',r1.ticket,r
                       }
                       const colunas = rotulos[subAnalise]
                       if (!colunas) return
-                      const corpo = `<div class="sec"><div class="sec-title">${{risco:'Em Risco',perdidos:'Perdidos',vip:'VIP',regular:'Regular',novo:'Novas'}[subAnalise]||subAnalise} — ${lista.length} clientes</div>
+                      const tituloSec: Record<string,string> = {risco:'Em Risco',perdidos:'Perdidos',vip:'VIP',regular:'Regular',novo:'Novas'}
+                      const corpo = `<div class="sec"><div class="sec-title">${tituloSec[subAnalise]||subAnalise} — ${lista.length} clientes</div>
 <table class="tbl"><thead><tr>${colunas.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>
 ${lista.map((c:any,i:number)=>{
   if(subAnalise==='risco'||subAnalise==='perdidos') return `<tr><td><strong>${c.cliente_nome}</strong></td><td style="color:#5b4fcf">${c.celular||'—'}</td><td style="color:#059669;font-weight:700">R$ ${(c.ltv_total||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td><td>${c.total_visitas}x</td><td>${c.ultima_visita||'—'}</td><td style="font-weight:700;color:${subAnalise==='risco'?'#f97316':'#ef4444'}">${c.dias_desde_ultima_visita}d</td><td>${c.intervalo_medio_dias?c.intervalo_medio_dias+'d':'—'}</td></tr>`
@@ -2264,7 +2265,8 @@ ${lista.map((c:any,i:number)=>{
   return ''
 }).join('')}
 </tbody></table></div>`
-                      abrirImpressaoRel(wrapRel(({risco:'Em Risco',perdidos:'Perdidos',vip:'VIP',regular:'Regular',novo:'Novas',frequencia:'Frequência',diasemana:'Dia da Semana',crosssell:'Cross-sell'} as any)[subAnalise]||subAnalise, corpo))
+                      const labelsMap: Record<string,string> = {risco:'Em Risco',perdidos:'Perdidos',vip:'VIP',regular:'Regular',novo:'Novas',frequencia:'Frequência',diasemana:'Dia da Semana',crosssell:'Cross-sell'}
+                      abrirImpressaoRel(wrapRel(labelsMap[subAnalise]||subAnalise, corpo))
                     }} style={{ display:'flex',alignItems:'center',gap:6,padding:'6px 14px',border:'1px solid #e0ddd8',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',background:'#fff',color:'#767069' }}>🖨️ Imprimir</button>
                   </div>
                 </div>
