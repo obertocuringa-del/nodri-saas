@@ -3109,8 +3109,7 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
             {loadMet && <div className="flex justify-center py-10"><Loader2 size={24} className="animate-spin text-nodri-cyan"/></div>}
             {metricas && !loadMet && <>
               {(p1 || p2) ? <>
-                {fidel && <BlocoFidelizacao f={fidel}/>}
-                {/* Comparativo com média da categoria */}
+                {/* Comparativo com média da categoria — topo */}
                 {categoriaMedia?.media && categoriaMedia.atual && (() => {
                   const m = categoriaMedia.media
                   const a = categoriaMedia.atual
@@ -3163,6 +3162,7 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                     </div>
                   )
                 })()}
+                {fidel && <BlocoFidelizacao f={fidel}/>}
                 {/* Gráfico vertical com comparativo */}
                 {metricas.historico_completo?.length > 0 && (
                   <GraficoFaturamento historico={metricas.historico_completo}/>
@@ -3596,35 +3596,32 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
               <button onClick={() => {
                 const d = analiseData.dependencia
                 if (!d) return
-                const { nomeProf, dataStr, css, MESES_PT, wrap } = printBase('Dependência')
+                const { MESES_PT, wrap } = printBase('Dependência')
                 const cor = d.cor_risco || '#10b981'
                 const nivelLabel = d.nivel_risco==='critico'?'CRÍTICO':d.nivel_risco==='alto'?'ALTO':d.nivel_risco==='medio'?'MODERADO':'BAIXO'
                 const histRows = (d.historico||[]).map((h:any)=>`<tr><td>${MESES_PT[h.mes-1]} ${h.ano}</td><td>${h.pct}%</td><td>R$ ${(h.fat_prof||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td><td>R$ ${(h.fat_total||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td></tr>`).join('')
-                const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Dependência — ${nomeProf}</title>${css}</head><body>
-<div class="header"><div class="header-brand">NODRI</div><div class="header-meta"><strong>Relatório de Dependência</strong>${nomeProf}<br>${dataStr}<br><span style="color:#5b4fcf;font-weight:700">Documento Confidencial</span></div></div>
-<div class="sec"><div class="sec-title">Resumo de Risco</div>
+                const corpo = `<div class="sec"><div class="sec-title">Resumo de Risco</div>
 <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px">
-  <div style="flex:1;min-width:120px;background:${cor}10;border:1px solid ${cor}40;border-radius:8px;padding:12px;text-align:center">
+  <div style="flex:1;min-width:120px;background:${cor}18;border:1.5px solid ${cor}55;border-radius:8px;padding:12px;text-align:center">
     <div style="font-size:32pt;font-weight:900;color:${cor}">${d.pct_faturamento}%</div>
     <div style="font-size:9pt;font-weight:700;color:${cor};text-transform:uppercase">${nivelLabel}</div>
     <div style="font-size:8pt;color:#555;margin-top:4px">${d.mensagem}</div>
   </div>
   <div style="flex:3;display:grid;grid-template-columns:1fr 1fr;gap:8px">
-    <div style="background:#f8f7f5;border-radius:6px;padding:10px"><div style="font-size:7pt;color:#888;text-transform:uppercase">Faturamento Gerado</div><div style="font-size:13pt;font-weight:700;color:#5b4fcf">R$ ${(d.fat_prof||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div style="font-size:7pt;color:#888">valor líquido pago</div></div>
-    <div style="background:#f8f7f5;border-radius:6px;padding:10px"><div style="font-size:7pt;color:#888;text-transform:uppercase">Clientes Exclusivos</div><div style="font-size:13pt;font-weight:700;color:#f59e0b">${d.clientes_exclusivos}</div></div>
-    <div style="background:#f8f7f5;border-radius:6px;padding:10px"><div style="font-size:7pt;color:#888;text-transform:uppercase">Impacto Mensal Est.</div><div style="font-size:13pt;font-weight:700;color:#f43f8e">R$ ${(d.impacto_mensal||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div>
-    <div style="background:#f8f7f5;border-radius:6px;padding:10px"><div style="font-size:7pt;color:#888;text-transform:uppercase">Faturamento Total Salão</div><div style="font-size:13pt;font-weight:700;color:#1a1a1a">R$ ${(d.fat_total||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div>
+    <div class="card"><div class="card-lbl">Faturamento Gerado</div><div class="card-val" style="color:#5b4fcf">R$ ${(d.fat_prof||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div class="card-sub">valor líquido pago</div></div>
+    <div class="card"><div class="card-lbl">Clientes Exclusivos</div><div class="card-val" style="color:#f59e0b">${d.clientes_exclusivos}</div></div>
+    <div class="card"><div class="card-lbl">Impacto Mensal Est.</div><div class="card-val" style="color:#f43f8e">R$ ${(d.impacto_mensal||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div>
+    <div class="card"><div class="card-lbl">Faturamento Total Salão</div><div class="card-val">R$ ${(d.fat_total||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div>
   </div>
 </div></div>
-${histRows?`<div class="sec"><div class="sec-title">Histórico Mensal</div><table class="tbl"><thead><tr><th>Mês</th><th>% Faturamento</th><th>Fat. Prof.</th><th>Fat. Salão</th></tr></thead><tbody>${histRows}</tbody></table></div>`:''}
-<div class="sec"><div class="sec-title">Recomendação</div><p style="font-size:10pt;line-height:1.6">${
+${histRows?`<div class="sec"><div class="sec-title">Histórico Mensal</div><table class="tbl"><thead><tr><th>Mês</th><th>% Fat.</th><th>Fat. Prof.</th><th>Fat. Salão</th></tr></thead><tbody>${histRows}</tbody></table></div>`:''}
+<div class="sec"><div class="sec-title">Recomendação</div><p style="font-size:10pt;line-height:1.6;padding:10px 0">${
   d.nivel_risco==='critico'?'⚠️ Risco CRÍTICO. Recomenda-se redistribuir clientes, treinar substituto e criar estratégia de retenção imediata.':
   d.nivel_risco==='alto'?'🔶 Risco ALTO. Considere desenvolver outro profissional com habilidades similares e registrar os clientes preferenciais.':
   d.nivel_risco==='medio'?'🟡 Risco MODERADO. Monitore a satisfação deste profissional e garanta que os clientes conheçam outros profissionais.':
   '✅ Baixo risco. O salão está bem distribuído — parabéns!'
-}</p></div>
-${wrap}</body></html>`
-                abrirImpressao(html)
+}</p></div>`
+                abrirImpressao(wrap(corpo))
               }}
                 className="flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold rounded-lg border border-nodri-border text-nodri-t2 hover:border-nodri-cyan hover:text-nodri-cyan transition-colors">
                 🖨️ Imprimir
@@ -3712,18 +3709,15 @@ ${wrap}</body></html>`
               <button onClick={() => {
                 const d = analiseData.oportunidades
                 if (!d) return
-                const { nomeProf, dataStr, css, wrap } = printBase('Oportunidades')
-                const fmt$ = (v:number) => `R$ ${(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}`
-                const maisVendeRows = (d.mais_vende||[]).map((item:any,i:number)=>`<tr><td>${i+1}º</td><td><strong>${item.servico}</strong></td><td>${item.quantidade}</td><td>${item.pct}%</td><td>${fmt$(item.valor)}</td></tr>`).join('')
-                const deveriaRows = (d.deveria_vender||[]).map((item:any)=>`<tr><td><strong>${item.servico}</strong></td><td>${item.motivo}</td><td>${item.comissao>0?fmt$(item.comissao):'-'}</td></tr>`).join('')
-                const nuncaRows = (d.nunca_oferece||[]).map((item:any)=>`<tr><td><strong>${item.servico}</strong></td><td>${item.comissao>0?fmt$(item.comissao):'-'}</td></tr>`).join('')
-                const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Oportunidades — ${nomeProf}</title>${css}</head><body>
-<div class="header"><div class="header-brand">NODRI</div><div class="header-meta"><strong>Relatório de Oportunidades</strong>${nomeProf}<br>${dataStr}<br><span style="color:#5b4fcf;font-weight:700">Documento Confidencial</span></div></div>
-${maisVendeRows?`<div class="sec"><div class="sec-title">🏆 Serviços que Mais Vende</div><table class="tbl"><thead><tr><th>#</th><th>Serviço</th><th>Qtd</th><th>%</th><th>Valor</th></tr></thead><tbody>${maisVendeRows}</tbody></table></div>`:''}
+                const { wrap } = printBase('Oportunidades')
+                const fmtV = (v:number) => `R$ ${(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}`
+                const maisVendeRows = (d.mais_vende||[]).map((item:any,i:number)=>`<tr><td>${i+1}º</td><td><strong>${item.servico}</strong></td><td>${item.quantidade}</td><td>${item.pct}%</td><td>${fmtV(item.valor)}</td></tr>`).join('')
+                const deveriaRows = (d.deveria_vender||[]).map((item:any)=>`<tr><td><strong>${item.servico}</strong></td><td>${item.motivo}</td><td>${item.comissao>0?fmtV(item.comissao):'-'}</td></tr>`).join('')
+                const nuncaRows = (d.nunca_oferece||[]).map((item:any)=>`<tr><td><strong>${item.servico}</strong></td><td>${item.comissao>0?fmtV(item.comissao):'-'}</td></tr>`).join('')
+                const corpo = `${maisVendeRows?`<div class="sec"><div class="sec-title">🏆 Serviços que Mais Vende</div><table class="tbl"><thead><tr><th>#</th><th>Serviço</th><th>Qtd</th><th>%</th><th>Valor</th></tr></thead><tbody>${maisVendeRows}</tbody></table></div>`:''}
 ${deveriaRows?`<div class="sec"><div class="sec-title">🎯 Serviços que Deveria Vender</div><table class="tbl"><thead><tr><th>Serviço</th><th>Motivo</th><th>Comissão</th></tr></thead><tbody>${deveriaRows}</tbody></table></div>`:''}
-${nuncaRows?`<div class="sec"><div class="sec-title">🔴 Serviços que Nunca Oferece</div><table class="tbl"><thead><tr><th>Serviço</th><th>Comissão potencial</th></tr></thead><tbody>${nuncaRows}</tbody></table></div>`:''}
-${wrap}</body></html>`
-                abrirImpressao(html)
+${nuncaRows?`<div class="sec"><div class="sec-title">🔴 Serviços que Nunca Oferece</div><table class="tbl"><thead><tr><th>Serviço</th><th>Comissão potencial</th></tr></thead><tbody>${nuncaRows}</tbody></table></div>`:''}`
+                abrirImpressao(wrap(corpo))
               }}
                 className="flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold rounded-lg border border-nodri-border text-nodri-t2 hover:border-nodri-cyan hover:text-nodri-cyan transition-colors">
                 🖨️ Imprimir
@@ -3809,16 +3803,14 @@ ${wrap}</body></html>`
               <button onClick={() => {
                 const d = analiseData.bundle
                 if (!d) return
-                const { nomeProf, dataStr, css, wrap } = printBase('Bundles')
+                const { wrap } = printBase('Bundles')
                 const paresRows = (d.pares||[]).map((par:any,i:number)=>`<tr><td>${i+1}º</td><td><strong>${par.servico_a}</strong></td><td><strong>${par.servico_b}</strong></td><td style="font-weight:700;color:${par.pct>=70?'#22c55e':par.pct>=40?'#f59e0b':'#5b4fcf'}">${par.pct}%</td><td>${par.count} clientes</td></tr>`).join('')
-                const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Bundles — ${nomeProf}</title>${css}</head><body>
-<div class="header"><div class="header-brand">NODRI</div><div class="header-meta"><strong>Análise de Bundles</strong>${nomeProf}<br>${dataStr}<br><span style="color:#5b4fcf;font-weight:700">Documento Confidencial</span></div></div>
-<div class="sec"><div class="sec-title">🔗 Pares de Serviços com Alta Co-ocorrência</div>
+                const corpo = `<div class="sec"><div class="sec-title">🔗 Pares de Serviços com Alta Co-ocorrência</div>
 <p style="font-size:9pt;color:#666;margin-bottom:10px">Análise de ${d.total_comandas||0} comandas · Pares com ≥20% de co-ocorrência</p>
 ${paresRows?`<table class="tbl"><thead><tr><th>#</th><th>Serviço A</th><th>Serviço B</th><th>Co-ocorrência</th><th>Clientes</th></tr></thead><tbody>${paresRows}</tbody></table>
 <p style="font-size:9pt;color:#5b4fcf;font-weight:600;margin-top:12px">💡 Estratégia: Ofereça o Serviço B para clientes que vieram para o Serviço A</p>`:'<p style="color:#888">Dados insuficientes para análise de bundles.</p>'}
-</div>${wrap}</body></html>`
-                abrirImpressao(html)
+</div>`
+                abrirImpressao(wrap(corpo))
               }}
                 className="flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold rounded-lg border border-nodri-border text-nodri-t2 hover:border-nodri-cyan hover:text-nodri-cyan transition-colors">
                 🖨️ Imprimir
