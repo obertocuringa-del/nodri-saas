@@ -2259,7 +2259,7 @@ export default function PerfilProfissionalPage() {
       ${metaInfo.principal_gargalo&&metaInfo.principal_gargalo!=='nenhum gargalo crítico identificado'?`<tr><td>Principal gargalo</td><td style="color:#991b1b;font-weight:700">${metaInfo.principal_gargalo}</td></tr>`:''}
     </table></div>`
 
-    const habilitados = servicosSalao.filter(s=>(prof.servicos_habilitados||[]).includes(s.id)&&(s.comissao_valor||0)>0).sort((a,b)=>(b.comissao_valor||0)-(a.comissao_valor||0))
+    const habilitados = servicosSalao.filter(s=>(prof?.servicos_habilitados||[]).includes(s.id)&&(s.comissao_valor||0)>0).sort((a,b)=>(b.comissao_valor||0)-(a.comissao_valor||0))
     let guiaHtml = ''
     if (metaInfo.faltam>0 && habilitados.length) {
       const top5 = habilitados.slice(0,5).map(s=>({nome:s.nome,comissao:s.comissao_valor||0,qtd:Math.ceil(metaInfo.faltam/(s.comissao_valor||1))}))
