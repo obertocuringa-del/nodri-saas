@@ -300,7 +300,7 @@ export default function FeedbackProfissionalPage() {
                 <button
                   onClick={() => router.push(`/salon/feedback-profissional/resultados/${selected.id}`)}
                   className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-semibold transition-all"
-                  style={{ background: 'rgba(139,92,246,.15)', color: '#a78bfa', border: '1px solid rgba(139,92,246,.3)' }}
+                  style={{ background: 'rgba(139,92,246,.15)', color: '#7c6fe0', border: '1px solid rgba(139,92,246,.3)' }}
                 >
                   <BarChart2 size={12} /> Ver Resultados
                 </button>
@@ -340,7 +340,7 @@ export default function FeedbackProfissionalPage() {
               <button
                 onClick={criarFormulario}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm mx-auto"
-                style={{ background: 'linear-gradient(135deg,#7c5cfc,#f43f8e)', color: 'white' }}
+                style={{ background: 'linear-gradient(135deg,#5b4fcf,#f43f8e)', color: 'white' }}
               >
                 <Plus size={16} /> Criar formulário
               </button>
@@ -357,7 +357,7 @@ export default function FeedbackProfissionalPage() {
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <button onClick={toggleAtivo} className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] border" style={{ borderColor: 'rgba(255,255,255,.1)', color: '#94a3b8' }}>
+                  <button onClick={toggleAtivo} className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] border" style={{ borderColor: 'rgba(255,255,255,.1)', color: '#9e9b94' }}>
                     <Eye size={10} /> {selected.ativo ? 'Desativar' : 'Ativar'}
                   </button>
                   <button onClick={excluirFormulario} className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] border border-red-500/30 text-red-400">
@@ -404,7 +404,7 @@ export default function FeedbackProfissionalPage() {
                             className="py-3 rounded-xl text-[12px] font-bold transition-all"
                             style={formTipo === 'positivo'
                               ? { background: 'rgba(34,197,94,.15)', color: '#4ade80', border: '2px solid rgba(34,197,94,.4)' }
-                              : { background: 'rgba(255,255,255,.03)', color: '#64748b', border: '1px solid rgba(255,255,255,.08)' }}>
+                              : { background: 'rgba(255,255,255,.03)', color: '#9e9b94', border: '1px solid rgba(255,255,255,.08)' }}>
                             <Check size={12} className="inline mr-1" /> Positivo
                           </button>
                           <button
@@ -412,7 +412,7 @@ export default function FeedbackProfissionalPage() {
                             className="py-3 rounded-xl text-[12px] font-bold transition-all"
                             style={formTipo === 'negativo'
                               ? { background: 'rgba(239,68,68,.12)', color: '#f87171', border: '2px solid rgba(239,68,68,.35)' }
-                              : { background: 'rgba(255,255,255,.03)', color: '#64748b', border: '1px solid rgba(255,255,255,.08)' }}>
+                              : { background: 'rgba(255,255,255,.03)', color: '#9e9b94', border: '1px solid rgba(255,255,255,.08)' }}>
                             <X size={12} className="inline mr-1" /> Negativo
                           </button>
                         </div>
@@ -577,7 +577,7 @@ export default function FeedbackProfissionalPage() {
                       <button
                         onClick={() => { navigator.clipboard.writeText(linkForm); toast.success('Link copiado!') }}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold shrink-0"
-                        style={{ background: 'rgba(139,92,246,.2)', color: '#a78bfa', border: '1px solid rgba(139,92,246,.35)' }}
+                        style={{ background: 'rgba(139,92,246,.2)', color: '#7c6fe0', border: '1px solid rgba(139,92,246,.35)' }}
                       >
                         <Copy size={11} /> Copiar
                       </button>

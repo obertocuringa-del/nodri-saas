@@ -146,7 +146,7 @@ export default function ImportarPage() {
             {/* Botão importar */}
             <button onClick={importar} disabled={loading || !formularioId}
               className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm disabled:opacity-50 transition-all"
-              style={{ background: 'linear-gradient(135deg,#7c5cfc,#06b6d4)', color: 'white', boxShadow: '0 8px 30px rgba(124,92,252,.3)' }}>
+              style={{ background: 'linear-gradient(135deg,#5b4fcf,#06b6d4)', color: 'white', boxShadow: '0 8px 30px rgba(124,92,252,.3)' }}>
               {loading ? (
                 <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Importando...</>
               ) : (
@@ -178,7 +178,7 @@ export default function ImportarPage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {[
                 { label: 'Importados', val: result.importados, cor: '#4ade80' },
-                { label: 'Ignorados', val: result.ignorados, cor: '#94a3b8' },
+                { label: 'Ignorados', val: result.ignorados, cor: '#9e9b94' },
                 { label: 'Total lidos', val: result.total_linhas, cor: '#60a5fa' },
               ].map(({ label, val, cor }) => (
                 <div key={label} className="p-3 rounded-xl text-center border" style={{ borderColor: `${cor}20`, background: `${cor}08` }}>

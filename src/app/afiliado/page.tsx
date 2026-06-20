@@ -43,7 +43,7 @@ export default function PainelAfiliadoPage() {
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <div className="w-14 h-14 rounded-2xl flex items-center justify-center font-black text-2xl text-black mx-auto mb-4"
-            style={{ background: 'linear-gradient(135deg,#00e5c8,#7c5cfc)' }}>N</div>
+            style={{ background: 'linear-gradient(135deg,#5b4fcf,#5b4fcf)' }}>N</div>
           <h1 className="font-syne font-black text-xl">Painel do Afiliado</h1>
           <p className="text-nodri-t3 text-xs mt-1">Entre com seu email e CPF cadastrados</p>
         </div>
@@ -86,7 +86,7 @@ export default function PainelAfiliadoPage() {
       <nav className="bg-nodri-surface border-b border-nodri-border px-5 py-3 flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm text-black"
-            style={{ background: 'linear-gradient(135deg,#00e5c8,#7c5cfc)' }}>N</div>
+            style={{ background: 'linear-gradient(135deg,#5b4fcf,#5b4fcf)' }}>N</div>
           <div>
             <div className="font-syne font-bold text-sm">NODRI Afiliados</div>
             <div className="text-[11px] text-nodri-cyan">Olá, {afiliado?.nome?.split(' ')[0]}!</div>

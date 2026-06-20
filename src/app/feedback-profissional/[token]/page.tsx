@@ -69,7 +69,7 @@ export default function FeedbackProfissionalPublico() {
   if (error) return (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg,#f5f3ff,#ede9fe)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ textAlign: 'center' }}><div style={{ fontSize: 52, marginBottom: 16 }}></div>
-        <h1 style={{ color: '#111827', fontWeight: 700, fontSize: 20 }}>Formulário indisponível</h1>
+        <h1 style={{ color: '#faf9f7', fontWeight: 700, fontSize: 20 }}>Formulário indisponível</h1>
         <p style={{ color: '#6b7280', marginTop: 8 }}>{error}</p></div>
     </div>
   )
@@ -80,7 +80,7 @@ export default function FeedbackProfissionalPublico() {
         <div style={{ width: 84, height: 84, borderRadius: '50%', background: `linear-gradient(135deg,${COR},${COR}99)`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', boxShadow: `0 20px 60px ${COR}40` }}>
           <CheckCircle size={42} color="white" />
         </div>
-        <h1 style={{ color: '#111827', fontWeight: 800, fontSize: 26, marginBottom: 10 }}>Registro salvo!</h1>
+        <h1 style={{ color: '#faf9f7', fontWeight: 800, fontSize: 26, marginBottom: 10 }}>Registro salvo!</h1>
         <p style={{ color: '#6b7280', fontSize: 15, lineHeight: 1.7 }}>O feedback do profissional foi registrado com sucesso.</p>
         <button onClick={() => { setProfissionalId(''); setProfissionalNome(''); setTipo(''); setOcorridoId(''); setOcorridoDescricao(''); setDescricao(''); setEnviado(false) }}
           style={{ marginTop: 24, padding: '12px 28px', borderRadius: 12, border: 'none', cursor: 'pointer', background: COR, color: 'white', fontWeight: 700, fontSize: 14 }}>
@@ -106,7 +106,7 @@ export default function FeedbackProfissionalPublico() {
             {nomeIniciais}
           </div>
           {form.salao_nome && <p style={{ fontSize: 12, fontWeight: 700, color: COR, letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 6 }}>{form.salao_nome}</p>}
-          <h1 style={{ fontSize: 20, fontWeight: 800, color: '#111827', marginBottom: 4 }}>{form.titulo}</h1>
+          <h1 style={{ fontSize: 20, fontWeight: 800, color: '#faf9f7', marginBottom: 4 }}>{form.titulo}</h1>
           <p style={{ fontSize: 13, color: '#9ca3af' }}>Registre ocorrências de forma rápida e objetiva</p>
           <p style={{ fontSize: 11, color: '#ef4444', marginTop: 8 }}>* Campos obrigatórios</p>
         </div>
@@ -115,9 +115,9 @@ export default function FeedbackProfissionalPublico() {
 
           {/* PROFISSIONAL */}
           <div className="card" style={{ background: 'white', borderRadius: 20, padding: 28, marginBottom: 14, boxShadow: '0 2px 20px rgba(0,0,0,0.06)', animationDelay: '0s' }}>
-            <p style={{ fontSize: 15, fontWeight: 600, color: '#111827', marginBottom: 14 }}>Profissional <span style={{ color: '#ef4444' }}>*</span></p>
+            <p style={{ fontSize: 15, fontWeight: 600, color: '#faf9f7', marginBottom: 14 }}>Profissional <span style={{ color: '#ef4444' }}>*</span></p>
             <select value={profissionalId} onChange={e => selectProf(e.target.value)}
-              style={{ width: '100%', padding: '14px 16px', borderRadius: 14, border: `2px solid ${profissionalId ? COR : '#f3f4f6'}`, fontSize: 14, color: profissionalId ? '#111827' : '#9ca3af', background: '#f9fafb', fontFamily: 'inherit', cursor: 'pointer' }}>
+              style={{ width: '100%', padding: '14px 16px', borderRadius: 14, border: `2px solid ${profissionalId ? COR : '#f3f4f6'}`, fontSize: 14, color: profissionalId ? '#faf9f7' : '#9ca3af', background: '#f9fafb', fontFamily: 'inherit', cursor: 'pointer' }}>
               <option value="">Escolher profissional...</option>
               {form.profissionais.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
             </select>
@@ -125,7 +125,7 @@ export default function FeedbackProfissionalPublico() {
 
           {/* POSITIVO / NEGATIVO */}
           <div className="card" style={{ background: 'white', borderRadius: 20, padding: 28, marginBottom: 14, boxShadow: '0 2px 20px rgba(0,0,0,0.06)', animationDelay: '.07s' }}>
-            <p style={{ fontSize: 15, fontWeight: 600, color: '#111827', marginBottom: 14 }}>Positivo ou Negativo? <span style={{ color: '#ef4444' }}>*</span></p>
+            <p style={{ fontSize: 15, fontWeight: 600, color: '#faf9f7', marginBottom: 14 }}>Positivo ou Negativo? <span style={{ color: '#ef4444' }}>*</span></p>
             <div style={{ display: 'flex', gap: 12 }}>
               {(['positivo', 'negativo'] as const).map(t => {
                 const sel = tipo === t
@@ -145,9 +145,9 @@ export default function FeedbackProfissionalPublico() {
 
           {/* O QUE HOUVE */}
           <div className="card" style={{ background: 'white', borderRadius: 20, padding: 28, marginBottom: 14, boxShadow: '0 2px 20px rgba(0,0,0,0.06)', animationDelay: '.14s' }}>
-            <p style={{ fontSize: 15, fontWeight: 600, color: '#111827', marginBottom: 14 }}>O que houve? <span style={{ color: '#ef4444' }}>*</span></p>
+            <p style={{ fontSize: 15, fontWeight: 600, color: '#faf9f7', marginBottom: 14 }}>O que houve? <span style={{ color: '#ef4444' }}>*</span></p>
             <select value={ocorridoId} onChange={e => selectOcorrido(e.target.value)}
-              style={{ width: '100%', padding: '14px 16px', borderRadius: 14, border: `2px solid ${ocorridoId ? COR : '#f3f4f6'}`, fontSize: 14, color: ocorridoId ? '#111827' : '#9ca3af', background: '#f9fafb', fontFamily: 'inherit', cursor: 'pointer' }}>
+              style={{ width: '100%', padding: '14px 16px', borderRadius: 14, border: `2px solid ${ocorridoId ? COR : '#f3f4f6'}`, fontSize: 14, color: ocorridoId ? '#faf9f7' : '#9ca3af', background: '#f9fafb', fontFamily: 'inherit', cursor: 'pointer' }}>
               <option value="">Escolher ocorrido...</option>
               {form.ocorridos.map(o => <option key={o.id} value={o.id}>{o.descricao}</option>)}
             </select>
@@ -155,11 +155,11 @@ export default function FeedbackProfissionalPublico() {
 
           {/* DESCRIÇÃO */}
           <div className="card" style={{ background: 'white', borderRadius: 20, padding: 28, marginBottom: 14, boxShadow: '0 2px 20px rgba(0,0,0,0.06)', border: `2px solid ${COR}15`, animationDelay: '.21s' }}>
-            <p style={{ fontSize: 15, fontWeight: 600, color: '#111827', marginBottom: 14 }}>Descreva o ocorrido <span style={{ color: '#6b7280', fontSize: 13, fontWeight: 400 }}>(opcional)</span></p>
+            <p style={{ fontSize: 15, fontWeight: 600, color: '#faf9f7', marginBottom: 14 }}>Descreva o ocorrido <span style={{ color: '#6b7280', fontSize: 13, fontWeight: 400 }}>(opcional)</span></p>
             <textarea value={descricao} onChange={e => setDescricao(e.target.value)}
               placeholder="Descreva com mais detalhes o que aconteceu..."
               rows={4}
-              style={{ width: '100%', border: `2px solid ${COR}20`, borderRadius: 14, padding: '14px 16px', fontSize: 14, color: '#111827', background: `${COR}05`, resize: 'none', fontFamily: 'inherit', lineHeight: 1.6 }}
+              style={{ width: '100%', border: `2px solid ${COR}20`, borderRadius: 14, padding: '14px 16px', fontSize: 14, color: '#faf9f7', background: `${COR}05`, resize: 'none', fontFamily: 'inherit', lineHeight: 1.6 }}
               onFocus={e => e.target.style.borderColor = COR}
               onBlur={e => e.target.style.borderColor = `${COR}20`} />
           </div>

@@ -24,22 +24,22 @@ function imprimirEstrategia(planoTexto: string, nomeProf: string) {
   body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10.5pt; color: #1a1a2e; line-height: 1.55; background: #fff; }
 
   /* Cabeçalho */
-  .header { display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #7c5cfc; padding-bottom: 10px; margin-bottom: 16px; }
-  .header-brand { font-size: 18pt; font-weight: 900; color: #7c5cfc; letter-spacing: -0.5px; }
-  .header-brand span { color: #00e5c8; }
+  .header { display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #5b4fcf; padding-bottom: 10px; margin-bottom: 16px; }
+  .header-brand { font-size: 18pt; font-weight: 900; color: #5b4fcf; letter-spacing: -0.5px; }
+  .header-brand span { color: #5b4fcf; }
   .header-meta { text-align: right; font-size: 8.5pt; color: #555; line-height: 1.4; }
   .header-meta strong { display: block; font-size: 10pt; color: #1a1a2e; }
 
   /* Seções */
   .section { margin-bottom: 14px; break-inside: avoid; }
   h1, h2, h3 { font-weight: 800; color: #1a1a2e; }
-  h1 { font-size: 13pt; border-bottom: 2px solid #7c5cfc; padding-bottom: 5px; margin-bottom: 10px; color: #7c5cfc; }
-  h2 { font-size: 11pt; background: linear-gradient(90deg,#f3f0ff,transparent); padding: 4px 8px; border-left: 4px solid #7c5cfc; margin: 12px 0 6px; color: #3d2070; }
+  h1 { font-size: 13pt; border-bottom: 2px solid #5b4fcf; padding-bottom: 5px; margin-bottom: 10px; color: #5b4fcf; }
+  h2 { font-size: 11pt; background: linear-gradient(90deg,#f3f0ff,transparent); padding: 4px 8px; border-left: 4px solid #5b4fcf; margin: 12px 0 6px; color: #3d2070; }
   h3 { font-size: 10pt; color: #3d2070; margin: 8px 0 4px; }
 
   /* Tabelas */
   table { width: 100%; border-collapse: collapse; font-size: 9.5pt; margin: 6px 0 10px; }
-  th { background: #7c5cfc; color: #fff; padding: 5px 8px; text-align: left; font-weight: 700; font-size: 9pt; }
+  th { background: #5b4fcf; color: #fff; padding: 5px 8px; text-align: left; font-weight: 700; font-size: 9pt; }
   td { padding: 4px 8px; border-bottom: 1px solid #e8e8f0; vertical-align: top; }
   tr:nth-child(even) td { background: #f8f7ff; }
   tr:last-child td { border-bottom: none; }
@@ -47,7 +47,7 @@ function imprimirEstrategia(planoTexto: string, nomeProf: string) {
   /* Bullets e listas */
   ul, ol { padding-left: 18px; margin: 4px 0 8px; }
   li { margin-bottom: 3px; }
-  .bullet-cyan::before { content: "●"; color: #00e5c8; margin-right: 6px; font-size: 8pt; }
+  .bullet-cyan::before { content: "●"; color: #5b4fcf; margin-right: 6px; font-size: 8pt; }
   .bullet-red::before { content: "🔴"; margin-right: 4px; }
   .bullet-check::before { content: "□"; margin-right: 6px; font-size: 11pt; color: #555; }
 
@@ -56,7 +56,7 @@ function imprimirEstrategia(planoTexto: string, nomeProf: string) {
   .highlight-box { background: #f3f0ff; border: 1px solid #c4b5fd; border-radius: 6px; padding: 8px 12px; margin: 6px 0; }
   .alert-box { background: #fff5f5; border-left: 4px solid #ef4444; padding: 6px 10px; margin: 4px 0; border-radius: 0 4px 4px 0; }
   .success-box { background: #f0fdf4; border-left: 4px solid #22c55e; padding: 6px 10px; margin: 4px 0; border-radius: 0 4px 4px 0; }
-  .insight-box { background: linear-gradient(135deg,#f3f0ff,#e0f7f4); border: 2px solid #7c5cfc; border-radius: 8px; padding: 10px 14px; margin: 12px 0; font-style: italic; font-weight: 600; color: #3d2070; font-size: 10.5pt; }
+  .insight-box { background: linear-gradient(135deg,#f3f0ff,#e0f7f4); border: 2px solid #5b4fcf; border-radius: 8px; padding: 10px 14px; margin: 12px 0; font-style: italic; font-weight: 600; color: #3d2070; font-size: 10.5pt; }
 
   /* Rodapé e assinatura */
   .footer { margin-top: 28px; border-top: 2px solid #e8e8f0; padding-top: 18px; }
@@ -85,7 +85,7 @@ function imprimirEstrategia(planoTexto: string, nomeProf: string) {
     <strong>Planejamento Estratégico de Meta</strong>
     ${nomeProf}<br>
     Emitido em ${dataStr}<br>
-    <span style="color:#7c5cfc;font-weight:700">NODRI IA — Documento Confidencial</span>
+    <span style="color:#5b4fcf;font-weight:700">NODRI IA — Documento Confidencial</span>
   </div>
 </div>
 
@@ -195,7 +195,7 @@ function renderParaImpressao(texto: string): string {
     if (/^[•\-\*]\s+/.test(linha) || /^\d+\.\s/.test(linha)) {
       const isNum = /^\d+\./.test(linha)
       const content = applyInline(linha.replace(/^[•\-\*\d\.]\s+/, ''))
-      out.push(`<div style="display:flex;gap:6px;margin:2px 0 2px 8px"><span style="color:#7c5cfc;flex-shrink:0">${isNum ? linha.match(/^(\d+)/)?.[1]+'.' : '•'}</span><span>${content}</span></div>`)
+      out.push(`<div style="display:flex;gap:6px;margin:2px 0 2px 8px"><span style="color:#5b4fcf;flex-shrink:0">${isNum ? linha.match(/^(\d+)/)?.[1]+'.' : '•'}</span><span>${content}</span></div>`)
       continue
     }
 
@@ -224,7 +224,7 @@ function renderPlanoHtml(texto: string): string {
     if (rows.length > 0) {
       const [head, ...body] = rows
       out.push('<table style="width:100%;border-collapse:collapse;margin:8px 0;font-size:11px">')
-      out.push('<thead><tr>' + head.map(c => `<th style="text-align:left;padding:6px 8px;color:#00e5c8;border-bottom:1px solid rgba(0,229,200,0.25)">${c}</th>`).join('') + '</tr></thead>')
+      out.push('<thead><tr>' + head.map(c => `<th style="text-align:left;padding:6px 8px;color:#5b4fcf;border-bottom:1px solid rgba(0,229,200,0.25)">${c}</th>`).join('') + '</tr></thead>')
       out.push('<tbody>' + body.map(r => '<tr>' + r.map(c => `<td style="padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.06)">${c}</td>`).join('') + '</tr>').join('') + '</tbody>')
       out.push('</table>')
     }
@@ -245,7 +245,7 @@ function renderPlanoHtml(texto: string): string {
     if (!linha.trim()) { out.push('<div style="margin:6px 0"></div>'); continue }
 
     let l = linha
-      .replace(/\*\*([^*]+)\*\*/g, '<strong style="color:#f1f5f9">$1</strong>')
+      .replace(/\*\*([^*]+)\*\*/g, '<strong style="color:#3a3835">$1</strong>')
       .replace(/^[•\-]\s+(.+)$/, '$1')
 
     // Títulos ## / ###
@@ -256,27 +256,27 @@ function renderPlanoHtml(texto: string): string {
       if (nivel === 1) {
         out.push(`<div style="font-weight:800;font-size:15px;color:#fff;margin:14px 0 8px;padding-bottom:6px;border-bottom:2px solid rgba(0,229,200,0.35)">${texto2}</div>`)
       } else {
-        out.push(`<div style="font-weight:700;font-size:13px;color:#00e5c8;margin:12px 0 6px">${texto2}</div>`)
+        out.push(`<div style="font-weight:700;font-size:13px;color:#5b4fcf;margin:12px 0 6px">${texto2}</div>`)
       }
       continue
     }
 
     // Linhas com status (✅ / ⚠️ / 🔴 / 🟢) tratadas como mini-título
     if (/^(✅|⚠️|🔴|🟢|🟡|🔵|🏆|💎|🧠|⚡|🔮|🚨|📌|📊|📅|📍|👔|🤖)\s*[A-ZÀ-Ú]/.test(linha) && linha.length < 60) {
-      out.push(`<div style="font-weight:700;font-size:12px;color:#e2e8f0;margin:8px 0 4px">${l}</div>`)
+      out.push(`<div style="font-weight:700;font-size:12px;color:#1a1a1a;margin:8px 0 4px">${l}</div>`)
       continue
     }
 
     // Linhas numeradas
     const numMatch = linha.match(/^(\d+)[️⃣.]\s*(.+)$/) || linha.match(/^(\d+)\.\s+(.+)$/)
     if (numMatch) {
-      out.push(`<div style="display:flex;gap:6px;margin:3px 0"><span style="color:#7c5cfc;font-weight:700;flex-shrink:0">${numMatch[1]}.</span><span>${numMatch[2].replace(/\*\*([^*]+)\*\*/g, '<strong style="color:#f1f5f9">$1</strong>')}</span></div>`)
+      out.push(`<div style="display:flex;gap:6px;margin:3px 0"><span style="color:#5b4fcf;font-weight:700;flex-shrink:0">${numMatch[1]}.</span><span>${numMatch[2].replace(/\*\*([^*]+)\*\*/g, '<strong style="color:#3a3835">$1</strong>')}</span></div>`)
       continue
     }
 
     // Bullets
     if (/^[•\-\*]\s+/.test(linha)) {
-      out.push(`<div style="display:flex;gap:6px;margin:2px 0"><span style="color:#00e5c8;flex-shrink:0">•</span><span>${l}</span></div>`)
+      out.push(`<div style="display:flex;gap:6px;margin:2px 0"><span style="color:#5b4fcf;flex-shrink:0">•</span><span>${l}</span></div>`)
       continue
     }
 
@@ -455,7 +455,7 @@ function TabelaServicos({ p1, p2, nomeProfissional }: { p1: MetricaBloco | null;
     <div className="space-y-4">
       {/* Tabela de serviços */}
       <div className="bg-nodri-surface border border-nodri-border rounded-2xl overflow-hidden">
-        <div className="px-5 py-3 flex items-center justify-between" style={{background:'#0f3460'}}>
+        <div className="px-5 py-3 flex items-center justify-between" style={{background:'#e0ddf5'}}>
           <h3 className="font-syne font-bold text-[13px] text-white">
              SERVIÇOS REALIZADOS{nomeProfissional ? ` POR ${nomeProfissional.toUpperCase()}` : ''}
           </h3>
@@ -464,7 +464,7 @@ function TabelaServicos({ p1, p2, nomeProfissional }: { p1: MetricaBloco | null;
         <div className="overflow-x-auto">
           <table className="w-full text-[11px]">
             <thead>
-              <tr style={{background:'#1e2d3d'}}>
+              <tr style={{background:'#f0eeff'}}>
                 <th className="py-2.5 px-4 text-left text-white font-semibold text-[11px] uppercase tracking-wide">SERVIÇO</th>
                 <th className="py-2.5 px-4 text-center text-white font-semibold text-[11px] uppercase tracking-wide">QTD ATUAL</th>
                 <th className="py-2.5 px-4 text-center text-white font-semibold text-[11px] uppercase tracking-wide">QTD ANT.</th>
@@ -481,7 +481,7 @@ function TabelaServicos({ p1, p2, nomeProfissional }: { p1: MetricaBloco | null;
                 return (
                   <tr key={s} className="border-b border-nodri-border/30 hover:bg-nodri-card/40 transition-colors" style={{background:rowBg}}>
                     <td className="py-2.5 px-4 text-nodri-t1 font-medium">{s}</td>
-                    <td className="py-2.5 px-4 text-center font-bold" style={{color: q2>0?'#e2e8f0':'#64748b'}}>{q2||'–'}</td>
+                    <td className="py-2.5 px-4 text-center font-bold" style={{color: q2>0?'#1a1a1a':'#9e9b94'}}>{q2||'–'}</td>
                     <td className="py-2.5 px-4 text-center text-nodri-t3">{q1||'–'}</td>
                     <td className="py-2.5 px-4 text-center">
                       {isNovo    && <span className="text-nodri-green font-bold"> 100%</span>}
@@ -719,7 +719,7 @@ function BlocoDiagnostico({ prof, form, metricas, p1, p2, fidel }: {
 
   const allScores = [sFat, sTicket, sOcup, sFidel, sCheck, sOc].filter(Boolean) as {score:number}[]
   const scoreGeral = allScores.length ? Math.round(allScores.reduce((s,v)=>s+v.score,0)/allScores.length*10) : null
-  const corGeral = !scoreGeral ? '#64748b' : scoreGeral>=70?'#22c55e':scoreGeral>=45?'#f59e0b':'#ef4444'
+  const corGeral = !scoreGeral ? '#9e9b94' : scoreGeral>=70?'#22c55e':scoreGeral>=45?'#f59e0b':'#ef4444'
   const labelGeral = !scoreGeral ? '—' : scoreGeral>=70?'BOM':scoreGeral>=45?'ATENÇÃO':'CRÍTICO'
 
   // Diagnóstico textual
@@ -854,7 +854,7 @@ function BlocoDiagnostico({ prof, form, metricas, p1, p2, fidel }: {
         <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
           <h3 className="font-syne font-bold text-[13px] mb-4">️ Ocorrências no Período <span className="text-[10px] text-nodri-t3 font-normal">{metricas.feedbacks.length} registros</span></h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
-            {[{l:'Positivas',v:ocPos,c:'#22c55e'},{l:'Negativas',v:ocNeg,c:'#ef4444'},{l:'Total',v:metricas.feedbacks.length,c:'#7c5cfc'}].map(item=>(
+            {[{l:'Positivas',v:ocPos,c:'#22c55e'},{l:'Negativas',v:ocNeg,c:'#ef4444'},{l:'Total',v:metricas.feedbacks.length,c:'#5b4fcf'}].map(item=>(
               <div key={item.l} className="bg-nodri-card border border-nodri-border rounded-xl p-3 text-center">
                 <div className="text-[9px] text-nodri-t3 uppercase mb-1">{item.l}</div>
                 <div className="font-syne font-bold text-[22px]" style={{color:item.c}}>{item.v}</div>
@@ -982,7 +982,7 @@ function GraficoFaturamento({ historico }: { historico: HistoricoItem[] }) {
     <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
       <h3 className="font-syne font-bold text-[13px] mb-1"> Faturamento Mensal</h3>
       <div className="flex gap-4 mb-4 text-[9px] text-nodri-t3">
-        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm" style={{background:'linear-gradient(to top,#00e5c8,#7c5cfc)'}}/> Atual</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm" style={{background:'linear-gradient(to top,#5b4fcf,#5b4fcf)'}}/> Atual</span>
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm opacity-40 bg-purple-400"/> Ano ant.</span>
       </div>
       <div className="overflow-x-auto">
@@ -1003,7 +1003,7 @@ function GraficoFaturamento({ historico }: { historico: HistoricoItem[] }) {
                     </span>
                   )}
                   {diff !== 0 && prevFat > 0 && (
-                    <span style={{color:'#94a3b8', fontSize:'8px', lineHeight:1.2}}>
+                    <span style={{color:'#9e9b94', fontSize:'8px', lineHeight:1.2}}>
                       {diff>0?'+':''}{(diff/1000).toFixed(1)}k
                     </span>
                   )}
@@ -1011,18 +1011,18 @@ function GraficoFaturamento({ historico }: { historico: HistoricoItem[] }) {
                 {/* Barras */}
                 <div className="flex items-end gap-0.5 flex-1 w-full">
                   {prevFat > 0 && (
-                    <div className="flex-1 rounded-t-sm opacity-40" style={{height:`${prevH}%`, background:'#7c5cfc', minHeight:'3px'}}
+                    <div className="flex-1 rounded-t-sm opacity-40" style={{height:`${prevH}%`, background:'#5b4fcf', minHeight:'3px'}}
                       title={`Ano ant: R$ ${prevFat.toLocaleString('pt-BR',{minimumFractionDigits:2})}`}/>
                   )}
-                  <div className="flex-1 rounded-t-sm" style={{height:`${barH}%`, background:'linear-gradient(to top,#00e5c8,#7c5cfc)', minHeight: h.faturamento>0?'3px':'0'}}
+                  <div className="flex-1 rounded-t-sm" style={{height:`${barH}%`, background:'linear-gradient(to top,#5b4fcf,#5b4fcf)', minHeight: h.faturamento>0?'3px':'0'}}
                     title={`R$ ${h.faturamento.toLocaleString('pt-BR',{minimumFractionDigits:2})}`}/>
                 </div>
                 {/* Valor */}
-                <span style={{fontSize:'8px', color:'#e2e8f0', fontWeight:600, textAlign:'center', lineHeight:1.2}}>
+                <span style={{fontSize:'8px', color:'#1a1a1a', fontWeight:600, textAlign:'center', lineHeight:1.2}}>
                   {(h.faturamento/1000).toFixed(1)}k
                 </span>
                 {/* Mês */}
-                <span style={{fontSize:'8px', color:'#64748b'}}>{MESES[h.mes-1]}/{String(h.ano).slice(2)}</span>
+                <span style={{fontSize:'8px', color:'#9e9b94'}}>{MESES[h.mes-1]}/{String(h.ano).slice(2)}</span>
               </div>
             )
           })}
@@ -1069,7 +1069,7 @@ function BlocoEficiencia({ p1, p2 }: { p1: MetricaBloco; p2: MetricaBloco }) {
 function BlocoMixReceita({ mix }: { mix: MixItem[] }) {
   const fmt$ = (v: number) => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0)
   if (!mix.length) return null
-  const cores = ['#00e5c8','#7c5cfc','#f43f8e','#f59e0b','#22c55e','#06b6d4','#a855f7','#ef4444','#84cc16','#fb923c']
+  const cores = ['#5b4fcf','#5b4fcf','#f43f8e','#f59e0b','#22c55e','#06b6d4','#a855f7','#ef4444','#84cc16','#fb923c']
   const maxPct = Math.max(...mix.map(m=>m.pct), 1)
   return (
     <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
@@ -1113,7 +1113,7 @@ function BlocoClientesFidelizacao({ historico }: { historico: HistoricoItem[] })
                   <div className="flex-1 rounded-t-sm" style={{height:`${Math.max(prefH,prefH>0?3:0)}%`, background:'#22c55e'}} title={`Fiéis: ${h.clientes_preferencia}`}/>
                   <div className="flex-1 rounded-t-sm" style={{height:`${Math.max(novH,novH>0?3:0)}%`, background:'#06b6d4'}} title={`Novos: ${h.clientes_sem_preferencia}`}/>
                 </div>
-                <span style={{fontSize:'8px',color:'#64748b'}}>{MESES[h.mes-1]}/{String(h.ano).slice(2)}</span>
+                <span style={{fontSize:'8px',color:'#9e9b94'}}>{MESES[h.mes-1]}/{String(h.ano).slice(2)}</span>
               </div>
             )
           })}
@@ -1127,7 +1127,7 @@ function BlocoClientesFidelizacao({ historico }: { historico: HistoricoItem[] })
 function BlocoProjecao({ p }: { p: ProjecaoData }) {
   const fmt$ = (v: number) => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0)
   const MESES_NOMES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
-  const cor = p.tendencia==='alta'?'#22c55e':p.tendencia==='baixa'?'#ef4444':'#a5b4fc'
+  const cor = p.tendencia==='alta'?'#22c55e':p.tendencia==='baixa'?'#ef4444':'#5b4fcf'
   const bg  = p.tendencia==='alta'?'rgba(34,197,94,0.05)':p.tendencia==='baixa'?'rgba(239,68,68,0.05)':'rgba(99,102,241,0.05)'
   const bd  = p.tendencia==='alta'?'rgba(34,197,94,0.25)':p.tendencia==='baixa'?'rgba(239,68,68,0.25)':'rgba(99,102,241,0.25)'
   return (
@@ -1181,7 +1181,7 @@ function BlocoSazonalidade({ s }: { s: SazonalidadeItem[] }) {
           const h = item.count>0?(item.media/max)*100:0
           const isMelhor = item.mes===melhor.mes
           const isPior   = item.mes===pior.mes
-          const cor = isMelhor?'#22c55e':isPior?'#ef4444':'linear-gradient(to top,#00e5c8,#7c5cfc)'
+          const cor = isMelhor?'#22c55e':isPior?'#ef4444':'linear-gradient(to top,#5b4fcf,#5b4fcf)'
           return (
             <div key={item.mes} className="flex flex-col items-center gap-1" title={item.count>0?`Média: ${fmt$(item.media)}\nMáx: ${fmt$(item.max)}\nMín: ${fmt$(item.min)}\n${item.count} anos`:'Sem dados'}>
               <div className="w-full flex items-end justify-center" style={{height:'64px'}}>
@@ -1192,8 +1192,8 @@ function BlocoSazonalidade({ s }: { s: SazonalidadeItem[] }) {
                   transition:'height 0.3s'
                 }}/>
               </div>
-              <span style={{fontSize:'8px',color:'#64748b',fontWeight:600}}>{MESES[item.mes-1]}</span>
-              {item.count>0&&<span style={{fontSize:'7px',color:'#475569'}}>{item.count}x</span>}
+              <span style={{fontSize:'8px',color:'#9e9b94',fontWeight:600}}>{MESES[item.mes-1]}</span>
+              {item.count>0&&<span style={{fontSize:'7px',color:'#6b6860'}}>{item.count}x</span>}
             </div>
           )
         })}
@@ -1250,7 +1250,7 @@ function BlocoDiagnosticoResumido({ prof, form, metricas, p1, p2, fidel }: {
 
   const allScores = [sFat, sTicket, sOcup, sFidel, sCheck, sOc].filter(Boolean) as {score:number}[]
   const scoreGeral = allScores.length ? Math.round(allScores.reduce((s,v)=>s+v.score,0)/allScores.length*10) : null
-  const corGeral = !scoreGeral ? '#64748b' : scoreGeral>=70?'#22c55e':scoreGeral>=45?'#f59e0b':'#ef4444'
+  const corGeral = !scoreGeral ? '#9e9b94' : scoreGeral>=70?'#22c55e':scoreGeral>=45?'#f59e0b':'#ef4444'
   const labelGeral = !scoreGeral ? '—' : scoreGeral>=70?'BOM':scoreGeral>=45?'ATENÇÃO':'CRÍTICO'
 
   const narrativa = gerarNarrativa(
@@ -1880,7 +1880,7 @@ function AbaIA({ profissionalId, nomeProfissional }: { profissionalId: string; n
                   m.content
                     // Títulos com emoji
                     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-                    .replace(/^#{1,3}\s+(.+)$/gm, '<div style="font-weight:700;font-size:13px;color:#00e5c8;margin:12px 0 6px;border-bottom:1px solid rgba(0,229,200,0.2);padding-bottom:4px">$1</div>')
+                    .replace(/^#{1,3}\s+(.+)$/gm, '<div style="font-weight:700;font-size:13px;color:#5b4fcf;margin:12px 0 6px;border-bottom:1px solid rgba(0,229,200,0.2);padding-bottom:4px">$1</div>')
                     // Linhas separadoras
                     .replace(/^={3,}.*={3,}$/gm, '<hr style="border-color:rgba(255,255,255,0.08);margin:10px 0"/>')
                     .replace(/^---+$/gm, '<hr style="border-color:rgba(255,255,255,0.08);margin:10px 0"/>')
@@ -1891,11 +1891,11 @@ function AbaIA({ profissionalId, nomeProfissional }: { profissionalId: string; n
                       return '<div style="display:flex;gap:8px;margin:2px 0">' + cols.map(c => `<span style="flex:1;padding:3px 6px;background:rgba(255,255,255,0.04);border-radius:4px;font-size:11px">${c.trim()}</span>`).join('') + '</div>'
                     })
                     // Listas com bullets
-                    .replace(/^[•\-\*]\s+(.+)$/gm, '<div style="display:flex;gap:6px;margin:2px 0"><span style="color:#00e5c8;flex-shrink:0">•</span><span>$1</span></div>')
+                    .replace(/^[•\-\*]\s+(.+)$/gm, '<div style="display:flex;gap:6px;margin:2px 0"><span style="color:#5b4fcf;flex-shrink:0">•</span><span>$1</span></div>')
                     // Listas numeradas
-                    .replace(/^(\d+)\.\s+(.+)$/gm, '<div style="display:flex;gap:6px;margin:3px 0"><span style="color:#7c5cfc;font-weight:700;flex-shrink:0">$1.</span><span>$2</span></div>')
+                    .replace(/^(\d+)\.\s+(.+)$/gm, '<div style="display:flex;gap:6px;margin:3px 0"><span style="color:#5b4fcf;font-weight:700;flex-shrink:0">$1.</span><span>$2</span></div>')
                     // Emojis de seção como títulos
-                    .replace(/^(||||||||||||)\s*(.+)$/gm, '<div style="font-weight:700;font-size:12px;color:#e2e8f0;margin:10px 0 4px">$1 $2</div>')
+                    .replace(/^(||||||||||||)\s*(.+)$/gm, '<div style="font-weight:700;font-size:12px;color:#1a1a1a;margin:10px 0 4px">$1 $2</div>')
                     // Quebras de linha
                     .replace(/\n\n/g, '<div style="margin:6px 0"></div>')
                     .replace(/\n/g, '<br/>')
@@ -1984,9 +1984,9 @@ export default function PerfilProfissionalPage() {
 @page { size: A4; margin: 18mm 16mm 20mm 16mm; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a2e; background: #fff; line-height: 1.5; }
-.header { display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #7c5cfc; padding-bottom: 10px; margin-bottom: 16px; }
-.header-brand { font-size: 18pt; font-weight: 900; color: #7c5cfc; letter-spacing: -0.5px; }
-.header-brand span { color: #00e5c8; }
+.header { display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #5b4fcf; padding-bottom: 10px; margin-bottom: 16px; }
+.header-brand { font-size: 18pt; font-weight: 900; color: #5b4fcf; letter-spacing: -0.5px; }
+.header-brand span { color: #5b4fcf; }
 .header-meta { text-align: right; font-size: 8.5pt; color: #555; line-height: 1.4; }
 .print-content { color: #1a1a2e; }
 .print-content * { color: inherit !important; background: transparent !important; border-color: #ccc !important; }
@@ -2263,7 +2263,7 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
     if (t.includes('falta')) return '#f59e0b'
     if (t.includes('positivo') || t.includes('gerente') || t.includes('feedback gerente')) return '#22c55e'
     if (t.includes('negou') || t.includes('reclamação')) return '#f43f8e'
-    return '#7c5cfc'
+    return '#5b4fcf'
   }
 
   // Usa dados do relatorio_periodos se disponíveis, senão usa prof_metricas_mensais
@@ -2281,7 +2281,7 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
           <ArrowLeft size={15}/> Profissionais
         </button>
         <div className="w-px h-5 bg-nodri-border"/>
-        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#7c5cfc] to-[#f43f8e] flex items-center justify-center text-white text-[10px] font-bold shrink-0">
+        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#5b4fcf] to-[#f43f8e] flex items-center justify-center text-white text-[10px] font-bold shrink-0">
           {(prof.apelido||prof.nome_completo).split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase()}
         </div>
         <div>
@@ -2378,7 +2378,7 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
             <div className="lg:col-span-2 space-y-5">
               {/* Banner de departamento */}
               {form.is_departamento && (
-                <div className="rounded-2xl p-5 flex items-center gap-4" style={{ background: (form.departamento_cor || '#7c5cfc') + '15', border: `1px solid ${form.departamento_cor || '#7c5cfc'}40` }}>
+                <div className="rounded-2xl p-5 flex items-center gap-4" style={{ background: (form.departamento_cor || '#5b4fcf') + '15', border: `1px solid ${form.departamento_cor || '#5b4fcf'}40` }}>
                   <div className="text-4xl">{form.nome_completo === 'ADMINISTRATIVO' ? '🗂️' : form.nome_completo === 'FINANCEIRO' ? '💰' : form.nome_completo === 'RECEPÇÃO' ? '🛎️' : '🏢'}</div>
                   <div>
                     <p className="font-syne font-bold text-[14px] text-nodri-t1">{form.nome_completo}</p>
@@ -2647,7 +2647,7 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
                         <span className="text-[12px] text-nodri-t3">meta: {fmt$(metaInfo.meta_final)}</span>
                       </div>
                       <div className="w-full h-3 rounded-full bg-nodri-border/40 overflow-hidden">
-                        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: pct >= 100 ? '#22c55e' : 'linear-gradient(135deg, #7c5cfc, #00e5c8)' }} />
+                        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: pct >= 100 ? '#22c55e' : 'linear-gradient(135deg, #5b4fcf, #5b4fcf)' }} />
                       </div>
                       <p className="text-[11px] text-nodri-t3 mt-1">{pct.toFixed(0)}% da meta atingida</p>
                     </div>
@@ -2674,10 +2674,10 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
                   {/* Indicadores */}
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                     {[
-                      { l: 'Meta Mensal', v: fmt$(metaInfo.meta_final), cor: '#7c5cfc' },
+                      { l: 'Meta Mensal', v: fmt$(metaInfo.meta_final), cor: '#5b4fcf' },
                       { l: 'Realizado', v: fmt$(metaInfo.realizado), cor: '#22c55e' },
                       { l: 'Faltam', v: fmt$(metaInfo.faltam), cor: metaInfo.faltam > 0 ? '#f59e0b' : '#22c55e' },
-                      { l: 'Dias Restantes', v: String(metaInfo.dias_restantes), cor: '#00e5c8' },
+                      { l: 'Dias Restantes', v: String(metaInfo.dias_restantes), cor: '#5b4fcf' },
                       { l: 'Necessário/Dia', v: fmt$(metaInfo.necessario_por_dia), cor: '#f43f8e' },
                     ].map(item => (
                       <div key={item.l} className="bg-nodri-card border border-nodri-border rounded-xl p-3">
@@ -2769,7 +2769,7 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
 
                   <div className="flex items-center gap-2">
                     <button onClick={gerarEstrategia} disabled={gerandoEstrategia}
-                      style={{ background: 'linear-gradient(135deg, #7c5cfc, #f43f8e)' }}
+                      style={{ background: 'linear-gradient(135deg, #5b4fcf, #f43f8e)' }}
                       className="flex items-center gap-2 text-white px-4 py-2.5 rounded-xl text-[12px] font-bold disabled:opacity-50">
                       {gerandoEstrategia ? <Loader2 size={14} className="animate-spin"/> : null}
                       {metaInfo.plano ? '🔄 Recalcular Estratégia' : '🚀 Criar Estratégia para Bater a Meta'}
@@ -2892,8 +2892,8 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
               {/* Resumo de feedbacks no período */}
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { l: 'Total P1', v: metricas.feedbacks_p1_total, cor: '#7c5cfc' },
-                  { l: 'Total P2', v: metricas.feedbacks_p2_total, cor: '#00e5c8' },
+                  { l: 'Total P1', v: metricas.feedbacks_p1_total, cor: '#5b4fcf' },
+                  { l: 'Total P2', v: metricas.feedbacks_p2_total, cor: '#5b4fcf' },
                   { l: 'Variação', v: null, cor: metricas.feedbacks_p2_total <= metricas.feedbacks_p1_total ? '#22c55e' : '#ef4444',
                     txt: metricas.feedbacks_p1_total > 0
                       ? (((metricas.feedbacks_p2_total-metricas.feedbacks_p1_total)/metricas.feedbacks_p1_total)*100).toFixed(1)+'%'
@@ -3035,7 +3035,7 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {[
                       {l:'% do Faturamento',v:`${d.pct_faturamento}%`,c:cor},
-                      {l:'Faturamento Gerado',v:fmt$(d.fat_prof),c:'#00e5c8'},
+                      {l:'Faturamento Gerado',v:fmt$(d.fat_prof),c:'#5b4fcf'},
                       {l:'Clientes Exclusivos',v:d.clientes_exclusivos,c:'#f59e0b'},
                       {l:'Impacto Mensal Est.',v:fmt$(d.impacto_mensal),c:'#f43f8e'},
                     ].map(item=>(
@@ -3056,7 +3056,7 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
                               <div className="flex-1 w-full flex items-end justify-center">
                                 <div className="w-full rounded-t" style={{height:`${Math.max(h.pct*2.5,3)}%`,background:cor,opacity:0.8}} title={`${h.pct}%`}/>
                               </div>
-                              <span style={{fontSize:'8px',color:'#64748b'}}>{MESES[h.mes-1]}</span>
+                              <span style={{fontSize:'8px',color:'#9e9b94'}}>{MESES[h.mes-1]}</span>
                               <span style={{fontSize:'8px',color:cor,fontWeight:700}}>{h.pct}%</span>
                             </div>
                           ))}
@@ -3184,12 +3184,12 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a
                             </div>
                           </div>
                           <div className="text-right shrink-0">
-                            <div className="font-syne font-black text-[24px]" style={{color: par.pct>=70?'#22c55e':par.pct>=40?'#f59e0b':'#00e5c8'}}>{par.pct}%</div>
+                            <div className="font-syne font-black text-[24px]" style={{color: par.pct>=70?'#22c55e':par.pct>=40?'#f59e0b':'#5b4fcf'}}>{par.pct}%</div>
                             <div className="text-[9px] text-nodri-t3">co-ocorrência</div>
                           </div>
                         </div>
                         <div className="w-full bg-nodri-border rounded-full h-2 overflow-hidden mb-2">
-                          <div className="h-2 rounded-full" style={{width:`${par.pct}%`,background:`linear-gradient(90deg,#00e5c8,#7c5cfc)`}}/>
+                          <div className="h-2 rounded-full" style={{width:`${par.pct}%`,background:`linear-gradient(90deg,#5b4fcf,#5b4fcf)`}}/>
                         </div>
                         <p className="text-[10px] text-nodri-t3">
                           {par.count} clientes fazem os dois serviços juntos

@@ -298,7 +298,7 @@ export default function FeedbackPage() {
             {selected && (
               <button onClick={() => router.push(`/salon/feedback/resultados/${selected.id}`)}
                 className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-semibold transition-all"
-                style={{ background: 'rgba(139,92,246,0.15)', color: '#a78bfa', border: '1px solid rgba(139,92,246,0.3)' }}>
+                style={{ background: 'rgba(139,92,246,0.15)', color: '#7c6fe0', border: '1px solid rgba(139,92,246,0.3)' }}>
                 <BarChart2 size={12} /> Ver Resultados
               </button>
             )}
@@ -314,7 +314,7 @@ export default function FeedbackPage() {
               <p className="text-nodri-t2 text-sm mb-6 max-w-sm">Crie formulários personalizados e envie o link para seus clientes responderem</p>
               <button onClick={criarFormulario} disabled={saving}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm mx-auto transition-all"
-                style={{ background: 'linear-gradient(135deg, #7c5cfc, #f43f8e)', color: 'white' }}>
+                style={{ background: 'linear-gradient(135deg, #5b4fcf, #f43f8e)', color: 'white' }}>
                 <Plus size={16} /> Criar primeiro formulário
               </button>
             </div>
@@ -333,7 +333,7 @@ export default function FeedbackPage() {
                 <div className="flex items-center gap-1.5">
                   <button onClick={toggleAtivo}
                     className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] border transition-all"
-                    style={{ borderColor: 'rgba(255,255,255,0.1)', color: '#94a3b8' }}>
+                    style={{ borderColor: 'rgba(255,255,255,0.1)', color: '#9e9b94' }}>
                     {selected.ativo ? <><EyeOff size={10} /> Desativar</> : <><Eye size={10} /> Ativar</>}
                   </button>
                   <button onClick={excluirFormulario}
@@ -473,7 +473,7 @@ export default function FeedbackPage() {
                                 {p.obrigatoria && <span className="text-red-400 text-[10px]">*</span>}
                               </div>
                               <div className="flex items-center gap-2">
-                                <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.06)', color: '#64748b' }}>
+                                <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.06)', color: '#9e9b94' }}>
                                   {TIPO_LABELS[p.tipo]}
                                 </span>
                                 {p.opcoes.length > 0 && (
@@ -521,7 +521,7 @@ export default function FeedbackPage() {
                       <span className="flex-1 text-[11px] text-nodri-cyan break-all">{linkFeedback}</span>
                       <button onClick={copiarLink}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold shrink-0 transition-all"
-                        style={{ background: 'rgba(139,92,246,0.2)', color: '#a78bfa', border: '1px solid rgba(139,92,246,0.35)' }}>
+                        style={{ background: 'rgba(139,92,246,0.2)', color: '#7c6fe0', border: '1px solid rgba(139,92,246,0.35)' }}>
                         <Copy size={11} /> Copiar
                       </button>
                     </div>

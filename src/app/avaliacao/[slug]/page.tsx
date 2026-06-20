@@ -130,7 +130,7 @@ export default function AvaliacaoPage() {
       <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #fff1f5 0%, #fdf4ff 50%, #f0f9ff 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
         <div style={{ textAlign: 'center', maxWidth: 360 }}>
           <div style={{ fontSize: 56, marginBottom: 16 }}>😕</div>
-          <h1 style={{ color: '#111827', fontWeight: 700, fontSize: 22, marginBottom: 8 }}>Formulário indisponível</h1>
+          <h1 style={{ color: '#faf9f7', fontWeight: 700, fontSize: 22, marginBottom: 8 }}>Formulário indisponível</h1>
           <p style={{ color: '#6b7280', fontSize: 15 }}>{error}</p>
         </div>
       </div>
@@ -150,7 +150,7 @@ export default function AvaliacaoPage() {
           }}>
             <CheckCircle size={44} color="white" />
           </div>
-          <h1 style={{ color: '#111827', fontWeight: 800, fontSize: 28, marginBottom: 12, letterSpacing: '-0.5px' }}>
+          <h1 style={{ color: '#faf9f7', fontWeight: 800, fontSize: 28, marginBottom: 12, letterSpacing: '-0.5px' }}>
             Muito obrigado!
           </h1>
           <p style={{ color: '#6b7280', fontSize: 15, lineHeight: 1.7 }}>
@@ -216,7 +216,7 @@ export default function AvaliacaoPage() {
               {form.salao_nome}
             </p>
           )}
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: '#111827', letterSpacing: '-0.3px', marginBottom: 6 }}>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: '#faf9f7', letterSpacing: '-0.3px', marginBottom: 6 }}>
             {form.titulo}
           </h1>
           {form.descricao && (
@@ -241,7 +241,7 @@ export default function AvaliacaoPage() {
               animationDelay: `${idx * 0.07}s`,
             }}>
               <div style={{ marginBottom: 20 }}>
-                <p style={{ fontSize: 15, fontWeight: 600, color: '#111827', lineHeight: 1.5 }}>
+                <p style={{ fontSize: 15, fontWeight: 600, color: '#faf9f7', lineHeight: 1.5 }}>
                   {pergunta.titulo}
                   {pergunta.obrigatoria && <span style={{ color: '#ef4444', marginLeft: 4 }}>*</span>}
                 </p>
@@ -302,7 +302,7 @@ export default function AvaliacaoPage() {
                         }}>
                           {selected && <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'white' }} />}
                         </div>
-                        <span style={{ fontSize: 14, fontWeight: selected ? 600 : 400, color: selected ? '#111827' : '#374151' }}>
+                        <span style={{ fontSize: 14, fontWeight: selected ? 600 : 400, color: selected ? '#faf9f7' : '#374151' }}>
                           {opcao}
                         </span>
                       </button>
@@ -319,7 +319,7 @@ export default function AvaliacaoPage() {
                   rows={4}
                   style={{
                     width: '100%', border: '2px solid #f3f4f6', borderRadius: 14,
-                    padding: '14px 16px', fontSize: 14, color: '#111827',
+                    padding: '14px 16px', fontSize: 14, color: '#faf9f7',
                     background: '#f9fafb', resize: 'none', fontFamily: 'inherit',
                     lineHeight: 1.6, transition: 'border-color 0.2s',
                   }}
@@ -435,7 +435,7 @@ export default function AvaliacaoPage() {
               }}>
                 <MessageSquare size={18} color={cor} />
               </div>
-              <p style={{ fontSize: 15, fontWeight: 600, color: '#111827' }}>
+              <p style={{ fontSize: 15, fontWeight: 600, color: '#faf9f7' }}>
                 Deixe um comentário <span style={{ fontWeight: 400, color: '#9ca3af', fontSize: 13 }}>(opcional)</span>
               </p>
             </div>
@@ -446,7 +446,7 @@ export default function AvaliacaoPage() {
               rows={5}
               style={{
                 width: '100%', border: `2px solid ${cor}20`, borderRadius: 14,
-                padding: '16px 18px', fontSize: 14, color: '#111827',
+                padding: '16px 18px', fontSize: 14, color: '#faf9f7',
                 background: `${cor}05`, resize: 'none', fontFamily: 'inherit',
                 lineHeight: 1.7, transition: 'border-color 0.2s',
               }}

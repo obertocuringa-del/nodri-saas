@@ -18,14 +18,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           position="top-right"
           toastOptions={{
             style: {
-              background: '#181c27',
-              color: '#f0f2ff',
-              border: '1px solid #232840',
+              background: '#ffffff',
+              color: '#1a1a1a',
+              border: '1px solid #e8e6e0',
               borderRadius: '10px',
               fontSize: '13px',
             },
-            success: { iconTheme: { primary: '#22c55e', secondary: '#181c27' } },
-            error:   { iconTheme: { primary: '#ef4444', secondary: '#181c27' } },
+            success: { iconTheme: { primary: '#22c55e', secondary: '#ffffff' } },
+            error:   { iconTheme: { primary: '#ef4444', secondary: '#ffffff' } },
           }}
         />
       </body>

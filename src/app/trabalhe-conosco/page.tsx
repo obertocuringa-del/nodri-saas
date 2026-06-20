@@ -47,7 +47,7 @@ export default function TrabalheConoscoPage() {
       <nav className="bg-nodri-surface border-b border-nodri-border px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-black text-sm"
-            style={{ background: 'linear-gradient(135deg,#00e5c8,#7c5cfc)' }}>N</div>
+            style={{ background: 'linear-gradient(135deg,#5b4fcf,#5b4fcf)' }}>N</div>
           <div>
             <div className="font-syne font-bold text-sm">NODRI</div>
             <div className="text-[9px] text-nodri-cyan tracking-wider uppercase">Programa de Afiliados</div>

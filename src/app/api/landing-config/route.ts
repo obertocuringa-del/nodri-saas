@@ -8,7 +8,7 @@ const DEFAULT_CONFIG = {
   hero_titulo: 'Sistema de Gestão para Salões de Beleza',
   hero_subtitulo: 'Automatize confirmações, envio de mensagens, relatórios e muito mais. Tudo integrado diretamente ao seu WhatsApp.',
   hero_botao: 'Ver Planos',
-  hero_cor_botao: '#7c5cfc',
+  hero_cor_botao: '#5b4fcf',
   beneficios_titulo: 'Por que escolher o NODRI?',
   beneficios: [
     { emoji: '⚡', titulo: 'Abre com 1 clique', desc: 'Clique em Abrir no site e o programa abre instantaneamente no seu computador.' },

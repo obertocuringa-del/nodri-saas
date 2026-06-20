@@ -30,7 +30,7 @@ const DEFAULT_LANDING = {
   hero_titulo: 'Sistema de Gestão para Salões de Beleza',
   hero_subtitulo: 'Automatize confirmações, envio de mensagens, relatórios e muito mais. Tudo integrado diretamente ao seu WhatsApp.',
   hero_botao: 'Ver Planos',
-  hero_cor_botao: '#7c5cfc',
+  hero_cor_botao: '#5b4fcf',
   beneficios_titulo: 'Por que escolher o NODRI?',
   beneficios: [
     { emoji: '', titulo: 'Abre com 1 clique', desc: 'Clique em Abrir no site e o programa abre instantaneamente no seu computador.' },
@@ -926,7 +926,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
     <div className="flex h-screen bg-nodri-dark overflow-hidden">
       <aside className="w-[200px] min-w-[200px] bg-nodri-surface border-r border-nodri-border flex flex-col">
         <div className="px-4 py-4 border-b border-nodri-border flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center font-syne font-black text-sm text-black" style={{ background: 'linear-gradient(135deg, #00e5c8, #7c5cfc)' }}>N</div>
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center font-syne font-black text-sm text-black" style={{ background: 'linear-gradient(135deg, #5b4fcf, #5b4fcf)' }}>N</div>
           <div><div className="font-syne font-bold text-[13px]">NODRI</div><div className="text-[8px] text-nodri-cyan tracking-wider uppercase">Admin</div></div>
         </div>
         <nav className="flex-1 p-2 overflow-y-auto space-y-0.5">
@@ -950,7 +950,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
         </nav>
         <div className="p-2 border-t border-nodri-border">
           <div className="flex items-center gap-2 p-2 bg-white/3 rounded-lg border border-nodri-border">
-            <div className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-bold text-black" style={{ background: 'linear-gradient(135deg, #00e5c8, #7c5cfc)' }}>AD</div>
+            <div className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-bold text-black" style={{ background: 'linear-gradient(135deg, #5b4fcf, #5b4fcf)' }}>AD</div>
             <div className="flex-1 min-w-0"><div className="text-[11px] font-medium truncate">Admin Master</div><div className="text-[9px] text-nodri-cyan">Acesso Total</div></div>
             <button onClick={handleLogout} title="Sair" className="text-nodri-t3 hover:text-nodri-red transition-colors"><LogOut size={13} /></button>
           </div>
@@ -1158,9 +1158,9 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                             <div>
                               <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Cor do botão</label>
                               <div className="flex gap-2 items-center">
-                                <input type="color" value={(landingConfig as any).hero_cor_botao || '#7c5cfc'} onChange={e => setLandingConfig({ ...landingConfig, hero_cor_botao: e.target.value } as any)}
+                                <input type="color" value={(landingConfig as any).hero_cor_botao || '#5b4fcf'} onChange={e => setLandingConfig({ ...landingConfig, hero_cor_botao: e.target.value } as any)}
                                   className="w-12 h-9 rounded-lg border border-nodri-border cursor-pointer bg-nodri-card" />
-                                <input value={(landingConfig as any).hero_cor_botao || '#7c5cfc'} onChange={e => setLandingConfig({ ...landingConfig, hero_cor_botao: e.target.value } as any)}
+                                <input value={(landingConfig as any).hero_cor_botao || '#5b4fcf'} onChange={e => setLandingConfig({ ...landingConfig, hero_cor_botao: e.target.value } as any)}
                                   className="flex-1 bg-nodri-surface border border-nodri-border rounded-lg px-2 py-2 text-[12px] font-mono outline-none focus:border-nodri-cyan" />
                               </div>
                             </div>
@@ -1871,7 +1871,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                         <tr key={salao.id} className="border-b border-nodri-border/50 hover:bg-white/[0.01] transition-colors">
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2.5">
-                              <div className="w-7 h-7 rounded-md flex items-center justify-center text-[11px] font-bold text-white shrink-0" style={{ background: 'linear-gradient(135deg, #7c5cfc, #f43f8e)' }}>{salao.nome[0]}</div>
+                              <div className="w-7 h-7 rounded-md flex items-center justify-center text-[11px] font-bold text-white shrink-0" style={{ background: 'linear-gradient(135deg, #5b4fcf, #f43f8e)' }}>{salao.nome[0]}</div>
                               <div><div className="font-medium text-nodri-t1">{salao.nome}</div><div className="text-[10px] text-nodri-t2">{salao.email}</div></div>
                             </div>
                           </td>
@@ -2044,7 +2044,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
           <div className="nodri-card w-full max-w-lg animate-slide-up overflow-hidden">
             <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-nodri-border">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center text-[14px] font-bold text-white" style={{ background: 'linear-gradient(135deg, #7c5cfc, #f43f8e)' }}>{editSalao.nome[0]}</div>
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center text-[14px] font-bold text-white" style={{ background: 'linear-gradient(135deg, #5b4fcf, #f43f8e)' }}>{editSalao.nome[0]}</div>
                 <div><div className="font-syne font-bold text-[13px]">{editSalao.nome}</div><div className="text-[10px] text-nodri-t3">{editSalao.email}</div></div>
               </div>
               <button onClick={() => setEditSalao(null)} className="text-nodri-t3 hover:text-nodri-t1"><X size={16} /></button>

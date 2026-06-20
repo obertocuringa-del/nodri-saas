@@ -295,7 +295,7 @@ export default function PendenciasPage() {
             <p className="text-[10px] text-nodri-t3 uppercase tracking-widest font-bold mb-3">Departamentos</p>
             <div className="grid grid-cols-3 gap-3">
               {departamentos.map(d => {
-                const cor = d.departamento_cor || '#7c5cfc'
+                const cor = d.departamento_cor || '#5b4fcf'
                 const icone = d.nome_completo === 'ADMINISTRATIVO' ? '🗂️' : d.nome_completo === 'FINANCEIRO' ? '💰' : d.nome_completo === 'RECEPÇÃO' ? '🛎️' : '🏢'
                 const temPend = (d.pendencias_abertas || 0) > 0
                 return (

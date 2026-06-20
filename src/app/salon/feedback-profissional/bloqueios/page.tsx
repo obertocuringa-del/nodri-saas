@@ -247,7 +247,7 @@ export default function BloqueiosPage() {
             {/* Resumo */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {[
-                { label: 'Total', val: data.profissionais.length, cor: '#94a3b8' },
+                { label: 'Total', val: data.profissionais.length, cor: '#9e9b94' },
                 { label: 'Disponíveis', val: disponiveis.length, cor: '#4ade80' },
                 { label: 'Bloqueados', val: bloqueados.length, cor: '#f87171' },
               ].map(({ label, val, cor }) => (
@@ -389,7 +389,7 @@ export default function BloqueiosPage() {
                 {!editandoRegras && (
                   <button onClick={() => setEditandoRegras(true)}
                     className="ml-auto flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold"
-                    style={{ background: 'rgba(139,92,246,.15)', color: '#a78bfa', border: '1px solid rgba(139,92,246,.3)' }}>
+                    style={{ background: 'rgba(139,92,246,.15)', color: '#7c6fe0', border: '1px solid rgba(139,92,246,.3)' }}>
                     <Settings size={11} /> Editar
                   </button>
                 )}
@@ -455,7 +455,7 @@ export default function BloqueiosPage() {
                       </button>
                       <button onClick={() => setEditAndoRegras(false)}
                         className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12px] font-semibold"
-                        style={{ background: 'rgba(255,255,255,.05)', color: '#94a3b8', border: '1px solid rgba(255,255,255,.1)' }}>
+                        style={{ background: 'rgba(255,255,255,.05)', color: '#9e9b94', border: '1px solid rgba(255,255,255,.1)' }}>
                         Cancelar
                       </button>
                     </div>
@@ -540,7 +540,7 @@ export default function BloqueiosPage() {
                       </button>
                       <button onClick={() => setAdicionandoRegra(false)}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px]"
-                        style={{ background: 'rgba(255,255,255,.05)', color: '#94a3b8', border: '1px solid rgba(255,255,255,.1)' }}>
+                        style={{ background: 'rgba(255,255,255,.05)', color: '#9e9b94', border: '1px solid rgba(255,255,255,.1)' }}>
                         <X size={12} /> Cancelar
                       </button>
                     </div>
@@ -585,7 +585,7 @@ export default function BloqueiosPage() {
                           </button>
                           <button onClick={() => setEditandoRegraId(null)}
                             className="flex items-center gap-1 px-2 py-1 rounded text-[10px]"
-                            style={{ background: 'rgba(255,255,255,.05)', color: '#94a3b8' }}>
+                            style={{ background: 'rgba(255,255,255,.05)', color: '#9e9b94' }}>
                             <X size={10} /> Cancelar
                           </button>
                         </div>

@@ -373,7 +373,7 @@ export default function EditorSubmenus() {
           <div className="w-px h-5 bg-nodri-border mx-0.5" />
           <div className="flex items-center gap-1">
             <span className="text-[9px] text-nodri-t3">Texto:</span>
-            <input type="color" defaultValue="#e2e8f0"
+            <input type="color" defaultValue="#1a1a1a"
               onChange={e => execCmd('foreColor', e.target.value)}
               className="w-6 h-6 rounded cursor-pointer border border-nodri-border" title="Cor do texto" />
           </div>

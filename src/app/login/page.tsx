@@ -38,14 +38,14 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-nodri-dark px-4">
       <div className="absolute inset-0 opacity-[0.03]"
-        style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, #00e5c8 1px, transparent 0)', backgroundSize: '40px 40px' }} />
+        style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, #5b4fcf 1px, transparent 0)', backgroundSize: '40px 40px' }} />
 
       <div className="w-full max-w-sm relative z-10">
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-3 mb-4">
             <div className="w-12 h-12 rounded-2xl flex items-center justify-center font-syne font-black text-2xl text-black"
-              style={{ background: 'linear-gradient(135deg, #00e5c8, #7c5cfc)' }}>N</div>
+              style={{ background: 'linear-gradient(135deg, #5b4fcf, #5b4fcf)' }}>N</div>
             <div className="text-left">
               <div className="font-syne font-bold text-xl text-nodri-t1">NODRI</div>
               <div className="text-[10px] text-nodri-cyan tracking-[2px] uppercase">Estilo & Beleza</div>

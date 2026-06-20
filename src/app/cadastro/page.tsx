@@ -111,7 +111,7 @@ function CadastroInner() {
 
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <div style={{ background: 'linear-gradient(135deg, #7c5cfc, #f43f8e)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontSize: 28, fontWeight: 900, marginBottom: 6 }}>NODRI</div>
+          <div style={{ background: 'linear-gradient(135deg, #5b4fcf, #f43f8e)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontSize: 28, fontWeight: 900, marginBottom: 6 }}>NODRI</div>
           <div style={{ color: '#888', fontSize: 13 }}>
             {etapa === 'form' && 'Preencha seus dados para continuar'}
             {etapa === 'pagamento' && 'Como deseja pagar?'}
@@ -193,7 +193,7 @@ function CadastroInner() {
             </div>
 
             <button onClick={() => { if (!formValido()) { alert('Preencha todos os campos obrigatórios'); return }; setEtapa('pagamento') }}
-              style={{ width: '100%', padding: 14, background: 'linear-gradient(135deg, #7c5cfc, #f43f8e)', color: 'white', border: 'none', borderRadius: 12, fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
+              style={{ width: '100%', padding: 14, background: 'linear-gradient(135deg, #5b4fcf, #f43f8e)', color: 'white', border: 'none', borderRadius: 12, fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
               Continuar para Pagamento →
             </button>
 

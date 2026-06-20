@@ -36,7 +36,7 @@ export default function RenovarLicencaPage() {
         {/* Header */}
         <div className="text-center mb-10">
           <div className="w-16 h-16 rounded-2xl flex items-center justify-center font-black text-2xl text-black mx-auto mb-4"
-            style={{ background: 'linear-gradient(135deg,#00e5c8,#7c5cfc)' }}>N</div>
+            style={{ background: 'linear-gradient(135deg,#5b4fcf,#5b4fcf)' }}>N</div>
           <div className="flex items-center justify-center gap-2 mb-3">
             <AlertTriangle size={20} className="text-nodri-amber" />
             <h1 className="font-syne font-black text-2xl">Acesso Suspenso</h1>

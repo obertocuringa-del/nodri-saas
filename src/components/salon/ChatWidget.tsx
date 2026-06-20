@@ -18,7 +18,7 @@ function renderMarkdown(texto: string): string {
   // Blocos de código — preserva antes de escapar
   html = html.replace(/```[\w]*\n?([\s\S]*?)```/g, (_, code) => {
     const idx = blocos.length
-    blocos.push(`<pre style="background:#0d1117;border:1px solid #30363d;border-radius:10px;padding:14px 16px;overflow-x:auto;font-size:12.5px;line-height:1.7;margin:12px 0"><code style="color:#e6edf3;font-family:'Fira Mono',monospace">${code.trim().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</code></pre>`)
+    blocos.push(`<pre style="background:#0d1117;border:1px solid #30363d;border-radius:10px;padding:14px 16px;overflow-x:auto;font-size:12.5px;line-height:1.7;margin:12px 0"><code style="color:#1a1a1a;font-family:'Fira Mono',monospace">${code.trim().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</code></pre>`)
     return `\x00BLOCO${idx}\x00`
   })
 
@@ -39,9 +39,9 @@ function renderMarkdown(texto: string): string {
       if (isSep(row)) { isHead = false; continue }
       const cells = row.split('|').filter((_, i, a) => i > 0 && i < a.length - 1)
       if (isHead) {
-        table += `<thead><tr>${cells.map(c => `<th style="padding:10px 14px;background:#1c2128;color:#e6edf3;font-weight:600;text-align:left;font-size:12px;border-bottom:2px solid #f59e0b;white-space:nowrap">${c.trim()}</th>`).join('')}</tr></thead><tbody>`
+        table += `<thead><tr>${cells.map(c => `<th style="padding:10px 14px;background:#1c2128;color:#1a1a1a;font-weight:600;text-align:left;font-size:12px;border-bottom:2px solid #f59e0b;white-space:nowrap">${c.trim()}</th>`).join('')}</tr></thead><tbody>`
       } else {
-        const bg = rowIdx % 2 === 0 ? '#0d1117' : '#111827'
+        const bg = rowIdx % 2 === 0 ? '#0d1117' : '#faf9f7'
         table += `<tr style="background:${bg}">${cells.map(c => `<td style="padding:9px 14px;border-bottom:1px solid #21262d;color:#c9d1d9;font-size:13px">${c.trim()}</td>`).join('')}</tr>`
         rowIdx++
       }
@@ -55,14 +55,14 @@ function renderMarkdown(texto: string): string {
   html = html.replace(/^═{3,}$/gm, '<hr style="border:none;border-top:2px solid #30363d;margin:20px 0"/>')
 
   // Títulos com visual destacado
-  html = html.replace(/^#### (.+)$/gm, '<p style="font-size:13px;font-weight:700;color:#8b949e;margin:12px 0 4px;text-transform:uppercase;letter-spacing:.5px">$1</p>')
-  html = html.replace(/^### (.+)$/gm, '<h3 style="font-size:15px;font-weight:700;color:#e6edf3;margin:18px 0 8px;display:flex;align-items:center;gap:8px"><span style="width:3px;height:16px;background:#f59e0b;border-radius:2px;display:inline-block;flex-shrink:0"></span>$1</h3>')
-  html = html.replace(/^## (.+)$/gm, '<h2 style="font-size:17px;font-weight:700;color:#e6edf3;margin:22px 0 10px;padding-bottom:8px;border-bottom:2px solid #f59e0b44">$1</h2>')
-  html = html.replace(/^# (.+)$/gm, '<h1 style="font-size:20px;font-weight:700;color:#e6edf3;margin:22px 0 12px">$1</h1>')
+  html = html.replace(/^#### (.+)$/gm, '<p style="font-size:13px;font-weight:700;color:#6b6860;margin:12px 0 4px;text-transform:uppercase;letter-spacing:.5px">$1</p>')
+  html = html.replace(/^### (.+)$/gm, '<h3 style="font-size:15px;font-weight:700;color:#1a1a1a;margin:18px 0 8px;display:flex;align-items:center;gap:8px"><span style="width:3px;height:16px;background:#f59e0b;border-radius:2px;display:inline-block;flex-shrink:0"></span>$1</h3>')
+  html = html.replace(/^## (.+)$/gm, '<h2 style="font-size:17px;font-weight:700;color:#1a1a1a;margin:22px 0 10px;padding-bottom:8px;border-bottom:2px solid #f59e0b44">$1</h2>')
+  html = html.replace(/^# (.+)$/gm, '<h1 style="font-size:20px;font-weight:700;color:#1a1a1a;margin:22px 0 12px">$1</h1>')
 
   // Linhas com emoji no início (seções da IA: 📊 **Título**)
   html = html.replace(/^([\u{1F300}-\u{1FFFF}\u{2600}-\u{27BF}])\s*\*\*(.+?)\*\*/gmu, (_, emoji, titulo) =>
-    `<div style="display:flex;align-items:center;gap:10px;margin:18px 0 10px;padding:10px 14px;background:#1c2128;border-radius:10px;border-left:3px solid #f59e0b"><span style="font-size:20px;flex-shrink:0">${emoji}</span><span style="color:#e6edf3;font-weight:700;font-size:15px">${titulo}</span></div>`
+    `<div style="display:flex;align-items:center;gap:10px;margin:18px 0 10px;padding:10px 14px;background:#1c2128;border-radius:10px;border-left:3px solid #f59e0b"><span style="font-size:20px;flex-shrink:0">${emoji}</span><span style="color:#1a1a1a;font-weight:700;font-size:15px">${titulo}</span></div>`
   )
   html = html.replace(/^([\u{1F300}-\u{1FFFF}\u{2600}-\u{27BF}])\s+(.+)$/gmu, (_, emoji, rest) =>
     `<div style="display:flex;gap:10px;align-items:flex-start;margin:8px 0"><span style="font-size:17px;flex-shrink:0;line-height:1.5">${emoji}</span><span style="color:#c9d1d9;line-height:1.7">${rest}</span></div>`
@@ -86,8 +86,8 @@ function renderMarkdown(texto: string): string {
 
   // Negrito e itálico
   html = html.replace(/\*\*\*(.*?)\*\*\*/g, '<strong style="color:#fff"><em>$1</em></strong>')
-  html = html.replace(/\*\*(.*?)\*\*/g, '<strong style="color:#e6edf3;font-weight:600">$1</strong>')
-  html = html.replace(/__(.*?)__/g, '<strong style="color:#e6edf3;font-weight:600">$1</strong>')
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong style="color:#1a1a1a;font-weight:600">$1</strong>')
+  html = html.replace(/__(.*?)__/g, '<strong style="color:#1a1a1a;font-weight:600">$1</strong>')
   html = html.replace(/\*(.*?)\*/g, '<em style="color:#adbac7">$1</em>')
 
   // Quebras de linha → parágrafos
@@ -324,17 +324,17 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
     @page { size: A4; margin: 18mm 16mm 20mm 16mm; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10.5pt; color: #1a1a2e; line-height: 1.55; background: #fff; }
-    .header { display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #7c5cfc; padding-bottom: 10px; margin-bottom: 16px; }
-    .header-brand { font-size: 18pt; font-weight: 900; color: #7c5cfc; letter-spacing: -0.5px; }
-    .header-brand span { color: #00e5c8; }
+    .header { display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #5b4fcf; padding-bottom: 10px; margin-bottom: 16px; }
+    .header-brand { font-size: 18pt; font-weight: 900; color: #5b4fcf; letter-spacing: -0.5px; }
+    .header-brand span { color: #5b4fcf; }
     .header-meta { text-align: right; font-size: 8.5pt; color: #555; line-height: 1.4; }
     .header-meta strong { display: block; font-size: 10pt; color: #1a1a2e; }
     h1, h2, h3 { font-weight: 800; color: #1a1a2e; }
-    h1 { font-size: 13pt; border-bottom: 2px solid #7c5cfc; padding-bottom: 5px; margin-bottom: 10px; color: #7c5cfc; }
-    h2 { font-size: 11pt; background: linear-gradient(90deg,#f3f0ff,transparent); padding: 4px 8px; border-left: 4px solid #7c5cfc; margin: 12px 0 6px; color: #3d2070; }
+    h1 { font-size: 13pt; border-bottom: 2px solid #5b4fcf; padding-bottom: 5px; margin-bottom: 10px; color: #5b4fcf; }
+    h2 { font-size: 11pt; background: linear-gradient(90deg,#f3f0ff,transparent); padding: 4px 8px; border-left: 4px solid #5b4fcf; margin: 12px 0 6px; color: #3d2070; }
     h3 { font-size: 10pt; color: #3d2070; margin: 8px 0 4px; }
     table { width: 100%; border-collapse: collapse; font-size: 9.5pt; margin: 6px 0 10px; }
-    th { background: #7c5cfc; color: #fff; padding: 5px 8px; text-align: left; font-weight: 700; font-size: 9pt; }
+    th { background: #5b4fcf; color: #fff; padding: 5px 8px; text-align: left; font-weight: 700; font-size: 9pt; }
     td { padding: 4px 8px; border-bottom: 1px solid #e8e8f0; vertical-align: top; }
     tr:nth-child(even) td { background: #f8f7ff; }
     ul, ol { padding-left: 18px; margin: 4px 0 8px; }
@@ -381,7 +381,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
       .replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br/>')
     const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>NODRI IA</title><style>${CSS_IMPRESSAO}</style></head><body>
       <div class="header"><div class="header-brand">NOD<span>RI</span></div>
-      <div class="header-meta"><strong>NODRI IA — Análise</strong>Emitido em ${dataStr}<br/><span style="color:#7c5cfc;font-weight:700">Documento Confidencial</span></div></div>
+      <div class="header-meta"><strong>NODRI IA — Análise</strong>Emitido em ${dataStr}<br/><span style="color:#5b4fcf;font-weight:700">Documento Confidencial</span></div></div>
       <div>${htmlConteudo}</div>
       <div class="footer">
         <div class="signature-area">
@@ -489,7 +489,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
         <div style={containerStyle}>
 
           {/* Header */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#161b22', borderBottom: '1px solid #21262d', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#faf9f7', borderBottom: '1px solid #21262d', flexShrink: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               {/* Botão menu mobile */}
               {isMobile && (
@@ -497,26 +497,26 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
                   style={{ width: 34, height: 34, background: sidebarChatAberta ? '#f59e0b' : '#21262d', border: 'none', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'background 0.2s' }}
                   title="Perguntas salvas"
                 >
-                  <span style={{ fontSize: 16, color: sidebarChatAberta ? '#000' : '#8b949e' }}>☰</span>
+                  <span style={{ fontSize: 16, color: sidebarChatAberta ? '#000' : '#6b6860' }}>☰</span>
                 </button>
               )}
               <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg,#f59e0b,#d97706)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, color: '#000', flexShrink: 0 }}>N</div>
               <div>
-                <p style={{ color: '#e6edf3', fontWeight: 700, fontSize: telaCheia ? 16 : 14, margin: 0 }}>NODRI IA</p>
+                <p style={{ color: '#1a1a1a', fontWeight: 700, fontSize: telaCheia ? 16 : 14, margin: 0 }}>NODRI IA</p>
                 <p style={{ color: '#22c55e', fontSize: 11, margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
                   <span style={{ width: 6, height: 6, background: '#22c55e', borderRadius: '50%', display: 'inline-block' }} /> Online
                 </p>
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <button onClick={imprimir} title="Imprimir conversa" style={{ padding: '6px 8px', background: 'transparent', border: '1px solid #30363d', borderRadius: 8, cursor: 'pointer', color: '#8b949e', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+              <button onClick={imprimir} title="Imprimir conversa" style={{ padding: '6px 8px', background: 'transparent', border: '1px solid #30363d', borderRadius: 8, cursor: 'pointer', color: '#6b6860', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
                 <Printer size={14} /><span className="hidden sm:inline">Imprimir</span>
               </button>
-              <button onClick={limpar} title="Limpar conversa" style={{ padding: '6px 8px', background: 'transparent', border: '1px solid #30363d', borderRadius: 8, cursor: 'pointer', color: '#8b949e', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+              <button onClick={limpar} title="Limpar conversa" style={{ padding: '6px 8px', background: 'transparent', border: '1px solid #30363d', borderRadius: 8, cursor: 'pointer', color: '#6b6860', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
                 <Trash2 size={14} /><span className="hidden sm:inline">Limpar</span>
               </button>
               {!modoEmbarcado && (
-                <button onClick={fechar} title="Fechar" style={{ padding: '6px 8px', background: 'transparent', border: '1px solid #30363d', borderRadius: 8, cursor: 'pointer', color: '#8b949e', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+                <button onClick={fechar} title="Fechar" style={{ padding: '6px 8px', background: 'transparent', border: '1px solid #30363d', borderRadius: 8, cursor: 'pointer', color: '#6b6860', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
                   <X size={14} /><span className="hidden sm:inline">Fechar</span>
                 </button>
               )}
@@ -535,17 +535,17 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
 
           {/* ── Sidebar Esquerda — Biblioteca de Prompts ── */}
           <div style={isMobile ? {
-            width: 260, flexShrink: 0, background: '#161b22', borderRight: '1px solid #21262d',
+            width: 260, flexShrink: 0, background: '#faf9f7', borderRight: '1px solid #21262d',
             display: 'flex', flexDirection: 'column', overflow: 'hidden',
             position: 'absolute', top: 0, left: sidebarChatAberta ? 0 : -260, bottom: 0, zIndex: 40,
             transition: 'left 0.25s ease',
           } : {
-            width: 260, flexShrink: 0, background: '#161b22', borderRight: '1px solid #21262d',
+            width: 260, flexShrink: 0, background: '#faf9f7', borderRight: '1px solid #21262d',
             display: 'flex', flexDirection: 'column', overflow: 'hidden',
           }}>
             {/* Cabeçalho sidebar */}
             <div style={{ padding: '14px 14px 10px', borderBottom: '1px solid #21262d', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 12, fontWeight: 700, color: '#8b949e', textTransform: 'uppercase', letterSpacing: 1 }}>Perguntas Salvas</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#6b6860', textTransform: 'uppercase', letterSpacing: 1 }}>Perguntas Salvas</span>
               <button onClick={abrirNovo} title="Nova pergunta"
                 style={{ width: 26, height: 26, borderRadius: 6, background: '#f59e0b', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 18, color: '#000', lineHeight: 1 }}>+</button>
             </div>
@@ -553,7 +553,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
             <div style={{ flex: 1, overflowY: 'auto', padding: '8px 8px' }}>
               {prompts.length === 0 && (
                 <div style={{ padding: '16px 8px', textAlign: 'center' }}>
-                  <p style={{ color: '#484f58', fontSize: 12, lineHeight: 1.6, margin: 0 }}>Nenhuma pergunta salva ainda.<br/>Clique no <strong style={{ color: '#f59e0b' }}>+</strong> para criar.</p>
+                  <p style={{ color: '#e8e6e0', fontSize: 12, lineHeight: 1.6, margin: 0 }}>Nenhuma pergunta salva ainda.<br/>Clique no <strong style={{ color: '#f59e0b' }}>+</strong> para criar.</p>
                 </div>
               )}
               {prompts.map(p => (
@@ -564,21 +564,21 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
                     {p.titulo}
                   </button>
                   <button onClick={() => abrirEditar(p)} title="Editar"
-                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#484f58', padding: '2px 4px', fontSize: 13, lineHeight: 1, flexShrink: 0 }}>✏</button>
+                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#e8e6e0', padding: '2px 4px', fontSize: 13, lineHeight: 1, flexShrink: 0 }}>✏</button>
                   {confirmDelete === p.id
                     ? <span style={{ display: 'flex', gap: 2 }}>
                         <button onClick={() => excluirPrompt(p.id)} style={{ background: '#ef4444', border: 'none', borderRadius: 4, cursor: 'pointer', color: '#fff', fontSize: 10, padding: '2px 5px' }}>Sim</button>
-                        <button onClick={() => setConfirmDelete(null)} style={{ background: '#21262d', border: 'none', borderRadius: 4, cursor: 'pointer', color: '#8b949e', fontSize: 10, padding: '2px 5px' }}>Não</button>
+                        <button onClick={() => setConfirmDelete(null)} style={{ background: '#21262d', border: 'none', borderRadius: 4, cursor: 'pointer', color: '#6b6860', fontSize: 10, padding: '2px 5px' }}>Não</button>
                       </span>
                     : <button onClick={() => setConfirmDelete(p.id)} title="Excluir"
-                        style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#484f58', padding: '2px 4px', fontSize: 13, lineHeight: 1, flexShrink: 0 }}>✕</button>
+                        style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#e8e6e0', padding: '2px 4px', fontSize: 13, lineHeight: 1, flexShrink: 0 }}>✕</button>
                   }
                 </div>
               ))}
 
               {/* Seção de perguntas inteligentes fixas */}
               <div style={{ marginTop: prompts.length > 0 ? 12 : 0, paddingTop: prompts.length > 0 ? 12 : 0, borderTop: prompts.length > 0 ? '1px solid #21262d' : 'none' }}>
-                <p style={{ fontSize: 10, fontWeight: 700, color: '#484f58', textTransform: 'uppercase', letterSpacing: 1, margin: '0 2px 8px' }}>
+                <p style={{ fontSize: 10, fontWeight: 700, color: '#e8e6e0', textTransform: 'uppercase', letterSpacing: 1, margin: '0 2px 8px' }}>
                   {profissionalId ? 'Análises rápidas' : 'Análises inteligentes'}
                 </p>
                 {sugestoesAtivas.map(s => (
@@ -588,7 +588,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
                     onMouseEnter={e => (e.currentTarget.style.borderColor = '#f59e0b')}
                     onMouseLeave={e => (e.currentTarget.style.borderColor = '#21262d')}
                   >
-                    <span style={{ fontSize: 12, color: '#8b949e', lineHeight: 1.4, display: 'block', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                    <span style={{ fontSize: 12, color: '#6b6860', lineHeight: 1.4, display: 'block', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
                       {s.titulo}
                     </span>
                   </div>
@@ -609,11 +609,11 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
                   {msg.role === 'assistant' && (
                     <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg,#f59e0b,#d97706)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12, color: '#000', flexShrink: 0 }}>N</div>
                   )}
-                  <span style={{ fontSize: 12, color: '#8b949e', fontWeight: 600 }}>
+                  <span style={{ fontSize: 12, color: '#6b6860', fontWeight: 600 }}>
                     {msg.role === 'assistant' ? 'NODRI IA' : 'Você'}
                   </span>
                   {msg.role === 'user' && (
-                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#21262d', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: '#8b949e' }}>U</div>
+                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#21262d', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: '#6b6860' }}>U</div>
                   )}
                 </div>
 
@@ -623,7 +623,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
                   width: msg.role === 'assistant' ? '100%' : 'auto',
                   padding: msg.role === 'user' ? '10px 16px' : '14px 18px',
                   borderRadius: msg.role === 'user' ? '18px 18px 4px 18px' : '4px 18px 18px 18px',
-                  background: msg.role === 'user' ? 'linear-gradient(135deg,#f59e0b,#d97706)' : '#161b22',
+                  background: msg.role === 'user' ? 'linear-gradient(135deg,#f59e0b,#d97706)' : '#faf9f7',
                   border: msg.role === 'assistant' ? '1px solid #21262d' : 'none',
                   fontSize: 14,
                   lineHeight: 1.7,
@@ -642,7 +642,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
                     <button
                       onClick={() => copiarMensagem(msg.content, i)}
                       title="Copiar mensagem"
-                      style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', background: 'transparent', border: '1px solid #21262d', borderRadius: 6, cursor: 'pointer', color: copiados.has(i) ? '#22c55e' : '#8b949e', fontSize: 11, transition: 'all 0.2s' }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', background: 'transparent', border: '1px solid #21262d', borderRadius: 6, cursor: 'pointer', color: copiados.has(i) ? '#22c55e' : '#6b6860', fontSize: 11, transition: 'all 0.2s' }}
                     >
                       {copiados.has(i) ? <Check size={12} /> : <Copy size={12} />}
                       {copiados.has(i) ? 'Copiado!' : 'Copiar'}
@@ -650,7 +650,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
                     <button
                       onClick={() => imprimirMensagem(msg.content)}
                       title="Imprimir esta mensagem"
-                      style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', background: 'transparent', border: '1px solid #21262d', borderRadius: 6, cursor: 'pointer', color: '#8b949e', fontSize: 11, transition: 'all 0.2s' }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', background: 'transparent', border: '1px solid #21262d', borderRadius: 6, cursor: 'pointer', color: '#6b6860', fontSize: 11, transition: 'all 0.2s' }}
                     >
                       <Printer size={12} />
                       Imprimir
@@ -665,9 +665,9 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', marginBottom: 20 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                   <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg,#f59e0b,#d97706)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12, color: '#000' }}>N</div>
-                  <span style={{ fontSize: 12, color: '#8b949e', fontWeight: 600 }}>NODRI IA</span>
+                  <span style={{ fontSize: 12, color: '#6b6860', fontWeight: 600 }}>NODRI IA</span>
                 </div>
-                <div style={{ padding: '14px 18px', background: '#161b22', border: '1px solid #21262d', borderRadius: '4px 18px 18px 18px' }}>
+                <div style={{ padding: '14px 18px', background: '#faf9f7', border: '1px solid #21262d', borderRadius: '4px 18px 18px 18px' }}>
                   <Loader2 size={16} color="#f59e0b" style={{ animation: 'spin 1s linear infinite' }} />
                 </div>
               </div>
@@ -677,7 +677,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
 
 
           {/* Input */}
-          <div style={{ padding: isMobile ? '10px 12px' : '16px max(24px, calc(50% - 400px))', borderTop: '1px solid #21262d', background: '#161b22', flexShrink: 0 }}>
+          <div style={{ padding: isMobile ? '10px 12px' : '16px max(24px, calc(50% - 400px))', borderTop: '1px solid #21262d', background: '#faf9f7', flexShrink: 0 }}>
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, background: '#0d1117', border: '1px solid #30363d', borderRadius: 14, padding: '10px 14px', transition: 'border-color 0.2s' }}
               onFocus={() => {}} >
               <textarea
@@ -691,7 +691,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
                 onKeyDown={onKeyDown}
                 placeholder="Pergunte algo sobre seu salão... (Enter para enviar, Shift+Enter para nova linha)"
                 disabled={carregando}
-                style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: '#e6edf3', fontSize: 14, lineHeight: 1.6, resize: 'none', minHeight: 24, maxHeight: 140, fontFamily: 'inherit' }}
+                style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: '#1a1a1a', fontSize: 14, lineHeight: 1.6, resize: 'none', minHeight: 24, maxHeight: 140, fontFamily: 'inherit' }}
                 rows={1}
               />
               <button
@@ -707,12 +707,12 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
                 style={{ width: 36, height: 36, borderRadius: 10, background: input.trim() && !carregando ? 'linear-gradient(135deg,#f59e0b,#d97706)' : '#21262d', border: 'none', cursor: input.trim() && !carregando ? 'pointer' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.2s' }}
               >
                 {carregando
-                  ? <Loader2 size={16} color="#8b949e" style={{ animation: 'spin 1s linear infinite' }} />
-                  : <Send size={16} color={input.trim() ? '#000' : '#8b949e'} />
+                  ? <Loader2 size={16} color="#6b6860" style={{ animation: 'spin 1s linear infinite' }} />
+                  : <Send size={16} color={input.trim() ? '#000' : '#6b6860'} />
                 }
               </button>
             </div>
-            <p style={{ fontSize: 11, color: '#484f58', margin: '6px 0 0', textAlign: 'center' }}>
+            <p style={{ fontSize: 11, color: '#e8e6e0', margin: '6px 0 0', textAlign: 'center' }}>
               NODRI IA pode cometer erros. Verifique informações importantes.
             </p>
           </div>
@@ -724,36 +724,36 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
       {/* ── Modal Nova/Editar Pergunta ── */}
       {modalAberto && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 10002, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-          <div style={{ background: '#161b22', border: '1px solid #30363d', borderRadius: 16, padding: 28, width: '100%', maxWidth: 520, display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ background: '#faf9f7', border: '1px solid #30363d', borderRadius: 16, padding: 28, width: '100%', maxWidth: 520, display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h3 style={{ margin: 0, color: '#e6edf3', fontSize: 16, fontWeight: 700 }}>
+              <h3 style={{ margin: 0, color: '#1a1a1a', fontSize: 16, fontWeight: 700 }}>
                 {editando ? 'Editar Pergunta' : 'Nova Pergunta'}
               </h3>
-              <button onClick={fecharModal} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#8b949e', fontSize: 20, lineHeight: 1 }}>×</button>
+              <button onClick={fecharModal} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#6b6860', fontSize: 20, lineHeight: 1 }}>×</button>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <label style={{ fontSize: 12, fontWeight: 600, color: '#8b949e', textTransform: 'uppercase', letterSpacing: .5 }}>Título (aparece na lista)</label>
+              <label style={{ fontSize: 12, fontWeight: 600, color: '#6b6860', textTransform: 'uppercase', letterSpacing: .5 }}>Título (aparece na lista)</label>
               <input value={formTitulo} onChange={e => setFormTitulo(e.target.value)}
                 placeholder="Ex: Análise da equipe completa"
-                style={{ background: '#0d1117', border: '1px solid #30363d', borderRadius: 8, padding: '10px 14px', color: '#e6edf3', fontSize: 14, outline: 'none', fontFamily: 'inherit' }} />
+                style={{ background: '#0d1117', border: '1px solid #30363d', borderRadius: 8, padding: '10px 14px', color: '#1a1a1a', fontSize: 14, outline: 'none', fontFamily: 'inherit' }} />
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <label style={{ fontSize: 12, fontWeight: 600, color: '#8b949e', textTransform: 'uppercase', letterSpacing: .5 }}>Script completo (enviado ao chat)</label>
+              <label style={{ fontSize: 12, fontWeight: 600, color: '#6b6860', textTransform: 'uppercase', letterSpacing: .5 }}>Script completo (enviado ao chat)</label>
               <textarea value={formScript} onChange={e => setFormScript(e.target.value)} rows={6}
                 placeholder="Ex: Faça uma análise completa da equipe com faturamento, ocorrências e ranking de cada profissional no período atual. Apresente em tabela e destaque pontos de atenção."
-                style={{ background: '#0d1117', border: '1px solid #30363d', borderRadius: 8, padding: '10px 14px', color: '#e6edf3', fontSize: 13, outline: 'none', fontFamily: 'inherit', resize: 'vertical', lineHeight: 1.6 }} />
-              <p style={{ margin: 0, fontSize: 11, color: '#484f58' }}>O script é o texto completo enviado à IA. O título é só um atalho para você identificar.</p>
+                style={{ background: '#0d1117', border: '1px solid #30363d', borderRadius: 8, padding: '10px 14px', color: '#1a1a1a', fontSize: 13, outline: 'none', fontFamily: 'inherit', resize: 'vertical', lineHeight: 1.6 }} />
+              <p style={{ margin: 0, fontSize: 11, color: '#e8e6e0' }}>O script é o texto completo enviado à IA. O título é só um atalho para você identificar.</p>
             </div>
 
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
               <button onClick={fecharModal}
-                style={{ padding: '9px 20px', background: 'transparent', border: '1px solid #30363d', borderRadius: 8, cursor: 'pointer', color: '#8b949e', fontSize: 14 }}>
+                style={{ padding: '9px 20px', background: 'transparent', border: '1px solid #30363d', borderRadius: 8, cursor: 'pointer', color: '#6b6860', fontSize: 14 }}>
                 Cancelar
               </button>
               <button onClick={salvarPrompt} disabled={!formTitulo.trim() || !formScript.trim()}
-                style={{ padding: '9px 20px', background: formTitulo.trim() && formScript.trim() ? 'linear-gradient(135deg,#f59e0b,#d97706)' : '#21262d', border: 'none', borderRadius: 8, cursor: formTitulo.trim() && formScript.trim() ? 'pointer' : 'default', color: formTitulo.trim() && formScript.trim() ? '#000' : '#484f58', fontWeight: 700, fontSize: 14 }}>
+                style={{ padding: '9px 20px', background: formTitulo.trim() && formScript.trim() ? 'linear-gradient(135deg,#f59e0b,#d97706)' : '#21262d', border: 'none', borderRadius: 8, cursor: formTitulo.trim() && formScript.trim() ? 'pointer' : 'default', color: formTitulo.trim() && formScript.trim() ? '#000' : '#e8e6e0', fontWeight: 700, fontSize: 14 }}>
                 {editando ? 'Salvar alterações' : 'Criar pergunta'}
               </button>
             </div>

@@ -29,7 +29,7 @@ function calcAlcancabilidade(p: {
 
   let label = '', cor = ''
   if (probabilidade >= 80) { label = '✅ Meta confortável'; cor = '#22c55e' }
-  else if (probabilidade >= 60) { label = '✅ Meta desafiadora porém alcançável'; cor = '#00e5c8' }
+  else if (probabilidade >= 60) { label = '✅ Meta desafiadora porém alcançável'; cor = '#5b4fcf' }
   else if (probabilidade >= 35) { label = '⚠️ Meta ambiciosa'; cor = '#f59e0b' }
   else { label = '⚠️ Meta pouco realista'; cor = '#ef4444' }
 

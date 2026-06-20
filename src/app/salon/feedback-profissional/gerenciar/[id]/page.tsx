@@ -140,7 +140,7 @@ export default function GerenciarFeedbacksPage() {
           {busca && (
             <button onClick={() => { setBusca(''); setBuscaInput(''); setPage(1) }}
               className="px-3 py-2 rounded-xl text-[12px]"
-              style={{ background: 'rgba(255,255,255,.05)', color: '#94a3b8', border: '1px solid rgba(255,255,255,.1)' }}>
+              style={{ background: 'rgba(255,255,255,.05)', color: '#9e9b94', border: '1px solid rgba(255,255,255,.1)' }}>
               Limpar
             </button>
           )}
@@ -269,13 +269,13 @@ export default function GerenciarFeedbacksPage() {
           <div className="flex items-center justify-center gap-2">
             <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
               className="p-2 rounded-lg disabled:opacity-30"
-              style={{ background: 'rgba(255,255,255,.05)', color: '#94a3b8' }}>
+              style={{ background: 'rgba(255,255,255,.05)', color: '#9e9b94' }}>
               <ChevronLeft size={14} />
             </button>
             <span className="text-[12px] text-nodri-t2 px-3">Página {page} de {totalPages}</span>
             <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
               className="p-2 rounded-lg disabled:opacity-30"
-              style={{ background: 'rgba(255,255,255,.05)', color: '#94a3b8' }}>
+              style={{ background: 'rgba(255,255,255,.05)', color: '#9e9b94' }}>
               <ChevronRight size={14} />
             </button>
           </div>

@@ -5,20 +5,20 @@
 @tailwind utilities;
 
 :root {
-  --nodri-dark:    #0d0f14;
-  --nodri-surface: #13161e;
-  --nodri-card:    #181c27;
-  --nodri-border:  #232840;
-  --nodri-cyan:    #00e5c8;
-  --nodri-purple:  #7c5cfc;
-  --nodri-pink:    #f43f8e;
-  --nodri-green:   #22c55e;
-  --nodri-amber:   #f59e0b;
-  --nodri-red:     #ef4444;
-  --nodri-blue:    #3b82f6;
-  --nodri-t1:      #f0f2ff;
-  --nodri-t2:      #8891b3;
-  --nodri-t3:      #4a506b;
+  --nodri-dark:    #f5f4f0;
+  --nodri-surface: #faf9f7;
+  --nodri-card:    #ffffff;
+  --nodri-border:  #e8e6e0;
+  --nodri-cyan:    #5b4fcf;
+  --nodri-purple:  #5b4fcf;
+  --nodri-pink:    #c94d8a;
+  --nodri-green:   #16a34a;
+  --nodri-amber:   #b45309;
+  --nodri-red:     #dc2626;
+  --nodri-blue:    #2563eb;
+  --nodri-t1:      #1a1a1a;
+  --nodri-t2:      #6b6860;
+  --nodri-t3:      #9e9b94;
 }
 
 * { box-sizing: border-box; }
@@ -43,23 +43,23 @@ html, body {
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: var(--nodri-surface); }
 ::-webkit-scrollbar-thumb { background: var(--nodri-border); border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: var(--nodri-t3); }
+::-webkit-scrollbar-thumb:hover { background: #c8c5be; }
 
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
 /* Seleção de texto */
-::selection { background: rgba(0, 229, 200, 0.2); color: var(--nodri-t1); }
+::selection { background: rgba(91, 79, 207, 0.15); color: var(--nodri-t1); }
 
 @layer components {
   .nodri-card {
     @apply bg-nodri-card border border-nodri-border rounded-xl;
   }
   .nodri-btn-primary {
-    @apply bg-nodri-cyan text-black font-bold text-sm px-4 py-2 rounded-lg hover:brightness-110 transition-all active:scale-95;
+    @apply bg-nodri-cyan text-white font-bold text-sm px-4 py-2 rounded-lg hover:brightness-110 transition-all active:scale-95;
   }
   .nodri-btn-ghost {
-    @apply border border-nodri-border text-nodri-t2 text-sm px-4 py-2 rounded-lg hover:bg-white/5 hover:text-nodri-t1 transition-all;
+    @apply border border-nodri-border text-nodri-t2 text-sm px-4 py-2 rounded-lg hover:bg-black/5 hover:text-nodri-t1 transition-all;
   }
   .nodri-input {
     @apply w-full bg-nodri-card border border-nodri-border text-nodri-t1 placeholder-nodri-t3 rounded-lg px-3 py-2 text-sm outline-none focus:border-nodri-cyan/50 transition-colors;

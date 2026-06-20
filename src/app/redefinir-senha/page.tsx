@@ -90,7 +90,7 @@ export default function RedefinirSenhaPage() {
       <div className="w-full max-w-md">
         <div className="nodri-card p-8">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-black" style={{ background: 'linear-gradient(135deg,#00e5c8,#7c5cfc)' }}>N</div>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-black" style={{ background: 'linear-gradient(135deg,#5b4fcf,#5b4fcf)' }}>N</div>
             <div>
               <div className="font-syne font-bold text-lg">NODRI</div>
               <div className="text-[10px] text-nodri-cyan tracking-wider uppercase">Redefinir Senha</div>

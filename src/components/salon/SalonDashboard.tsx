@@ -286,12 +286,12 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
           style={{ background: '#854d0e', color: '#fef3c7', borderBottom: '2px solid #ca8a04' }}>
           <div className="flex items-center gap-2">
             <span className="flex items-center gap-1"><Eye size={13} /> Você está acessando como cliente:</span>
-            <span className="px-2 py-0.5 rounded font-black" style={{ background: '#ca8a04', color: '#1c1917' }}>{impersonandoNome}</span>
+            <span className="px-2 py-0.5 rounded font-black" style={{ background: '#ca8a04', color: '#faf9f7' }}>{impersonandoNome}</span>
             <span style={{ color: '#fde68a', fontWeight: 'normal' }}>— Sessão temporária (2h)</span>
           </div>
           <button onClick={voltarAoAdmin}
             className="flex items-center gap-1.5 px-3 py-1 rounded-lg font-black text-[11px] transition-all hover:brightness-110"
-            style={{ background: '#1c1917', color: '#fbbf24', border: '1px solid #ca8a04' }}>
+            style={{ background: '#faf9f7', color: '#fbbf24', border: '1px solid #ca8a04' }}>
             ← Voltar ao Admin
           </button>
         </div>
@@ -393,7 +393,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
           <div className="p-2 border-t border-nodri-border space-y-1">
             <div className="flex items-center gap-2 px-2 py-1.5 bg-white/3 rounded-lg border border-nodri-border">
               <div className="w-6 h-6 rounded-md flex items-center justify-center text-[9px] font-bold text-white shrink-0"
-                style={{ background: 'linear-gradient(135deg, #7c5cfc, #f43f8e)' }}>{initials}</div>
+                style={{ background: 'linear-gradient(135deg, #5b4fcf, #f43f8e)' }}>{initials}</div>
               <div className="flex-1 min-w-0">
                 <div className="text-[10px] font-medium truncate">{salaoNome}</div>
                 <div className="text-[9px] text-nodri-purple">{planoLabel}</div>
@@ -433,7 +433,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                 <div className="hidden md:flex items-center gap-2">
                   <a href={configPrograma.link} target="_blank" rel="noopener noreferrer"
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10.5px] font-bold transition-all hover:brightness-110"
-                    style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.35)', color: '#a5b4fc' }}>
+                    style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.35)', color: '#5b4fcf' }}>
                     Baixar Programa
                   </a>
                   {configPrograma.atualizacao_ativa && configPrograma.link_atualizacao && (
@@ -500,7 +500,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
             <div key={modulo.id}
               className="p-4 flex flex-col cursor-pointer transition-all hover:-translate-y-0.5 relative overflow-hidden rounded-xl border"
               style={{
-                background: emManutencao ? '#1a0a0a' : modulo.habilitado ? '#0a1f14' : '#111318',
+                background: emManutencao ? '#fff0f0' : modulo.habilitado ? '#0a1f14' : '#111318',
                 borderColor: emManutencao ? 'rgba(239,68,68,0.35)' : modulo.habilitado ? 'rgba(34,197,94,0.2)' : 'rgba(255,255,255,0.04)',
                 opacity: emManutencao ? 0.9 : modulo.habilitado ? 1 : 0.5,
                 boxShadow: modulo.habilitado && !emManutencao ? 'inset 0 0 30px rgba(34,197,94,0.04)' : undefined,
@@ -516,16 +516,16 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
 
               <div className="flex justify-end mb-3">
                 <span className="text-[9px] px-1.5 py-0.5 rounded-full"
-                  style={{ background: 'rgba(255,255,255,0.06)', color: '#475569', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  style={{ background: 'rgba(255,255,255,0.06)', color: '#6b6860', border: '1px solid rgba(255,255,255,0.06)' }}>
                   v{modulo.versao}
                 </span>
               </div>
 
               <div className="font-syne font-bold text-[13px] uppercase tracking-wide leading-snug mb-1.5"
-                style={{ color: emManutencao ? '#f87171' : modulo.habilitado ? '#d1fae5' : '#475569' }}>
+                style={{ color: emManutencao ? '#f87171' : modulo.habilitado ? '#d1fae5' : '#6b6860' }}>
                 {modulo.nome}
               </div>
-              <p className="text-[10px] leading-relaxed mb-4 flex-1" style={{ color: '#475569' }}>
+              <p className="text-[10px] leading-relaxed mb-4 flex-1" style={{ color: '#6b6860' }}>
                 {modulo.descricao}
               </p>
 
@@ -542,11 +542,11 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                   <div className="flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full"
                       style={{
-                        background: modulo.habilitado ? '#6ee7b7' : '#ef4444',
+                        background: modulo.habilitado ? '#059669' : '#ef4444',
                         boxShadow: modulo.habilitado ? '0 0 6px rgba(110,231,183,0.5)' : 'none'
                       }} />
                     <span className="text-[9.5px] font-medium"
-                      style={{ color: modulo.habilitado ? '#6ee7b7' : '#ef4444' }}>
+                      style={{ color: modulo.habilitado ? '#059669' : '#ef4444' }}>
                       {modulo.habilitado ? 'Ativado' : 'Bloqueado'}
                     </span>
                   </div>
@@ -561,7 +561,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                     border: '1px solid rgba(239,68,68,0.3)',
                   } : modulo.habilitado ? {
                     background: 'rgba(255,255,255,0.08)',
-                    color: '#f1f5f9',
+                    color: '#3a3835',
                     border: '1px solid rgba(255,255,255,0.1)',
                   } : {
                     background: 'transparent',
@@ -571,7 +571,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                   {emManutencao
                     ? <><Wrench size={9} /> Indisponível</>
                     : modulo.habilitado
-                      ? <><Play size={9} fill="#f1f5f9" /> Abrir</>
+                      ? <><Play size={9} fill="#3a3835" /> Abrir</>
                       : <><Zap size={9} /> Ativar</>}
                 </button>
               </div>
@@ -580,7 +580,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
           })}
         </div>
           {modulosFiltrados.length === 0 && (
-            <div className="text-center py-16" style={{ color: '#475569' }}>
+            <div className="text-center py-16" style={{ color: '#6b6860' }}>
               <div className="flex justify-center mb-3"><Search size={32} className="text-nodri-t3" /></div>
               <p className="text-sm">Nenhum módulo encontrado</p>
             </div>
@@ -600,7 +600,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                   onClick={() => setMostrarAlertasIA(v => !v)}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 10,
-                    background: '#161b22', border: `1.5px solid ${pulseColor}40`,
+                    background: '#faf9f7', border: `1.5px solid ${pulseColor}40`,
                     borderRadius: 12, padding: '10px 16px', cursor: 'pointer',
                     boxShadow: mostrarAlertasIA ? `0 0 0 3px ${pulseColor}20` : 'none',
                     transition: 'box-shadow 0.2s',
@@ -614,11 +614,11 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                     }}/>
                     <span style={{ position: 'relative', borderRadius: '50%', width: 10, height: 10, background: pulseColor }}/>
                   </span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#e6edf3' }}>⚡ Alertas do dia</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#1a1a1a' }}>⚡ Alertas do dia</span>
                   <span style={{ fontSize: 11, fontWeight: 600, background: `${pulseColor}20`, color: pulseColor, padding: '2px 10px', borderRadius: 99 }}>
                     {ativos.length}
                   </span>
-                  <span style={{ fontSize: 12, color: '#484f58', marginLeft: 4 }}>{mostrarAlertasIA ? '▲' : '▼'}</span>
+                  <span style={{ fontSize: 12, color: '#e8e6e0', marginLeft: 4 }}>{mostrarAlertasIA ? '▲' : '▼'}</span>
                 </button>
 
                 {/* Dropdown */}
@@ -626,13 +626,13 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                   <div style={{
                     position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50,
                     maxWidth: 460, maxHeight: 420, overflowY: 'auto',
-                    background: '#161b22', border: '0.5px solid #21262d',
+                    background: '#faf9f7', border: '0.5px solid #21262d',
                     borderRadius: 14, boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
                     marginTop: 6,
                   }}>
                     <div style={{ padding: '10px 16px', borderBottom: '0.5px solid #21262d', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: 12, fontWeight: 600, color: '#8b949e' }}>{ativos.length} alertas ativos</span>
-                      <button onClick={() => setMostrarAlertasIA(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#484f58', fontSize: 16 }}>✕</button>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: '#6b6860' }}>{ativos.length} alertas ativos</span>
+                      <button onClick={() => setMostrarAlertasIA(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#e8e6e0', fontSize: 16 }}>✕</button>
                     </div>
                     {ativos.map(alerta => {
                       const isCritico = alerta.tipo === 'critico'
@@ -647,20 +647,20 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                           borderLeft: `3px solid ${accentColor}`, display: 'flex', flexDirection: 'column', gap: 6,
                         }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <span style={{ fontSize: 12, fontWeight: 600, color: '#e6edf3', flex: 1 }}>{alerta.titulo}</span>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: '#1a1a1a', flex: 1 }}>{alerta.titulo}</span>
                             <span style={{ fontSize: 10, background: pillBg, color: pillColor, padding: '1px 7px', borderRadius: 99, flexShrink: 0 }}>{pillLabel}</span>
                             <button onClick={() => setAlertasDismissed(prev => new Set([...prev, alerta.titulo]))}
-                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#484f58', fontSize: 13, padding: '0 0 0 4px' }}>✕</button>
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#e8e6e0', fontSize: 13, padding: '0 0 0 4px' }}>✕</button>
                           </div>
                           {alerta.pct !== undefined && (
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                               <div style={{ flex: 1, height: 4, background: '#21262d', borderRadius: 99, overflow: 'hidden' }}>
                                 <div style={{ width: `${Math.min(alerta.pct, 100)}%`, height: '100%', background: accentColor, borderRadius: 99 }}/>
                               </div>
-                              <span style={{ fontSize: 11, color: '#8b949e', minWidth: 28, textAlign: 'right' }}>{alerta.pct}%</span>
+                              <span style={{ fontSize: 11, color: '#6b6860', minWidth: 28, textAlign: 'right' }}>{alerta.pct}%</span>
                             </div>
                           )}
-                          <div style={{ fontSize: 11, color: '#8b949e' }}>
+                          <div style={{ fontSize: 11, color: '#6b6860' }}>
                             {alerta.diasRestantes !== undefined ? `📅 ${alerta.diasRestantes} dias restantes` : alerta.mensagem}
                           </div>
                         </div>

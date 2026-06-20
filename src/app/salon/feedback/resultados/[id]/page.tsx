@@ -371,7 +371,7 @@ export default function ResultadosPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     {[
-                      { label: ' Clientes Novos', data: data.segmentacao.novos, cor: '#a78bfa' },
+                      { label: ' Clientes Novos', data: data.segmentacao.novos, cor: '#7c6fe0' },
                       { label: ' Clientes Recorrentes', data: data.segmentacao.recorrentes, cor: '#34d399' },
                     ].map(({ label, data: seg, cor }) => (
                       <div key={label} className="p-4 rounded-xl border text-center" style={{ borderColor: `${cor}30`, background: `${cor}08` }}>
@@ -656,7 +656,7 @@ export default function ResultadosPage() {
                             {[
                               { label: ' Próximos 7 dias', items: iaAnalise.plano_acao.proximos_7_dias, cor: '#f97316' },
                               { label: ' Próximos 30 dias', items: iaAnalise.plano_acao.proximos_30_dias, cor: '#facc15' },
-                              { label: ' Próximos 90 dias', items: iaAnalise.plano_acao.proximos_90_dias, cor: '#a78bfa' },
+                              { label: ' Próximos 90 dias', items: iaAnalise.plano_acao.proximos_90_dias, cor: '#7c6fe0' },
                             ].map(({ label, items, cor }) => (
                               <div key={label} className="p-3 rounded-xl" style={{ background: `${cor}08`, border: `1px solid ${cor}25` }}>
                                 <div className="text-[10px] font-bold uppercase mb-2" style={{ color: cor }}>{label}</div>
@@ -763,7 +763,7 @@ export default function ResultadosPage() {
                                     <span className="text-[12px] text-nodri-t1">{opcao}</span>
                                     <span className="text-[11px] font-bold text-nodri-cyan">{count} ({s.total > 0 ? Math.round(count / s.total * 100) : 0}%)</span>
                                   </div>
-                                  <BarraH valor={count} max={max} cor="#7c5cfc" />
+                                  <BarraH valor={count} max={max} cor="#5b4fcf" />
                                 </div>
                               ))}
                             </div>
