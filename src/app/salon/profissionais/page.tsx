@@ -203,15 +203,18 @@ export default function ProfissionaisPage() {
 <meta charset="UTF-8">
 <title>Distrato — ${dProfNome}</title>
 <style>
-  @page { size: A4 portrait; margin: 3cm 2cm 2cm 3cm; }
+  @page { size: A4 portrait; margin: 2cm 2cm 1.5cm 3cm; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Times New Roman', Times, serif; font-size: 12pt; color: #000; line-height: 1.5; background: #fff; }
-  h1 { font-size: 14pt; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 24pt; letter-spacing: 1px; }
-  p { text-align: justify; margin-bottom: 12pt; }
-  .assinaturas { margin-top: 48pt; display: flex; justify-content: space-between; }
+  body { font-family: 'Times New Roman', Times, serif; font-size: 11pt; color: #000; line-height: 1.4; background: #fff; }
+  h1 { font-size: 13pt; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 14pt; letter-spacing: 1px; }
+  p { text-align: justify; margin-bottom: 8pt; }
+  .rodape { margin-top: 16pt; page-break-inside: avoid; }
+  .data { text-align: center; margin-bottom: 14pt; }
+  .assinaturas { display: flex; justify-content: space-between; margin-bottom: 12pt; }
   .ass-bloco { width: 45%; }
-  .test { margin-top: 32pt; }
-  .test p { margin-bottom: 6pt; }
+  .test { font-size: 9pt; }
+  .test p { margin-bottom: 3pt; }
+  .test-linha { margin-bottom: 8pt; }
   @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
 </style>
 </head>
@@ -226,27 +229,31 @@ export default function ProfissionaisPage() {
 
 <p><strong>1.1)</strong> As partes resolvem, nesta data, em comum acordo, que, considerando que não existem pendências de ambas as partes, fica consumado o distrato.</p>
 
-<p style="margin-top:32pt">${dLocalDistrato}, ${dDataDistrato}</p>
-
-<div class="assinaturas">
-  <div class="ass-bloco">
-    <p>________________________</p>
-    <p>DISTRATANTE</p>
+<div class="rodape">
+  <p class="data">${dLocalDistrato}, ${dDataDistrato}</p>
+  <div class="assinaturas">
+    <div class="ass-bloco">
+      <p>________________________</p>
+      <p>DISTRATANTE</p>
+    </div>
+    <div class="ass-bloco">
+      <p>____________________</p>
+      <p>DISTRATADO</p>
+    </div>
   </div>
-  <div class="ass-bloco">
-    <p>____________________</p>
-    <p>DISTRATADO</p>
+  <div class="test">
+    <p>Testemunhas:</p>
+    <div class="test-linha">
+      <p>1ª) Ass. _________________________</p>
+      <p>Nome:</p>
+      <p>RG:</p>
+    </div>
+    <div class="test-linha">
+      <p>2ª) Ass. _________________________</p>
+      <p>Nome:</p>
+      <p>RG:</p>
+    </div>
   </div>
-</div>
-
-<div class="test">
-  <p>Testemunhas:</p>
-  <p>1ª) Ass. _________________________</p>
-  <p>Nome:</p>
-  <p>RG:</p>
-  <p style="margin-top:14pt">2ª) Ass. _________________________</p>
-  <p>Nome:</p>
-  <p>RG:</p>
 </div>
 </body>
 </html>`
