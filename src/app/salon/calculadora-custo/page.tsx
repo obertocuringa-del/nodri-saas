@@ -454,7 +454,7 @@ const DESPESAS_INDIRETAS = [
 ]
 
 // ─── Tipos ──────────────────────────────────────────────────────────────────
-interface DespesaItem { nome: string; valor: string; dica: string; editavel?: boolean }
+interface DespesaItem { nome: string; valor: string; dica: string; editavel?: boolean; parcela?: string }
 interface Ingrediente  { id: number; nome: string; qtdEmb: string; qtdUsa: string; preco: string; unidade: string }
 interface ServicoProd  { id: number; nomeServico: string; ingredientes: Ingrediente[] }
 interface Servico      { id: number; nome: string; preco: string; rateioP: string; produto: string; imposto: string }
@@ -497,6 +497,7 @@ export default function CalculadoraCusto() {
   const [distSocios,  setDistSocios]  = useState('')
   // Campos extras
   const [extrasDespInd, setExtrasDespInd] = useState<DespesaItem[]>([])
+  const [modalCatalogoAberto, setModalCatalogoAberto] = useState(false)
   const [reservaEmerg,  setReservaEmerg]  = useState('')
   const [totalReservaAcum, setTotalReservaAcum] = useState(0) // total acumulado de todos os meses
   const [mediaCustoOp, setMediaCustoOp] = useState(0) // média do custo operacional % de todos os meses
@@ -597,7 +598,7 @@ export default function CalculadoraCusto() {
     return {
       fat, custIndD, custDirD, lucroD, invInicial, totalDeprec,
       despInd: despInd.map(d=>({nome:d.nome,valor:d.valor})),
-      extrasDespInd: extrasDespInd.map(d=>({nome:d.nome,valor:d.valor})),
+      extrasDespInd: extrasDespInd.map(d=>({nome:d.nome,valor:d.valor,parcela:d.parcela||''})),
       extrasDiretas: extrasDiretas.map(d=>({nome:d.nome,valor:d.valor})),
       extrasOutras: extrasOutras.map(d=>({nome:d.nome,valor:d.valor})),
       sal13, ferias, fgtsR, imposto, produto, rateio, taxaC,
@@ -618,7 +619,7 @@ export default function CalculadoraCusto() {
     if (d.invInicial !== undefined) setInvInicial(d.invInicial)
     if (d.totalDeprec !== undefined) setTotalDeprec(d.totalDeprec)
     if (d.despInd) setDespInd(DESPESAS_INDIRETAS.map((di,i)=>({...di,valor:d.despInd[i]?.valor||''})))
-    if (d.extrasDespInd) setExtrasDespInd(d.extrasDespInd.map((x:any)=>({nome:x.nome,valor:x.valor,dica:''})))
+    if (d.extrasDespInd) setExtrasDespInd(d.extrasDespInd.map((x:any)=>({nome:x.nome,valor:x.valor,dica:'',parcela:x.parcela||''})))
     if ((d as any).extrasDiretas) setExtrasDiretas((d as any).extrasDiretas.map((x:any)=>({nome:x.nome,valor:x.valor,dica:''})))
     if ((d as any).extrasOutras) setExtrasOutras((d as any).extrasOutras.map((x:any)=>({nome:x.nome,valor:x.valor,dica:''})))
     if (d.sal13 !== undefined) setSal13(d.sal13)
@@ -1321,12 +1322,12 @@ Use números reais. Seja direto.`
             </div>
 
             {/* Despesas Indiretas */}
-            <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
-              <button onClick={()=>setSecIndiretas(p=>!p)} className="w-full flex items-center justify-between px-5 py-3 border-b hover:bg-white/2 transition-colors" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
+            <div className="rounded-2xl border overflow-hidden" style={{background:'#fffbf0',borderColor:'#f59e0b'}}>
+              <button onClick={()=>setSecIndiretas(p=>!p)} className="w-full flex items-center justify-between px-5 py-3 border-b transition-colors" style={{background:'linear-gradient(135deg,#fffbf0,#fef3c7)',borderColor:'#f59e0b'}}>
                 <div className="flex items-center gap-2">
                   {secIndiretas ? <ChevronUp size={14} style={{color:'#b45309'}}/> : <ChevronDown size={14} style={{color:'#b45309'}}/>}
-                  <span className="font-bold text-sm" style={{color:'#b45309'}}>📋 Despesas Indiretas (Fixas)</span>
-                  {!secIndiretas && totInd > 0 && <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{background:'#f59e0b20',color:'#b45309'}}>{fmtR(totInd)}</span>}
+                  <span className="font-bold text-sm" style={{color:'#92400e'}}>📋 Despesas Indiretas (Fixas)</span>
+                  {totInd > 0 && <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{background:'#f59e0b',color:'#fff'}}>{fmtR(totInd)}</span>}
                 </div>
                 <div className="flex items-center gap-3" onClick={e=>e.stopPropagation()}>
                   <button onClick={()=>setShowCatDespesa(true)}
@@ -1342,77 +1343,131 @@ Use números reais. Seja direto.`
                   Clique no cabeçalho para expandir e preencher as despesas fixas mensais.
                 </div>
               )}
-              {secIndiretas && <><div className="grid grid-cols-12 gap-2 px-5 py-2 text-[10px] font-bold uppercase tracking-wider border-b" style={{color:'#6b6860',borderColor:'#e8e6e020'}}>
-                <div className="col-span-5">Despesa</div>
-                <div className="col-span-3">Valor Mensal (R$)</div>
-                <div className="col-span-2">% Fat.</div>
-                <div className="col-span-2">Dica</div>
-              </div>
-              {despInd.map((d,i)=>{
-                const v=n(d.valor), pctV=fatN>0?(v/fatN*100):0
-                const cor=pctV>20?'#ef4444':pctV>10?'#f59e0b':'#10b981'
-                return(
-                  <div key={i} className="grid grid-cols-12 gap-2 px-5 py-2 items-center hover:bg-white/2" style={{borderBottom:'1px solid #e8e6e010'}}>
-                    <div className="col-span-5 flex items-center gap-1.5">
-                      <span className="text-xs" style={{color:'#3a3835'}}>{d.nome}</span>
-                      <InfoBtn id={d.nome==='Aluguel'?'aluguel':d.nome==='Energia Elétrica'?'energia':d.nome==='Água'?'agua':d.nome==='Contabilidade'?'contabilidade':''}/>
-                    </div>
-                    <div className="col-span-3">
+              {secIndiretas && <>
+                {/* Cabeçalho colunas */}
+                <div className="grid gap-2 px-5 py-2 text-[10px] font-bold uppercase tracking-wider border-b" style={{gridTemplateColumns:'1fr 110px 70px 72px 24px',color:'#92400e',borderColor:'#f59e0b40',background:'#fef9ec'}}>
+                  <div>Despesa</div>
+                  <div className="text-center">Valor Mensal</div>
+                  <div className="text-center">% Fat.</div>
+                  <div className="text-center">Parcela</div>
+                  <div/>
+                </div>
+
+                {/* Despesas fixas do catálogo padrão */}
+                {despInd.map((d,i)=>{
+                  const v=n(d.valor), pctV=fatN>0?(v/fatN*100):0
+                  const cor=pctV>20?'#ef4444':pctV>10?'#f59e0b':'#10b981'
+                  return(
+                    <div key={i} className="grid gap-2 px-5 py-2 items-center" style={{gridTemplateColumns:'1fr 110px 70px 72px 24px',borderBottom:'1px solid #f59e0b20',background: v>0 ? '#fffdf5' : 'transparent'}}>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-semibold" style={{color:'#78350f'}}>{d.nome}</span>
+                        <InfoBtn id={d.nome==='Aluguel'?'aluguel':d.nome==='Energia Elétrica'?'energia':d.nome==='Água'?'agua':d.nome==='Contabilidade'?'contabilidade':''}/>
+                      </div>
                       <div className="relative">
-                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#767069'}}>R$</span>
+                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#b45309'}}>R$</span>
                         <input type="number" value={d.valor}
                           onChange={e=>{const nd=[...despInd];nd[i]={...nd[i],valor:e.target.value};setDespInd(nd)}}
                           placeholder="0"
-                          className="w-full pl-6 pr-2 py-1 rounded-lg text-xs text-white focus:outline-none"
-                          style={{background: '#ffffff', border: `1.5px solid ${v>0?'#dedad460':'#e8e6e0'}`}}/>
+                          className="w-full pl-6 pr-2 py-1.5 rounded-lg text-xs focus:outline-none"
+                          style={{background:'#fff',border:`1.5px solid ${v>0?'#f59e0b':'#e8e6e0'}`,color:'#1a1a1a',fontWeight: v>0?600:400}}/>
+                      </div>
+                      <div className="text-xs text-center font-bold" style={{color:v>0?cor:'#dedad4'}}>
+                        {v>0?`${pctV.toFixed(1)}%`:'—'}
+                      </div>
+                      <div>
+                        <input value={d.parcela||''} onChange={e=>{const nd=[...despInd];nd[i]={...nd[i],parcela:e.target.value};setDespInd(nd)}}
+                          placeholder="ex: 1/3" maxLength={5}
+                          className="w-full px-2 py-1.5 rounded-lg text-xs text-center focus:outline-none"
+                          style={{background:'#fff',border:'1.5px solid #e8e6e0',color:d.parcela?'#b45309':'#aaa',fontWeight:d.parcela?700:400}}/>
+                      </div>
+                      <div/>
+                    </div>
+                  )
+                })}
+
+                {/* Extras do catálogo */}
+                {extrasDespInd.map((d,i)=>{
+                  const v=n(d.valor), pctV=fatN>0?(v/fatN*100):0
+                  const cor=pctV>20?'#ef4444':pctV>10?'#f59e0b':'#10b981'
+                  return(
+                    <div key={i} className="grid gap-2 px-5 py-2 items-center" style={{gridTemplateColumns:'1fr 110px 70px 72px 24px',borderBottom:'1px solid #f59e0b20',background:'#fffdf5'}}>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-semibold" style={{color:'#78350f'}}>{d.nome}</span>
+                        <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{background:'#f59e0b20',color:'#b45309'}}>catálogo</span>
+                      </div>
+                      <div className="relative">
+                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#b45309'}}>R$</span>
+                        <input type="number" value={d.valor} onChange={e=>{const nd=[...extrasDespInd];nd[i]={...nd[i],valor:e.target.value};setExtrasDespInd(nd)}}
+                          placeholder="0"
+                          className="w-full pl-6 pr-2 py-1.5 rounded-lg text-xs focus:outline-none"
+                          style={{background:'#fff',border:`1.5px solid ${v>0?'#f59e0b':'#e8e6e0'}`,color:'#1a1a1a',fontWeight:v>0?600:400}}/>
+                      </div>
+                      <div className="text-xs text-center font-bold" style={{color:v>0?cor:'#dedad4'}}>
+                        {v>0?`${pctV.toFixed(1)}%`:'—'}
+                      </div>
+                      <div>
+                        <input value={d.parcela||''} onChange={e=>{const nd=[...extrasDespInd];nd[i]={...nd[i],parcela:e.target.value};setExtrasDespInd(nd)}}
+                          placeholder="1/3" maxLength={5}
+                          className="w-full px-2 py-1.5 rounded-lg text-xs text-center focus:outline-none"
+                          style={{background:'#fff',border:'1.5px solid #e8e6e0',color:d.parcela?'#b45309':'#aaa',fontWeight:d.parcela?700:400}}/>
+                      </div>
+                      <div className="flex justify-end">
+                        <button onClick={()=>setExtrasDespInd(prev=>prev.filter((_,idx)=>idx!==i))} style={{color:'#ef4444'}}><Trash2 size={12}/></button>
                       </div>
                     </div>
-                    <div className="col-span-2 text-xs text-center" style={{color:v>0?cor:'#dedad4'}}>
-                      {v>0?`${pctV.toFixed(1)}%`:'—'}
-                    </div>
-                    <div className="col-span-2 text-[10px]" style={{color:'#6b6860'}}>{d.dica}</div>
-                  </div>
-                )
-              })}
-              {/* Extras */}
-              {extrasDespInd.map((d,i)=>(
-                <div key={i} className="grid grid-cols-12 gap-2 px-5 py-2 items-center" style={{borderBottom:'1px solid #e8e6e010'}}>
-                  <div className="col-span-5 relative">
-                    <input value={d.nome} onChange={e=>{const nd=[...extrasDespInd];nd[i]={...nd[i],nome:e.target.value};setExtrasDespInd(nd);setAutocomplDespesa(`ind-${i}`)}}
-                      onFocus={()=>setAutocomplDespesa(`ind-${i}`)} onBlur={()=>setTimeout(()=>setAutocomplDespesa(null),200)}
-                      placeholder="Nome da despesa"
-                      className="w-full px-2 py-1 rounded-lg text-xs text-white focus:outline-none"
-                      style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/>
-                    {autocomplDespesa===`ind-${i}` && sugestoesDespesa(d.nome,'indireta').length>0 && (
-                      <div className="absolute top-full left-0 right-0 z-50 rounded-lg border shadow-xl" style={{background:'#faf9f7',borderColor:'#dedad4'}}>
-                        {sugestoesDespesa(d.nome,'indireta').map((s,si)=>(
-                          <button key={si} onMouseDown={()=>{const nd=[...extrasDespInd];nd[i]={...nd[i],nome:s.nome};setExtrasDespInd(nd);setAutocomplDespesa(null)}}
-                            className="w-full text-left px-3 py-1.5 text-xs hover:bg-white/5 text-white" style={{borderBottom:'1px solid #e8e6e010'}}>{s.nome}</button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <div className="col-span-3">
-                    <div className="relative">
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#767069'}}>R$</span>
-                      <input type="number" value={d.valor} onChange={e=>{const nd=[...extrasDespInd];nd[i]={...nd[i],valor:e.target.value};setExtrasDespInd(nd)}}
-                        className="w-full pl-6 pr-2 py-1 rounded-lg text-xs text-white focus:outline-none"
-                        style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/>
-                    </div>
-                  </div>
-                  <div className="col-span-2"/>
-                  <div className="col-span-2 flex justify-end">
-                    <button onClick={()=>setExtrasDespInd(prev=>prev.filter((_,idx)=>idx!==i))} style={{color:'#6b6860'}}><Trash2 size={12}/></button>
-                  </div>
+                  )
+                })}
+
+                {/* Botão adicionar + modal catálogo */}
+                <div className="px-5 py-3 border-t flex items-center justify-between" style={{borderColor:'#f59e0b40',background:'#fef9ec'}}>
+                  <button onClick={()=>setModalCatalogoAberto(true)}
+                    className="flex items-center gap-2 text-xs px-4 py-2 rounded-lg font-semibold transition-all"
+                    style={{background:'#f59e0b',color:'#fff',border:'none',boxShadow:'0 2px 6px #f59e0b40'}}>
+                    <Plus size={13}/> Adicionar despesa do catálogo
+                  </button>
+                  {despesasCatalogo.filter(c=>c.categoria==='indireta').length===0 && (
+                    <span className="text-[10px]" style={{color:'#b45309'}}>⚠️ Cadastre despesas em <strong>Gerenciar Catálogo</strong> primeiro</span>
+                  )}
                 </div>
-              ))}
-              <div className="px-5 py-3 border-t" style={{borderColor:'#e8e6e0'}}>
-                <button onClick={()=>setExtrasDespInd(p=>[...p,{nome:'',valor:'',dica:''}])}
-                  className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg"
-                  style={{background:'#f59e0b20',color:'#b45309',border:'1px dashed #f59e0b40'}}>
-                  <Plus size={12}/> Adicionar despesa
-                </button>
-              </div></>}
+
+                {/* Modal seletor de catálogo */}
+                {modalCatalogoAberto && (
+                  <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center'}} onClick={()=>setModalCatalogoAberto(false)}>
+                    <div style={{background:'#fff',borderRadius:'16px',padding:'24px',minWidth:'340px',maxWidth:'480px',width:'90%',maxHeight:'70vh',display:'flex',flexDirection:'column',gap:'12px'}} onClick={e=>e.stopPropagation()}>
+                      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                        <h3 style={{fontSize:'15px',fontWeight:700,color:'#1a1a1a',margin:0}}>Selecionar do Catálogo</h3>
+                        <button onClick={()=>setModalCatalogoAberto(false)} style={{background:'none',border:'none',cursor:'pointer',color:'#767069'}}><X size={18}/></button>
+                      </div>
+                      {despesasCatalogo.filter(c=>c.categoria==='indireta').length===0 ? (
+                        <div style={{textAlign:'center',padding:'24px',color:'#b45309',fontSize:'13px'}}>
+                          <p style={{marginBottom:'8px'}}>Nenhuma despesa indireta no catálogo.</p>
+                          <p style={{fontSize:'11px',color:'#767069'}}>Vá em <strong>Gerenciar Catálogo</strong> para cadastrar.</p>
+                        </div>
+                      ) : (
+                        <div style={{overflowY:'auto',display:'flex',flexDirection:'column',gap:'6px'}}>
+                          {despesasCatalogo.filter(c=>c.categoria==='indireta').map(cat=>{
+                            const jaAdicionada = extrasDespInd.some(e=>e.nome===cat.nome) || despInd.some(d=>d.nome===cat.nome)
+                            return(
+                              <button key={cat.id} disabled={jaAdicionada}
+                                onClick={()=>{
+                                  if (!jaAdicionada) setExtrasDespInd(p=>[...p,{nome:cat.nome,valor:'',dica:cat.observacao||'',parcela:''}])
+                                  setModalCatalogoAberto(false)
+                                }}
+                                style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 14px',border:'1.5px solid',borderColor:jaAdicionada?'#e8e6e0':'#f59e0b',borderRadius:'8px',background:jaAdicionada?'#f5f4f0':'#fffbf0',cursor:jaAdicionada?'not-allowed':'pointer',opacity:jaAdicionada?0.5:1}}>
+                                <span style={{fontSize:'13px',fontWeight:600,color:'#78350f'}}>{cat.nome}</span>
+                                {jaAdicionada
+                                  ? <span style={{fontSize:'10px',color:'#767069'}}>já adicionada</span>
+                                  : <span style={{fontSize:'11px',color:'#f59e0b',fontWeight:600}}>+ Adicionar</span>
+                                }
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </>}
             </div>
 
             {/* Provisão */}
