@@ -2230,6 +2230,10 @@ export default function PerfilProfissionalPage() {
   const anoAtual = new Date().getFullYear()
   const [clientesPerdidos, setClientesPerdidos] = useState<any>(null)
   const [loadClientesPerdidos, setLoadClientesPerdidos] = useState(false)
+  const [bundleIA, setBundleIA] = useState<any[]|null>(null)
+  const [loadBundleIA, setLoadBundleIA] = useState(false)
+  const [ocorrImpacto, setOcorrImpacto] = useState<any|null>(null)
+  const [loadOcorrImpacto, setLoadOcorrImpacto] = useState(false)
   const [perdidosDataInicio, setPerdidosDataInicio] = useState(`01/01/${anoAtual - 1}`)
   const [perdidosDataFim, setPerdidosDataFim] = useState(`31/12/${anoAtual}`)
   const [subTabPerdidos, setSubTabPerdidos] = useState<'outro-servico'|'saiu-salao'|'outra-categoria'>('outra-categoria')
@@ -3585,6 +3589,82 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                 </div>
               )}
 
+              {/* Card IA — Impacto do Comportamento */}
+              {metricas.ocorrencias_comparativo.length > 0 && (
+                <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div>
+                      <h3 className="font-syne font-bold text-[13px] text-nodri-t1">🤖 O que esse comportamento gera?</h3>
+                      <p className="text-[10px] text-nodri-t3 mt-0.5">A IA analisa as ocorrências e mostra o impacto real para o profissional, clientes, recepção e salão</p>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        if (loadOcorrImpacto) return
+                        setLoadOcorrImpacto(true)
+                        setOcorrImpacto(null)
+                        try {
+                          const res = await fetch(`/api/profissionais/${id}/ia-profissional`, {
+                            method: 'POST',
+                            headers: {'Content-Type':'application/json'},
+                            body: JSON.stringify({
+                              tipo: 'ocorrencias',
+                              dados: {
+                                profNome: prof?.nome_completo || '',
+                                cargo: prof?.cargo || '',
+                                ocorrencias: metricas.ocorrencias_comparativo,
+                                periodo1: `${p1i} → ${p1f}`,
+                                periodo2: `${p2i} → ${p2f}`,
+                                total_p1: metricas.feedbacks_p1_total || 0,
+                                total_p2: metricas.feedbacks_p2_total || 0,
+                              }
+                            })
+                          })
+                          const json = await res.json()
+                          setOcorrImpacto(json.analise || null)
+                        } catch { setOcorrImpacto(null) }
+                        finally { setLoadOcorrImpacto(false) }
+                      }}
+                      className="shrink-0 flex items-center gap-2 bg-red-600 text-white text-[11px] font-semibold px-4 py-2 rounded-xl hover:opacity-90 transition"
+                    >
+                      {loadOcorrImpacto ? <><Loader2 size={12} className="animate-spin"/> Analisando...</> : '🔍 Ver Impacto'}
+                    </button>
+                  </div>
+
+                  {!ocorrImpacto && !loadOcorrImpacto && (
+                    <p className="text-[11px] text-nodri-t3 text-center py-4">Clique em "Ver Impacto" para a IA analisar o que esses comportamentos causam</p>
+                  )}
+                  {loadOcorrImpacto && (
+                    <div className="flex items-center justify-center py-8 gap-2 text-nodri-t3 text-[12px]">
+                      <Loader2 size={16} className="animate-spin text-red-500"/>
+                      Analisando ocorrências e calculando impactos...
+                    </div>
+                  )}
+                  {ocorrImpacto && (
+                    <div className="space-y-3">
+                      <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                        <p className="text-[11px] text-red-800 font-medium leading-relaxed">{ocorrImpacto.resumo}</p>
+                      </div>
+                      {[
+                        {icon:'👤', label:'Para o Profissional', key:'impacto_profissional', color:'text-nodri-purple'},
+                        {icon:'💇', label:'Para o Cliente', key:'impacto_cliente', color:'text-nodri-cyan'},
+                        {icon:'📋', label:'Para a Recepção', key:'impacto_recepcao', color:'text-amber-600'},
+                        {icon:'🏠', label:'Para o Salão', key:'impacto_salao', color:'text-nodri-t1'},
+                      ].map(item => (
+                        <div key={item.key} className="bg-nodri-card border border-nodri-border rounded-xl p-3">
+                          <p className={`text-[10px] font-bold mb-1 ${item.color}`}>{item.icon} {item.label}</p>
+                          <p className="text-[11px] text-nodri-t2 leading-relaxed">{ocorrImpacto[item.key]}</p>
+                        </div>
+                      ))}
+                      <div className="bg-nodri-purple/10 border border-nodri-purple/30 rounded-xl p-4">
+                        <p className="text-[10px] font-bold text-nodri-purple mb-1">💬 Mensagem Direta ao Profissional</p>
+                        <p className="text-[11px] text-nodri-t1 leading-relaxed italic">&ldquo;{ocorrImpacto.mensagem_profissional}&rdquo;</p>
+                      </div>
+                      <button onClick={() => setOcorrImpacto(null)} className="text-[10px] text-nodri-t3 hover:text-nodri-t2">↩ Limpar análise</button>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Feed de feedbacks filtrado */}
               {metricas.feedbacks.length > 0 && (
                 <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
@@ -4060,6 +4140,78 @@ ${paresRows?`<table class="tbl"><thead><tr><th>#</th><th>Serviço A</th><th>Serv
                 </>
               )
             })()}
+
+            {/* Card IA — Mais Opções de Bundle */}
+            {analiseData.bundle && (
+              <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
+                <div className="flex items-start justify-between mb-3 gap-3">
+                  <div>
+                    <h3 className="font-syne font-bold text-[13px] text-nodri-t1">✨ Mais Opções Geradas pela IA</h3>
+                    <p className="text-[10px] text-nodri-t3 mt-0.5">A IA analisa os serviços deste profissional e sugere combos estratégicos para aumentar o ticket médio</p>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      if (loadBundleIA) return
+                      setLoadBundleIA(true)
+                      setBundleIA(null)
+                      try {
+                        const bd = analiseData.bundle
+                        const op = analiseData.oportunidades
+                        const res = await fetch(`/api/profissionais/${id}/ia-profissional`, {
+                          method: 'POST',
+                          headers: {'Content-Type':'application/json'},
+                          body: JSON.stringify({
+                            tipo: 'bundle',
+                            dados: {
+                              profNome: prof?.nome_completo || '',
+                              cargo: prof?.cargo || '',
+                              servicos_mais_vendidos: op?.mais_vende || [],
+                              bundles_existentes: bd?.pares || [],
+                              todos_servicos: [...(op?.mais_vende||[]).map((s:any)=>s.servico), ...(op?.deveria_vender||[]).map((s:any)=>s.servico)],
+                            }
+                          })
+                        })
+                        const json = await res.json()
+                        setBundleIA(json.sugestoes || [])
+                      } catch { setBundleIA([]) }
+                      finally { setLoadBundleIA(false) }
+                    }}
+                    className="shrink-0 flex items-center gap-2 bg-nodri-purple text-white text-[11px] font-semibold px-4 py-2 rounded-xl hover:opacity-90 transition"
+                  >
+                    {loadBundleIA ? <><Loader2 size={12} className="animate-spin"/> Gerando...</> : '🤖 Gerar com IA'}
+                  </button>
+                </div>
+
+                {bundleIA === null && !loadBundleIA && (
+                  <p className="text-[11px] text-nodri-t3 text-center py-4">Clique em "Gerar com IA" para ver sugestões personalizadas</p>
+                )}
+                {loadBundleIA && (
+                  <div className="flex items-center justify-center py-8 gap-2 text-nodri-t3 text-[12px]">
+                    <Loader2 size={16} className="animate-spin text-nodri-purple"/>
+                    Analisando serviços e gerando combos estratégicos...
+                  </div>
+                )}
+                {bundleIA && bundleIA.length > 0 && (
+                  <div className="space-y-3">
+                    {bundleIA.map((s:any, i:number) => (
+                      <div key={i} className="bg-nodri-card border border-nodri-border rounded-xl p-4">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                          <span className="text-[11px] font-bold text-nodri-purple">{s.servico_a}</span>
+                          <span className="text-nodri-t3 text-[10px]">+</span>
+                          <span className="text-[11px] font-bold text-nodri-pink">{s.servico_b}</span>
+                        </div>
+                        <p className="text-[10px] text-nodri-t2 mb-1">📊 {s.motivo}</p>
+                        <p className="text-[10px] text-nodri-cyan font-semibold">💬 {s.oportunidade}</p>
+                      </div>
+                    ))}
+                    <button onClick={() => setBundleIA(null)} className="text-[10px] text-nodri-t3 hover:text-nodri-t2 mt-1">↩ Limpar sugestões</button>
+                  </div>
+                )}
+                {bundleIA && bundleIA.length === 0 && (
+                  <p className="text-[11px] text-nodri-t3 text-center py-4">A IA não conseguiu gerar sugestões. Tente novamente.</p>
+                )}
+              </div>
+            )}
           </div>
         )}
 
