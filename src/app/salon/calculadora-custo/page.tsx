@@ -318,7 +318,7 @@ function InfoBtn({ id, className }: { id: string; className?: string }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.7)'}}>
           <div className="rounded-2xl border max-w-md w-full shadow-2xl" style={{background:'#faf9f7',borderColor:'#5b4fcf50'}}>
             <div className="flex items-center justify-between px-5 py-4 border-b" style={{borderColor:'#e8e6e0'}}>
-              <h3 className="font-bold text-sm text-white">{info.titulo}</h3>
+              <h3 className="font-bold text-sm text-[#1a1a1a]">{info.titulo}</h3>
               <button onClick={() => setAberto(false)} className="p-1 rounded-lg hover:bg-white/10" style={{color:'#767069'}}><X size={16}/></button>
             </div>
             <div className="p-5 space-y-4">
@@ -369,7 +369,7 @@ function AvisoDefault({ ativo, padrao, onPreencher, onManter }: {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.7)'}}>
           <div className="rounded-2xl border max-w-sm w-full shadow-2xl" style={{background:'#faf9f7',borderColor:'#f59e0b50'}}>
             <div className="px-5 py-4 border-b" style={{borderColor:'#e8e6e0'}}>
-              <h3 className="font-bold text-sm text-white flex items-center gap-2">Campo usando valor padrão</h3>
+              <h3 className="font-bold text-sm text-[#1a1a1a] flex items-center gap-2">Campo usando valor padrão</h3>
             </div>
             <div className="p-5 space-y-3">
               <div className="rounded-xl p-3" style={{background:'#f59e0b10',border:'1px solid #f59e0b30'}}>
@@ -1151,7 +1151,7 @@ Use números reais. Seja direto.`
         <div className="flex items-center gap-3 mb-4">
           <a href="/salon" className="p-2 rounded-lg hover:bg-white/5" style={{color:'#767069'}}><ArrowLeft size={18}/></a>
           <div className="flex-1">
-            <h1 className="text-xl font-bold text-white flex items-center gap-2">
+            <h1 className="text-xl font-bold text-[#1a1a1a] flex items-center gap-2">
               <Calculator size={22} style={{color:'#5b4fcf'}}/>Calculadoras do Salão
             </h1>
             <p className="text-xs mt-0.5" style={{color:'#767069'}}>
@@ -1267,7 +1267,7 @@ Use números reais. Seja direto.`
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>R$</span>
                     <input type="number" value={fat} onChange={e=>setFat(e.target.value)} placeholder="Ex: 50000"
-                      className="w-full pl-9 pr-3 py-2.5 rounded-xl text-white text-base font-bold focus:outline-none"
+                      className="w-full pl-9 pr-3 py-2.5 rounded-xl text-[#1a1a1a] text-base font-bold focus:outline-none"
                       style={{background:'#f5f4f0',border:'1px solid #5b4fcf60'}}/>
                   </div>
                 </div>
@@ -1286,7 +1286,7 @@ Use números reais. Seja direto.`
                       <p className="text-[9px] mb-1" style={{color:'#6b6860'}}>{f.dica}</p>
                       <div className="relative">
                         <input type="number" value={f.v} onChange={e=>f.set&&f.set(e.target.value)} readOnly={f.auto}
-                          className="w-full pr-6 pl-2 py-1.5 rounded-lg text-xs text-white focus:outline-none"
+                          className="w-full pr-6 pl-2 py-1.5 rounded-lg text-xs text-[#1a1a1a] focus:outline-none"
                           style={{background:'#f5f4f0',border:`1px solid ${f.c}40`}}/>
                         <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#767069'}}>%</span>
                       </div>
@@ -1301,7 +1301,7 @@ Use números reais. Seja direto.`
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>R$</span>
                     <input type="number" value={invInicial} onChange={e=>setInvInicial(e.target.value)} placeholder="Ex: 100000"
-                      className="w-full pl-9 pr-3 py-2 rounded-xl text-white text-sm focus:outline-none"
+                      className="w-full pl-9 pr-3 py-2 rounded-xl text-[#1a1a1a] text-sm focus:outline-none"
                       style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
                   </div>
                 </div>
@@ -1314,7 +1314,7 @@ Use números reais. Seja direto.`
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>R$</span>
                     <input type="number" value={totalDeprec} onChange={e=>setTotalDeprec(e.target.value)} placeholder="Ex: 10000"
-                      className="w-full pl-9 pr-3 py-2 rounded-xl text-white text-sm focus:outline-none"
+                      className="w-full pl-9 pr-3 py-2 rounded-xl text-[#1a1a1a] text-sm focus:outline-none"
                       style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
                   </div>
                 </div>
@@ -1497,7 +1497,7 @@ Use números reais. Seja direto.`
                     <div className="relative">
                       <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>R$</span>
                       <input type="number" value={f.v} onChange={e=>f.set(e.target.value)} placeholder="0"
-                        className="w-full pl-8 pr-2 py-2 rounded-lg text-sm text-white focus:outline-none"
+                        className="w-full pl-8 pr-2 py-2 rounded-lg text-sm text-[#1a1a1a] focus:outline-none"
                         style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
                     </div>
                   </div>
@@ -1538,7 +1538,7 @@ Use números reais. Seja direto.`
                     <div className="relative">
                       <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>R$</span>
                       <input type="number" value={f.v} onChange={e=>f.set(e.target.value)} placeholder="0"
-                        className="w-full pl-8 pr-2 py-2 rounded-lg text-sm text-white focus:outline-none"
+                        className="w-full pl-8 pr-2 py-2 rounded-lg text-sm text-[#1a1a1a] focus:outline-none"
                         style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
                     </div>
                   </div>
@@ -1550,13 +1550,13 @@ Use números reais. Seja direto.`
                       <div className="flex-1 relative">
                         <input value={d.nome} onChange={e=>{const nd=[...extrasDiretas];nd[i]={...nd[i],nome:e.target.value};setExtrasDiretas(nd);setAutocomplDespesa(`dir-${i}`)}}
                           onFocus={()=>setAutocomplDespesa(`dir-${i}`)} onBlur={()=>setTimeout(()=>setAutocomplDespesa(null),200)}
-                          placeholder="Nome da despesa" className="w-full px-2 py-1 rounded-lg text-xs text-white focus:outline-none"
+                          placeholder="Nome da despesa" className="w-full px-2 py-1 rounded-lg text-xs text-[#1a1a1a] focus:outline-none"
                           style={{background:'#f5f4f0',border:'1px solid #ef444440'}}/>
                         {autocomplDespesa===`dir-${i}` && sugestoesDespesa(d.nome,'direta').length>0 && (
                           <div className="absolute top-full left-0 right-0 z-50 rounded-lg border shadow-xl" style={{background:'#faf9f7',borderColor:'#dedad4'}}>
                             {sugestoesDespesa(d.nome,'direta').map((s,si)=>(
                               <button key={si} onMouseDown={()=>{const nd=[...extrasDiretas];nd[i]={...nd[i],nome:s.nome};setExtrasDiretas(nd);setAutocomplDespesa(null)}}
-                                className="w-full text-left px-3 py-1.5 text-xs hover:bg-white/5 text-white" style={{borderBottom:'1px solid #e8e6e010'}}>{s.nome}</button>
+                                className="w-full text-left px-3 py-1.5 text-xs hover:bg-white/5 text-[#1a1a1a]" style={{borderBottom:'1px solid #e8e6e010'}}>{s.nome}</button>
                             ))}
                           </div>
                         )}
@@ -1566,7 +1566,7 @@ Use números reais. Seja direto.`
                     <div className="relative">
                       <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#767069'}}>R$</span>
                       <input type="number" value={d.valor} onChange={e=>{const nd=[...extrasDiretas];nd[i]={...nd[i],valor:e.target.value};setExtrasDiretas(nd)}}
-                        className="w-full pl-6 pr-2 py-1.5 rounded-lg text-xs text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/>
+                        className="w-full pl-6 pr-2 py-1.5 rounded-lg text-xs text-[#1a1a1a] focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/>
                     </div>
                   </div>
                 ))}
@@ -1605,7 +1605,7 @@ Use números reais. Seja direto.`
                     <div className="relative">
                       <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>R$</span>
                       <input type="number" value={f.v} onChange={e=>f.set(e.target.value)} placeholder="0"
-                        className="w-full pl-8 pr-2 py-2 rounded-lg text-sm text-white focus:outline-none"
+                        className="w-full pl-8 pr-2 py-2 rounded-lg text-sm text-[#1a1a1a] focus:outline-none"
                         style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
                     </div>
                   </div>
@@ -1617,13 +1617,13 @@ Use números reais. Seja direto.`
                       <div className="flex-1 relative">
                         <input value={d.nome} onChange={e=>{const nd=[...extrasOutras];nd[i]={...nd[i],nome:e.target.value};setExtrasOutras(nd);setAutocomplDespesa(`out-${i}`)}}
                           onFocus={()=>setAutocomplDespesa(`out-${i}`)} onBlur={()=>setTimeout(()=>setAutocomplDespesa(null),200)}
-                          placeholder="Nome da despesa" className="w-full px-2 py-1 rounded-lg text-xs text-white focus:outline-none"
+                          placeholder="Nome da despesa" className="w-full px-2 py-1 rounded-lg text-xs text-[#1a1a1a] focus:outline-none"
                           style={{background:'#f5f4f0',border:'1px solid #06b6d440'}}/>
                         {autocomplDespesa===`out-${i}` && sugestoesDespesa(d.nome,'outras').length>0 && (
                           <div className="absolute top-full left-0 right-0 z-50 rounded-lg border shadow-xl" style={{background:'#faf9f7',borderColor:'#dedad4'}}>
                             {sugestoesDespesa(d.nome,'outras').map((s,si)=>(
                               <button key={si} onMouseDown={()=>{const nd=[...extrasOutras];nd[i]={...nd[i],nome:s.nome};setExtrasOutras(nd);setAutocomplDespesa(null)}}
-                                className="w-full text-left px-3 py-1.5 text-xs hover:bg-white/5 text-white" style={{borderBottom:'1px solid #e8e6e010'}}>{s.nome}</button>
+                                className="w-full text-left px-3 py-1.5 text-xs hover:bg-white/5 text-[#1a1a1a]" style={{borderBottom:'1px solid #e8e6e010'}}>{s.nome}</button>
                             ))}
                           </div>
                         )}
@@ -1633,7 +1633,7 @@ Use números reais. Seja direto.`
                     <div className="relative">
                       <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#767069'}}>R$</span>
                       <input type="number" value={d.valor} onChange={e=>{const nd=[...extrasOutras];nd[i]={...nd[i],valor:e.target.value};setExtrasOutras(nd)}}
-                        className="w-full pl-6 pr-2 py-1.5 rounded-lg text-xs text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/>
+                        className="w-full pl-6 pr-2 py-1.5 rounded-lg text-xs text-[#1a1a1a] focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/>
                     </div>
                   </div>
                 ))}
@@ -1750,7 +1750,7 @@ Use números reais. Seja direto.`
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>R$</span>
                         <input type="number" value={f.v} onChange={e=>f.set(e.target.value)} placeholder="0"
-                          className="w-full pl-9 pr-3 py-2 rounded-lg text-sm text-white focus:outline-none"
+                          className="w-full pl-9 pr-3 py-2 rounded-lg text-sm text-[#1a1a1a] focus:outline-none"
                           style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
                       </div>
                     </div>
@@ -1760,7 +1760,7 @@ Use números reais. Seja direto.`
                 {/* ══ RESUMO FINANCEIRO COMPLETO ══ */}
                 <div className="rounded-2xl border overflow-hidden" style={{borderColor:'#5b4fcf50'}}>
                   <div className="px-5 py-4 border-b" style={{background:'linear-gradient(135deg,#ffffff,#faf9f7)',borderColor:'#e8e6e0'}}>
-                    <h2 className="font-bold text-base text-white flex items-center gap-2">📊 Resumo da Situação Financeira — {MESES_NOMES[mesSel]}/{anoSel}</h2>
+                    <h2 className="font-bold text-base text-[#1a1a1a] flex items-center gap-2">📊 Resumo da Situação Financeira — {MESES_NOMES[mesSel]}/{anoSel}</h2>
                     <p className="text-xs mt-1" style={{color:'#767069'}}>Tudo que você precisa saber sobre a saúde financeira do seu salão neste mês.</p>
                   </div>
 
@@ -2002,7 +2002,7 @@ Use números reais. Seja direto.`
                     <div className="relative">
                       {f.tipo==='R$'&&<span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#767069'}}>R$</span>}
                       <input type="number" value={f.v} onChange={e=>f.set(e.target.value)} placeholder={f.ph}
-                        className={`w-full ${f.tipo==='R$'?'pl-7':'pl-3'} ${f.tipo&&f.tipo!=='R$'?'pr-7':'pr-3'} py-2 rounded-lg text-xs text-white focus:outline-none`}
+                        className={`w-full ${f.tipo==='R$'?'pl-7':'pl-3'} ${f.tipo&&f.tipo!=='R$'?'pr-7':'pr-3'} py-2 rounded-lg text-xs text-[#1a1a1a] focus:outline-none`}
                         style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
                       {f.tipo&&f.tipo!=='R$'&&<span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#767069'}}>{f.tipo}</span>}
                     </div>
@@ -2104,12 +2104,12 @@ Use números reais. Seja direto.`
                     <AvisoDefault ativo={taxaCartao==='5'} padrao="5% (padrão)" onPreencher={()=>{}} onManter={()=>{}}/>
                   </div>
                   <p className="text-[10px] mb-1" style={{color:'#6b6860'}}>Média das maquininhas. Recomendado: 5%</p>
-                  <div className="relative"><input type="number" value={taxaCartao} onChange={e=>setTaxaCartao(e.target.value)} className="w-full pr-6 pl-3 py-2 rounded-lg text-sm text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/><span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>%</span></div>
+                  <div className="relative"><input type="number" value={taxaCartao} onChange={e=>setTaxaCartao(e.target.value)} className="w-full pr-6 pl-3 py-2 rounded-lg text-sm text-[#1a1a1a] focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/><span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>%</span></div>
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5 mb-1"><label className="text-xs font-bold" style={{color:'#767069'}}>Abatimento do Produto (%)</label><InfoBtn id="abatProd"/></div>
                   <p className="text-[10px] mb-1" style={{color:'#6b6860'}}>% do produto abatido do rateio. Recomendado: 100%</p>
-                  <div className="relative"><input type="number" value={abatProd} onChange={e=>setAbatProd(e.target.value)} className="w-full pr-6 pl-3 py-2 rounded-lg text-sm text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/><span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>%</span></div>
+                  <div className="relative"><input type="number" value={abatProd} onChange={e=>setAbatProd(e.target.value)} className="w-full pr-6 pl-3 py-2 rounded-lg text-sm text-[#1a1a1a] focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/><span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>%</span></div>
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5 mb-2"><label className="text-xs font-bold" style={{color:'#767069'}}>Custo Operacional (%)</label><InfoBtn id="custOpServ"/></div>
@@ -2165,7 +2165,7 @@ Use números reais. Seja direto.`
                     <input type="number" value={custOpServ}
                       onChange={e=>setCustOpServ(e.target.value)}
                       placeholder={fatN>0&&custoOp>0?(custoOp/fatN*100).toFixed(1):'30'}
-                      className="w-full pr-6 pl-3 py-2 rounded-lg text-sm text-white focus:outline-none"
+                      className="w-full pr-6 pl-3 py-2 rounded-lg text-sm text-[#1a1a1a] focus:outline-none"
                       style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/>
                     <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>%</span>
                   </div>
@@ -2198,7 +2198,7 @@ Use números reais. Seja direto.`
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>🔍</span>
                 <input value={buscaServico} onChange={e=>setBuscaServico(e.target.value)}
                   placeholder="Buscar serviço pelo nome..."
-                  className="w-full pl-8 pr-3 py-2 rounded-lg text-xs text-white focus:outline-none"
+                  className="w-full pl-8 pr-3 py-2 rounded-lg text-xs text-[#1a1a1a] focus:outline-none"
                   style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/>
               </div>
               <button onClick={()=>setOrdenarPorLucro(v=>!v)}
@@ -2236,7 +2236,7 @@ Use números reais. Seja direto.`
                   <div key={s.id}>
                     <div className="grid gap-2 px-5 py-3 items-center" style={{gridTemplateColumns:'2fr 1fr 1fr 1fr 1fr 20px'}}>
                       <input value={s.nome} onChange={e=>setServicos(p=>p.map(x=>x.id===s.id?{...x,nome:e.target.value}:x))}
-                        placeholder="Ex: Coloração longo" className="px-3 py-2 rounded-lg text-sm text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
+                        placeholder="Ex: Coloração longo" className="px-3 py-2 rounded-lg text-sm text-[#1a1a1a] focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
                       {[
                         {k:'preco' as const,ph:'0',pre:'R$',aviso:false,padrao:''},
                         {k:'rateioP' as const,ph:'50',suf:'%',aviso:!(s as any).rateioP,padrao:'50% (padrão)'},
@@ -2253,7 +2253,7 @@ Use números reais. Seja direto.`
                           <input type="number" value={(s as any)[f.k]}
                             onChange={e=>setServicos(p=>p.map(x=>x.id===s.id?{...x,[f.k]:e.target.value}:x))}
                             placeholder={f.ph}
-                            className={`w-full ${f.pre?'pl-7':'pl-3'} ${f.suf?'pr-6':'pr-2'} py-2 rounded-lg text-sm text-white focus:outline-none`}
+                            className={`w-full ${f.pre?'pl-7':'pl-3'} ${f.suf?'pr-6':'pr-2'} py-2 rounded-lg text-sm text-[#1a1a1a] focus:outline-none`}
                             style={{background: '#ffffff', border: `1.5px solid ${f.aviso?'#f59e0b40':n((s as any)[f.k])>0?'#5b4fcf40':'#e8e6e0'}`}}/>
                           {f.suf&&<span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#767069'}}>{f.suf}</span>}
                         </div>
@@ -2326,7 +2326,7 @@ Use números reais. Seja direto.`
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>🔍</span>
                 <input value={buscaProduto} onChange={e=>setBuscaProduto(e.target.value)}
                   placeholder="Buscar serviço pelo nome..."
-                  className="w-full pl-8 pr-3 py-2 rounded-lg text-xs text-white focus:outline-none"
+                  className="w-full pl-8 pr-3 py-2 rounded-lg text-xs text-[#1a1a1a] focus:outline-none"
                   style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/>
               </div>
               <button onClick={()=>setOrdenarPorLucro(v=>!v)}
@@ -2354,7 +2354,7 @@ Use números reais. Seja direto.`
                     <input value={sp.nomeServico}
                       onChange={e=>setServicoProd(p=>p.map(s=>s.id===sp.id?{...s,nomeServico:e.target.value}:s))}
                       placeholder="Nome do serviço (ex: Coloração Longo)"
-                      className="flex-1 bg-transparent text-white font-bold text-sm focus:outline-none"
+                      className="flex-1 bg-transparent text-[#1a1a1a] font-bold text-sm focus:outline-none"
                       style={{borderBottom:'1px solid #dedad4'}}/>
                     {total>0&&<div className="text-right flex-shrink-0"><p className="text-[10px]" style={{color:'#767069'}}>Custo total</p><p className="font-bold text-lg" style={{color:'#b45309'}}>{fmtR(total)}</p></div>}
                   </div>
@@ -2381,7 +2381,7 @@ Use números reais. Seja direto.`
                             onFocus={()=>setAutocompleteKey(`${sp.id}-${idx}`)}
                             onBlur={()=>setTimeout(()=>setAutocompleteKey(null),200)}
                             placeholder="Ex: Tinta Color (buscar catálogo)"
-                            className="w-full px-3 py-1.5 rounded-lg text-xs text-white focus:outline-none"
+                            className="w-full px-3 py-1.5 rounded-lg text-xs text-[#1a1a1a] focus:outline-none"
                             style={{background:'#f5f4f0',border:`1px solid ${autocompleteKey===`${sp.id}-${idx}`?'#5b4fcf':'#ffffff'}`}}/>
                           {/* Dropdown sugestões */}
                           {autocompleteKey===`${sp.id}-${idx}` && produtosCatalogo.length > 0 && (
@@ -2405,7 +2405,7 @@ Use números reais. Seja direto.`
                                   className="w-full text-left px-3 py-2 hover:bg-white/5 flex items-center justify-between"
                                   style={{borderBottom:'1px solid #e8e6e010'}}>
                                   <div>
-                                    <span className="text-xs font-bold text-white">{p.nome}</span>
+                                    <span className="text-xs font-bold text-[#1a1a1a]">{p.nome}</span>
                                     {p.marca&&<span className="text-[10px] ml-2 px-1.5 py-0.5 rounded" style={{background:'#f59e0b20',color:'#b45309'}}>{p.marca}</span>}
                                   </div>
                                   <span className="text-[10px]" style={{color:'#059669'}}>R$ {p.preco} / {p.qtd_embalagem}{p.unidade}</span>
@@ -2423,18 +2423,18 @@ Use números reais. Seja direto.`
                           )}
                         </div>
                         <select value={ing.unidade} onChange={e=>atualizarIngrediente(sp.id,idx,'unidade',e.target.value)}
-                          className="px-2 py-1.5 rounded-lg text-xs text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}>
+                          className="px-2 py-1.5 rounded-lg text-xs text-[#1a1a1a] focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}>
                           {['ml','g','und','L','kg'].map(u=><option key={u} value={u}>{u}</option>)}
                         </select>
                         <input type="number" value={ing.qtdEmb} onChange={e=>atualizarIngrediente(sp.id,idx,'qtdEmb',e.target.value)}
-                          placeholder="Ex: 60" className="px-3 py-1.5 rounded-lg text-xs text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
+                          placeholder="Ex: 60" className="px-3 py-1.5 rounded-lg text-xs text-[#1a1a1a] focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
                         <div className="relative">
                           <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#767069'}}>R$</span>
                           <input type="number" value={ing.preco} onChange={e=>atualizarIngrediente(sp.id,idx,'preco',e.target.value)}
-                            placeholder="0" className="w-full pl-7 pr-2 py-1.5 rounded-lg text-xs text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
+                            placeholder="0" className="w-full pl-7 pr-2 py-1.5 rounded-lg text-xs text-[#1a1a1a] focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
                         </div>
                         <input type="number" value={ing.qtdUsa} onChange={e=>atualizarIngrediente(sp.id,idx,'qtdUsa',e.target.value)}
-                          placeholder="Ex: 90" className="px-3 py-1.5 rounded-lg text-xs text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
+                          placeholder="Ex: 90" className="px-3 py-1.5 rounded-lg text-xs text-[#1a1a1a] focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
                         <div className="text-xs font-bold text-center" style={{color:custo>0?'#f59e0b':'#dedad4'}}>{custo>0?fmtR(custo):'—'}</div>
                         <button onClick={()=>removerIngrediente(sp.id,idx)} style={{color:'#6b6860'}}><Trash2 size={12}/></button>
                       </div>
@@ -2490,7 +2490,7 @@ Use números reais. Seja direto.`
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{color:'#767069'}}>R$</span>
                     <input type="number" value={custoOpCad||(custoOp>0?String(Math.round(custoOp)):'')} onChange={e=>setCustoOpCad(e.target.value)}
-                      placeholder={custoOp>0?custoOp.toFixed(2):'0,00'} className="w-full pl-10 pr-4 py-3 rounded-xl text-white focus:outline-none"
+                      placeholder={custoOp>0?custoOp.toFixed(2):'0,00'} className="w-full pl-10 pr-4 py-3 rounded-xl text-[#1a1a1a] focus:outline-none"
                       style={{background:'#f5f4f0',border:'1px solid #f59e0b60'}}/>
                   </div>
                 </div>
@@ -2498,7 +2498,7 @@ Use números reais. Seja direto.`
                   <div className="flex items-center gap-1.5 mb-1"><label className="text-xs font-bold" style={{color:'#767069'}}>Número de Cadeiras / Postos</label><InfoBtn id="numCad"/></div>
                   <p className="text-xs mb-2" style={{color:'#6b6860'}}>Quantas cadeiras ou postos de atendimento tem o salão?</p>
                   <input type="number" value={numCad} onChange={e=>setNumCad(e.target.value)} placeholder="Ex: 10"
-                    className="w-full px-4 py-3 rounded-xl text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
+                    className="w-full px-4 py-3 rounded-xl text-[#1a1a1a] focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
                 </div>
               </div>
               {custPorCad>0&&(
@@ -2547,14 +2547,14 @@ Use números reais. Seja direto.`
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{color:'#767069'}}>R$</span>
                     <input type="number" value={fatMinM2||(pe>0?String(Math.round(pe)):'')} onChange={e=>setFatMinM2(e.target.value)}
-                      placeholder={pe>0?pe.toFixed(2):'0,00'} className="w-full pl-10 pr-4 py-3 rounded-xl text-white focus:outline-none"
+                      placeholder={pe>0?pe.toFixed(2):'0,00'} className="w-full pl-10 pr-4 py-3 rounded-xl text-[#1a1a1a] focus:outline-none"
                       style={{background:'#f5f4f0',border:'1px solid #06b6d460'}}/>
                   </div>
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5 mb-1"><label className="text-xs font-bold" style={{color:'#767069'}}>Metragem Total do Salão (m²)</label><InfoBtn id="mTotal"/></div>
                   <input type="number" value={mTotal} onChange={e=>setMTotal(e.target.value)} placeholder="Ex: 80"
-                    className="w-full px-4 py-3 rounded-xl text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
+                    className="w-full px-4 py-3 rounded-xl text-[#1a1a1a] focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
                 </div>
               </div>
               {fatPorM2>0&&(
@@ -2574,7 +2574,7 @@ Use números reais. Seja direto.`
                     <div className="flex items-center gap-1.5 mb-3"><p className="text-xs font-bold" style={{color:'#767069'}}>📏 Calcular para um espaço específico:</p><InfoBtn id="mSala"/></div>
                     <div className="flex gap-2 items-center">
                       <input type="number" value={mSala} onChange={e=>setMSala(e.target.value)} placeholder="Ex: 15 m²"
-                        className="flex-1 px-4 py-2.5 rounded-lg text-white text-sm focus:outline-none" style={{background:'#faf9f7',border:'1px solid #dedad4'}}/>
+                        className="flex-1 px-4 py-2.5 rounded-lg text-[#1a1a1a] text-sm focus:outline-none" style={{background:'#faf9f7',border:'1px solid #dedad4'}}/>
                       <span className="text-sm" style={{color:'#767069'}}>m²</span>
                     </div>
                     {fatSugSala>0&&(
@@ -2597,7 +2597,7 @@ Use números reais. Seja direto.`
             {!fatN ? (
               <div className="rounded-2xl p-10 text-center border" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
                 <p className="text-4xl mb-3">📊</p>
-                <p className="font-bold text-white mb-1">Nenhum dado ainda</p>
+                <p className="font-bold text-[#1a1a1a] mb-1">Nenhum dado ainda</p>
                 <p className="text-sm" style={{color:'#767069'}}>Preencha o Faturamento e as Despesas na aba <strong style={{color:'#7c6fe0'}}>Receitas e Despesas</strong> para ver os gráficos.</p>
               </div>
             ) : (
@@ -2889,17 +2889,17 @@ Use números reais. Seja direto.`
               <div className="grid grid-cols-2 gap-3 mb-3">
                 <div><label className="text-xs font-bold block mb-1" style={{color:'#767069'}}>Nome do Serviço *</label>
                   <input value={fsNome} onChange={e=>setFsNome(e.target.value)} placeholder="Ex: Coloração Completa"
-                    className="w-full px-3 py-2 rounded-xl text-sm text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/></div>
+                    className="w-full px-3 py-2 rounded-xl text-sm text-[#1a1a1a] focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/></div>
                 <div><label className="text-xs font-bold block mb-1" style={{color:'#767069'}}>Rateio Profissional (%)</label>
                   <input type="number" value={fsRateio} onChange={e=>setFsRateio(e.target.value)} placeholder="50"
-                    className="w-full px-3 py-2 rounded-xl text-sm text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/></div>
+                    className="w-full px-3 py-2 rounded-xl text-sm text-[#1a1a1a] focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/></div>
                 <div><label className="text-xs font-bold block mb-1" style={{color:'#767069'}}>Imposto (%)</label>
                   <input type="number" value={fsImposto} onChange={e=>setFsImposto(e.target.value)} placeholder="5"
-                    className="w-full px-3 py-2 rounded-xl text-sm text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/></div>
+                    className="w-full px-3 py-2 rounded-xl text-sm text-[#1a1a1a] focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/></div>
                 <div><label className="text-xs font-bold block mb-1" style={{color:'#767069'}}>Produto Padrão (R$)</label>
                   <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>R$</span>
                   <input type="number" value={fsProduto} onChange={e=>setFsProduto(e.target.value)} placeholder="0"
-                    className="w-full pl-9 pr-3 py-2 rounded-xl text-sm text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/></div></div>
+                    className="w-full pl-9 pr-3 py-2 rounded-xl text-sm text-[#1a1a1a] focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/></div></div>
               </div>
               <div className="flex items-center gap-3">
                 <button onClick={()=>salvarServico(editandoServ||undefined)} disabled={!fsNome||salvandoCat}
@@ -2915,9 +2915,9 @@ Use números reais. Seja direto.`
             {/* Lista */}
             <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
               <div className="flex items-center justify-between px-5 py-3 border-b" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
-                <span className="font-bold text-sm text-white">📋 Serviços Cadastrados ({servicosCatalogo.length})</span>
+                <span className="font-bold text-sm text-[#1a1a1a]">📋 Serviços Cadastrados ({servicosCatalogo.length})</span>
                 <input value={buscarServico} onChange={e=>setBuscarServico(e.target.value)} placeholder="🔍 Buscar serviço..."
-                  className="px-3 py-1.5 rounded-lg text-xs text-white focus:outline-none w-48" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/>
+                  className="px-3 py-1.5 rounded-lg text-xs text-[#1a1a1a] focus:outline-none w-48" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/>
               </div>
               {servicosCatalogo.filter(s=>s.nome.toLowerCase().includes(buscarServico.toLowerCase())).length===0
                 ? <p className="text-center py-8 text-sm" style={{color:'#6b6860'}}>Nenhum serviço cadastrado ainda</p>
@@ -2927,7 +2927,7 @@ Use números reais. Seja direto.`
                       onClick={()=>setAcordeaoServ(acordeaoServ===s.id?null:s.id)}>
                       <div className="flex items-center gap-3">
                         <span className="text-xs" style={{color:'#767069'}}>{acordeaoServ===s.id?'▼':'▶'}</span>
-                        <span className="text-sm font-bold text-white">{s.nome}</span>
+                        <span className="text-sm font-bold text-[#1a1a1a]">{s.nome}</span>
                       </div>
                       <div className="flex items-center gap-4">
                         <span className="text-xs" style={{color:'#7c6fe0'}}>Rateio: {s.rateio_pct}%</span>
@@ -2961,20 +2961,20 @@ Use números reais. Seja direto.`
               <div className="grid grid-cols-3 gap-3 mb-3">
                 <div className="col-span-2"><label className="text-xs font-bold block mb-1" style={{color:'#767069'}}>Nome do Produto *</label>
                   <input value={fNome} onChange={e=>setFNome(e.target.value)} placeholder="Ex: Tinta Color Sem Amônia"
-                    className="w-full px-3 py-2 rounded-xl text-sm text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/></div>
+                    className="w-full px-3 py-2 rounded-xl text-sm text-[#1a1a1a] focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/></div>
                 <div><label className="text-xs font-bold block mb-1" style={{color:'#767069'}}>Marca</label>
                   <input value={fMarca} onChange={e=>setFMarca(e.target.value)} placeholder="Ex: Wella"
-                    className="w-full px-3 py-2 rounded-xl text-sm text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/></div>
+                    className="w-full px-3 py-2 rounded-xl text-sm text-[#1a1a1a] focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/></div>
                 <div><label className="text-xs font-bold block mb-1" style={{color:'#767069'}}>Unidade</label>
-                  <select value={fUnid} onChange={e=>setFUnid(e.target.value)} className="w-full px-3 py-2 rounded-xl text-sm text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}>
+                  <select value={fUnid} onChange={e=>setFUnid(e.target.value)} className="w-full px-3 py-2 rounded-xl text-sm text-[#1a1a1a] focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}>
                     {['ml','g','und','L','kg','outros'].map(u=><option key={u} value={u}>{u}</option>)}</select></div>
                 <div><label className="text-xs font-bold block mb-1" style={{color:'#767069'}}>Qtd da Embalagem</label>
                   <input type="number" value={fQtd} onChange={e=>setFQtd(e.target.value)} placeholder="Ex: 60"
-                    className="w-full px-3 py-2 rounded-xl text-sm text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/></div>
+                    className="w-full px-3 py-2 rounded-xl text-sm text-[#1a1a1a] focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/></div>
                 <div><label className="text-xs font-bold block mb-1" style={{color:'#767069'}}>Preço da Embalagem (R$)</label>
                   <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>R$</span>
                   <input type="number" value={fPreco} onChange={e=>setFPreco(e.target.value)} placeholder="Ex: 35,27"
-                    className="w-full pl-9 pr-3 py-2 rounded-xl text-sm text-white focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/></div></div>
+                    className="w-full pl-9 pr-3 py-2 rounded-xl text-sm text-[#1a1a1a] focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/></div></div>
               </div>
               <div className="flex items-center gap-3">
                 <button onClick={()=>salvarProduto(editandoProd||undefined)} disabled={!fNome||salvandoCat}
@@ -2990,9 +2990,9 @@ Use números reais. Seja direto.`
             {/* Lista */}
             <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
               <div className="flex items-center justify-between px-5 py-3 border-b" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
-                <span className="font-bold text-sm text-white">📦 Produtos Cadastrados ({produtosCatalogo.length})</span>
+                <span className="font-bold text-sm text-[#1a1a1a]">📦 Produtos Cadastrados ({produtosCatalogo.length})</span>
                 <input value={buscarProduto} onChange={e=>setBuscarProduto(e.target.value)} placeholder="🔍 Buscar produto..."
-                  className="px-3 py-1.5 rounded-lg text-xs text-white focus:outline-none w-48" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/>
+                  className="px-3 py-1.5 rounded-lg text-xs text-[#1a1a1a] focus:outline-none w-48" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/>
               </div>
               {produtosCatalogo.filter(p=>p.nome.toLowerCase().includes(buscarProduto.toLowerCase())).length===0
                 ? <p className="text-center py-8 text-sm" style={{color:'#6b6860'}}>Nenhum produto cadastrado ainda</p>
@@ -3002,7 +3002,7 @@ Use números reais. Seja direto.`
                       onClick={()=>setAcordeaoProd(acordeaoProd===p.id?null:p.id)}>
                       <div className="flex items-center gap-3">
                         <span className="text-xs" style={{color:'#767069'}}>{acordeaoProd===p.id?'▼':'▶'}</span>
-                        <span className="text-sm font-bold text-white">{p.nome}</span>
+                        <span className="text-sm font-bold text-[#1a1a1a]">{p.nome}</span>
                         {p.marca&&<span className="text-xs px-2 py-0.5 rounded-full" style={{background:'#f59e0b20',color:'#b45309'}}>{p.marca}</span>}
                       </div>
                       <div className="flex items-center gap-4">
@@ -3049,13 +3049,13 @@ Use números reais. Seja direto.`
                 <div className="col-span-2">
                   <label className="text-[10px] font-bold mb-1 block" style={{color:'#767069'}}>NOME DA DESPESA</label>
                   <input value={fdNome} onChange={e=>setFdNome(e.target.value)} placeholder="Ex: Aluguel, Internet, Salários..."
-                    className="w-full px-3 py-2 rounded-lg text-sm text-white focus:outline-none"
+                    className="w-full px-3 py-2 rounded-lg text-sm text-[#1a1a1a] focus:outline-none"
                     style={{background:'#faf9f7',border:'1px solid #dedad4'}}/>
                 </div>
                 <div>
                   <label className="text-[10px] font-bold mb-1 block" style={{color:'#767069'}}>CATEGORIA</label>
                   <select value={fdCat} onChange={e=>setFdCat(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg text-sm text-white focus:outline-none"
+                    className="w-full px-3 py-2 rounded-lg text-sm text-[#1a1a1a] focus:outline-none"
                     style={{background:'#faf9f7',border:'1px solid #dedad4'}}>
                     <option value="indireta">Indireta (fixa)</option>
                     <option value="direta">Direta</option>
@@ -3066,7 +3066,7 @@ Use números reais. Seja direto.`
               <div className="mt-3">
                 <label className="text-[10px] font-bold mb-1 block" style={{color:'#767069'}}>OBSERVAÇÃO (opcional)</label>
                 <input value={fdObs} onChange={e=>setFdObs(e.target.value)} placeholder="Descrição ou dica para esta despesa"
-                  className="w-full px-3 py-2 rounded-lg text-sm text-white focus:outline-none"
+                  className="w-full px-3 py-2 rounded-lg text-sm text-[#1a1a1a] focus:outline-none"
                   style={{background:'#faf9f7',border:'1px solid #dedad4'}}/>
               </div>
               <div className="flex gap-2 mt-3">
@@ -3108,7 +3108,7 @@ Use números reais. Seja direto.`
                           {itens.map(d=>(
                             <div key={d.id} className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-white/3" style={{background:'#ffffff',border:'1px solid #e8e6e010'}}>
                               <div>
-                                <span className="text-sm text-white">{d.nome}</span>
+                                <span className="text-sm text-[#1a1a1a]">{d.nome}</span>
                                 {d.observacao && <span className="ml-2 text-[10px]" style={{color:'#6b6860'}}>{d.observacao}</span>}
                               </div>
                               <div className="flex gap-2">
@@ -3148,3 +3148,4 @@ Use números reais. Seja direto.`
     setServicoProd(p=>p.map(s=>s.id===sId?{...s,ingredientes:s.ingredientes.filter((_,idx)=>idx!==iIdx)}:s))
   }
 }
+
