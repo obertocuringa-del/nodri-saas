@@ -10,12 +10,17 @@ export async function DELETE() {
   const salaoId = payload?.salaoId
   if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
-  const { error, count } = await supabaseAdmin
-    .from('relatorio_periodos')
-    .delete({ count: 'exact' })
-    .eq('salao_id', salaoId)
+  const results: Record<string, number> = {}
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  const tabelas = ['relatorio_periodos', 'atendimentos_raw', 'agendamentos_raw'] as const
+  for (const tabela of tabelas) {
+    const { error, count } = await supabaseAdmin
+      .from(tabela)
+      .delete({ count: 'exact' })
+      .eq('salao_id', salaoId)
+    if (error) return NextResponse.json({ error: `Erro em ${tabela}: ${error.message}` }, { status: 500 })
+    results[tabela] = count ?? 0
+  }
 
-  return NextResponse.json({ ok: true, deletados: count })
+  return NextResponse.json({ ok: true, deletados: results })
 }

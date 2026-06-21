@@ -46,8 +46,12 @@ export default function ImportarExcelPage() {
     const data = await res.json()
     localStorage.removeItem('nodri_relatorios_v2')
     setResetando(false)
-    if (data.ok) toast.success(`Banco limpo! ${data.deletados} períodos removidos. Agora reimporte os arquivos.`)
-    else toast.error('Erro ao resetar: ' + data.error)
+    if (data.ok) {
+      const d = data.deletados || {}
+      toast.success(
+        `Banco limpo! Removidos: ${d.relatorio_periodos ?? 0} períodos · ${d.atendimentos_raw ?? 0} atendimentos · ${d.agendamentos_raw ?? 0} agendamentos`
+      )
+    } else toast.error('Erro ao resetar: ' + data.error)
   }
 
   function selecionarArquivo(f: File) {
