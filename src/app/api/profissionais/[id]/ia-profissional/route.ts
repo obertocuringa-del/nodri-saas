@@ -21,6 +21,16 @@ async function geminiCall(apiKey: string, modelo: string, prompt: string): Promi
   return json?.candidates?.[0]?.content?.parts?.[0]?.text || ''
 }
 
+// Regras comuns para todos os prompts
+const REGRAS_GERAIS = `
+REGRAS OBRIGATÓRIAS (violá-las invalida a resposta):
+- NUNCA sugira shampoo, higienização, lavagem ou qualquer serviço de preparo como parte de um combo — eles são automaticamente realizados quando necessário e não geram venda adicional
+- Se houver serviços com nomes semelhantes ou mesma categoria (ex: CORTE 10, CORTE 18, CORTE 19, CORTE 20), escolha apenas O MAIS RENTÁVEL (maior comissão) como representante — não repita a mesma categoria
+- Priorize SEMPRE a combinação de ticket médio + comissão: o que gera mais valor real para o profissional
+- Varie ao máximo os serviços sugeridos — use toda a gama de habilidades do profissional, não apenas os mais vendidos
+- Pense em probabilidades reais: o cliente que faz X tem alta chance de aceitar Y?
+`
+
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const salaoId = await getSalaoId()
   if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
@@ -40,42 +50,50 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   // ── BUNDLE IA ─────────────────────────────────────────────────────────────
   if (tipo === 'bundle') {
-    const { profNome, cargo, servicos_mais_vendidos, bundles_existentes, todos_servicos } = dados
+    const { profNome, cargo, servicos_mais_vendidos, bundles_existentes, todos_servicos_com_comissao } = dados
 
-    const prompt = `Você é um especialista em estratégia de vendas para salões de beleza brasileiros.
+    const servicosStr = (todos_servicos_com_comissao || [])
+      .map((s: any) => `${s.nome} (comissão: R$${s.comissao?.toFixed(2) || '0,00'})`)
+      .join('\n')
 
-Profissional: ${profNome} — Cargo: ${cargo}
+    const maisVendeStr = (servicos_mais_vendidos || [])
+      .map((s: any) => `${s.servico} — ${s.quantidade}x realizações, ${s.pct}% do total`)
+      .join('\n')
 
-SERVIÇOS QUE MAIS VENDE (histórico real):
-${(servicos_mais_vendidos || []).map((s: any, i: number) => `${i + 1}. ${s.servico} (${s.quantidade}x, ${s.pct}% do total)`).join('\n')}
+    const bundlesExistentesStr = (bundles_existentes || [])
+      .map((b: any) => `${b.servico_a} + ${b.servico_b}`)
+      .join('\n') || 'Nenhum ainda'
 
-BUNDLES JÁ IDENTIFICADOS NO SISTEMA (NÃO REPITA ESSES):
-${(bundles_existentes || []).map((b: any) => `- ${b.servico_a} + ${b.servico_b}`).join('\n') || 'Nenhum ainda'}
+    const prompt = `Você é especialista em estratégia de vendas para salões de beleza brasileiros.
 
-TODOS OS SERVIÇOS HABILITADOS PARA ESTE PROFISSIONAL:
-${(todos_servicos || []).join(', ')}
+Profissional: ${profNome} — ${cargo}
 
-REGRAS IMPORTANTÍSSIMAS DE SENSO COMUM (aplique sempre):
-- NUNCA sugira "Higienização + Nutrição" ou "Higienização + Hidratação" — se vai nutrir/hidratar, vai lavar o cabelo automaticamente, é redundante
-- NUNCA sugira "Troca de Esmalte + Manicure" — a manicure já inclui esmalte
-- NUNCA sugira "Remoção de Top Coat + Manicure" pois não sabemos se a cliente vem com esmalte em gel
-- NUNCA sugira combos onde um serviço já está incluso no outro por natureza
-- Priorize combos que REALMENTE aumentam o ticket médio com serviços complementares que fazem sentido juntos
+TODOS OS SERVIÇOS HABILITADOS COM COMISSÃO:
+${servicosStr}
 
-OBJETIVO: Gerar 10 NOVAS sugestões de bundle (combo de 2 serviços) que:
-1. Aumentem o ticket médio do profissional
-2. Façam sentido técnico e prático juntos
-3. Usem serviços que este profissional realmente faz
-4. Variem o mix — não repita o mesmo serviço em muitos combos
-5. Sejam diferentes dos bundles já identificados acima
+SERVIÇOS QUE MAIS VENDE (histórico):
+${maisVendeStr}
 
-FORMATO DE RESPOSTA (JSON puro, sem markdown, sem explicação fora do JSON):
+COMBOS JÁ IDENTIFICADOS (NÃO REPITA):
+${bundlesExistentesStr}
+
+${REGRAS_GERAIS}
+
+OBJETIVO: Gerar 10 NOVOS combos (2 serviços) que:
+1. Maximizem o ticket médio E a comissão do profissional
+2. Façam sentido técnico e sejam vendáveis no dia a dia
+3. Variem bastante — explore toda a gama de habilidades, não só os top serviços
+4. Sejam completamente diferentes dos combos já existentes acima
+5. Para cada combo, calcule a comissão combinada dos dois serviços
+
+FORMATO (JSON puro, sem markdown):
 [
   {
-    "servico_a": "NOME EXATO DO SERVIÇO A",
-    "servico_b": "NOME EXATO DO SERVIÇO B",
-    "motivo": "Por que esse combo faz sentido e aumenta o ticket (1 frase direta)",
-    "oportunidade": "Como oferecer — o que o profissional deve dizer ao cliente (1 frase prática)"
+    "servico_a": "NOME EXATO",
+    "servico_b": "NOME EXATO",
+    "comissao_total": 0.00,
+    "motivo": "Por que esse combo faz sentido e aumenta o ticket (1 frase direta e específica)",
+    "oportunidade": "Frase exata que o profissional pode dizer ao cliente para oferecer esse combo"
   }
 ]`
 
@@ -89,6 +107,132 @@ FORMATO DE RESPOSTA (JSON puro, sem markdown, sem explicação fora do JSON):
     }
   }
 
+  // ── OPORTUNIDADES IA ──────────────────────────────────────────────────────
+  if (tipo === 'oportunidades') {
+    const { profNome, cargo, mais_vende, deveria_vender, todos_servicos_com_comissao } = dados
+
+    const servicosStr = (todos_servicos_com_comissao || [])
+      .map((s: any) => `${s.nome} (comissão: R$${s.comissao?.toFixed(2) || '0,00'})`)
+      .join('\n')
+
+    const maisVendeStr = (mais_vende || [])
+      .map((s: any) => `${s.servico} — ${s.quantidade}x, R$${s.valor?.toFixed(2) || '0'}`)
+      .join('\n')
+
+    const deveriaStr = (deveria_vender || [])
+      .map((s: any) => `${s.servico} — ${s.motivo}`)
+      .join('\n') || 'Nenhum identificado'
+
+    const prompt = `Você é especialista em estratégia de vendas para salões de beleza brasileiros.
+
+Profissional: ${profNome} — ${cargo}
+
+SERVIÇOS MAIS VENDIDOS (histórico real):
+${maisVendeStr}
+
+SERVIÇOS HABILITADOS QUE RARAMENTE OU NUNCA VENDE:
+${deveriaStr}
+
+TODOS OS SERVIÇOS COM COMISSÃO:
+${servicosStr}
+
+${REGRAS_GERAIS}
+
+OBJETIVO: Identificar 10 OPORTUNIDADES individuais (serviços isolados, não combos) que este profissional deveria explorar mais, priorizando:
+1. Alto potencial de aceitação pelo perfil de clientes
+2. Alta comissão para o profissional
+3. Serviços que o profissional faz mas não explora — ou que clientes habituais precisam e não pedem
+4. Variedade — não repita categorias similares
+
+FORMATO (JSON puro, sem markdown):
+[
+  {
+    "servico": "NOME EXATO",
+    "comissao": 0.00,
+    "potencial": "alto | médio",
+    "motivo": "Por que este serviço é uma oportunidade real para este profissional (1 frase específica)",
+    "abordagem": "Como oferecer — frase prática que o profissional pode usar com o cliente"
+  }
+]`
+
+    const resposta = await geminiCall(config.api_key, modelo, prompt)
+    try {
+      const limpo = resposta.replace(/```json|```/g, '').trim()
+      const oportunidades = JSON.parse(limpo)
+      return NextResponse.json({ oportunidades })
+    } catch {
+      return NextResponse.json({ error: 'IA retornou formato inválido', raw: resposta }, { status: 500 })
+    }
+  }
+
+  // ── META IA ───────────────────────────────────────────────────────────────
+  if (tipo === 'meta') {
+    const { profNome, cargo, faltam, meta, realizado, todos_servicos_com_comissao, historico_servicos } = dados
+
+    const servicosStr = (todos_servicos_com_comissao || [])
+      .map((s: any) => `${s.nome}: comissão R$${s.comissao?.toFixed(2) || '0,00'} | preço R$${s.preco?.toFixed(2) || '0,00'}`)
+      .join('\n')
+
+    const historicoStr = (historico_servicos || [])
+      .slice(0, 10)
+      .map((s: any) => `${s.servico}: ${s.quantidade}x realizações`)
+      .join('\n') || 'Sem histórico'
+
+    const prompt = `Você é especialista em estratégia de vendas para salões de beleza brasileiros.
+
+Profissional: ${profNome} — ${cargo}
+Meta do mês: R$${meta?.toFixed(2) || '0'}
+Já realizado: R$${realizado?.toFixed(2) || '0'}
+FALTAM: R$${faltam?.toFixed(2) || '0'} em COMISSÕES para bater a meta
+
+SERVIÇOS HABILITADOS (nome | comissão por serviço | preço para cliente):
+${servicosStr}
+
+HISTÓRICO DE SERVIÇOS MAIS REALIZADOS:
+${historicoStr}
+
+${REGRAS_GERAIS}
+
+OBJETIVO: Criar um PLANO ESTRATÉGICO personalizado para este profissional bater a meta, com:
+1. Mix principal: combinação de 2-3 serviços que juntos maximizam comissão e têm alta probabilidade de venda
+2. As quantidades de cada serviço devem somar exatamente (ou mais que) R$${faltam?.toFixed(2)} em comissão
+3. Estratégias alternativas com serviços diferentes
+4. Dica tática prática para o dia a dia
+
+FORMATO (JSON puro, sem markdown):
+{
+  "resumo": "Frase motivacional e direta sobre o que precisa acontecer (máx 2 frases)",
+  "mix_principal": [
+    {
+      "servico": "NOME EXATO",
+      "comissao_unit": 0.00,
+      "quantidade": 0,
+      "comissao_total": 0.00,
+      "porque": "Por que focar neste serviço (1 frase)"
+    }
+  ],
+  "total_mix_comissao": 0.00,
+  "alternativas": [
+    {
+      "servico": "NOME EXATO",
+      "comissao_unit": 0.00,
+      "quantidade_necessaria": 0,
+      "comissao_total": 0.00
+    }
+  ],
+  "dica_tatica": "1 dica prática e específica para este profissional converter mais neste mês"
+}`
+
+    const resposta = await geminiCall(config.api_key, modelo, prompt)
+    try {
+      const limpo = resposta.replace(/```json|```/g, '').trim()
+      const plano = JSON.parse(limpo)
+      return NextResponse.json({ plano })
+    } catch {
+      return NextResponse.json({ error: 'IA retornou formato inválido', raw: resposta }, { status: 500 })
+    }
+  }
+
   // ── OCORRÊNCIAS IA ────────────────────────────────────────────────────────
   if (tipo === 'ocorrencias') {
     const { profNome, cargo, ocorrencias, periodo1, periodo2, total_p1, total_p2 } = dados
@@ -97,30 +241,25 @@ FORMATO DE RESPOSTA (JSON puro, sem markdown, sem explicação fora do JSON):
       .map((o: any) => `- ${o.tipo}: ${o.p1 || 0}x em P1 → ${o.p2 || 0}x em P2 (${o.variacao !== null ? (o.variacao >= 0 ? '+' : '') + o.variacao + '%' : o.p2 > 0 ? 'NOVO' : '—'})`)
       .join('\n')
 
-    const prompt = `Você é um consultor de gestão de salões de beleza. Preciso que você analise o comportamento de ocorrências de um profissional e gere um impacto DIRETO, FORTE e CLARO sobre o que isso causa para cada parte envolvida.
+    const prompt = `Você é um consultor de gestão de salões de beleza. Analise as ocorrências e gere um impacto DIRETO, FORTE e CLARO.
 
 Profissional: ${profNome} — ${cargo}
 Período anterior (P1): ${periodo1} — ${total_p1} ocorrências
 Período atual (P2): ${periodo2} — ${total_p2} ocorrências
 
-OCORRÊNCIAS REGISTRADAS:
-${linhas || 'Nenhuma ocorrência registrada'}
+OCORRÊNCIAS:
+${linhas || 'Nenhuma registrada'}
 
-INSTRUÇÕES:
-- Seja direto, sem rodeios, sem enrolação
-- Use linguagem profissional mas acessível (não acadêmica)
-- Não proteja o profissional — se o comportamento é prejudicial, diga com clareza
-- NÃO use bullet points genéricos — seja específico para o tipo de ocorrência deste profissional
-- O gestor vai mostrar essa análise para o profissional, então precisa ter impacto real
+Seja direto, sem rodeios. Não proteja o profissional. Use linguagem profissional mas acessível.
 
-FORMATO DE RESPOSTA (JSON puro, sem markdown):
+FORMATO (JSON puro, sem markdown):
 {
-  "resumo": "1 parágrafo resumindo o padrão de comportamento observado (máx 3 frases)",
-  "impacto_profissional": "O que esse comportamento está gerando para a carreira e imagem deste profissional (2-3 frases fortes)",
-  "impacto_cliente": "O que o cliente sente e como isso afeta a fidelização (2-3 frases)",
-  "impacto_recepcao": "O que a recepção precisa lidar por causa disso (2-3 frases práticas)",
-  "impacto_salao": "O custo financeiro e reputacional para o salão (2-3 frases com dados quando possível)",
-  "mensagem_profissional": "Uma mensagem direta para o profissional — como se você fosse um consultor falando com ele pessoalmente. Máx 4 frases. Sem ser agressivo, mas sem ser mole."
+  "resumo": "Padrão observado em 1-3 frases",
+  "impacto_profissional": "Impacto na carreira e imagem (2-3 frases fortes)",
+  "impacto_cliente": "O que o cliente sente (2-3 frases)",
+  "impacto_recepcao": "O que a recepção lida (2-3 frases práticas)",
+  "impacto_salao": "Custo financeiro e reputacional (2-3 frases)",
+  "mensagem_profissional": "Mensagem direta ao profissional — consultor falando pessoalmente. Máx 4 frases. Direto, sem ser agressivo, mas sem papas na língua."
 }`
 
     const resposta = await geminiCall(config.api_key, modelo, prompt)

@@ -2234,6 +2234,10 @@ export default function PerfilProfissionalPage() {
   const [loadBundleIA, setLoadBundleIA] = useState(false)
   const [ocorrImpacto, setOcorrImpacto] = useState<any|null>(null)
   const [loadOcorrImpacto, setLoadOcorrImpacto] = useState(false)
+  const [oportunidadesIA, setOportunidadesIA] = useState<any[]|null>(null)
+  const [loadOportunidadesIA, setLoadOportunidadesIA] = useState(false)
+  const [metaIA, setMetaIA] = useState<any|null>(null)
+  const [loadMetaIA, setLoadMetaIA] = useState(false)
   const [perdidosDataInicio, setPerdidosDataInicio] = useState(`01/01/${anoAtual - 1}`)
   const [perdidosDataFim, setPerdidosDataFim] = useState(`31/12/${anoAtual}`)
   const [subTabPerdidos, setSubTabPerdidos] = useState<'outro-servico'|'saiu-salao'|'outra-categoria'>('outra-categoria')
@@ -3394,14 +3398,109 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                     )
                   })()}
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <button onClick={gerarEstrategia} disabled={gerandoEstrategia}
                       style={{ background: 'linear-gradient(135deg, #5b4fcf, #f43f8e)' }}
                       className="flex items-center gap-2 text-white px-4 py-2.5 rounded-xl text-[12px] font-bold disabled:opacity-50">
                       {gerandoEstrategia ? <Loader2 size={14} className="animate-spin"/> : null}
                       {metaInfo.plano ? '🔄 Recalcular Estratégia' : '🚀 Criar Estratégia para Bater a Meta'}
                     </button>
+                    <button
+                      onClick={async () => {
+                        if (loadMetaIA) return
+                        setLoadMetaIA(true)
+                        setMetaIA(null)
+                        try {
+                          const habilitadosComComissao = servicosSalao
+                            .filter(s => (prof?.servicos_habilitados||[]).includes(s.id) && (s.comissao_valor||0) > 0)
+                            .map(s => ({ nome: s.nome, comissao: s.comissao_valor || 0, preco: s.preco_fixo || s.preco_min || 0 }))
+                          const historico = analiseData.oportunidades?.mais_vende || []
+                          const res = await fetch(`/api/profissionais/${id}/ia-profissional`, {
+                            method: 'POST',
+                            headers: {'Content-Type':'application/json'},
+                            body: JSON.stringify({
+                              tipo: 'meta',
+                              dados: {
+                                profNome: prof?.nome_completo || '',
+                                cargo: prof?.cargo || '',
+                                faltam: metaInfo.faltam || 0,
+                                meta: metaInfo.meta_final || 0,
+                                realizado: metaInfo.realizado || 0,
+                                todos_servicos_com_comissao: habilitadosComComissao,
+                                historico_servicos: historico,
+                              }
+                            })
+                          })
+                          const json = await res.json()
+                          setMetaIA(json.plano || null)
+                        } catch { setMetaIA(null) }
+                        finally { setLoadMetaIA(false) }
+                      }}
+                      disabled={loadMetaIA}
+                      className="flex items-center gap-2 bg-nodri-cyan text-nodri-dark px-4 py-2.5 rounded-xl text-[12px] font-bold hover:opacity-90 disabled:opacity-50"
+                    >
+                      {loadMetaIA ? <><Loader2 size={14} className="animate-spin"/> Gerando...</> : '🤖 Gerar com IA'}
+                    </button>
                   </div>
+
+                  {/* Plano IA para bater a meta */}
+                  {loadMetaIA && (
+                    <div className="flex items-center justify-center py-8 gap-2 text-nodri-t3 text-[12px]">
+                      <Loader2 size={16} className="animate-spin text-nodri-cyan"/>
+                      Calculando estratégia personalizada com base nas comissões...
+                    </div>
+                  )}
+                  {metaIA && (
+                    <div className="bg-nodri-surface border border-nodri-cyan/30 rounded-2xl p-5 space-y-4">
+                      <h3 className="font-syne font-bold text-[13px] text-nodri-cyan">🤖 Plano da IA para Bater a Meta</h3>
+                      <div className="bg-nodri-cyan/10 border border-nodri-cyan/20 rounded-xl p-3">
+                        <p className="text-[11px] text-nodri-t1 leading-relaxed">{metaIA.resumo}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-nodri-t3 font-semibold uppercase tracking-wider mb-2">Mix Principal</p>
+                        <div className="space-y-2">
+                          {(metaIA.mix_principal||[]).map((item:any,i:number) => (
+                            <div key={i} className="flex items-center justify-between p-3 bg-nodri-card rounded-xl border border-nodri-border">
+                              <div className="flex-1">
+                                <span className="text-[12px] text-nodri-t1 font-semibold">{item.servico}</span>
+                                <p className="text-[10px] text-nodri-t3 mt-0.5">{item.porque}</p>
+                              </div>
+                              <div className="text-right shrink-0 ml-3">
+                                <div className="font-syne font-bold text-[18px] text-nodri-cyan">{item.quantidade}×</div>
+                                <div className="text-[9px] text-nodri-t3">{new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(item.comissao_unit)}/un</div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        {metaIA.total_mix_comissao > 0 && (
+                          <div className="mt-2 text-right text-[11px] font-bold text-nodri-cyan">
+                            Total em comissão: {new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(metaIA.total_mix_comissao)}
+                          </div>
+                        )}
+                      </div>
+                      {(metaIA.alternativas||[]).length > 0 && (
+                        <div>
+                          <p className="text-[10px] text-nodri-t3 font-semibold uppercase tracking-wider mb-2">Alternativas (serviço único)</p>
+                          <div className="grid grid-cols-2 gap-2">
+                            {metaIA.alternativas.map((item:any,i:number) => (
+                              <div key={i} className="p-2.5 bg-nodri-card rounded-lg border border-nodri-border text-center">
+                                <div className="text-[10px] text-nodri-t3 truncate">{item.servico}</div>
+                                <div className="font-bold text-[16px] text-nodri-cyan">{item.quantidade_necessaria}×</div>
+                                <div className="text-[9px] text-nodri-t3">{new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(item.comissao_unit)}/un</div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {metaIA.dica_tatica && (
+                        <div className="bg-nodri-purple/10 border border-nodri-purple/20 rounded-xl p-3">
+                          <p className="text-[10px] font-bold text-nodri-purple mb-1">💡 Dica Tática</p>
+                          <p className="text-[11px] text-nodri-t2 leading-relaxed">{metaIA.dica_tatica}</p>
+                        </div>
+                      )}
+                      <button onClick={() => setMetaIA(null)} className="text-[10px] text-nodri-t3 hover:text-nodri-t2">↩ Limpar plano</button>
+                    </div>
+                  )}
 
                   {/* Rascunho recém-gerado, aguardando confirmação */}
                   {rascunhoEstrategia && (
@@ -4070,6 +4169,78 @@ ${nuncaRows?`<div class="sec"><div class="sec-title">🔴 Serviços que Nunca Of
                       <p className="text-[13px] mt-3">Nenhum dado disponível. Verifique os serviços habilitados.</p>
                     </div>
                   )}
+
+                  {/* Card IA — Mais Oportunidades */}
+                  <div className="bg-nodri-surface border border-amber-500/30 rounded-2xl p-5">
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div>
+                        <h3 className="font-syne font-bold text-[13px] text-amber-400">✨ Mais Oportunidades com IA</h3>
+                        <p className="text-[10px] text-nodri-t3 mt-0.5">A IA identifica oportunidades reais com base nas habilidades e comissões deste profissional</p>
+                      </div>
+                      <button
+                        onClick={async () => {
+                          if (loadOportunidadesIA) return
+                          setLoadOportunidadesIA(true)
+                          setOportunidadesIA(null)
+                          try {
+                            const habilitadosComComissao = servicosSalao
+                              .filter(s => (prof?.servicos_habilitados||[]).includes(s.id))
+                              .map(s => ({ nome: s.nome, comissao: s.comissao_valor || 0, preco: s.preco_fixo || s.preco_min || 0 }))
+                            const res = await fetch(`/api/profissionais/${id}/ia-profissional`, {
+                              method: 'POST',
+                              headers: {'Content-Type':'application/json'},
+                              body: JSON.stringify({
+                                tipo: 'oportunidades',
+                                dados: {
+                                  profNome: prof?.nome_completo || '',
+                                  cargo: prof?.cargo || '',
+                                  mais_vende: d.mais_vende || [],
+                                  deveria_vender: d.deveria_vender || [],
+                                  todos_servicos_com_comissao: habilitadosComComissao,
+                                }
+                              })
+                            })
+                            const json = await res.json()
+                            setOportunidadesIA(json.oportunidades || [])
+                          } catch { setOportunidadesIA([]) }
+                          finally { setLoadOportunidadesIA(false) }
+                        }}
+                        className="shrink-0 flex items-center gap-2 bg-amber-500 text-white text-[11px] font-semibold px-4 py-2 rounded-xl hover:opacity-90 transition"
+                      >
+                        {loadOportunidadesIA ? <><Loader2 size={12} className="animate-spin"/> Analisando...</> : '🤖 Gerar com IA'}
+                      </button>
+                    </div>
+                    {oportunidadesIA === null && !loadOportunidadesIA && (
+                      <p className="text-[11px] text-nodri-t3 text-center py-4">Clique em "Gerar com IA" para ver oportunidades personalizadas</p>
+                    )}
+                    {loadOportunidadesIA && (
+                      <div className="flex items-center justify-center py-8 gap-2 text-nodri-t3 text-[12px]">
+                        <Loader2 size={16} className="animate-spin text-amber-500"/>
+                        Identificando oportunidades com base nas habilidades...
+                      </div>
+                    )}
+                    {oportunidadesIA && oportunidadesIA.length > 0 && (
+                      <div className="space-y-2">
+                        {oportunidadesIA.map((op:any, i:number) => (
+                          <div key={i} className="bg-nodri-card border border-amber-500/15 rounded-xl p-3">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-[11px] font-bold text-nodri-t1">{op.servico}</span>
+                              <div className="flex items-center gap-2">
+                                {op.comissao > 0 && <span className="text-[10px] text-nodri-t3">comissão {new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(op.comissao)}</span>}
+                                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${op.potencial==='alto'?'bg-green-100 text-green-700':'bg-amber-100 text-amber-700'}`}>{op.potencial}</span>
+                              </div>
+                            </div>
+                            <p className="text-[10px] text-nodri-t3 mb-1">📊 {op.motivo}</p>
+                            <p className="text-[10px] text-amber-500 font-semibold">💬 {op.abordagem}</p>
+                          </div>
+                        ))}
+                        <button onClick={() => setOportunidadesIA(null)} className="text-[10px] text-nodri-t3 hover:text-nodri-t2 mt-1">↩ Limpar sugestões</button>
+                      </div>
+                    )}
+                    {oportunidadesIA && oportunidadesIA.length === 0 && (
+                      <p className="text-[11px] text-nodri-t3 text-center py-4">A IA não conseguiu gerar oportunidades. Tente novamente.</p>
+                    )}
+                  </div>
                 </>
               )
             })()}
@@ -4167,7 +4338,9 @@ ${paresRows?`<table class="tbl"><thead><tr><th>#</th><th>Serviço A</th><th>Serv
                               cargo: prof?.cargo || '',
                               servicos_mais_vendidos: op?.mais_vende || [],
                               bundles_existentes: bd?.pares || [],
-                              todos_servicos: [...(op?.mais_vende||[]).map((s:any)=>s.servico), ...(op?.deveria_vender||[]).map((s:any)=>s.servico)],
+                              todos_servicos_com_comissao: servicosSalao
+                                .filter(s => (prof?.servicos_habilitados||[]).includes(s.id))
+                                .map(s => ({ nome: s.nome, comissao: s.comissao_valor || 0, preco: s.preco_fixo || s.preco_min || 0 })),
                             }
                           })
                         })
