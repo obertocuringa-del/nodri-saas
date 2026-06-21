@@ -3694,10 +3694,14 @@ ${fieisRows?`<div class="sec"><div class="sec-title">Clientes Fiéis ❤️ (${d
                     const labelAnos = anosFiltro.join(' + ')
 
                     // Filtra clientes fiéis pela última visita dentro dos anos selecionados
+                    // data_comanda pode ser DD/MM/YYYY ou YYYY-MM-DD
+                    const extrairAno = (dt: string) => {
+                      if (!dt) return 0
+                      if (dt.includes('/')) return parseInt(dt.split('/')[2]) // DD/MM/YYYY → ano
+                      return parseInt(dt.slice(0,4)) // YYYY-MM-DD → ano
+                    }
                     const fieisFiltr = (d.detalhes_fieis||[]).filter((f:any) => {
-                      if (!f.ultimaVisita) return false
-                      const anoVisita = parseInt(f.ultimaVisita.slice(0,4))
-                      return anosFiltro.includes(anoVisita)
+                      return anosFiltro.includes(extrairAno(f.ultimaVisita))
                     })
                     const clientesFieisFilt = fieisFiltr.length
 

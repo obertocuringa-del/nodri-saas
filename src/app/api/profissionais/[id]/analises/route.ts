@@ -123,25 +123,40 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       }
 
       const hoje = new Date()
-      const clienteMap: Record<string, { total: number; comProf: number; ultimaVisita: string }> = {}
+      // Converte data_comanda (DD/MM/YYYY ou YYYY-MM-DD) para Date
+      const parseDt = (dt: string): Date => {
+        if (!dt) return new Date(0)
+        if (dt.includes('/')) {
+          const [d, m, y] = dt.split('/')
+          return new Date(parseInt(y), parseInt(m) - 1, parseInt(d))
+        }
+        return new Date(dt)
+      }
+      const clienteMap: Record<string, { total: number; comProf: number; ultimaVisita: string; ultimaData: Date }> = {}
       for (const r of rawTodos) {
         const cli = (r.cliente || '').trim()
         if (!cli) continue
-        if (!clienteMap[cli]) clienteMap[cli] = { total: 0, comProf: 0, ultimaVisita: '' }
+        if (!clienteMap[cli]) clienteMap[cli] = { total: 0, comProf: 0, ultimaVisita: '', ultimaData: new Date(0) }
         clienteMap[cli].total++
         if (matchProf({ profissional: r.profissional }, tokens, apelido, nomeCompleto)) {
           clienteMap[cli].comProf++
         }
         const dt = r.data_comanda || ''
-        if (dt > clienteMap[cli].ultimaVisita) clienteMap[cli].ultimaVisita = dt
+        if (dt) {
+          const dtParsed = parseDt(dt)
+          if (dtParsed > clienteMap[cli].ultimaData) {
+            clienteMap[cli].ultimaData = dtParsed
+            clienteMap[cli].ultimaVisita = dt
+          }
+        }
       }
 
       for (const [cli, info] of Object.entries(clienteMap)) {
         if (info.total < 4) continue
         const pctProf = info.comProf / info.total
         if (pctProf < 0.8) continue
-        const diasDesdeUltima = info.ultimaVisita
-          ? Math.floor((hoje.getTime() - new Date(info.ultimaVisita).getTime()) / 86400000)
+        const diasDesdeUltima = info.ultimaData.getTime() > 0
+          ? Math.floor((hoje.getTime() - info.ultimaData.getTime()) / 86400000)
           : 999
         if (diasDesdeUltima > 90) continue
         clientesFieis++
