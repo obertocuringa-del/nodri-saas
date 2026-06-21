@@ -79,15 +79,20 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
     const pct = fatTotal > 0 ? Math.round((fatProf / fatTotal) * 1000) / 10 : 0
 
-    // Clientes exclusivos desse profissional (que só foram atendidos por ele)
-    let clientesExclusivos = 0
+    // Impacto mensal = média real (total / meses com dados)
+    const mesesComDados = fatPorMes.filter(m => m.fat_prof > 0).length
+    const impactoMensal = mesesComDados > 0 ? Math.round(fatProf / mesesComDados * 100) / 100 : 0
+
+    // Clientes Fiéis: ≥4 atendimentos no salão, ≥80% com este prof, última visita ≤90 dias
+    let clientesFieis = 0
+    const detalhesFieis: Array<{ cliente: string; total: number; comProf: number; pct: number; ultimaVisita: string }> = []
     try {
       let rawTodos: any[] = []
       let from = 0
       while (true) {
         const { data } = await supabaseAdmin
           .from('atendimentos_raw')
-          .select('cliente, profissional')
+          .select('cliente, profissional, data_comanda')
           .eq('salao_id', salaoId)
           .range(from, from + 999)
         if (!data || data.length === 0) break
@@ -96,21 +101,38 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         from += 1000
       }
 
-      // Agrupa por cliente: true = atendido por este prof, false = atendido por outro
-      const clienteFlags: Record<string, { temProf: boolean; temOutro: boolean }> = {}
+      const hoje = new Date()
+      const clienteMap: Record<string, { total: number; comProf: number; ultimaVisita: string }> = {}
       for (const r of rawTodos) {
         const cli = (r.cliente || '').trim()
         if (!cli) continue
-        if (!clienteFlags[cli]) clienteFlags[cli] = { temProf: false, temOutro: false }
+        if (!clienteMap[cli]) clienteMap[cli] = { total: 0, comProf: 0, ultimaVisita: '' }
+        clienteMap[cli].total++
         if (matchProf({ profissional: r.profissional }, tokens, apelido, nomeCompleto)) {
-          clienteFlags[cli].temProf = true
-        } else {
-          clienteFlags[cli].temOutro = true
+          clienteMap[cli].comProf++
         }
+        const dt = r.data_comanda || ''
+        if (dt > clienteMap[cli].ultimaVisita) clienteMap[cli].ultimaVisita = dt
       }
-      for (const f of Object.values(clienteFlags)) {
-        if (f.temProf && !f.temOutro) clientesExclusivos++
+
+      for (const [cli, info] of Object.entries(clienteMap)) {
+        if (info.total < 4) continue
+        const pctProf = info.comProf / info.total
+        if (pctProf < 0.8) continue
+        const diasDesdeUltima = info.ultimaVisita
+          ? Math.floor((hoje.getTime() - new Date(info.ultimaVisita).getTime()) / 86400000)
+          : 999
+        if (diasDesdeUltima > 90) continue
+        clientesFieis++
+        detalhesFieis.push({
+          cliente: cli,
+          total: info.total,
+          comProf: info.comProf,
+          pct: Math.round(pctProf * 100),
+          ultimaVisita: info.ultimaVisita,
+        })
       }
+      detalhesFieis.sort((a, b) => b.pct - a.pct)
     } catch (_) {}
 
     // Nível de risco
@@ -121,10 +143,11 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       pct_faturamento: pct,
       fat_prof: Math.round(fatProf * 100) / 100,
       fat_total: Math.round(fatTotal * 100) / 100,
-      clientes_exclusivos: clientesExclusivos,
+      clientes_fieis: clientesFieis,
+      detalhes_fieis: detalhesFieis,
       nivel_risco: nivelRisco,
       cor_risco: corRisco,
-      impacto_mensal: Math.round((fatPorMes.slice(-3).reduce((s, m) => s + m.fat_prof, 0) / Math.max(Math.min(fatPorMes.length, 3), 1)) * 100) / 100,
+      impacto_mensal: impactoMensal,
       historico: fatPorMes.slice(-12),
       historico_completo: fatPorMes,
       mensagem: pct >= 30

@@ -3638,7 +3638,8 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                 const { MESES_PT, wrap } = printBase('Dependência')
                 const cor = d.cor_risco || '#10b981'
                 const nivelLabel = d.nivel_risco==='critico'?'CRÍTICO':d.nivel_risco==='alto'?'ALTO':d.nivel_risco==='medio'?'MODERADO':'BAIXO'
-                const histRows = (d.historico||[]).map((h:any)=>`<tr><td>${MESES_PT[h.mes-1]} ${h.ano}</td><td>${h.pct}%</td><td>R$ ${(h.fat_prof||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td><td>R$ ${(h.fat_total||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td></tr>`).join('')
+                const histRows = (d.historico_completo||[]).map((h:any)=>`<tr><td>${MESES_PT[h.mes-1]} ${h.ano}</td><td>${h.pct}%</td><td>R$ ${(h.fat_prof||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td><td>R$ ${(h.fat_total||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td></tr>`).join('')
+                const fieisRows = (d.detalhes_fieis||[]).map((f:any)=>`<tr><td>${f.cliente}</td><td>${f.total}</td><td>${f.comProf}</td><td>${f.pct}%</td><td>${f.ultimaVisita||'-'}</td></tr>`).join('')
                 const corpo = `<div class="sec"><div class="sec-title">Resumo de Risco</div>
 <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px">
   <div style="flex:1;min-width:120px;background:${cor}18;border:1.5px solid ${cor}55;border-radius:8px;padding:12px;text-align:center">
@@ -3647,13 +3648,14 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
     <div style="font-size:8pt;color:#555;margin-top:4px">${d.mensagem}</div>
   </div>
   <div style="flex:3;display:grid;grid-template-columns:1fr 1fr;gap:8px">
-    <div class="card"><div class="card-lbl">Faturamento Gerado</div><div class="card-val" style="color:#5b4fcf">R$ ${(d.fat_prof||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div class="card-sub">faturamento bruto gerado</div></div>
-    <div class="card"><div class="card-lbl">Clientes Exclusivos</div><div class="card-val" style="color:#f59e0b">${d.clientes_exclusivos}</div></div>
-    <div class="card"><div class="card-lbl">Impacto Mensal Est.</div><div class="card-val" style="color:#f43f8e">R$ ${(d.impacto_mensal||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div>
+    <div class="card"><div class="card-lbl">Faturamento Gerado (total histórico)</div><div class="card-val" style="color:#5b4fcf">R$ ${(d.fat_prof||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div>
+    <div class="card"><div class="card-lbl">Clientes Fiéis ❤️</div><div class="card-val" style="color:#f59e0b">${d.clientes_fieis||0}</div><div class="card-sub">≥4 visitas, ≥80% com este prof, últimos 90 dias</div></div>
+    <div class="card"><div class="card-lbl">Média Mensal (histórico)</div><div class="card-val" style="color:#f43f8e">R$ ${(d.impacto_mensal||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div>
     <div class="card"><div class="card-lbl">Faturamento Total Salão</div><div class="card-val">R$ ${(d.fat_total||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div>
   </div>
 </div></div>
-${histRows?`<div class="sec"><div class="sec-title">Histórico Mensal</div><table class="tbl"><thead><tr><th>Mês</th><th>% Fat.</th><th>Fat. Prof.</th><th>Fat. Salão</th></tr></thead><tbody>${histRows}</tbody></table></div>`:''}
+${histRows?`<div class="sec"><div class="sec-title">Histórico Completo por Mês</div><table class="tbl"><thead><tr><th>Mês</th><th>% Fat.</th><th>Fat. Prof.</th><th>Fat. Salão</th></tr></thead><tbody>${histRows}</tbody></table></div>`:''}
+${fieisRows?`<div class="sec"><div class="sec-title">Clientes Fiéis ❤️ (${d.clientes_fieis||0} clientes)</div><table class="tbl"><thead><tr><th>Cliente</th><th>Total Visitas</th><th>Com este Prof.</th><th>%</th><th>Última Visita</th></tr></thead><tbody>${fieisRows}</tbody></table></div>`:''}
 <div class="sec"><div class="sec-title">Recomendação</div><p style="font-size:10pt;line-height:1.6;padding:10px 0">${
   d.nivel_risco==='critico'?'⚠️ Risco CRÍTICO. Recomenda-se redistribuir clientes, treinar substituto e criar estratégia de retenção imediata.':
   d.nivel_risco==='alto'?'🔶 Risco ALTO. Considere desenvolver outro profissional com habilidades similares e registrar os clientes preferenciais.':
@@ -3698,8 +3700,8 @@ ${histRows?`<div class="sec"><div class="sec-title">Histórico Mensal</div><tabl
                     const fatTotalFilt = histFiltrado.reduce((s:number,h:any)=>s+h.fat_total,0)
                     const pctFilt = fatTotalFilt > 0 ? Math.round(fatProfFilt/fatTotalFilt*1000)/10 : d.pct_faturamento
                     const corFilt = pctFilt >= 30 ? '#ef4444' : pctFilt >= 20 ? '#f97316' : pctFilt >= 10 ? '#f59e0b' : '#10b981'
-                    const last3 = histFiltrado.slice(-3)
-                    const impactoFilt = last3.length ? Math.round(last3.reduce((s:number,h:any)=>s+h.fat_prof,0)/last3.length*100)/100 : d.impacto_mensal
+                    const mesesFiltComDados = histFiltrado.filter((h:any)=>h.fat_prof>0).length
+                    const mediaMensalFilt = mesesFiltComDados > 0 ? Math.round(fatProfFilt/mesesFiltComDados*100)/100 : 0
                     const labelAnos = anosFiltro.join(' + ')
                     return (
                       <>
@@ -3708,8 +3710,8 @@ ${histRows?`<div class="sec"><div class="sec-title">Histórico Mensal</div><tabl
                           {[
                             {l:'% do Faturamento',v:`${pctFilt}%`,c:corFilt},
                             {l:'Faturamento Gerado',v:fmt$(fatProfFilt),c:'#5b4fcf'},
-                            {l:'Clientes Exclusivos',v:d.clientes_exclusivos,c:'#f59e0b'},
-                            {l:'Impacto Mensal Est.',v:fmt$(impactoFilt),c:'#f43f8e'},
+                            {l:'❤️ Clientes Fiéis',v:d.clientes_fieis||0,c:'#f59e0b'},
+                            {l:'Média Mensal',v:fmt$(mediaMensalFilt),c:'#f43f8e'},
                           ].map(item=>(
                             <div key={item.l} className="bg-nodri-card border border-nodri-border rounded-xl p-3">
                               <div className="text-[9px] text-nodri-t3 uppercase tracking-wider mb-1">{item.l}</div>
@@ -3724,6 +3726,67 @@ ${histRows?`<div class="sec"><div class="sec-title">Histórico Mensal</div><tabl
                   {/* Gráfico SVG comparativo anual */}
                   {d.historico_completo?.length > 0 && (
                     <GraficoDependencia historico={d.historico_completo} onAnosChange={setAnosDepAtivos}/>
+                  )}
+
+                  {/* Tabela histórico completo */}
+                  {d.historico_completo?.length > 0 && (
+                    <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
+                      <h3 className="font-syne font-bold text-[13px] mb-3">📊 Histórico Completo por Mês</h3>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-[11px]">
+                          <thead>
+                            <tr className="border-b border-nodri-border text-nodri-t3 text-[9px] uppercase">
+                              <th className="text-left pb-2">Mês</th>
+                              <th className="text-right pb-2">% Fat.</th>
+                              <th className="text-right pb-2">Fat. Prof.</th>
+                              <th className="text-right pb-2">Fat. Salão</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {d.historico_completo.map((h:any)=>(
+                              <tr key={`${h.ano}-${h.mes}`} className="border-b border-nodri-border/40 hover:bg-nodri-border/10">
+                                <td className="py-1.5 text-nodri-t2">{MESES[h.mes-1]} {h.ano}</td>
+                                <td className="text-right text-nodri-t2">{h.pct}%</td>
+                                <td className="text-right font-semibold text-nodri-cyan">{fmt$(h.fat_prof)}</td>
+                                <td className="text-right text-nodri-t3">{fmt$(h.fat_total)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tabela clientes fiéis */}
+                  {(d.detalhes_fieis?.length > 0) && (
+                    <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
+                      <h3 className="font-syne font-bold text-[13px] mb-1">❤️ Clientes Fiéis — {d.clientes_fieis} clientes</h3>
+                      <p className="text-[9px] text-nodri-t3 mb-3">≥4 visitas no salão · ≥80% com este profissional · última visita nos últimos 90 dias</p>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-[11px]">
+                          <thead>
+                            <tr className="border-b border-nodri-border text-nodri-t3 text-[9px] uppercase">
+                              <th className="text-left pb-2">Cliente</th>
+                              <th className="text-right pb-2">Total Visitas</th>
+                              <th className="text-right pb-2">Com este Prof.</th>
+                              <th className="text-right pb-2">%</th>
+                              <th className="text-right pb-2">Última Visita</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {d.detalhes_fieis.map((f:any)=>(
+                              <tr key={f.cliente} className="border-b border-nodri-border/40 hover:bg-nodri-border/10">
+                                <td className="py-1.5 font-semibold text-nodri-t1">{f.cliente}</td>
+                                <td className="text-right text-nodri-t2">{f.total}</td>
+                                <td className="text-right text-nodri-t2">{f.comProf}</td>
+                                <td className="text-right font-bold text-amber-500">{f.pct}%</td>
+                                <td className="text-right text-nodri-t3">{f.ultimaVisita||'-'}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
                   )}
 
                   <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
