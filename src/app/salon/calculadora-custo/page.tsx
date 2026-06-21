@@ -693,23 +693,14 @@ export default function CalculadoraCusto() {
             setQtdMesesMedia(mesesValidos.length)
           }
 
-          // Pré-preenche faturamento com média dos últimos 12 meses antes do período atual
-          const agora = new Date()
-          const anoAtual = agora.getFullYear()
-          const mesAtual = agora.getMonth() + 1
-          const ultimos12 = d.historico.filter((h:any) => {
-            const fat = parseFloat(h.dados?.fat || '0') || 0
-            if (fat <= 0) return false
-            // Exclui o mês atual e pega só os anteriores
-            if (h.ano > anoAtual) return false
-            if (h.ano === anoAtual && h.mes >= mesAtual) return false
-            // Máximo 12 meses atrás
-            const diffMeses = (anoAtual - h.ano) * 12 + (mesAtual - h.mes)
-            return diffMeses <= 12
-          })
-          if (ultimos12.length > 0) {
-            const somaFat = ultimos12.reduce((s:number, h:any) => s + (parseFloat(h.dados?.fat||'0')||0), 0)
-            const mediaFat = Math.round(somaFat / ultimos12.length)
+          // Pré-preenche faturamento com média dos últimos 12 meses com dados
+          const comFat = d.historico
+            .filter((h:any) => (parseFloat(h.dados?.fat||'0')||0) > 0)
+            .sort((a:any,b:any) => b.ano!==a.ano ? b.ano-a.ano : b.mes-a.mes)
+            .slice(0, 12)
+          if (comFat.length > 0) {
+            const somaFat = comFat.reduce((s:number, h:any) => s + (parseFloat(h.dados?.fat||'0')||0), 0)
+            const mediaFat = Math.round(somaFat / comFat.length)
             setMediaFat12(mediaFat)
           }
         }
