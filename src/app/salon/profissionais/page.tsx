@@ -34,6 +34,8 @@ interface Profissional {
   departamento_cor?: string
   pendencias_abertas?: number
   status_cadastro?: string
+  servicos_habilitados?: string[]
+  conta_bancaria?: string
   criado_em: string
 }
 
