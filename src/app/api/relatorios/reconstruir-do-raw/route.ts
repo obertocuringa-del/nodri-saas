@@ -112,7 +112,7 @@ export async function POST(req: NextRequest) {
       // ── Busca o registro atual para preservar campos do Excel ──
       const { data: atual } = await supabaseAdmin
         .from('relatorio_periodos')
-        .select('prof_pagamentos, prof_ticket, prof_preferencia, prof_ocupacao, prof_produtos, metas, data_inicio, data_fim, resumo_mensal')
+        .select('prof_pagamentos, prof_ticket, prof_preferencia, prof_ocupacao, prof_produtos, metas, data_inicio, data_fim, resumo_mensal, produtos')
         .eq('salao_id', salaoId)
         .eq('ano', ano)
         .eq('mes', mes)
@@ -137,7 +137,7 @@ export async function POST(req: NextRequest) {
           resumo_mensal,
           faturamento_diario,
           servicos,
-          produtos:           [],
+          produtos:           atual?.produtos || [],
           prof_servicos,
           prof_pagamentos:    atual?.prof_pagamentos || [],
           prof_ticket:        atual?.prof_ticket || [],
