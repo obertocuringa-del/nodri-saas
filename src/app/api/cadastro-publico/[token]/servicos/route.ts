@@ -12,10 +12,10 @@ export async function GET(_req: NextRequest, { params }: { params: { token: stri
 
   const [{ data: servicos }, { data: profs }] = await Promise.all([
     supabaseAdmin
-      .from('servicos')
+      .from('salao_servicos')
       .select('id, nome, categoria, comissao_valor')
       .eq('salao_id', salao.id)
-      .eq('ativo', true)
+      .order('categoria')
       .order('nome'),
     supabaseAdmin
       .from('profissionais')
