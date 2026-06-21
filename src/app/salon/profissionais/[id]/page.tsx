@@ -2712,29 +2712,29 @@ Profissional(is): ${h?.profissionais_ultima?.join(', ') || '—'}
 ${diasSemServico || 'Sem dados'}
 
 ═══ SUA MISSÃO ═══
-Gere 3 sugestões de venda COMPLETAMENTE DIFERENTES entre si, priorizando:
-- Serviços que o cliente faz muito mas não fez recentemente
-- Serviços complementares ao que ele vai fazer HOJE
-- Serviços que ele NUNCA fez mas que combinam com seu perfil
+Gere EXATAMENTE 3 sugestões COMPLETAMENTE DIFERENTES entre si:
+- Sugestão 1: serviço que o cliente já faz mas não fez há mais tempo
+- Sugestão 2: serviço complementar ao que ele vai fazer HOJE
+- Sugestão 3: serviço que ele NUNCA fez mas que combina com seu perfil
 
-Para cada sugestão, responda EXATAMENTE neste formato:
+RESPONDA EXATAMENTE neste formato JSON (sem markdown, sem texto fora do JSON):
+{
+  "sugestoes": [
+    {
+      "titulo": "Nome do serviço ou ação",
+      "percentual": 78,
+      "motivo": "Por que faz sentido AGORA com base nos dados reais",
+      "momento": "Antes / Durante / Após o serviço de hoje — e por quê",
+      "beneficios": "3 benefícios concretos separados por · ",
+      "abordagem": "Frase exata natural e calorosa para o profissional usar",
+      "reversao": "Frase de reversão se o cliente recusar"
+    },
+    { ... },
+    { ... }
+  ]
+}
 
----
-🎯 SUGESTÃO [N]: [NOME DO SERVIÇO]
-
-📊 Probabilidade: 🟢 Alta / 🟡 Média / 🔴 Baixa
-📋 Motivo: [Por que faz sentido AGORA, baseado nos dados acima]
-⏰ Momento ideal: [Antes / Durante / Após o serviço de hoje — e por quê]
-✨ Benefícios para o cliente: [3 benefícios reais e concretos]
-
-💬 Como abordar (frase exata para o profissional usar):
-"[frase natural, calorosa, não forçada]"
-
-🔄 Se o cliente recusar — como reverter:
-"[frase de reversão que mantém a porta aberta]"
----
-
-Seja específico, use os dados reais do cliente. Proibido sugestões genéricas ou repetidas.`
+O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chance real de aceitação baseada nos dados do cliente. Seja específico e use os dados reais. Proibido sugestões genéricas.`
 
       const res = await fetch('/api/ia/chat', {
         method: 'POST',
@@ -2742,7 +2742,13 @@ Seja específico, use os dados reais do cliente. Proibido sugestões genéricas 
         body: JSON.stringify({ mensagens: [{ role: 'user', content: prompt }], modo: 'agendamentos' }),
       })
       const d = await res.json()
-      setAgendSugestao(d.resposta || d.content || d.message || '')
+      const texto = d.resposta || d.content || d.message || ''
+      // Tenta extrair JSON da resposta
+      try {
+        const jsonMatch = texto.match(/\{[\s\S]*\}/)
+        if (jsonMatch) { JSON.parse(jsonMatch[0]); setAgendSugestao(jsonMatch[0]) }
+        else setAgendSugestao(texto)
+      } catch { setAgendSugestao(texto) }
     } catch { setAgendSugestao('Erro ao gerar sugestão. Verifique a configuração da IA.') }
     setAgendLoadSug(false)
   }
@@ -3679,14 +3685,72 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                               </button>
 
                               {/* Resposta IA */}
-                              {agendSugestao && (
-                                <div className="rounded-xl p-5" style={{background:'#faf9ff',border:'2px solid #c4bef0'}}>
-                                  <p className="text-[12px] font-bold uppercase tracking-wider mb-3" style={{color:'#5b4fcf'}}>🎯 Oportunidades para hoje</p>
-                                  <div className="text-[12px] whitespace-pre-wrap" style={{color:'#1a1a1a',lineHeight:'1.8'}}>
-                                    {agendSugestao}
+                              {agendSugestao && (() => {
+                                let sugestoes: any[] = []
+                                let isFallback = false
+                                try {
+                                  const parsed = JSON.parse(agendSugestao)
+                                  sugestoes = parsed.sugestoes || []
+                                } catch { isFallback = true }
+
+                                if (isFallback) return (
+                                  <div className="rounded-xl p-4" style={{background:'#faf9ff',border:'1.5px solid #c4bef0'}}>
+                                    <p className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{color:'#5b4fcf'}}>🎯 Sugestões da IA</p>
+                                    <div className="text-[12px] whitespace-pre-wrap" style={{color:'#1a1a1a',lineHeight:'1.7'}}>{agendSugestao}</div>
                                   </div>
-                                </div>
-                              )}
+                                )
+
+                                const COR_BAR = (p: number) => p >= 70 ? '#16a34a' : p >= 40 ? '#d97706' : '#dc2626'
+                                const LABEL_P = (p: number) => p >= 70 ? '🟢 Alta' : p >= 40 ? '🟡 Média' : '🔴 Baixa'
+
+                                return (
+                                  <div className="space-y-3">
+                                    <p className="text-[11px] font-bold uppercase tracking-wider" style={{color:'#5b4fcf'}}>🎯 Oportunidades para hoje — escolha uma abordagem</p>
+                                    {sugestoes.map((s: any, i: number) => (
+                                      <div key={i} className="rounded-xl overflow-hidden" style={{border:'1.5px solid #c4bef0'}}>
+                                        {/* Header */}
+                                        <div className="flex items-center justify-between px-4 py-3" style={{background:'#5b4fcf'}}>
+                                          <div>
+                                            <span className="text-[10px] font-bold uppercase tracking-wider" style={{color:'#c4bef0'}}>Opção {i+1}</span>
+                                            <p className="text-[13px] font-bold" style={{color:'#fff'}}>{s.titulo}</p>
+                                          </div>
+                                          <div className="text-right">
+                                            <p className="text-[22px] font-bold leading-none" style={{color:'#fff'}}>{s.percentual}%</p>
+                                            <p className="text-[10px]" style={{color:'#c4bef0'}}>{LABEL_P(s.percentual)} aceitação</p>
+                                          </div>
+                                        </div>
+                                        {/* Barra */}
+                                        <div style={{height:'4px',background:'#e0d9f8'}}>
+                                          <div style={{height:'100%',width:`${s.percentual}%`,background:COR_BAR(s.percentual),transition:'width .5s'}}/>
+                                        </div>
+                                        {/* Corpo */}
+                                        <div className="p-4 space-y-3" style={{background:'#faf9ff'}}>
+                                          <div>
+                                            <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{color:'#6b7280'}}>Por que agora</p>
+                                            <p className="text-[12px]" style={{color:'#1a1a1a',lineHeight:'1.6'}}>{s.motivo}</p>
+                                          </div>
+                                          {s.beneficios && (
+                                            <div>
+                                              <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{color:'#6b7280'}}>Benefícios</p>
+                                              <p className="text-[12px]" style={{color:'#1a1a1a',lineHeight:'1.6'}}>✨ {s.beneficios}</p>
+                                            </div>
+                                          )}
+                                          <div className="rounded-lg p-3" style={{background:'#ede9fe'}}>
+                                            <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{color:'#5b4fcf'}}>💬 {s.momento}</p>
+                                            <p className="text-[12px] italic" style={{color:'#3730a3'}}>"{s.abordagem}"</p>
+                                          </div>
+                                          {s.reversao && (
+                                            <div className="rounded-lg p-3" style={{background:'#fef3c7'}}>
+                                              <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{color:'#92400e'}}>🔄 Se recusar</p>
+                                              <p className="text-[12px] italic" style={{color:'#78350f'}}>"{s.reversao}"</p>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )
+                              })()}
                             </div>
                           )
                         })()}
