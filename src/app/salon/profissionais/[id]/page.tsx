@@ -3693,11 +3693,19 @@ ${fieisRows?`<div class="sec"><div class="sec-title">Clientes Fiéis ❤️ (${d
                     const mediaMensalFilt = mesesFiltComDados > 0 ? Math.round(fatProfFilt/mesesFiltComDados*100)/100 : 0
                     const labelAnos = anosFiltro.join(' + ')
 
+                    // Filtra clientes fiéis pela última visita dentro dos anos selecionados
+                    const fieisFiltr = (d.detalhes_fieis||[]).filter((f:any) => {
+                      if (!f.ultimaVisita) return false
+                      const anoVisita = parseInt(f.ultimaVisita.slice(0,4))
+                      return anosFiltro.includes(anoVisita)
+                    })
+                    const clientesFieisFilt = fieisFiltr.length
+
                     const cards = [
-                      { id:'pct',   l:'% do Faturamento', v:`${pctFilt}%`,          c:corFilt    },
-                      { id:'fat',   l:'Faturamento Gerado',v:fmt$(fatProfFilt),       c:'#5b4fcf'  },
-                      { id:'fieis', l:'❤️ Clientes Fiéis', v:String(d.clientes_fieis||0), c:'#f59e0b' },
-                      { id:'media', l:'Média Mensal',      v:fmt$(mediaMensalFilt),   c:'#f43f8e'  },
+                      { id:'pct',   l:'% do Faturamento', v:`${pctFilt}%`,            c:corFilt    },
+                      { id:'fat',   l:'Faturamento Gerado',v:fmt$(fatProfFilt),         c:'#5b4fcf'  },
+                      { id:'fieis', l:'❤️ Clientes Fiéis', v:String(clientesFieisFilt), c:'#f59e0b'  },
+                      { id:'media', l:'Média Mensal',      v:fmt$(mediaMensalFilt),     c:'#f43f8e'  },
                     ]
 
                     return (
@@ -3779,16 +3787,16 @@ ${fieisRows?`<div class="sec"><div class="sec-title">Clientes Fiéis ❤️ (${d
                         {/* Painel Clientes Fiéis */}
                         {depCardAberto==='fieis' && (
                           <div className="bg-nodri-surface border border-nodri-cyan/40 rounded-2xl p-4">
-                            <h4 className="font-syne font-bold text-[12px] mb-1 text-nodri-cyan">❤️ Clientes Fiéis — {d.clientes_fieis||0} clientes</h4>
-                            <p className="text-[10px] text-nodri-t3 mb-3">≥4 visitas no salão · ≥80% com este prof. · última visita nos últimos 90 dias</p>
-                            {(d.detalhes_fieis?.length>0) ? (
+                            <h4 className="font-syne font-bold text-[12px] mb-1 text-nodri-cyan">❤️ Clientes Fiéis — {clientesFieisFilt} clientes</h4>
+                            <p className="text-[10px] text-nodri-t3 mb-3">≥4 visitas no salão · ≥80% com este prof. · última visita em {labelAnos}</p>
+                            {fieisFiltr.length>0 ? (
                               <div className="overflow-x-auto">
                                 <table className="w-full text-[11px]">
                                   <thead><tr className="border-b border-nodri-border text-nodri-t3 text-[9px] uppercase">
                                     <th className="text-left pb-2">Cliente</th><th className="text-right pb-2">Visitas</th><th className="text-right pb-2">c/ Prof.</th><th className="text-right pb-2">%</th><th className="text-right pb-2">Última</th>
                                   </tr></thead>
                                   <tbody>
-                                    {d.detalhes_fieis.map((f:any)=>(
+                                    {fieisFiltr.map((f:any)=>(
                                       <tr key={`fiel-${f.cliente}`} className="border-b border-nodri-border/40">
                                         <td className="py-1.5 font-semibold text-nodri-t1">{f.cliente}</td>
                                         <td className="text-right text-nodri-t2">{f.total}</td>
@@ -3800,7 +3808,7 @@ ${fieisRows?`<div class="sec"><div class="sec-title">Clientes Fiéis ❤️ (${d
                                   </tbody>
                                 </table>
                               </div>
-                            ) : <p className="text-[11px] text-nodri-t3">Nenhum cliente fiel identificado no momento.</p>}
+                            ) : <p className="text-[11px] text-nodri-t3">Nenhum cliente fiel com última visita em {labelAnos}.</p>}
                           </div>
                         )}
 
