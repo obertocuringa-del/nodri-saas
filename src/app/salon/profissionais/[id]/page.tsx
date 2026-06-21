@@ -3792,7 +3792,16 @@ ${fieisRows?`<div class="sec"><div class="sec-title">Clientes Fiéis ❤️ (${d
                         {depCardAberto==='fieis' && (
                           <div className="bg-nodri-surface border border-nodri-cyan/40 rounded-2xl p-4">
                             <h4 className="font-syne font-bold text-[12px] mb-1 text-nodri-cyan">❤️ Clientes Fiéis — {clientesFieisFilt} clientes</h4>
-                            <p className="text-[10px] text-nodri-t3 mb-3">≥4 visitas no salão · ≥80% com este prof. · última visita em {labelAnos}</p>
+                            <div className="bg-nodri-card border border-nodri-border rounded-xl p-3 mb-3 text-[10px] text-nodri-t3 leading-relaxed">
+                              <span className="font-semibold text-nodri-t2 block mb-1">Como esse número é calculado:</span>
+                              São considerados fiéis os clientes que atendem os 3 critérios abaixo:
+                              <ul className="mt-1 space-y-0.5">
+                                <li>✅ <span className="text-nodri-t2 font-semibold">Mínimo 4 visitas</span> ao salão no histórico total</li>
+                                <li>✅ <span className="text-nodri-t2 font-semibold">80% ou mais</span> dos atendimentos foram com este profissional</li>
+                                <li>✅ <span className="text-nodri-t2 font-semibold">Última visita nos últimos 12 meses</span> — clientes sumidos há mais de 1 ano não entram</li>
+                              </ul>
+                              <span className="block mt-2 text-[9px]">Período filtrado pelo gráfico: {labelAnos}</span>
+                            </div>
                             {fieisFiltr.length>0 ? (
                               <div className="overflow-x-auto">
                                 <table className="w-full text-[11px]">
@@ -3861,7 +3870,7 @@ ${fieisRows?`<div class="sec"><div class="sec-title">Clientes Fiéis ❤️ (${d
                       {[
                         {label:'% de Dependência',       bom:'< 10%',  ok:'10–20%', ruim:'> 20%', critico:'> 30%', desc:'Quanto do faturamento bruto do salão vem deste profissional.'},
                         {label:'Faturamento Gerado',     bom:'—',      ok:'—',      ruim:'—',     critico:'—',     desc:'Soma do campo "total" dos atendimentos brutos (atendimentos_raw) deste profissional no período.'},
-                        {label:'Clientes Fiéis ❤️',     bom:'> 20',   ok:'10–20',  ruim:'5–10',  critico:'< 5',   desc:'Clientes com ≥4 visitas no salão, ≥80% dos atendimentos com este prof. e que voltaram nos últimos 90 dias.'},
+                        {label:'Clientes Fiéis ❤️',     bom:'> 20',   ok:'10–20',  ruim:'5–10',  critico:'< 5',   desc:'Clientes com ≥4 visitas no salão, ≥80% dos atendimentos com este profissional e que retornaram nos últimos 12 meses. Um cliente pode ir a cada 4 meses e ainda ser fiel — por isso usamos 12 meses e não 90 dias.'},
                         {label:'Média Mensal',           bom:'—',      ok:'—',      ruim:'—',     critico:'—',     desc:'Faturamento gerado total ÷ meses com pelo menos 1 atendimento.'},
                       ].map(g=>(
                         <div key={g.label} className="bg-nodri-card border border-nodri-border rounded-xl p-3">

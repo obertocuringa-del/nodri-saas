@@ -157,8 +157,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         if (pctProf < 0.8) continue
         const diasDesdeUltima = info.ultimaData.getTime() > 0
           ? Math.floor((hoje.getTime() - info.ultimaData.getTime()) / 86400000)
-          : 999
-        if (diasDesdeUltima > 90) continue
+          : 9999
+        if (diasDesdeUltima > 365) continue
         clientesFieis++
         detalhesFieis.push({
           cliente: cli,
