@@ -33,6 +33,7 @@ interface Profissional {
   is_departamento?: boolean
   departamento_cor?: string
   pendencias_abertas?: number
+  status_cadastro?: string
   criado_em: string
 }
 
@@ -97,6 +98,9 @@ export default function ProfissionaisPage() {
   const [editandoCategoriaValor, setEditandoCategoriaValor] = useState('')
   const [novaCatTexto, setNovaCatTexto] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
+  const [linkCadastro, setLinkCadastro] = useState('')
+  const [linkCopiado, setLinkCopiado] = useState(false)
+  const [gerandoLink, setGerandoLink] = useState(false)
 
   const CATEGORIAS_PADRAO = ['Cabeleireiro', 'Manicure', 'Pedicure', 'Assistente', 'Massoterapeuta', 'Maquiador(a)', 'Colorista', 'Recepcionista', 'Auxiliar']
 
@@ -127,7 +131,36 @@ export default function ProfissionaisPage() {
     carregarProfissionais()
   }
 
-  useEffect(() => { carregarProfissionais() }, [])
+  useEffect(() => { carregarProfissionais(); buscarLinkCadastro() }, [])
+
+  async function buscarLinkCadastro() {
+    try {
+      const res = await fetch('/api/profissionais/link-cadastro')
+      if (res.ok) {
+        const d = await res.json()
+        setLinkCadastro(`${window.location.origin}/cadastro/${d.token}`)
+      }
+    } catch {}
+  }
+
+  async function regenerarLink() {
+    if (!confirm('Isso vai invalidar o link atual. Quem tiver o link antigo não conseguirá mais acessar. Continuar?')) return
+    setGerandoLink(true)
+    const res = await fetch('/api/profissionais/link-cadastro', { method: 'POST' })
+    if (res.ok) {
+      const d = await res.json()
+      setLinkCadastro(`${window.location.origin}/cadastro/${d.token}`)
+      toast.success('Novo link gerado!')
+    }
+    setGerandoLink(false)
+  }
+
+  function copiarLink() {
+    navigator.clipboard.writeText(linkCadastro)
+    setLinkCopiado(true)
+    toast.success('Link copiado!')
+    setTimeout(() => setLinkCopiado(false), 3000)
+  }
 
   async function carregarProfissionais() {
     setLoading(true)
@@ -206,7 +239,12 @@ export default function ProfissionaisPage() {
       p.nome_completo.toLowerCase().includes(busca.toLowerCase()) ||
       (p.cargo || '').toLowerCase().includes(busca.toLowerCase())
     )
-  )
+  ).sort((a, b) => {
+    // Pendentes primeiro
+    const aPend = (a as any).status_cadastro === 'pendente' ? 0 : 1
+    const bPend = (b as any).status_cadastro === 'pendente' ? 0 : 1
+    return aPend - bPend
+  })
 
   // Verifica se profissional tem qualquer pendência (checklist OU pendências abertas)
   function temPendencia(p: Profissional) {
@@ -360,6 +398,19 @@ export default function ProfissionaisPage() {
                 </div>
               )}
 
+              {/* Pendentes de auto-cadastro */}
+              {!loading && profissionais.filter(p => (p as any).status_cadastro === 'pendente').length > 0 && (
+                <div style={{ background: '#fffbeb', border: '1px solid #f59e0b', borderRadius: '10px', padding: '12px 16px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: '18px' }}>⏳</span>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ color: '#92400e', fontWeight: 700, fontSize: '12px', margin: 0 }}>
+                      {profissionais.filter(p => (p as any).status_cadastro === 'pendente').length} cadastro(s) aguardando aprovação
+                    </p>
+                    <p style={{ color: '#b45309', fontSize: '11px', margin: '2px 0 0' }}>Clique no profissional para revisar e ativar</p>
+                  </div>
+                </div>
+              )}
+
               {loading ? (
                 <div style={{ textAlign: 'center', color: '#6b6860', padding: '60px' }}>Carregando...</div>
               ) : profFiltrados.length === 0 ? (
@@ -449,6 +500,44 @@ export default function ProfissionaisPage() {
                   {editando ? `✏️ Editando: ${editando.nome_completo}` : '➕ Cadastrar Profissional'}
                 </h2>
               </div>
+
+              {/* LINK DE AUTO-CADASTRO */}
+              {!editando && (
+                <div style={{ background: 'linear-gradient(135deg, #f5f3ff, #fdf2f8)', border: '1px solid #c4b5fd', borderRadius: '14px', padding: '18px 20px', marginBottom: '20px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '10px' }}>
+                    <span style={{ fontSize: '18px' }}>🔗</span>
+                    <div>
+                      <p style={{ color: '#5b4fcf', fontWeight: 700, fontSize: '13px', margin: 0 }}>Link de Auto-Cadastro</p>
+                      <p style={{ color: '#767069', fontSize: '11px', margin: '2px 0 0' }}>Envie este link para o profissional preencher os dados pelo celular</p>
+                    </div>
+                  </div>
+                  {linkCadastro ? (
+                    <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: '8px', padding: '10px 12px', fontSize: '11px', color: '#1a1a1a', wordBreak: 'break-all', marginBottom: '10px', fontFamily: 'monospace' }}>
+                      {linkCadastro}
+                    </div>
+                  ) : (
+                    <div style={{ background: '#f0eeea', borderRadius: '8px', padding: '10px 12px', fontSize: '11px', color: '#a09890', marginBottom: '10px' }}>Carregando link...</div>
+                  )}
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      type="button"
+                      onClick={copiarLink}
+                      disabled={!linkCadastro}
+                      style={{ flex: 1, background: linkCopiado ? '#10b981' : '#5b4fcf', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '12px', fontWeight: 700, padding: '9px', cursor: 'pointer' }}
+                    >
+                      {linkCopiado ? '✓ Copiado!' : '📋 Copiar Link'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={regenerarLink}
+                      disabled={gerandoLink}
+                      style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: '8px', color: '#767069', fontSize: '12px', padding: '9px 14px', cursor: 'pointer' }}
+                    >
+                      {gerandoLink ? '...' : '🔄 Novo link'}
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <form onSubmit={salvar}>
                 {/* FOTO */}
