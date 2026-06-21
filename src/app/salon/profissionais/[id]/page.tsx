@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { ArrowLeft, Save, Loader2, TrendingUp, TrendingDown, BarChart2,
@@ -456,19 +456,19 @@ function TabelaServicos({ p1, p2, nomeProfissional }: { p1: MetricaBloco | null;
       {/* Tabela de serviços */}
       <div className="bg-nodri-surface border border-nodri-border rounded-2xl overflow-hidden">
         <div className="px-5 py-3 flex items-center justify-between" style={{background:'#e0ddf5'}}>
-          <h3 className="font-syne font-bold text-[13px] text-white">
+          <h3 className="font-syne font-bold text-[13px] text-[#1a1a1a]">
              SERVIÇOS REALIZADOS{nomeProfissional ? ` POR ${nomeProfissional.toUpperCase()}` : ''}
           </h3>
-          <span className="text-[11px] text-white/70">{sorted.length} serviços</span>
+          <span className="text-[11px] text-[#1a1a1a]/70">{sorted.length} serviços</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-[11px]">
             <thead>
               <tr style={{background:'#f0eeff'}}>
-                <th className="py-2.5 px-4 text-left text-white font-semibold text-[11px] uppercase tracking-wide">SERVIÇO</th>
-                <th className="py-2.5 px-4 text-center text-white font-semibold text-[11px] uppercase tracking-wide">QTD ATUAL</th>
-                <th className="py-2.5 px-4 text-center text-white font-semibold text-[11px] uppercase tracking-wide">QTD ANT.</th>
-                <th className="py-2.5 px-4 text-center text-white font-semibold text-[11px] uppercase tracking-wide">CRESC.</th>
+                <th className="py-2.5 px-4 text-left text-[#1a1a1a] font-semibold text-[11px] uppercase tracking-wide">SERVIÇO</th>
+                <th className="py-2.5 px-4 text-center text-[#1a1a1a] font-semibold text-[11px] uppercase tracking-wide">QTD ATUAL</th>
+                <th className="py-2.5 px-4 text-center text-[#1a1a1a] font-semibold text-[11px] uppercase tracking-wide">QTD ANT.</th>
+                <th className="py-2.5 px-4 text-center text-[#1a1a1a] font-semibold text-[11px] uppercase tracking-wide">CRESC.</th>
               </tr>
             </thead>
             <tbody>
@@ -2773,7 +2773,7 @@ export default function PerfilProfissionalPage() {
           <ArrowLeft size={15}/> Profissionais
         </button>
         <div className="w-px h-5 bg-nodri-border"/>
-        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#5b4fcf] to-[#f43f8e] flex items-center justify-center text-white text-[10px] font-bold shrink-0">
+        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#5b4fcf] to-[#f43f8e] flex items-center justify-center text-[#1a1a1a] text-[10px] font-bold shrink-0">
           {(prof.apelido||prof.nome_completo).split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase()}
         </div>
         <div>
@@ -3172,7 +3172,7 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                             return (
                               <span key={sid} className="flex items-center gap-1 bg-nodri-cyan/10 border border-nodri-cyan/30 text-nodri-cyan text-[10px] px-2 py-0.5 rounded-full">
                                 {s.nome}
-                                <button type="button" onClick={() => set('servicos_habilitados', (form.servicos_habilitados||[]).filter(x=>x!==sid) as any)} className="hover:text-white">×</button>
+                                <button type="button" onClick={() => set('servicos_habilitados', (form.servicos_habilitados||[]).filter(x=>x!==sid) as any)} className="hover:text-[#1a1a1a]">×</button>
                               </span>
                             )
                           })}
@@ -3500,7 +3500,7 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                   <div className="flex items-center gap-2 flex-wrap">
                     <button onClick={gerarEstrategia} disabled={gerandoEstrategia}
                       style={{ background: 'linear-gradient(135deg, #5b4fcf, #f43f8e)' }}
-                      className="flex items-center gap-2 text-white px-4 py-2.5 rounded-xl text-[12px] font-bold disabled:opacity-50">
+                      className="flex items-center gap-2 text-[#1a1a1a] px-4 py-2.5 rounded-xl text-[12px] font-bold disabled:opacity-50">
                       {gerandoEstrategia ? <Loader2 size={14} className="animate-spin"/> : null}
                       {metaInfo.plano ? '🔄 Recalcular Estratégia' : '🚀 Criar Estratégia para Bater a Meta'}
                     </button>
@@ -3822,7 +3822,7 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                         } catch { setOcorrImpacto(null) }
                         finally { setLoadOcorrImpacto(false) }
                       }}
-                      className="shrink-0 flex items-center gap-2 bg-red-600 text-white text-[11px] font-semibold px-4 py-2 rounded-xl hover:opacity-90 transition"
+                      className="shrink-0 flex items-center gap-2 bg-red-600 text-[#1a1a1a] text-[11px] font-semibold px-4 py-2 rounded-xl hover:opacity-90 transition"
                     >
                       {loadOcorrImpacto ? <><Loader2 size={12} className="animate-spin"/> Analisando...</> : '🔍 Ver Impacto'}
                     </button>
@@ -4304,7 +4304,7 @@ ${nuncaRows?`<div class="sec"><div class="sec-title">🔴 Serviços que Nunca Of
                           } catch { setOportunidadesIA([]) }
                           finally { setLoadOportunidadesIA(false) }
                         }}
-                        className="shrink-0 flex items-center gap-2 bg-amber-500 text-white text-[11px] font-semibold px-4 py-2 rounded-xl hover:opacity-90 transition"
+                        className="shrink-0 flex items-center gap-2 bg-amber-500 text-[#1a1a1a] text-[11px] font-semibold px-4 py-2 rounded-xl hover:opacity-90 transition"
                       >
                         {loadOportunidadesIA ? <><Loader2 size={12} className="animate-spin"/> Analisando...</> : '🤖 Gerar com IA'}
                       </button>
@@ -4448,7 +4448,7 @@ ${paresRows?`<table class="tbl"><thead><tr><th>#</th><th>Serviço A</th><th>Serv
                       } catch { setBundleIA([]) }
                       finally { setLoadBundleIA(false) }
                     }}
-                    className="shrink-0 flex items-center gap-2 bg-nodri-purple text-white text-[11px] font-semibold px-4 py-2 rounded-xl hover:opacity-90 transition"
+                    className="shrink-0 flex items-center gap-2 bg-nodri-purple text-[#1a1a1a] text-[11px] font-semibold px-4 py-2 rounded-xl hover:opacity-90 transition"
                   >
                     {loadBundleIA ? <><Loader2 size={12} className="animate-spin"/> Gerando...</> : '🤖 Gerar com IA'}
                   </button>
@@ -4663,7 +4663,7 @@ ${paresRows?`<table class="tbl"><thead><tr><th>#</th><th>Serviço A</th><th>Serv
                     {(perdaTotalSalao > 0 || perdaTotalProf > 0) && (
                       <div className="rounded-xl p-3 border-2 border-nodri-border bg-nodri-surface">
                         <div className="text-[10px] text-nodri-t3 mb-0.5">📊 Impacto total</div>
-                        <div className="font-syne font-black text-[22px] leading-none text-white">{cp.total}</div>
+                        <div className="font-syne font-black text-[22px] leading-none text-[#1a1a1a]">{cp.total}</div>
                         <div className="text-[9px] text-nodri-t3 mb-2">clientes perdidos</div>
                         <div className="border-t border-nodri-border pt-1.5 space-y-0.5">
                           {perdaTotalSalao > 0 && (
