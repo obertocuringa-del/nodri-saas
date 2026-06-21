@@ -186,7 +186,7 @@ export default function ProfissionaisPage() {
 
   function preencherDistrato(prof: Profissional) {
     setDistratoProf(prof)
-    setDProfNome(prof.nome_completo || '')
+    setDProfNome((prof.nome_completo || '').toUpperCase())
     setDProfCPF(prof.cpf || '')
     setDProfCNPJ(prof.cnpj || '')
     setDProfEndereco(prof.endereco || '')
@@ -1060,7 +1060,7 @@ export default function ProfissionaisPage() {
                     </div>
                     <p style={{ fontSize: '11px', fontWeight: 700, color: '#ef4444', margin: '0 0 12px', fontFamily: 'sans-serif' }}>✏️ DADOS DO PROFISSIONAL (DISTRATADO)</p>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }}>
-                      <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Nome do Profissional<input style={iStyle} value={dProfNome} onChange={e => setDProfNome(e.target.value)} /></label>
+                      <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Nome do Profissional<input style={iStyle} value={dProfNome} onChange={e => setDProfNome(e.target.value.toUpperCase())} /></label>
                       <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>CPF do Profissional<input style={iStyle} value={dProfCPF} onChange={e => setDProfCPF(e.target.value)} /></label>
                       <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>CNPJ do Profissional<input style={iStyle} value={dProfCNPJ} onChange={e => setDProfCNPJ(e.target.value)} /></label>
                       <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Endereço do Profissional<input style={iStyle} value={dProfEndereco} onChange={e => setDProfEndereco(e.target.value)} /></label>
@@ -1090,7 +1090,7 @@ export default function ProfissionaisPage() {
                 <p style={{ textAlign: 'justify', marginBottom: '14pt', fontFamily: 'inherit' }}>
                   O presente tem como OBJETO o contrato de parceria celebrado entre as partes neste mencionadas, o qual teve como fundamento, o seguinte: O SALÃO-PARCEIRO, empresa destinada à prestação de serviços de salão de beleza e afins, proprietária e/ou possuidora de bens móveis e de instalação para barbeiros, cabeleireiros, manicuras, pedicuras, esteticistas, massagistas, maquiadores, escovistas, calistas, depiladores e demais profissões afins, sendo proprietária e possuidora de espaço, equipamentos e móveis apropriados à atividade desses profissionais, estabelece parceria com o PROFISSIONAL-PARCEIRO, pelo que a ele dá, em locação e/ou uso, móveis, aparelhos, utensílios e produtos de sua propriedade e/ou posse, para fins de exploração específica da atividade de cabeleireira e outras que porventura sejam praticadas exclusivamente dentro da abrangência da Lei 13.352, de 27 de outubro de 2016, em serviços de beleza, dentro do seu objeto social, não podendo o PROFISSIONAL-PARCEIRO usar os objetos dados em locação para quaisquer outros fins. Além dos bens dados em locação, o SALÃO-PARCEIRO também concede, ao PROFISSIONAL-PARCEIRO, serviços de gestão, de apoio administrativo e de escritório, tais como, exemplificativamente, cobrança e recebimento de valores pagos pelos clientes atendidos por ela, datado do dia{' '}
                   <input value={dDataContrato} onChange={e => setDDataContrato(e.target.value)} placeholder="dd/mm/aaaa"
-                    style={{ border: 'none', borderBottom: '1px solid #aaa', background: 'transparent', fontFamily: 'inherit', fontSize: 'inherit', width: '100px', outline: 'none', textAlign: 'center' }} />.
+                    style={{ border: 'none', borderBottom: '2px solid #ef4444', background: 'transparent', fontFamily: 'inherit', fontSize: 'inherit', width: '110px', outline: 'none', textAlign: 'center', color: dDataContrato ? 'inherit' : '#ef4444', fontWeight: dDataContrato ? 'inherit' : 600 }} />.
                 </p>
 
                 {/* ── CLÁUSULA 1.1 ── */}
@@ -1099,11 +1099,11 @@ export default function ProfissionaisPage() {
                 </p>
 
                 {/* ── Local e data ── */}
-                <p style={{ marginBottom: '48pt', fontFamily: 'inherit' }}>
+                <p style={{ marginBottom: '48pt', fontFamily: 'inherit', textAlign: 'center' }}>
                   <input value={dLocalDistrato} onChange={e => setDLocalDistrato(e.target.value)}
-                    style={{ border: 'none', borderBottom: '1px solid #aaa', background: 'transparent', fontFamily: 'inherit', fontSize: 'inherit', width: '120px', outline: 'none' }} />,{' '}
+                    style={{ border: 'none', borderBottom: '2px solid #ef4444', background: 'transparent', fontFamily: 'inherit', fontSize: 'inherit', width: '120px', outline: 'none', textAlign: 'center', color: dLocalDistrato ? 'inherit' : '#ef4444' }} />,{' '}
                   <input value={dDataDistrato} onChange={e => setDDataDistrato(e.target.value)}
-                    style={{ border: 'none', borderBottom: '1px solid #aaa', background: 'transparent', fontFamily: 'inherit', fontSize: 'inherit', width: '110px', outline: 'none' }} />
+                    style={{ border: 'none', borderBottom: '2px solid #ef4444', background: 'transparent', fontFamily: 'inherit', fontSize: 'inherit', width: '120px', outline: 'none', textAlign: 'center', color: '#ef4444', fontWeight: 600 }} />
                 </p>
 
                 {/* ── Assinaturas (igual ao Word: linhas __ com label abaixo) ── */}
