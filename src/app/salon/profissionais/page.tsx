@@ -64,7 +64,6 @@ const CONTEUDO_INFO: Record<string, { titulo: string; texto: string }> = {
   materiais:    { titulo: 'Materiais para Trabalho', texto: 'Lista de materiais que o salão fornece e o que é responsabilidade do profissional. Geralmente o salão fornece: espaço, lavatório, secador base. O profissional traz: tesouras, pentes, produtos específicos de sua linha.' },
   perfil:       { titulo: 'Perfil Ideal de Profissional', texto: 'Buscamos profissionais: ✅ Pontuais e comprometidos ✅ Com cartela de clientes ✅ Que valorizam higiene e organização ✅ Comunicativos e empáticos ✅ Com CNPJ ativo ✅ Abertos a feedback e treinamento contínuo.' },
   horarios:     { titulo: 'Horários e Folgas', texto: 'Defina junto ao profissional: dias de trabalho por semana, horário de entrada e saída, dias fixos de folga, política de ausências e como comunicar faltas. Tudo deve estar no contrato assinado.' },
-  distrato:     { titulo: 'Distrato', texto: 'O distrato é o documento que encerra a parceria de forma amigável. Deve conter: data de encerramento, acerto de comissões pendentes, devolução de materiais, cláusula de não-concorrência se aplicável, e assinatura de ambas as partes.' },
   contrato:     { titulo: 'Contrato de Trabalho', texto: 'O contrato de locação de espaço ou parceria deve conter: identificação das partes (salão e profissional), CNPJ de ambos, percentual de comissão, dias e horários de trabalho, responsabilidades, vigência e cláusulas de rescisão.' },
   certificados: { titulo: 'Certificados', texto: 'Solicite cópias dos certificados de cursos concluídos: colorimetria, corte, escova, tratamentos capilares, manicure, podologia, etc. Guarde digitalmente na ficha do profissional. Incentive atualização constante.' },
   carreira:     { titulo: 'Plano de Carreira', texto: 'Estruture crescimento por etapas: 🥉 Júnior (0-1 ano) → 🥈 Pleno (1-3 anos) → 🥇 Sênior (3+ anos) → 🏆 Referência. Defina metas de faturamento, satisfação de clientes e horas de capacitação para evolução em cada nível.' },
@@ -108,7 +107,30 @@ export default function ProfissionaisPage() {
   const [servicosSelecionados, setServicosSelecionados] = useState<string[]>([])
   const [servicosAberto, setServicosAberto] = useState(false)
 
+  // ── DISTRATO ──
+  const [distratoProf, setDistratoProf] = useState<Profissional | null>(null)
+  const [distratoEditando, setDistratoEditando] = useState(false)
+  const [salaoData, setSalaoData] = useState<any>(null)
+  // campos editáveis do distrato
+  const [dSalaoNome, setDSalaoNome] = useState('')
+  const [dSalaoCidade, setDSalaoCidade] = useState('BRASÍLIA, DF')
+  const [dSalaoEndereco, setDSalaoEndereco] = useState('')
+  const [dSalaoCNPJ, setDSalaoCNPJ] = useState('')
+  const [dSalaoResponsavel, setDSalaoResponsavel] = useState('')
+  const [dSalaoRG, setDSalaoRG] = useState('')
+  const [dProfNome, setDProfNome] = useState('')
+  const [dProfCPF, setDProfCPF] = useState('')
+  const [dProfCNPJ, setDProfCNPJ] = useState('')
+  const [dProfEndereco, setDProfEndereco] = useState('')
+  const [dProfRepresentante, setDProfRepresentante] = useState('')
+  const [dDataContrato, setDDataContrato] = useState('')
+  const [dDataDistrato, setDDataDistrato] = useState(() => {
+    const h = new Date(); return `${String(h.getDate()).padStart(2,'0')}/${String(h.getMonth()+1).padStart(2,'0')}/${h.getFullYear()}`
+  })
+  const [dLocalDistrato, setDLocalDistrato] = useState('Brasília')
+
   const CATEGORIAS_PADRAO = ['Cabeleireiro', 'Manicure', 'Pedicure', 'Assistente', 'Massoterapeuta', 'Maquiador(a)', 'Colorista', 'Recepcionista', 'Auxiliar']
+  const iStyle: React.CSSProperties = { display: 'block', width: '100%', marginTop: '3px', padding: '6px 10px', border: '1px solid #d6d3ce', borderRadius: '6px', fontSize: '12px', background: '#fafaf8', color: '#1a1a1a', fontFamily: 'inherit' }
 
   // Categorias existentes dos profissionais cadastrados + padrão (sem duplicatas)
   const categorias = Array.from(new Set([
@@ -137,7 +159,108 @@ export default function ProfissionaisPage() {
     carregarProfissionais()
   }
 
-  useEffect(() => { carregarProfissionais(); buscarLinkCadastro(); carregarServicos() }, [])
+  useEffect(() => { carregarProfissionais(); buscarLinkCadastro(); carregarServicos(); carregarSalao() }, [])
+
+  async function carregarSalao() {
+    try {
+      const res = await fetch('/api/salon/perfil')
+      if (res.ok) {
+        const d = await res.json()
+        setSalaoData(d)
+        setDSalaoNome(d.nome || '')
+        setDSalaoResponsavel(d.responsavel || '')
+        setDSalaoCNPJ(d.cnpj || '')
+        setDSalaoEndereco(d.endereco || '')
+      }
+    } catch {}
+  }
+
+  function preencherDistrato(prof: Profissional) {
+    setDistratoProf(prof)
+    setDProfNome(prof.nome_completo || '')
+    setDProfCPF(prof.cpf || '')
+    setDProfCNPJ(prof.cnpj || '')
+    setDProfEndereco(prof.endereco || '')
+    try {
+      const cr = prof.contato_responsavel ? JSON.parse(prof.contato_responsavel) : {}
+      setDProfRepresentante(cr.nome || prof.nome_completo || '')
+    } catch { setDProfRepresentante(prof.nome_completo || '') }
+  }
+
+  function imprimirDistrato() {
+    const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Distrato — ${dProfNome}</title>
+<style>
+  @page { size: A4 portrait; margin: 3cm 2cm 2cm 3cm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Times New Roman', Times, serif; font-size: 12pt; color: #000; line-height: 1.5; background: #fff; }
+  h1 { font-size: 14pt; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 24pt; letter-spacing: 1px; }
+  p { text-align: justify; text-indent: 1.25cm; margin-bottom: 12pt; }
+  p.sem-recuo { text-indent: 0; }
+  .assinaturas { margin-top: 48pt; display: flex; justify-content: space-between; }
+  .ass-bloco { text-align: center; width: 45%; }
+  .ass-linha { border-top: 1px solid #000; margin-bottom: 4pt; }
+  .ass-nome { font-weight: bold; font-size: 11pt; }
+  .testemunhas { margin-top: 32pt; }
+  .test-linha { margin-bottom: 18pt; }
+  @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+</style>
+</head>
+<body>
+<h1>Distrato de Contrato de Parceria</h1>
+
+<p class="sem-recuo"><strong>${dSalaoNome.toUpperCase()}</strong>, com sede na cidade de ${dSalaoCidade}, ${dSalaoEndereco}, inscrita no CNPJ sob o n° ${dSalaoCNPJ}, neste ato representada por ${dSalaoResponsavel}${dSalaoRG ? ', RG ' + dSalaoRG : ''}, doravante denominada simplesmente <strong>DISTRATANTE</strong>, e</p>
+
+<p class="sem-recuo"><strong>${dProfNome.toUpperCase()}</strong>${dProfCPF ? ', CPF ' + dProfCPF : ''}${dProfCNPJ ? ', inscrito(a) no CNPJ sob o n° ' + dProfCNPJ : ''}, com endereço em ${dProfEndereco || '___________________________'}, neste ato representado(a) por <strong>${dProfRepresentante || dProfNome}</strong>, doravante denominado(a) simplesmente <strong>DISTRATADO(A)</strong>, têm entre os mesmos, de maneira justa e acordada, o presente <strong>DISTRATO DE CONTRATO DE PARCERIA</strong>, ficando desde já aceito, pelas cláusulas abaixo descritas:</p>
+
+<p class="sem-recuo"><strong>1)&nbsp;&nbsp;&nbsp;&nbsp; Do Objeto e Considerações do Contrato:</strong></p>
+
+<p>O presente tem como OBJETO o contrato de parceria celebrado entre as partes neste mencionadas, o qual teve como fundamento, o seguinte: O SALÃO-PARCEIRO, empresa destinada à prestação de serviços de salão de beleza e afins, proprietária e/ou possuidora de bens móveis e de instalação para barbeiros, cabeleireiros, manicuras, pedicuras, esteticistas, massagistas, maquiadores, escovistas, calistas, depiladores e demais profissões afins, sendo proprietária e possuidora de espaço, equipamentos e móveis apropriados à atividade desses profissionais, estabelece parceria com o PROFISSIONAL-PARCEIRO, pelo que a ele dá, em locação e/ou uso, móveis, aparelhos, utensílios e produtos de sua propriedade e/ou posse, para fins de exploração específica da atividade de cabeleireira e outras que porventura sejam praticadas exclusivamente dentro da abrangência da Lei 13.352, de 27 de outubro de 2016, em serviços de beleza, dentro do seu objeto social, não podendo o PROFISSIONAL-PARCEIRO usar os objetos dados em locação para quaisquer outros fins. Além dos bens dados em locação, o SALÃO-PARCEIRO também concede, ao PROFISSIONAL-PARCEIRO, serviços de gestão, de apoio administrativo e de escritório, tais como, exemplificativamente, cobrança e recebimento de valores pagos pelos clientes atendidos por ela, datado do dia ${dDataContrato || '___/___/______'}.</p>
+
+<p class="sem-recuo"><strong>1.1)</strong> As partes resolvem, nesta data, em comum acordo, que, considerando que não existem pendências de ambas as partes, fica consumado o distrato.</p>
+
+<p class="sem-recuo">${dLocalDistrato}, ${dDataDistrato}</p>
+
+<div class="assinaturas">
+  <div class="ass-bloco">
+    <div class="ass-linha"></div>
+    <div class="ass-nome">${dSalaoNome.toUpperCase()}</div>
+    <div>DISTRATANTE</div>
+    <div>${dSalaoResponsavel}</div>
+  </div>
+  <div class="ass-bloco">
+    <div class="ass-linha"></div>
+    <div class="ass-nome">${dProfNome.toUpperCase()}</div>
+    <div>DISTRATADO(A)</div>
+  </div>
+</div>
+
+<div class="testemunhas">
+  <p class="sem-recuo"><strong>Testemunhas:</strong></p>
+  <div class="test-linha">
+    <p class="sem-recuo">1ª) Ass. _________________________</p>
+    <p class="sem-recuo">Nome:</p>
+    <p class="sem-recuo">RG:</p>
+  </div>
+  <div class="test-linha">
+    <p class="sem-recuo">2ª) Ass. _________________________</p>
+    <p class="sem-recuo">Nome:</p>
+    <p class="sem-recuo">RG:</p>
+  </div>
+</div>
+</body>
+</html>`
+    const iframe = document.createElement('iframe')
+    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:0;height:0;border:none'
+    document.body.appendChild(iframe)
+    iframe.contentDocument!.open()
+    iframe.contentDocument!.write(html)
+    iframe.contentDocument!.close()
+    setTimeout(() => { iframe.contentWindow!.print(); setTimeout(() => document.body.removeChild(iframe), 2000) }, 400)
+  }
 
   async function buscarLinkCadastro() {
     try {
@@ -815,6 +938,119 @@ export default function ProfissionaisPage() {
                     </div>
                   )
                 })}
+              </div>
+            </div>
+          )}
+
+          {/* ── DISTRATO ── */}
+          {secao === 'distrato' && (
+            <div style={{ maxWidth: '860px' }}>
+              {/* Cabeçalho toolbar */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
+                <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#1a1a1a', margin: 0 }}>Distrato de Contrato de Parceria</h2>
+                <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
+                  <button onClick={() => setDistratoEditando(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: distratoEditando ? '#5b4fcf' : '#f0eeea', color: distratoEditando ? '#fff' : '#444', border: '1px solid #d6d3ce', borderRadius: '8px', padding: '8px 14px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
+                    <Edit2 size={14} /> {distratoEditando ? 'Concluir Edição' : 'Editar Arquivo por Completo'}
+                  </button>
+                  <button onClick={imprimirDistrato} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'linear-gradient(135deg,#5b4fcf,#f43f8e)', color: '#fff', border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
+                    🖨️ Imprimir
+                  </button>
+                </div>
+              </div>
+
+              {/* Seletor de profissional */}
+              <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
+                <label style={{ fontSize: '13px', fontWeight: 600, color: '#444', display: 'block', marginBottom: '8px' }}>Selecionar Profissional (Distratado)</label>
+                <select
+                  value={distratoProf?.id || ''}
+                  onChange={e => { const p = profissionais.find(x => x.id === e.target.value); if (p) preencherDistrato(p) }}
+                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d6d3ce', borderRadius: '8px', fontSize: '14px', background: '#fafaf8', color: '#1a1a1a' }}
+                >
+                  <option value=''>— Selecione o profissional —</option>
+                  {profissionais.filter(p => p.ativo || p.status_cadastro === 'pendente').map(p => (
+                    <option key={p.id} value={p.id}>{p.nome_completo}{p.cargo ? ` — ${p.cargo}` : ''}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Documento */}
+              <div style={{ background: '#fff', border: '1px solid #d6d3ce', borderRadius: '12px', padding: '48px', fontFamily: "'Times New Roman', Times, serif", fontSize: '12pt', lineHeight: 1.6, color: '#000' }}>
+                {/* Título */}
+                <h1 style={{ textAlign: 'center', fontSize: '14pt', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '32px' }}>
+                  Distrato de Contrato de Parceria
+                </h1>
+
+                {/* Bloco distratante + distratado */}
+                <div style={{ textAlign: 'justify', textIndent: 0, marginBottom: '14pt' }}>
+                  {distratoEditando ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                        <label style={{ fontSize: '11px', color: '#666' }}>Nome do Salão<input style={iStyle} value={dSalaoNome} onChange={e => setDSalaoNome(e.target.value)} /></label>
+                        <label style={{ fontSize: '11px', color: '#666' }}>Cidade/Estado<input style={iStyle} value={dSalaoCidade} onChange={e => setDSalaoCidade(e.target.value)} /></label>
+                        <label style={{ fontSize: '11px', color: '#666' }}>Endereço do Salão<input style={iStyle} value={dSalaoEndereco} onChange={e => setDSalaoEndereco(e.target.value)} /></label>
+                        <label style={{ fontSize: '11px', color: '#666' }}>CNPJ do Salão<input style={iStyle} value={dSalaoCNPJ} onChange={e => setDSalaoCNPJ(e.target.value)} /></label>
+                        <label style={{ fontSize: '11px', color: '#666' }}>Responsável do Salão<input style={iStyle} value={dSalaoResponsavel} onChange={e => setDSalaoResponsavel(e.target.value)} /></label>
+                        <label style={{ fontSize: '11px', color: '#666' }}>RG do Responsável<input style={iStyle} value={dSalaoRG} onChange={e => setDSalaoRG(e.target.value)} /></label>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '8px', padding: '12px', background: '#f5f4f0', borderRadius: '8px' }}>
+                        <label style={{ fontSize: '11px', color: '#666' }}>Nome do Profissional<input style={iStyle} value={dProfNome} onChange={e => setDProfNome(e.target.value)} /></label>
+                        <label style={{ fontSize: '11px', color: '#666' }}>CPF do Profissional<input style={iStyle} value={dProfCPF} onChange={e => setDProfCPF(e.target.value)} /></label>
+                        <label style={{ fontSize: '11px', color: '#666' }}>CNPJ do Profissional<input style={iStyle} value={dProfCNPJ} onChange={e => setDProfCNPJ(e.target.value)} /></label>
+                        <label style={{ fontSize: '11px', color: '#666' }}>Endereço do Profissional<input style={iStyle} value={dProfEndereco} onChange={e => setDProfEndereco(e.target.value)} /></label>
+                        <label style={{ fontSize: '11px', color: '#666' }}>Representante do Profissional<input style={iStyle} value={dProfRepresentante} onChange={e => setDProfRepresentante(e.target.value)} /></label>
+                      </div>
+                    </div>
+                  ) : (
+                    <p style={{ textAlign: 'justify', marginBottom: '14pt', fontFamily: 'inherit' }}>
+                      <strong>{dSalaoNome.toUpperCase() || '[NOME DO SALÃO]'}</strong>, com sede na cidade de {dSalaoCidade}{dSalaoEndereco ? `, ${dSalaoEndereco}` : ''}, inscrita no CNPJ sob o n° <strong>{dSalaoCNPJ || '[CNPJ]'}</strong>, neste ato representada por <strong>{dSalaoResponsavel || '[RESPONSÁVEL]'}</strong>{dSalaoRG ? `, RG ${dSalaoRG}` : ''}, doravante denominada simplesmente <strong>DISTRATANTE</strong>, e{' '}
+                      <strong>{dProfNome.toUpperCase() || '[NOME DO PROFISSIONAL]'}</strong>{dProfCPF ? `, CPF ${dProfCPF}` : ''}{dProfCNPJ ? `, inscrito(a) no CNPJ sob o n° ${dProfCNPJ}` : ''}, com endereço em {dProfEndereco || '___________________________'}, neste ato representado(a) por <strong>{dProfRepresentante || dProfNome || '[NOME]'}</strong>, doravante denominado(a) simplesmente <strong>DISTRATADO(A)</strong>, têm entre os mesmos, de maneira justa e acordada, o presente <strong>DISTRATO DE CONTRATO DE PARCERIA</strong>, ficando desde já aceito, pelas cláusulas abaixo descritas:
+                    </p>
+                  )}
+                </div>
+
+                <p style={{ textAlign: 'justify', marginBottom: '10pt', fontFamily: 'inherit' }}><strong>1)&nbsp;&nbsp;&nbsp;&nbsp; Do Objeto e Considerações do Contrato:</strong></p>
+                <p style={{ textAlign: 'justify', textIndent: '1.25cm', marginBottom: '14pt', fontFamily: 'inherit' }}>
+                  O presente tem como OBJETO o contrato de parceria celebrado entre as partes neste mencionadas, o qual teve como fundamento, o seguinte: O SALÃO-PARCEIRO, empresa destinada à prestação de serviços de salão de beleza e afins, proprietária e/ou possuidora de bens móveis e de instalação para barbeiros, cabeleireiros, manicuras, pedicuras, esteticistas, massagistas, maquiadores, escovistas, calistas, depiladores e demais profissões afins, sendo proprietária e possuidora de espaço, equipamentos e móveis apropriados à atividade desses profissionais, estabelece parceria com o PROFISSIONAL-PARCEIRO, pelo que a ele dá, em locação e/ou uso, móveis, aparelhos, utensílios e produtos de sua propriedade e/ou posse, para fins de exploração específica da atividade de cabeleireira e outras que porventura sejam praticadas exclusivamente dentro da abrangência da Lei 13.352, de 27 de outubro de 2016, em serviços de beleza, dentro do seu objeto social, não podendo o PROFISSIONAL-PARCEIRO usar os objetos dados em locação para quaisquer outros fins. Além dos bens dados em locação, o SALÃO-PARCEIRO também concede, ao PROFISSIONAL-PARCEIRO, serviços de gestão, de apoio administrativo e de escritório, tais como, exemplificativamente, cobrança e recebimento de valores pagos pelos clientes atendidos por ela, datado do dia{' '}
+                  {distratoEditando ? <input style={{ ...iStyle, display: 'inline', width: '120px', padding: '2px 6px' }} value={dDataContrato} onChange={e => setDDataContrato(e.target.value)} placeholder="dd/mm/aaaa" /> : <strong>{dDataContrato || '___/___/______'}</strong>}.
+                </p>
+                <p style={{ textAlign: 'justify', marginBottom: '14pt', fontFamily: 'inherit' }}><strong>1.1)</strong> As partes resolvem, nesta data, em comum acordo, que, considerando que não existem pendências de ambas as partes, fica consumado o distrato.</p>
+
+                {/* Data e local */}
+                <p style={{ margin: '32pt 0 0', fontFamily: 'inherit' }}>
+                  {distratoEditando ? (
+                    <span style={{ display: 'inline-flex', gap: '8px', alignItems: 'center' }}>
+                      <input style={{ ...iStyle, display: 'inline', width: '120px', padding: '2px 6px' }} value={dLocalDistrato} onChange={e => setDLocalDistrato(e.target.value)} placeholder="Cidade" />,{' '}
+                      <input style={{ ...iStyle, display: 'inline', width: '130px', padding: '2px 6px' }} value={dDataDistrato} onChange={e => setDDataDistrato(e.target.value)} placeholder="dd/mm/aaaa" />
+                    </span>
+                  ) : <>{dLocalDistrato}, {dDataDistrato}</>}
+                </p>
+
+                {/* Assinaturas */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '48pt' }}>
+                  <div style={{ textAlign: 'center', width: '44%' }}>
+                    <div style={{ borderTop: '1px solid #000', marginBottom: '6px' }}></div>
+                    <div style={{ fontWeight: 'bold' }}>{dSalaoNome.toUpperCase() || 'SALÃO'}</div>
+                    <div>DISTRATANTE</div>
+                    <div style={{ fontSize: '11pt' }}>{dSalaoResponsavel}</div>
+                  </div>
+                  <div style={{ textAlign: 'center', width: '44%' }}>
+                    <div style={{ borderTop: '1px solid #000', marginBottom: '6px' }}></div>
+                    <div style={{ fontWeight: 'bold' }}>{dProfNome.toUpperCase() || 'PROFISSIONAL'}</div>
+                    <div>DISTRATADO(A)</div>
+                  </div>
+                </div>
+
+                {/* Testemunhas */}
+                <div style={{ marginTop: '32pt' }}>
+                  <p style={{ marginBottom: '16pt', fontFamily: 'inherit' }}><strong>Testemunhas:</strong></p>
+                  {[1,2].map(n => (
+                    <div key={n} style={{ marginBottom: '20pt' }}>
+                      <p style={{ marginBottom: '4pt', fontFamily: 'inherit' }}>{n}ª) Ass. _________________________</p>
+                      <p style={{ marginBottom: '4pt', fontFamily: 'inherit' }}>Nome: _______________________________________________</p>
+                      <p style={{ fontFamily: 'inherit' }}>RG: __________________________________________________</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}
