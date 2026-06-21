@@ -2224,6 +2224,7 @@ export default function PerfilProfissionalPage() {
   const [tab, setTab] = useState<'cadastro'|'desempenho'|'faturamento'|'metas'|'ia'|'dependencia'|'oportunidades'|'bundle'|'clientes-perdidos'>('cadastro')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [anosDepAtivos, setAnosDepAtivos] = useState<number[]>([])
+  const [depCardAberto, setDepCardAberto] = useState<string|null>(null)
   const [analiseData, setAnaliseData] = useState<{dependencia:any;oportunidades:any;bundle:any}>({dependencia:null,oportunidades:null,bundle:null})
   const [loadAnalise, setLoadAnalise] = useState<{dependencia:boolean;oportunidades:boolean;bundle:boolean}>({dependencia:false,oportunidades:false,bundle:false})
   const anoAtual = new Date().getFullYear()
@@ -3716,14 +3717,133 @@ ${fieisRows?`<div class="sec"><div class="sec-title">Clientes Fiéis ❤️ (${d
                         <p className="text-[10px] text-nodri-t3">Período: {labelAnos} — clique em cada card para ver os detalhes</p>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                           {cards.map(item=>(
-                            <button key={item.id} onClick={()=>setAnosDepAtivos(prev => { (window as any).__depCard = (window as any).__depCard===item.id?null:item.id; return [...prev] })}
-                              className="bg-nodri-card border border-nodri-border rounded-xl p-3 text-left hover:border-nodri-cyan transition-all cursor-pointer">
+                            <button key={item.id} onClick={()=>setDepCardAberto(depCardAberto===item.id?null:item.id)}
+                              className={`bg-nodri-card border rounded-xl p-3 text-left transition-all cursor-pointer ${depCardAberto===item.id?'border-nodri-cyan':'border-nodri-border hover:border-nodri-cyan'}`}>
                               <div className="text-[9px] text-nodri-t3 uppercase tracking-wider mb-1">{item.l}</div>
                               <div className="font-syne font-bold text-[16px]" style={{color:item.c}}>{item.v}</div>
-                              <div className="text-[8px] text-nodri-t3 mt-1">clique para detalhes ▼</div>
+                              <div className="text-[8px] text-nodri-t3 mt-1">{depCardAberto===item.id?'▲ fechar':'▼ ver detalhes'}</div>
                             </button>
                           ))}
                         </div>
+
+                        {/* Painel % do Faturamento */}
+                        {depCardAberto==='pct' && (
+                          <div className="bg-nodri-surface border border-nodri-cyan/40 rounded-2xl p-4">
+                            <h4 className="font-syne font-bold text-[12px] mb-3 text-nodri-cyan">% do Faturamento — como chegamos em {pctFilt}%</h4>
+                            <p className="text-[10px] text-nodri-t3 mb-3">Fórmula: Fat. Prof. ÷ Fat. Salão × 100 — mês a mês no período {labelAnos}</p>
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-[11px]">
+                                <thead><tr className="border-b border-nodri-border text-nodri-t3 text-[9px] uppercase">
+                                  <th className="text-left pb-2">Mês</th><th className="text-right pb-2">Fat. Prof.</th><th className="text-right pb-2">Fat. Salão</th><th className="text-right pb-2">%</th>
+                                </tr></thead>
+                                <tbody>
+                                  {histFiltrado.map((h:any)=>(
+                                    <tr key={`pct-${h.ano}-${h.mes}`} className="border-b border-nodri-border/40">
+                                      <td className="py-1.5 text-nodri-t2">{MESES[h.mes-1]} {h.ano}</td>
+                                      <td className="text-right text-nodri-cyan font-semibold">{fmt$(h.fat_prof)}</td>
+                                      <td className="text-right text-nodri-t3">{fmt$(h.fat_total)}</td>
+                                      <td className="text-right font-bold" style={{color:corFilt}}>{h.pct}%</td>
+                                    </tr>
+                                  ))}
+                                  <tr className="border-t-2 border-nodri-border font-bold">
+                                    <td className="py-2">TOTAL</td>
+                                    <td className="text-right text-nodri-cyan">{fmt$(fatProfFilt)}</td>
+                                    <td className="text-right text-nodri-t2">{fmt$(fatTotalFilt)}</td>
+                                    <td className="text-right" style={{color:corFilt}}>{pctFilt}%</td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Painel Faturamento Gerado */}
+                        {depCardAberto==='fat' && (
+                          <div className="bg-nodri-surface border border-nodri-cyan/40 rounded-2xl p-4">
+                            <h4 className="font-syne font-bold text-[12px] mb-3 text-nodri-cyan">Faturamento Gerado — {fmt$(fatProfFilt)}</h4>
+                            <p className="text-[10px] text-nodri-t3 mb-3">Fonte: soma de <strong>atendimentos_raw.total</strong> para este profissional no período {labelAnos}</p>
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-[11px]">
+                                <thead><tr className="border-b border-nodri-border text-nodri-t3 text-[9px] uppercase">
+                                  <th className="text-left pb-2">Mês</th><th className="text-right pb-2">Fat. Prof. (RAW)</th><th className="text-right pb-2">Fat. Salão</th><th className="text-right pb-2">%</th>
+                                </tr></thead>
+                                <tbody>
+                                  {histFiltrado.map((h:any)=>(
+                                    <tr key={`fat-${h.ano}-${h.mes}`} className="border-b border-nodri-border/40">
+                                      <td className="py-1.5 text-nodri-t2">{MESES[h.mes-1]} {h.ano}</td>
+                                      <td className="text-right text-[#5b4fcf] font-semibold">{fmt$(h.fat_prof)}</td>
+                                      <td className="text-right text-nodri-t3">{fmt$(h.fat_total)}</td>
+                                      <td className="text-right text-nodri-t2">{h.pct}%</td>
+                                    </tr>
+                                  ))}
+                                  <tr className="border-t-2 border-nodri-border font-bold">
+                                    <td className="py-2">TOTAL</td>
+                                    <td className="text-right text-[#5b4fcf]">{fmt$(fatProfFilt)}</td>
+                                    <td className="text-right text-nodri-t2">{fmt$(fatTotalFilt)}</td>
+                                    <td className="text-right text-nodri-t2">{pctFilt}%</td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Painel Clientes Fiéis */}
+                        {depCardAberto==='fieis' && (
+                          <div className="bg-nodri-surface border border-nodri-cyan/40 rounded-2xl p-4">
+                            <h4 className="font-syne font-bold text-[12px] mb-1 text-nodri-cyan">❤️ Clientes Fiéis — {d.clientes_fieis||0} clientes</h4>
+                            <p className="text-[10px] text-nodri-t3 mb-3">≥4 visitas no salão · ≥80% com este prof. · última visita nos últimos 90 dias</p>
+                            {(d.detalhes_fieis?.length>0) ? (
+                              <div className="overflow-x-auto">
+                                <table className="w-full text-[11px]">
+                                  <thead><tr className="border-b border-nodri-border text-nodri-t3 text-[9px] uppercase">
+                                    <th className="text-left pb-2">Cliente</th><th className="text-right pb-2">Visitas</th><th className="text-right pb-2">c/ Prof.</th><th className="text-right pb-2">%</th><th className="text-right pb-2">Última</th>
+                                  </tr></thead>
+                                  <tbody>
+                                    {d.detalhes_fieis.map((f:any)=>(
+                                      <tr key={`fiel-${f.cliente}`} className="border-b border-nodri-border/40">
+                                        <td className="py-1.5 font-semibold text-nodri-t1">{f.cliente}</td>
+                                        <td className="text-right text-nodri-t2">{f.total}</td>
+                                        <td className="text-right text-nodri-t2">{f.comProf}</td>
+                                        <td className="text-right font-bold text-amber-500">{f.pct}%</td>
+                                        <td className="text-right text-nodri-t3">{f.ultimaVisita||'-'}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            ) : <p className="text-[11px] text-nodri-t3">Nenhum cliente fiel identificado no momento.</p>}
+                          </div>
+                        )}
+
+                        {/* Painel Média Mensal */}
+                        {depCardAberto==='media' && (
+                          <div className="bg-nodri-surface border border-nodri-cyan/40 rounded-2xl p-4">
+                            <h4 className="font-syne font-bold text-[12px] mb-3 text-nodri-cyan">Média Mensal — {fmt$(mediaMensalFilt)}</h4>
+                            <p className="text-[10px] text-nodri-t3 mb-3">
+                              Fórmula: {fmt$(fatProfFilt)} ÷ {mesesFiltComDados} meses com dados = <strong>{fmt$(mediaMensalFilt)}/mês</strong>
+                            </p>
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-[11px]">
+                                <thead><tr className="border-b border-nodri-border text-nodri-t3 text-[9px] uppercase">
+                                  <th className="text-left pb-2">Mês</th><th className="text-right pb-2">Fat. Prof.</th><th className="text-right pb-2">vs Média</th>
+                                </tr></thead>
+                                <tbody>
+                                  {histFiltrado.filter((h:any)=>h.fat_prof>0).map((h:any)=>{
+                                    const diff = h.fat_prof - mediaMensalFilt
+                                    return (
+                                      <tr key={`med-${h.ano}-${h.mes}`} className="border-b border-nodri-border/40">
+                                        <td className="py-1.5 text-nodri-t2">{MESES[h.mes-1]} {h.ano}</td>
+                                        <td className="text-right text-[#f43f8e] font-semibold">{fmt$(h.fat_prof)}</td>
+                                        <td className={`text-right font-semibold ${diff>=0?'text-green-500':'text-red-400'}`}>{diff>=0?'+':''}{fmt$(diff)}</td>
+                                      </tr>
+                                    )
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        )}
                       </>
                     )
                   })()}
@@ -3733,83 +3853,6 @@ ${fieisRows?`<div class="sec"><div class="sec-title">Clientes Fiéis ❤️ (${d
                     <GraficoDependencia historico={d.historico_completo} onAnosChange={setAnosDepAtivos}/>
                   )}
 
-                  {/* Tabela histórico completo sempre visível */}
-                  {d.historico_completo?.length > 0 && (() => {
-                    const hist = d.historico_completo || []
-                    const anosDisp2 = Array.from(new Set(hist.map((h:any)=>h.ano))).sort((a:any,b:any)=>b-a) as number[]
-                    const anosFiltro = anosDepAtivos.length ? anosDepAtivos : anosDisp2.slice(0,2)
-                    const histFiltrado = hist.filter((h:any) => anosFiltro.includes(h.ano))
-                    const fatProfFilt = histFiltrado.reduce((s:number,h:any)=>s+h.fat_prof,0)
-                    const fatTotalFilt = histFiltrado.reduce((s:number,h:any)=>s+h.fat_total,0)
-                    return (
-                      <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
-                        <h3 className="font-syne font-bold text-[13px] mb-1">📊 Comprovação dos Valores — Mês a Mês</h3>
-                        <p className="text-[9px] text-nodri-t3 mb-3">
-                          Total Prof: <strong>{fmt$(fatProfFilt)}</strong> · Total Salão: <strong>{fmt$(fatTotalFilt)}</strong> · % = <strong>{fatTotalFilt>0?Math.round(fatProfFilt/fatTotalFilt*1000)/10:0}%</strong>
-                        </p>
-                        <div className="overflow-x-auto">
-                          <table className="w-full text-[11px]">
-                            <thead>
-                              <tr className="border-b border-nodri-border text-nodri-t3 text-[9px] uppercase">
-                                <th className="text-left pb-2">Mês</th>
-                                <th className="text-right pb-2">Fat. Prof. (RAW)</th>
-                                <th className="text-right pb-2">Fat. Salão</th>
-                                <th className="text-right pb-2">%</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {histFiltrado.map((h:any)=>(
-                                <tr key={`${h.ano}-${h.mes}`} className="border-b border-nodri-border/40 hover:bg-nodri-border/10">
-                                  <td className="py-1.5 text-nodri-t2">{MESES[h.mes-1]} {h.ano}</td>
-                                  <td className="text-right font-semibold text-nodri-cyan">{fmt$(h.fat_prof)}</td>
-                                  <td className="text-right text-nodri-t3">{fmt$(h.fat_total)}</td>
-                                  <td className="text-right text-nodri-t2">{h.pct}%</td>
-                                </tr>
-                              ))}
-                              <tr className="border-t-2 border-nodri-border font-bold">
-                                <td className="py-2 text-nodri-t1">TOTAL</td>
-                                <td className="text-right text-nodri-cyan">{fmt$(fatProfFilt)}</td>
-                                <td className="text-right text-nodri-t2">{fmt$(fatTotalFilt)}</td>
-                                <td className="text-right text-nodri-t2">{fatTotalFilt>0?Math.round(fatProfFilt/fatTotalFilt*1000)/10:0}%</td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    )
-                  })()}
-
-                  {/* Tabela clientes fiéis */}
-                  {(d.detalhes_fieis?.length > 0) && (
-                    <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
-                      <h3 className="font-syne font-bold text-[13px] mb-1">❤️ Clientes Fiéis — {d.clientes_fieis} clientes</h3>
-                      <p className="text-[9px] text-nodri-t3 mb-3">≥4 visitas no salão · ≥80% com este profissional · última visita nos últimos 90 dias</p>
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-[11px]">
-                          <thead>
-                            <tr className="border-b border-nodri-border text-nodri-t3 text-[9px] uppercase">
-                              <th className="text-left pb-2">Cliente</th>
-                              <th className="text-right pb-2">Total Visitas</th>
-                              <th className="text-right pb-2">Com este Prof.</th>
-                              <th className="text-right pb-2">%</th>
-                              <th className="text-right pb-2">Última Visita</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {d.detalhes_fieis.map((f:any)=>(
-                              <tr key={f.cliente} className="border-b border-nodri-border/40 hover:bg-nodri-border/10">
-                                <td className="py-1.5 font-semibold text-nodri-t1">{f.cliente}</td>
-                                <td className="text-right text-nodri-t2">{f.total}</td>
-                                <td className="text-right text-nodri-t2">{f.comProf}</td>
-                                <td className="text-right font-bold text-amber-500">{f.pct}%</td>
-                                <td className="text-right text-nodri-t3">{f.ultimaVisita||'-'}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  )}
 
                   {/* Glossário / O que fazer */}
                   <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5 space-y-3">
