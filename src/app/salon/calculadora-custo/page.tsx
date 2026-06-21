@@ -501,6 +501,7 @@ export default function CalculadoraCusto() {
   const [reservaEmerg,  setReservaEmerg]  = useState('')
   const [totalReservaAcum, setTotalReservaAcum] = useState(0) // total acumulado de todos os meses
   const [mediaCustoOp, setMediaCustoOp] = useState(0) // média do custo operacional % de todos os meses
+  const [mediaFat12, setMediaFat12] = useState(0) // média faturamento últimos 12 meses
   const [qtdMesesMedia, setQtdMesesMedia] = useState(0) // quantos meses foram usados na média
   const [modoCustoOp, setModoCustoOp] = useState<'dani'|'real'>('real') // modo de cálculo do custo operacional
 
@@ -690,6 +691,26 @@ export default function CalculadoraCusto() {
             const media = somaRatios / mesesValidos.length
             setMediaCustoOp(media)
             setQtdMesesMedia(mesesValidos.length)
+          }
+
+          // Pré-preenche faturamento com média dos últimos 12 meses antes do período atual
+          const agora = new Date()
+          const anoAtual = agora.getFullYear()
+          const mesAtual = agora.getMonth() + 1
+          const ultimos12 = d.historico.filter((h:any) => {
+            const fat = parseFloat(h.dados?.fat || '0') || 0
+            if (fat <= 0) return false
+            // Exclui o mês atual e pega só os anteriores
+            if (h.ano > anoAtual) return false
+            if (h.ano === anoAtual && h.mes >= mesAtual) return false
+            // Máximo 12 meses atrás
+            const diffMeses = (anoAtual - h.ano) * 12 + (mesAtual - h.mes)
+            return diffMeses <= 12
+          })
+          if (ultimos12.length > 0) {
+            const somaFat = ultimos12.reduce((s:number, h:any) => s + (parseFloat(h.dados?.fat||'0')||0), 0)
+            const mediaFat = Math.round(somaFat / ultimos12.length)
+            setMediaFat12(mediaFat)
           }
         }
       })
@@ -1264,9 +1285,18 @@ Use números reais. Seja direto.`
                     <AvisoDefault ativo={!fat||fat==='0'} padrao="não preenchido" onPreencher={()=>{}} onManter={()=>{}}/>
                   </div>
                   <p className="text-xs mb-1" style={{color:'#6b6860'}}>Média dos últimos 12 meses ÷ 12</p>
+                  {mediaFat12 > 0 && !fat && (
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="text-[10px]" style={{color:'#5b4fcf'}}>📊 Média calculada: <strong>R$ {mediaFat12.toLocaleString('pt-BR')}</strong></span>
+                      <button onClick={()=>setFat(String(mediaFat12))}
+                        className="text-[10px] px-2 py-0.5 rounded-full font-bold"
+                        style={{background:'#5b4fcf',color:'#fff'}}>Usar</button>
+                    </div>
+                  )}
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>R$</span>
-                    <input type="number" value={fat} onChange={e=>setFat(e.target.value)} placeholder="Ex: 50000"
+                    <input type="number" value={fat} onChange={e=>setFat(e.target.value)}
+                      placeholder={mediaFat12 > 0 ? String(mediaFat12) : 'Ex: 50000'}
                       className="w-full pl-9 pr-3 py-2.5 rounded-xl text-[#1a1a1a] text-base font-bold focus:outline-none"
                       style={{background:'#f5f4f0',border:'1px solid #5b4fcf60'}}/>
                   </div>
