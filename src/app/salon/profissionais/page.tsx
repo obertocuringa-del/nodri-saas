@@ -470,7 +470,7 @@ export default function ProfissionaisPage() {
                           )}
                         </div>
                       </div>
-                      {p.habilidades && <p style={{ color: '#6b6860', fontSize: '11px', margin: '0 0 8px', lineHeight: 1.5 }}>{p.habilidades.slice(0, 80)}{p.habilidades.length > 80 ? '...' : ''}</p>}
+                      {p.habilidades && !p.habilidades.trim().startsWith('{') && <p style={{ color: '#6b6860', fontSize: '11px', margin: '0 0 8px', lineHeight: 1.5 }}>{p.habilidades.slice(0, 80)}{p.habilidades.length > 80 ? '...' : ''}</p>}
                       {p.email && <p style={{ color: '#6b6860', fontSize: '11px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: 4 }}><Mail size={11} /> {p.email}</p>}
                       {(() => {
                         const pends = [
