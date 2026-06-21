@@ -28,13 +28,16 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
 
-  const { nome, responsavel, telefone, nova_senha } = await req.json()
+  const { nome, responsavel, telefone, nova_senha, cnpj, endereco, cidade, rg_responsavel } = await req.json()
 
-  // FIX: só atualiza campos que foram enviados (evita sobrescrever com undefined/null)
   const updates: Record<string, any> = {}
   if (nome && nome.trim()) updates.nome = nome.trim()
   if (responsavel && responsavel.trim()) updates.responsavel = responsavel.trim()
   if (telefone !== undefined) updates.telefone = telefone || null
+  if (cnpj !== undefined) updates.cnpj = cnpj || null
+  if (endereco !== undefined) updates.endereco = endereco || null
+  if (cidade !== undefined) updates.cidade = cidade || null
+  if (rg_responsavel !== undefined) updates.rg_responsavel = rg_responsavel || null
 
   if (Object.keys(updates).length > 0) {
     const { error } = await supabaseAdmin

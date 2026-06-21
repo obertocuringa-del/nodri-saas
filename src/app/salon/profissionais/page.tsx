@@ -178,6 +178,8 @@ export default function ProfissionaisPage() {
         setDSalaoResponsavel(d.responsavel || '')
         setDSalaoCNPJ(d.cnpj || '')
         setDSalaoEndereco(d.endereco || '')
+        setDSalaoCidade(d.cidade || 'BRASÍLIA, DF')
+        setDSalaoRG(d.rg_responsavel || '')
       }
     } catch {}
   }
@@ -1006,9 +1008,6 @@ export default function ProfissionaisPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
                 <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#1a1a1a', margin: 0 }}>Distrato de Contrato de Parceria</h2>
                 <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
-                  <button onClick={() => setDistratoEditando(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: distratoEditando ? '#5b4fcf' : '#f0eeea', color: distratoEditando ? '#fff' : '#444', border: '1px solid #d6d3ce', borderRadius: '8px', padding: '8px 14px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
-                    <Edit2 size={14} /> {distratoEditando ? 'Concluir Edição' : 'Editar Arquivo por Completo'}
-                  </button>
                   <button onClick={imprimirDistrato} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'linear-gradient(135deg,#5b4fcf,#f43f8e)', color: '#fff', border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
                     🖨️ Imprimir
                   </button>
@@ -1037,31 +1036,10 @@ export default function ProfissionaisPage() {
                   Distrato de Contrato de Parceria
                 </h1>
 
-                {/* Painel de edição — aparece só no modo editar */}
-                {distratoEditando && (
-                  <div style={{ background: '#f5f4f0', border: '1px solid #d6d3ce', borderRadius: '10px', padding: '16px', marginBottom: '24px' }}>
-                    <p style={{ fontSize: '11px', fontWeight: 700, color: '#5b4fcf', margin: '0 0 12px', fontFamily: 'sans-serif' }}>✏️ DADOS DO SALÃO (DISTRATANTE)</p>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }}>
-                      <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Nome do Salão<input style={iStyle} value={dSalaoNome} onChange={e => setDSalaoNome(e.target.value)} /></label>
-                      <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Cidade/Estado<input style={iStyle} value={dSalaoCidade} onChange={e => setDSalaoCidade(e.target.value)} /></label>
-                      <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Endereço do Salão<input style={iStyle} value={dSalaoEndereco} onChange={e => setDSalaoEndereco(e.target.value)} /></label>
-                      <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>CNPJ do Salão<input style={iStyle} value={dSalaoCNPJ} onChange={e => setDSalaoCNPJ(e.target.value)} /></label>
-                      <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Responsável do Salão<input style={iStyle} value={dSalaoResponsavel} onChange={e => setDSalaoResponsavel(e.target.value)} /></label>
-                      <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>RG do Responsável<input style={iStyle} value={dSalaoRG} onChange={e => setDSalaoRG(e.target.value)} /></label>
-                    </div>
-                    <p style={{ fontSize: '11px', fontWeight: 700, color: '#ef4444', margin: '0 0 12px', fontFamily: 'sans-serif' }}>✏️ DADOS DO PROFISSIONAL (DISTRATADO)</p>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }}>
-                      <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Nome do Profissional<input style={iStyle} value={dProfNome} onChange={e => setDProfNome(e.target.value)} /></label>
-                      <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>CPF do Profissional<input style={iStyle} value={dProfCPF} onChange={e => setDProfCPF(e.target.value)} /></label>
-                      <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>CNPJ do Profissional<input style={iStyle} value={dProfCNPJ} onChange={e => setDProfCNPJ(e.target.value)} /></label>
-                      <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Endereço do Profissional<input style={iStyle} value={dProfEndereco} onChange={e => setDProfEndereco(e.target.value)} /></label>
-                    </div>
-                    <p style={{ fontSize: '11px', fontWeight: 700, color: '#444', margin: '0 0 12px', fontFamily: 'sans-serif' }}>✏️ DATAS</p>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
-                      <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Data início do contrato<input style={iStyle} value={dDataContrato} onChange={e => setDDataContrato(e.target.value)} placeholder="dd/mm/aaaa" /></label>
-                      <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Local do distrato<input style={iStyle} value={dLocalDistrato} onChange={e => setDLocalDistrato(e.target.value)} /></label>
-                      <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Data do distrato<input style={iStyle} value={dDataDistrato} onChange={e => setDDataDistrato(e.target.value)} placeholder="dd/mm/aaaa" /></label>
-                    </div>
+                {/* Aviso se faltar dados do salão */}
+                {(!dSalaoCNPJ || !dSalaoEndereco) && (
+                  <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '8px', padding: '12px 16px', marginBottom: '16px', fontSize: '12px', color: '#92400e', fontFamily: 'sans-serif' }}>
+                    ⚠️ Preencha CNPJ, endereço e cidade do salão em <strong>Meu Perfil</strong> para o distrato ficar completo.
                   </div>
                 )}
 
@@ -1079,7 +1057,9 @@ export default function ProfissionaisPage() {
                   <strong>1)&nbsp;&nbsp;&nbsp;&nbsp; Do Objeto e Considerações do Contrato:</strong>
                 </p>
                 <p style={{ textAlign: 'justify', marginBottom: '14pt', fontFamily: 'inherit' }}>
-                  O presente tem como OBJETO o contrato de parceria celebrado entre as partes neste mencionadas, o qual teve como fundamento, o seguinte: O SALÃO-PARCEIRO, empresa destinada à prestação de serviços de salão de beleza e afins, proprietária e/ou possuidora de bens móveis e de instalação para barbeiros, cabeleireiros, manicuras, pedicuras, esteticistas, massagistas, maquiadores, escovistas, calistas, depiladores e demais profissões afins, sendo proprietária e possuidora de espaço, equipamentos e móveis apropriados à atividade desses profissionais, estabelece parceria com o PROFISSIONAL-PARCEIRO, pelo que a ele dá, em locação e/ou uso, móveis, aparelhos, utensílios e produtos de sua propriedade e/ou posse, para fins de exploração específica da atividade de cabeleireira e outras que porventura sejam praticadas exclusivamente dentro da abrangência da Lei 13.352, de 27 de outubro de 2016, em serviços de beleza, dentro do seu objeto social, não podendo o PROFISSIONAL-PARCEIRO usar os objetos dados em locação para quaisquer outros fins. Além dos bens dados em locação, o SALÃO-PARCEIRO também concede, ao PROFISSIONAL-PARCEIRO, serviços de gestão, de apoio administrativo e de escritório, tais como, exemplificativamente, cobrança e recebimento de valores pagos pelos clientes atendidos por ela, datado do dia {dDataContrato || '___/___/______'}.
+                  O presente tem como OBJETO o contrato de parceria celebrado entre as partes neste mencionadas, o qual teve como fundamento, o seguinte: O SALÃO-PARCEIRO, empresa destinada à prestação de serviços de salão de beleza e afins, proprietária e/ou possuidora de bens móveis e de instalação para barbeiros, cabeleireiros, manicuras, pedicuras, esteticistas, massagistas, maquiadores, escovistas, calistas, depiladores e demais profissões afins, sendo proprietária e possuidora de espaço, equipamentos e móveis apropriados à atividade desses profissionais, estabelece parceria com o PROFISSIONAL-PARCEIRO, pelo que a ele dá, em locação e/ou uso, móveis, aparelhos, utensílios e produtos de sua propriedade e/ou posse, para fins de exploração específica da atividade de cabeleireira e outras que porventura sejam praticadas exclusivamente dentro da abrangência da Lei 13.352, de 27 de outubro de 2016, em serviços de beleza, dentro do seu objeto social, não podendo o PROFISSIONAL-PARCEIRO usar os objetos dados em locação para quaisquer outros fins. Além dos bens dados em locação, o SALÃO-PARCEIRO também concede, ao PROFISSIONAL-PARCEIRO, serviços de gestão, de apoio administrativo e de escritório, tais como, exemplificativamente, cobrança e recebimento de valores pagos pelos clientes atendidos por ela, datado do dia{' '}
+                  <input value={dDataContrato} onChange={e => setDDataContrato(e.target.value)} placeholder="dd/mm/aaaa"
+                    style={{ border: 'none', borderBottom: '1px solid #aaa', background: 'transparent', fontFamily: 'inherit', fontSize: 'inherit', width: '100px', outline: 'none', textAlign: 'center' }} />.
                 </p>
 
                 {/* ── CLÁUSULA 1.1 ── */}
@@ -1088,7 +1068,12 @@ export default function ProfissionaisPage() {
                 </p>
 
                 {/* ── Local e data ── */}
-                <p style={{ marginBottom: '48pt', fontFamily: 'inherit' }}>{dLocalDistrato}, {dDataDistrato}</p>
+                <p style={{ marginBottom: '48pt', fontFamily: 'inherit' }}>
+                  <input value={dLocalDistrato} onChange={e => setDLocalDistrato(e.target.value)}
+                    style={{ border: 'none', borderBottom: '1px solid #aaa', background: 'transparent', fontFamily: 'inherit', fontSize: 'inherit', width: '120px', outline: 'none' }} />,{' '}
+                  <input value={dDataDistrato} onChange={e => setDDataDistrato(e.target.value)}
+                    style={{ border: 'none', borderBottom: '1px solid #aaa', background: 'transparent', fontFamily: 'inherit', fontSize: 'inherit', width: '110px', outline: 'none' }} />
+                </p>
 
                 {/* ── Assinaturas (igual ao Word: linhas __ com label abaixo) ── */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '32pt' }}>

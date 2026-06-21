@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { ArrowLeft, Save, Loader2, User, Mail, Phone, Key, Eye, EyeOff } from 'lucide-react'
+import { ArrowLeft, Save, Loader2, User, Mail, Phone, Key, Eye, EyeOff, FileText, MapPin } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 
@@ -9,11 +9,11 @@ export default function PerfilSalaoPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [showSenha, setShowSenha] = useState(false)
-  const [form, setForm] = useState({ nome: '', responsavel: '', email: '', telefone: '', nova_senha: '', confirmar_senha: '' })
+  const [form, setForm] = useState({ nome: '', responsavel: '', email: '', telefone: '', nova_senha: '', confirmar_senha: '', cnpj: '', endereco: '', cidade: '', rg_responsavel: '' })
 
   useEffect(() => {
     fetch('/api/salon/perfil').then(r => r.json()).then(salao => {
-      setForm(p => ({ ...p, nome: salao.nome || '', responsavel: salao.responsavel || '', email: salao.email || '', telefone: salao.telefone || '' }))
+      setForm(p => ({ ...p, nome: salao.nome || '', responsavel: salao.responsavel || '', email: salao.email || '', telefone: salao.telefone || '', cnpj: salao.cnpj || '', endereco: salao.endereco || '', cidade: salao.cidade || '', rg_responsavel: salao.rg_responsavel || '' }))
       setLoading(false)
     }).catch(() => setLoading(false))
   }, [])
@@ -26,7 +26,7 @@ export default function PerfilSalaoPage() {
     const res = await fetch('/api/salon/perfil', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nome: form.nome, responsavel: form.responsavel, telefone: form.telefone, nova_senha: form.nova_senha || undefined }),
+      body: JSON.stringify({ nome: form.nome, responsavel: form.responsavel, telefone: form.telefone, nova_senha: form.nova_senha || undefined, cnpj: form.cnpj, endereco: form.endereco, cidade: form.cidade, rg_responsavel: form.rg_responsavel }),
     })
     setSaving(false)
     if (res.ok) { toast.success('Perfil atualizado!'); setForm(p => ({ ...p, nova_senha: '', confirmar_senha: '' })) }
@@ -80,6 +80,47 @@ export default function PerfilSalaoPage() {
                   <Phone size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-nodri-t3" />
                   <input value={form.telefone} onChange={e => setForm(p => ({ ...p, telefone: e.target.value }))}
                     placeholder="(00) 00000-0000"
+                    className="w-full bg-nodri-surface border border-nodri-border rounded-lg pl-8 pr-3 py-2.5 text-[13px] outline-none focus:border-nodri-cyan transition-colors" />
+                </div>
+              </div>
+            </div>
+
+            <div className="nodri-card p-5 space-y-4">
+              <h2 className="font-syne font-bold text-[13px] text-nodri-cyan">Dados para Documentos (Distrato / Contrato)</h2>
+              <p className="text-nodri-t3 text-[11px]">Esses dados preenchem automaticamente o Distrato e outros documentos.</p>
+              <div>
+                <label className="text-[11px] text-nodri-t3 uppercase tracking-wider mb-1.5 block">CNPJ do Salão</label>
+                <div className="relative">
+                  <FileText size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-nodri-t3" />
+                  <input value={form.cnpj} onChange={e => setForm(p => ({ ...p, cnpj: e.target.value }))}
+                    placeholder="00.000.000/0001-00"
+                    className="w-full bg-nodri-surface border border-nodri-border rounded-lg pl-8 pr-3 py-2.5 text-[13px] outline-none focus:border-nodri-cyan transition-colors" />
+                </div>
+              </div>
+              <div>
+                <label className="text-[11px] text-nodri-t3 uppercase tracking-wider mb-1.5 block">RG do Responsável</label>
+                <div className="relative">
+                  <FileText size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-nodri-t3" />
+                  <input value={form.rg_responsavel} onChange={e => setForm(p => ({ ...p, rg_responsavel: e.target.value }))}
+                    placeholder="0000000000"
+                    className="w-full bg-nodri-surface border border-nodri-border rounded-lg pl-8 pr-3 py-2.5 text-[13px] outline-none focus:border-nodri-cyan transition-colors" />
+                </div>
+              </div>
+              <div>
+                <label className="text-[11px] text-nodri-t3 uppercase tracking-wider mb-1.5 block">Cidade / Estado</label>
+                <div className="relative">
+                  <MapPin size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-nodri-t3" />
+                  <input value={form.cidade} onChange={e => setForm(p => ({ ...p, cidade: e.target.value }))}
+                    placeholder="Ex: BRASÍLIA, DF"
+                    className="w-full bg-nodri-surface border border-nodri-border rounded-lg pl-8 pr-3 py-2.5 text-[13px] outline-none focus:border-nodri-cyan transition-colors" />
+                </div>
+              </div>
+              <div>
+                <label className="text-[11px] text-nodri-t3 uppercase tracking-wider mb-1.5 block">Endereço Completo do Salão</label>
+                <div className="relative">
+                  <MapPin size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-nodri-t3" />
+                  <input value={form.endereco} onChange={e => setForm(p => ({ ...p, endereco: e.target.value }))}
+                    placeholder="Ex: EQN 110/111 NORTE BLOCO A LOJAS 14 E 15, PLAZA NORTE"
                     className="w-full bg-nodri-surface border border-nodri-border rounded-lg pl-8 pr-3 py-2.5 text-[13px] outline-none focus:border-nodri-cyan transition-colors" />
                 </div>
               </div>
