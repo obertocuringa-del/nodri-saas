@@ -70,8 +70,9 @@ const CONTEUDO_INFO: Record<string, { titulo: string; texto: string }> = {
 
 const FORM_INITIAL = {
   nome_completo: '', apelido: '', email: '', cpf: '', rg: '', cnpj: '', cargo: '',
-  habilidades: '', endereco: '', data_aniversario: '', cor_favorita: '', comida_favorita: '',
-  animal_favorito: '', hobbies: '', um_sonho: '', contato_responsavel: '', certificados: '', foto_url: '',
+  habilidades: '{}', endereco: '', data_aniversario: '', cor_favorita: '', comida_favorita: '',
+  animal_favorito: '', hobbies: '', um_sonho: '', contato_responsavel: '{}', certificados: '',
+  foto_url: '', conta_bancaria: '',
 }
 
 export default function ProfissionaisPage() {
@@ -101,6 +102,9 @@ export default function ProfissionaisPage() {
   const [linkCadastro, setLinkCadastro] = useState('')
   const [linkCopiado, setLinkCopiado] = useState(false)
   const [gerandoLink, setGerandoLink] = useState(false)
+  const [servicosSalao, setServicosSalao] = useState<any[]>([])
+  const [servicosSelecionados, setServicosSelecionados] = useState<string[]>([])
+  const [servicosAberto, setServicosAberto] = useState(false)
 
   const CATEGORIAS_PADRAO = ['Cabeleireiro', 'Manicure', 'Pedicure', 'Assistente', 'Massoterapeuta', 'Maquiador(a)', 'Colorista', 'Recepcionista', 'Auxiliar']
 
@@ -131,7 +135,7 @@ export default function ProfissionaisPage() {
     carregarProfissionais()
   }
 
-  useEffect(() => { carregarProfissionais(); buscarLinkCadastro() }, [])
+  useEffect(() => { carregarProfissionais(); buscarLinkCadastro(); carregarServicos() }, [])
 
   async function buscarLinkCadastro() {
     try {
@@ -160,6 +164,13 @@ export default function ProfissionaisPage() {
     setLinkCopiado(true)
     toast.success('Link copiado!')
     setTimeout(() => setLinkCopiado(false), 3000)
+  }
+
+  async function carregarServicos() {
+    try {
+      const res = await fetch('/api/servicos')
+      if (res.ok) setServicosSalao(await res.json())
+    } catch {}
   }
 
   async function carregarProfissionais() {
@@ -195,10 +206,11 @@ export default function ProfissionaisPage() {
     try {
       const url = editando ? `/api/profissionais/${editando.id}` : '/api/profissionais'
       const method = editando ? 'PUT' : 'POST'
-      const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
+      const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...form, servicos_habilitados: servicosSelecionados }) })
       if (res.ok) {
         toast.success(editando ? 'Profissional atualizado!' : 'Profissional cadastrado!')
         setForm({ ...FORM_INITIAL })
+        setServicosSelecionados([])
         setEditando(null)
         setFotoPreview('')
         setSecao('lista')
@@ -228,7 +240,11 @@ export default function ProfissionaisPage() {
       animal_favorito: p.animal_favorito || '', hobbies: p.hobbies || '',
       um_sonho: p.um_sonho || '', contato_responsavel: p.contato_responsavel || '',
       certificados: p.certificados || '', foto_url: p.foto_url || '',
+      conta_bancaria: (p as any).conta_bancaria || '',
+      habilidades: (p as any).habilidades || '{}',
+      contato_responsavel: (p as any).contato_responsavel || '{}',
     })
+    setServicosSelecionados(Array.isArray(p.servicos_habilitados) ? p.servicos_habilitados : [])
     setFotoPreview(p.foto_url || '')
     setSecao('cadastrar')
   }
@@ -558,77 +574,145 @@ export default function ProfissionaisPage() {
                 </div>
 
                 {/* DADOS PESSOAIS */}
-                <div style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid #e8e6e0', padding: '20px', marginBottom: '16px' }}>
-                  <h3 style={{ color: '#5b4fcf', fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>👤 Dados Pessoais</h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                    {F('Nome Completo *', 'nome_completo', { full: true })}
-                    {F('Apelido', 'apelido')}
-                    {F('E-mail', 'email', { type: 'email' })}
-                    {F('Data de Aniversário', 'data_aniversario', { type: 'date' })}
-                    {F('CPF', 'cpf', { placeholder: '000.000.000-00' })}
-                    {F('RG', 'rg')}
-                    {F('CNPJ (MEI)', 'cnpj', { placeholder: '00.000.000/0001-00' })}
-                    {/* Seletor de categoria inteligente */}
-                    <div>
-                      <label style={{ display: 'block', fontSize: '11px', color: '#767069', marginBottom: '4px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Categoria / Cargo</label>
-                      {novaCategoria ? (
-                        <div style={{ display: 'flex', gap: 6 }}>
-                          <input
-                            type="text"
-                            placeholder="Digite a nova categoria..."
-                            value={form.cargo}
-                            onChange={e => setForm(f => ({ ...f, cargo: e.target.value }))}
-                            style={{ flex: 1, background: '#ffffff', border: '1px solid #5b4fcf', borderRadius: '8px', padding: '9px 12px', fontSize: '13px', color: '#1a1a1a', outline: 'none' }}
-                            autoFocus
-                          />
-                          <button type="button" onClick={() => setNovaCategoria(false)}
-                            style={{ background: '#ffffff', border: '1px solid #dedad4', borderRadius: '8px', padding: '9px 12px', color: '#767069', cursor: 'pointer', fontSize: '12px' }}>
-                            ← Voltar
-                          </button>
-                        </div>
-                      ) : (
-                        <div style={{ display: 'flex', gap: 6 }}>
-                          <select
-                            value={form.cargo}
-                            onChange={e => setForm(f => ({ ...f, cargo: e.target.value }))}
-                            style={{ flex: 1, background: '#ffffff', border: '1px solid #e8e6e0', borderRadius: '8px', padding: '9px 12px', fontSize: '13px', color: form.cargo ? '#1a1a1a' : '#767069', outline: 'none' }}>
-                            <option value="">Selecione a categoria...</option>
-                            {categorias.map(c => <option key={c} value={c}>{c}</option>)}
-                          </select>
-                          <button type="button" onClick={() => { setNovaCategoria(true); setForm(f => ({ ...f, cargo: '' })) }}
-                            title="Criar nova categoria"
-                            style={{ background: '#5b4fcf20', border: '1px solid #5b4fcf40', borderRadius: '8px', padding: '9px 12px', color: '#5b4fcf', cursor: 'pointer', fontSize: '18px', fontWeight: 700 }}>
-                            +
-                          </button>
-                        </div>
-                      )}
-                      <p style={{ color: '#767069', fontSize: '10px', margin: '4px 0 0' }}>
-                        Selecione uma categoria existente ou clique em <strong style={{ color: '#5b4fcf' }}>+</strong> para criar nova
-                      </p>
+                {(() => {
+                  const sched = (() => { try { return JSON.parse(form.habilidades || '{}') } catch { return {} } })() as any
+                  const resp = (() => { try { return JSON.parse(form.contato_responsavel || '{}') } catch { return { nome: form.contato_responsavel || '', tel: '' } } })() as any
+                  const horas = Array.from({ length: 18 }, (_, i) => `${String(i + 6).padStart(2, '0')}:00`)
+                  const dias = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo']
+                  const folgas: string[] = sched.dias_folga || []
+                  const inp2 = (label: string, val: string, onChange: (v: string) => void, opts?: { type?: string; placeholder?: string; full?: boolean }) => (
+                    <div className={opts?.full ? 'col-span-2' : ''}>
+                      <label style={{ display: 'block', fontSize: '11px', color: '#767069', marginBottom: '4px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</label>
+                      <input type={opts?.type || 'text'} value={val} onChange={e => onChange(e.target.value)} placeholder={opts?.placeholder || label}
+                        style={{ width: '100%', background: '#ffffff', border: '1px solid #e8e6e0', borderRadius: '8px', padding: '9px 12px', fontSize: '13px', color: '#1a1a1a', outline: 'none' }} />
                     </div>
-                    {F('Endereço', 'endereco', { full: true })}
-                  </div>
-                </div>
+                  )
+                  return (
+                    <div style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid #e8e6e0', padding: '20px', marginBottom: '16px' }}>
+                      <h3 style={{ color: '#5b4fcf', fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 16px' }}>👤 Dados Pessoais</h3>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                        {inp2('Nome Completo *', form.nome_completo, v => setForm(f => ({ ...f, nome_completo: v })), { full: true })}
+                        {inp2('Apelido', form.apelido, v => setForm(f => ({ ...f, apelido: v })))}
+                        <div>
+                          <label style={{ display: 'block', fontSize: '11px', color: '#767069', marginBottom: '4px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Cargo / Categoria</label>
+                          {novaCategoria ? (
+                            <div style={{ display: 'flex', gap: 6 }}>
+                              <input type="text" placeholder="Nova categoria..." value={form.cargo} onChange={e => setForm(f => ({ ...f, cargo: e.target.value }))}
+                                style={{ flex: 1, background: '#ffffff', border: '1px solid #5b4fcf', borderRadius: '8px', padding: '9px 12px', fontSize: '13px', color: '#1a1a1a', outline: 'none' }} autoFocus />
+                              <button type="button" onClick={() => setNovaCategoria(false)} style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: '8px', padding: '9px 12px', color: '#767069', cursor: 'pointer', fontSize: '12px' }}>← Voltar</button>
+                            </div>
+                          ) : (
+                            <div style={{ display: 'flex', gap: 6 }}>
+                              <select value={form.cargo} onChange={e => setForm(f => ({ ...f, cargo: e.target.value }))}
+                                style={{ flex: 1, background: '#ffffff', border: '1px solid #e8e6e0', borderRadius: '8px', padding: '9px 12px', fontSize: '13px', color: form.cargo ? '#1a1a1a' : '#767069', outline: 'none' }}>
+                                <option value="">Selecione...</option>
+                                {categorias.map(c => <option key={c} value={c}>{c}</option>)}
+                              </select>
+                              <button type="button" onClick={() => { setNovaCategoria(true); setForm(f => ({ ...f, cargo: '' })) }}
+                                style={{ background: '#5b4fcf20', border: '1px solid #5b4fcf40', borderRadius: '8px', padding: '9px 12px', color: '#5b4fcf', cursor: 'pointer', fontSize: '18px', fontWeight: 700 }}>+</button>
+                            </div>
+                          )}
+                        </div>
+                        {inp2('CPF', form.cpf, v => setForm(f => ({ ...f, cpf: v })), { placeholder: '000.000.000-00' })}
+                        {inp2('RG', form.rg, v => setForm(f => ({ ...f, rg: v })))}
+                        {inp2('Data de Aniversário', form.data_aniversario, v => setForm(f => ({ ...f, data_aniversario: v })), { type: 'date' })}
+                        {inp2('E-mail', form.email, v => setForm(f => ({ ...f, email: v })), { type: 'email' })}
+                        {inp2('Endereço', form.endereco, v => setForm(f => ({ ...f, endereco: v })), { full: true })}
+                        {inp2('Nome do Responsável', resp.nome || '', v => { const c = (() => { try { return JSON.parse(form.contato_responsavel || '{}') } catch { return {} } })(); setForm(f => ({ ...f, contato_responsavel: JSON.stringify({ ...c, nome: v }) })) })}
+                        {inp2('Telefone do Responsável', resp.tel || '', v => { const c = (() => { try { return JSON.parse(form.contato_responsavel || '{}') } catch { return {} } })(); setForm(f => ({ ...f, contato_responsavel: JSON.stringify({ ...c, tel: v }) })) }, { placeholder: '(00) 00000-0000' })}
+                      </div>
 
-                {/* DADOS PROFISSIONAIS */}
-                <div style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid #e8e6e0', padding: '20px', marginBottom: '16px' }}>
-                  <h3 style={{ color: '#0891b2', fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 16px' }}>💼 Dados Profissionais</h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                    {TA('Habilidades (serviços que consegue fazer)', 'habilidades', 3)}
-                    {TA('Certificados de Curso', 'certificados', 3)}
-                    <div style={{ padding: '12px', background: '#f5f4f0', borderRadius: '8px', border: '1px solid #e8e6e0' }}>
-                      <label style={{ display: 'block', fontSize: '11px', color: '#767069', marginBottom: '4px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Nome e Telefone do Responsável / Parente</label>
-                      <input value={form.contato_responsavel} onChange={e => setForm(f => ({ ...f, contato_responsavel: e.target.value }))}
-                        placeholder="Nome, (00) 00000-0000"
-                        style={{ width: '100%', background: '#ffffff', border: '1px solid #e8e6e0', borderRadius: '6px', padding: '8px 10px', fontSize: '13px', color: '#1a1a1a', outline: 'none' }} />
+                      {/* Dias de Folga */}
+                      <div style={{ marginTop: '16px' }}>
+                        <label style={{ display: 'block', fontSize: '11px', color: '#767069', marginBottom: '8px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Dias de Folga</label>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                          {dias.map(d => {
+                            const on = folgas.includes(d)
+                            return (
+                              <button key={d} type="button" onClick={() => {
+                                const novo = on ? folgas.filter(x => x !== d) : [...folgas, d]
+                                setForm(f => ({ ...f, habilidades: JSON.stringify({ ...sched, dias_folga: novo }) }))
+                              }}
+                                style={{ padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 600, border: `1px solid ${on ? '#06b6d4' : '#e8e6e0'}`, background: on ? '#06b6d420' : '#ffffff', color: on ? '#0891b2' : '#767069', cursor: 'pointer' }}>
+                                {d}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Horário de Trabalho */}
+                      <div style={{ marginTop: '16px' }}>
+                        <label style={{ display: 'block', fontSize: '11px', color: '#767069', marginBottom: '8px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Horário de Trabalho</label>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                          <div>
+                            <label style={{ display: 'block', fontSize: '10px', color: '#a09890', marginBottom: '4px' }}>De</label>
+                            <select value={sched.h_inicio || ''} onChange={e => setForm(f => ({ ...f, habilidades: JSON.stringify({ ...sched, h_inicio: e.target.value }) }))}
+                              style={{ width: '100%', background: '#ffffff', border: '1px solid #e8e6e0', borderRadius: '8px', padding: '9px 12px', fontSize: '13px', color: '#1a1a1a', outline: 'none' }}>
+                              <option value="">Selecione</option>
+                              {horas.map(h => <option key={h} value={h}>{h}</option>)}
+                            </select>
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', fontSize: '10px', color: '#a09890', marginBottom: '4px' }}>Até</label>
+                            <select value={sched.h_fim || ''} onChange={e => setForm(f => ({ ...f, habilidades: JSON.stringify({ ...sched, h_fim: e.target.value }) }))}
+                              style={{ width: '100%', background: '#ffffff', border: '1px solid #e8e6e0', borderRadius: '8px', padding: '9px 12px', fontSize: '13px', color: '#1a1a1a', outline: 'none' }}>
+                              <option value="">Selecione</option>
+                              {horas.map(h => <option key={h} value={h}>{h}</option>)}
+                            </select>
+                          </div>
+                          <div style={{ gridColumn: '1 / -1' }}>
+                            <label style={{ display: 'block', fontSize: '10px', color: '#a09890', marginBottom: '4px' }}>Observação de Horário</label>
+                            <input value={sched.h_obs || ''} onChange={e => setForm(f => ({ ...f, habilidades: JSON.stringify({ ...sched, h_obs: e.target.value }) }))}
+                              placeholder="Ex: Nas terças-feiras entra às 14:00"
+                              style={{ width: '100%', background: '#ffffff', border: '1px solid #e8e6e0', borderRadius: '8px', padding: '9px 12px', fontSize: '13px', color: '#1a1a1a', outline: 'none' }} />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Serviços que Realiza */}
+                      <div style={{ marginTop: '16px' }}>
+                        <label style={{ display: 'block', fontSize: '11px', color: '#767069', marginBottom: '8px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Serviços que Realiza</label>
+                        <div style={{ position: 'relative' }}>
+                          <button type="button" onClick={() => setServicosAberto(o => !o)}
+                            style={{ width: '100%', background: '#ffffff', border: '1px solid #e8e6e0', borderRadius: '8px', padding: '9px 12px', fontSize: '13px', color: servicosSelecionados.length ? '#1a1a1a' : '#a09890', textAlign: 'left', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span>{servicosSelecionados.length ? `${servicosSelecionados.length} serviço(s) selecionado(s)` : 'Clique para selecionar serviços...'}</span>
+                            <span style={{ fontSize: '10px' }}>▼</span>
+                          </button>
+                          {servicosAberto && servicosSalao.length > 0 && (
+                            <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50, background: '#ffffff', border: '1px solid #e8e6e0', borderRadius: '10px', boxShadow: '0 8px 24px rgba(0,0,0,0.12)', maxHeight: '260px', overflowY: 'auto', marginTop: '4px' }}>
+                              {servicosSalao.filter((s: any) => s.ativo !== false).map((s: any) => {
+                                const sel = servicosSelecionados.includes(s.id)
+                                return (
+                                  <button key={s.id} type="button" onClick={() => setServicosSelecionados(prev => sel ? prev.filter(x => x !== s.id) : [...prev, s.id])}
+                                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 14px', background: sel ? '#f5f3ff' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', borderBottom: '1px solid #f0eeea' }}>
+                                    <div style={{ width: '16px', height: '16px', borderRadius: '4px', border: `2px solid ${sel ? '#5b4fcf' : '#d0cec8'}`, background: sel ? '#5b4fcf' : 'transparent', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                      {sel && <span style={{ color: '#fff', fontSize: '10px', fontWeight: 700 }}>✓</span>}
+                                    </div>
+                                    <div>
+                                      <div style={{ fontSize: '12px', color: '#1a1a1a', fontWeight: sel ? 600 : 400 }}>{s.nome}</div>
+                                      {s.categoria && <div style={{ fontSize: '10px', color: '#a09890' }}>{s.categoria}</div>}
+                                    </div>
+                                    {s.comissao_valor && <span style={{ marginLeft: 'auto', fontSize: '11px', color: '#5b4fcf', fontWeight: 600 }}>R${Number(s.comissao_valor).toFixed(0)}</span>}
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          )}
+                        </div>
+                        {servicosSelecionados.length > 0 && (
+                          <p style={{ fontSize: '10px', color: '#5b4fcf', marginTop: '4px' }}>
+                            → {servicosSalao.filter(s => servicosSelecionados.includes(s.id)).map(s => s.nome).join(', ')}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    <div />
-                  </div>
-                </div>
+                  )
+                })()}
 
-                {/* PERSONALIDADE */}
-                <div style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid #e8e6e0', padding: '20px', marginBottom: '24px' }}>
-                  <h3 style={{ color: '#f43f8e', fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 16px' }}>✨ Personalidade</h3>
+                {/* PERFIL PESSOAL */}
+                <div style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid #e8e6e0', padding: '20px', marginBottom: '16px' }}>
+                  <h3 style={{ color: '#f43f8e', fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 16px' }}>✨ Perfil Pessoal</h3>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     {F('Cor Favorita', 'cor_favorita')}
                     {F('Comida Favorita', 'comida_favorita')}
@@ -636,6 +720,16 @@ export default function ProfissionaisPage() {
                     <div />
                     {TA('Hobbies e Paixões', 'hobbies', 2)}
                     {TA('Um Sonho', 'um_sonho', 2)}
+                  </div>
+                </div>
+
+                {/* DADOS PROFISSIONAIS */}
+                <div style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid #e8e6e0', padding: '20px', marginBottom: '24px' }}>
+                  <h3 style={{ color: '#0891b2', fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 16px' }}>💼 Dados Profissionais</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    {F('CNPJ (MEI)', 'cnpj', { placeholder: '00.000.000/0001-00' })}
+                    {F('Dados Bancários (Banco / Ag / Conta)', 'conta_bancaria', { placeholder: 'Banco / Ag / Conta' })}
+                    {TA('Certificados de Curso', 'certificados', 3)}
                   </div>
                 </div>
 
