@@ -51,30 +51,51 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
   // ── DEPENDÊNCIA ────────────────────────────────────────────────────────────
   if (tipo === 'dependencia') {
-    let fatTotal = 0
-    let fatProf = 0
-    const fatPorMes: Array<{ ano: number; mes: number; fat_prof: number; fat_total: number; pct: number }> = []
-
+    // Fat total do salão por mês: usa resumo_mensal.faturamento_total (bruto real)
+    const fatSalaoPorMes: Record<string, number> = {}
     for (const row of (periodos || [])) {
-      // Fat total do salão: usa resumo_mensal.faturamento_total (bruto real)
       const rm = (row.resumo_mensal || []) as Array<{ faturamento_total?: number }>
       const totalMes = rm.reduce((s, r) => s + Number(r.faturamento_total || 0), 0)
+      if (totalMes > 0) fatSalaoPorMes[`${row.ano}-${row.mes}`] = totalMes
+    }
 
-      // Fat do profissional: usa prof_servicos.valor (bruto real dos serviços)
-      let profMes = 0
-      for (const item of (row.prof_servicos || [])) {
-        if (matchProf(item, tokens, apelido, nomeCompleto)) profMes += Number(item.valor || 0)
-      }
+    // Fat do profissional por mês: usa atendimentos_raw.total (fonte original)
+    const fatProfPorMes: Record<string, number> = {}
+    let rawAll: any[] = []
+    let from2 = 0
+    while (true) {
+      const { data } = await supabaseAdmin
+        .from('atendimentos_raw')
+        .select('ano, mes, total, profissional')
+        .eq('salao_id', salaoId)
+        .range(from2, from2 + 999)
+      if (!data || data.length === 0) break
+      rawAll = rawAll.concat(data)
+      if (data.length < 1000) break
+      from2 += 1000
+    }
+    for (const r of rawAll) {
+      if (!matchProf({ profissional: r.profissional }, tokens, apelido, nomeCompleto)) continue
+      const k = `${r.ano}-${r.mes}`
+      fatProfPorMes[k] = (fatProfPorMes[k] || 0) + Number(r.total || 0)
+    }
+
+    // Monta histórico combinando as duas fontes
+    let fatTotal = 0, fatProf = 0
+    const fatPorMes: Array<{ ano: number; mes: number; fat_prof: number; fat_total: number; pct: number }> = []
+    const chavesOrdenadas = Object.keys(fatSalaoPorMes).sort()
+    for (const k of chavesOrdenadas) {
+      const [anoS, mesS] = k.split('-')
+      const totalMes = fatSalaoPorMes[k]
+      const profMes = Math.round((fatProfPorMes[k] || 0) * 100) / 100
       fatTotal += totalMes
       fatProf += profMes
-      if (totalMes > 0) {
-        fatPorMes.push({
-          ano: row.ano, mes: row.mes,
-          fat_prof: Math.round(profMes * 100) / 100,
-          fat_total: Math.round(totalMes * 100) / 100,
-          pct: Math.round((profMes / totalMes) * 1000) / 10,
-        })
-      }
+      fatPorMes.push({
+        ano: parseInt(anoS), mes: parseInt(mesS),
+        fat_prof: profMes,
+        fat_total: Math.round(totalMes * 100) / 100,
+        pct: Math.round((profMes / totalMes) * 1000) / 10,
+      })
     }
 
     const pct = fatTotal > 0 ? Math.round((fatProf / fatTotal) * 1000) / 10 : 0

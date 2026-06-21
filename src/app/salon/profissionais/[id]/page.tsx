@@ -3703,59 +3703,81 @@ ${fieisRows?`<div class="sec"><div class="sec-title">Clientes Fiéis ❤️ (${d
                     const mesesFiltComDados = histFiltrado.filter((h:any)=>h.fat_prof>0).length
                     const mediaMensalFilt = mesesFiltComDados > 0 ? Math.round(fatProfFilt/mesesFiltComDados*100)/100 : 0
                     const labelAnos = anosFiltro.join(' + ')
+
+                    const cards = [
+                      { id:'pct',   l:'% do Faturamento', v:`${pctFilt}%`,          c:corFilt    },
+                      { id:'fat',   l:'Faturamento Gerado',v:fmt$(fatProfFilt),       c:'#5b4fcf'  },
+                      { id:'fieis', l:'❤️ Clientes Fiéis', v:String(d.clientes_fieis||0), c:'#f59e0b' },
+                      { id:'media', l:'Média Mensal',      v:fmt$(mediaMensalFilt),   c:'#f43f8e'  },
+                    ]
+
                     return (
                       <>
-                        <p className="text-[10px] text-nodri-t3">Período: {labelAnos}</p>
+                        <p className="text-[10px] text-nodri-t3">Período: {labelAnos} — clique em cada card para ver os detalhes</p>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                          {[
-                            {l:'% do Faturamento',v:`${pctFilt}%`,c:corFilt},
-                            {l:'Faturamento Gerado',v:fmt$(fatProfFilt),c:'#5b4fcf'},
-                            {l:'❤️ Clientes Fiéis',v:d.clientes_fieis||0,c:'#f59e0b'},
-                            {l:'Média Mensal',v:fmt$(mediaMensalFilt),c:'#f43f8e'},
-                          ].map(item=>(
-                            <div key={item.l} className="bg-nodri-card border border-nodri-border rounded-xl p-3">
+                          {cards.map(item=>(
+                            <button key={item.id} onClick={()=>setAnosDepAtivos(prev => { (window as any).__depCard = (window as any).__depCard===item.id?null:item.id; return [...prev] })}
+                              className="bg-nodri-card border border-nodri-border rounded-xl p-3 text-left hover:border-nodri-cyan transition-all cursor-pointer">
                               <div className="text-[9px] text-nodri-t3 uppercase tracking-wider mb-1">{item.l}</div>
                               <div className="font-syne font-bold text-[16px]" style={{color:item.c}}>{item.v}</div>
-                            </div>
+                              <div className="text-[8px] text-nodri-t3 mt-1">clique para detalhes ▼</div>
+                            </button>
                           ))}
                         </div>
                       </>
                     )
                   })()}
 
-                  {/* Gráfico SVG comparativo anual */}
+                  {/* Gráfico SVG comparativo anual — clique no card do título expande tabela */}
                   {d.historico_completo?.length > 0 && (
                     <GraficoDependencia historico={d.historico_completo} onAnosChange={setAnosDepAtivos}/>
                   )}
 
-                  {/* Tabela histórico completo */}
-                  {d.historico_completo?.length > 0 && (
-                    <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
-                      <h3 className="font-syne font-bold text-[13px] mb-3">📊 Histórico Completo por Mês</h3>
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-[11px]">
-                          <thead>
-                            <tr className="border-b border-nodri-border text-nodri-t3 text-[9px] uppercase">
-                              <th className="text-left pb-2">Mês</th>
-                              <th className="text-right pb-2">% Fat.</th>
-                              <th className="text-right pb-2">Fat. Prof.</th>
-                              <th className="text-right pb-2">Fat. Salão</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {d.historico_completo.map((h:any)=>(
-                              <tr key={`${h.ano}-${h.mes}`} className="border-b border-nodri-border/40 hover:bg-nodri-border/10">
-                                <td className="py-1.5 text-nodri-t2">{MESES[h.mes-1]} {h.ano}</td>
-                                <td className="text-right text-nodri-t2">{h.pct}%</td>
-                                <td className="text-right font-semibold text-nodri-cyan">{fmt$(h.fat_prof)}</td>
-                                <td className="text-right text-nodri-t3">{fmt$(h.fat_total)}</td>
+                  {/* Tabela histórico completo sempre visível */}
+                  {d.historico_completo?.length > 0 && (() => {
+                    const hist = d.historico_completo || []
+                    const anosDisp2 = Array.from(new Set(hist.map((h:any)=>h.ano))).sort((a:any,b:any)=>b-a) as number[]
+                    const anosFiltro = anosDepAtivos.length ? anosDepAtivos : anosDisp2.slice(0,2)
+                    const histFiltrado = hist.filter((h:any) => anosFiltro.includes(h.ano))
+                    const fatProfFilt = histFiltrado.reduce((s:number,h:any)=>s+h.fat_prof,0)
+                    const fatTotalFilt = histFiltrado.reduce((s:number,h:any)=>s+h.fat_total,0)
+                    return (
+                      <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
+                        <h3 className="font-syne font-bold text-[13px] mb-1">📊 Comprovação dos Valores — Mês a Mês</h3>
+                        <p className="text-[9px] text-nodri-t3 mb-3">
+                          Total Prof: <strong>{fmt$(fatProfFilt)}</strong> · Total Salão: <strong>{fmt$(fatTotalFilt)}</strong> · % = <strong>{fatTotalFilt>0?Math.round(fatProfFilt/fatTotalFilt*1000)/10:0}%</strong>
+                        </p>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-[11px]">
+                            <thead>
+                              <tr className="border-b border-nodri-border text-nodri-t3 text-[9px] uppercase">
+                                <th className="text-left pb-2">Mês</th>
+                                <th className="text-right pb-2">Fat. Prof. (RAW)</th>
+                                <th className="text-right pb-2">Fat. Salão</th>
+                                <th className="text-right pb-2">%</th>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                            </thead>
+                            <tbody>
+                              {histFiltrado.map((h:any)=>(
+                                <tr key={`${h.ano}-${h.mes}`} className="border-b border-nodri-border/40 hover:bg-nodri-border/10">
+                                  <td className="py-1.5 text-nodri-t2">{MESES[h.mes-1]} {h.ano}</td>
+                                  <td className="text-right font-semibold text-nodri-cyan">{fmt$(h.fat_prof)}</td>
+                                  <td className="text-right text-nodri-t3">{fmt$(h.fat_total)}</td>
+                                  <td className="text-right text-nodri-t2">{h.pct}%</td>
+                                </tr>
+                              ))}
+                              <tr className="border-t-2 border-nodri-border font-bold">
+                                <td className="py-2 text-nodri-t1">TOTAL</td>
+                                <td className="text-right text-nodri-cyan">{fmt$(fatProfFilt)}</td>
+                                <td className="text-right text-nodri-t2">{fmt$(fatTotalFilt)}</td>
+                                <td className="text-right text-nodri-t2">{fatTotalFilt>0?Math.round(fatProfFilt/fatTotalFilt*1000)/10:0}%</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )
+                  })()}
 
                   {/* Tabela clientes fiéis */}
                   {(d.detalhes_fieis?.length > 0) && (
@@ -3789,12 +3811,38 @@ ${fieisRows?`<div class="sec"><div class="sec-title">Clientes Fiéis ❤️ (${d
                     </div>
                   )}
 
-                  <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
-                    <h3 className="font-syne font-bold text-[13px] mb-3"> O que fazer?</h3>
-                    {d.nivel_risco === 'critico' && <p className="text-[12px] text-red-400 leading-relaxed">⚠️ Risco crítico. Recomenda-se redistribuir clientes, treinar substituto e criar estratégia de retenção imediata.</p>}
-                    {d.nivel_risco === 'alto' && <p className="text-[12px] text-orange-400 leading-relaxed">️ Risco alto. Considere desenvolver outro profissional com habilidades similares e registrar os clientes preferenciais.</p>}
-                    {d.nivel_risco === 'medio' && <p className="text-[12px] text-yellow-400 leading-relaxed"> Risco moderado. Monitore a satisfação deste profissional e garanta que os clientes conheçam outros profissionais do salão.</p>}
-                    {d.nivel_risco === 'baixo' && <p className="text-[12px] text-green-400 leading-relaxed"> Baixo risco. O salão está bem distribuído — parabéns!</p>}
+                  {/* Glossário / O que fazer */}
+                  <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5 space-y-3">
+                    <h3 className="font-syne font-bold text-[13px]">📖 Glossário e Parâmetros</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px]">
+                      {[
+                        {label:'% de Dependência',       bom:'< 10%',  ok:'10–20%', ruim:'> 20%', critico:'> 30%', desc:'Quanto do faturamento bruto do salão vem deste profissional.'},
+                        {label:'Faturamento Gerado',     bom:'—',      ok:'—',      ruim:'—',     critico:'—',     desc:'Soma do campo "total" dos atendimentos brutos (atendimentos_raw) deste profissional no período.'},
+                        {label:'Clientes Fiéis ❤️',     bom:'> 20',   ok:'10–20',  ruim:'5–10',  critico:'< 5',   desc:'Clientes com ≥4 visitas no salão, ≥80% dos atendimentos com este prof. e que voltaram nos últimos 90 dias.'},
+                        {label:'Média Mensal',           bom:'—',      ok:'—',      ruim:'—',     critico:'—',     desc:'Faturamento gerado total ÷ meses com pelo menos 1 atendimento.'},
+                      ].map(g=>(
+                        <div key={g.label} className="bg-nodri-card border border-nodri-border rounded-xl p-3">
+                          <div className="font-semibold text-nodri-t1 mb-1">{g.label}</div>
+                          <div className="text-nodri-t3 text-[10px] mb-2 leading-relaxed">{g.desc}</div>
+                          {g.bom!=='—' && (
+                            <div className="flex gap-1 flex-wrap text-[9px] font-bold">
+                              <span className="px-2 py-0.5 rounded-full bg-green-500/10 text-green-600">✅ Bom: {g.bom}</span>
+                              <span className="px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-600">⚠️ Ok: {g.ok}</span>
+                              <span className="px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-600">🔶 Alto: {g.ruim}</span>
+                              <span className="px-2 py-0.5 rounded-full bg-red-500/10 text-red-600">🚨 Crítico: {g.critico}</span>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-2 p-3 rounded-xl border" style={{borderColor:`${d.cor_risco||'#10b981'}40`, background:`${d.cor_risco||'#10b981'}08`}}>
+                      <p className="text-[11px] font-semibold" style={{color:d.cor_risco||'#10b981'}}>
+                        {d.nivel_risco==='critico' && '🚨 Risco CRÍTICO: Redistribua clientes urgentemente, treine substituto e crie estratégia de retenção imediata.'}
+                        {d.nivel_risco==='alto'    && '🔶 Risco ALTO: Desenvolva outro profissional com habilidades similares e registre os clientes preferenciais.'}
+                        {d.nivel_risco==='medio'   && '⚠️ Risco MODERADO: Monitore a satisfação e garanta que clientes conheçam outros profissionais do salão.'}
+                        {d.nivel_risco==='baixo'   && '✅ Baixo risco: O salão está bem distribuído. Mantenha o equilíbrio e continue monitorando mensalmente.'}
+                      </p>
+                    </div>
                   </div>
                 </>
               )
