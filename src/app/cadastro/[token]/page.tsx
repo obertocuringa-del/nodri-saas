@@ -25,6 +25,7 @@ export default function CadastroPublicoPage() {
   const [enviado, setEnviado] = useState(false)
   const [salvando, setSalvando] = useState(false)
   const [servicosSalao, setServicosSalao] = useState<any[]>([])
+  const [categoriasSalao, setCategoriasSalao] = useState<string[]>([])
   const [servicosSelecionados, setServicosSelecionados] = useState<string[]>([])
   const [servicosAberto, setServicosAberto] = useState(false)
 
@@ -75,10 +76,13 @@ export default function CadastroPublicoPage() {
       .then(d => {
         if (d.error) { setInvalido(true); return }
         setSalaoNome(d.salao_nome)
-        // Carrega serviços do salão via token
+        // Carrega serviços e categorias do salão via token
         fetch(`/api/cadastro-publico/${token}/servicos`)
           .then(r => r.json())
-          .then(s => { if (Array.isArray(s)) setServicosSalao(s) })
+          .then(d => {
+            if (d.servicos) setServicosSalao(d.servicos)
+            if (d.categorias) setCategoriasSalao(d.categorias)
+          })
           .catch(() => {})
       })
       .catch(() => setInvalido(true))
@@ -230,7 +234,7 @@ export default function CadastroPublicoPage() {
               <select value={cargo} onChange={e => setCargo(e.target.value)}
                 style={{ width: '100%', background: '#fff', border: '1px solid #e8e6e0', borderRadius: '8px', padding: '10px 12px', fontSize: '13px', color: cargo ? '#1a1a1a' : '#a09890', outline: 'none', boxSizing: 'border-box' }}>
                 <option value="">Selecione...</option>
-                {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
+                {(categoriasSalao.length > 0 ? categoriasSalao : CATEGORIAS).map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
             {inp('CPF', cpf, setCpf, { placeholder: '000.000.000-00' })}

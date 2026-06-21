@@ -8,14 +8,24 @@ export async function GET(_req: NextRequest, { params }: { params: { token: stri
     .eq('link_cadastro_token', params.token)
     .maybeSingle()
 
-  if (!salao) return NextResponse.json([], { status: 200 })
+  if (!salao) return NextResponse.json({ servicos: [], categorias: [] }, { status: 200 })
 
-  const { data } = await supabaseAdmin
-    .from('servicos')
-    .select('id, nome, categoria, comissao_valor')
-    .eq('salao_id', salao.id)
-    .eq('ativo', true)
-    .order('nome')
+  const [{ data: servicos }, { data: profs }] = await Promise.all([
+    supabaseAdmin
+      .from('servicos')
+      .select('id, nome, categoria, comissao_valor')
+      .eq('salao_id', salao.id)
+      .eq('ativo', true)
+      .order('nome'),
+    supabaseAdmin
+      .from('profissionais')
+      .select('cargo')
+      .eq('salao_id', salao.id)
+      .eq('ativo', true)
+      .not('cargo', 'is', null),
+  ])
 
-  return NextResponse.json(data || [])
+  const categorias = Array.from(new Set((profs || []).map((p: any) => p.cargo).filter(Boolean))).sort()
+
+  return NextResponse.json({ servicos: servicos || [], categorias })
 }
