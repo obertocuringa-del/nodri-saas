@@ -304,7 +304,7 @@ export default function ProfissionaisPage() {
         </aside>
 
         {/* CONTEÚDO PRINCIPAL */}
-        <main style={{ flex: 1, padding: isMobile ? '12px' : '24px', overflowY: 'auto' }}>
+        <main style={{ flex: 1, padding: isMobile ? '12px' : '24px', overflowY: 'auto', background: '#f0eeea' }}>
 
           {/* ── LISTA ── */}
           {secao === 'lista' && (
