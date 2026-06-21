@@ -1056,7 +1056,16 @@ export default function ProfissionaisPage() {
                 {/* Painel de edição completa */}
                 {distratoEditando && (
                   <div style={{ background: '#f5f4f0', border: '1px solid #d6d3ce', borderRadius: '10px', padding: '16px', marginBottom: '24px' }}>
-                    <p style={{ fontSize: '11px', fontWeight: 700, color: '#5b4fcf', margin: '0 0 12px', fontFamily: 'sans-serif' }}>✏️ DADOS DO SALÃO (DISTRATANTE)</p>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                      <p style={{ fontSize: '11px', fontWeight: 700, color: '#5b4fcf', margin: 0, fontFamily: 'sans-serif' }}>✏️ DADOS DO SALÃO (DISTRATANTE)</p>
+                      <button onClick={async () => {
+                        const res = await fetch('/api/salon/perfil', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nome: dSalaoNome, responsavel: dSalaoResponsavel, cnpj: dSalaoCNPJ, endereco: dSalaoEndereco, cidade: dSalaoCidade, rg_responsavel: dSalaoRG }) })
+                        if (res.ok) toast.success('Dados do salão salvos no perfil!')
+                        else toast.error('Erro ao salvar')
+                      }} style={{ fontSize: '11px', fontWeight: 600, background: '#5b4fcf', color: '#fff', border: 'none', borderRadius: '6px', padding: '5px 12px', cursor: 'pointer', fontFamily: 'sans-serif' }}>
+                        💾 Salvar dados do salão
+                      </button>
+                    </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }}>
                       <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Nome do Salão<input style={iStyle} value={dSalaoNome} onChange={e => setDSalaoNome(e.target.value)} /></label>
                       <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Cidade/Estado<input style={iStyle} value={dSalaoCidade} onChange={e => setDSalaoCidade(e.target.value)} /></label>
