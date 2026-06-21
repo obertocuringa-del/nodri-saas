@@ -1952,7 +1952,7 @@ ${([['Faturamento Total',r1.fat_total,r2.fat_total],['Ticket Médio',r1.ticket,r
                           const seta = r.tipo === 'doador' ? '↓' : r.tipo === 'receptor' ? '↑' : ''
                           const nomeMostra = r.prof.apelido || r.prof.nome_completo
                           return (
-                            <tr key={i} style={{ borderBottom: '1px solid #faf9f7', background: i % 2 === 0 ? bgTipo : bgTipo || '#f5f4f008' }}>
+                            <tr key={i} style={{ borderBottom: i < redistResultado.length - 1 ? '2px solid #e8e6e0' : 'none', background: i % 2 === 0 ? bgTipo : bgTipo || '#f5f4f008' }}>
                               <td style={{ padding: '10px 16px', color: '#1a1a1a', fontWeight: 600, fontSize: 13 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                   <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg, #5b4fcf, #f43f8e)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 11, flexShrink: 0 }}>

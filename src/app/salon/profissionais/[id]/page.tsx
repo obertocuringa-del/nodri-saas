@@ -2147,28 +2147,65 @@ function AbaIA({ profissionalId, nomeProfissional }: { profissionalId: string; n
             }`}>
               {m.role === 'assistant' ? (
                 <div className="prose-ia" dangerouslySetInnerHTML={{ __html:
-                  m.content
-                    // Títulos com emoji
-                    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-                    .replace(/^#{1,3}\s+(.+)$/gm, '<div style="font-weight:700;font-size:13px;color:#5b4fcf;margin:12px 0 6px;border-bottom:1px solid rgba(0,229,200,0.2);padding-bottom:4px">$1</div>')
-                    // Linhas separadoras
-                    .replace(/^={3,}.*={3,}$/gm, '<hr style="border-color:#e0ddd8;margin:10px 0"/>')
-                    .replace(/^---+$/gm, '<hr style="border-color:#e0ddd8;margin:10px 0"/>')
-                    // Tabelas markdown simples
-                    .replace(/\|(.+)\|/g, (match) => {
-                      if (match.includes('---')) return ''
-                      const cols = match.split('|').filter(c => c.trim())
-                      return '<div style="display:flex;gap:8px;margin:2px 0">' + cols.map(c => `<span style="flex:1;padding:3px 6px;background:#f5f4f0;border-radius:4px;font-size:11px">${c.trim()}</span>`).join('') + '</div>'
+                  (() => {
+                    let txt = m.content
+                    // Blocos de código (```...```) → caixa com fundo claro e texto escuro
+                    txt = txt.replace(/```[\s\S]*?```/g, (bloco) => {
+                      const conteudo = bloco.replace(/^```[^\n]*\n?/, '').replace(/```$/, '').trim()
+                      return `<div style="background:#f0f0f0;border:1px solid #ddd;border-radius:8px;padding:10px 14px;margin:8px 0;font-family:monospace;font-size:11px;color:#1a1a1a;white-space:pre-wrap;overflow-x:auto">${conteudo}</div>`
                     })
+                    // Código inline `...`
+                    txt = txt.replace(/`([^`]+)`/g, '<code style="background:#f0f0f0;padding:1px 5px;border-radius:4px;font-family:monospace;font-size:11px;color:#5b4fcf">$1</code>')
+                    // Negrito
+                    txt = txt.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+                    // Títulos
+                    txt = txt.replace(/^#{1,3}\s+(.+)$/gm, '<div style="font-weight:700;font-size:13px;color:#5b4fcf;margin:12px 0 6px;border-bottom:1px solid rgba(91,79,207,0.2);padding-bottom:4px">$1</div>')
+                    // Linhas separadoras
+                    txt = txt.replace(/^={3,}.*$/gm, '<hr style="border-color:#e0ddd8;margin:10px 0"/>')
+                    txt = txt.replace(/^---+$/gm, '<hr style="border-color:#e0ddd8;margin:10px 0"/>')
+                    // Tabelas markdown: detecta header vs dados
+                    let tabelaAtiva = false
+                    const linhas = txt.split('\n')
+                    const resultado: string[] = []
+                    for (let i = 0; i < linhas.length; i++) {
+                      const l = linhas[i]
+                      if (l.includes('|')) {
+                        if (/^\|[\s:|-]+\|/.test(l) || l.replace(/[^|]/g,'').length > 1 && l.includes('---')) {
+                          // linha separadora — abre tbody na próxima
+                          if (!tabelaAtiva) {
+                            tabelaAtiva = true
+                            // substitui o header anterior (já adicionado) por um <thead>
+                            const prev = resultado[resultado.length - 1]
+                            if (prev && prev.startsWith('<div style="display:flex')) {
+                              const cols = linhas[i-1].split('|').filter(c => c.trim())
+                              resultado[resultado.length - 1] = '<div style="background:#5b4fcf;border-radius:8px 8px 0 0;margin-top:8px">' + cols.map(c => `<span style="flex:1;padding:5px 8px;color:#fff;font-weight:700;font-size:11px;display:inline-block">${c.trim()}</span>`).join('') + '</div>'
+                            }
+                          }
+                          continue
+                        }
+                        const cols = l.split('|').filter(c => c.trim())
+                        const isHeader = i + 1 < linhas.length && (linhas[i+1].includes('---') || linhas[i+1].includes(':--'))
+                        if (isHeader) {
+                          resultado.push('<div style="display:flex;gap:0">' + cols.map(c => `<span style="flex:1;padding:5px 8px;background:#5b4fcf;color:#fff;font-weight:700;font-size:11px;display:inline-block">${c.trim()}</span>`).join('') + '</div>')
+                        } else {
+                          resultado.push('<div style="display:flex;gap:0;border-bottom:1px solid #e8e6e0">' + cols.map(c => `<span style="flex:1;padding:4px 8px;background:#f8f7f5;font-size:11px;color:#1a1a1a;display:inline-block">${c.trim()}</span>`).join('') + '</div>')
+                        }
+                        continue
+                      } else {
+                        tabelaAtiva = false
+                      }
+                      resultado.push(l)
+                    }
+                    txt = resultado.join('\n')
                     // Listas com bullets
-                    .replace(/^[•\-\*]\s+(.+)$/gm, '<div style="display:flex;gap:6px;margin:2px 0"><span style="color:#5b4fcf;flex-shrink:0">•</span><span>$1</span></div>')
+                    txt = txt.replace(/^[•\-\*]\s+(.+)$/gm, '<div style="display:flex;gap:6px;margin:2px 0"><span style="color:#5b4fcf;flex-shrink:0">•</span><span>$1</span></div>')
                     // Listas numeradas
-                    .replace(/^(\d+)\.\s+(.+)$/gm, '<div style="display:flex;gap:6px;margin:3px 0"><span style="color:#5b4fcf;font-weight:700;flex-shrink:0">$1.</span><span>$2</span></div>')
-                    // Emojis de seção como títulos
-                    .replace(/^(||||||||||||)\s*(.+)$/gm, '<div style="font-weight:700;font-size:12px;color:#1a1a1a;margin:10px 0 4px">$1 $2</div>')
+                    txt = txt.replace(/^(\d+)\.\s+(.+)$/gm, '<div style="display:flex;gap:6px;margin:3px 0"><span style="color:#5b4fcf;font-weight:700;flex-shrink:0">$1.</span><span>$2</span></div>')
                     // Quebras de linha
-                    .replace(/\n\n/g, '<div style="margin:6px 0"></div>')
-                    .replace(/\n/g, '<br/>')
+                    txt = txt.replace(/\n\n/g, '<div style="margin:6px 0"></div>')
+                    txt = txt.replace(/\n/g, '<br/>')
+                    return txt
+                  })()
                 }}/>
               ) : (
                 m.content

@@ -109,14 +109,21 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // ── Busca o registro atual para não apagar prof_pagamentos/ocupacao ──
+      // ── Busca o registro atual para preservar campos do Excel ──
       const { data: atual } = await supabaseAdmin
         .from('relatorio_periodos')
-        .select('prof_pagamentos, prof_ticket, prof_preferencia, prof_ocupacao, prof_produtos, metas, data_inicio, data_fim')
+        .select('prof_pagamentos, prof_ticket, prof_preferencia, prof_ocupacao, prof_produtos, metas, data_inicio, data_fim, resumo_mensal')
         .eq('salao_id', salaoId)
         .eq('ano', ano)
         .eq('mes', mes)
         .maybeSingle()
+
+      // Preserva clientes_novos e faturamento_produtos do Excel (o raw não tem esses dados)
+      const resumoAtual = (atual?.resumo_mensal || []) as Array<any>
+      const clientesNovosExcel = resumoAtual.reduce((s: number, r: any) => s + Number(r.clientes_novos || 0), 0)
+      const fatProdutosExcel = resumoAtual.reduce((s: number, r: any) => s + Number(r.faturamento_produtos || 0), 0)
+      resumo_mensal[0].clientes_novos = clientesNovosExcel
+      resumo_mensal[0].faturamento_produtos = fatProdutosExcel
 
       // ── Upsert com dados reconstruídos ──────────────────────────────
       const { error: eUp } = await supabaseAdmin
