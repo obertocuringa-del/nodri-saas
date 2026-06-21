@@ -234,15 +234,15 @@ export default function ProfissionaisPage() {
     setForm({
       nome_completo: p.nome_completo || '', apelido: p.apelido || '', email: p.email || '',
       cpf: p.cpf || '', rg: p.rg || '', cnpj: p.cnpj || '', cargo: p.cargo || '',
-      habilidades: p.habilidades || '', endereco: p.endereco || '',
+      habilidades: (p as any).habilidades || '{}',
+      endereco: p.endereco || '',
       data_aniversario: p.data_aniversario?.split('T')[0] || '',
       cor_favorita: p.cor_favorita || '', comida_favorita: p.comida_favorita || '',
       animal_favorito: p.animal_favorito || '', hobbies: p.hobbies || '',
-      um_sonho: p.um_sonho || '', contato_responsavel: p.contato_responsavel || '',
+      um_sonho: p.um_sonho || '',
+      contato_responsavel: (p as any).contato_responsavel || '{}',
       certificados: p.certificados || '', foto_url: p.foto_url || '',
       conta_bancaria: (p as any).conta_bancaria || '',
-      habilidades: (p as any).habilidades || '{}',
-      contato_responsavel: (p as any).contato_responsavel || '{}',
     })
     setServicosSelecionados(Array.isArray(p.servicos_habilitados) ? p.servicos_habilitados : [])
     setFotoPreview(p.foto_url || '')
