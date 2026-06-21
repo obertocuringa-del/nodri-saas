@@ -2263,7 +2263,17 @@ export default function PerfilProfissionalPage() {
   const [endCidade, setEndCidade] = useState('')
   const [endUf, setEndUf] = useState('')
   const [buscandoCep, setBuscandoCep] = useState(false)
-  const [tab, setTab] = useState<'cadastro'|'desempenho'|'faturamento'|'metas'|'ia'|'dependencia'|'oportunidades'|'bundle'|'clientes-perdidos'>('cadastro')
+  const [tab, setTab] = useState<'cadastro'|'desempenho'|'faturamento'|'metas'|'ia'|'dependencia'|'oportunidades'|'bundle'|'clientes-perdidos'|'agendamentos'>('cadastro')
+  // ── Agendamentos ─────────────────────────────────────────────────────────────
+  const [agendData, setAgendData] = useState<string>(() => { const h = new Date(); return `${String(h.getDate()).padStart(2,'0')}/${String(h.getMonth()+1).padStart(2,'0')}/${h.getFullYear()}` })
+  const [agendamentos, setAgendamentos] = useState<any[]>([])
+  const [agendLoad, setAgendLoad] = useState(false)
+  const [agendClienteSel, setAgendClienteSel] = useState<string|null>(null)
+  const [agendHistorico, setAgendHistorico] = useState<{servicos:Record<string,number>;ultima_visita:string|null;servicos_ultima:string[];profissionais_ultima:string[];primeira_visita:boolean}|null>(null)
+  const [agendLoadHist, setAgendLoadHist] = useState(false)
+  const [agendSugestao, setAgendSugestao] = useState<string>('')
+  const [agendLoadSug, setAgendLoadSug] = useState(false)
+  const [datasDispon, setDatasDispon] = useState<string[]>([])
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [anosDepAtivos, setAnosDepAtivos] = useState<number[]>([])
   const [depCardAberto, setDepCardAberto] = useState<string|null>(null)
@@ -2621,6 +2631,75 @@ export default function PerfilProfissionalPage() {
     buscarClientesPerdidos(perdidosDataInicio, perdidosDataFim)
   }, [tab, id])
 
+  // ── Agendamentos: busca por data ──────────────────────────────────────────
+  async function buscarAgendamentos(data: string) {
+    setAgendLoad(true)
+    setAgendClienteSel(null)
+    setAgendHistorico(null)
+    setAgendSugestao('')
+    try {
+      const res = await fetch(`/api/profissionais/${id}/agendamentos?data=${encodeURIComponent(data)}`)
+      const d = await res.json()
+      setAgendamentos(d.agendamentos || [])
+      setDatasDispon(d.datas_disponiveis || [])
+    } catch { setAgendamentos([]) }
+    setAgendLoad(false)
+  }
+
+  async function buscarHistoricoCliente(nomeCliente: string, celular: string) {
+    setAgendLoadHist(true)
+    setAgendSugestao('')
+    try {
+      const params = new URLSearchParams({ cliente: nomeCliente, celular: celular || '' })
+      const res = await fetch(`/api/profissionais/${id}/agendamentos/historico-cliente?${params}`)
+      const d = await res.json()
+      setAgendHistorico(d)
+    } catch { setAgendHistorico(null) }
+    setAgendLoadHist(false)
+  }
+
+  async function gerarSugestaoVenda(agend: any) {
+    setAgendLoadSug(true)
+    setAgendSugestao('')
+    try {
+      const agendamentoAtual = agend.servico
+      const historico = agendHistorico
+      const nomeProf = prof?.nome_completo || prof?.apelido || ''
+      const prompt = `Você é um especialista em vendas e experiência do cliente para salões de beleza.
+
+Profissional: ${nomeProf}
+Cliente: ${agend.cliente}
+Serviço agendado hoje: ${agendamentoAtual}
+${historico?.primeira_visita ? '⭐ PRIMEIRA VISITA do cliente no salão!' : `Última visita: ${historico?.ultima_visita || 'desconhecida'}`}
+${historico?.servicos_ultima?.length ? `Serviços da última visita: ${historico.servicos_ultima.join(', ')}` : ''}
+${historico?.profissionais_ultima?.length ? `Atendido por: ${historico.profissionais_ultima.join(', ')}` : ''}
+${Object.keys(historico?.servicos || {}).length ? `Histórico completo do cliente: ${Object.entries(historico?.servicos || {}).map(([s,q])=>`${s} (${q}x)`).join(', ')}` : ''}
+
+Crie 3 sugestões DIFERENTES de venda adicional (upsell/cross-sell) para este momento do atendimento. Para cada sugestão:
+1. Qual serviço ou produto sugerir e por quê (baseado no histórico e no serviço de hoje)
+2. O MOMENTO IDEAL para abordar (antes, durante ou após o serviço)
+3. Como abordar com naturalidade — frase exata que o profissional pode usar
+4. Como reverter se o cliente disser não (objeção mais comum)
+
+Foque em aumentar o ticket médio E proporcionar uma experiência memorável. Seja específico, prático e diferente em cada sugestão.`
+
+      const res = await fetch('/api/ia/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mensagens: [{ role: 'user', content: prompt }], modo: 'agendamentos' }),
+      })
+      const d = await res.json()
+      setAgendSugestao(d.resposta || d.content || d.message || '')
+    } catch { setAgendSugestao('Erro ao gerar sugestão. Verifique a configuração da IA.') }
+    setAgendLoadSug(false)
+  }
+
+  useEffect(() => {
+    if (tab !== 'agendamentos') return
+    buscarAgendamentos(agendData)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, id])
+
   useEffect(() => {
     if (!id) return
     setLoadAlertas(true)
@@ -2843,6 +2922,7 @@ export default function PerfilProfissionalPage() {
           ['oportunidades','Oport.'],
           ['bundle','Bundles'],
           ['clientes-perdidos','⚠️ Perdidos'],
+          ['agendamentos','📅 Agendamentos'],
           ['ia','IA'],
         ] as const
         const labelAtivo = TABS.find(([t])=>t===tab)?.[1] ?? 'Menu'
@@ -3348,6 +3428,169 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
         {tab === 'ia' && (
           <div className="-mx-3 sm:-mx-5 -mt-4 sm:-mt-6">
             <ChatWidget profissionalId={id} modoEmbarcado={true} />
+          </div>
+        )}
+
+        {/* ── AGENDAMENTOS ── */}
+        {tab === 'agendamentos' && (
+          <div className="space-y-5 max-w-3xl">
+            {/* Seletor de data */}
+            <div className="rounded-2xl p-5 border" style={{background:'#f9fafb',borderColor:'#e5e7eb'}}>
+              <h3 className="font-syne font-bold text-[13px] mb-3" style={{color:'#1a1a1a'}}>📅 Selecionar Data</h3>
+              <div className="flex items-center gap-3 flex-wrap">
+                <input type="date" value={agendData.split('/').reverse().join('-')}
+                  onChange={e => {
+                    const [y,m,d] = e.target.value.split('-')
+                    const fmt = `${d}/${m}/${y}`
+                    setAgendData(fmt)
+                    buscarAgendamentos(fmt)
+                  }}
+                  className="px-3 py-2 rounded-lg border text-sm focus:outline-none"
+                  style={{background:'#fff',borderColor:'#d1d5db',color:'#1a1a1a'}}/>
+                <button onClick={() => buscarAgendamentos(agendData)}
+                  className="px-4 py-2 rounded-lg text-sm font-semibold"
+                  style={{background:'#5b4fcf',color:'#fff'}}>
+                  🔍 Buscar
+                </button>
+                {datasDispon.length > 0 && (
+                  <span className="text-[11px]" style={{color:'#6b7280'}}>
+                    {datasDispon.length} data(s) com agendamentos confirmados
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Lista de clientes do dia */}
+            <div className="rounded-2xl border overflow-hidden" style={{borderColor:'#e5e7eb'}}>
+              <div className="px-5 py-3 border-b" style={{background:'#f3f4f6',borderColor:'#e5e7eb'}}>
+                <span className="font-syne font-bold text-[13px]" style={{color:'#1a1a1a'}}>
+                  Clientes agendados em {agendData}
+                </span>
+                {agendamentos.length > 0 && (
+                  <span className="ml-2 text-[11px] px-2 py-0.5 rounded-full" style={{background:'#5b4fcf',color:'#fff'}}>
+                    {agendamentos.length}
+                  </span>
+                )}
+              </div>
+
+              {agendLoad && (
+                <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin" style={{color:'#5b4fcf'}}/></div>
+              )}
+
+              {!agendLoad && agendamentos.length === 0 && (
+                <div className="px-5 py-8 text-center text-[13px]" style={{color:'#9ca3af'}}>
+                  Nenhum agendamento confirmado nesta data.
+                </div>
+              )}
+
+              {!agendLoad && agendamentos.map((ag, i) => {
+                const selecionado = agendClienteSel === ag.cliente
+                return (
+                  <div key={i}
+                    onClick={() => {
+                      if (selecionado) { setAgendClienteSel(null); setAgendHistorico(null); setAgendSugestao('') }
+                      else { setAgendClienteSel(ag.cliente); buscarHistoricoCliente(ag.cliente, ag.celular) }
+                    }}
+                    className="cursor-pointer transition-all"
+                    style={{
+                      borderBottom: i < agendamentos.length - 1 ? '1px solid #f3f4f6' : 'none',
+                      background: selecionado ? '#f0eefb' : '#fff',
+                    }}>
+                    {/* Linha do cliente */}
+                    <div className="flex items-center justify-between px-5 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
+                          style={{background:'#5b4fcf20',color:'#5b4fcf'}}>
+                          {ag.cliente?.charAt(0)?.toUpperCase() || '?'}
+                        </div>
+                        <div>
+                          <p className="text-[13px] font-semibold" style={{color:'#1a1a1a'}}>{ag.cliente}</p>
+                          <p className="text-[11px]" style={{color:'#6b7280'}}>{ag.hora} · {ag.servico}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {ag.celular && <span className="text-[10px]" style={{color:'#9ca3af'}}>{ag.celular}</span>}
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                          style={{background:'#d1fae5',color:'#065f46'}}>{ag.status}</span>
+                        <span className="text-[11px]" style={{color:'#5b4fcf'}}>{selecionado ? '▲' : '▼'}</span>
+                      </div>
+                    </div>
+
+                    {/* Painel expandido */}
+                    {selecionado && (
+                      <div className="px-5 pb-5 border-t" style={{borderColor:'#e5e7eb',background:'#faf9ff'}}>
+                        {agendLoadHist && (
+                          <div className="flex justify-center py-4"><Loader2 size={18} className="animate-spin" style={{color:'#5b4fcf'}}/></div>
+                        )}
+                        {!agendLoadHist && agendHistorico && (
+                          <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {/* Serviços já feitos */}
+                            <div className="rounded-xl p-4" style={{background:'#fff',border:'1px solid #e5e7eb'}}>
+                              <p className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{color:'#6b7280'}}>Histórico de Serviços</p>
+                              {Object.keys(agendHistorico.servicos).length === 0
+                                ? <p className="text-[12px]" style={{color:'#9ca3af'}}>Sem histórico registrado</p>
+                                : Object.entries(agendHistorico.servicos)
+                                    .sort(([,a],[,b]) => (b as number) - (a as number))
+                                    .map(([s, q]) => (
+                                      <div key={s} className="flex justify-between items-center py-1 border-b" style={{borderColor:'#f3f4f6'}}>
+                                        <span className="text-[12px]" style={{color:'#1a1a1a'}}>{s}</span>
+                                        <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{background:'#5b4fcf15',color:'#5b4fcf'}}>{q as number}x</span>
+                                      </div>
+                                    ))
+                              }
+                            </div>
+
+                            {/* Última visita */}
+                            <div className="space-y-3">
+                              <div className="rounded-xl p-4" style={{background:'#fff',border:'1px solid #e5e7eb'}}>
+                                <p className="text-[11px] font-bold uppercase tracking-wider mb-1" style={{color:'#6b7280'}}>Última Visita</p>
+                                {agendHistorico.primeira_visita
+                                  ? <p className="text-[13px] font-bold" style={{color:'#f59e0b'}}>⭐ Primeira visita!</p>
+                                  : <p className="text-[13px] font-semibold" style={{color:'#1a1a1a'}}>{agendHistorico.ultima_visita || '—'}</p>
+                                }
+                                {agendHistorico.servicos_ultima?.length > 0 && (
+                                  <p className="text-[11px] mt-1" style={{color:'#6b7280'}}>Serviços: {agendHistorico.servicos_ultima.join(', ')}</p>
+                                )}
+                                {agendHistorico.profissionais_ultima?.length > 0 && (
+                                  <p className="text-[11px] mt-0.5" style={{color:'#9ca3af'}}>Por: {agendHistorico.profissionais_ultima.join(', ')}</p>
+                                )}
+                              </div>
+
+                              {/* Serviço de hoje */}
+                              <div className="rounded-xl p-4" style={{background:'#f0fdf4',border:'1px solid #bbf7d0'}}>
+                                <p className="text-[11px] font-bold uppercase tracking-wider mb-1" style={{color:'#166534'}}>Procedimento de Hoje</p>
+                                <p className="text-[13px] font-semibold" style={{color:'#166534'}}>{ag.servico}</p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Botão e sugestão IA */}
+                        <div className="mt-4">
+                          <button
+                            onClick={e => { e.stopPropagation(); gerarSugestaoVenda(ag) }}
+                            disabled={agendLoadSug}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all"
+                            style={{background:'#5b4fcf',color:'#fff',opacity: agendLoadSug ? 0.7 : 1}}>
+                            {agendLoadSug ? <Loader2 size={14} className="animate-spin"/> : '✨'}
+                            {agendLoadSug ? 'Gerando sugestões...' : 'Gerar Sugestão de Venda (IA)'}
+                          </button>
+
+                          {agendSugestao && (
+                            <div className="mt-3 rounded-xl p-4" style={{background:'#faf9ff',border:'1.5px solid #c4bef0'}}>
+                              <p className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{color:'#5b4fcf'}}>✨ Sugestões da IA</p>
+                              <div className="text-[12px] whitespace-pre-wrap" style={{color:'#1a1a1a',lineHeight:'1.6'}}>
+                                {agendSugestao}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
           </div>
         )}
 

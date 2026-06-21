@@ -86,6 +86,7 @@ export default function ImportarExcelPage() {
       const metas           = sheetToJson(wb, 'METAS')
       const feedbacks       = sheetToJson(wb, 'FEEDBACK')
       const atendimentosRaw = sheetToJson(wb, 'ATENDIMENTOS_RAW')
+      const agendamentosRaw = sheetToJson(wb, 'AGENDAMENTOS_RAW')
 
       // ── 2. Enviar dados agregados (rápido) ───────────────────────────────
       setProgresso(`Salvando ${periodos.length} períodos no banco...`)
@@ -139,9 +140,35 @@ export default function ImportarExcelPage() {
         await fetch('/api/relatorios/reconstruir-do-raw', { method: 'POST' })
       }
 
+      // ── 5. Enviar agendamentos_raw em lotes ─────────────────────────────
+      let agendSalvos = 0
+      if (agendamentosRaw.length > 0) {
+        const CHUNK = 500
+        const totalChunks = Math.ceil(agendamentosRaw.length / CHUNK)
+        const periodosParaLimpar = Array.from(
+          new Set(agendamentosRaw.map((r: any) => `${Number(r.ano)}-${Number(r.mes)}`))
+        ).map(k => { const [ano, mes] = (k as string).split('-'); return { ano: Number(ano), mes: Number(mes) } })
+
+        for (let i = 0; i < totalChunks; i++) {
+          const chunk = agendamentosRaw.slice(i * CHUNK, (i + 1) * CHUNK)
+          setProgresso(`Salvando agendamentos: ${Math.min((i+1)*CHUNK, agendamentosRaw.length)} de ${agendamentosRaw.length}...`)
+          const resA = await fetch('/api/relatorios/importar-agendamentos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              rows: chunk,
+              periodos_para_limpar: i === 0 ? periodosParaLimpar : [],
+            }),
+          })
+          const dataA = await resA.json()
+          if (!dataA.ok) { toast.error('Erro ao salvar agendamentos: ' + dataA.error); break }
+          agendSalvos += dataA.salvos || 0
+        }
+      }
+
       localStorage.removeItem('nodri_relatorios_v2')
       setProgresso('')
-      setResultado({ ...data1, atendimentos_raw_salvos: rawSalvos })
+      setResultado({ ...data1, atendimentos_raw_salvos: rawSalvos, agendamentos_salvos: agendSalvos })
       toast.success(`${data1.periodos_salvos} períodos importados!`)
 
     } catch (e: any) {
