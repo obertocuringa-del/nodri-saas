@@ -107,6 +107,13 @@ export default function ProfissionaisPage() {
   const [servicosSelecionados, setServicosSelecionados] = useState<string[]>([])
   const [servicosAberto, setServicosAberto] = useState(false)
 
+  // ── ENDEREÇO ESTRUTURADO ──
+  const [formCep, setFormCep] = useState('')
+  const [formBairro, setFormBairro] = useState('')
+  const [formCidade, setFormCidade] = useState('')
+  const [formUf, setFormUf] = useState('')
+  const [buscandoCep, setBuscandoCep] = useState(false)
+
   // ── DISTRATO ──
   const [distratoProf, setDistratoProf] = useState<Profissional | null>(null)
   const [distratoEditando, setDistratoEditando] = useState(false)
@@ -279,6 +286,32 @@ export default function ProfissionaisPage() {
     setTimeout(() => setLinkCopiado(false), 3000)
   }
 
+  async function buscarCep(cep: string) {
+    const digits = cep.replace(/\D/g, '')
+    if (digits.length !== 8) return
+    setBuscandoCep(true)
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`)
+      const d = await res.json()
+      if (!d.erro) {
+        setFormBairro(d.bairro || '')
+        setFormCidade(d.localidade || '')
+        setFormUf(d.uf || '')
+      } else {
+        toast.error('CEP não encontrado')
+      }
+    } catch { toast.error('Erro ao buscar CEP') } finally { setBuscandoCep(false) }
+  }
+
+  function enderecoParaCampos(endereco: string) {
+    // Tenta extrair CEP do formato "BAIRRO, CIDADE-UF, CEP: XXXXX" ou "XXXXX-XXX"
+    const cepMatch = endereco.match(/CEP[:\s]+(\d{5}-?\d{3})/i)
+    const cepRaw = cepMatch ? cepMatch[1].replace('-','') : ''
+    // Tenta extrair cidade-UF
+    const partes = endereco.split(',').map(s => s.trim())
+    return { cep: cepRaw, bairro: partes[0] || '', cidade: partes[1] || '', uf: partes[2]?.replace(/CEP.*/i,'').trim() || '' }
+  }
+
   async function carregarServicos() {
     try {
       const res = await fetch('/api/servicos')
@@ -319,13 +352,15 @@ export default function ProfissionaisPage() {
     try {
       const url = editando ? `/api/profissionais/${editando.id}` : '/api/profissionais'
       const method = editando ? 'PUT' : 'POST'
-      const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...form, servicos_habilitados: servicosSelecionados }) })
+      const enderecoFull = [formBairro, formCidade && formUf ? `${formCidade}-${formUf}` : formCidade || formUf, formCep ? `CEP: ${formCep}` : ''].filter(Boolean).join(', ')
+      const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...form, endereco: enderecoFull || form.endereco, servicos_habilitados: servicosSelecionados }) })
       if (res.ok) {
         toast.success(editando ? 'Profissional atualizado!' : 'Profissional cadastrado!')
         setForm({ ...FORM_INITIAL })
         setServicosSelecionados([])
         setEditando(null)
         setFotoPreview('')
+        setFormCep(''); setFormBairro(''); setFormCidade(''); setFormUf('')
         setSecao('lista')
         carregarProfissionais()
       } else {
@@ -359,6 +394,11 @@ export default function ProfissionaisPage() {
     })
     setServicosSelecionados(Array.isArray(p.servicos_habilitados) ? p.servicos_habilitados : [])
     setFotoPreview(p.foto_url || '')
+    // Popula campos de endereço estruturado
+    if (p.endereco) {
+      const parsed = enderecoParaCampos(p.endereco)
+      setFormCep(parsed.cep); setFormBairro(parsed.bairro); setFormCidade(parsed.cidade); setFormUf(parsed.uf)
+    } else { setFormCep(''); setFormBairro(''); setFormCidade(''); setFormUf('') }
     setSecao('cadastrar')
   }
 
@@ -730,7 +770,36 @@ export default function ProfissionaisPage() {
                         {inp2('RG', form.rg, v => setForm(f => ({ ...f, rg: v })))}
                         {inp2('Data de Aniversário', form.data_aniversario, v => setForm(f => ({ ...f, data_aniversario: v })), { type: 'date' })}
                         {inp2('E-mail', form.email, v => setForm(f => ({ ...f, email: v })), { type: 'email' })}
-                        {inp2('Endereço', form.endereco, v => setForm(f => ({ ...f, endereco: v })), { full: true })}
+                        {/* ── ENDEREÇO ESTRUTURADO ── */}
+                        <div style={{ gridColumn: '1 / -1' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr 1fr 60px', gap: '8px', alignItems: 'end' }}>
+                            <div>
+                              <label style={{ fontSize: '11px', fontWeight: 600, color: '#767069', display: 'block', marginBottom: '4px' }}>CEP</label>
+                              <div style={{ position: 'relative' }}>
+                                <input value={formCep} onChange={e => { const v = e.target.value.replace(/\D/g,'').slice(0,8); setFormCep(v); if (v.length === 8) buscarCep(v) }}
+                                  placeholder="00000000" maxLength={8}
+                                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #dedad4', borderRadius: '8px', fontSize: '13px', background: '#fafaf8', color: '#1a1a1a', outline: 'none', paddingRight: buscandoCep ? '32px' : '12px' }} />
+                                {buscandoCep && <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '12px', color: '#5b4fcf' }}>⏳</span>}
+                              </div>
+                            </div>
+                            <div>
+                              <label style={{ fontSize: '11px', fontWeight: 600, color: '#767069', display: 'block', marginBottom: '4px' }}>Bairro</label>
+                              <input value={formBairro} onChange={e => setFormBairro(e.target.value)} placeholder="Bairro"
+                                style={{ width: '100%', padding: '10px 12px', border: '1px solid #dedad4', borderRadius: '8px', fontSize: '13px', background: '#fafaf8', color: '#1a1a1a', outline: 'none' }} />
+                            </div>
+                            <div>
+                              <label style={{ fontSize: '11px', fontWeight: 600, color: '#767069', display: 'block', marginBottom: '4px' }}>Cidade</label>
+                              <input value={formCidade} onChange={e => setFormCidade(e.target.value)} placeholder="Cidade"
+                                style={{ width: '100%', padding: '10px 12px', border: '1px solid #dedad4', borderRadius: '8px', fontSize: '13px', background: '#fafaf8', color: '#1a1a1a', outline: 'none' }} />
+                            </div>
+                            <div>
+                              <label style={{ fontSize: '11px', fontWeight: 600, color: '#767069', display: 'block', marginBottom: '4px' }}>UF</label>
+                              <input value={formUf} onChange={e => setFormUf(e.target.value.toUpperCase().slice(0,2))} placeholder="UF" maxLength={2}
+                                style={{ width: '100%', padding: '10px 12px', border: '1px solid #dedad4', borderRadius: '8px', fontSize: '13px', background: '#fafaf8', color: '#1a1a1a', outline: 'none', textAlign: 'center' }} />
+                            </div>
+                          </div>
+                          {(formBairro || formCidade) && <p style={{ fontSize: '10px', color: '#a09890', marginTop: '4px' }}>📍 {[formBairro, formCidade && formUf ? `${formCidade}-${formUf}` : formCidade, formCep ? `CEP: ${formCep}` : ''].filter(Boolean).join(', ')}</p>}
+                        </div>
                         {inp2('Nome do Responsável', resp.nome || '', v => { const c = (() => { try { return JSON.parse(form.contato_responsavel || '{}') } catch { return {} } })(); setForm(f => ({ ...f, contato_responsavel: JSON.stringify({ ...c, nome: v }) })) })}
                         {inp2('Telefone do Responsável', resp.tel || '', v => { const c = (() => { try { return JSON.parse(form.contato_responsavel || '{}') } catch { return {} } })(); setForm(f => ({ ...f, contato_responsavel: JSON.stringify({ ...c, tel: v }) })) }, { placeholder: '(00) 00000-0000' })}
                       </div>

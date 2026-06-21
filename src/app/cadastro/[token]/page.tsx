@@ -48,7 +48,11 @@ export default function CadastroPublicoPage() {
   const [rg, setRg] = useState('')
   const [dataNasc, setDataNasc] = useState('')
   const [email, setEmail] = useState('')
-  const [endereco, setEndereco] = useState('')
+  const [cep, setCep] = useState('')
+  const [bairro, setBairro] = useState('')
+  const [cidade, setCidade] = useState('')
+  const [uf, setUf] = useState('')
+  const [buscandoCep, setBuscandoCep] = useState(false)
   const [nomeResp, setNomeResp] = useState('')
   const [telResp, setTelResp] = useState('')
 
@@ -99,6 +103,16 @@ export default function CadastroPublicoPage() {
     if (d.url) { setFotoUrl(d.url); setFotoPreview(d.url) }
   }
 
+  async function buscarCep(v: string) {
+    if (v.length !== 8) return
+    setBuscandoCep(true)
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${v}/json/`)
+      const d = await res.json()
+      if (!d.erro) { setBairro(d.bairro || ''); setCidade(d.localidade || ''); setUf(d.uf || '') }
+    } catch {} finally { setBuscandoCep(false) }
+  }
+
   async function uploadDoc(file: File, tipo: string, label: string) {
     setUploadandoDoc(tipo)
     const fd = new FormData()
@@ -124,7 +138,7 @@ export default function CadastroPublicoPage() {
       rg,
       data_aniversario: dataNasc || null,
       email,
-      endereco,
+      endereco: [bairro, cidade && uf ? `${cidade}-${uf}` : cidade || uf, cep ? `CEP: ${cep}` : ''].filter(Boolean).join(', '),
       contato_responsavel: JSON.stringify({ nome: nomeResp, tel: telResp }),
       habilidades: JSON.stringify({ dias_folga: diasFolga, h_inicio: hInicio, h_fim: hFim, h_obs: hObs }),
       cor_favorita: corFav,
@@ -241,7 +255,36 @@ export default function CadastroPublicoPage() {
             {inp('RG', rg, setRg)}
             {inp('Data de Aniversário', dataNasc, setDataNasc, { type: 'date' })}
             {inp('E-mail', email, setEmail, { type: 'email' })}
-            {inp('Endereço', endereco, setEndereco, { full: true })}
+            {/* ── ENDEREÇO COM CEP ── */}
+            <div style={{ gridColumn: '1 / -1' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr 1fr 60px', gap: '8px', alignItems: 'end' }}>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#555', display: 'block', marginBottom: '4px' }}>CEP</label>
+                  <div style={{ position: 'relative' }}>
+                    <input value={cep} onChange={e => { const v = e.target.value.replace(/\D/g,'').slice(0,8); setCep(v); if (v.length === 8) buscarCep(v) }}
+                      placeholder="00000000" maxLength={8} inputMode="numeric"
+                      style={{ width: '100%', padding: '12px', border: '1.5px solid #e0ddd8', borderRadius: '10px', fontSize: '14px', background: '#fff', color: '#1a1a1a', outline: 'none' }} />
+                    {buscandoCep && <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)' }}>⏳</span>}
+                  </div>
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#555', display: 'block', marginBottom: '4px' }}>Bairro</label>
+                  <input value={bairro} onChange={e => setBairro(e.target.value)} placeholder="Bairro"
+                    style={{ width: '100%', padding: '12px', border: '1.5px solid #e0ddd8', borderRadius: '10px', fontSize: '14px', background: '#fff', color: '#1a1a1a', outline: 'none' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#555', display: 'block', marginBottom: '4px' }}>Cidade</label>
+                  <input value={cidade} onChange={e => setCidade(e.target.value)} placeholder="Cidade"
+                    style={{ width: '100%', padding: '12px', border: '1.5px solid #e0ddd8', borderRadius: '10px', fontSize: '14px', background: '#fff', color: '#1a1a1a', outline: 'none' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#555', display: 'block', marginBottom: '4px' }}>UF</label>
+                  <input value={uf} onChange={e => setUf(e.target.value.toUpperCase().slice(0,2))} placeholder="UF" maxLength={2}
+                    style={{ width: '100%', padding: '12px', border: '1.5px solid #e0ddd8', borderRadius: '10px', fontSize: '14px', background: '#fff', color: '#1a1a1a', outline: 'none', textAlign: 'center' }} />
+                </div>
+              </div>
+              {(bairro || cidade) && <p style={{ fontSize: '11px', color: '#999', marginTop: '4px' }}>📍 {[bairro, cidade && uf ? `${cidade}-${uf}` : cidade, cep ? `CEP: ${cep}` : ''].filter(Boolean).join(', ')}</p>}
+            </div>
             {inp('Nome do Responsável', nomeResp, setNomeResp)}
             {inp('Telefone do Responsável', telResp, setTelResp, { placeholder: '(00) 00000-0000' })}
 
