@@ -3675,21 +3675,9 @@ ${fieisRows?`<div class="sec"><div class="sec-title">Clientes Fiéis ❤️ (${d
               const cor = d.cor_risco || '#10b981'
               return (
                 <>
-                  <div className="rounded-2xl p-6 border" style={{background:`${cor}08`, borderColor:`${cor}40`}}>
-                    <div className="flex items-start justify-between mb-4">
-                      <div>
-                        <h2 className="font-syne font-black text-[18px] text-nodri-t1">👑 Relatório de Dependência</h2>
-                        <p className="text-[11px] text-nodri-t3 mt-1">Se este profissional sair amanhã, qual o impacto real no salão?</p>
-                      </div>
-                      <div className="text-right shrink-0 ml-2">
-                        <div className="font-syne font-black text-[32px] sm:text-[48px] leading-none" style={{color:cor}}>{d.pct_faturamento}%</div>
-                        <div className="text-[11px] font-bold mt-1 uppercase" style={{color:cor}}>{d.nivel_risco}</div>
-                      </div>
-                    </div>
-                    <div className="w-full bg-nodri-border rounded-full h-3 overflow-hidden">
-                      <div className="h-3 rounded-full transition-all" style={{width:`${Math.min(d.pct_faturamento*(100/30),100)}%`, background:`linear-gradient(90deg,${cor},${cor}88)`}}/>
-                    </div>
-                    <p className="text-[12px] mt-3 font-semibold" style={{color:cor}}>{d.mensagem}</p>
+                  <div className="px-1">
+                    <h2 className="font-syne font-black text-[18px] text-nodri-t1">👑 Relatório de Dependência</h2>
+                    <p className="text-[11px] text-nodri-t3 mt-1">Selecione os anos no gráfico para ver o impacto real no período</p>
                   </div>
 
                   {(() => {
