@@ -2258,6 +2258,11 @@ export default function PerfilProfissionalPage() {
   const [form, setForm] = useState<Partial<Profissional>>({})
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
+  const [endCep, setEndCep] = useState('')
+  const [endBairro, setEndBairro] = useState('')
+  const [endCidade, setEndCidade] = useState('')
+  const [endUf, setEndUf] = useState('')
+  const [buscandoCep, setBuscandoCep] = useState(false)
   const [tab, setTab] = useState<'cadastro'|'desempenho'|'faturamento'|'metas'|'ia'|'dependencia'|'oportunidades'|'bundle'|'clientes-perdidos'>('cadastro')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [anosDepAtivos, setAnosDepAtivos] = useState<number[]>([])
@@ -2510,14 +2515,14 @@ export default function PerfilProfissionalPage() {
       const cached = sessionStorage.getItem('nodri_prof_' + id)
       if (cached) {
         const d = JSON.parse(cached)
-        setProf(d); setForm(d); setLoading(false)
+        setProf(d); setForm(d); popularEndereco(d.endereco || ''); setLoading(false)
       }
     } catch(_) {}
     // Sempre busca dados frescos do servidor, mesmo havendo cache (cache pode estar
     // desatualizado em relação a campos salvos depois, ex: servicos_habilitados)
     fetch(`/api/profissionais/${id}`)
       .then(r => r.json())
-      .then(d => { if (d?.id) { setProf(d); setForm(d) }; setLoading(false) })
+      .then(d => { if (d?.id) { setProf(d); setForm(d); popularEndereco(d.endereco || '') }; setLoading(false) })
       .catch(() => setLoading(false))
   }, [id])
 
@@ -2701,11 +2706,41 @@ export default function PerfilProfissionalPage() {
       method: 'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(cleaned)
     })
     setSalvando(false)
-    if (res.ok) { const d = await res.json(); setProf(d); setForm(d); toast.success(' Salvo!') }
+    if (res.ok) { const d = await res.json(); setProf(d); setForm(d); popularEndereco(d.endereco || ''); toast.success(' Salvo!') }
     else { const e = await res.json().catch(()=>({})); toast.error('Erro: ' + (e?.error || 'Falha ao salvar')) }
   }
 
   function set(key: keyof Profissional, value: any) { setForm(p=>({...p,[key]:value})) }
+
+  function popularEndereco(endereco: string) {
+    if (!endereco) return
+    const cepMatch = endereco.match(/CEP[:\s]+(\d{5,8})/i)
+    if (cepMatch) setEndCep(cepMatch[1].replace(/\D/g,''))
+    const partes = endereco.split(',').map(s => s.trim())
+    setEndBairro(partes[0] || '')
+    if (partes[1]) {
+      const cidUf = partes[1].replace(/CEP.*/i,'').trim()
+      const dash = cidUf.lastIndexOf('-')
+      if (dash > 0) { setEndCidade(cidUf.slice(0, dash).trim()); setEndUf(cidUf.slice(dash+1).trim()) }
+      else setEndCidade(cidUf)
+    }
+  }
+
+  async function buscarCepPerfil(v: string) {
+    if (v.length !== 8) return
+    setBuscandoCep(true)
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${v}/json/`)
+      const d = await res.json()
+      if (!d.erro) {
+        setEndBairro(d.bairro || '')
+        setEndCidade(d.localidade || '')
+        setEndUf(d.uf || '')
+        const end = [d.bairro, d.localidade && d.uf ? `${d.localidade}-${d.uf}` : d.localidade, `CEP: ${v}`].filter(Boolean).join(', ')
+        set('endereco', end)
+      } else { toast.error('CEP não encontrado') }
+    } catch { toast.error('Erro ao buscar CEP') } finally { setBuscandoCep(false) }
+  }
 
   if (loading) return <div className="min-h-screen bg-nodri-dark flex items-center justify-center"><Loader2 size={28} className="animate-spin text-nodri-cyan"/></div>
   if (!prof) return <div className="min-h-screen bg-nodri-dark flex items-center justify-center text-nodri-t3">Profissional não encontrado</div>
@@ -2966,7 +3001,34 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                     <div><label className={labelCls}>RG</label><input value={form.rg||''} onChange={e=>set('rg',e.target.value)} className={inputCls}/></div>
                     <div><label className={labelCls}>Data de Aniversário</label><input type="date" value={form.data_aniversario||''} onChange={e=>set('data_aniversario',e.target.value)} className={inputCls}/></div>
                     <div><label className={labelCls}>Email</label><input type="email" value={form.email||''} onChange={e=>set('email',e.target.value)} className={inputCls}/></div>
-                    <div className="col-span-2"><label className={labelCls}>Endereço</label><input value={form.endereco||''} onChange={e=>set('endereco',e.target.value)} className={inputCls}/></div>
+                    {/* ── ENDEREÇO COM CEP AUTO-FILL ── */}
+                    <div className="col-span-2">
+                      <label className={labelCls}>Endereço</label>
+                      <div className="grid grid-cols-[120px_1fr_1fr_56px] gap-2 items-end">
+                        <div>
+                          <label className="text-[10px] text-nodri-t3 block mb-1">CEP</label>
+                          <div className="relative">
+                            <input value={endCep} maxLength={8} inputMode="numeric" placeholder="00000000"
+                              onChange={e => { const v = e.target.value.replace(/\D/g,'').slice(0,8); setEndCep(v); if (v.length === 8) buscarCepPerfil(v) }}
+                              className={inputCls + ' pr-7'} />
+                            {buscandoCep && <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px]">⏳</span>}
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-nodri-t3 block mb-1">Bairro</label>
+                          <input value={endBairro} placeholder="Bairro" onChange={e => { setEndBairro(e.target.value); set('endereco', [e.target.value, endCidade && endUf ? `${endCidade}-${endUf}` : endCidade, endCep ? `CEP: ${endCep}` : ''].filter(Boolean).join(', ')) }} className={inputCls} />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-nodri-t3 block mb-1">Cidade</label>
+                          <input value={endCidade} placeholder="Cidade" onChange={e => { setEndCidade(e.target.value); set('endereco', [endBairro, e.target.value && endUf ? `${e.target.value}-${endUf}` : e.target.value, endCep ? `CEP: ${endCep}` : ''].filter(Boolean).join(', ')) }} className={inputCls} />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-nodri-t3 block mb-1">UF</label>
+                          <input value={endUf} placeholder="UF" maxLength={2} onChange={e => { const v = e.target.value.toUpperCase().slice(0,2); setEndUf(v); set('endereco', [endBairro, endCidade && v ? `${endCidade}-${v}` : endCidade, endCep ? `CEP: ${endCep}` : ''].filter(Boolean).join(', ')) }} className={inputCls + ' text-center'} />
+                        </div>
+                      </div>
+                      {(endBairro || endCidade) && <p className="text-[10px] text-nodri-t3 mt-1">📍 {[endBairro, endCidade && endUf ? `${endCidade}-${endUf}` : endCidade, endCep ? `CEP: ${endCep}` : ''].filter(Boolean).join(', ')}</p>}
+                    </div>
                     {/* Contato do Responsável — nome e telefone separados */}
                     <div><label className={labelCls}>Nome do Responsável</label>
                       <input value={(() => { try { return JSON.parse(form.contato_responsavel||'{}').nome||'' } catch { return form.contato_responsavel||'' } })()}
