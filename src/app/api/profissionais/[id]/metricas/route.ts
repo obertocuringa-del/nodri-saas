@@ -158,7 +158,9 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       buscarFb(datasP1.inicio, datasP1.fim),
       buscarFb(datasP2.inicio, datasP2.fim),
     ])
+    const idsVistos = new Set<string>()
     feedbacksTodos = [...feedbacksP2, ...feedbacksP1]
+      .filter(fb => { if (idsVistos.has(fb.id)) return false; idsVistos.add(fb.id); return true })
       .sort((a, b) => new Date(b.criado_em).getTime() - new Date(a.criado_em).getTime())
   }
 
