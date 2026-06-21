@@ -2269,7 +2269,14 @@ export default function PerfilProfissionalPage() {
   const [agendamentos, setAgendamentos] = useState<any[]>([])
   const [agendLoad, setAgendLoad] = useState(false)
   const [agendClienteSel, setAgendClienteSel] = useState<string|null>(null)
-  const [agendHistorico, setAgendHistorico] = useState<{servicos:Record<string,number>;ultima_visita:string|null;servicos_ultima:string[];profissionais_ultima:string[];primeira_visita:boolean}|null>(null)
+  const [agendHistorico, setAgendHistorico] = useState<{
+    primeira_visita_real:boolean; data_primeira_visita:string|null; ultima_visita:string|null;
+    dias_desde_ultima:number|null; total_visitas:number; faturamento_acumulado:number;
+    ticket_medio:number; cliente_fiel:boolean; freq_media_dias:number|null;
+    profissionais_atendidos:string[]; servicos:Record<string,number>;
+    servicos_ultima:string[]; profissionais_ultima:string[];
+    ultima_vez_servico:Record<string,string>; alertas:string[];
+  }|null>(null)
   const [agendLoadHist, setAgendLoadHist] = useState(false)
   const [agendSugestao, setAgendSugestao] = useState<string>('')
   const [agendLoadSug, setAgendLoadSug] = useState(false)
@@ -2662,26 +2669,72 @@ export default function PerfilProfissionalPage() {
     setAgendLoadSug(true)
     setAgendSugestao('')
     try {
-      const agendamentoAtual = agend.servico
-      const historico = agendHistorico
+      const h = agendHistorico
       const nomeProf = prof?.nome_completo || prof?.apelido || ''
-      const prompt = `Você é um especialista em vendas e experiência do cliente para salões de beleza.
+      const servicosHistorico = Object.entries(h?.servicos || {}).sort(([,a],[,b])=>(b as number)-(a as number)).map(([s,q])=>`${s} (${q}x)`).join(', ')
 
+      // Dias sem cada serviço (top relevantes)
+      const diasSemServico = Object.entries(h?.ultima_vez_servico || {}).map(([s, dt]) => {
+        try {
+          const [d,m,y] = dt.includes('/') ? dt.split('/') : [dt.slice(8,10),dt.slice(5,7),dt.slice(0,4)]
+          const dias = Math.floor((Date.now() - new Date(`${y}-${m}-${d}`).getTime()) / 86400000)
+          return `${s}: ${dias} dias atrás`
+        } catch { return null }
+      }).filter(Boolean).join('; ')
+
+      const prompt = `Você é um especialista em vendas, experiência do cliente e aumento de ticket médio para salões de beleza de alto padrão.
+
+═══ DADOS DO PROFISSIONAL ═══
 Profissional: ${nomeProf}
-Cliente: ${agend.cliente}
-Serviço agendado hoje: ${agendamentoAtual}
-${historico?.primeira_visita ? '⭐ PRIMEIRA VISITA do cliente no salão!' : `Última visita: ${historico?.ultima_visita || 'desconhecida'}`}
-${historico?.servicos_ultima?.length ? `Serviços da última visita: ${historico.servicos_ultima.join(', ')}` : ''}
-${historico?.profissionais_ultima?.length ? `Atendido por: ${historico.profissionais_ultima.join(', ')}` : ''}
-${Object.keys(historico?.servicos || {}).length ? `Histórico completo do cliente: ${Object.entries(historico?.servicos || {}).map(([s,q])=>`${s} (${q}x)`).join(', ')}` : ''}
 
-Crie 3 sugestões DIFERENTES de venda adicional (upsell/cross-sell) para este momento do atendimento. Para cada sugestão:
-1. Qual serviço ou produto sugerir e por quê (baseado no histórico e no serviço de hoje)
-2. O MOMENTO IDEAL para abordar (antes, durante ou após o serviço)
-3. Como abordar com naturalidade — frase exata que o profissional pode usar
-4. Como reverter se o cliente disser não (objeção mais comum)
+═══ DADOS DO CLIENTE ═══
+Nome: ${agend.cliente}
+Serviço agendado HOJE: ${agend.servico}
+${h?.primeira_visita_real ? '⭐⭐ PRIMEIRA VISITA NO SALÃO — trate como experiência de encantamento!' : ''}
+Primeira visita no salão: ${h?.data_primeira_visita || 'desconhecida'}
+Última visita: ${h?.ultima_visita || 'desconhecida'}${h?.dias_desde_ultima !== null ? ` (${h?.dias_desde_ultima} dias atrás)` : ''}
+Total de visitas: ${h?.total_visitas || 0}
+Frequência média: ${h?.freq_media_dias ? `a cada ${h?.freq_media_dias} dias` : 'desconhecida'}
+Faturamento acumulado: R$ ${(h?.faturamento_acumulado || 0).toFixed(2)}
+Ticket médio: R$ ${(h?.ticket_medio || 0).toFixed(2)}
+Cliente fiel: ${h?.cliente_fiel ? 'SIM ❤️' : 'NÃO'}
+Profissionais que já atenderam: ${h?.profissionais_atendidos?.join(', ') || 'nenhum'}
 
-Foque em aumentar o ticket médio E proporcionar uma experiência memorável. Seja específico, prático e diferente em cada sugestão.`
+═══ HISTÓRICO DE SERVIÇOS ═══
+${servicosHistorico || 'Sem histórico'}
+
+═══ ÚLTIMA VISITA ═══
+Data: ${h?.ultima_visita || '—'}
+Serviços realizados: ${h?.servicos_ultima?.join(', ') || '—'}
+Profissional(is): ${h?.profissionais_ultima?.join(', ') || '—'}
+
+═══ TEMPO SEM CADA SERVIÇO ═══
+${diasSemServico || 'Sem dados'}
+
+═══ SUA MISSÃO ═══
+Gere 3 sugestões de venda COMPLETAMENTE DIFERENTES entre si, priorizando:
+- Serviços que o cliente faz muito mas não fez recentemente
+- Serviços complementares ao que ele vai fazer HOJE
+- Serviços que ele NUNCA fez mas que combinam com seu perfil
+
+Para cada sugestão, responda EXATAMENTE neste formato:
+
+---
+🎯 SUGESTÃO [N]: [NOME DO SERVIÇO]
+
+📊 Probabilidade: 🟢 Alta / 🟡 Média / 🔴 Baixa
+📋 Motivo: [Por que faz sentido AGORA, baseado nos dados acima]
+⏰ Momento ideal: [Antes / Durante / Após o serviço de hoje — e por quê]
+✨ Benefícios para o cliente: [3 benefícios reais e concretos]
+
+💬 Como abordar (frase exata para o profissional usar):
+"[frase natural, calorosa, não forçada]"
+
+🔄 Se o cliente recusar — como reverter:
+"[frase de reversão que mantém a porta aberta]"
+---
+
+Seja específico, use os dados reais do cliente. Proibido sugestões genéricas ou repetidas.`
 
       const res = await fetch('/api/ia/chat', {
         method: 'POST',
@@ -3518,73 +3571,125 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
 
                     {/* Painel expandido */}
                     {selecionado && (
-                      <div className="px-5 pb-5 border-t" style={{borderColor:'#e5e7eb',background:'#faf9ff'}}>
+                      <div className="px-5 pb-5 border-t" style={{borderColor:'#e5e7eb',background:'#faf9ff'}} onClick={e=>e.stopPropagation()}>
                         {agendLoadHist && (
-                          <div className="flex justify-center py-4"><Loader2 size={18} className="animate-spin" style={{color:'#5b4fcf'}}/></div>
+                          <div className="flex justify-center py-6"><Loader2 size={20} className="animate-spin" style={{color:'#5b4fcf'}}/></div>
                         )}
-                        {!agendLoadHist && agendHistorico && (
-                          <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {/* Serviços já feitos */}
-                            <div className="rounded-xl p-4" style={{background:'#fff',border:'1px solid #e5e7eb'}}>
-                              <p className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{color:'#6b7280'}}>Histórico de Serviços</p>
-                              {Object.keys(agendHistorico.servicos).length === 0
-                                ? <p className="text-[12px]" style={{color:'#9ca3af'}}>Sem histórico registrado</p>
-                                : Object.entries(agendHistorico.servicos)
-                                    .sort(([,a],[,b]) => (b as number) - (a as number))
-                                    .map(([s, q]) => (
-                                      <div key={s} className="flex justify-between items-center py-1 border-b" style={{borderColor:'#f3f4f6'}}>
-                                        <span className="text-[12px]" style={{color:'#1a1a1a'}}>{s}</span>
-                                        <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{background:'#5b4fcf15',color:'#5b4fcf'}}>{q as number}x</span>
-                                      </div>
-                                    ))
-                              }
-                            </div>
+                        {!agendLoadHist && agendHistorico && (() => {
+                          const h = agendHistorico
+                          const fmt$ = (v:number) => v > 0 ? `R$ ${v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}` : '—'
+                          const ALERTAS_CFG: Record<string,{icon:string;label:string;cor:string;bg:string}> = {
+                            'primeira_visita':  {icon:'⭐',label:'Primeira visita — encante!',    cor:'#92400e',bg:'#fef3c7'},
+                            'cliente_vip':      {icon:'💎',label:'Cliente VIP (10+ visitas)',      cor:'#5b21b6',bg:'#ede9fe'},
+                            'alto_ticket':      {icon:'💰',label:'Cliente de alto ticket',         cor:'#065f46',bg:'#d1fae5'},
+                            'risco_abandono':   {icon:'🚨',label:'Risco de abandono — atenção!',   cor:'#991b1b',bg:'#fee2e2'},
+                            'longo_ausente':    {icon:'⏰',label:'Sem visitar há mais de 90 dias',  cor:'#92400e',bg:'#ffedd5'},
+                          }
+                          return (
+                            <div className="pt-4 space-y-4">
 
-                            {/* Última visita */}
-                            <div className="space-y-3">
-                              <div className="rounded-xl p-4" style={{background:'#fff',border:'1px solid #e5e7eb'}}>
-                                <p className="text-[11px] font-bold uppercase tracking-wider mb-1" style={{color:'#6b7280'}}>Última Visita</p>
-                                {agendHistorico.primeira_visita
-                                  ? <p className="text-[13px] font-bold" style={{color:'#f59e0b'}}>⭐ Primeira visita!</p>
-                                  : <p className="text-[13px] font-semibold" style={{color:'#1a1a1a'}}>{agendHistorico.ultima_visita || '—'}</p>
-                                }
-                                {agendHistorico.servicos_ultima?.length > 0 && (
-                                  <p className="text-[11px] mt-1" style={{color:'#6b7280'}}>Serviços: {agendHistorico.servicos_ultima.join(', ')}</p>
-                                )}
-                                {agendHistorico.profissionais_ultima?.length > 0 && (
-                                  <p className="text-[11px] mt-0.5" style={{color:'#9ca3af'}}>Por: {agendHistorico.profissionais_ultima.join(', ')}</p>
-                                )}
+                              {/* Alertas */}
+                              {h.alertas?.length > 0 && (
+                                <div className="flex flex-wrap gap-2">
+                                  {h.alertas.map(a => {
+                                    const cfg = ALERTAS_CFG[a]
+                                    if (!cfg) return null
+                                    return (
+                                      <span key={a} className="flex items-center gap-1 text-[11px] font-bold px-3 py-1 rounded-full"
+                                        style={{background:cfg.bg,color:cfg.cor}}>
+                                        {cfg.icon} {cfg.label}
+                                      </span>
+                                    )
+                                  })}
+                                </div>
+                              )}
+
+                              {/* Cards resumo */}
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                {[
+                                  {label:'Total Visitas',  val: h.total_visitas || '—',        icon:'📅'},
+                                  {label:'Última Visita',  val: h.dias_desde_ultima !== null ? `${h.dias_desde_ultima}d atrás` : h.ultima_visita || '—', icon:'🕐'},
+                                  {label:'Fat. Acumulado', val: fmt$(h.faturamento_acumulado),  icon:'💵'},
+                                  {label:'Ticket Médio',   val: fmt$(h.ticket_medio),           icon:'🎯'},
+                                ].map(c=>(
+                                  <div key={c.label} className="rounded-xl p-3 text-center" style={{background:'#fff',border:'1px solid #e5e7eb'}}>
+                                    <p className="text-[18px]">{c.icon}</p>
+                                    <p className="text-[13px] font-bold mt-0.5" style={{color:'#1a1a1a'}}>{c.val}</p>
+                                    <p className="text-[10px] uppercase tracking-wider" style={{color:'#9ca3af'}}>{c.label}</p>
+                                  </div>
+                                ))}
                               </div>
 
-                              {/* Serviço de hoje */}
-                              <div className="rounded-xl p-4" style={{background:'#f0fdf4',border:'1px solid #bbf7d0'}}>
-                                <p className="text-[11px] font-bold uppercase tracking-wider mb-1" style={{color:'#166534'}}>Procedimento de Hoje</p>
-                                <p className="text-[13px] font-semibold" style={{color:'#166534'}}>{ag.servico}</p>
+                              {/* Fiel + Frequência + Profissionais */}
+                              <div className="flex flex-wrap gap-2 text-[11px]">
+                                {h.cliente_fiel && <span className="px-3 py-1 rounded-full font-semibold" style={{background:'#fce7f3',color:'#be185d'}}>❤️ Cliente Fiel</span>}
+                                {h.freq_media_dias && <span className="px-3 py-1 rounded-full" style={{background:'#f3f4f6',color:'#374151'}}>🔄 Frequência média: a cada {h.freq_media_dias} dias</span>}
+                                {h.data_primeira_visita && <span className="px-3 py-1 rounded-full" style={{background:'#f3f4f6',color:'#374151'}}>📌 1ª visita: {h.data_primeira_visita}</span>}
+                                {h.profissionais_atendidos?.length > 0 && <span className="px-3 py-1 rounded-full" style={{background:'#f3f4f6',color:'#374151'}}>✂️ Já atendido por: {h.profissionais_atendidos.join(', ')}</span>}
                               </div>
-                            </div>
-                          </div>
-                        )}
 
-                        {/* Botão e sugestão IA */}
-                        <div className="mt-4">
-                          <button
-                            onClick={e => { e.stopPropagation(); gerarSugestaoVenda(ag) }}
-                            disabled={agendLoadSug}
-                            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all"
-                            style={{background:'#5b4fcf',color:'#fff',opacity: agendLoadSug ? 0.7 : 1}}>
-                            {agendLoadSug ? <Loader2 size={14} className="animate-spin"/> : '✨'}
-                            {agendLoadSug ? 'Gerando sugestões...' : 'Gerar Sugestão de Venda (IA)'}
-                          </button>
+                              {/* Histórico serviços + Última visita + Hoje */}
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                {/* Histórico serviços */}
+                                <div className="rounded-xl p-4" style={{background:'#fff',border:'1px solid #e5e7eb'}}>
+                                  <p className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{color:'#6b7280'}}>Histórico de Serviços</p>
+                                  {Object.keys(h.servicos).length === 0
+                                    ? <p className="text-[12px]" style={{color:'#9ca3af'}}>Sem histórico</p>
+                                    : Object.entries(h.servicos).sort(([,a],[,b])=>(b as number)-(a as number)).map(([s,q])=>(
+                                        <div key={s} className="flex justify-between items-center py-1 border-b" style={{borderColor:'#f3f4f6'}}>
+                                          <span className="text-[11px]" style={{color:'#1a1a1a'}}>{s}</span>
+                                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{background:'#5b4fcf15',color:'#5b4fcf'}}>{q as number}x</span>
+                                        </div>
+                                      ))
+                                  }
+                                </div>
 
-                          {agendSugestao && (
-                            <div className="mt-3 rounded-xl p-4" style={{background:'#faf9ff',border:'1.5px solid #c4bef0'}}>
-                              <p className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{color:'#5b4fcf'}}>✨ Sugestões da IA</p>
-                              <div className="text-[12px] whitespace-pre-wrap" style={{color:'#1a1a1a',lineHeight:'1.6'}}>
-                                {agendSugestao}
+                                {/* Última visita */}
+                                <div className="rounded-xl p-4" style={{background:'#fff',border:'1px solid #e5e7eb'}}>
+                                  <p className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{color:'#6b7280'}}>Última Visita</p>
+                                  <p className="text-[12px] font-semibold mb-2" style={{color:'#1a1a1a'}}>{h.ultima_visita || '—'}</p>
+                                  {h.servicos_ultima?.length > 0 && (
+                                    <div className="space-y-1">
+                                      {h.servicos_ultima.map(s=>(
+                                        <div key={s} className="text-[11px] px-2 py-1 rounded-lg" style={{background:'#f3f4f6',color:'#374151'}}>• {s}</div>
+                                      ))}
+                                    </div>
+                                  )}
+                                  {h.profissionais_ultima?.length > 0 && (
+                                    <p className="text-[10px] mt-2" style={{color:'#9ca3af'}}>Por: {h.profissionais_ultima.join(', ')}</p>
+                                  )}
+                                </div>
+
+                                {/* Hoje */}
+                                <div className="rounded-xl p-4" style={{background:'#f0fdf4',border:'1px solid #86efac'}}>
+                                  <p className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{color:'#166534'}}>Hoje — {agendData}</p>
+                                  <p className="text-[12px] font-semibold" style={{color:'#166534'}}>✂️ {ag.servico}</p>
+                                  <p className="text-[11px] mt-1" style={{color:'#166534'}}>⏰ {ag.hora}</p>
+                                </div>
                               </div>
+
+                              {/* Botão IA */}
+                              <button
+                                onClick={()=>gerarSugestaoVenda(ag)}
+                                disabled={agendLoadSug}
+                                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all"
+                                style={{background:'#5b4fcf',color:'#fff',opacity:agendLoadSug?0.7:1,boxShadow:'0 2px 8px #5b4fcf40'}}>
+                                {agendLoadSug ? <Loader2 size={16} className="animate-spin"/> : '🧠'}
+                                {agendLoadSug ? 'Analisando dados e gerando estratégias...' : 'GERAR SUGESTÕES DE EXPERIÊNCIA E VENDA (IA)'}
+                              </button>
+
+                              {/* Resposta IA */}
+                              {agendSugestao && (
+                                <div className="rounded-xl p-5" style={{background:'#faf9ff',border:'2px solid #c4bef0'}}>
+                                  <p className="text-[12px] font-bold uppercase tracking-wider mb-3" style={{color:'#5b4fcf'}}>🎯 Oportunidades para hoje</p>
+                                  <div className="text-[12px] whitespace-pre-wrap" style={{color:'#1a1a1a',lineHeight:'1.8'}}>
+                                    {agendSugestao}
+                                  </div>
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
+                          )
+                        })()}
                       </div>
                     )}
                   </div>
