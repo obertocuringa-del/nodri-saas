@@ -304,6 +304,22 @@ export default function RelatoriosPage() {
       .catch(() => {})
   }, [p1Ano, p1Mes, profsCadastrados])
 
+  // ── Auto-salvar metas redistribuídas (sincroniza com a página do profissional) ──
+  // A redistribuição é calculada no render; guardamos o resultado num ref e um
+  // efeito debounced persiste automaticamente, sem o gestor precisar clicar em Salvar.
+  const autoSaveMetasRef = useRef<{ ano: number; mes: number; metaEmComissoes: number; resultado: any[]; redistResultado: any[]; sig: string } | null>(null)
+  const ultimoAutoSaveSig = useRef<string>('')
+  useEffect(() => {
+    const d = autoSaveMetasRef.current
+    if (!d || !d.resultado?.length) return
+    if (d.sig === ultimoAutoSaveSig.current) return
+    const t = setTimeout(() => {
+      ultimoAutoSaveSig.current = d.sig
+      salvarMetasProfsParaIA(d.ano, d.mes, d.metaEmComissoes, d.resultado, d.redistResultado, true)
+    }, 1500)
+    return () => clearTimeout(t)
+  })
+
   // Período custom
   const [p1De, setP1De] = useState('')
   const [p1Ate, setP1Ate] = useState('')
@@ -684,7 +700,8 @@ export default function RelatoriosPage() {
     ano: number, mes: number,
     metaEmComissoes: number,
     resultado: any[],
-    redistResultado: any[]
+    redistResultado: any[],
+    silencioso = false
   ) {
     const metas_profissionais = resultado.map(r => {
       const redist = redistResultado.find((rd: any) => rd.prof.id === r.prof.id)
@@ -707,9 +724,9 @@ export default function RelatoriosPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ano, mes, meta_em_comissoes: Math.round(metaEmComissoes * 100) / 100, metas_profissionais }),
       })
-      toast.success('Metas salvas para a IA!')
+      if (!silencioso) toast.success('Metas salvas para a IA!')
     } catch {
-      toast.error('Erro ao salvar metas para a IA')
+      if (!silencioso) toast.error('Erro ao salvar metas para a IA')
     }
   }
 
@@ -1894,6 +1911,14 @@ ${([['Faturamento Total',r1.fat_total,r2.fat_total],['Ticket Médio',r1.ticket,r
 
               const totalAjustados = redistResultado.filter(r => r.tipo !== 'neutro').length
               const somaRedist = redistResultado.reduce((s, r) => s + r.metaRedistribuida, 0)
+
+              // Captura para auto-save: assinatura = período + (prof:meta) de cada um.
+              // O efeito debounced persiste isso na tabela que a página do profissional lê.
+              autoSaveMetasRef.current = {
+                ano: p1Ano, mes: p1Mes, metaEmComissoes, resultado, redistResultado,
+                sig: `${p1Ano}-${p1Mes}|` + redistResultado
+                  .map(r => `${r.prof.id}:${Math.round(r.metaRedistribuida * 100)}`).join(','),
+              }
 
               // Botão salvar para IA (disponível em ambas as abas)
               const btnSalvarIA = (
