@@ -53,7 +53,15 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 
   // ── Datas únicas (cada data = 1 visita) ─────────────────────────────────
-  const datasUnicas = [...new Set(atendimentos.map(a => a.data_comanda).filter(Boolean))].sort()
+  // Ordena pela DATA REAL (não como texto): "DD/MM/YYYY" como string ordena errado
+  // (ex: 02/01 viria depois de 31/12). Converte para timestamp antes de ordenar.
+  const tsData = (s: string) => {
+    if (!s) return 0
+    if (s.includes('/')) { const [d, m, y] = s.split('/'); return new Date(`${y}-${m}-${d}`).getTime() || 0 }
+    return new Date(s).getTime() || 0
+  }
+  const datasUnicas = [...new Set(atendimentos.map(a => a.data_comanda).filter(Boolean))]
+    .sort((a, b) => tsData(a) - tsData(b))
   const data_primeira_visita = datasUnicas[0] || null
   const ultima_visita = datasUnicas[datasUnicas.length - 1] || null
   const total_visitas = datasUnicas.length
