@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Upload, TrendingUp, TrendingDown, Minus, Calendar, FileSpreadsheet, ChevronUp, ChevronDown, ChevronsUpDown, Target, BarChart2, Settings, ChevronRight, Users, AlertTriangle, Star, RefreshCw } from 'lucide-react'
 import toast from 'react-hot-toast'
+import RankingUnificado from '@/components/salon/RankingUnificado'
 
 // ─── TIPOS ──────────────────────────────────────────────────────────────────
 interface ResumoMensal { ano: number; mes: number; periodo: string; faturamento_total: number; ticket_medio: number; clientes_atendidos: number; clientes_novos: number; faturamento_servicos: number; faturamento_produtos: number }
@@ -233,7 +234,7 @@ export default function RelatoriosPage() {
   const router = useRouter()
   const [dados, setDados] = useState<DadosBase | null>(null)
   const [profsCadastrados, setProfsCadastrados] = useState<ProfCadastrado[]>([])
-  const [aba, setAba] = useState<'geral' | 'metas' | 'profissionais' | 'feedbacks' | 'meta_prof' | 'redistribuicao' | 'analise'>('geral')
+  const [aba, setAba] = useState<'geral' | 'metas' | 'profissionais' | 'feedbacks' | 'meta_prof' | 'redistribuicao' | 'analise' | 'ranking'>('geral')
   const [dropdownAberto, setDropdownAberto] = useState(false)
   const [subAnalise, setSubAnalise] = useState<'risco' | 'perdidos' | 'vip' | 'regular' | 'novo' | 'crosssell' | 'frequencia' | 'diasemana'>('risco')
   const [freqModal, setFreqModal] = useState<{ label: string; min: number; max: number } | null>(null)
@@ -966,6 +967,12 @@ export default function RelatoriosPage() {
               )}
             </div>
 
+            {/* ABA — Relatório Unificado Profissionais */}
+            <button onClick={() => setAba('ranking')}
+              style={{ padding: '8px 14px', border: 'none', borderRadius: '8px 8px 0 0', fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s', background: aba === 'ranking' ? '#f5f4f0' : 'transparent', color: aba === 'ranking' ? '#5b4fcf' : '#5b4fcf', borderBottom: aba === 'ranking' ? '2px solid #5b4fcf' : '2px solid transparent', marginBottom: -1, display: 'flex', alignItems: 'center', gap: 5 }}>
+              <BarChart2 size={13} /> Relatório Unificado Profissionais
+            </button>
+
             <div style={{ marginLeft: 'auto', padding: '6px 0', fontSize: 11, color: '#767069', alignSelf: 'center' }}>
               <span style={{ color: '#5b4fcf', fontWeight: 600 }}>{label1}</span>
               <span style={{ margin: '0 6px' }}>vs</span>
@@ -974,6 +981,9 @@ export default function RelatoriosPage() {
           </div>
 
           <div style={{ flex: 1, padding: '20px', overflowY: 'auto' }}>
+
+            {/* ════════ ABA RELATÓRIO UNIFICADO PROFISSIONAIS ════════ */}
+            {aba === 'ranking' && <RankingUnificado ano={p1Ano} mes={p1Mes} />}
 
             {/* ════════ ABA GERAL ════════ */}
             {aba === 'geral' && (
