@@ -3937,57 +3937,7 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                     )}
                   </div>
 
-                  {/* Breakdown de serviços para bater a meta */}
-                  {metaInfo.faltam > 0 && (() => {
-                    const habilitados = servicosSalao
-                      .filter(s => (prof.servicos_habilitados||[]).includes(s.id) && (s.comissao_valor||0) > 0)
-                      .sort((a, b) => (b.comissao_valor||0) - (a.comissao_valor||0))
-                    if (!habilitados.length) return null
-                    const faltam = metaInfo.faltam
-                    const sugestoes = habilitados.slice(0, 5).map(s => ({
-                      nome: s.nome,
-                      comissao: s.comissao_valor || 0,
-                      qtd: Math.ceil(faltam / (s.comissao_valor || 1)),
-                    }))
-                    // Mix equilibrado: distribui faltam entre top 3 serviços
-                    const top3 = habilitados.slice(0, 3)
-                    const totalComissao = top3.reduce((s, x) => s + (x.comissao_valor||0), 0)
-                    const mixQtds = top3.map(s => ({
-                      nome: s.nome,
-                      comissao: s.comissao_valor || 0,
-                      qtd: totalComissao > 0 ? Math.ceil((faltam * (s.comissao_valor||0) / totalComissao) / (s.comissao_valor||1)) : 0,
-                    }))
-                    return (
-                      <div className="bg-nodri-surface border border-nodri-cyan/25 rounded-2xl p-5">
-                        <h3 className="font-syne font-bold text-[12px] text-nodri-cyan mb-1"> Como bater a meta — Guia de Serviços</h3>
-                        <p className="text-[10px] text-nodri-t3 mb-4">Faltam {fmt$(faltam)} · Quantidade baseada na comissão recebida, não no valor bruto</p>
-                        <div className="space-y-3 mb-4">
-                          <div className="text-[10px] text-nodri-t3 font-semibold uppercase tracking-wider">Mix equilibrado (top 3)</div>
-                          {mixQtds.map(item => (
-                            <div key={item.nome} className="flex items-center justify-between p-3 bg-nodri-card rounded-xl border border-nodri-border">
-                              <div>
-                                <span className="text-[12px] text-nodri-t1 font-semibold">{item.nome}</span>
-                                <span className="ml-2 text-[10px] text-nodri-t3">{fmt$(item.comissao)}/comissão</span>
-                              </div>
-                              <span className="font-syne font-bold text-[18px] text-nodri-cyan">{item.qtd}×</span>
-                            </div>
-                          ))}
-                        </div>
-                        <div className="border-t border-nodri-border pt-3">
-                          <div className="text-[10px] text-nodri-t3 font-semibold uppercase tracking-wider mb-2">Alternativas (somente um serviço)</div>
-                          <div className="grid grid-cols-2 gap-2">
-                            {sugestoes.map(item => (
-                              <div key={item.nome} className="p-2.5 bg-nodri-card rounded-lg border border-nodri-border text-center">
-                                <div className="text-[10px] text-nodri-t3 truncate">{item.nome}</div>
-                                <div className="font-bold text-[16px] text-nodri-cyan">{item.qtd}×</div>
-                                <div className="text-[9px] text-nodri-t3">{fmt$(item.comissao)}/comissão</div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })()}
+                  {/* Card "Como bater a meta — Guia de Serviços" removido a pedido do gestor */}
 
                   <div className="flex items-center gap-2 flex-wrap">
                     <button onClick={gerarEstrategia} disabled={gerandoEstrategia}
