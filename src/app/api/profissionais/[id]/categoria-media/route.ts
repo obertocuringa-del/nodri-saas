@@ -68,38 +68,44 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     return nome.toLowerCase().split(/\s+/).filter(t => t && !STOPWORDS.has(t)).slice(0, 2)
   }
 
-  function matchNome(item: any, tokens: string[], apelido: string): boolean {
-    const n = (item.profissional || '').toLowerCase().trim()
+  // Casamento ESTRITO — idêntico à rota oficial /metricas (matchProf):
+  // nome exato OU apelido OU os 2 primeiros tokens batendo. Evita contar a mesma
+  // pessoa em vários profissionais (que inflava a soma e a média da categoria).
+  function matchNome(item: any, nomeCompleto: string, tokens: string[], apelido: string): boolean {
+    const n = (item.profissional || item.profissional_original || '').toLowerCase().trim()
     if (!n) return false
-    if (apelido && (n === apelido.toLowerCase() || n.includes(apelido.toLowerCase()))) return true
+    if (nomeCompleto && n === nomeCompleto.toLowerCase().trim()) return true
+    const ap = (apelido || '').toLowerCase().trim()
+    if (ap && (n === ap || n.includes(ap) || ap.includes(n))) return true
     const nTok = n.split(/\s+/).filter((t: string) => t && !STOPWORDS.has(t))
+    if (tokens.length === 0 || nTok.length === 0) return false
     const matchCount = tokens.filter(t => nTok.some((nt: string) => nt.startsWith(t) || t.startsWith(nt))).length
-    return matchCount >= Math.min(tokens.length, 1)
+    return matchCount >= Math.min(tokens.length, 2)
   }
 
   // Calcula métricas para um profissional em P2
-  function calcMetricasProf(tokens: string[], apelido: string) {
+  function calcMetricasProf(nomeCompleto: string, tokens: string[], apelido: string) {
     let fat = 0, ticket = 0, ticketCount = 0, pref = 0, semPref = 0
     let dias = 0, ocupSum = 0, ocupCount = 0, serv = 0, prod = 0
     let temDados = false
     for (const row of periodosP2) {
       for (const item of (row.prof_pagamentos || [])) {
-        if (matchNome(item, tokens, apelido)) { fat += Number(item.valor_a_pagar||0) + Number(item.desconto||0); temDados = true }
+        if (matchNome(item, nomeCompleto, tokens, apelido)) { fat += Number(item.valor_a_pagar||0) + Number(item.desconto||0); temDados = true }
       }
       for (const item of (row.prof_ticket || [])) {
-        if (matchNome(item, tokens, apelido)) { ticket += Number(item.ticket_medio||0); ticketCount++; temDados = true }
+        if (matchNome(item, nomeCompleto, tokens, apelido)) { ticket += Number(item.ticket_medio||0); ticketCount++; temDados = true }
       }
       for (const item of (row.prof_preferencia || [])) {
-        if (matchNome(item, tokens, apelido)) { pref += Number(item.clientes_preferencia||0); semPref += Number(item.clientes_sem_preferencia||0); temDados = true }
+        if (matchNome(item, nomeCompleto, tokens, apelido)) { pref += Number(item.clientes_preferencia||0); semPref += Number(item.clientes_sem_preferencia||0); temDados = true }
       }
       for (const item of (row.prof_ocupacao || [])) {
-        if (matchNome(item, tokens, apelido)) { dias += Number(item.dias_trabalhados||0); ocupSum += Number(item.taxa_ocupacao||0); ocupCount++; temDados = true }
+        if (matchNome(item, nomeCompleto, tokens, apelido)) { dias += Number(item.dias_trabalhados||0); ocupSum += Number(item.taxa_ocupacao||0); ocupCount++; temDados = true }
       }
       for (const item of (row.prof_servicos || [])) {
-        if (matchNome(item, tokens, apelido)) { serv += Number(item.quantidade||0); temDados = true }
+        if (matchNome(item, nomeCompleto, tokens, apelido)) { serv += Number(item.quantidade||0); temDados = true }
       }
       for (const item of (row.prof_produtos || [])) {
-        if (matchNome(item, tokens, apelido)) { prod += Number(item.quantidade||0); temDados = true }
+        if (matchNome(item, nomeCompleto, tokens, apelido)) { prod += Number(item.quantidade||0); temDados = true }
       }
     }
     if (!temDados) return null
@@ -116,15 +122,16 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 
   // Calcula o próprio profissional
-  const tokensAtual = tokensNome(profAtual.nome_completo || '')
+  const nomeAtual = profAtual.nome_completo || ''
+  const tokensAtual = tokensNome(nomeAtual)
   const apelidoAtual = profAtual.apelido || ''
-  const metricasAtual = calcMetricasProf(tokensAtual, apelidoAtual)
+  const metricasAtual = calcMetricasProf(nomeAtual, tokensAtual, apelidoAtual)
 
   // Calcula cada colega
   const metricasColegas: any[] = []
   for (const c of (colegas || [])) {
     const tok = tokensNome(c.nome_completo || '')
-    const m = calcMetricasProf(tok, c.apelido || '')
+    const m = calcMetricasProf(c.nome_completo || '', tok, c.apelido || '')
     if (m) metricasColegas.push({ nome: c.apelido || c.nome_completo, ...m })
   }
 
