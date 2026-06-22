@@ -253,6 +253,11 @@ export default function ImportarExcelPage() {
           style={{ background: '#fef3c7', border: '1.5px solid #f59e0b', color: '#b45309' }}>
           {reconstruindo ? <><Loader2 size={16} className="animate-spin" /> Reconstruindo dados...</> : '🔧 Reconstruir dados a partir dos atendimentos brutos'}
         </button>
+        <p className="text-[10px] mt-1.5 px-1" style={{ color: '#b45309' }}>
+          ⚠️ <strong>Avançado — raramente necessário.</strong> Recalcula serviços e detalhamentos
+          a partir dos atendimentos brutos. Use só se um relatório de serviços estiver faltando.
+          Não precisa clicar aqui no uso normal — a importação da planilha já traz tudo.
+        </p>
 
         {resultadoReconstrucao && (
           <div className="mt-3 p-4 rounded-xl border text-[12px]"
@@ -279,6 +284,11 @@ export default function ImportarExcelPage() {
           {resetando ? <><Loader2 size={14} className="animate-spin" /> Limpando banco...</> : '🗑 Limpar todos os dados antes de reimportar'}
         </button>
 
+        <p className="text-[10px] mt-1.5 px-1" style={{ color: '#dc2626' }}>
+          <strong>Apaga:</strong> faturamento/períodos, atendimentos, agendamentos e perfis de clientes
+          (Em Risco, Perdidos, VIP, etc.). <strong>NÃO apaga</strong> os feedbacks de clientes e de profissionais.
+        </p>
+
         {/* Botão Importar */}
         <button onClick={enviar} disabled={!arquivo || carregando}
           className="w-full mt-4 py-4 rounded-xl font-syne font-bold text-[15px] transition-all disabled:opacity-40 flex items-center justify-center gap-2"
@@ -289,6 +299,10 @@ export default function ImportarExcelPage() {
             <><Upload size={18} /> Importar Dados para o Sistema</>
           )}
         </button>
+        <p className="text-[10px] mt-1.5 px-1" style={{ color: '#6b6860' }}>
+          Lê a planilha e <strong>substitui</strong> os dados de cada mês que ela contém.
+          Os valores oficiais da planilha (faturamento, serviços, produtos) entram exatamente como estão.
+        </p>
 
         {carregando && progresso && (
           <div className="mt-3 text-center text-[12px]" style={{ color: '#6b6860' }}>
