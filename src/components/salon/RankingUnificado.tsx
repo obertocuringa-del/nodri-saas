@@ -83,13 +83,14 @@ export default function RankingUnificado({ ano, mes }: { ano: number; mes: numbe
       out += `<div style="margin-bottom:20px;break-inside:avoid">`
       out += `<div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:10px;border-bottom:2px solid #5b4fcf;padding-bottom:4px">${cargo} · ${arr.length}</div>`
       for (const tema of TEMAS) {
-        out += `<div style="margin-bottom:14px;break-inside:avoid">`
-        out += `<div style="font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:6px">${tema.titulo}</div>`
+        out += `<div style="margin-bottom:16px;break-inside:avoid;border:1px solid #d8d4e8;border-radius:12px;overflow:hidden">`
+        out += `<div style="background:#e7e3f3;border-bottom:1px solid #d8d4e8;padding:9px 12px;font-size:13px;font-weight:700;color:#3a3550">${tema.titulo}</div>`
+        out += `<div style="padding:10px 12px;background:#ffffff">`
 
         // Tema dinâmico: Ocorrências — uma coluna por tipo de anotação + Total (menos é melhor)
         let cols: Metrica[]
         if (tema.dynamic === 'ocorr') {
-          if (!ocorrTipos.length) { out += `<div style="font-size:11px;color:#9ca3af;padding:4px 0">Nenhuma ocorrência registrada no período.</div></div>`; continue }
+          if (!ocorrTipos.length) { out += `<div style="font-size:11px;color:#9ca3af;padding:4px 0">Nenhuma ocorrência registrada no período.</div></div></div>`; continue }
           cols = [
             ...ocorrTipos.map(t => ({ k: '__oc__' + t, t, low: true, fmt: n1 })),
             { k: '__octot__', t: 'Total', low: true, fmt: n1 },
@@ -118,7 +119,7 @@ export default function RankingUnificado({ ano, mes }: { ano: number; mes: numbe
           })
           out += `</div>`
         }
-        out += `</div></div>`
+        out += `</div></div></div>`
       }
       out += `</div>`
     }
