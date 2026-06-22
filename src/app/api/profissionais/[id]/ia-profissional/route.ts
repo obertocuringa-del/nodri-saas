@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
+import Anthropic from '@anthropic-ai/sdk'
 
 async function getSalaoId() {
   const token = cookies().get('nodri_token')?.value
@@ -10,12 +11,38 @@ async function getSalaoId() {
   return payload?.salaoId || null
 }
 
-async function geminiCall(apiKey: string, modelo: string, prompt: string): Promise<string> {
+// Serviços/itens que NUNCA podem entrar em promoções, pacotes, combos ou sugestões.
+// São complementos/finalizações sem venda real — regra de negócio do salão.
+const SERVICOS_PROIBIDOS = `REGRA ABSOLUTA — NUNCA, em hipótese alguma, inclua os seguintes itens em promoções, pacotes, combos ou sugestões (são complementos/finalizações, não vendas reais):
+- Higienização / higienizações (qualquer tipo)
+- Complementos
+- Troca de esmalte
+- Remoção de gel
+- Top coat
+- Secagem
+- Shampoo, lavagem ou preparo
+Se algum desses aparecer na lista oficial, IGNORE-O completamente. Sugestões que incluam qualquer um desses itens são inválidas.`
+
+// Chama a IA configurada — Claude (Anthropic) ou Gemini (Google), conforme o modelo.
+async function iaCall(apiKey: string, modelo: string, prompt: string): Promise<string> {
+  if (modelo.startsWith('claude')) {
+    const anthropic = new Anthropic({ apiKey })
+    const msg = await anthropic.messages.create({
+      model: modelo,
+      max_tokens: 4096,
+      messages: [{ role: 'user', content: prompt }],
+    })
+    const txt = msg.content.find((c: any) => c.type === 'text') as any
+    return txt?.text || ''
+  }
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${apiKey}`
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }] }),
+    body: JSON.stringify({
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: { maxOutputTokens: 4096 },
+    }),
   })
   const json = await res.json()
   return json?.candidates?.[0]?.content?.parts?.[0]?.text || ''
@@ -90,9 +117,11 @@ ${maisVendeStr}
 COMBOS JÁ EXISTENTES — NÃO REPITA:
 ${bundlesExStr}
 
+${SERVICOS_PROIBIDOS}
+
 REGRAS OBRIGATÓRIAS:
 1. Use APENAS serviços da lista oficial acima — ZERO invenção
-2. NUNCA inclua higienização, shampoo, lavagem ou preparo em nenhum combo
+2. NUNCA inclua higienização, shampoo, lavagem, preparo, troca de esmalte, remoção de gel, top coat, secagem ou complementos em nenhum combo
 3. Cada serviço deve aparecer em no máximo 2 combos no total — VARIE ao máximo
 4. Explore serviços pouco usados do profissional, não só os mais vendidos
 5. Cada combo deve ter serviços de categorias DIFERENTES (ex: não juntar dois cortes)
@@ -111,7 +140,7 @@ FORMATO (JSON puro, sem markdown, sem texto fora do array):
   }
 ]`
 
-    const resposta = await geminiCall(config.api_key, modelo, prompt)
+    const resposta = await iaCall(config.api_key, modelo, prompt)
     try {
       const limpo = resposta.replace(/```json[\s\S]*?```|```/g, '').trim()
       const sugestoes = JSON.parse(limpo)
@@ -160,6 +189,8 @@ ${maisVendeStr}
 SERVIÇOS HABILITADOS MAS POUCO EXPLORADOS:
 ${deveriaStr}
 
+${SERVICOS_PROIBIDOS}
+
 REGRAS:
 1. Use APENAS serviços da lista oficial — ZERO invenção
 2. Cada serviço deve aparecer no máximo 1 vez
@@ -180,7 +211,7 @@ FORMATO (JSON puro, sem markdown):
   }
 ]`
 
-    const resposta = await geminiCall(config.api_key, modelo, prompt)
+    const resposta = await iaCall(config.api_key, modelo, prompt)
     try {
       const limpo = resposta.replace(/```json[\s\S]*?```|```/g, '').trim()
       const oportunidades = JSON.parse(limpo)
@@ -226,6 +257,8 @@ Nomes válidos: ${nomesValidos}
 HISTÓRICO (mais realizados):
 ${historicoStr}
 
+${SERVICOS_PROIBIDOS}
+
 REGRAS OBRIGATÓRIAS:
 1. Use APENAS serviços da lista oficial acima
 2. NO MIX PRINCIPAL use entre 4 e 6 serviços DIFERENTES — não repita categorias
@@ -260,7 +293,7 @@ FORMATO (JSON puro, sem markdown):
   "dica_tatica": "1 dica prática e específica para este profissional converter mais agora"
 }`
 
-    const resposta = await geminiCall(config.api_key, modelo, prompt)
+    const resposta = await iaCall(config.api_key, modelo, prompt)
     try {
       const limpo = resposta.replace(/```json[\s\S]*?```|```/g, '').trim()
       const plano = JSON.parse(limpo)
@@ -298,7 +331,7 @@ FORMATO (JSON puro, sem markdown):
   "mensagem_profissional": "Mensagem direta ao profissional — consultor falando pessoalmente. Máx 4 frases. Sem ser agressivo, mas sem papas na língua."
 }`
 
-    const resposta = await geminiCall(config.api_key, modelo, prompt)
+    const resposta = await iaCall(config.api_key, modelo, prompt)
     try {
       const limpo = resposta.replace(/```json[\s\S]*?```|```/g, '').trim()
       const analise = JSON.parse(limpo)

@@ -2795,7 +2795,21 @@ DNA BEAUTY BUSINESS NODRI:
 Antes de responder qualquer pergunta relacionada à beleza, validar internamente:
 "Como essa informação pode gerar mais resultado para o negócio?"
 
-Se a resposta não gerar valor comercial, operacional ou estratégico para o salão, ela deve ser aprofundada até gerar uma recomendação prática e aplicável.`
+Se a resposta não gerar valor comercial, operacional ou estratégico para o salão, ela deve ser aprofundada até gerar uma recomendação prática e aplicável.
+
+═══════════════════════════════════════
+REGRA ABSOLUTA — SERVIÇOS PROIBIDOS EM PROMOÇÕES/PACOTES/COMBOS
+═══════════════════════════════════════
+Ao criar QUALQUER promoção, pacote, combo, sugestão de venda, estratégia de meta ou bundle,
+NUNCA, em hipótese alguma, inclua os seguintes itens (são complementos/finalizações, não vendas reais):
+- Higienização / higienizações (qualquer tipo)
+- Complementos
+- Troca de esmalte
+- Remoção de gel
+- Top coat
+- Secagem
+- Shampoo, lavagem ou preparo
+Esses itens NÃO podem ser o foco nem fazer parte de nenhuma oferta. Sempre use serviços de venda real.`
 
     const agora = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }))
     const hoje = agora.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
