@@ -2809,7 +2809,12 @@ NUNCA, em hipótese alguma, inclua os seguintes itens (são complementos/finaliz
 - Top coat
 - Secagem
 - Shampoo, lavagem ou preparo
-Esses itens NÃO podem ser o foco nem fazer parte de nenhuma oferta. Sempre use serviços de venda real.`
+Esses itens NÃO podem ser o foco nem fazer parte de nenhuma oferta. Sempre use serviços de venda real.
+
+REGRA DE GÊNERO: NUNCA vincule BARBA (ou serviços masculinos) com procedimentos femininos
+(manicure, pedicure, escova, unhas, sobrancelha feminina, etc.) na mesma sugestão, combo ou ação.
+ÚNICA EXCEÇÃO: quando a intenção for explicitamente PRESENTEAR alguém (ex: cliente mulher comprando
+barba de presente para um homem). Fora o caso de presente, manter serviços masculinos e femininos separados.`
 
     const agora = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }))
     const hoje = agora.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })

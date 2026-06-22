@@ -271,6 +271,7 @@ REGRAS CRÍTICAS:
 6. UNIDADES: meta/faturado/falta/necessario_por_dia/simulador/dinheiro_perdido = COMISSÃO do profissional. ticket_medio = VALOR CHEIO cobrado do cliente. São escalas diferentes — nunca some um com o outro.
 7. Não repita dados do Resumo Executivo nas seções seguintes — cada seção acrescenta, nunca repete.
 8. REGRA ABSOLUTA — NUNCA inclua em promoções, pacotes, combos ou sugestões: higienização (qualquer tipo), complementos, troca de esmalte, remoção de gel, top coat, secagem, shampoo, lavagem ou preparo. São complementos/finalizações, não vendas reais.
+9. REGRA DE GÊNERO — NUNCA vincule BARBA (ou serviços masculinos) com procedimentos femininos (manicure, pedicure, escova, unhas, sobrancelha feminina, etc.) na mesma sugestão/combo/ação. ÚNICA EXCEÇÃO: quando a intenção for PRESENTEAR alguém. Fora isso, mantenha serviços masculinos e femininos separados.
 
 PROFISSIONAL: ${prof.nome_completo} (${prof.apelido || ''}) | Cargo: ${prof.cargo}
 HABILIDADES: ${prof.habilidades || 'não informado'}

@@ -21,7 +21,12 @@ const SERVICOS_PROIBIDOS = `REGRA ABSOLUTA — NUNCA, em hipótese alguma, inclu
 - Top coat
 - Secagem
 - Shampoo, lavagem ou preparo
-Se algum desses aparecer na lista oficial, IGNORE-O completamente. Sugestões que incluam qualquer um desses itens são inválidas.`
+Se algum desses aparecer na lista oficial, IGNORE-O completamente. Sugestões que incluam qualquer um desses itens são inválidas.
+
+REGRA DE GÊNERO — NUNCA vincule BARBA (ou serviços masculinos) com procedimentos femininos
+(manicure, pedicure, escova, unhas, sobrancelha feminina, etc.) no mesmo combo/sugestão/ação.
+ÚNICA EXCEÇÃO: quando a intenção for explicitamente PRESENTEAR alguém (ex: uma cliente comprando
+barba de presente para um homem). Fora o caso de presente, manter serviços masculinos e femininos separados.`
 
 // Chama a IA configurada — Claude (Anthropic) ou Gemini (Google), conforme o modelo.
 async function iaCall(apiKey: string, modelo: string, prompt: string): Promise<string> {
