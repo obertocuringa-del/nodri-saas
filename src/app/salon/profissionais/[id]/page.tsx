@@ -370,8 +370,11 @@ function MetCard({ label, atual, anterior, fmt='n', inverso=false }:
   )
 }
 
-function BlocoFidelizacao({ f }: { f: Fidelizacao }) {
+function BlocoFidelizacao({ f, comissaoMedia = 0 }: { f: Fidelizacao; comissaoMedia?: number }) {
   const isCrit = f.nivel === 'critico'
+  // Valor Perdido = clientes perdidos × comissão média ponderada (o que o profissional
+  // recebe), e não o ticket médio cheio pago pelo cliente.
+  const valorPerdido = comissaoMedia > 0 ? Math.abs(f.perdidos) * comissaoMedia : f.valor_perdido
   return (
     <div className="rounded-2xl p-5 border" style={{
       background: isCrit ? 'rgba(239,68,68,0.05)' : 'rgba(34,197,94,0.05)',
@@ -390,7 +393,7 @@ function BlocoFidelizacao({ f }: { f: Fidelizacao }) {
           { l:'Total Novos', v: f.total_novos, sub: `${f.novos_p1} (P1) + ${f.novos_p2} (P2)` },
           { l:'Fidelizados', v: f.fidelizados, sub: `${f.taxa_fidelizacao}% de fidelização` },
           { l:'Perdidos',    v: f.perdidos,    sub: `Taxa de perda: ${f.taxa_perda}%` },
-          { l:'Valor Perdido', v: -1,          sub: fmt$(f.valor_perdido) },
+          { l:'Valor Perdido', v: -1,          sub: fmt$(valorPerdido) },
         ].map(item=>(
           <div key={item.l} className="bg-nodri-card border border-nodri-border rounded-xl p-3">
             <div className="text-[9px] text-nodri-t3 uppercase tracking-wider mb-1">{item.l}</div>
@@ -2934,6 +2937,21 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
   const p2 = usarFat ? metricas?.fat_p2 : metricas?.p2
   const fidel = usarFat ? metricas?.fidelizacao_fat : metricas?.fidelizacao
 
+  // Comissão média ponderada do profissional (o que ELE recebe por atendimento).
+  // Mesma base do card "Dinheiro perdido por atrasos". Usada no "Valor Perdido"
+  // da fidelização (antes usava o ticket médio cheio pago pelo cliente).
+  const comissaoMediaPond = (() => {
+    const mix = metricas?.mix_receita || []
+    let q = 0, soma = 0
+    for (const item of mix) {
+      const serv = servicosSalao.find(s => s.nome.toUpperCase() === item.servico.toUpperCase())
+      if (serv?.comissao_valor) { q += item.quantidade; soma += serv.comissao_valor * item.quantidade }
+    }
+    if (q > 0) return soma / q
+    const hab = servicosSalao.filter(s => (prof?.servicos_habilitados || []).includes(s.id))
+    return hab.length > 0 ? hab.reduce((s, x) => s + (x.comissao_valor || 0), 0) / hab.length : 0
+  })()
+
   return (
     <div className="min-h-screen bg-nodri-dark">
       {/* Header */}
@@ -3510,7 +3528,7 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                     </div>
                   )
                 })()}
-                {fidel && <BlocoFidelizacao f={fidel}/>}
+                {fidel && <BlocoFidelizacao f={fidel} comissaoMedia={comissaoMediaPond}/>}
                 {/* Gráfico vertical com comparativo */}
                 {metricas.historico_completo?.length > 0 && (
                   <GraficoFaturamento historico={metricas.historico_completo}/>
