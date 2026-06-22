@@ -139,9 +139,11 @@ export default function ImportarExcelPage() {
           rawSalvos += data2.salvos || 0
         }
 
-        // ── 4. Recalcular perfis de clientes ──────────────────────────────
-        setProgresso('Recalculando perfis de clientes...')
-        await fetch('/api/relatorios/reconstruir-do-raw', { method: 'POST' })
+        // ── 4. NÃO reconstruir do raw aqui ────────────────────────────────
+        // A planilha já traz RESUMO_MENSAL, FATURAMENTO_DIARIO, SERVICOS e
+        // PROF_SERVICOS completos (com produtos). O reconstruir-do-raw recalcula
+        // tudo a partir do 0031 (só serviços) e SUBCONTAVA o faturamento total,
+        // ticket, clientes e fat. serviços. Os dados oficiais do Excel ficam intactos.
       }
 
       // ── 5. Enviar agendamentos_raw em lotes ─────────────────────────────
