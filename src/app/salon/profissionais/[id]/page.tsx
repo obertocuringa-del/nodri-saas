@@ -2557,7 +2557,7 @@ export default function PerfilProfissionalPage() {
 
   const [categoriaMedia, setCategoriaMedia] = useState<{
     cargo: string; total_prof_categoria: number; prof_com_dados: number; media: Record<string,number> | null; atual: Record<string,number> | null
-    colegas?: Array<{ nome: string; faturamento: number }>
+    colegas?: Array<Record<string, number>>
   } | null>(null)
 
   const buscarMetricas = useCallback(async () => {
@@ -3438,15 +3438,17 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                     return { d, up:d>=0, label:`${d>=0?'+':''}${d.toFixed(1)}%` }
                   }
                   const itens = [
-                    {l:' Faturamento',      a:a.faturamento||0,              med:m.faturamento||0,              f:fmt$},
-                    {l:'️ Ticket Médio',     a:a.ticket_medio||0,             med:m.ticket_medio||0,             f:fmt$},
-                    {l:' Preferência',      a:a.clientes_preferencia||0,     med:m.clientes_preferencia||0,     f:fmtN},
-                    {l:' Sem Pref.',        a:a.clientes_sem_preferencia||0, med:m.clientes_sem_preferencia||0, f:fmtN},
-                    {l:' Dias Trabalhados', a:a.dias_trabalhados||0,         med:m.dias_trabalhados||0,         f:fmtN},
-                    {l:'️ Ocupação',         a:a.taxa_ocupacao||0,            med:m.taxa_ocupacao||0,            f:fmtP},
-                    {l:'️ Serviços',         a:a.total_servicos||0,           med:m.total_servicos||0,           f:fmtN},
-                    {l:' Produtos',         a:a.total_produtos||0,           med:m.total_produtos||0,           f:fmtN},
+                    {l:' Faturamento',      k:'faturamento',              a:a.faturamento||0,              med:m.faturamento||0,              f:fmt$},
+                    {l:'️ Ticket Médio',     k:'ticket_medio',             a:a.ticket_medio||0,             med:m.ticket_medio||0,             f:fmt$},
+                    {l:' Preferência',      k:'clientes_preferencia',     a:a.clientes_preferencia||0,     med:m.clientes_preferencia||0,     f:fmtN},
+                    {l:' Sem Pref.',        k:'clientes_sem_preferencia', a:a.clientes_sem_preferencia||0, med:m.clientes_sem_preferencia||0, f:fmtN},
+                    {l:' Dias Trabalhados', k:'dias_trabalhados',         a:a.dias_trabalhados||0,         med:m.dias_trabalhados||0,         f:fmtN},
+                    {l:'️ Ocupação',         k:'taxa_ocupacao',            a:a.taxa_ocupacao||0,            med:m.taxa_ocupacao||0,            f:fmtP},
+                    {l:'️ Serviços',         k:'total_servicos',           a:a.total_servicos||0,           med:m.total_servicos||0,           f:fmtN},
+                    {l:' Produtos',         k:'total_produtos',           a:a.total_produtos||0,           med:m.total_produtos||0,           f:fmtN},
                   ]
+                  const nomeProprio = prof?.apelido || prof?.nome_completo || 'Você'
+                  const colegasVals = categoriaMedia.colegas || []
                   return (
                     <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
                       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
@@ -3455,54 +3457,52 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                           {categoriaMedia.prof_com_dados} de {categoriaMedia.total_prof_categoria} profissional(is) com dados
                         </span>
                       </div>
+                      <p className="text-[9px] text-nodri-t3 mb-3">Clique em qualquer card para ver onde você está no ranking da categoria (os outros profissionais aparecem anônimos).</p>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                         {itens.map(item => {
                           const d = deltaCat(item.a, item.med)
                           const acimaDaMed = d ? d.up : false
+                          // Detalhamento ANÔNIMO: valores de todos os colegas + o próprio (nomeado),
+                          // ordenados. Cada profissional só vê o PRÓPRIO nome; os demais = "Colega N".
+                          let cc = 0
+                          const linhas = [
+                            ...colegasVals.map(c => ({ val: Number(c[item.k] || 0), eh: false })),
+                            { val: item.a, eh: true },
+                          ].sort((x, y) => y.val - x.val)
+                            .map(l => ({ ...l, rotulo: l.eh ? `${nomeProprio} (você)` : `Colega ${++cc}` }))
+                          const minhaPos = linhas.findIndex(l => l.eh) + 1
                           return (
-                            <div key={item.l} className="bg-nodri-card border border-nodri-border rounded-xl p-3">
-                              <div className="text-[9px] text-nodri-t3 uppercase tracking-wider mb-1">{item.l}</div>
-                              <div className="font-syne font-bold text-[17px] text-nodri-t1">{item.f(item.a)}</div>
-                              <div className="text-[9px] text-nodri-t3 mt-1">Categoria: {item.f(item.med)}</div>
-                              {d && (
-                                <div className="flex items-center gap-1 mt-1">
-                                  {acimaDaMed ? <TrendingUp size={10} color="#22c55e"/> : <TrendingDown size={10} color="#ef4444"/>}
-                                  <span className="text-[10px] font-bold" style={{color:acimaDaMed?'#22c55e':'#ef4444'}}>{d.label}</span>
-                                  <span className="text-[8px] text-nodri-t3">{acimaDaMed?'acima':'abaixo'} da média</span>
+                            <details key={item.l} className="bg-nodri-card border border-nodri-border rounded-xl p-3">
+                              <summary className="cursor-pointer list-none">
+                                <div className="text-[9px] text-nodri-t3 uppercase tracking-wider mb-1">{item.l}</div>
+                                <div className="font-syne font-bold text-[17px] text-nodri-t1">{item.f(item.a)}</div>
+                                <div className="text-[9px] text-nodri-t3 mt-1">Categoria: {item.f(item.med)}</div>
+                                {d && (
+                                  <div className="flex items-center gap-1 mt-1">
+                                    {acimaDaMed ? <TrendingUp size={10} color="#22c55e"/> : <TrendingDown size={10} color="#ef4444"/>}
+                                    <span className="text-[10px] font-bold" style={{color:acimaDaMed?'#22c55e':'#ef4444'}}>{d.label}</span>
+                                    <span className="text-[8px] text-nodri-t3">{acimaDaMed?'acima':'abaixo'} da média</span>
+                                  </div>
+                                )}
+                                <div className="text-[8px] text-nodri-purple mt-1">🔎 {minhaPos}º de {linhas.length} · ver detalhamento</div>
+                              </summary>
+                              <div className="mt-2 rounded-lg border border-nodri-border overflow-hidden">
+                                {linhas.map((l, i) => (
+                                  <div key={i} className="flex items-center justify-between px-2 py-1 text-[10px]"
+                                    style={{ background: l.eh ? '#f0eefb' : (i % 2 === 0 ? '#fff' : '#faf9f7'), color: '#1a1a1a' }}>
+                                    <span style={{ fontWeight: l.eh ? 700 : 500 }}>{i+1}º {l.rotulo}</span>
+                                    <span style={{ fontWeight: l.eh ? 700 : 500 }}>{item.f(l.val)}</span>
+                                  </div>
+                                ))}
+                                <div className="flex items-center justify-between px-2 py-1.5 text-[10px] font-bold" style={{ background: '#1a1a1a', color: '#fff' }}>
+                                  <span>Média ({linhas.length})</span>
+                                  <span>{item.f(item.med)}</span>
                                 </div>
-                              )}
-                            </div>
+                              </div>
+                            </details>
                           )
                         })}
                       </div>
-                      {/* Detalhamento: faturamento de cada profissional que entra na média */}
-                      {categoriaMedia.colegas && categoriaMedia.colegas.length > 0 && (() => {
-                        const linhas = [
-                          ...categoriaMedia.colegas!.map(c => ({ nome: c.nome, fat: c.faturamento, eh: false })),
-                          { nome: (prof?.apelido || prof?.nome_completo || 'Este profissional'), fat: a.faturamento || 0, eh: true },
-                        ].sort((x, y) => y.fat - x.fat)
-                        const soma = linhas.reduce((s, l) => s + (l.fat || 0), 0)
-                        return (
-                          <details className="mt-4">
-                            <summary className="cursor-pointer text-[11px] font-semibold text-nodri-purple">
-                              🔎 Ver faturamento de cada {categoriaMedia.cargo.toLowerCase()} na média ({linhas.length})
-                            </summary>
-                            <div className="mt-2 rounded-xl border border-nodri-border overflow-hidden">
-                              {linhas.map((l, i) => (
-                                <div key={i} className="flex items-center justify-between px-3 py-1.5 text-[11px]"
-                                  style={{ background: l.eh ? '#f0eefb' : (i % 2 === 0 ? '#fff' : '#faf9f7'), color: '#1a1a1a' }}>
-                                  <span style={{ fontWeight: l.eh ? 700 : 500 }}>{l.nome}{l.eh ? ' (este)' : ''}</span>
-                                  <span style={{ fontWeight: l.eh ? 700 : 500 }}>{fmt$(l.fat)}</span>
-                                </div>
-                              ))}
-                              <div className="flex items-center justify-between px-3 py-2 text-[11px] font-bold" style={{ background: '#1a1a1a', color: '#fff' }}>
-                                <span>Soma ÷ {linhas.length} = Média</span>
-                                <span>{fmt$(soma)} ÷ {linhas.length} = {fmt$(soma / linhas.length)}</span>
-                              </div>
-                            </div>
-                          </details>
-                        )
-                      })()}
                     </div>
                   )
                 })()}

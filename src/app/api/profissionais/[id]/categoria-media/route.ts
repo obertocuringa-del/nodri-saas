@@ -153,6 +153,17 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     prof_com_dados: todos.length,
     media,
     atual: metricasAtual,
-    colegas: metricasColegas.map(c => ({ nome: c.nome, faturamento: c.faturamento })),
+    // PRIVACIDADE: enviamos apenas os VALORES dos colegas, SEM o nome.
+    // Assim o profissional vê onde está no ranking sem saber de quem são os dados.
+    colegas: metricasColegas.map(c => ({
+      faturamento: c.faturamento,
+      ticket_medio: c.ticket_medio,
+      clientes_preferencia: c.clientes_preferencia,
+      clientes_sem_preferencia: c.clientes_sem_preferencia,
+      dias_trabalhados: c.dias_trabalhados,
+      taxa_ocupacao: c.taxa_ocupacao,
+      total_servicos: c.total_servicos,
+      total_produtos: c.total_produtos,
+    })),
   })
 }
