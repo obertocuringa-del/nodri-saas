@@ -1474,7 +1474,55 @@ function BlocoSazonalidade({ s }: { s: SazonalidadeItem[] }) {
   )
 }
 
-//  BlocoDiagnosticoResumido — Score + Semáforo + Narrativa + Plano de Ação (sem checklist/ocorrências) 
+// Comparativo por Métrica (P2 vs P1) — card próprio, exibido no topo da aba Faturamento
+function BlocoComparativoMetrica({ p1, p2 }: { p1: MetricaBloco | null; p2: MetricaBloco | null }) {
+  const fmt$loc = (v: number) => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0)
+  const fmtN = (v: number) => (v||0).toLocaleString('pt-BR',{maximumFractionDigits:1})
+  const fmtP = (v: number) => (v||0).toFixed(1)+'%'
+  const delta = (atual: number, ant: number, inv=false) => {
+    if (!ant) return null
+    const d = ((atual-ant)/ant)*100
+    const up = inv ? d<=0 : d>=0
+    return { d, up, label: `${d>=0?'+':''}${d.toFixed(1)}%` }
+  }
+  const metricas8 = [
+    { l:' Faturamento',      a:p2?.faturamento||0,              b:p1?.faturamento||0,              f:fmt$loc },
+    { l:'️ Ticket Médio',     a:p2?.ticket_medio||0,             b:p1?.ticket_medio||0,             f:fmt$loc },
+    { l:' Preferência',      a:p2?.clientes_preferencia||0,     b:p1?.clientes_preferencia||0,     f:fmtN },
+    { l:' Sem Pref.',        a:p2?.clientes_sem_preferencia||0, b:p1?.clientes_sem_preferencia||0, f:fmtN, inv:true },
+    { l:' Dias Trabalhados', a:p2?.dias_trabalhados||0,         b:p1?.dias_trabalhados||0,         f:fmtN },
+    { l:'️ Ocupação',         a:p2?.taxa_ocupacao||0,            b:p1?.taxa_ocupacao||0,            f:fmtP },
+    { l:'️ Serviços',         a:p2?.total_servicos||0,           b:p1?.total_servicos||0,           f:fmtN },
+    { l:' Produtos',         a:p2?.total_produtos||0,           b:p1?.total_produtos||0,           f:fmtN },
+  ]
+  return (
+    <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
+      <h3 className="font-syne font-bold text-[13px] mb-4"> Comparativo por Métrica</h3>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {metricas8.map(item => {
+          const d = delta(item.a, item.b, item.inv)
+          return (
+            <div key={item.l} className="bg-nodri-card border border-nodri-border rounded-xl p-3">
+              <div className="text-[9px] text-nodri-t3 uppercase tracking-wider mb-1">{item.l}</div>
+              <div className="font-syne font-bold text-[17px] text-nodri-t1">{item.f(item.a)}</div>
+              <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                <span className="text-[9px] text-nodri-t3">Ant: {item.f(item.b)}</span>
+                {d && (
+                  <span className="text-[10px] font-bold flex items-center gap-0.5" style={{color: d.up?'#22c55e':'#ef4444'}}>
+                    {d.up ? <TrendingUp size={10}/> : <TrendingDown size={10}/>}
+                    {d.label}
+                  </span>
+                )}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+//  BlocoDiagnosticoResumido — Score + Semáforo + Narrativa + Plano de Ação (sem checklist/ocorrências)
 function BlocoDiagnosticoResumido({ prof, form, metricas, p1, p2, fidel }: {
   prof: Profissional; form: Partial<Profissional>
   metricas: DadosMetricas | null; p1: MetricaBloco | null; p2: MetricaBloco | null; fidel: Fidelizacao | null
@@ -1543,54 +1591,8 @@ function BlocoDiagnosticoResumido({ prof, form, metricas, p1, p2, fidel }: {
   const icoP = {alta:'',media:'',baixa:''}
   const txtP = {alta:'URGENTE',media:'ESTA SEMANA',baixa:'ESTE MÊS'}
 
-  const fmt$loc = (v: number) => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0)
-  const fmtN = (v: number) => (v||0).toLocaleString('pt-BR',{maximumFractionDigits:1})
-  const fmtP = (v: number) => (v||0).toFixed(1)+'%'
-  const delta = (atual: number, ant: number, inv=false) => {
-    if (!ant) return null
-    const d = ((atual-ant)/ant)*100
-    const up = inv ? d<=0 : d>=0
-    return { d, up, label: `${d>=0?'+':''}${d.toFixed(1)}%` }
-  }
-
-  const metricas8 = [
-    { l:' Faturamento',      a:p2?.faturamento||0,              b:p1?.faturamento||0,              f:fmt$loc },
-    { l:'️ Ticket Médio',     a:p2?.ticket_medio||0,             b:p1?.ticket_medio||0,             f:fmt$loc },
-    { l:' Preferência',      a:p2?.clientes_preferencia||0,     b:p1?.clientes_preferencia||0,     f:fmtN },
-    { l:' Sem Pref.',        a:p2?.clientes_sem_preferencia||0, b:p1?.clientes_sem_preferencia||0, f:fmtN, inv:true },
-    { l:' Dias Trabalhados', a:p2?.dias_trabalhados||0,         b:p1?.dias_trabalhados||0,         f:fmtN },
-    { l:'️ Ocupação',         a:p2?.taxa_ocupacao||0,            b:p1?.taxa_ocupacao||0,            f:fmtP },
-    { l:'️ Serviços',         a:p2?.total_servicos||0,           b:p1?.total_servicos||0,           f:fmtN },
-    { l:' Produtos',         a:p2?.total_produtos||0,           b:p1?.total_produtos||0,           f:fmtN },
-  ]
-
   return (
     <div className="space-y-5">
-      {/* Comparativo por métrica */}
-      <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
-        <h3 className="font-syne font-bold text-[13px] mb-4"> Comparativo por Métrica</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {metricas8.map(item => {
-            const d = delta(item.a, item.b, item.inv)
-            return (
-              <div key={item.l} className="bg-nodri-card border border-nodri-border rounded-xl p-3">
-                <div className="text-[9px] text-nodri-t3 uppercase tracking-wider mb-1">{item.l}</div>
-                <div className="font-syne font-bold text-[17px] text-nodri-t1">{item.f(item.a)}</div>
-                <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                  <span className="text-[9px] text-nodri-t3">Ant: {item.f(item.b)}</span>
-                  {d && (
-                    <span className="text-[10px] font-bold flex items-center gap-0.5" style={{color: d.up?'#22c55e':'#ef4444'}}>
-                      {d.up ? <TrendingUp size={10}/> : <TrendingDown size={10}/>}
-                      {d.label}
-                    </span>
-                  )}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-
       {/* Narrativa personalizada */}
       {narrativa && (
         <div className="rounded-2xl p-5 border" style={{background:'rgba(99,102,241,0.04)', borderColor:'rgba(99,102,241,0.25)'}}>
@@ -3425,7 +3427,9 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
             {loadMet && <div className="flex justify-center py-10"><Loader2 size={24} className="animate-spin text-nodri-cyan"/></div>}
             {metricas && !loadMet && <>
               {(p1 || p2) ? <>
-                {/* Comparativo com média da categoria — topo */}
+                {/* Comparativo por métrica (P2 vs P1) — topo */}
+                <BlocoComparativoMetrica p1={p1||null} p2={p2||null}/>
+                {/* Comparativo com média da categoria */}
                 {categoriaMedia?.media && categoriaMedia.atual && (() => {
                   const m = categoriaMedia.media
                   const a = categoriaMedia.atual
