@@ -112,18 +112,27 @@ export async function POST(req: NextRequest) {
       // ── Busca o registro atual para preservar campos do Excel ──
       const { data: atual } = await supabaseAdmin
         .from('relatorio_periodos')
-        .select('prof_pagamentos, prof_ticket, prof_preferencia, prof_ocupacao, prof_produtos, metas, data_inicio, data_fim, resumo_mensal, produtos')
+        .select('prof_pagamentos, prof_ticket, prof_preferencia, prof_ocupacao, prof_produtos, metas, data_inicio, data_fim, resumo_mensal, produtos, faturamento_diario')
         .eq('salao_id', salaoId)
         .eq('ano', ano)
         .eq('mes', mes)
         .maybeSingle()
 
-      // Preserva clientes_novos e faturamento_produtos do Excel (o raw não tem esses dados)
+      // ── RESUMO MENSAL: o Excel (0083/0088) é a FONTE OFICIAL ──
+      // O raw (0031) só tem serviços e subconta (sem produtos, comandas diferentes).
+      // Então, se o Excel já trouxe o resumo mensal, preserva ele INTEIRO
+      // (total, ticket, clientes, serviços, produtos) e só reconstrói os
+      // detalhamentos que o Excel não tem (lista de serviços, prof_servicos).
       const resumoAtual = (atual?.resumo_mensal || []) as Array<any>
-      const clientesNovosExcel = resumoAtual.reduce((s: number, r: any) => s + Number(r.clientes_novos || 0), 0)
-      const fatProdutosExcel = resumoAtual.reduce((s: number, r: any) => s + Number(r.faturamento_produtos || 0), 0)
-      resumo_mensal[0].clientes_novos = clientesNovosExcel
-      resumo_mensal[0].faturamento_produtos = fatProdutosExcel
+      const fatTotalExcel = resumoAtual.reduce((s: number, r: any) => s + Number(r.faturamento_total || 0), 0)
+      const temResumoExcel = resumoAtual.length > 0 && fatTotalExcel > 0
+
+      const resumo_final = temResumoExcel ? resumoAtual : resumo_mensal
+
+      // Faturamento diário: preserva o do Excel (0088, já inclui produtos por dia).
+      // Só usa o reconstruído (apenas serviços) quando o Excel não trouxe o diário.
+      const fatDiarioExcel = (atual?.faturamento_diario || []) as Array<any>
+      const faturamento_diario_final = fatDiarioExcel.length > 0 ? fatDiarioExcel : faturamento_diario
 
       // ── Upsert com dados reconstruídos ──────────────────────────────
       const { error: eUp } = await supabaseAdmin
@@ -134,8 +143,8 @@ export async function POST(req: NextRequest) {
           mes,
           data_inicio:        atual?.data_inicio || `01/${String(mes).padStart(2,'0')}/${ano}`,
           data_fim:           atual?.data_fim || '',
-          resumo_mensal,
-          faturamento_diario,
+          resumo_mensal:       resumo_final,
+          faturamento_diario:  faturamento_diario_final,
           servicos,
           produtos:           atual?.produtos || [],
           prof_servicos,

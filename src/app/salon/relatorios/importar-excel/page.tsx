@@ -49,7 +49,7 @@ export default function ImportarExcelPage() {
     if (data.ok) {
       const d = data.deletados || {}
       toast.success(
-        `Banco limpo! Removidos: ${d.relatorio_periodos ?? 0} períodos · ${d.atendimentos_raw ?? 0} atendimentos · ${d.agendamentos_raw ?? 0} agendamentos`
+        `Banco limpo! Removidos: ${d.relatorio_periodos ?? 0} períodos · ${d.atendimentos_raw ?? 0} atendimentos · ${d.agendamentos_raw ?? 0} agendamentos · ${d.clientes_perfil ?? 0} perfis de clientes`
       )
     } else toast.error('Erro ao resetar: ' + data.error)
   }

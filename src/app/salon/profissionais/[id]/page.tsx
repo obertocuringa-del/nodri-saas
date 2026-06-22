@@ -2692,7 +2692,7 @@ Nome: ${agend.cliente}
 Serviço agendado HOJE: ${agend.servico}
 ${h?.primeira_visita_real ? '⭐⭐ PRIMEIRA VISITA NO SALÃO — trate como experiência de encantamento!' : ''}
 Primeira visita no salão: ${h?.data_primeira_visita || 'desconhecida'}
-Última visita: ${h?.ultima_visita || 'desconhecida'}${h?.dias_desde_ultima !== null ? ` (${h?.dias_desde_ultima} dias atrás)` : ''}
+Última visita: ${h?.ultima_visita || 'desconhecida'}${h?.dias_desde_ultima != null ? ` (${h?.dias_desde_ultima} dias atrás)` : ''}
 Total de visitas: ${h?.total_visitas || 0}
 Frequência média: ${h?.freq_media_dias ? `a cada ${h?.freq_media_dias} dias` : 'desconhecida'}
 Faturamento acumulado: R$ ${(h?.faturamento_acumulado || 0).toFixed(2)}
@@ -2739,10 +2739,39 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
       const res = await fetch('/api/ia/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mensagens: [{ role: 'user', content: prompt }], modo: 'agendamentos' }),
+        body: JSON.stringify({ mensagens: [{ role: 'user', content: prompt }], profissional_id: id, modo: 'agendamentos' }),
       })
-      const d = await res.json()
-      const texto = d.resposta || d.content || d.message || ''
+
+      if (!res.ok || !res.body) {
+        let msg = 'Erro ao gerar sugestão. Verifique a configuração da IA.'
+        try { const d = await res.json(); if (d?.error) msg = d.error } catch {}
+        setAgendSugestao(msg)
+        setAgendLoadSug(false)
+        return
+      }
+
+      // A rota /api/ia/chat responde em streaming (SSE) — acumula os tokens
+      const reader = res.body.getReader()
+      const dec = new TextDecoder()
+      let buffer = ''
+      let texto = ''
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += dec.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+        for (const line of lines) {
+          if (!line.startsWith('data:')) continue
+          const json = line.slice(5).trim()
+          if (!json) continue
+          try {
+            const parsed = JSON.parse(json)
+            if (parsed.token) texto += parsed.token
+          } catch {}
+        }
+      }
+
       // Tenta extrair JSON da resposta
       try {
         const jsonMatch = texto.match(/\{[\s\S]*\}/)
@@ -3614,7 +3643,7 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                 {[
                                   {label:'Total Visitas',  val: h.total_visitas || '—',        icon:'📅'},
-                                  {label:'Última Visita',  val: h.dias_desde_ultima !== null ? `${h.dias_desde_ultima}d atrás` : h.ultima_visita || '—', icon:'🕐'},
+                                  {label:'Última Visita',  val: h.dias_desde_ultima != null ? `${h.dias_desde_ultima}d atrás` : h.ultima_visita || '—', icon:'🕐'},
                                   {label:'Fat. Acumulado', val: fmt$(h.faturamento_acumulado),  icon:'💵'},
                                   {label:'Ticket Médio',   val: fmt$(h.ticket_medio),           icon:'🎯'},
                                 ].map(c=>(

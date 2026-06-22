@@ -12,7 +12,9 @@ export async function DELETE() {
 
   const results: Record<string, number> = {}
 
-  const tabelas = ['relatorio_periodos', 'atendimentos_raw', 'agendamentos_raw'] as const
+  // NÃO inclui relatorio_feedbacks / feedback_respostas / feedback_prof_respostas:
+  // os feedbacks de cliente e profissional são preservados no reset (decisão do gestor).
+  const tabelas = ['relatorio_periodos', 'atendimentos_raw', 'agendamentos_raw', 'clientes_perfil'] as const
   for (const tabela of tabelas) {
     const { error, count } = await supabaseAdmin
       .from(tabela)
