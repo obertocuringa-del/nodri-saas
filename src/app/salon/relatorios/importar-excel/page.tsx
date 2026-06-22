@@ -49,8 +49,11 @@ export default function ImportarExcelPage() {
     if (data.ok) {
       const d = data.deletados || {}
       toast.success(
-        `Banco limpo! Removidos: ${d.relatorio_periodos ?? 0} períodos · ${d.atendimentos_raw ?? 0} atendimentos · ${d.agendamentos_raw ?? 0} agendamentos · ${d.clientes_perfil ?? 0} perfis de clientes`
+        `Banco limpo! Removidos: ${d.relatorio_periodos ?? 0} períodos · ${d.atendimentos_raw ?? 0} atendimentos · ${d.agendamentos_raw ?? 0} agendamentos · ${(d.clientes_perfil ?? 0) + (d.clientes_resumo_mensal ?? 0)} perfis de clientes`
       )
+      if (data.erros) {
+        toast.error('Algumas tabelas não foram limpas: ' + Object.entries(data.erros).map(([t, m]) => `${t} (${m})`).join(' · '), { duration: 8000 })
+      }
     } else toast.error('Erro ao resetar: ' + data.error)
   }
 

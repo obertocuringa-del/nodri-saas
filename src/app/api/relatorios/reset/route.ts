@@ -11,18 +11,33 @@ export async function DELETE() {
   if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   const results: Record<string, number> = {}
+  const erros: Record<string, string> = {}
 
   // NÃO inclui relatorio_feedbacks / feedback_respostas / feedback_prof_respostas:
   // os feedbacks de cliente e profissional são preservados no reset (decisão do gestor).
-  const tabelas = ['relatorio_periodos', 'atendimentos_raw', 'agendamentos_raw', 'clientes_perfil'] as const
+  // clientes_perfil e clientes_resumo_mensal = cache dos "Mais Relatórios" (Em Risco, Perdidos, VIP, etc.)
+  const tabelas = [
+    'relatorio_periodos',
+    'atendimentos_raw',
+    'agendamentos_raw',
+    'clientes_perfil',
+    'clientes_resumo_mensal',
+  ] as const
+
+  // Resiliente: se uma tabela falhar (não existe, RLS, etc.), registra o erro
+  // e CONTINUA limpando as demais — não aborta o reset inteiro.
   for (const tabela of tabelas) {
     const { error, count } = await supabaseAdmin
       .from(tabela)
       .delete({ count: 'exact' })
       .eq('salao_id', salaoId)
-    if (error) return NextResponse.json({ error: `Erro em ${tabela}: ${error.message}` }, { status: 500 })
-    results[tabela] = count ?? 0
+    if (error) erros[tabela] = error.message
+    else results[tabela] = count ?? 0
   }
 
-  return NextResponse.json({ ok: true, deletados: results })
+  return NextResponse.json({
+    ok: true,
+    deletados: results,
+    erros: Object.keys(erros).length ? erros : undefined,
+  })
 }
