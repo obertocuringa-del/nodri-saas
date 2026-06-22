@@ -36,12 +36,14 @@ export async function GET(req: NextRequest) {
   const mes = parseInt(url.searchParams.get('mes') || '0')
   if (!ano || !mes) return NextResponse.json({ error: 'ano e mes obrigatórios' }, { status: 400 })
 
-  // Profissionais ativos
-  const { data: profs } = await supabaseAdmin
+  // Profissionais ativos (exclui cargos administrativos)
+  const CARGOS_EXCLUIR = ['administrativo', 'financeiro', 'gerencia', 'gerência', 'recepcao', 'recepção']
+  const { data: profsRaw } = await supabaseAdmin
     .from('profissionais')
     .select('id, nome_completo, apelido, cargo')
     .eq('salao_id', salaoId)
     .eq('ativo', true)
+  const profs = (profsRaw || []).filter((p: any) => !CARGOS_EXCLUIR.includes((p.cargo || '').toLowerCase().trim()))
 
   // Período do mês selecionado
   const { data: periodos } = await supabaseAdmin
@@ -84,19 +86,25 @@ export async function GET(req: NextRequest) {
 
   const rows = periodos || []
 
-  // Faturamento total do salão no mês (para % de dependência)
-  let fatSalao = 0
+  // Tipos de ocorrência distintos do mês, ordenados pelos mais frequentes
+  const contagemTipos: Record<string, number> = {}
+  for (const f of (feedbacks || [])) {
+    const t = (f.ocorrido_descricao || f.tipo || 'Outro').trim()
+    contagemTipos[t] = (contagemTipos[t] || 0) + 1
+  }
+  const ocorrenciasTipos = Object.keys(contagemTipos).sort((a, b) => contagemTipos[b] - contagemTipos[a])
+
+  // Faturamento BRUTO total do salão no mês (soma dos valores de serviço — para % de dependência)
+  let fatBrutoSalao = 0
   for (const r of rows) {
-    for (const it of (r.prof_pagamentos || [])) {
-      fatSalao += Number(it.valor_a_pagar || 0) + Number(it.desconto || 0)
-    }
+    for (const it of (r.prof_servicos || [])) fatBrutoSalao += Number(it.valor || 0)
   }
 
   const resultado = (profs || []).map((p: any) => {
     const nome = p.nome_completo || ''
     const tokens = tokensNome(nome)
     const apelido = p.apelido || ''
-    let fat = 0, ticket = 0, ticketN = 0, pref = 0, sem = 0
+    let fat = 0, fatBruto = 0, ticket = 0, ticketN = 0, pref = 0, sem = 0
     let dias = 0, ocupSum = 0, ocupN = 0, serv = 0, prod = 0
 
     for (const r of rows) {
@@ -109,41 +117,37 @@ export async function GET(req: NextRequest) {
       for (const it of (r.prof_ocupacao || []))
         if (matchNome(it, nome, tokens, apelido)) { dias += Number(it.dias_trabalhados || 0); ocupSum += Number(it.taxa_ocupacao || 0); ocupN++ }
       for (const it of (r.prof_servicos || []))
-        if (matchNome(it, nome, tokens, apelido)) serv += Number(it.quantidade || 0)
+        if (matchNome(it, nome, tokens, apelido)) { serv += Number(it.quantidade || 0); fatBruto += Number(it.valor || 0) }
       for (const it of (r.prof_produtos || []))
         if (matchNome(it, nome, tokens, apelido)) prod += Number(it.quantidade || 0)
     }
 
-    // Ocorrências por profissional_id
-    const fbs = (feedbacks || []).filter((f: any) => f.profissional_id === p.id)
-    const neg = fbs.filter((f: any) => f.tipo === 'negativo').length
-    const pos = fbs.filter((f: any) => f.tipo === 'positivo').length
-    const faltas = fbs.filter((f: any) => (f.ocorrido_descricao || '').toLowerCase().includes('falta')).length
-    const atrasos = fbs.filter((f: any) => (f.ocorrido_descricao || '').toLowerCase().includes('atras')).length
+    // Ocorrências por tipo (por profissional_id — exato)
+    const fbsProf = (feedbacks || []).filter((f: any) => f.profissional_id === p.id)
+    const ocorr: Record<string, number> = {}
+    for (const f of fbsProf) {
+      const t = (f.ocorrido_descricao || f.tipo || 'Outro').trim()
+      ocorr[t] = (ocorr[t] || 0) + 1
+    }
+    const ocorrTotal = fbsProf.length
 
     const ticketMedio = ticketN > 0 ? ticket / ticketN : (serv > 0 ? fat / serv : 0)
     const ocupacao = ocupN > 0 ? ocupSum / ocupN : 0
 
-    // Mês anterior (faturamento e preferência/sem-preferência) para fidelização e tendência
-    let fatPrev = 0, prefPrev = 0, semPrev = 0
+    // Mês anterior (preferência/sem-preferência) para fidelização
+    let prefPrev = 0, semPrev = 0
     for (const r of rowsPrev) {
-      for (const it of (r.prof_pagamentos || []))
-        if (matchNome(it, nome, tokens, apelido)) fatPrev += Number(it.valor_a_pagar || 0) + Number(it.desconto || 0)
       for (const it of (r.prof_preferencia || []))
         if (matchNome(it, nome, tokens, apelido)) { prefPrev += Number(it.clientes_preferencia || 0); semPrev += Number(it.clientes_sem_preferencia || 0) }
     }
-    // Fidelização (mesma lógica de /metricas)
+    // Fidelização — clientes perdidos (mesma lógica de /metricas)
     const totalNovos = semPrev + sem
     const fidelizados = pref - prefPrev
     const perdidos = totalNovos - fidelizados
-    const taxaFid = totalNovos > 0 ? (fidelizados / totalNovos) * 100 : 0
-    const taxaPerda = totalNovos > 0 ? (perdidos / totalNovos) * 100 : 0
     // Meta
     const meta = metaPorId[p.id] || 0
     const metaPct = meta > 0 ? (fat / meta) * 100 : 0
-    // Tendência
-    const cresc = fatPrev > 0 ? ((fat - fatPrev) / fatPrev) * 100 : 0
-    const proj = fat * (1 + cresc / 100)
+    const falta = Math.max(meta - fat, 0)
 
     return {
       id: p.id,
@@ -162,29 +166,20 @@ export async function GET(req: NextRequest) {
       fat_dia: dias > 0 ? Math.round((fat / dias) * 100) / 100 : 0,
       serv_dia: dias > 0 ? Math.round((serv / dias) * 10) / 10 : 0,
       ticket_servico: serv > 0 ? Math.round((fat / serv) * 100) / 100 : 0,
-      // Ocorrências
-      ocorr_negativas: neg,
-      ocorr_positivas: pos,
-      faltas,
-      atrasos,
-      // Dependência
-      pct_salao: fatSalao > 0 ? Math.round((fat / fatSalao) * 1000) / 10 : 0,
-      fat_gerado: Math.round(fat * 100) / 100,
+      // Ocorrências (todas as anotações + total)
+      ocorr,
+      ocorr_total: ocorrTotal,
+      // Dependência (valor BRUTO faturado)
+      pct_salao: fatBrutoSalao > 0 ? Math.round((fatBruto / fatBrutoSalao) * 1000) / 10 : 0,
+      fat_gerado: Math.round(fatBruto * 100) / 100,
       clientes_fieis: pref,
       // Fidelização
-      taxa_fidelizacao: Math.round(taxaFid * 10) / 10,
-      taxa_perda: Math.round(taxaPerda * 10) / 10,
-      fidelizados,
       clientes_perdidos: perdidos,
-      total_novos: totalNovos,
       // Meta
       meta_pct: Math.round(metaPct * 10) / 10,
-      realizado: Math.round(fat * 100) / 100,
-      // Tendência
-      crescimento: Math.round(cresc * 10) / 10,
-      projecao: Math.round(proj * 100) / 100,
+      falta: Math.round(falta * 100) / 100,
     }
   })
 
-  return NextResponse.json({ ano, mes, fat_salao: Math.round(fatSalao * 100) / 100, profissionais: resultado })
+  return NextResponse.json({ ano, mes, ocorrencias_tipos: ocorrenciasTipos, profissionais: resultado })
 }

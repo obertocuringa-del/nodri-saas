@@ -7,7 +7,7 @@ const MESES = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', '
 
 type Prof = Record<string, any>
 interface Metrica { k: string; t: string; low?: boolean; fmt: (v: number) => string }
-interface Tema { titulo: string; cols: Metrica[] }
+interface Tema { titulo: string; cols?: Metrica[]; dynamic?: 'ocorr' }
 
 const rs = (v: number) => 'R$ ' + Math.round(Number(v) || 0).toLocaleString('pt-BR')
 const n1 = (v: number) => (Number(v) || 0).toLocaleString('pt-BR', { maximumFractionDigits: 1 })
@@ -30,29 +30,18 @@ const TEMAS: Tema[] = [
     { k: 'serv_dia', t: 'Serviços/dia', fmt: n1 },
     { k: 'ticket_servico', t: 'Ticket/serviço', fmt: rs },
   ]},
-  { titulo: '⚠️ Ocorrências', cols: [
-    { k: 'ocorr_negativas', t: 'Negativas', low: true, fmt: n1 },
-    { k: 'ocorr_positivas', t: 'Positivas', fmt: n1 },
-    { k: 'faltas', t: 'Faltas', low: true, fmt: n1 },
-    { k: 'atrasos', t: 'Atrasos', low: true, fmt: n1 },
-  ]},
+  { titulo: '⚠️ Ocorrências', dynamic: 'ocorr' },
   { titulo: '👑 Dependência', cols: [
     { k: 'pct_salao', t: '% do salão', fmt: (v) => n1(v) + '%' },
-    { k: 'fat_gerado', t: 'Faturam. gerado', fmt: rs },
+    { k: 'fat_gerado', t: 'Faturam. gerado (bruto)', fmt: rs },
     { k: 'clientes_fieis', t: 'Clientes fiéis', fmt: n1 },
   ]},
   { titulo: '❤️ Fidelização', cols: [
-    { k: 'taxa_fidelizacao', t: 'Taxa fidelização', fmt: (v) => n1(v) + '%' },
-    { k: 'fidelizados', t: 'Fidelizados', fmt: n1 },
     { k: 'clientes_perdidos', t: 'Perdidos', low: true, fmt: n1 },
   ]},
   { titulo: '🎯 Meta', cols: [
     { k: 'meta_pct', t: '% atingimento', fmt: (v) => n1(v) + '%' },
-    { k: 'realizado', t: 'Realizado', fmt: rs },
-  ]},
-  { titulo: '📈 Tendência', cols: [
-    { k: 'crescimento', t: 'Crescimento', fmt: (v) => (v >= 0 ? '+' : '') + n1(v) + '%' },
-    { k: 'projecao', t: 'Projeção próx.', fmt: rs },
+    { k: 'falta', t: 'Quanto falta', low: true, fmt: rs },
   ]},
 ]
 
@@ -67,6 +56,7 @@ export default function RankingUnificado({ ano, mes }: { ano: number; mes: numbe
   const [anoSel, setAnoSel] = useState(ano)
   const [mesSel, setMesSel] = useState(mes)
   const [profs, setProfs] = useState<Prof[] | null>(null)
+  const [ocorrTipos, setOcorrTipos] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [diag, setDiag] = useState('')
   const [loadDiag, setLoadDiag] = useState(false)
@@ -79,8 +69,8 @@ export default function RankingUnificado({ ano, mes }: { ano: number; mes: numbe
     setDiag('')
     fetch(`/api/relatorios/ranking?ano=${anoSel}&mes=${mesSel}`)
       .then(r => r.ok ? r.json() : { profissionais: [] })
-      .then(d => setProfs(d.profissionais || []))
-      .catch(() => setProfs([]))
+      .then(d => { setProfs(d.profissionais || []); setOcorrTipos(d.ocorrencias_tipos || []) })
+      .catch(() => { setProfs([]); setOcorrTipos([]) })
       .finally(() => setLoading(false))
   }, [anoSel, mesSel])
 
@@ -95,9 +85,27 @@ export default function RankingUnificado({ ano, mes }: { ano: number; mes: numbe
       for (const tema of TEMAS) {
         out += `<div style="margin-bottom:14px;break-inside:avoid">`
         out += `<div style="font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:6px">${tema.titulo}</div>`
-        out += `<div style="display:grid;grid-template-columns:repeat(${tema.cols.length},minmax(0,1fr));gap:8px">`
-        for (const c of tema.cols) {
-          const ord = [...arr].sort((a, b) => c.low ? (a[c.k] - b[c.k]) : (b[c.k] - a[c.k]))
+
+        // Tema dinâmico: Ocorrências — uma coluna por tipo de anotação + Total (menos é melhor)
+        let cols: Metrica[]
+        if (tema.dynamic === 'ocorr') {
+          if (!ocorrTipos.length) { out += `<div style="font-size:11px;color:#9ca3af;padding:4px 0">Nenhuma ocorrência registrada no período.</div></div>`; continue }
+          cols = [
+            ...ocorrTipos.map(t => ({ k: '__oc__' + t, t, low: true, fmt: n1 })),
+            { k: '__octot__', t: 'Total', low: true, fmt: n1 },
+          ]
+        } else {
+          cols = tema.cols!
+        }
+        const val = (p: Prof, c: Metrica): number => {
+          if (c.k === '__octot__') return p.ocorr_total || 0
+          if (c.k.startsWith('__oc__')) return (p.ocorr && p.ocorr[c.k.slice(6)]) || 0
+          return p[c.k]
+        }
+
+        out += `<div style="display:grid;grid-template-columns:repeat(${cols.length},minmax(0,1fr));gap:8px">`
+        for (const c of cols) {
+          const ord = [...arr].sort((a, b) => c.low ? (val(a, c) - val(b, c)) : (val(b, c) - val(a, c)))
           out += `<div style="border:1px solid #e5e7eb;border-radius:10px;overflow:hidden">`
           out += `<div style="background:#f5f4f0;padding:6px 8px;font-size:11px;font-weight:600;color:#1a1a1a;text-align:center">${c.low ? '↓ ' : ''}${c.t}</div>`
           ord.forEach((p, i) => {
@@ -105,7 +113,7 @@ export default function RankingUnificado({ ano, mes }: { ano: number; mes: numbe
             out += `<div style="display:flex;align-items:center;gap:5px;padding:6px 8px;border-top:1px solid #f0eee8">`
               + `<span style="font-size:10px;color:#9ca3af;min-width:14px">${i + 1}º</span>`
               + `<span style="font-size:11px;color:#1a1a1a;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nome}</span>`
-              + `<span style="font-size:10px;background:${bg};color:${tx};border-radius:5px;padding:2px 5px;white-space:nowrap">${c.fmt(p[c.k])}</span>`
+              + `<span style="font-size:10px;background:${bg};color:${tx};border-radius:5px;padding:2px 5px;white-space:nowrap">${c.fmt(val(p, c))}</span>`
               + `</div>`
           })
           out += `</div>`
@@ -141,7 +149,7 @@ export default function RankingUnificado({ ano, mes }: { ano: number; mes: numbe
     setLoadDiag(true)
     setDiag('')
     const resumo = profs.map(p =>
-      `${p.nome} (${p.cargo}): faturamento ${rs(p.faturamento)}, ticket ${rs(p.ticket_medio)}, ${p.servicos} serviços, ocupação ${n1(p.ocupacao)}%, ${p.preferencia} preferência, ${p.ocorr_negativas} ocorrências negativas, ${p.faltas} faltas, ${p.atrasos} atrasos, ${n1(p.pct_salao)}% do salão`
+      `${p.nome} (${p.cargo}): faturamento ${rs(p.faturamento)}, ticket ${rs(p.ticket_medio)}, ${p.servicos} serviços, ocupação ${n1(p.ocupacao)}%, ${p.preferencia} preferência, ${p.ocorr_total || 0} ocorrências, ${p.clientes_perdidos} perdidos, meta ${n1(p.meta_pct)}% (falta ${rs(p.falta)}), ${n1(p.pct_salao)}% do salão (bruto)`
     ).join('\n')
     const prompt = `Você é a NODRI IA. Abaixo estão as métricas dos profissionais do salão em ${MESES[mesSel]}/${anoSel}:\n\n${resumo}\n\nFaça um DIAGNÓSTICO gerencial curto e direto, comparando cada profissional DENTRO do seu cargo: destaques, quem precisa de atenção, padrões por cargo e 3 ações práticas. Não repita a lista inteira.`
     try {
