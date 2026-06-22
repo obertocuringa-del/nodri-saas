@@ -41,6 +41,19 @@ const TEMAS: Tema[] = [
     { k: 'fat_gerado', t: 'Faturam. gerado', fmt: rs },
     { k: 'clientes_fieis', t: 'Clientes fiéis', fmt: n1 },
   ]},
+  { titulo: '❤️ Fidelização', cols: [
+    { k: 'taxa_fidelizacao', t: 'Taxa fidelização', fmt: (v) => n1(v) + '%' },
+    { k: 'fidelizados', t: 'Fidelizados', fmt: n1 },
+    { k: 'clientes_perdidos', t: 'Perdidos', low: true, fmt: n1 },
+  ]},
+  { titulo: '🎯 Meta', cols: [
+    { k: 'meta_pct', t: '% atingimento', fmt: (v) => n1(v) + '%' },
+    { k: 'realizado', t: 'Realizado', fmt: rs },
+  ]},
+  { titulo: '📈 Tendência', cols: [
+    { k: 'crescimento', t: 'Crescimento', fmt: (v) => (v >= 0 ? '+' : '') + n1(v) + '%' },
+    { k: 'projecao', t: 'Projeção próx.', fmt: rs },
+  ]},
 ]
 
 function heat(i: number, total: number): [string, string] {
