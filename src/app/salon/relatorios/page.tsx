@@ -63,7 +63,7 @@ interface ResumoPeriodo { fat_total: number; ticket: number; clientes: number; n
 const moeda = (v: number) => `R$ ${(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 const MESES = ['', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
 const MESES_FULL = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
-const STORAGE_KEY = 'nodri_relatorios_v2'
+const STORAGE_KEY = 'nodri_relatorios_v3'
 const META_KEY = 'nodri_metas_config'
 
 function calcPct(p1: number, p2: number) { return p2 === 0 ? (p1 > 0 ? 100 : 0) : ((p1 - p2) / p2) * 100 }

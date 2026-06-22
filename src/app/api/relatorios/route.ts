@@ -46,7 +46,10 @@ export async function GET() {
     base.faturamento_diario.push(...(p.faturamento_diario || []).map((r: any) => ({ ...r, ano: p.ano, mes: p.mes })))
     base.servicos.push(...(p.servicos || []).map((r: any) => ({ ...r, ano: p.ano, mes: p.mes })))
     base.produtos.push(...(p.produtos || []).map((r: any) => ({ ...r, ano: p.ano, mes: p.mes })))
-    base.prof_pagamentos.push(...(p.prof_pagamentos || []).map((r: any) => ({ ...r, ano: p.ano, mes: p.mes })))
+    // valor_a_pagar = faturamento/comissão oficial = valor_a_pagar + desconto
+    // (mesma definição de /metricas e categoria-media; a redistribuição soma só
+    //  valor_a_pagar, então o desconto precisa já vir embutido aqui)
+    base.prof_pagamentos.push(...(p.prof_pagamentos || []).map((r: any) => ({ ...r, valor_a_pagar: (Number(r.valor_a_pagar) || 0) + (Number(r.desconto) || 0), ano: p.ano, mes: p.mes })))
     base.metas.push(...(p.metas || []).map((r: any) => ({ ...r, ano: p.ano, mes: p.mes })))
     base.periodos.push({ ano: p.ano, mes: p.mes, data_inicio: p.data_inicio, data_fim: p.data_fim })
   }
