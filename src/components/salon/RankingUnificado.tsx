@@ -64,19 +64,25 @@ function heat(i: number, total: number): [string, string] {
 }
 
 export default function RankingUnificado({ ano, mes }: { ano: number; mes: number }) {
+  const [anoSel, setAnoSel] = useState(ano)
+  const [mesSel, setMesSel] = useState(mes)
   const [profs, setProfs] = useState<Prof[] | null>(null)
   const [loading, setLoading] = useState(true)
   const [diag, setDiag] = useState('')
   const [loadDiag, setLoadDiag] = useState(false)
 
+  const anoAtual = new Date().getFullYear()
+  const anosDisp = [anoAtual, anoAtual - 1, anoAtual - 2]
+
   useEffect(() => {
     setLoading(true)
-    fetch(`/api/relatorios/ranking?ano=${ano}&mes=${mes}`)
+    setDiag('')
+    fetch(`/api/relatorios/ranking?ano=${anoSel}&mes=${mesSel}`)
       .then(r => r.ok ? r.json() : { profissionais: [] })
       .then(d => setProfs(d.profissionais || []))
       .catch(() => setProfs([]))
       .finally(() => setLoading(false))
-  }, [ano, mes])
+  }, [anoSel, mesSel])
 
   function tabelasHTML(): string {
     if (!profs || !profs.length) return '<p style="color:#6b7280">Sem dados para o período.</p>'
@@ -114,7 +120,7 @@ export default function RankingUnificado({ ano, mes }: { ano: number; mes: numbe
   function imprimir() {
     const win = window.open('', '_blank', 'width=1200,height=800')
     if (!win) return
-    win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Ranking Unificado — ${MESES[mes]}/${ano}</title>
+    win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Ranking Unificado — ${MESES[mesSel]}/${anoSel}</title>
       <style>
         @page { size: A4 landscape; margin: 9mm; }
         * { font-family: Arial, Helvetica, sans-serif; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -123,7 +129,7 @@ export default function RankingUnificado({ ano, mes }: { ano: number; mes: numbe
         .sub { font-size: 12px; color: #6b7280; margin-bottom: 14px; }
       </style></head><body>
       <h1>Ranking Unificado de Profissionais</h1>
-      <div class="sub">${MESES[mes]}/${ano} · ${profs?.length || 0} profissionais · gerado pelo NODRI</div>
+      <div class="sub">${MESES[mesSel]}/${anoSel} · ${profs?.length || 0} profissionais · gerado pelo NODRI</div>
       ${tabelasHTML()}
       <script>window.onload=function(){setTimeout(function(){window.print()},300)}<\/script>
       </body></html>`)
@@ -137,7 +143,7 @@ export default function RankingUnificado({ ano, mes }: { ano: number; mes: numbe
     const resumo = profs.map(p =>
       `${p.nome} (${p.cargo}): faturamento ${rs(p.faturamento)}, ticket ${rs(p.ticket_medio)}, ${p.servicos} serviços, ocupação ${n1(p.ocupacao)}%, ${p.preferencia} preferência, ${p.ocorr_negativas} ocorrências negativas, ${p.faltas} faltas, ${p.atrasos} atrasos, ${n1(p.pct_salao)}% do salão`
     ).join('\n')
-    const prompt = `Você é a NODRI IA. Abaixo estão as métricas dos profissionais do salão em ${MESES[mes]}/${ano}:\n\n${resumo}\n\nFaça um DIAGNÓSTICO gerencial curto e direto, comparando cada profissional DENTRO do seu cargo: destaques, quem precisa de atenção, padrões por cargo e 3 ações práticas. Não repita a lista inteira.`
+    const prompt = `Você é a NODRI IA. Abaixo estão as métricas dos profissionais do salão em ${MESES[mesSel]}/${anoSel}:\n\n${resumo}\n\nFaça um DIAGNÓSTICO gerencial curto e direto, comparando cada profissional DENTRO do seu cargo: destaques, quem precisa de atenção, padrões por cargo e 3 ações práticas. Não repita a lista inteira.`
     try {
       const res = await fetch('/api/ia/chat', {
         method: 'POST',
@@ -176,7 +182,17 @@ export default function RankingUnificado({ ano, mes }: { ano: number; mes: numbe
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 16 }}>
         <div style={{ marginRight: 'auto' }}>
           <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1a1a1a', margin: 0 }}>Relatório Unificado de Profissionais</h2>
-          <p style={{ fontSize: 12, color: '#6b6860', margin: '2px 0 0' }}>{MESES[mes]}/{ano} · {profs?.length || 0} profissionais · ranking por métrica e por cargo</p>
+          <p style={{ fontSize: 12, color: '#6b6860', margin: '2px 0 0' }}>{profs?.length || 0} profissionais · ranking por métrica e por cargo</p>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <select value={mesSel} onChange={e => setMesSel(Number(e.target.value))}
+            style={{ background: '#fff', border: '1.5px solid #d0cdc7', borderRadius: 8, color: '#1a1a1a', padding: '7px 10px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            {MESES.slice(1).map((m, i) => <option key={i + 1} value={i + 1}>{m}</option>)}
+          </select>
+          <select value={anoSel} onChange={e => setAnoSel(Number(e.target.value))}
+            style={{ background: '#fff', border: '1.5px solid #d0cdc7', borderRadius: 8, color: '#1a1a1a', padding: '7px 10px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            {anosDisp.map(a => <option key={a} value={a}>{a}</option>)}
+          </select>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 11, color: '#6b6860' }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 11, height: 11, borderRadius: 3, background: '#E1F5EE' }} />topo</span>
