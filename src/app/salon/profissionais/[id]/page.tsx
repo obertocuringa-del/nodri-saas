@@ -2557,6 +2557,7 @@ export default function PerfilProfissionalPage() {
 
   const [categoriaMedia, setCategoriaMedia] = useState<{
     cargo: string; total_prof_categoria: number; prof_com_dados: number; media: Record<string,number> | null; atual: Record<string,number> | null
+    colegas?: Array<{ nome: string; faturamento: number }>
   } | null>(null)
 
   const buscarMetricas = useCallback(async () => {
@@ -3474,6 +3475,34 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                           )
                         })}
                       </div>
+                      {/* Detalhamento: faturamento de cada profissional que entra na média */}
+                      {categoriaMedia.colegas && categoriaMedia.colegas.length > 0 && (() => {
+                        const linhas = [
+                          ...categoriaMedia.colegas!.map(c => ({ nome: c.nome, fat: c.faturamento, eh: false })),
+                          { nome: (prof?.apelido || prof?.nome_completo || 'Este profissional'), fat: a.faturamento || 0, eh: true },
+                        ].sort((x, y) => y.fat - x.fat)
+                        const soma = linhas.reduce((s, l) => s + (l.fat || 0), 0)
+                        return (
+                          <details className="mt-4">
+                            <summary className="cursor-pointer text-[11px] font-semibold text-nodri-purple">
+                              🔎 Ver faturamento de cada {categoriaMedia.cargo.toLowerCase()} na média ({linhas.length})
+                            </summary>
+                            <div className="mt-2 rounded-xl border border-nodri-border overflow-hidden">
+                              {linhas.map((l, i) => (
+                                <div key={i} className="flex items-center justify-between px-3 py-1.5 text-[11px]"
+                                  style={{ background: l.eh ? '#f0eefb' : (i % 2 === 0 ? '#fff' : '#faf9f7'), color: '#1a1a1a' }}>
+                                  <span style={{ fontWeight: l.eh ? 700 : 500 }}>{l.nome}{l.eh ? ' (este)' : ''}</span>
+                                  <span style={{ fontWeight: l.eh ? 700 : 500 }}>{fmt$(l.fat)}</span>
+                                </div>
+                              ))}
+                              <div className="flex items-center justify-between px-3 py-2 text-[11px] font-bold" style={{ background: '#1a1a1a', color: '#fff' }}>
+                                <span>Soma ÷ {linhas.length} = Média</span>
+                                <span>{fmt$(soma)} ÷ {linhas.length} = {fmt$(soma / linhas.length)}</span>
+                              </div>
+                            </div>
+                          </details>
+                        )
+                      })()}
                     </div>
                   )
                 })()}
