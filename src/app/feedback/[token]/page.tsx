@@ -311,7 +311,7 @@ export default function FeedbackPublicoPage() {
                         }}>
                           {selected && <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'white' }} />}
                         </div>
-                        <span style={{ fontSize: 14, fontWeight: selected ? 600 : 400, color: selected ? '#faf9f7' : '#374151' }}>
+                        <span style={{ fontSize: 14, fontWeight: selected ? 600 : 400, color: selected ? '#1a1a1a' : '#374151' }}>
                           {opcao}
                         </span>
                       </button>

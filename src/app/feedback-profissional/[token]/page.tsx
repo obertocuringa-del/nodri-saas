@@ -117,7 +117,7 @@ export default function FeedbackProfissionalPublico() {
           <div className="card" style={{ background: 'white', borderRadius: 20, padding: 28, marginBottom: 14, boxShadow: '0 2px 20px rgba(0,0,0,0.06)', animationDelay: '0s' }}>
             <p style={{ fontSize: 15, fontWeight: 600, color: '#1a1a1a', marginBottom: 14 }}>Profissional <span style={{ color: '#ef4444' }}>*</span></p>
             <select value={profissionalId} onChange={e => selectProf(e.target.value)}
-              style={{ width: '100%', padding: '14px 16px', borderRadius: 14, border: `2px solid ${profissionalId ? COR : '#f3f4f6'}`, fontSize: 14, color: profissionalId ? '#faf9f7' : '#6b7280', background: '#f9fafb', fontFamily: 'inherit', cursor: 'pointer' }}>
+              style={{ width: '100%', padding: '14px 16px', borderRadius: 14, border: `2px solid ${profissionalId ? COR : '#f3f4f6'}`, fontSize: 14, color: profissionalId ? '#1a1a1a' : '#6b7280', background: '#f9fafb', fontFamily: 'inherit', cursor: 'pointer' }}>
               <option value="">Escolher profissional...</option>
               {form.profissionais.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
             </select>
@@ -147,7 +147,7 @@ export default function FeedbackProfissionalPublico() {
           <div className="card" style={{ background: 'white', borderRadius: 20, padding: 28, marginBottom: 14, boxShadow: '0 2px 20px rgba(0,0,0,0.06)', animationDelay: '.14s' }}>
             <p style={{ fontSize: 15, fontWeight: 600, color: '#1a1a1a', marginBottom: 14 }}>O que houve? <span style={{ color: '#ef4444' }}>*</span></p>
             <select value={ocorridoId} onChange={e => selectOcorrido(e.target.value)}
-              style={{ width: '100%', padding: '14px 16px', borderRadius: 14, border: `2px solid ${ocorridoId ? COR : '#f3f4f6'}`, fontSize: 14, color: ocorridoId ? '#faf9f7' : '#6b7280', background: '#f9fafb', fontFamily: 'inherit', cursor: 'pointer' }}>
+              style={{ width: '100%', padding: '14px 16px', borderRadius: 14, border: `2px solid ${ocorridoId ? COR : '#f3f4f6'}`, fontSize: 14, color: ocorridoId ? '#1a1a1a' : '#6b7280', background: '#f9fafb', fontFamily: 'inherit', cursor: 'pointer' }}>
               <option value="">Escolher ocorrido...</option>
               {form.ocorridos.map(o => <option key={o.id} value={o.id}>{o.descricao}</option>)}
             </select>
