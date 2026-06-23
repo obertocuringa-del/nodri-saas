@@ -2618,8 +2618,8 @@ ${lista.map((c:any,i:number)=>{
                       </div>
                     )}
 
-                    {/* DIA DA SEMANA (legado — substituído por DiaSemanaReport; nunca renderiza aqui) */}
-                    {false && dados && (() => {
+                    {/* DIA DA SEMANA (legado — substituído por DiaSemanaReport; nunca renderiza) */}
+                    {(subAnalise as string) === '__legado__' && dados && (() => {
                       const fatP1 = dados.faturamento_diario.filter(r => {
                         const v = r.ano * 100 + r.mes
                         const [dY, dM] = de1.split('-').map(Number)
