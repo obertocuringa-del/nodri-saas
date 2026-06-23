@@ -59,10 +59,10 @@ export default function RecuperadosReport() {
       {/* Ranking recepção */}
       {data.ranking?.length > 0 && (
         <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: 16, marginBottom: 18 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: '#1a1a1a', marginBottom: 10 }}><Trophy size={15} color="#d97706" /> Desempenho da recepção</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: '#1a1a1a', marginBottom: 10 }}><Trophy size={15} color="#d97706" /> Taxa de recuperação por recepcionista</div>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
             <thead><tr style={{ background: '#faf9f7' }}>
-              {['#', 'Recepcionista', 'Contatos', 'Recuperados', 'Conversão', 'Bônus'].map(h => (
+              {['#', 'Recepcionista', 'Clientes Contatados', 'Clientes Recuperados', 'Taxa', 'Bônus'].map(h => (
                 <th key={h} style={{ padding: '8px 10px', textAlign: h === 'Recepcionista' ? 'left' : 'right', fontSize: 11, color: '#6b6860', fontWeight: 600 }}>{h}</th>
               ))}
             </tr></thead>
