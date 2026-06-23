@@ -1,5 +1,5 @@
 ﻿'use client'
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { ArrowLeft, Save, Loader2, TrendingUp, TrendingDown, BarChart2,
   MessageSquare, CheckSquare, Square, AlertTriangle } from 'lucide-react'
@@ -2272,6 +2272,21 @@ export default function PerfilProfissionalPage() {
   // ── Agendamentos ─────────────────────────────────────────────────────────────
   const [agendData, setAgendData] = useState<string>(() => { const h = new Date(); return `${String(h.getDate()).padStart(2,'0')}/${String(h.getMonth()+1).padStart(2,'0')}/${h.getFullYear()}` })
   const [agendamentos, setAgendamentos] = useState<any[]>([])
+  // Agrupa por cliente: mesma cliente com vários procedimentos vira 1 linha,
+  // com todos os procedimentos juntos (não polui a lista repetindo o nome).
+  const agendamentosAgrupados = useMemo(() => {
+    const grupos: Array<{ cliente: string; celular: string; status: string; procedimentos: Array<{ hora: string; servico: string }> }> = []
+    const indice: Record<string, number> = {}
+    for (const ag of agendamentos) {
+      const chave = `${(ag.cliente || '').trim().toUpperCase()}|${(ag.celular || '').replace(/\D/g, '')}`
+      if (indice[chave] === undefined) {
+        indice[chave] = grupos.length
+        grupos.push({ cliente: ag.cliente, celular: ag.celular, status: ag.status, procedimentos: [] })
+      }
+      grupos[indice[chave]].procedimentos.push({ hora: ag.hora, servico: ag.servico })
+    }
+    return grupos
+  }, [agendamentos])
   const [agendLoad, setAgendLoad] = useState(false)
   const [agendClienteSel, setAgendClienteSel] = useState<string|null>(null)
   const [agendHistorico, setAgendHistorico] = useState<{
@@ -2987,13 +3002,13 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
       {!loadAlertas && alertasAtivos.length > 0 && (
         <div className="relative border-b border-nodri-border bg-nodri-surface px-5 py-2 flex items-center gap-3">
           <button onClick={() => setMostrarHistoricoAlertas(v => !v)}
-            className="flex items-center gap-2 bg-orange-900/40 border border-orange-700/50 rounded-xl px-3 py-1.5 hover:bg-orange-900/60 transition-all">
+            className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-1.5 hover:bg-amber-100 transition-all">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"/>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"/>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"/>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"/>
             </span>
-            <span className="text-[11px] font-bold text-orange-300">
-              ⚠️ Alertas do dia ({alertasAtivos.length})
+            <span className="text-[11px] font-bold text-amber-700">
+              Alertas do dia ({alertasAtivos.length})
             </span>
           </button>
 
@@ -3001,7 +3016,7 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
           {mostrarHistoricoAlertas && (
             <div className="absolute top-full left-0 right-0 mt-1 z-50 max-w-[480px] max-h-80 overflow-y-auto bg-nodri-surface border border-nodri-border rounded-2xl shadow-xl">
               <div className="flex items-center justify-between px-4 py-2 border-b border-nodri-border">
-                <span className="text-[11px] font-bold text-orange-400">{alertasAtivos.length} clientes ausentes há 60+ dias</span>
+                <span className="text-[11px] font-bold text-amber-600">{alertasAtivos.length} clientes ausentes há 60+ dias</span>
                 <button onClick={() => setMostrarHistoricoAlertas(false)} className="text-nodri-t3 hover:text-nodri-t1 text-[14px]">✕</button>
               </div>
               <div className="divide-y divide-nodri-border">
@@ -3009,7 +3024,7 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
                   <div key={i} className="flex items-center justify-between px-4 py-2 hover:bg-nodri-bg/30">
                     <div>
                       <span className="text-[11px] font-semibold text-nodri-t1">{a.cliente_nome}</span>
-                      <span className="text-[10px] text-orange-400 ml-2">{a.dias_ausente}d ausente</span>
+                      <span className="text-[10px] text-amber-600 ml-2">{a.dias_ausente}d ausente</span>
                       {a.ultimo_servico && <span className="text-[10px] text-nodri-t3 ml-1">· {a.ultimo_servico}</span>}
                     </div>
                     <button onClick={() => arquivarAlerta(a)} title="Arquivar"
@@ -3607,9 +3622,9 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                 <span className="font-syne font-bold text-[13px]" style={{color:'#1a1a1a'}}>
                   Clientes agendados em {agendData}
                 </span>
-                {agendamentos.length > 0 && (
+                {agendamentosAgrupados.length > 0 && (
                   <span className="ml-2 text-[11px] px-2 py-0.5 rounded-full" style={{background:'#5b4fcf',color:'#fff'}}>
-                    {agendamentos.length}
+                    {agendamentosAgrupados.length}
                   </span>
                 )}
               </div>
@@ -3624,7 +3639,7 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                 </div>
               )}
 
-              {!agendLoad && agendamentos.map((ag, i) => {
+              {!agendLoad && agendamentosAgrupados.map((ag, i) => {
                 const selecionado = agendClienteSel === ag.cliente
                 return (
                   <div key={i}
@@ -3634,7 +3649,7 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                     }}
                     className="cursor-pointer transition-all"
                     style={{
-                      borderBottom: i < agendamentos.length - 1 ? '1px solid #f3f4f6' : 'none',
+                      borderBottom: i < agendamentosAgrupados.length - 1 ? '1px solid #f3f4f6' : 'none',
                       background: selecionado ? '#f0eefb' : '#fff',
                     }}>
                     {/* Linha do cliente */}
@@ -3645,8 +3660,17 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                           {ag.cliente?.charAt(0)?.toUpperCase() || '?'}
                         </div>
                         <div>
-                          <p className="text-[13px] font-semibold" style={{color:'#1a1a1a'}}>{ag.cliente}</p>
-                          <p className="text-[11px]" style={{color:'#6b7280'}}>{ag.hora} · {ag.servico}</p>
+                          <p className="text-[13px] font-semibold" style={{color:'#1a1a1a'}}>
+                            {ag.cliente}
+                            {ag.procedimentos.length > 1 && (
+                              <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full" style={{background:'#ede9fe',color:'#5b21b6'}}>
+                                {ag.procedimentos.length} procedimentos
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-[11px]" style={{color:'#6b7280'}}>
+                            {ag.procedimentos.map(p => `${p.hora} · ${p.servico}`).join('   •   ')}
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">

@@ -11,7 +11,9 @@ export default function BotaoInicio() {
   return (
     <button onClick={() => router.push('/salon')} aria-label="Ir para a página inicial"
       style={{
-        position: 'fixed', left: 16, bottom: 16, zIndex: 9999,
+        // Canto inferior direito, empilhado acima do botão de chat (bottom:90),
+        // pra não cobrir a coluna de dados (nomes ficam à esquerda).
+        position: 'fixed', right: 24, bottom: 158, zIndex: 9999,
         display: 'flex', alignItems: 'center', gap: 6,
         padding: '9px 16px', borderRadius: 24, border: 'none',
         background: '#5b4fcf', color: '#fff', fontSize: 13, fontWeight: 700,
