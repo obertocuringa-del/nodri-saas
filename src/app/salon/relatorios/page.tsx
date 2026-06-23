@@ -244,6 +244,7 @@ export default function RelatoriosPage() {
   const [freqLoading, setFreqLoading] = useState(false)
   const [analiseResumo, setAnaliseResumo] = useState<any>(null)
   const [analiseDetalhe, setAnaliseDetalhe] = useState<any[]>([])
+  const [verQtd, setVerQtd] = useState(10)  // paginação: quantas linhas mostrar
   const [analiseLoading, setAnaliseLoading] = useState(false)
   // Cross-sell por categoria
   const [csCategoria, setCsCategoria] = useState<string | null>(null)
@@ -767,6 +768,7 @@ export default function RelatoriosPage() {
   async function carregarAnalise(tipo: string) {
     setAnaliseLoading(true)
     setAnaliseDetalhe([])
+    setVerQtd(10)  // toda nova análise começa mostrando 10 (carrega rápido)
     if (tipo === 'diasemana') { setAnaliseLoading(false); return }
     if (tipo === 'crosssell') {
       setCsCategoria(null); setCsServico(null); setCsServicos([]); setCsClientes([])
@@ -805,6 +807,22 @@ export default function RelatoriosPage() {
       }
     } catch { /* silencioso */ }
     setAnaliseLoading(false)
+  }
+
+  // Barra de paginação reutilizável (mostra X de Y + seletor de quantidade)
+  function BarraPag({ total }: { total: number }) {
+    if (total <= 10) return null
+    const btn = (n: number, lbl: string) => (
+      <button key={lbl} onClick={() => setVerQtd(n)}
+        style={{ padding: '4px 12px', borderRadius: 8, border: '1.5px solid #e0ddd8', background: (n >= total ? verQtd >= total : verQtd === n) ? '#5b4fcf' : '#fff', color: (n >= total ? verQtd >= total : verQtd === n) ? '#fff' : '#6b6860', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>{lbl}</button>
+    )
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 4px 4px', flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 12, color: '#6b6860' }}>Exibindo <strong>{Math.min(verQtd, total)}</strong> de {total}</span>
+        {[10, 50, 100, 300].filter(n => n < total).map(n => btn(n, String(n)))}
+        {btn(total, 'Todos')}
+      </div>
+    )
   }
 
   async function selecionarCategoria(cat: string) {
@@ -2379,7 +2397,7 @@ ${lista.map((c:any,i:number)=>{
                               </tr>
                             </thead>
                             <tbody>
-                              {(analiseDetalhe as any[]).map((c: any, i: number) => (
+                              {(analiseDetalhe as any[]).slice(0, verQtd).map((c: any, i: number) => (
                                 <tr key={i} style={{ borderBottom: '1px solid #e8e6e0', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
                                   <td style={{ padding: '9px 12px', fontSize: 12, color: '#1a1a1a', fontWeight: 600 }}>{c.cliente_nome}</td>
                                   <td style={{ padding: '9px 12px', fontSize: 11, color: '#5b4fcf' }}>{c.celular || '—'}</td>
@@ -2395,6 +2413,7 @@ ${lista.map((c:any,i:number)=>{
                             </tbody>
                           </table>
                         </div>
+                        <BarraPag total={analiseDetalhe.length} />
                       </div>
                     )}
 
@@ -2406,7 +2425,7 @@ ${lista.map((c:any,i:number)=>{
                             style={{ background: '#f59e0b', color: '#ffffff', border: 'none', borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>⬇ Exportar Excel</button>
                         </div>
                         <div style={{ background: '#ffffff', border: '1.5px solid #f59e0b30', borderRadius: 12, overflow: 'hidden' }}>
-                          {(analiseDetalhe as any[]).map((c: any, i: number) => (
+                          {(analiseDetalhe as any[]).slice(0, verQtd).map((c: any, i: number) => (
                             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderBottom: '1px solid #e8e6e0' }}>
                               <div style={{ width: 28, height: 28, borderRadius: '50%', background: i === 0 ? '#f59e0b' : i === 1 ? '#767069' : i === 2 ? '#cd7c4f' : '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: i < 3 ? '#f5f4f0' : '#6b6860', flexShrink: 0 }}>#{i+1}</div>
                               <div style={{ flex: 1 }}>
@@ -2421,6 +2440,7 @@ ${lista.map((c:any,i:number)=>{
                             </div>
                           ))}
                         </div>
+                        <BarraPag total={analiseDetalhe.length} />
                       </div>
                     )}
 
@@ -2440,7 +2460,7 @@ ${lista.map((c:any,i:number)=>{
                               ))}
                             </tr></thead>
                             <tbody>
-                              {(analiseDetalhe as any[]).map((c: any, i: number) => (
+                              {(analiseDetalhe as any[]).slice(0, verQtd).map((c: any, i: number) => (
                                 <tr key={i} style={{ borderBottom: '1px solid #e8e6e0', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
                                   <td style={{ padding: '9px 12px', fontSize: 12, color: '#1a1a1a', fontWeight: 600 }}>{c.cliente_nome}</td>
                                   <td style={{ padding: '9px 12px', fontSize: 11, color: '#5b4fcf' }}>{c.celular || '—'}</td>
@@ -2454,6 +2474,7 @@ ${lista.map((c:any,i:number)=>{
                             </tbody>
                           </table>
                         </div>
+                        <BarraPag total={analiseDetalhe.length} />
                       </div>
                     )}
 
@@ -2473,7 +2494,7 @@ ${lista.map((c:any,i:number)=>{
                               ))}
                             </tr></thead>
                             <tbody>
-                              {(analiseDetalhe as any[]).map((c: any, i: number) => (
+                              {(analiseDetalhe as any[]).slice(0, verQtd).map((c: any, i: number) => (
                                 <tr key={i} style={{ borderBottom: '1px solid #e8e6e0', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
                                   <td style={{ padding: '9px 12px', fontSize: 12, color: '#1a1a1a', fontWeight: 600 }}>{c.cliente_nome}</td>
                                   <td style={{ padding: '9px 12px', fontSize: 11, color: '#5b4fcf' }}>{c.celular || '—'}</td>
@@ -2485,6 +2506,7 @@ ${lista.map((c:any,i:number)=>{
                             </tbody>
                           </table>
                         </div>
+                        <BarraPag total={analiseDetalhe.length} />
                       </div>
                     )}
 

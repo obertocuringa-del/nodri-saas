@@ -96,6 +96,18 @@ async function buildPerfis(salaoId: string): Promise<Perfil[]> {
   return perfis
 }
 
+// Cache curto em memória: ao trocar de aba, reaproveita os perfis (evita
+// recalcular tudo do atendimentos_raw a cada clique).
+const _cache = new Map<string, { perfis: Perfil[]; ts: number }>()
+const CACHE_TTL = 60_000
+async function buildPerfisCached(salaoId: string): Promise<Perfil[]> {
+  const c = _cache.get(salaoId)
+  if (c && Date.now() - c.ts < CACHE_TTL) return c.perfis
+  const perfis = await buildPerfis(salaoId)
+  _cache.set(salaoId, { perfis, ts: Date.now() })
+  return perfis
+}
+
 const campos = (p: Perfil) => ({
   cliente_nome: p.cliente_nome, ltv_total: p.ltv_total, total_visitas: p.total_visitas,
   ultima_visita: p.ultima_visita, dias_desde_ultima_visita: p.dias_desde_ultima_visita,
@@ -110,7 +122,7 @@ export async function GET(req: NextRequest) {
   const tipo = searchParams.get('tipo') || 'resumo'
 
   try {
-    const perfis = await buildPerfis(salaoId)
+    const perfis = await buildPerfisCached(salaoId)
 
     if (tipo === 'resumo') {
       if (perfis.length === 0) return NextResponse.json({ vazio: true })
