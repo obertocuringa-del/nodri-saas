@@ -2305,6 +2305,8 @@ export default function PerfilProfissionalPage() {
   const [perdidosDataInicio, setPerdidosDataInicio] = useState(`01/01/${anoAtual - 1}`)
   const [perdidosDataFim, setPerdidosDataFim] = useState(`31/12/${anoAtual}`)
   const [subTabPerdidos, setSubTabPerdidos] = useState<'outro-servico'|'saiu-salao'|'outra-categoria'>('outra-categoria')
+  const [verQtdPerd, setVerQtdPerd] = useState(10)  // paginação da lista de perdidos
+  useEffect(() => { setVerQtdPerd(10) }, [subTabPerdidos])
   const [sortKeyPerdidos, setSortKeyPerdidos] = useState<'ultima_visita_com_prof'|'ultima_visita_salao'|'dias_ausente'|'cliente'>('ultima_visita_com_prof')
   const [sortAscPerdidos, setSortAscPerdidos] = useState(false)
   const [alertasAtivos, setAlertasAtivos] = useState<any[]>([])
@@ -5168,7 +5170,7 @@ ${paresRows?`<table class="tbl"><thead><tr><th>#</th><th>Serviço A</th><th>Serv
                             </tr>
                           </thead>
                           <tbody>
-                            {listaAtual.map((r: any, i: number) => (
+                            {listaAtual.slice(0, verQtdPerd).map((r: any, i: number) => (
                               <tr key={i} className={`border-b border-nodri-border last:border-0 ${i%2===0?'bg-transparent':'bg-nodri-bg/30'}`}>
                                 <td className="px-4 py-2 font-semibold text-nodri-t2">{r.cliente}</td>
                                 <td className="px-4 py-2 text-nodri-t3">{r.ultimo_servico_com_prof || '—'}</td>
@@ -5194,6 +5196,17 @@ ${paresRows?`<table class="tbl"><thead><tr><th>#</th><th>Serviço A</th><th>Serv
                           </tbody>
                         </table>
                       </div>
+                      {listaAtual.length > 10 && (
+                        <div className="flex items-center gap-2 flex-wrap mt-3">
+                          <span className="text-[11px] text-nodri-t3">Exibindo <strong className="text-nodri-t2">{Math.min(verQtdPerd, listaAtual.length)}</strong> de {listaAtual.length}</span>
+                          {[10, 50, 100, 300].filter(n => n < listaAtual.length).map(n => (
+                            <button key={n} onClick={() => setVerQtdPerd(n)}
+                              className={`px-3 py-1 rounded-lg text-[11px] font-semibold border ${verQtdPerd === n ? 'bg-nodri-cyan text-nodri-dark border-nodri-cyan' : 'border-nodri-border text-nodri-t3'}`}>{n}</button>
+                          ))}
+                          <button onClick={() => setVerQtdPerd(listaAtual.length)}
+                            className={`px-3 py-1 rounded-lg text-[11px] font-semibold border ${verQtdPerd >= listaAtual.length ? 'bg-nodri-cyan text-nodri-dark border-nodri-cyan' : 'border-nodri-border text-nodri-t3'}`}>Todos</button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </>
