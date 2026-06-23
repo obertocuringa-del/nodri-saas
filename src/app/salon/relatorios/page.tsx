@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft, Upload, TrendingUp, TrendingDown, Minus, Calendar, FileSpreadsheet, ChevronUp, ChevronDown, ChevronsUpDown, Target, BarChart2, Settings, ChevronRight, Users, AlertTriangle, Star, RefreshCw } from 'lucide-react'
 import toast from 'react-hot-toast'
 import RankingUnificado from '@/components/salon/RankingUnificado'
+import BotaoRecuperacao from '@/components/salon/BotaoRecuperacao'
+import RecuperadosReport from '@/components/salon/RecuperadosReport'
 
 // ─── TIPOS ──────────────────────────────────────────────────────────────────
 interface ResumoMensal { ano: number; mes: number; periodo: string; faturamento_total: number; ticket_medio: number; clientes_atendidos: number; clientes_novos: number; faturamento_servicos: number; faturamento_produtos: number }
@@ -236,7 +238,7 @@ export default function RelatoriosPage() {
   const [profsCadastrados, setProfsCadastrados] = useState<ProfCadastrado[]>([])
   const [aba, setAba] = useState<'geral' | 'metas' | 'profissionais' | 'feedbacks' | 'meta_prof' | 'redistribuicao' | 'analise' | 'ranking'>('geral')
   const [dropdownAberto, setDropdownAberto] = useState(false)
-  const [subAnalise, setSubAnalise] = useState<'risco' | 'perdidos' | 'vip' | 'regular' | 'novo' | 'crosssell' | 'frequencia' | 'diasemana'>('risco')
+  const [subAnalise, setSubAnalise] = useState<'risco' | 'perdidos' | 'vip' | 'regular' | 'novo' | 'crosssell' | 'frequencia' | 'diasemana' | 'recuperados'>('risco')
   const [freqModal, setFreqModal] = useState<{ label: string; min: number; max: number } | null>(null)
   const [freqClientes, setFreqClientes] = useState<any[]>([])
   const [freqLoading, setFreqLoading] = useState(false)
@@ -949,13 +951,14 @@ export default function RelatoriosPage() {
                     { id: 'crosssell', icon: <ChevronRight size={13} />, label: 'Cross-sell', desc: 'Quem pode comprar mais' },
                     { id: 'frequencia', icon: <RefreshCw size={13} />, label: 'Frequência', desc: 'Com que frequência voltam' },
                     { id: 'diasemana', icon: <BarChart2 size={13} />, label: 'Dia da Semana', desc: 'Melhores dias do salão' },
+                    { id: 'recuperados', icon: <RefreshCw size={13} />, label: 'Clientes Recuperados', desc: 'Voltaram após contato' },
                   ].map(item => (
                     <button key={item.id} onClick={() => {
                       setAba('analise')
                       setSubAnalise(item.id as any)
                       setDropdownAberto(false)
-                      carregarAnalise(item.id)
-                    }} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 14px', border: 'none', background: subAnalise === item.id && aba === 'analise' ? '#ffffff' : 'transparent', color: '#1a1a1a', cursor: 'pointer', textAlign: 'left', borderRadius: item.id === 'risco' ? '10px 10px 0 0' : item.id === 'diasemana' ? '0 0 10px 10px' : 0 }}>
+                      if (item.id !== 'recuperados') carregarAnalise(item.id)
+                    }} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 14px', border: 'none', background: subAnalise === item.id && aba === 'analise' ? '#ffffff' : 'transparent', color: '#1a1a1a', cursor: 'pointer', textAlign: 'left', borderRadius: item.id === 'risco' ? '10px 10px 0 0' : item.id === 'recuperados' ? '0 0 10px 10px' : 0 }}>
                       <span style={{ color: '#b45309' }}>{item.icon}</span>
                       <div>
                         <div style={{ fontSize: 12, fontWeight: 600 }}>{item.label}</div>
@@ -2250,14 +2253,16 @@ ${([['Faturamento Total',r1.fat_total,r2.fat_total],['Ticket Médio',r1.ticket,r
                     { id: 'crosssell', label: 'Cross-sell' },
                     { id: 'frequencia', label: 'Frequência' },
                     { id: 'diasemana', label: 'Dia da Semana' },
+                    { id: 'recuperados', label: '💚 Recuperados' },
                   ].map(s => (
-                    <button key={s.id} onClick={() => { setSubAnalise(s.id as any); carregarAnalise(s.id) }}
+                    <button key={s.id} onClick={() => { setSubAnalise(s.id as any); if (s.id !== 'recuperados') carregarAnalise(s.id) }}
                       style={{ padding: '6px 14px', border: 'none', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', background: subAnalise === s.id ? '#f59e0b' : '#ffffff', color: subAnalise === s.id ? '#f5f4f0' : '#767069' }}>
                       {s.label}
                     </button>
                   ))}
                 </div>
 
+                {subAnalise === 'recuperados' ? <RecuperadosReport /> : <>
                 {/* Filtro de data + Imprimir — Mais Relatórios */}
                 <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 10, background: '#f8f7f5', border: '1.5px solid #e0ddd8', borderRadius: 10, padding: '10px 14px', margin: '12px 0' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -2368,7 +2373,7 @@ ${lista.map((c:any,i:number)=>{
                           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <thead>
                               <tr style={{ background: '#faf9f7' }}>
-                                {['Cliente', 'Celular', 'LTV Total', 'Visitas', 'Última Visita', 'Dias Ausente', 'Intervalo Médio', 'Serviços'].map(h => (
+                                {['Cliente', 'Celular', 'LTV Total', 'Visitas', 'Última Visita', 'Dias Ausente', 'Intervalo Médio', 'Serviços', 'Recuperar'].map(h => (
                                   <th key={h} style={{ padding: '8px 12px', fontSize: 11, color: '#6b6860', fontWeight: 600, textAlign: 'left', whiteSpace: 'nowrap' }}>{h}</th>
                                 ))}
                               </tr>
@@ -2384,6 +2389,7 @@ ${lista.map((c:any,i:number)=>{
                                   <td style={{ padding: '9px 12px', fontSize: 12, color: subAnalise === 'risco' ? '#f97316' : '#ef4444', fontWeight: 700 }}>{c.dias_desde_ultima_visita}d</td>
                                   <td style={{ padding: '9px 12px', fontSize: 11, color: '#767069' }}>{c.intervalo_medio_dias ? `${c.intervalo_medio_dias}d` : '—'}</td>
                                   <td style={{ padding: '9px 12px', fontSize: 10, color: '#6b6860', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{(c.servicos_feitos || []).slice(0, 3).join(', ') || '—'}</td>
+                                  <td style={{ padding: '9px 12px', whiteSpace: 'nowrap' }}><BotaoRecuperacao cliente={c} origem={subAnalise} /></td>
                                 </tr>
                               ))}
                             </tbody>
@@ -2643,6 +2649,7 @@ ${lista.map((c:any,i:number)=>{
                     )}
                   </>
                 )}
+                </>}
               </div>
             )}
 
