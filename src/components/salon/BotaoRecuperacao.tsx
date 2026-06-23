@@ -42,10 +42,12 @@ export default function BotaoRecuperacao({ cliente, origem }: { cliente: any; or
 
   function abrir() {
     const primeiro = (cliente.cliente_nome || '').split(' ')[0]
-    // Padrão já abre espaço para feedback (pega quem saiu insatisfeita)
+    const servs = (cliente.servicos_feitos || []).slice(0, 2).filter(Boolean)
+    const servTxt = servs.length ? ` sua ${servs.join(' e ')}` : ' seu horário'
+    // Padrão: acolhe, abre espaço para feedback E oferece o serviço que ela faz
     setMsg(perdida
-      ? `Oi ${primeiro}! Faz um tempinho que não te vejo aqui no salão 💛 Tá tudo bem? Se teve algo que a gente possa melhorar, me conta. Adoraríamos muito te receber de novo!`
-      : `Oi ${primeiro}! Senti sua falta por aqui 💛 Tá tudo certo? Quando quiser, é só me chamar que agendamos seu horário com carinho.`)
+      ? `Oi ${primeiro}! Faz um tempinho que não te vejo aqui no salão 💛 Tá tudo bem? Adoraríamos muito te receber de novo — que tal agendarmos${servTxt}? Se teve algo que a gente possa melhorar, me conta também!`
+      : `Oi ${primeiro}! Senti sua falta por aqui 💛 Que tal agendarmos${servTxt} essa semana? É só me chamar!`)
     setRecepSel(recep[0]?.nome || '')
     setOpen(true)
   }
@@ -56,7 +58,7 @@ export default function BotaoRecuperacao({ cliente, origem }: { cliente: any; or
       ? 'Ela está sem vir há bastante tempo. Seja cuidadosa e acolhedora, SEM cobrar nem pressionar. ABRA espaço para ela dar feedback (pergunte gentilmente se está tudo bem ou se teve algo a melhorar).'
       : 'Ela só atrasou um pouco a próxima visita. Use um tom leve, carinhoso, de lembrete amigável.'
     const ofertaTxt = oferta.trim() ? `Inclua de forma natural esta oferta especial de retorno: "${oferta.trim()}".` : ''
-    const prompt = `Crie uma mensagem curta e calorosa de WhatsApp para reconquistar a cliente ${cliente.cliente_nome} de um salão de beleza. Ela está há ${cliente.dias_desde_ultima_visita || '?'} dias sem vir. Serviços que costuma fazer: ${(cliente.servicos_feitos || []).slice(0, 3).join(', ') || 'diversos'}. ${tom} ${ofertaTxt} Use o primeiro nome dela, no máximo 3 linhas, 1 emoji, e faça um CONVITE GENTIL (não uma cobrança). Responda APENAS o texto da mensagem, sem aspas e sem explicações.`
+    const prompt = `Crie uma mensagem curta e calorosa de WhatsApp para reconquistar a cliente ${cliente.cliente_nome} de um salão de beleza. Ela está há ${cliente.dias_desde_ultima_visita || '?'} dias sem vir. Serviços que costuma fazer: ${(cliente.servicos_feitos || []).slice(0, 3).join(', ') || 'diversos'}. ${tom} ${ofertaTxt} SEMPRE convide-a gentilmente para AGENDAR um dos serviços que ela costuma fazer (cite o serviço pelo nome). Use o primeiro nome dela, no máximo 3 linhas, 1 emoji, e faça um CONVITE GENTIL (não uma cobrança). Responda APENAS o texto da mensagem, sem aspas e sem explicações.`
     try {
       const res = await fetch('/api/ia/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mensagens: [{ role: 'user', content: prompt }], modo: 'gestor' }) })
       if (res.ok && res.body) {
