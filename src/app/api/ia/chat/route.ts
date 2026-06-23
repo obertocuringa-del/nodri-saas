@@ -689,63 +689,64 @@ export async function POST(req: NextRequest) {
 
     const dadosFormatados = formatarDadosSalao(dadosSalao, profissional_id)
 
-    // Busca memória semântica (conversas anteriores similares)
-    let memoriaSemântica = ''
+    // Memória e contexto adicional — buscados EM PARALELO.
+    // IMPORTANTE: o conteúdo entregue à IA é EXATAMENTE o mesmo de antes; só
+    // deixamos de esperar uma busca terminar pra começar a próxima (eram 4
+    // buscas em fila, agora rodam ao mesmo tempo). Nenhum dado é removido.
     const ultimaMensagem = mensagens.filter((m: any) => m.role === 'user').slice(-1)[0]?.content || ''
-    if (ultimaMensagem && config.api_key) {
-      const embeddingQuery = await gerarEmbedding(ultimaMensagem, config.api_key)
-      if (embeddingQuery) {
+
+    const [memoriaSemântica, memoriaEvolutiva, analisePreComputada, memoriaConversa] = await Promise.all([
+      // Memória semântica (embedding + busca por similaridade)
+      (async (): Promise<string> => {
+        if (!ultimaMensagem || !config.api_key) return ''
+        const embeddingQuery = await gerarEmbedding(ultimaMensagem, config.api_key)
+        if (!embeddingQuery) return ''
         const memorias = await buscarMemoriaSemântica(embeddingQuery, salaoId)
-        if (memorias) memoriaSemântica = `\nCONVERSAS ANTERIORES RELEVANTES (memória semântica):\n${memorias}\n`
-      }
-    }
-
-    // Busca memória evolutiva do salão
-    let memoriaEvolutiva = ''
-    const { data: memoriaData } = await supabaseAdmin
-      .from('ia_memoria_usuario')
-      .select('memoria')
-      .eq('salao_id', salaoId)
-      .maybeSingle()
-    if (memoriaData?.memoria) {
-      memoriaEvolutiva = `\n\nPERFIL DO SALÃO (memória evolutiva — contexto do negócio, NÃO assume que quem está conversando é a pessoa mencionada):\n${memoriaData.memoria}\n`
-    }
-
-    // Busca análise pré-computada do profissional (se existir)
-    let analisePreComputada = ''
-    if (profissional_id) {
-      const { data: analise } = await supabaseAdmin
-        .from('ia_analise_profissional')
-        .select('analise, atualizado_em')
-        .eq('salao_id', salaoId)
-        .eq('profissional_id', profissional_id)
-        .maybeSingle()
-      if (analise?.analise) {
+        return memorias ? `\nCONVERSAS ANTERIORES RELEVANTES (memória semântica):\n${memorias}\n` : ''
+      })(),
+      // Memória evolutiva do salão
+      (async (): Promise<string> => {
+        const { data: memoriaData } = await supabaseAdmin
+          .from('ia_memoria_usuario')
+          .select('memoria')
+          .eq('salao_id', salaoId)
+          .maybeSingle()
+        return memoriaData?.memoria
+          ? `\n\nPERFIL DO SALÃO (memória evolutiva — contexto do negócio, NÃO assume que quem está conversando é a pessoa mencionada):\n${memoriaData.memoria}\n`
+          : ''
+      })(),
+      // Análise pré-computada do profissional (se existir)
+      (async (): Promise<string> => {
+        if (!profissional_id) return ''
+        const { data: analise } = await supabaseAdmin
+          .from('ia_analise_profissional')
+          .select('analise, atualizado_em')
+          .eq('salao_id', salaoId)
+          .eq('profissional_id', profissional_id)
+          .maybeSingle()
+        if (!analise?.analise) return ''
         const dataAnalise = new Date(analise.atualizado_em).toLocaleDateString('pt-BR')
-        analisePreComputada = `\n\nCONHECIMENTO PRÉ-CARREGADO (análise gerada em ${dataAnalise}):\n${analise.analise}\n\nIMPORTANTE: Você já tem o diagnóstico completo deste profissional. Use este conhecimento para responder qualquer pergunta instantaneamente sem precisar recalcular.`
-      }
-    }
-
-    // 6. Carregar histórico de conversas anteriores para memória
-    let memoriaConversa = ''
-    if (profissional_id) {
-      const { data: conversasAnteriores } = await supabaseAdmin
-        .from('ia_conversas')
-        .select('mensagens, atualizado_em')
-        .eq('salao_id', salaoId)
-        .eq('profissional_id', profissional_id)
-        .order('atualizado_em', { ascending: false })
-        .limit(3)
-
-      if (conversasAnteriores && conversasAnteriores.length > 1) {
-        const historicoTexto = conversasAnteriores.slice(1).flatMap((c: any) =>
-          (c.mensagens || []).slice(-4).map((m: any) => `${m.role === 'user' ? 'Usuário' : 'IA'}: ${m.content}`)
-        ).join('\n')
-        if (historicoTexto) {
-          memoriaConversa = `\nCONVERSAS ANTERIORES (contexto de memória):\n${historicoTexto}\n`
+        return `\n\nCONHECIMENTO PRÉ-CARREGADO (análise gerada em ${dataAnalise}):\n${analise.analise}\n\nIMPORTANTE: Você já tem o diagnóstico completo deste profissional. Use este conhecimento para responder qualquer pergunta instantaneamente sem precisar recalcular.`
+      })(),
+      // Histórico de conversas anteriores
+      (async (): Promise<string> => {
+        if (!profissional_id) return ''
+        const { data: conversasAnteriores } = await supabaseAdmin
+          .from('ia_conversas')
+          .select('mensagens, atualizado_em')
+          .eq('salao_id', salaoId)
+          .eq('profissional_id', profissional_id)
+          .order('atualizado_em', { ascending: false })
+          .limit(3)
+        if (conversasAnteriores && conversasAnteriores.length > 1) {
+          const historicoTexto = conversasAnteriores.slice(1).flatMap((c: any) =>
+            (c.mensagens || []).slice(-4).map((m: any) => `${m.role === 'user' ? 'Usuário' : 'IA'}: ${m.content}`)
+          ).join('\n')
+          if (historicoTexto) return `\nCONVERSAS ANTERIORES (contexto de memória):\n${historicoTexto}\n`
         }
-      }
-    }
+        return ''
+      })(),
+    ])
 
     // 7. Montar system prompt com PROMPT MESTRE
     const PROMPT_MESTRE = `═══════════════════════════════════════
