@@ -47,7 +47,7 @@ export default function BotaoRecuperacao({ cliente, origem }: { cliente: any; or
     // Padrão: acolhe, abre espaço para feedback E oferece o serviço que ela faz
     setMsg(perdida
       ? `Oi ${primeiro}! Faz um tempinho que não te vejo aqui no salão 💛 Tá tudo bem? Adoraríamos muito te receber de novo — que tal agendarmos${servTxt}? Se teve algo que a gente possa melhorar, me conta também!`
-      : `Oi ${primeiro}! Senti sua falta por aqui 💛 Bora marcar${servTxt}? Consigo um horário ótimo pra você amanhã — que horas fica melhor?`)
+      : `Oi ${primeiro}! Senti sua falta por aqui 💛 Vamos agendar${servTxt}? Consigo um horário ótimo pra você amanhã — que horas fica melhor?`)
     setRecepSel(recep[0]?.nome || '')
     setOpen(true)
   }
