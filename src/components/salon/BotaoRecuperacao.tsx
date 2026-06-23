@@ -21,6 +21,7 @@ export default function BotaoRecuperacao({ cliente, origem }: { cliente: any; or
   const [open, setOpen] = useState(false)
   const [recepSel, setRecepSel] = useState('')
   const [msg, setMsg] = useState('')
+  const [oferta, setOferta] = useState('')
   const [enviando, setEnviando] = useState(false)
   const [loadIA, setLoadIA] = useState(false)
   const janela = useRef(10)
@@ -37,16 +38,25 @@ export default function BotaoRecuperacao({ cliente, origem }: { cliente: any; or
   const travado = travadoAte != null && travadoAte > Date.now()
   const diasRest = travado ? Math.ceil((travadoAte! - Date.now()) / 86400000) : 0
 
+  const perdida = origem === 'perdido' || origem === 'perdidos'
+
   function abrir() {
     const primeiro = (cliente.cliente_nome || '').split(' ')[0]
-    setMsg(`Oi ${primeiro}! Sentimos sua falta aqui no salão 💛 Que tal agendar um horário essa semana?`)
+    // Padrão já abre espaço para feedback (pega quem saiu insatisfeita)
+    setMsg(perdida
+      ? `Oi ${primeiro}! Faz um tempinho que não te vejo aqui no salão 💛 Tá tudo bem? Se teve algo que a gente possa melhorar, me conta. Adoraríamos muito te receber de novo!`
+      : `Oi ${primeiro}! Senti sua falta por aqui 💛 Tá tudo certo? Quando quiser, é só me chamar que agendamos seu horário com carinho.`)
     setRecepSel(recep[0]?.nome || '')
     setOpen(true)
   }
 
   async function gerarIA() {
     setLoadIA(true)
-    const prompt = `Crie uma mensagem curta, calorosa e pessoal de WhatsApp para reconquistar a cliente ${cliente.cliente_nome}, que está há ${cliente.dias_desde_ultima_visita || '?'} dias sem vir ao salão. Serviços que ela costuma fazer: ${(cliente.servicos_feitos || []).slice(0, 3).join(', ') || 'diversos'}. Use o primeiro nome dela, no máximo 3 linhas, 1 emoji, com um convite gentil para agendar. Responda APENAS o texto da mensagem, sem aspas e sem explicações.`
+    const tom = perdida
+      ? 'Ela está sem vir há bastante tempo. Seja cuidadosa e acolhedora, SEM cobrar nem pressionar. ABRA espaço para ela dar feedback (pergunte gentilmente se está tudo bem ou se teve algo a melhorar).'
+      : 'Ela só atrasou um pouco a próxima visita. Use um tom leve, carinhoso, de lembrete amigável.'
+    const ofertaTxt = oferta.trim() ? `Inclua de forma natural esta oferta especial de retorno: "${oferta.trim()}".` : ''
+    const prompt = `Crie uma mensagem curta e calorosa de WhatsApp para reconquistar a cliente ${cliente.cliente_nome} de um salão de beleza. Ela está há ${cliente.dias_desde_ultima_visita || '?'} dias sem vir. Serviços que costuma fazer: ${(cliente.servicos_feitos || []).slice(0, 3).join(', ') || 'diversos'}. ${tom} ${ofertaTxt} Use o primeiro nome dela, no máximo 3 linhas, 1 emoji, e faça um CONVITE GENTIL (não uma cobrança). Responda APENAS o texto da mensagem, sem aspas e sem explicações.`
     try {
       const res = await fetch('/api/ia/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mensagens: [{ role: 'user', content: prompt }], modo: 'gestor' }) })
       if (res.ok && res.body) {
@@ -115,6 +125,10 @@ export default function BotaoRecuperacao({ cliente, origem }: { cliente: any; or
                 {recep.map(r => <option key={r.id} value={r.nome}>{r.nome}</option>)}
               </select>
             )}
+
+            <label style={{ fontSize: 12, fontWeight: 600, color: '#6b6860', display: 'block', marginBottom: 5 }}>Oferta de retorno <span style={{ color: '#9ca3af', fontWeight: 400 }}>(opcional)</span></label>
+            <input value={oferta} onChange={e => setOferta(e.target.value)} placeholder="ex: 10% off, hidratação grátis..."
+              style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13, color: '#1a1a1a', marginBottom: 12 }} />
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
               <label style={{ fontSize: 12, fontWeight: 600, color: '#6b6860' }}>Mensagem (edite à vontade)</label>
