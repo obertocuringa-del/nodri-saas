@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { Loader2, Search, Sparkles, Calculator } from 'lucide-react'
 
 const DIAS = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado']
@@ -32,6 +32,7 @@ export default function DiaSemanaReport() {
   const [pergunta, setPergunta] = useState('')
   const [resposta, setResposta] = useState('')
   const [loadIA, setLoadIA] = useState(false)
+  const [mesExp, setMesExp] = useState<number | null>(null)
 
   async function carregar() {
     setLoading(true); setDados(null); setResposta('')
@@ -172,17 +173,42 @@ export default function DiaSemanaReport() {
               <tbody>
                 {MESES.slice(1).map((nome, idx) => {
                   const mi = idx + 1
-                  const t1 = (dd.porMes[mi] || []).reduce((s: number, x: any) => s + x.valor, 0)
-                  const t2 = (dd2.porMes[mi] || []).reduce((s: number, x: any) => s + x.valor, 0)
+                  const arr1 = (dd.porMes[mi] || []).slice().sort((a: any, b: any) => a.data.localeCompare(b.data))
+                  const arr2 = (dd2.porMes[mi] || []).slice().sort((a: any, b: any) => a.data.localeCompare(b.data))
+                  const t1 = arr1.reduce((s: number, x: any) => s + x.valor, 0)
+                  const t2 = arr2.reduce((s: number, x: any) => s + x.valor, 0)
                   if (t1 === 0 && t2 === 0) return null
                   const dif = t1 - t2
+                  const aberto = mesExp === mi
+                  const colDias = (titulo: string, cor: string, arr: any[]) => (
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: cor, marginBottom: 4 }}>{titulo}</div>
+                      {arr.length ? arr.map((x: any, i: number) => (
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', fontSize: 12, borderBottom: '1px solid #f0eee8' }}>
+                          <span style={{ color: '#767069' }}>{x.data}</span><span style={{ color: '#1a1a1a', fontWeight: 600 }}>{rs(x.valor)}</span>
+                        </div>
+                      )) : <span style={{ fontSize: 11, color: '#9ca3af' }}>—</span>}
+                    </div>
+                  )
                   return (
-                    <tr key={mi} style={{ borderTop: '1px solid #f0eee8' }}>
-                      <td style={{ padding: '7px 12px', color: '#1a1a1a', fontWeight: 600 }}>{nome}</td>
-                      <td style={{ padding: '7px 12px', textAlign: 'right', color: '#5b4fcf', fontWeight: 600 }}>{rs(t1)}</td>
-                      <td style={{ padding: '7px 12px', textAlign: 'right', color: '#0891b2', fontWeight: 600 }}>{rs(t2)}</td>
-                      <td style={{ padding: '7px 12px', textAlign: 'right', color: dif >= 0 ? '#16a34a' : '#A32D2D', fontWeight: 700 }}>{dif >= 0 ? '+' : ''}{rs(dif)}</td>
-                    </tr>
+                    <Fragment key={mi}>
+                      <tr onClick={() => setMesExp(aberto ? null : mi)} style={{ borderTop: '1px solid #f0eee8', cursor: 'pointer', background: aberto ? '#f5f4f0' : 'transparent' }}>
+                        <td style={{ padding: '7px 12px', color: '#1a1a1a', fontWeight: 600 }}>{aberto ? '▾' : '▸'} {nome}</td>
+                        <td style={{ padding: '7px 12px', textAlign: 'right', color: '#5b4fcf', fontWeight: 600 }}>{rs(t1)}</td>
+                        <td style={{ padding: '7px 12px', textAlign: 'right', color: '#0891b2', fontWeight: 600 }}>{rs(t2)}</td>
+                        <td style={{ padding: '7px 12px', textAlign: 'right', color: dif >= 0 ? '#16a34a' : '#A32D2D', fontWeight: 700 }}>{dif >= 0 ? '+' : ''}{rs(dif)}</td>
+                      </tr>
+                      {aberto && (
+                        <tr style={{ background: '#faf9f7' }}>
+                          <td colSpan={4} style={{ padding: '10px 14px' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                              {colDias(DIAS[dia], '#5b4fcf', arr1)}
+                              {colDias(DIAS[dia2], '#0891b2', arr2)}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
                   )
                 })}
               </tbody>
