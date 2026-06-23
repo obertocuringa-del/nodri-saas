@@ -2285,7 +2285,13 @@ export default function PerfilProfissionalPage() {
       }
       grupos[indice[chave]].procedimentos.push({ hora: ag.hora, servico: ag.servico })
     }
-    return grupos
+    // Mantém campos servico/hora (agregados) p/ compatibilidade com o painel e a IA:
+    // servico = todos os procedimentos juntos; hora = todos os horários.
+    return grupos.map(g => ({
+      ...g,
+      servico: g.procedimentos.map(p => p.servico).filter(Boolean).join(', '),
+      hora: g.procedimentos.map(p => p.hora).filter(Boolean).join(' / '),
+    }))
   }, [agendamentos])
   const [agendLoad, setAgendLoad] = useState(false)
   const [agendClienteSel, setAgendClienteSel] = useState<string|null>(null)
