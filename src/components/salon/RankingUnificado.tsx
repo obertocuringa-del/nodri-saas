@@ -88,10 +88,10 @@ export default function RankingUnificado({ ano, mes }: { ano: number; mes: numbe
     for (const p of profs) { (cargos[p.cargo] = cargos[p.cargo] || []).push(p) }
     let out = ''
     for (const [cargo, arr] of Object.entries(cargos)) {
-      out += `<div style="margin-bottom:20px;break-inside:avoid">`
-      out += `<div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:10px;border-bottom:2px solid #5b4fcf;padding-bottom:4px">${cargo} · ${arr.length}</div>`
+      out += `<div style="margin-bottom:20px">`
+      out += `<div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:10px;border-bottom:2px solid #5b4fcf;padding-bottom:4px;break-after:avoid;page-break-after:avoid">${cargo} · ${arr.length}</div>`
       for (const tema of TEMAS) {
-        out += `<div style="margin-bottom:16px;break-inside:avoid;border:1px solid #d8d4e8;border-radius:12px;overflow:hidden">`
+        out += `<div style="margin-bottom:16px;break-inside:avoid;page-break-inside:avoid;border:1px solid #d8d4e8;border-radius:12px;overflow:hidden">`
         out += `<div style="background:#e7e3f3;border-bottom:1px solid #d8d4e8;padding:9px 12px;font-size:13px;font-weight:700;color:#3a3550">${tema.titulo}</div>`
         out += `<div style="padding:10px 12px;background:#ffffff">`
 
@@ -149,11 +149,14 @@ export default function RankingUnificado({ ano, mes }: { ano: number; mes: numbe
     if (!win) return
     win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Ranking Unificado — ${MESES[mesSel]}/${anoSel}</title>
       <style>
-        @page { size: A4 landscape; margin: 9mm; }
+        @page { size: A4 landscape; margin: 8mm; }
         * { font-family: Arial, Helvetica, sans-serif; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        body { margin: 0; padding: 14px; color: #1a1a1a; }
+        html, body { margin: 0; padding: 0; }
+        body { padding: 10px; color: #1a1a1a; }
         h1 { font-size: 18px; margin: 0 0 2px; }
-        .sub { font-size: 12px; color: #6b7280; margin-bottom: 14px; }
+        .sub { font-size: 12px; color: #6b7280; margin-bottom: 12px; }
+        /* Nunca cortar um card de tema no meio: se não couber, desce inteiro */
+        div[style*="border-radius:12px"] { break-inside: avoid !important; page-break-inside: avoid !important; }
       </style></head><body>
       <h1>Ranking Unificado de Profissionais</h1>
       <div class="sub">${MESES[mesSel]}/${anoSel} · ${profs?.length || 0} profissionais · gerado pelo NODRI</div>
