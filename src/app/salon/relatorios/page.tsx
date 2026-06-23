@@ -2618,8 +2618,8 @@ ${lista.map((c:any,i:number)=>{
                       </div>
                     )}
 
-                    {/* DIA DA SEMANA */}
-                    {subAnalise === 'diasemana' && dados && (() => {
+                    {/* DIA DA SEMANA (legado — substituído por DiaSemanaReport; nunca renderiza aqui) */}
+                    {false && dados && (() => {
                       const fatP1 = dados.faturamento_diario.filter(r => {
                         const v = r.ano * 100 + r.mes
                         const [dY, dM] = de1.split('-').map(Number)
@@ -2667,7 +2667,7 @@ ${lista.map((c:any,i:number)=>{
                       )
                     })()}
 
-                    {!analiseLoading && analiseDetalhe.length === 0 && subAnalise !== 'diasemana' && (
+                    {!analiseLoading && analiseDetalhe.length === 0 && (
                       <div style={{ textAlign: 'center', padding: 40, color: '#6b6860', fontSize: 13 }}>Nenhum dado para esta análise ainda.</div>
                     )}
                   </>
