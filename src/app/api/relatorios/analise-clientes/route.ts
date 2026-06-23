@@ -10,25 +10,97 @@ async function getSalaoId() {
   return payload?.salaoId || null
 }
 
-async function fetchCelulares(salaoId: string, nomes: string[]): Promise<Record<string, string>> {
-  if (!nomes.length) return {}
-  const map: Record<string, string> = {}
+// Converte "DD/MM/YYYY" (ou ISO) para timestamp
+function parseBR(s: string): number {
+  if (!s) return 0
+  if (s.includes('/')) { const [d, m, y] = s.split('/'); return new Date(`${y}-${m}-${d}`).getTime() || 0 }
+  return new Date(s).getTime() || 0
+}
+
+type Perfil = {
+  cliente_nome: string; celular: string; ltv_total: number; total_visitas: number
+  primeira_visita: string; ultima_visita: string; dias_desde_ultima_visita: number
+  intervalo_medio_dias: number; servicos_feitos: string[]; status: string; score_rfm: string
+}
+
+// Calcula os perfis de clientes DIRETO do atendimentos_raw (sem tabela cacheada),
+// garantindo que os "Mais Relatórios" fiquem sempre em sincronia com os dados importados.
+async function buildPerfis(salaoId: string): Promise<Perfil[]> {
+  let rows: any[] = []
   let from = 0
   while (true) {
     const { data } = await supabaseAdmin
       .from('atendimentos_raw')
-      .select('cliente, celular')
+      .select('cliente, celular, data_comanda, servico, total, valor')
       .eq('salao_id', salaoId)
-      .in('cliente', nomes.slice(0, 500))
-      .neq('celular', '')
       .range(from, from + 999)
     if (!data || data.length === 0) break
-    for (const c of data) if (c.celular && !map[c.cliente]) map[c.cliente] = c.celular
+    rows = rows.concat(data)
     if (data.length < 1000) break
     from += 1000
   }
-  return map
+
+  const map: Record<string, { datas: Set<string>; ltv: number; servicos: Set<string>; celular: string }> = {}
+  for (const r of rows) {
+    const nome = (r.cliente || '').trim()
+    if (!nome) continue
+    if (!map[nome]) map[nome] = { datas: new Set(), ltv: 0, servicos: new Set(), celular: '' }
+    const m = map[nome]
+    if (r.data_comanda) m.datas.add(r.data_comanda)
+    m.ltv += Number(r.total) || Number(r.valor) || 0
+    if (r.servico) m.servicos.add(String(r.servico).trim())
+    if (r.celular && !m.celular) m.celular = String(r.celular)
+  }
+
+  const now = Date.now()
+  const perfis: Perfil[] = Object.entries(map).map(([nome, m]) => {
+    const datasOrd = [...m.datas].sort((a, b) => parseBR(a) - parseBR(b))
+    const total_visitas = datasOrd.length
+    const ultima = datasOrd[total_visitas - 1] || ''
+    const dias_desde_ultima_visita = ultima ? Math.floor((now - parseBR(ultima)) / 86400000) : 9999
+    let intervalo_medio_dias = 0
+    if (datasOrd.length >= 2) {
+      const diffs: number[] = []
+      for (let i = 1; i < datasOrd.length; i++) {
+        const d = (parseBR(datasOrd[i]) - parseBR(datasOrd[i - 1])) / 86400000
+        if (d > 0) diffs.push(d)
+      }
+      if (diffs.length) intervalo_medio_dias = Math.round(diffs.reduce((a, b) => a + b, 0) / diffs.length)
+    }
+    return {
+      cliente_nome: nome,
+      celular: m.celular,
+      ltv_total: Math.round(m.ltv * 100) / 100,
+      total_visitas,
+      primeira_visita: datasOrd[0] || '',
+      ultima_visita: ultima,
+      dias_desde_ultima_visita,
+      intervalo_medio_dias,
+      servicos_feitos: [...m.servicos],
+      status: '', score_rfm: '',
+    }
+  })
+
+  // Status pela recência (relativo a 45/90 dias)
+  for (const p of perfis) {
+    p.status = p.dias_desde_ultima_visita > 90 ? 'perdido' : p.dias_desde_ultima_visita > 45 ? 'risco' : 'ativo'
+  }
+  // RFM: novo = 1 visita; vip = top 15% por LTV; regular = recorrente
+  const ltvsOrd = perfis.map(p => p.ltv_total).sort((a, b) => b - a)
+  const vipThreshold = ltvsOrd.length ? (ltvsOrd[Math.floor(ltvsOrd.length * 0.15)] || ltvsOrd[0] || 0) : 0
+  for (const p of perfis) {
+    if (p.total_visitas <= 1) p.score_rfm = 'novo'
+    else if (p.ltv_total > 0 && p.ltv_total >= vipThreshold) p.score_rfm = 'vip'
+    else p.score_rfm = 'regular'
+  }
+  return perfis
 }
+
+const campos = (p: Perfil) => ({
+  cliente_nome: p.cliente_nome, ltv_total: p.ltv_total, total_visitas: p.total_visitas,
+  ultima_visita: p.ultima_visita, dias_desde_ultima_visita: p.dias_desde_ultima_visita,
+  intervalo_medio_dias: p.intervalo_medio_dias, servicos_feitos: p.servicos_feitos, celular: p.celular,
+})
 
 export async function GET(req: NextRequest) {
   const salaoId = await getSalaoId()
@@ -38,144 +110,41 @@ export async function GET(req: NextRequest) {
   const tipo = searchParams.get('tipo') || 'resumo'
 
   try {
-    // ── Resumo geral ─────────────────────────────────────────────────────
+    const perfis = await buildPerfis(salaoId)
+
     if (tipo === 'resumo') {
-      let perfis: any[] = []
-      let from = 0
-      while (true) {
-        const { data } = await supabaseAdmin
-          .from('clientes_perfil').select('status, score_rfm, ltv_total, total_visitas, dias_desde_ultima_visita')
-          .eq('salao_id', salaoId).range(from, from + 999)
-        if (!data || data.length === 0) break
-        perfis = perfis.concat(data)
-        if (data.length < 1000) break
-        from += 1000
-      }
       if (perfis.length === 0) return NextResponse.json({ vazio: true })
-      const total    = perfis.length
-      const vip      = perfis.filter(p => p.score_rfm === 'vip').length
+      const total = perfis.length
+      const vip = perfis.filter(p => p.score_rfm === 'vip').length
       const em_risco = perfis.filter(p => p.status === 'risco').length
       const perdidos = perfis.filter(p => p.status === 'perdido').length
-      const novos    = perfis.filter(p => p.score_rfm === 'novo').length
-      const ativos   = perfis.filter(p => p.status === 'ativo').length
-      const ltv_medio = Math.round(perfis.reduce((s, p) => s + (p.ltv_total || 0), 0) / total)
-      const ltv_total = Math.round(perfis.reduce((s, p) => s + (p.ltv_total || 0), 0))
-      const ltv_total_perdidos = Math.round(perfis.filter(p => p.status === 'perdido').reduce((s, p) => s + (p.ltv_total || 0), 0))
+      const novos = perfis.filter(p => p.score_rfm === 'novo').length
+      const ativos = perfis.filter(p => p.status === 'ativo').length
+      const ltv_total = Math.round(perfis.reduce((s, p) => s + p.ltv_total, 0))
+      const ltv_medio = Math.round(ltv_total / total)
+      const ltv_total_perdidos = Math.round(perfis.filter(p => p.status === 'perdido').reduce((s, p) => s + p.ltv_total, 0))
       return NextResponse.json({ total, vip, em_risco, perdidos, novos, ativos, ltv_medio, ltv_total, ltv_total_perdidos })
     }
 
-    // ── Em Risco ─────────────────────────────────────────────────────────
-    if (tipo === 'risco') {
-      const { data } = await supabaseAdmin
-        .from('clientes_perfil')
-        .select('cliente_nome, ltv_total, total_visitas, ultima_visita, dias_desde_ultima_visita, intervalo_medio_dias, score_rfm, servicos_feitos')
-        .eq('salao_id', salaoId)
-        .eq('status', 'risco')
-        .order('ltv_total', { ascending: false })
-      const lista = data || []
-      const cel = await fetchCelulares(salaoId, lista.map(d => d.cliente_nome))
-      return NextResponse.json(lista.map(d => ({ ...d, celular: cel[d.cliente_nome] || '' })))
-    }
+    if (tipo === 'risco')
+      return NextResponse.json(perfis.filter(p => p.status === 'risco').sort((a, b) => b.ltv_total - a.ltv_total).map(campos))
+    if (tipo === 'perdidos')
+      return NextResponse.json(perfis.filter(p => p.status === 'perdido').sort((a, b) => b.ltv_total - a.ltv_total).map(campos))
+    if (tipo === 'vip')
+      return NextResponse.json(perfis.filter(p => p.score_rfm === 'vip').sort((a, b) => b.ltv_total - a.ltv_total).map(campos))
+    if (tipo === 'regular')
+      return NextResponse.json(perfis.filter(p => p.score_rfm === 'regular').sort((a, b) => b.ltv_total - a.ltv_total).map(campos))
+    if (tipo === 'novo')
+      return NextResponse.json(perfis.filter(p => p.score_rfm === 'novo').sort((a, b) => b.ltv_total - a.ltv_total).map(campos))
 
-    // ── Perdidos ─────────────────────────────────────────────────────────
-    if (tipo === 'perdidos') {
-      const { data } = await supabaseAdmin
-        .from('clientes_perfil')
-        .select('cliente_nome, ltv_total, total_visitas, ultima_visita, dias_desde_ultima_visita, intervalo_medio_dias, servicos_feitos')
-        .eq('salao_id', salaoId)
-        .eq('status', 'perdido')
-        .order('ltv_total', { ascending: false })
-      const lista = data || []
-      const cel = await fetchCelulares(salaoId, lista.map(d => d.cliente_nome))
-      return NextResponse.json(lista.map(d => ({ ...d, celular: cel[d.cliente_nome] || '' })))
-    }
-
-    // ── VIP ───────────────────────────────────────────────────────────────
-    if (tipo === 'vip') {
-      const { data } = await supabaseAdmin
-        .from('clientes_perfil')
-        .select('cliente_nome, ltv_total, total_visitas, ultima_visita, intervalo_medio_dias, servicos_feitos')
-        .eq('salao_id', salaoId)
-        .eq('score_rfm', 'vip')
-        .order('ltv_total', { ascending: false })
-      const lista = data || []
-      const cel = await fetchCelulares(salaoId, lista.map(d => d.cliente_nome))
-      return NextResponse.json(lista.map(d => ({ ...d, celular: cel[d.cliente_nome] || '' })))
-    }
-
-    // ── Regular ───────────────────────────────────────────────────────────
-    if (tipo === 'regular') {
-      let lista: any[] = []
-      let from = 0
-      while (true) {
-        const { data } = await supabaseAdmin
-          .from('clientes_perfil')
-          .select('cliente_nome, ltv_total, total_visitas, ultima_visita, intervalo_medio_dias, servicos_feitos')
-          .eq('salao_id', salaoId)
-          .eq('score_rfm', 'regular')
-          .order('ltv_total', { ascending: false })
-          .range(from, from + 999)
-        if (!data || data.length === 0) break
-        lista = lista.concat(data)
-        if (data.length < 1000) break
-        from += 1000
-      }
-      const cel = await fetchCelulares(salaoId, lista.map(d => d.cliente_nome))
-      return NextResponse.json(lista.map(d => ({ ...d, celular: cel[d.cliente_nome] || '' })))
-    }
-
-    // ── Novo ──────────────────────────────────────────────────────────────
-    if (tipo === 'novo') {
-      let lista: any[] = []
-      let from = 0
-      while (true) {
-        const { data } = await supabaseAdmin
-          .from('clientes_perfil')
-          .select('cliente_nome, ltv_total, total_visitas, ultima_visita, intervalo_medio_dias, servicos_feitos')
-          .eq('salao_id', salaoId)
-          .eq('score_rfm', 'novo')
-          .order('ltv_total', { ascending: false })
-          .range(from, from + 999)
-        if (!data || data.length === 0) break
-        lista = lista.concat(data)
-        if (data.length < 1000) break
-        from += 1000
-      }
-      const cel = await fetchCelulares(salaoId, lista.map(d => d.cliente_nome))
-      return NextResponse.json(lista.map(d => ({ ...d, celular: cel[d.cliente_nome] || '' })))
-    }
-
-    // ── RFM distribution ─────────────────────────────────────────────────
     if (tipo === 'rfm') {
-      let rfmData: any[] = []
-      let from = 0
-      while (true) {
-        const { data } = await supabaseAdmin
-          .from('clientes_perfil').select('score_rfm, status')
-          .eq('salao_id', salaoId).range(from, from + 999)
-        if (!data || data.length === 0) break
-        rfmData = rfmData.concat(data)
-        if (data.length < 1000) break
-        from += 1000
-      }
       const contagem: Record<string, number> = {}
-      for (const p of rfmData) contagem[p.score_rfm] = (contagem[p.score_rfm] || 0) + 1
+      for (const p of perfis) contagem[p.score_rfm] = (contagem[p.score_rfm] || 0) + 1
       return NextResponse.json(contagem)
     }
 
-    // ── Frequência: distribuição por faixa ───────────────────────────────
     if (tipo === 'frequencia') {
-      let freqData: any[] = []
-      let from = 0
-      while (true) {
-        const { data } = await supabaseAdmin
-          .from('clientes_perfil').select('intervalo_medio_dias, total_visitas, score_rfm')
-          .eq('salao_id', salaoId).neq('intervalo_medio_dias', 0).range(from, from + 999)
-        if (!data || data.length === 0) break
-        freqData = freqData.concat(data)
-        if (data.length < 1000) break
-        from += 1000
-      }
+      const freqData = perfis.filter(p => p.intervalo_medio_dias > 0)
       const faixas = [
         { label: '7-15 dias', min: 7, max: 15, count: 0 },
         { label: '16-30 dias', min: 16, max: 30, count: 0 },
@@ -192,51 +161,26 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(faixas.map(f => ({ ...f, pct: total > 0 ? Math.round(f.count / total * 100) : 0 })))
     }
 
-    // ── Frequência: clientes de uma faixa (para modal) ───────────────────
     if (tipo === 'frequencia-clientes') {
       const min = parseInt(searchParams.get('min') || '0')
       const max = parseInt(searchParams.get('max') || '9999')
-      let lista: any[] = []
-      let from = 0
-      while (true) {
-        const { data } = await supabaseAdmin
-          .from('clientes_perfil')
-          .select('cliente_nome, ltv_total, total_visitas, ultima_visita, intervalo_medio_dias, servicos_feitos')
-          .eq('salao_id', salaoId)
-          .gte('intervalo_medio_dias', min)
-          .lte('intervalo_medio_dias', max)
-          .order('ltv_total', { ascending: false })
-          .range(from, from + 999)
-        if (!data || data.length === 0) break
-        lista = lista.concat(data)
-        if (data.length < 1000) break
-        from += 1000
-      }
-      const cel = await fetchCelulares(salaoId, lista.map(d => d.cliente_nome))
-      return NextResponse.json(lista.map(d => ({ ...d, celular: cel[d.cliente_nome] || '' })))
+      return NextResponse.json(perfis
+        .filter(p => p.intervalo_medio_dias >= min && p.intervalo_medio_dias <= max)
+        .sort((a, b) => b.ltv_total - a.ltv_total).map(campos))
     }
 
-    // ── crosssell (legado) ────────────────────────────────────────────────
     if (tipo === 'crosssell') {
-      const { data } = await supabaseAdmin
-        .from('clientes_perfil')
-        .select('cliente_nome, servicos_feitos, ltv_total, total_visitas')
-        .eq('salao_id', salaoId)
-        .eq('status', 'ativo')
-        .order('ltv_total', { ascending: false })
-        .limit(200)
-      if (!data || data.length === 0) return NextResponse.json([])
+      const ativos = perfis.filter(p => p.status === 'ativo').sort((a, b) => b.ltv_total - a.ltv_total).slice(0, 200)
+      if (!ativos.length) return NextResponse.json([])
       const freqServico: Record<string, number> = {}
-      for (const c of data)
-        for (const s of (c.servicos_feitos || []))
-          freqServico[s] = (freqServico[s] || 0) + 1
+      for (const c of ativos) for (const s of c.servicos_feitos) freqServico[s] = (freqServico[s] || 0) + 1
       const servicosOrdenados = Object.entries(freqServico).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([s]) => s)
       const oportunidades: any[] = []
       for (const sA of servicosOrdenados.slice(0, 5)) {
         for (const sB of servicosOrdenados.slice(0, 5)) {
           if (sA === sB) continue
-          const fazA = data.filter(c => (c.servicos_feitos || []).includes(sA))
-          const naoFazB = fazA.filter(c => !(c.servicos_feitos || []).includes(sB))
+          const fazA = ativos.filter(c => c.servicos_feitos.includes(sA))
+          const naoFazB = fazA.filter(c => !c.servicos_feitos.includes(sB))
           if (naoFazB.length >= 3)
             oportunidades.push({ servico_tem: sA, servico_nao_tem: sB, clientes: naoFazB.length, clientes_lista: naoFazB.slice(0, 5).map(c => c.cliente_nome) })
         }
@@ -244,37 +188,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(oportunidades.sort((a, b) => b.clientes - a.clientes).slice(0, 10))
     }
 
-    // ── Frequência: distribuição ─────────────────────────────────────────
-    if (tipo === 'frequencia') {
-      let freqData: any[] = []
-      let from = 0
-      while (true) {
-        const { data } = await supabaseAdmin
-          .from('clientes_perfil').select('intervalo_medio_dias, total_visitas, score_rfm')
-          .eq('salao_id', salaoId).neq('intervalo_medio_dias', 0).range(from, from + 999)
-        if (!data || data.length === 0) break
-        freqData = freqData.concat(data)
-        if (data.length < 1000) break
-        from += 1000
-      }
-      const faixas = [
-        { label: '7-15 dias', min: 7, max: 15, count: 0 },
-        { label: '16-30 dias', min: 16, max: 30, count: 0 },
-        { label: '31-45 dias', min: 31, max: 45, count: 0 },
-        { label: '46-60 dias', min: 46, max: 60, count: 0 },
-        { label: '61-90 dias', min: 61, max: 90, count: 0 },
-        { label: '+90 dias', min: 91, max: 9999, count: 0 },
-      ]
-      for (const c of freqData) {
-        const f = faixas.find(fx => c.intervalo_medio_dias >= fx.min && c.intervalo_medio_dias <= fx.max)
-        if (f) f.count++
-      }
-      const total = freqData.length
-      return NextResponse.json(faixas.map(f => ({ ...f, pct: total > 0 ? Math.round(f.count / total * 100) : 0 })))
-    }
-
     return NextResponse.json({ error: 'Tipo inválido' }, { status: 400 })
-
   } catch (err: any) {
     return NextResponse.json({ error: String(err?.message || err) }, { status: 500 })
   }
