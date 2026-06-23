@@ -33,6 +33,8 @@ export default function DiaSemanaReport() {
   const [resposta, setResposta] = useState('')
   const [loadIA, setLoadIA] = useState(false)
   const [mesExp, setMesExp] = useState<number | null>(null)
+  const [diaFechar, setDiaFechar] = useState(0)
+  const [redistPct, setRedistPct] = useState(60)
 
   async function carregar() {
     setLoading(true); setDados(null); setResposta('')
@@ -63,7 +65,7 @@ export default function DiaSemanaReport() {
     setLoadIA(true); setResposta('')
     const det = Object.entries(dadosDoDia(dia).porMes).sort((a, b) => +a[0] - +b[0])
       .map(([m, arr]: any) => `${MESES[+m]}: ${rs(arr.reduce((s: number, x: any) => s + x.valor, 0))}`).join(' · ')
-    const prompt = `Você é a NODRI IA, consultora de gestão de salão de beleza. Use SOMENTE os dados abaixo (faturamento BRUTO por dia da semana, ano ${ano}).\n\nResumo por dia da semana:\n${resumoSemana()}\n\nDetalhe de ${DIAS[dia]} por mês: ${det}\n\nPERGUNTA: ${texto}\n\nSe for uma SIMULAÇÃO (fechar um dia, transferir X% dos clientes para outro dia, abrir em um novo dia), CALCULE o impacto com NÚMEROS em R$: a perda/ganho bruto direto, e SEMPRE apresente também o cenário de redistribuição (ex: "se 60% dos clientes migrarem para outros dias, a perda real cai para R$X"). Seja direto, prático e curto, com valores reais.`
+    const prompt = `Você é a NODRI IA, consultora de gestão de salão de beleza.\n\nDADOS JÁ CALCULADOS PELO SISTEMA (faturamento BRUTO por dia da semana, ano ${ano}):\n${resumoSemana()}\n\nDetalhe de ${DIAS[dia]} por mês: ${det}\n\nREGRA ABSOLUTA: use EXCLUSIVAMENTE os números acima. NUNCA invente, recalcule ou apresente valores diferentes dos fornecidos. NÃO monte tabelas de números — eles já estão na tela. Se precisar de um número que não está nos dados, diga que não tem. Seu papel é apenas INTERPRETAR e RECOMENDAR (texto), não calcular.\n\nPERGUNTA DO GESTOR: ${texto}\n\nResponda curto, direto e prático, focado no PARECER e nas AÇÕES.`
     try {
       const res = await fetch('/api/ia/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mensagens: [{ role: 'user', content: prompt }], modo: 'gestor' }) })
       if (res.ok && res.body) {
@@ -217,25 +219,48 @@ export default function DiaSemanaReport() {
         </>
       )}
 
-      {/* SIMULADOR + IA */}
+      {/* SIMULADOR DE FECHAMENTO — calculado pelo sistema */}
+      {dados && dados.length > 0 && (() => {
+        const totFechar = dadosDoDia(diaFechar).total
+        const perdaReal = totFechar * (1 - redistPct / 100)
+        const recuperado = totFechar - perdaReal
+        return (
+          <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 16, marginBottom: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: '#1a1a1a', marginBottom: 12, flexWrap: 'wrap' }}>
+              <Calculator size={15} color="#5b4fcf" /> Simulador de Fechamento
+              <span style={{ fontSize: 10, color: '#15803d', fontWeight: 600, background: '#dcfce7', borderRadius: 6, padding: '2px 8px' }}>números calculados pelo sistema</span>
+            </div>
+            <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'end', marginBottom: 14 }}>
+              <div><div style={{ fontSize: 11, color: '#6b6860', marginBottom: 4 }}>Fechar qual dia?</div>
+                <select value={diaFechar} onChange={e => setDiaFechar(+e.target.value)} style={selStyle}>{DIAS.map((d, i) => <option key={i} value={i}>{d}</option>)}</select></div>
+              <div style={{ flex: '1 1 220px' }}>
+                <div style={{ fontSize: 11, color: '#6b6860', marginBottom: 4 }}>Quantos clientes migram p/ outros dias? <strong style={{ color: '#5b4fcf' }}>{redistPct}%</strong></div>
+                <input type="range" min={0} max={100} step={5} value={redistPct} onChange={e => setRedistPct(+e.target.value)} style={{ width: '100%' }} />
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+              {cardMetric(`Perda bruta ao fechar ${DIAS[diaFechar].toLowerCase()}`, rs(totFechar), '#A32D2D')}
+              {cardMetric(`Recuperado com ${redistPct}% migrando`, rs(recuperado), '#16a34a')}
+              {cardMetric('Perda REAL estimada', rs(perdaReal), '#d97706')}
+            </div>
+            <button onClick={() => perguntarIA(`O sistema calculou: fechar as ${DIAS[diaFechar].toLowerCase()}s no ano ${ano} dá perda BRUTA de ${rs(totFechar)}. Com ${redistPct}% dos clientes migrando para outros dias, a perda REAL fica em ${rs(perdaReal)}. Dê um parecer gerencial curto: vale a pena? riscos? como facilitar a migração? Use SOMENTE esses números.`)} disabled={loadIA}
+              style={{ marginTop: 14, padding: '9px 18px', borderRadius: 8, border: 'none', background: 'linear-gradient(135deg,#5b4fcf,#f43f8e)', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              {loadIA ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />} Pedir parecer da IA
+            </button>
+          </div>
+        )
+      })()}
+
+      {/* PERGUNTE À IA (parecer, não números) */}
       {dados && dados.length > 0 && (
         <div style={{ background: '#f0eefb', border: '1.5px solid #c4bef0', borderRadius: 14, padding: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: '#5b4fcf', marginBottom: 10 }}>
-            <Calculator size={15} /> Simulador Operacional + Pergunte à IA
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: '#5b4fcf', marginBottom: 4 }}>
+            <Sparkles size={15} /> Pergunte à IA
           </div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
-            {[
-              `Se eu fechar as ${DIAS[dia].toLowerCase()}s, qual o impacto no ano?`,
-              `Se eu transferir 30% dos clientes da ${DIAS[dia].toLowerCase()} para outro dia, qual o impacto?`,
-              `Comparando os dias, vale a pena reforçar a equipe em algum dia específico?`,
-            ].map((q, i) => (
-              <button key={i} onClick={() => perguntarIA(q)} disabled={loadIA}
-                style={{ padding: '6px 12px', borderRadius: 8, border: '1.5px solid #c4bef0', background: '#fff', color: '#5b4fcf', fontSize: 11, fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}>{q}</button>
-            ))}
-          </div>
+          <p style={{ fontSize: 11, color: '#6b6860', margin: '0 0 10px' }}>A IA usa os números já calculados pelo sistema e responde só o parecer (não inventa valores).</p>
           <div style={{ display: 'flex', gap: 8 }}>
             <input value={pergunta} onChange={e => setPergunta(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') perguntarIA(pergunta) }}
-              placeholder="ex: vale a pena abrir aos domingos?" style={{ flex: 1, padding: '9px 12px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13, color: '#1a1a1a' }} />
+              placeholder="ex: vale a pena abrir aos domingos? como atrair mais nas terças?" style={{ flex: 1, padding: '9px 12px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13, color: '#1a1a1a' }} />
             <button onClick={() => perguntarIA(pergunta)} disabled={loadIA}
               style={{ padding: '9px 18px', borderRadius: 8, border: 'none', background: '#5b4fcf', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
               {loadIA ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />} Perguntar
