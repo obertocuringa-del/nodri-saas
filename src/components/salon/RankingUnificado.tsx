@@ -34,7 +34,6 @@ const TEMAS: Tema[] = [
   { titulo: '👑 Dependência', cols: [
     { k: 'pct_salao', t: '% do salão', fmt: (v) => n1(v) + '%' },
     { k: 'fat_gerado', t: 'Faturam. gerado (valor cheio)', fmt: rs },
-    { k: 'clientes_fieis', t: 'Clientes c/ preferência', fmt: n1 },
   ]},
   { titulo: '❤️ Fidelização', cols: [
     { k: 'clientes_perdidos', t: 'Atendeu e não fidelizou', low: true, fmt: n1 },
