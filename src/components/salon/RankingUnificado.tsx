@@ -33,11 +33,11 @@ const TEMAS: Tema[] = [
   { titulo: '⚠️ Ocorrências', dynamic: 'ocorr' },
   { titulo: '👑 Dependência', cols: [
     { k: 'pct_salao', t: '% do salão', fmt: (v) => n1(v) + '%' },
-    { k: 'fat_gerado', t: 'Faturam. gerado (bruto)', fmt: rs },
-    { k: 'clientes_fieis', t: 'Clientes fiéis', fmt: n1 },
+    { k: 'fat_gerado', t: 'Faturam. gerado (valor cheio)', fmt: rs },
+    { k: 'clientes_fieis', t: 'Clientes c/ preferência', fmt: n1 },
   ]},
   { titulo: '❤️ Fidelização', cols: [
-    { k: 'clientes_perdidos', t: 'Perdidos', low: true, fmt: n1 },
+    { k: 'clientes_perdidos', t: 'Atendeu e não fidelizou', low: true, fmt: n1 },
   ]},
   { titulo: '🎯 Meta', cols: [
     { k: 'meta_pct', t: '% atingimento', fmt: (v) => n1(v) + '%' },
