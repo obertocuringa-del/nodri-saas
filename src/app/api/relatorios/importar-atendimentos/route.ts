@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
+import { limparCacheAtendimentos } from '@/lib/atendimentosCache'
 
 async function getSalaoId() {
   const token = cookies().get('nodri_token')?.value
@@ -51,6 +52,9 @@ export async function POST(req: NextRequest) {
       }))
       await supabaseAdmin.from('atendimentos_raw').insert(chunk)
     }
+
+    // Dados brutos mudaram → invalida o cache de leitura.
+    limparCacheAtendimentos(salaoId)
 
     return NextResponse.json({ ok: true, salvos: rows?.length || 0, ultimo_chunk })
   } catch (err: any) {

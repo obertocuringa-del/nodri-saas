@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
+import { getAtendimentosRaw } from '@/lib/atendimentosCache'
 
 // Configuração da recuperação de clientes
 const BONUS_PCT = 5      // % do valor da visita de retorno que vira bônus da recepção
@@ -48,20 +49,8 @@ async function carregarContatos(salaoId: string) {
 }
 
 async function carregarAtendimentos(salaoId: string) {
-  let rows: any[] = []
-  let from = 0
-  while (true) {
-    const { data } = await supabaseAdmin
-      .from('atendimentos_raw')
-      .select('cliente, data_comanda, total, valor')
-      .eq('salao_id', salaoId)
-      .range(from, from + 999)
-    if (!data || data.length === 0) break
-    rows = rows.concat(data)
-    if (data.length < 1000) break
-    from += 1000
-  }
-  return rows
+  // Cache compartilhado: relê o banco só quando os dados mudam.
+  return getAtendimentosRaw(salaoId)
 }
 
 export async function GET(req: NextRequest) {

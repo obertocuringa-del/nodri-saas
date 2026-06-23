@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
+import { getAtendimentosRaw } from '@/lib/atendimentosCache'
 
 async function getSalaoId() {
   const token = cookies().get('nodri_token')?.value
@@ -70,19 +71,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   )
 
   // Busca atendimentos deste profissional para detectar clientes ausentes
-  let rows: any[] = []
-  let from = 0
-  while (true) {
-    const { data } = await supabaseAdmin
-      .from('atendimentos_raw')
-      .select('cliente, celular, profissional, data_comanda, servico')
-      .eq('salao_id', salaoId)
-      .range(from, from + 999)
-    if (!data || data.length === 0) break
-    rows = rows.concat(data)
-    if (data.length < 1000) break
-    from += 1000
-  }
+  // (cache compartilhado: relê o banco só quando os dados mudam)
+  const rows = await getAtendimentosRaw(salaoId)
 
   // Por cliente: última visita com este prof e última visita geral
   const clienteComProf: Record<string, { ultimaData: Date; servico: string; celular: string }> = {}

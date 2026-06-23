@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
-import { supabaseAdmin } from '@/lib/supabase'
+import { getAtendimentosRaw } from '@/lib/atendimentosCache'
 
 async function getSalaoId() {
   const token = cookies().get('nodri_token')?.value
@@ -22,21 +22,8 @@ function normTel(t: string): string {
 }
 
 async function buscarTodosRaw(salaoId: string) {
-  let rows: any[] = []
-  let from = 0
-  while (true) {
-    const { data } = await supabaseAdmin
-      .from('atendimentos_raw')
-      .select('cliente, servico, categoria, data_comanda, celular, telefone, ano, mes')
-      .eq('salao_id', salaoId)
-      .order('ano').order('mes').order('cliente')
-      .range(from, from + 999)
-    if (!data || data.length === 0) break
-    rows = rows.concat(data)
-    if (data.length < 1000) break
-    from += 1000
-  }
-  return rows
+  // Cache compartilhado: relê o banco só quando os dados mudam.
+  return getAtendimentosRaw(salaoId)
 }
 
 // Constrói mapa telefone → nome canônico

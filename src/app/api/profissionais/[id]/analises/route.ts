@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
+import { getAtendimentosRaw } from '@/lib/atendimentosCache'
 
 async function getSalaoId() {
   const token = cookies().get('nodri_token')?.value
@@ -108,19 +109,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     let clientesFieis = 0
     const detalhesFieis: Array<{ cliente: string; total: number; comProf: number; pct: number; ultimaVisita: string }> = []
     try {
-      let rawTodos: any[] = []
-      let from = 0
-      while (true) {
-        const { data } = await supabaseAdmin
-          .from('atendimentos_raw')
-          .select('cliente, profissional, data_comanda')
-          .eq('salao_id', salaoId)
-          .range(from, from + 999)
-        if (!data || data.length === 0) break
-        rawTodos = rawTodos.concat(data)
-        if (data.length < 1000) break
-        from += 1000
-      }
+      // Cache compartilhado: relê o banco só quando os dados mudam.
+      const rawTodos = await getAtendimentosRaw(salaoId)
 
       const hoje = new Date()
       // Converte data_comanda (DD/MM/YYYY ou YYYY-MM-DD) para Date

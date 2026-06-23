@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
+import { getAtendimentosRaw } from '@/lib/atendimentosCache'
 
 async function getSalaoId() {
   const token = cookies().get('nodri_token')?.value
@@ -150,31 +151,15 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
   const comissaoMedia = totalQtdComissao > 0 ? totalComissaoPonderada / totalQtdComissao : 0
 
-  // Busca atendimentos filtrados pelo período (ano/mes são numéricos no banco)
-  let rows: any[] = []
-  let from = 0
-  while (true) {
-    let q = supabaseAdmin
-      .from('atendimentos_raw')
-      .select('cliente, celular, profissional, data_comanda, servico, categoria')
-      .eq('salao_id', salaoId)
-      .order('ano').order('mes').order('data_comanda')
-      .range(from, from + 999)
-    if (inicio) q = q.gte('ano', inicio.ano)
-    if (fim)    q = q.lte('ano', fim.ano)
-    const { data } = await q
-    if (!data || data.length === 0) break
-    // Filtra meses exatos nas bordas
-    const filtrado = data.filter((r: any) => {
-      const a = Number(r.ano), m = Number(r.mes)
-      if (inicio && a === inicio.ano && m < inicio.mes) return false
-      if (fim && a === fim.ano && m > fim.mes) return false
-      return true
-    })
-    rows = rows.concat(filtrado)
-    if (data.length < 1000) break
-    from += 1000
-  }
+  // Busca atendimentos do salão (cache compartilhado) e filtra o período em memória.
+  // Equivale ao filtro antigo: ano dentro de [inicio, fim] com precisão de mês nas bordas.
+  const todosRaw = await getAtendimentosRaw(salaoId)
+  const rows = todosRaw.filter((r: any) => {
+    const a = Number(r.ano), m = Number(r.mes)
+    if (inicio && (a < inicio.ano || (a === inicio.ano && m < inicio.mes))) return false
+    if (fim && (a > fim.ano || (a === fim.ano && m > fim.mes))) return false
+    return true
+  })
 
   const hoje = new Date()
   const DIAS_SAIU = 90
