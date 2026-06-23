@@ -113,9 +113,17 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 
   // ── Dias sem fazer cada serviço (top 5) ─────────────────────────────────
+  // IMPORTANTE: comparar as datas DE VERDADE (timestamp), não confiar na ordem
+  // do array — data_comanda é "DD/MM/YYYY" e ordena errado como texto.
+  // Guardamos sempre a data MAIS RECENTE de cada serviço.
   const ultima_vez_servico: Record<string, string> = {}
   for (const a of atendimentos) {
-    if (a.servico && a.data_comanda) ultima_vez_servico[a.servico] = a.data_comanda
+    if (a.servico && a.data_comanda) {
+      const anterior = ultima_vez_servico[a.servico]
+      if (!anterior || tsData(a.data_comanda) > tsData(anterior)) {
+        ultima_vez_servico[a.servico] = a.data_comanda
+      }
+    }
   }
 
   // ── Alertas automáticos ─────────────────────────────────────────────────
