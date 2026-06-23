@@ -47,7 +47,7 @@ export default function BotaoRecuperacao({ cliente, origem }: { cliente: any; or
     // Padrão: acolhe, abre espaço para feedback E oferece o serviço que ela faz
     setMsg(perdida
       ? `Oi ${primeiro}! Faz um tempinho que não te vejo aqui no salão 💛 Tá tudo bem? Adoraríamos muito te receber de novo — que tal agendarmos${servTxt}? Se teve algo que a gente possa melhorar, me conta também!`
-      : `Oi ${primeiro}! Senti sua falta por aqui 💛 Que tal agendarmos${servTxt} essa semana? É só me chamar!`)
+      : `Oi ${primeiro}! Senti sua falta por aqui 💛 Bora marcar${servTxt}? Consigo um horário ótimo pra você amanhã — que horas fica melhor?`)
     setRecepSel(recep[0]?.nome || '')
     setOpen(true)
   }
@@ -56,7 +56,7 @@ export default function BotaoRecuperacao({ cliente, origem }: { cliente: any; or
     setLoadIA(true)
     const tom = perdida
       ? 'Ela está sem vir há bastante tempo. Seja cuidadosa e acolhedora, SEM cobrar nem pressionar. ABRA espaço para ela dar feedback (pergunte gentilmente se está tudo bem ou se teve algo a melhorar).'
-      : 'Ela só atrasou um pouco a próxima visita. Use um tom leve, carinhoso, de lembrete amigável.'
+      : 'Ela só atrasou um pouco a próxima visita. Seja DIRETA e propositiva: já proponha agendar para um dia próximo (ex: amanhã ou essa semana), sugerindo horário, sem deixar muito em aberto. Tom leve e amigável, mas com um chamado claro para marcar.'
     const ofertaTxt = oferta.trim() ? `Inclua de forma natural esta oferta especial de retorno: "${oferta.trim()}".` : ''
     const prompt = `Crie uma mensagem curta e calorosa de WhatsApp para reconquistar a cliente ${cliente.cliente_nome} de um salão de beleza. Ela está há ${cliente.dias_desde_ultima_visita || '?'} dias sem vir. Serviços que costuma fazer: ${(cliente.servicos_feitos || []).slice(0, 3).join(', ') || 'diversos'}. ${tom} ${ofertaTxt} SEMPRE convide-a gentilmente para AGENDAR um dos serviços que ela costuma fazer (cite o serviço pelo nome). Use o primeiro nome dela, no máximo 3 linhas, 1 emoji, e faça um CONVITE GENTIL (não uma cobrança). Responda APENAS o texto da mensagem, sem aspas e sem explicações.`
     try {
