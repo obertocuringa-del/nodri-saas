@@ -52,6 +52,14 @@ function heat(i: number, total: number): [string, string] {
   return ['#FCEBEB', '#A32D2D']
 }
 
+// Paleta de cores para os tipos de ocorrência (um quadradinho por tipo)
+const CORES_OC = [
+  { bg: '#E6F1FB', tx: '#185FA5' }, { bg: '#FCEBEB', tx: '#A32D2D' }, { bg: '#EAF3DE', tx: '#3B6D11' },
+  { bg: '#FAEEDA', tx: '#854F0B' }, { bg: '#EEEDFE', tx: '#534AB7' }, { bg: '#FBEAF0', tx: '#993556' },
+  { bg: '#E1F5EE', tx: '#0F6E56' }, { bg: '#FAECE7', tx: '#993C1D' }, { bg: '#F1EFE8', tx: '#5F5E5A' },
+  { bg: '#D3E5F7', tx: '#0C447C' }, { bg: '#F7D9C7', tx: '#712B13' }, { bg: '#D9F0E5', tx: '#085041' },
+]
+
 export default function RankingUnificado({ ano, mes }: { ano: number; mes: number }) {
   const [anoSel, setAnoSel] = useState(ano)
   const [mesSel, setMesSel] = useState(mes)
@@ -87,26 +95,36 @@ export default function RankingUnificado({ ano, mes }: { ano: number; mes: numbe
         out += `<div style="background:#e7e3f3;border-bottom:1px solid #d8d4e8;padding:9px 12px;font-size:13px;font-weight:700;color:#3a3550">${tema.titulo}</div>`
         out += `<div style="padding:10px 12px;background:#ffffff">`
 
-        // Tema dinâmico: Ocorrências — uma coluna por tipo de anotação + Total (menos é melhor)
-        let cols: Metrica[]
+        // Tema dinâmico: Ocorrências — quadradinhos coloridos por tipo, ordenado pela soma total
         if (tema.dynamic === 'ocorr') {
           if (!ocorrTipos.length) { out += `<div style="font-size:11px;color:#9ca3af;padding:4px 0">Nenhuma ocorrência registrada no período.</div></div></div>`; continue }
-          cols = [
-            ...ocorrTipos.map(t => ({ k: '__oc__' + t, t, low: true, fmt: n1 })),
-            { k: '__octot__', t: 'Total', low: true, fmt: n1 },
-          ]
-        } else {
-          cols = tema.cols!
-        }
-        const val = (p: Prof, c: Metrica): number => {
-          if (c.k === '__octot__') return p.ocorr_total || 0
-          if (c.k.startsWith('__oc__')) return (p.ocorr && p.ocorr[c.k.slice(6)]) || 0
-          return p[c.k]
+          const corDe = (t: string) => CORES_OC[Math.max(0, ocorrTipos.indexOf(t)) % CORES_OC.length]
+          // Legenda
+          out += `<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;font-size:10px;color:#6b7280">`
+          for (const t of ocorrTipos) { const c = corDe(t); out += `<span style="display:flex;align-items:center;gap:4px"><span style="width:11px;height:11px;border-radius:3px;background:${c.bg};border:1px solid ${c.tx}"></span>${t}</span>` }
+          out += `</div>`
+          // Linhas por profissional, ordenadas pela soma total (maior → menor)
+          const ord = [...arr].sort((a, b) => (b.ocorr_total || 0) - (a.ocorr_total || 0))
+          ord.forEach((p, i) => {
+            const tiposP = Object.keys(p.ocorr || {}).sort((a, b) => p.ocorr[b] - p.ocorr[a])
+            out += `<div style="display:flex;align-items:center;gap:8px;padding:7px 4px;border-top:1px solid #f0eee8">`
+              + `<span style="font-size:10px;color:#9ca3af;min-width:16px">${i + 1}º</span>`
+              + `<span style="font-size:12px;color:#1a1a1a;min-width:130px">${p.nome}</span>`
+              + `<span style="display:flex;flex-wrap:wrap;gap:4px;flex:1">`
+              + (tiposP.length ? tiposP.map(t => { const c = corDe(t); return `<span title="${t}: ${p.ocorr[t]}" style="display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:20px;padding:0 5px;border-radius:5px;background:${c.bg};color:${c.tx};font-size:11px;font-weight:700;border:1px solid ${c.tx}">${p.ocorr[t]}</span>` }).join('') : `<span style="font-size:11px;color:#9ca3af">—</span>`)
+              + `</span>`
+              + `<span style="font-size:11px;font-weight:700;color:#1a1a1a;min-width:60px;text-align:right">Total ${p.ocorr_total || 0}</span>`
+              + `</div>`
+          })
+          out += `</div></div>`
+          continue
         }
 
+        // Temas normais — colunas-ranking com heatmap
+        const cols = tema.cols!
         out += `<div style="display:grid;grid-template-columns:repeat(${cols.length},minmax(0,1fr));gap:8px">`
         for (const c of cols) {
-          const ord = [...arr].sort((a, b) => c.low ? (val(a, c) - val(b, c)) : (val(b, c) - val(a, c)))
+          const ord = [...arr].sort((a, b) => c.low ? (a[c.k] - b[c.k]) : (b[c.k] - a[c.k]))
           out += `<div style="border:1px solid #e5e7eb;border-radius:10px;overflow:hidden">`
           out += `<div style="background:#f5f4f0;padding:6px 8px;font-size:11px;font-weight:600;color:#1a1a1a;text-align:center">${c.low ? '↓ ' : ''}${c.t}</div>`
           ord.forEach((p, i) => {
@@ -114,7 +132,7 @@ export default function RankingUnificado({ ano, mes }: { ano: number; mes: numbe
             out += `<div style="display:flex;align-items:center;gap:5px;padding:6px 8px;border-top:1px solid #f0eee8">`
               + `<span style="font-size:10px;color:#9ca3af;min-width:14px">${i + 1}º</span>`
               + `<span style="font-size:11px;color:#1a1a1a;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nome}</span>`
-              + `<span style="font-size:10px;background:${bg};color:${tx};border-radius:5px;padding:2px 5px;white-space:nowrap">${c.fmt(val(p, c))}</span>`
+              + `<span style="font-size:10px;background:${bg};color:${tx};border-radius:5px;padding:2px 5px;white-space:nowrap">${c.fmt(p[c.k])}</span>`
               + `</div>`
           })
           out += `</div>`

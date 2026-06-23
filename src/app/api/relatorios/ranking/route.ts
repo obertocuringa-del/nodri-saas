@@ -79,7 +79,7 @@ export async function GET(req: NextRequest) {
   const fim = new Date(ano, mes, 0, 23, 59, 59).toISOString()
   const { data: feedbacks } = await supabaseAdmin
     .from('feedback_prof_respostas')
-    .select('profissional_id, tipo, ocorrido_descricao')
+    .select('profissional_id, profissional_nome, tipo, ocorrido_descricao')
     .eq('salao_id', salaoId)
     .gte('criado_em', ini)
     .lte('criado_em', fim)
@@ -122,8 +122,11 @@ export async function GET(req: NextRequest) {
         if (matchNome(it, nome, tokens, apelido)) prod += Number(it.quantidade || 0)
     }
 
-    // Ocorrências por tipo (por profissional_id — exato)
-    const fbsProf = (feedbacks || []).filter((f: any) => f.profissional_id === p.id)
+    // Ocorrências por tipo — casa por NOME (profissional_nome), igual ao perfil/metricas,
+    // pois profissional_id nem sempre vem preenchido no feedback_prof_respostas.
+    const fbsProf = (feedbacks || []).filter((f: any) =>
+      f.profissional_id === p.id || matchNome({ profissional: f.profissional_nome }, nome, tokens, apelido)
+    )
     const ocorr: Record<string, number> = {}
     for (const f of fbsProf) {
       const t = (f.ocorrido_descricao || f.tipo || 'Outro').trim()
