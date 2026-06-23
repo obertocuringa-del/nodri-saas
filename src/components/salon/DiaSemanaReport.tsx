@@ -10,7 +10,8 @@ const rs = (v: number) => 'R$ ' + Math.round(Number(v) || 0).toLocaleString('pt-
 function dow(data: string): number {
   if (!data || !data.includes('/')) return -1
   const [d, m, y] = data.split('/')
-  const dt = new Date(`${y}-${m}-${d}`)
+  // Data LOCAL (não usar "YYYY-MM-DD" que o JS interpreta como UTC e desloca 1 dia no Brasil)
+  const dt = new Date(Number(y), Number(m) - 1, Number(d))
   return isNaN(dt.getTime()) ? -1 : dt.getDay()
 }
 function heat(v: number, max: number): [string, string] {
