@@ -1,7 +1,7 @@
 'use client'
 
-import { Fragment, useState } from 'react'
-import { Loader2, Search, Sparkles, Calculator } from 'lucide-react'
+import { Fragment, useState, useEffect } from 'react'
+import { Loader2, Search, Sparkles, Calculator, AlertTriangle, Users } from 'lucide-react'
 
 const DIAS = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado']
 const MESES = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
@@ -36,6 +36,9 @@ export default function DiaSemanaReport() {
   const [mesExp, setMesExp] = useState<number | null>(null)
   const [diaFechar, setDiaFechar] = useState(0)
   const [redistPct, setRedistPct] = useState(60)
+  // Análise de dependência do dia (exclusivos vs multidia) — dados reais
+  const [dep, setDep] = useState<any | null>(null)
+  const [depLoad, setDepLoad] = useState(false)
 
   async function carregar() {
     setLoading(true); setDados(null); setResposta('')
@@ -46,6 +49,22 @@ export default function DiaSemanaReport() {
     } catch { setDados([]) }
     setLoading(false)
   }
+
+  // Busca a análise de dependência (exclusivos vs multidia) do dia escolhido no simulador
+  async function carregarDependencia(diaIdx: number, anoRef: number) {
+    setDepLoad(true); setDep(null)
+    try {
+      const r = await fetch(`/api/relatorios/dia-semana-dependencia?ano=${anoRef}&dia=${diaIdx}`)
+      const j = await r.json()
+      setDep(j?.error ? null : j)
+    } catch { setDep(null) }
+    setDepLoad(false)
+  }
+  // Recarrega a análise quando os dados são carregados ou o dia a fechar muda
+  useEffect(() => {
+    if (dados && dados.length) carregarDependencia(diaFechar, ano)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [diaFechar, dados])
 
   function dadosDoDia(diaIdx: number) {
     const lista = (dados || []).filter(d => dow(d.data) === diaIdx)
@@ -252,6 +271,121 @@ export default function DiaSemanaReport() {
               style={{ marginTop: 14, padding: '9px 18px', borderRadius: 8, border: 'none', background: 'linear-gradient(135deg,#5b4fcf,#f43f8e)', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
               {loadIA ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />} Pedir parecer da IA
             </button>
+          </div>
+        )
+      })()}
+
+      {/* ANÁLISE DE DEPENDÊNCIA DO DIA — clientes exclusivos vs multidia (dados reais) */}
+      {dados && dados.length > 0 && (() => {
+        const totDia = dadosDoDia(diaFechar).total
+        const pctRisco = dep?.pct_receita_risco ?? 0
+        const receitaRisco = Math.round(totDia * pctRisco)
+        const receitaRecup = Math.round(totDia - receitaRisco)
+        const probCor = (p: string) => p === 'alta'
+          ? { bg: '#dcfce7', tx: '#15803d', lbl: 'Alta' }
+          : p === 'media' ? { bg: '#fef3c7', tx: '#854f0b', lbl: 'Média' } : { bg: '#fee2e2', tx: '#991b1b', lbl: 'Baixa' }
+        return (
+          <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 16, marginBottom: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: '#1a1a1a', marginBottom: 4, flexWrap: 'wrap' }}>
+              <Users size={15} color="#5b4fcf" /> Análise de Dependência — {DIAS[diaFechar]}
+              <span style={{ fontSize: 10, color: '#15803d', fontWeight: 600, background: '#dcfce7', borderRadius: 6, padding: '2px 8px' }}>comportamento real dos clientes</span>
+            </div>
+            <p style={{ fontSize: 11, color: '#6b6860', margin: '0 0 12px' }}>
+              Quantos clientes dependem SÓ deste dia (receita em risco real) vs. quem também vem em outros dias (recuperável).
+            </p>
+
+            {depLoad && <div style={{ display: 'flex', justifyContent: 'center', padding: 24 }}><Loader2 size={20} className="animate-spin" style={{ color: '#5b4fcf' }} /></div>}
+
+            {!depLoad && !dep && <div style={{ fontSize: 12, color: '#9ca3af', padding: 12 }}>Sem dados de atendimentos para calcular a dependência deste dia.</div>}
+
+            {!depLoad && dep && dep.total_clientes > 0 && (
+              <>
+                {/* Cards principais */}
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
+                  {cardMetric('Clientes exclusivos', String(dep.exclusivos), '#A32D2D')}
+                  {cardMetric('% Exclusivos', dep.pct_exclusivos + '%', '#d97706')}
+                  {cardMetric('Clientes multidia', String(dep.multidia), '#16a34a')}
+                  {cardMetric('Receita em risco', rs(receitaRisco), '#A32D2D')}
+                  {cardMetric('Receita recuperável', rs(receitaRecup), '#16a34a')}
+                </div>
+
+                {/* Barra de distribuição */}
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ display: 'flex', height: 22, borderRadius: 8, overflow: 'hidden', border: '1px solid #e8e6e0' }}>
+                    <div style={{ width: `${dep.pct_exclusivos}%`, background: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 700 }}>
+                      {dep.pct_exclusivos >= 12 ? `${dep.pct_exclusivos}%` : ''}
+                    </div>
+                    <div style={{ flex: 1, background: '#22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 700 }}>
+                      {(100 - dep.pct_exclusivos) >= 12 ? `${Math.round((100 - dep.pct_exclusivos) * 10) / 10}%` : ''}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#6b6860', marginTop: 4 }}>
+                    <span>🟥 Exclusivos deste dia</span><span>🟩 Frequentam outros dias</span>
+                  </div>
+                </div>
+
+                {/* Quadro impacto + migração */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 12, marginBottom: 14 }}>
+                  <div style={{ border: '1px solid #fecaca', background: '#fef2f2', borderRadius: 10, padding: 12 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#991b1b', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 5 }}><AlertTriangle size={13} /> Impacto de fechar {DIAS[diaFechar].toLowerCase()}</div>
+                    {([['Faturamento atual', rs(totDia)], ['Clientes exclusivos', String(dep.exclusivos)], ['Receita em risco', rs(receitaRisco)], ['Receita recuperável', rs(receitaRecup)], ['Perda real estimada', rs(receitaRisco)]] as [string, string][]).map(([k, v], i) => (
+                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '3px 0', color: '#1a1a1a' }}>
+                        <span style={{ color: '#6b6860' }}>{k}</span><strong>{v}</strong>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ border: '1px solid #e8e6e0', borderRadius: 10, padding: 12 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#1a1a1a', marginBottom: 8 }}>Potencial de migração (estimativa) — exclusivos</div>
+                    {([['alta', dep.migracao.alta], ['media', dep.migracao.media], ['baixa', dep.migracao.baixa]] as [string, number][]).map(([p, q]) => {
+                      const c = probCor(p)
+                      return (
+                        <div key={p} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, padding: '4px 0' }}>
+                          <span style={{ background: c.bg, color: c.tx, borderRadius: 6, padding: '2px 8px', fontWeight: 600, fontSize: 11 }}>{c.lbl} probabilidade</span>
+                          <strong>{q} clientes</strong>
+                        </div>
+                      )
+                    })}
+                    <p style={{ fontSize: 10, color: '#9ca3af', margin: '8px 0 0' }}>Heurística do sistema por frequência de visitas (não é IA).</p>
+                  </div>
+                </div>
+
+                {/* Lista de exclusivos (irrecuperáveis sem ação) */}
+                {dep.lista_exclusivos.length > 0 && (
+                  <div style={{ border: '1px solid #e8e6e0', borderRadius: 10, overflow: 'hidden', marginBottom: 14 }}>
+                    <div style={{ background: '#fef2f2', padding: '8px 12px', fontSize: 12, fontWeight: 700, color: '#991b1b' }}>
+                      Clientes que vêm SÓ {DIAS[diaFechar].toLowerCase()} — precisam ser migrados antes de fechar
+                    </div>
+                    <div style={{ overflowX: 'auto', maxHeight: 320, overflowY: 'auto' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                        <thead><tr style={{ background: '#faf9f7', position: 'sticky', top: 0 }}>
+                          {['Cliente', 'Visitas', 'Última visita', 'Receita', 'Migração'].map(h => <th key={h} style={{ padding: '7px 12px', textAlign: h === 'Cliente' ? 'left' : 'right', fontSize: 11, color: '#6b6860', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>)}
+                        </tr></thead>
+                        <tbody>
+                          {dep.lista_exclusivos.map((c: any, i: number) => {
+                            const pc = probCor(c.prob_migracao)
+                            return (
+                              <tr key={i} style={{ borderTop: '1px solid #f0eee8' }}>
+                                <td style={{ padding: '6px 12px', color: '#1a1a1a', fontWeight: 600 }}>{c.cliente}</td>
+                                <td style={{ padding: '6px 12px', textAlign: 'right', color: '#767069' }}>{c.visitas}x</td>
+                                <td style={{ padding: '6px 12px', textAlign: 'right', color: '#767069' }}>{c.ultima_visita || '—'}</td>
+                                <td style={{ padding: '6px 12px', textAlign: 'right', color: '#1a1a1a', fontWeight: 600 }}>{rs(c.receita)}</td>
+                                <td style={{ padding: '6px 12px', textAlign: 'right' }}><span style={{ background: pc.bg, color: pc.tx, borderRadius: 6, padding: '2px 7px', fontSize: 10, fontWeight: 700 }}>{pc.lbl}</span></td>
+                              </tr>
+                            )
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* Parecer da IA com base na dependência real */}
+                <button onClick={() => perguntarIA(`Análise de dependência do dia (dados reais do sistema, ano ${ano}): ao fechar as ${DIAS[diaFechar].toLowerCase()}s, o faturamento atual é ${rs(totDia)}. ${dep.exclusivos} clientes vêm SÓ neste dia (${dep.pct_exclusivos}% do total), representando ${rs(receitaRisco)} de receita REALMENTE em risco. ${dep.multidia} clientes também vêm em outros dias (${rs(receitaRecup)} recuperável). Migração estimada dos exclusivos: ${dep.migracao.alta} alta, ${dep.migracao.media} média, ${dep.migracao.baixa} baixa. Dê um parecer gerencial curto e um plano de migração desses ${dep.exclusivos} clientes exclusivos. Use SOMENTE esses números.`)} disabled={loadIA}
+                  style={{ padding: '9px 18px', borderRadius: 8, border: 'none', background: 'linear-gradient(135deg,#5b4fcf,#f43f8e)', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  {loadIA ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />} Parecer da IA com base na dependência real
+                </button>
+              </>
+            )}
           </div>
         )
       })()}
