@@ -76,8 +76,12 @@ export default function DiaSemanaReport() {
           buf += dec.decode(value, { stream: true }); const lines = buf.split('\n'); buf = lines.pop() || ''
           for (const l of lines) { if (!l.startsWith('data:')) continue; const j = l.slice(5).trim(); if (!j) continue; try { const p = JSON.parse(j); if (p.token) setResposta(prev => prev + p.token) } catch {} }
         }
-      } else setResposta('Não foi possível consultar a IA.')
-    } catch { setResposta('Erro de conexão com a IA.') }
+      } else {
+        let msg = `Não foi possível consultar a IA (status ${res.status}).`
+        try { const d = await res.json(); if (d?.error) msg = d.error } catch {}
+        setResposta(msg)
+      }
+    } catch (e: any) { setResposta('Erro de conexão com a IA: ' + (e?.message || '')) }
     setLoadIA(false)
   }
 
