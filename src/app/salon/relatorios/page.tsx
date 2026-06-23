@@ -7,6 +7,7 @@ import toast from 'react-hot-toast'
 import RankingUnificado from '@/components/salon/RankingUnificado'
 import BotaoRecuperacao from '@/components/salon/BotaoRecuperacao'
 import RecuperadosReport from '@/components/salon/RecuperadosReport'
+import DiaSemanaReport from '@/components/salon/DiaSemanaReport'
 
 // ─── TIPOS ──────────────────────────────────────────────────────────────────
 interface ResumoMensal { ano: number; mes: number; periodo: string; faturamento_total: number; ticket_medio: number; clientes_atendidos: number; clientes_novos: number; faturamento_servicos: number; faturamento_produtos: number }
@@ -2280,7 +2281,7 @@ ${([['Faturamento Total',r1.fat_total,r2.fat_total],['Ticket Médio',r1.ticket,r
                   ))}
                 </div>
 
-                {subAnalise === 'recuperados' ? <RecuperadosReport /> : <>
+                {subAnalise === 'recuperados' ? <RecuperadosReport /> : subAnalise === 'diasemana' ? <DiaSemanaReport /> : <>
                 {/* Filtro de data + Imprimir — Mais Relatórios */}
                 <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 10, background: '#f8f7f5', border: '1.5px solid #e0ddd8', borderRadius: 10, padding: '10px 14px', margin: '12px 0' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
