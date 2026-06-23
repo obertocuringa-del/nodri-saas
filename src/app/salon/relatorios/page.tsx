@@ -9,6 +9,27 @@ import BotaoRecuperacao from '@/components/salon/BotaoRecuperacao'
 import RecuperadosReport from '@/components/salon/RecuperadosReport'
 import DiaSemanaReport from '@/components/salon/DiaSemanaReport'
 
+// ─── ORDENAÇÃO DE TABELAS (reutilizável) ─────────────────────────────────────
+// Converte um valor para uma chave ordenável: detecta número, data BR (DD/MM/YYYY)
+// e texto. Assim a mesma função serve qualquer coluna sem configuração extra.
+function chaveOrd(v: any): number | string {
+  if (v == null) return ''
+  if (typeof v === 'number') return v
+  const s = String(v).trim()
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) { const [d, m, y] = s.split('/'); return new Date(`${y}-${m}-${d}`).getTime() || 0 }
+  if (/[a-zA-Z]/.test(s)) return s.toLowerCase()             // texto (nomes)
+  const n = Number(s.replace(/\s/g, ''))                      // número puro / telefone
+  return isNaN(n) ? s.toLowerCase() : n
+}
+function ordenarPor<T>(arr: T[], key: string, dir: 1 | -1): T[] {
+  if (!key) return arr
+  return [...arr].sort((a: any, b: any) => {
+    const va = chaveOrd(a[key]), vb = chaveOrd(b[key])
+    if (typeof va === 'number' && typeof vb === 'number') return dir * (va - vb)
+    return dir * String(va).localeCompare(String(vb), 'pt-BR')
+  })
+}
+
 // ─── TIPOS ──────────────────────────────────────────────────────────────────
 interface ResumoMensal { ano: number; mes: number; periodo: string; faturamento_total: number; ticket_medio: number; clientes_atendidos: number; clientes_novos: number; faturamento_servicos: number; faturamento_produtos: number }
 interface FatDiario { ano: number; mes: number; data: string; dia_semana: string; valor: number }
@@ -246,6 +267,8 @@ export default function RelatoriosPage() {
   const [analiseResumo, setAnaliseResumo] = useState<any>(null)
   const [analiseDetalhe, setAnaliseDetalhe] = useState<any[]>([])
   const [verQtd, setVerQtd] = useState(10)  // paginação: quantas linhas mostrar
+  // Ordenação das listas de clientes (clique no título da coluna). dir -1 = maior→menor.
+  const [sortLista, setSortLista] = useState<{ key: string; dir: 1 | -1 }>({ key: '', dir: -1 })
   const [analiseLoading, setAnaliseLoading] = useState(false)
   // Cross-sell por categoria
   const [csCategoria, setCsCategoria] = useState<string | null>(null)
@@ -2392,13 +2415,24 @@ ${lista.map((c:any,i:number)=>{
                           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <thead>
                               <tr style={{ background: '#faf9f7' }}>
-                                {['Cliente', 'Celular', 'LTV Total', 'Visitas', 'Última Visita', 'Dias Ausente', 'Intervalo Médio', 'Serviços', 'Recuperar'].map(h => (
-                                  <th key={h} style={{ padding: '8px 12px', fontSize: 11, color: '#6b6860', fontWeight: 600, textAlign: 'left', whiteSpace: 'nowrap' }}>{h}</th>
+                                {([
+                                  ['Cliente', 'cliente_nome'], ['Celular', 'celular'], ['LTV Total', 'ltv_total'],
+                                  ['Visitas', 'total_visitas'], ['Última Visita', 'ultima_visita'],
+                                  ['Dias Ausente', 'dias_desde_ultima_visita'], ['Intervalo Médio', 'intervalo_medio_dias'],
+                                  ['Serviços', ''], ['Recuperar', ''],
+                                ] as [string, string][]).map(([h, key]) => (
+                                  <th key={h} onClick={key ? () => setSortLista(s => ({ key, dir: s.key === key ? (-s.dir as 1 | -1) : -1 })) : undefined}
+                                    style={{ padding: '8px 12px', fontSize: 11, color: '#6b6860', fontWeight: 600, textAlign: 'left', whiteSpace: 'nowrap', cursor: key ? 'pointer' : 'default', userSelect: 'none' }}>
+                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                                      {h}
+                                      {key && (sortLista.key === key ? (sortLista.dir === -1 ? <ChevronDown size={11} /> : <ChevronUp size={11} />) : <ChevronsUpDown size={11} style={{ opacity: 0.3 }} />)}
+                                    </span>
+                                  </th>
                                 ))}
                               </tr>
                             </thead>
                             <tbody>
-                              {(analiseDetalhe as any[]).slice(0, verQtd).map((c: any, i: number) => (
+                              {ordenarPor(analiseDetalhe as any[], sortLista.key, sortLista.dir).slice(0, verQtd).map((c: any, i: number) => (
                                 <tr key={i} style={{ borderBottom: '1px solid #e8e6e0', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
                                   <td style={{ padding: '9px 12px', fontSize: 12, color: '#1a1a1a', fontWeight: 600 }}>{c.cliente_nome}</td>
                                   <td style={{ padding: '9px 12px', fontSize: 11, color: '#5b4fcf' }}>{c.celular || '—'}</td>
@@ -2456,12 +2490,22 @@ ${lista.map((c:any,i:number)=>{
                         <div style={{ background: '#ffffff', border: '1.5px solid #e0ddd8', borderRadius: 12, overflow: 'hidden' }}>
                           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <thead><tr style={{ background: '#faf9f7' }}>
-                              {['Cliente', 'Celular', 'LTV Total', 'Visitas', 'Última Visita', 'Frequência', 'Serviços'].map(h => (
-                                <th key={h} style={{ padding: '8px 12px', fontSize: 11, color: '#6b6860', fontWeight: 600, textAlign: 'left', whiteSpace: 'nowrap' }}>{h}</th>
+                              {([
+                                ['Cliente', 'cliente_nome'], ['Celular', 'celular'], ['LTV Total', 'ltv_total'],
+                                ['Visitas', 'total_visitas'], ['Última Visita', 'ultima_visita'],
+                                ['Frequência', 'intervalo_medio_dias'], ['Serviços', ''],
+                              ] as [string, string][]).map(([h, key]) => (
+                                <th key={h} onClick={key ? () => setSortLista(s => ({ key, dir: s.key === key ? (-s.dir as 1 | -1) : -1 })) : undefined}
+                                  style={{ padding: '8px 12px', fontSize: 11, color: '#6b6860', fontWeight: 600, textAlign: 'left', whiteSpace: 'nowrap', cursor: key ? 'pointer' : 'default', userSelect: 'none' }}>
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                                    {h}
+                                    {key && (sortLista.key === key ? (sortLista.dir === -1 ? <ChevronDown size={11} /> : <ChevronUp size={11} />) : <ChevronsUpDown size={11} style={{ opacity: 0.3 }} />)}
+                                  </span>
+                                </th>
                               ))}
                             </tr></thead>
                             <tbody>
-                              {(analiseDetalhe as any[]).slice(0, verQtd).map((c: any, i: number) => (
+                              {ordenarPor(analiseDetalhe as any[], sortLista.key, sortLista.dir).slice(0, verQtd).map((c: any, i: number) => (
                                 <tr key={i} style={{ borderBottom: '1px solid #e8e6e0', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
                                   <td style={{ padding: '9px 12px', fontSize: 12, color: '#1a1a1a', fontWeight: 600 }}>{c.cliente_nome}</td>
                                   <td style={{ padding: '9px 12px', fontSize: 11, color: '#5b4fcf' }}>{c.celular || '—'}</td>
