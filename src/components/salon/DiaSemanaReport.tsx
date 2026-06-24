@@ -156,7 +156,10 @@ export default function DiaSemanaReport() {
   button, input, select, [type=range] { display: none !important; }
   table { width: 100%; border-collapse: collapse; }
   thead { display: table-header-group; }
-  tr, img { break-inside: avoid; }
+  /* Cards e blocos não quebram no meio da página (descem inteiros) */
+  tr, img, .pb { break-inside: avoid; page-break-inside: avoid; }
+  /* Contêineres grandes podem ocupar várias páginas — achatamos a borda/fundo */
+  .flat { border: none !important; background: transparent !important; padding: 0 !important; }
   /* Na impressão, todos os meses do comparativo vêm abertos */
   tr.mes-detalhe { display: table-row !important; }
   h1.pt { font-size: 18px; color: #5b4fcf; margin: 0 0 10px; }
@@ -171,7 +174,7 @@ export default function DiaSemanaReport() {
 
   const selStyle = { background: '#fff', border: '1.5px solid #d0cdc7', borderRadius: 8, color: '#1a1a1a', padding: '8px 10px', fontSize: 13, fontWeight: 600, cursor: 'pointer' } as const
   const cardMetric = (label: string, valor: string, cor: string) => (
-    <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: '12px 14px', flex: '1 1 150px' }}>
+    <div className="pb" style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: '12px 14px', flex: '1 1 150px' }}>
       <div style={{ fontSize: 11, color: '#6b6860', textTransform: 'uppercase', fontWeight: 600 }}>{label}</div>
       <div style={{ fontSize: 20, fontWeight: 800, color: cor }}>{valor}</div>
     </div>
@@ -244,7 +247,7 @@ export default function DiaSemanaReport() {
             {Object.entries(dd.porMes).sort((a, b) => +a[0] - +b[0]).map(([m, arr]: any) => {
               const totMes = arr.reduce((s: number, x: any) => s + x.valor, 0)
               return (
-                <div key={m} style={{ border: '1px solid #e8e6e0', borderRadius: 12, overflow: 'hidden' }}>
+                <div key={m} className="pb" style={{ border: '1px solid #e8e6e0', borderRadius: 12, overflow: 'hidden' }}>
                   <div style={{ background: '#f5f4f0', padding: '7px 12px', display: 'flex', justifyContent: 'space-between', fontSize: 12, fontWeight: 700 }}>
                     <span>{MESES[+m]}</span><span style={{ color: '#5b4fcf' }}>{rs(totMes)}</span>
                   </div>
@@ -327,7 +330,7 @@ export default function DiaSemanaReport() {
 
       {/* SELETOR DE DIA A ANALISAR (ex-simulador) */}
       {dados && dados.length > 0 && (
-        <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 16, marginBottom: 14 }}>
+        <div className="pb" style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 16, marginBottom: 14 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: '#1a1a1a', marginBottom: 12, flexWrap: 'wrap' }}>
             <Calculator size={15} color="#5b4fcf" /> Simulação de Fechamento
             <span style={{ fontSize: 10, color: '#15803d', fontWeight: 600, background: '#dcfce7', borderRadius: 6, padding: '2px 8px' }}>números calculados pelo sistema</span>
@@ -369,7 +372,7 @@ export default function DiaSemanaReport() {
         })() : []
         const cols: [string, string][] = [['Cliente', 'cliente'], ['Telefone', 'celular'], ['Visitas', 'visitas'], ['Última visita', 'ultima_visita'], ['Receita', 'receita'], ['Migração', 'prob_migracao']]
         return (
-          <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 16, marginBottom: 14 }}>
+          <div className="flat" style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 16, marginBottom: 14 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: '#1a1a1a', marginBottom: 4, flexWrap: 'wrap' }}>
               <Users size={15} color="#5b4fcf" /> Análise de Dependência — {DIAS[diaFechar]}
               <span style={{ fontSize: 10, color: '#15803d', fontWeight: 600, background: '#dcfce7', borderRadius: 6, padding: '2px 8px' }}>comportamento real dos clientes</span>
@@ -396,7 +399,7 @@ export default function DiaSemanaReport() {
                 </div>
 
                 {/* Barra de distribuição (exclusivos vs multidia) */}
-                <div style={{ marginBottom: 14 }}>
+                <div className="pb" style={{ marginBottom: 14 }}>
                   <div style={{ display: 'flex', height: 22, borderRadius: 8, overflow: 'hidden', border: '1px solid #e8e6e0' }}>
                     <div style={{ width: `${dep.pct_exclusivos}%`, background: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 700 }}>
                       {dep.pct_exclusivos >= 12 ? `${dep.pct_exclusivos}%` : ''}
@@ -461,7 +464,7 @@ export default function DiaSemanaReport() {
 
                 {/* Quadro impacto + migração */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 12, marginBottom: 14 }}>
-                  <div style={{ border: '1px solid #fecaca', background: '#fef2f2', borderRadius: 10, padding: 12 }}>
+                  <div className="pb" style={{ border: '1px solid #fecaca', background: '#fef2f2', borderRadius: 10, padding: 12 }}>
                     <div style={{ fontSize: 12, fontWeight: 700, color: '#991b1b', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 5 }}><AlertTriangle size={13} /> Impacto de fechar {DIAS[diaFechar].toLowerCase()}</div>
                     {([['Faturamento atual', rs(totDia)], ['Clientes exclusivos', String(dep.exclusivos)], ['Receita em risco', rs(receitaRisco)], ['Receita recuperável', rs(receitaRecup)], ['Perda real estimada', rs(receitaRisco)]] as [string, string][]).map(([k, v], i) => (
                       <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '3px 0', color: '#1a1a1a' }}>
@@ -469,7 +472,7 @@ export default function DiaSemanaReport() {
                       </div>
                     ))}
                   </div>
-                  <div style={{ border: '1px solid #e8e6e0', borderRadius: 10, padding: 12 }}>
+                  <div className="pb" style={{ border: '1px solid #e8e6e0', borderRadius: 10, padding: 12 }}>
                     <div style={{ fontSize: 12, fontWeight: 700, color: '#1a1a1a', marginBottom: 8 }}>Potencial de migração (estimativa) — exclusivos</div>
                     {([['alta', dep.migracao.alta], ['media', dep.migracao.media], ['baixa', dep.migracao.baixa]] as [string, number][]).map(([p, q]) => {
                       const c = probCor(p)
@@ -536,7 +539,7 @@ export default function DiaSemanaReport() {
 
       {/* PERGUNTE À IA (parecer, não números) */}
       {dados && dados.length > 0 && (
-        <div style={{ background: '#f0eefb', border: '1.5px solid #c4bef0', borderRadius: 14, padding: 16 }}>
+        <div className="flat" style={{ background: '#f0eefb', border: '1.5px solid #c4bef0', borderRadius: 14, padding: 16 }}>
           <style>{`
             .ia-md p { margin: 0 0 8px; }
             .ia-md p:last-child { margin-bottom: 0; }
