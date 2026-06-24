@@ -3046,15 +3046,15 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
       {/* Tabs */}
       {(() => {
         const TABS = [
-          ['cadastro','Cadastro'],
-          ['faturamento','Faturamento'],
-          ['desempenho','Ocorrências'],
-          ['metas','Metas'],
-          ['dependencia','👑 Depend.'],
-          ['oportunidades','Oport.'],
-          ['bundle','Bundles'],
-          ['clientes-perdidos','⚠️ Perdidos'],
-          ['agendamentos','📅 Agendamentos'],
+          ['cadastro','CADASTRO'],
+          ['faturamento','FATURAMENTO'],
+          ['desempenho','OCORRÊNCIAS'],
+          ['metas','METAS'],
+          ['dependencia','DEPEND.'],
+          ['oportunidades','OPORT.'],
+          ['bundle','BUNDLES'],
+          ['clientes-perdidos','PERDIDOS'],
+          ['agendamentos','AGENDAMENTOS'],
           ['ia','IA'],
         ] as const
         const labelAtivo = TABS.find(([t])=>t===tab)?.[1] ?? 'Menu'

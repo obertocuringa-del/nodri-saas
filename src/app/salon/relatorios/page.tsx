@@ -1430,6 +1430,19 @@ ${([['Faturamento Total',r1.fat_total,r2.fat_total],['Ticket Médio',r1.ticket,r
                   {/* Seletor de período de comparação */}
                   <div style={{ marginBottom: 14 }}>
                     <div style={{ fontSize: 11, color: '#767069', fontWeight: 600, marginBottom: 6 }}>PERÍODO DE COMPARAÇÃO (base para % e "vs")</div>
+                    {isMobile ? (
+                      <select value={(de2 || '').slice(0, 7)}
+                        onChange={e => { const ym = e.target.value; if (ym) { setModo('custom'); setP2De(ym + '-01'); setP2Ate(ym + '-31') } }}
+                        style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 14, fontWeight: 600, color: '#1a1a1a', background: '#fff' }}>
+                        <option value="">Selecione um período…</option>
+                        {(dados?.periodos || []).slice().sort((a, b) => b.ano * 100 + b.mes - (a.ano * 100 + a.mes)).map(p => {
+                          const ym = `${p.ano}-${String(p.mes).padStart(2, '0')}`
+                          if (p.ano === p1Ano && p.mes === p1Mes) return null
+                          const fatP = somarResumo(filtrarResumo(dados!.resumo_mensal, ym + '-01', ym + '-31')).fat_total
+                          return <option key={ym} value={ym}>{MESES_FULL[p.mes]}/{p.ano}{fatP > 0 ? ` — ${moeda(fatP)}` : ''}</option>
+                        })}
+                      </select>
+                    ) : (
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
                       {(dados?.periodos || [])
                         .slice()
@@ -1449,6 +1462,7 @@ ${([['Faturamento Total',r1.fat_total,r2.fat_total],['Ticket Médio',r1.ticket,r
                           )
                         })}
                     </div>
+                    )}
                   </div>
 
                   <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -2339,7 +2353,8 @@ ${([['Faturamento Total',r1.fat_total,r2.fat_total],['Ticket Médio',r1.ticket,r
             {/* ════════ ABA ANÁLISE DE CLIENTES ════════ */}
             {aba === 'analise' && (
               <div>
-                {/* Sub-menu */}
+                {/* Sub-menu — oculto no celular (já está na lista suspensa do topo) */}
+                {!isMobile && (
                 <div style={{ display: 'flex', gap: 6, marginBottom: 20, flexWrap: 'wrap' }}>
                   {[
                     { id: 'risco', label: 'Em Risco' },
@@ -2358,6 +2373,7 @@ ${([['Faturamento Total',r1.fat_total,r2.fat_total],['Ticket Médio',r1.ticket,r
                     </button>
                   ))}
                 </div>
+                )}
 
                 {subAnalise === 'recuperados' ? <RecuperadosReport /> : subAnalise === 'diasemana' ? <DiaSemanaReport /> : <>
                 {/* Filtro de data + Imprimir — Mais Relatórios */}
