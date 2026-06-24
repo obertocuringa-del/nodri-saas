@@ -92,21 +92,40 @@ export default function BotaoRecuperacao({ cliente, origem }: { cliente: any; or
     if (!recepSel) return
     setEnviando(true)
     const recepObj = recep.find(r => r.nome === recepSel)
+
+    // 1) Registra o contato no banco — agora conferindo o resultado de verdade
+    let okReg = false, erroReg = ''
     try {
-      await fetch('/api/relatorios/recuperacao', {
+      const res = await fetch('/api/relatorios/recuperacao', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ cliente_nome: cliente.cliente_nome, celular: cliente.celular, origem, recepcionista_id: recepObj?.id, recepcionista_nome: recepSel, mensagem: msg }),
       })
-    } catch {}
+      const d = await res.json().catch(() => ({}))
+      if (res.ok && d?.ok) okReg = true
+      else erroReg = d?.error || ('HTTP ' + res.status)
+    } catch { erroReg = 'falha de conexão' }
+
+    // 2) Abre o WhatsApp de qualquer jeito (a mensagem precisa sair)
     const fone = String(cliente.celular || '').replace(/\D/g, '')
     const numero = fone.startsWith('55') ? fone : '55' + fone
     window.open(`https://wa.me/${numero}?text=${encodeURIComponent(msg)}`, '_blank')
-    const until = Date.now() + janela.current * 86400000
-    try { localStorage.setItem(lockKey, String(until)) } catch {}
-    setTravadoAte(until)
-    setEnvios(e => e + 1) // atualiza a observação "Nx" na hora
-    _statusCache = null
-    setEnviando(false); setOpen(false)
+
+    setEnviando(false)
+
+    if (okReg) {
+      // só trava e conta quando gravou de verdade
+      const until = Date.now() + janela.current * 86400000
+      try { localStorage.setItem(lockKey, String(until)) } catch {}
+      setTravadoAte(until)
+      setEnvios(e => e + 1)
+      _statusCache = null
+      setOpen(false)
+    } else {
+      // NÃO trava: deixa tentar de novo e mostra o motivo real
+      alert('⚠️ O WhatsApp foi aberto, mas NÃO consegui registrar o contato no sistema' +
+        (erroReg ? ':\n\n' + erroReg : '.') +
+        '\n\nÉ por isso que aparece 0 em "Contatadas". Tente clicar em enviar de novo. Se o erro continuar, me mande esta mensagem.')
+    }
   }
 
   // Observação de quantas vezes já foi enviado (visível mesmo destravada)
