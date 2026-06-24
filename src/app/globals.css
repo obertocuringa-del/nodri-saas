@@ -73,6 +73,20 @@ html, body {
   /* 6) Fonte mínima legível: nada abaixo de 11px no celular */
   [style*="font-size: 9px"], [style*="font-size:9px"],
   [style*="font-size: 10px"], [style*="font-size:10px"] { font-size: 11px !important; }
+
+  /* 7) Campos de formulário e botões nunca estouram a tela */
+  input[style], select[style], textarea[style], button[style] { max-width: 100% !important; }
+
+  /* 8) Modais/janelas centralizadas cabem com folga nas laterais */
+  [style*="position: fixed"][style*="inset"] { padding-left: 10px !important; padding-right: 10px !important; }
+
+  /* 9) Gaps muito grandes entre blocos diminuem ao empilhar */
+  [style*="gap: 20px"], [style*="gap:20px"],
+  [style*="gap: 24px"], [style*="gap:24px"] { gap: 12px !important; }
+
+  /* 10) Tabela: conteúdo quebra pra caber (mostra tudo, sem corte).
+         O quadro continua rolável onde já existe overflow-x. */
+  td, th { word-break: break-word; }
 }
 
 /* Scrollbar customizada */
