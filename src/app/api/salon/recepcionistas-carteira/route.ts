@@ -79,6 +79,24 @@ function jogarMines(qtd: number): { mult: number; label: string; detalhe: any } 
   return { mult, label, detalhe: { bombas: [...bombas], abertas, total, ganhou: !acertouBomba } }
 }
 
+// Duelo 1×1: cada uma "rola" 3 dados; maior soma vence (empate re-rola)
+function resolverDuelo(): { vencedorIdx: number; somas: number[]; dados: number[][] } {
+  const roll = () => [0, 0, 0].map(() => 1 + Math.floor(Math.random() * 6))
+  let a = roll(), b = roll(), sa = a[0] + a[1] + a[2], sb = b[0] + b[1] + b[2]
+  while (sa === sb) { a = roll(); b = roll(); sa = a[0] + a[1] + a[2]; sb = b[0] + b[1] + b[2] }
+  return { vencedorIdx: sa > sb ? 0 : 1, somas: [sa, sb], dados: [a, b] }
+}
+
+async function carregarDesafios(salaoId: string) {
+  const { data } = await supabaseAdmin
+    .from('recepcionista_desafios')
+    .select('id, desafiante, desafiado, aposta, status, vencedor, resultado, criado_em, resolvido_em')
+    .eq('salao_id', salaoId)
+    .order('criado_em', { ascending: false })
+    .limit(60)
+  return data || []
+}
+
 async function carregarMovimentos(salaoId: string) {
   const { data } = await supabaseAdmin
     .from('recepcionista_movimentos')
@@ -115,12 +133,13 @@ function agregar(movs: any[]) {
 export async function GET() {
   const p = await getPayload()
   if (!p) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-  const movs = await carregarMovimentos(p.salaoId!)
+  const [movs, desafios] = await Promise.all([carregarMovimentos(p.salaoId!), carregarDesafios(p.salaoId!)])
   return NextResponse.json({
     carteira: agregar(movs),
     movimentos: movs.slice(0, 200),
     roda: RODA.map(s => ({ label: s.label, mult: s.mult, cor: s.cor })),
     limite_jogadas_dia: LIMITE_JOGADAS_DIA,
+    desafios,
   })
 }
 
@@ -129,17 +148,57 @@ export async function POST(req: NextRequest) {
   if (!p) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   const body = await req.json()
   const { acao, nome } = body
-  if (!nome) return NextResponse.json({ error: 'recepcionista obrigatória' }, { status: 400 })
 
   // Saldo atual (recalculado do banco — fonte da verdade)
   const movs = await carregarMovimentos(p.salaoId!)
   const carteira = agregar(movs)
-  const atual = carteira[nome] || { saldo: 0, bonus_creditado: 0, pago: 0, jogadas_hoje: 0 }
-
-  const insert = (tipo: string, valor: number, extra: any = {}) =>
+  const insertNome = (n: string, tipo: string, valor: number, extra: any = {}) =>
     supabaseAdmin.from('recepcionista_movimentos').insert({
-      salao_id: p.salaoId, recepcionista_nome: nome, tipo, valor, ...extra,
+      salao_id: p.salaoId, recepcionista_nome: n, tipo, valor, ...extra,
     })
+
+  // ── Desafios 1×1 entre recepcionistas ──
+  if (acao === 'desafio_criar') {
+    const desafiante = String(body.desafiante || ''), desafiado = String(body.desafiado || '')
+    const aposta = Math.round((Number(body.aposta) || 0) * 100) / 100
+    if (!desafiante || !desafiado || desafiante === desafiado) return NextResponse.json({ error: 'Escolha duas recepcionistas diferentes' }, { status: 400 })
+    if (aposta <= 0) return NextResponse.json({ error: 'Aposta inválida' }, { status: 400 })
+    if (aposta > ((carteira[desafiante]?.saldo) || 0) + 0.001) return NextResponse.json({ error: `Saldo de ${desafiante} insuficiente` }, { status: 400 })
+    const { data: novo, error } = await supabaseAdmin.from('recepcionista_desafios').insert({
+      salao_id: p.salaoId, desafiante, desafiado, aposta, status: 'pendente',
+    }).select().single()
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    await insertNome(desafiante, 'desafio_aposta', -aposta, { jogo: 'desafio', descricao: `Aposta no desafio contra ${desafiado}` })
+    return NextResponse.json({ ok: true, desafio: novo })
+  }
+
+  if (acao === 'desafio_recusar' || acao === 'desafio_aceitar') {
+    const id = String(body.id || '')
+    const { data: des } = await supabaseAdmin.from('recepcionista_desafios').select('*').eq('id', id).eq('salao_id', p.salaoId).single()
+    if (!des || des.status !== 'pendente') return NextResponse.json({ error: 'Desafio não disponível' }, { status: 400 })
+    const aposta = Number(des.aposta) || 0
+
+    if (acao === 'desafio_recusar') {
+      await insertNome(des.desafiante, 'desafio_estorno', aposta, { jogo: 'desafio', descricao: 'Estorno (desafio recusado)' })
+      await supabaseAdmin.from('recepcionista_desafios').update({ status: 'recusado', resolvido_em: new Date().toISOString() }).eq('id', id)
+      return NextResponse.json({ ok: true })
+    }
+
+    // aceitar: valida saldo do desafiado, debita, resolve o duelo, paga a vencedora
+    if (aposta > ((carteira[des.desafiado]?.saldo) || 0) + 0.001) return NextResponse.json({ error: `Saldo de ${des.desafiado} insuficiente` }, { status: 400 })
+    await insertNome(des.desafiado, 'desafio_aposta', -aposta, { jogo: 'desafio', descricao: `Aposta no desafio contra ${des.desafiante}` })
+    const rr = resolverDuelo()
+    const vencedor = rr.vencedorIdx === 0 ? des.desafiante : des.desafiado
+    const pote = Math.round(aposta * 2 * 100) / 100
+    await insertNome(vencedor, 'desafio_premio', pote, { jogo: 'desafio', descricao: `Venceu o desafio (pote ${pote})` })
+    const resultado = { somas: rr.somas, dados: rr.dados, vencedor }
+    await supabaseAdmin.from('recepcionista_desafios').update({ status: 'concluido', vencedor, resultado, resolvido_em: new Date().toISOString() }).eq('id', id)
+    return NextResponse.json({ ok: true, vencedor, pote, resultado })
+  }
+
+  if (!nome) return NextResponse.json({ error: 'recepcionista obrigatória' }, { status: 400 })
+  const atual = carteira[nome] || { saldo: 0, bonus_creditado: 0, pago: 0, jogadas_hoje: 0 }
+  const insert = (tipo: string, valor: number, extra: any = {}) => insertNome(nome, tipo, valor, extra)
 
   // ── Creditar bônus disponível (bônus conquistado ainda não creditado) ──
   if (acao === 'creditar') {
