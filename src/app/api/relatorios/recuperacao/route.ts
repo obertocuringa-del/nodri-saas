@@ -76,13 +76,19 @@ export async function GET(req: NextRequest) {
       const contatos = await carregarContatos(salaoId)
       const limite = Date.now() - JANELA_DIAS * 86400000
       const travados: Record<string, { contato_em: string; recepcionista: string }> = {}
+      const contagem: Record<string, number> = {}        // quantas vezes cada cliente já foi contatado
+      const ultimo_contato: Record<string, string> = {}  // data do último contato
       for (const c of contatos) {
+        contagem[c.cliente_nome] = (contagem[c.cliente_nome] || 0) + 1
         const t = new Date(c.contato_em).getTime()
         if (t >= limite && !travados[c.cliente_nome]) {
           travados[c.cliente_nome] = { contato_em: c.contato_em, recepcionista: c.recepcionista_nome || '' }
         }
+        if (!ultimo_contato[c.cliente_nome] || t > new Date(ultimo_contato[c.cliente_nome]).getTime()) {
+          ultimo_contato[c.cliente_nome] = c.contato_em
+        }
       }
-      return NextResponse.json({ janela_dias: JANELA_DIAS, travados })
+      return NextResponse.json({ janela_dias: JANELA_DIAS, travados, contagem, ultimo_contato })
     }
 
     // Recuperados: cruza contatos com atendimentos_raw (retorno em até JANELA_DIAS após o contato)

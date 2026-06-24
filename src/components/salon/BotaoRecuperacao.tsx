@@ -24,6 +24,7 @@ export default function BotaoRecuperacao({ cliente, origem }: { cliente: any; or
   const [oferta, setOferta] = useState('')
   const [enviando, setEnviando] = useState(false)
   const [loadIA, setLoadIA] = useState(false)
+  const [envios, setEnvios] = useState(0) // quantas vezes já foi contatada (observação 1x/2x...)
   const janela = useRef(10)
 
   const lockKey = 'nodri_recup_lock_' + (cliente.cliente_nome || '')
@@ -37,6 +38,7 @@ export default function BotaoRecuperacao({ cliente, origem }: { cliente: any; or
     } catch {}
     getStatus().then(s => {
       janela.current = s.janela_dias || 10
+      setEnvios(s.contagem?.[cliente.cliente_nome] || 0)
       const t = s.travados?.[cliente.cliente_nome]
       if (t) {
         const serverAte = new Date(t.contato_em).getTime() + (s.janela_dias || 10) * 86400000
@@ -102,12 +104,22 @@ export default function BotaoRecuperacao({ cliente, origem }: { cliente: any; or
     const until = Date.now() + janela.current * 86400000
     try { localStorage.setItem(lockKey, String(until)) } catch {}
     setTravadoAte(until)
+    setEnvios(e => e + 1) // atualiza a observação "Nx" na hora
     _statusCache = null
     setEnviando(false); setOpen(false)
   }
 
+  // Observação de quantas vezes já foi enviado (visível mesmo destravada)
+  const selo = envios > 0 ? (
+    <span title={`Já enviado ${envios} vez(es)`}
+      style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 7px', borderRadius: 20, background: envios >= 2 ? '#fee2e2' : '#ede9fe', color: envios >= 2 ? '#b91c1c' : '#5b21b6', fontSize: 10, fontWeight: 800 }}>
+      {envios}x
+    </span>
+  ) : null
+
   return (
     <>
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
       {travado ? (
         <span title={`Já contatada — destrava em ${diasRest} dia(s)`}
           style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 8, background: '#f1efe8', color: '#9ca3af', fontSize: 11, fontWeight: 600 }}>
@@ -119,6 +131,8 @@ export default function BotaoRecuperacao({ cliente, origem }: { cliente: any; or
           <MessageCircle size={13} /> WhatsApp
         </button>
       )}
+      {selo}
+      </span>
 
       {open && (
         <div onClick={() => setOpen(false)}

@@ -269,6 +269,15 @@ export default function RelatoriosPage() {
   const [verQtd, setVerQtd] = useState(10)  // paginação: quantas linhas mostrar
   // Ordenação das listas de clientes (clique no título da coluna). dir -1 = maior→menor.
   const [sortLista, setSortLista] = useState<{ key: string; dir: 1 | -1 }>({ key: '', dir: -1 })
+  // Controle de envios (recuperação): quantas vezes cada cliente já foi contatado
+  const [enviosMap, setEnviosMap] = useState<Record<string, number>>({})
+  const [filtroPendente, setFiltroPendente] = useState(false) // mostrar só quem ainda não foi enviado
+  useEffect(() => {
+    fetch('/api/relatorios/recuperacao?tipo=status')
+      .then(r => r.ok ? r.json() : {})
+      .then(d => setEnviosMap(d.contagem || {}))
+      .catch(() => {})
+  }, [analiseDetalhe])
   const [analiseLoading, setAnaliseLoading] = useState(false)
   // Cross-sell por categoria
   const [csCategoria, setCsCategoria] = useState<string | null>(null)
@@ -2424,10 +2433,17 @@ ${lista.map((c:any,i:number)=>{
                               </div>
                             )}
                           </div>
-                          <button onClick={() => exportarListaExcel(analiseDetalhe, subAnalise)}
-                            style={{ background: '#10b981', color: '#fff', border: 'none', borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
-                            ⬇ Exportar Excel
-                          </button>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                            <button onClick={() => setFiltroPendente(v => !v)}
+                              title="Mostrar só clientes que ainda NÃO receberam mensagem"
+                              style={{ background: filtroPendente ? '#5b4fcf' : '#fff', color: filtroPendente ? '#fff' : '#5b4fcf', border: '1.5px solid #5b4fcf', borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                              {filtroPendente ? '✓ Só pendentes de envio' : 'Só pendentes de envio'}
+                            </button>
+                            <button onClick={() => exportarListaExcel(analiseDetalhe, subAnalise)}
+                              style={{ background: '#10b981', color: '#fff', border: 'none', borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                              ⬇ Exportar Excel
+                            </button>
+                          </div>
                         </div>
                         <div style={{ overflowX: 'auto' }}>
                           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -2437,7 +2453,7 @@ ${lista.map((c:any,i:number)=>{
                                   ['Cliente', 'cliente_nome'], ['Celular', 'celular'], ['LTV Total', 'ltv_total'],
                                   ['Visitas', 'total_visitas'], ['Última Visita', 'ultima_visita'],
                                   ['Dias Ausente', 'dias_desde_ultima_visita'], ['Intervalo Médio', 'intervalo_medio_dias'],
-                                  ['Serviços', ''], ['Recuperar', ''],
+                                  ['Serviços', ''], ['Recuperar', '_envios'],
                                 ] as [string, string][]).map(([h, key]) => (
                                   <th key={h} onClick={key ? () => setSortLista(s => ({ key, dir: s.key === key ? (-s.dir as 1 | -1) : -1 })) : undefined}
                                     style={{ padding: '8px 12px', fontSize: 11, color: '#6b6860', fontWeight: 600, textAlign: 'left', whiteSpace: 'nowrap', cursor: key ? 'pointer' : 'default', userSelect: 'none' }}>
@@ -2450,7 +2466,7 @@ ${lista.map((c:any,i:number)=>{
                               </tr>
                             </thead>
                             <tbody>
-                              {ordenarPor(analiseDetalhe as any[], sortLista.key, sortLista.dir).slice(0, verQtd).map((c: any, i: number) => (
+                              {ordenarPor((analiseDetalhe as any[]).map(c => ({ ...c, _envios: enviosMap[c.cliente_nome] || 0 })).filter(c => !filtroPendente || c._envios === 0), sortLista.key, sortLista.dir).slice(0, verQtd).map((c: any, i: number) => (
                                 <tr key={i} style={{ borderBottom: '1px solid #e8e6e0', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
                                   <td style={{ padding: '9px 12px', fontSize: 12, color: '#1a1a1a', fontWeight: 600 }}>{c.cliente_nome}</td>
                                   <td style={{ padding: '9px 12px', fontSize: 11, color: '#5b4fcf' }}>{c.celular || '—'}</td>
