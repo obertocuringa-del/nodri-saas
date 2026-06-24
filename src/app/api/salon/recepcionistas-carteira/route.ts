@@ -59,7 +59,7 @@ function agregar(movs: any[]) {
 export async function GET() {
   const p = await getPayload()
   if (!p) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-  const movs = await carregarMovimentos(p.salaoId)
+  const movs = await carregarMovimentos(p.salaoId!)
   return NextResponse.json({
     carteira: agregar(movs),
     movimentos: movs.slice(0, 200),
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
   if (!nome) return NextResponse.json({ error: 'recepcionista obrigatória' }, { status: 400 })
 
   // Saldo atual (recalculado do banco — fonte da verdade)
-  const movs = await carregarMovimentos(p.salaoId)
+  const movs = await carregarMovimentos(p.salaoId!)
   const carteira = agregar(movs)
   const atual = carteira[nome] || { saldo: 0, bonus_creditado: 0, pago: 0, jogadas_hoje: 0 }
 
