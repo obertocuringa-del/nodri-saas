@@ -1,7 +1,7 @@
 'use client'
 
 import { Fragment, useState, useEffect } from 'react'
-import { Loader2, Search, Sparkles, Calculator, AlertTriangle, Users } from 'lucide-react'
+import { Loader2, Search, Sparkles, Calculator, AlertTriangle, Users, Printer, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react'
 
 const DIAS = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado']
 const MESES = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
@@ -22,12 +22,36 @@ function heat(v: number, max: number): [string, string] {
   return ['#FCEBEB', '#A32D2D']
 }
 
+// Converte o markdown simples que a IA devolve (**negrito**, listas, ###, ---)
+// em HTML limpo e bem formatado. Faz escape antes para não injetar HTML.
+function mdToHtml(raw: string): string {
+  const esc = (x: string) => x.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const inline = (x: string) => esc(x).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+  const linhas = (raw || '').split('\n')
+  const out: string[] = []
+  let lista: string[] | null = null
+  let tipo: 'ul' | 'ol' = 'ul'
+  const flush = () => { if (lista) { out.push(`<${tipo}>${lista.join('')}</${tipo}>`); lista = null } }
+  for (const ln of linhas) {
+    const t = ln.trim()
+    if (!t) { flush(); continue }
+    if (/^---+$/.test(t)) { flush(); out.push('<hr/>'); continue }
+    let m: RegExpMatchArray | null
+    if ((m = t.match(/^#{1,6}\s+(.*)$/))) { flush(); out.push(`<h4>${inline(m[1])}</h4>`); continue }
+    if ((m = t.match(/^[-*•]\s+(.*)$/))) { if (!lista || tipo !== 'ul') { flush(); lista = []; tipo = 'ul' } lista.push(`<li>${inline(m[1])}</li>`); continue }
+    if ((m = t.match(/^\d+\.\s+(.*)$/))) { if (!lista || tipo !== 'ol') { flush(); lista = []; tipo = 'ol' } lista.push(`<li>${inline(m[1])}</li>`); continue }
+    flush(); out.push(`<p>${inline(t)}</p>`)
+  }
+  flush()
+  return out.join('')
+}
+
 export default function DiaSemanaReport() {
   const anoAtual = new Date().getFullYear()
   const [modo, setModo] = useState<'um' | 'comparar'>('um')
   const [dia, setDia] = useState(1)
   const [dia2, setDia2] = useState(6)
-  const [ano, setAno] = useState(anoAtual)
+  const [anosSel, setAnosSel] = useState<number[]>([anoAtual])
   const [dados, setDados] = useState<any[] | null>(null)
   const [loading, setLoading] = useState(false)
   const [pergunta, setPergunta] = useState('')
@@ -35,26 +59,35 @@ export default function DiaSemanaReport() {
   const [loadIA, setLoadIA] = useState(false)
   const [mesExp, setMesExp] = useState<number | null>(null)
   const [diaFechar, setDiaFechar] = useState(0)
-  const [redistPct, setRedistPct] = useState(60)
   // Análise de dependência do dia (exclusivos vs multidia) — dados reais
   const [dep, setDep] = useState<any | null>(null)
   const [depLoad, setDepLoad] = useState(false)
+  // Ordenação da tabela de clientes exclusivos
+  const [sortExcl, setSortExcl] = useState<{ key: string; dir: 1 | -1 }>({ key: '', dir: -1 })
+
+  const anosDisponiveis = [anoAtual, anoAtual - 1, anoAtual - 2, anoAtual - 3]
+  const anosLabel = anosSel.slice().sort((a, b) => a - b).join(', ')
+  function toggleAno(a: number) {
+    setAnosSel(prev => prev.includes(a) ? (prev.length > 1 ? prev.filter(x => x !== a) : prev) : [...prev, a])
+  }
 
   async function carregar() {
     setLoading(true); setDados(null); setResposta('')
     try {
-      const r = await fetch(`/api/relatorios/dia-semana?ano=${ano}`)
-      const j = await r.json()
-      setDados(j.dias || [])
+      const anos = anosSel.length ? anosSel : [anoAtual]
+      const results = await Promise.all(
+        anos.map(a => fetch(`/api/relatorios/dia-semana?ano=${a}`).then(r => r.json()).catch(() => ({ dias: [] })))
+      )
+      setDados(results.flatMap((j: any) => j?.dias || []))
     } catch { setDados([]) }
     setLoading(false)
   }
 
-  // Busca a análise de dependência (exclusivos vs multidia) do dia escolhido no simulador
-  async function carregarDependencia(diaIdx: number, anoRef: number) {
+  // Busca a análise de dependência (exclusivos vs multidia) do dia escolhido
+  async function carregarDependencia(diaIdx: number, anos: number[]) {
     setDepLoad(true); setDep(null)
     try {
-      const r = await fetch(`/api/relatorios/dia-semana-dependencia?ano=${anoRef}&dia=${diaIdx}`)
+      const r = await fetch(`/api/relatorios/dia-semana-dependencia?anos=${anos.join(',')}&dia=${diaIdx}`)
       const j = await r.json()
       setDep(j?.error ? null : j)
     } catch { setDep(null) }
@@ -62,7 +95,7 @@ export default function DiaSemanaReport() {
   }
   // Recarrega a análise quando os dados são carregados ou o dia a fechar muda
   useEffect(() => {
-    if (dados && dados.length) carregarDependencia(diaFechar, ano)
+    if (dados && dados.length) carregarDependencia(diaFechar, anosSel)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [diaFechar, dados])
 
@@ -85,7 +118,7 @@ export default function DiaSemanaReport() {
     setLoadIA(true); setResposta('')
     const det = Object.entries(dadosDoDia(dia).porMes).sort((a, b) => +a[0] - +b[0])
       .map(([m, arr]: any) => `${MESES[+m]}: ${rs(arr.reduce((s: number, x: any) => s + x.valor, 0))}`).join(' · ')
-    const prompt = `Você é a NODRI IA, consultora de gestão de salão de beleza.\n\nDADOS JÁ CALCULADOS PELO SISTEMA (faturamento BRUTO por dia da semana, ano ${ano}):\n${resumoSemana()}\n\nDetalhe de ${DIAS[dia]} por mês: ${det}\n\nREGRA ABSOLUTA: use EXCLUSIVAMENTE os números acima. NUNCA invente, recalcule ou apresente valores diferentes dos fornecidos. NÃO monte tabelas de números — eles já estão na tela. Se precisar de um número que não está nos dados, diga que não tem. Seu papel é apenas INTERPRETAR e RECOMENDAR (texto), não calcular.\n\nPERGUNTA DO GESTOR: ${texto}\n\nResponda curto, direto e prático, focado no PARECER e nas AÇÕES.`
+    const prompt = `Você é a NODRI IA, consultora de gestão de salão de beleza.\n\nDADOS JÁ CALCULADOS PELO SISTEMA (faturamento BRUTO por dia da semana, ano(s) ${anosLabel}):\n${resumoSemana()}\n\nDetalhe de ${DIAS[dia]} por mês: ${det}\n\nREGRA ABSOLUTA: use EXCLUSIVAMENTE os números acima. NUNCA invente, recalcule ou apresente valores diferentes dos fornecidos. NÃO monte tabelas de números — eles já estão na tela. Se precisar de um número que não está nos dados, diga que não tem. Seu papel é apenas INTERPRETAR e RECOMENDAR (texto), não calcular.\n\nPERGUNTA DO GESTOR: ${texto}\n\nResponda curto, direto e prático, focado no PARECER e nas AÇÕES.`
     try {
       const res = await fetch('/api/ia/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mensagens: [{ role: 'user', content: prompt }], modo: 'gestor' }) })
       if (res.ok && res.body) {
@@ -102,6 +135,65 @@ export default function DiaSemanaReport() {
       }
     } catch (e: any) { setResposta('Erro de conexão com a IA: ' + (e?.message || '')) }
     setLoadIA(false)
+  }
+
+  // Impressão A4 retrato com TODOS os dados (inclusive os que estão na rolagem),
+  // cards sem quebra de página (sobe/desce inteiros).
+  function imprimir() {
+    if (!dep || !dep.total_clientes) return
+    const totDia = dadosDoDia(diaFechar).total
+    const pctRisco = dep.pct_receita_risco || 0
+    const receitaRisco = Math.round(totDia * pctRisco)
+    const receitaRecup = Math.round(totDia - receitaRisco)
+    const probTxt = (p: string) => p === 'alta' ? 'Alta' : p === 'media' ? 'Média' : 'Baixa'
+    const linhas = (dep.lista_exclusivos || []).map((c: any) =>
+      `<tr><td>${c.cliente}</td><td>${c.celular || '—'}</td><td class="c">${c.visitas}x</td><td class="c">${c.ultima_visita || '—'}</td><td class="r">${rs(c.receita)}</td><td class="c">${probTxt(c.prob_migracao)}</td></tr>`
+    ).join('')
+    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>Análise de Dependência — ${DIAS[diaFechar]}</title>
+<style>
+  @page { size: A4 portrait; margin: 12mm; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, Segoe UI, Arial, sans-serif; color: #1a1a1a; font-size: 11px; margin: 0; }
+  h1 { font-size: 18px; margin: 0 0 2px; color: #5b4fcf; }
+  .sub { color: #6b6860; font-size: 11px; margin-bottom: 14px; }
+  .cards { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .card { border: 1px solid #e8e6e0; border-radius: 8px; padding: 9px 11px; flex: 1 1 140px; break-inside: avoid; }
+  .card .l { font-size: 9px; color: #6b6860; text-transform: uppercase; font-weight: 700; }
+  .card .v { font-size: 17px; font-weight: 800; }
+  .risco { color: #A32D2D; } .ok { color: #16a34a; } .alerta { color: #d97706; }
+  .block { break-inside: avoid; margin-bottom: 14px; border: 1px solid #e8e6e0; border-radius: 8px; padding: 11px; }
+  .block h2 { font-size: 12px; margin: 0 0 7px; color: #1a1a1a; }
+  table { width: 100%; border-collapse: collapse; font-size: 10px; }
+  thead { display: table-header-group; }
+  th { background: #f5f4f0; text-align: left; padding: 5px 7px; border-bottom: 1px solid #e0ddd8; }
+  td { padding: 4px 7px; border-bottom: 1px solid #f0eee8; }
+  td.c { text-align: center; } td.r { text-align: right; font-weight: 600; }
+  tr { break-inside: avoid; }
+</style></head><body>
+  <h1>Análise de Dependência — ${DIAS[diaFechar]}</h1>
+  <div class="sub">Ano(s): ${anosLabel} &nbsp;·&nbsp; Gerado em ${new Date().toLocaleDateString('pt-BR')}</div>
+  <div class="cards">
+    <div class="card"><div class="l">Faturamento do dia</div><div class="v">${rs(totDia)}</div></div>
+    <div class="card"><div class="l">Clientes exclusivos</div><div class="v risco">${dep.exclusivos}</div></div>
+    <div class="card"><div class="l">% Exclusivos</div><div class="v alerta">${dep.pct_exclusivos}%</div></div>
+    <div class="card"><div class="l">Clientes multidia</div><div class="v ok">${dep.multidia}</div></div>
+    <div class="card"><div class="l">Receita em risco</div><div class="v risco">${rs(receitaRisco)}</div></div>
+    <div class="card"><div class="l">Receita recuperável</div><div class="v ok">${rs(receitaRecup)}</div></div>
+  </div>
+  <div class="block"><h2>Potencial de migração (estimativa) — exclusivos</h2>
+    Alta probabilidade: <strong>${dep.migracao.alta}</strong> &nbsp;·&nbsp; Média: <strong>${dep.migracao.media}</strong> &nbsp;·&nbsp; Baixa: <strong>${dep.migracao.baixa}</strong>
+  </div>
+  <div style="break-inside:auto"><h2 style="font-size:12px;margin:0 0 7px">Clientes que vêm SÓ ${DIAS[diaFechar].toLowerCase()} (${dep.exclusivos})</h2>
+    <table><thead><tr><th>Cliente</th><th>Telefone</th><th>Visitas</th><th>Última visita</th><th>Receita</th><th>Migração</th></tr></thead>
+    <tbody>${linhas}</tbody></table>
+  </div>
+</body></html>`
+    const win = window.open('', '_blank', 'width=900,height=700')
+    if (!win) return
+    win.document.write(html)
+    win.document.close()
+    win.focus()
+    setTimeout(() => win.print(), 350)
   }
 
   const selStyle = { background: '#fff', border: '1.5px solid #d0cdc7', borderRadius: 8, color: '#1a1a1a', padding: '8px 10px', fontSize: 13, fontWeight: 600, cursor: 'pointer' } as const
@@ -135,18 +227,29 @@ export default function DiaSemanaReport() {
           <div><div style={{ fontSize: 11, color: '#6b6860', marginBottom: 4 }}>Comparar com</div>
             <select value={dia2} onChange={e => setDia2(+e.target.value)} style={selStyle}>{DIAS.map((d, i) => <option key={i} value={i}>{d}</option>)}</select></div>
         )}
-        <div><div style={{ fontSize: 11, color: '#6b6860', marginBottom: 4 }}>Ano</div>
-          <select value={ano} onChange={e => setAno(+e.target.value)} style={selStyle}>{[anoAtual, anoAtual - 1, anoAtual - 2].map(a => <option key={a} value={a}>{a}</option>)}</select></div>
+        <div><div style={{ fontSize: 11, color: '#6b6860', marginBottom: 4 }}>Ano(s) — pode escolher mais de um</div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {anosDisponiveis.map(a => {
+              const on = anosSel.includes(a)
+              return (
+                <button key={a} onClick={() => toggleAno(a)}
+                  style={{ padding: '8px 13px', borderRadius: 8, border: on ? '2px solid #5b4fcf' : '1.5px solid #d0cdc7', background: on ? '#f0eefb' : '#fff', color: on ? '#5b4fcf' : '#6b6860', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                  {a}
+                </button>
+              )
+            })}
+          </div>
+        </div>
         <button onClick={carregar} disabled={loading}
           style={{ padding: '9px 22px', borderRadius: 8, border: 'none', background: '#5b4fcf', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
           {loading ? <Loader2 size={15} className="animate-spin" /> : <Search size={15} />} Carregar
         </button>
       </div>
 
-      {!dados && !loading && <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af', fontSize: 13 }}>Selecione o dia e o ano e clique em Carregar.</div>}
+      {!dados && !loading && <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af', fontSize: 13 }}>Selecione o dia e o(s) ano(s) e clique em Carregar.</div>}
       {loading && <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Loader2 size={24} className="animate-spin" style={{ color: '#5b4fcf' }} /></div>}
 
-      {dados && dados.length === 0 && <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af', fontSize: 13 }}>Nenhum dado de faturamento diário para {ano}.</div>}
+      {dados && dados.length === 0 && <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af', fontSize: 13 }}>Nenhum dado de faturamento diário para {anosLabel}.</div>}
 
       {/* MODO UM DIA */}
       {dados && dados.length > 0 && modo === 'um' && dd && (
@@ -243,37 +346,20 @@ export default function DiaSemanaReport() {
         </>
       )}
 
-      {/* SIMULADOR DE FECHAMENTO — calculado pelo sistema */}
-      {dados && dados.length > 0 && (() => {
-        const totFechar = dadosDoDia(diaFechar).total
-        const perdaReal = totFechar * (1 - redistPct / 100)
-        const recuperado = totFechar - perdaReal
-        return (
-          <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 16, marginBottom: 14 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: '#1a1a1a', marginBottom: 12, flexWrap: 'wrap' }}>
-              <Calculator size={15} color="#5b4fcf" /> Simulador de Fechamento
-              <span style={{ fontSize: 10, color: '#15803d', fontWeight: 600, background: '#dcfce7', borderRadius: 6, padding: '2px 8px' }}>números calculados pelo sistema</span>
-            </div>
-            <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'end', marginBottom: 14 }}>
-              <div><div style={{ fontSize: 11, color: '#6b6860', marginBottom: 4 }}>Fechar qual dia?</div>
-                <select value={diaFechar} onChange={e => setDiaFechar(+e.target.value)} style={selStyle}>{DIAS.map((d, i) => <option key={i} value={i}>{d}</option>)}</select></div>
-              <div style={{ flex: '1 1 220px' }}>
-                <div style={{ fontSize: 11, color: '#6b6860', marginBottom: 4 }}>Quantos clientes migram p/ outros dias? <strong style={{ color: '#5b4fcf' }}>{redistPct}%</strong></div>
-                <input type="range" min={0} max={100} step={5} value={redistPct} onChange={e => setRedistPct(+e.target.value)} style={{ width: '100%' }} />
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-              {cardMetric(`Perda bruta ao fechar ${DIAS[diaFechar].toLowerCase()}`, rs(totFechar), '#A32D2D')}
-              {cardMetric(`Recuperado com ${redistPct}% migrando`, rs(recuperado), '#16a34a')}
-              {cardMetric('Perda REAL estimada', rs(perdaReal), '#d97706')}
-            </div>
-            <button onClick={() => perguntarIA(`O sistema calculou: fechar as ${DIAS[diaFechar].toLowerCase()}s no ano ${ano} dá perda BRUTA de ${rs(totFechar)}. Com ${redistPct}% dos clientes migrando para outros dias, a perda REAL fica em ${rs(perdaReal)}. Dê um parecer gerencial curto: vale a pena? riscos? como facilitar a migração? Use SOMENTE esses números.`)} disabled={loadIA}
-              style={{ marginTop: 14, padding: '9px 18px', borderRadius: 8, border: 'none', background: 'linear-gradient(135deg,#5b4fcf,#f43f8e)', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-              {loadIA ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />} Pedir parecer da IA
-            </button>
+      {/* SELETOR DE DIA A ANALISAR (ex-simulador) */}
+      {dados && dados.length > 0 && (
+        <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 16, marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: '#1a1a1a', marginBottom: 12, flexWrap: 'wrap' }}>
+            <Calculator size={15} color="#5b4fcf" /> Simulação de Fechamento
+            <span style={{ fontSize: 10, color: '#15803d', fontWeight: 600, background: '#dcfce7', borderRadius: 6, padding: '2px 8px' }}>números calculados pelo sistema</span>
           </div>
-        )
-      })()}
+          <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'end' }}>
+            <div><div style={{ fontSize: 11, color: '#6b6860', marginBottom: 4 }}>Fechar qual dia?</div>
+              <select value={diaFechar} onChange={e => setDiaFechar(+e.target.value)} style={selStyle}>{DIAS.map((d, i) => <option key={i} value={i}>{d}</option>)}</select></div>
+            {cardMetric(`Perda bruta ao fechar ${DIAS[diaFechar].toLowerCase()}`, rs(dadosDoDia(diaFechar).total), '#A32D2D')}
+          </div>
+        </div>
+      )}
 
       {/* ANÁLISE DE DEPENDÊNCIA DO DIA — clientes exclusivos vs multidia (dados reais) */}
       {dados && dados.length > 0 && (() => {
@@ -284,11 +370,36 @@ export default function DiaSemanaReport() {
         const probCor = (p: string) => p === 'alta'
           ? { bg: '#dcfce7', tx: '#15803d', lbl: 'Alta' }
           : p === 'media' ? { bg: '#fef3c7', tx: '#854f0b', lbl: 'Média' } : { bg: '#fee2e2', tx: '#991b1b', lbl: 'Baixa' }
+        // Ordenação da lista de exclusivos
+        const rank: Record<string, number> = { alta: 3, media: 2, baixa: 1 }
+        const valOrd = (c: any, k: string): number | string => {
+          if (k === 'visitas' || k === 'receita') return Number(c[k]) || 0
+          if (k === 'ultima_visita') { const s = c[k]; if (!s || !s.includes('/')) return 0; const [d, m, y] = s.split('/'); return new Date(+y, +m - 1, +d).getTime() || 0 }
+          if (k === 'prob_migracao') return rank[c[k]] || 0
+          return String(c[k] || '').toLowerCase()
+        }
+        const listaOrd = dep?.lista_exclusivos ? (() => {
+          const arr = [...dep.lista_exclusivos]
+          if (!sortExcl.key) return arr
+          arr.sort((a, b) => {
+            const va = valOrd(a, sortExcl.key), vb = valOrd(b, sortExcl.key)
+            if (typeof va === 'number' && typeof vb === 'number') return sortExcl.dir * (va - vb)
+            return sortExcl.dir * String(va).localeCompare(String(vb), 'pt-BR')
+          })
+          return arr
+        })() : []
+        const cols: [string, string][] = [['Cliente', 'cliente'], ['Telefone', 'celular'], ['Visitas', 'visitas'], ['Última visita', 'ultima_visita'], ['Receita', 'receita'], ['Migração', 'prob_migracao']]
         return (
           <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 16, marginBottom: 14 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: '#1a1a1a', marginBottom: 4, flexWrap: 'wrap' }}>
               <Users size={15} color="#5b4fcf" /> Análise de Dependência — {DIAS[diaFechar]}
               <span style={{ fontSize: 10, color: '#15803d', fontWeight: 600, background: '#dcfce7', borderRadius: 6, padding: '2px 8px' }}>comportamento real dos clientes</span>
+              {dep && dep.total_clientes > 0 && (
+                <button onClick={imprimir} title="Imprimir em A4"
+                  style={{ marginLeft: 'auto', padding: '6px 12px', borderRadius: 8, border: '1.5px solid #d0cdc7', background: '#fff', color: '#5b4fcf', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                  <Printer size={14} /> Imprimir
+                </button>
+              )}
             </div>
             <p style={{ fontSize: 11, color: '#6b6860', margin: '0 0 12px' }}>
               Quantos clientes dependem SÓ deste dia (receita em risco real) vs. quem também vem em outros dias (recuperável).
@@ -309,7 +420,7 @@ export default function DiaSemanaReport() {
                   {cardMetric('Receita recuperável', rs(receitaRecup), '#16a34a')}
                 </div>
 
-                {/* Barra de distribuição */}
+                {/* Barra de distribuição (exclusivos vs multidia) */}
                 <div style={{ marginBottom: 14 }}>
                   <div style={{ display: 'flex', height: 22, borderRadius: 8, overflow: 'hidden', border: '1px solid #e8e6e0' }}>
                     <div style={{ width: `${dep.pct_exclusivos}%`, background: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 700 }}>
@@ -349,8 +460,8 @@ export default function DiaSemanaReport() {
                   </div>
                 </div>
 
-                {/* Lista de exclusivos (irrecuperáveis sem ação) */}
-                {dep.lista_exclusivos.length > 0 && (
+                {/* Lista de exclusivos — ordenável por qualquer coluna */}
+                {listaOrd.length > 0 && (
                   <div style={{ border: '1px solid #e8e6e0', borderRadius: 10, overflow: 'hidden', marginBottom: 14 }}>
                     <div style={{ background: '#fef2f2', padding: '8px 12px', fontSize: 12, fontWeight: 700, color: '#991b1b' }}>
                       Clientes que vêm SÓ {DIAS[diaFechar].toLowerCase()} — precisam ser migrados antes de fechar
@@ -358,14 +469,23 @@ export default function DiaSemanaReport() {
                     <div style={{ overflowX: 'auto', maxHeight: 320, overflowY: 'auto' }}>
                       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                         <thead><tr style={{ background: '#faf9f7', position: 'sticky', top: 0 }}>
-                          {['Cliente', 'Visitas', 'Última visita', 'Receita', 'Migração'].map(h => <th key={h} style={{ padding: '7px 12px', textAlign: h === 'Cliente' ? 'left' : 'right', fontSize: 11, color: '#6b6860', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>)}
+                          {cols.map(([h, key]) => (
+                            <th key={key} onClick={() => setSortExcl(s => ({ key, dir: s.key === key ? (-s.dir as 1 | -1) : -1 }))}
+                              style={{ padding: '7px 12px', textAlign: key === 'cliente' || key === 'celular' ? 'left' : 'right', fontSize: 11, color: '#6b6860', fontWeight: 600, whiteSpace: 'nowrap', cursor: 'pointer', userSelect: 'none' }}>
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                                {h}
+                                {sortExcl.key === key ? (sortExcl.dir === -1 ? <ChevronDown size={11} /> : <ChevronUp size={11} />) : <ChevronsUpDown size={11} style={{ opacity: 0.3 }} />}
+                              </span>
+                            </th>
+                          ))}
                         </tr></thead>
                         <tbody>
-                          {dep.lista_exclusivos.map((c: any, i: number) => {
+                          {listaOrd.map((c: any, i: number) => {
                             const pc = probCor(c.prob_migracao)
                             return (
                               <tr key={i} style={{ borderTop: '1px solid #f0eee8' }}>
                                 <td style={{ padding: '6px 12px', color: '#1a1a1a', fontWeight: 600 }}>{c.cliente}</td>
+                                <td style={{ padding: '6px 12px', color: '#5b4fcf' }}>{c.celular || '—'}</td>
                                 <td style={{ padding: '6px 12px', textAlign: 'right', color: '#767069' }}>{c.visitas}x</td>
                                 <td style={{ padding: '6px 12px', textAlign: 'right', color: '#767069' }}>{c.ultima_visita || '—'}</td>
                                 <td style={{ padding: '6px 12px', textAlign: 'right', color: '#1a1a1a', fontWeight: 600 }}>{rs(c.receita)}</td>
@@ -380,7 +500,7 @@ export default function DiaSemanaReport() {
                 )}
 
                 {/* Parecer da IA com base na dependência real */}
-                <button onClick={() => perguntarIA(`Análise de dependência do dia (dados reais do sistema, ano ${ano}): ao fechar as ${DIAS[diaFechar].toLowerCase()}s, o faturamento atual é ${rs(totDia)}. ${dep.exclusivos} clientes vêm SÓ neste dia (${dep.pct_exclusivos}% do total), representando ${rs(receitaRisco)} de receita REALMENTE em risco. ${dep.multidia} clientes também vêm em outros dias (${rs(receitaRecup)} recuperável). Migração estimada dos exclusivos: ${dep.migracao.alta} alta, ${dep.migracao.media} média, ${dep.migracao.baixa} baixa. Dê um parecer gerencial curto e um plano de migração desses ${dep.exclusivos} clientes exclusivos. Use SOMENTE esses números.`)} disabled={loadIA}
+                <button onClick={() => perguntarIA(`Análise de dependência do dia (dados reais do sistema, ano(s) ${anosLabel}): ao fechar as ${DIAS[diaFechar].toLowerCase()}s, o faturamento atual é ${rs(totDia)}. ${dep.exclusivos} clientes vêm SÓ neste dia (${dep.pct_exclusivos}% do total), representando ${rs(receitaRisco)} de receita REALMENTE em risco. ${dep.multidia} clientes também vêm em outros dias (${rs(receitaRecup)} recuperável). Migração estimada dos exclusivos: ${dep.migracao.alta} alta, ${dep.migracao.media} média, ${dep.migracao.baixa} baixa. Dê um parecer gerencial curto e um plano de migração desses ${dep.exclusivos} clientes exclusivos. Use SOMENTE esses números.`)} disabled={loadIA}
                   style={{ padding: '9px 18px', borderRadius: 8, border: 'none', background: 'linear-gradient(135deg,#5b4fcf,#f43f8e)', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                   {loadIA ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />} Parecer da IA com base na dependência real
                 </button>
@@ -393,6 +513,15 @@ export default function DiaSemanaReport() {
       {/* PERGUNTE À IA (parecer, não números) */}
       {dados && dados.length > 0 && (
         <div style={{ background: '#f0eefb', border: '1.5px solid #c4bef0', borderRadius: 14, padding: 16 }}>
+          <style>{`
+            .ia-md p { margin: 0 0 8px; }
+            .ia-md p:last-child { margin-bottom: 0; }
+            .ia-md strong { color: #1a1a1a; font-weight: 700; }
+            .ia-md h4 { font-size: 14px; margin: 12px 0 6px; color: #5b4fcf; font-weight: 700; }
+            .ia-md ul, .ia-md ol { margin: 4px 0 10px; padding-left: 20px; }
+            .ia-md li { margin: 3px 0; }
+            .ia-md hr { border: none; border-top: 1px solid #e8e6e0; margin: 10px 0; }
+          `}</style>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: '#5b4fcf', marginBottom: 4 }}>
             <Sparkles size={15} /> Pergunte à IA
           </div>
@@ -406,9 +535,9 @@ export default function DiaSemanaReport() {
             </button>
           </div>
           {(resposta || loadIA) && (
-            <div style={{ background: '#fff', borderRadius: 10, padding: 14, marginTop: 12, whiteSpace: 'pre-wrap', fontSize: 13, lineHeight: 1.6, color: '#1a1a1a' }}>
-              {resposta || 'Analisando...'}
-            </div>
+            resposta
+              ? <div className="ia-md" style={{ background: '#fff', borderRadius: 10, padding: 14, marginTop: 12, fontSize: 13, lineHeight: 1.6, color: '#1a1a1a' }} dangerouslySetInnerHTML={{ __html: mdToHtml(resposta) }} />
+              : <div style={{ background: '#fff', borderRadius: 10, padding: 14, marginTop: 12, fontSize: 13, color: '#9ca3af' }}>Analisando...</div>
           )}
         </div>
       )}
