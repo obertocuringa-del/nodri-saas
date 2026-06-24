@@ -39,6 +39,42 @@ html, body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* ───────────────────────────────────────────────────────────────
+   RESPONSIVIDADE MOBILE — telas até 640px (celular)
+   Ajustes globais que valem para TODAS as páginas sem editar os
+   componentes. Só afetam o celular; o desktop fica intacto.
+   Objetivo: tudo cabe na tela e nada fica escondido.
+   (CSS com !important numa media query vence o estilo inline.)
+   ─────────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  /* 1) Grids de várias colunas empilham em 1 coluna (lê tudo) */
+  [style*="grid-template-columns"] { grid-template-columns: 1fr !important; }
+
+  /* 2) Linhas em flex podem quebrar quando não couberem (não estoura a tela).
+        Não mexe nas que já são em coluna. */
+  [style*="display:flex"]:not([style*="column"]),
+  [style*="display: flex"]:not([style*="column"]) { flex-wrap: wrap !important; }
+
+  /* 3) Nenhum bloco passa da largura da tela (largura fixa vira "no máximo a tela").
+        min-width continua valendo, então áreas roláveis seguem rolando. */
+  div[style], section[style], header[style], main[style] { max-width: 100% !important; }
+
+  /* 4) Tabelas e mídias nunca estouram; a tabela quebra o conteúdo p/ caber */
+  table { max-width: 100% !important; }
+  img, svg, canvas, video { max-width: 100% !important; }
+
+  /* 5) Respiros laterais muito grandes diminuem p/ sobrar largura ao conteúdo */
+  [style*="padding: 24px"], [style*="padding:24px"],
+  [style*="padding: 28px"], [style*="padding:28px"],
+  [style*="padding: 32px"], [style*="padding:32px"],
+  [style*="padding: 36px"], [style*="padding:36px"],
+  [style*="padding: 40px"], [style*="padding:40px"] { padding: 14px !important; }
+
+  /* 6) Fonte mínima legível: nada abaixo de 11px no celular */
+  [style*="font-size: 9px"], [style*="font-size:9px"],
+  [style*="font-size: 10px"], [style*="font-size:10px"] { font-size: 11px !important; }
+}
+
 /* Scrollbar customizada */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: var(--nodri-surface); }
