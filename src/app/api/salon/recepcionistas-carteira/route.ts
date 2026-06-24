@@ -23,6 +23,62 @@ const RODA = [
 ]
 const LIMITE_JOGADAS_DIA = 3
 
+// ── Resolvedores dos jogos (sempre calculados no servidor, margem do salão) ──
+function jogarRoda(): { mult: number; label: string; detalhe: any } {
+  const total = RODA.reduce((s, x) => s + x.peso, 0)
+  let r = Math.random() * total, idx = 0
+  for (let i = 0; i < RODA.length; i++) { r -= RODA[i].peso; if (r <= 0) { idx = i; break } }
+  return { mult: RODA[idx].mult, label: RODA[idx].label, detalhe: { indice: idx } }
+}
+// 3 dados — prêmio pela soma (EV < 1)
+function jogarDados(): { mult: number; label: string; detalhe: any } {
+  const d = [0, 0, 0].map(() => 1 + Math.floor(Math.random() * 6))
+  const soma = d[0] + d[1] + d[2]
+  let mult = 0, label = 'Perdeu'
+  if (soma === 18) { mult = 10; label = 'Trinca máxima! 10×' }
+  else if (soma >= 15) { mult = 3; label = `Soma ${soma} — 3×` }
+  else if (soma >= 11) { mult = 1; label = `Soma ${soma} — empate` }
+  else if (soma >= 8) { mult = 0.5; label = `Soma ${soma} — metade` }
+  return { mult, label, detalhe: { dados: d, soma } }
+}
+// 1 carta — prêmio pelo valor (Ás alto)
+function jogarCartas(): { mult: number; label: string; detalhe: any } {
+  const naipes = ['♠', '♥', '♦', '♣']
+  const rank = 2 + Math.floor(Math.random() * 13)
+  const naipe = naipes[Math.floor(Math.random() * 4)]
+  const nomeRank = rank === 14 ? 'A' : rank === 13 ? 'K' : rank === 12 ? 'Q' : rank === 11 ? 'J' : String(rank)
+  let mult = 0, label = 'Perdeu'
+  if (rank === 14) { mult = 5; label = 'Ás! 5×' }
+  else if (rank >= 11) { mult = 2; label = 'Figura! 2×' }
+  else if (rank >= 8) { mult = 1; label = 'Empate' }
+  else if (rank >= 5) { mult = 0.5; label = 'Metade' }
+  return { mult, label, detalhe: { rank: nomeRank, naipe, vermelho: naipe === '♥' || naipe === '♦' } }
+}
+// 12 caixas — prêmios embaralhados (soma 7.5 → EV ~0,63×)
+const CAIXAS_PREMIOS = [0, 0, 0, 0, 0, 0, 0, 0.5, 1, 1, 2, 3]
+function jogarCaixas(escolha: number): { mult: number; label: string; detalhe: any } {
+  const arr = [...CAIXAS_PREMIOS]
+  for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[arr[i], arr[j]] = [arr[j], arr[i]] }
+  const e = (escolha >= 0 && escolha < 12) ? escolha : Math.floor(Math.random() * 12)
+  const mult = arr[e]
+  const label = mult === 0 ? 'Caixa vazia' : mult >= 2 ? `Sortuda! ${mult}×` : `${mult}×`
+  return { mult, label, detalhe: { caixas: arr, escolha: e } }
+}
+// Mina de diamantes — 25 casas, 3 bombas; abre N, se todas seguras o prêmio cresce
+const MINES_MULT: Record<number, number> = { 1: 1.0, 3: 1.3, 5: 1.8, 7: 2.6 }
+function jogarMines(qtd: number): { mult: number; label: string; detalhe: any } {
+  const total = 25, nBombas = 3
+  const n = [1, 3, 5, 7].includes(qtd) ? qtd : 3
+  const bombas = new Set<number>()
+  while (bombas.size < nBombas) bombas.add(Math.floor(Math.random() * total))
+  const ordem = [...Array(total).keys()].sort(() => Math.random() - 0.5)
+  const abertas = ordem.slice(0, n)
+  const acertouBomba = abertas.some(p => bombas.has(p))
+  const mult = acertouBomba ? 0 : (MINES_MULT[n] || 1)
+  const label = acertouBomba ? '💥 Bomba!' : `${n} diamantes! ${mult}×`
+  return { mult, label, detalhe: { bombas: [...bombas], abertas, total, ganhou: !acertouBomba } }
+}
+
 async function carregarMovimentos(salaoId: string) {
   const { data } = await supabaseAdmin
     .from('recepcionista_movimentos')
@@ -106,27 +162,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, pago: valor, data: dataStr, saldo: Math.round((atual.saldo - valor) * 100) / 100 })
   }
 
-  // ── Jogar Roda da Sorte (resultado calculado no servidor) ──
+  // ── Jogar (Roda, Dados, Cartas, Caixas, Mines) — resultado no servidor ──
   if (acao === 'jogar') {
     const aposta = Math.round((Number(body.aposta) || 0) * 100) / 100
     if (aposta <= 0) return NextResponse.json({ error: 'Aposta inválida' }, { status: 400 })
     if (aposta > atual.saldo + 0.001) return NextResponse.json({ error: 'Saldo insuficiente' }, { status: 400 })
     if (atual.jogadas_hoje >= LIMITE_JOGADAS_DIA) return NextResponse.json({ error: `Limite de ${LIMITE_JOGADAS_DIA} jogadas por dia atingido` }, { status: 400 })
 
-    // Sorteio ponderado
-    const pesoTotal = RODA.reduce((s, x) => s + x.peso, 0)
-    let r = Math.random() * pesoTotal
-    let idx = 0
-    for (let i = 0; i < RODA.length; i++) { r -= RODA[i].peso; if (r <= 0) { idx = i; break } }
-    const seg = RODA[idx]
-    const premio = Math.round(aposta * seg.mult * 100) / 100
+    const jogo = String(body.jogo || 'roda')
+    let res: { mult: number; label: string; detalhe: any }
+    if (jogo === 'dados') res = jogarDados()
+    else if (jogo === 'cartas') res = jogarCartas()
+    else if (jogo === 'caixas') res = jogarCaixas(Number(body.escolha))
+    else if (jogo === 'mines') res = jogarMines(Number(body.qtd))
+    else res = jogarRoda()
 
-    // Registra aposta (-) e prêmio (+)
-    await insert('jogo_aposta', -aposta, { jogo: 'roda_sorte', descricao: 'Aposta na Roda da Sorte' })
-    if (premio > 0) await insert('jogo_premio', premio, { jogo: 'roda_sorte', descricao: `Prêmio Roda da Sorte (${seg.label})` })
+    const premio = Math.round(aposta * res.mult * 100) / 100
+    await insert('jogo_aposta', -aposta, { jogo, descricao: `Aposta (${jogo})` })
+    if (premio > 0) await insert('jogo_premio', premio, { jogo, descricao: `Prêmio ${jogo} (${res.label})` })
 
     const saldoNovo = Math.round((atual.saldo - aposta + premio) * 100) / 100
-    return NextResponse.json({ ok: true, indice: idx, label: seg.label, mult: seg.mult, premio, aposta, saldo: saldoNovo })
+    return NextResponse.json({ ok: true, jogo, label: res.label, mult: res.mult, premio, aposta, saldo: saldoNovo, ...res.detalhe })
   }
 
   return NextResponse.json({ error: 'Ação inválida' }, { status: 400 })

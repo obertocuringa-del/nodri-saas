@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Loader2, Trophy, TrendingUp, Users, DollarSign } from 'lucide-react'
 import RecepcionistasCarteira from './RecepcionistasCarteira'
-import RodaDaSorte from './RodaDaSorte'
+import SalaDeJogos from './SalaDeJogos'
 
 const moeda = (v: number) => 'R$ ' + (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
@@ -41,7 +41,7 @@ export default function RecuperadosReport() {
       </div>
 
       {vista === 'carteira' && <RecepcionistasCarteira />}
-      {vista === 'jogo' && <RodaDaSorte />}
+      {vista === 'jogo' && <SalaDeJogos />}
 
       {vista === 'recuperados' && (
         loading ? <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Loader2 size={24} className="animate-spin" style={{ color: '#5b4fcf' }} /></div>
