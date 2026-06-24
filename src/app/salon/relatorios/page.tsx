@@ -275,7 +275,7 @@ export default function RelatoriosPage() {
   useEffect(() => {
     fetch('/api/relatorios/recuperacao?tipo=status')
       .then(r => r.ok ? r.json() : {})
-      .then(d => setEnviosMap(d.contagem || {}))
+      .then((d: any) => setEnviosMap(d?.contagem || {}))
       .catch(() => {})
   }, [analiseDetalhe])
   const [analiseLoading, setAnaliseLoading] = useState(false)
