@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { Loader2, Wallet, HandCoins, Check } from 'lucide-react'
+import { Loader2, DollarSign, Check } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const moeda = (v: number) => 'R$ ' + (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -59,7 +59,7 @@ export default function RecepcionistasCarteira() {
   return (
     <div>
       <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 12, padding: '14px 18px', marginBottom: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, fontWeight: 700, color: '#9a3412' }}><Wallet size={16} /> Carteira & Pagamentos das Recepcionistas</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, fontWeight: 700, color: '#9a3412' }}><DollarSign size={16} /> Carteira & Pagamentos das Recepcionistas</div>
         <p style={{ color: '#9a3412', fontSize: 12, margin: '4px 0 0' }}>
           Credite o bônus conquistado na carteira, faça o pagamento total ou um adiantamento. O saldo é a fonte usada também na Sala de Recompensas.
         </p>
@@ -103,7 +103,7 @@ export default function RecepcionistasCarteira() {
                             </button>
                             <button disabled={carregando} onClick={() => { setAdiantando(nome); setValorAdiant('') }}
                               style={{ background: '#fff', color: '#5b4fcf', border: '1.5px solid #5b4fcf', borderRadius: 7, padding: '5px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                              <HandCoins size={12} /> Adiantar
+                              <DollarSign size={12} /> Adiantar
                             </button>
                           </>
                         )}
