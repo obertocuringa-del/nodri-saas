@@ -26,14 +26,25 @@ export default function BotaoRecuperacao({ cliente, origem }: { cliente: any; or
   const [loadIA, setLoadIA] = useState(false)
   const janela = useRef(10)
 
+  const lockKey = 'nodri_recup_lock_' + (cliente.cliente_nome || '')
+
   useEffect(() => {
+    // Trava persistida localmente: sobrevive ao refresh e destrava sozinha
+    // quando os dias passam (não some ao atualizar a página).
+    try {
+      const ls = localStorage.getItem(lockKey)
+      if (ls) { const t = Number(ls); if (t > Date.now()) setTravadoAte(t); else localStorage.removeItem(lockKey) }
+    } catch {}
     getStatus().then(s => {
       janela.current = s.janela_dias || 10
       const t = s.travados?.[cliente.cliente_nome]
-      if (t) setTravadoAte(new Date(t.contato_em).getTime() + (s.janela_dias || 10) * 86400000)
+      if (t) {
+        const serverAte = new Date(t.contato_em).getTime() + (s.janela_dias || 10) * 86400000
+        setTravadoAte(prev => (prev && prev > serverAte ? prev : serverAte))
+      }
     })
     getRecepcionistas().then(setRecep)
-  }, [cliente.cliente_nome])
+  }, [cliente.cliente_nome, lockKey])
 
   const travado = travadoAte != null && travadoAte > Date.now()
   const diasRest = travado ? Math.ceil((travadoAte! - Date.now()) / 86400000) : 0
@@ -47,8 +58,8 @@ export default function BotaoRecuperacao({ cliente, origem }: { cliente: any; or
     // Padrão: nome em negrito (*nome* no WhatsApp), parágrafos separados,
     // acolhe, abre espaço para feedback E oferece o serviço que ela faz
     setMsg(perdida
-      ? `Oi *${primeiro}*!\n\nFaz um tempinho que não te vejo aqui no salão 💛 Tá tudo bem?\nAdoraríamos muito te receber de novo — que tal agendarmos${servTxt}?\n\nSe teve algo que a gente possa melhorar, me conta também!`
-      : `Oi *${primeiro}*!\n\nSenti sua falta por aqui 💛 Vamos agendar${servTxt}?\nConsigo um horário ótimo pra você amanhã — que horas fica melhor?`)
+      ? `Oi *${primeiro}*!\n\nFaz um tempinho que não te vejo aqui no salão \u{1F49B} Tá tudo bem?\nAdoraríamos muito te receber de novo — que tal agendarmos${servTxt}?\n\nSe teve algo que a gente possa melhorar, me conta também!`
+      : `Oi *${primeiro}*!\n\nSenti sua falta por aqui \u{1F49B} Vamos agendar${servTxt}?\nConsigo um horário ótimo pra você amanhã — que horas fica melhor?`)
     setRecepSel(recep[0]?.nome || '')
     setOpen(true)
   }
@@ -88,7 +99,9 @@ export default function BotaoRecuperacao({ cliente, origem }: { cliente: any; or
     const fone = String(cliente.celular || '').replace(/\D/g, '')
     const numero = fone.startsWith('55') ? fone : '55' + fone
     window.open(`https://wa.me/${numero}?text=${encodeURIComponent(msg)}`, '_blank')
-    setTravadoAte(Date.now() + janela.current * 86400000)
+    const until = Date.now() + janela.current * 86400000
+    try { localStorage.setItem(lockKey, String(until)) } catch {}
+    setTravadoAte(until)
     _statusCache = null
     setEnviando(false); setOpen(false)
   }
