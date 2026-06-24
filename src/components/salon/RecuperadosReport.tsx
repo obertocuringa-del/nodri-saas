@@ -5,13 +5,14 @@ import { Loader2, Trophy, TrendingUp, Users, DollarSign } from 'lucide-react'
 import RecepcionistasCarteira from './RecepcionistasCarteira'
 import SalaDeJogos from './SalaDeJogos'
 import DesafioMatch from './DesafioMatch'
+import ArenaNodri from './ArenaNodri'
 
 const moeda = (v: number) => 'R$ ' + (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
 export default function RecuperadosReport() {
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [vista, setVista] = useState<'recuperados' | 'carteira' | 'jogo' | 'desafios'>('recuperados')
+  const [vista, setVista] = useState<'recuperados' | 'carteira' | 'jogo' | 'desafios' | 'arena'>('recuperados')
 
   useEffect(() => {
     setLoading(true)
@@ -33,7 +34,7 @@ export default function RecuperadosReport() {
     <div>
       {/* Sub-abas */}
       <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
-        {([['recuperados', '💚 Recuperados'], ['carteira', '💰 Carteira & Pagamentos'], ['jogo', '🎡 Sala de Recompensas'], ['desafios', '⚔️ Desafio 1×1']] as const).map(([v, l]) => (
+        {([['recuperados', '💚 Recuperados'], ['carteira', '💰 Carteira & Pagamentos'], ['jogo', '🎡 Sala de Recompensas'], ['desafios', '⚔️ Desafio 1×1'], ['arena', '🏟️ Arena NODRI']] as const).map(([v, l]) => (
           <button key={v} onClick={() => setVista(v)}
             style={{ padding: '7px 14px', borderRadius: 8, border: vista === v ? '2px solid #5b4fcf' : '1.5px solid #e0ddd8', background: vista === v ? '#f0eefb' : '#fff', color: vista === v ? '#5b4fcf' : '#6b6860', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
             {l}
@@ -44,6 +45,7 @@ export default function RecuperadosReport() {
       {vista === 'carteira' && <RecepcionistasCarteira />}
       {vista === 'jogo' && <SalaDeJogos />}
       {vista === 'desafios' && <DesafioMatch />}
+      {vista === 'arena' && <ArenaNodri />}
 
       {vista === 'recuperados' && (
         loading ? <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Loader2 size={24} className="animate-spin" style={{ color: '#5b4fcf' }} /></div>
