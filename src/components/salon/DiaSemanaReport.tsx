@@ -64,6 +64,8 @@ export default function DiaSemanaReport() {
   const [depLoad, setDepLoad] = useState(false)
   // Ordenação da tabela de clientes exclusivos
   const [sortExcl, setSortExcl] = useState<{ key: string; dir: 1 | -1 }>({ key: '', dir: -1 })
+  // Ordenação do ranking de serviços
+  const [sortServ, setSortServ] = useState<{ key: string; dir: 1 | -1 }>({ key: '', dir: -1 })
   // Referência ao conteúdo do relatório (para impressão de tudo)
   const printRef = useRef<HTMLDivElement>(null)
 
@@ -384,6 +386,8 @@ export default function DiaSemanaReport() {
               <>
                 {/* Cards principais */}
                 <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
+                  {cardMetric('Clientes no dia', String(dep.total_clientes), '#5b4fcf')}
+                  {cardMetric('Atendimentos no dia', String(dep.total_atendimentos ?? 0), '#0891b2')}
                   {cardMetric('Clientes exclusivos', String(dep.exclusivos), '#A32D2D')}
                   {cardMetric('% Exclusivos', dep.pct_exclusivos + '%', '#d97706')}
                   {cardMetric('Clientes multidia', String(dep.multidia), '#16a34a')}
@@ -405,6 +409,55 @@ export default function DiaSemanaReport() {
                     <span>🟥 Exclusivos deste dia</span><span>🟩 Frequentam outros dias</span>
                   </div>
                 </div>
+
+                {/* Ranking de serviços mais vendidos no dia */}
+                {Array.isArray(dep.servicos) && dep.servicos.length > 0 && (() => {
+                  const valServ = (s: any, k: string): number | string => k === 'servico' ? String(s.servico || '').toLowerCase() : Number(s[k]) || 0
+                  const servOrd = (() => {
+                    const arr = [...dep.servicos]
+                    if (!sortServ.key) return arr
+                    arr.sort((a, b) => {
+                      const va = valServ(a, sortServ.key), vb = valServ(b, sortServ.key)
+                      if (typeof va === 'number' && typeof vb === 'number') return sortServ.dir * (va - vb)
+                      return sortServ.dir * String(va).localeCompare(String(vb), 'pt-BR')
+                    })
+                    return arr
+                  })()
+                  const colsS: [string, string][] = [['Serviço', 'servico'], ['Qtd', 'qtd'], ['Faturamento', 'receita']]
+                  return (
+                    <div style={{ border: '1px solid #e8e6e0', borderRadius: 10, overflow: 'hidden', marginBottom: 14 }}>
+                      <div style={{ background: '#f0eefb', padding: '8px 12px', fontSize: 12, fontWeight: 700, color: '#5b4fcf' }}>
+                        Serviços mais vendidos {DIAS[diaFechar].toLowerCase()} — {dep.servicos.length} serviços · {dep.total_atendimentos} atendimentos
+                      </div>
+                      <div style={{ overflowX: 'auto', maxHeight: 320, overflowY: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                          <thead><tr style={{ background: '#faf9f7', position: 'sticky', top: 0 }}>
+                            {colsS.map(([h, key]) => (
+                              <th key={key} onClick={() => setSortServ(s => ({ key, dir: s.key === key ? (-s.dir as 1 | -1) : -1 }))}
+                                style={{ padding: '7px 12px', textAlign: key === 'servico' ? 'left' : 'right', fontSize: 11, color: '#6b6860', fontWeight: 600, whiteSpace: 'nowrap', cursor: 'pointer', userSelect: 'none' }}>
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                                  {h}
+                                  {sortServ.key === key ? (sortServ.dir === -1 ? <ChevronDown size={11} /> : <ChevronUp size={11} />) : <ChevronsUpDown size={11} style={{ opacity: 0.3 }} />}
+                                </span>
+                              </th>
+                            ))}
+                            <th style={{ padding: '7px 12px', textAlign: 'right', fontSize: 11, color: '#6b6860', fontWeight: 600 }}>%</th>
+                          </tr></thead>
+                          <tbody>
+                            {servOrd.map((s: any, i: number) => (
+                              <tr key={i} style={{ borderTop: '1px solid #f0eee8' }}>
+                                <td style={{ padding: '6px 12px', color: '#1a1a1a', fontWeight: 600 }}>{s.servico}</td>
+                                <td style={{ padding: '6px 12px', textAlign: 'right', color: '#5b4fcf', fontWeight: 700 }}>{s.qtd}</td>
+                                <td style={{ padding: '6px 12px', textAlign: 'right', color: '#16a34a', fontWeight: 600 }}>{rs(s.receita)}</td>
+                                <td style={{ padding: '6px 12px', textAlign: 'right', color: '#767069' }}>{dep.total_atendimentos > 0 ? Math.round(s.qtd / dep.total_atendimentos * 1000) / 10 : 0}%</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )
+                })()}
 
                 {/* Quadro impacto + migração */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 12, marginBottom: 14 }}>
@@ -471,7 +524,7 @@ export default function DiaSemanaReport() {
                 )}
 
                 {/* Parecer da IA com base na dependência real */}
-                <button onClick={() => perguntarIA(`Análise de dependência do dia (dados reais do sistema, ano(s) ${anosLabel}): ao fechar as ${DIAS[diaFechar].toLowerCase()}s, o faturamento atual é ${rs(totDia)}. ${dep.exclusivos} clientes vêm SÓ neste dia (${dep.pct_exclusivos}% do total), representando ${rs(receitaRisco)} de receita REALMENTE em risco. ${dep.multidia} clientes também vêm em outros dias (${rs(receitaRecup)} recuperável). Migração estimada dos exclusivos: ${dep.migracao.alta} alta, ${dep.migracao.media} média, ${dep.migracao.baixa} baixa. Dê um parecer gerencial curto e um plano de migração desses ${dep.exclusivos} clientes exclusivos. Use SOMENTE esses números.`)} disabled={loadIA}
+                <button onClick={() => perguntarIA(`Análise de dependência do dia (dados reais do sistema, ano(s) ${anosLabel}): ao fechar as ${DIAS[diaFechar].toLowerCase()}s, o faturamento atual é ${rs(totDia)}. ${dep.exclusivos} clientes vêm SÓ neste dia (${dep.pct_exclusivos}% do total), representando ${rs(receitaRisco)} de receita REALMENTE em risco. ${dep.multidia} clientes também vêm em outros dias (${rs(receitaRecup)} recuperável). Migração estimada dos exclusivos: ${dep.migracao.alta} alta, ${dep.migracao.media} média, ${dep.migracao.baixa} baixa. ${dep.total_clientes} clientes no dia, ${dep.total_atendimentos} atendimentos. Serviços mais vendidos: ${(dep.servicos || []).slice(0, 6).map((s: any) => `${s.servico} (${s.qtd}x)`).join(', ')}. Dê um parecer gerencial curto e um plano de migração desses ${dep.exclusivos} clientes exclusivos, aproveitando os serviços fortes do dia. Use SOMENTE esses números.`)} disabled={loadIA}
                   style={{ padding: '9px 18px', borderRadius: 8, border: 'none', background: 'linear-gradient(135deg,#5b4fcf,#f43f8e)', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                   {loadIA ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />} Parecer da IA com base na dependência real
                 </button>

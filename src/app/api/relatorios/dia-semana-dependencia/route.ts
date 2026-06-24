@@ -50,14 +50,27 @@ export async function GET(req: NextRequest) {
   const porCliente: Record<string, {
     dias: Set<number>; receitaNoDia: number; visitasNoDia: number; ultimaNoDia: string; celular: string
   }> = {}
+  // Ranking de serviços vendidos no dia-alvo (quantidade + faturamento)
+  const porServico: Record<string, { qtd: number; receita: number }> = {}
 
   for (const r of rows) {
     if (!anos.has(Number(r.ano))) continue
-    const cli = (r.cliente || '').trim().toUpperCase()
-    if (!cli || cli === 'NAN') continue
     const wd = dow(r.data_comanda)
     if (wd < 0) continue
     const val = Number(r.total) || Number(r.valor) || 0
+
+    // Serviços do dia-alvo: conta TODOS os atendimentos do dia (cada linha = 1 serviço)
+    if (wd === dia) {
+      const sv = (r.servico || '').trim().toUpperCase()
+      if (sv) {
+        if (!porServico[sv]) porServico[sv] = { qtd: 0, receita: 0 }
+        porServico[sv].qtd += 1
+        porServico[sv].receita += val
+      }
+    }
+
+    const cli = (r.cliente || '').trim().toUpperCase()
+    if (!cli || cli === 'NAN') continue
     if (!porCliente[cli]) porCliente[cli] = { dias: new Set(), receitaNoDia: 0, visitasNoDia: 0, ultimaNoDia: '', celular: '' }
     const c = porCliente[cli]
     c.dias.add(wd)
@@ -97,10 +110,17 @@ export async function GET(req: NextRequest) {
   const receitaTotal = receitaExclusiva + receitaMultidia
   listaExclusivos.sort((a, b) => b.receita - a.receita)
 
+  const servicos = Object.entries(porServico)
+    .map(([servico, v]) => ({ servico, qtd: v.qtd, receita: Math.round(v.receita) }))
+    .sort((a, b) => b.qtd - a.qtd)
+  const totalAtendimentos = servicos.reduce((s, x) => s + x.qtd, 0)
+
   return NextResponse.json({
     dia,
     anos: [...anos].sort((a, b) => a - b),
     total_clientes: totalClientes,
+    total_atendimentos: totalAtendimentos,
+    servicos,
     exclusivos,
     multidia,
     pct_exclusivos: totalClientes > 0 ? Math.round((exclusivos / totalClientes) * 1000) / 10 : 0,
