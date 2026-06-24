@@ -1095,7 +1095,7 @@ export default function RelatoriosPage() {
 ${([['Faturamento Total',r1.fat_total,r2.fat_total],['Ticket Médio',r1.ticket,r2.ticket],['Clientes Atendidos',r1.clientes,r2.clientes],['Clientes Novos',r1.novos,r2.novos],['Fat. Serviços',r1.fat_srv,r2.fat_srv],['Fat. Produtos',r1.fat_prd,r2.fat_prd]] as [string,number,number][]).map(([lbl,v1,v2])=>{const p=Number(v2)>0?((Number(v1)-Number(v2))/Number(v2)*100):0;const cor=p>=0?'#166534':'#991b1b';const isN=lbl.includes('Clientes');return `<tr><td>${lbl}</td><td style="text-align:right;font-weight:700">${isN?v1.toLocaleString('pt-BR'):moeda(v1)}</td><td style="text-align:right;color:#777">${isN?v2.toLocaleString('pt-BR'):moeda(v2)}</td><td style="text-align:right;font-weight:700;color:${cor}">${p>=0?'+':''}${p.toFixed(1)}%</td></tr>`}).join('')}
 </tbody></table></div>`
                     abrirImpressaoRel(wrapRel('Relatório Geral', corpo))
-                  }} style={{ display:'flex',alignItems:'center',gap:6,padding:'6px 14px',border:'1px solid #e0ddd8',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',background:'#fff',color:'#767069' }}>🖨️ Imprimir</button>
+                  }} style={{ display:'flex',alignItems:'center',gap:6,padding:'6px 14px',border:'1px solid #e0ddd8',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',background:'#fff',color:'#767069' }} className="no-mobile">🖨️ Imprimir</button>
                 </div>
                 {/* KPIs */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 10, marginBottom: 20 }}>
@@ -2056,7 +2056,7 @@ ${([['Faturamento Total',r1.fat_total,r2.fat_total],['Ticket Médio',r1.ticket,r
                       }).join('')
                       const corpo = `<div class="cards"><div class="card"><div class="card-lbl">Surplus Redistribuído</div><div class="card-val" style="color:#5b4fcf">${moeda(surplus)}</div></div><div class="card"><div class="card-lbl">Profis. Ajustados</div><div class="card-val">${totalAjustados}</div></div><div class="card"><div class="card-lbl">Doadores / Receptores</div><div class="card-val">${redistResultado.filter(r=>r.tipo==='doador').length} / ${redistResultado.filter(r=>r.tipo==='receptor').length}</div></div></div><div class="sec"><div class="sec-title">Redistribuição de Metas — ${periodoRefLabel}</div><table class="tbl"><thead><tr><th>Profissional</th><th>Cargo</th><th style="text-align:right">Meta Original</th><th style="text-align:right">Meta Ajustada</th><th style="text-align:right">Diferença</th><th>Motivo</th></tr></thead><tbody>${rows}</tbody></table></div>`
                       abrirImpressaoRel(wrapRel('Redistribuição de Metas', corpo))
-                    }} style={{ display:'flex',alignItems:'center',gap:6,padding:'6px 14px',border:'1px solid #e0ddd8',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',background:'#fff',color:'#767069' }}>🖨️ Imprimir</button>
+                    }} style={{ display:'flex',alignItems:'center',gap:6,padding:'6px 14px',border:'1px solid #e0ddd8',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',background:'#fff',color:'#767069' }} className="no-mobile">🖨️ Imprimir</button>
                   </div>
                   {/* Card resumo */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10, marginBottom: 16 }}>
@@ -2222,7 +2222,7 @@ ${([['Faturamento Total',r1.fat_total,r2.fat_total],['Ticket Médio',r1.ticket,r
                       }).join('')
                       const corpo = `<div class="sec"><div class="sec-title">Meta por Profissional — ${periodoRefLabel}</div><table class="tbl"><thead><tr><th>Profissional</th><th>Cargo</th><th style="text-align:right">Meta</th><th style="text-align:right">%</th></tr></thead><tbody>${rows}</tbody></table></div>`
                       abrirImpressaoRel(wrapRel('Meta Prof. — ' + periodoRefLabel, corpo))
-                    }} style={{ display:'flex',alignItems:'center',gap:6,padding:'6px 14px',border:'1px solid #e0ddd8',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',background:'#fff',color:'#767069' }}>🖨️ Imprimir</button>
+                    }} style={{ display:'flex',alignItems:'center',gap:6,padding:'6px 14px',border:'1px solid #e0ddd8',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',background:'#fff',color:'#767069' }} className="no-mobile">🖨️ Imprimir</button>
                   </div>
 
                   {/* Tabela de metas por profissional */}
@@ -2407,7 +2407,7 @@ ${lista.map((c:any,i:number)=>{
 </tbody></table></div>`
                       const labelsMap: Record<string,string> = {risco:'Em Risco',perdidos:'Perdidos',vip:'VIP',regular:'Regular',novo:'Novas',frequencia:'Frequência',diasemana:'Dia da Semana',crosssell:'Cross-sell'}
                       abrirImpressaoRel(wrapRel(labelsMap[subAnalise]||subAnalise, corpo))
-                    }} style={{ display:'flex',alignItems:'center',gap:6,padding:'6px 14px',border:'1px solid #e0ddd8',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',background:'#fff',color:'#767069' }}>🖨️ Imprimir</button>
+                    }} style={{ display:'flex',alignItems:'center',gap:6,padding:'6px 14px',border:'1px solid #e0ddd8',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',background:'#fff',color:'#767069' }} className="no-mobile">🖨️ Imprimir</button>
                   </div>
                 </div>
 

@@ -97,6 +97,10 @@ html, body {
          WhatsApp) nunca taparem o último conteúdo da página. */
   [style*="min-height: 100vh"], [style*="min-height:100vh"],
   [style*="min-height: 100dvh"], [style*="min-height:100dvh"] { padding-bottom: 92px !important; }
+
+  /* 12) Itens marcados como .no-mobile somem no celular (ex: botões de
+         imprimir, que não fazem sentido no telefone). */
+  .no-mobile { display: none !important; }
 }
 
 /* Scrollbar customizada */
