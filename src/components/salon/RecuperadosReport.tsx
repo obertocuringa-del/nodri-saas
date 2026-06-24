@@ -2,12 +2,15 @@
 
 import { useEffect, useState } from 'react'
 import { Loader2, Trophy, TrendingUp, Users, DollarSign } from 'lucide-react'
+import RecepcionistasCarteira from './RecepcionistasCarteira'
+import RodaDaSorte from './RodaDaSorte'
 
 const moeda = (v: number) => 'R$ ' + (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
 export default function RecuperadosReport() {
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [vista, setVista] = useState<'recuperados' | 'carteira' | 'jogo'>('recuperados')
 
   useEffect(() => {
     setLoading(true)
@@ -18,9 +21,6 @@ export default function RecuperadosReport() {
       .finally(() => setLoading(false))
   }, [])
 
-  if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Loader2 size={24} className="animate-spin" style={{ color: '#5b4fcf' }} /></div>
-  if (!data) return <div style={{ textAlign: 'center', padding: 40, color: '#6b7280' }}>Não foi possível carregar.</div>
-
   const card = (icon: any, label: string, valor: string, cor: string) => (
     <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: '14px 16px', flex: '1 1 160px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#6b6860', fontWeight: 600, textTransform: 'uppercase', marginBottom: 6 }}>{icon}{label}</div>
@@ -30,6 +30,24 @@ export default function RecuperadosReport() {
 
   return (
     <div>
+      {/* Sub-abas */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
+        {([['recuperados', '💚 Recuperados'], ['carteira', '💰 Carteira & Pagamentos'], ['jogo', '🎡 Sala de Recompensas']] as const).map(([v, l]) => (
+          <button key={v} onClick={() => setVista(v)}
+            style={{ padding: '7px 14px', borderRadius: 8, border: vista === v ? '2px solid #5b4fcf' : '1.5px solid #e0ddd8', background: vista === v ? '#f0eefb' : '#fff', color: vista === v ? '#5b4fcf' : '#6b6860', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+            {l}
+          </button>
+        ))}
+      </div>
+
+      {vista === 'carteira' && <RecepcionistasCarteira />}
+      {vista === 'jogo' && <RodaDaSorte />}
+
+      {vista === 'recuperados' && (
+        loading ? <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Loader2 size={24} className="animate-spin" style={{ color: '#5b4fcf' }} /></div>
+        : !data ? <div style={{ textAlign: 'center', padding: 40, color: '#6b7280' }}>Não foi possível carregar.</div>
+        : (
+        <>
       <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 12, padding: '14px 18px', marginBottom: 16 }}>
         <h3 style={{ color: '#15803d', fontSize: 14, fontWeight: 700, margin: 0 }}>💚 Clientes Recuperados</h3>
         <p style={{ color: '#166534', fontSize: 12, margin: '4px 0 0' }}>
@@ -111,6 +129,9 @@ export default function RecuperadosReport() {
           </div>
         )}
       </div>
+        </>
+        )
+      )}
     </div>
   )
 }
