@@ -142,13 +142,45 @@ export default function GerenciarFeedbacksPage() {
     setPage(1)
   }
 
-  // Imprime a página inteira (todos os dados na tela, inclusive o resumo)
+  // Impressão A4 do RESUMO por categoria — HTML próprio e estilizado (não clona a
+  // tela, pois o Tailwind não carrega na janela de impressão). Cada categoria e
+  // cada profissional não quebram no meio da página.
   const printFbRef = useRef<HTMLDivElement>(null)
-  function imprimirFb() {
-    const node = printFbRef.current
-    if (!node) return
-    const css = `@page{size:A4 portrait;margin:12mm}*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;max-height:none !important;overflow:visible !important}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;font-size:11px;margin:0}button,input,select,[type=range]{display:none !important}table{width:100%;border-collapse:collapse}thead{display:table-header-group}tr,img{break-inside:avoid}h1.pt{font-size:18px;color:#5b4fcf;margin:0 0 12px}`
-    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Feedbacks NODRI</title><style>${css}</style></head><body><h1 class="pt">NODRI — Feedbacks &nbsp;·&nbsp; ${new Date().toLocaleDateString('pt-BR')}</h1>${node.innerHTML}</body></html>`
+  async function imprimirFb() {
+    // Garante os dados do resumo (mesmo que a seção não esteja aberta na tela)
+    let dados = resumo
+    if (!dados) {
+      const qs = new URLSearchParams({ formulario_id })
+      if (ocorridoSel) qs.set('ocorrido', ocorridoSel)
+      if (mesesSel.length) qs.set('meses', mesesSel.join(','))
+      try { const r = await fetch(`/api/feedback-prof/resumo?${qs}`); if (r.ok) dados = await r.json() } catch {}
+    }
+    if (!dados || !dados.categorias?.length) { alert('Nada para imprimir com o filtro atual.'); return }
+
+    const esc = (s: string) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    const filtros: string[] = []
+    if (mesesSel.length) filtros.push('Meses: ' + mesesSel.slice().sort().map(labelMes).join(', '))
+    if (ocorridoSel) filtros.push('Ocorrência: ' + esc(ocorridoSel))
+
+    const cats = dados.categorias.map((cat: any) => {
+      const profs = cat.profissionais.map((pf: any) => `
+        <div class="prof">
+          <div class="prof-hd"><span class="prof-nome">${esc(pf.nome)}</span><span class="prof-tot">${pf.total} · ${pf.positivos}+ / ${pf.negativos}-</span></div>
+          <div class="badges">${pf.ocorrencias.map((o: any) => `<span class="bdg">${esc(o.ocorrencia)} <b>${o.qtd}</b></span>`).join('')}</div>
+        </div>`).join('')
+      const resumoCat = cat.resumo_ocorrencias.map((o: any) => `<span class="bdg bdg-cat">${esc(o.ocorrencia)} <b>${o.qtd}</b></span>`).join('')
+      return `
+        <div class="cat">
+          <div class="cat-hd"><span class="cat-nome">${esc(cat.categoria)}</span><span class="cat-tot">${cat.total} ocorrências · ${cat.positivos} pos · ${cat.negativos} neg</span></div>
+          <div class="cat-body">
+            ${profs}
+            <div class="cat-resumo"><div class="cat-resumo-lbl">Resumo da categoria — ${esc(cat.categoria)}</div><div class="badges">${resumoCat}</div></div>
+          </div>
+        </div>`
+    }).join('')
+
+    const css = `@page{size:A4 portrait;margin:12mm}*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;font-size:11px;margin:0;line-height:1.45}h1{font-size:18px;color:#5b4fcf;margin:0 0 3px}.sub{font-size:11px;color:#6b6860;margin-bottom:14px}.cat{border:1px solid #e3e0f5;border-radius:10px;overflow:hidden;margin-bottom:14px;break-inside:avoid;page-break-inside:avoid}.cat-hd{background:#f0eefb;padding:7px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px}.cat-nome{font-weight:800;color:#5b4fcf;font-size:13px}.cat-tot{font-size:10.5px;color:#555;white-space:nowrap}.cat-body{padding:8px 12px}.prof{padding:7px 0;border-bottom:1px solid #f0eee8;break-inside:avoid;page-break-inside:avoid}.prof:last-child{border-bottom:none}.prof-hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:5px}.prof-nome{font-weight:700;font-size:12px}.prof-tot{font-size:10px;color:#888;white-space:nowrap}.badges{display:flex;flex-wrap:wrap;gap:5px}.bdg{background:#f5f4f0;color:#555;border-radius:20px;padding:2px 9px;font-size:10px;white-space:nowrap}.bdg b{color:#1a1a2e}.bdg-cat{background:#ede9fe;color:#5b21b6}.cat-resumo{margin-top:9px;padding-top:8px;border-top:1.5px dashed #d8d4ef}.cat-resumo-lbl{font-size:11px;font-weight:700;color:#5b4fcf;margin-bottom:5px}`
+    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Feedbacks NODRI</title><style>${css}</style></head><body><h1>NODRI — Resumo de Feedbacks por Categoria</h1><div class="sub">Gerado em ${new Date().toLocaleDateString('pt-BR')}${filtros.length ? ' &nbsp;·&nbsp; ' + filtros.join(' &nbsp;·&nbsp; ') : ''}</div>${cats}</body></html>`
     const win = window.open('', '_blank', 'width=900,height=700')
     if (!win) return
     win.document.write(html); win.document.close(); win.focus()
