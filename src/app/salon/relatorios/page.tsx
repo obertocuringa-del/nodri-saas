@@ -8,6 +8,7 @@ import RankingUnificado from '@/components/salon/RankingUnificado'
 import BotaoRecuperacao from '@/components/salon/BotaoRecuperacao'
 import RecuperadosReport from '@/components/salon/RecuperadosReport'
 import DiaSemanaReport from '@/components/salon/DiaSemanaReport'
+import { useIsMobile } from '@/lib/useIsMobile'
 
 // ─── ORDENAÇÃO DE TABELAS (reutilizável) ─────────────────────────────────────
 // Converte um valor para uma chave ordenável: detecta número, data BR (DD/MM/YYYY)
@@ -256,6 +257,7 @@ function TabelaComp({ title, items, label1, label2 }: { title: string; items: It
 // ─── COMPONENTE PRINCIPAL ────────────────────────────────────────────────────
 export default function RelatoriosPage() {
   const router = useRouter()
+  const isMobile = useIsMobile()
   const [dados, setDados] = useState<DadosBase | null>(null)
   const [profsCadastrados, setProfsCadastrados] = useState<ProfCadastrado[]>([])
   const [aba, setAba] = useState<'geral' | 'metas' | 'profissionais' | 'feedbacks' | 'meta_prof' | 'redistribuicao' | 'analise' | 'ranking'>('geral')
@@ -987,7 +989,30 @@ export default function RelatoriosPage() {
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
 
           {/* ABAS */}
-          <div style={{ padding: '12px 20px 0', display: 'flex', gap: 4, borderBottom: '1px solid #e8e6e0' }}>
+          <div style={{ padding: isMobile ? '10px 14px 0' : '12px 20px 0', display: 'flex', gap: 4, borderBottom: '1px solid #e8e6e0', flexWrap: 'wrap' }}>
+            {isMobile && (
+              <select value={aba === 'analise' ? `analise:${subAnalise}` : aba}
+                onChange={e => { const v = e.target.value; if (v.startsWith('analise:')) { const sub = v.slice(8); setAba('analise'); setSubAnalise(sub as any); if (sub !== 'recuperados') carregarAnalise(sub) } else { setAba(v as any) } }}
+                style={{ width: '100%', padding: '11px 12px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 14, fontWeight: 700, color: '#1a1a1a', background: '#fff', margin: '2px 0 8px' }}>
+                <option value="geral">Geral</option>
+                <option value="metas">Metas</option>
+                <option value="meta_prof">Meta Prof.</option>
+                <option value="redistribuicao">Redistribuição</option>
+                <option value="ranking">Relatório Unificado Profissionais</option>
+                <optgroup label="Mais Relatórios">
+                  <option value="analise:risco">Em Risco</option>
+                  <option value="analise:perdidos">Perdidos</option>
+                  <option value="analise:vip">VIP</option>
+                  <option value="analise:regular">Regular</option>
+                  <option value="analise:novo">Novo</option>
+                  <option value="analise:crosssell">Cross-sell</option>
+                  <option value="analise:frequencia">Frequência</option>
+                  <option value="analise:diasemana">Dia da Semana</option>
+                  <option value="analise:recuperados">Clientes Recuperados</option>
+                </optgroup>
+              </select>
+            )}
+            {!isMobile && (<>
             {([['geral', 'Geral'], ['metas', 'Metas'], ['meta_prof', 'Meta Prof.'], ['redistribuicao', 'Redistribuição']] as const).map(([id, lbl]) => (
               <button key={id} onClick={() => setAba(id as any)}
                 style={{ padding: '8px 18px', border: 'none', borderRadius: '8px 8px 0 0', fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s', background: aba === id ? '#f5f4f0' : 'transparent', color: aba === id ? '#1a1a1a' : '#6b6860', borderBottom: aba === id ? '2px solid #5b4fcf' : '2px solid transparent', marginBottom: -1 }}>
@@ -1043,16 +1068,19 @@ export default function RelatoriosPage() {
               <span style={{ margin: '0 6px' }}>vs</span>
               <span style={{ color: '#0891b2', fontWeight: 600 }}>{label2}</span>
             </div>
+            </>)}
           </div>
 
           <div style={{ flex: 1, padding: '20px', overflowY: 'auto' }} ref={printRelRef}>
 
+            {!isMobile && (
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
               <button onClick={imprimirTudoRel} title="Imprime a aba inteira em A4, com todos os dados"
                 style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', background: '#5b4fcf', color: '#fff' }}>
                 🖨️ Imprimir tudo
               </button>
             </div>
+            )}
 
             {/* ════════ ABA RELATÓRIO UNIFICADO PROFISSIONAIS ════════ */}
             {aba === 'ranking' && <RankingUnificado ano={p1Ano} mes={p1Mes} />}
