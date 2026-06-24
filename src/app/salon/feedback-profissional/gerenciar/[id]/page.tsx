@@ -1,7 +1,7 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Search, Trash2, Edit2, Check, X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ArrowLeft, Search, Trash2, Edit2, Check, X, ChevronLeft, ChevronRight, Printer } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 interface Resposta {
@@ -142,6 +142,19 @@ export default function GerenciarFeedbacksPage() {
     setPage(1)
   }
 
+  // Imprime a página inteira (todos os dados na tela, inclusive o resumo)
+  const printFbRef = useRef<HTMLDivElement>(null)
+  function imprimirFb() {
+    const node = printFbRef.current
+    if (!node) return
+    const css = `@page{size:A4 portrait;margin:12mm}*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;max-height:none !important;overflow:visible !important}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;font-size:11px;margin:0}button,input,select,[type=range]{display:none !important}table{width:100%;border-collapse:collapse}thead{display:table-header-group}tr,img{break-inside:avoid}h1.pt{font-size:18px;color:#5b4fcf;margin:0 0 12px}`
+    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Feedbacks NODRI</title><style>${css}</style></head><body><h1 class="pt">NODRI — Feedbacks &nbsp;·&nbsp; ${new Date().toLocaleDateString('pt-BR')}</h1>${node.innerHTML}</body></html>`
+    const win = window.open('', '_blank', 'width=900,height=700')
+    if (!win) return
+    win.document.write(html); win.document.close(); win.focus()
+    setTimeout(() => win.print(), 400)
+  }
+
   return (
     <div className="nodri-salon-bg min-h-screen">
       <nav className="bg-nodri-surface border-b border-nodri-border px-5 py-3 flex items-center gap-3 sticky top-0 z-50">
@@ -152,9 +165,14 @@ export default function GerenciarFeedbacksPage() {
         <div className="w-px h-4 bg-nodri-border" />
         <span className="font-syne font-bold text-sm text-nodri-t1">Gerenciar Feedbacks</span>
         <span className="text-[11px] text-nodri-t3 ml-1">— editar e excluir registros</span>
+        <button onClick={imprimirFb} title="Imprimir a página inteira em A4"
+          className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold text-white"
+          style={{ background: '#5b4fcf' }}>
+          <Printer size={14} /> Imprimir tudo
+        </button>
       </nav>
 
-      <div className="p-4 max-w-5xl mx-auto space-y-4">
+      <div className="p-4 max-w-5xl mx-auto space-y-4" ref={printFbRef}>
         {/* Busca */}
         <div className="flex gap-2">
           <div className="flex-1 flex items-center gap-2 px-3 py-2 rounded-xl border"

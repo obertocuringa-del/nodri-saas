@@ -308,6 +308,17 @@ export default function RelatoriosPage() {
     return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${titulo}</title><style>${CSS_REL}</style></head><body><div class="hd"><div class="brand">NODRI</div><div class="meta"><strong>${titulo}</strong><br>Gerado em: ${dataStr}</div></div>${corpo}<div class="footer"><span>NODRI — Sistema de Gestão de Salão</span><span>${titulo} · ${dataStr}</span></div></body></html>`
   }
 
+  // Imprime a aba INTEIRA (todos os dados visíveis, inclusive os da rolagem),
+  // capturando o conteúdo da tela e mandando para uma folha A4 retrato.
+  const printRelRef = useRef<HTMLDivElement>(null)
+  function imprimirTudoRel() {
+    const node = printRelRef.current
+    if (!node) return
+    const css = `@page{size:A4 portrait;margin:12mm}*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;max-height:none !important;overflow:visible !important}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;font-size:11px;margin:0}button,input,select,[type=range]{display:none !important}table{width:100%;border-collapse:collapse}thead{display:table-header-group}tr,img{break-inside:avoid}h1.pt{font-size:18px;color:#5b4fcf;margin:0 0 12px}`
+    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Relatório NODRI</title><style>${css}</style></head><body><h1 class="pt">NODRI — Relatório &nbsp;·&nbsp; ${new Date().toLocaleDateString('pt-BR')}</h1>${node.innerHTML}</body></html>`
+    abrirImpressaoRel(html)
+  }
+
   // Fecha dropdown ao clicar fora
   useEffect(() => {
     if (!dropdownAberto) return
@@ -1025,7 +1036,14 @@ export default function RelatoriosPage() {
             </div>
           </div>
 
-          <div style={{ flex: 1, padding: '20px', overflowY: 'auto' }}>
+          <div style={{ flex: 1, padding: '20px', overflowY: 'auto' }} ref={printRelRef}>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
+              <button onClick={imprimirTudoRel} title="Imprime a aba inteira em A4, com todos os dados"
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', background: '#5b4fcf', color: '#fff' }}>
+                🖨️ Imprimir tudo
+              </button>
+            </div>
 
             {/* ════════ ABA RELATÓRIO UNIFICADO PROFISSIONAIS ════════ */}
             {aba === 'ranking' && <RankingUnificado ano={p1Ano} mes={p1Mes} />}
