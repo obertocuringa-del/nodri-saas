@@ -47,8 +47,12 @@ html, body {
    (CSS com !important numa media query vence o estilo inline.)
    ─────────────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
-  /* 1) Grids de várias colunas empilham em 1 coluna (lê tudo) */
-  [style*="grid-template-columns"] { grid-template-columns: 1fr !important; }
+  /* 1) Grids de contagem fixa (repeat(3,1fr) etc.) viram 2 colunas no celular
+        — cards ficam 2 por linha. Os que já se adaptam (minmax/auto-fit/auto-fill)
+        são deixados como estão, pois já são responsivos. */
+  [style*="grid-template-columns"]:not([style*="minmax"]):not([style*="auto-fit"]):not([style*="auto-fill"]) {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
 
   /* 2) Linhas em flex podem quebrar quando não couberem (não estoura a tela).
         Não mexe nas que já são em coluna. */
@@ -87,6 +91,11 @@ html, body {
   /* 10) Tabela: conteúdo quebra pra caber (mostra tudo, sem corte).
          O quadro continua rolável onde já existe overflow-x. */
   td, th { word-break: break-word; }
+
+  /* 11) Sobra de espaço no rodapé pra os botões flutuantes (Início, Chat,
+         WhatsApp) nunca taparem o último conteúdo da página. */
+  [style*="min-height: 100vh"], [style*="min-height:100vh"],
+  [style*="min-height: 100dvh"], [style*="min-height:100dvh"] { padding-bottom: 92px !important; }
 }
 
 /* Scrollbar customizada */
