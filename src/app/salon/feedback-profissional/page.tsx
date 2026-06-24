@@ -299,7 +299,7 @@ export default function FeedbackProfissionalPage() {
               <>
                 <button
                   onClick={() => router.push(`/salon/feedback-profissional/resultados/${selected.id}`)}
-                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-semibold transition-all"
+                  className="w-full hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-semibold transition-all"
                   style={{ background: 'rgba(139,92,246,.15)', color: '#7c6fe0', border: '1px solid rgba(139,92,246,.3)' }}
                 >
                   <BarChart2 size={12} /> Ver Resultados
@@ -365,7 +365,16 @@ export default function FeedbackProfissionalPage() {
                   </button>
                 </div>
               </div>
-              <div className="flex gap-0 overflow-x-auto">
+              {/* Mobile: abas em lista suspensa */}
+              <select value={tab} onChange={e => setTab(e.target.value as any)}
+                className="sm:hidden w-full mb-2 px-3 py-2.5 rounded-lg border border-nodri-border text-sm font-semibold text-nodri-t1 bg-white">
+                <option value="registrar">Registrar Feedback</option>
+                <option value="profissionais">Profissionais ({profissionais.length})</option>
+                <option value="ocorridos">Ocorridos ({ocorridos.length})</option>
+                <option value="link">Link</option>
+              </select>
+              {/* Desktop: abas */}
+              <div className="hidden sm:flex gap-0 overflow-x-auto">
                 {([
                   { id: 'registrar', label: <><Pencil size={11} className="inline mr-1" />Registrar Feedback</> },
                   { id: 'profissionais', label: <><Users size={11} className="inline mr-1" />Profissionais ({profissionais.length})</> },

@@ -224,7 +224,7 @@ export default function GerenciarFeedbacksPage() {
         <span className="font-syne font-bold text-sm text-nodri-t1">Gerenciar Feedbacks</span>
         <span className="text-[11px] text-nodri-t3 ml-1">— editar e excluir registros</span>
         <button onClick={imprimirFb} title="Imprimir a página inteira em A4"
-          className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold text-white"
+          className="ml-auto hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold text-white"
           style={{ background: '#5b4fcf' }}>
           <Printer size={14} /> Imprimir tudo
         </button>
@@ -279,7 +279,28 @@ export default function GerenciarFeedbacksPage() {
           </div>
           <div>
             <div className="text-[10px] text-nodri-t3 mb-1">Filtrar por mês/ano (pode escolher vários):</div>
-            <div className="flex flex-wrap gap-1.5">
+            {/* Mobile: lista suspensa que adiciona/remove meses */}
+            <div className="sm:hidden">
+              <select value="" onChange={e => { if (e.target.value) toggleMes(e.target.value) }}
+                className="w-full px-3 py-2 rounded-lg border text-[12px] text-nodri-t1 bg-white"
+                style={{ borderColor: 'rgba(0,0,0,.12)' }}>
+                <option value="">+ Adicionar mês/ano…</option>
+                {ultimosMeses.map(ym => <option key={ym} value={ym}>{mesesSel.includes(ym) ? '✓ ' : ''}{labelMes(ym)}</option>)}
+              </select>
+              {mesesSel.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {mesesSel.map(ym => (
+                    <button key={ym} onClick={() => toggleMes(ym)}
+                      className="px-2.5 py-1 rounded-lg text-[11px] font-semibold"
+                      style={{ background: '#5b4fcf', color: '#fff', border: '1px solid #5b4fcf' }}>
+                      {labelMes(ym)} ✕
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            {/* Desktop: grade de chips */}
+            <div className="hidden sm:flex flex-wrap gap-1.5">
               {ultimosMeses.map(ym => {
                 const on = mesesSel.includes(ym)
                 return (
@@ -435,7 +456,7 @@ export default function GerenciarFeedbacksPage() {
                             </span>
                           </td>
                           <td className="px-4 py-3 text-nodri-t2">{r.ocorrido_descricao}</td>
-                          <td className="px-4 py-3 text-nodri-t3 italic max-w-[200px] truncate">
+                          <td className="px-4 py-3 text-nodri-t3 italic min-w-[180px] whitespace-normal break-words">
                             {r.descricao || '—'}
                           </td>
                           <td className="px-4 py-3">
