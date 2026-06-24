@@ -179,8 +179,34 @@ export default function GerenciarFeedbacksPage() {
         </div>`
     }).join('')
 
-    const css = `@page{size:A4 portrait;margin:12mm}*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;font-size:11px;margin:0;line-height:1.45}h1{font-size:18px;color:#5b4fcf;margin:0 0 3px}.sub{font-size:11px;color:#6b6860;margin-bottom:14px}.cat{border:1px solid #e3e0f5;border-radius:10px;overflow:hidden;margin-bottom:14px;break-inside:avoid;page-break-inside:avoid}.cat-hd{background:#f0eefb;padding:7px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px}.cat-nome{font-weight:800;color:#5b4fcf;font-size:13px}.cat-tot{font-size:10.5px;color:#555;white-space:nowrap}.cat-body{padding:8px 12px}.prof{padding:7px 0;border-bottom:1px solid #f0eee8;break-inside:avoid;page-break-inside:avoid}.prof:last-child{border-bottom:none}.prof-hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:5px}.prof-nome{font-weight:700;font-size:12px}.prof-tot{font-size:10px;color:#888;white-space:nowrap}.badges{display:flex;flex-wrap:wrap;gap:5px}.bdg{background:#f5f4f0;color:#555;border-radius:20px;padding:2px 9px;font-size:10px;white-space:nowrap}.bdg b{color:#1a1a2e}.bdg-cat{background:#ede9fe;color:#5b21b6}.cat-resumo{margin-top:9px;padding-top:8px;border-top:1.5px dashed #d8d4ef}.cat-resumo-lbl{font-size:11px;font-weight:700;color:#5b4fcf;margin-bottom:5px}`
-    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Feedbacks NODRI</title><style>${css}</style></head><body><h1>NODRI — Resumo de Feedbacks por Categoria</h1><div class="sub">Gerado em ${new Date().toLocaleDateString('pt-BR')}${filtros.length ? ' &nbsp;·&nbsp; ' + filtros.join(' &nbsp;·&nbsp; ') : ''}</div>${cats}</body></html>`
+    // Busca TODOS os registros detalhados (todas as páginas) com os filtros atuais
+    const baseQs = new URLSearchParams({ formulario_id, busca })
+    if (ocorridoSel) baseQs.set('ocorrido', ocorridoSel)
+    if (mesesSel.length) baseQs.set('meses', mesesSel.join(','))
+    let registros: any[] = []
+    try {
+      const q1 = new URLSearchParams(baseQs); q1.set('page', '1')
+      const r1 = await fetch(`/api/feedback-prof/respostas?${q1}`)
+      if (r1.ok) {
+        const d1 = await r1.json()
+        registros = d1.respostas || []
+        const pages = Math.ceil((d1.total || 0) / 50)
+        if (pages > 1) {
+          const rest = await Promise.all(Array.from({ length: pages - 1 }, (_, i) => {
+            const qp = new URLSearchParams(baseQs); qp.set('page', String(i + 2))
+            return fetch(`/api/feedback-prof/respostas?${qp}`).then(r => r.ok ? r.json() : { respostas: [] }).catch(() => ({ respostas: [] }))
+          }))
+          for (const d of rest) registros = registros.concat(d.respostas || [])
+        }
+      }
+    } catch {}
+
+    const fmtData = (s: string) => { try { const d = new Date(s); return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) } catch { return '' } }
+    const linhasReg = registros.map((r: any) => `<tr><td class="nw">${fmtData(r.criado_em)}</td><td><b>${esc(r.profissional_nome)}</b></td><td class="nw">${r.tipo === 'positivo' ? '<span class="tp tp-pos">+ POS</span>' : '<span class="tp tp-neg">− NEG</span>'}</td><td>${esc(r.ocorrido_descricao)}</td><td class="desc">${esc(r.descricao || '—')}</td></tr>`).join('')
+    const tabelaReg = registros.length ? `<h2 class="h2">Registros detalhados (${registros.length})</h2><table class="reg"><thead><tr><th>Data</th><th>Profissional</th><th>Tipo</th><th>Ocorrência</th><th>Descrição</th></tr></thead><tbody>${linhasReg}</tbody></table>` : ''
+
+    const css = `@page{size:A4 portrait;margin:12mm}*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;font-size:11px;margin:0;line-height:1.45}h1{font-size:18px;color:#5b4fcf;margin:0 0 3px}.sub{font-size:11px;color:#6b6860;margin-bottom:14px}.cat{border:1px solid #e3e0f5;border-radius:10px;overflow:hidden;margin-bottom:14px;break-inside:avoid;page-break-inside:avoid}.cat-hd{background:#f0eefb;padding:7px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px}.cat-nome{font-weight:800;color:#5b4fcf;font-size:13px}.cat-tot{font-size:10.5px;color:#555;white-space:nowrap}.cat-body{padding:8px 12px}.prof{padding:7px 0;border-bottom:1px solid #f0eee8;break-inside:avoid;page-break-inside:avoid}.prof:last-child{border-bottom:none}.prof-hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:5px}.prof-nome{font-weight:700;font-size:12px}.prof-tot{font-size:10px;color:#888;white-space:nowrap}.badges{display:flex;flex-wrap:wrap;gap:5px}.bdg{background:#f5f4f0;color:#555;border-radius:20px;padding:2px 9px;font-size:10px;white-space:nowrap}.bdg b{color:#1a1a2e}.bdg-cat{background:#ede9fe;color:#5b21b6}.cat-resumo{margin-top:9px;padding-top:8px;border-top:1.5px dashed #d8d4ef}.cat-resumo-lbl{font-size:11px;font-weight:700;color:#5b4fcf;margin-bottom:5px}.h2{font-size:14px;color:#5b4fcf;margin:20px 0 8px;border-bottom:2px solid #ede9fe;padding-bottom:4px;break-after:avoid}table.reg{width:100%;border-collapse:collapse;font-size:10px}table.reg thead{display:table-header-group}table.reg th{background:#f0eefb;color:#5b4fcf;text-align:left;padding:5px 8px;border-bottom:1px solid #ddd}table.reg td{padding:4px 8px;border-bottom:1px solid #eee;vertical-align:top}table.reg tr{break-inside:avoid;page-break-inside:avoid}table.reg tr:nth-child(even) td{background:#faf9ff}.nw{white-space:nowrap}.desc{color:#555;font-style:italic}.tp{font-size:8px;font-weight:700;padding:1px 6px;border-radius:10px;white-space:nowrap}.tp-pos{background:#dcfce7;color:#15803d}.tp-neg{background:#fee2e2;color:#b91c1c}`
+    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Feedbacks NODRI</title><style>${css}</style></head><body><h1>NODRI — Feedbacks por Categoria</h1><div class="sub">Gerado em ${new Date().toLocaleDateString('pt-BR')}${filtros.length ? ' &nbsp;·&nbsp; ' + filtros.join(' &nbsp;·&nbsp; ') : ''}</div>${cats}${tabelaReg}</body></html>`
     const win = window.open('', '_blank', 'width=900,height=700')
     if (!win) return
     win.document.write(html); win.document.close(); win.focus()
