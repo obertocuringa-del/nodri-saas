@@ -1,25 +1,31 @@
 'use client'
 
+import { useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { Home } from 'lucide-react'
 
 export default function BotaoInicio() {
   const router = useRouter()
   const pathname = usePathname()
+  const [hover, setHover] = useState(false)
   // Não mostra na própria página inicial
   if (pathname === '/salon') return null
   return (
-    <button onClick={() => router.push('/salon')} aria-label="Ir para a página inicial"
+    <button onClick={() => router.push('/salon')} aria-label="Ir para a página inicial" title="Início"
+      onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
       style={{
-        // Canto inferior direito, empilhado acima do botão de chat (bottom:90),
-        // pra não cobrir a coluna de dados (nomes ficam à esquerda).
-        position: 'fixed', right: 24, bottom: 158, zIndex: 9999,
-        display: 'flex', alignItems: 'center', gap: 6,
-        padding: '9px 16px', borderRadius: 24, border: 'none',
-        background: '#5b4fcf', color: '#fff', fontSize: 13, fontWeight: 700,
-        cursor: 'pointer', boxShadow: '0 4px 16px rgba(91,79,207,0.4)',
+        // Ícone compacto e DISCRETO no canto inferior esquerdo: fica translúcido
+        // (dá pra ver através) e só fica sólido ao passar o mouse — assim não
+        // atrapalha a leitura dos dados em nenhuma página/aba.
+        position: 'fixed', left: 14, bottom: 14, zIndex: 9999,
+        width: 38, height: 38, borderRadius: '50%', border: 'none',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: '#5b4fcf', color: '#fff', cursor: 'pointer',
+        opacity: hover ? 1 : 0.4,
+        boxShadow: '0 3px 12px rgba(91,79,207,0.35)',
+        transition: 'opacity .15s',
       }}>
-      <Home size={16} /> Início
+      <Home size={17} />
     </button>
   )
 }
