@@ -17,6 +17,8 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const formulario_id = searchParams.get('formulario_id')
   const busca = searchParams.get('busca') || ''
+  const ocorrido = searchParams.get('ocorrido') || ''
+  const meses = (searchParams.get('meses') || '').split(',').map(s => s.trim()).filter(Boolean)
   const page = parseInt(searchParams.get('page') || '1')
   const limit = 50
   const offset = (page - 1) * limit
@@ -40,6 +42,19 @@ export async function GET(req: NextRequest) {
     .range(offset, offset + limit - 1)
 
   if (busca) query = query.ilike('profissional_nome', `%${busca}%`)
+  if (ocorrido) query = query.eq('ocorrido_descricao', ocorrido)
+  if (meses.length) {
+    // Filtra por meses (YYYY-MM) montando um OR de intervalos [mês, próximo mês)
+    const conds = meses.map(m => {
+      const [y, mo] = m.split('-').map(Number)
+      const ini = `${y}-${String(mo).padStart(2, '0')}-01`
+      const ny = mo === 12 ? y + 1 : y
+      const nm = mo === 12 ? 1 : mo + 1
+      const fim = `${ny}-${String(nm).padStart(2, '0')}-01`
+      return `and(criado_em.gte.${ini},criado_em.lt.${fim})`
+    }).join(',')
+    query = query.or(conds)
+  }
 
   const { data, count } = await query
   return NextResponse.json({ respostas: data || [], total: count || 0, page, limit })
