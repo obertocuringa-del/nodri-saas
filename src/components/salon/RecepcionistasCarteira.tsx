@@ -120,21 +120,22 @@ export default function RecepcionistasCarteira() {
 
       {/* Modal de adiantamento */}
       {adiantando && (() => {
-        const saldo = carteira[adiantando]?.saldo || 0
+        const nomeAd = adiantando as string
+        const saldo = carteira[nomeAd]?.saldo || 0
         const v = Math.round((Number(valorAdiant.replace(',', '.')) || 0) * 100) / 100
         return (
           <div onClick={() => setAdiantando(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
             <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 380, padding: 22 }}>
-              <h3 style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', margin: '0 0 4px' }}>Adiantamento — {adiantando}</h3>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', margin: '0 0 4px' }}>Adiantamento — {nomeAd}</h3>
               <p style={{ fontSize: 12, color: '#6b6860', margin: '0 0 14px' }}>Saldo disponível: <strong style={{ color: '#5b4fcf' }}>{moeda(saldo)}</strong>. O restante continua na carteira.</p>
               <input autoFocus value={valorAdiant} onChange={e => setValorAdiant(e.target.value)} placeholder="Valor a adiantar (ex: 50,00)"
                 style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 14, color: '#1a1a1a', marginBottom: 14 }} />
               <div style={{ display: 'flex', gap: 8 }}>
                 <button onClick={() => setAdiantando(null)} style={{ flex: 1, padding: '10px', borderRadius: 8, border: '1.5px solid #e0ddd8', background: '#fff', color: '#767069', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>Cancelar</button>
-                <button disabled={v <= 0 || v > saldo + 0.001 || busy === adiantando}
-                  onClick={() => acao(adiantando, 'adiantar', v)}
+                <button disabled={v <= 0 || v > saldo + 0.001 || busy === nomeAd}
+                  onClick={() => acao(nomeAd, 'adiantar', v)}
                   style={{ flex: 1, padding: '10px', borderRadius: 8, border: 'none', background: '#5b4fcf', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer', opacity: (v <= 0 || v > saldo + 0.001) ? 0.5 : 1 }}>
-                  {busy === adiantando ? <Loader2 size={14} className="animate-spin" /> : `Adiantar ${v > 0 ? moeda(v) : ''}`}
+                  {busy === nomeAd ? <Loader2 size={14} className="animate-spin" /> : `Adiantar ${v > 0 ? moeda(v) : ''}`}
                 </button>
               </div>
             </div>
