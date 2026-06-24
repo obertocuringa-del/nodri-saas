@@ -155,6 +155,8 @@ export default function DiaSemanaReport() {
   table { width: 100%; border-collapse: collapse; }
   thead { display: table-header-group; }
   tr, img { break-inside: avoid; }
+  /* Na impressão, todos os meses do comparativo vêm abertos */
+  tr.mes-detalhe { display: table-row !important; }
   h1.pt { font-size: 18px; color: #5b4fcf; margin: 0 0 10px; }
 </style></head><body>
   <h1 class="pt">Relatório — Dia da Semana${anosLabel ? ' · Ano(s): ' + anosLabel : ''} &nbsp;·&nbsp; ${new Date().toLocaleDateString('pt-BR')}</h1>
@@ -302,16 +304,16 @@ export default function DiaSemanaReport() {
                         <td style={{ padding: '7px 12px', textAlign: 'right', color: '#0891b2', fontWeight: 600 }}>{rs(t2)}</td>
                         <td style={{ padding: '7px 12px', textAlign: 'right', color: dif >= 0 ? '#16a34a' : '#A32D2D', fontWeight: 700 }}>{dif >= 0 ? '+' : ''}{rs(dif)}</td>
                       </tr>
-                      {aberto && (
-                        <tr style={{ background: '#faf9f7' }}>
-                          <td colSpan={4} style={{ padding: '10px 14px' }}>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-                              {colDias(DIAS[dia], '#5b4fcf', arr1)}
-                              {colDias(DIAS[dia2], '#0891b2', arr2)}
-                            </div>
-                          </td>
-                        </tr>
-                      )}
+                      {/* Detalhe sempre renderizado: escondido na tela quando recolhido,
+                          mas forçado a aparecer na impressão (classe mes-detalhe). */}
+                      <tr className="mes-detalhe" style={{ background: '#faf9f7', display: aberto ? undefined : 'none' }}>
+                        <td colSpan={4} style={{ padding: '10px 14px' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                            {colDias(DIAS[dia], '#5b4fcf', arr1)}
+                            {colDias(DIAS[dia2], '#0891b2', arr2)}
+                          </div>
+                        </td>
+                      </tr>
                     </Fragment>
                   )
                 })}
