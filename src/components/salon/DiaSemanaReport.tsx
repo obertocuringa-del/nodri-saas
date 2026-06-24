@@ -1,6 +1,6 @@
 'use client'
 
-import { Fragment, useState, useEffect } from 'react'
+import { Fragment, useState, useEffect, useRef } from 'react'
 import { Loader2, Search, Sparkles, Calculator, AlertTriangle, Users, Printer, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react'
 
 const DIAS = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado']
@@ -64,6 +64,8 @@ export default function DiaSemanaReport() {
   const [depLoad, setDepLoad] = useState(false)
   // Ordenação da tabela de clientes exclusivos
   const [sortExcl, setSortExcl] = useState<{ key: string; dir: 1 | -1 }>({ key: '', dir: -1 })
+  // Referência ao conteúdo do relatório (para impressão de tudo)
+  const printRef = useRef<HTMLDivElement>(null)
 
   const anosDisponiveis = [anoAtual, anoAtual - 1, anoAtual - 2, anoAtual - 3]
   const anosLabel = anosSel.slice().sort((a, b) => a - b).join(', ')
@@ -137,63 +139,30 @@ export default function DiaSemanaReport() {
     setLoadIA(false)
   }
 
-  // Impressão A4 retrato com TODOS os dados (inclusive os que estão na rolagem),
-  // cards sem quebra de página (sobe/desce inteiros).
+  // Impressão: captura TUDO que está na tela (do início ao fim), expande as
+  // áreas com rolagem (sai a lista inteira) e manda para folha A4 retrato.
   function imprimir() {
-    if (!dep || !dep.total_clientes) return
-    const totDia = dadosDoDia(diaFechar).total
-    const pctRisco = dep.pct_receita_risco || 0
-    const receitaRisco = Math.round(totDia * pctRisco)
-    const receitaRecup = Math.round(totDia - receitaRisco)
-    const probTxt = (p: string) => p === 'alta' ? 'Alta' : p === 'media' ? 'Média' : 'Baixa'
-    const linhas = (dep.lista_exclusivos || []).map((c: any) =>
-      `<tr><td>${c.cliente}</td><td>${c.celular || '—'}</td><td class="c">${c.visitas}x</td><td class="c">${c.ultima_visita || '—'}</td><td class="r">${rs(c.receita)}</td><td class="c">${probTxt(c.prob_migracao)}</td></tr>`
-    ).join('')
-    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>Análise de Dependência — ${DIAS[diaFechar]}</title>
-<style>
-  @page { size: A4 portrait; margin: 12mm; }
-  * { box-sizing: border-box; }
-  body { font-family: -apple-system, Segoe UI, Arial, sans-serif; color: #1a1a1a; font-size: 11px; margin: 0; }
-  h1 { font-size: 18px; margin: 0 0 2px; color: #5b4fcf; }
-  .sub { color: #6b6860; font-size: 11px; margin-bottom: 14px; }
-  .cards { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
-  .card { border: 1px solid #e8e6e0; border-radius: 8px; padding: 9px 11px; flex: 1 1 140px; break-inside: avoid; }
-  .card .l { font-size: 9px; color: #6b6860; text-transform: uppercase; font-weight: 700; }
-  .card .v { font-size: 17px; font-weight: 800; }
-  .risco { color: #A32D2D; } .ok { color: #16a34a; } .alerta { color: #d97706; }
-  .block { break-inside: avoid; margin-bottom: 14px; border: 1px solid #e8e6e0; border-radius: 8px; padding: 11px; }
-  .block h2 { font-size: 12px; margin: 0 0 7px; color: #1a1a1a; }
-  table { width: 100%; border-collapse: collapse; font-size: 10px; }
-  thead { display: table-header-group; }
-  th { background: #f5f4f0; text-align: left; padding: 5px 7px; border-bottom: 1px solid #e0ddd8; }
-  td { padding: 4px 7px; border-bottom: 1px solid #f0eee8; }
-  td.c { text-align: center; } td.r { text-align: right; font-weight: 600; }
-  tr { break-inside: avoid; }
-</style></head><body>
-  <h1>Análise de Dependência — ${DIAS[diaFechar]}</h1>
-  <div class="sub">Ano(s): ${anosLabel} &nbsp;·&nbsp; Gerado em ${new Date().toLocaleDateString('pt-BR')}</div>
-  <div class="cards">
-    <div class="card"><div class="l">Faturamento do dia</div><div class="v">${rs(totDia)}</div></div>
-    <div class="card"><div class="l">Clientes exclusivos</div><div class="v risco">${dep.exclusivos}</div></div>
-    <div class="card"><div class="l">% Exclusivos</div><div class="v alerta">${dep.pct_exclusivos}%</div></div>
-    <div class="card"><div class="l">Clientes multidia</div><div class="v ok">${dep.multidia}</div></div>
-    <div class="card"><div class="l">Receita em risco</div><div class="v risco">${rs(receitaRisco)}</div></div>
-    <div class="card"><div class="l">Receita recuperável</div><div class="v ok">${rs(receitaRecup)}</div></div>
-  </div>
-  <div class="block"><h2>Potencial de migração (estimativa) — exclusivos</h2>
-    Alta probabilidade: <strong>${dep.migracao.alta}</strong> &nbsp;·&nbsp; Média: <strong>${dep.migracao.media}</strong> &nbsp;·&nbsp; Baixa: <strong>${dep.migracao.baixa}</strong>
-  </div>
-  <div style="break-inside:auto"><h2 style="font-size:12px;margin:0 0 7px">Clientes que vêm SÓ ${DIAS[diaFechar].toLowerCase()} (${dep.exclusivos})</h2>
-    <table><thead><tr><th>Cliente</th><th>Telefone</th><th>Visitas</th><th>Última visita</th><th>Receita</th><th>Migração</th></tr></thead>
-    <tbody>${linhas}</tbody></table>
-  </div>
-</body></html>`
+    const node = printRef.current
+    if (!node) return
     const win = window.open('', '_blank', 'width=900,height=700')
     if (!win) return
-    win.document.write(html)
+    win.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>Relatório — Dia da Semana</title>
+<style>
+  @page { size: A4 portrait; margin: 12mm; }
+  * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; max-height: none !important; overflow: visible !important; }
+  body { font-family: -apple-system, Segoe UI, Arial, sans-serif; color: #1a1a1a; margin: 0; font-size: 12px; }
+  button, input, select, [type=range] { display: none !important; }
+  table { width: 100%; border-collapse: collapse; }
+  thead { display: table-header-group; }
+  tr, img { break-inside: avoid; }
+  h1.pt { font-size: 18px; color: #5b4fcf; margin: 0 0 10px; }
+</style></head><body>
+  <h1 class="pt">Relatório — Dia da Semana${anosLabel ? ' · Ano(s): ' + anosLabel : ''} &nbsp;·&nbsp; ${new Date().toLocaleDateString('pt-BR')}</h1>
+  ${node.innerHTML}
+</body></html>`)
     win.document.close()
     win.focus()
-    setTimeout(() => win.print(), 350)
+    setTimeout(() => win.print(), 400)
   }
 
   const selStyle = { background: '#fff', border: '1.5px solid #d0cdc7', borderRadius: 8, color: '#1a1a1a', padding: '8px 10px', fontSize: 13, fontWeight: 600, cursor: 'pointer' } as const
@@ -208,15 +177,21 @@ export default function DiaSemanaReport() {
   const dd2 = dados ? dadosDoDia(dia2) : null
 
   return (
-    <div>
-      {/* Modo */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
+    <div ref={printRef}>
+      {/* Modo + Imprimir */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 14, alignItems: 'center', flexWrap: 'wrap' }}>
         {(['um', 'comparar'] as const).map(m => (
           <button key={m} onClick={() => { setModo(m); setResposta('') }}
             style={{ padding: '7px 16px', borderRadius: 8, border: modo === m ? '2px solid #5b4fcf' : '1.5px solid #e0ddd8', background: modo === m ? '#f0eefb' : 'transparent', color: modo === m ? '#5b4fcf' : '#6b6860', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
             {m === 'um' ? 'Um dia' : 'Comparar dois dias'}
           </button>
         ))}
+        {dados && dados.length > 0 && (
+          <button onClick={imprimir} title="Imprimir todo o relatório em A4"
+            style={{ marginLeft: 'auto', padding: '8px 16px', borderRadius: 8, border: 'none', background: '#5b4fcf', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <Printer size={15} /> Imprimir tudo
+          </button>
+        )}
       </div>
 
       {/* Filtros */}
@@ -394,12 +369,6 @@ export default function DiaSemanaReport() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: '#1a1a1a', marginBottom: 4, flexWrap: 'wrap' }}>
               <Users size={15} color="#5b4fcf" /> Análise de Dependência — {DIAS[diaFechar]}
               <span style={{ fontSize: 10, color: '#15803d', fontWeight: 600, background: '#dcfce7', borderRadius: 6, padding: '2px 8px' }}>comportamento real dos clientes</span>
-              {dep && dep.total_clientes > 0 && (
-                <button onClick={imprimir} title="Imprimir em A4"
-                  style={{ marginLeft: 'auto', padding: '6px 12px', borderRadius: 8, border: '1.5px solid #d0cdc7', background: '#fff', color: '#5b4fcf', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                  <Printer size={14} /> Imprimir
-                </button>
-              )}
             </div>
             <p style={{ fontSize: 11, color: '#6b6860', margin: '0 0 12px' }}>
               Quantos clientes dependem SÓ deste dia (receita em risco real) vs. quem também vem em outros dias (recuperável).
