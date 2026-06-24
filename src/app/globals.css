@@ -47,10 +47,10 @@ html, body {
    (CSS com !important numa media query vence o estilo inline.)
    ─────────────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
-  /* 1) Grids de contagem fixa (repeat(3,1fr) etc.) viram 2 colunas no celular
-        — cards ficam 2 por linha. Os que já se adaptam (minmax/auto-fit/auto-fill)
-        são deixados como estão, pois já são responsivos. */
-  [style*="grid-template-columns"]:not([style*="minmax"]):not([style*="auto-fit"]):not([style*="auto-fill"]) {
+  /* 1) Todo grid de CARDS (qualquer "repeat(...)", inclusive auto-fill/auto-fit)
+        vira 2 colunas no celular — cards ficam 2 por linha. Grids usados como
+        tabela (ex: "1fr 140px 80px", sem repeat) NÃO são afetados. */
+  [style*="grid-template-columns"][style*="repeat("] {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 
@@ -63,8 +63,7 @@ html, body {
         min-width continua valendo, então áreas roláveis seguem rolando. */
   div[style], section[style], header[style], main[style] { max-width: 100% !important; }
 
-  /* 4) Tabelas e mídias nunca estouram; a tabela quebra o conteúdo p/ caber */
-  table { max-width: 100% !important; }
+  /* 4) Mídias nunca estouram */
   img, svg, canvas, video { max-width: 100% !important; }
 
   /* 5) Respiros laterais muito grandes diminuem p/ sobrar largura ao conteúdo */
@@ -88,9 +87,11 @@ html, body {
   [style*="gap: 20px"], [style*="gap:20px"],
   [style*="gap: 24px"], [style*="gap:24px"] { gap: 12px !important; }
 
-  /* 10) Tabela: conteúdo quebra pra caber (mostra tudo, sem corte).
-         O quadro continua rolável onde já existe overflow-x. */
-  td, th { word-break: break-word; }
+  /* 10) Tabelas: NUNCA quebram números/textos no meio. O quadro que
+         envolve a tabela passa a rolar de lado, mostrando tudo sem cortar
+         (vale até para quadros que usavam overflow:hidden). */
+  div:has(> table) { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
+  table { min-width: 100%; }
 
   /* 11) Sobra de espaço no rodapé pra os botões flutuantes (Início, Chat,
          WhatsApp) nunca taparem o último conteúdo da página. */
