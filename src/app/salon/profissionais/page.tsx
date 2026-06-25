@@ -64,7 +64,6 @@ const CONTEUDO_INFO: Record<string, { titulo: string; texto: string }> = {
   materiais:    { titulo: 'Materiais para Trabalho', texto: 'Lista de materiais que o salão fornece e o que é responsabilidade do profissional. Geralmente o salão fornece: espaço, lavatório, secador base. O profissional traz: tesouras, pentes, produtos específicos de sua linha.' },
   perfil:       { titulo: 'Perfil Ideal de Profissional', texto: 'Buscamos profissionais: ✅ Pontuais e comprometidos ✅ Com cartela de clientes ✅ Que valorizam higiene e organização ✅ Comunicativos e empáticos ✅ Com CNPJ ativo ✅ Abertos a feedback e treinamento contínuo.' },
   horarios:     { titulo: 'Horários e Folgas', texto: 'Defina junto ao profissional: dias de trabalho por semana, horário de entrada e saída, dias fixos de folga, política de ausências e como comunicar faltas. Tudo deve estar no contrato assinado.' },
-  contrato:     { titulo: 'Contrato de Trabalho', texto: 'O contrato de locação de espaço ou parceria deve conter: identificação das partes (salão e profissional), CNPJ de ambos, percentual de comissão, dias e horários de trabalho, responsabilidades, vigência e cláusulas de rescisão.' },
   certificados: { titulo: 'Certificados', texto: 'Solicite cópias dos certificados de cursos concluídos: colorimetria, corte, escova, tratamentos capilares, manicure, podologia, etc. Guarde digitalmente na ficha do profissional. Incentive atualização constante.' },
   carreira:     { titulo: 'Plano de Carreira', texto: 'Estruture crescimento por etapas: 🥉 Júnior (0-1 ano) → 🥈 Pleno (1-3 anos) → 🥇 Sênior (3+ anos) → 🏆 Referência. Defina metas de faturamento, satisfação de clientes e horas de capacitação para evolução em cada nível.' },
 }
@@ -135,6 +134,177 @@ export default function ProfissionaisPage() {
     const h = new Date(); return `${String(h.getDate()).padStart(2,'0')}/${String(h.getMonth()+1).padStart(2,'0')}/${h.getFullYear()}`
   })
   const [dLocalDistrato, setDLocalDistrato] = useState('Brasília')
+
+  // ── CONTRATO DE TRABALHO (parceria) ──
+  const [contratoProf, setContratoProf] = useState<Profissional | null>(null)
+  const [contratoEditando, setContratoEditando] = useState(false)
+  const [cProfNome, setCProfNome] = useState('')
+  const [cProfCPF, setCProfCPF] = useState('')
+  const [cProfCNPJ, setCProfCNPJ] = useState('')
+  const [cProfEndereco, setCProfEndereco] = useState('')
+  const [cProfRG, setCProfRG] = useState('')
+  const [cProfRepresentante, setCProfRepresentante] = useState('')
+  const [cDataContrato, setCDataContrato] = useState(() => {
+    const h = new Date(); return `${String(h.getDate()).padStart(2, '0')}/${String(h.getMonth() + 1).padStart(2, '0')}/${h.getFullYear()}`
+  })
+  const [cLocalContrato, setCLocalContrato] = useState('Brasília (DF)')
+
+  function preencherContrato(prof: Profissional) {
+    setContratoProf(prof)
+    setCProfNome((prof.nome_completo || '').toUpperCase())
+    setCProfCPF(prof.cpf || '')
+    setCProfCNPJ(prof.cnpj || '')
+    setCProfEndereco(prof.endereco || '')
+    setCProfRG((prof as any).rg || '')
+    try {
+      const cr = prof.contato_responsavel ? JSON.parse(prof.contato_responsavel) : {}
+      setCProfRepresentante(cr.nome || prof.nome_completo || '')
+    } catch { setCProfRepresentante(prof.nome_completo || '') }
+  }
+
+  // Corpo do CONTRATO DE PARCERIA (texto integral do contrato), com as partes preenchidas.
+  function montarContratoHTML(): string {
+    const salao = (dSalaoNome || '[NOME DO SALÃO]').toUpperCase()
+    const salaoCnpj = dSalaoCNPJ || '___'
+    const salaoResp = dSalaoResponsavel || '___'
+    const salaoRG = dSalaoRG ? `, carteira de identidade número ${dSalaoRG}` : ''
+    const sede = dSalaoEndereco ? `na ${dSalaoEndereco}` : 'nesta Capital'
+    const profNome = (cProfNome || '[NOME DO PROFISSIONAL]').toUpperCase()
+    const profEnd = cProfEndereco || '___'
+    const profCnpj = cProfCNPJ || '___'
+    const profRep = cProfRepresentante || cProfNome || '___'
+    const profRGtxt = cProfRG ? `, portador(a) da Carteira de Identidade ${cProfRG}` : ''
+    const profCPF = cProfCPF || '___'
+    const P = (t: string, extra = '') => `<p style="text-align:justify;margin:0 0 10pt;${extra}">${t}</p>`
+    const H = (t: string) => `<p style="text-align:justify;margin:16pt 0 8pt;font-weight:bold">${t}</p>`
+    const S = (t: string) => `<p style="margin:8pt 0 4pt;font-weight:bold">${t}</p>`
+    return [
+      P(`Pelo presente instrumento contratual, de um lado, <strong>${salao}</strong>, pessoa jurídica de direito privado, com sua sede ${sede}, inscrita no C.N.P.J./M.F. sob o n.º ${salaoCnpj}, neste ato representada por seu sócio ${salaoResp}${salaoRG}, doravante denominado simplesmente <strong>SALÃO-PARCEIRO</strong>, e, de outro lado, <strong>${profNome}</strong>, pessoa jurídica de direito privado, situada ${profEnd}, inscrita no C.N.P.J./M.F. sob o nº ${profCnpj}, nesse ato representada por ${profRep}${profRGtxt}, e do CPF ${profCPF}, residente em ${profEnd}, doravante denominada simplesmente <strong>PROFISSIONAL-PARCEIRO</strong>, celebram o presente <strong>CONTRATO DE PARCERIA</strong>, na forma da Lei 13.352/16 e das cláusulas abaixo estabelecidas:`),
+      H('CLÁUSULA PRIMEIRA – DO OBJETO:'),
+      P('O SALÃO-PARCEIRO, empresa destinada à prestação de serviços de salão de beleza e afins, proprietária e/ou possuidora de bens móveis e de instalação para barbeiros, cabeleireiros, manicuras, pedicuras, esteticistas, massagistas, maquiadores, escovistas, calistas, depiladores e demais profissões afins, sendo proprietária e possuidora de espaço, equipamentos e móveis apropriados à atividade desses profissionais, estabelece parceria com o PROFISSIONAL-PARCEIRO, pelo que a ele dá, em locação e/ou uso, móveis, aparelhos, utensílios e produtos de sua propriedade e/ou posse, para fins de exploração específica da atividade de cabeleireira e outras que porventura sejam praticadas exclusivamente dentro da abrangência da Lei 13.352, de 27 de outubro de 2016, em serviços de beleza, dentro do seu objeto social, não podendo o PROFISSIONAL-PARCEIRO usar os objetos dados em locação para quaisquer outros fins. Além dos bens dados em locação, o SALÃO-PARCEIRO também concede, ao PROFISSIONAL-PARCEIRO, serviços de gestão, de apoio administrativo e de escritório, tais como, exemplificativamente, cobrança e recebimento de valores pagos pelos clientes atendidos por ele.'),
+      S('Parágrafo Primeiro:'),
+      P('O presente contrato regula exclusivamente o rateio dos serviços objeto deste contrato e se referem a corte, modelagem, pigmentação, coloração, bem como outros serviços que envolvam terapia e embelezamento capilar. Para outros serviços, como maquiagem, sobrancelha, massagem, manicure, etc., onde existem outros parâmetros de rateio, deve ser formalizado o respectivo ADITIVO CONTRATUAL.'),
+      S('Parágrafo Segundo:'),
+      P('A parceria firmada pelo presente instrumento não exclui a possibilidade de estabelecerem-se outras parcerias, entre o SALÃO-PARCEIRO e terceiros, ainda que para os mesmos fins e no mesmo âmbito de atividade do PROFISSIONAL-PARCEIRO. Este também poderá firmar outras parcerias, desde que respeitada o previsto na Cláusula Nona do presente instrumento.'),
+      S('Parágrafo Terceiro:'),
+      P('A parceria firmada entre as partes, no presente instrumento, não envolve a utilização total dos móveis, objetos e utensílios de propriedade e/ou posse do SALÃO-PARCEIRO, sendo que o acesso às suas instalações e a circulação nas suas dependências, pelo PROFISSIONAL-PARCEIRO, será restrito ao necessário para a manutenção da parceria e aos objetos dados em locação quando destinados à realização do objeto da presente parceria.'),
+      S('Parágrafo Quarto:'),
+      P('Serão fornecidos, pelo SALÃO-PARCEIRO ao PROFISSIONAL-PARCEIRO, para o exercício de sua atividade profissional, móveis, água, luz, telefone, serviços de recepção, serviços de telefonia, serviços de cobrança, a marca do estabelecimento comercial, além de cadeira de uso da clientela, toalhas, capas para uso em química, bancada de atendimento ao cliente, com espelho e lavatórios para cabelo.'),
+      S('Parágrafo Quinto:'),
+      P('Serão de propriedade e posse do PROFISSIONAL-PARCEIRO os seguintes materiais e insumos necessários ao exercício de sua profissão, pelo que deve ele providenciar a compra dos mesmos, zelando pela utilização de produtos de inquestionável qualidade, mantendo-os em perfeitas condições, assumindo todos os custos da sua higienização e esterilização: tesouras, pentes, escovas de cabelo, máquinas de corte de cabelo, navalha desfiadora, luvas, secadores de cabelo, gel, mousse, aparelho chapinha para alisamento, spray de cabelo, grampos, papel alumínio, papel filme, produtos finalizadores, carrinho, plásticos descartáveis, prendedores de cabelo, potes misturadores e tigelas para manuseio de tintas.'),
+      S('Parágrafo Sexto:'),
+      P('O desgaste natural dos bens, utensílios, aparelhos, objetos e produtos de propriedade e/ou posse do PROFISSIONAL-PARCEIRO não implica a responsabilidade do SALÃO-PARCEIRO, no que se refere à reposição ou troca de qualquer um deles, assim como o desgaste natural dos móveis, equipamentos, objetos e utensílios dados em locação e/ou uso não implica a responsabilidade do PROFISSIONAL-PARCEIRO, quanto a sua troca e/ou manutenção. Entretanto, o uso inadequado do objeto locado, por parte deste, que cause estrago, mau-funcionamento ou perda de sua funcionalidade, obriga-o a indenizar o SALÃO-PARCEIRO, quanto aos gastos realizados para o reparo ou troca do mesmo, o que deverá ser feito imediatamente após a realização da despesa respectiva e apresentação, ao PROFISSIONAL-PARCEIRO, dos custos empregados, pelo SALÃO-PARCEIRO.'),
+      S('Parágrafo Sétimo:'),
+      P('A relação de bens e produtos contida nos parágrafos terceiro e quarto, da presente cláusula, não é exaustiva, podendo sofrer acréscimo e diminuição, sem que com isto fique descaracterizado o presente contrato de parceria.'),
+      S('Parágrafo Oitavo:'),
+      P('As partes assumem reciprocamente a responsabilidade pelo custeio da atividade econômica que será exercida por cada qual, assumindo a responsabilidade na administração de sua pessoa jurídica e não assumindo nenhuma delas a responsabilidade pela administração da outra, de qualquer ordem, respeitados os termos da Lei 13.352 de 27 de outubro de 2016.'),
+      S('Parágrafo Nono:'),
+      P('Poderão incluir-se entre os serviços fornecidos, pelo SALÃO-PARCEIRO ao PROFISSIONAL-PARCEIRO, aqueles que englobem gestão do negócio, tais como serviços de recepção, cobrança e recebimento, serviços administrativos, serviços de apoio, assim como fornecimento possível de outros serviços que se fizerem necessários para o bom atendimento do consumidor final, se necessários, cujos termos e condições serão estabelecidos entre as partes, ainda que não expressamente discriminados no presente instrumento.'),
+      S('Parágrafo Décimo:'),
+      P('A contratação de assistentes ou auxiliares, necessários à realização dos serviços objeto do presente contrato de parceria, poderá ser providenciada diretamente pelo PROFISSIONAL-PARCEIRO, desde que haja comunicação ao SALÃO-PARCEIRO da contratação direta de pessoas e da avaliação, por este, da capacidade técnica das pessoas contratadas e desde que corram por conta e risco do profissional contratante os direitos e deveres que ele guardará em relação aos seus contratados diretos, inclusive de ordem trabalhista, fiscal, previdenciária e outros. Caso seja ou venha a ser, o SALÃO-PARCEIRO, responsabilizado ou imputado, em qualquer nível, administrativamente ou judicialmente, por danos causados, às partes aqui contratantes e/ou a terceiros, pelos assistentes e/ou auxiliares contratados diretamente pelo PROFISSIONAL-PARCEIRO, terá direito de regresso assegurado pelo presente instrumento, podendo exigir deste que regularize a situação que gerou ou que possa gerar o dano, além de indenização, perdas e danos e lucros cessantes.'),
+      S('Parágrafo Décimo Primeiro:'),
+      P('O PROFISSIONAL-PARCEIRO não assumirá as responsabilidades e obrigações decorrentes da administração do SALÃO-PARCEIRO, de ordem contábil, fiscal, trabalhista e previdenciária e que porventura decorram do exercício da atividade deste, de acordo com seu objeto social.'),
+      S('Parágrafo Décimo Segundo:'),
+      P('As partes declaram ter ciência de que o SALÃO-PARCEIRO poderá ter mais de uma unidade de atendimento, bem como, poderá, ainda, trabalhar em parceria com salões de outras razões sociais, mas que poderão estar sob a mesma administração, de forma que o PROFISSIONAL-PARCEIRO compromete-se a prestar atendimento à clientela, prestando-lhe serviços em quaisquer dos estabelecimentos comerciais, o que não alterará em nada as cláusulas neste estabelecidas.'),
+      H('CLÁUSULA SEGUNDA – DO PREÇO:'),
+      P('O rateio dos valores recebidos dos clientes, decorrentes dos SERVIÇOS executados pelo PROFISSIONAL-PARCEIRO, ocorrerá de acordo com o estipulado no artigo 1º A, §10º, inciso primeiro, da Lei, nº 13.352 / 2016 e na cláusula décima quinta, parágrafo décimo, da Convenção Coletiva de Trabalho.'),
+      S('Parágrafo Primeiro:'),
+      P('Será deduzido do valor pago pelo cliente a título de insumos e produtos necessários à execução dos serviços 30% (trinta por cento), assim entendido, insumos como shampoo, condicionador, toalha, robe, capa, excluindo-se ainda, produtos adicionais vendidos pelo SALÃO-PARCEIRO, que serão vendidos e cobrados separadamente do cliente, bem como, será deduzido do valor pago pelo cliente a título de custo operacional 15% (quinze por cento) referente a taxas administrativas, taxas de cartão de crédito, tributos vigentes e custos operacionais.'),
+      S('Parágrafo Segundo:'),
+      P('Após as deduções acima, previstas no parágrafo primeiro desta Cláusula Segunda e observados os parâmetros constantes dos parágrafos seguintes, se pagará ao SALÃO-PARCEIRO, em face da presente parceria, 42% (quarenta e dois por cento) e ao PROFISSIONAL-PARCEIRO caberá os 58% (cinquenta e oito por cento) restantes.'),
+      S('Parágrafo Terceiro:'),
+      P('Poderá o PROFISSIONAL-PARCEIRO trabalhar em conjunto com outro PROFISSIONAL-PARCEIRO para o atendimento do mesmo cliente e, nesse caso, deverá autorizar o SALÃO-PARCEIRO, a repassar parte de seus ganhos diretamente a esse outro PROFISSIONAL-PARCEIRO. A autorização considerada válida sempre que o PROFISSIONAL-PARCEIRO realizar o lançamento no sistema de pagamento, indicando que o trabalho foi realizado em cooperação entre os PROFISSIONAIS-PARCEIROS. Esse lançamento no sistema de pagamento valerá como autorização para o fracionamento e repasses da cota-parte ideal para cada PROFISSIONAL-PARCEIRO envolvido.'),
+      S('Parágrafo Quarto:'),
+      P('Nos casos onde for necessário o uso de produtos adicionais para a realização de terapia capilar, pigmentação, reflexo, realinhamento capilar e qualquer outro procedimento que exija a utilização de produtos diferenciados ou ainda produtos mais caros por escolha do cliente, o SALÃO-PARCEIRO poderá fazer a VENDA DO PRODUTO ao cliente, sem que esse valor entre na composição do rateio de SERVIÇOS.'),
+      S('Parágrafo Quinto:'),
+      P('Caberá ao SALÃO-PARCEIRO o recebimento de valores pagos, pela clientela, decorrentes da prestação de serviços de beleza, por ele realizada, o que se fará mediante a centralização dos pagamentos realizados, em caixa central do estabelecimento.'),
+      S('Parágrafo Sexto:'),
+      P('O SALÃO-PARCEIRO providenciará, uma vez recebidas as importâncias pagas ao PROFISSIONAL-PARCEIRO, em caixa centralizado, a retenção de sua cota-parte percentual, na forma prevista no presente instrumento, bem como dos valores alusivos aos tributos, contribuições sociais e previdenciárias, incidentes sobre a cota-parte destinada ao PROFISSIONAL-PARCEIRO.'),
+      S('Parágrafo Sétimo:'),
+      P('A cota-parte destinada ao PROFISSIONAL-PARCEIRO não será considerada como parte integrante da receita bruta auferida pelo SALÃO-PARCEIRO, ainda que se tenha adotado o sistema de emissão de Nota Fiscal única e centralizada, destinada ao consumidor dos serviços.'),
+      S('Parágrafo Oitavo:'),
+      P('Para os efeitos desta cláusula, considerar-se-á como pagamento do preço o rateio, entre as partes, dos valores recebidos da clientela, por cada serviço prestado pelo PROFISSIONAL-PARCEIRO, nos limites percentuais estabelecidos no caput da presente cláusula.'),
+      S('Parágrafo Nono:'),
+      P('O acerto financeiro objeto da presente parceria ocorrerá mensalmente, podendo haver antecipações quinzenais, pelo rateio previsto na presente cláusula, destinando-se a cada uma das partes a expressão financeira dos percentuais ajustados no presente instrumento, podendo haver, entre elas, contudo, a fixação de outra periodicidade para o acerto, mediante a aferição da produção do PROFISSIONAL-PARCEIRO, em período inferior, o que se fará mediante consenso com o SALÃO-PARCEIRO.'),
+      S('Parágrafo Décimo:'),
+      P('Além do que estabelecido na presente cláusula, ao PROFISSIONAL-PARCEIRO não poderão ser atribuídos quaisquer outros custos com manutenção das instalações, infraestrutura e equipamentos, salvo se decorrentes de mau uso, seja por culpa ou dolo, hipótese em que arcará com os custos pertinentes ao conserto ou reposição dos bens danificados, inclusive se praticados por assistentes e auxiliares por ele contratados diretamente.'),
+      S('Parágrafo Décimo Primeiro:'),
+      P('Os preços constantes da tabela de serviços prestados, pelas partes à clientela, serão fixados de comum acordo entre o SALÃO-PARCEIRO e o PROFISSIONAL-PARCEIRO, de forma a que haja uniformidade quanto a valores praticados pelo estabelecimento. Caso não haja consenso quanto ao preço a ser praticado pelas partes, em relação à clientela, será do SALÃO-PARCEIRO a decisão final sobre a importância a ser fixada.'),
+      H('CLÁUSULA TERCEIRA – DA TRANSMISSÃO A TERCEIROS DOS DIREITOS E OBRIGAÇÕES:'),
+      P('Este contrato produz efeitos apenas entre os contratantes, ficando expressamente vedada a transferência a terceiros, ainda que parcialmente, dos direitos e obrigações aqui estabelecidas.'),
+      S('Parágrafo Único:'),
+      P('O PROFISSIONAL-PARCEIRO poderá fazer-se substituir por terceiro, na prestação de serviços à clientela, desde que haja comunicação prévia dessa necessidade ao SALÃO-PARCEIRO, para que se proceda à autorização quanto ao acesso de estranhos às dependências do salão. A substituição de que se trata no presente parágrafo, contudo, será eventual e temporária, para atendimento à clientela, não resultando ou implicando a transferência de direitos e obrigações previstos no presente contrato.'),
+      H('CLÁUSULA QUARTA – DAS OBRIGAÇÕES DO SALÃO-PARCEIRO:'),
+      P('São obrigações do SALÃO-PARCEIRO:'),
+      P('Exigir e manter o presente Contrato de Parceria, firmado por escrito com o PROFISSIONAL-PARCEIRO, bem como providenciar a homologação do mesmo junto ao Sindicato da categoria profissional;'),
+      P('Centralizar os pagamentos e recebimentos de valores pagos pela clientela, decorrentes da atividade de prestação de serviços de beleza realizada pelo PROFISSIONAL-PARCEIRO, em caixa central, zelando para o controle e guarda das importâncias auferidas por este, no exercício de sua atividade ou cumprimento do seu objeto social;'),
+      P('Promover, entre as partes, o rateio (prestação de contas) das importâncias pagas pela clientela atendida pelo PROFISSIONAL-PARCEIRO, nos termos e condições estabelecidas pelo presente instrumento, observando rigorosamente a periodicidade fixada para este fim, no presente instrumento, ou outra que venha a ser praticada por consenso entre as partes;'),
+      P('Promover a retenção de valores devidos pelo PROFISSIONAL-PARCEIRO, a título de tributos e contribuições sociais e previdenciárias, para o repasse deles aos respectivos destinatários finais, dentro do prazo de lei;'),
+      P('Assumir integralmente as obrigações alusivas à administração da pessoa jurídica do SALÃO-PARCEIRO, de natureza contábil, fiscal, trabalhista e previdenciária, além de outras decorrentes do desenvolvimento do negócio;'),
+      P('Manter suas instalações e bens, locados e dados em uso, na forma do presente contrato de parceria, em perfeitas condições de uso, higiene e limpeza, zelando para a consecução dos objetivos comuns às partes, assim como para o desenvolvimento do negócio, possibilitando, ainda, o cumprimento das normas de saúde e segurança;'),
+      P('Conhecer as normas e determinações do serviço de saúde pública, comprometendo-se a zelar pelo cumprimento delas.'),
+      H('CLÁUSULA QUINTA – DAS OBRIGAÇÕES DO PROFISSIONAL-PARCEIRO:'),
+      P('São obrigações do PROFISSIONAL-PARCEIRO:'),
+      P('Exigir e manter o presente Contrato de Parceria, firmado por escrito com o SALÃO-PARCEIRO, bem como providenciar a homologação do mesmo pelo Sindicato da categoria profissional;'),
+      P('Agir com probidade, lisura e compromisso para com a sua clientela e demais PROFISSIONAIS-PARCEIROS, assim como zelar para o desenvolvimento da parceria, segundo os mais altos padrões de qualidade, higiene e segurança daqueles que frequentam o estabelecimento;'),
+      P('Manter pessoalmente o controle dos atendimentos realizados a sua clientela, para a aferição posterior da regularidade dos valores retidos pelo SALÃO-PARCEIRO e rateados entre as partes;'),
+      P('Observar rigorosamente os agendamentos autorizados e providenciados em relação ao atendimento à clientela, comunicando previamente sobre impedimentos que exijam o redirecionamento do atendimento a outro PROFISSIONAL-PARCEIRO ou mesmo novo agendamento a ser providenciado pelos serviços de recepção;'),
+      P('Estabelecer junto ao SALÃO-PARCEIRO os dias e horários em que haverá o atendimento a sua clientela, autorizando a abertura e fechamento de sua agenda, de forma antecipada, junto aos serviços de recepção, segundo sua conveniência, sem que se prejudique o atendimento à clientela;'),
+      P('Não interferir na gestão e administração do negócio do SALÃO-PARCEIRO, garantindo-se o ambiente necessário ao desenvolvimento das suas atividades;'),
+      P('Assumir integralmente as obrigações inerentes à gestão de sua pessoa jurídica, se estiver ou vier a estar constituído como tal, em qualquer modalidade permitida em lei, observando exigências de natureza contábil, fiscal, trabalhista e previdenciária, além de outras decorrentes do desenvolvimento do negócio;'),
+      P('Manter sua inscrição no órgão previdenciário e perante as autoridades fazendárias, na forma exigida por lei, bem como manter em dia o cumprimento de suas obrigações de ordem fiscal e previdenciária, inclusive no que diz respeito a sua cota-parte auferida no rateio de valores pagos pela clientela e nos termos do presente instrumento;'),
+      P('Zelar e responsabilizar-se, inclusive financeiramente, pela conservação, manutenção, higiene, esterilização e reposição dos materiais e insumos de sua propriedade, necessários ao exercício da sua atividade profissional, observando as regras de qualidade, higiene, saúde e segurança impostas por lei e fixadas pelo SALÃO-PARCEIRO.'),
+      P('Assumir integral e unilateralmente eventuais prejuízos que possa sofrer em relação à perda, avaria e desaparecimento de materiais e utilitários de sua propriedade e/ou posse, mantendo os mesmos sob sua guarda e vigilância constantes;'),
+      P('Comunicar ao SALÃO-PARCEIRO sobre a eventual contratação direta de assistentes ou auxiliares, assumindo toda e qualquer responsabilidade, de qualquer natureza, em relação à pessoa contratada, devendo providenciar a anotação e registro do mesmo em CTPS e cumprir com todas as obrigações inerentes ao vínculo de emprego que firmará com a pessoa contratada, assegurando que o contrato também cumpra as regras e padrões estabelecidos no presente contrato;'),
+      P('Atender à sua clientela obedecendo ao horário comercial de funcionamento do SALÃO-PARCEIRO, cuja definição é exclusivamente deste;'),
+      P('Atender aos seus clientes próprios, como igualmente a outros que lhe sejam direcionados pelo SALÃO-PARCEIRO, se assim o desejar e se tal estiver dentro do escopo do presente contrato;'),
+      P('Conhecer as normas e determinações do serviço de saúde pública, comprometendo-se a zelar pelo cumprimento delas.'),
+      P('Portar vestimentas compatíveis com o ambiente da prestação de serviços, além de aderir a padrões de vestuário que sejam estabelecidas entre as partes, no sentido de valorização da marca e da imagem do estabelecimento comercial.'),
+      H('CLÁUSULA SEXTA – DA INEXISTÊNCIA DE RELAÇÃO DE EMPREGO:'),
+      P('Não haverá, entre o SALÃO-PARCEIRO e o PROFISSIONAL-PARCEIRO, relação de emprego, nos termos dos artigos 2º e 3º, da CLT, inserindo-se o presente contrato no âmbito do direito obrigacional, na forma do que estabelecido no presente instrumento.'),
+      S('Parágrafo Único:'),
+      P('A assinatura do presente instrumento implica o reconhecimento de que o mesmo foi celebrado com amplo conhecimento de todos os seus termos, pelas partes, com liberdade absoluta quanto à manifestação volitiva, pelo que ambas declaram que não existe, entre elas, subordinação técnica, jurídica, hierárquica ou de qualquer outra espécie, uma vez que a parceria ora estabelecida se faz no sentido da reunião de forças em prol do desenvolvimento da atividade profissional e/ou do objeto social das partes.'),
+      H('CLÁUSULA SÉTIMA – DA RESCISÃO:'),
+      P('As partes poderão rescindir, unilateralmente e a qualquer tempo, o presente contrato, devendo comunicar a outra, contudo, sobre sua intenção, com antecedência de no mínimo 30 (trinta) dias, sob pena de multa correspondente a 10% (dez por cento) do salário mínimo, salvo se a ruptura da parceria estiver baseada em justo motivo de que decorra a quebra de confiança, entendida esta como aquela advinda da prática, por qualquer das partes, de concorrência desleal, descumprimento do raio de exclusividade fixada neste contrato, prática de ato de improbidade, incontinência de conduta ou mau procedimento, desídia profissional, violação de segredos do SALÃO PARCEIRO e conflitos entre os representantes do SALÃO PARCEIRO e o PROFISSIONAL PARCEIRO que inviabilize a convivência.'),
+      S('Parágrafo Primeiro:'),
+      P('Havendo rescisão do contrato, por qualquer motivo, o PROFISSIONAL-PARCEIRO obriga-se a devolver, ao SALÃO-PARCEIRO, todos os objetos dados em locação, em perfeitas condições de uso, higiene e limpeza, sob pena de responder por indenização, perdas e danos e lucros cessantes.'),
+      S('Parágrafo Segundo:'),
+      P('O não comparecimento do PROFISSIONAL-PARCEIRO às dependências do SALÃO-PARCEIRO, por mais de 5 (cinco) dias, sem comunicação providenciada por qualquer meio possível, implicará o reconhecimento de abandono da parceria estabelecida no presente instrumento, bem como dos móveis, objetos, utensílios e produtos etc. dados em locação e uso, como igualmente resultará na inexecução do contrato, o que será suficiente a que se considere desfeita automaticamente a parceria, independente de aviso ou interpelação judicial, podendo o SALÃO-PARCEIRO dispor dos bens dados em locação como bem entender, inclusive utilizando-os em outras parcerias a serem firmadas com terceiros. Os gastos e despesas que a ausência do PROFISSIONAL-PARCEIRO porventura constituir serão de sua inteira responsabilidade e deverão ser por ele suportados, ficando autorizada a retenção, por parte do SALÃO-PARCEIRO, se houver saldo de rateio alusivo à parceria, da importância alusiva aos prejuízos apurados, assim como a utilização dos demais meios legítimos e legais inerentes à responsabilização.'),
+      H('CLÁUSULA OITAVA – DO DIREITO DE REGRESSO:'),
+      P('Fica assegurado, ao SALÃO-PARCEIRO, o direito de regresso, via ação regressiva, em face do PROFISSIONAL-PARCEIRO, caso venha a sofrer prejuízos de qualquer natureza, por atos praticados por este, seja por culpa ou dolo, em face de terceiros, inclusive por erros técnicos por este praticados.'),
+      H('CLÁUSULA NONA – DO RAIO DE ATUAÇÃO COM EXCLUSIVIDADE:'),
+      P('O PROFISSIONAL PARCEIRO se obriga a prestar serviços dentro de sua área de atuação exclusivamente ao SALÃO PARCEIRO, dentro do Distrito Federal – DF, não podendo fazê-lo a terceiros, dentro desta área territorial. O descumprimento do que estabelecido na presente cláusula implicará o justo motivo para a ruptura do contrato, na forma da Cláusula Sétima.'),
+      H('CLÁUSULA DÉCIMA – DA VIGÊNCIA:'),
+      P('O prazo de locação é de um ano, iniciando-se na data da assinatura deste instrumento, e ficará automaticamente prorrogado, por prazo indeterminado, se não houver qualquer manifestação das partes.'),
+      H('CLÁUSULA DÉCIMA PRIMEIRA – DA RATIFICAÇÃO:'),
+      P('As partes declaram, de comum acordo, que a relação entre elas será na modalidade de parceria, na forma descrita no presente instrumento e concordam que os termos aqui estabelecidos são aqueles que permeiam a relação existente entre as partes, nos termos da Lei 13.352/2016.'),
+      H('CLÁUSULA DÉCIMA SEGUNDA – DO FORO:'),
+      P('Fica eleito o foro de Brasília, com renúncia de qualquer outro, por mais privilegiado que seja, para dirimir eventuais conflitos porventura decorrentes da interpretação ou execução do presente contrato.'),
+      P('E, por estarem de comum acordo, as partes assinam o presente instrumento, em 2 (duas) vias, juntamente com duas testemunhas.', 'margin-top:14pt'),
+      `<p style="text-align:center;margin:24pt 0 36pt">${cLocalContrato || 'Brasília (DF)'}, ${cDataContrato || '___'}</p>`,
+      `<div style="margin-top:8pt"><p style="margin:0 0 2pt">_______________________________________________________</p><p style="margin:0 0 28pt">${salao}</p><p style="margin:0 0 2pt">_______________________________________________________</p><p style="margin:0 0 24pt">${profNome}</p></div>`,
+      `<div style="font-size:10pt"><p style="margin:0 0 4pt">Testemunhas:</p><p style="margin:0 0 4pt">1ª) Ass. _________________________ &nbsp; Nome: &nbsp; RG:</p><p style="margin:0">2ª) Ass. _________________________ &nbsp; Nome: &nbsp; RG:</p></div>`,
+    ].join('')
+  }
+
+  function imprimirContrato() {
+    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Contrato de Parceria — ${cProfNome}</title>
+<style>
+  @page { size: A4 portrait; margin: 2cm 2cm 1.5cm 3cm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Times New Roman', Times, serif; font-size: 11pt; color: #000; line-height: 1.45; background: #fff; }
+  h1 { font-size: 13pt; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 16pt; letter-spacing: 1px; }
+  p { text-align: justify; }
+  @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+</style></head><body>
+<h1>Contrato de Parceria</h1>
+${montarContratoHTML()}
+<script>window.onload=function(){window.print()}</script>
+</body></html>`
+    const win = window.open('', '_blank', 'width=900,height=700')
+    if (!win) return
+    win.document.write(html); win.document.close(); win.focus()
+  }
 
   const CATEGORIAS_PADRAO = ['Cabeleireiro', 'Manicure', 'Pedicure', 'Assistente', 'Massoterapeuta', 'Maquiador(a)', 'Colorista', 'Recepcionista', 'Auxiliar']
   const iStyle: React.CSSProperties = { display: 'block', width: '100%', marginTop: '3px', padding: '6px 10px', border: '1px solid #d6d3ce', borderRadius: '6px', fontSize: '12px', background: '#fafaf8', color: '#1a1a1a', fontFamily: 'inherit' }
@@ -1142,6 +1312,84 @@ export default function ProfissionaisPage() {
                 <p style={{ marginBottom: '4pt', fontFamily: 'inherit' }}>2ª) Ass. _________________________</p>
                 <p style={{ marginBottom: '4pt', fontFamily: 'inherit' }}>Nome:</p>
                 <p style={{ fontFamily: 'inherit' }}>RG:</p>
+              </div>
+            </div>
+          )}
+
+          {/* ── CONTRATO DE TRABALHO (PARCERIA) ── */}
+          {secao === 'contrato' && (
+            <div style={{ maxWidth: '860px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
+                <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#1a1a1a', margin: 0 }}>Contrato de Parceria</h2>
+                <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
+                  <button onClick={() => setContratoEditando(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: contratoEditando ? '#5b4fcf' : '#f0eeea', color: contratoEditando ? '#fff' : '#444', border: '1px solid #d6d3ce', borderRadius: '8px', padding: '8px 14px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
+                    <Edit2 size={14} /> {contratoEditando ? 'Concluir Edição' : 'Editar Arquivo por Completo'}
+                  </button>
+                  <button onClick={imprimirContrato} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'linear-gradient(135deg,#5b4fcf,#f43f8e)', color: '#fff', border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
+                    🖨️ Imprimir
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
+                <label style={{ fontSize: '13px', fontWeight: 600, color: '#444', display: 'block', marginBottom: '8px' }}>Selecionar Profissional (Parceiro)</label>
+                <select
+                  value={contratoProf?.id || ''}
+                  onChange={e => { const p = profissionais.find(x => x.id === e.target.value); if (p) preencherContrato(p) }}
+                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d6d3ce', borderRadius: '8px', fontSize: '14px', background: '#fafaf8', color: '#1a1a1a' }}
+                >
+                  <option value=''>— Selecione o profissional —</option>
+                  {profissionais.filter(p => p.ativo || p.status_cadastro === 'pendente').map(p => (
+                    <option key={p.id} value={p.id}>{p.nome_completo}{p.cargo ? ` — ${p.cargo}` : ''}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ background: '#fff', border: '1px solid #d6d3ce', borderRadius: '12px', padding: '48px', fontFamily: "'Times New Roman', Times, serif", fontSize: '12pt', lineHeight: 1.6, color: '#000' }}>
+                <h1 style={{ textAlign: 'center', fontSize: '14pt', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '28px' }}>Contrato de Parceria</h1>
+
+                {(!dSalaoCNPJ || !dSalaoEndereco) && (
+                  <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '8px', padding: '12px 16px', marginBottom: '16px', fontSize: '12px', color: '#92400e', fontFamily: 'sans-serif' }}>
+                    ⚠️ Preencha CNPJ, endereço e cidade do salão em <strong>Meu Perfil</strong> (ou no botão Editar abaixo) para o contrato ficar completo.
+                  </div>
+                )}
+
+                {contratoEditando && (
+                  <div style={{ background: '#f5f4f0', border: '1px solid #d6d3ce', borderRadius: '10px', padding: '16px', marginBottom: '24px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                      <p style={{ fontSize: '11px', fontWeight: 700, color: '#5b4fcf', margin: 0, fontFamily: 'sans-serif' }}>✏️ DADOS DO SALÃO (SALÃO-PARCEIRO)</p>
+                      <button onClick={async () => {
+                        const res = await fetch('/api/salon/perfil', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nome: dSalaoNome, responsavel: dSalaoResponsavel, cnpj: dSalaoCNPJ, endereco: dSalaoEndereco, cidade: dSalaoCidade, rg_responsavel: dSalaoRG }) })
+                        if (res.ok) toast.success('Dados do salão salvos no perfil!'); else toast.error('Erro ao salvar')
+                      }} style={{ fontSize: '11px', fontWeight: 600, background: '#5b4fcf', color: '#fff', border: 'none', borderRadius: '6px', padding: '5px 12px', cursor: 'pointer', fontFamily: 'sans-serif' }}>
+                        💾 Salvar dados do salão
+                      </button>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }}>
+                      <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Nome/Razão social<input style={iStyle} value={dSalaoNome} onChange={e => setDSalaoNome(e.target.value)} /></label>
+                      <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Endereço/Sede<input style={iStyle} value={dSalaoEndereco} onChange={e => setDSalaoEndereco(e.target.value)} /></label>
+                      <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>CNPJ<input style={iStyle} value={dSalaoCNPJ} onChange={e => setDSalaoCNPJ(e.target.value)} /></label>
+                      <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Sócio/Responsável<input style={iStyle} value={dSalaoResponsavel} onChange={e => setDSalaoResponsavel(e.target.value)} /></label>
+                      <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>RG do responsável<input style={iStyle} value={dSalaoRG} onChange={e => setDSalaoRG(e.target.value)} /></label>
+                    </div>
+                    <p style={{ fontSize: '11px', fontWeight: 700, color: '#ef4444', margin: '0 0 12px', fontFamily: 'sans-serif' }}>✏️ DADOS DO PROFISSIONAL (PROFISSIONAL-PARCEIRO)</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }}>
+                      <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Nome/Razão social<input style={iStyle} value={cProfNome} onChange={e => setCProfNome(e.target.value.toUpperCase())} /></label>
+                      <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>CPF<input style={iStyle} value={cProfCPF} onChange={e => setCProfCPF(e.target.value)} /></label>
+                      <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>CNPJ<input style={iStyle} value={cProfCNPJ} onChange={e => setCProfCNPJ(e.target.value)} /></label>
+                      <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>RG<input style={iStyle} value={cProfRG} onChange={e => setCProfRG(e.target.value)} /></label>
+                      <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Endereço<input style={iStyle} value={cProfEndereco} onChange={e => setCProfEndereco(e.target.value)} /></label>
+                      <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Representante<input style={iStyle} value={cProfRepresentante} onChange={e => setCProfRepresentante(e.target.value)} /></label>
+                    </div>
+                    <p style={{ fontSize: '11px', fontWeight: 700, color: '#444', margin: '0 0 12px', fontFamily: 'sans-serif' }}>✏️ LOCAL E DATA</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                      <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Local<input style={iStyle} value={cLocalContrato} onChange={e => setCLocalContrato(e.target.value)} /></label>
+                      <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Data<input style={iStyle} value={cDataContrato} onChange={e => setCDataContrato(e.target.value)} placeholder="dd/mm/aaaa" /></label>
+                    </div>
+                  </div>
+                )}
+
+                <div dangerouslySetInnerHTML={{ __html: montarContratoHTML() }} />
               </div>
             </div>
           )}
