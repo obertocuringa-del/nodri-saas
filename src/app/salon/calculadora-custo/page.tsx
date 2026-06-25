@@ -708,6 +708,28 @@ export default function CalculadoraCusto() {
       .catch(() => {})
   }, [])
 
+  // Faturamento médio REAL dos últimos 12 meses (a partir do mês anterior),
+  // usando os dados de faturamento já importados. Pré-preenche o campo se vazio.
+  useEffect(() => {
+    fetch('/api/relatorios').then(r => r.ok ? r.json() : null).then((d: any) => {
+      const rm: any[] = d?.resumo_mensal || []
+      if (!rm.length) return
+      const now = new Date()
+      const curKey = now.getFullYear() * 100 + (now.getMonth() + 1) // exclui o mês atual (em curso)
+      const meses = rm
+        .filter(r => (r.ano * 100 + r.mes) < curKey && (Number(r.faturamento_total) || 0) > 0)
+        .sort((a, b) => (b.ano * 100 + b.mes) - (a.ano * 100 + a.mes))
+        .slice(0, 12)
+      if (!meses.length) return
+      const soma = meses.reduce((s, r) => s + (Number(r.faturamento_total) || 0), 0)
+      const media = Math.round(soma / meses.length)
+      if (media > 0) {
+        setMediaFat12(media)
+        setFat(prev => (prev && prev !== '0') ? prev : String(media)) // pré-preenche só se vazio
+      }
+    }).catch(() => {})
+  }, [])
+
   // Carrega mês selecionado
   useEffect(() => {
     setCarregando(true)
@@ -1280,7 +1302,7 @@ Use números reais. Seja direto.`
                     <InfoBtn id="faturamento"/>
                     <AvisoDefault ativo={!fat||fat==='0'} padrao="não preenchido" onPreencher={()=>{}} onManter={()=>{}}/>
                   </div>
-                  <p className="text-xs mb-1" style={{color:'#6b6860'}}>Média dos últimos 12 meses ÷ 12</p>
+                  <p className="text-xs mb-1" style={{color:'#6b6860'}}>Pré-preenchido com a média real dos últimos 12 meses (até o mês anterior). Pode editar.</p>
                   {mediaFat12 > 0 && !fat && (
                     <div className="flex items-center gap-2 mb-1.5">
                       <span className="text-[10px]" style={{color:'#5b4fcf'}}>📊 Média calculada: <strong>R$ {mediaFat12.toLocaleString('pt-BR')}</strong></span>
@@ -1297,7 +1319,7 @@ Use números reais. Seja direto.`
                       style={{background:'#f5f4f0',border:'1px solid #5b4fcf60'}}/>
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   {[
                     {l:'Custo Indireto Desejado',v:custIndD,set:setCustIndD,c:'#f59e0b',dica:'Recomendado: 30%',auto:false,info:'custIndD'},
                     {l:'Custo Direto Desejado',v:custDirD,set:null,c:'#ef4444',dica:'Calculado: 100% − Indireto − Lucro',auto:true,info:'custDirD'},
@@ -1472,19 +1494,18 @@ Use números reais. Seja direto.`
                       ) : (
                         <div style={{overflowY:'auto',display:'flex',flexDirection:'column',gap:'6px'}}>
                           {despesasCatalogo.filter(c=>c.categoria==='indireta').map(cat=>{
+                            // Pode adicionar a mesma empresa mais de uma vez (ex.: 2 compras
+                            // no mesmo mês da mesma empresa). Não bloqueia mais.
                             const jaAdicionada = extrasDespInd.some(e=>e.nome===cat.nome) || despInd.some(d=>d.nome===cat.nome)
                             return(
-                              <button key={cat.id} disabled={jaAdicionada}
+                              <button key={cat.id}
                                 onClick={()=>{
-                                  if (!jaAdicionada) setExtrasDespInd(p=>[...p,{nome:cat.nome,valor:'',dica:cat.observacao||'',parcela:''}])
+                                  setExtrasDespInd(p=>[...p,{nome:cat.nome,valor:'',dica:cat.observacao||'',parcela:''}])
                                   setModalCatalogoAberto(false)
                                 }}
-                                style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 14px',border:'1.5px solid',borderColor:jaAdicionada?'#e8e6e0':'#f59e0b',borderRadius:'8px',background:jaAdicionada?'#f5f4f0':'#fffbf0',cursor:jaAdicionada?'not-allowed':'pointer',opacity:jaAdicionada?0.5:1}}>
+                                style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 14px',border:'1.5px solid',borderColor:'#f59e0b',borderRadius:'8px',background:'#fffbf0',cursor:'pointer'}}>
                                 <span style={{fontSize:'13px',fontWeight:600,color:'#78350f'}}>{cat.nome}</span>
-                                {jaAdicionada
-                                  ? <span style={{fontSize:'10px',color:'#767069'}}>já adicionada</span>
-                                  : <span style={{fontSize:'11px',color:'#f59e0b',fontWeight:600}}>+ Adicionar</span>
-                                }
+                                <span style={{fontSize:'11px',color:'#f59e0b',fontWeight:600}}>{jaAdicionada ? '+ Adicionar outra' : '+ Adicionar'}</span>
                               </button>
                             )
                           })}
