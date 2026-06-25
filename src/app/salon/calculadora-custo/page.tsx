@@ -1228,8 +1228,13 @@ Use números reais. Seja direto.`
           </div>
         </div>
 
-        {/* Abas */}
-        <div className="flex gap-1 mb-6 p-1 rounded-xl overflow-x-auto" style={{background:'#faf9f7'}}>
+        {/* Abas — lista suspensa no celular */}
+        <select value={aba} onChange={e=>setAba(e.target.value as any)}
+          className="sm:hidden w-full mb-4 px-3 py-2.5 rounded-lg text-sm font-semibold text-[#1a1a1a]" style={{background:'#fff',border:'1px solid #dedad4'}}>
+          {ABAS.map(a=><option key={a.id} value={a.id}>{a.label}</option>)}
+        </select>
+        {/* Abas (desktop) */}
+        <div className="hidden sm:flex gap-1 mb-6 p-1 rounded-xl overflow-x-auto" style={{background:'#faf9f7'}}>
           {ABAS.map(a=>(
             <button key={a.id} onClick={()=>setAba(a.id as any)}
               className="flex-shrink-0 py-2 px-2 sm:px-1 rounded-lg text-[10px] font-bold transition-all text-center min-w-[72px] sm:min-w-0 sm:flex-1"
