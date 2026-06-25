@@ -1244,7 +1244,16 @@ ${montarContratoHTML()}
                       <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Responsável do Salão<input style={iStyle} value={dSalaoResponsavel} onChange={e => setDSalaoResponsavel(e.target.value)} /></label>
                       <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>RG do Responsável<input style={iStyle} value={dSalaoRG} onChange={e => setDSalaoRG(e.target.value)} /></label>
                     </div>
-                    <p style={{ fontSize: '11px', fontWeight: 700, color: '#ef4444', margin: '0 0 12px', fontFamily: 'sans-serif' }}>✏️ DADOS DO PROFISSIONAL (DISTRATADO)</p>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                      <p style={{ fontSize: '11px', fontWeight: 700, color: '#ef4444', margin: 0, fontFamily: 'sans-serif' }}>✏️ DADOS DO PROFISSIONAL (DISTRATADO)</p>
+                      <button onClick={async () => {
+                        if (!distratoProf) { toast.error('Selecione um profissional primeiro'); return }
+                        const res = await fetch(`/api/profissionais/${distratoProf.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cpf: dProfCPF, cnpj: dProfCNPJ, endereco: dProfEndereco }) })
+                        if (res.ok) { toast.success('Dados salvos no cadastro do profissional!'); carregarProfissionais() } else toast.error('Erro ao salvar')
+                      }} style={{ fontSize: '11px', fontWeight: 600, background: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', padding: '5px 12px', cursor: 'pointer', fontFamily: 'sans-serif' }}>
+                        💾 Salvar no cadastro
+                      </button>
+                    </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }}>
                       <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Nome do Profissional<input style={iStyle} value={dProfNome} onChange={e => setDProfNome(e.target.value.toUpperCase())} /></label>
                       <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>CPF do Profissional<input style={iStyle} value={dProfCPF} onChange={e => setDProfCPF(e.target.value)} /></label>
@@ -1372,7 +1381,16 @@ ${montarContratoHTML()}
                       <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Sócio/Responsável<input style={iStyle} value={dSalaoResponsavel} onChange={e => setDSalaoResponsavel(e.target.value)} /></label>
                       <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>RG do responsável<input style={iStyle} value={dSalaoRG} onChange={e => setDSalaoRG(e.target.value)} /></label>
                     </div>
-                    <p style={{ fontSize: '11px', fontWeight: 700, color: '#ef4444', margin: '0 0 12px', fontFamily: 'sans-serif' }}>✏️ DADOS DO PROFISSIONAL (PROFISSIONAL-PARCEIRO)</p>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                      <p style={{ fontSize: '11px', fontWeight: 700, color: '#ef4444', margin: 0, fontFamily: 'sans-serif' }}>✏️ DADOS DO PROFISSIONAL (PROFISSIONAL-PARCEIRO)</p>
+                      <button onClick={async () => {
+                        if (!contratoProf) { toast.error('Selecione um profissional primeiro'); return }
+                        const res = await fetch(`/api/profissionais/${contratoProf.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cpf: cProfCPF, cnpj: cProfCNPJ, endereco: cProfEndereco, rg: cProfRG }) })
+                        if (res.ok) { toast.success('Dados salvos no cadastro do profissional!'); carregarProfissionais() } else toast.error('Erro ao salvar')
+                      }} style={{ fontSize: '11px', fontWeight: 600, background: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', padding: '5px 12px', cursor: 'pointer', fontFamily: 'sans-serif' }}>
+                        💾 Salvar no cadastro
+                      </button>
+                    </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }}>
                       <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Nome/Razão social<input style={iStyle} value={cProfNome} onChange={e => setCProfNome(e.target.value.toUpperCase())} /></label>
                       <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>CPF<input style={iStyle} value={cProfCPF} onChange={e => setCProfCPF(e.target.value)} /></label>
