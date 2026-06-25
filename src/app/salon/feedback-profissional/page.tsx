@@ -396,9 +396,9 @@ export default function FeedbackProfissionalPage() {
 
               {tab === 'registrar' && (
                 <div className="max-w-lg mx-auto">
-                  <div className="rounded-2xl border overflow-hidden" style={{ background: '#ffffff', borderColor: 'rgba(255,255,255,.08)' }}>
+                  <div className="rounded-2xl border overflow-hidden" style={{ background: '#ffffff', borderColor: 'rgba(0,0,0,.08)' }}>
                     {/* Header */}
-                    <div className="px-6 py-5 border-b" style={{ borderColor: 'rgba(255,255,255,.06)', background: 'linear-gradient(135deg,rgba(124,92,252,.08),rgba(244,63,142,.05))' }}>
+                    <div className="px-6 py-5 border-b" style={{ borderColor: 'rgba(0,0,0,.07)', background: 'linear-gradient(135deg,rgba(124,92,252,.08),rgba(244,63,142,.05))' }}>
                       <div className="text-[13px] font-bold text-nodri-t1 mb-0.5">Registrar Ocorrência</div>
                       <div className="text-[11px] text-nodri-t3">Preencha os dados abaixo para registrar um feedback</div>
                     </div>
@@ -413,7 +413,7 @@ export default function FeedbackProfissionalPage() {
                             className="py-3 rounded-xl text-[12px] font-bold transition-all"
                             style={formTipo === 'positivo'
                               ? { background: 'rgba(34,197,94,.15)', color: '#15803d', border: '2px solid rgba(34,197,94,.4)' }
-                              : { background: 'rgba(255,255,255,.03)', color: '#767069', border: '1px solid rgba(255,255,255,.08)' }}>
+                              : { background: '#f5f4f0', color: '#767069', border: '1px solid rgba(0,0,0,.08)' }}>
                             <Check size={12} className="inline mr-1" /> Positivo
                           </button>
                           <button
@@ -421,7 +421,7 @@ export default function FeedbackProfissionalPage() {
                             className="py-3 rounded-xl text-[12px] font-bold transition-all"
                             style={formTipo === 'negativo'
                               ? { background: 'rgba(239,68,68,.12)', color: '#dc2626', border: '2px solid rgba(239,68,68,.35)' }
-                              : { background: 'rgba(255,255,255,.03)', color: '#767069', border: '1px solid rgba(255,255,255,.08)' }}>
+                              : { background: '#f5f4f0', color: '#767069', border: '1px solid rgba(0,0,0,.08)' }}>
                             <X size={12} className="inline mr-1" /> Negativo
                           </button>
                         </div>
@@ -503,7 +503,7 @@ export default function FeedbackProfissionalPage() {
                   </div>
                   <div className="space-y-1.5">
                     {profissionais.map(p => (
-                      <div key={p.id} className="flex items-center gap-2 p-3 rounded-xl border" style={{ background: '#ffffff', borderColor: 'rgba(255,255,255,.06)' }}>
+                      <div key={p.id} className="flex items-center gap-2 p-3 rounded-xl border" style={{ background: '#ffffff', borderColor: 'rgba(0,0,0,.07)' }}>
                         {editingProf?.id === p.id ? (
                           <>
                             <input
@@ -549,7 +549,7 @@ export default function FeedbackProfissionalPage() {
                   </div>
                   <div className="space-y-1.5">
                     {ocorridos.map(o => (
-                      <div key={o.id} className="flex items-center gap-2 p-3 rounded-xl border" style={{ background: '#ffffff', borderColor: 'rgba(255,255,255,.06)' }}>
+                      <div key={o.id} className="flex items-center gap-2 p-3 rounded-xl border" style={{ background: '#ffffff', borderColor: 'rgba(0,0,0,.07)' }}>
                         {editingOcorr?.id === o.id ? (
                           <>
                             <input
@@ -581,7 +581,7 @@ export default function FeedbackProfissionalPage() {
                     <p className="text-[11px] text-nodri-t3 mb-4">
                       Compartilhe com coordenadores, gerentes ou líderes para registrar ocorrências dos profissionais.
                     </p>
-                    <div className="flex items-center gap-2 p-3 rounded-xl border mb-3" style={{ background: '#f5f4f0', borderColor: 'rgba(255,255,255,.08)' }}>
+                    <div className="flex items-center gap-2 p-3 rounded-xl border mb-3" style={{ background: '#f5f4f0', borderColor: 'rgba(0,0,0,.08)' }}>
                       <span className="flex-1 text-[11px] text-nodri-cyan break-all">{linkForm}</span>
                       <button
                         onClick={() => { navigator.clipboard.writeText(linkForm); toast.success('Link copiado!') }}

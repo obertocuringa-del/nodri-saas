@@ -1028,7 +1028,7 @@ export default function RelatoriosPage() {
                 <BarChart2 size={13} /> Mais Relatórios <ChevronDown size={12} style={{ transform: dropdownAberto ? 'rotate(180deg)' : 'none', transition: '0.15s' }} />
               </button>
               {dropdownAberto && (
-                <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', top: '100%', left: 0, zIndex: 100, background: '#ffffff', border: '1.5px solid #e0ddd8', borderRadius: 10, minWidth: 230, boxShadow: '0 8px 32px #0009', marginTop: 4 }}>
+                <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', top: '100%', left: 0, zIndex: 100, background: '#ffffff', border: '1.5px solid #e0ddd8', borderRadius: 10, minWidth: 230, boxShadow: '0 8px 32px rgba(0,0,0,.18)', marginTop: 4 }}>
                   {[
                     { id: 'risco', icon: <AlertTriangle size={13} />, label: 'Em Risco', desc: 'Prestes a abandonar' },
                     { id: 'perdidos', icon: <Users size={13} />, label: 'Perdidos', desc: 'Não voltam há muito tempo' },

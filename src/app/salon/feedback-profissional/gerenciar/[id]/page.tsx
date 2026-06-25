@@ -234,7 +234,7 @@ export default function GerenciarFeedbacksPage() {
         {/* Busca */}
         <div className="flex gap-2">
           <div className="flex-1 flex items-center gap-2 px-3 py-2 rounded-xl border"
-            style={{ background: '#ffffff', borderColor: 'rgba(255,255,255,.1)' }}>
+            style={{ background: '#ffffff', borderColor: 'rgba(0,0,0,.1)' }}>
             <Search size={13} className="text-nodri-t3 shrink-0" />
             <input
               value={buscaInput}
@@ -251,7 +251,7 @@ export default function GerenciarFeedbacksPage() {
           {busca && (
             <button onClick={() => { setBusca(''); setBuscaInput(''); setPage(1) }}
               className="px-3 py-2 rounded-xl text-[12px]"
-              style={{ background: 'rgba(255,255,255,.05)', color: '#767069', border: '1px solid rgba(255,255,255,.1)' }}>
+              style={{ background: '#f5f4f0', color: '#767069', border: '1px solid rgba(0,0,0,.1)' }}>
               Limpar
             </button>
           )}
@@ -374,7 +374,7 @@ export default function GerenciarFeedbacksPage() {
         </div>
 
         {/* Tabela */}
-        <div className="pcard rounded-2xl border overflow-hidden" style={{ background: '#ffffff', borderColor: 'rgba(255,255,255,.07)' }}>
+        <div className="pcard rounded-2xl border overflow-hidden" style={{ background: '#ffffff', borderColor: 'rgba(0,0,0,.07)' }}>
           {loading ? (
             <div className="flex justify-center py-16"><div className="w-7 h-7 border-2 border-t-nodri-cyan rounded-full animate-spin" /></div>
           ) : respostas.length === 0 ? (
@@ -383,7 +383,7 @@ export default function GerenciarFeedbacksPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-[11px]">
                 <thead>
-                  <tr style={{ background: 'rgba(255,255,255,.03)' }}>
+                  <tr style={{ background: '#faf9f7' }}>
                     <th className="text-left px-4 py-3 text-nodri-t3 font-semibold">Data</th>
                     <th className="text-left px-4 py-3 text-nodri-t3 font-semibold">Profissional</th>
                     <th className="text-center px-4 py-3 text-nodri-t3 font-semibold">Tipo</th>
@@ -488,13 +488,13 @@ export default function GerenciarFeedbacksPage() {
           <div className="flex items-center justify-center gap-2">
             <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
               className="p-2 rounded-lg disabled:opacity-30"
-              style={{ background: 'rgba(255,255,255,.05)', color: '#767069' }}>
+              style={{ background: '#f5f4f0', color: '#767069' }}>
               <ChevronLeft size={14} />
             </button>
             <span className="text-[12px] text-nodri-t2 px-3">Página {page} de {totalPages}</span>
             <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
               className="p-2 rounded-lg disabled:opacity-30"
-              style={{ background: 'rgba(255,255,255,.05)', color: '#767069' }}>
+              style={{ background: '#f5f4f0', color: '#767069' }}>
               <ChevronRight size={14} />
             </button>
           </div>

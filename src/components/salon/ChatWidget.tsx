@@ -18,7 +18,7 @@ function renderMarkdown(texto: string): string {
   // Blocos de código — preserva antes de escapar
   html = html.replace(/```[\w]*\n?([\s\S]*?)```/g, (_, code) => {
     const idx = blocos.length
-    blocos.push(`<pre style="background:#ffffff;border:1px solid #30363d;border-radius:10px;padding:14px 16px;overflow-x:auto;font-size:12.5px;line-height:1.7;margin:12px 0"><code style="color:#1a1a1a;font-family:'Fira Mono',monospace">${code.trim().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</code></pre>`)
+    blocos.push(`<pre style="background:#ffffff;border:1px solid #e0ddd8;border-radius:10px;padding:14px 16px;overflow-x:auto;font-size:12.5px;line-height:1.7;margin:12px 0"><code style="color:#1a1a1a;font-family:'Fira Mono',monospace">${code.trim().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</code></pre>`)
     return `\x00BLOCO${idx}\x00`
   })
 
@@ -26,20 +26,20 @@ function renderMarkdown(texto: string): string {
   html = html.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
   // Código inline
-  html = html.replace(/`([^`]+)`/g, '<code style="background:#1c2128;border:1px solid #30363d;border-radius:5px;padding:2px 7px;font-size:12.5px;font-family:monospace;color:#79c0ff">$1</code>')
+  html = html.replace(/`([^`]+)`/g, '<code style="background:#f0eefb;border:1px solid #e0ddd8;border-radius:5px;padding:2px 7px;font-size:12.5px;font-family:monospace;color:#5b4fcf">$1</code>')
 
   // Tabelas — zebra striping e hover
   html = html.replace(/(\|.+\|\n?)+/g, (block) => {
     const rows = block.trim().split('\n').filter(r => r.trim())
     const isSep = (r: string) => /^\|[\s\-:|]+\|$/.test(r.trim())
-    let table = '<div style="overflow-x:auto;margin:14px 0;border-radius:10px;border:1px solid #30363d;overflow:hidden"><table style="width:100%;border-collapse:collapse;font-size:13px">'
+    let table = '<div style="overflow-x:auto;margin:14px 0;border-radius:10px;border:1px solid #e0ddd8;overflow:hidden"><table style="width:100%;border-collapse:collapse;font-size:13px">'
     let isHead = true
     let rowIdx = 0
     for (const row of rows) {
       if (isSep(row)) { isHead = false; continue }
       const cells = row.split('|').filter((_, i, a) => i > 0 && i < a.length - 1)
       if (isHead) {
-        table += `<thead><tr>${cells.map(c => `<th style="padding:10px 14px;background:#1c2128;color:#1a1a1a;font-weight:600;text-align:left;font-size:12px;border-bottom:2px solid #f59e0b;white-space:nowrap">${c.trim()}</th>`).join('')}</tr></thead><tbody>`
+        table += `<thead><tr>${cells.map(c => `<th style="padding:10px 14px;background:#f0eefb;color:#1a1a1a;font-weight:600;text-align:left;font-size:12px;border-bottom:2px solid #f59e0b;white-space:nowrap">${c.trim()}</th>`).join('')}</tr></thead><tbody>`
       } else {
         const bg = rowIdx % 2 === 0 ? '#ffffff' : '#faf9f7'
         table += `<tr style="background:${bg}">${cells.map(c => `<td style="padding:9px 14px;border-bottom:1px solid #f0ede8;color:#6b6860;font-size:13px">${c.trim()}</td>`).join('')}</tr>`
@@ -52,7 +52,7 @@ function renderMarkdown(texto: string): string {
 
   // Linhas separadoras
   html = html.replace(/^---+$/gm, '<hr style="border:none;border-top:1px solid #f0ede8;margin:16px 0"/>')
-  html = html.replace(/^═{3,}$/gm, '<hr style="border:none;border-top:2px solid #30363d;margin:20px 0"/>')
+  html = html.replace(/^═{3,}$/gm, '<hr style="border:none;border-top:2px solid #e0ddd8;margin:20px 0"/>')
 
   // Títulos com visual destacado
   html = html.replace(/^#### (.+)$/gm, '<p style="font-size:13px;font-weight:700;color:#6b6860;margin:12px 0 4px;text-transform:uppercase;letter-spacing:.5px">$1</p>')
@@ -62,7 +62,7 @@ function renderMarkdown(texto: string): string {
 
   // Linhas com emoji no início (seções da IA: 📊 **Título**)
   html = html.replace(/^([\u{1F300}-\u{1FFFF}\u{2600}-\u{27BF}])\s*\*\*(.+?)\*\*/gmu, (_, emoji, titulo) =>
-    `<div style="display:flex;align-items:center;gap:10px;margin:18px 0 10px;padding:10px 14px;background:#1c2128;border-radius:10px;border-left:3px solid #f59e0b"><span style="font-size:20px;flex-shrink:0">${emoji}</span><span style="color:#1a1a1a;font-weight:700;font-size:15px">${titulo}</span></div>`
+    `<div style="display:flex;align-items:center;gap:10px;margin:18px 0 10px;padding:10px 14px;background:#f0eefb;border-radius:10px;border-left:3px solid #f59e0b"><span style="font-size:20px;flex-shrink:0">${emoji}</span><span style="color:#1a1a1a;font-weight:700;font-size:15px">${titulo}</span></div>`
   )
   html = html.replace(/^([\u{1F300}-\u{1FFFF}\u{2600}-\u{27BF}])\s+(.+)$/gmu, (_, emoji, rest) =>
     `<div style="display:flex;gap:10px;align-items:flex-start;margin:8px 0"><span style="font-size:17px;flex-shrink:0;line-height:1.5">${emoji}</span><span style="color:#6b6860;line-height:1.7">${rest}</span></div>`
@@ -80,7 +80,7 @@ function renderMarkdown(texto: string): string {
   html = html.replace(/((?:^\d+\.\s.+\n?)+)/gm, (block) => {
     const items = block.trim().split('\n').map(l => l.replace(/^\d+\.\s/, '').trim()).filter(Boolean)
     return '<ol style="margin:10px 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px">' +
-      items.map((item, idx) => `<li style="display:flex;gap:10px;align-items:flex-start;color:#6b6860;line-height:1.7"><span style="color:#b45309;flex-shrink:0;font-weight:700;font-size:13px;min-width:22px;background:#1c2128;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;margin-top:2px">${idx+1}</span><span>${item}</span></li>`).join('') +
+      items.map((item, idx) => `<li style="display:flex;gap:10px;align-items:flex-start;color:#6b6860;line-height:1.7"><span style="color:#b45309;flex-shrink:0;font-weight:700;font-size:13px;min-width:22px;background:#f0eefb;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;margin-top:2px">${idx+1}</span><span>${item}</span></li>`).join('') +
       '</ol>'
   })
 
@@ -88,7 +88,7 @@ function renderMarkdown(texto: string): string {
   html = html.replace(/\*\*\*(.*?)\*\*\*/g, '<strong style="color:#fff"><em>$1</em></strong>')
   html = html.replace(/\*\*(.*?)\*\*/g, '<strong style="color:#1a1a1a;font-weight:600">$1</strong>')
   html = html.replace(/__(.*?)__/g, '<strong style="color:#1a1a1a;font-weight:600">$1</strong>')
-  html = html.replace(/\*(.*?)\*/g, '<em style="color:#adbac7">$1</em>')
+  html = html.replace(/\*(.*?)\*/g, '<em style="color:#6b6860">$1</em>')
 
   // Quebras de linha → parágrafos
   html = html.replace(/\n\n+/g, '</p><p style="margin:10px 0;color:#6b6860;line-height:1.8">')
@@ -509,14 +509,14 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <button onClick={imprimir} title="Imprimir conversa" style={{ padding: '6px 8px', background: 'transparent', border: '1px solid #30363d', borderRadius: 8, cursor: 'pointer', color: '#6b6860', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+              <button onClick={imprimir} title="Imprimir conversa" style={{ padding: '6px 8px', background: 'transparent', border: '1px solid #e0ddd8', borderRadius: 8, cursor: 'pointer', color: '#6b6860', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
                 <Printer size={14} /><span className="hidden sm:inline">Imprimir</span>
               </button>
-              <button onClick={limpar} title="Limpar conversa" style={{ padding: '6px 8px', background: 'transparent', border: '1px solid #30363d', borderRadius: 8, cursor: 'pointer', color: '#6b6860', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+              <button onClick={limpar} title="Limpar conversa" style={{ padding: '6px 8px', background: 'transparent', border: '1px solid #e0ddd8', borderRadius: 8, cursor: 'pointer', color: '#6b6860', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
                 <Trash2 size={14} /><span className="hidden sm:inline">Limpar</span>
               </button>
               {!modoEmbarcado && (
-                <button onClick={fechar} title="Fechar" style={{ padding: '6px 8px', background: 'transparent', border: '1px solid #30363d', borderRadius: 8, cursor: 'pointer', color: '#6b6860', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+                <button onClick={fechar} title="Fechar" style={{ padding: '6px 8px', background: 'transparent', border: '1px solid #e0ddd8', borderRadius: 8, cursor: 'pointer', color: '#6b6860', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
                   <X size={14} /><span className="hidden sm:inline">Fechar</span>
                 </button>
               )}
@@ -627,7 +627,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
                   border: msg.role === 'assistant' ? '1px solid #f0ede8' : 'none',
                   fontSize: 14,
                   lineHeight: 1.7,
-                  color: msg.role === 'user' ? '#000' : '#c9d1d9',
+                  color: msg.role === 'user' ? '#000' : '#3a3835',
                   wordBreak: 'break-word',
                 }}>
                   {msg.role === 'user'
@@ -678,7 +678,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
 
           {/* Input */}
           <div style={{ padding: isMobile ? '10px 12px' : '16px max(24px, calc(50% - 400px))', borderTop: '1px solid #f0ede8', background: '#faf9f7', flexShrink: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, background: '#ffffff', border: '1px solid #30363d', borderRadius: 14, padding: '10px 14px', transition: 'border-color 0.2s' }}
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, background: '#ffffff', border: '1px solid #e0ddd8', borderRadius: 14, padding: '10px 14px', transition: 'border-color 0.2s' }}
               onFocus={() => {}} >
               <textarea
                 ref={inputRef}
@@ -724,7 +724,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
       {/* ── Modal Nova/Editar Pergunta ── */}
       {modalAberto && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 10002, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-          <div style={{ background: '#faf9f7', border: '1px solid #30363d', borderRadius: 16, padding: 28, width: '100%', maxWidth: 520, display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ background: '#faf9f7', border: '1px solid #e0ddd8', borderRadius: 16, padding: 28, width: '100%', maxWidth: 520, display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <h3 style={{ margin: 0, color: '#1a1a1a', fontSize: 16, fontWeight: 700 }}>
                 {editando ? 'Editar Pergunta' : 'Nova Pergunta'}
@@ -736,20 +736,20 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
               <label style={{ fontSize: 12, fontWeight: 600, color: '#6b6860', textTransform: 'uppercase', letterSpacing: .5 }}>Título (aparece na lista)</label>
               <input value={formTitulo} onChange={e => setFormTitulo(e.target.value)}
                 placeholder="Ex: Análise da equipe completa"
-                style={{ background: '#ffffff', border: '1px solid #30363d', borderRadius: 8, padding: '10px 14px', color: '#1a1a1a', fontSize: 14, outline: 'none', fontFamily: 'inherit' }} />
+                style={{ background: '#ffffff', border: '1px solid #e0ddd8', borderRadius: 8, padding: '10px 14px', color: '#1a1a1a', fontSize: 14, outline: 'none', fontFamily: 'inherit' }} />
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <label style={{ fontSize: 12, fontWeight: 600, color: '#6b6860', textTransform: 'uppercase', letterSpacing: .5 }}>Script completo (enviado ao chat)</label>
               <textarea value={formScript} onChange={e => setFormScript(e.target.value)} rows={6}
                 placeholder="Ex: Faça uma análise completa da equipe com faturamento, ocorrências e ranking de cada profissional no período atual. Apresente em tabela e destaque pontos de atenção."
-                style={{ background: '#ffffff', border: '1px solid #30363d', borderRadius: 8, padding: '10px 14px', color: '#1a1a1a', fontSize: 13, outline: 'none', fontFamily: 'inherit', resize: 'vertical', lineHeight: 1.6 }} />
+                style={{ background: '#ffffff', border: '1px solid #e0ddd8', borderRadius: 8, padding: '10px 14px', color: '#1a1a1a', fontSize: 13, outline: 'none', fontFamily: 'inherit', resize: 'vertical', lineHeight: 1.6 }} />
               <p style={{ margin: 0, fontSize: 11, color: '#6b6860' }}>O script é o texto completo enviado à IA. O título é só um atalho para você identificar.</p>
             </div>
 
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
               <button onClick={fecharModal}
-                style={{ padding: '9px 20px', background: 'transparent', border: '1px solid #30363d', borderRadius: 8, cursor: 'pointer', color: '#6b6860', fontSize: 14 }}>
+                style={{ padding: '9px 20px', background: 'transparent', border: '1px solid #e0ddd8', borderRadius: 8, cursor: 'pointer', color: '#6b6860', fontSize: 14 }}>
                 Cancelar
               </button>
               <button onClick={salvarPrompt} disabled={!formTitulo.trim() || !formScript.trim()}
@@ -764,7 +764,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
       <style>{`
         @keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }
         ::-webkit-scrollbar { width: 4px } ::-webkit-scrollbar-track { background: transparent }
-        ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px }
+        ::-webkit-scrollbar-thumb { background: #e0ddd8; border-radius: 4px }
       `}</style>
     </>
   )
