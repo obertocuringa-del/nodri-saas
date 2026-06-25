@@ -105,6 +105,10 @@ html, body {
   /* 13) Qualquer botão com ícone de impressora some no celular (cobre todas
          as páginas de uma vez — imprimir não faz sentido no telefone). */
   button:has(svg.lucide-printer), a:has(svg.lucide-printer) { display: none !important; }
+
+  /* 14) Linhas de formulário em grid de colunas fixas (ex: CEP/Rua/Nº)
+         empilham em 1 coluna no celular — marque o container com .stack-mobile. */
+  .stack-mobile { grid-template-columns: 1fr !important; }
 }
 
 /* Scrollbar customizada */

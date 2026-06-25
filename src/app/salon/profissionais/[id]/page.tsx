@@ -3216,7 +3216,7 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                     {/* ── ENDEREÇO COM CEP AUTO-FILL ── */}
                     <div className="col-span-2">
                       <label className={labelCls}>Endereço</label>
-                      <div className="grid grid-cols-[120px_1fr_1fr_56px] gap-2 items-end">
+                      <div className="grid grid-cols-1 sm:grid-cols-[120px_1fr_1fr_56px] gap-2 items-end">
                         <div>
                           <label className="text-[10px] text-nodri-t3 block mb-1">CEP</label>
                           <div className="relative">

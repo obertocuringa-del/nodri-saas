@@ -781,7 +781,7 @@ export default function ProfissionaisPage() {
                         {inp2('E-mail', form.email, v => setForm(f => ({ ...f, email: v })), { type: 'email' })}
                         {/* ── ENDEREÇO ESTRUTURADO ── */}
                         <div style={{ gridColumn: '1 / -1' }}>
-                          <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr 1fr 60px', gap: '8px', alignItems: 'end' }}>
+                          <div className="stack-mobile" style={{ display: 'grid', gridTemplateColumns: '140px 1fr 1fr 60px', gap: '8px', alignItems: 'end' }}>
                             <div>
                               <label style={{ fontSize: '11px', fontWeight: 600, color: '#767069', display: 'block', marginBottom: '4px' }}>CEP</label>
                               <div style={{ position: 'relative' }}>
