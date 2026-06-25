@@ -3212,8 +3212,8 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                     <div><label className={labelCls}>CPF</label><input value={form.cpf||''} onChange={e=>set('cpf',e.target.value)} placeholder="000.000.000-00" className={inputCls}/></div>
                     <div><label className={labelCls}>RG</label><input value={form.rg||''} onChange={e=>set('rg',e.target.value)} className={inputCls}/></div>
                     <div><label className={labelCls}>Data de Aniversário</label><input type="date" value={form.data_aniversario||''} onChange={e=>set('data_aniversario',e.target.value)} className={inputCls}/></div>
-                    <div><label className={labelCls}>Data de Admissão <span style={{color:'#5b4fcf'}}>(entra no Contrato)</span></label><input type="date" value={form.data_admissao||''} onChange={e=>set('data_admissao',e.target.value)} className={inputCls}/></div>
-                    <div><label className={labelCls}>Data de Demissão <span style={{color:'#ef4444'}}>(entra no Distrato)</span></label><input type="date" value={form.data_demissao||''} onChange={e=>set('data_demissao',e.target.value)} className={inputCls}/></div>
+                    <div><label className={labelCls}>Data de Admissão <span style={{color:'#5b4fcf'}}>(entra no Contrato)</span></label><input type="date" value={(form as any).data_admissao||''} onChange={e=>set('data_admissao' as any,e.target.value)} className={inputCls}/></div>
+                    <div><label className={labelCls}>Data de Demissão <span style={{color:'#ef4444'}}>(entra no Distrato)</span></label><input type="date" value={(form as any).data_demissao||''} onChange={e=>set('data_demissao' as any,e.target.value)} className={inputCls}/></div>
                     <div><label className={labelCls}>Email</label><input type="email" value={form.email||''} onChange={e=>set('email',e.target.value)} className={inputCls}/></div>
                     {/* ── ENDEREÇO COM CEP AUTO-FILL ── */}
                     <div className="col-span-2">
