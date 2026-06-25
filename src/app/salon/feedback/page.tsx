@@ -342,7 +342,14 @@ export default function FeedbackPage() {
                   </button>
                 </div>
               </div>
-              <div className="flex gap-0 border-b-0">
+              {/* Mobile: abas em lista suspensa */}
+              <select value={tab} onChange={e => setTab(e.target.value as any)}
+                className="sm:hidden w-full mb-2 px-3 py-2.5 rounded-lg border border-nodri-border text-sm font-semibold text-nodri-t1 bg-white">
+                <option value="perguntas">Perguntas</option>
+                <option value="link">Link para Clientes</option>
+                <option value="config">Configurações</option>
+              </select>
+              <div className="hidden sm:flex gap-0 border-b-0">
                 {(['perguntas', 'link', 'config'] as const).map(t => (
                   <button key={t} onClick={() => setTab(t)}
                     className={`px-4 py-2 text-[11px] font-medium capitalize border-b-2 transition-all ${tab === t ? 'border-nodri-cyan text-nodri-cyan' : 'border-transparent text-nodri-t3 hover:text-nodri-t1'}`}>
