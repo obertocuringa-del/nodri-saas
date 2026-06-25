@@ -722,6 +722,8 @@ export default function RelatoriosPage() {
 
       // ── Atualizar localStorage como cache ──
       localStorage.setItem(STORAGE_KEY, JSON.stringify(novo))
+      // Limpa o cache das sub-análises (os dados mudaram com a reimportação)
+      try { Object.keys(localStorage).filter(k => k.startsWith('nodri_analise_')).forEach(k => localStorage.removeItem(k)) } catch { /* */ }
       setDados(novo)
 
       const ult = novo.resumo_mensal.length ? novo.resumo_mensal.reduce((a, b) => (a.ano * 100 + a.mes > b.ano * 100 + b.mes ? a : b)) : null
@@ -816,19 +818,33 @@ export default function RelatoriosPage() {
     setAnaliseDetalhe([])
     setVerQtd(10)  // toda nova análise começa mostrando 10 (carrega rápido)
     if (tipo === 'diasemana') { setAnaliseLoading(false); return }
+
+    // ── Cache instantâneo por tipo: mostra o último resultado na hora e revalida atrás.
+    //    Seguro porque o relatório só muda quando você reimporta os atendimentos. ──
+    const cacheKey = 'nodri_analise_' + tipo
+    try {
+      const c = localStorage.getItem(cacheKey)
+      if (c) {
+        const d = JSON.parse(c)
+        if (Array.isArray(d.detalhe)) setAnaliseDetalhe(d.detalhe)
+        if (Array.isArray(d.csCategorias)) setCsCategorias(d.csCategorias)
+        if (d.resumo) setAnaliseResumo(d.resumo)
+        setAnaliseLoading(false)  // já tem o que mostrar — sem espera
+      }
+    } catch { /* */ }
+
     if (tipo === 'crosssell') {
-      setCsCategoria(null); setCsServico(null); setCsServicos([]); setCsClientes([])
-      setCsLoadingCat(true)
+      setCsCategoria(null); setCsServico(null); setCsServicos([])
+      setCsClientes([])
       try {
         const res = await fetch('/api/relatorios/crosssell?tipo=categorias')
-        const data = await res.json()
-        setCsCategorias(Array.isArray(data) ? data : [])
-      } catch {}
+        const cats = await res.json().then(d => Array.isArray(d) ? d : []).catch(() => [])
+        setCsCategorias(cats)
+        let resumo = analiseResumo
+        if (!resumo) { resumo = await fetch('/api/relatorios/analise-clientes?tipo=resumo').then(r => r.json()); setAnaliseResumo(resumo) }
+        try { localStorage.setItem(cacheKey, JSON.stringify({ csCategorias: cats, resumo })) } catch { /* */ }
+      } catch { /* */ }
       setCsLoadingCat(false)
-      if (!analiseResumo) {
-        const res2 = await fetch('/api/relatorios/analise-clientes?tipo=resumo')
-        setAnaliseResumo(await res2.json())
-      }
       setAnaliseLoading(false)
       return
     }
@@ -840,16 +856,18 @@ export default function RelatoriosPage() {
         ])
         const resumo = await resResumo.json()
         const rfm = await resRfm.json()
+        const detalhe = Object.entries(rfm).map(([score, qtd]) => ({ score, qtd }))
         setAnaliseResumo(resumo)
-        setAnaliseDetalhe(Object.entries(rfm).map(([score, qtd]) => ({ score, qtd })))
+        setAnaliseDetalhe(detalhe)
+        try { localStorage.setItem(cacheKey, JSON.stringify({ detalhe, resumo })) } catch { /* */ }
       } else {
         const res = await fetch(`/api/relatorios/analise-clientes?tipo=${tipo}`)
         const data = await res.json()
-        setAnaliseDetalhe(Array.isArray(data) ? data : [])
-        if (!analiseResumo) {
-          const res2 = await fetch('/api/relatorios/analise-clientes?tipo=resumo')
-          setAnaliseResumo(await res2.json())
-        }
+        const detalhe = Array.isArray(data) ? data : []
+        setAnaliseDetalhe(detalhe)
+        let resumo = analiseResumo
+        if (!resumo) { resumo = await fetch('/api/relatorios/analise-clientes?tipo=resumo').then(r => r.json()); setAnaliseResumo(resumo) }
+        try { localStorage.setItem(cacheKey, JSON.stringify({ detalhe, resumo })) } catch { /* */ }
       }
     } catch { /* silencioso */ }
     setAnaliseLoading(false)
