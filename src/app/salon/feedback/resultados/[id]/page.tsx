@@ -287,7 +287,7 @@ export default function ResultadosPage() {
                 return (
                   <div key={p.id} className="print-card grid grid-cols-3 gap-3">
                     <NpsGauge nps={s.nps} />
-                    <div className="p-4 rounded-xl border col-span-2" style={{ background: '#ffffff', borderColor: 'rgba(255,255,255,.07)' }}>
+                    <div className="p-4 rounded-xl border col-span-2" style={{ background: '#ffffff', borderColor: 'rgba(0,0,0,.07)' }}>
                       <div className="text-[10px] text-nodri-t3 mb-2 truncate">{p.titulo}</div>
                       <div className="flex gap-3 mb-3">
                         {[{ label: 'Promotores (9-10)', val: s.promotores, cor: '#4ade80' }, { label: 'Neutros (7-8)', val: s.neutros, cor: '#facc15' }, { label: 'Detratores (0-6)', val: s.detratores, cor: '#f87171' }].map(({ label, val, cor }) => (
@@ -318,7 +318,7 @@ export default function ResultadosPage() {
 
               {/*  TENDÊNCIA SEMANAL  */}
               {data.tendenciaSemanal.length >= 2 && (
-                <div className="print-card rounded-2xl border p-5" style={{ background: '#ffffff', borderColor: 'rgba(255,255,255,.07)' }}>
+                <div className="print-card rounded-2xl border p-5" style={{ background: '#ffffff', borderColor: 'rgba(0,0,0,.07)' }}>
                   <div className="flex items-center gap-2 mb-4">
                     <TrendingUp size={14} className="text-nodri-cyan" />
                     <span className="text-[13px] font-semibold text-nodri-t1">Tendência Semanal — Nota Média</span>
@@ -364,7 +364,7 @@ export default function ResultadosPage() {
 
               {/*  SEGMENTAÇÃO NOVO X RECORRENTE  */}
               {data.segmentacao && (data.segmentacao.novos.count > 0 || data.segmentacao.recorrentes.count > 0) && (
-                <div className="print-card rounded-2xl border p-5" style={{ background: '#ffffff', borderColor: 'rgba(255,255,255,.07)' }}>
+                <div className="print-card rounded-2xl border p-5" style={{ background: '#ffffff', borderColor: 'rgba(0,0,0,.07)' }}>
                   <div className="flex items-center gap-2 mb-4">
                     <Users size={14} className="text-nodri-purple" />
                     <span className="text-[13px] font-semibold text-nodri-t1">Segmentação — Novos vs Recorrentes</span>
@@ -743,9 +743,9 @@ export default function ResultadosPage() {
                   const stat = data.stats[pergunta.id]
                   if (!stat) return null
                   return (
-                    <div key={pergunta.id} className="print-card rounded-2xl border overflow-hidden" style={{ background: '#ffffff', borderColor: 'rgba(255,255,255,.07)' }}>
-                      <div className="px-5 py-3 border-b flex items-center gap-2" style={{ borderColor: 'rgba(255,255,255,.06)' }}>
-                        <span className="text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold text-nodri-t3" style={{ background: 'rgba(255,255,255,.06)' }}>{idx + 1}</span>
+                    <div key={pergunta.id} className="print-card rounded-2xl border overflow-hidden" style={{ background: '#ffffff', borderColor: 'rgba(0,0,0,.07)' }}>
+                      <div className="px-5 py-3 border-b flex items-center gap-2" style={{ borderColor: 'rgba(0,0,0,.06)' }}>
+                        <span className="text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold text-nodri-t3" style={{ background: 'rgba(0,0,0,.06)' }}>{idx + 1}</span>
                         <span className="text-[13px] font-medium text-nodri-t1 flex-1">{pergunta.titulo}</span>
                         <span className="ml-auto text-[10px] text-nodri-t3">{(stat as { total: number }).total} resp.</span>
                       </div>
@@ -777,7 +777,7 @@ export default function ResultadosPage() {
                               {s.respostas.length === 0
                                 ? <p className="text-nodri-t3 text-sm">Nenhuma resposta</p>
                                 : s.respostas.map((r, i) => (
-                                  <div key={i} className="p-3 rounded-xl text-[12px] text-nodri-t1 italic" style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.05)' }}>
+                                  <div key={i} className="p-3 rounded-xl text-[12px] text-nodri-t1 italic" style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(0,0,0,.06)' }}>
                                     "{r}"
                                   </div>
                                 ))}
@@ -793,7 +793,7 @@ export default function ResultadosPage() {
                                 const total = c.sim + c.nao
                                 const pctSim = total > 0 ? Math.round((c.sim / total) * 100) : 0
                                 return (
-                                  <div key={item} className="p-3 rounded-xl" style={{ background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.05)' }}>
+                                  <div key={item} className="p-3 rounded-xl" style={{ background: 'rgba(255,255,255,.02)', border: '1px solid rgba(0,0,0,.06)' }}>
                                     <div className="flex items-center justify-between mb-1.5">
                                       <span className="text-[12px] text-nodri-t1">{item}</span>
                                       <span className="text-[11px] font-bold" style={{ color: pctSim >= 70 ? '#4ade80' : pctSim >= 50 ? '#facc15' : '#f87171' }}>{pctSim}% Sim</span>
@@ -849,8 +849,8 @@ export default function ResultadosPage() {
 
               {/*  COMENTÁRIOS  */}
               {data.comentarios.length > 0 && (
-                <div className="print-card rounded-2xl border overflow-hidden" style={{ background: '#ffffff', borderColor: 'rgba(255,255,255,.07)' }}>
-                  <div className="px-5 py-3 border-b flex items-center gap-2" style={{ borderColor: 'rgba(255,255,255,.06)' }}>
+                <div className="print-card rounded-2xl border overflow-hidden" style={{ background: '#ffffff', borderColor: 'rgba(0,0,0,.07)' }}>
+                  <div className="px-5 py-3 border-b flex items-center gap-2" style={{ borderColor: 'rgba(0,0,0,.06)' }}>
                     <span className="text-lg"></span>
                     <span className="text-[13px] font-medium text-nodri-t1">Comentários dos Clientes</span>
                     <span className="ml-auto text-[10px] text-nodri-t3">{data.comentarios.length} comentário{data.comentarios.length !== 1 ? 's' : ''}</span>
@@ -858,7 +858,7 @@ export default function ResultadosPage() {
                   <div className="p-5 space-y-3 max-h-80 overflow-y-auto">
                     {data.comentarios.map((c, i) => (
                       <div key={i} className="p-3 rounded-xl text-[12px] text-nodri-t1 italic leading-relaxed"
-                        style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.05)', borderLeft: '3px solid rgba(139,92,246,.5)' }}>
+                        style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(0,0,0,.06)', borderLeft: '3px solid rgba(139,92,246,.5)' }}>
                         "{c}"
                       </div>
                     ))}
@@ -868,15 +868,15 @@ export default function ResultadosPage() {
 
               {/* GERENCIAR RESPOSTAS */}
               {data.respostas_recentes?.length > 0 && (
-                <div className="print-card rounded-2xl border overflow-hidden" style={{ background: '#ffffff', borderColor: 'rgba(255,255,255,.07)' }}>
-                  <div className="px-5 py-3 border-b flex items-center gap-2" style={{ borderColor: 'rgba(255,255,255,.06)' }}>
+                <div className="print-card rounded-2xl border overflow-hidden" style={{ background: '#ffffff', borderColor: 'rgba(0,0,0,.07)' }}>
+                  <div className="px-5 py-3 border-b flex items-center gap-2" style={{ borderColor: 'rgba(0,0,0,.06)' }}>
                     <Trash2 size={14} className="text-red-400" />
                     <span className="text-[13px] font-medium text-nodri-t1">Gerenciar Respostas</span>
                     <span className="ml-auto text-[10px] text-nodri-t3">{data.respostas_recentes.length} resposta{data.respostas_recentes.length !== 1 ? 's' : ''}</span>
                   </div>
                   <div className="p-4 space-y-2 max-h-72 overflow-y-auto">
                     {data.respostas_recentes.map((r, i) => (
-                      <div key={r.id} className="flex items-center justify-between px-4 py-2.5 rounded-xl" style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.05)' }}>
+                      <div key={r.id} className="flex items-center justify-between px-4 py-2.5 rounded-xl" style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(0,0,0,.06)' }}>
                         <div className="flex items-center gap-3">
                           <span className="text-[10px] text-nodri-t3 w-5">#{data.respostas_recentes.length - i}</span>
                           <span className="text-[12px] text-nodri-t2">

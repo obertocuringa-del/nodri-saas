@@ -455,7 +455,7 @@ export default function BloqueiosPage() {
                       </button>
                       <button onClick={() => setEditAndoRegras(false)}
                         className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12px] font-semibold"
-                        style={{ background: 'rgba(255,255,255,.05)', color: '#767069', border: '1px solid rgba(255,255,255,.1)' }}>
+                        style={{ background: '#f5f4f0', color: '#767069', border: '1px solid rgba(0,0,0,.1)' }}>
                         Cancelar
                       </button>
                     </div>
@@ -540,7 +540,7 @@ export default function BloqueiosPage() {
                       </button>
                       <button onClick={() => setAdicionandoRegra(false)}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px]"
-                        style={{ background: 'rgba(255,255,255,.05)', color: '#767069', border: '1px solid rgba(255,255,255,.1)' }}>
+                        style={{ background: '#f5f4f0', color: '#767069', border: '1px solid rgba(0,0,0,.1)' }}>
                         <X size={12} /> Cancelar
                       </button>
                     </div>
@@ -554,7 +554,7 @@ export default function BloqueiosPage() {
 
                 {regrasCustom.map(rc => (
                   <div key={rc.id} className="rounded-xl p-3 flex items-start gap-3"
-                    style={{ background: 'rgba(255,255,255,.02)', border: `1px solid ${rc.ativo ? 'rgba(34,211,238,.15)' : 'rgba(255,255,255,.06)'}` }}>
+                    style={{ background: '#faf9f7', border: `1px solid ${rc.ativo ? 'rgba(34,211,238,.15)' : 'rgba(0,0,0,.06)'}` }}>
                     {editandoRegraId === rc.id ? (
                       <div className="flex-1 grid grid-cols-2 gap-2">
                         <input defaultValue={rc.nome} onChange={e => setEditandoRegraData(d => ({ ...d, nome: e.target.value }))}
@@ -585,7 +585,7 @@ export default function BloqueiosPage() {
                           </button>
                           <button onClick={() => setEditandoRegraId(null)}
                             className="flex items-center gap-1 px-2 py-1 rounded text-[10px]"
-                            style={{ background: 'rgba(255,255,255,.05)', color: '#767069' }}>
+                            style={{ background: '#f5f4f0', color: '#767069' }}>
                             <X size={10} /> Cancelar
                           </button>
                         </div>
