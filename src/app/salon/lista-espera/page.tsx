@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Plus, MessageCircle, Trash2, X, Clock, AlertTriangle, DollarSign, Users, Check, Loader2 } from 'lucide-react'
+import { ArrowLeft, Plus, MessageCircle, Trash2, X, Clock, AlertTriangle, DollarSign, Users, Check, Loader2, Pencil } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const moeda = (v: number) => 'R$ ' + (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -48,6 +48,7 @@ export default function ListaEsperaPage() {
   const [filtro, setFiltro] = useState<'ativas' | 'espera' | 'nao_agendada' | 'finalizadas'>('ativas')
   const [modal, setModal] = useState(false)
   const [salvando, setSalvando] = useState(false)
+  const [editId, setEditId] = useState<string | null>(null)
   // form
   const [fNome, setFNome] = useState('')
   const [fTel, setFTel] = useState('')
@@ -63,25 +64,48 @@ export default function ListaEsperaPage() {
         fetch('/api/salon/lista-espera').then(r => r.ok ? r.json() : { lista: [] }).catch(() => ({ lista: [] })),
         fetch('/api/servicos').then(r => r.ok ? r.json() : []).catch(() => []),
       ])
-      setLista(a.lista || [])
-      setServicosCat(Array.isArray(b) ? b.filter((s: any) => s.ativo !== false) : [])
+      const lst = a.lista || []
+      setLista(lst)
+      try { localStorage.setItem('nodri_lista_espera', JSON.stringify(lst)) } catch { /* */ }
+      const srv = Array.isArray(b) ? b.filter((s: any) => s.ativo !== false) : []
+      setServicosCat(srv)
+      try { localStorage.setItem('nodri_servicos_cache', JSON.stringify(srv)) } catch { /* */ }
     } catch { /* ignore */ }
     setLoading(false)
   }, [])
-  useEffect(() => { carregar() }, [carregar])
+  useEffect(() => {
+    // Mostra o cache na hora (sem espera) e atualiza em segundo plano
+    try {
+      const c = localStorage.getItem('nodri_lista_espera'); if (c) { setLista(JSON.parse(c)); setLoading(false) }
+      const s = localStorage.getItem('nodri_servicos_cache'); if (s) setServicosCat(JSON.parse(s))
+    } catch { /* */ }
+    carregar()
+  }, [carregar])
 
-  function limparForm() { setFNome(''); setFTel(''); setFServs([]); setFData(''); setFHora(''); setFCat('espera'); setFObs('') }
+  function limparForm() { setEditId(null); setFNome(''); setFTel(''); setFServs([]); setFData(''); setFHora(''); setFCat('espera'); setFObs('') }
+
+  function abrirEdicao(it: Item) {
+    setEditId(it.id)
+    setFNome(it.cliente_nome || '')
+    setFTel(it.telefone || '')
+    setFServs(Array.isArray(it.servicos) ? it.servicos : [])
+    setFData(it.data_desejada ? String(it.data_desejada).slice(0, 10) : '')
+    setFHora(it.horario_desejado || '')
+    setFCat(it.categoria || 'espera')
+    setFObs(it.observacao || '')
+    setModal(true)
+  }
 
   async function salvar() {
     if (!fNome.trim()) { toast.error('Informe o nome da cliente'); return }
     setSalvando(true)
     try {
-      const res = await fetch('/api/salon/lista-espera', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cliente_nome: fNome, telefone: fTel, servicos: fServs, data_desejada: fData || null, horario_desejado: fHora, categoria: fCat, observacao: fObs }),
-      })
+      const dados = { cliente_nome: fNome, telefone: fTel, servicos: fServs, data_desejada: fData || null, horario_desejado: fHora, categoria: fCat, observacao: fObs }
+      const res = editId
+        ? await fetch('/api/salon/lista-espera', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: editId, ...dados }) })
+        : await fetch('/api/salon/lista-espera', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dados) })
       if (!res.ok) { const d = await res.json().catch(() => ({})); toast.error(d?.error || 'Erro ao salvar'); setSalvando(false); return }
-      toast.success('Cliente adicionada à fila!')
+      toast.success(editId ? 'Alterações salvas!' : 'Cliente adicionada à fila!')
       limparForm(); setModal(false); await carregar()
     } catch { toast.error('Erro de conexão') }
     setSalvando(false)
@@ -220,10 +244,16 @@ export default function ListaEsperaPage() {
                         style={{ padding: '6px 8px', borderRadius: 8, border: '1.5px solid #e0ddd8', fontSize: 12, color: '#374151', background: '#fff', cursor: 'pointer' }}>
                         {STATUS.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
                       </select>
-                      <button onClick={() => excluir(it.id)} title="Remover"
-                        style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4, padding: '5px', borderRadius: 8, border: '1px solid #f0dede', background: '#fff', color: '#dc2626', fontSize: 11, cursor: 'pointer' }}>
-                        <Trash2 size={12} />
-                      </button>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button onClick={() => abrirEdicao(it)} title="Editar"
+                          style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4, padding: '5px 8px', borderRadius: 8, border: '1px solid #e0ddd8', background: '#fff', color: '#5b4fcf', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                          <Pencil size={12} /> Editar
+                        </button>
+                        <button onClick={() => excluir(it.id)} title="Remover"
+                          style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4, padding: '5px 8px', borderRadius: 8, border: '1px solid #f0dede', background: '#fff', color: '#dc2626', fontSize: 11, cursor: 'pointer' }}>
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -242,7 +272,7 @@ export default function ListaEsperaPage() {
         <div onClick={() => setModal(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 14 }}>
           <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 460, maxHeight: '92vh', overflowY: 'auto', padding: 20, boxShadow: '0 20px 60px rgba(0,0,0,.3)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-              <h3 style={{ fontSize: 16, fontWeight: 800, color: '#1a1a1a', margin: 0 }}>Adicionar à lista de espera</h3>
+              <h3 style={{ fontSize: 16, fontWeight: 800, color: '#1a1a1a', margin: 0 }}>{editId ? 'Editar cliente' : 'Adicionar à lista de espera'}</h3>
               <button onClick={() => setModal(false)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#9ca3af' }}><X size={18} /></button>
             </div>
 
@@ -304,7 +334,7 @@ export default function ListaEsperaPage() {
 
             <button onClick={salvar} disabled={salvando || !fNome.trim()}
               style={{ width: '100%', padding: '12px', borderRadius: 10, border: 'none', background: (!fNome.trim() || salvando) ? '#d1d5db' : 'linear-gradient(135deg,#0891b2,#5b4fcf)', color: '#fff', fontSize: 15, fontWeight: 800, cursor: (!fNome.trim() || salvando) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-              {salvando ? <><Loader2 size={16} className="animate-spin" /> Salvando...</> : <><Check size={16} /> Adicionar à fila</>}
+              {salvando ? <><Loader2 size={16} className="animate-spin" /> Salvando...</> : <><Check size={16} /> {editId ? 'Salvar alterações' : 'Adicionar à fila'}</>}
             </button>
           </div>
         </div>

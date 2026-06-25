@@ -122,11 +122,14 @@ html, body {
   .linha-form-mobile > :first-child { grid-column: 1 / -1 !important; }
 }
 
-/* Scrollbar customizada */
-::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-track { background: var(--nodri-surface); }
-::-webkit-scrollbar-thumb { background: var(--nodri-border); border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: #c8c5be; }
+/* Scrollbar customizada — mais larga e escura, fácil de pegar com o mouse */
+::-webkit-scrollbar { width: 14px; height: 14px; }
+::-webkit-scrollbar-track { background: #e6e2db; }
+::-webkit-scrollbar-thumb { background: #908a80; border-radius: 7px; border: 3px solid #e6e2db; }
+::-webkit-scrollbar-thumb:hover { background: #6f6a62; }
+::-webkit-scrollbar-thumb:active { background: #5b554e; }
+/* Firefox */
+html { scrollbar-width: auto; scrollbar-color: #908a80 #e6e2db; }
 
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }

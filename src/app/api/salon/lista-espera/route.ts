@@ -57,6 +57,14 @@ export async function GET() {
     } catch { /* sem dados de atendimento ainda */ }
   }
 
+  // Move para "não agendada" quem passou da data desejada e ainda está aguardando
+  const hojeStr = new Date().toISOString().slice(0, 10)
+  const mover = itens.filter(i => (i.status === 'aguardando' || i.status === 'contatada' || i.status === 'remarcada') && i.categoria === 'espera' && i.data_desejada && String(i.data_desejada).slice(0, 10) < hojeStr).map(i => i.id)
+  if (mover.length) {
+    await supabaseAdmin.from('lista_espera').update({ categoria: 'nao_agendada', atualizado_em: new Date().toISOString() }).in('id', mover).eq('salao_id', salaoId)
+    for (const i of itens) if (mover.includes(i.id)) i.categoria = 'nao_agendada'
+  }
+
   return NextResponse.json({ lista: itens })
 }
 
