@@ -39,7 +39,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     'animal_favorito','hobbies','um_sonho','contato_responsavel','certificados',
     'conta_bancaria','ativo','data_admissao','servicos_habilitados',
     'ficha_entrevista','processo_contratacao','materiais_trabalho','perfil_ideal',
-    'horarios_folgas','distrato','contrato_trabalho','tem_certificados','plano_carreira',
+    'horarios_folgas','distrato','contrato_trabalho','tem_certificados','plano_carreira','data_demissao',
     'tem_contrato','perfil_pessoal_completo','dados_pessoais_completo','dados_profissionais_completo',
     'is_departamento','departamento_cor',
   ])

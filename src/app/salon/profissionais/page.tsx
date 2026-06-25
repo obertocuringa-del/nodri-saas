@@ -160,6 +160,7 @@ export default function ProfissionaisPage() {
     setCProfCNPJ(prof.cnpj || '')
     setCProfEndereco(prof.endereco || '')
     setCProfRG((prof as any).rg || '')
+    if ((prof as any).data_admissao) setCDataContrato(String((prof as any).data_admissao).slice(0, 10).split('-').reverse().join('/'))
     try {
       const cr = prof.contato_responsavel ? JSON.parse(prof.contato_responsavel) : {}
       setCProfRepresentante(cr.nome || prof.nome_completo || '')
@@ -367,6 +368,8 @@ ${montarContratoHTML()}
     setDProfCPF(prof.cpf || '')
     setDProfCNPJ(prof.cnpj || '')
     setDProfEndereco(prof.endereco || '')
+    if ((prof as any).data_demissao) setDDataDistrato(String((prof as any).data_demissao).slice(0, 10).split('-').reverse().join('/'))
+    if ((prof as any).data_admissao) setDDataContrato(String((prof as any).data_admissao).slice(0, 10).split('-').reverse().join('/'))
     try {
       const cr = prof.contato_responsavel ? JSON.parse(prof.contato_responsavel) : {}
       setDProfRepresentante(cr.nome || prof.nome_completo || '')
@@ -1287,12 +1290,9 @@ ${montarContratoHTML()}
                   <strong>1.1)</strong> As partes resolvem, nesta data, em comum acordo, que, considerando que não existem pendências de ambas as partes, fica consumado o distrato.
                 </p>
 
-                {/* ── Local e data ── */}
+                {/* ── Local e data — texto normal (a data vem da Data de Demissão do cadastro) ── */}
                 <p style={{ marginBottom: '48pt', fontFamily: 'inherit', textAlign: 'center' }}>
-                  <input value={dLocalDistrato} onChange={e => setDLocalDistrato(e.target.value)}
-                    style={{ border: 'none', borderBottom: '2px solid #ef4444', background: 'transparent', fontFamily: 'inherit', fontSize: 'inherit', width: '120px', outline: 'none', textAlign: 'center', color: dLocalDistrato ? 'inherit' : '#ef4444' }} />,{' '}
-                  <input value={dDataDistrato} onChange={e => setDDataDistrato(e.target.value)}
-                    style={{ border: 'none', borderBottom: '2px solid #ef4444', background: 'transparent', fontFamily: 'inherit', fontSize: 'inherit', width: '120px', outline: 'none', textAlign: 'center', color: '#ef4444', fontWeight: 600 }} />
+                  {dLocalDistrato || 'Brasília'}, {dDataDistrato || '___/___/______'}
                 </p>
 
                 {/* ── Assinaturas (igual ao Word: linhas __ com label abaixo) ── */}
@@ -1392,12 +1392,9 @@ ${montarContratoHTML()}
 
                 <div dangerouslySetInnerHTML={{ __html: montarContratoHTML(false) }} />
 
-                {/* Local e data — editáveis em vermelho (igual ao Distrato) */}
+                {/* Local e data — texto normal (a data vem da Data de Admissão do cadastro) */}
                 <p style={{ textAlign: 'center', margin: '24pt 0 36pt' }}>
-                  <input value={cLocalContrato} onChange={e => setCLocalContrato(e.target.value)}
-                    style={{ border: 'none', borderBottom: '2px solid #ef4444', background: 'transparent', fontFamily: 'inherit', fontSize: 'inherit', width: '160px', outline: 'none', textAlign: 'center', color: cLocalContrato ? 'inherit' : '#ef4444' }} />,{' '}
-                  <input value={cDataContrato} onChange={e => setCDataContrato(e.target.value)} placeholder="dd/mm/aaaa"
-                    style={{ border: 'none', borderBottom: '2px solid #ef4444', background: 'transparent', fontFamily: 'inherit', fontSize: 'inherit', width: '130px', outline: 'none', textAlign: 'center', color: cDataContrato ? 'inherit' : '#ef4444', fontWeight: 600 }} />
+                  {cLocalContrato || 'Brasília (DF)'}, {cDataContrato || '___/___/______'}
                 </p>
                 <div style={{ marginTop: '8pt' }}>
                   <p style={{ margin: '0 0 2pt' }}>_______________________________________________________</p>
