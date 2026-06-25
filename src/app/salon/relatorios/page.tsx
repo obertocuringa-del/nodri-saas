@@ -2700,17 +2700,30 @@ ${lista.map((c:any,i:number)=>{
                             {csLoadingCli
                               ? <div style={{ color: '#6b6860', fontSize: 13 }}>Carregando clientes...</div>
                               : <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 500, overflowY: 'auto' }}>
-                                  {/* Header */}
+                                  {/* Header — só desktop */}
+                                  {!isMobile && (
                                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px 80px 100px', gap: 8, padding: '6px 12px', fontSize: 10, color: '#6b6860', fontWeight: 700, textTransform: 'uppercase' }}>
                                     <span>Cliente</span><span>Celular</span><span>Visitas</span><span>Última visita</span>
                                   </div>
+                                  )}
                                   {csClientes.map((c: any, i: number) => (
+                                    isMobile ? (
+                                    <div key={i} style={{ background: '#ffffff', border: '1.5px solid #e0ddd8', borderRadius: 8, padding: '10px 12px', fontSize: 12 }}>
+                                      <div style={{ color: '#1a1a1a', fontWeight: 700, fontSize: 13, marginBottom: 5 }}>{c.cliente}</div>
+                                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 14px', color: '#6b6860' }}>
+                                        <span style={{ color: '#5b4fcf' }}>📱 {c.celular || '—'}</span>
+                                        <span>Visitas: <strong>{c.total_visitas}x</strong></span>
+                                        <span>Última: {c.ultima_visita || '—'}</span>
+                                      </div>
+                                    </div>
+                                    ) : (
                                     <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 140px 80px 100px', gap: 8, padding: '10px 12px', background: '#ffffff', border: '1.5px solid #e0ddd8', borderRadius: 8, fontSize: 12 }}>
                                       <span style={{ color: '#1a1a1a', fontWeight: 600 }}>{c.cliente}</span>
                                       <span style={{ color: '#5b4fcf' }}>{c.celular || '—'}</span>
                                       <span style={{ color: '#767069' }}>{c.total_visitas}x</span>
                                       <span style={{ color: '#6b6860' }}>{c.ultima_visita || '—'}</span>
                                     </div>
+                                    )
                                   ))}
                                 </div>
                             }

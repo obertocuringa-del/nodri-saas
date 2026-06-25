@@ -373,7 +373,7 @@ export default function ResultadosProfPage() {
                         return (
                         <div className="p-4 space-y-3">
                           {/* Cabeçalho das colunas */}
-                          <div className="grid grid-cols-[160px_1fr_1fr] gap-3 px-2">
+                          <div className="grid grid-cols-[88px_1fr_1fr] sm:grid-cols-[160px_1fr_1fr] gap-3 px-2">
                             <div />
                             <div className="text-center text-[10px] font-bold text-nodri-t3 uppercase tracking-wider pb-1 border-b border-nodri-border">
                               {mesAnteriorKey ? formatMes(mesAnteriorKey) : '—'}
@@ -401,7 +401,7 @@ export default function ResultadosProfPage() {
                               <div key={nome} className="rounded-xl overflow-hidden"
                                 style={{ background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.06)' }}>
                                 {/* Cabeçalho do profissional */}
-                                <button className="w-full grid grid-cols-[160px_1fr_1fr] gap-3 px-3 py-2.5 text-left items-center"
+                                <button className="w-full grid grid-cols-[88px_1fr_1fr] sm:grid-cols-[160px_1fr_1fr] gap-3 px-3 py-2.5 text-left items-center"
                                   onClick={() => setExpandidoHistorico(aberto ? null : `placar-${nome}`)}>
                                   <div className="flex items-center gap-2">
                                     <div className="w-6 h-6 rounded-full flex items-center justify-center font-black text-[10px] shrink-0"
@@ -437,7 +437,7 @@ export default function ResultadosProfPage() {
                                 {/* Ocorrências lado a lado */}
                                 {aberto && todasOcorrs.length > 0 && (
                                   <div className="border-t border-nodri-border/30 px-3 pb-3">
-                                    <div className="grid grid-cols-[160px_1fr_1fr] gap-3 mt-2 mb-1 px-1">
+                                    <div className="grid grid-cols-[88px_1fr_1fr] sm:grid-cols-[160px_1fr_1fr] gap-3 mt-2 mb-1 px-1">
                                       <div className="text-[9px] text-nodri-t3 uppercase tracking-wider">Ocorrência</div>
                                       <div className="text-[9px] text-nodri-t3 uppercase tracking-wider text-center">{mesAnteriorKey ? formatMes(mesAnteriorKey) : '—'}</div>
                                       <div className="text-[9px] text-nodri-cyan uppercase tracking-wider text-center">{formatMes(mesAtualKey)}</div>
@@ -455,7 +455,7 @@ export default function ResultadosProfPage() {
                                         : ''
                                       return (
                                         <div key={desc} className="py-1.5 px-1 rounded-lg hover:bg-white/[0.02]">
-                                          <div className="grid grid-cols-[160px_1fr_1fr] gap-3 items-center">
+                                          <div className="grid grid-cols-[88px_1fr_1fr] sm:grid-cols-[160px_1fr_1fr] gap-3 items-center">
                                             <span className="text-[11px] text-nodri-t2 truncate" title={desc}>{desc}</span>
                                             <div className="text-center">
                                               {qtdAnt > 0
