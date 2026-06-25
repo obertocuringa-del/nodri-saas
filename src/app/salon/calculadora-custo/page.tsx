@@ -1371,7 +1371,7 @@ Use números reais. Seja direto.`
               )}
               {secIndiretas && <>
                 {/* Cabeçalho colunas */}
-                <div className="grid gap-2 px-5 py-2 text-[10px] font-bold uppercase tracking-wider border-b" style={{gridTemplateColumns:'1fr 110px 70px 72px 24px',color:'#92400e',borderColor:'#f59e0b40',background:'#fef9ec'}}>
+                <div className="hidden sm:grid gap-2 px-5 py-2 text-[10px] font-bold uppercase tracking-wider border-b" style={{gridTemplateColumns:'1fr 110px 70px 72px 24px',color:'#92400e',borderColor:'#f59e0b40',background:'#fef9ec'}}>
                   <div>Despesa</div>
                   <div className="text-center">Valor Mensal</div>
                   <div className="text-center">% Fat.</div>
@@ -1384,7 +1384,7 @@ Use números reais. Seja direto.`
                   const v=n(d.valor), pctV=fatN>0?(v/fatN*100):0
                   const cor=pctV>20?'#ef4444':pctV>10?'#f59e0b':'#10b981'
                   return(
-                    <div key={i} className="grid gap-2 px-5 py-2 items-center" style={{gridTemplateColumns:'1fr 110px 70px 72px 24px',borderBottom:'1px solid #f59e0b20',background: v>0 ? '#fffdf5' : 'transparent'}}>
+                    <div key={i} className="grid linha-form-mobile gap-2 px-5 py-2 items-center" style={{gridTemplateColumns:'1fr 110px 70px 72px 24px',borderBottom:'1px solid #f59e0b20',background: v>0 ? '#fffdf5' : 'transparent'}}>
                       <div className="flex items-center gap-1.5">
                         <span className="text-xs font-semibold" style={{color:'#78350f'}}>{d.nome}</span>
                         <InfoBtn id={d.nome==='Aluguel'?'aluguel':d.nome==='Energia Elétrica'?'energia':d.nome==='Água'?'agua':d.nome==='Contabilidade'?'contabilidade':''}/>
@@ -1416,7 +1416,7 @@ Use números reais. Seja direto.`
                   const v=n(d.valor), pctV=fatN>0?(v/fatN*100):0
                   const cor=pctV>20?'#ef4444':pctV>10?'#f59e0b':'#10b981'
                   return(
-                    <div key={i} className="grid gap-2 px-5 py-2 items-center" style={{gridTemplateColumns:'1fr 110px 70px 72px 24px',borderBottom:'1px solid #f59e0b20',background:'#fffdf5'}}>
+                    <div key={i} className="grid linha-form-mobile gap-2 px-5 py-2 items-center" style={{gridTemplateColumns:'1fr 110px 70px 72px 24px',borderBottom:'1px solid #f59e0b20',background:'#fffdf5'}}>
                       <div className="flex items-center gap-1.5">
                         <span className="text-xs font-semibold" style={{color:'#78350f'}}>{d.nome}</span>
                         <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{background:'#f59e0b20',color:'#b45309'}}>catálogo</span>
@@ -2237,7 +2237,7 @@ Use números reais. Seja direto.`
 
             {/* Tabela de serviços */}
             <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
-              <div className="grid gap-2 px-5 py-3 text-[10px] font-bold uppercase tracking-wider border-b"
+              <div className="hidden sm:grid gap-2 px-5 py-3 text-[10px] font-bold uppercase tracking-wider border-b"
                 style={{background:'#ffffff',borderColor:'#e8e6e0',color:'#6b6860',gridTemplateColumns:'2fr 1fr 1fr 1fr 1fr 20px'}}>
                 <div>Serviço</div>
                 <div className="flex items-center gap-1">Preço (R$)<InfoBtn id="precoServico"/></div>
@@ -2260,7 +2260,7 @@ Use números reais. Seja direto.`
                 const c=calcServ(s)
                 return(
                   <div key={s.id}>
-                    <div className="grid gap-2 px-5 py-3 items-center" style={{gridTemplateColumns:'2fr 1fr 1fr 1fr 1fr 20px'}}>
+                    <div className="grid linha-form-mobile gap-2 px-5 py-3 items-center" style={{gridTemplateColumns:'2fr 1fr 1fr 1fr 1fr 20px'}}>
                       <input value={s.nome} onChange={e=>setServicos(p=>p.map(x=>x.id===s.id?{...x,nome:e.target.value}:x))}
                         placeholder="Ex: Coloração longo" className="px-3 py-2 rounded-lg text-sm text-[#1a1a1a] focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
                       {[

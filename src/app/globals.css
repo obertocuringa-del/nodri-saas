@@ -97,6 +97,11 @@ html, body {
          WhatsApp) nunca taparem o último conteúdo da página. */
   [style*="min-height: 100vh"], [style*="min-height:100vh"],
   [style*="min-height: 100dvh"], [style*="min-height:100dvh"] { padding-bottom: 92px !important; }
+  /* O painel de conteúdo principal (flex:1 + rolagem) ganha folga no rodapé,
+     pra os botões flutuantes não taparem o último item. Mira só nos painéis
+     grandes (não em dropdowns/modais pequenos). */
+  [style*="flex: 1"][style*="overflow-y: auto"],
+  [style*="flex: 1"][style*="overflow-y:auto"] { padding-bottom: 88px !important; }
 
   /* 12) Itens marcados como .no-mobile somem no celular (ex: botões de
          imprimir, que não fazem sentido no telefone). */
@@ -109,6 +114,12 @@ html, body {
   /* 14) Linhas de formulário em grid de colunas fixas (ex: CEP/Rua/Nº)
          empilham em 1 coluna no celular — marque o container com .stack-mobile. */
   .stack-mobile { grid-template-columns: 1fr !important; }
+
+  /* 15) Linhas tipo "tabela com inputs" (Despesas, Catálogos): no celular o
+         1º item (nome) ocupa a linha toda e os campos ficam embaixo, em colunas
+         iguais. Marque a linha com .linha-form-mobile. */
+  .linha-form-mobile { grid-template-columns: repeat(3, 1fr) !important; row-gap: 6px !important; }
+  .linha-form-mobile > :first-child { grid-column: 1 / -1 !important; }
 }
 
 /* Scrollbar customizada */
