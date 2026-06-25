@@ -163,7 +163,7 @@ export default function ProfissionaisPage() {
   }
 
   // Corpo do CONTRATO DE PARCERIA (texto integral do contrato), com as partes preenchidas.
-  function montarContratoHTML(): string {
+  function montarContratoHTML(comFinal = true): string {
     const salao = (dSalaoNome || '[NOME DO SALÃO]').toUpperCase()
     const salaoCnpj = dSalaoCNPJ || '___'
     const salaoResp = dSalaoResponsavel || '___'
@@ -281,9 +281,11 @@ export default function ProfissionaisPage() {
       H('CLÁUSULA DÉCIMA SEGUNDA – DO FORO:'),
       P('Fica eleito o foro de Brasília, com renúncia de qualquer outro, por mais privilegiado que seja, para dirimir eventuais conflitos porventura decorrentes da interpretação ou execução do presente contrato.'),
       P('E, por estarem de comum acordo, as partes assinam o presente instrumento, em 2 (duas) vias, juntamente com duas testemunhas.', 'margin-top:14pt'),
-      `<p style="text-align:center;margin:24pt 0 36pt">${cLocalContrato || 'Brasília (DF)'}, ${cDataContrato || '___'}</p>`,
-      `<div style="margin-top:8pt"><p style="margin:0 0 2pt">_______________________________________________________</p><p style="margin:0 0 28pt">${salao}</p><p style="margin:0 0 2pt">_______________________________________________________</p><p style="margin:0 0 24pt">${profNome}</p></div>`,
-      `<div style="font-size:10pt"><p style="margin:0 0 4pt">Testemunhas:</p><p style="margin:0 0 4pt">1ª) Ass. _________________________ &nbsp; Nome: &nbsp; RG:</p><p style="margin:0">2ª) Ass. _________________________ &nbsp; Nome: &nbsp; RG:</p></div>`,
+      ...(comFinal ? [
+        `<p style="text-align:center;margin:24pt 0 36pt">${cLocalContrato || 'Brasília (DF)'}, ${cDataContrato || '___'}</p>`,
+        `<div style="margin-top:8pt"><p style="margin:0 0 2pt">_______________________________________________________</p><p style="margin:0 0 28pt">${salao}</p><p style="margin:0 0 2pt">_______________________________________________________</p><p style="margin:0 0 24pt">${profNome}</p></div>`,
+        `<div style="font-size:10pt"><p style="margin:0 0 4pt">Testemunhas:</p><p style="margin:0 0 4pt">1ª) Ass. _________________________ &nbsp; Nome: &nbsp; RG:</p><p style="margin:0">2ª) Ass. _________________________ &nbsp; Nome: &nbsp; RG:</p></div>`,
+      ] : []),
     ].join('')
   }
 
@@ -1407,7 +1409,26 @@ ${montarContratoHTML()}
                   </div>
                 )}
 
-                <div dangerouslySetInnerHTML={{ __html: montarContratoHTML() }} />
+                <div dangerouslySetInnerHTML={{ __html: montarContratoHTML(false) }} />
+
+                {/* Local e data — editáveis em vermelho (igual ao Distrato) */}
+                <p style={{ textAlign: 'center', margin: '24pt 0 36pt' }}>
+                  <input value={cLocalContrato} onChange={e => setCLocalContrato(e.target.value)}
+                    style={{ border: 'none', borderBottom: '2px solid #ef4444', background: 'transparent', fontFamily: 'inherit', fontSize: 'inherit', width: '160px', outline: 'none', textAlign: 'center', color: cLocalContrato ? 'inherit' : '#ef4444' }} />,{' '}
+                  <input value={cDataContrato} onChange={e => setCDataContrato(e.target.value)} placeholder="dd/mm/aaaa"
+                    style={{ border: 'none', borderBottom: '2px solid #ef4444', background: 'transparent', fontFamily: 'inherit', fontSize: 'inherit', width: '130px', outline: 'none', textAlign: 'center', color: cDataContrato ? 'inherit' : '#ef4444', fontWeight: 600 }} />
+                </p>
+                <div style={{ marginTop: '8pt' }}>
+                  <p style={{ margin: '0 0 2pt' }}>_______________________________________________________</p>
+                  <p style={{ margin: '0 0 28pt' }}>{(dSalaoNome || '[NOME DO SALÃO]').toUpperCase()}</p>
+                  <p style={{ margin: '0 0 2pt' }}>_______________________________________________________</p>
+                  <p style={{ margin: '0 0 24pt' }}>{(cProfNome || '[NOME DO PROFISSIONAL]').toUpperCase()}</p>
+                </div>
+                <div style={{ fontSize: '10pt' }}>
+                  <p style={{ margin: '0 0 4pt' }}>Testemunhas:</p>
+                  <p style={{ margin: '0 0 4pt' }}>1ª) Ass. _________________________ &nbsp; Nome: &nbsp; RG:</p>
+                  <p style={{ margin: 0 }}>2ª) Ass. _________________________ &nbsp; Nome: &nbsp; RG:</p>
+                </div>
               </div>
             </div>
           )}
