@@ -124,6 +124,10 @@ export default function ProfissionaisPage() {
   const [dSalaoCNPJ, setDSalaoCNPJ] = useState('')
   const [dSalaoResponsavel, setDSalaoResponsavel] = useState('')
   const [dSalaoRG, setDSalaoRG] = useState('')
+  const [dSalaoNacionalidade, setDSalaoNacionalidade] = useState('brasileira')
+  const [dSalaoEstadoCivil, setDSalaoEstadoCivil] = useState('casada')
+  const [dSalaoProfissao, setDSalaoProfissao] = useState('empresária')
+  const [dSalaoOrgaoRG, setDSalaoOrgaoRG] = useState('SSP/RS')
   const [dProfNome, setDProfNome] = useState('')
   const [dProfCPF, setDProfCPF] = useState('')
   const [dProfCNPJ, setDProfCNPJ] = useState('')
@@ -167,19 +171,21 @@ export default function ProfissionaisPage() {
     const salao = (dSalaoNome || '[NOME DO SALÃO]').toUpperCase()
     const salaoCnpj = dSalaoCNPJ || '___'
     const salaoResp = dSalaoResponsavel || '___'
-    const salaoRG = dSalaoRG ? `, carteira de identidade número ${dSalaoRG}` : ''
+    const quals = [dSalaoNacionalidade, dSalaoEstadoCivil, dSalaoProfissao].map(s => (s || '').trim()).filter(Boolean).join(', ')
+    const qualifTxt = quals ? `, ${quals}` : ''
+    const salaoRG = dSalaoRG ? `, carteira de identidade número ${dSalaoRG}${dSalaoOrgaoRG ? ' ' + dSalaoOrgaoRG : ''}` : ''
     const sede = dSalaoEndereco ? `nesta Capital, ${dSalaoEndereco}` : 'nesta Capital'
     const profNome = (cProfNome || '[NOME DO PROFISSIONAL]').toUpperCase()
     const profEnd = cProfEndereco || '___'
     const profCnpj = cProfCNPJ || '___'
     const profRep = cProfRepresentante || cProfNome || '___'
-    const profRGtxt = cProfRG ? `, portador(a) da Carteira de Identidade ${cProfRG}` : ''
+    const profRGtxt = cProfRG ? ` portador(a) da Carteira de Identidade ${cProfRG},` : ''
     const profCPF = cProfCPF || '___'
     const P = (t: string, extra = '') => `<p style="text-align:justify;margin:0 0 10pt;${extra}">${t}</p>`
     const H = (t: string) => `<p style="text-align:justify;margin:16pt 0 8pt;font-weight:bold">${t}</p>`
     const S = (t: string) => `<p style="margin:8pt 0 4pt;font-weight:bold">${t}</p>`
     return [
-      P(`Pelo presente instrumento contratual, de um lado, <strong>${salao}</strong>, pessoa jurídica de direito privado, com sua sede ${sede}, inscrita no C.N.P.J./M.F. sob o n.º ${salaoCnpj}, neste ato representada por seu sócio ${salaoResp}${salaoRG}, doravante denominado simplesmente <strong>SALÃO-PARCEIRO</strong>, e, de outro lado, <strong>${profNome}</strong>, pessoa jurídica de direito privado, situada ${profEnd}, inscrita no C.N.P.J./M.F. sob o nº ${profCnpj}, nesse ato representada por ${profRep}${profRGtxt}, e do CPF ${profCPF}, residente em ${profEnd}, doravante denominada simplesmente <strong>PROFISSIONAL-PARCEIRO</strong>, celebram o presente <strong>CONTRATO DE PARCERIA</strong>, na forma da Lei 13.352/16 e das cláusulas abaixo estabelecidas:`),
+      P(`Pelo presente instrumento contratual, de um lado, <strong>${salao}</strong>, pessoa jurídica de direito privado, com sua sede ${sede}, inscrita no C.N.P.J./M.F. sob o n.º ${salaoCnpj}, neste ato representada por seu sócio ${salaoResp}${qualifTxt}${salaoRG}, doravante denominado simplesmente <strong>SALÃO-PARCEIRO</strong>, e, de outro lado, <strong>${profNome}</strong>, pessoa jurídica de direito privado, situada ${profEnd}, inscrita no C.N.P.J./M.F. sob o nº ${profCnpj}, nesse ato representada por ${profRep}${profRGtxt} e do CPF ${profCPF} residente em ${profEnd}, doravante denominada simplesmente <strong>PROFISSIONAL-PARCEIRO</strong>, celebram o presente <strong>CONTRATO DE PARCERIA</strong>, na forma da Lei 13.352/16 e das cláusulas abaixo estabelecidas:`),
       H('CLÁUSULA PRIMEIRA – DO OBJETO:'),
       P('O SALÃO-PARCEIRO, empresa destinada à prestação de serviços de salão de beleza e afins, proprietária e/ou possuidora de bens móveis e de instalação para barbeiros, cabeleireiros, manicuras, pedicuras, esteticistas, massagistas, maquiadores, escovistas, calistas, depiladores e demais profissões afins, sendo proprietária e possuidora de espaço, equipamentos e móveis apropriados à atividade desses profissionais, estabelece parceria com o PROFISSIONAL-PARCEIRO, pelo que a ele dá, em locação e/ou uso, móveis, aparelhos, utensílios e produtos de sua propriedade e/ou posse, para fins de exploração específica da atividade de cabeleireira e outras que porventura sejam praticadas exclusivamente dentro da abrangência da Lei 13.352, de 27 de outubro de 2016, em serviços de beleza, dentro do seu objeto social, não podendo o PROFISSIONAL-PARCEIRO usar os objetos dados em locação para quaisquer outros fins. Além dos bens dados em locação, o SALÃO-PARCEIRO também concede, ao PROFISSIONAL-PARCEIRO, serviços de gestão, de apoio administrativo e de escritório, tais como, exemplificativamente, cobrança e recebimento de valores pagos pelos clientes atendidos por ele.'),
       S('Parágrafo Primeiro:'),
@@ -284,7 +290,6 @@ export default function ProfissionaisPage() {
       ...(comFinal ? [
         `<p style="text-align:center;margin:24pt 0 36pt">${cLocalContrato || 'Brasília (DF)'}, ${cDataContrato || '___'}</p>`,
         `<div style="margin-top:8pt"><p style="margin:0 0 2pt">_______________________________________________________</p><p style="margin:0 0 28pt">${salao}</p><p style="margin:0 0 2pt">_______________________________________________________</p><p style="margin:0 0 24pt">${profNome}</p></div>`,
-        `<div style="font-size:10pt"><p style="margin:0 0 4pt">Testemunhas:</p><p style="margin:0 0 4pt">1ª) Ass. _________________________ &nbsp; Nome: &nbsp; RG:</p><p style="margin:0">2ª) Ass. _________________________ &nbsp; Nome: &nbsp; RG:</p></div>`,
       ] : []),
     ].join('')
   }
@@ -1367,8 +1372,12 @@ ${montarContratoHTML()}
                       <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Nome/Razão social<input style={iStyle} value={dSalaoNome} onChange={e => setDSalaoNome(e.target.value)} /></label>
                       <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Endereço/Sede<input style={iStyle} value={dSalaoEndereco} onChange={e => setDSalaoEndereco(e.target.value)} /></label>
                       <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>CNPJ<input style={iStyle} value={dSalaoCNPJ} onChange={e => setDSalaoCNPJ(e.target.value)} /></label>
-                      <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Sócio/Responsável<input style={iStyle} value={dSalaoResponsavel} onChange={e => setDSalaoResponsavel(e.target.value)} /></label>
-                      <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>RG do responsável<input style={iStyle} value={dSalaoRG} onChange={e => setDSalaoRG(e.target.value)} /></label>
+                      <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Sócio/Responsável (nome)<input style={iStyle} value={dSalaoResponsavel} onChange={e => setDSalaoResponsavel(e.target.value)} placeholder="Ex: BRUNA GEHRKE SCHNEIDER" /></label>
+                      <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Nacionalidade<input style={iStyle} value={dSalaoNacionalidade} onChange={e => setDSalaoNacionalidade(e.target.value)} placeholder="Ex: brasileira" /></label>
+                      <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Estado civil<input style={iStyle} value={dSalaoEstadoCivil} onChange={e => setDSalaoEstadoCivil(e.target.value)} placeholder="Ex: casada" /></label>
+                      <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Profissão<input style={iStyle} value={dSalaoProfissao} onChange={e => setDSalaoProfissao(e.target.value)} placeholder="Ex: empresária" /></label>
+                      <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>RG do responsável (número)<input style={iStyle} value={dSalaoRG} onChange={e => setDSalaoRG(e.target.value)} placeholder="Ex: 4108029721" /></label>
+                      <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Órgão emissor do RG<input style={iStyle} value={dSalaoOrgaoRG} onChange={e => setDSalaoOrgaoRG(e.target.value)} placeholder="Ex: SSP/RS" /></label>
                     </div>
                     <p style={{ fontSize: '11px', color: '#767069', margin: '0 0 14px', fontFamily: 'sans-serif', fontStyle: 'italic', background: '#fff', border: '1px dashed #d6d3ce', borderRadius: '8px', padding: '8px 10px' }}>
                       📋 Os dados do profissional (nome, CPF, CNPJ, RG, endereço) são puxados automaticamente do <strong>cadastro do profissional</strong> selecionado acima. Para alterar, edite a ficha dele.
@@ -1395,11 +1404,6 @@ ${montarContratoHTML()}
                   <p style={{ margin: '0 0 28pt' }}>{(dSalaoNome || '[NOME DO SALÃO]').toUpperCase()}</p>
                   <p style={{ margin: '0 0 2pt' }}>_______________________________________________________</p>
                   <p style={{ margin: '0 0 24pt' }}>{(cProfNome || '[NOME DO PROFISSIONAL]').toUpperCase()}</p>
-                </div>
-                <div style={{ fontSize: '10pt' }}>
-                  <p style={{ margin: '0 0 4pt' }}>Testemunhas:</p>
-                  <p style={{ margin: '0 0 4pt' }}>1ª) Ass. _________________________ &nbsp; Nome: &nbsp; RG:</p>
-                  <p style={{ margin: 0 }}>2ª) Ass. _________________________ &nbsp; Nome: &nbsp; RG:</p>
                 </div>
               </div>
             </div>
