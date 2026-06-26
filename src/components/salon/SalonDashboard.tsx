@@ -397,6 +397,11 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               style={{ color: '#db2777' }}>
               Aniversariantes do Mês
             </a>
+            <a href="/salon/administrativo"
+              className="w-full flex items-center px-3 py-2 rounded-md text-[11px] font-medium tracking-wide uppercase transition-colors"
+              style={{ color: '#5b4fcf' }}>
+              Salão Administrativo
+            </a>
           </nav>
 
           {/* Rodapé da sidebar */}

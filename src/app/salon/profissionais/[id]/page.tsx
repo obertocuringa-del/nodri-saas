@@ -3218,6 +3218,7 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                     </div>
                     <div><label className={labelCls}>CPF</label><input value={form.cpf||''} onChange={e=>set('cpf',e.target.value)} placeholder="000.000.000-00" className={inputCls}/></div>
                     <div><label className={labelCls}>RG</label><input value={form.rg||''} onChange={e=>set('rg',e.target.value)} className={inputCls}/></div>
+                    <div><label className={labelCls}>Telefone (WhatsApp)</label><input value={(form as any).telefone||''} onChange={e=>set('telefone' as any,e.target.value)} placeholder="(00) 00000-0000" className={inputCls}/></div>
                     <div><label className={labelCls}>Data de Aniversário</label><input type="date" value={form.data_aniversario||''} onChange={e=>set('data_aniversario',e.target.value)} className={inputCls}/></div>
                     <div><label className={labelCls}>Vínculo Trabalhista</label>
                       <select value={(form as any).vinculo||''} onChange={e=>set('vinculo' as any,e.target.value)} className={inputCls}>
