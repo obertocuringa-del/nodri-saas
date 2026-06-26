@@ -178,6 +178,27 @@ export default function ProfissionaisPage() {
     } catch { toast.error('Erro de conexão') }
     setCltSalvando(null)
   }
+
+  // ── Imprimir (A4) e Exportar Excel (reutilizável) ──
+  const fmtData = (s: any) => s ? String(s).slice(0, 10).split('-').reverse().join('/') : ''
+  function imprimirTabela(titulo: string, colunas: string[], linhas: (string | number)[][]) {
+    const esc = (v: any) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    const css = `@page{size:A4 portrait;margin:14mm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;font-size:11px;color:#1a1a2e}.hd{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #5b4fcf;padding-bottom:8px;margin-bottom:14px}.brand{font-size:20px;font-weight:900;color:#5b4fcf}h1{font-size:15px;color:#1a1a2e}.meta{font-size:10px;color:#666;text-align:right}table{width:100%;border-collapse:collapse;font-size:10px}thead{display:table-header-group}th{background:#5b4fcf;color:#fff;text-align:left;padding:7px 9px;font-size:10px}td{padding:6px 9px;border-bottom:1px solid #eee;vertical-align:top}tr:nth-child(even) td{background:#f7f6ff}tr{break-inside:avoid}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}`
+    const head = colunas.map(c => `<th>${esc(c)}</th>`).join('')
+    const body = linhas.map(r => `<tr>${r.map(c => `<td>${esc(c)}</td>`).join('')}</tr>`).join('')
+    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${esc(titulo)}</title><style>${css}</style></head><body><div class="hd"><div class="brand">NODRI</div><div class="meta"><strong>${esc(titulo)}</strong><br>${new Date().toLocaleDateString('pt-BR')} · ${linhas.length} registros</div></div><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table><script>window.onload=function(){window.print()}</script></body></html>`
+    const w = window.open('', '_blank', 'width=900,height=700'); if (!w) return; w.document.write(html); w.document.close(); w.focus()
+  }
+  async function exportarExcel(nomeArq: string, colunas: string[], linhas: (string | number)[][]) {
+    try {
+      const XLSX = await import('xlsx')
+      const ws = XLSX.utils.aoa_to_sheet([colunas, ...linhas])
+      ws['!cols'] = colunas.map(() => ({ wch: 22 }))
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, 'Dados')
+      XLSX.writeFile(wb, nomeArq + '.xlsx')
+    } catch { toast.error('Erro ao gerar Excel') }
+  }
   const [cProfNome, setCProfNome] = useState('')
   const [cProfCPF, setCProfCPF] = useState('')
   const [cProfCNPJ, setCProfCNPJ] = useState('')
@@ -1518,9 +1539,21 @@ ${montarContratoHTML()}
           {/* ── PAINEL DE CNPJ DOS PROFISSIONAIS ── */}
           {secao === 'cnpj' && (
             <div style={{ maxWidth: '1000px' }}>
-              <div style={{ marginBottom: '16px' }}>
-                <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#1a1a1a', margin: '0 0 6px' }}>CNPJ dos Profissionais</h2>
-                <p style={{ fontSize: '13px', color: '#6b6860', margin: 0 }}>Veja o CNPJ, a categoria, a data de admissão e os horários de cada um. Marque o status e anote observações (ex: tem CNPJ mas não está emitindo guia).</p>
+              <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', marginBottom: '16px' }}>
+                <div>
+                  <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#1a1a1a', margin: '0 0 6px' }}>CNPJ dos Profissionais</h2>
+                  <p style={{ fontSize: '13px', color: '#6b6860', margin: 0 }}>Veja o CNPJ, a categoria, a data de admissão. Marque o status e anote observações (ex: tem CNPJ mas não está emitindo guia).</p>
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }} className="no-mobile">
+                  {(() => {
+                    const cols = ['Nome', 'Categoria', 'CNPJ', 'Admissão', 'Status', 'Observação']
+                    const rows = () => profissionais.filter(p => !['ADMINISTRATIVO', 'FINANCEIRO', 'GERENCIA', 'RECEPCAO'].includes(norm(p.cargo || '')) && norm((p as any).vinculo || '') !== 'CLT').sort((a, b) => (a.cargo || '').localeCompare(b.cargo || '')).map(p => [p.nome_completo || '', p.cargo || '', p.cnpj || 'PENDENTE DE CRIAÇÃO', fmtData((p as any).data_admissao), ((p as any).cnpj_status === 'pendente' || !p.cnpj) ? 'Pendente' : 'OK', (p as any).cnpj_observacao || ''])
+                    return (<>
+                      <button onClick={() => imprimirTabela('CNPJ dos Profissionais', cols, rows())} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: 'none', background: '#5b4fcf', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>🖨️ Imprimir</button>
+                      <button onClick={() => exportarExcel('CNPJ_profissionais', cols, rows())} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: 'none', background: '#16a34a', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>📊 Excel</button>
+                    </>)
+                  })()}
+                </div>
               </div>
               {profissionais.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af', fontSize: 14 }}>Nenhum profissional cadastrado.</div>
@@ -1592,9 +1625,26 @@ ${montarContratoHTML()}
           {/* ── PROFISSIONAIS CLT ── */}
           {secao === 'clt' && (
             <div style={{ maxWidth: '1000px' }}>
-              <div style={{ marginBottom: '16px' }}>
-                <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#1a1a1a', margin: '0 0 6px' }}>Profissionais CLT</h2>
-                <p style={{ fontSize: '13px', color: '#6b6860', margin: 0 }}>Profissionais com vínculo CLT (e categorias administrativas). Para marcar alguém como CLT, defina o <strong>Vínculo Trabalhista</strong> na ficha → Cadastro.</p>
+              <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', marginBottom: '16px' }}>
+                <div>
+                  <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#1a1a1a', margin: '0 0 6px' }}>Profissionais CLT</h2>
+                  <p style={{ fontSize: '13px', color: '#6b6860', margin: 0 }}>Profissionais com vínculo CLT (e categorias administrativas). Para marcar alguém como CLT, defina o <strong>Vínculo Trabalhista</strong> na ficha → Cadastro.</p>
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }} className="no-mobile">
+                  {(() => {
+                    const cols = ['Nome', 'Categoria', 'Admissão', 'Horário', 'Folgas', 'Observação']
+                    const rows = () => profissionais.filter(ehClt).sort((a, b) => (a.cargo || '').localeCompare(b.cargo || '')).map(p => {
+                      let sched: any = {}; try { sched = JSON.parse((p as any).habilidades || '{}') } catch { /* */ }
+                      const horario = (sched.h_inicio || sched.h_fim) ? `${sched.h_inicio || '?'} às ${sched.h_fim || '?'}` : ''
+                      const folgas = Array.isArray(sched.dias_folga) ? sched.dias_folga.join(', ') : ''
+                      return [p.nome_completo || '', p.cargo || '', fmtData((p as any).data_admissao), horario, folgas, (p as any).clt_observacao || '']
+                    })
+                    return (<>
+                      <button onClick={() => imprimirTabela('Profissionais CLT', cols, rows())} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: 'none', background: '#5b4fcf', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>🖨️ Imprimir</button>
+                      <button onClick={() => exportarExcel('Profissionais_CLT', cols, rows())} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: 'none', background: '#16a34a', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>📊 Excel</button>
+                    </>)
+                  })()}
+                </div>
               </div>
               {(() => {
                 const clts = profissionais.filter(ehClt)
