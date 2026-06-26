@@ -4,6 +4,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { ArrowLeft, Save, Loader2, TrendingUp, TrendingDown, BarChart2,
   MessageSquare, CheckSquare, Square, AlertTriangle } from 'lucide-react'
 import ChatWidget from '@/components/salon/ChatWidget'
+import AvaliarProfissional from '@/components/salon/AvaliarProfissional'
 import toast from 'react-hot-toast'
 
 // Converte o markdown gerado pela IA num HTML estilizado (títulos, negrito real,
@@ -2268,7 +2269,7 @@ export default function PerfilProfissionalPage() {
   const [endCidade, setEndCidade] = useState('')
   const [endUf, setEndUf] = useState('')
   const [buscandoCep, setBuscandoCep] = useState(false)
-  const [tab, setTab] = useState<'cadastro'|'desempenho'|'faturamento'|'metas'|'ia'|'dependencia'|'oportunidades'|'bundle'|'clientes-perdidos'|'agendamentos'>('cadastro')
+  const [tab, setTab] = useState<'cadastro'|'avaliar'|'desempenho'|'faturamento'|'metas'|'ia'|'dependencia'|'oportunidades'|'bundle'|'clientes-perdidos'|'agendamentos'>('cadastro')
   // ── Agendamentos ─────────────────────────────────────────────────────────────
   const [agendData, setAgendData] = useState<string>(() => { const h = new Date(); return `${String(h.getDate()).padStart(2,'0')}/${String(h.getMonth()+1).padStart(2,'0')}/${h.getFullYear()}` })
   const [agendamentos, setAgendamentos] = useState<any[]>([])
@@ -3047,6 +3048,7 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
       {(() => {
         const TABS = [
           ['cadastro','CADASTRO'],
+          ['avaliar','AVALIAR'],
           ['faturamento','FATURAMENTO'],
           ['desempenho','OCORRÊNCIAS'],
           ['metas','METAS'],
@@ -3100,6 +3102,11 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
       })()}
 
       <div className="max-w-5xl mx-auto px-3 sm:px-5 py-4 sm:py-6">
+
+        {/*  AVALIAR PROFISSIONAL  */}
+        {tab === 'avaliar' && (
+          <AvaliarProfissional profissionalId={id} profissionalNome={prof?.apelido || prof?.nome_completo || 'Profissional'} />
+        )}
 
         {/*  CADASTRO  */}
         {tab === 'cadastro' && (
