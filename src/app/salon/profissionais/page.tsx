@@ -56,6 +56,11 @@ const SIDEBAR_ITEMS = [
   { id: 'carreira',     label: 'Plano de Carreira',               icon: TrendingUp,     cor: '#22c55e' },
 ]
 
+// Normaliza texto: maiúsculo, sem acento, sem espaço extra (para comparar categorias)
+function norm(s: string): string {
+  return (s || '').toUpperCase().trim().normalize('NFD').replace(/[̀-ͯ]/g, '')
+}
+
 const CONTEUDO_INFO: Record<string, { titulo: string; texto: string }> = {
   abertura:     { titulo: 'Abertura de Conta Bancária', texto: 'Oriente o profissional a abrir uma conta PJ no banco de sua preferência. Documentos necessários: RG, CPF, comprovante de residência e CNPJ (se MEI). Bancos recomendados: Nubank PJ, Inter PJ, Caixa, Bradesco.' },
   entrevista:   { titulo: 'Ficha para Entrevista', texto: 'Utilize o cadastro de profissional abaixo como guia de entrevista. Avalie: habilidades técnicas, apresentação pessoal, disponibilidade de horários, experiência anterior e referências. Faça perguntas sobre metas e sonhos profissionais.' },
