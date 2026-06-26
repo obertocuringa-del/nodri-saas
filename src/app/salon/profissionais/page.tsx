@@ -64,12 +64,87 @@ function norm(s: string): string {
 
 const CONTEUDO_INFO: Record<string, { titulo: string; texto: string }> = {
   abertura:     { titulo: 'Abertura de Conta Bancária', texto: 'Oriente o profissional a abrir uma conta PJ no banco de sua preferência. Documentos necessários: RG, CPF, comprovante de residência e CNPJ (se MEI). Bancos recomendados: Nubank PJ, Inter PJ, Caixa, Bradesco.' },
-  entrevista:   { titulo: 'Ficha para Entrevista', texto: 'Utilize o cadastro de profissional abaixo como guia de entrevista. Avalie: habilidades técnicas, apresentação pessoal, disponibilidade de horários, experiência anterior e referências. Faça perguntas sobre metas e sonhos profissionais.' },
   contratacao:  { titulo: 'Processo de Contratação', texto: 'Etapas: 1. Entrevista inicial → 2. Período de teste (7 dias) → 3. Avaliação técnica → 4. Negociação de comissão → 5. Assinatura de contrato → 6. Cadastro no sistema → 7. Integração com a equipe.' },
   materiais:    { titulo: 'Materiais para Trabalho', texto: 'Lista de materiais que o salão fornece e o que é responsabilidade do profissional. Geralmente o salão fornece: espaço, lavatório, secador base. O profissional traz: tesouras, pentes, produtos específicos de sua linha.' },
   perfil:       { titulo: 'Perfil Ideal de Profissional', texto: 'Buscamos profissionais: ✅ Pontuais e comprometidos ✅ Com cartela de clientes ✅ Que valorizam higiene e organização ✅ Comunicativos e empáticos ✅ Com CNPJ ativo ✅ Abertos a feedback e treinamento contínuo.' },
   certificados: { titulo: 'Certificados', texto: 'Solicite cópias dos certificados de cursos concluídos: colorimetria, corte, escova, tratamentos capilares, manicure, podologia, etc. Guarde digitalmente na ficha do profissional. Incentive atualização constante.' },
   carreira:     { titulo: 'Plano de Carreira', texto: 'Estruture crescimento por etapas: 🥉 Júnior (0-1 ano) → 🥈 Pleno (1-3 anos) → 🥇 Sênior (3+ anos) → 🏆 Referência. Defina metas de faturamento, satisfação de clientes e horas de capacitação para evolução em cada nível.' },
+}
+
+// Guia para entrevistas com novos profissionais (modelo fiel ao PDF)
+const GUIA_ENTREVISTA = {
+  antes: [
+    'Caso a entrevista seja agendada, atenda no horário. Seja acolhedor e simpático.',
+    'Trate o entrevistado como você trataria um cliente. Crie um clima de confiança.',
+    'Leve um copo de água para você e um para a pessoa entrevistada.',
+  ],
+  blocos: [
+    {
+      titulo: 'Bloco 1 — Histórico', perguntas: [
+        'Conte-me como você iniciou na profissão. Lugares que já trabalhou.',
+        'Desses lugares, qual você mais gostou e qual menos gostou (qual o motivo)?',
+        'Com relação ao último lugar que você trabalhou, o que você mais gostava lá, e o que gostaria que fosse diferente?',
+        'Se eu ligar para a última empresa que você trabalhou, o que acha que falarão de você?',
+        'Ouvindo sua história, me chama atenção... Por que isso aconteceu?',
+      ]
+    },
+    {
+      titulo: 'Bloco 2 — Comportamento e atitudes', perguntas: [
+        'Na sua opinião, quais são as qualidades de um profissional com AGENDA CHEIA?',
+        'Você se considera um profissional de sucesso?',
+        'Do que você mais se orgulha em sua vida profissional?',
+        'O que o motiva a querer dar o seu melhor todos os dias?',
+        'Com relação aos colegas de trabalho/lideranças, o que mais lhe incomoda?',
+        'Conte uma situação dentro do salão que não foi positiva (com clientes ou equipe).',
+        'O que você aprendeu com essa situação?',
+        'Diga-me dois pontos que você deseja melhorar profissionalmente.',
+        'Hoje precisamos trabalhar com metas, buscar melhores resultados. Como você lida com essa pressão no dia a dia?',
+      ]
+    },
+    {
+      titulo: 'Bloco 3 — Misto entre vida pessoal e profissional', perguntas: [
+        'Fale-me um pouco da sua vida pessoal. Casado(a), filhos, o que gosta de fazer no tempo livre?',
+        'Como foi sua formação na profissão (cursos)?',
+        'Posso ver seus trabalhos em alguma rede social? Quais?',
+        'Em quais serviços você se realiza mais?',
+        'Tem algum serviço que você presta, mas que não gosta muito? Qual?',
+        'Como se atualiza? Qual foi a última especialização que você fez?',
+        'Como você se mantém atualizado sobre novas tendências?',
+        'Quais profissionais/pessoas o inspiram na profissão? Você segue alguém (ou algum canal)? Quais?',
+      ]
+    },
+    {
+      titulo: 'Bloco 4 — A empresa', perguntas: [
+        'O que você sabe sobre a nossa empresa?',
+        'Como ficou sabendo da vaga?',
+        'O que você gostaria de saber sobre nós ou sobre a vaga?',
+        'Tenho alguns candidatos para essa vaga, por que devo contratar você?',
+        'Você tem disponibilidade para fazer um teste?',
+        'Se eu contratar você hoje, poderia começar amanhã (ou na próxima segunda)?',
+      ]
+    },
+    {
+      titulo: 'Bloco 5 — Objetivos', perguntas: [
+        'Com relação ao seu rateio/comissão, qual o valor mínimo que você precisa fazer nos três primeiros meses?',
+        'Você tem reserva financeira para pagar suas despesas (aluguel, transporte, alimentação) nos primeiros meses?',
+        'Qual a sua meta de rateio/comissão para daqui a 12 meses?',
+        'O que você pretende fazer para atrair clientes?',
+      ]
+    },
+    {
+      titulo: 'Bloco 6 — Documentação e outros (se estiver certo da contratação)', perguntas: [
+        'Fale sobre a forma de pagamento (comissões e datas de pagamento).',
+        'Existe algum desconto? Quais?',
+        'Apresente a tabela de preços.',
+        'Qual documentação o profissional precisa entregar?',
+        'Materiais necessários para a vaga.',
+        'Horário desejável de atendimento.',
+        'Vestimenta indicada.',
+        'Dia e horário para começar.',
+      ]
+    },
+  ],
+  nota: 'Deixe para falar sobre as regras, os valores, a história da empresa e o conhecimento sobre o sistema de informação no primeiro dia de trabalho, quando o profissional já estiver contratado.',
 }
 
 const FORM_INITIAL = {
@@ -198,6 +273,13 @@ export default function ProfissionaisPage() {
       XLSX.utils.book_append_sheet(wb, ws, 'Dados')
       XLSX.writeFile(wb, nomeArq + '.xlsx')
     } catch { toast.error('Erro ao gerar Excel') }
+  }
+  function imprimirGuiaEntrevista() {
+    let n = 0
+    const blocosHtml = GUIA_ENTREVISTA.blocos.map(b => `<div class="bloco"><h2>${b.titulo}</h2>${b.perguntas.map(q => { n++; return `<div class="q"><div class="qn">${n}. ${q}</div><div class="ln"></div><div class="ln"></div></div>` }).join('')}</div>`).join('')
+    const css = `@page{size:A4 portrait;margin:13mm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;font-size:11px}.hd{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #5b4fcf;padding-bottom:8px;margin-bottom:10px}.brand{font-size:22px;font-weight:900;color:#5b4fcf}.cand{font-size:10px;color:#444;margin:0 0 12px;display:flex;gap:24px}.cand span{border-bottom:1px solid #999;flex:1;padding-bottom:2px}.antes{background:#f0eefb;border-radius:8px;padding:8px 12px;font-size:10px;margin-bottom:12px}.bloco{margin-bottom:10px;break-inside:avoid}h2{font-size:12px;color:#5b4fcf;border-bottom:1px solid #ddd;padding-bottom:3px;margin-bottom:6px}.q{margin-bottom:7px;break-inside:avoid}.qn{font-weight:600;margin-bottom:3px}.ln{border-bottom:1px dotted #aaa;height:13px}.nota{font-size:9px;color:#666;font-style:italic;margin-top:10px;border-top:1px solid #eee;padding-top:6px}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}`
+    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Ficha de Entrevista</title><style>${css}</style></head><body><div class="hd"><div class="brand">NODRI</div><div style="text-align:right;font-size:10px"><strong>Guia de Entrevista com Novos Profissionais</strong><br>${new Date().toLocaleDateString('pt-BR')}</div></div><div class="cand"><span>Candidato(a):</span><span style="max-width:130px;flex:0 0 130px">Data:</span></div><div class="antes"><strong>Antes da entrevista:</strong> ${GUIA_ENTREVISTA.antes.join(' ')}</div>${blocosHtml}<div class="nota">${GUIA_ENTREVISTA.nota}</div><script>window.onload=function(){window.print()}</script></body></html>`
+    const w = window.open('', '_blank', 'width=900,height=700'); if (!w) return; w.document.write(html); w.document.close(); w.focus()
   }
   const [cProfNome, setCProfNome] = useState('')
   const [cProfCPF, setCProfCPF] = useState('')
@@ -1692,6 +1774,34 @@ ${montarContratoHTML()}
                   )
                 })
               })()}
+            </div>
+          )}
+
+          {/* ── GUIA DE ENTREVISTA ── */}
+          {secao === 'entrevista' && (
+            <div style={{ maxWidth: '820px' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
+                <div>
+                  <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#1a1a1a', margin: '0 0 6px' }}>Guia de Entrevista</h2>
+                  <p style={{ fontSize: '13px', color: '#6b6860', margin: 0 }}>Roteiro completo para entrevistar novos profissionais. Imprima em A4 com espaço para anotar as respostas.</p>
+                </div>
+                <button onClick={imprimirGuiaEntrevista} className="no-mobile" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: 'none', background: '#5b4fcf', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>🖨️ Imprimir Ficha (A4)</button>
+              </div>
+              <div style={{ background: '#f0eefb', border: '1px solid #ddd6fb', borderRadius: 12, padding: '14px 16px', marginBottom: 16 }}>
+                <div style={{ fontWeight: 800, color: '#5b4fcf', fontSize: 13, marginBottom: 6 }}>Antes da entrevista</div>
+                <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, color: '#374151', lineHeight: 1.6 }}>
+                  {GUIA_ENTREVISTA.antes.map((t, i) => <li key={i}>{t}</li>)}
+                </ul>
+              </div>
+              {(() => { let n = 0; return GUIA_ENTREVISTA.blocos.map((b, bi) => (
+                <div key={bi} style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: '16px', marginBottom: 12 }}>
+                  <div style={{ fontWeight: 800, color: '#5b4fcf', fontSize: 14, marginBottom: 10, paddingBottom: 6, borderBottom: '1px solid #f0eee8' }}>{b.titulo}</div>
+                  <ol style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {b.perguntas.map((q, qi) => { n++; return <li key={qi} style={{ display: 'flex', gap: 8, fontSize: 14, color: '#1a1a1a', lineHeight: 1.5 }}><span style={{ fontWeight: 800, color: '#5b4fcf', flexShrink: 0 }}>{n}.</span><span>{q}</span></li> })}
+                  </ol>
+                </div>
+              )) })()}
+              <div style={{ fontSize: 12, color: '#6b6860', fontStyle: 'italic', background: '#faf9f7', borderRadius: 10, padding: '12px 14px' }}>💡 {GUIA_ENTREVISTA.nota}</div>
             </div>
           )}
 
