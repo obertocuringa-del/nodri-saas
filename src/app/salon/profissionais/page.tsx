@@ -58,7 +58,6 @@ const SIDEBAR_ITEMS = [
 
 const CONTEUDO_INFO: Record<string, { titulo: string; texto: string }> = {
   abertura:     { titulo: 'Abertura de Conta Bancária', texto: 'Oriente o profissional a abrir uma conta PJ no banco de sua preferência. Documentos necessários: RG, CPF, comprovante de residência e CNPJ (se MEI). Bancos recomendados: Nubank PJ, Inter PJ, Caixa, Bradesco.' },
-  cnpj:         { titulo: 'CNPJ — Microempreendedor Individual', texto: 'Para trabalhar como MEI no salão, o profissional deve ter CNPJ ativo. Acesse gov.br/mei para abrir gratuitamente. O CNPJ MEI permite faturar até R$ 81.000/ano com menos impostos. Guarde o certificado e alvará de funcionamento.' },
   entrevista:   { titulo: 'Ficha para Entrevista', texto: 'Utilize o cadastro de profissional abaixo como guia de entrevista. Avalie: habilidades técnicas, apresentação pessoal, disponibilidade de horários, experiência anterior e referências. Faça perguntas sobre metas e sonhos profissionais.' },
   contratacao:  { titulo: 'Processo de Contratação', texto: 'Etapas: 1. Entrevista inicial → 2. Período de teste (7 dias) → 3. Avaliação técnica → 4. Negociação de comissão → 5. Assinatura de contrato → 6. Cadastro no sistema → 7. Integração com a equipe.' },
   materiais:    { titulo: 'Materiais para Trabalho', texto: 'Lista de materiais que o salão fornece e o que é responsabilidade do profissional. Geralmente o salão fornece: espaço, lavatório, secador base. O profissional traz: tesouras, pentes, produtos específicos de sua linha.' },
@@ -144,6 +143,21 @@ export default function ProfissionaisPage() {
   const [contratoEditando, setContratoEditando] = useState(false)
   const [contratoPendencias, setContratoPendencias] = useState<string[]>([])
   const [distratoPendencias, setDistratoPendencias] = useState<string[]>([])
+  // Painel de CNPJ (status + observação por profissional)
+  const [cnpjEdits, setCnpjEdits] = useState<Record<string, { status?: string; obs?: string }>>({})
+  const [cnpjSalvando, setCnpjSalvando] = useState<string | null>(null)
+
+  async function salvarCnpj(prof: Profissional) {
+    const e = cnpjEdits[prof.id] || {}
+    const status = e.status ?? (prof as any).cnpj_status ?? (prof.cnpj ? 'ok' : 'pendente')
+    const obs = e.obs ?? (prof as any).cnpj_observacao ?? ''
+    setCnpjSalvando(prof.id)
+    try {
+      const res = await fetch(`/api/profissionais/${prof.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cnpj_status: status, cnpj_observacao: obs }) })
+      if (res.ok) { toast.success('Salvo!'); setCnpjEdits(p => { const n = { ...p }; delete n[prof.id]; return n }); carregarProfissionais() } else toast.error('Erro ao salvar')
+    } catch { toast.error('Erro de conexão') }
+    setCnpjSalvando(null)
+  }
   const [cProfNome, setCProfNome] = useState('')
   const [cProfCPF, setCProfCPF] = useState('')
   const [cProfCNPJ, setCProfCNPJ] = useState('')
@@ -1436,6 +1450,77 @@ ${montarContratoHTML()}
                   <p style={{ margin: '0 0 24pt' }}>{(cProfNome || '[NOME DO PROFISSIONAL]').toUpperCase()}</p>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* ── PAINEL DE CNPJ DOS PROFISSIONAIS ── */}
+          {secao === 'cnpj' && (
+            <div style={{ maxWidth: '1000px' }}>
+              <div style={{ marginBottom: '16px' }}>
+                <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#1a1a1a', margin: '0 0 6px' }}>CNPJ dos Profissionais</h2>
+                <p style={{ fontSize: '13px', color: '#6b6860', margin: 0 }}>Veja o CNPJ, a categoria, a data de admissão e os horários de cada um. Marque o status e anote observações (ex: tem CNPJ mas não está emitindo guia).</p>
+              </div>
+              {profissionais.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af', fontSize: 14 }}>Nenhum profissional cadastrado.</div>
+              ) : (
+                Array.from(new Set(profissionais.map(p => p.cargo || 'Sem categoria'))).sort().map(cat => {
+                  const profsCat = profissionais.filter(p => (p.cargo || 'Sem categoria') === cat)
+                  return (
+                    <div key={cat} style={{ marginBottom: '20px' }}>
+                      <div style={{ fontSize: '13px', fontWeight: 800, color: '#5b4fcf', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>{cat} <span style={{ color: '#9ca3af', fontWeight: 600 }}>· {profsCat.length}</span></div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {profsCat.map(p => {
+                          const edit = cnpjEdits[p.id] || {}
+                          const status = edit.status ?? (p as any).cnpj_status ?? (p.cnpj ? 'ok' : 'pendente')
+                          const obs = edit.obs ?? (p as any).cnpj_observacao ?? ''
+                          const semCnpj = !p.cnpj
+                          const adm = (p as any).data_admissao ? String((p as any).data_admissao).slice(0, 10).split('-').reverse().join('/') : '—'
+                          return (
+                            <div key={p.id} style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: '12px', padding: '14px 16px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '10px' }}>
+                                <span style={{ fontWeight: 800, fontSize: '15px', color: '#1a1a1a' }}>{p.nome_completo}</span>
+                                {semCnpj
+                                  ? <span style={{ fontSize: '11px', fontWeight: 800, color: '#dc2626', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '20px', padding: '3px 10px' }}>⚠️ CNPJ pendente de criação</span>
+                                  : <span style={{ fontSize: '12px', color: '#16a34a', fontWeight: 700 }}>CNPJ: {p.cnpj}</span>}
+                              </div>
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', alignItems: 'end' }}>
+                                <div>
+                                  <label style={{ fontSize: '11px', color: '#6b6860', display: 'block', marginBottom: '3px' }}>Data de admissão</label>
+                                  <div style={{ fontSize: '13px', color: '#1a1a1a' }}>{adm}</div>
+                                </div>
+                                <div>
+                                  <label style={{ fontSize: '11px', color: '#6b6860', display: 'block', marginBottom: '3px' }}>Status do CNPJ</label>
+                                  <select value={status} onChange={e => setCnpjEdits(prev => ({ ...prev, [p.id]: { ...prev[p.id], status: e.target.value } }))}
+                                    style={{ width: '100%', padding: '7px 10px', borderRadius: '8px', border: '1.5px solid #d0cdc7', fontSize: '13px', background: status === 'ok' ? '#f0fdf4' : '#fffbeb', color: status === 'ok' ? '#16a34a' : '#b45309', fontWeight: 700 }}>
+                                    <option value="ok">✅ OK / Ativo</option>
+                                    <option value="pendente">⏳ Pendente</option>
+                                  </select>
+                                </div>
+                                <div style={{ gridColumn: '1 / -1' }}>
+                                  <label style={{ fontSize: '11px', color: '#6b6860', display: 'block', marginBottom: '3px' }}>Observação (ex: tem CNPJ mas não emite guia)</label>
+                                  <input value={obs} onChange={e => setCnpjEdits(prev => ({ ...prev, [p.id]: { ...prev[p.id], obs: e.target.value } }))}
+                                    placeholder="—" style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1.5px solid #d0cdc7', fontSize: '13px' }} />
+                                </div>
+                              </div>
+                              {(p as any).horarios_folgas && (
+                                <div style={{ fontSize: '11px', color: '#767069', marginTop: '8px' }}>🕐 <strong>Horários/Folgas:</strong> {typeof (p as any).horarios_folgas === 'string' ? (p as any).horarios_folgas : JSON.stringify((p as any).horarios_folgas)}</div>
+                              )}
+                              {cnpjEdits[p.id] && (
+                                <div style={{ marginTop: '10px', textAlign: 'right' }}>
+                                  <button onClick={() => salvarCnpj(p)} disabled={cnpjSalvando === p.id}
+                                    style={{ padding: '7px 16px', borderRadius: '8px', border: 'none', background: '#5b4fcf', color: '#fff', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
+                                    {cnpjSalvando === p.id ? 'Salvando...' : '💾 Salvar'}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })
+              )}
             </div>
           )}
 
