@@ -142,6 +142,8 @@ export default function ProfissionaisPage() {
   // ── CONTRATO DE TRABALHO (parceria) ──
   const [contratoProf, setContratoProf] = useState<Profissional | null>(null)
   const [contratoEditando, setContratoEditando] = useState(false)
+  const [contratoPendencias, setContratoPendencias] = useState<string[]>([])
+  const [distratoPendencias, setDistratoPendencias] = useState<string[]>([])
   const [cProfNome, setCProfNome] = useState('')
   const [cProfCPF, setCProfCPF] = useState('')
   const [cProfCNPJ, setCProfCNPJ] = useState('')
@@ -161,6 +163,14 @@ export default function ProfissionaisPage() {
     setCProfEndereco(prof.endereco || '')
     setCProfRG((prof as any).rg || '')
     if ((prof as any).data_admissao) setCDataContrato(String((prof as any).data_admissao).slice(0, 10).split('-').reverse().join('/'))
+    // Documentos obrigatórios para o Contrato
+    const faltas: string[] = []
+    if (!prof.cpf) faltas.push('CPF')
+    if (!prof.cnpj) faltas.push('CNPJ')
+    if (!(prof as any).rg) faltas.push('RG')
+    if (!prof.endereco) faltas.push('Endereço')
+    if (!(prof as any).data_admissao) faltas.push('Data de Admissão')
+    setContratoPendencias(faltas)
     try {
       const cr = prof.contato_responsavel ? JSON.parse(prof.contato_responsavel) : {}
       setCProfRepresentante(cr.nome || prof.nome_completo || '')
@@ -370,6 +380,13 @@ ${montarContratoHTML()}
     setDProfEndereco(prof.endereco || '')
     if ((prof as any).data_demissao) setDDataDistrato(String((prof as any).data_demissao).slice(0, 10).split('-').reverse().join('/'))
     if ((prof as any).data_admissao) setDDataContrato(String((prof as any).data_admissao).slice(0, 10).split('-').reverse().join('/'))
+    // Documentos obrigatórios para o Distrato
+    const faltasD: string[] = []
+    if (!prof.cpf) faltasD.push('CPF')
+    if (!prof.cnpj) faltasD.push('CNPJ')
+    if (!prof.endereco) faltasD.push('Endereço')
+    if (!(prof as any).data_demissao) faltasD.push('Data de Demissão')
+    setDistratoPendencias(faltasD)
     try {
       const cr = prof.contato_responsavel ? JSON.parse(prof.contato_responsavel) : {}
       setDProfRepresentante(cr.nome || prof.nome_completo || '')
@@ -1219,6 +1236,14 @@ ${montarContratoHTML()}
                 </select>
               </div>
 
+              {distratoProf && distratoPendencias.length > 0 && (
+                <div style={{ background: '#fef2f2', border: '1.5px solid #fca5a5', borderRadius: '12px', padding: '14px 18px', marginBottom: '20px' }}>
+                  <div style={{ fontWeight: 800, color: '#b91c1c', fontSize: '14px', marginBottom: '6px' }}>⚠️ Documentos pendentes — {distratoProf.nome_completo}</div>
+                  <p style={{ fontSize: '13px', color: '#7f1d1d', margin: '0 0 8px' }}>Este profissional ainda não tem no cadastro: <strong>{distratoPendencias.join(', ')}</strong>.</p>
+                  <p style={{ fontSize: '12px', color: '#991b1b', margin: 0 }}>Preencha na <strong>ficha do profissional → Cadastro</strong> antes de gerar o distrato.</p>
+                </div>
+              )}
+
               {/* Documento */}
               <div style={{ background: '#fff', border: '1px solid #d6d3ce', borderRadius: '12px', padding: '48px', fontFamily: "'Times New Roman', Times, serif", fontSize: '12pt', lineHeight: 1.6, color: '#000' }}>
                 {/* Título */}
@@ -1347,6 +1372,14 @@ ${montarContratoHTML()}
                   ))}
                 </select>
               </div>
+
+              {contratoProf && contratoPendencias.length > 0 && (
+                <div style={{ background: '#fef2f2', border: '1.5px solid #fca5a5', borderRadius: '12px', padding: '14px 18px', marginBottom: '20px' }}>
+                  <div style={{ fontWeight: 800, color: '#b91c1c', fontSize: '14px', marginBottom: '6px' }}>⚠️ Documentos pendentes — {contratoProf.nome_completo}</div>
+                  <p style={{ fontSize: '13px', color: '#7f1d1d', margin: '0 0 8px' }}>Este profissional ainda não tem no cadastro: <strong>{contratoPendencias.join(', ')}</strong>.</p>
+                  <p style={{ fontSize: '12px', color: '#991b1b', margin: 0 }}>Preencha na <strong>ficha do profissional → Cadastro</strong> antes de gerar o contrato, para ele sair completo.</p>
+                </div>
+              )}
 
               <div style={{ background: '#fff', border: '1px solid #d6d3ce', borderRadius: '12px', padding: '48px', fontFamily: "'Times New Roman', Times, serif", fontSize: '12pt', lineHeight: 1.6, color: '#000' }}>
                 <h1 style={{ textAlign: 'center', fontSize: '14pt', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '28px' }}>Contrato de Parceria</h1>

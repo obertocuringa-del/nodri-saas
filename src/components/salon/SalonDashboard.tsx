@@ -392,6 +392,11 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               style={{ color: '#0891b2' }}>
               Lista de Espera
             </a>
+            <a href="/salon/aniversariantes"
+              className="w-full flex items-center px-3 py-2 rounded-md text-[11px] font-medium tracking-wide uppercase transition-colors"
+              style={{ color: '#db2777' }}>
+              Aniversariantes do Mês
+            </a>
           </nav>
 
           {/* Rodapé da sidebar */}
