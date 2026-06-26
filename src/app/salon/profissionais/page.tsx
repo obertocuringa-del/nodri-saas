@@ -45,6 +45,7 @@ const SIDEBAR_ITEMS = [
   { id: 'categorias',   label: 'Gerenciar Categorias',            icon: Award,          cor: '#f59e0b' },
   { id: 'abertura',     label: 'Abertura de Conta Bancária',      icon: Building2,      cor: '#10b981' },
   { id: 'cnpj',         label: 'CNPJ',                            icon: FileText,       cor: '#f59e0b' },
+  { id: 'clt',          label: 'CLT',                             icon: Briefcase,      cor: '#0ea5e9' },
   { id: 'entrevista',   label: 'Ficha para Entrevista',           icon: Briefcase,      cor: '#3b82f6' },
   { id: 'contratacao',  label: 'Processo de Contratação',         icon: FileSignature,  cor: '#8b5cf6' },
   { id: 'materiais',    label: 'Materiais para Trabalho',         icon: BookOpen,       cor: '#ec4899' },
@@ -161,6 +162,21 @@ export default function ProfissionaisPage() {
       if (res.ok) { toast.success('Salvo!'); setCnpjEdits(p => { const n = { ...p }; delete n[prof.id]; return n }); carregarProfissionais() } else toast.error('Erro ao salvar')
     } catch { toast.error('Erro de conexão') }
     setCnpjSalvando(null)
+  }
+
+  // Painel CLT (observação por profissional)
+  const [cltEdits, setCltEdits] = useState<Record<string, { obs?: string }>>({})
+  const [cltSalvando, setCltSalvando] = useState<string | null>(null)
+  const ehClt = (p: Profissional) => norm((p as any).vinculo || '') === 'CLT' || ['ADMINISTRATIVO', 'FINANCEIRO', 'GERENCIA', 'RECEPCAO'].includes(norm(p.cargo || ''))
+
+  async function salvarClt(prof: Profissional) {
+    const obs = (cltEdits[prof.id]?.obs) ?? (prof as any).clt_observacao ?? ''
+    setCltSalvando(prof.id)
+    try {
+      const res = await fetch(`/api/profissionais/${prof.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clt_observacao: obs }) })
+      if (res.ok) { toast.success('Salvo!'); setCltEdits(p => { const n = { ...p }; delete n[prof.id]; return n }); carregarProfissionais() } else toast.error('Erro ao salvar')
+    } catch { toast.error('Erro de conexão') }
+    setCltSalvando(null)
   }
   const [cProfNome, setCProfNome] = useState('')
   const [cProfCPF, setCProfCPF] = useState('')
@@ -1570,6 +1586,62 @@ ${montarContratoHTML()}
                   )
                 })
               )}
+            </div>
+          )}
+
+          {/* ── PROFISSIONAIS CLT ── */}
+          {secao === 'clt' && (
+            <div style={{ maxWidth: '1000px' }}>
+              <div style={{ marginBottom: '16px' }}>
+                <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#1a1a1a', margin: '0 0 6px' }}>Profissionais CLT</h2>
+                <p style={{ fontSize: '13px', color: '#6b6860', margin: 0 }}>Profissionais com vínculo CLT (e categorias administrativas). Para marcar alguém como CLT, defina o <strong>Vínculo Trabalhista</strong> na ficha → Cadastro.</p>
+              </div>
+              {(() => {
+                const clts = profissionais.filter(ehClt)
+                if (clts.length === 0) return <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af', fontSize: 14 }}>Nenhum profissional CLT. Defina o vínculo &quot;CLT&quot; na ficha de quem é CLT.</div>
+                return Array.from(new Set(clts.map(p => p.cargo || 'Sem categoria'))).sort().map(cat => {
+                  const profsCat = clts.filter(p => (p.cargo || 'Sem categoria') === cat)
+                  return (
+                    <div key={cat} style={{ marginBottom: '20px' }}>
+                      <div style={{ fontSize: '13px', fontWeight: 800, color: '#0ea5e9', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>{cat} <span style={{ color: '#9ca3af', fontWeight: 600 }}>· {profsCat.length}</span></div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {profsCat.map(p => {
+                          const obs = (cltEdits[p.id]?.obs) ?? (p as any).clt_observacao ?? ''
+                          const adm = (p as any).data_admissao ? String((p as any).data_admissao).slice(0, 10).split('-').reverse().join('/') : '—'
+                          let sched: any = {}; try { sched = JSON.parse((p as any).habilidades || '{}') } catch { /* */ }
+                          const horario = (sched.h_inicio || sched.h_fim) ? `${sched.h_inicio || '?'} às ${sched.h_fim || '?'}` : '—'
+                          const folgas = Array.isArray(sched.dias_folga) && sched.dias_folga.length ? sched.dias_folga.join(', ') : '—'
+                          return (
+                            <div key={p.id} style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: '12px', padding: '14px 16px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                                <span style={{ fontWeight: 800, fontSize: '15px', color: '#1a1a1a' }}>{p.nome_completo}</span>
+                                <span style={{ fontSize: '11px', fontWeight: 800, color: '#0369a1', background: '#e0f2fe', borderRadius: '20px', padding: '3px 10px' }}>CLT</span>
+                              </div>
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '10px', fontSize: '12px', color: '#374151' }}>
+                                <div><span style={{ color: '#6b6860' }}>Admissão:</span> <strong>{adm}</strong></div>
+                                <div><span style={{ color: '#6b6860' }}>Horário:</span> <strong>{horario}</strong></div>
+                                <div><span style={{ color: '#6b6860' }}>Folgas:</span> <strong>{folgas}</strong></div>
+                              </div>
+                              <div style={{ marginTop: '10px' }}>
+                                <label style={{ fontSize: '11px', color: '#6b6860', display: 'block', marginBottom: '3px' }}>Observação</label>
+                                <input value={obs} onChange={e => setCltEdits(prev => ({ ...prev, [p.id]: { obs: e.target.value } }))}
+                                  placeholder="—" style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1.5px solid #d0cdc7', fontSize: '13px' }} />
+                              </div>
+                              {cltEdits[p.id] && (
+                                <div style={{ marginTop: '10px', textAlign: 'right' }}>
+                                  <button onClick={() => salvarClt(p)} disabled={cltSalvando === p.id} style={{ padding: '7px 16px', borderRadius: '8px', border: 'none', background: '#0ea5e9', color: '#fff', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
+                                    {cltSalvando === p.id ? 'Salvando...' : '💾 Salvar'}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })
+              })()}
             </div>
           )}
 
