@@ -1504,8 +1504,8 @@ ${montarContratoHTML()}
               {profissionais.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af', fontSize: 14 }}>Nenhum profissional cadastrado.</div>
               ) : (
-                Array.from(new Set(profissionais.map(p => p.cargo || 'Sem categoria'))).sort().map(cat => {
-                  const profsCat = profissionais.filter(p => (p.cargo || 'Sem categoria') === cat)
+                Array.from(new Set(profissionais.filter(p => !['ADMINISTRATIVO', 'FINANCEIRO', 'GERENCIA', 'RECEPCAO'].includes(norm(p.cargo || '')) && norm((p as any).vinculo || '') !== 'CLT').map(p => p.cargo || 'Sem categoria'))).sort().map(cat => {
+                  const profsCat = profissionais.filter(p => (p.cargo || 'Sem categoria') === cat && !['ADMINISTRATIVO', 'FINANCEIRO', 'GERENCIA', 'RECEPCAO'].includes(norm(p.cargo || '')) && norm((p as any).vinculo || '') !== 'CLT')
                   return (
                     <div key={cat} style={{ marginBottom: '20px' }}>
                       <div style={{ fontSize: '13px', fontWeight: 800, color: '#5b4fcf', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>{cat} <span style={{ color: '#9ca3af', fontWeight: 600 }}>· {profsCat.length}</span></div>
@@ -1518,11 +1518,17 @@ ${montarContratoHTML()}
                           const adm = (p as any).data_admissao ? String((p as any).data_admissao).slice(0, 10).split('-').reverse().join('/') : '—'
                           return (
                             <div key={p.id} style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: '12px', padding: '14px 16px' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '10px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
                                 <span style={{ fontWeight: 800, fontSize: '15px', color: '#1a1a1a' }}>{p.nome_completo}</span>
                                 {semCnpj
                                   ? <span style={{ fontSize: '11px', fontWeight: 800, color: '#dc2626', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '20px', padding: '3px 10px' }}>⚠️ CNPJ pendente de criação</span>
-                                  : <span style={{ fontSize: '12px', color: '#16a34a', fontWeight: 700 }}>CNPJ: {p.cnpj}</span>}
+                                  : <>
+                                      <span style={{ fontSize: '12px', color: '#16a34a', fontWeight: 700 }}>CNPJ: {p.cnpj}</span>
+                                      <button onClick={() => { try { navigator.clipboard.writeText(p.cnpj || '') } catch { /* */ } toast.success('CNPJ copiado!') }}
+                                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 6, border: '1px solid #d0cdc7', background: '#fff', color: '#5b4fcf', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>📋 Copiar</button>
+                                    </>}
+                                <a href="https://www8.receita.fazenda.gov.br/SimplesNacional/Aplicacoes/ATSPO/pgmei.app/Identificacao" target="_blank" rel="noopener noreferrer"
+                                  style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 6, border: 'none', background: '#16a34a', color: '#fff', fontSize: 11, fontWeight: 700, textDecoration: 'none' }}>🧾 Emitir Guia do MEI ↗</a>
                               </div>
                               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', alignItems: 'end' }}>
                                 <div>

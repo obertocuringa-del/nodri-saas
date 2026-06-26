@@ -2,11 +2,12 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Cake, Loader2, Gift } from 'lucide-react'
+import { ArrowLeft, Cake, Loader2, Gift, MessageCircle, X, Send } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
 
-interface Aniv { nome: string; cargo?: string; dia: number; mes: number; idade: number | null; data: string }
+interface Aniv { nome: string; cargo?: string; dia: number; mes: number; idade: number | null; data: string; telefone?: string }
 
 function corAvatar(nome: string) {
   let h = 0; for (let i = 0; i < nome.length; i++) h = nome.charCodeAt(i) + ((h << 5) - h)
@@ -17,7 +18,23 @@ export default function AniversariantesPage() {
   const router = useRouter()
   const [lista, setLista] = useState<Aniv[]>([])
   const [loading, setLoading] = useState(true)
+  const [msgAlvo, setMsgAlvo] = useState<Aniv | null>(null)
+  const [msgTexto, setMsgTexto] = useState('')
   const mesAtual = new Date().getMonth() + 1
+
+  function abrirWhats(a: Aniv) {
+    const primeiro = (a.nome || '').trim().split(/\s+/)[0]
+    setMsgTexto(`Olá *${primeiro}*! 🎂🎉\n\nToda a equipe deseja a você um feliz aniversário! Que este novo ciclo seja repleto de saúde, alegria e muitas conquistas. 💛\n\nConte sempre com a gente!`)
+    setMsgAlvo(a)
+  }
+  function enviarWhats() {
+    if (!msgAlvo) return
+    const fone = String(msgAlvo.telefone || '').replace(/\D/g, '')
+    if (!fone) { toast.error('Este profissional não tem telefone no cadastro.'); return }
+    const numero = fone.startsWith('55') ? fone : '55' + fone
+    window.open(`https://wa.me/${numero}?text=${encodeURIComponent(msgTexto)}`, '_blank')
+    setMsgAlvo(null)
+  }
 
   const carregar = useCallback(async () => {
     try {
@@ -30,7 +47,9 @@ export default function AniversariantesPage() {
           const [y, m, d] = s.split('-').map(Number)
           // idade que completa no aniversário deste ano
           const idade: number | null = (y && y > 1900) ? hoje.getFullYear() - y : null
-          return { nome: p.apelido || p.nome_completo || '—', cargo: p.cargo || '', dia: d || 0, mes: m || 0, idade, data: s }
+          let tel = p.telefone || ''
+          if (!tel) { try { tel = JSON.parse(p.contato_responsavel || '{}').tel || '' } catch { /* */ } }
+          return { nome: p.apelido || p.nome_completo || '—', cargo: p.cargo || '', dia: d || 0, mes: m || 0, idade, data: s, telefone: tel }
         })
         .filter(a => a.mes >= 1 && a.mes <= 12)
       setLista(arr)
@@ -91,6 +110,10 @@ export default function AniversariantesPage() {
                           <div style={{ fontWeight: 800, color: '#db2777', fontSize: 14 }}>{String(a.dia).padStart(2, '0')}/{String(a.mes).padStart(2, '0')}</div>
                           {a.idade != null && <div style={{ fontSize: 11, color: '#6b6860' }}>faz {a.idade} anos</div>}
                         </div>
+                        <button onClick={() => abrirWhats(a)} title="Enviar mensagem de aniversário"
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 12px', borderRadius: 8, border: 'none', background: '#25D366', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>
+                          <MessageCircle size={13} /> Parabenizar
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -100,6 +123,24 @@ export default function AniversariantesPage() {
           </div>
         )}
       </div>
+
+      {msgAlvo && (
+        <div onClick={() => setMsgAlvo(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 14 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 440, padding: 20, boxShadow: '0 20px 60px rgba(0,0,0,.3)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <h3 style={{ fontSize: 15, fontWeight: 800, color: '#1a1a1a', margin: 0 }}>🎂 Parabenizar {msgAlvo.nome}</h3>
+              <button onClick={() => setMsgAlvo(null)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#9ca3af' }}><X size={18} /></button>
+            </div>
+            <label style={{ fontSize: 12, fontWeight: 700, color: '#6b6860', display: 'block', marginBottom: 5 }}>Mensagem (edite à vontade)</label>
+            <textarea value={msgTexto} onChange={e => setMsgTexto(e.target.value)} rows={6}
+              style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #d0cdc7', fontSize: 13, resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.5, marginBottom: 8 }} />
+            {!msgAlvo.telefone && <p style={{ fontSize: 11, color: '#ef4444', margin: '0 0 8px' }}>⚠️ Sem telefone no cadastro — adicione o telefone na ficha do profissional.</p>}
+            <button onClick={enviarWhats} style={{ width: '100%', padding: '12px', borderRadius: 10, border: 'none', background: '#25D366', color: '#fff', fontSize: 15, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              <Send size={16} /> Enviar pelo WhatsApp
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
