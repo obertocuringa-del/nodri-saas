@@ -62,7 +62,6 @@ const CONTEUDO_INFO: Record<string, { titulo: string; texto: string }> = {
   contratacao:  { titulo: 'Processo de Contratação', texto: 'Etapas: 1. Entrevista inicial → 2. Período de teste (7 dias) → 3. Avaliação técnica → 4. Negociação de comissão → 5. Assinatura de contrato → 6. Cadastro no sistema → 7. Integração com a equipe.' },
   materiais:    { titulo: 'Materiais para Trabalho', texto: 'Lista de materiais que o salão fornece e o que é responsabilidade do profissional. Geralmente o salão fornece: espaço, lavatório, secador base. O profissional traz: tesouras, pentes, produtos específicos de sua linha.' },
   perfil:       { titulo: 'Perfil Ideal de Profissional', texto: 'Buscamos profissionais: ✅ Pontuais e comprometidos ✅ Com cartela de clientes ✅ Que valorizam higiene e organização ✅ Comunicativos e empáticos ✅ Com CNPJ ativo ✅ Abertos a feedback e treinamento contínuo.' },
-  horarios:     { titulo: 'Horários e Folgas', texto: 'Defina junto ao profissional: dias de trabalho por semana, horário de entrada e saída, dias fixos de folga, política de ausências e como comunicar faltas. Tudo deve estar no contrato assinado.' },
   certificados: { titulo: 'Certificados', texto: 'Solicite cópias dos certificados de cursos concluídos: colorimetria, corte, escova, tratamentos capilares, manicure, podologia, etc. Guarde digitalmente na ficha do profissional. Incentive atualização constante.' },
   carreira:     { titulo: 'Plano de Carreira', texto: 'Estruture crescimento por etapas: 🥉 Júnior (0-1 ano) → 🥈 Pleno (1-3 anos) → 🥇 Sênior (3+ anos) → 🏆 Referência. Defina metas de faturamento, satisfação de clientes e horas de capacitação para evolução em cada nível.' },
 }
@@ -1453,6 +1452,48 @@ ${montarContratoHTML()}
             </div>
           )}
 
+          {/* ── HORÁRIOS E FOLGAS DE TODOS OS PROFISSIONAIS ── */}
+          {secao === 'horarios' && (
+            <div style={{ maxWidth: '1000px' }}>
+              <div style={{ marginBottom: '16px' }}>
+                <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#1a1a1a', margin: '0 0 6px' }}>Horários e Folgas</h2>
+                <p style={{ fontSize: '13px', color: '#6b6860', margin: 0 }}>Horário de trabalho e dias de folga de cada profissional, por categoria. Para alterar, edite a ficha do profissional (aba Cadastro).</p>
+              </div>
+              {profissionais.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af', fontSize: 14 }}>Nenhum profissional cadastrado.</div>
+              ) : (
+                Array.from(new Set(profissionais.map(p => p.cargo || 'Sem categoria'))).sort().map(cat => {
+                  const profsCat = profissionais.filter(p => (p.cargo || 'Sem categoria') === cat)
+                  return (
+                    <div key={cat} style={{ marginBottom: '20px' }}>
+                      <div style={{ fontSize: '13px', fontWeight: 800, color: '#5b4fcf', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>{cat} <span style={{ color: '#9ca3af', fontWeight: 600 }}>· {profsCat.length}</span></div>
+                      <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: '12px', overflow: 'hidden' }}>
+                        {profsCat.map((p, i) => {
+                          let sched: any = {}; try { sched = JSON.parse((p as any).habilidades || '{}') } catch { /* */ }
+                          const horario = (sched.h_inicio || sched.h_fim) ? `${sched.h_inicio || '?'} às ${sched.h_fim || '?'}` : ''
+                          const folgas: string[] = Array.isArray(sched.dias_folga) ? sched.dias_folga : []
+                          return (
+                            <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', borderTop: i > 0 ? '1px solid #f0eee8' : 'none', flexWrap: 'wrap' }}>
+                              <span style={{ fontWeight: 700, color: '#1a1a1a', fontSize: '14px', flex: '1 1 150px', minWidth: 0 }}>{p.nome_completo}</span>
+                              <div style={{ fontSize: '12px', color: '#374151', flex: '1 1 140px' }}>
+                                🕐 {horario ? <strong>{horario}</strong> : <span style={{ color: '#b45309' }}>horário não definido</span>}
+                              </div>
+                              <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', flex: '1 1 200px' }}>
+                                {folgas.length > 0
+                                  ? folgas.map(d => <span key={d} style={{ fontSize: '11px', fontWeight: 700, color: '#dc2626', background: '#fef2f2', borderRadius: '20px', padding: '3px 9px' }}>{d}</span>)
+                                  : <span style={{ fontSize: '11px', color: '#9ca3af' }}>sem folga definida</span>}
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })
+              )}
+            </div>
+          )}
+
           {/* ── PAINEL DE CNPJ DOS PROFISSIONAIS ── */}
           {secao === 'cnpj' && (
             <div style={{ maxWidth: '1000px' }}>
@@ -1502,17 +1543,6 @@ ${montarContratoHTML()}
                                     placeholder="—" style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1.5px solid #d0cdc7', fontSize: '13px' }} />
                                 </div>
                               </div>
-                              {(() => {
-                                let sched: any = {}; try { sched = JSON.parse((p as any).habilidades || '{}') } catch { /* */ }
-                                const horario = (sched.h_inicio || sched.h_fim) ? `${sched.h_inicio || '?'} às ${sched.h_fim || '?'}` : ''
-                                const folgas = Array.isArray(sched.dias_folga) && sched.dias_folga.length ? sched.dias_folga.join(', ') : ''
-                                if (!horario && !folgas) return <div style={{ fontSize: '11px', color: '#b45309', marginTop: '8px' }}>🕐 Horários/folgas não preenchidos (ficha → aba Cadastro)</div>
-                                return (
-                                  <div style={{ fontSize: '11px', color: '#767069', marginTop: '8px' }}>
-                                    🕐 {horario && <><strong>Horário:</strong> {horario}</>}{horario && folgas ? ' · ' : ''}{folgas && <><strong>Folgas:</strong> {folgas}</>}
-                                  </div>
-                                )
-                              })()}
                               {cnpjEdits[p.id] && (
                                 <div style={{ marginTop: '10px', textAlign: 'right' }}>
                                   <button onClick={() => salvarCnpj(p)} disabled={cnpjSalvando === p.id}
