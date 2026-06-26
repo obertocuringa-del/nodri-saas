@@ -1502,9 +1502,17 @@ ${montarContratoHTML()}
                                     placeholder="—" style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1.5px solid #d0cdc7', fontSize: '13px' }} />
                                 </div>
                               </div>
-                              {(p as any).horarios_folgas && (
-                                <div style={{ fontSize: '11px', color: '#767069', marginTop: '8px' }}>🕐 <strong>Horários/Folgas:</strong> {typeof (p as any).horarios_folgas === 'string' ? (p as any).horarios_folgas : JSON.stringify((p as any).horarios_folgas)}</div>
-                              )}
+                              {(() => {
+                                let sched: any = {}; try { sched = JSON.parse((p as any).habilidades || '{}') } catch { /* */ }
+                                const horario = (sched.h_inicio || sched.h_fim) ? `${sched.h_inicio || '?'} às ${sched.h_fim || '?'}` : ''
+                                const folgas = Array.isArray(sched.dias_folga) && sched.dias_folga.length ? sched.dias_folga.join(', ') : ''
+                                if (!horario && !folgas) return <div style={{ fontSize: '11px', color: '#b45309', marginTop: '8px' }}>🕐 Horários/folgas não preenchidos (ficha → aba Cadastro)</div>
+                                return (
+                                  <div style={{ fontSize: '11px', color: '#767069', marginTop: '8px' }}>
+                                    🕐 {horario && <><strong>Horário:</strong> {horario}</>}{horario && folgas ? ' · ' : ''}{folgas && <><strong>Folgas:</strong> {folgas}</>}
+                                  </div>
+                                )
+                              })()}
                               {cnpjEdits[p.id] && (
                                 <div style={{ marginTop: '10px', textAlign: 'right' }}>
                                   <button onClick={() => salvarCnpj(p)} disabled={cnpjSalvando === p.id}
