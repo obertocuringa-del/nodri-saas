@@ -7,6 +7,9 @@ import toast from 'react-hot-toast'
 import GridEditavel, { cel, type Doc as GridDoc } from '@/components/salon/GridEditavel'
 import ListaBebidas from '@/components/salon/ListaBebidas'
 import ListaTelefones from '@/components/salon/ListaTelefones'
+import ListaPrecoServicos from '@/components/salon/ListaPrecoServicos'
+import DocEditavel from '@/components/salon/DocEditavel'
+import { CAFE_BLOCOS, POP_SALAO_BLOCOS } from '@/components/salon/popDefaults'
 
 interface ProfSalao { id: string; nome: string; telefone: string }
 interface Coluna { id: string; nome: string; telefone: string }
@@ -33,13 +36,18 @@ const GRIDS = [
 ]
 const TAB_GRIDS = [{ key: 'bebidas', label: 'Bebidas' }, ...GRIDS.map(g => ({ key: g.key, label: g.label }))]
 
+const DEFAULT_PACOTES: GridDoc = { tabelas: [{ titulo: 'PREÇO DE PACOTES', cabecalho: [cel('Pacote'), cel('O que inclui'), cel('Valor'), cel('Observação')], linhas: linhasVazias(10, 4), larguras: [220, 420, 140, 240] }] }
+
 // ── Abas do topo (além de Listas) ──
 const ABAS_TOPO = [
   { key: 'listas', label: 'Listas' },
+  { key: 'servicos_valores', label: 'Serviços Internos (Valores)' },
+  { key: 'pacotes', label: 'Preço de Pacotes' },
   { key: 'telefones', label: 'Telefones Importantes' },
   { key: 'ata', label: 'Ata de Reunião' },
   { key: 'escala', label: 'Escala de Trabalho' },
   { key: 'feriados', label: 'Escala de Feriados' },
+  { key: 'pop', label: 'POP' },
   { key: 'senhas', label: 'Senhas' },
 ]
 
@@ -99,6 +107,7 @@ export default function SalaoAdministrativoPage() {
   const [profsSalao, setProfsSalao] = useState<ProfSalao[]>([])
   const [servico, setServico] = useState('realinhamento')
   const [abaTopo, setAbaTopo] = useState('listas')
+  const [abaPop, setAbaPop] = useState('cafe')
   const [historico, setHistorico] = useState<any[]>([])
   const [verHistorico, setVerHistorico] = useState(false)
 
@@ -139,23 +148,18 @@ export default function SalaoAdministrativoPage() {
         </div>
 
         {abaTopo === 'listas' && (<>
-          {/* Sub-abas de serviços (com contador) */}
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
-            {SERVICOS.map(s => (
-              <button key={s.key} onClick={() => setServico(s.key)}
-                style={{ padding: '9px 16px', borderRadius: 10, border: servico === s.key ? 'none' : '1.5px solid #e0ddd8', background: servico === s.key ? '#1a1a1a' : '#fff', color: servico === s.key ? '#fff' : '#6b6860', fontSize: 13.5, fontWeight: 700, cursor: 'pointer' }}>
-                Lista de {s.label}
-              </button>
-            ))}
-          </div>
-          {/* Sub-abas de preenchimento livre (sem contador) */}
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
-            {TAB_GRIDS.map(g => (
-              <button key={g.key} onClick={() => setServico(g.key)}
-                style={{ padding: '9px 16px', borderRadius: 10, border: servico === g.key ? 'none' : '1.5px solid #e0ddd8', background: servico === g.key ? '#5b4fcf' : '#fff', color: servico === g.key ? '#fff' : '#6b6860', fontSize: 13.5, fontWeight: 700, cursor: 'pointer' }}>
-                {g.label}
-              </button>
-            ))}
+          {/* Seletor de lista (dropdown organizado) */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 16 }}>
+            <label style={{ fontSize: 13, fontWeight: 700, color: '#6b6860' }}>Escolha a lista:</label>
+            <select value={servico} onChange={e => setServico(e.target.value)}
+              style={{ padding: '10px 14px', borderRadius: 10, border: '1.5px solid #5b4fcf', background: '#f0eefb', color: '#1a1a1a', fontSize: 14, fontWeight: 700, cursor: 'pointer', minWidth: 260 }}>
+              <optgroup label="Contagem de serviços (com rodízio)">
+                {SERVICOS.map(s => <option key={s.key} value={s.key}>Lista de {s.label}</option>)}
+              </optgroup>
+              <optgroup label="Preenchimento livre">
+                {TAB_GRIDS.map(g => <option key={g.key} value={g.key}>{g.label}</option>)}
+              </optgroup>
+            </select>
           </div>
 
           {SERVICOS.some(s => s.key === servico)
@@ -165,11 +169,26 @@ export default function SalaoAdministrativoPage() {
               : (() => { const g = GRIDS.find(x => x.key === servico)!; return <GridEditavel key={servico} chave={g.key} defaultDoc={g.doc} mensal={g.mensal} landscape={g.landscape} /> })()}
         </>)}
 
+        {abaTopo === 'servicos_valores' && <ListaPrecoServicos />}
+        {abaTopo === 'pacotes' && <GridEditavel key="pacotes" chave="pacotes" defaultDoc={DEFAULT_PACOTES} landscape />}
         {abaTopo === 'telefones' && <ListaTelefones />}
         {abaTopo === 'ata' && <GridEditavel key="ata" chave="ata" defaultDoc={DEFAULT_ATA} />}
         {abaTopo === 'escala' && <GridEditavel key="escala" chave="escala" defaultDocFn={escalaDoMes} mensal landscape />}
         {abaTopo === 'feriados' && <GridEditavel key="feriados" chave="feriados" defaultDoc={DEFAULT_FERIADOS} landscape />}
         {abaTopo === 'senhas' && <GridEditavel key="senhas" chave="senhas" defaultDoc={DEFAULT_SENHAS} />}
+
+        {abaTopo === 'pop' && (<>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+            {[{ key: 'cafe', label: 'Preparo de Café' }, { key: 'salao', label: 'POP Salão' }].map(p => (
+              <button key={p.key} onClick={() => setAbaPop(p.key)}
+                style={{ padding: '9px 16px', borderRadius: 10, border: abaPop === p.key ? 'none' : '1.5px solid #e0ddd8', background: abaPop === p.key ? '#1a1a1a' : '#fff', color: abaPop === p.key ? '#fff' : '#6b6860', fontSize: 13.5, fontWeight: 700, cursor: 'pointer' }}>
+                {p.label}
+              </button>
+            ))}
+          </div>
+          {abaPop === 'cafe' && <DocEditavel key="pop_cafe" chave="pop_cafe" tituloPadrao="PREPARO DE SERVIÇOS — CAFÉ" blocosPadrao={CAFE_BLOCOS} />}
+          {abaPop === 'salao' && <DocEditavel key="pop_salao" chave="pop_salao" tituloPadrao="POP — PROCEDIMENTO DE OPERAÇÃO PADRÃO" blocosPadrao={POP_SALAO_BLOCOS} />}
+        </>)}
       </div>
 
       {verHistorico && (
