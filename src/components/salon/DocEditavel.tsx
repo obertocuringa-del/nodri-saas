@@ -17,14 +17,25 @@ function AutoTextarea({ value, onChange, style, placeholder }: { value: string; 
 export default function DocEditavel({ chave, tituloPadrao, blocosPadrao, corTema = '#5b4fcf' }: { chave: string; tituloPadrao: string; blocosPadrao: { titulo: string; corpo: string }[]; corTema?: string }) {
   const [titulo, setTitulo] = useState(tituloPadrao)
   const [blocos, setBlocos] = useState<Bloco[]>(() => blocosPadrao.map(b => ({ id: rid(), ...b })))
+  const [logo, setLogo] = useState('')
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
   const [dirty, setDirty] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  function onLogo(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0]; if (!f) return
+    if (!f.type.startsWith('image/')) { toast.error('Selecione uma imagem'); return }
+    if (f.size > 1.5 * 1024 * 1024) { toast.error('Imagem muito grande (máx. 1,5 MB)'); return }
+    const reader = new FileReader()
+    reader.onload = () => { setLogo(String(reader.result || '')); setDirty(true) }
+    reader.readAsDataURL(f)
+  }
 
   const carregar = useCallback(async () => {
     try {
       const d = await fetch(`/api/salon/grid?chave=${encodeURIComponent(chave)}`).then(r => r.ok ? r.json() : null)
-      if (d && Array.isArray(d.blocos)) { setTitulo(d.titulo || tituloPadrao); setBlocos(d.blocos) }
+      if (d && Array.isArray(d.blocos)) { setTitulo(d.titulo || tituloPadrao); setBlocos(d.blocos); setLogo(d.logo || '') }
     } catch { /* */ }
     setLoading(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -41,7 +52,7 @@ export default function DocEditavel({ chave, tituloPadrao, blocosPadrao, corTema
   async function salvar() {
     setSalvando(true)
     try {
-      const res = await fetch('/api/salon/grid', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chave, doc: { titulo, blocos } }) })
+      const res = await fetch('/api/salon/grid', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chave, doc: { titulo, blocos, logo } }) })
       if (res.ok) { toast.success('Salvo!'); setDirty(false) } else toast.error('Erro ao salvar')
     } catch { toast.error('Erro de conexão') }
     setSalvando(false)
@@ -51,7 +62,8 @@ export default function DocEditavel({ chave, tituloPadrao, blocosPadrao, corTema
     const esc = (v: string) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>')
     const corpo = blocos.map(b => `<div class="bl"><h2>${esc(b.titulo)}</h2><div class="tx">${esc(b.corpo)}</div></div>`).join('')
     const css = `@page{size:A4 portrait;margin:14mm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;font-size:12px;line-height:1.5}.hd{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid ${corTema};padding-bottom:8px;margin-bottom:14px}.brand{font-size:24px;font-weight:900;color:${corTema}}h1{font-size:16px;text-align:center;margin-bottom:14px;color:#1a1a2e}.bl{margin-bottom:14px;break-inside:avoid}h2{font-size:13px;color:${corTema};font-weight:800;border-bottom:1px solid #ddd;padding-bottom:3px;margin-bottom:5px}.tx{white-space:pre-wrap;font-size:11.5px}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}`
-    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${esc(titulo)}</title><style>${css}</style></head><body><div class="hd"><div class="brand">NODRI</div><div style="text-align:right;font-size:11px">${new Date().toLocaleDateString('pt-BR')}</div></div><h1>${esc(titulo)}</h1>${corpo}<script>window.onload=function(){window.print()}</script></body></html>`
+    const cabec = logo ? `<img src="${logo}" style="max-height:64px;max-width:220px"/>` : `<div class="brand">NODRI</div>`
+    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${esc(titulo)}</title><style>${css}</style></head><body><div class="hd">${cabec}<div style="text-align:right;font-size:11px">${new Date().toLocaleDateString('pt-BR')}</div></div><h1>${esc(titulo)}</h1>${corpo}<script>window.onload=function(){window.print()}</script></body></html>`
     const w = window.open('', '_blank', 'width=900,height=700'); if (!w) return; w.document.write(html); w.document.close(); w.focus()
   }
 
@@ -59,6 +71,24 @@ export default function DocEditavel({ chave, tituloPadrao, blocosPadrao, corTema
 
   return (
     <div>
+      {/* Espaço para anexar a logo */}
+      <div style={{ marginBottom: 12 }}>
+        <input ref={fileRef} type="file" accept="image/*" onChange={onLogo} style={{ display: 'none' }} />
+        {logo ? (
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: 10 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={logo} alt="logo" style={{ maxHeight: 60, maxWidth: 200, objectFit: 'contain', borderRadius: 6 }} />
+            <button onClick={() => fileRef.current?.click()} style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid #d0cdc7', background: '#fff', color: '#5b4fcf', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Trocar</button>
+            <button onClick={() => { setLogo(''); setDirty(true) }} style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid #fca5a5', background: '#fff', color: '#dc2626', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Remover</button>
+          </div>
+        ) : (
+          <button onClick={() => fileRef.current?.click()} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 20px', borderRadius: 12, border: '2px dashed #c9c4f0', background: '#f6f4ff', color: '#5b4fcf', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+            🖼️ Anexar logo (clique para escolher a imagem)
+          </button>
+        )}
+        <p style={{ fontSize: 11, color: '#9ca3af', margin: '6px 0 0' }}>A logo aparece no topo e na impressão. Lembre de <strong>Salvar</strong>. (imagem até 1,5 MB)</p>
+      </div>
+
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
         <input value={titulo} onChange={e => { setTitulo(e.target.value); setDirty(true) }} style={{ fontSize: 16, fontWeight: 800, color: corTema, border: 'none', background: 'transparent', outline: 'none', flex: 1, minWidth: 200 }} />
         <button onClick={imprimir} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 8, border: '1px solid #d0cdc7', background: '#fff', color: '#374151', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}><Printer size={14} /> Imprimir</button>
