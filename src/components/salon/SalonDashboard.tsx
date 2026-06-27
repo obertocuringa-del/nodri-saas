@@ -103,6 +103,17 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
   const pode = (chave: string) => !ehSub || (permissoes as string[]).includes(chave)
   const [filtro, setFiltro] = useState<'todos' | 'ativos' | 'bloqueados'>('ativos')
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  // Lembrete de compromissos do Calendário (faltam até 2 dias) — abre ao abrir o app
+  const [lembretesCal, setLembretesCal] = useState<{ id: string; data: string; texto: string }[]>([])
+  const [lembreteCalAberto, setLembreteCalAberto] = useState(true)
+  useEffect(() => {
+    fetch('/api/salon/grid?chave=calendario').then(r => r.ok ? r.json() : null).then(d => {
+      if (!d || !Array.isArray(d.eventos)) return
+      const h = new Date(); h.setHours(0, 0, 0, 0)
+      const prox = d.eventos.filter((e: any) => { const [y, m, dd] = String(e.data).split('-').map(Number); const n = Math.round((new Date(y, m - 1, dd).getTime() - h.getTime()) / 86400000); return n >= 0 && n <= 2 })
+      if (prox.length) setLembretesCal(prox)
+    }).catch(() => { })
+  }, [])
   const [notifDismissed, setNotifDismissed] = useState(false)
   const [notifIndex, setNotifIndex] = useState(0)
   const [busca, setBusca] = useState('')
@@ -315,6 +326,31 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
   return (
     <div className="nodri-salon-bg h-screen flex flex-col overflow-hidden">
 
+      {/* ANÚNCIO — compromissos do Calendário chegando (faltam até 2 dias) */}
+      {lembretesCal.length > 0 && lembreteCalAberto && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div style={{ background: '#fff', borderRadius: 18, maxWidth: 420, width: '100%', overflow: 'hidden', boxShadow: '0 24px 70px rgba(0,0,0,.35)' }}>
+            <div style={{ background: 'linear-gradient(135deg,#ef4444,#db2777)', color: '#fff', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontWeight: 800, fontSize: 16, display: 'flex', alignItems: 'center', gap: 8 }}>📅 Compromissos chegando!</span>
+              <button onClick={() => setLembreteCalAberto(false)} style={{ border: 'none', background: 'rgba(255,255,255,.25)', color: '#fff', borderRadius: 8, width: 30, height: 30, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={18} /></button>
+            </div>
+            <div style={{ padding: 20 }}>
+              {lembretesCal.map(e => {
+                const [y, m, dd] = e.data.split('-').map(Number); const h = new Date(); h.setHours(0, 0, 0, 0)
+                const n = Math.round((new Date(y, m - 1, dd).getTime() - h.getTime()) / 86400000)
+                return (
+                  <div key={e.id} style={{ display: 'flex', gap: 10, padding: '10px 0', borderBottom: '1px solid #f0eee8' }}>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: '#fff', background: n === 0 ? '#dc2626' : '#f59e0b', borderRadius: 20, padding: '3px 10px', height: 'fit-content', whiteSpace: 'nowrap' }}>{n === 0 ? 'HOJE' : n === 1 ? 'AMANHÃ' : `${n} DIAS`}</span>
+                    <span style={{ fontSize: 14, color: '#1a1a1a' }}>{e.texto}</span>
+                  </div>
+                )
+              })}
+              <button onClick={() => { setLembreteCalAberto(false); window.location.href = '/salon/calendario' }} style={{ marginTop: 14, width: '100%', padding: '11px', borderRadius: 10, border: 'none', background: '#5b4fcf', color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>Ver no Calendário</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* FAIXA DE IMPERSONAÇÃO */}
       {impersonandoNome && (
         <div className="flex items-center justify-between px-4 py-2 text-[12px] font-bold z-[60] sticky top-0"
@@ -414,6 +450,8 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               { href: '/salon/aniversariantes', label: 'Aniversariantes do Mês', chave: 'aniversariantes' },
               { href: '/salon/administrativo', label: 'Salão Administrativo', chave: 'administrativo' },
               { href: '/salon/checklist', label: 'Check List', chave: 'checklist' },
+              { href: '/salon/calendario', label: 'Calendário', chave: 'calendario' },
+              { href: '/salon/calendario-mkt', label: 'Calendário de Marketing', chave: 'calendario_mkt' },
               { href: '/salon/usuarios', label: 'Usuários & Acessos', chave: 'cfg_usuarios' },
             ].filter(item => pode(item.chave)).map(item => (
               <a key={item.href} href={item.href}
