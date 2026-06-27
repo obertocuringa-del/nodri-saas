@@ -266,6 +266,7 @@ export default function RelatoriosPage() {
   const { pode: podePerm, carregado: permCarregado } = usePermissoes()
   const TAB_PERM: Record<string, string> = { geral: 'rel_aba_geral', metas: 'rel_aba_metas', meta_prof: 'rel_aba_metaprof', redistribuicao: 'rel_aba_redistribuicao', analise: 'rel_aba_mais', ranking: 'rel_aba_unificado' }
   const SUBS_REL = ['risco', 'perdidos', 'vip', 'regular', 'novo', 'crosssell', 'frequencia', 'diasemana', 'recuperados']
+  const algumaAbaRel = ['geral', 'metas', 'meta_prof', 'redistribuicao', 'analise', 'ranking'].some(t => podePerm(TAB_PERM[t]))
   // Sub-usuário: cai numa aba/relatório que ele pode ver
   useEffect(() => {
     if (!permCarregado) return
@@ -1111,6 +1112,12 @@ export default function RelatoriosPage() {
           </div>
 
           <div style={{ flex: 1, padding: '20px', overflowY: 'auto' }} ref={printRelRef}>
+
+            {permCarregado && !algumaAbaRel && (
+              <div style={{ padding: 50, textAlign: 'center', color: '#6b6860', fontSize: 14, background: '#fff', border: '1px dashed #d0cdc7', borderRadius: 12 }}>
+                🔒 Você não tem relatórios liberados no seu acesso.<br />Peça ao administrador do salão para liberar em <strong>Usuários &amp; Acessos</strong>.
+              </div>
+            )}
 
             {!isMobile && (
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
