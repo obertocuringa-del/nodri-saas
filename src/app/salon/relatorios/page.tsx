@@ -9,6 +9,7 @@ import BotaoRecuperacao from '@/components/salon/BotaoRecuperacao'
 import RecuperadosReport from '@/components/salon/RecuperadosReport'
 import DiaSemanaReport from '@/components/salon/DiaSemanaReport'
 import { useIsMobile } from '@/lib/useIsMobile'
+import { usePermissoes } from '@/lib/usePermissoes'
 
 // ─── ORDENAÇÃO DE TABELAS (reutilizável) ─────────────────────────────────────
 // Converte um valor para uma chave ordenável: detecta número, data BR (DD/MM/YYYY)
@@ -262,6 +263,7 @@ export default function RelatoriosPage() {
   const [profsCadastrados, setProfsCadastrados] = useState<ProfCadastrado[]>([])
   const [aba, setAba] = useState<'geral' | 'metas' | 'profissionais' | 'feedbacks' | 'meta_prof' | 'redistribuicao' | 'analise' | 'ranking'>('geral')
   const [dropdownAberto, setDropdownAberto] = useState(false)
+  const { pode: podePerm } = usePermissoes()
   const [subAnalise, setSubAnalise] = useState<'risco' | 'perdidos' | 'vip' | 'regular' | 'novo' | 'crosssell' | 'frequencia' | 'diasemana' | 'recuperados'>('risco')
   const [freqModal, setFreqModal] = useState<{ label: string; min: number; max: number } | null>(null)
   const [freqClientes, setFreqClientes] = useState<any[]>([])
@@ -1057,7 +1059,7 @@ export default function RelatoriosPage() {
                     { id: 'frequencia', icon: <RefreshCw size={13} />, label: 'Frequência', desc: 'Com que frequência voltam' },
                     { id: 'diasemana', icon: <BarChart2 size={13} />, label: 'Dia da Semana', desc: 'Melhores dias do salão' },
                     { id: 'recuperados', icon: <RefreshCw size={13} />, label: 'Clientes Recuperados', desc: 'Voltaram após contato' },
-                  ].map(item => (
+                  ].filter(item => podePerm('rel_' + item.id)).map(item => (
                     <button key={item.id} onClick={() => {
                       setAba('analise')
                       setSubAnalise(item.id as any)
@@ -2488,7 +2490,7 @@ ${lista.map((c:any,i:number)=>{
                             <h3 style={{ color: subAnalise === 'risco' ? '#f97316' : '#ef4444', fontSize: 14, fontWeight: 700, margin: 0 }}>
                               {analiseDetalhe.length} clientes {subAnalise === 'risco' ? 'em risco' : 'perdidas'}
                             </h3>
-                            {subAnalise === 'perdidos' && analiseResumo?.ltv_total_perdidos > 0 && (
+                            {subAnalise === 'perdidos' && analiseResumo?.ltv_total_perdidos > 0 && podePerm('rel_valores') && (
                               <div style={{ fontSize: 12, color: '#ef4444', fontWeight: 700, marginTop: 4 }}>
                                 💸 Dinheiro perdido: <span style={{ fontSize: 15 }}>{moeda(analiseResumo.ltv_total_perdidos)}</span>
                                 <span style={{ fontSize: 10, color: '#767069', marginLeft: 6 }}>soma do LTV de todos os clientes perdidos</span>

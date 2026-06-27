@@ -61,6 +61,20 @@ export const CATALOGO_PERMISSOES: PermGrupo[] = [
     ]
   },
   {
+    grupo: 'Relatórios — seções', itens: [
+      { chave: 'rel_risco', label: 'Em Risco' },
+      { chave: 'rel_perdidos', label: 'Perdidos' },
+      { chave: 'rel_vip', label: 'VIP' },
+      { chave: 'rel_regular', label: 'Regular' },
+      { chave: 'rel_novo', label: 'Novos' },
+      { chave: 'rel_crosssell', label: 'Cross-sell' },
+      { chave: 'rel_frequencia', label: 'Frequência' },
+      { chave: 'rel_diasemana', label: 'Dia da Semana' },
+      { chave: 'rel_recuperados', label: 'Clientes Recuperados' },
+      { chave: 'rel_valores', label: 'Ver valores em R$ (LTV / dinheiro perdido)' },
+    ]
+  },
+  {
     grupo: 'Dados sensíveis (ocultar informação)', itens: [
       { chave: 'dado_financeiro', label: 'Valores e faturamento' },
       { chave: 'dado_comissoes', label: 'Comissões / rateio / vales' },
@@ -81,6 +95,23 @@ export const CATALOGO_PERMISSOES: PermGrupo[] = [
 ]
 
 export const TODAS_CHAVES = CATALOGO_PERMISSOES.flatMap(g => g.itens.map(i => i.chave))
+
+// Gera a chave de permissão de um módulo a partir do nome (usada no dashboard e nas permissões)
+export function chaveModulo(nome: string): string {
+  const n = (nome || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+  if (n.includes('profission')) return 'profissionais'
+  if (n.includes('relator')) return 'relatorios'
+  if (n.includes('calcul') || n.includes('custo')) return 'calculadora'
+  if (n.includes('academ')) return 'academia'
+  if (n.includes('check')) return 'checklist'
+  if (n.includes('administrativ')) return 'administrativo'
+  if (n.includes('espera')) return 'lista_espera'
+  if (n.includes('aniversar')) return 'aniversariantes'
+  if (n.includes('pendenc')) return 'pendencias'
+  if (n.includes('feedback') && n.includes('profission')) return 'feedback_prof'
+  if (n.includes('feedback')) return 'feedback_cliente'
+  return 'modulo_' + n.replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 24)
+}
 
 // Papéis prontos (sugestões) — o dono aplica e ajusta como quiser
 export const PAPEIS_SUGERIDOS: { nome: string; permissoes: string[] }[] = [

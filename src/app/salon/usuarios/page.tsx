@@ -4,13 +4,14 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Loader2, Plus, Save, Trash2, X, UserPlus, Check, Lock, Pencil } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { CATALOGO_PERMISSOES, TODAS_CHAVES, PAPEIS_SUGERIDOS } from '@/lib/permissoes'
+import { CATALOGO_PERMISSOES, TODAS_CHAVES, PAPEIS_SUGERIDOS, chaveModulo } from '@/lib/permissoes'
 
 interface Usuario { id: string; nome?: string; usuario: string; papel?: string; permissoes: string[]; ativo: boolean }
 
 export default function UsuariosPage() {
   const router = useRouter()
   const [lista, setLista] = useState<Usuario[]>([])
+  const [modulos, setModulos] = useState<{ id: string; nome: string }[]>([])
   const [loading, setLoading] = useState(true)
   const [editando, setEditando] = useState<Usuario | 'novo' | null>(null)
   const [nome, setNome] = useState('')
@@ -22,9 +23,14 @@ export default function UsuariosPage() {
 
   const carregar = useCallback(async () => {
     try { const d = await fetch('/api/salon/usuarios').then(r => r.ok ? r.json() : []); setLista(Array.isArray(d) ? d : []) } catch { /* */ }
+    try { const m = await fetch('/api/salon/modulos').then(r => r.ok ? r.json() : []); setModulos(Array.isArray(m) ? m : []) } catch { /* */ }
     setLoading(false)
   }, [])
   useEffect(() => { carregar() }, [carregar])
+
+  // chaves de todos os módulos (cards) — dedup
+  const moduloItens = Array.from(new Map(modulos.map(m => [chaveModulo(m.nome), m.nome])).entries()).map(([chave, nome]) => ({ chave, label: nome }))
+  const TODAS_COM_MODULOS = [...TODAS_CHAVES, ...moduloItens.map(i => i.chave)]
 
   function abrirNovo() { setEditando('novo'); setNome(''); setUsuario(''); setSenha(''); setPapel(''); setPerms(new Set()) }
   function abrirEdit(u: Usuario) { setEditando(u); setNome(u.nome || ''); setUsuario(u.usuario); setSenha(''); setPapel(u.papel || ''); setPerms(new Set(u.permissoes || [])) }
@@ -83,9 +89,9 @@ export default function UsuariosPage() {
               <span style={{ fontSize: 11, color: '#9ca3af' }}>(aplica uma sugestão; você ajusta depois)</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, flexWrap: 'wrap', gap: 8 }}>
-              <div style={{ fontSize: 13, fontWeight: 800, color: '#5b4fcf' }}>Liberações <span style={{ color: '#9ca3af', fontWeight: 600 }}>· {perms.size} de {TODAS_CHAVES.length}</span></div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: '#5b4fcf' }}>Liberações <span style={{ color: '#9ca3af', fontWeight: 600 }}>· {perms.size} de {TODAS_COM_MODULOS.length}</span></div>
               <div style={{ display: 'flex', gap: 6 }}>
-                <button onClick={() => setPerms(new Set(TODAS_CHAVES))} style={btnMini}>Liberar tudo</button>
+                <button onClick={() => setPerms(new Set(TODAS_COM_MODULOS))} style={btnMini}>Liberar tudo</button>
                 <button onClick={() => setPerms(new Set())} style={btnMini}>Bloquear tudo</button>
               </div>
             </div>
@@ -114,6 +120,30 @@ export default function UsuariosPage() {
                 </div>
               )
             })}
+
+            {moduloItens.length > 0 && (() => {
+              const chaves = moduloItens.map(i => i.chave)
+              const todos = chaves.every(c => perms.has(c))
+              return (
+                <div style={{ border: '1px solid #ece9e2', borderRadius: 10, padding: 12, marginBottom: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <span style={{ fontSize: 12, fontWeight: 800, color: '#374151', textTransform: 'uppercase', letterSpacing: .4 }}>Módulos (cards da tela inicial)</span>
+                    <button onClick={() => toggleGrupo(chaves, !todos)} style={{ ...btnMini, fontSize: 11 }}>{todos ? 'Bloquear grupo' : 'Liberar grupo'}</button>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 6 }}>
+                    {moduloItens.map(it => {
+                      const on = perms.has(it.chave)
+                      return (
+                        <button key={it.chave} onClick={() => toggle(it.chave)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, border: `1px solid ${on ? '#16a34a' : '#e0ddd8'}`, background: on ? '#f0fdf4' : '#fff', cursor: 'pointer', textAlign: 'left' }}>
+                          <span style={{ width: 18, height: 18, borderRadius: 5, background: on ? '#16a34a' : '#e5e7eb', color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{on ? <Check size={12} /> : <Lock size={10} />}</span>
+                          <span style={{ fontSize: 12.5, color: on ? '#166534' : '#6b6860', fontWeight: on ? 700 : 500 }}>{it.label}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })()}
 
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 14 }}>
               <button onClick={fechar} style={{ padding: '10px 18px', borderRadius: 10, border: '1px solid #d0cdc7', background: '#fff', color: '#6b6860', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Cancelar</button>

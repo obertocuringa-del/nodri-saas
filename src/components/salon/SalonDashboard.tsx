@@ -5,6 +5,7 @@ import { Bell, Settings, CheckCircle, X, Zap, Play, Search, ChevronDown, ArrowRi
 import ChatWidget from './ChatWidget'
 import toast from 'react-hot-toast'
 import type { ModuloComStatus, Notificacao } from '@/types'
+import { chaveModulo } from '@/lib/permissoes'
 
 const MENU_LINKS: Record<string, { title: string; url: string }[]> = {
   'Manual do Usuário': [
@@ -84,25 +85,6 @@ interface Props {
   totalModulos: number
   permissoes?: string[] | null
   nomeUsuario?: string | null
-}
-
-// Mapeia o nome de um módulo para a chave de permissão (heurística)
-function chaveModulo(nome: string): string {
-  const n = (nome || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
-  if (n.includes('profission')) return 'profissionais'
-  if (n.includes('servico')) return 'servicos'
-  if (n.includes('relator')) return 'relatorios'
-  if (n.includes('calcul') || n.includes('custo')) return 'calculadora'
-  if (n.includes('academ')) return 'academia'
-  if (n.includes('check')) return 'checklist'
-  if (n.includes('administrativ')) return 'administrativo'
-  if (n.includes('espera')) return 'lista_espera'
-  if (n.includes('aniversar')) return 'aniversariantes'
-  if (n.includes('pendenc')) return 'pendencias'
-  if (n.includes('feedback') && n.includes('profission')) return 'feedback_prof'
-  if (n.includes('feedback')) return 'feedback_cliente'
-  if (n.includes(' ia') || n.includes('inteligenc') || n.startsWith('ia')) return 'ia'
-  return 'modulo_' + n.replace(/[^a-z0-9]+/g, '_').slice(0, 20)
 }
 
 if (typeof document !== 'undefined') {
