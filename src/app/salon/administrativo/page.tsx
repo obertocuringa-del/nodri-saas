@@ -10,6 +10,14 @@ import ListaTelefones from '@/components/salon/ListaTelefones'
 import ListaPrecoServicos from '@/components/salon/ListaPrecoServicos'
 import DocEditavel from '@/components/salon/DocEditavel'
 import { CAFE_BLOCOS, POP_SALAO_BLOCOS } from '@/components/salon/popDefaults'
+import { usePermissoes } from '@/lib/usePermissoes'
+
+// Mapeia cada aba do topo para a chave de permissão
+const ABA_CHAVE: Record<string, string> = {
+  listas: 'adm_listas', servicos_valores: 'adm_servicos_valores', tratamentos: 'adm_tratamentos',
+  pacotes: 'adm_pacotes', telefones: 'adm_telefones', ata: 'adm_ata', escala: 'adm_escala',
+  feriados: 'adm_feriados', pop: 'adm_pop', senhas: 'adm_senhas',
+}
 
 interface ProfSalao { id: string; nome: string; telefone: string }
 interface Coluna { id: string; nome: string; telefone: string }
@@ -111,6 +119,13 @@ export default function SalaoAdministrativoPage() {
   const [abaPop, setAbaPop] = useState('cafe')
   const [historico, setHistorico] = useState<any[]>([])
   const [verHistorico, setVerHistorico] = useState(false)
+  const { pode: podeP, carregado: permCarregado } = usePermissoes()
+  const abasVisiveis = ABAS_TOPO.filter(a => podeP(ABA_CHAVE[a.key] || a.key))
+  // se a aba atual não está liberada, vai pra primeira liberada
+  useEffect(() => {
+    if (permCarregado && abasVisiveis.length && !abasVisiveis.some(a => a.key === abaTopo)) setAbaTopo(abasVisiveis[0].key)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [permCarregado])
 
   useEffect(() => {
     fetch('/api/profissionais').then(r => r.ok ? r.json() : []).then((arr: any[]) => {
@@ -140,7 +155,7 @@ export default function SalaoAdministrativoPage() {
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: 16 }}>
         {/* Abas do topo */}
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 18, borderBottom: '1px solid #ece9e2', paddingBottom: 12 }}>
-          {ABAS_TOPO.map(a => (
+          {abasVisiveis.map(a => (
             <button key={a.key} onClick={() => setAbaTopo(a.key)}
               style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: abaTopo === a.key ? '1px solid #5b4fcf' : '1px solid #e0ddd8', background: abaTopo === a.key ? '#5b4fcf' : '#fff', color: abaTopo === a.key ? '#fff' : '#6b6860', fontSize: 13, fontWeight: 700, cursor: 'pointer', transition: 'all .15s' }}>
               {a.key === 'listas' && <ListChecks size={14} />}{a.label}

@@ -2534,7 +2534,7 @@ ${lista.map((c:any,i:number)=>{
                                 <tr key={i} style={{ borderBottom: '1px solid #e8e6e0', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
                                   <td style={{ padding: '9px 12px', fontSize: 12, color: '#1a1a1a', fontWeight: 600 }}>{c.cliente_nome}</td>
                                   <td style={{ padding: '9px 12px', fontSize: 11, color: '#5b4fcf' }}>{c.celular || '—'}</td>
-                                  <td style={{ padding: '9px 12px', fontSize: 12, color: '#059669', fontWeight: 700 }}>{moeda(c.ltv_total)}</td>
+                                  <td style={{ padding: '9px 12px', fontSize: 12, color: '#059669', fontWeight: 700 }}>{podePerm('rel_valores') ? moeda(c.ltv_total) : '•••'}</td>
                                   <td style={{ padding: '9px 12px', fontSize: 12, color: '#767069' }}>{c.total_visitas}x</td>
                                   <td style={{ padding: '9px 12px', fontSize: 11, color: '#767069' }}>{c.ultima_visita}</td>
                                   <td style={{ padding: '9px 12px', fontSize: 12, color: subAnalise === 'risco' ? '#f97316' : '#ef4444', fontWeight: 700 }}>{c.dias_desde_ultima_visita}d</td>
@@ -2607,7 +2607,7 @@ ${lista.map((c:any,i:number)=>{
                                 <tr key={i} style={{ borderBottom: '1px solid #e8e6e0', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
                                   <td style={{ padding: '9px 12px', fontSize: 12, color: '#1a1a1a', fontWeight: 600 }}>{c.cliente_nome}</td>
                                   <td style={{ padding: '9px 12px', fontSize: 11, color: '#5b4fcf' }}>{c.celular || '—'}</td>
-                                  <td style={{ padding: '9px 12px', fontSize: 12, color: '#059669', fontWeight: 700 }}>{moeda(c.ltv_total)}</td>
+                                  <td style={{ padding: '9px 12px', fontSize: 12, color: '#059669', fontWeight: 700 }}>{podePerm('rel_valores') ? moeda(c.ltv_total) : '•••'}</td>
                                   <td style={{ padding: '9px 12px', fontSize: 12, color: '#767069' }}>{c.total_visitas}x</td>
                                   <td style={{ padding: '9px 12px', fontSize: 11, color: '#767069' }}>{c.ultima_visita}</td>
                                   <td style={{ padding: '9px 12px', fontSize: 11, color: '#0891b2' }}>{c.intervalo_medio_dias ? `a cada ${c.intervalo_medio_dias}d` : '—'}</td>
