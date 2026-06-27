@@ -61,7 +61,17 @@ export const CATALOGO_PERMISSOES: PermGrupo[] = [
     ]
   },
   {
-    grupo: 'Relatórios — seções', itens: [
+    grupo: 'Relatórios — abas do topo', itens: [
+      { chave: 'rel_aba_geral', label: 'Geral (faturamento, ticket, crescimentos…)' },
+      { chave: 'rel_aba_metas', label: 'Metas' },
+      { chave: 'rel_aba_metaprof', label: 'Meta Prof.' },
+      { chave: 'rel_aba_redistribuicao', label: 'Redistribuição' },
+      { chave: 'rel_aba_mais', label: 'Mais Relatórios (Em Risco, Perdidos…)' },
+      { chave: 'rel_aba_unificado', label: 'Relatório Unificado Profissionais' },
+    ]
+  },
+  {
+    grupo: 'Relatórios — seções de "Mais Relatórios"', itens: [
       { chave: 'rel_risco', label: 'Em Risco' },
       { chave: 'rel_perdidos', label: 'Perdidos' },
       { chave: 'rel_vip', label: 'VIP' },

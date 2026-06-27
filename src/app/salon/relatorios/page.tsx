@@ -263,7 +263,22 @@ export default function RelatoriosPage() {
   const [profsCadastrados, setProfsCadastrados] = useState<ProfCadastrado[]>([])
   const [aba, setAba] = useState<'geral' | 'metas' | 'profissionais' | 'feedbacks' | 'meta_prof' | 'redistribuicao' | 'analise' | 'ranking'>('geral')
   const [dropdownAberto, setDropdownAberto] = useState(false)
-  const { pode: podePerm } = usePermissoes()
+  const { pode: podePerm, carregado: permCarregado } = usePermissoes()
+  const TAB_PERM: Record<string, string> = { geral: 'rel_aba_geral', metas: 'rel_aba_metas', meta_prof: 'rel_aba_metaprof', redistribuicao: 'rel_aba_redistribuicao', analise: 'rel_aba_mais', ranking: 'rel_aba_unificado' }
+  const SUBS_REL = ['risco', 'perdidos', 'vip', 'regular', 'novo', 'crosssell', 'frequencia', 'diasemana', 'recuperados']
+  // Sub-usuário: cai numa aba/relatório que ele pode ver
+  useEffect(() => {
+    if (!permCarregado) return
+    if (!podePerm(TAB_PERM[aba])) {
+      const t = ['analise', 'geral', 'metas', 'meta_prof', 'redistribuicao', 'ranking'].find(x => podePerm(TAB_PERM[x]))
+      if (t) setAba(t as any)
+    }
+    if (podePerm('rel_aba_mais') && !podePerm('rel_' + subAnalise)) {
+      const s = SUBS_REL.find(x => podePerm('rel_' + x))
+      if (s) { setSubAnalise(s as any); if (s !== 'recuperados') carregarAnalise(s) }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [permCarregado])
   const [subAnalise, setSubAnalise] = useState<'risco' | 'perdidos' | 'vip' | 'regular' | 'novo' | 'crosssell' | 'frequencia' | 'diasemana' | 'recuperados'>('risco')
   const [freqModal, setFreqModal] = useState<{ label: string; min: number; max: number } | null>(null)
   const [freqClientes, setFreqClientes] = useState<any[]>([])
@@ -1014,26 +1029,28 @@ export default function RelatoriosPage() {
               <select value={aba === 'analise' ? `analise:${subAnalise}` : aba}
                 onChange={e => { const v = e.target.value; if (v.startsWith('analise:')) { const sub = v.slice(8); setAba('analise'); setSubAnalise(sub as any); if (sub !== 'recuperados') carregarAnalise(sub) } else { setAba(v as any) } }}
                 style={{ width: '100%', padding: '11px 12px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 14, fontWeight: 700, color: '#1a1a1a', background: '#fff', margin: '2px 0 8px' }}>
-                <option value="geral">Geral</option>
-                <option value="metas">Metas</option>
-                <option value="meta_prof">Meta Prof.</option>
-                <option value="redistribuicao">Redistribuição</option>
-                <option value="ranking">Relatório Unificado Profissionais</option>
+                {podePerm('rel_aba_geral') && <option value="geral">Geral</option>}
+                {podePerm('rel_aba_metas') && <option value="metas">Metas</option>}
+                {podePerm('rel_aba_metaprof') && <option value="meta_prof">Meta Prof.</option>}
+                {podePerm('rel_aba_redistribuicao') && <option value="redistribuicao">Redistribuição</option>}
+                {podePerm('rel_aba_unificado') && <option value="ranking">Relatório Unificado Profissionais</option>}
+                {podePerm('rel_aba_mais') && (
                 <optgroup label="Mais Relatórios">
-                  <option value="analise:risco">Em Risco</option>
-                  <option value="analise:perdidos">Perdidos</option>
-                  <option value="analise:vip">VIP</option>
-                  <option value="analise:regular">Regular</option>
-                  <option value="analise:novo">Novo</option>
-                  <option value="analise:crosssell">Cross-sell</option>
-                  <option value="analise:frequencia">Frequência</option>
-                  <option value="analise:diasemana">Dia da Semana</option>
-                  <option value="analise:recuperados">Clientes Recuperados</option>
+                  {podePerm('rel_risco') && <option value="analise:risco">Em Risco</option>}
+                  {podePerm('rel_perdidos') && <option value="analise:perdidos">Perdidos</option>}
+                  {podePerm('rel_vip') && <option value="analise:vip">VIP</option>}
+                  {podePerm('rel_regular') && <option value="analise:regular">Regular</option>}
+                  {podePerm('rel_novo') && <option value="analise:novo">Novo</option>}
+                  {podePerm('rel_crosssell') && <option value="analise:crosssell">Cross-sell</option>}
+                  {podePerm('rel_frequencia') && <option value="analise:frequencia">Frequência</option>}
+                  {podePerm('rel_diasemana') && <option value="analise:diasemana">Dia da Semana</option>}
+                  {podePerm('rel_recuperados') && <option value="analise:recuperados">Clientes Recuperados</option>}
                 </optgroup>
+                )}
               </select>
             )}
             {!isMobile && (<>
-            {([['geral', 'Geral'], ['metas', 'Metas'], ['meta_prof', 'Meta Prof.'], ['redistribuicao', 'Redistribuição']] as const).map(([id, lbl]) => (
+            {([['geral', 'Geral'], ['metas', 'Metas'], ['meta_prof', 'Meta Prof.'], ['redistribuicao', 'Redistribuição']] as const).filter(([id]) => podePerm(TAB_PERM[id])).map(([id, lbl]) => (
               <button key={id} onClick={() => setAba(id as any)}
                 style={{ padding: '8px 18px', border: 'none', borderRadius: '8px 8px 0 0', fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s', background: aba === id ? '#f5f4f0' : 'transparent', color: aba === id ? '#1a1a1a' : '#6b6860', borderBottom: aba === id ? '2px solid #5b4fcf' : '2px solid transparent', marginBottom: -1 }}>
                 {lbl}
@@ -1041,7 +1058,7 @@ export default function RelatoriosPage() {
             ))}
 
             {/* MAIS RELATÓRIOS dropdown */}
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative', ...(podePerm('rel_aba_mais') ? {} : { display: 'none' }) }}>
               <button
                 onClick={e => { e.stopPropagation(); setDropdownAberto(v => !v) }}
                 style={{ padding: '8px 14px', border: 'none', borderRadius: '8px 8px 0 0', fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s', background: aba === 'analise' ? '#f5f4f0' : 'transparent', color: aba === 'analise' ? '#f59e0b' : '#f59e0b', borderBottom: aba === 'analise' ? '2px solid #f59e0b' : '2px solid transparent', marginBottom: -1, display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -1078,10 +1095,12 @@ export default function RelatoriosPage() {
             </div>
 
             {/* ABA — Relatório Unificado Profissionais */}
+            {podePerm('rel_aba_unificado') && (
             <button onClick={() => setAba('ranking')}
               style={{ padding: '8px 14px', border: 'none', borderRadius: '8px 8px 0 0', fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s', background: aba === 'ranking' ? '#f5f4f0' : 'transparent', color: aba === 'ranking' ? '#5b4fcf' : '#5b4fcf', borderBottom: aba === 'ranking' ? '2px solid #5b4fcf' : '2px solid transparent', marginBottom: -1, display: 'flex', alignItems: 'center', gap: 5 }}>
               <BarChart2 size={13} /> Relatório Unificado Profissionais
             </button>
+            )}
 
             <div style={{ marginLeft: 'auto', padding: '6px 0', fontSize: 11, color: '#767069', alignSelf: 'center' }}>
               <span style={{ color: '#5b4fcf', fontWeight: 600 }}>{label1}</span>
@@ -1103,10 +1122,10 @@ export default function RelatoriosPage() {
             )}
 
             {/* ════════ ABA RELATÓRIO UNIFICADO PROFISSIONAIS ════════ */}
-            {aba === 'ranking' && <RankingUnificado ano={p1Ano} mes={p1Mes} />}
+            {aba === 'ranking' && podePerm('rel_aba_unificado') && <RankingUnificado ano={p1Ano} mes={p1Mes} />}
 
             {/* ════════ ABA GERAL ════════ */}
-            {aba === 'geral' && (
+            {aba === 'geral' && podePerm('rel_aba_geral') && (
               <div>
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
                   <button onClick={() => {
@@ -1179,7 +1198,7 @@ ${([['Faturamento Total',r1.fat_total,r2.fat_total],['Ticket Médio',r1.ticket,r
             )}
 
             {/* ════════ ABA METAS ════════ */}
-            {aba === 'metas' && (
+            {aba === 'metas' && podePerm('rel_aba_metas') && (
               <div>
                 {/* Gráfico comparativo anual — barras agrupadas + tendência + desvio padrão */}
                 {dados && (() => {
@@ -2371,7 +2390,7 @@ ${([['Faturamento Total',r1.fat_total,r2.fat_total],['Ticket Médio',r1.ticket,r
             })()}
 
             {/* ════════ ABA ANÁLISE DE CLIENTES ════════ */}
-            {aba === 'analise' && (
+            {aba === 'analise' && podePerm('rel_aba_mais') && (
               <div>
                 {/* Sub-menu — oculto no celular (já está na lista suspensa do topo) */}
                 {!isMobile && (
@@ -2386,7 +2405,7 @@ ${([['Faturamento Total',r1.fat_total,r2.fat_total],['Ticket Médio',r1.ticket,r
                     { id: 'frequencia', label: 'Frequência' },
                     { id: 'diasemana', label: 'Dia da Semana' },
                     { id: 'recuperados', label: '💚 Recuperados' },
-                  ].map(s => (
+                  ].filter(s => podePerm('rel_' + s.id)).map(s => (
                     <button key={s.id} onClick={() => { setSubAnalise(s.id as any); if (s.id !== 'recuperados') carregarAnalise(s.id) }}
                       style={{ padding: '6px 14px', border: 'none', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', background: subAnalise === s.id ? '#f59e0b' : '#ffffff', color: subAnalise === s.id ? '#f5f4f0' : '#767069' }}>
                       {s.label}
