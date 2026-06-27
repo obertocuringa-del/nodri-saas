@@ -151,6 +151,33 @@ export default function CalendarioEditavel({ chave, titulo, comResponsavel, camp
           </div>
         )}
 
+        {/* Próximos compromissos (agenda) */}
+        {(() => {
+          const futuros = eventos.filter(e => diasAte(e.data) >= 0).sort((a, b) => a.data.localeCompare(b.data)).slice(0, 20)
+          if (!futuros.length) return null
+          return (
+            <div style={{ marginTop: 16, background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: 16 }}>
+              <h3 style={{ fontSize: 14, fontWeight: 800, color: corTema, margin: '0 0 10px' }}>📋 Próximos compromissos</h3>
+              {futuros.map(e => {
+                const n = diasAte(e.data)
+                const badge = n === 0 ? 'HOJE' : n === 1 ? 'AMANHÃ' : `${n} dias`
+                const cor = n <= 2 ? '#dc2626' : '#0891b2'
+                return (
+                  <div key={e.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '8px 0', borderBottom: '1px solid #f0eee8' }}>
+                    <span style={{ fontSize: 10, fontWeight: 800, color: '#fff', background: cor, borderRadius: 20, padding: '3px 9px', whiteSpace: 'nowrap', flexShrink: 0, marginTop: 2 }}>{badge}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 11, color: '#9ca3af' }}>{e.data.split('-').reverse().join('/')}</div>
+                      <div style={{ fontSize: 13, color: '#1a1a1a', whiteSpace: 'pre-wrap' }}>{e.texto}</div>
+                      {e.responsavel && <div style={{ fontSize: 11, color: corTema, fontWeight: 700, marginTop: 2 }}>👤 {e.responsavel}</div>}
+                    </div>
+                    <button onClick={() => removerEvento(e.id)} title="Remover" style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', flexShrink: 0 }}><Trash2 size={14} /></button>
+                  </div>
+                )
+              })}
+            </div>
+          )
+        })()}
+
         <p style={{ fontSize: 11, color: '#9ca3af', textAlign: 'center', marginTop: 14 }}>Dias com compromisso ficam <span style={{ color: '#dc2626', fontWeight: 700 }}>em vermelho</span>. Clique numa data para adicionar, ver ou remover. {salvando && '· salvando...'}</p>
       </div>
     </div>
