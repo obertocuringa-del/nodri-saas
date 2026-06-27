@@ -1,15 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
-
-async function getSalaoId() {
-  const token = cookies().get('nodri_token')?.value
-  if (!token) return null
-  const payload = await verifyJWT(token)
-  if (!payload || !payload.salaoId) return null
-  return payload.salaoId
-}
+import { getSessao, permDaGrade } from '@/lib/apiAuth'
 
 const norm = (s: string) => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
 
@@ -54,8 +45,10 @@ function trecho(textos: string[], q: string): string {
 }
 
 export async function GET(req: NextRequest) {
-  const salaoId = await getSalaoId()
-  if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  const sessao = await getSessao()
+  if (!sessao) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  const salaoId = sessao.salaoId
+  const pode = (c: string) => sessao.permissoes === null || sessao.permissoes.includes(c)
   const q = norm(new URL(req.url).searchParams.get('q') || '').trim()
   if (q.length < 2) return NextResponse.json([])
 
@@ -67,7 +60,7 @@ export async function GET(req: NextRequest) {
     for (const row of (data || [])) {
       const textos: string[] = []
       coletarTextos(row.valor, textos)
-      if (textos.some(t => norm(t).includes(q))) {
+      if (textos.some(t => norm(t).includes(q)) && pode(permDaGrade(row.chave))) {
         const m = mapaChave(row.chave)
         resultados.push({ tipo: m.label, titulo: m.label, trecho: trecho(textos.filter(t => norm(t).includes(q)).concat(textos), q), rota: m.rota })
       }
@@ -75,7 +68,7 @@ export async function GET(req: NextRequest) {
   } catch { /* */ }
 
   // 2) Serviços
-  try {
+  if (pode('servicos')) try {
     const { data } = await supabaseAdmin.from('servicos').select('nome, categoria, preco').eq('salao_id', salaoId)
     for (const s of (data || [])) {
       if (norm(`${s.nome} ${s.categoria || ''}`).includes(q)) {
@@ -85,7 +78,7 @@ export async function GET(req: NextRequest) {
   } catch { /* */ }
 
   // 3) Profissionais
-  try {
+  if (pode('profissionais')) try {
     const { data } = await supabaseAdmin.from('profissionais').select('id, nome_completo, apelido, cargo').eq('salao_id', salaoId)
     for (const p of (data || [])) {
       if (norm(`${p.nome_completo || ''} ${p.apelido || ''} ${p.cargo || ''}`).includes(q)) {
