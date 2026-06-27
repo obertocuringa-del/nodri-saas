@@ -12,7 +12,7 @@ export default async function SalonPage() {
   if (!token) redirect('/login')
 
   const payload = await verifyJWT(token)
-  if (!payload || payload.role !== 'salon') redirect('/login')
+  if (!payload || (payload.role !== 'salon' && payload.role !== 'sub')) redirect('/login')
 
   // FIX: salaoId explicitamente validado antes de usar
   if (!payload.salaoId) redirect('/login')
@@ -69,6 +69,8 @@ export default async function SalonPage() {
       notificacoes={notificacoes || []}
       totalAtivos={totalAtivos}
       totalModulos={modulosComStatus.length}
+      permissoes={payload.role === 'sub' ? (payload.permissoes || []) : null}
+      nomeUsuario={payload.role === 'sub' ? (payload.nome || 'Usuário') : null}
     />
   )
 }

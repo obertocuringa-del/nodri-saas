@@ -12,10 +12,12 @@ const JWT_SECRET = new TextEncoder().encode(jwtSecret || 'nodri_fallback_configu
 export interface JWTPayload {
   userId: string
   email: string
-  role: 'master' | 'salon'
+  role: 'master' | 'salon' | 'sub'
   salaoId?: string
   salaoNome?: string
   plano?: string
+  permissoes?: string[]
+  nome?: string
 }
 
 export async function signJWT(payload: JWTPayload): Promise<string> {

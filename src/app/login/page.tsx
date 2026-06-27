@@ -58,10 +58,10 @@ export default function LoginPage() {
         <div className="nodri-card p-6 shadow-2xl">
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="nodri-label block mb-1.5">Email</label>
-              <input type="email" placeholder="seu@email.com" value={email}
+              <label className="nodri-label block mb-1.5">E-mail ou usuário</label>
+              <input type="text" placeholder="seu@email.com ou seu usuário" value={email}
                 onChange={e => setEmail(e.target.value)} className="nodri-input"
-                autoComplete="email" disabled={loading} />
+                autoComplete="username" disabled={loading} />
             </div>
 
             <div>

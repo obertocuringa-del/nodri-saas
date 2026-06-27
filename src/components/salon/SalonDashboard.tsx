@@ -82,6 +82,27 @@ interface Props {
   notificacoes: Notificacao[]
   totalAtivos: number
   totalModulos: number
+  permissoes?: string[] | null
+  nomeUsuario?: string | null
+}
+
+// Mapeia o nome de um módulo para a chave de permissão (heurística)
+function chaveModulo(nome: string): string {
+  const n = (nome || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+  if (n.includes('profission')) return 'profissionais'
+  if (n.includes('servico')) return 'servicos'
+  if (n.includes('relator')) return 'relatorios'
+  if (n.includes('calcul') || n.includes('custo')) return 'calculadora'
+  if (n.includes('academ')) return 'academia'
+  if (n.includes('check')) return 'checklist'
+  if (n.includes('administrativ')) return 'administrativo'
+  if (n.includes('espera')) return 'lista_espera'
+  if (n.includes('aniversar')) return 'aniversariantes'
+  if (n.includes('pendenc')) return 'pendencias'
+  if (n.includes('feedback') && n.includes('profission')) return 'feedback_prof'
+  if (n.includes('feedback')) return 'feedback_cliente'
+  if (n.includes(' ia') || n.includes('inteligenc') || n.startsWith('ia')) return 'ia'
+  return 'modulo_' + n.replace(/[^a-z0-9]+/g, '_').slice(0, 20)
 }
 
 if (typeof document !== 'undefined') {
@@ -95,7 +116,9 @@ if (typeof document !== 'undefined') {
   if (!document.getElementById('nodri-animations')) { style.id = 'nodri-animations'; document.head.appendChild(style) }
 }
 
-export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes, totalAtivos, totalModulos }: Props) {
+export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes, totalAtivos, totalModulos, permissoes = null, nomeUsuario = null }: Props) {
+  const ehSub = Array.isArray(permissoes)
+  const pode = (chave: string) => !ehSub || (permissoes as string[]).includes(chave)
   const [filtro, setFiltro] = useState<'todos' | 'ativos' | 'bloqueados'>('ativos')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [notifDismissed, setNotifDismissed] = useState(false)
@@ -224,7 +247,8 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
     // FIX: combinação correta de filtro status + busca por nome
     const passaFiltro = filtro === 'ativos' ? m.habilitado : filtro === 'bloqueados' ? !m.habilitado : true
     const passaBusca = !busca || m.nome.toLowerCase().includes(busca.toLowerCase())
-    return passaFiltro && passaBusca
+    const passaPermissao = pode(chaveModulo(m.nome))
+    return passaFiltro && passaBusca && passaPermissao
   })
 
   function handleLogout() { window.location.href = '/logout' }
@@ -400,16 +424,16 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               <p className="text-[10px] font-bold text-nodri-t1 uppercase tracking-[2px] px-2 pb-1 border-b border-nodri-border mb-1">Ferramentas</p>
             </div>
             {[
-              { href: '/salon/feedback', label: 'Feedback de Cliente' },
-              { href: '/salon/feedback-profissional', label: 'Feedback Profissional' },
-              { href: '/salon/pendencias', label: 'Pendências' },
-              { href: '/salon/servicos', label: 'Serviços' },
-              { href: '/salon/lista-espera', label: 'Lista de Espera' },
-              { href: '/salon/aniversariantes', label: 'Aniversariantes do Mês' },
-              { href: '/salon/administrativo', label: 'Salão Administrativo' },
-              { href: '/salon/checklist', label: 'Check List' },
-              { href: '/salon/usuarios', label: 'Usuários & Acessos' },
-            ].map(item => (
+              { href: '/salon/feedback', label: 'Feedback de Cliente', chave: 'feedback_cliente' },
+              { href: '/salon/feedback-profissional', label: 'Feedback Profissional', chave: 'feedback_prof' },
+              { href: '/salon/pendencias', label: 'Pendências', chave: 'pendencias' },
+              { href: '/salon/servicos', label: 'Serviços', chave: 'servicos' },
+              { href: '/salon/lista-espera', label: 'Lista de Espera', chave: 'lista_espera' },
+              { href: '/salon/aniversariantes', label: 'Aniversariantes do Mês', chave: 'aniversariantes' },
+              { href: '/salon/administrativo', label: 'Salão Administrativo', chave: 'administrativo' },
+              { href: '/salon/checklist', label: 'Check List', chave: 'checklist' },
+              { href: '/salon/usuarios', label: 'Usuários & Acessos', chave: 'cfg_usuarios' },
+            ].filter(item => pode(item.chave)).map(item => (
               <a key={item.href} href={item.href}
                 className="w-full flex items-center px-3 py-2 rounded-md text-[11px] font-medium tracking-wide uppercase transition-colors text-nodri-t2 hover:text-nodri-t1 hover:bg-black/5">
                 {item.label}

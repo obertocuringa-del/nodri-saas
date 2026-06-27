@@ -10,16 +10,37 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Email e senha são obrigatórios' }, { status: 400 })
     }
 
-    // Busca usuário com dados do salão
-    const { data: usuario, error } = await supabaseAdmin
+    // Busca usuário (dono) com dados do salão
+    const { data: usuario } = await supabaseAdmin
       .from('usuarios')
       .select('*, salao:saloes(*, plano:planos(*))')
       .eq('email', email.toLowerCase())
       .eq('ativo', true)
-      .single()
+      .maybeSingle()
 
-    if (error || !usuario) {
-      return NextResponse.json({ error: 'Email ou senha incorretos' }, { status: 401 })
+    // Se não for dono, tenta sub-usuário (login = usuario definido pelo dono)
+    if (!usuario) {
+      const { data: sub } = await supabaseAdmin
+        .from('salao_usuarios')
+        .select('*, salao:saloes(nome, status, plano:planos(slug))')
+        .eq('usuario', email.toLowerCase().trim())
+        .eq('ativo', true)
+        .maybeSingle()
+
+      if (!sub) return NextResponse.json({ error: 'Usuário ou senha incorretos' }, { status: 401 })
+      const okSub = await verifyPassword(password, sub.senha_hash)
+      if (!okSub) return NextResponse.json({ error: 'Usuário ou senha incorretos' }, { status: 401 })
+      if (sub.salao?.status === 'bloqueado' || sub.salao?.status === 'vencido') {
+        return NextResponse.json({ error: 'A licença do salão está indisponível. Fale com o dono.' }, { status: 403 })
+      }
+      const tokenSub = await signJWT({
+        userId: sub.id, email: sub.usuario, role: 'sub', salaoId: sub.salao_id,
+        salaoNome: sub.salao?.nome, plano: sub.salao?.plano?.slug,
+        permissoes: Array.isArray(sub.permissoes) ? sub.permissoes : [], nome: sub.nome || sub.usuario,
+      })
+      const respSub = NextResponse.json({ user: { id: sub.id, nome: sub.nome || sub.usuario, role: 'sub' } })
+      respSub.cookies.set('nodri_token', tokenSub, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 60 * 60 * 24 * 7, path: '/' })
+      return respSub
     }
 
     // Verifica senha
