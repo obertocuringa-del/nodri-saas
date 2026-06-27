@@ -6,7 +6,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 async function getPayload() {
   const token = cookies().get('nodri_token')?.value
   const payload = token ? await verifyJWT(token) : null
-  if (!payload || payload.role !== 'salon' || !payload.salaoId) return null
+  if (!payload || !['salon','sub'].includes(payload.role) || !payload.salaoId) return null
   return payload
 }
 

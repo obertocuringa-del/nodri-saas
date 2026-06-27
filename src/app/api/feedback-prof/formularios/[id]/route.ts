@@ -6,7 +6,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 async function auth(id: string) {
   const token = cookies().get('nodri_token')?.value
   const payload = token ? await verifyJWT(token) : null
-  if (!payload || payload.role !== 'salon' || !payload.salaoId) return null
+  if (!payload || !['salon','sub'].includes(payload.role) || !payload.salaoId) return null
   const { data } = await supabaseAdmin.from('feedback_prof_formularios').select('*').eq('id', id).eq('salao_id', payload.salaoId).single()
   if (!data) return null
   return { payload, form: data }

@@ -122,7 +122,7 @@ const STAGE_CORES: Record<Stage, string> = {
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   const token = cookies().get('nodri_token')?.value
   const payload = token ? await verifyJWT(token) : null
-  if (!payload || payload.role !== 'salon' || !payload.salaoId)
+  if (!payload || !['salon','sub'].includes(payload.role) || !payload.salaoId)
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   const { searchParams } = new URL(req.url)

@@ -18,7 +18,7 @@ const OCORRIDOS_PADRAO = [
 export async function GET() {
   const token = cookies().get('nodri_token')?.value
   const payload = token ? await verifyJWT(token) : null
-  if (!payload || payload.role !== 'salon' || !payload.salaoId)
+  if (!payload || !['salon','sub'].includes(payload.role) || !payload.salaoId)
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   const { data } = await supabaseAdmin
@@ -33,7 +33,7 @@ export async function GET() {
 export async function POST() {
   const token = cookies().get('nodri_token')?.value
   const payload = token ? await verifyJWT(token) : null
-  if (!payload || payload.role !== 'salon' || !payload.salaoId)
+  if (!payload || !['salon','sub'].includes(payload.role) || !payload.salaoId)
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   const { data: form, error } = await supabaseAdmin

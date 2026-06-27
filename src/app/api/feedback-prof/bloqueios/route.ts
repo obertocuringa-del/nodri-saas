@@ -39,7 +39,7 @@ function toDateStr(d: Date) {
 export async function GET() {
   const token = cookies().get('nodri_token')?.value
   const payload = token ? await verifyJWT(token) : null
-  if (!payload || payload.role !== 'salon' || !payload.salaoId)
+  if (!payload || !['salon','sub'].includes(payload.role) || !payload.salaoId)
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   const salaoId = payload.salaoId
@@ -195,7 +195,7 @@ export async function GET() {
 export async function DELETE(req: NextRequest) {
   const token = cookies().get('nodri_token')?.value
   const payload = token ? await verifyJWT(token) : null
-  if (!payload || payload.role !== 'salon' || !payload.salaoId)
+  if (!payload || !['salon','sub'].includes(payload.role) || !payload.salaoId)
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   const { profissional_nome } = await req.json()
