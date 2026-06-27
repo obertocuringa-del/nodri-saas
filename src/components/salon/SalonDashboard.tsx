@@ -402,6 +402,11 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               style={{ color: '#5b4fcf' }}>
               Salão Administrativo
             </a>
+            <a href="/salon/checklist"
+              className="w-full flex items-center px-3 py-2 rounded-md text-[11px] font-medium tracking-wide uppercase transition-colors"
+              style={{ color: '#16a34a' }}>
+              Check List
+            </a>
           </nav>
 
           {/* Rodapé da sidebar */}
