@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { ArrowLeft, Plus, Trash2, Calculator, Loader2, Save, ChevronDown, ChevronUp, History, CheckCircle, ChevronLeft, ChevronRight, X } from 'lucide-react'
+import { usePermissoes } from '@/lib/usePermissoes'
 
 const MESES_NOMES = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 
@@ -472,6 +473,11 @@ export default function CalculadoraCusto() {
 
   // Aba ativa
   const [aba, setAba] = useState<'rd'|'pe'|'servicos'|'produto'|'catproduto'|'cadeira'|'metro'|'graficos'>('rd')
+
+  // Permissões: cada parte da Calculadora é liberada por perfil (dono vê tudo)
+  const { pode: podeCalc, carregado: permOk } = usePermissoes()
+  const verAbasExtras = !permOk || podeCalc('calc_abas_extras')
+  useEffect(() => { if (!verAbasExtras && aba !== 'rd') setAba('rd') }, [verAbasExtras, aba])
 
   // ── Receitas e Despesas ──────────────────────────────────────────────────
   const [fat,      setFat]      = useState('')
@@ -1250,7 +1256,8 @@ Use números reais. Seja direto.`
           </div>
         </div>
 
-        {/* Abas — lista suspensa no celular */}
+        {/* Abas — só aparecem se o perfil puder ver as abas extras */}
+        {verAbasExtras && (<>
         <select value={aba} onChange={e=>setAba(e.target.value as any)}
           className="sm:hidden w-full mb-4 px-3 py-2.5 rounded-lg text-sm font-semibold text-[#1a1a1a]" style={{background:'#fff',border:'1px solid #dedad4'}}>
           {ABAS.map(a=><option key={a.id} value={a.id}>{a.label}</option>)}
@@ -1265,12 +1272,14 @@ Use números reais. Seja direto.`
             </button>
           ))}
         </div>
+        </>)}
 
         {/* ════ ABA RECEITAS E DESPESAS ════ */}
         {aba==='rd' && (
           <div className="space-y-4">
 
             {/* Guia passo a passo */}
+            {podeCalc('calc_passos') && (
             <div className="rounded-2xl p-4 border" style={{background:'#ffffff',borderColor:'#5b4fcf30'}}>
               <p className="text-xs font-bold mb-3" style={{color:'#5b4fcf'}}>📋 Como preencher — siga os 4 passos em ordem:</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -1291,8 +1300,10 @@ Use números reais. Seja direto.`
                 ))}
               </div>
             </div>
+            )}
 
             {/* Card configurações */}
+            {podeCalc('calc_config') && (
             <div className="rounded-2xl p-5 border" style={{background:'#faf9f7',borderColor:'#5b4fcf40'}}>
               <h3 className="font-bold text-sm mb-4" style={{color:'#5b4fcf'}}>⚙️ Configurações</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
@@ -1369,7 +1380,10 @@ Use números reais. Seja direto.`
               </div>
             </div>
 
+            )}
+
             {/* Despesas Indiretas */}
+            {podeCalc('calc_desp_fixas') && (
             <div className="rounded-2xl border overflow-hidden" style={{background:'#fffbf0',borderColor:'#f59e0b'}}>
               <button onClick={()=>setSecIndiretas(p=>!p)} className="w-full flex items-center justify-between px-5 py-3 border-b transition-colors" style={{background:'linear-gradient(135deg,#fffbf0,#fef3c7)',borderColor:'#f59e0b'}}>
                 <div className="flex items-center gap-2">
@@ -1559,7 +1573,10 @@ Use números reais. Seja direto.`
               )}</>}
             </div>
 
+            )}
+
             {/* Despesas Diretas */}
+            {podeCalc('calc_desp_variaveis') && (
             <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
               <button onClick={()=>setSecDiretas(p=>!p)} className="w-full flex items-center justify-between px-5 py-3 border-b hover:bg-white/2 transition-colors" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
                 <div className="flex items-center gap-2">
@@ -1694,8 +1711,10 @@ Use números reais. Seja direto.`
               </div></>}
             </div>
 
+            )}
+
             {/* Resultado */}
-            {fatN > 0 && (
+            {fatN > 0 && podeCalc('calc_resultado') && (
               <div className="space-y-3">
                 {/* Resumo sempre visível */}
                 <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#10b98130'}}>

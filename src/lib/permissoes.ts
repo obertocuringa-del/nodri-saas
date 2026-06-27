@@ -75,6 +75,16 @@ export const CATALOGO_PERMISSOES: PermGrupo[] = [
     ]
   },
   {
+    grupo: 'Calculadora de Custo — partes', itens: [
+      { chave: 'calc_abas_extras', label: 'Abas extras (Ponto de Equilíbrio, Serviços, Catálogo, Aluguel, Gráficos)' },
+      { chave: 'calc_passos', label: 'Cards de etapas (Passo 1 a 4)' },
+      { chave: 'calc_config', label: 'Configuração (Faturamento / Investimento)' },
+      { chave: 'calc_desp_fixas', label: 'Despesas Fixas (Indiretas) — lançar compras' },
+      { chave: 'calc_desp_variaveis', label: 'Despesas Variáveis' },
+      { chave: 'calc_resultado', label: 'Resultado / Diagnóstico' },
+    ]
+  },
+  {
     grupo: 'Dados sensíveis (ocultar informação)', itens: [
       { chave: 'dado_financeiro', label: 'Valores e faturamento' },
       { chave: 'dado_comissoes', label: 'Comissões / rateio / vales' },
