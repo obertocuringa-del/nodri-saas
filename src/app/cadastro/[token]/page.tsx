@@ -48,6 +48,8 @@ export default function CadastroPublicoPage() {
   const [rg, setRg] = useState('')
   const [dataNasc, setDataNasc] = useState('')
   const [email, setEmail] = useState('')
+  const [telefone, setTelefone] = useState('')
+  const [vinculo, setVinculo] = useState('')
   const [cep, setCep] = useState('')
   const [bairro, setBairro] = useState('')
   const [cidade, setCidade] = useState('')
@@ -138,6 +140,8 @@ export default function CadastroPublicoPage() {
       rg,
       data_aniversario: dataNasc || null,
       email,
+      telefone,
+      vinculo,
       endereco: [bairro, cidade && uf ? `${cidade}-${uf}` : cidade || uf, cep ? `CEP: ${cep}` : ''].filter(Boolean).join(', '),
       contato_responsavel: JSON.stringify({ nome: nomeResp, tel: telResp }),
       habilidades: JSON.stringify({ dias_folga: diasFolga, h_inicio: hInicio, h_fim: hFim, h_obs: hObs }),
@@ -284,6 +288,16 @@ export default function CadastroPublicoPage() {
                 </div>
               </div>
               {(bairro || cidade) && <p style={{ fontSize: '11px', color: '#999', marginTop: '4px' }}>📍 {[bairro, cidade && uf ? `${cidade}-${uf}` : cidade, cep ? `CEP: ${cep}` : ''].filter(Boolean).join(', ')}</p>}
+            </div>
+            {inp('Telefone (WhatsApp)', telefone, setTelefone, { placeholder: '(00) 00000-0000' })}
+            <div>
+              <label style={{ fontSize: '12px', fontWeight: 600, color: '#555', display: 'block', marginBottom: '4px' }}>Vínculo Trabalhista</label>
+              <select value={vinculo} onChange={e => setVinculo(e.target.value)}
+                style={{ width: '100%', padding: '12px', border: '1.5px solid #e0ddd8', borderRadius: '10px', fontSize: '14px', background: '#fff', color: '#1a1a1a', outline: 'none' }}>
+                <option value="">— Selecione —</option>
+                <option value="MEI">MEI / CNPJ (Parceria)</option>
+                <option value="CLT">CLT</option>
+              </select>
             </div>
             {inp('Nome do Responsável', nomeResp, setNomeResp)}
             {inp('Telefone do Responsável', telResp, setTelResp, { placeholder: '(00) 00000-0000' })}
