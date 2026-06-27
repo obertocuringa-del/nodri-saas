@@ -6,6 +6,7 @@ import { ArrowLeft, Loader2, Save, Plus, Minus, X, MessageCircle, Send, Printer,
 import toast from 'react-hot-toast'
 import GridEditavel, { cel, type Doc as GridDoc } from '@/components/salon/GridEditavel'
 import ListaBebidas from '@/components/salon/ListaBebidas'
+import ListaTelefones from '@/components/salon/ListaTelefones'
 
 interface ProfSalao { id: string; nome: string; telefone: string }
 interface Coluna { id: string; nome: string; telefone: string }
@@ -23,12 +24,62 @@ const linhasVazias = (qtd: number, cols: number): GridDoc['tabelas'][0]['linhas'
 
 const DEFAULT_ALICATES: GridDoc = { tabelas: [{ titulo: 'CONTROLE DE ALICATES', cabecalho: [cel('Data recebido'), cel('Responsável por receber'), cel('Profissional'), cel('Quantidade'), cel('Data da devolução'), cel('Assinatura')], linhas: linhasVazias(12, 6) }] }
 const DEFAULT_PRODUTOS: GridDoc = { tabelas: [{ titulo: 'CONSUMO DE PRODUTOS', cabecalho: [cel('Profissional'), cel('Data'), cel('Cliente'), cel('Produto'), cel('Quantidade')], linhas: linhasVazias(12, 5) }] }
+const DEFAULT_SERV_INT: GridDoc = { tabelas: [{ titulo: 'SERVIÇO INTERNO / PRODUTOS UTILIZADOS', cabecalho: [cel('Data'), cel('Produto'), cel('Quantidade'), cel('Profissional'), cel('Valor')], linhas: linhasVazias(14, 5) }] }
 
 const GRIDS = [
   { key: 'alicates', label: 'Controle de Alicates', mensal: false, landscape: true, doc: DEFAULT_ALICATES },
   { key: 'produtos', label: 'Consumo de Produtos', mensal: false, landscape: true, doc: DEFAULT_PRODUTOS },
+  { key: 'servinterno', label: 'Serviços Internos', mensal: false, landscape: false, doc: DEFAULT_SERV_INT },
 ]
 const TAB_GRIDS = [{ key: 'bebidas', label: 'Bebidas' }, ...GRIDS.map(g => ({ key: g.key, label: g.label }))]
+
+// ── Abas do topo (além de Listas) ──
+const ABAS_TOPO = [
+  { key: 'listas', label: 'Listas' },
+  { key: 'telefones', label: 'Telefones Importantes' },
+  { key: 'ata', label: 'Ata de Reunião' },
+  { key: 'escala', label: 'Escala de Trabalho' },
+  { key: 'feriados', label: 'Escala de Feriados' },
+  { key: 'senhas', label: 'Senhas' },
+]
+
+const DEFAULT_ATA: GridDoc = { tabelas: [
+  { titulo: 'PAUTA DA REUNIÃO', cabecalho: [cel('Nº'), cel('Ponto a apresentar'), cel('Responsável'), cel('Decisão / Encaminhamento')], linhas: Array.from({ length: 8 }, (_, i) => [cel(String(i + 1)), cel(''), cel(''), cel('')]) },
+  { titulo: 'ASSINATURAS DOS PROFISSIONAIS', cabecalho: [cel('Profissional'), cel('Assinatura')], linhas: linhasVazias(12, 2) },
+] }
+
+const DEFAULT_ESCALA: GridDoc = { tabelas: [
+  { titulo: 'ESCALA DE TRABALHO', cabecalho: [cel('Semana / Grupo'), cel('Domingo'), cel('Segunda'), cel('Terça'), cel('Quarta'), cel('Quinta'), cel('Sexta'), cel('Sábado')], linhas: linhasVazias(6, 8) },
+  { titulo: 'VALE TRANSPORTE E ALIMENTAÇÃO', cabecalho: [cel('Nome'), cel('Dias'), cel('Valor'), cel('PIX')], linhas: linhasVazias(8, 4) },
+  { titulo: 'AJUDA DE CUSTO PARA PROFISSIONAIS', cabecalho: [cel('Nome'), cel('Cálculo'), cel('Valor'), cel('PIX')], linhas: linhasVazias(6, 4) },
+] }
+
+const FERIADOS_2026: [string, string, string][] = [
+  ['Carnaval', '02, 03 e 04/03/2026', 'FECHADO'],
+  ['Tira Dentes', '21/04/2026', '10:00 às 18:00'],
+  ['Dia do Trabalhador', '01/05/2026', '10:00 às 18:00'],
+  ['Sete de Setembro', '07/09/2026', '10:00 às 18:00'],
+  ['Nossa Senhora', '12/10/2026', '10:00 às 18:00'],
+  ['Finados', '02/11/2026', '10:00 às 18:00'],
+  ['Proclamação da República', '15/11/2026', '10:00 às 18:00'],
+  ['Consciência Negra', '20/11/2026', '10:00 às 18:00'],
+  ['Natal', '24/12/2026', '10:00 às 18:00'],
+  ['Ano Novo', '31/12/2026', '10:00 às 18:00'],
+]
+const DEFAULT_FERIADOS: GridDoc = { tabelas: [
+  { titulo: 'ESCALA DE FERIADOS', cabecalho: [cel('Feriado'), cel('Data'), cel('Horário'), cel('Profissionais escalados'), cel('Obs')], linhas: FERIADOS_2026.map(([f, d, h]) => [cel(f), cel(d), cel(h), cel(''), cel('')]) },
+] }
+
+const DEFAULT_SENHAS: GridDoc = { tabelas: [
+  { titulo: 'DADOS E SENHAS DO SALÃO', cabecalho: [cel('Descrição'), cel('Informação')], linhas: [
+    [cel('PIX Salão'), cel('CNPJ: 29.789.033/0001-44 — OLIVEIRA E SCHNEIDER INSTITUTO DE BELEZA LTDA')],
+    [cel('Conta para transferência'), cel('Agência: 3426-6 · Conta corrente: 21949-5 · CNPJ: 29.789.033/0001-44')],
+    [cel('E-mail Salão'), cel('ROUGEHAIR110@GMAIL.COM')],
+    [cel('Senha do e-mail'), cel('')],
+    [cel('Wi-Fi'), cel('')],
+    [cel('Sistema NODRI'), cel('')],
+  ] },
+] }
 
 function mesAtual() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` }
 function diasNoMes(mes: string) { const [y, m] = mes.split('-').map(Number); return new Date(y, m, 0).getDate() }
@@ -37,6 +88,7 @@ export default function SalaoAdministrativoPage() {
   const router = useRouter()
   const [profsSalao, setProfsSalao] = useState<ProfSalao[]>([])
   const [servico, setServico] = useState('realinhamento')
+  const [abaTopo, setAbaTopo] = useState('listas')
   const [historico, setHistorico] = useState<any[]>([])
   const [verHistorico, setVerHistorico] = useState(false)
 
@@ -66,35 +118,48 @@ export default function SalaoAdministrativoPage() {
       </nav>
 
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: 16 }}>
-        {/* Aba LISTAS */}
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#5b4fcf', color: '#fff', borderRadius: 10, padding: '8px 16px', fontWeight: 800, fontSize: 14, marginBottom: 14 }}>
-          <ListChecks size={16} /> LISTAS
-        </div>
-
-        {/* Sub-abas de serviços (com contador) */}
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
-          {SERVICOS.map(s => (
-            <button key={s.key} onClick={() => setServico(s.key)}
-              style={{ padding: '9px 16px', borderRadius: 10, border: servico === s.key ? 'none' : '1.5px solid #e0ddd8', background: servico === s.key ? '#1a1a1a' : '#fff', color: servico === s.key ? '#fff' : '#6b6860', fontSize: 13.5, fontWeight: 700, cursor: 'pointer' }}>
-              Lista de {s.label}
-            </button>
-          ))}
-        </div>
-        {/* Sub-abas de preenchimento livre (sem contador) */}
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
-          {TAB_GRIDS.map(g => (
-            <button key={g.key} onClick={() => setServico(g.key)}
-              style={{ padding: '9px 16px', borderRadius: 10, border: servico === g.key ? 'none' : '1.5px solid #e0ddd8', background: servico === g.key ? '#5b4fcf' : '#fff', color: servico === g.key ? '#fff' : '#6b6860', fontSize: 13.5, fontWeight: 700, cursor: 'pointer' }}>
-              {g.label}
+        {/* Abas do topo */}
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16, borderBottom: '2px solid #ece9e2', paddingBottom: 12 }}>
+          {ABAS_TOPO.map(a => (
+            <button key={a.key} onClick={() => setAbaTopo(a.key)}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 10, border: 'none', background: abaTopo === a.key ? '#5b4fcf' : '#f0eefb', color: abaTopo === a.key ? '#fff' : '#5b4fcf', fontSize: 13.5, fontWeight: 800, cursor: 'pointer' }}>
+              {a.key === 'listas' && <ListChecks size={15} />}{a.label}
             </button>
           ))}
         </div>
 
-        {SERVICOS.some(s => s.key === servico)
-          ? <ListaServico key={servico} servico={servico} label={SERVICOS.find(s => s.key === servico)?.label || ''} profsSalao={profsSalao} onMensagem={carregarHistorico} />
-          : servico === 'bebidas'
-            ? <ListaBebidas key="bebidas" profsSalao={profsSalao} />
-            : (() => { const g = GRIDS.find(x => x.key === servico)!; return <GridEditavel key={servico} chave={g.key} defaultDoc={g.doc} mensal={g.mensal} landscape={g.landscape} /> })()}
+        {abaTopo === 'listas' && (<>
+          {/* Sub-abas de serviços (com contador) */}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
+            {SERVICOS.map(s => (
+              <button key={s.key} onClick={() => setServico(s.key)}
+                style={{ padding: '9px 16px', borderRadius: 10, border: servico === s.key ? 'none' : '1.5px solid #e0ddd8', background: servico === s.key ? '#1a1a1a' : '#fff', color: servico === s.key ? '#fff' : '#6b6860', fontSize: 13.5, fontWeight: 700, cursor: 'pointer' }}>
+                Lista de {s.label}
+              </button>
+            ))}
+          </div>
+          {/* Sub-abas de preenchimento livre (sem contador) */}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+            {TAB_GRIDS.map(g => (
+              <button key={g.key} onClick={() => setServico(g.key)}
+                style={{ padding: '9px 16px', borderRadius: 10, border: servico === g.key ? 'none' : '1.5px solid #e0ddd8', background: servico === g.key ? '#5b4fcf' : '#fff', color: servico === g.key ? '#fff' : '#6b6860', fontSize: 13.5, fontWeight: 700, cursor: 'pointer' }}>
+                {g.label}
+              </button>
+            ))}
+          </div>
+
+          {SERVICOS.some(s => s.key === servico)
+            ? <ListaServico key={servico} servico={servico} label={SERVICOS.find(s => s.key === servico)?.label || ''} profsSalao={profsSalao} onMensagem={carregarHistorico} />
+            : servico === 'bebidas'
+              ? <ListaBebidas key="bebidas" profsSalao={profsSalao} />
+              : (() => { const g = GRIDS.find(x => x.key === servico)!; return <GridEditavel key={servico} chave={g.key} defaultDoc={g.doc} mensal={g.mensal} landscape={g.landscape} /> })()}
+        </>)}
+
+        {abaTopo === 'telefones' && <ListaTelefones />}
+        {abaTopo === 'ata' && <GridEditavel key="ata" chave="ata" defaultDoc={DEFAULT_ATA} />}
+        {abaTopo === 'escala' && <GridEditavel key="escala" chave="escala" defaultDoc={DEFAULT_ESCALA} mensal landscape />}
+        {abaTopo === 'feriados' && <GridEditavel key="feriados" chave="feriados" defaultDoc={DEFAULT_FERIADOS} landscape />}
+        {abaTopo === 'senhas' && <GridEditavel key="senhas" chave="senhas" defaultDoc={DEFAULT_SENHAS} />}
       </div>
 
       {verHistorico && (
