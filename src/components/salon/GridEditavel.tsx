@@ -62,6 +62,8 @@ export default function GridEditavel({ chave, defaultDoc, defaultDocFn, mensal, 
   function delLinha(ti: number, ri: number) { mut(d => { d.tabelas[ti].linhas.splice(ri, 1) }) }
   function addColuna(ti: number) { mut(d => { const t = d.tabelas[ti]; t.cabecalho.push(cel('Nova coluna')); t.linhas.forEach(l => l.push(cel(''))); if (t.larguras) t.larguras.push(LARG_PADRAO) }) }
   function delColuna(ti: number, ci: number) { mut(d => { const t = d.tabelas[ti]; if (t.cabecalho.length <= 1) return; t.cabecalho.splice(ci, 1); t.linhas.forEach(l => l.splice(ci, 1)); if (t.larguras) t.larguras.splice(ci, 1) }) }
+  function addTabela() { mut(d => { d.tabelas.push({ titulo: 'NOVO BLOCO', cabecalho: [cel('Coluna 1'), cel('Coluna 2'), cel('Coluna 3')], linhas: Array.from({ length: 4 }, () => [cel(''), cel(''), cel('')]), larguras: [220, 320, 180] }) }) }
+  function delTabela(ti: number) { if (!confirm('Excluir este bloco inteiro?')) return; mut(d => { d.tabelas.splice(ti, 1) }) }
   const largura = (t: Tabela, ci: number) => t.larguras?.[ci] ?? LARG_PADRAO
 
   function iniciarResize(ti: number, ci: number, e: React.MouseEvent) {
@@ -137,8 +139,11 @@ export default function GridEditavel({ chave, defaultDoc, defaultDocFn, mensal, 
       {loading ? <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Loader2 size={24} className="animate-spin" style={{ color: corTema }} /></div> :
         doc.tabelas.map((t, ti) => (
           <div key={ti} style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: 14, marginBottom: 16, overflowX: 'auto' }}>
-            <input value={t.titulo} onFocus={() => setSel(null)} onChange={e => mut(d => { d.tabelas[ti].titulo = e.target.value })}
-              style={{ fontSize: 15, fontWeight: 800, color: corTema, border: 'none', outline: 'none', background: 'transparent', textTransform: 'uppercase', width: '100%', marginBottom: 10 }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+              <input value={t.titulo} onFocus={() => setSel(null)} onChange={e => mut(d => { d.tabelas[ti].titulo = e.target.value })}
+                style={{ fontSize: 15, fontWeight: 800, color: corTema, border: 'none', outline: 'none', background: 'transparent', textTransform: 'uppercase', flex: 1 }} />
+              {doc.tabelas.length > 1 && <button onClick={() => delTabela(ti)} title="Excluir bloco" style={{ border: '1px solid #fca5a5', background: '#fff', color: '#dc2626', borderRadius: 6, padding: '4px 8px', cursor: 'pointer', fontSize: 11, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}><Trash2 size={12} /> Bloco</button>}
+            </div>
             <table style={{ borderCollapse: 'collapse', tableLayout: 'fixed', width: t.cabecalho.reduce((a, _, ci) => a + largura(t, ci), 0) + 38 }}>
               <colgroup>
                 {t.cabecalho.map((_, ci) => <col key={ci} style={{ width: largura(t, ci) }} />)}
@@ -167,6 +172,8 @@ export default function GridEditavel({ chave, defaultDoc, defaultDocFn, mensal, 
             <button onClick={() => addLinha(ti)} style={{ marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 12px', borderRadius: 8, border: '1px dashed #d0cdc7', background: '#faf9f7', color: '#6b6860', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}><Plus size={13} /> Adicionar linha</button>
           </div>
         ))}
+
+      {!loading && <button onClick={addTabela} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 16px', borderRadius: 10, border: `1px dashed ${corTema}`, background: '#f6f4ff', color: corTema, fontSize: 13, fontWeight: 800, cursor: 'pointer' }}><Plus size={15} /> Adicionar novo bloco/tabela</button>}
     </div>
   )
 }

@@ -42,6 +42,7 @@ const DEFAULT_PACOTES: GridDoc = { tabelas: [{ titulo: 'PREÇO DE PACOTES', cabe
 const ABAS_TOPO = [
   { key: 'listas', label: 'Listas' },
   { key: 'servicos_valores', label: 'Serviços Internos (Valores)' },
+  { key: 'tratamentos', label: 'Tratamentos Dosagem' },
   { key: 'pacotes', label: 'Preço de Pacotes' },
   { key: 'telefones', label: 'Telefones Importantes' },
   { key: 'ata', label: 'Ata de Reunião' },
@@ -169,7 +170,8 @@ export default function SalaoAdministrativoPage() {
               : (() => { const g = GRIDS.find(x => x.key === servico)!; return <GridEditavel key={servico} chave={g.key} defaultDoc={g.doc} mensal={g.mensal} landscape={g.landscape} /> })()}
         </>)}
 
-        {abaTopo === 'servicos_valores' && <ListaPrecoServicos />}
+        {abaTopo === 'servicos_valores' && <ListaPrecoServicos key="precos" />}
+        {abaTopo === 'tratamentos' && <ListaPrecoServicos key="trat" chave="tratamentos_dosagem" titulo="Tratamentos — Dosagem" comLogo />}
         {abaTopo === 'pacotes' && <GridEditavel key="pacotes" chave="pacotes" defaultDoc={DEFAULT_PACOTES} landscape />}
         {abaTopo === 'telefones' && <ListaTelefones />}
         {abaTopo === 'ata' && <GridEditavel key="ata" chave="ata" defaultDoc={DEFAULT_ATA} />}
