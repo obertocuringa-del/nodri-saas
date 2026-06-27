@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Loader2, Save, Plus, Minus, X, MessageCircle, Send, Printer, ListChecks, History } from 'lucide-react'
 import toast from 'react-hot-toast'
+import GridEditavel, { cel, type Doc as GridDoc } from '@/components/salon/GridEditavel'
 
 interface ProfSalao { id: string; nome: string; telefone: string }
 interface Coluna { id: string; nome: string; telefone: string }
@@ -14,6 +15,20 @@ const SERVICOS = [
   { key: 'corte', label: 'Corte' },
   { key: 'mechas', label: 'Mechas' },
   { key: 'pigmentacao', label: 'Pigmentação' },
+]
+
+// Listas de preenchimento livre (sem contador)
+const NOMES_BEBIDAS = ['VERA', 'ADILSON', 'PATRICK', 'DANIEL', 'TELDY', 'KATARINA', 'CLEIDE', 'DAIANE', 'LUBNA', 'JANAINA', 'FRANCISCA', 'KALEANE', 'SUELEM', 'VALDIRENE', 'CELIA', 'PAULA', 'MAIDER', 'JESSICA', 'DARIANA', 'LORRANE', 'JAICE', 'LUDSON', 'EMANUEL', 'BELA', 'ILDETE']
+const linhasVazias = (qtd: number, cols: number): GridDoc['tabelas'][0]['linhas'] => Array.from({ length: qtd }, () => Array.from({ length: cols }, () => cel('')))
+
+const DEFAULT_BEBIDAS: GridDoc = { tabelas: [{ titulo: 'CONSUMO DE BEBIDAS', cabecalho: [cel('Profissional'), cel('Café'), cel('Chá'), cel('Capuccino')], linhas: NOMES_BEBIDAS.map(n => [cel(n), cel(''), cel(''), cel('')]) }] }
+const DEFAULT_ALICATES: GridDoc = { tabelas: [{ titulo: 'CONTROLE DE ALICATES', cabecalho: [cel('Data recebido'), cel('Responsável por receber'), cel('Profissional'), cel('Quantidade'), cel('Data da devolução'), cel('Assinatura')], linhas: linhasVazias(12, 6) }] }
+const DEFAULT_PRODUTOS: GridDoc = { tabelas: [{ titulo: 'CONSUMO DE PRODUTOS', cabecalho: [cel('Profissional'), cel('Data'), cel('Cliente'), cel('Produto'), cel('Quantidade')], linhas: linhasVazias(12, 5) }] }
+
+const GRIDS = [
+  { key: 'bebidas', label: 'Bebidas', mensal: true, landscape: false, doc: DEFAULT_BEBIDAS },
+  { key: 'alicates', label: 'Controle de Alicates', mensal: false, landscape: true, doc: DEFAULT_ALICATES },
+  { key: 'produtos', label: 'Consumo de Produtos', mensal: false, landscape: true, doc: DEFAULT_PRODUTOS },
 ]
 
 function mesAtual() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` }
@@ -57,8 +72,8 @@ export default function SalaoAdministrativoPage() {
           <ListChecks size={16} /> LISTAS
         </div>
 
-        {/* Sub-abas de serviços */}
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+        {/* Sub-abas de serviços (com contador) */}
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
           {SERVICOS.map(s => (
             <button key={s.key} onClick={() => setServico(s.key)}
               style={{ padding: '9px 16px', borderRadius: 10, border: servico === s.key ? 'none' : '1.5px solid #e0ddd8', background: servico === s.key ? '#1a1a1a' : '#fff', color: servico === s.key ? '#fff' : '#6b6860', fontSize: 13.5, fontWeight: 700, cursor: 'pointer' }}>
@@ -66,8 +81,19 @@ export default function SalaoAdministrativoPage() {
             </button>
           ))}
         </div>
+        {/* Sub-abas de preenchimento livre (sem contador) */}
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+          {GRIDS.map(g => (
+            <button key={g.key} onClick={() => setServico(g.key)}
+              style={{ padding: '9px 16px', borderRadius: 10, border: servico === g.key ? 'none' : '1.5px solid #e0ddd8', background: servico === g.key ? '#5b4fcf' : '#fff', color: servico === g.key ? '#fff' : '#6b6860', fontSize: 13.5, fontWeight: 700, cursor: 'pointer' }}>
+              {g.label}
+            </button>
+          ))}
+        </div>
 
-        <ListaServico key={servico} servico={servico} label={SERVICOS.find(s => s.key === servico)?.label || ''} profsSalao={profsSalao} onMensagem={carregarHistorico} />
+        {SERVICOS.some(s => s.key === servico)
+          ? <ListaServico key={servico} servico={servico} label={SERVICOS.find(s => s.key === servico)?.label || ''} profsSalao={profsSalao} onMensagem={carregarHistorico} />
+          : (() => { const g = GRIDS.find(x => x.key === servico)!; return <GridEditavel key={servico} chave={g.key} defaultDoc={g.doc} mensal={g.mensal} landscape={g.landscape} /> })()}
       </div>
 
       {verHistorico && (
