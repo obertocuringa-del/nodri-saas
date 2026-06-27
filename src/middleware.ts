@@ -63,18 +63,45 @@ export async function middleware(request: NextRequest) {
   }
 
   // FIX: role desconhecido → login (evita loop infinito entre /salon e /admin)
-  if (!['master', 'salon'].includes(payload.role)) {
+  if (!['master', 'salon', 'sub'].includes(payload.role)) {
     const response = NextResponse.redirect(new URL('/login', request.url))
     response.cookies.set('nodri_token', '', { maxAge: 0, path: '/' })
     return response
   }
 
-  // Proteção por role
-  if (pathname.startsWith('/salon') && payload.role !== 'salon') {
-    return NextResponse.redirect(new URL('/admin', request.url))
-  }
+  // /admin é só do master
   if (pathname.startsWith('/admin') && payload.role !== 'master') {
     return NextResponse.redirect(new URL('/salon', request.url))
+  }
+  // /salon é do dono (salon) e dos sub-usuários (sub); master vai pro /admin
+  if (pathname.startsWith('/salon') && payload.role === 'master') {
+    return NextResponse.redirect(new URL('/admin', request.url))
+  }
+
+  // Sub-usuário: bloqueia páginas NÃO liberadas (mesmo digitando o link direto)
+  if (payload.role === 'sub' && pathname.startsWith('/salon')) {
+    const ROTAS: [string, string][] = [
+      ['/salon/feedback-profissional', 'feedback_prof'],
+      ['/salon/feedback', 'feedback_cliente'],
+      ['/salon/administrativo', 'administrativo'],
+      ['/salon/checklist', 'checklist'],
+      ['/salon/usuarios', 'cfg_usuarios'],
+      ['/salon/profissionais', 'profissionais'],
+      ['/salon/relatorios', 'relatorios'],
+      ['/salon/servicos', 'servicos'],
+      ['/salon/lista-espera', 'lista_espera'],
+      ['/salon/aniversariantes', 'aniversariantes'],
+      ['/salon/pendencias', 'pendencias'],
+      ['/salon/calculadora-custo', 'calculadora'],
+      ['/salon/academia', 'academia'],
+      ['/salon/perfil', 'cfg_salao'],
+      ['/salon/ia-config', 'cfg_ia'],
+    ]
+    const hit = ROTAS.find(([pre]) => pathname.startsWith(pre))
+    const perms = Array.isArray((payload as any).permissoes) ? (payload as any).permissoes as string[] : []
+    if (hit && !perms.includes(hit[1])) {
+      return NextResponse.redirect(new URL('/salon', request.url))
+    }
   }
 
   return NextResponse.next()

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Loader2, Plus, Save, Trash2, X, UserPlus, Check, Lock, Pencil } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { CATALOGO_PERMISSOES, TODAS_CHAVES } from '@/lib/permissoes'
+import { CATALOGO_PERMISSOES, TODAS_CHAVES, PAPEIS_SUGERIDOS } from '@/lib/permissoes'
 
 interface Usuario { id: string; nome?: string; usuario: string; papel?: string; permissoes: string[]; ativo: boolean }
 
@@ -77,6 +77,11 @@ export default function UsuariosPage() {
               <div><label style={lbl}>Papel (opcional)</label><input value={papel} onChange={e => setPapel(e.target.value)} placeholder="ex: Recepção" style={inp} /></div>
             </div>
 
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 10, padding: '10px 12px', background: '#f6f4ff', borderRadius: 10 }}>
+              <span style={{ fontSize: 12, fontWeight: 800, color: '#5b4fcf' }}>Papel pronto:</span>
+              {PAPEIS_SUGERIDOS.map(p => <button key={p.nome} onClick={() => { setPerms(new Set(p.permissoes)); if (!papel) setPapel(p.nome) }} style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid #c9c4f0', background: '#fff', color: '#5b4fcf', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>{p.nome}</button>)}
+              <span style={{ fontSize: 11, color: '#9ca3af' }}>(aplica uma sugestão; você ajusta depois)</span>
+            </div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, flexWrap: 'wrap', gap: 8 }}>
               <div style={{ fontSize: 13, fontWeight: 800, color: '#5b4fcf' }}>Liberações <span style={{ color: '#9ca3af', fontWeight: 600 }}>· {perms.size} de {TODAS_CHAVES.length}</span></div>
               <div style={{ display: 'flex', gap: 6 }}>

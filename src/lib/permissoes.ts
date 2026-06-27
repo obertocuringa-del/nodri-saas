@@ -81,3 +81,20 @@ export const CATALOGO_PERMISSOES: PermGrupo[] = [
 ]
 
 export const TODAS_CHAVES = CATALOGO_PERMISSOES.flatMap(g => g.itens.map(i => i.chave))
+
+// Papéis prontos (sugestões) — o dono aplica e ajusta como quiser
+export const PAPEIS_SUGERIDOS: { nome: string; permissoes: string[] }[] = [
+  {
+    nome: 'Recepção',
+    permissoes: ['lista_espera', 'aniversariantes', 'checklist', 'servicos', 'pendencias', 'feedback_cliente', 'prof_horarios'],
+  },
+  {
+    nome: 'Gerente',
+    // tudo, menos gerenciar usuários e as senhas do salão
+    permissoes: TODAS_CHAVES.filter(c => !['cfg_usuarios', 'adm_senhas', 'dado_senhas'].includes(c)),
+  },
+  {
+    nome: 'Dosadora',
+    permissoes: ['administrativo', 'adm_listas', 'adm_servicos_valores', 'adm_tratamentos', 'adm_pacotes', 'prof_materiais', 'checklist'],
+  },
+]
