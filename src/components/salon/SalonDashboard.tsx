@@ -101,6 +101,9 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
   const [notifDismissed, setNotifDismissed] = useState(false)
   const [notifIndex, setNotifIndex] = useState(0)
   const [busca, setBusca] = useState('')
+  const [buscaRes, setBuscaRes] = useState<{ tipo: string; titulo: string; trecho: string; rota: string }[]>([])
+  const [buscando, setBuscando] = useState(false)
+  const [buscaFoco, setBuscaFoco] = useState(false)
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
   const [configPrograma, setConfigPrograma] = useState<{ link: string; link_atualizacao: string; atualizacao_ativa: boolean } | null>(null)
   const [alertasIA, setAlertasIA] = useState<{ tipo: string; titulo: string; mensagem: string; icone: string; pct?: number; diasRestantes?: number }[]>([])
@@ -190,6 +193,32 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  // ── Busca global (páginas + conteúdo salvo + serviços + profissionais) ──
+  const PAGINAS_BUSCA = [
+    { nome: 'Profissionais', rota: '/salon/profissionais', palavras: 'profissional cadastro cnpj clt avaliar ficha entrevista materiais perfil horarios contrato distrato certificados carreira aniversario' },
+    { nome: 'Serviços do Salão', rota: '/salon/servicos', palavras: 'servico preco comissao valor' },
+    { nome: 'Lista de Espera', rota: '/salon/lista-espera', palavras: 'espera fila cliente' },
+    { nome: 'Aniversariantes do Mês', rota: '/salon/aniversariantes', palavras: 'aniversario niver parabens whatsapp' },
+    { nome: 'Salão Administrativo', rota: '/salon/administrativo', palavras: 'administrativo listas telefones ata reuniao escala feriados senhas pop pacotes tratamentos bebidas alicates produtos corte mechas pigmentacao realinhamento cafe' },
+    { nome: 'Check List', rota: '/salon/checklist', palavras: 'checklist check list abertura fechamento intermediario dosagem gerente limpeza manutencao demanda' },
+    { nome: 'Relatórios', rota: '/salon/relatorios', palavras: 'relatorio analise faturamento' },
+  ]
+  useEffect(() => {
+    const q = busca.trim()
+    if (q.length < 2) { setBuscaRes([]); return }
+    const nq = q.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    const t = setTimeout(async () => {
+      setBuscando(true)
+      const pageHits = PAGINAS_BUSCA.filter(p => (p.nome + ' ' + p.palavras).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').includes(nq)).map(p => ({ tipo: 'Página', titulo: p.nome, trecho: '', rota: p.rota }))
+      let api: any[] = []
+      try { api = await fetch('/api/salon/busca?q=' + encodeURIComponent(q)).then(r => r.ok ? r.json() : []) } catch { /* */ }
+      setBuscaRes([...pageHits, ...(Array.isArray(api) ? api : [])])
+      setBuscando(false)
+    }, 300)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [busca])
 
   const modulosFiltrados = modulos.filter(m => {
     // FIX: combinação correta de filtro status + busca por nome
@@ -467,8 +496,26 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               )}
               <div className="relative">
                 <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-nodri-t3" />
-                <input type="text" placeholder="Buscar..." value={busca} onChange={e => setBusca(e.target.value)}
-                  className="bg-nodri-card border border-nodri-border rounded-lg pl-7 pr-3 py-1.5 text-[11px] outline-none focus:border-nodri-cyan/40 w-28 sm:w-40" />
+                <input type="text" placeholder="Buscar tudo..." value={busca} onChange={e => setBusca(e.target.value)}
+                  onFocus={() => setBuscaFoco(true)} onBlur={() => setTimeout(() => setBuscaFoco(false), 200)}
+                  className="bg-nodri-card border border-nodri-border rounded-lg pl-7 pr-3 py-1.5 text-[11px] outline-none focus:border-nodri-cyan/40 w-36 sm:w-56" />
+                {buscaFoco && busca.trim().length >= 2 && (
+                  <div style={{ position: 'absolute', top: '115%', right: 0, zIndex: 60, width: 380, maxWidth: '85vw', maxHeight: 440, overflowY: 'auto', background: '#fff', border: '1px solid #e0ddd8', borderRadius: 12, boxShadow: '0 12px 40px rgba(0,0,0,.18)', padding: 6 }}>
+                    {buscando && <div style={{ padding: 10, fontSize: 12, color: '#9ca3af' }}>Buscando…</div>}
+                    {!buscando && buscaRes.length === 0 && <div style={{ padding: 10, fontSize: 12, color: '#9ca3af' }}>Nada encontrado para “{busca}”.</div>}
+                    {buscaRes.map((r, i) => (
+                      <a key={i} href={r.rota}
+                        style={{ display: 'block', padding: '8px 10px', borderRadius: 8, textDecoration: 'none', color: '#1a1a1a' }}
+                        onMouseEnter={e => (e.currentTarget.style.background = '#f0eefb')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', color: '#5b4fcf', background: '#f0eefb', borderRadius: 6, padding: '1px 6px', flexShrink: 0 }}>{r.tipo}</span>
+                          <span style={{ fontSize: 13, fontWeight: 700 }}>{r.titulo}</span>
+                        </div>
+                        {r.trecho && <div style={{ fontSize: 11, color: '#6b6860', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.trecho}</div>}
+                      </a>
+                    ))}
+                  </div>
+                )}
               </div>
               <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-nodri-cyan/7 border border-nodri-cyan/17 rounded-lg text-[10.5px] text-nodri-cyan font-bold">
                 <CheckCircle size={12} />{totalAtivos}/{totalModulos}
