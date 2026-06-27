@@ -20,22 +20,32 @@ export async function POST(req: NextRequest) {
 
     // Se não for dono, tenta sub-usuário (login = usuario definido pelo dono)
     if (!usuario) {
-      const { data: sub } = await supabaseAdmin
+      const login = email.toLowerCase().trim()
+      // 1) busca o sub-usuário (sem join — a tabela não tem FK pra saloes)
+      const { data: sub, error: subErr } = await supabaseAdmin
         .from('salao_usuarios')
-        .select('*, salao:saloes(nome, status, plano:planos(slug))')
-        .eq('usuario', email.toLowerCase().trim())
+        .select('*')
+        .eq('usuario', login)
         .eq('ativo', true)
         .maybeSingle()
 
-      if (!sub) return NextResponse.json({ error: 'Usuário ou senha incorretos' }, { status: 401 })
+      if (subErr || !sub) return NextResponse.json({ error: 'Usuário ou senha incorretos' }, { status: 401 })
       const okSub = await verifyPassword(password, sub.senha_hash)
       if (!okSub) return NextResponse.json({ error: 'Usuário ou senha incorretos' }, { status: 401 })
-      if (sub.salao?.status === 'bloqueado' || sub.salao?.status === 'vencido') {
+
+      // 2) busca o salão separadamente
+      const { data: salaoSub } = await supabaseAdmin
+        .from('saloes')
+        .select('nome, status, plano:planos(slug)')
+        .eq('id', sub.salao_id)
+        .maybeSingle()
+      if (salaoSub?.status === 'bloqueado' || salaoSub?.status === 'vencido') {
         return NextResponse.json({ error: 'A licença do salão está indisponível. Fale com o dono.' }, { status: 403 })
       }
+
       const tokenSub = await signJWT({
         userId: sub.id, email: sub.usuario, role: 'sub', salaoId: sub.salao_id,
-        salaoNome: sub.salao?.nome, plano: sub.salao?.plano?.slug,
+        salaoNome: salaoSub?.nome, plano: (salaoSub?.plano as any)?.slug,
         permissoes: Array.isArray(sub.permissoes) ? sub.permissoes : [], nome: sub.nome || sub.usuario,
       })
       const respSub = NextResponse.json({ user: { id: sub.id, nome: sub.nome || sub.usuario, role: 'sub' } })
