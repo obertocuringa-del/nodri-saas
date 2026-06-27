@@ -48,11 +48,21 @@ const DEFAULT_ATA: GridDoc = { tabelas: [
   { titulo: 'ASSINATURAS DOS PROFISSIONAIS', cabecalho: [cel('Profissional'), cel('Assinatura')], linhas: linhasVazias(12, 2) },
 ] }
 
-const DEFAULT_ESCALA: GridDoc = { tabelas: [
-  { titulo: 'ESCALA DE TRABALHO', cabecalho: [cel('Semana / Grupo'), cel('Domingo'), cel('Segunda'), cel('Terça'), cel('Quarta'), cel('Quinta'), cel('Sexta'), cel('Sábado')], linhas: linhasVazias(6, 8) },
-  { titulo: 'VALE TRANSPORTE E ALIMENTAÇÃO', cabecalho: [cel('Nome'), cel('Dias'), cel('Valor'), cel('PIX')], linhas: linhasVazias(8, 4) },
-  { titulo: 'AJUDA DE CUSTO PARA PROFISSIONAIS', cabecalho: [cel('Nome'), cel('Cálculo'), cel('Valor'), cel('PIX')], linhas: linhasVazias(6, 4) },
-] }
+const SEM = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
+function escalaDoMes(mes: string): GridDoc {
+  const [y, m] = mes.split('-').map(Number)
+  const dias = new Date(y, m, 0).getDate()
+  const linhas = Array.from({ length: dias }, (_, i) => {
+    const d = i + 1, wd = new Date(y, m - 1, d).getDay()
+    const c0 = cel(`${String(d).padStart(2, '0')} - ${SEM[wd]}`); c0.b = true; if (wd === 0) c0.bg = '#fef08a'
+    return [c0, cel(''), cel('')]
+  })
+  return { tabelas: [
+    { titulo: 'ESCALA DE TRABALHO', cabecalho: [cel('Dia'), cel('Profissionais escalados'), cel('Obs')], linhas, larguras: [120, 560, 220] },
+    { titulo: 'VALE TRANSPORTE E ALIMENTAÇÃO', cabecalho: [cel('Nome'), cel('Dias'), cel('Valor'), cel('PIX')], linhas: linhasVazias(8, 4), larguras: [220, 120, 140, 220] },
+    { titulo: 'AJUDA DE CUSTO PARA PROFISSIONAIS', cabecalho: [cel('Nome'), cel('Cálculo'), cel('Valor'), cel('PIX')], linhas: linhasVazias(6, 4), larguras: [220, 180, 140, 220] },
+  ] }
+}
 
 const FERIADOS_2026: [string, string, string][] = [
   ['Carnaval', '02, 03 e 04/03/2026', 'FECHADO'],
@@ -67,7 +77,7 @@ const FERIADOS_2026: [string, string, string][] = [
   ['Ano Novo', '31/12/2026', '10:00 às 18:00'],
 ]
 const DEFAULT_FERIADOS: GridDoc = { tabelas: [
-  { titulo: 'ESCALA DE FERIADOS', cabecalho: [cel('Feriado'), cel('Data'), cel('Horário'), cel('Profissionais escalados'), cel('Obs')], linhas: FERIADOS_2026.map(([f, d, h]) => [cel(f), cel(d), cel(h), cel(''), cel('')]) },
+  { titulo: 'ESCALA DE FERIADOS', cabecalho: [cel('Feriado'), cel('Data'), cel('Horário'), cel('Profissionais escalados (1 por linha ou separados por vírgula)'), cel('Obs')], linhas: FERIADOS_2026.map(([f, d, h]) => [cel(f), cel(d), cel(h), cel(''), cel('')]), larguras: [180, 150, 130, 640, 200] },
 ] }
 
 const DEFAULT_SENHAS: GridDoc = { tabelas: [
@@ -157,7 +167,7 @@ export default function SalaoAdministrativoPage() {
 
         {abaTopo === 'telefones' && <ListaTelefones />}
         {abaTopo === 'ata' && <GridEditavel key="ata" chave="ata" defaultDoc={DEFAULT_ATA} />}
-        {abaTopo === 'escala' && <GridEditavel key="escala" chave="escala" defaultDoc={DEFAULT_ESCALA} mensal landscape />}
+        {abaTopo === 'escala' && <GridEditavel key="escala" chave="escala" defaultDocFn={escalaDoMes} mensal landscape />}
         {abaTopo === 'feriados' && <GridEditavel key="feriados" chave="feriados" defaultDoc={DEFAULT_FERIADOS} landscape />}
         {abaTopo === 'senhas' && <GridEditavel key="senhas" chave="senhas" defaultDoc={DEFAULT_SENHAS} />}
       </div>
