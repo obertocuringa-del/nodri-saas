@@ -1257,7 +1257,7 @@ Use números reais. Seja direto.`
         </div>
 
         {/* Abas — só aparecem se o perfil puder ver as abas extras */}
-        {verAbasExtras && (<>
+        {verAbasExtras && <>
         <select value={aba} onChange={e=>setAba(e.target.value as any)}
           className="sm:hidden w-full mb-4 px-3 py-2.5 rounded-lg text-sm font-semibold text-[#1a1a1a]" style={{background:'#fff',border:'1px solid #dedad4'}}>
           {ABAS.map(a=><option key={a.id} value={a.id}>{a.label}</option>)}
@@ -1272,7 +1272,7 @@ Use números reais. Seja direto.`
             </button>
           ))}
         </div>
-        </>)}
+        </>}
 
         {/* ════ ABA RECEITAS E DESPESAS ════ */}
         {aba==='rd' && (
