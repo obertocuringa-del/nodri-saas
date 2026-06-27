@@ -144,4 +144,12 @@ export const PAPEIS_SUGERIDOS: { nome: string; permissoes: string[] }[] = [
     nome: 'Lançador de Compras',
     permissoes: ['calculadora', 'calc_desp_fixas'],
   },
+  {
+    nome: 'Limpeza',
+    permissoes: ['checklist'],
+  },
+  {
+    nome: 'Caixa',
+    permissoes: ['servicos', 'lista_espera', 'aniversariantes', 'pendencias', 'calculadora', 'calc_desp_fixas'],
+  },
 ]
