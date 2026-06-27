@@ -307,7 +307,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
   const TODAS_CATEGORIAS = [...CATEGORIAS_CONTEUDO, ...tabsExtras]
 
   return (
-    <div className="nodri-salon-bg min-h-screen flex flex-col">
+    <div className="nodri-salon-bg h-screen flex flex-col overflow-hidden">
 
       {/* FAIXA DE IMPERSONAÇÃO */}
       {impersonandoNome && (
@@ -338,7 +338,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
         <aside ref={dropdownRef} className={`
           fixed lg:relative inset-y-0 left-0 z-50 lg:z-auto
           w-[260px] lg:w-[210px] min-w-[210px]
-          bg-nodri-surface border-r border-nodri-border flex flex-col overflow-y-auto
+          bg-nodri-surface border-r border-nodri-border flex flex-col
           transition-transform duration-300 ease-in-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}>
