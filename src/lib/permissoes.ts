@@ -81,6 +81,8 @@ export const CATALOGO_PERMISSOES: PermGrupo[] = [
       { chave: 'calc_config', label: 'Configuração (Faturamento / Investimento)' },
       { chave: 'calc_desp_fixas', label: 'Despesas Fixas (Indiretas) — lançar compras' },
       { chave: 'calc_desp_variaveis', label: 'Despesas Variáveis' },
+      { chave: 'calc_provisao', label: 'Provisão Mensal (13º, férias, FGTS)' },
+      { chave: 'calc_outras_despesas', label: 'Outras Despesas / Gasto de Capital' },
       { chave: 'calc_resultado', label: 'Resultado / Diagnóstico' },
     ]
   },

@@ -1525,7 +1525,7 @@ Use números reais. Seja direto.`
             </div>
 
             {/* Provisão */}
-            <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
+            <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#e8e6e0',...oculto(podeCalc('calc_provisao'))}}>
               <button onClick={()=>setSecProvisao(p=>!p)} className="w-full flex items-center justify-between px-5 py-3 border-b hover:bg-white/2 transition-colors" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
                 <div className="flex items-center gap-2">
                   {secProvisao ? <ChevronUp size={14} style={{color:'#7c6fe0'}}/> : <ChevronDown size={14} style={{color:'#7c6fe0'}}/>}
@@ -1635,7 +1635,7 @@ Use números reais. Seja direto.`
             </div>
 
             {/* Outras Despesas */}
-            <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
+            <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#e8e6e0',...oculto(podeCalc('calc_outras_despesas'))}}>
               <button onClick={()=>setSecOutras(p=>!p)} className="w-full flex items-center justify-between px-5 py-3 border-b hover:bg-white/2 transition-colors" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
                 <div className="flex items-center gap-2">
                   {secOutras ? <ChevronUp size={14} style={{color:'#0891b2'}}/> : <ChevronDown size={14} style={{color:'#0891b2'}}/>}
