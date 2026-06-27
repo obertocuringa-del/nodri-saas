@@ -408,6 +408,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               { href: '/salon/aniversariantes', label: 'Aniversariantes do Mês' },
               { href: '/salon/administrativo', label: 'Salão Administrativo' },
               { href: '/salon/checklist', label: 'Check List' },
+              { href: '/salon/usuarios', label: 'Usuários & Acessos' },
             ].map(item => (
               <a key={item.href} href={item.href}
                 className="w-full flex items-center px-3 py-2 rounded-md text-[11px] font-medium tracking-wide uppercase transition-colors text-nodri-t2 hover:text-nodri-t1 hover:bg-black/5">
