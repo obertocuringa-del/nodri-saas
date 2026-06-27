@@ -17,6 +17,20 @@ export default async function SalonPage() {
   // FIX: salaoId explicitamente validado antes de usar
   if (!payload.salaoId) redirect('/login')
 
+  // Sub-usuário: lê permissões AO VIVO do banco (assim mudanças aplicam só recarregando)
+  let permsSub: string[] | null = null
+  let nomeSub: string | null = null
+  if (payload.role === 'sub') {
+    const { data: su } = await supabaseAdmin
+      .from('salao_usuarios')
+      .select('permissoes, nome, ativo')
+      .eq('id', payload.userId)
+      .maybeSingle()
+    if (!su || su.ativo === false) redirect('/login')
+    permsSub = Array.isArray(su.permissoes) ? su.permissoes : []
+    nomeSub = su.nome || 'Usuário'
+  }
+
   // Verifica status do salão
   const { data: salaoStatus } = await supabaseAdmin
     .from('saloes')
@@ -69,8 +83,8 @@ export default async function SalonPage() {
       notificacoes={notificacoes || []}
       totalAtivos={totalAtivos}
       totalModulos={modulosComStatus.length}
-      permissoes={payload.role === 'sub' ? (payload.permissoes || []) : null}
-      nomeUsuario={payload.role === 'sub' ? (payload.nome || 'Usuário') : null}
+      permissoes={permsSub}
+      nomeUsuario={nomeSub}
     />
   )
 }

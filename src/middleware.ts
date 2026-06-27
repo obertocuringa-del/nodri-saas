@@ -98,9 +98,16 @@ export async function middleware(request: NextRequest) {
       ['/salon/ia-config', 'cfg_ia'],
     ]
     const hit = ROTAS.find(([pre]) => pathname.startsWith(pre))
-    const perms = Array.isArray((payload as any).permissoes) ? (payload as any).permissoes as string[] : []
-    if (hit && !perms.includes(hit[1])) {
-      return NextResponse.redirect(new URL('/salon', request.url))
+    if (hit) {
+      // Lê permissões AO VIVO do banco (fallback p/ as do token se falhar)
+      let perms = Array.isArray((payload as any).permissoes) ? (payload as any).permissoes as string[] : []
+      try {
+        const base = process.env.NEXT_PUBLIC_SUPABASE_URL
+        const key = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+        const r = await fetch(`${base}/rest/v1/salao_usuarios?id=eq.${payload.userId}&select=permissoes,ativo`, { headers: { apikey: key, Authorization: `Bearer ${key}` }, cache: 'no-store' })
+        if (r.ok) { const rows = await r.json(); if (rows?.[0]) perms = Array.isArray(rows[0].permissoes) ? rows[0].permissoes : [] }
+      } catch { /* mantém as do token */ }
+      if (!perms.includes(hit[1])) return NextResponse.redirect(new URL('/salon', request.url))
     }
   }
 
