@@ -140,4 +140,8 @@ export const PAPEIS_SUGERIDOS: { nome: string; permissoes: string[] }[] = [
     nome: 'Dosadora',
     permissoes: ['administrativo', 'adm_listas', 'adm_servicos_valores', 'adm_tratamentos', 'adm_pacotes', 'prof_materiais', 'checklist'],
   },
+  {
+    nome: 'Lançador de Compras',
+    permissoes: ['calculadora', 'calc_desp_fixas'],
+  },
 ]
