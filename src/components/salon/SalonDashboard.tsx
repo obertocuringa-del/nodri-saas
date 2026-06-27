@@ -352,7 +352,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
             </div>
           </div>
 
-          <nav className="flex-1 px-2 py-3 space-y-0.5">
+          <nav className="flex-1 min-h-0 overflow-y-auto px-2 py-3 space-y-0.5">
 
             {/* MÓDULOS */}
             <p className="text-[10px] font-bold text-nodri-t1 uppercase tracking-[2px] px-2 pb-1 border-b border-nodri-border mb-1">Módulos</p>
@@ -399,43 +399,21 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
             <div className="pt-4 pb-1">
               <p className="text-[10px] font-bold text-nodri-t1 uppercase tracking-[2px] px-2 pb-1 border-b border-nodri-border mb-1">Ferramentas</p>
             </div>
-            <a href="/salon/feedback"
-              className="w-full flex items-center px-3 py-2 rounded-md text-[11px] font-medium tracking-wide text-nodri-pink hover:bg-nodri-pink/8 transition-colors uppercase">
-              Feedback de Cliente
-            </a>
-            <a href="/salon/feedback-profissional"
-              className="w-full flex items-center px-3 py-2 rounded-md text-[11px] font-medium tracking-wide text-nodri-purple hover:bg-nodri-purple/8 transition-colors uppercase">
-              Feedback Profissional
-            </a>
-            <a href="/salon/pendencias"
-              className="w-full flex items-center px-3 py-2 rounded-md text-[11px] font-medium tracking-wide uppercase transition-colors"
-              style={{ color: '#c2410c' }}>
-              Pendências
-            </a>
-            <a href="/salon/servicos"
-              className="w-full flex items-center px-3 py-2 rounded-md text-[11px] font-medium tracking-wide text-nodri-purple hover:bg-nodri-purple/8 transition-colors uppercase">
-              Serviços
-            </a>
-            <a href="/salon/lista-espera"
-              className="w-full flex items-center px-3 py-2 rounded-md text-[11px] font-medium tracking-wide uppercase transition-colors"
-              style={{ color: '#0891b2' }}>
-              Lista de Espera
-            </a>
-            <a href="/salon/aniversariantes"
-              className="w-full flex items-center px-3 py-2 rounded-md text-[11px] font-medium tracking-wide uppercase transition-colors"
-              style={{ color: '#db2777' }}>
-              Aniversariantes do Mês
-            </a>
-            <a href="/salon/administrativo"
-              className="w-full flex items-center px-3 py-2 rounded-md text-[11px] font-medium tracking-wide uppercase transition-colors"
-              style={{ color: '#5b4fcf' }}>
-              Salão Administrativo
-            </a>
-            <a href="/salon/checklist"
-              className="w-full flex items-center px-3 py-2 rounded-md text-[11px] font-medium tracking-wide uppercase transition-colors"
-              style={{ color: '#16a34a' }}>
-              Check List
-            </a>
+            {[
+              { href: '/salon/feedback', label: 'Feedback de Cliente' },
+              { href: '/salon/feedback-profissional', label: 'Feedback Profissional' },
+              { href: '/salon/pendencias', label: 'Pendências' },
+              { href: '/salon/servicos', label: 'Serviços' },
+              { href: '/salon/lista-espera', label: 'Lista de Espera' },
+              { href: '/salon/aniversariantes', label: 'Aniversariantes do Mês' },
+              { href: '/salon/administrativo', label: 'Salão Administrativo' },
+              { href: '/salon/checklist', label: 'Check List' },
+            ].map(item => (
+              <a key={item.href} href={item.href}
+                className="w-full flex items-center px-3 py-2 rounded-md text-[11px] font-medium tracking-wide uppercase transition-colors text-nodri-t2 hover:text-nodri-t1 hover:bg-black/5">
+                {item.label}
+              </a>
+            ))}
           </nav>
 
           {/* Rodapé da sidebar */}

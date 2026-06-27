@@ -14,6 +14,14 @@ const rid = () => Math.random().toString(36).slice(2, 8)
 const norm = (s: string) => (s || '').toLowerCase().trim().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ')
 const buildDefault = (): Doc => ({ categorias: CHECKLIST_DEFAULT.map(c => ({ id: rid(), nome: c.nome, demandas: c.demandas.map(t => ({ id: rid(), texto: t, freq: 'Diário', feito: false })) })) })
 
+const FREQ_COR: Record<string, { bg: string; bd: string; txt: string }> = {
+  'Diário': { bg: '#f0fdf4', bd: '#16a34a', txt: '#15803d' },
+  'Semanal': { bg: '#ecfeff', bd: '#0891b2', txt: '#0e7490' },
+  'Quinzenal': { bg: '#f5f3ff', bd: '#7c3aed', txt: '#6d28d9' },
+  'Mensal': { bg: '#fff7ed', bd: '#ea580c', txt: '#c2410c' },
+  'Trimestral': { bg: '#fdf2f8', bd: '#db2777', txt: '#be185d' },
+}
+
 export default function ChecklistPage() {
   const router = useRouter()
   const [doc, setDoc] = useState<Doc>({ categorias: [] })
@@ -87,6 +95,11 @@ export default function ChecklistPage() {
             <div style={{ fontSize: 13 }}>{okGeral} de {totGeral} demandas feitas hoje<br /><span style={{ opacity: .85 }}>em {doc.categorias.length} categorias</span></div>
           </div>
 
+          {/* Legenda de cores por período */}
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14, fontSize: 11 }}>
+            {FREQUENCIAS.map(f => { const c = FREQ_COR[f]; return <span key={f} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: '#6b6860' }}><span style={{ width: 12, height: 12, borderRadius: 3, background: c.bg, border: `2px solid ${c.bd}` }} />{f}</span> })}
+          </div>
+
           {verRelatorio && (
             <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: 16, marginBottom: 16 }}>
               <h3 style={{ fontSize: 15, fontWeight: 800, margin: '0 0 10px' }}>📊 Relatório unificado</h3>
@@ -135,18 +148,21 @@ export default function ChecklistPage() {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {cat.demandas.map((dem, di) => (
-                  <div key={dem.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 8px', borderRadius: 8, background: dem.feito ? '#f0fdf4' : '#faf9f7', flexWrap: 'wrap' }}>
+                {cat.demandas.map((dem, di) => {
+                  const fc = FREQ_COR[dem.freq] || FREQ_COR['Diário']
+                  return (
+                  <div key={dem.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 8px', borderRadius: 8, borderLeft: `4px solid ${fc.bd}`, background: dem.feito ? '#f0fdf4' : fc.bg, flexWrap: 'wrap' }}>
                     <button onClick={() => toggleFeito(catSel, di)} title="Feito?" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 7, border: 'none', background: dem.feito ? '#16a34a' : '#e5e7eb', color: dem.feito ? '#fff' : '#6b7280', fontSize: 12, fontWeight: 800, cursor: 'pointer', flexShrink: 0, width: 70, justifyContent: 'center' }}>
                       {dem.feito ? <><Check size={13} /> Sim</> : <><X size={13} /> Não</>}
                     </button>
                     <input value={dem.texto} onChange={e => setDemanda(catSel, di, 'texto', e.target.value)} placeholder="Descreva a demanda" style={{ flex: 1, minWidth: 180, border: '1px solid transparent', borderRadius: 4, padding: '6px 8px', fontSize: 13, background: 'transparent', outline: 'none', textDecoration: dem.feito ? 'line-through' : 'none', color: dem.feito ? '#6b7280' : '#1a1a1a' }} />
-                    <select value={dem.freq} onChange={e => setDemanda(catSel, di, 'freq', e.target.value)} style={{ padding: '5px 8px', borderRadius: 6, border: '1px solid #d0cdc7', fontSize: 12, flexShrink: 0 }}>
+                    <select value={dem.freq} onChange={e => setDemanda(catSel, di, 'freq', e.target.value)} style={{ padding: '5px 8px', borderRadius: 6, border: `1.5px solid ${fc.bd}`, background: '#fff', color: fc.txt, fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
                       {FREQUENCIAS.map(f => <option key={f} value={f}>{f}</option>)}
                     </select>
                     <button onClick={() => delDemanda(catSel, di)} title="Excluir demanda" style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', padding: 6, flexShrink: 0 }}><Trash2 size={13} /></button>
                   </div>
-                ))}
+                  )
+                })}
               </div>
               <button onClick={() => addDemanda(catSel)} style={{ marginTop: 10, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 8, border: '1px dashed #d0cdc7', background: '#faf9f7', color: '#6b6860', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}><Plus size={14} /> Adicionar demanda</button>
             </div>

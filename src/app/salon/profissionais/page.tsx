@@ -242,7 +242,19 @@ export default function ProfissionaisPage() {
   // Painel CLT (observação por profissional)
   const [cltEdits, setCltEdits] = useState<Record<string, { obs?: string }>>({})
   const [cltSalvando, setCltSalvando] = useState<string | null>(null)
-  const ehClt = (p: Profissional) => norm((p as any).vinculo || '') === 'CLT' || ['ADMINISTRATIVO', 'FINANCEIRO', 'GERENCIA', 'RECEPCAO'].includes(norm(p.cargo || ''))
+  // Categorias administrativas que NÃO são profissionais reais (só buckets de ocorrência)
+  const CATS_ADMIN = ['ADMINISTRATIVO', 'FINANCEIRO', 'GERENCIA']
+  // Exclui do painel CNPJ: admin, recepção (é CLT) e quem é CLT
+  const excluiCnpj = (p: Profissional) => {
+    const cg = norm(p.cargo || ''), nm = norm(p.nome_completo || '')
+    return CATS_ADMIN.includes(cg) || CATS_ADMIN.includes(nm) || cg.startsWith('RECEP') || nm.startsWith('RECEP') || norm((p as any).vinculo || '') === 'CLT'
+  }
+  // CLT = recepção e quem tem vínculo CLT, EXCETO as categorias administrativas
+  const ehClt = (p: Profissional) => {
+    const cg = norm(p.cargo || ''), nm = norm(p.nome_completo || '')
+    if (CATS_ADMIN.includes(cg) || CATS_ADMIN.includes(nm)) return false
+    return norm((p as any).vinculo || '') === 'CLT' || cg.startsWith('RECEP') || nm.startsWith('RECEP')
+  }
 
   async function salvarClt(prof: Profissional) {
     const obs = (cltEdits[prof.id]?.obs) ?? (prof as any).clt_observacao ?? ''
@@ -1629,7 +1641,7 @@ ${montarContratoHTML()}
                 <div style={{ display: 'flex', gap: '8px' }} className="no-mobile">
                   {(() => {
                     const cols = ['Nome', 'Categoria', 'CNPJ', 'Admissão', 'Status', 'Observação']
-                    const rows = () => profissionais.filter(p => !['ADMINISTRATIVO', 'FINANCEIRO', 'GERENCIA', 'RECEPCAO'].includes(norm(p.cargo || '')) && norm((p as any).vinculo || '') !== 'CLT').sort((a, b) => (a.cargo || '').localeCompare(b.cargo || '')).map(p => [p.nome_completo || '', p.cargo || '', p.cnpj || 'PENDENTE DE CRIAÇÃO', fmtData((p as any).data_admissao), ((p as any).cnpj_status === 'pendente' || !p.cnpj) ? 'Pendente' : 'OK', (p as any).cnpj_observacao || ''])
+                    const rows = () => profissionais.filter(p => !excluiCnpj(p)).sort((a, b) => (a.cargo || '').localeCompare(b.cargo || '')).map(p => [p.nome_completo || '', p.cargo || '', p.cnpj || 'PENDENTE DE CRIAÇÃO', fmtData((p as any).data_admissao), ((p as any).cnpj_status === 'pendente' || !p.cnpj) ? 'Pendente' : 'OK', (p as any).cnpj_observacao || ''])
                     return (<>
                       <button onClick={() => imprimirTabela('CNPJ dos Profissionais', cols, rows())} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: 'none', background: '#5b4fcf', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>🖨️ Imprimir</button>
                       <button onClick={() => exportarExcel('CNPJ_profissionais', cols, rows())} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: 'none', background: '#16a34a', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>📊 Excel</button>
@@ -1640,8 +1652,8 @@ ${montarContratoHTML()}
               {profissionais.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af', fontSize: 14 }}>Nenhum profissional cadastrado.</div>
               ) : (
-                Array.from(new Set(profissionais.filter(p => !['ADMINISTRATIVO', 'FINANCEIRO', 'GERENCIA', 'RECEPCAO'].includes(norm(p.cargo || '')) && norm((p as any).vinculo || '') !== 'CLT').map(p => p.cargo || 'Sem categoria'))).sort().map(cat => {
-                  const profsCat = profissionais.filter(p => (p.cargo || 'Sem categoria') === cat && !['ADMINISTRATIVO', 'FINANCEIRO', 'GERENCIA', 'RECEPCAO'].includes(norm(p.cargo || '')) && norm((p as any).vinculo || '') !== 'CLT')
+                Array.from(new Set(profissionais.filter(p => !excluiCnpj(p)).map(p => p.cargo || 'Sem categoria'))).sort().map(cat => {
+                  const profsCat = profissionais.filter(p => (p.cargo || 'Sem categoria') === cat && !excluiCnpj(p))
                   return (
                     <div key={cat} style={{ marginBottom: '20px' }}>
                       <div style={{ fontSize: '13px', fontWeight: 800, color: '#5b4fcf', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>{cat} <span style={{ color: '#9ca3af', fontWeight: 600 }}>· {profsCat.length}</span></div>
