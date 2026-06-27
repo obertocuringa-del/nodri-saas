@@ -63,6 +63,9 @@ function norm(s: string): string {
   return (s || '').toUpperCase().trim().normalize('NFD').replace(/[̀-ͯ]/g, '')
 }
 
+const lblFer: React.CSSProperties = { fontSize: 10, color: '#6b6860', display: 'block', marginBottom: 2 }
+const inpFer: React.CSSProperties = { width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid #cdd9e3', fontSize: 12 }
+
 const CONTEUDO_INFO: Record<string, { titulo: string; texto: string }> = {
   abertura:     { titulo: 'Abertura de Conta Bancária', texto: 'Oriente o profissional a abrir uma conta PJ no banco de sua preferência. Documentos necessários: RG, CPF, comprovante de residência e CNPJ (se MEI). Bancos recomendados: Nubank PJ, Inter PJ, Caixa, Bradesco.' },
   contratacao:  { titulo: 'Processo de Contratação', texto: 'Etapas: 1. Entrevista inicial → 2. Período de teste (7 dias) → 3. Avaliação técnica → 4. Negociação de comissão → 5. Assinatura de contrato → 6. Cadastro no sistema → 7. Integração com a equipe.' },
@@ -241,7 +244,22 @@ export default function ProfissionaisPage() {
 
   // Painel CLT (observação por profissional)
   const [cltEdits, setCltEdits] = useState<Record<string, { obs?: string }>>({})
+  const [cltFerias, setCltFerias] = useState<Record<string, any>>({})
   const [cltSalvando, setCltSalvando] = useState<string | null>(null)
+  const getFerias = (p: Profissional) => cltFerias[p.id] ?? (() => { try { return JSON.parse((p as any).ferias || '{}') || {} } catch { return {} } })()
+  const setFeriasCampo = (id: string, campo: string, val: string) => setCltFerias(prev => ({ ...prev, [id]: { ...(prev[id] ?? {}), [campo]: val } }))
+  // Calcula situação das férias (período aquisitivo de 12 meses)
+  function feriasInfo(p: Profissional, fer: any) {
+    if (fer?.fut1_ini) return { tipo: 'agendada', texto: 'Férias agendada', cor: '#16a34a' }
+    const base = fer?.ult_fim || (p as any).data_admissao
+    if (!base) return { tipo: 'sem', texto: 'Sem referência (defina admissão ou última férias)', cor: '#9ca3af' }
+    const due = new Date(base + 'T00:00:00'); due.setFullYear(due.getFullYear() + 1)
+    const hoje = new Date(); hoje.setHours(0, 0, 0, 0)
+    const dias = Math.round((due.getTime() - hoje.getTime()) / 86400000)
+    if (dias < 0) return { tipo: 'vencida', texto: `Vencida há ${Math.abs(Math.round(dias / 30))} mês(es)`, cor: '#dc2626' }
+    const meses = Math.floor(dias / 30)
+    return { tipo: 'ok', texto: `Faltam ${meses} mês(es) e ${dias % 30} dia(s)`, cor: dias < 60 ? '#ea580c' : '#0891b2' }
+  }
   // Categorias administrativas que NÃO são profissionais reais (só buckets de ocorrência)
   const CATS_ADMIN = ['ADMINISTRATIVO', 'FINANCEIRO', 'GERENCIA']
   // Exclui do painel CNPJ: admin, recepção (é CLT) e quem é CLT
@@ -258,12 +276,19 @@ export default function ProfissionaisPage() {
 
   async function salvarClt(prof: Profissional) {
     const obs = (cltEdits[prof.id]?.obs) ?? (prof as any).clt_observacao ?? ''
+    const fer = getFerias(prof)
     setCltSalvando(prof.id)
     try {
-      const res = await fetch(`/api/profissionais/${prof.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clt_observacao: obs }) })
-      if (res.ok) { toast.success('Salvo!'); setCltEdits(p => { const n = { ...p }; delete n[prof.id]; return n }); carregarProfissionais() } else toast.error('Erro ao salvar')
+      const res = await fetch(`/api/profissionais/${prof.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clt_observacao: obs, ferias: fer }) })
+      if (res.ok) { toast.success('Salvo!'); setCltEdits(p => { const n = { ...p }; delete n[prof.id]; return n }); setCltFerias(p => { const n = { ...p }; delete n[prof.id]; return n }); carregarProfissionais() } else toast.error('Erro ao salvar')
     } catch { toast.error('Erro de conexão') }
     setCltSalvando(null)
+  }
+  // Confirma que as férias futuras foram tiradas → vira "último período" e zera o agendamento
+  function concluirFerias(prof: Profissional) {
+    const fer = getFerias(prof)
+    const novo = { ult_ini: fer.fut1_ini, ult_fim: fer.fut2_fim || fer.fut1_fim, ult_obs: fer.ult_obs || '', fut1_ini: '', fut1_fim: '', fut2_ini: '', fut2_fim: '' }
+    setCltFerias(prev => ({ ...prev, [prof.id]: novo }))
   }
 
   // ── Imprimir (A4) e Exportar Excel (reutilizável) ──
@@ -1751,6 +1776,8 @@ ${montarContratoHTML()}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                         {profsCat.map(p => {
                           const obs = (cltEdits[p.id]?.obs) ?? (p as any).clt_observacao ?? ''
+                          const fer = getFerias(p)
+                          const finfo = feriasInfo(p, fer)
                           const adm = (p as any).data_admissao ? String((p as any).data_admissao).slice(0, 10).split('-').reverse().join('/') : '—'
                           let sched: any = {}; try { sched = JSON.parse((p as any).habilidades || '{}') } catch { /* */ }
                           const horario = (sched.h_inicio || sched.h_fim) ? `${sched.h_inicio || '?'} às ${sched.h_fim || '?'}` : '—'
@@ -1771,7 +1798,31 @@ ${montarContratoHTML()}
                                 <input value={obs} onChange={e => setCltEdits(prev => ({ ...prev, [p.id]: { obs: e.target.value } }))}
                                   placeholder="—" style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1.5px solid #d0cdc7', fontSize: '13px' }} />
                               </div>
-                              {cltEdits[p.id] && (
+
+                              {/* ── FÉRIAS ── */}
+                              <div style={{ marginTop: '12px', background: '#f7fbff', border: '1px solid #dcefff', borderRadius: '10px', padding: '12px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
+                                  <span style={{ fontSize: 12, fontWeight: 800, color: '#0369a1' }}>🏖️ Férias</span>
+                                  <span style={{ fontSize: 11, fontWeight: 800, color: '#fff', background: finfo.cor, borderRadius: 20, padding: '3px 10px' }}>Próxima: {finfo.texto}</span>
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 8, marginBottom: 8 }}>
+                                  <div><label style={lblFer}>Última férias — início</label><input type="date" value={fer.ult_ini || ''} onChange={e => setFeriasCampo(p.id, 'ult_ini', e.target.value)} style={inpFer} /></div>
+                                  <div><label style={lblFer}>Última férias — fim</label><input type="date" value={fer.ult_fim || ''} onChange={e => setFeriasCampo(p.id, 'ult_fim', e.target.value)} style={inpFer} /></div>
+                                  <div style={{ gridColumn: '1 / -1' }}><label style={lblFer}>Observação das férias</label><input value={fer.ult_obs || ''} onChange={e => setFeriasCampo(p.id, 'ult_obs', e.target.value)} placeholder="—" style={inpFer} /></div>
+                                </div>
+                                <div style={{ borderTop: '1px dashed #cde7f7', paddingTop: 8 }}>
+                                  <div style={{ fontSize: 11, fontWeight: 700, color: '#0369a1', marginBottom: 6 }}>Marcar próxima férias {fer.fut1_ini && <span style={{ color: '#16a34a' }}>· agendada (contador zerado)</span>}</div>
+                                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8 }}>
+                                    <div><label style={lblFer}>1º período — início</label><input type="date" value={fer.fut1_ini || ''} onChange={e => setFeriasCampo(p.id, 'fut1_ini', e.target.value)} style={inpFer} /></div>
+                                    <div><label style={lblFer}>1º período — fim</label><input type="date" value={fer.fut1_fim || ''} onChange={e => setFeriasCampo(p.id, 'fut1_fim', e.target.value)} style={inpFer} /></div>
+                                    <div><label style={lblFer}>2º período (dividir) — início</label><input type="date" value={fer.fut2_ini || ''} onChange={e => setFeriasCampo(p.id, 'fut2_ini', e.target.value)} style={inpFer} /></div>
+                                    <div><label style={lblFer}>2º período — fim</label><input type="date" value={fer.fut2_fim || ''} onChange={e => setFeriasCampo(p.id, 'fut2_fim', e.target.value)} style={inpFer} /></div>
+                                  </div>
+                                  {fer.fut1_ini && <button onClick={() => concluirFerias(p)} style={{ marginTop: 8, padding: '6px 12px', borderRadius: 8, border: '1px solid #16a34a', background: '#fff', color: '#16a34a', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>✓ Concluí estas férias (vira a última e reinicia o contador)</button>}
+                                </div>
+                              </div>
+
+                              {(cltEdits[p.id] || cltFerias[p.id]) && (
                                 <div style={{ marginTop: '10px', textAlign: 'right' }}>
                                   <button onClick={() => salvarClt(p)} disabled={cltSalvando === p.id} style={{ padding: '7px 16px', borderRadius: '8px', border: 'none', background: '#0ea5e9', color: '#fff', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
                                     {cltSalvando === p.id ? 'Salvando...' : '💾 Salvar'}
