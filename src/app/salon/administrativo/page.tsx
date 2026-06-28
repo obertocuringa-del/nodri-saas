@@ -137,6 +137,7 @@ export default function SalaoAdministrativoPage() {
   const [profsSalao, setProfsSalao] = useState<ProfSalao[]>([])
   const [servico, setServico] = useState('realinhamento')
   const [abaTopo, setAbaTopo] = useState('listas')
+  const [abasMenuOpen, setAbasMenuOpen] = useState(false)
   const [abaPop, setAbaPop] = useState('cafe')
   const [historico, setHistorico] = useState<any[]>([])
   const [verHistorico, setVerHistorico] = useState(false)
@@ -174,19 +175,24 @@ export default function SalaoAdministrativoPage() {
       </nav>
 
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: 16 }}>
-        {/* Celular: dropdown de abas (uma linha só, limpo) */}
-        <select className="nodri-mob-only" value={abaTopo} onChange={e => setAbaTopo(e.target.value)} style={{ width: '100%', padding: '11px 12px', borderRadius: 10, border: '1.5px solid #5b4fcf', background: '#f0eefb', color: '#1a1a1a', fontSize: 14, fontWeight: 700, marginBottom: 16 }}>
-          {abasVisiveis.map(a => <option key={a.key} value={a.key}>{a.label}</option>)}
-        </select>
-
-        {/* PC: barra de abas com aba ativa sublinhada (quebra em linhas, mostra todas) */}
-        <div className="nodri-abas-topo nodri-desk-only" style={{ display: 'flex', flexWrap: 'wrap', gap: '2px 4px', marginBottom: 18, borderBottom: '1px solid #ece9e2' }}>
-          {abasVisiveis.map(a => (
-            <button key={a.key} onClick={() => setAbaTopo(a.key)}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 13px', borderRadius: 0, border: 'none', borderBottom: abaTopo === a.key ? '2px solid #5b4fcf' : '2px solid transparent', background: 'transparent', color: abaTopo === a.key ? '#5b4fcf' : '#6b6860', fontSize: 13, fontWeight: 700, cursor: 'pointer', transition: 'all .15s', whiteSpace: 'nowrap', flexShrink: 0 }}>
-              {a.key === 'listas' && <ListChecks size={14} />}{a.label}
-            </button>
-          ))}
+        {/* Lista suspensa de ferramentas (PC e celular): mostra a aba atual; ao clicar, abre todas */}
+        <div style={{ position: 'relative', maxWidth: 420, marginBottom: 18 }}>
+          {abasMenuOpen && <div onClick={() => setAbasMenuOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 49 }} />}
+          <button onClick={() => setAbasMenuOpen(o => !o)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '12px 16px', borderRadius: 12, border: '1.5px solid #5b4fcf', background: '#f0eefb', color: '#1a1a1a', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, minWidth: 0 }}><ListChecks size={16} color="#5b4fcf" /><span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{abasVisiveis.find(a => a.key === abaTopo)?.label || 'Ferramentas'}</span></span>
+            <span style={{ color: '#5b4fcf', fontSize: 13, transition: 'transform .15s', transform: abasMenuOpen ? 'rotate(180deg)' : 'none' }}>▼</span>
+          </button>
+          {abasMenuOpen && (
+            <div style={{ position: 'absolute', top: '108%', left: 0, right: 0, zIndex: 50, background: '#fff', border: '1px solid #e0ddd8', borderRadius: 12, boxShadow: '0 14px 36px rgba(0,0,0,.16)', maxHeight: 380, overflowY: 'auto', padding: 6 }}>
+              {abasVisiveis.map(a => (
+                <button key={a.key} onClick={() => { setAbaTopo(a.key); setAbasMenuOpen(false) }}
+                  style={{ display: 'block', width: '100%', textAlign: 'left', padding: '11px 12px', border: 'none', borderRadius: 8, background: abaTopo === a.key ? '#f0eefb' : 'transparent', color: abaTopo === a.key ? '#5b4fcf' : '#374151', fontSize: 14, fontWeight: abaTopo === a.key ? 800 : 600, cursor: 'pointer' }}
+                  onMouseEnter={e => { if (abaTopo !== a.key) e.currentTarget.style.background = '#faf9f7' }} onMouseLeave={e => { if (abaTopo !== a.key) e.currentTarget.style.background = 'transparent' }}>
+                  {a.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {abaTopo === 'listas' && (<>
