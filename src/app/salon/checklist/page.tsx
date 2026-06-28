@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Loader2, Save, Plus, Trash2, Check, X, BarChart3, Copy, RotateCcw, Pencil } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -151,11 +151,11 @@ export default function ChecklistPage() {
                 {cat.demandas.map((dem, di) => {
                   const fc = FREQ_COR[dem.freq] || FREQ_COR['Diário']
                   return (
-                  <div key={dem.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 8px', borderRadius: 8, borderLeft: `4px solid ${fc.bd}`, background: dem.feito ? '#f0fdf4' : fc.bg, flexWrap: 'wrap' }}>
-                    <button onClick={() => toggleFeito(catSel, di)} title="Feito?" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 7, border: 'none', background: dem.feito ? '#16a34a' : '#e5e7eb', color: dem.feito ? '#fff' : '#6b7280', fontSize: 12, fontWeight: 800, cursor: 'pointer', flexShrink: 0, width: 70, justifyContent: 'center' }}>
+                  <div key={dem.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '6px 8px', borderRadius: 8, borderLeft: `4px solid ${fc.bd}`, background: dem.feito ? '#f0fdf4' : fc.bg, flexWrap: 'wrap' }}>
+                    <button onClick={() => toggleFeito(catSel, di)} title="Feito?" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 7, border: 'none', background: dem.feito ? '#16a34a' : '#e5e7eb', color: dem.feito ? '#fff' : '#6b7280', fontSize: 12, fontWeight: 800, cursor: 'pointer', flexShrink: 0, width: 70, justifyContent: 'center', marginTop: 2 }}>
                       {dem.feito ? <><Check size={13} /> Sim</> : <><X size={13} /> Não</>}
                     </button>
-                    <input value={dem.texto} onChange={e => setDemanda(catSel, di, 'texto', e.target.value)} placeholder="Descreva a demanda" style={{ flex: 1, minWidth: 180, border: '1px solid transparent', borderRadius: 4, padding: '6px 8px', fontSize: 13, background: 'transparent', outline: 'none', textDecoration: dem.feito ? 'line-through' : 'none', color: dem.feito ? '#6b7280' : '#1a1a1a' }} />
+                    <AutoTextarea value={dem.texto} onChange={v => setDemanda(catSel, di, 'texto', v)} feito={dem.feito} />
                     <select value={dem.freq} onChange={e => setDemanda(catSel, di, 'freq', e.target.value)} style={{ padding: '5px 8px', borderRadius: 6, border: `1.5px solid ${fc.bd}`, background: '#fff', color: fc.txt, fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
                       {FREQUENCIAS.map(f => <option key={f} value={f}>{f}</option>)}
                     </select>
@@ -171,6 +171,14 @@ export default function ChecklistPage() {
       </div>
     </div>
   )
+}
+
+// Campo de texto que cresce com o conteúdo e quebra linha (demandas grandes não cortam)
+function AutoTextarea({ value, onChange, feito }: { value: string; onChange: (v: string) => void; feito: boolean }) {
+  const ref = useRef<HTMLTextAreaElement>(null)
+  useEffect(() => { const el = ref.current; if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px' } }, [value])
+  return <textarea ref={ref} value={value} onChange={e => onChange(e.target.value)} placeholder="Descreva a demanda" rows={1}
+    style={{ flex: 1, minWidth: 180, border: '1px solid transparent', borderRadius: 4, padding: '6px 8px', fontSize: 13, background: 'transparent', outline: 'none', resize: 'none', overflow: 'hidden', lineHeight: 1.4, fontFamily: 'inherit', whiteSpace: 'pre-wrap', wordBreak: 'break-word', textDecoration: feito ? 'line-through' : 'none', color: feito ? '#6b7280' : '#1a1a1a' }} />
 }
 
 function btnNav(ativo: boolean): React.CSSProperties {

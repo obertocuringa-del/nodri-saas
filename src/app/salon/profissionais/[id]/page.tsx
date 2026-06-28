@@ -2264,6 +2264,9 @@ export default function PerfilProfissionalPage() {
   const [form, setForm] = useState<Partial<Profissional>>({})
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
+  // Categorias criadas/salvas em "Gerenciar Categorias" (puxadas aqui no perfil)
+  const [catsCustom, setCatsCustom] = useState<string[]>([])
+  useEffect(() => { fetch('/api/salon/grid?chave=prof_categorias').then(r => r.ok ? r.json() : null).then(d => { if (d && Array.isArray(d.lista)) setCatsCustom(d.lista) }).catch(() => { }) }, [])
   const [endCep, setEndCep] = useState('')
   const [endBairro, setEndBairro] = useState('')
   const [endCidade, setEndCidade] = useState('')
@@ -3211,7 +3214,8 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                     <div><label className={labelCls}>Apelido</label><input value={form.apelido||''} onChange={e=>set('apelido',e.target.value)} className={inputCls}/></div>
                     <div><label className={labelCls}>Cargo / Categoria</label>
                       <select value={form.cargo||''} onChange={e=>set('cargo',e.target.value)} className={inputCls}>
-                        {['Cabeleireiro','Manicure','Pedicure','Assistente','Massoterapeuta','Colorista','Maquiador(a)','Recepcionista'].map(c=>(
+                        <option value="">— selecionar —</option>
+                        {Array.from(new Set(['Cabeleireiro','Manicure','Pedicure','Assistente','Massoterapeuta','Colorista','Maquiador(a)','Auxiliar',...catsCustom,...(form.cargo?[form.cargo]:[])])).sort().map(c=>(
                           <option key={c} value={c}>{c}</option>
                         ))}
                       </select>

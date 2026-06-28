@@ -12,7 +12,10 @@ const PADRAO: ColBebida[] = [{ id: 'cafe', nome: 'Café' }, { id: 'cha', nome: '
 function mesAtual() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` }
 const rid = () => Math.random().toString(36).slice(2, 8)
 
+// Não listar buckets administrativos (não são profissionais que consomem)
+const ADMIN_RE = /(administra|financeir|ger[êe]nci|recep)/i
 export default function ListaBebidas({ profsSalao }: { profsSalao: ProfSalao[] }) {
+  const profsLista = (profsSalao || []).filter(p => !ADMIN_RE.test(p.nome || ''))
   const [mes, setMes] = useState(mesAtual())
   const [colunas, setColunas] = useState<ColBebida[]>(PADRAO)
   const [cells, setCells] = useState<Record<string, string>>({})
@@ -32,6 +35,10 @@ export default function ListaBebidas({ profsSalao }: { profsSalao: ProfSalao[] }
   useEffect(() => { carregar() }, [carregar])
 
   function setCell(profId: string, colId: string, v: string) { setCells(p => ({ ...p, [`${profId}::${colId}`]: v })); setDirty(true) }
+  function incCell(profId: string, colId: string, delta: number) {
+    const key = `${profId}::${colId}`
+    setCells(p => { const nv = Math.max(0, (Number(p[key]) || 0) + delta); return { ...p, [key]: nv ? String(nv) : '' } }); setDirty(true)
+  }
   function addColuna() { setColunas(c => [...c, { id: rid(), nome: 'Nova bebida' }]); setDirty(true) }
   function delColuna(id: string) { setColunas(c => c.length <= 1 ? c : c.filter(x => x.id !== id)); setDirty(true) }
   function renColuna(id: string, nome: string) { setColunas(c => c.map(x => x.id === id ? { ...x, nome } : x)); setDirty(true) }
@@ -48,7 +55,7 @@ export default function ListaBebidas({ profsSalao }: { profsSalao: ProfSalao[] }
   function imprimir() {
     const esc = (v: any) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     const head = colunas.map(c => `<th>${esc(c.nome)}</th>`).join('')
-    const body = profsSalao.map(p => `<tr><td class="nm">${esc(p.nome)}</td>${colunas.map(c => `<td>${esc(cells[`${p.id}::${c.id}`] || '')}</td>`).join('')}</tr>`).join('')
+    const body = profsLista.map(p => `<tr><td class="nm">${esc(p.nome)}</td>${colunas.map(c => `<td>${esc(cells[`${p.id}::${c.id}`] || '')}</td>`).join('')}</tr>`).join('')
     const css = `@page{size:A4 portrait;margin:12mm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;font-size:11px}h1{text-align:center;font-size:15px;color:#5b4fcf;margin-bottom:8px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #999;padding:4px 6px;text-align:center}th{background:#f1eefb;color:#3b2e7a}.nm{text-align:left;font-weight:700;background:#faf9ff}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}`
     const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Consumo de Bebidas</title><style>${css}</style></head><body><h1>CONSUMO DE BEBIDAS — ${esc(mes.split('-').reverse().join('/'))}</h1><table><thead><tr><th>Profissional</th>${head}</tr></thead><tbody>${body}</tbody></table><script>window.onload=function(){window.print()}</script></body></html>`
     const w = window.open('', '_blank', 'width=900,height=700'); if (!w) return; w.document.write(html); w.document.close(); w.focus()
@@ -67,7 +74,7 @@ export default function ListaBebidas({ profsSalao }: { profsSalao: ProfSalao[] }
       <p style={{ fontSize: 12, color: '#6b6860', marginBottom: 10 }}>Os nomes vêm <strong>automaticamente do cadastro</strong> de profissionais. Preencha o consumo em cada célula (ex: número de xícaras). Lembre de <strong>Salvar</strong>.</p>
 
       {loading ? <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Loader2 size={24} className="animate-spin" style={{ color: '#5b4fcf' }} /></div> :
-        profsSalao.length === 0 ? <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af', fontSize: 14, background: '#fff', border: '1px dashed #d0cdc7', borderRadius: 12 }}>Nenhum profissional cadastrado ainda.</div> : (
+        profsLista.length === 0 ? <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af', fontSize: 14, background: '#fff', border: '1px dashed #d0cdc7', borderRadius: 12 }}>Nenhum profissional cadastrado ainda.</div> : (
           <div style={{ overflowX: 'auto', background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: 8 }}>
             <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 360 }}>
               <thead>
@@ -84,14 +91,21 @@ export default function ListaBebidas({ profsSalao }: { profsSalao: ProfSalao[] }
                 </tr>
               </thead>
               <tbody>
-                {profsSalao.map(p => (
+                {profsLista.map(p => (
                   <tr key={p.id}>
                     <td style={{ ...tdSt, fontWeight: 700, background: '#faf9ff', textAlign: 'left', position: 'sticky', left: 0, zIndex: 1 }}>{p.nome}</td>
-                    {colunas.map(c => (
-                      <td key={c.id} style={tdSt}>
-                        <input value={cells[`${p.id}::${c.id}`] || ''} onChange={e => setCell(p.id, c.id, e.target.value)} style={{ width: '100%', border: '1px solid transparent', borderRadius: 4, padding: '5px 4px', textAlign: 'center', outline: 'none', fontSize: 13 }} onFocus={e => (e.currentTarget.style.border = '2px solid #5b4fcf')} onBlur={e => (e.currentTarget.style.border = '1px solid transparent')} />
-                      </td>
-                    ))}
+                    {colunas.map(c => {
+                      const qt = Number(cells[`${p.id}::${c.id}`]) || 0
+                      return (
+                        <td key={c.id} style={tdSt}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+                            <button onClick={() => incCell(p.id, c.id, -1)} disabled={qt === 0} style={{ ...stepBtn, opacity: qt === 0 ? .4 : 1 }}>−</button>
+                            <span style={{ minWidth: 22, textAlign: 'center', fontWeight: 800, fontSize: 15, color: qt ? '#5b4fcf' : '#c4c0b8' }}>{qt}</span>
+                            <button onClick={() => incCell(p.id, c.id, 1)} style={stepBtn}>+</button>
+                          </div>
+                        </td>
+                      )
+                    })}
                   </tr>
                 ))}
               </tbody>
@@ -104,3 +118,4 @@ export default function ListaBebidas({ profsSalao }: { profsSalao: ProfSalao[] }
 
 const thSt: React.CSSProperties = { border: '1px solid #ddd6f5', padding: '6px 8px', fontSize: 12, color: '#1a1a1a' }
 const tdSt: React.CSSProperties = { border: '1px solid #ece9e2', padding: 2, textAlign: 'center' }
+const stepBtn: React.CSSProperties = { width: 26, height: 26, borderRadius: 7, border: '1px solid #d8d4f0', background: '#f5f3ff', color: '#5b4fcf', fontSize: 16, fontWeight: 800, cursor: 'pointer', lineHeight: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }

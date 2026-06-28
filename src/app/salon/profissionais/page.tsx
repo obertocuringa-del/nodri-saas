@@ -180,6 +180,7 @@ export default function ProfissionaisPage() {
   const [editandoCategoria, setEditandoCategoria] = useState<string | null>(null)
   const [editandoCategoriaValor, setEditandoCategoriaValor] = useState('')
   const [novaCatTexto, setNovaCatTexto] = useState('')
+  const [catsCustom, setCatsCustom] = useState<string[]>([])
   const fileRef = useRef<HTMLInputElement>(null)
   const [linkCadastro, setLinkCadastro] = useState('')
   const [linkCopiado, setLinkCopiado] = useState(false)
@@ -246,7 +247,13 @@ export default function ProfissionaisPage() {
   const [cltEdits, setCltEdits] = useState<Record<string, { obs?: string }>>({})
   const [cltFerias, setCltFerias] = useState<Record<string, any>>({})
   const [cltSalvando, setCltSalvando] = useState<string | null>(null)
-  const getFerias = (p: Profissional) => cltFerias[p.id] ?? (() => { try { return JSON.parse((p as any).ferias || '{}') || {} } catch { return {} } })()
+  const getFerias = (p: Profissional) => {
+    if (cltFerias[p.id]) return cltFerias[p.id]
+    const raw = (p as any).ferias
+    if (!raw) return {}
+    if (typeof raw === 'object') return raw // coluna jsonb já vem como objeto
+    try { return JSON.parse(raw) || {} } catch { return {} }
+  }
   const setFeriasCampo = (id: string, campo: string, val: string) => setCltFerias(prev => ({ ...prev, [id]: { ...(prev[id] ?? {}), [campo]: val } }))
   // Calcula situação das férias (período aquisitivo de 12 meses)
   function feriasInfo(p: Profissional, fer: any) {
@@ -267,11 +274,11 @@ export default function ProfissionaisPage() {
     const cg = norm(p.cargo || ''), nm = norm(p.nome_completo || '')
     return CATS_ADMIN.includes(cg) || CATS_ADMIN.includes(nm) || cg.startsWith('RECEP') || nm.startsWith('RECEP') || norm((p as any).vinculo || '') === 'CLT'
   }
-  // CLT = recepção e quem tem vínculo CLT, EXCETO as categorias administrativas
+  // CLT = somente quem tem vínculo CLT, EXCETO as categorias administrativas
   const ehClt = (p: Profissional) => {
     const cg = norm(p.cargo || ''), nm = norm(p.nome_completo || '')
     if (CATS_ADMIN.includes(cg) || CATS_ADMIN.includes(nm)) return false
-    return norm((p as any).vinculo || '') === 'CLT' || cg.startsWith('RECEP') || nm.startsWith('RECEP')
+    return norm((p as any).vinculo || '') === 'CLT'
   }
 
   async function salvarClt(prof: Profissional) {
@@ -498,14 +505,29 @@ ${montarContratoHTML()}
     win.document.write(html); win.document.close(); win.focus()
   }
 
-  const CATEGORIAS_PADRAO = ['Cabeleireiro', 'Manicure', 'Pedicure', 'Assistente', 'Massoterapeuta', 'Maquiador(a)', 'Colorista', 'Recepcionista', 'Auxiliar']
+  const CATEGORIAS_PADRAO = ['Cabeleireiro', 'Manicure', 'Pedicure', 'Assistente', 'Massoterapeuta', 'Maquiador(a)', 'Colorista', 'Auxiliar']
   const iStyle: React.CSSProperties = { display: 'block', width: '100%', marginTop: '3px', padding: '6px 10px', border: '1px solid #d6d3ce', borderRadius: '6px', fontSize: '12px', background: '#fafaf8', color: '#1a1a1a', fontFamily: 'inherit' }
 
-  // Categorias existentes dos profissionais cadastrados + padrão (sem duplicatas)
+  // Categorias = padrão + criadas pelo dono (salvas) + as já usadas nos cadastros (sem duplicatas)
   const categorias = Array.from(new Set([
     ...CATEGORIAS_PADRAO,
+    ...catsCustom,
     ...profissionais.map(p => p.cargo || '').filter(Boolean)
   ])).sort()
+
+  // Persiste a lista de categorias criadas pelo dono (para aparecer no perfil mesmo antes de atribuir)
+  async function salvarCatsCustom(lista: string[]) {
+    setCatsCustom(lista)
+    try { await fetch('/api/salon/grid', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chave: 'prof_categorias', doc: { lista } }) }) } catch { /* */ }
+  }
+  async function criarCategoria(nome: string) {
+    const n = nome.trim()
+    if (!n) return
+    if (categorias.some(c => norm(c) === norm(n))) { toast.error('Essa categoria já existe'); setNovaCatTexto(''); return }
+    await salvarCatsCustom(Array.from(new Set([...catsCustom, n])))
+    toast.success(`Categoria "${n}" criada! Já aparece no cadastro do profissional.`)
+    setNovaCatTexto('')
+  }
 
   async function editarCategoria(antiga: string, nova: string) {
     if (!nova.trim() || antiga === nova.trim()) { setEditandoCategoria(null); return }
@@ -513,6 +535,8 @@ ${montarContratoHTML()}
     await Promise.all(afetados.map(p =>
       fetch(`/api/profissionais/${p.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cargo: nova.trim() }) })
     ))
+    // Mantém a lista salva em sincronia ao renomear
+    if (catsCustom.some(c => c === antiga)) await salvarCatsCustom(catsCustom.map(c => c === antiga ? nova.trim() : c))
     toast.success(`Categoria "${antiga}" renomeada para "${nova.trim()}"`)
     setEditandoCategoria(null)
     carregarProfissionais()
@@ -520,15 +544,16 @@ ${montarContratoHTML()}
 
   async function excluirCategoria(cat: string) {
     const afetados = profissionais.filter(p => p.cargo === cat)
-    if (!confirm(`Remover a categoria "${cat}" de ${afetados.length} profissional(is)?`)) return
-    await Promise.all(afetados.map(p =>
+    if (afetados.length && !confirm(`Remover a categoria "${cat}" de ${afetados.length} profissional(is)?`)) return
+    if (afetados.length) await Promise.all(afetados.map(p =>
       fetch(`/api/profissionais/${p.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cargo: '' }) })
     ))
+    if (catsCustom.some(c => c === cat)) await salvarCatsCustom(catsCustom.filter(c => c !== cat))
     toast.success(`Categoria "${cat}" removida`)
     carregarProfissionais()
   }
 
-  useEffect(() => { carregarProfissionais(); buscarLinkCadastro(); carregarServicos(); carregarSalao() }, [])
+  useEffect(() => { carregarProfissionais(); buscarLinkCadastro(); carregarServicos(); carregarSalao(); fetch('/api/salon/grid?chave=prof_categorias').then(r => r.ok ? r.json() : null).then(d => { if (d && Array.isArray(d.lista)) setCatsCustom(d.lista) }).catch(() => { }) }, [])
 
   async function carregarSalao() {
     try {
@@ -1323,9 +1348,9 @@ ${montarContratoHTML()}
                 <div style={{ display: 'flex', gap: 8 }}>
                   <input value={novaCatTexto} onChange={e => setNovaCatTexto(e.target.value)}
                     placeholder="Ex: Depiladora, Esteticista..."
-                    onKeyDown={e => { if (e.key === 'Enter' && novaCatTexto.trim()) { toast.success(`Categoria "${novaCatTexto.trim()}" criada! Atribua a um profissional para salvar.`); setNovaCatTexto('') } }}
+                    onKeyDown={e => { if (e.key === 'Enter') criarCategoria(novaCatTexto) }}
                     style={{ flex: 1, background: '#f5f4f0', border: '1px solid #e8e6e0', borderRadius: 8, padding: '9px 12px', fontSize: 13, color: '#1a1a1a', outline: 'none' }} />
-                  <button onClick={() => { if (novaCatTexto.trim()) { toast.success(`Categoria "${novaCatTexto.trim()}" disponível no formulário de cadastro!`); setNovaCatTexto('') } }}
+                  <button onClick={() => criarCategoria(novaCatTexto)}
                     style={{ background: '#f59e0b', border: 'none', borderRadius: 8, padding: '9px 16px', color: 'white', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
                     Criar
                   </button>

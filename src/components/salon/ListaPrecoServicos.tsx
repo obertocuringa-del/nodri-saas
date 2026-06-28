@@ -5,8 +5,15 @@ import toast from 'react-hot-toast'
 import { Loader2, Save, Printer, Plus, Trash2, RefreshCw } from 'lucide-react'
 
 interface Item { id: string; nome: string; valor: string }
-interface Servico { id: string; nome: string; preco?: string }
+interface Servico { id: string; nome: string; preco?: string; preco_fixo?: number | null; preco_min?: number | null }
 const rid = () => Math.random().toString(36).slice(2, 8)
+const norm = (s: string) => (s || '').toLowerCase().trim().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ')
+// Preço vem da página de Serviços: usa preço fixo ou, se variável, "a partir de"
+function fmtServ(s: Servico): string {
+  const v = Number(s.preco_fixo ?? s.preco_min ?? s.preco ?? 0)
+  if (!v) return ''
+  return 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
 
 export default function ListaPrecoServicos({ chave = 'precos_servicos', titulo = 'Serviços Internos — Valores', comLogo = false }: { chave?: string; titulo?: string; comLogo?: boolean }) {
   const [itens, setItens] = useState<Item[]>([])
@@ -23,9 +30,15 @@ export default function ListaPrecoServicos({ chave = 'precos_servicos', titulo =
     try {
       const servs: Servico[] = await fetch('/api/servicos').then(r => r.ok ? r.json() : [])
       setServicos(Array.isArray(servs) ? servs : [])
+      const servsArr = Array.isArray(servs) ? servs : []
       const salvo = await fetch(`/api/salon/grid?chave=${chave}`).then(r => r.ok ? r.json() : null)
-      if (salvo && Array.isArray(salvo.itens) && salvo.itens.length) { setItens(salvo.itens); setLogo(salvo.logo || '') }
-      else setItens((Array.isArray(servs) ? servs : []).map(s => ({ id: s.id || rid(), nome: s.nome || '', valor: s.preco ? `R$ ${s.preco}` : '' })))
+      if (salvo && Array.isArray(salvo.itens) && salvo.itens.length) {
+        // Preenche automaticamente o valor (da página de Serviços) onde ainda estiver vazio
+        const precoPorNome = new Map(servsArr.map(s => [norm(s.nome), fmtServ(s)]))
+        const merged = salvo.itens.map((it: Item) => ({ ...it, valor: (it.valor && String(it.valor).trim()) ? it.valor : (precoPorNome.get(norm(it.nome)) || '') }))
+        setItens(merged); setLogo(salvo.logo || '')
+      }
+      else setItens(servsArr.map(s => ({ id: s.id || rid(), nome: s.nome || '', valor: fmtServ(s) })))
     } catch { setItens([]) }
     setDirty(false); setLoading(false)
   }, [chave])
@@ -41,7 +54,7 @@ export default function ListaPrecoServicos({ chave = 'precos_servicos', titulo =
   function upd(id: string, campo: 'nome' | 'valor', v: string) { setItens(i => i.map(x => x.id === id ? { ...x, [campo]: v } : x)); setDirty(true) }
   function add() { setItens(i => [...i, { id: rid(), nome: '', valor: '' }]); setDirty(true) }
   function del(id: string) { setItens(i => i.filter(x => x.id !== id)); setDirty(true) }
-  function addServico(s: Servico) { setItens(i => [...i, { id: s.id || rid(), nome: s.nome || '', valor: s.preco ? `R$ ${s.preco}` : '' }]); setDirty(true); setPickerOpen(false) }
+  function addServico(s: Servico) { setItens(i => [...i, { id: s.id || rid(), nome: s.nome || '', valor: fmtServ(s) }]); setDirty(true); setPickerOpen(false) }
 
   const disponiveis = servicos.filter(s => !itens.some(i => i.id === s.id))
 
@@ -86,7 +99,7 @@ export default function ListaPrecoServicos({ chave = 'precos_servicos', titulo =
           {pickerOpen && (
             <div style={{ position: 'absolute', top: '110%', right: 0, zIndex: 30, background: '#fff', border: '1px solid #e0ddd8', borderRadius: 10, boxShadow: '0 10px 30px rgba(0,0,0,.15)', minWidth: 240, maxHeight: 300, overflowY: 'auto', padding: 6 }}>
               {disponiveis.length === 0 ? <div style={{ padding: 10, fontSize: 12, color: '#9ca3af' }}>Todos os serviços já estão na lista.</div> :
-                disponiveis.map(s => <button key={s.id} onClick={() => addServico(s)} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 10px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13, borderRadius: 6 }} onMouseEnter={e => (e.currentTarget.style.background = '#f0eefb')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>{s.nome}{s.preco ? ` — R$ ${s.preco}` : ''}</button>)}
+                disponiveis.map(s => { const pv = fmtServ(s); return <button key={s.id} onClick={() => addServico(s)} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 10px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13, borderRadius: 6 }} onMouseEnter={e => (e.currentTarget.style.background = '#f0eefb')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>{s.nome}{pv ? ` — ${pv}` : ''}</button> })}
             </div>
           )}
         </div>

@@ -39,6 +39,7 @@ function tempoFila(criadoEm: string): { horas: number; texto: string } {
 }
 const totalServ = (s: Servico[]) => (s || []).reduce((a, x) => a + (Number(x.preco) || 0), 0)
 const primeiroNome = (n: string) => (n || '').trim().split(/\s+/)[0]
+const normTxt = (s: string) => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim()
 
 export default function ListaEsperaPage() {
   const router = useRouter()
@@ -57,6 +58,7 @@ export default function ListaEsperaPage() {
   const [fHora, setFHora] = useState('')
   const [fCat, setFCat] = useState('espera')
   const [fObs, setFObs] = useState('')
+  const [buscaServ, setBuscaServ] = useState('')
 
   const carregar = useCallback(async () => {
     try {
@@ -82,7 +84,7 @@ export default function ListaEsperaPage() {
     carregar()
   }, [carregar])
 
-  function limparForm() { setEditId(null); setFNome(''); setFTel(''); setFServs([]); setFData(''); setFHora(''); setFCat('espera'); setFObs('') }
+  function limparForm() { setEditId(null); setFNome(''); setFTel(''); setFServs([]); setFData(''); setFHora(''); setFCat('espera'); setFObs(''); setBuscaServ('') }
 
   function abrirEdicao(it: Item) {
     setEditId(it.id)
@@ -105,17 +107,24 @@ export default function ListaEsperaPage() {
         ? await fetch('/api/salon/lista-espera', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: editId, ...dados }) })
         : await fetch('/api/salon/lista-espera', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dados) })
       if (!res.ok) { const d = await res.json().catch(() => ({})); toast.error(d?.error || 'Erro ao salvar'); setSalvando(false); return }
+      const saved = await res.json().catch(() => null)
       toast.success(editId ? 'Alterações salvas!' : 'Cliente adicionada à fila!')
-      limparForm(); setModal(false); await carregar()
+      // Atualização instantânea na tela (sem esperar o recarregamento pesado)
+      if (saved && saved.id) setLista(prev => editId ? prev.map(x => x.id === saved.id ? saved : x) : [...prev, saved])
+      limparForm(); setModal(false); setSalvando(false)
+      carregar() // sincroniza em segundo plano
+      return
     } catch { toast.error('Erro de conexão') }
     setSalvando(false)
   }
 
   async function atualizar(id: string, patch: any) {
+    // Atualização instantânea na tela; sincroniza em segundo plano
+    setLista(prev => prev.map(x => x.id === id ? { ...x, ...patch } : x))
     try {
       const res = await fetch('/api/salon/lista-espera', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, ...patch }) })
-      if (!res.ok) { toast.error('Erro'); return }
-      await carregar()
+      if (!res.ok) { toast.error('Erro'); carregar(); return }
+      carregar()
     } catch { toast.error('Erro de conexão') }
   }
 
@@ -133,12 +142,14 @@ export default function ListaEsperaPage() {
     if (it.status === 'aguardando') atualizar(it.id, { status: 'contatada' })
   }
 
+  function precoServ(s: any) { return Number(s?.preco_fixo) || Number(s?.preco_min) || 0 }
   function addServ(nome: string) {
     if (!nome) return
     const s = servicosCat.find((x: any) => x.nome === nome)
     if (!s) return
     if (fServs.some(x => x.nome === s.nome)) return
-    setFServs(p => [...p, { nome: s.nome, preco: Number(s.preco_fixo) || 0 }])
+    setFServs(p => [...p, { nome: s.nome, preco: precoServ(s) }])
+    setBuscaServ('')
   }
 
   // Métricas (só itens ativos)
@@ -290,11 +301,19 @@ export default function ListaEsperaPage() {
                 Nenhum serviço cadastrado. Cadastre na aba <strong>Serviços</strong> para escolher aqui.
               </div>
             ) : (
-              <select value="" onChange={e => { addServ(e.target.value); e.target.value = '' }}
-                style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 14, marginBottom: fServs.length ? 8 : 12, background: '#fff' }}>
-                <option value="">+ Adicionar serviço…</option>
-                {servicosCat.map((s: any) => <option key={s.id} value={s.nome}>{s.nome}{s.preco_fixo ? ` — ${moeda(s.preco_fixo)}` : ''}</option>)}
-              </select>
+              <div style={{ position: 'relative', marginBottom: fServs.length ? 8 : 12 }}>
+                <input value={buscaServ} onChange={e => setBuscaServ(e.target.value)} placeholder="🔍 Digite para buscar o serviço…"
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 14 }} />
+                {buscaServ.trim() && (() => {
+                  const achados = servicosCat.filter((s: any) => normTxt(s.nome).includes(normTxt(buscaServ)) && !fServs.some(x => x.nome === s.nome)).slice(0, 12)
+                  return (
+                    <div style={{ position: 'absolute', top: '104%', left: 0, right: 0, zIndex: 30, background: '#fff', border: '1px solid #e0ddd8', borderRadius: 10, boxShadow: '0 10px 30px rgba(0,0,0,.15)', maxHeight: 230, overflowY: 'auto' }}>
+                      {achados.length === 0 ? <div style={{ padding: 12, fontSize: 12, color: '#9ca3af' }}>Nenhum serviço encontrado.</div> :
+                        achados.map((s: any) => <button key={s.id} onClick={() => addServ(s.nome)} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '9px 12px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13 }} onMouseEnter={e => (e.currentTarget.style.background = '#f0eefb')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>{s.nome}{precoServ(s) ? ` — ${moeda(precoServ(s))}` : ''}</button>)}
+                    </div>
+                  )
+                })()}
+              </div>
             )}
             {fServs.length > 0 && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
