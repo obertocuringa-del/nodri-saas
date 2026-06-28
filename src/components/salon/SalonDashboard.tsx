@@ -114,6 +114,23 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
       if (prox.length) setLembretesCal(prox)
     }).catch(() => { })
   }, [])
+  // KPIs da tela inicial (fontes leves: profissionais + pendências)
+  const [kpiAtivos, setKpiAtivos] = useState<number | null>(null)
+  const [kpiNiver, setKpiNiver] = useState<number | null>(null)
+  const [kpiPend, setKpiPend] = useState<number | null>(null)
+  useEffect(() => {
+    const mes = new Date().getMonth() + 1
+    fetch('/api/profissionais').then(r => r.ok ? r.json() : []).then((arr: any[]) => {
+      const lista = Array.isArray(arr) ? arr : []
+      const ativos = lista.filter(p => p.ativo !== false && !p.is_departamento)
+      setKpiAtivos(ativos.length)
+      const niver = ativos.filter(p => { const d = String(p.data_aniversario || ''); const m = Number(d.slice(5, 7)); return m === mes }).length
+      setKpiNiver(niver)
+    }).catch(() => { })
+    fetch('/api/pendencias').then(r => r.ok ? r.json() : []).then((arr: any[]) => {
+      setKpiPend((Array.isArray(arr) ? arr : []).filter((p: any) => !p.resolvido).length)
+    }).catch(() => { })
+  }, [])
   const [notifDismissed, setNotifDismissed] = useState(false)
   const [notifIndex, setNotifIndex] = useState(0)
   const [busca, setBusca] = useState('')
@@ -580,6 +597,27 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               </div>
             )
           })()}
+
+          {/* PAINEL DE KPIs — resumo do dia (clicável) */}
+          {busca.trim() === '' && (
+            <div className="px-5 mt-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
+              {[
+                { perm: 'profissionais', href: '/salon/profissionais', emoji: '👥', label: 'Profissionais ativos', valor: kpiAtivos, cor: '#5b4fcf' },
+                { perm: 'aniversariantes', href: '/salon/aniversariantes', emoji: '🎂', label: 'Aniversariantes do mês', valor: kpiNiver, cor: '#db2777' },
+                { perm: 'pendencias', href: '/salon/pendencias', emoji: '⚠️', label: 'Pendências abertas', valor: kpiPend, cor: '#ea580c' },
+                { perm: 'calendario', href: '/salon/calendario', emoji: '📅', label: 'Compromissos (2 dias)', valor: lembretesCal.length, cor: '#0891b2' },
+              ].filter(k => pode(k.perm)).map(k => (
+                <a key={k.perm} href={k.href} style={{ textDecoration: 'none', background: '#fff', border: '1px solid #e8e6e0', borderLeft: `4px solid ${k.cor}`, borderRadius: 12, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12 }}
+                  onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 4px 14px rgba(0,0,0,.08)')} onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}>
+                  <span style={{ fontSize: 24 }}>{k.emoji}</span>
+                  <div>
+                    <div style={{ fontSize: 22, fontWeight: 900, color: k.cor, lineHeight: 1 }}>{k.valor == null ? '—' : k.valor}</div>
+                    <div style={{ fontSize: 11.5, color: '#6b6860', fontWeight: 600, marginTop: 2 }}>{k.label}</div>
+                  </div>
+                </a>
+              ))}
+            </div>
+          )}
 
           {/* MODULES GRID */}
           <div className="flex-1 px-3 sm:px-5 py-4 pb-6">
