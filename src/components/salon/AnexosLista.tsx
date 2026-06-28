@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import toast from 'react-hot-toast'
 import { Loader2, Save, Plus, Trash2, Upload, Download, FileText } from 'lucide-react'
 
-interface Item { id: string; nome: string; data?: string; url?: string; filename?: string }
+interface Item { id: string; nome: string; data?: string; url?: string; filename?: string; obs?: string }
 const rid = () => Math.random().toString(36).slice(2, 8)
 const hojeISO = () => new Date().toLocaleDateString('en-CA')
 
@@ -90,6 +90,10 @@ export default function AnexosLista({ chave, titulo, campoNome, comData = true, 
                 {it.url && <span style={{ fontSize: 11, color: '#6b6860', display: 'inline-flex', alignItems: 'center', gap: 4, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}><FileText size={12} /> {it.filename}</span>}
               </div>
               <button onClick={() => remover(it.id)} title="Remover" style={{ marginLeft: 'auto', border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', padding: 6 }}><Trash2 size={15} /></button>
+              <div style={{ flex: '1 1 100%' }}>
+                <label style={{ fontSize: 11, fontWeight: 700, color: '#6b6860', display: 'block', marginBottom: 4 }}>Observação</label>
+                <input value={it.obs || ''} onChange={e => setCampo(it.id, 'obs', e.target.value)} placeholder="Observação (opcional)" style={{ width: '100%', padding: '8px 11px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13 }} />
+              </div>
             </div>
           ))}
           <button onClick={add} style={{ alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 16px', borderRadius: 10, border: `1px dashed ${corTema}`, background: '#f6f4ff', color: corTema, fontSize: 13, fontWeight: 800, cursor: 'pointer' }}><Plus size={15} /> Adicionar {campoNome.toLowerCase()}</button>

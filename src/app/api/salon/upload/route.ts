@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   const formData = await req.formData()
   const file = formData.get('arquivo') as File | null
   if (!file) return NextResponse.json({ error: 'Nenhum arquivo enviado' }, { status: 400 })
-  if (file.size > 25 * 1024 * 1024) return NextResponse.json({ error: 'Arquivo muito grande (máx. 25 MB)' }, { status: 400 })
+  if (file.size > 50 * 1024 * 1024) return NextResponse.json({ error: 'Arquivo muito grande (máx. 50 MB)' }, { status: 400 })
 
   const safe = (file.name || 'arquivo').replace(/[^a-zA-Z0-9.\-_]/g, '_').slice(-80)
   const path = `arquivos/${payload.salaoId}/${Date.now()}_${safe}`
