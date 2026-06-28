@@ -206,6 +206,45 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome }
         </div>
         <button onClick={novaAvaliacao} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 16px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#7c3aed,#5b4fcf)', color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}><Plus size={16} /> Nova Avaliação</button>
       </div>
+
+      {/* ── EVOLUÇÃO POR CATEGORIA (comparativo no tempo) ── */}
+      {historico.length >= 2 && (() => {
+        const cron = [...historico].sort((a, b) => (a.data || '').localeCompare(b.data || ''))
+        const calcs = cron.map(av => ({ data: av.data, ...calcular(av.respostas, secoes) }))
+        const fmt = (d: string) => (d || '').split('-').reverse().slice(0, 2).join('/')
+        const seta = (d: number) => d > 0 ? '↑' : d < 0 ? '↓' : '→'
+        const corDelta = (d: number) => d > 0 ? '#16a34a' : d < 0 ? '#dc2626' : '#9ca3af'
+        const thE: React.CSSProperties = { padding: '6px 8px', fontSize: 11, color: '#6b6860', borderBottom: '2px solid #e8e6e0', whiteSpace: 'nowrap', textAlign: 'center' }
+        const tdE: React.CSSProperties = { padding: '6px 8px', fontSize: 12, borderBottom: '1px solid #f0eee8', textAlign: 'center', fontWeight: 700, whiteSpace: 'nowrap' }
+        return (
+          <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 16, marginBottom: 14, overflowX: 'auto' }}>
+            <h3 style={{ fontSize: 14, fontWeight: 800, color: '#1a1a1a', margin: '0 0 4px' }}>📈 Evolução por categoria</h3>
+            <p style={{ fontSize: 11, color: '#9ca3af', margin: '0 0 10px' }}>Comparativo de cada categoria ao longo das avaliações. Δ = variação da primeira para a última.</p>
+            <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 320 }}>
+              <thead><tr><th style={{ ...thE, textAlign: 'left' }}>Categoria</th>{calcs.map((c, i) => <th key={i} style={thE}>{fmt(c.data)}</th>)}<th style={thE}>Δ</th></tr></thead>
+              <tbody>
+                {secoes.map((s, si) => {
+                  const vals = calcs.map(c => c.secoes[si]?.pct ?? 0)
+                  const delta = vals[vals.length - 1] - vals[0]
+                  return (
+                    <tr key={s.id}>
+                      <td style={{ ...tdE, textAlign: 'left', color: '#1a1a1a', fontWeight: 600 }}><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 2, background: s.cor, marginRight: 6 }} />{s.titulo}</td>
+                      {vals.map((v, i) => <td key={i} style={{ ...tdE, color: classificarAval(v, faixas).cor }}>{v}%</td>)}
+                      <td style={{ ...tdE, color: corDelta(delta) }}>{seta(delta)} {Math.abs(delta)}%</td>
+                    </tr>
+                  )
+                })}
+                <tr>
+                  <td style={{ ...tdE, textAlign: 'left', fontWeight: 900, color: '#1a1a1a', background: '#faf9f7' }}>GERAL</td>
+                  {calcs.map((c, i) => <td key={i} style={{ ...tdE, fontWeight: 900, background: '#faf9f7', color: classificarAval(c.overallPct, faixas).cor }}>{c.overallPct}%</td>)}
+                  {(() => { const d = calcs[calcs.length - 1].overallPct - calcs[0].overallPct; return <td style={{ ...tdE, fontWeight: 900, background: '#faf9f7', color: corDelta(d) }}>{seta(d)} {Math.abs(d)}%</td> })()}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        )
+      })()}
+
       {historico.length === 0 ? (
         <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af', fontSize: 14, background: '#fff', border: '1px dashed #d0cdc7', borderRadius: 12 }}>
           Nenhuma avaliação ainda. Clique em <strong>Nova Avaliação</strong> para começar.
