@@ -5,7 +5,7 @@ import toast from 'react-hot-toast'
 import { Loader2, Save, Printer, Plus, Trash2, Bold, Italic, Type, PaintBucket, AlignLeft, AlignCenter, AlignRight, Square } from 'lucide-react'
 
 export type Cell = { t: string; b?: boolean; i?: boolean; cor?: string; tam?: number; bg?: string; cs?: number; rs?: number; h?: boolean; al?: 'left' | 'center' | 'right'; bd?: boolean }
-export type Tabela = { titulo: string; cabecalho: Cell[]; linhas: Cell[][]; larguras?: number[] }
+export type Tabela = { titulo: string; cabecalho: Cell[]; linhas: Cell[][]; larguras?: number[]; alturas?: number[] }
 export type Doc = { tabelas: Tabela[] }
 type Sel = { ti: number; ri: number; ci: number } // ri = -1 → cabeçalho
 
@@ -96,15 +96,6 @@ export default function GridEditavel({ chave, defaultDoc, defaultDocFn, mensal, 
       anchor.cs = 1; anchor.rs = 1
     })
   }
-  // Mover linhas e colunas manualmente
-  function moveLinha(ti: number, ri: number, dir: number) { mut(d => { const t = d.tabelas[ti]; const j = ri + dir; if (j < 0 || j >= t.linhas.length) return; const tmp = t.linhas[ri]; t.linhas[ri] = t.linhas[j]; t.linhas[j] = tmp }) }
-  function moveColuna(ti: number, ci: number, dir: number) {
-    mut(d => {
-      const t = d.tabelas[ti]; const j = ci + dir; if (j < 0 || j >= t.cabecalho.length) return
-      const sw = (arr: any[]) => { const tmp = arr[ci]; arr[ci] = arr[j]; arr[j] = tmp }
-      sw(t.cabecalho); t.linhas.forEach(l => sw(l)); if (t.larguras) sw(t.larguras)
-    })
-  }
   function addTabela() { mut(d => { d.tabelas.push({ titulo: 'NOVO BLOCO', cabecalho: [cel('Coluna 1'), cel('Coluna 2'), cel('Coluna 3')], linhas: Array.from({ length: 4 }, () => [cel(''), cel(''), cel('')]), larguras: [220, 320, 180] }) }) }
   function delTabela(ti: number) { if (!confirm('Excluir este bloco inteiro?')) return; mut(d => { d.tabelas.splice(ti, 1) }) }
   const largura = (t: Tabela, ci: number) => t.larguras?.[ci] ?? LARG_PADRAO
@@ -116,6 +107,20 @@ export default function GridEditavel({ chave, defaultDoc, defaultDocFn, mensal, 
     const move = (ev: MouseEvent) => {
       const w = Math.max(60, startW + (ev.clientX - startX))
       setDoc(prev => { const n: Doc = JSON.parse(JSON.stringify(prev)); const t = n.tabelas[ti]; if (!t.larguras) t.larguras = t.cabecalho.map(() => LARG_PADRAO); t.larguras[ci] = w; return n })
+      setDirty(true)
+    }
+    const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up) }
+    document.addEventListener('mousemove', move); document.addEventListener('mouseup', up)
+  }
+
+  const altura = (t: Tabela, ri: number) => t.alturas?.[ri]
+  function iniciarResizeLinha(ti: number, ri: number, e: React.MouseEvent) {
+    e.preventDefault(); e.stopPropagation()
+    const startY = e.clientY
+    const startH = altura(doc.tabelas[ti], ri) ?? 40
+    const move = (ev: MouseEvent) => {
+      const h = Math.max(30, startH + (ev.clientY - startY))
+      setDoc(prev => { const n: Doc = JSON.parse(JSON.stringify(prev)); const t = n.tabelas[ti]; if (!t.alturas) t.alturas = t.linhas.map(() => 0); t.alturas[ri] = h; return n })
       setDirty(true)
     }
     const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up) }
@@ -187,7 +192,7 @@ export default function GridEditavel({ chave, defaultDoc, defaultDocFn, mensal, 
         <button onClick={imprimir} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 8, border: '1px solid #d0cdc7', background: '#fff', color: '#374151', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}><Printer size={14} /> Imprimir A4</button>
         <button onClick={salvar} disabled={salvando} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 16px', borderRadius: 8, border: 'none', background: dirty ? '#16a34a' : '#a3b3a3', color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>{salvando ? '...' : <><Save size={14} /> Salvar</>}</button>
       </div>
-      <p style={{ fontSize: 11, color: '#9ca3af', margin: '0 0 10px' }}>Clique numa célula para: <strong>negrito/itálico</strong>, <strong>cor</strong> e <strong>fundo</strong>, <strong>alinhar</strong> (◀▬▶), <strong>mesclar/desmesclar</strong> (⬌⬍⊟) e <strong>borda</strong> (▢). Use ◀▶ no topo da coluna e ▲▼ ao lado da linha para <strong>mover</strong>. Arraste a borda do título para mudar a largura.</p>
+      <p style={{ fontSize: 11, color: '#9ca3af', margin: '0 0 10px' }}>Clique numa célula para: <strong>negrito/itálico</strong>, <strong>cor</strong> e <strong>fundo</strong>, <strong>alinhar</strong>, <strong>mesclar/desmesclar</strong> e <strong>borda</strong>. Para <strong>aumentar o tamanho</strong>: arraste a faixa roxa à direita do título (largura da coluna) ou a faixa cinza no fim da linha (altura da linha).</p>
 
       {loading ? <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Loader2 size={24} className="animate-spin" style={{ color: corTema }} /></div> :
         doc.tabelas.map((t, ti) => (
@@ -207,11 +212,7 @@ export default function GridEditavel({ chave, defaultDoc, defaultDocFn, mensal, 
                   {t.cabecalho.map((cc, ci) => cc.h ? null : (
                     <th key={ci} colSpan={cc.cs || 1} rowSpan={cc.rs || 1} style={{ background: cc.bg || '#f1eefb', border: bordaCell(cc, '1px solid #ddd6f5'), padding: 2, position: 'relative', verticalAlign: 'top' }}>
                       <div style={{ display: 'flex', alignItems: 'flex-start' }}>{cellBox(cc, { ti, ri: -1, ci })}<button onClick={() => delColuna(ti, ci)} title="Remover coluna" style={{ border: 'none', background: 'transparent', color: '#a99', cursor: 'pointer', padding: 2, flexShrink: 0 }}>×</button></div>
-                      <div style={{ display: 'flex', justifyContent: 'center', gap: 8 }}>
-                        <button onClick={() => moveColuna(ti, ci, -1)} title="Mover coluna para a esquerda" style={moveBtn}>◀</button>
-                        <button onClick={() => moveColuna(ti, ci, 1)} title="Mover coluna para a direita" style={moveBtn}>▶</button>
-                      </div>
-                      <div onMouseDown={e => iniciarResize(ti, ci, e)} title="Arraste para redimensionar" style={{ position: 'absolute', top: 0, right: -3, width: 7, height: '100%', cursor: 'col-resize', zIndex: 5 }} />
+                      <div onMouseDown={e => iniciarResize(ti, ci, e)} title="Arraste para aumentar/diminuir a largura da coluna" style={{ position: 'absolute', top: 0, right: 0, width: 7, height: '100%', cursor: 'col-resize', zIndex: 5, background: '#d8d4f0' }} />
                     </th>
                   ))}
                   <th style={{ border: '1px solid #ddd6f5', background: '#f1eefb', padding: 0, verticalAlign: 'top' }}><button onClick={() => addColuna(ti)} title="Adicionar coluna" style={{ border: 'none', background: 'transparent', color: corTema, cursor: 'pointer', width: '100%', padding: '6px 0' }}><Plus size={14} /></button></th>
@@ -220,13 +221,10 @@ export default function GridEditavel({ chave, defaultDoc, defaultDocFn, mensal, 
               <tbody>
                 {t.linhas.map((linha, ri) => (
                   <tr key={ri}>
-                    {linha.map((cc, ci) => cc.h ? null : <td key={ci} colSpan={cc.cs || 1} rowSpan={cc.rs || 1} style={{ border: bordaCell(cc, '1px solid #eee'), padding: 2, background: cc.bg || 'transparent', verticalAlign: 'top' }}>{cellBox(cc, { ti, ri, ci })}</td>)}
-                    <td style={{ border: '1px solid #eee', textAlign: 'center', padding: 0, verticalAlign: 'top' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                        <button onClick={() => moveLinha(ti, ri, -1)} title="Mover linha para cima" style={moveBtn}>▲</button>
-                        <button onClick={() => delLinha(ti, ri)} title="Remover linha" style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', padding: 2 }}><Trash2 size={13} /></button>
-                        <button onClick={() => moveLinha(ti, ri, 1)} title="Mover linha para baixo" style={moveBtn}>▼</button>
-                      </div>
+                    {linha.map((cc, ci) => cc.h ? null : <td key={ci} colSpan={cc.cs || 1} rowSpan={cc.rs || 1} style={{ border: bordaCell(cc, '1px solid #eee'), padding: 2, background: cc.bg || 'transparent', verticalAlign: 'top', height: altura(t, ri) || undefined }}>{cellBox(cc, { ti, ri, ci })}</td>)}
+                    <td style={{ border: '1px solid #eee', textAlign: 'center', padding: 0, verticalAlign: 'top', position: 'relative' }}>
+                      <button onClick={() => delLinha(ti, ri)} title="Remover linha" style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', padding: 6 }}><Trash2 size={13} /></button>
+                      <div onMouseDown={e => iniciarResizeLinha(ti, ri, e)} title="Arraste para aumentar/diminuir a altura da linha" style={{ position: 'absolute', left: 0, right: 0, bottom: -3, height: 9, cursor: 'row-resize', zIndex: 5, background: '#e6e2db' }} />
                     </td>
                   </tr>
                 ))}
@@ -245,4 +243,3 @@ function fmtBtn(ativo: boolean, cor: string): React.CSSProperties {
   return { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: 7, border: ativo ? 'none' : '1px solid #d0cdc7', background: ativo ? cor : '#fff', color: ativo ? '#fff' : '#374151', cursor: 'pointer' }
 }
 
-const moveBtn: React.CSSProperties = { border: 'none', background: 'transparent', color: '#9ca3af', cursor: 'pointer', fontSize: 10, lineHeight: 1, padding: 1 }
