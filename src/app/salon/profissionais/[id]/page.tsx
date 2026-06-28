@@ -7,6 +7,7 @@ import { ArrowLeft, Save, Loader2, TrendingUp, TrendingDown, BarChart2,
   MessageSquare, CheckSquare, Square, AlertTriangle } from 'lucide-react'
 import ChatWidget from '@/components/salon/ChatWidget'
 import AvaliarProfissional from '@/components/salon/AvaliarProfissional'
+import AcessoProfissional from '@/components/salon/AcessoProfissional'
 import toast from 'react-hot-toast'
 
 // Converte o markdown gerado pela IA num HTML estilizado (títulos, negrito real,
@@ -3117,6 +3118,7 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
         {/*  CADASTRO  */}
         {tab === 'cadastro' && (
           <div>
+          {!form.is_departamento && <AcessoProfissional profId={id} prof={prof} onSaved={d => { setProf((p: any) => ({ ...(p || {}), ...d })); }} />}
           <div className="flex justify-end mb-4">
             <button onClick={() => {
               const sched = (() => { try { return JSON.parse(form.habilidades||'{}') } catch { return {} } })() as any

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { verifyJWT } from '@/lib/auth'
+import { verifyJWT, hashPassword } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 import { escritaBloqueadaSub } from '@/lib/apiAuth'
 import { registrarAuditoria } from '@/lib/audit'
@@ -25,7 +25,9 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 404 })
-  return NextResponse.json(data)
+  // Nunca expõe o hash da senha; só informa se já existe uma senha definida
+  const { acesso_senha_hash, ...semHash } = (data as any) || {}
+  return NextResponse.json({ ...semHash, acesso_tem_senha: !!acesso_senha_hash })
 }
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
@@ -45,14 +47,22 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     'horarios_folgas','distrato','contrato_trabalho','tem_certificados','plano_carreira','data_demissao','cnpj_status','cnpj_observacao','vinculo','clt_observacao','avaliacoes','telefone','ferias',
     'tem_contrato','perfil_pessoal_completo','dados_pessoais_completo','dados_profissionais_completo',
     'is_departamento','departamento_cor',
+    // Portal do profissional: login e visibilidade controlados pelo salão
+    'acesso_login','acesso_liberado','acesso_oculto',
   ])
 
   // Converte campos vazios para null e filtra apenas colunas conhecidas
-  const cleaned = Object.fromEntries(
+  const cleaned: Record<string, any> = Object.fromEntries(
     Object.entries(body)
       .filter(([k]) => ALLOWED_COLS.has(k))
       .map(([k, v]) => [k, v === '' ? null : v])
   )
+  // login sempre minúsculo e sem espaços (garante o índice único)
+  if (typeof cleaned.acesso_login === 'string') cleaned.acesso_login = cleaned.acesso_login.trim().toLowerCase() || null
+  // senha em texto puro nunca é salva: vira hash; vazio = não altera
+  if (typeof body.acesso_senha === 'string' && body.acesso_senha.trim()) {
+    cleaned.acesso_senha_hash = await hashPassword(body.acesso_senha.trim())
+  }
 
   const { data, error } = await supabaseAdmin
     .from('profissionais')
