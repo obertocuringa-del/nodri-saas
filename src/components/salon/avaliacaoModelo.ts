@@ -4,7 +4,8 @@
 
 export interface CritItem { id: string; texto: string }
 export interface CatAval { id: string; titulo: string; cor: string; criterios: CritItem[] }
-export interface ModeloAval { categorias: CatAval[] }
+export interface Faixa { min: number; txt: string; cor: string; emoji: string }
+export interface ModeloAval { categorias: CatAval[]; classificacao?: Faixa[] }
 
 let _i = 0
 const cid = () => 'a' + (++_i)
@@ -43,11 +44,14 @@ export const MODELO_AVAL_DEFAULT: ModeloAval = {
   ],
 }
 
-export const CLASSIF_AVAL = [
+export const CLASSIF_AVAL: Faixa[] = [
   { min: 90, txt: 'Profissional Destaque', cor: '#16a34a', emoji: '🏆' },
   { min: 80, txt: 'Excelente desempenho', cor: '#0891b2', emoji: '⭐' },
   { min: 70, txt: 'Bom desempenho', cor: '#65a30d', emoji: '👍' },
   { min: 60, txt: 'Necessita desenvolvimento', cor: '#f59e0b', emoji: '⚠️' },
   { min: 0, txt: 'Plano de ação imediato', cor: '#ef4444', emoji: '🚨' },
 ]
-export function classificarAval(pct: number) { return CLASSIF_AVAL.find(c => pct >= c.min) || CLASSIF_AVAL[CLASSIF_AVAL.length - 1] }
+export function classificarAval(pct: number, faixas: Faixa[] = CLASSIF_AVAL): Faixa {
+  const f = [...(faixas && faixas.length ? faixas : CLASSIF_AVAL)].sort((a, b) => b.min - a.min)
+  return f.find(c => pct >= c.min) || f[f.length - 1]
+}

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import toast from 'react-hot-toast'
 import { Loader2, Plus, Save, Printer, Trash2, ArrowLeft } from 'lucide-react'
-import { MODELO_AVAL_DEFAULT, classificarAval, type CatAval } from './avaliacaoModelo'
+import { MODELO_AVAL_DEFAULT, CLASSIF_AVAL, classificarAval, type CatAval, type Faixa } from './avaliacaoModelo'
 
 const ESCALA = [{ n: 1, l: 'Muito abaixo' }, { n: 2, l: 'Abaixo' }, { n: 3, l: 'Dentro do esperado' }, { n: 4, l: 'Acima' }, { n: 5, l: 'Excelente' }]
 const TEMPOS = ['Menos de 6 meses', '6 meses a 1 ano', '1 a 2 anos', '2 a 5 anos', 'Mais de 5 anos']
@@ -37,6 +37,7 @@ function Gauge({ pct, cor, label }: { pct: number; cor: string; label: string })
 
 export default function AvaliarProfissional({ profissionalId, profissionalNome }: { profissionalId: string; profissionalNome: string }) {
   const [secoes, setSecoes] = useState<CatAval[]>([])
+  const [faixas, setFaixas] = useState<Faixa[]>(CLASSIF_AVAL)
   const [historico, setHistorico] = useState<Avaliacao[]>([])
   const [loading, setLoading] = useState(true)
   const [view, setView] = useState<'lista' | 'form' | 'resultado'>('lista')
@@ -54,6 +55,7 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome }
         fetch('/api/salon/grid?chave=avaliacao_modelo').then(r => r.ok ? r.json() : null).catch(() => null),
       ])
       setSecoes(modelo && Array.isArray(modelo.categorias) && modelo.categorias.length ? modelo.categorias : MODELO_AVAL_DEFAULT.categorias)
+      setFaixas(modelo && Array.isArray(modelo.classificacao) && modelo.classificacao.length ? modelo.classificacao : CLASSIF_AVAL)
       let arr: Avaliacao[] = []
       try { arr = Array.isArray(p?.avaliacoes) ? p.avaliacoes : (p?.avaliacoes ? JSON.parse(p.avaliacoes) : []) } catch { arr = [] }
       setHistorico(arr.sort((a, b) => (b.data || '').localeCompare(a.data || '')))
@@ -92,8 +94,12 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome }
 
   function imprimir(av: Avaliacao) {
     const r = calcular(av.respostas, secoes)
-    const cl = classificarAval(r.overallPct)
-    const linhas = secoes.map(s => `<div class="sec"><h3 style="color:${s.cor}">${s.titulo}</h3>${s.criterios.map(cr => `<div class="cri"><span>${cr.texto.replace(/</g, '&lt;')}</span><b>${av.respostas[`${s.id}:${cr.id}`] ?? '-'} / 5</b></div>`).join('')}</div>`).join('')
+    const cl = classificarAval(r.overallPct, faixas)
+    const linhas = secoes.map(s => {
+      const notas = s.criterios.map(cr => av.respostas[`${s.id}:${cr.id}`]).filter(n => n != null) as number[]
+      const avg = notas.length ? Math.round(notas.reduce((a, b) => a + b, 0) / notas.length / 5 * 100) : 0
+      return `<div class="sec"><h3 style="color:${s.cor}">${s.titulo} <span style="font-weight:400;color:#666;font-size:11px">— média ${avg}%</span></h3>${s.criterios.map(cr => `<div class="cri"><span>${cr.texto.replace(/</g, '&lt;')}</span><b>${av.respostas[`${s.id}:${cr.id}`] ?? '-'} / 5</b></div>`).join('')}</div>`
+    }).join('')
     const css = `@page{size:A4 portrait;margin:14mm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;font-size:12px}.hd{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #5b4fcf;padding-bottom:8px;margin-bottom:12px}.brand{font-size:22px;font-weight:900;color:#5b4fcf}.score{background:${cl.cor};color:#fff;border-radius:12px;padding:14px 18px;text-align:center;margin-bottom:14px}.score b{font-size:30px}.sec{margin-bottom:12px;break-inside:avoid}h3{font-size:13px;border-bottom:1px solid #ddd;padding-bottom:3px;margin-bottom:5px}.cri{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dotted #eee}.obs{background:#faf9f7;border-radius:8px;padding:10px;margin-top:10px;font-size:11px}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}`
     const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Avaliação ${profissionalNome}</title><style>${css}</style></head><body><div class="hd"><div class="brand">NODRI</div><div style="text-align:right;font-size:11px"><strong>Avaliação de Profissional</strong><br>${profissionalNome} · ${av.data.split('-').reverse().join('/')}</div></div><div class="score"><div>${cl.emoji} ${cl.txt}</div><b>${r.overall10.toFixed(1)}</b> / 10 &nbsp; (${r.overallPct}%)</div>${linhas}${av.obs ? `<div class="obs"><strong>Observações:</strong> ${av.obs.replace(/</g, '&lt;')}</div>` : ''}<script>window.onload=function(){window.print()}</script></body></html>`
     const w = window.open('', '_blank', 'width=900,height=700'); if (!w) return; w.document.write(html); w.document.close(); w.focus()
@@ -105,7 +111,7 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome }
   if (view === 'resultado' || vendo) {
     const av = vendo || { id: 'tmp', data: dataAval, tempo, respostas, obs }
     const r = calcular(av.respostas, secoes)
-    const cl = classificarAval(r.overallPct)
+    const cl = classificarAval(r.overallPct, faixas)
     return (
       <div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', marginBottom: 16 }}>
@@ -122,6 +128,21 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome }
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, justifyContent: 'center', background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: '18px', marginBottom: 14 }}>
           {r.secoes.map((s, i) => <Gauge key={i} pct={s.pct} cor={s.cor} label={s.titulo} />)}
+        </div>
+        <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 16, marginBottom: 14 }}>
+          <h3 style={{ fontSize: 14, fontWeight: 800, color: '#1a1a1a', margin: '0 0 10px' }}>📊 Média por categoria</h3>
+          {r.secoes.map((s, i) => {
+            const c = classificarAval(s.pct, faixas)
+            return (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderTop: i > 0 ? '1px solid #f0eee8' : 'none', flexWrap: 'wrap' }}>
+                <span style={{ width: 10, height: 10, borderRadius: 3, background: s.cor, flexShrink: 0 }} />
+                <span style={{ flex: 1, minWidth: 150, fontSize: 13, color: '#1a1a1a' }}>{s.titulo}</span>
+                <div style={{ flex: '1 1 100px', minWidth: 70, height: 8, background: '#eee', borderRadius: 5, overflow: 'hidden' }}><div style={{ width: `${s.pct}%`, height: '100%', background: s.cor }} /></div>
+                <span style={{ fontWeight: 800, fontSize: 14, color: s.cor, width: 46, textAlign: 'right' }}>{s.pct}%</span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: c.cor, minWidth: 130, textAlign: 'right' }}>{c.emoji} {c.txt}</span>
+              </div>
+            )
+          })}
         </div>
         {av.obs && <div style={{ background: '#faf9f7', borderRadius: 10, padding: '12px 14px', fontSize: 13, color: '#374151' }}><strong>Observações:</strong> {av.obs}</div>}
       </div>
@@ -192,7 +213,7 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome }
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {historico.map(av => {
-            const r = calcular(av.respostas, secoes); const cl = classificarAval(r.overallPct)
+            const r = calcular(av.respostas, secoes); const cl = classificarAval(r.overallPct, faixas)
             return (
               <div key={av.id} style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
                 <div style={{ width: 54, height: 54, borderRadius: 12, background: cl.cor, color: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>

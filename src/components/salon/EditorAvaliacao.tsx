@@ -33,6 +33,7 @@ export default function EditorAvaliacao() {
     setSalvando(false)
   }
 
+  function setFaixa(i: number, campo: 'min' | 'txt' | 'cor' | 'emoji', val: string | number) { mut(d => { if (!d.classificacao) d.classificacao = JSON.parse(JSON.stringify(CLASSIF_AVAL)); (d.classificacao[i] as any)[campo] = val }) }
   const totalCrit = doc.categorias.reduce((a, c) => a + c.criterios.length, 0)
 
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Loader2 size={26} className="animate-spin" style={{ color: '#5b4fcf' }} /></div>
@@ -73,15 +74,20 @@ export default function EditorAvaliacao() {
       <button onClick={() => mut(d => { d.categorias.push({ id: rid(), titulo: 'NOVA CATEGORIA', cor: '#5b4fcf', criterios: [{ id: rid(), texto: '' }] }) })} style={btnDashed}><Plus size={15} /> Adicionar categoria</button>
 
       <div style={{ marginTop: 18, background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: 16 }}>
-        <h3 style={{ fontSize: 14, fontWeight: 800, color: '#0891b2', margin: '0 0 8px' }}>Classificação final (cada critério vale de 1 a 5)</h3>
-        <p style={{ fontSize: 12, color: '#6b6860', margin: '0 0 10px' }}>1 — Muito abaixo · 2 — Abaixo · 3 — Dentro do esperado · 4 — Acima · 5 — Excelente</p>
-        {CLASSIF_AVAL.map((c, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, padding: '3px 0' }}>
-            <span style={{ width: 12, height: 12, borderRadius: 3, background: c.cor }} />
-            <strong style={{ color: c.cor }}>{c.emoji} {c.txt}</strong>
-            <span style={{ color: '#9ca3af' }}>{c.min === 0 ? 'abaixo de 60%' : c.min >= 90 ? '90% a 100%' : `${c.min}% a ${c.min + 9}%`}</span>
+        <h3 style={{ fontSize: 14, fontWeight: 800, color: '#0891b2', margin: '0 0 4px' }}>Classificação final (editável)</h3>
+        <p style={{ fontSize: 12, color: '#6b6860', margin: '0 0 12px' }}>Cada critério vale de 1 a 5. Defina as faixas de % e o rótulo de cada nível.</p>
+        {(doc.classificacao || CLASSIF_AVAL).map((c, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 12, color: '#6b6860' }}>a partir de</span>
+            <input type="number" min={0} max={100} value={c.min} onChange={e => setFaixa(i, 'min', Number(e.target.value))} style={{ width: 64, padding: '7px 8px', borderRadius: 6, border: '1px solid #d0cdc7', fontSize: 13, textAlign: 'center' }} />
+            <span style={{ fontSize: 12, color: '#6b6860' }}>%</span>
+            <input value={c.emoji} onChange={e => setFaixa(i, 'emoji', e.target.value)} style={{ width: 44, padding: '7px 8px', borderRadius: 6, border: '1px solid #d0cdc7', fontSize: 15, textAlign: 'center' }} />
+            <input value={c.txt} onChange={e => setFaixa(i, 'txt', e.target.value)} placeholder="Rótulo" style={{ flex: 1, minWidth: 160, padding: '7px 10px', borderRadius: 6, border: '1px solid #d0cdc7', fontSize: 13 }} />
+            <input type="color" value={c.cor} onChange={e => setFaixa(i, 'cor', e.target.value)} title="Cor" style={{ width: 32, height: 32, border: 'none', background: 'transparent', cursor: 'pointer', padding: 0 }} />
+            <button onClick={() => mut(d => { (d.classificacao || (d.classificacao = [...CLASSIF_AVAL])).splice(i, 1) })} title="Remover faixa" style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', padding: 4 }}><Trash2 size={14} /></button>
           </div>
         ))}
+        <button onClick={() => mut(d => { (d.classificacao || (d.classificacao = [...CLASSIF_AVAL])).push({ min: 0, txt: 'Novo nível', cor: '#5b4fcf', emoji: '•' }) })} style={{ ...btnDashed, marginTop: 4 }}><Plus size={13} /> Adicionar faixa</button>
       </div>
     </div>
   )
