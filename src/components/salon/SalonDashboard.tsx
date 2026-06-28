@@ -114,21 +114,23 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
       if (prox.length) setLembretesCal(prox)
     }).catch(() => { })
   }, [])
-  // KPIs da tela inicial (fontes leves: profissionais + pendências)
-  const [kpiAtivos, setKpiAtivos] = useState<number | null>(null)
-  const [kpiNiver, setKpiNiver] = useState<number | null>(null)
-  const [kpiPend, setKpiPend] = useState<number | null>(null)
+  // KPIs da tela inicial (fontes leves) — mostra do cache na hora e atualiza em 2º plano
+  const lerKpi = (k: string): number | null => { try { const c = JSON.parse(localStorage.getItem('nodri_kpis') || '{}'); return typeof c[k] === 'number' ? c[k] : null } catch { return null } }
+  const salvarKpi = (patch: Record<string, number>) => { try { const c = JSON.parse(localStorage.getItem('nodri_kpis') || '{}'); localStorage.setItem('nodri_kpis', JSON.stringify({ ...c, ...patch })) } catch { /* */ } }
+  const [kpiAtivos, setKpiAtivos] = useState<number | null>(() => lerKpi('ativos'))
+  const [kpiNiver, setKpiNiver] = useState<number | null>(() => lerKpi('niver'))
+  const [kpiPend, setKpiPend] = useState<number | null>(() => lerKpi('pend'))
   useEffect(() => {
     const mes = new Date().getMonth() + 1
     fetch('/api/profissionais').then(r => r.ok ? r.json() : []).then((arr: any[]) => {
       const lista = Array.isArray(arr) ? arr : []
       const ativos = lista.filter(p => p.ativo !== false && !p.is_departamento)
-      setKpiAtivos(ativos.length)
       const niver = ativos.filter(p => { const d = String(p.data_aniversario || ''); const m = Number(d.slice(5, 7)); return m === mes }).length
-      setKpiNiver(niver)
+      setKpiAtivos(ativos.length); setKpiNiver(niver); salvarKpi({ ativos: ativos.length, niver })
     }).catch(() => { })
     fetch('/api/pendencias').then(r => r.ok ? r.json() : []).then((arr: any[]) => {
-      setKpiPend((Array.isArray(arr) ? arr : []).filter((p: any) => !p.resolvido).length)
+      const n = (Array.isArray(arr) ? arr : []).filter((p: any) => !p.resolvido).length
+      setKpiPend(n); salvarKpi({ pend: n })
     }).catch(() => { })
   }, [])
   const [notifDismissed, setNotifDismissed] = useState(false)

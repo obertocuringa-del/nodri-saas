@@ -733,10 +733,12 @@ ${montarContratoHTML()}
   }
 
   async function carregarProfissionais() {
+    // Mostra do cache na hora (sem espera) e atualiza em segundo plano
+    try { const c = localStorage.getItem('nodri_profissionais'); if (c) { setProfissionais(JSON.parse(c)); setLoading(false) } } catch { /* */ }
     setLoading(true)
     try {
       const res = await fetch('/api/profissionais')
-      if (res.ok) setProfissionais(await res.json())
+      if (res.ok) { const d = await res.json(); setProfissionais(d); try { localStorage.setItem('nodri_profissionais', JSON.stringify(d)) } catch { /* */ } }
     } catch { } finally { setLoading(false) }
   }
 
