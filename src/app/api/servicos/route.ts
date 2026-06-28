@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { verifyJWT } from '@/lib/auth'
 import { cookies } from 'next/headers'
+import { escritaBloqueadaSub } from '@/lib/apiAuth'
 
 async function getSalaoId() {
   const token = cookies().get('nodri_token')?.value
@@ -27,6 +28,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const salaoId = await getSalaoId()
   if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  if (await escritaBloqueadaSub()) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
 
   const body = await req.json()
   const { categoria, nome, preco_fixo, preco_min, comissao_valor, observacao, ciclo_retorno_dias } = body
@@ -46,6 +48,7 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   const salaoId = await getSalaoId()
   if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  if (await escritaBloqueadaSub()) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
 
   const body = await req.json()
   const { id, categoria, nome, preco_fixo, preco_min, comissao_valor, observacao, ciclo_retorno_dias, ativo } = body
@@ -65,6 +68,7 @@ export async function PUT(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const salaoId = await getSalaoId()
   if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  if (await escritaBloqueadaSub()) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
 
   const { searchParams } = new URL(req.url)
   const id = searchParams.get('id')

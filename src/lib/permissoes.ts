@@ -37,6 +37,7 @@ export const CATALOGO_PERMISSOES: PermGrupo[] = [
       { chave: 'adm_feriados', label: 'Escala de Feriados' },
       { chave: 'adm_pop', label: 'POP (Procedimentos)' },
       { chave: 'adm_senhas', label: 'Senhas' },
+      { chave: 'adm_cadastrar_produto', label: 'Cadastrar Produto' },
     ]
   },
   {
@@ -57,6 +58,7 @@ export const CATALOGO_PERMISSOES: PermGrupo[] = [
       { chave: 'prof_certificados', label: 'Certificados' },
       { chave: 'prof_carreira', label: 'Plano de carreira' },
       { chave: 'prof_avaliar', label: 'Avaliar profissional' },
+      { chave: 'clt_exame', label: 'Exame Admissional (CLT)' },
       { chave: 'prof_faturamento', label: 'Faturamento do profissional' },
       { chave: 'prof_ocorrencias', label: 'Ocorrências do profissional' },
       { chave: 'prof_metas', label: 'Metas do profissional' },

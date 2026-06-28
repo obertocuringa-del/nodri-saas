@@ -217,6 +217,7 @@ export default function PendenciasPage() {
                 type="date"
                 value={novaData}
                 onChange={e => setNovaData(e.target.value)}
+                onClick={e => { try { (e.currentTarget as any).showPicker?.() } catch { /* */ } }}
                 className="bg-nodri-card border border-nodri-cyan/40 rounded-lg px-2 py-1 text-[11px] text-nodri-t1 outline-none cursor-pointer"
                 style={{ colorScheme: 'dark' }}
               />
@@ -361,7 +362,7 @@ export default function PendenciasPage() {
             </div>
             <div>
               <label className={labelCls}>Data Limite (opcional)</label>
-              <input type="date" value={dataLimite} onChange={e => setDataLimite(e.target.value)} className={inputCls} style={{ colorScheme: 'dark', cursor: 'pointer' }}/>
+              <input type="date" value={dataLimite} onChange={e => setDataLimite(e.target.value)} onClick={e => { try { (e.currentTarget as any).showPicker?.() } catch { /* */ } }} className={inputCls} style={{ colorScheme: 'dark', cursor: 'pointer' }}/>
             </div>
             <button
               onClick={criar}

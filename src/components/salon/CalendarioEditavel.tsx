@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Loader2, Save, Plus, Trash2, X, CalendarDays, ChevronLeft, ChevronRight, Bell } from 'lucide-react'
+import { ArrowLeft, Loader2, Save, Plus, Trash2, X, CalendarDays, ChevronLeft, ChevronRight, Bell, Printer } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { usePermissoes } from '@/lib/usePermissoes'
 
 interface Evento { id: string; data: string; texto: string; responsavel?: string }
 const rid = () => Math.random().toString(36).slice(2, 8)
@@ -14,6 +15,8 @@ const diasAte = (data: string) => { const [y, m, d] = data.split('-').map(Number
 
 export default function CalendarioEditavel({ chave, titulo, comResponsavel, camposGrandes, corTema = '#5b4fcf', mostrarLembrete }: { chave: string; titulo: string; comResponsavel?: boolean; camposGrandes?: boolean; corTema?: string; mostrarLembrete?: boolean }) {
   const router = useRouter()
+  const { ehSub } = usePermissoes()
+  const somenteLeitura = ehSub // usuário criado pelo salão só visualiza
   const [eventos, setEventos] = useState<Evento[]>([])
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
@@ -60,6 +63,16 @@ export default function CalendarioEditavel({ chave, titulo, comResponsavel, camp
     setEventos(lista); setDirty(true); salvar(lista)
   }
 
+  function imprimir() {
+    const esc = (v: any) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>')
+    const ordenados = [...eventos].sort((a, b) => a.data.localeCompare(b.data))
+    const body = ordenados.map(e => `<tr><td class="d">${esc(e.data.split('-').reverse().join('/'))}</td><td>${esc(e.texto)}</td>${comResponsavel ? `<td>${esc(e.responsavel || '')}</td>` : ''}</tr>`).join('')
+    const colResp = comResponsavel ? '<th>Responsável</th>' : ''
+    const css = `@page{size:A4 portrait;margin:14mm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;font-size:12px}.hd{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid ${corTema};padding-bottom:8px;margin-bottom:14px}.brand{font-size:22px;font-weight:900;color:${corTema}}table{width:100%;border-collapse:collapse}th,td{border:1px solid #bbb;padding:7px 9px;text-align:left;vertical-align:top;word-break:break-word;white-space:pre-wrap}th{background:#f1eefb;color:#3b2e7a}.d{white-space:nowrap;font-weight:700;width:110px}tr{break-inside:avoid}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}`
+    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${esc(titulo)}</title><style>${css}</style></head><body><div class="hd"><div class="brand">NODRI</div><div style="text-align:right;font-size:11px"><strong>${esc(titulo)}</strong><br>${new Date().toLocaleDateString('pt-BR')}</div></div><table><thead><tr><th>Data</th><th>Compromisso</th>${colResp}</tr></thead><tbody>${body || `<tr><td colspan="3">Nenhum compromisso.</td></tr>`}</tbody></table><script>window.onload=function(){window.print()}</script></body></html>`
+    const w = window.open('', '_blank', 'width=900,height=700'); if (!w) return; w.document.write(html); w.document.close(); w.focus()
+  }
+
   const diasNoMes = new Date(ref.ano, ref.mes + 1, 0).getDate()
   const primDiaSemana = new Date(ref.ano, ref.mes, 1).getDay()
   const mesStr = (d: number) => `${ref.ano}-${String(ref.mes + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
@@ -76,6 +89,8 @@ export default function CalendarioEditavel({ chave, titulo, comResponsavel, camp
         <button onClick={() => router.push('/salon')} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', color: '#6b6860', cursor: 'pointer', fontSize: 14 }}><ArrowLeft size={16} /> Voltar</button>
         <span style={{ width: 1, height: 16, background: '#e0ddd8' }} />
         <span style={{ fontWeight: 800, fontSize: 15, color: '#1a1a1a' }}><CalendarDays size={15} style={{ display: 'inline', verticalAlign: -2, marginRight: 6, color: corTema }} />{titulo}</span>
+        <div style={{ flex: 1 }} />
+        <button onClick={imprimir} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 13px', borderRadius: 8, border: '1px solid #d0cdc7', background: '#fff', color: '#374151', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}><Printer size={14} /> Imprimir</button>
       </nav>
 
       <div style={{ maxWidth: 820, margin: '0 auto', padding: 16 }}>
@@ -120,33 +135,38 @@ export default function CalendarioEditavel({ chave, titulo, comResponsavel, camp
           </div>
         </div>
 
-        {/* Painel do dia selecionado */}
+        {/* Card do dia selecionado (modal — abre por cima, sem precisar rolar) */}
         {selDia && (
-          <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: 16, marginTop: 14 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-              <h3 style={{ fontSize: 15, fontWeight: 800, color: corTema, margin: 0 }}>{selDia.split('-').reverse().join('/')}</h3>
-              <button onClick={() => setSelDia(null)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#9ca3af' }}><X size={18} /></button>
-            </div>
-
-            {eventosDoDia(selDia).length === 0 && <p style={{ fontSize: 13, color: '#9ca3af', margin: '0 0 10px' }}>Nenhum compromisso neste dia.</p>}
-            {eventosDoDia(selDia).map(e => (
-              <div key={e.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px', borderRadius: 8, background: '#faf9f7', marginBottom: 8 }}>
-                <span style={{ color: '#dc2626', flexShrink: 0 }}>📌</span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13.5, color: '#1a1a1a', whiteSpace: 'pre-wrap' }}>{e.texto}</div>
-                  {e.responsavel && <div style={{ fontSize: 11, color: corTema, fontWeight: 700, marginTop: 2 }}>👤 {e.responsavel}</div>}
-                </div>
-                <button onClick={() => removerEvento(e.id)} title="Remover" style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', flexShrink: 0 }}><Trash2 size={14} /></button>
+          <div onClick={() => setSelDia(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 1500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+            <div onClick={ev => ev.stopPropagation()} style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 480, maxHeight: '88vh', overflowY: 'auto', boxShadow: '0 24px 70px rgba(0,0,0,.35)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid #f0eee8', position: 'sticky', top: 0, background: '#fff' }}>
+                <h3 style={{ fontSize: 16, fontWeight: 800, color: corTema, margin: 0 }}>📅 {selDia.split('-').reverse().join('/')}</h3>
+                <button onClick={() => setSelDia(null)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#9ca3af' }}><X size={20} /></button>
               </div>
-            ))}
+              <div style={{ padding: 18 }}>
+                {eventosDoDia(selDia).length === 0 && <p style={{ fontSize: 13, color: '#9ca3af', margin: '0 0 10px' }}>Nenhum compromisso neste dia.</p>}
+                {eventosDoDia(selDia).map(e => (
+                  <div key={e.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px', borderRadius: 8, background: '#faf9f7', marginBottom: 8 }}>
+                    <span style={{ color: '#dc2626', flexShrink: 0 }}>📌</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13.5, color: '#1a1a1a', whiteSpace: 'pre-wrap', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{e.texto}</div>
+                      {e.responsavel && <div style={{ fontSize: 11, color: corTema, fontWeight: 700, marginTop: 2, wordBreak: 'break-word' }}>👤 {e.responsavel}</div>}
+                    </div>
+                    {!somenteLeitura && <button onClick={() => removerEvento(e.id)} title="Remover" style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', flexShrink: 0 }}><Trash2 size={14} /></button>}
+                  </div>
+                ))}
 
-            {/* Adicionar */}
-            <div style={{ marginTop: 8, borderTop: '1px dashed #e8e6e0', paddingTop: 10 }}>
-              {comResponsavel && <input value={novoResp} onChange={e => setNovoResp(e.target.value)} placeholder="Responsável" style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13, marginBottom: 8 }} />}
-              {camposGrandes
-                ? <textarea value={novoTexto} onChange={e => setNovoTexto(e.target.value)} placeholder="Descreva a ação / compromisso..." rows={4} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13, resize: 'vertical', fontFamily: 'inherit' }} />
-                : <input value={novoTexto} onChange={e => setNovoTexto(e.target.value)} placeholder="Compromisso..." style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13 }} />}
-              <button onClick={addEvento} disabled={salvando} style={{ marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 8, border: 'none', background: corTema, color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}><Plus size={15} /> Adicionar e salvar</button>
+                {/* Adicionar (oculto para usuário somente leitura) */}
+                {!somenteLeitura && (
+                  <div style={{ marginTop: 8, borderTop: '1px dashed #e8e6e0', paddingTop: 12 }}>
+                    {comResponsavel && <input value={novoResp} onChange={e => setNovoResp(e.target.value)} placeholder="Responsável" style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13, marginBottom: 8 }} />}
+                    {camposGrandes
+                      ? <textarea value={novoTexto} onChange={e => setNovoTexto(e.target.value)} placeholder="Descreva a ação / compromisso..." rows={4} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13, resize: 'vertical', fontFamily: 'inherit' }} />
+                      : <input value={novoTexto} onChange={e => setNovoTexto(e.target.value)} placeholder="Compromisso..." style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13 }} />}
+                    <button onClick={addEvento} disabled={salvando} style={{ marginTop: 8, width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '11px 16px', borderRadius: 8, border: 'none', background: corTema, color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}><Plus size={15} /> Adicionar e salvar</button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -167,10 +187,10 @@ export default function CalendarioEditavel({ chave, titulo, comResponsavel, camp
                     <span style={{ fontSize: 10, fontWeight: 800, color: '#fff', background: cor, borderRadius: 20, padding: '3px 9px', whiteSpace: 'nowrap', flexShrink: 0, marginTop: 2 }}>{badge}</span>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 11, color: '#9ca3af' }}>{e.data.split('-').reverse().join('/')}</div>
-                      <div style={{ fontSize: 13, color: '#1a1a1a', whiteSpace: 'pre-wrap' }}>{e.texto}</div>
-                      {e.responsavel && <div style={{ fontSize: 11, color: corTema, fontWeight: 700, marginTop: 2 }}>👤 {e.responsavel}</div>}
+                      <div style={{ fontSize: 13, color: '#1a1a1a', whiteSpace: 'pre-wrap', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{e.texto}</div>
+                      {e.responsavel && <div style={{ fontSize: 11, color: corTema, fontWeight: 700, marginTop: 2, wordBreak: 'break-word' }}>👤 {e.responsavel}</div>}
                     </div>
-                    <button onClick={() => removerEvento(e.id)} title="Remover" style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', flexShrink: 0 }}><Trash2 size={14} /></button>
+                    {!somenteLeitura && <button onClick={() => removerEvento(e.id)} title="Remover" style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', flexShrink: 0 }}><Trash2 size={14} /></button>}
                   </div>
                 )
               })}

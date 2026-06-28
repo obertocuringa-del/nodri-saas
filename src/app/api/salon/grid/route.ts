@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { salaoIdSe, permDaGrade } from '@/lib/apiAuth'
+import { salaoIdSe, permDaGrade, getSessao } from '@/lib/apiAuth'
 
 // Grades editáveis genéricas (bebidas, alicates, produtos, senhas, pop...). Namespace 'grid_'.
 export async function GET(req: NextRequest) {
@@ -17,6 +17,10 @@ export async function PUT(req: NextRequest) {
   if (!chave) return NextResponse.json({ error: 'Falta chave' }, { status: 400 })
   const salaoId = await salaoIdSe(permDaGrade(chave))
   if (!salaoId) return NextResponse.json({ error: 'Sem acesso' }, { status: 403 })
+  // Sub-usuário é somente leitura, EXCETO as Listas (bebidas, alicates, produtos, serviços internos)
+  const ehListasGrid = /^bebidas/.test(chave) || ['alicates', 'produtos', 'servinterno'].includes(chave)
+  const sess = await getSessao()
+  if (sess?.role === 'sub' && !ehListasGrid) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
   const { error } = await supabaseAdmin.from('salao_config').upsert({ salao_id: salaoId, chave: `grid_${chave}`, valor: doc, atualizado_em: new Date().toISOString() }, { onConflict: 'salao_id,chave' })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ ok: true })

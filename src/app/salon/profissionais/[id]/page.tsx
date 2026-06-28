@@ -1831,7 +1831,8 @@ function AbaPendencias({ profissionalId }: { profissionalId: string }) {
             type="date"
             value={novaDataLimite}
             onChange={e => setNovaDataLimite(e.target.value)}
-            className="bg-nodri-surface border border-nodri-border rounded-lg px-3 py-1.5 text-[11px] text-nodri-t1 outline-none focus:border-nodri-cyan/40"
+            onClick={e => { try { (e.currentTarget as any).showPicker?.() } catch { /* */ } }}
+            className="bg-nodri-surface border border-nodri-border rounded-lg px-3 py-1.5 text-[11px] text-nodri-t1 outline-none focus:border-nodri-cyan/40 cursor-pointer"
             style={{ colorScheme: 'dark' }}
           />
           <button
@@ -1879,7 +1880,8 @@ function AbaPendencias({ profissionalId }: { profissionalId: string }) {
               {editandoData === p.id && (
                 <div className="flex items-center gap-2 pt-1 border-t border-nodri-border">
                   <input type="date" value={novaData} onChange={e => setNovaData(e.target.value)}
-                    className="bg-nodri-surface border border-nodri-cyan/40 rounded-lg px-2 py-1 text-[11px] text-nodri-t1 outline-none"
+                    onClick={e => { try { (e.currentTarget as any).showPicker?.() } catch { /* */ } }}
+                    className="bg-nodri-surface border border-nodri-cyan/40 rounded-lg px-2 py-1 text-[11px] text-nodri-t1 outline-none cursor-pointer"
                     style={{ colorScheme: 'dark' }} />
                   <button onClick={() => salvarData(p.id)} className="text-[10px] px-3 py-1 rounded-lg bg-nodri-cyan text-nodri-dark font-bold">Salvar</button>
                   <button onClick={() => setEditandoData(null)} className="text-[10px] text-nodri-t3 hover:text-nodri-t1">Cancelar</button>

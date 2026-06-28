@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft, Plus, Search, UserCheck, UserX, Edit2, Trash2, Upload, X, ChevronRight, Users, FileText, Briefcase, Clock, Award, BookOpen, FileSignature, AlertCircle, TrendingUp, Building2, Menu, Mail } from 'lucide-react'
 import toast from 'react-hot-toast'
 import MateriaisTrabalho from '@/components/salon/MateriaisTrabalho'
+import ExameAdmissional from '@/components/salon/ExameAdmissional'
 
 interface Profissional {
   id: string
@@ -160,6 +161,7 @@ const FORM_INITIAL = {
 export default function ProfissionaisPage() {
   const router = useRouter()
   const [secao, setSecao] = useState('lista')
+  const [cltSub, setCltSub] = useState<'clt' | 'exame'>('clt')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   useEffect(() => {
@@ -1769,6 +1771,13 @@ ${montarContratoHTML()}
           {/* ── PROFISSIONAIS CLT ── */}
           {secao === 'clt' && (
             <div style={{ maxWidth: '1000px' }}>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', borderBottom: '1px solid #ece9e2', paddingBottom: 12 }}>
+                <button onClick={() => setCltSub('clt')} style={{ padding: '8px 16px', borderRadius: 8, border: cltSub === 'clt' ? '1px solid #0ea5e9' : '1px solid #e0ddd8', background: cltSub === 'clt' ? '#0ea5e9' : '#fff', color: cltSub === 'clt' ? '#fff' : '#6b6860', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Profissionais CLT</button>
+                <button onClick={() => setCltSub('exame')} style={{ padding: '8px 16px', borderRadius: 8, border: cltSub === 'exame' ? '1px solid #0ea5e9' : '1px solid #e0ddd8', background: cltSub === 'exame' ? '#0ea5e9' : '#fff', color: cltSub === 'exame' ? '#fff' : '#6b6860', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>🩺 Exame Admissional</button>
+              </div>
+              {cltSub === 'exame' ? (
+                <ExameAdmissional pessoas={profissionais.map(p => ({ nome: p.apelido || p.nome_completo || '—', telefone: (p as any).telefone || (() => { try { return JSON.parse((p as any).contato_responsavel || '{}').tel || '' } catch { return '' } })() }))} />
+              ) : (<div>
               <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', marginBottom: '16px' }}>
                 <div>
                   <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#1a1a1a', margin: '0 0 6px' }}>Profissionais CLT</h2>
@@ -1862,6 +1871,7 @@ ${montarContratoHTML()}
                   )
                 })
               })()}
+              </div>)}
             </div>
           )}
 

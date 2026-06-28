@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getAtendimentosRaw } from '@/lib/atendimentosCache'
+import { escritaBloqueadaSub } from '@/lib/apiAuth'
 
 async function getSalaoId() {
   const token = cookies().get('nodri_token')?.value
@@ -71,6 +72,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const salaoId = await getSalaoId()
   if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  if (await escritaBloqueadaSub()) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
   const b = await req.json()
   if (!b.cliente_nome?.trim()) return NextResponse.json({ error: 'Nome obrigatório' }, { status: 400 })
   const { data, error } = await supabaseAdmin.from('lista_espera').insert({
@@ -91,6 +93,7 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   const salaoId = await getSalaoId()
   if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  if (await escritaBloqueadaSub()) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
   const b = await req.json()
   if (!b.id) return NextResponse.json({ error: 'id obrigatório' }, { status: 400 })
   const patch: any = { atualizado_em: new Date().toISOString() }
@@ -106,6 +109,7 @@ export async function PUT(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const salaoId = await getSalaoId()
   if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  if (await escritaBloqueadaSub()) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
   const id = new URL(req.url).searchParams.get('id')
   if (!id) return NextResponse.json({ error: 'id não informado' }, { status: 400 })
   const { error } = await supabaseAdmin.from('lista_espera').delete().eq('id', id).eq('salao_id', salaoId)

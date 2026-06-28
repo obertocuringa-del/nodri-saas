@@ -18,6 +18,13 @@ export async function getSessao(): Promise<Sessao | null> {
   return { salaoId: p.salaoId, role: p.role, permissoes: null }
 }
 
+// Sub-usuário (criado pelo salão) é SOMENTE LEITURA — não pode editar/excluir/alterar nada.
+// Retorna true quando a escrita deve ser bloqueada (usuário é 'sub'). Dono/master nunca bloqueiam.
+export async function escritaBloqueadaSub(): Promise<boolean> {
+  const s = await getSessao()
+  return s?.role === 'sub'
+}
+
 // Retorna o salaoId se a sessão tem QUALQUER uma das chaves (dono sempre passa); senão null
 export async function salaoIdSe(chaves: string | string[]): Promise<string | null> {
   const s = await getSessao()
@@ -41,6 +48,11 @@ export function permDaGrade(chave: string): string {
   if (c === 'telefones') return 'adm_telefones'
   if (c === 'precos_servicos') return 'adm_servicos_valores'
   if (c === 'tratamentos_dosagem') return 'adm_tratamentos'
+  if (c === 'cadastrar_produto') return 'adm_cadastrar_produto'
+  if (c === 'exame_admissional') return 'clt_exame'
+  if (c.startsWith('calendario_mkt')) return 'calendario_mkt'
+  if (c.startsWith('calendario')) return 'calendario'
+  if (c === 'prof_categorias') return 'profissionais'
   // bebidas, alicates, produtos, servinterno → Listas
   return 'adm_listas'
 }

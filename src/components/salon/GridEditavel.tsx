@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react
 import toast from 'react-hot-toast'
 import { Loader2, Save, Printer, Plus, Trash2, Bold, Italic, Type, PaintBucket } from 'lucide-react'
 
-export type Cell = { t: string; b?: boolean; i?: boolean; cor?: string; tam?: number; bg?: string }
+export type Cell = { t: string; b?: boolean; i?: boolean; cor?: string; tam?: number; bg?: string; cs?: number; rs?: number; h?: boolean }
 export type Tabela = { titulo: string; cabecalho: Cell[]; linhas: Cell[][]; larguras?: number[] }
 export type Doc = { tabelas: Tabela[] }
 type Sel = { ti: number; ri: number; ci: number } // ri = -1 → cabeçalho
@@ -62,6 +62,38 @@ export default function GridEditavel({ chave, defaultDoc, defaultDocFn, mensal, 
   function delLinha(ti: number, ri: number) { mut(d => { d.tabelas[ti].linhas.splice(ri, 1) }) }
   function addColuna(ti: number) { mut(d => { const t = d.tabelas[ti]; t.cabecalho.push(cel('Nova coluna')); t.linhas.forEach(l => l.push(cel(''))); if (t.larguras) t.larguras.push(LARG_PADRAO) }) }
   function delColuna(ti: number, ci: number) { mut(d => { const t = d.tabelas[ti]; if (t.cabecalho.length <= 1) return; t.cabecalho.splice(ci, 1); t.linhas.forEach(l => l.splice(ci, 1)); if (t.larguras) t.larguras.splice(ci, 1) }) }
+  // ── Mesclar células (colspan/rowspan) ──
+  const rowOf = (t: Tabela, r: number) => r === -1 ? t.cabecalho : t.linhas[r]
+  function mesclarDir(s: Sel) {
+    mut(d => {
+      const t = d.tabelas[s.ti]; const anchor = rowOf(t, s.ri)[s.ci]; if (!anchor || anchor.h) return
+      const cs = (anchor.cs || 1) + 1, rs = anchor.rs || 1
+      if (s.ci + cs - 1 >= rowOf(t, s.ri).length) { return }
+      for (let r = s.ri; r < s.ri + rs; r++) { const cell = rowOf(t, r)?.[s.ci + cs - 1]; if (cell) cell.h = true }
+      anchor.cs = cs
+    })
+  }
+  function mesclarBaixo(s: Sel) {
+    if (s.ri < 0) { toast('Mescle para baixo só nas linhas (não no cabeçalho)', { icon: '👆' }); return }
+    mut(d => {
+      const t = d.tabelas[s.ti]; const anchor = t.linhas[s.ri][s.ci]; if (!anchor || anchor.h) return
+      const cs = anchor.cs || 1, rs = (anchor.rs || 1) + 1
+      if (s.ri + rs - 1 >= t.linhas.length) { return }
+      for (let c = s.ci; c < s.ci + cs; c++) { const cell = t.linhas[s.ri + rs - 1]?.[c]; if (cell) cell.h = true }
+      anchor.rs = rs
+    })
+  }
+  function desmesclar(s: Sel) {
+    mut(d => {
+      const t = d.tabelas[s.ti]; const anchor = rowOf(t, s.ri)[s.ci]; if (!anchor) return
+      const cs = anchor.cs || 1, rs = anchor.rs || 1
+      for (let r = s.ri; r < s.ri + rs; r++) for (let c = s.ci; c < s.ci + cs; c++) {
+        if (r === s.ri && c === s.ci) continue
+        const cell = rowOf(t, r)?.[c]; if (cell) cell.h = false
+      }
+      anchor.cs = 1; anchor.rs = 1
+    })
+  }
   function addTabela() { mut(d => { d.tabelas.push({ titulo: 'NOVO BLOCO', cabecalho: [cel('Coluna 1'), cel('Coluna 2'), cel('Coluna 3')], linhas: Array.from({ length: 4 }, () => [cel(''), cel(''), cel('')]), larguras: [220, 320, 180] }) }) }
   function delTabela(ti: number) { if (!confirm('Excluir este bloco inteiro?')) return; mut(d => { d.tabelas.splice(ti, 1) }) }
   const largura = (t: Tabela, ci: number) => t.larguras?.[ci] ?? LARG_PADRAO
@@ -93,8 +125,9 @@ export default function GridEditavel({ chave, defaultDoc, defaultDocFn, mensal, 
     const sty = (cell: Cell) => `font-weight:${cell.b ? 700 : 400};font-style:${cell.i ? 'italic' : 'normal'};color:${cell.cor || '#1a1a1a'};font-size:${cell.tam || 13}px;${cell.bg ? `background:${cell.bg};` : ''}`
     const tabelas = doc.tabelas.map(t => {
       const cols = t.cabecalho.map((_, ci) => `<col style="width:${largura(t, ci)}px">`).join('')
-      const head = t.cabecalho.map(cc => `<th style="${sty(cc)}">${esc(cc.t)}</th>`).join('')
-      const body = t.linhas.map(r => `<tr>${r.map(cc => `<td style="${sty(cc)}">${esc(cc.t)}</td>`).join('')}</tr>`).join('')
+      const sp = (cc: Cell) => `${cc.cs && cc.cs > 1 ? ` colspan="${cc.cs}"` : ''}${cc.rs && cc.rs > 1 ? ` rowspan="${cc.rs}"` : ''}`
+      const head = t.cabecalho.map(cc => cc.h ? '' : `<th${sp(cc)} style="${sty(cc)}">${esc(cc.t)}</th>`).join('')
+      const body = t.linhas.map(r => `<tr>${r.map(cc => cc.h ? '' : `<td${sp(cc)} style="${sty(cc)}">${esc(cc.t)}</td>`).join('')}</tr>`).join('')
       return `<h2>${esc(t.titulo)}</h2><table><colgroup>${cols}</colgroup><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`
     }).join('')
     const css = `@page{size:A4 ${landscape ? 'landscape' : 'portrait'};margin:12mm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e}.hd{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid ${corTema};padding-bottom:8px;margin-bottom:14px}.brand{font-size:22px;font-weight:900;color:${corTema}}h2{font-size:14px;color:${corTema};margin:14px 0 6px;text-transform:uppercase;letter-spacing:.5px}table{width:100%;border-collapse:collapse;margin-bottom:6px;table-layout:fixed}th,td{border:1px solid #ccc;padding:5px 8px;font-size:11px;text-align:left;vertical-align:top;word-break:break-word;white-space:pre-wrap}th{background:#f1eefb;color:#3b2e7a}tr{break-inside:avoid}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}`
@@ -130,6 +163,10 @@ export default function GridEditavel({ chave, defaultDoc, defaultDocFn, mensal, 
             {TAMANHOS.map(t => <option key={t} value={t}>{t}px</option>)}
           </select>
         </span>
+        <span style={{ width: 1, height: 20, background: '#eee', margin: '0 2px' }} />
+        <button onClick={() => sel && mesclarDir(sel)} disabled={!sel} title="Mesclar com a célula à direita" style={{ ...fmtBtn(false, corTema), fontSize: 15, fontWeight: 800 }}>⬌</button>
+        <button onClick={() => sel && mesclarBaixo(sel)} disabled={!sel} title="Mesclar com a célula abaixo" style={{ ...fmtBtn(false, corTema), fontSize: 15, fontWeight: 800 }}>⬍</button>
+        <button onClick={() => sel && desmesclar(sel)} disabled={!sel} title="Desmesclar célula" style={{ ...fmtBtn(false, corTema), fontSize: 13, fontWeight: 800 }}>⊟</button>
         <div style={{ flex: 1 }} />
         <button onClick={imprimir} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 8, border: '1px solid #d0cdc7', background: '#fff', color: '#374151', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}><Printer size={14} /> Imprimir A4</button>
         <button onClick={salvar} disabled={salvando} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 16px', borderRadius: 8, border: 'none', background: dirty ? '#16a34a' : '#a3b3a3', color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>{salvando ? '...' : <><Save size={14} /> Salvar</>}</button>
@@ -151,8 +188,8 @@ export default function GridEditavel({ chave, defaultDoc, defaultDocFn, mensal, 
               </colgroup>
               <thead>
                 <tr>
-                  {t.cabecalho.map((cc, ci) => (
-                    <th key={ci} style={{ background: cc.bg || '#f1eefb', border: '1px solid #ddd6f5', padding: 2, position: 'relative', verticalAlign: 'top' }}>
+                  {t.cabecalho.map((cc, ci) => cc.h ? null : (
+                    <th key={ci} colSpan={cc.cs || 1} rowSpan={cc.rs || 1} style={{ background: cc.bg || '#f1eefb', border: '1px solid #ddd6f5', padding: 2, position: 'relative', verticalAlign: 'top' }}>
                       <div style={{ display: 'flex', alignItems: 'flex-start' }}>{cellBox(cc, { ti, ri: -1, ci })}<button onClick={() => delColuna(ti, ci)} title="Remover coluna" style={{ border: 'none', background: 'transparent', color: '#a99', cursor: 'pointer', padding: 2, flexShrink: 0 }}>×</button></div>
                       <div onMouseDown={e => iniciarResize(ti, ci, e)} title="Arraste para redimensionar" style={{ position: 'absolute', top: 0, right: -3, width: 7, height: '100%', cursor: 'col-resize', zIndex: 5 }} />
                     </th>
@@ -163,7 +200,7 @@ export default function GridEditavel({ chave, defaultDoc, defaultDocFn, mensal, 
               <tbody>
                 {t.linhas.map((linha, ri) => (
                   <tr key={ri}>
-                    {linha.map((cc, ci) => <td key={ci} style={{ border: '1px solid #eee', padding: 2, background: cc.bg || 'transparent', verticalAlign: 'top' }}>{cellBox(cc, { ti, ri, ci })}</td>)}
+                    {linha.map((cc, ci) => cc.h ? null : <td key={ci} colSpan={cc.cs || 1} rowSpan={cc.rs || 1} style={{ border: '1px solid #eee', padding: 2, background: cc.bg || 'transparent', verticalAlign: 'top' }}>{cellBox(cc, { ti, ri, ci })}</td>)}
                     <td style={{ border: '1px solid #eee', textAlign: 'center', padding: 0, verticalAlign: 'top' }}><button onClick={() => delLinha(ti, ri)} title="Remover linha" style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', padding: 6 }}><Trash2 size={13} /></button></td>
                   </tr>
                 ))}
