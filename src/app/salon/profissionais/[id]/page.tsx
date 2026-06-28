@@ -3018,9 +3018,12 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
           </button>
         )}
         {souProf && (
-          <span className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold" style={{ background: '#eef2ff', color: '#4338ca' }}>
-            👁️ Somente leitura
-          </span>
+          <div className="ml-auto flex items-center gap-2">
+            <a href="/salon/meu-painel" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold" style={{ background: '#7c5cfc', color: '#fff' }}>📊 Painel</a>
+            <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold" style={{ background: '#eef2ff', color: '#4338ca' }}>
+              👁️ Somente leitura
+            </span>
+          </div>
         )}
       </div>
 
