@@ -140,6 +140,12 @@ html, body {
          a barra de botões some no celular (e vice-versa no PC). */
   .nodri-mob-only { display: block !important; }
   .nodri-desk-only { display: none !important; }
+
+  /* 19) Barra de ferramentas das planilhas: no celular vira uma faixa que rola
+         de lado (negrito, cor, fundo, mesclar, alinhar, borda), deixando o
+         botão Salvar sempre visível à direita. */
+  .nodri-grid-ctrls { flex-wrap: nowrap !important; overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; padding-bottom: 4px; }
+  .nodri-grid-ctrls > * { flex: 0 0 auto; }
 }
 
 /* Scrollbar customizada — mais larga e escura, fácil de pegar com o mouse */
@@ -156,6 +162,11 @@ html { scrollbar-width: auto; scrollbar-color: #908a80 #e6e2db; }
 
 /* Seleção de texto */
 ::selection { background: rgba(91, 79, 207, 0.15); color: var(--nodri-t1); }
+
+/* Acessibilidade: foco visível para navegação por teclado */
+:focus-visible { outline: 2px solid #5b4fcf; outline-offset: 2px; border-radius: 4px; }
+/* Botões herdam a fonte do app (consistência) e têm transição suave */
+button { font-family: inherit; transition: filter .12s ease, box-shadow .12s ease, background-color .12s ease; }
 
 @layer components {
   .nodri-card {

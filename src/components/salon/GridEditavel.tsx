@@ -162,6 +162,7 @@ export default function GridEditavel({ chave, defaultDoc, defaultDocFn, mensal, 
   return (
     <div>
       <div style={{ position: 'sticky', top: 0, zIndex: 20, background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: '10px 12px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', boxShadow: '0 2px 8px rgba(0,0,0,.05)' }}>
+        <div className="nodri-grid-ctrls" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', minWidth: 0 }}>
         {mensal && <><label style={{ fontSize: 12, fontWeight: 700, color: '#6b6860' }}>Mês:</label><input type="month" value={mes} onChange={e => setMes(e.target.value)} style={{ padding: '5px 8px', borderRadius: 6, border: '1px solid #d0cdc7', fontSize: 12 }} /><span style={{ width: 1, height: 20, background: '#eee' }} /></>}
         <button onClick={() => aplicar(c => ({ b: !c.b }))} disabled={!sel} title="Negrito" style={fmtBtn(!!selCell?.b, corTema)}><Bold size={15} /></button>
         <button onClick={() => aplicar(c => ({ i: !c.i }))} disabled={!sel} title="Itálico" style={fmtBtn(!!selCell?.i, corTema)}><Italic size={15} /></button>
@@ -188,6 +189,7 @@ export default function GridEditavel({ chave, defaultDoc, defaultDocFn, mensal, 
         <button onClick={() => aplicar({ al: 'center' })} disabled={!sel} title="Centralizar" style={fmtBtn(selCell?.al === 'center', corTema)}><AlignCenter size={15} /></button>
         <button onClick={() => aplicar({ al: 'right' })} disabled={!sel} title="Alinhar à direita" style={fmtBtn(selCell?.al === 'right', corTema)}><AlignRight size={15} /></button>
         <button onClick={() => aplicar(c => ({ bd: !c.bd }))} disabled={!sel} title="Borda da célula (ligar/desligar)" style={fmtBtn(!!selCell?.bd, corTema)}><Square size={15} /></button>
+        </div>
         <div style={{ flex: 1 }} />
         <button onClick={imprimir} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 8, border: '1px solid #d0cdc7', background: '#fff', color: '#374151', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}><Printer size={14} /> Imprimir A4</button>
         <button onClick={salvar} disabled={salvando} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 16px', borderRadius: 8, border: 'none', background: dirty ? '#16a34a' : '#a3b3a3', color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>{salvando ? '...' : <><Save size={14} /> Salvar</>}</button>
