@@ -3071,43 +3071,26 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
         ] as const
         const labelAtivo = TABS.find(([t])=>t===tab)?.[1] ?? 'Menu'
         return (
-          <>
-            {/* Mobile: dropdown */}
-            <div className="sm:hidden bg-nodri-surface border-b border-nodri-border relative">
-              <button
-                onClick={()=>setMobileMenuOpen(o=>!o)}
-                className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-nodri-cyan"
-              >
-                <span>{labelAtivo}</span>
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className={`transition-transform ${mobileMenuOpen?'rotate-180':''}`}>
-                  <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
+          <div className="bg-nodri-surface border-b border-nodri-border" style={{ padding: '10px 12px' }}>
+            <div style={{ position: 'relative', maxWidth: 420 }}>
+              {mobileMenuOpen && <div onClick={()=>setMobileMenuOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 49 }} />}
+              <button onClick={()=>setMobileMenuOpen(o=>!o)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '11px 14px', borderRadius: 10, border: '1.5px solid #5b4fcf', background: '#f0eefb', color: '#1a1a1a', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{labelAtivo}</span>
+                <span style={{ color: '#5b4fcf', fontSize: 13, transition: 'transform .15s', transform: mobileMenuOpen ? 'rotate(180deg)' : 'none' }}>▼</span>
               </button>
               {mobileMenuOpen && (
-                <div className="absolute top-full left-0 right-0 z-50 bg-nodri-surface border-b border-nodri-border shadow-lg">
+                <div style={{ position: 'absolute', top: '108%', left: 0, right: 0, zIndex: 50, background: '#fff', border: '1px solid #e0ddd8', borderRadius: 12, boxShadow: '0 14px 36px rgba(0,0,0,.16)', maxHeight: 360, overflowY: 'auto', padding: 6 }}>
                   {TABS.map(([t,l])=>(
                     <button key={t} onClick={()=>{setTab(t);setMobileMenuOpen(false)}}
-                      className={`w-full text-left px-5 py-3 text-sm font-semibold border-l-2 transition-all
-                        ${tab===t ? 'border-nodri-cyan text-nodri-cyan bg-nodri-cyan/5' : 'border-transparent text-nodri-t2 hover:text-nodri-cyan hover:bg-nodri-cyan/5'}`}>
+                      style={{ display: 'block', width: '100%', textAlign: 'left', padding: '11px 12px', border: 'none', borderRadius: 8, background: tab===t ? '#f0eefb' : 'transparent', color: tab===t ? '#5b4fcf' : '#374151', fontSize: 14, fontWeight: tab===t ? 800 : 600, cursor: 'pointer' }}
+                      onMouseEnter={e=>{ if(tab!==t) e.currentTarget.style.background='#faf9f7' }} onMouseLeave={e=>{ if(tab!==t) e.currentTarget.style.background='transparent' }}>
                       {l}
                     </button>
                   ))}
                 </div>
               )}
             </div>
-            {/* Desktop: horizontal scroll */}
-            <div className="hidden sm:block bg-nodri-surface border-b border-nodri-border overflow-x-auto">
-              <div className="flex px-2 min-w-max">
-              {TABS.map(([t,l])=>(
-                <button key={t} onClick={()=>setTab(t)}
-                  className={`px-3 py-3 text-[11px] font-semibold border-b-2 transition-all whitespace-nowrap
-                    ${tab===t ? 'border-nodri-cyan text-nodri-cyan' : 'border-transparent text-nodri-t3 hover:text-nodri-t2'}`}>
-                  {l}
-                </button>
-              ))}
-              </div>
-            </div>
-          </>
+          </div>
         )
       })()}
 
