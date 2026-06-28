@@ -187,7 +187,7 @@ export default function GridEditavel({ chave, defaultDoc, defaultDocFn, mensal, 
         <button onClick={imprimir} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 8, border: '1px solid #d0cdc7', background: '#fff', color: '#374151', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}><Printer size={14} /> Imprimir A4</button>
         <button onClick={salvar} disabled={salvando} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 16px', borderRadius: 8, border: 'none', background: dirty ? '#16a34a' : '#a3b3a3', color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>{salvando ? '...' : <><Save size={14} /> Salvar</>}</button>
       </div>
-      <p style={{ fontSize: 11, color: '#9ca3af', margin: '0 0 10px' }}>Clique numa célula para: <strong>negrito/itálico</strong>, <strong>cor</strong> e <strong>fundo</strong>, <strong>alinhar</strong> (◀▬▶), <strong>mesclar/desmesclar</strong> (⬌⬍⊟) e <strong>borda</strong> (▢). Use ◀▶ no topo da coluna e ▲▼ ao lado da linha para <strong>mover</strong>. Arraste a borda do título para mudar a largura.
+      <p style={{ fontSize: 11, color: '#9ca3af', margin: '0 0 10px' }}>Clique numa célula para: <strong>negrito/itálico</strong>, <strong>cor</strong> e <strong>fundo</strong>, <strong>alinhar</strong> (◀▬▶), <strong>mesclar/desmesclar</strong> (⬌⬍⊟) e <strong>borda</strong> (▢). Use ◀▶ no topo da coluna e ▲▼ ao lado da linha para <strong>mover</strong>. Arraste a borda do título para mudar a largura.</p>
 
       {loading ? <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Loader2 size={24} className="animate-spin" style={{ color: corTema }} /></div> :
         doc.tabelas.map((t, ti) => (
