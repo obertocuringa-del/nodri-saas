@@ -9,6 +9,7 @@ import ListaBebidas from '@/components/salon/ListaBebidas'
 import ListaTelefones from '@/components/salon/ListaTelefones'
 import ListaPrecoServicos from '@/components/salon/ListaPrecoServicos'
 import DocEditavel from '@/components/salon/DocEditavel'
+import AnexosLista from '@/components/salon/AnexosLista'
 import { CAFE_BLOCOS, POP_SALAO_BLOCOS } from '@/components/salon/popDefaults'
 import { usePermissoes } from '@/lib/usePermissoes'
 
@@ -17,7 +18,7 @@ const ABA_CHAVE: Record<string, string> = {
   listas: 'adm_listas', servicos_valores: 'adm_servicos_valores', tratamentos: 'adm_tratamentos',
   pacotes: 'adm_pacotes', telefones: 'adm_telefones', ata: 'adm_ata', escala: 'adm_escala',
   feriados: 'adm_feriados', pop: 'adm_pop', senhas: 'adm_senhas', cadastrar_produto: 'adm_cadastrar_produto',
-  desconto_profissional: 'adm_desconto_profissional',
+  desconto_profissional: 'adm_desconto_profissional', tabela_precos: 'adm_tabela_precos', arquivos_envio: 'adm_arquivos_envio',
 }
 
 interface ProfSalao { id: string; nome: string; telefone: string }
@@ -61,6 +62,8 @@ const ABAS_TOPO = [
   { key: 'senhas', label: 'Senhas' },
   { key: 'cadastrar_produto', label: 'Cadastrar Produto' },
   { key: 'desconto_profissional', label: 'Desconto Profissional' },
+  { key: 'tabela_precos', label: 'Tabela de Preço Atualizada' },
+  { key: 'arquivos_envio', label: 'Arquivos para Envio' },
 ]
 
 const DEFAULT_CAD_PRODUTO: GridDoc = { tabelas: [{ titulo: 'CADASTRO DE PRODUTOS', cabecalho: [cel('Produto'), cel('Marca'), cel('Categoria'), cel('Quantidade'), cel('Validade'), cel('Fornecedor'), cel('Custo'), cel('Preço de venda')], linhas: linhasVazias(14, 8), larguras: [220, 150, 150, 110, 120, 180, 110, 130] }] }
@@ -201,6 +204,8 @@ export default function SalaoAdministrativoPage() {
         {abaTopo === 'senhas' && <GridEditavel key="senhas" chave="senhas" defaultDoc={DEFAULT_SENHAS} />}
         {abaTopo === 'cadastrar_produto' && <GridEditavel key="cadprod" chave="cadastrar_produto" defaultDoc={DEFAULT_CAD_PRODUTO} landscape />}
         {abaTopo === 'desconto_profissional' && <GridEditavel key="descprof" chave="desconto_profissional" defaultDoc={DEFAULT_DESC_PROF} landscape />}
+        {abaTopo === 'tabela_precos' && <AnexosLista key="tabprecos" chave="tabela_precos_arquivos" titulo="Tabela de Preço Atualizada" campoNome="Marca" comData />}
+        {abaTopo === 'arquivos_envio' && <AnexosLista key="arqenvio" chave="arquivos_envio_lista" titulo="Arquivos para Envio" campoNome="Nome do arquivo" comData />}
 
         {abaTopo === 'pop' && (<>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>

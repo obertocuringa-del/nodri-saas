@@ -1,5 +1,6 @@
 ﻿'use client'
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import CalendarioEditavel from '@/components/salon/CalendarioEditavel'
 import { useRouter, useParams } from 'next/navigation'
 import { ArrowLeft, Save, Loader2, TrendingUp, TrendingDown, BarChart2,
   MessageSquare, CheckSquare, Square, AlertTriangle } from 'lucide-react'
@@ -2274,7 +2275,7 @@ export default function PerfilProfissionalPage() {
   const [endCidade, setEndCidade] = useState('')
   const [endUf, setEndUf] = useState('')
   const [buscandoCep, setBuscandoCep] = useState(false)
-  const [tab, setTab] = useState<'cadastro'|'avaliar'|'desempenho'|'faturamento'|'metas'|'ia'|'dependencia'|'oportunidades'|'bundle'|'clientes-perdidos'|'agendamentos'>('cadastro')
+  const [tab, setTab] = useState<'cadastro'|'avaliar'|'desempenho'|'faturamento'|'metas'|'ia'|'dependencia'|'oportunidades'|'bundle'|'clientes-perdidos'|'agendamentos'|'calendario_mkt'>('cadastro')
   // ── Agendamentos ─────────────────────────────────────────────────────────────
   const [agendData, setAgendData] = useState<string>(() => { const h = new Date(); return `${String(h.getDate()).padStart(2,'0')}/${String(h.getMonth()+1).padStart(2,'0')}/${h.getFullYear()}` })
   const [agendamentos, setAgendamentos] = useState<any[]>([])
@@ -3062,6 +3063,7 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
           ['bundle','BUNDLES'],
           ['clientes-perdidos','PERDIDOS'],
           ['agendamentos','AGENDAMENTOS'],
+          ['calendario_mkt','CALENDÁRIO MKT'],
           ['ia','IA'],
         ] as const
         const labelAtivo = TABS.find(([t])=>t===tab)?.[1] ?? 'Menu'
@@ -3111,6 +3113,11 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
         {/*  AVALIAR PROFISSIONAL  */}
         {tab === 'avaliar' && (
           <AvaliarProfissional profissionalId={id} profissionalNome={prof?.apelido || prof?.nome_completo || 'Profissional'} />
+        )}
+
+        {/*  CALENDÁRIO DE MARKETING (o mesmo do menu, compartilhado pelo salão)  */}
+        {tab === 'calendario_mkt' && (
+          <CalendarioEditavel chave="calendario_mkt" titulo="Calendário de Marketing" corTema="#db2777" comResponsavel camposGrandes mostrarLembrete embutido />
         )}
 
         {/*  CADASTRO  */}

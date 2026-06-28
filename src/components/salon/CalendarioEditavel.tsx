@@ -13,7 +13,7 @@ const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julh
 const hojeStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` }
 const diasAte = (data: string) => { const [y, m, d] = data.split('-').map(Number); const alvo = new Date(y, m - 1, d); const h = new Date(); h.setHours(0, 0, 0, 0); return Math.round((alvo.getTime() - h.getTime()) / 86400000) }
 
-export default function CalendarioEditavel({ chave, titulo, comResponsavel, camposGrandes, corTema = '#5b4fcf', mostrarLembrete }: { chave: string; titulo: string; comResponsavel?: boolean; camposGrandes?: boolean; corTema?: string; mostrarLembrete?: boolean }) {
+export default function CalendarioEditavel({ chave, titulo, comResponsavel, camposGrandes, corTema = '#5b4fcf', mostrarLembrete, embutido }: { chave: string; titulo: string; comResponsavel?: boolean; camposGrandes?: boolean; corTema?: string; mostrarLembrete?: boolean; embutido?: boolean }) {
   const router = useRouter()
   const { ehSub } = usePermissoes()
   const somenteLeitura = ehSub // usuário criado pelo salão só visualiza
@@ -81,10 +81,11 @@ export default function CalendarioEditavel({ chave, titulo, comResponsavel, camp
   // Próximos compromissos (faltam até 2 dias)
   const proximos = eventos.filter(e => { const n = diasAte(e.data); return n >= 0 && n <= 2 }).sort((a, b) => a.data.localeCompare(b.data))
 
-  if (loading) return <div className="nodri-salon-bg" style={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', paddingTop: 80 }}><Loader2 size={26} className="animate-spin" style={{ color: corTema }} /></div>
+  if (loading) return <div className={embutido ? '' : 'nodri-salon-bg'} style={{ minHeight: embutido ? 120 : '100vh', display: 'flex', justifyContent: 'center', paddingTop: embutido ? 30 : 80 }}><Loader2 size={26} className="animate-spin" style={{ color: corTema }} /></div>
 
   return (
-    <div className="nodri-salon-bg" style={{ minHeight: '100vh' }}>
+    <div className={embutido ? '' : 'nodri-salon-bg'} style={embutido ? {} : { minHeight: '100vh' }}>
+      {!embutido ? (
       <nav style={{ background: '#faf9f7', borderBottom: '1px solid #e8e6e0', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 40 }}>
         <button onClick={() => router.push('/salon')} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', color: '#6b6860', cursor: 'pointer', fontSize: 14 }}><ArrowLeft size={16} /> Voltar</button>
         <span style={{ width: 1, height: 16, background: '#e0ddd8' }} />
@@ -92,8 +93,13 @@ export default function CalendarioEditavel({ chave, titulo, comResponsavel, camp
         <div style={{ flex: 1 }} />
         <button onClick={imprimir} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 13px', borderRadius: 8, border: '1px solid #d0cdc7', background: '#fff', color: '#374151', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}><Printer size={14} /> Imprimir</button>
       </nav>
+      ) : (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginBottom: 8 }}>
+          <button onClick={imprimir} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 8, border: '1px solid #d0cdc7', background: '#fff', color: '#374151', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}><Printer size={13} /> Imprimir</button>
+        </div>
+      )}
 
-      <div style={{ maxWidth: 820, margin: '0 auto', padding: 16 }}>
+      <div style={{ maxWidth: 820, margin: '0 auto', padding: embutido ? 0 : 16 }}>
         {/* Lembrete (faltam até 2 dias) */}
         {mostrarLembrete && proximos.length > 0 && lembreteAberto && (
           <div style={{ background: 'linear-gradient(135deg,#ef4444,#db2777)', color: '#fff', borderRadius: 14, padding: '14px 18px', marginBottom: 16, position: 'relative' }}>
