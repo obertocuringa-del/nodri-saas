@@ -18,11 +18,11 @@ export default function Etiquetas() {
         fetch('/api/profissionais?ativo=true').then(r => r.ok ? r.json() : []).catch(() => []),
         fetch('/api/salon/despesas-catalogo', { credentials: 'include' }).then(r => r.ok ? r.json() : null).catch(() => null),
       ])
-      const nomesP = (Array.isArray(p) ? p : []).filter((x: any) => x.ativo !== false && !x.is_departamento).map((x: any) => (x.apelido || x.nome_completo || '').trim()).filter(Boolean)
-      setProfs(Array.from(new Set(nomesP)).sort())
-      const desp = (d && Array.isArray(d.despesas)) ? d.despesas : []
-      const nomesF = desp.filter((x: any) => x.categoria === 'indireta').map((x: any) => (x.nome || '').trim()).filter(Boolean)
-      setForns(Array.from(new Set(nomesF)).sort())
+      const nomesP: string[] = (Array.isArray(p) ? p : []).filter((x: any) => x.ativo !== false && !x.is_departamento).map((x: any) => String(x.apelido || x.nome_completo || '').trim()).filter((s: string) => !!s)
+      setProfs(Array.from(new Set<string>(nomesP)).sort())
+      const desp: any[] = (d && Array.isArray(d.despesas)) ? d.despesas : []
+      const nomesF: string[] = desp.filter((x: any) => x.categoria === 'indireta').map((x: any) => String(x.nome || '').trim()).filter((s: string) => !!s)
+      setForns(Array.from(new Set<string>(nomesF)).sort())
     } catch { /* */ }
     setLoading(false)
   }, [])
