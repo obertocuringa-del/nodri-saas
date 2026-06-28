@@ -3,38 +3,22 @@
 import { useState, useEffect, useCallback } from 'react'
 import toast from 'react-hot-toast'
 import { Loader2, Plus, Save, Printer, Trash2, ArrowLeft } from 'lucide-react'
+import { MODELO_AVAL_DEFAULT, classificarAval, type CatAval } from './avaliacaoModelo'
 
-const SECOES = [
-  { titulo: 'Comprometimento e Responsabilidade', cor: '#5b4fcf', criterios: ['Pontualidade e cumprimento dos horários', 'Presença e disponibilidade no salão', 'Baixa frequência de faltas e atrasos', 'Comprometimento com a agenda e clientes agendados', 'Não recusa/cancela atendimentos sem justificativa', 'Cumprimento das normas internas', 'Responsabilidade com materiais e patrimônio'] },
-  { titulo: 'Relacionamento Interpessoal e Cultura', cor: '#0891b2', criterios: ['Relacionamento saudável com colegas e gestores', 'Ausência de fofocas e conflitos internos', 'Respeito à equipe e aos clientes', 'Honestidade e transparência', 'Humildade para reconhecer erros e receber feedback', 'Sigilo sobre assuntos internos', 'Participação em ações, campanhas e eventos', 'Espírito de equipe e colaboração'] },
-  { titulo: 'Desenvolvimento Profissional e Inovação', cor: '#db2777', criterios: ['Participação em cursos e treinamentos', 'Busca constante por atualização técnica', 'Qualidade dos materiais utilizados', 'Conhecimento das tendências do mercado', 'Aplicação prática dos conhecimentos', 'Marketing pessoal e uso estratégico das redes', 'Qualidade e frequência das publicações'] },
-  { titulo: 'Qualidade no Atendimento e Experiência', cor: '#16a34a', criterios: ['Escuta ativa durante o atendimento', 'Excelência técnica e qualidade dos serviços', 'Respeito ao tempo de cada procedimento', 'Experiência diferenciada ao cliente', 'Priorização da saúde de cabelos/unhas/pele', 'Clareza na apresentação de serviços e valores', 'Resolução de conflitos e insatisfações', 'Pós-atendimento e acompanhamento'] },
-  { titulo: 'Fidelização e Relacionamento com Clientes', cor: '#ea580c', criterios: ['Taxa de fidelização (meta ≥ 55%)', 'Taxa de retorno dos clientes', 'Frequência média dos retornos', 'Índice de satisfação dos clientes', 'Baixo número de reclamações'] },
-  { titulo: 'Resultados e Crescimento Financeiro', cor: '#0d9488', criterios: ['Crescimento do faturamento (meta mín. 8%/mês)', 'Ticket médio', 'Quantidade de clientes atendidos', 'Taxa de ocupação da agenda', 'Venda de produtos e serviços complementares', 'Evolução do faturamento ao longo do tempo'] },
-]
-const TOTAL = SECOES.reduce((a, s) => a + s.criterios.length, 0)
 const ESCALA = [{ n: 1, l: 'Muito abaixo' }, { n: 2, l: 'Abaixo' }, { n: 3, l: 'Dentro do esperado' }, { n: 4, l: 'Acima' }, { n: 5, l: 'Excelente' }]
 const TEMPOS = ['Menos de 6 meses', '6 meses a 1 ano', '1 a 2 anos', '2 a 5 anos', 'Mais de 5 anos']
 
 interface Avaliacao { id: string; data: string; tempo: string; respostas: Record<string, number>; obs: string }
 
-function classificar(pct: number) {
-  if (pct >= 90) return { txt: 'Profissional Destaque', cor: '#16a34a', emoji: '🏆' }
-  if (pct >= 80) return { txt: 'Excelente desempenho', cor: '#0891b2', emoji: '⭐' }
-  if (pct >= 70) return { txt: 'Bom desempenho', cor: '#65a30d', emoji: '👍' }
-  if (pct >= 60) return { txt: 'Necessita desenvolvimento', cor: '#f59e0b', emoji: '⚠️' }
-  return { txt: 'Plano de ação imediato', cor: '#ef4444', emoji: '🚨' }
-}
-
-function calcular(respostas: Record<string, number>) {
-  const secoes = SECOES.map((s, si) => {
-    const notas = s.criterios.map((_, ci) => respostas[`${si}-${ci}`]).filter(n => n != null) as number[]
+function calcular(respostas: Record<string, number>, secoes: CatAval[]) {
+  const sec = secoes.map(s => {
+    const notas = s.criterios.map(cr => respostas[`${s.id}:${cr.id}`]).filter(n => n != null) as number[]
     const avg = notas.length ? notas.reduce((a, b) => a + b, 0) / notas.length : 0
-    return { titulo: s.titulo, cor: s.cor, pct: Math.round(avg / 5 * 100), avg }
+    return { titulo: s.titulo, cor: s.cor, pct: Math.round(avg / 5 * 100) }
   })
   const todas = Object.values(respostas)
   const overallAvg = todas.length ? todas.reduce((a, b) => a + b, 0) / todas.length : 0
-  return { secoes, overallPct: Math.round(overallAvg / 5 * 100), overall10: Math.round(overallAvg / 5 * 100) / 10 }
+  return { secoes: sec, overallPct: Math.round(overallAvg / 5 * 100), overall10: Math.round(overallAvg / 5 * 100) / 10 }
 }
 
 function Gauge({ pct, cor, label }: { pct: number; cor: string; label: string }) {
@@ -46,12 +30,13 @@ function Gauge({ pct, cor, label }: { pct: number; cor: string; label: string })
         <circle cx="43" cy="43" r={r} fill="none" stroke={cor} strokeWidth="8" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={off} transform="rotate(-90 43 43)" />
         <text x="43" y="48" textAnchor="middle" fontSize="18" fontWeight="800" fill={cor}>{pct}%</text>
       </svg>
-      <span style={{ fontSize: 11, fontWeight: 700, color: '#374151', textAlign: 'center', maxWidth: 100 }}>{label}</span>
+      <span style={{ fontSize: 11, fontWeight: 700, color: '#374151', textAlign: 'center', maxWidth: 110 }}>{label}</span>
     </div>
   )
 }
 
 export default function AvaliarProfissional({ profissionalId, profissionalNome }: { profissionalId: string; profissionalNome: string }) {
+  const [secoes, setSecoes] = useState<CatAval[]>([])
   const [historico, setHistorico] = useState<Avaliacao[]>([])
   const [loading, setLoading] = useState(true)
   const [view, setView] = useState<'lista' | 'form' | 'resultado'>('lista')
@@ -64,19 +49,25 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome }
 
   const carregar = useCallback(async () => {
     try {
-      const p = await fetch(`/api/profissionais/${profissionalId}`).then(r => r.ok ? r.json() : null)
+      const [p, modelo] = await Promise.all([
+        fetch(`/api/profissionais/${profissionalId}`).then(r => r.ok ? r.json() : null).catch(() => null),
+        fetch('/api/salon/grid?chave=avaliacao_modelo').then(r => r.ok ? r.json() : null).catch(() => null),
+      ])
+      setSecoes(modelo && Array.isArray(modelo.categorias) && modelo.categorias.length ? modelo.categorias : MODELO_AVAL_DEFAULT.categorias)
       let arr: Avaliacao[] = []
       try { arr = Array.isArray(p?.avaliacoes) ? p.avaliacoes : (p?.avaliacoes ? JSON.parse(p.avaliacoes) : []) } catch { arr = [] }
       setHistorico(arr.sort((a, b) => (b.data || '').localeCompare(a.data || '')))
-    } catch { /* */ }
+    } catch { setSecoes(MODELO_AVAL_DEFAULT.categorias) }
     setLoading(false)
   }, [profissionalId])
   useEffect(() => { carregar() }, [carregar])
 
+  const TOTAL = secoes.reduce((a, s) => a + s.criterios.length, 0)
+  const totalRespondidas = Object.keys(respostas).length
+
   function novaAvaliacao() {
     setRespostas({}); setObs(''); setTempo('2 a 5 anos'); setDataAval(new Date().toISOString().slice(0, 10)); setVendo(null); setView('form')
   }
-  const totalRespondidas = Object.keys(respostas).length
 
   async function salvar() {
     if (totalRespondidas < TOTAL) { toast.error(`Responda todos os ${TOTAL} critérios antes de salvar.`); return }
@@ -100,9 +91,9 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome }
   }
 
   function imprimir(av: Avaliacao) {
-    const r = calcular(av.respostas)
-    const cl = classificar(r.overallPct)
-    const linhas = SECOES.map((s, si) => `<div class="sec"><h3 style="color:${s.cor}">${s.titulo}</h3>${s.criterios.map((c, ci) => `<div class="cri"><span>${c}</span><b>${av.respostas[`${si}-${ci}`] ?? '-'} / 5</b></div>`).join('')}</div>`).join('')
+    const r = calcular(av.respostas, secoes)
+    const cl = classificarAval(r.overallPct)
+    const linhas = secoes.map(s => `<div class="sec"><h3 style="color:${s.cor}">${s.titulo}</h3>${s.criterios.map(cr => `<div class="cri"><span>${cr.texto.replace(/</g, '&lt;')}</span><b>${av.respostas[`${s.id}:${cr.id}`] ?? '-'} / 5</b></div>`).join('')}</div>`).join('')
     const css = `@page{size:A4 portrait;margin:14mm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;font-size:12px}.hd{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #5b4fcf;padding-bottom:8px;margin-bottom:12px}.brand{font-size:22px;font-weight:900;color:#5b4fcf}.score{background:${cl.cor};color:#fff;border-radius:12px;padding:14px 18px;text-align:center;margin-bottom:14px}.score b{font-size:30px}.sec{margin-bottom:12px;break-inside:avoid}h3{font-size:13px;border-bottom:1px solid #ddd;padding-bottom:3px;margin-bottom:5px}.cri{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dotted #eee}.obs{background:#faf9f7;border-radius:8px;padding:10px;margin-top:10px;font-size:11px}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}`
     const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Avaliação ${profissionalNome}</title><style>${css}</style></head><body><div class="hd"><div class="brand">NODRI</div><div style="text-align:right;font-size:11px"><strong>Avaliação de Profissional</strong><br>${profissionalNome} · ${av.data.split('-').reverse().join('/')}</div></div><div class="score"><div>${cl.emoji} ${cl.txt}</div><b>${r.overall10.toFixed(1)}</b> / 10 &nbsp; (${r.overallPct}%)</div>${linhas}${av.obs ? `<div class="obs"><strong>Observações:</strong> ${av.obs.replace(/</g, '&lt;')}</div>` : ''}<script>window.onload=function(){window.print()}</script></body></html>`
     const w = window.open('', '_blank', 'width=900,height=700'); if (!w) return; w.document.write(html); w.document.close(); w.focus()
@@ -110,11 +101,11 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome }
 
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Loader2 size={24} className="animate-spin" style={{ color: '#5b4fcf' }} /></div>
 
-  // ── RESULTADO (de uma avaliação selecionada ou recém-preenchida) ──
+  // ── RESULTADO ──
   if (view === 'resultado' || vendo) {
     const av = vendo || { id: 'tmp', data: dataAval, tempo, respostas, obs }
-    const r = calcular(av.respostas)
-    const cl = classificar(r.overallPct)
+    const r = calcular(av.respostas, secoes)
+    const cl = classificarAval(r.overallPct)
     return (
       <div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', marginBottom: 16 }}>
@@ -137,7 +128,7 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome }
     )
   }
 
-  // ── FORMULÁRIO (nova avaliação) ──
+  // ── FORMULÁRIO ──
   if (view === 'form') {
     return (
       <div>
@@ -149,18 +140,18 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome }
           <div><label style={{ fontSize: 12, fontWeight: 700, color: '#6b6860', display: 'block', marginBottom: 4 }}>Data da Avaliação</label><input type="date" value={dataAval} onChange={e => setDataAval(e.target.value)} style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13 }} /></div>
           <div><label style={{ fontSize: 12, fontWeight: 700, color: '#6b6860', display: 'block', marginBottom: 4 }}>Tempo de Empresa</label><select value={tempo} onChange={e => setTempo(e.target.value)} style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13 }}>{TEMPOS.map(t => <option key={t} value={t}>{t}</option>)}</select></div>
         </div>
-        {SECOES.map((s, si) => (
-          <div key={si} style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, overflow: 'hidden', marginBottom: 14 }}>
+        {secoes.map((s, si) => (
+          <div key={s.id} style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, overflow: 'hidden', marginBottom: 14 }}>
             <div style={{ background: s.cor, color: '#fff', padding: '10px 16px', fontWeight: 800, fontSize: 14 }}>{si + 1}. {s.titulo}</div>
             <div style={{ padding: 16 }}>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
                 {ESCALA.map(e => <span key={e.n} style={{ fontSize: 10, fontWeight: 700, color: '#6b6860', background: '#f0eee8', borderRadius: 6, padding: '3px 8px' }}>{e.n} = {e.l}</span>)}
               </div>
-              {s.criterios.map((c, ci) => {
-                const key = `${si}-${ci}`, val = respostas[key]
+              {s.criterios.map((cr, ci) => {
+                const key = `${s.id}:${cr.id}`, val = respostas[key]
                 return (
-                  <div key={ci} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '8px 0', borderTop: ci > 0 ? '1px solid #f0eee8' : 'none', flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: 13.5, color: '#1a1a1a', flex: 1, minWidth: 160 }}>{c}</span>
+                  <div key={cr.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '8px 0', borderTop: ci > 0 ? '1px solid #f0eee8' : 'none', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 13.5, color: '#1a1a1a', flex: 1, minWidth: 160 }}>{cr.texto}</span>
                     <div style={{ display: 'flex', gap: 5 }}>
                       {ESCALA.map(e => (
                         <button key={e.n} onClick={() => setRespostas(p => ({ ...p, [key]: e.n }))} title={e.l}
@@ -190,7 +181,7 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome }
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
         <div>
           <h3 style={{ fontSize: 18, fontWeight: 800, color: '#1a1a1a', margin: '0 0 4px' }}>Avaliações de {profissionalNome}</h3>
-          <p style={{ fontSize: 13, color: '#6b6860', margin: 0 }}>Avalie {TOTAL} critérios em 6 áreas (1 a 5) e acompanhe a evolução.</p>
+          <p style={{ fontSize: 13, color: '#6b6860', margin: 0 }}>Avalie {TOTAL} critérios em {secoes.length} áreas (1 a 5). Os critérios vêm de “Perfil e Avaliação de Desempenho”.</p>
         </div>
         <button onClick={novaAvaliacao} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 16px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#7c3aed,#5b4fcf)', color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}><Plus size={16} /> Nova Avaliação</button>
       </div>
@@ -201,7 +192,7 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome }
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {historico.map(av => {
-            const r = calcular(av.respostas); const cl = classificar(r.overallPct)
+            const r = calcular(av.respostas, secoes); const cl = classificarAval(r.overallPct)
             return (
               <div key={av.id} style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
                 <div style={{ width: 54, height: 54, borderRadius: 12, background: cl.cor, color: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>

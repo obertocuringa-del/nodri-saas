@@ -56,7 +56,7 @@ export function permDaGrade(chave: string): string {
   if (c === 'processo_contratacao_clt') return 'profissionais'
   if (c.startsWith('processo_')) return 'profissionais'
   if (c === 'perfil_avaliacao') return 'profissionais'
-  if (c.startsWith('avaliacao_prof_')) return 'prof_avaliar'
+  if (c === 'avaliacao_modelo') return 'profissionais'
   if (c.startsWith('calendario_mkt')) return 'calendario_mkt'
   if (c.startsWith('calendario')) return 'calendario'
   if (c === 'prof_categorias') return 'profissionais'

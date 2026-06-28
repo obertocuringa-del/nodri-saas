@@ -7,7 +7,8 @@ import toast from 'react-hot-toast'
 import MateriaisTrabalho from '@/components/salon/MateriaisTrabalho'
 import ExameAdmissional from '@/components/salon/ExameAdmissional'
 import ProcessoContratacao from '@/components/salon/ProcessoContratacao'
-import { PJ_CONTRATACAO, PJ_DESLIGAMENTO, PERFIL_AVALIACAO } from '@/components/salon/processoDefaults'
+import { PJ_CONTRATACAO, PJ_DESLIGAMENTO } from '@/components/salon/processoDefaults'
+import EditorAvaliacao from '@/components/salon/EditorAvaliacao'
 
 interface Profissional {
   id: string
@@ -1930,10 +1931,10 @@ ${montarContratoHTML()}
             </div>
           )}
 
-          {/* ── PERFIL IDEAL / AVALIAÇÃO (editável, modelo completo) ── */}
+          {/* ── PERFIL IDEAL / MODELO DE AVALIAÇÃO (fonte única — alimenta a aba Avaliar) ── */}
           {secao === 'perfil' && (
             <div style={{ maxWidth: 1000 }}>
-              <ProcessoContratacao chave="perfil_avaliacao" modelo={PERFIL_AVALIACAO} titulo="🎯 Perfil e Avaliação de Desempenho" comCarta={false} pessoas={profissionais.map(p => ({ nome: p.apelido || p.nome_completo || '—', telefone: (p as any).telefone || (() => { try { return JSON.parse((p as any).contato_responsavel || '{}').tel || '' } catch { return '' } })() }))} />
+              <EditorAvaliacao />
             </div>
           )}
 
