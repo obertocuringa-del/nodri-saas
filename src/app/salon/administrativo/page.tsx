@@ -162,11 +162,11 @@ export default function SalaoAdministrativoPage() {
       </nav>
 
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: 16 }}>
-        {/* Abas do topo */}
-        <div className="nodri-abas-topo" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 18, borderBottom: '1px solid #ece9e2', paddingBottom: 12 }}>
+        {/* Abas do topo — faixa única em linha, aba ativa sublinhada (rola de lado se faltar espaço) */}
+        <div className="nodri-abas-topo scrollbar-hide" style={{ display: 'flex', gap: 2, marginBottom: 18, borderBottom: '1px solid #ece9e2', overflowX: 'auto' }}>
           {abasVisiveis.map(a => (
             <button key={a.key} onClick={() => setAbaTopo(a.key)}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: abaTopo === a.key ? '1px solid #5b4fcf' : '1px solid #e0ddd8', background: abaTopo === a.key ? '#5b4fcf' : '#fff', color: abaTopo === a.key ? '#fff' : '#6b6860', fontSize: 13, fontWeight: 700, cursor: 'pointer', transition: 'all .15s' }}>
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 14px', borderRadius: 0, border: 'none', borderBottom: abaTopo === a.key ? '2px solid #5b4fcf' : '2px solid transparent', background: 'transparent', color: abaTopo === a.key ? '#5b4fcf' : '#6b6860', fontSize: 13, fontWeight: 700, cursor: 'pointer', transition: 'all .15s', whiteSpace: 'nowrap', flexShrink: 0, marginBottom: -1 }}>
               {a.key === 'listas' && <ListChecks size={14} />}{a.label}
             </button>
           ))}
