@@ -461,10 +461,8 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
             {[
               { href: '/salon/feedback', label: 'Feedback de Cliente', chave: 'feedback_cliente' },
               { href: '/salon/feedback-profissional', label: 'Feedback Profissional', chave: 'feedback_prof' },
-              { href: '/salon/pendencias', label: 'Pendências', chave: 'pendencias' },
               { href: '/salon/servicos', label: 'Serviços', chave: 'servicos' },
               { href: '/salon/lista-espera', label: 'Lista de Espera', chave: 'lista_espera' },
-              { href: '/salon/aniversariantes', label: 'Aniversariantes do Mês', chave: 'aniversariantes' },
               { href: '/salon/administrativo', label: 'Salão Administrativo', chave: 'administrativo' },
               { href: '/salon/checklist', label: 'Check List', chave: 'checklist' },
               { href: '/salon/calendario', label: 'Calendário', chave: 'calendario' },
