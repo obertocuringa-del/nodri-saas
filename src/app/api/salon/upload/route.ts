@@ -20,10 +20,14 @@ export async function POST(req: NextRequest) {
   const safe = (file.name || 'arquivo').replace(/[^a-zA-Z0-9.\-_]/g, '_').slice(-80)
   const path = `arquivos/${payload.salaoId}/${Date.now()}_${safe}`
   const buffer = Buffer.from(await file.arrayBuffer())
+  const opts = { contentType: file.type || 'application/octet-stream', upsert: true }
 
-  const { error } = await supabaseAdmin.storage
-    .from('uploads')
-    .upload(path, buffer, { contentType: file.type || 'application/octet-stream', upsert: true })
+  let { error } = await supabaseAdmin.storage.from('uploads').upload(path, buffer, opts)
+  // Cria o bucket (público) automaticamente na primeira vez e tenta de novo
+  if (error && /bucket not found/i.test(error.message || '')) {
+    await supabaseAdmin.storage.createBucket('uploads', { public: true, fileSizeLimit: 52428800 }).catch(() => { })
+    ;({ error } = await supabaseAdmin.storage.from('uploads').upload(path, buffer, opts))
+  }
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   const { data: { publicUrl } } = supabaseAdmin.storage.from('uploads').getPublicUrl(path)
