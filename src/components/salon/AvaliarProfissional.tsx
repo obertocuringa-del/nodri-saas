@@ -8,7 +8,9 @@ import { MODELO_AVAL_DEFAULT, CLASSIF_AVAL, classificarAval, type CatAval, type 
 const ESCALA = [{ n: 1, l: 'Muito abaixo' }, { n: 2, l: 'Abaixo' }, { n: 3, l: 'Dentro do esperado' }, { n: 4, l: 'Acima' }, { n: 5, l: 'Excelente' }]
 const TEMPOS = ['Menos de 6 meses', '6 meses a 1 ano', '1 a 2 anos', '2 a 5 anos', 'Mais de 5 anos']
 
-interface Avaliacao { id: string; data: string; tempo: string; respostas: Record<string, number>; obs: string }
+interface Avaliacao { id: string; data: string; tempo: string; respostas: Record<string, number>; obs: string; perspectiva?: string }
+const PERSPECTIVAS = ['Gestor (líder)', 'Colega de equipe', 'Cliente', 'Autoavaliação']
+const corPersp = (p?: string) => p === 'Cliente' ? '#db2777' : p === 'Colega de equipe' ? '#0891b2' : p === 'Autoavaliação' ? '#ea580c' : '#5b4fcf'
 
 function calcular(respostas: Record<string, number>, secoes: CatAval[]) {
   const sec = secoes.map(s => {
@@ -43,6 +45,7 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome }
   const [view, setView] = useState<'lista' | 'form' | 'resultado'>('lista')
   const [respostas, setRespostas] = useState<Record<string, number>>({})
   const [tempo, setTempo] = useState('2 a 5 anos')
+  const [perspectiva, setPerspectiva] = useState(PERSPECTIVAS[0])
   const [dataAval, setDataAval] = useState(() => new Date().toISOString().slice(0, 10))
   const [obs, setObs] = useState('')
   const [salvando, setSalvando] = useState(false)
@@ -68,13 +71,13 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome }
   const totalRespondidas = Object.keys(respostas).length
 
   function novaAvaliacao() {
-    setRespostas({}); setObs(''); setTempo('2 a 5 anos'); setDataAval(new Date().toISOString().slice(0, 10)); setVendo(null); setView('form')
+    setRespostas({}); setObs(''); setTempo('2 a 5 anos'); setPerspectiva(PERSPECTIVAS[0]); setDataAval(new Date().toISOString().slice(0, 10)); setVendo(null); setView('form')
   }
 
   async function salvar() {
     if (totalRespondidas < TOTAL) { toast.error(`Responda todos os ${TOTAL} critérios antes de salvar.`); return }
     setSalvando(true)
-    const nova: Avaliacao = { id: Date.now().toString(), data: dataAval, tempo, respostas, obs }
+    const nova: Avaliacao = { id: Date.now().toString(), data: dataAval, tempo, perspectiva, respostas, obs }
     const novoHist = [nova, ...historico]
     try {
       const res = await fetch(`/api/profissionais/${profissionalId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ avaliacoes: novoHist }) })
@@ -124,7 +127,7 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome }
         <div style={{ background: cl.cor, borderRadius: 16, padding: '20px', color: '#fff', textAlign: 'center', marginBottom: 18 }}>
           <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>{cl.emoji} {cl.txt}</div>
           <div style={{ fontSize: 40, fontWeight: 900, lineHeight: 1 }}>{r.overall10.toFixed(1)}<span style={{ fontSize: 18, opacity: .8 }}> / 10</span></div>
-          <div style={{ fontSize: 13, opacity: .9, marginTop: 4 }}>Pontuação geral: {r.overallPct}% · {profissionalNome} · {av.data.split('-').reverse().join('/')}</div>
+          <div style={{ fontSize: 13, opacity: .9, marginTop: 4 }}>Pontuação geral: {r.overallPct}% · {profissionalNome} · {av.data.split('-').reverse().join('/')}{av.perspectiva ? ` · ${av.perspectiva}` : ''}</div>
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, justifyContent: 'center', background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: '18px', marginBottom: 14 }}>
           {r.secoes.map((s, i) => <Gauge key={i} pct={s.pct} cor={s.cor} label={s.titulo} />)}
@@ -160,6 +163,7 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome }
         <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: 16, marginBottom: 14, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
           <div><label style={{ fontSize: 12, fontWeight: 700, color: '#6b6860', display: 'block', marginBottom: 4 }}>Data da Avaliação</label><input type="date" value={dataAval} onChange={e => setDataAval(e.target.value)} style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13 }} /></div>
           <div><label style={{ fontSize: 12, fontWeight: 700, color: '#6b6860', display: 'block', marginBottom: 4 }}>Tempo de Empresa</label><select value={tempo} onChange={e => setTempo(e.target.value)} style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13 }}>{TEMPOS.map(t => <option key={t} value={t}>{t}</option>)}</select></div>
+          <div><label style={{ fontSize: 12, fontWeight: 700, color: '#6b6860', display: 'block', marginBottom: 4 }}>Quem está avaliando (360°)</label><select value={perspectiva} onChange={e => setPerspectiva(e.target.value)} style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: `1.5px solid ${corPersp(perspectiva)}`, color: corPersp(perspectiva), fontWeight: 700, fontSize: 13 }}>{PERSPECTIVAS.map(t => <option key={t} value={t}>{t}</option>)}</select></div>
         </div>
         {secoes.map((s, si) => (
           <div key={s.id} style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, overflow: 'hidden', marginBottom: 14 }}>
@@ -262,6 +266,7 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome }
                 <div style={{ flex: 1, minWidth: 140 }}>
                   <div style={{ fontWeight: 800, color: cl.cor, fontSize: 14 }}>{cl.emoji} {cl.txt}</div>
                   <div style={{ fontSize: 12, color: '#6b6860' }}>{av.data.split('-').reverse().join('/')} · {av.tempo}</div>
+                  {av.perspectiva && <span style={{ display: 'inline-block', marginTop: 3, fontSize: 10, fontWeight: 800, color: '#fff', background: corPersp(av.perspectiva), borderRadius: 20, padding: '2px 8px' }}>{av.perspectiva}</span>}
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button onClick={() => setVendo(av)} style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid #d0cdc7', background: '#fff', color: '#5b4fcf', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Ver</button>

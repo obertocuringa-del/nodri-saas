@@ -47,6 +47,7 @@ interface Profissional {
 const SIDEBAR_ITEMS = [
   { id: 'cadastrar',    label: 'Cadastrar Profissional',          icon: Plus,           cor: '#5b4fcf', destaque: true },
   { id: 'lista',        label: 'Lista de Profissionais',          icon: Users,          cor: '#06b6d4' },
+  { id: 'ranking',      label: 'Ranking de Avaliações',           icon: TrendingUp,     cor: '#f59e0b' },
   { id: 'categorias',   label: 'Gerenciar Categorias',            icon: Award,          cor: '#f59e0b' },
   { id: 'abertura',     label: 'Abertura de Conta Bancária',      icon: Building2,      cor: '#10b981' },
   { id: 'cnpj',         label: 'CNPJ',                            icon: FileText,       cor: '#f59e0b' },
@@ -1928,6 +1929,42 @@ ${montarContratoHTML()}
               <div style={{ fontSize: 12, color: '#6b6860', fontStyle: 'italic', background: '#faf9f7', borderRadius: 10, padding: '12px 14px' }}>💡 {GUIA_ENTREVISTA.nota}</div>
             </div>
           )}
+
+          {/* ── RANKING DE AVALIAÇÕES (quem cresce / quem cai) ── */}
+          {secao === 'ranking' && (() => {
+            const ov = (resp: any) => { const v = Object.values(resp || {}) as number[]; return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length / 5 * 100) : null }
+            const parse = (a: any) => { try { return Array.isArray(a) ? a : (a ? JSON.parse(a) : []) } catch { return [] } }
+            const linhas = profissionais.filter(p => p.ativo !== false && !(p as any).is_departamento).map(p => {
+              const avs = parse((p as any).avaliacoes).sort((a: any, b: any) => (b.data || '').localeCompare(a.data || ''))
+              const atual = avs[0] ? ov(avs[0].respostas) : null
+              const ant = avs[1] ? ov(avs[1].respostas) : null
+              const delta = (atual != null && ant != null) ? atual - ant : null
+              return { nome: p.apelido || p.nome_completo || '—', cargo: p.cargo || '', atual, delta, qtd: avs.length, data: avs[0]?.data || '' }
+            }).sort((a, b) => (b.atual ?? -1) - (a.atual ?? -1))
+            const corPct = (v: number | null) => v == null ? '#9ca3af' : v >= 80 ? '#16a34a' : v >= 60 ? '#f59e0b' : '#ef4444'
+            const medalha = (i: number) => i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}º`
+            return (
+              <div style={{ maxWidth: 900 }}>
+                <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1a1a1a', margin: '0 0 4px' }}>🏆 Ranking de Avaliações</h2>
+                <p style={{ fontSize: 13, color: '#6b6860', margin: '0 0 16px' }}>Classificação pela <strong>última avaliação</strong> de cada profissional, com a variação (Δ) em relação à anterior. As notas vêm da aba <strong>Avaliar</strong>.</p>
+                {linhas.length === 0 ? <div style={{ textAlign: 'center', padding: 30, color: '#9ca3af', fontSize: 13 }}>Nenhum profissional ativo.</div> : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {linhas.map((l, i) => (
+                      <div key={i} style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: 18, fontWeight: 900, width: 34, textAlign: 'center', flexShrink: 0 }}>{medalha(i)}</span>
+                        <div style={{ flex: 1, minWidth: 140 }}>
+                          <div style={{ fontWeight: 800, fontSize: 14, color: '#1a1a1a' }}>{l.nome}</div>
+                          <div style={{ fontSize: 11, color: '#9ca3af' }}>{l.cargo}{l.qtd ? ` · ${l.qtd} avaliação${l.qtd !== 1 ? 'ões' : ''}` : ' · sem avaliação'}</div>
+                        </div>
+                        <span style={{ fontSize: 22, fontWeight: 900, color: corPct(l.atual), width: 60, textAlign: 'right' }}>{l.atual == null ? '—' : l.atual + '%'}</span>
+                        <span style={{ fontSize: 12, fontWeight: 800, width: 64, textAlign: 'right', color: l.delta == null ? '#9ca3af' : l.delta > 0 ? '#16a34a' : l.delta < 0 ? '#dc2626' : '#9ca3af' }}>{l.delta == null ? '–' : `${l.delta > 0 ? '↑' : l.delta < 0 ? '↓' : '→'} ${Math.abs(l.delta)}%`}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          })()}
 
           {/* ── DESCRIÇÃO DE CARGO (lista de cargos → descrição editável) ── */}
           {secao === 'descricao_cargo' && (
