@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 import { escritaBloqueadaSub } from '@/lib/apiAuth'
+import { registrarAuditoria } from '@/lib/audit'
 
 async function getSalaoId() {
   const token = cookies().get('nodri_token')?.value
@@ -62,6 +63,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  registrarAuditoria('Editou', 'Profissional', (data as any)?.nome_completo || params.id)
   return NextResponse.json(data)
 }
 
@@ -99,5 +101,6 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     .eq('salao_id', salaoId)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  registrarAuditoria('Excluiu', 'Profissional', params.id)
   return NextResponse.json({ ok: true })
 }

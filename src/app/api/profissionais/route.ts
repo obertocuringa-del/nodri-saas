@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 import { escritaBloqueadaSub } from '@/lib/apiAuth'
+import { registrarAuditoria } from '@/lib/audit'
 
 async function getSalaoId(req: NextRequest) {
   const token = cookies().get('nodri_token')?.value
@@ -70,5 +71,6 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  registrarAuditoria('Criou', 'Profissional', (data as any)?.nome_completo || '')
   return NextResponse.json(data, { status: 201 })
 }

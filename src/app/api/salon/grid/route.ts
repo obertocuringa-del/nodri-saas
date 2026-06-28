@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { salaoIdSe, permDaGrade, getSessao } from '@/lib/apiAuth'
+import { registrarAuditoria } from '@/lib/audit'
 
 // Grades editáveis genéricas (bebidas, alicates, produtos, senhas, pop...). Namespace 'grid_'.
 export async function GET(req: NextRequest) {
@@ -23,5 +24,6 @@ export async function PUT(req: NextRequest) {
   if (sess?.role === 'sub' && !ehListasGrid) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
   const { error } = await supabaseAdmin.from('salao_config').upsert({ salao_id: salaoId, chave: `grid_${chave}`, valor: doc, atualizado_em: new Date().toISOString() }, { onConflict: 'salao_id,chave' })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  registrarAuditoria('Editou', 'Planilha/Lista', chave)
   return NextResponse.json({ ok: true })
 }

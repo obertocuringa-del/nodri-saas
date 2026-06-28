@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { verifyJWT } from '@/lib/auth'
 import { cookies } from 'next/headers'
 import { escritaBloqueadaSub } from '@/lib/apiAuth'
+import { registrarAuditoria } from '@/lib/audit'
 
 async function getSalaoId() {
   const token = cookies().get('nodri_token')?.value
@@ -42,6 +43,7 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  registrarAuditoria('Criou', 'Serviço', nome || '')
   return NextResponse.json(data)
 }
 
@@ -62,6 +64,7 @@ export async function PUT(req: NextRequest) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  registrarAuditoria('Editou', 'Serviço', nome || '')
   return NextResponse.json(data)
 }
 
@@ -81,5 +84,6 @@ export async function DELETE(req: NextRequest) {
     .eq('salao_id', salaoId)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  registrarAuditoria('Excluiu', 'Serviço', id)
   return NextResponse.json({ ok: true })
 }

@@ -124,6 +124,7 @@ export const CATALOGO_PERMISSOES: PermGrupo[] = [
     grupo: 'Configurações', itens: [
       { chave: 'cfg_salao', label: 'Perfil / configurações do salão' },
       { chave: 'cfg_usuarios', label: 'Usuários & Acessos (gerenciar logins)' },
+      { chave: 'cfg_auditoria', label: 'Log de Auditoria' },
       { chave: 'cfg_ia', label: 'Configuração da IA' },
     ]
   },
