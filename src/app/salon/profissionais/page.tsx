@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft, Plus, Search, UserCheck, UserX, Edit2, Trash2, Upload, X, ChevronRight, Users, FileText, Briefcase, Clock, Award, BookOpen, FileSignature, AlertCircle, TrendingUp, Building2, Menu, Mail } from 'lucide-react'
 import toast from 'react-hot-toast'
 import MateriaisTrabalho from '@/components/salon/MateriaisTrabalho'
-import ExameAdmissional from '@/components/salon/ExameAdmissional'
 import ProcessoContratacao from '@/components/salon/ProcessoContratacao'
 import { PJ_CONTRATACAO, PJ_DESLIGAMENTO } from '@/components/salon/processoDefaults'
 import EditorAvaliacao from '@/components/salon/EditorAvaliacao'
+import DescricaoCargo from '@/components/salon/DescricaoCargo'
 
 interface Profissional {
   id: string
@@ -60,6 +60,7 @@ const SIDEBAR_ITEMS = [
   { id: 'contrato',     label: 'Contrato de Trabalho',            icon: FileText,       cor: '#6366f1' },
   { id: 'certificados', label: 'Certificados',                    icon: Award,          cor: '#d946ef' },
   { id: 'carreira',     label: 'Plano de Carreira',               icon: TrendingUp,     cor: '#22c55e' },
+  { id: 'descricao_cargo', label: 'Descrição de Cargo',           icon: FileText,       cor: '#0891b2' },
 ]
 
 // Normaliza texto: maiúsculo, sem acento, sem espaço extra (para comparar categorias)
@@ -1788,12 +1789,9 @@ ${montarContratoHTML()}
             <div style={{ maxWidth: '1000px' }}>
               <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', borderBottom: '1px solid #ece9e2', paddingBottom: 12 }}>
                 <button onClick={() => setCltSub('clt')} style={{ padding: '8px 16px', borderRadius: 8, border: cltSub === 'clt' ? '1px solid #0ea5e9' : '1px solid #e0ddd8', background: cltSub === 'clt' ? '#0ea5e9' : '#fff', color: cltSub === 'clt' ? '#fff' : '#6b6860', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Profissionais CLT</button>
-                <button onClick={() => setCltSub('exame')} style={{ padding: '8px 16px', borderRadius: 8, border: cltSub === 'exame' ? '1px solid #0ea5e9' : '1px solid #e0ddd8', background: cltSub === 'exame' ? '#0ea5e9' : '#fff', color: cltSub === 'exame' ? '#fff' : '#6b6860', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>🩺 Exame Admissional</button>
                 <button onClick={() => setCltSub('processo')} style={{ padding: '8px 16px', borderRadius: 8, border: cltSub === 'processo' ? '1px solid #0ea5e9' : '1px solid #e0ddd8', background: cltSub === 'processo' ? '#0ea5e9' : '#fff', color: cltSub === 'processo' ? '#fff' : '#6b6860', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>📝 Processo de Contratação</button>
               </div>
-              {cltSub === 'exame' ? (
-                <ExameAdmissional pessoas={profissionais.map(p => ({ nome: p.apelido || p.nome_completo || '—', telefone: (p as any).telefone || (() => { try { return JSON.parse((p as any).contato_responsavel || '{}').tel || '' } catch { return '' } })() }))} />
-              ) : cltSub === 'processo' ? (
+              {cltSub === 'processo' ? (
                 <ProcessoContratacao pessoas={profissionais.map(p => ({ nome: p.apelido || p.nome_completo || '—', telefone: (p as any).telefone || (() => { try { return JSON.parse((p as any).contato_responsavel || '{}').tel || '' } catch { return '' } })() }))} />
               ) : (<div>
               <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', marginBottom: '16px' }}>
@@ -1929,6 +1927,11 @@ ${montarContratoHTML()}
               )) })()}
               <div style={{ fontSize: 12, color: '#6b6860', fontStyle: 'italic', background: '#faf9f7', borderRadius: 10, padding: '12px 14px' }}>💡 {GUIA_ENTREVISTA.nota}</div>
             </div>
+          )}
+
+          {/* ── DESCRIÇÃO DE CARGO (lista de cargos → descrição editável) ── */}
+          {secao === 'descricao_cargo' && (
+            <DescricaoCargo categorias={categorias} />
           )}
 
           {/* ── PERFIL IDEAL / MODELO DE AVALIAÇÃO (fonte única — alimenta a aba Avaliar) ── */}

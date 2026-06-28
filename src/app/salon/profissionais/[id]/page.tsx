@@ -1,6 +1,7 @@
 ﻿'use client'
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import CalendarioEditavel from '@/components/salon/CalendarioEditavel'
+import GridEditavel, { cel } from '@/components/salon/GridEditavel'
 import { useRouter, useParams } from 'next/navigation'
 import { ArrowLeft, Save, Loader2, TrendingUp, TrendingDown, BarChart2,
   MessageSquare, CheckSquare, Square, AlertTriangle } from 'lucide-react'
@@ -2275,7 +2276,7 @@ export default function PerfilProfissionalPage() {
   const [endCidade, setEndCidade] = useState('')
   const [endUf, setEndUf] = useState('')
   const [buscandoCep, setBuscandoCep] = useState(false)
-  const [tab, setTab] = useState<'cadastro'|'avaliar'|'desempenho'|'faturamento'|'metas'|'ia'|'dependencia'|'oportunidades'|'bundle'|'clientes-perdidos'|'agendamentos'|'calendario_mkt'>('cadastro')
+  const [tab, setTab] = useState<'cadastro'|'avaliar'|'desempenho'|'faturamento'|'metas'|'ia'|'dependencia'|'oportunidades'|'bundle'|'clientes-perdidos'|'agendamentos'|'calendario_mkt'|'corrida'|'acoes'>('cadastro')
   // ── Agendamentos ─────────────────────────────────────────────────────────────
   const [agendData, setAgendData] = useState<string>(() => { const h = new Date(); return `${String(h.getDate()).padStart(2,'0')}/${String(h.getMonth()+1).padStart(2,'0')}/${h.getFullYear()}` })
   const [agendamentos, setAgendamentos] = useState<any[]>([])
@@ -3064,6 +3065,8 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
           ['clientes-perdidos','PERDIDOS'],
           ['agendamentos','AGENDAMENTOS'],
           ['calendario_mkt','CALENDÁRIO MKT'],
+          ['corrida','CORRIDA INTERNA'],
+          ['acoes','AÇÕES COMERCIAIS'],
           ['ia','IA'],
         ] as const
         const labelAtivo = TABS.find(([t])=>t===tab)?.[1] ?? 'Menu'
@@ -3118,6 +3121,14 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
         {/*  CALENDÁRIO DE MARKETING (o mesmo do menu, compartilhado pelo salão)  */}
         {tab === 'calendario_mkt' && (
           <CalendarioEditavel chave="calendario_mkt" titulo="Calendário de Marketing" corTema="#db2777" comResponsavel camposGrandes mostrarLembrete embutido />
+        )}
+
+        {/*  CORRIDA INTERNA / AÇÕES COMERCIAIS (planilha por profissional)  */}
+        {tab === 'corrida' && (
+          <GridEditavel chave={`corrida_interna_${id}`} corTema="#16a34a" landscape defaultDoc={{ tabelas: [{ titulo: 'CORRIDA INTERNA', cabecalho: [cel('Meta'), cel('Realizado'), cel('Pontos'), cel('Período'), cel('Observação')], linhas: Array.from({ length: 10 }, () => [cel(''), cel(''), cel(''), cel(''), cel('')]), larguras: [180, 160, 120, 150, 260] }] }} />
+        )}
+        {tab === 'acoes' && (
+          <GridEditavel chave={`acoes_comerciais_${id}`} corTema="#db2777" landscape defaultDoc={{ tabelas: [{ titulo: 'AÇÕES COMERCIAIS', cabecalho: [cel('Ação / Campanha'), cel('Período'), cel('Meta'), cel('Resultado'), cel('Observação')], linhas: Array.from({ length: 10 }, () => [cel(''), cel(''), cel(''), cel(''), cel('')]), larguras: [240, 150, 150, 160, 260] }] }} />
         )}
 
         {/*  CADASTRO  */}

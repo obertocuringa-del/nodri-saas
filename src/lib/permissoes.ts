@@ -41,6 +41,11 @@ export const CATALOGO_PERMISSOES: PermGrupo[] = [
       { chave: 'adm_desconto_profissional', label: 'Desconto Profissional' },
       { chave: 'adm_tabela_precos', label: 'Tabela de Preço Atualizada' },
       { chave: 'adm_arquivos_envio', label: 'Arquivos para Envio' },
+      { chave: 'adm_corrida_interna', label: 'Corrida Interna' },
+      { chave: 'adm_acoes_comerciais', label: 'Ações Comerciais' },
+      { chave: 'adm_correios', label: 'Correios' },
+      { chave: 'adm_etiquetas', label: 'Etiquetas' },
+      { chave: 'adm_agendamentos_grandes', label: 'Agendamentos Grandes' },
     ]
   },
   {

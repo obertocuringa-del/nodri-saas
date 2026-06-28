@@ -10,6 +10,7 @@ import ListaTelefones from '@/components/salon/ListaTelefones'
 import ListaPrecoServicos from '@/components/salon/ListaPrecoServicos'
 import DocEditavel from '@/components/salon/DocEditavel'
 import AnexosLista from '@/components/salon/AnexosLista'
+import Etiquetas from '@/components/salon/Etiquetas'
 import { CAFE_BLOCOS, POP_SALAO_BLOCOS } from '@/components/salon/popDefaults'
 import { usePermissoes } from '@/lib/usePermissoes'
 
@@ -19,6 +20,8 @@ const ABA_CHAVE: Record<string, string> = {
   pacotes: 'adm_pacotes', telefones: 'adm_telefones', ata: 'adm_ata', escala: 'adm_escala',
   feriados: 'adm_feriados', pop: 'adm_pop', senhas: 'adm_senhas', cadastrar_produto: 'adm_cadastrar_produto',
   desconto_profissional: 'adm_desconto_profissional', tabela_precos: 'adm_tabela_precos', arquivos_envio: 'adm_arquivos_envio',
+  corrida_interna: 'adm_corrida_interna', acoes_comerciais: 'adm_acoes_comerciais', correios: 'adm_correios',
+  etiquetas: 'adm_etiquetas', agendamentos_grandes: 'adm_agendamentos_grandes',
 }
 
 interface ProfSalao { id: string; nome: string; telefone: string }
@@ -64,10 +67,19 @@ const ABAS_TOPO = [
   { key: 'desconto_profissional', label: 'Desconto Profissional' },
   { key: 'tabela_precos', label: 'Tabela de Preço Atualizada' },
   { key: 'arquivos_envio', label: 'Arquivos para Envio' },
+  { key: 'corrida_interna', label: 'Corrida Interna' },
+  { key: 'acoes_comerciais', label: 'Ações Comerciais' },
+  { key: 'correios', label: 'Correios' },
+  { key: 'etiquetas', label: 'Etiquetas' },
+  { key: 'agendamentos_grandes', label: 'Agendamentos Grandes' },
 ]
 
 const DEFAULT_CAD_PRODUTO: GridDoc = { tabelas: [{ titulo: 'CADASTRO DE PRODUTOS', cabecalho: [cel('Produto'), cel('Marca'), cel('Categoria'), cel('Quantidade'), cel('Validade'), cel('Fornecedor'), cel('Custo'), cel('Preço de venda')], linhas: linhasVazias(14, 8), larguras: [220, 150, 150, 110, 120, 180, 110, 130] }] }
 const DEFAULT_DESC_PROF: GridDoc = { tabelas: [{ titulo: 'DESCONTO PROFISSIONAL', cabecalho: [cel('Profissional'), cel('Data'), cel('Motivo'), cel('Valor do desconto'), cel('Parcelas'), cel('Observação')], linhas: linhasVazias(14, 6), larguras: [200, 120, 280, 150, 110, 260] }] }
+const DEFAULT_CORRIDA: GridDoc = { tabelas: [{ titulo: 'CORRIDA INTERNA', cabecalho: [cel('Profissional'), cel('Meta'), cel('Realizado'), cel('Pontos'), cel('Posição'), cel('Observação')], linhas: linhasVazias(14, 6), larguras: [200, 140, 140, 100, 90, 240] }] }
+const DEFAULT_ACOES: GridDoc = { tabelas: [{ titulo: 'AÇÕES COMERCIAIS', cabecalho: [cel('Ação / Campanha'), cel('Período'), cel('Responsável'), cel('Meta'), cel('Resultado'), cel('Observação')], linhas: linhasVazias(12, 6), larguras: [240, 150, 160, 140, 160, 240] }] }
+const DEFAULT_CORREIOS: GridDoc = { tabelas: [{ titulo: 'CORREIOS', cabecalho: [cel('Data'), cel('Tipo (carta/encomenda)'), cel('Remetente'), cel('Destinatário'), cel('Código de rastreio'), cel('Status'), cel('Observação')], linhas: linhasVazias(14, 7), larguras: [110, 170, 180, 180, 180, 130, 220] }] }
+const DEFAULT_AGENDA_GRANDE: GridDoc = { tabelas: [{ titulo: 'AGENDAMENTOS GRANDES', cabecalho: [cel('Data'), cel('Cliente'), cel('Serviço'), cel('Profissional'), cel('Valor'), cel('Observação')], linhas: linhasVazias(14, 6), larguras: [110, 200, 200, 180, 120, 240] }] }
 
 const DEFAULT_ATA: GridDoc = { tabelas: [
   { titulo: 'PAUTA DA REUNIÃO', cabecalho: [cel('Nº'), cel('Ponto a apresentar'), cel('Responsável'), cel('Decisão / Encaminhamento')], linhas: Array.from({ length: 8 }, (_, i) => [cel(String(i + 1)), cel(''), cel(''), cel('')]) },
@@ -211,6 +223,11 @@ export default function SalaoAdministrativoPage() {
         {abaTopo === 'desconto_profissional' && <GridEditavel key="descprof" chave="desconto_profissional" defaultDoc={DEFAULT_DESC_PROF} landscape />}
         {abaTopo === 'tabela_precos' && <AnexosLista key="tabprecos" chave="tabela_precos_arquivos" titulo="Tabela de Preço Atualizada" campoNome="Marca" comData />}
         {abaTopo === 'arquivos_envio' && <AnexosLista key="arqenvio" chave="arquivos_envio_lista" titulo="Arquivos para Envio" campoNome="Nome do arquivo" comData />}
+        {abaTopo === 'corrida_interna' && <GridEditavel key="corrida" chave="corrida_interna" defaultDoc={DEFAULT_CORRIDA} landscape />}
+        {abaTopo === 'acoes_comerciais' && <GridEditavel key="acoes" chave="acoes_comerciais" defaultDoc={DEFAULT_ACOES} landscape />}
+        {abaTopo === 'correios' && <GridEditavel key="correios" chave="correios" defaultDoc={DEFAULT_CORREIOS} landscape />}
+        {abaTopo === 'agendamentos_grandes' && <GridEditavel key="aggrande" chave="agendamentos_grandes" defaultDoc={DEFAULT_AGENDA_GRANDE} landscape />}
+        {abaTopo === 'etiquetas' && <Etiquetas key="etiquetas" />}
 
         {abaTopo === 'pop' && (<>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
