@@ -12,7 +12,7 @@ interface Pessoa { nome: string; telefone: string }
 
 const rid = () => Math.random().toString(36).slice(2, 8)
 const norm = (s: string) => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim()
-const CHAVE = 'processo_contratacao_clt'
+export type ProcDoc = Doc
 
 const DEFAULT: Doc = {
   secoes: [
@@ -43,7 +43,8 @@ const DEFAULT: Doc = {
   ],
 }
 
-export default function ProcessoContratacao({ pessoas }: { pessoas: Pessoa[] }) {
+export default function ProcessoContratacao({ pessoas, chave = 'processo_contratacao_clt', modelo, titulo = '📝 Processo de Contratação', comCarta = true }: { pessoas: Pessoa[]; chave?: string; modelo?: Doc; titulo?: string; comCarta?: boolean }) {
+  const MODELO = modelo || DEFAULT
   const [doc, setDoc] = useState<Doc>({ secoes: [] })
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
@@ -57,18 +58,19 @@ export default function ProcessoContratacao({ pessoas }: { pessoas: Pessoa[] }) 
 
   const carregar = useCallback(async () => {
     try {
-      const d = await fetch(`/api/salon/grid?chave=${CHAVE}`).then(r => r.ok ? r.json() : null)
-      setDoc(d && Array.isArray(d.secoes) ? d : DEFAULT)
-    } catch { setDoc(DEFAULT) }
+      const d = await fetch(`/api/salon/grid?chave=${chave}`).then(r => r.ok ? r.json() : null)
+      setDoc(d && Array.isArray(d.secoes) ? d : MODELO)
+    } catch { setDoc(MODELO) }
     setLoading(false)
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chave])
   useEffect(() => { carregar() }, [carregar])
 
   function mut(fn: (d: Doc) => void) { setDoc(prev => { const n: Doc = JSON.parse(JSON.stringify(prev)); fn(n); return n }); setDirty(true) }
   async function salvar() {
     setSalvando(true)
     try {
-      const res = await fetch('/api/salon/grid', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chave: CHAVE, doc }) })
+      const res = await fetch('/api/salon/grid', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chave, doc }) })
       if (res.ok) { toast.success('Processo salvo!'); setDirty(false); setEditando(false) } else { const e = await res.json().catch(() => ({})); toast.error(e?.error || 'Erro ao salvar') }
     } catch { toast.error('Erro de conexão') }
     setSalvando(false)
@@ -79,7 +81,7 @@ export default function ProcessoContratacao({ pessoas }: { pessoas: Pessoa[] }) 
   function setPasso(si: number, pi: number, campo: 'titulo' | 'texto', v: string) { mut(d => { (d.secoes[si].passos[pi] as any)[campo] = v }) }
   function setSecao(si: number, campo: 'titulo' | 'cor', v: string) { mut(d => { (d.secoes[si] as any)[campo] = v }) }
   function addSecao() { mut(d => { d.secoes.push({ id: rid(), titulo: 'NOVA ETAPA', cor: '#5b4fcf', passos: [{ id: rid(), titulo: 'Passo 1', texto: '' }] }) }) }
-  function restaurarModelo() { if (!confirm('Restaurar o modelo padrão (15 etapas)? Isso substitui o conteúdo atual — lembre de Salvar depois.')) return; setDoc(JSON.parse(JSON.stringify(DEFAULT))); setDirty(true) }
+  function restaurarModelo() { if (!confirm('Restaurar o modelo padrão? Isso substitui o conteúdo atual — lembre de Salvar depois.')) return; setDoc(JSON.parse(JSON.stringify(MODELO))); setDirty(true) }
   function delSecao(si: number) { if (!confirm('Excluir esta etapa inteira?')) return; mut(d => { d.secoes.splice(si, 1) }) }
 
   function mensagem(secao: string, p: Passo) {
@@ -110,11 +112,11 @@ export default function ProcessoContratacao({ pessoas }: { pessoas: Pessoa[] }) 
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 16 }}>
         <div>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1a1a1a', margin: '0 0 4px' }}>📝 Processo de Contratação</h2>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1a1a1a', margin: '0 0 4px' }}>{titulo}</h2>
           <p style={{ fontSize: 13, color: '#6b6860', margin: 0 }}>Clique em cada passo para ver os detalhes e enviar por WhatsApp. {editando ? 'Modo edição ligado.' : 'Use “Editar” para mudar/acrescentar.'}</p>
         </div>
         <div style={{ flex: 1 }} />
-        <button onClick={() => setCartaAberta(true)} style={{ ...btnSec, borderColor: '#16a34a', color: '#16a34a' }}><FileText size={14} /> Carta de Abertura de Conta</button>
+        {comCarta && <button onClick={() => setCartaAberta(true)} style={{ ...btnSec, borderColor: '#16a34a', color: '#16a34a' }}><FileText size={14} /> Carta de Abertura de Conta</button>}
         <button onClick={imprimir} style={btnSec}><Printer size={14} /> Imprimir</button>
         {editando && <button onClick={restaurarModelo} style={btnSec}><RotateCcw size={14} /> Restaurar modelo</button>}
         {editando

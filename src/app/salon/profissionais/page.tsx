@@ -7,6 +7,7 @@ import toast from 'react-hot-toast'
 import MateriaisTrabalho from '@/components/salon/MateriaisTrabalho'
 import ExameAdmissional from '@/components/salon/ExameAdmissional'
 import ProcessoContratacao from '@/components/salon/ProcessoContratacao'
+import { PJ_CONTRATACAO, PJ_DESLIGAMENTO, PERFIL_AVALIACAO } from '@/components/salon/processoDefaults'
 
 interface Profissional {
   id: string
@@ -163,6 +164,7 @@ export default function ProfissionaisPage() {
   const router = useRouter()
   const [secao, setSecao] = useState('lista')
   const [cltSub, setCltSub] = useState<'clt' | 'exame' | 'processo'>('clt')
+  const [cnpjSub, setCnpjSub] = useState<'cnpj' | 'contratacao' | 'desligamento'>('cnpj')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   useEffect(() => {
@@ -1686,6 +1688,16 @@ ${montarContratoHTML()}
           {/* ── PAINEL DE CNPJ DOS PROFISSIONAIS ── */}
           {secao === 'cnpj' && (
             <div style={{ maxWidth: '1000px' }}>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', borderBottom: '1px solid #ece9e2', paddingBottom: 12 }}>
+                {([['cnpj', 'CNPJ'], ['contratacao', '📝 Processo de Contratação'], ['desligamento', '🚪 Processo de Desligamento']] as const).map(([k, l]) => (
+                  <button key={k} onClick={() => setCnpjSub(k)} style={{ padding: '8px 16px', borderRadius: 8, border: cnpjSub === k ? '1px solid #5b4fcf' : '1px solid #e0ddd8', background: cnpjSub === k ? '#5b4fcf' : '#fff', color: cnpjSub === k ? '#fff' : '#6b6860', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>{l}</button>
+                ))}
+              </div>
+              {cnpjSub === 'contratacao' ? (
+                <ProcessoContratacao chave="processo_contratacao_pj" modelo={PJ_CONTRATACAO} titulo="📝 Processo de Contratação (PJ/MEI)" pessoas={profissionais.map(p => ({ nome: p.apelido || p.nome_completo || '—', telefone: (p as any).telefone || (() => { try { return JSON.parse((p as any).contato_responsavel || '{}').tel || '' } catch { return '' } })() }))} />
+              ) : cnpjSub === 'desligamento' ? (
+                <ProcessoContratacao chave="processo_desligamento_pj" modelo={PJ_DESLIGAMENTO} titulo="🚪 Processo de Desligamento (PJ/MEI)" comCarta={false} pessoas={profissionais.map(p => ({ nome: p.apelido || p.nome_completo || '—', telefone: (p as any).telefone || (() => { try { return JSON.parse((p as any).contato_responsavel || '{}').tel || '' } catch { return '' } })() }))} />
+              ) : (<div>
               <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', marginBottom: '16px' }}>
                 <div>
                   <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#1a1a1a', margin: '0 0 6px' }}>CNPJ dos Profissionais</h2>
@@ -1766,6 +1778,7 @@ ${montarContratoHTML()}
                   )
                 })
               )}
+              </div>)}
             </div>
           )}
 
@@ -1917,8 +1930,15 @@ ${montarContratoHTML()}
             </div>
           )}
 
+          {/* ── PERFIL IDEAL / AVALIAÇÃO (editável, modelo completo) ── */}
+          {secao === 'perfil' && (
+            <div style={{ maxWidth: 1000 }}>
+              <ProcessoContratacao chave="perfil_avaliacao" modelo={PERFIL_AVALIACAO} titulo="🎯 Perfil e Avaliação de Desempenho" comCarta={false} pessoas={profissionais.map(p => ({ nome: p.apelido || p.nome_completo || '—', telefone: (p as any).telefone || (() => { try { return JSON.parse((p as any).contato_responsavel || '{}').tel || '' } catch { return '' } })() }))} />
+            </div>
+          )}
+
           {/* ── SEÇÕES DE CONTEÚDO INFORMATIVO ── */}
-          {CONTEUDO_INFO[secao] && (
+          {CONTEUDO_INFO[secao] && secao !== 'perfil' && (
             <div>
               <div style={{ background: '#ffffff', border: '1px solid #e8e6e0', borderRadius: '16px', padding: '32px', maxWidth: '700px' }}>
                 <h2 style={{ color: '#1a1a1a', fontSize: '22px', fontWeight: 700, margin: '0 0 20px' }}>

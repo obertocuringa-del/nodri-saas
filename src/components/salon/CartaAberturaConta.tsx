@@ -67,18 +67,21 @@ export default function CartaAberturaConta({ onClose }: { onClose: () => void })
 
   function imprimir() {
     if (!sel) { toast.error('Selecione o funcionário'); return }
-    const salTxt = salario.trim() ? esc(salario) : '____________ (preencher)'
-    const css = `@page{size:A4 portrait;margin:25mm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Times New Roman',Georgia,serif;color:#000;font-size:14px;line-height:1.7}.logo{text-align:center;margin-bottom:26px}.logo img{max-height:100px;max-width:280px;object-fit:contain}.data{text-align:right;margin-bottom:26px}.bloco{margin:16px 0}.sal{color:#dc2626;font-weight:800}.cargo{margin:6px 0;font-weight:700}.ass{margin-top:70px;text-align:center}.linha{border-top:1px solid #000;width:340px;margin:0 auto;padding-top:6px;font-size:13px}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}`
+    const temSal = !!salario.trim()
+    const salHtml = temSal ? esc(salario) : '<span style="color:#dc2626;font-weight:700">____________ (preencher)</span>'
+    const css = `@page{size:A4 portrait;margin:25mm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:Calibri,'Segoe UI',Arial,sans-serif;color:#000;font-size:15px;line-height:1.4}.logo{text-align:center;margin-bottom:30px}.logo img{max-height:120px;max-width:330px;object-fit:contain}.data{margin-bottom:18px}p{margin:0 0 14px}.bloco0{margin:0}.ass{margin-top:64px}.linha{border-top:1px solid #000;width:430px;padding-top:4px}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}`
     const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Carta de Abertura de Conta — ${esc(nome)}</title><style>${css}</style></head><body>
       ${logo ? `<div class="logo"><img src="${logo}" alt="logo"/></div>` : ''}
-      <div class="data">${esc(cidade)}, ${dataExtenso()}.</div>
-      <div class="bloco">Ao<br><strong>Banco ${esc(banco)}</strong><br>Att. Gerente</div>
-      <p class="bloco"><strong>Assunto:</strong> Abertura de Conta para Crédito de Salário.</p>
-      <p class="bloco">Prezado(a) senhor(a), apresentamos o(a) Sr.(a) <strong>${esc(nome)}</strong>, portador(a) do R.G. nº <strong>${esc(sel.rg || '____________')}</strong> e CPF nº <strong>${esc(sel.cpf || '____________')}</strong>, para abertura de uma Conta para Crédito de Salário. O(a) mesmo(a) é funcionário(a) da empresa <strong>${esc(empresa)}</strong>, sem mais, agradecemos.</p>
-      <p class="cargo">CARGO: ${esc((sel.cargo || '').toUpperCase())}</p>
-      <p class="cargo">SALÁRIO: <span class="sal">${salTxt}</span></p>
-      <p class="bloco" style="margin-top:44px">Atenciosamente,</p>
-      <div class="ass"><div class="linha">Carimbo e assinatura do Gerente Responsável</div></div>
+      <p class="data">${esc(cidade)}, ${dataExtenso()}.</p>
+      <p class="bloco0">Ao</p>
+      <p class="bloco0">Banco ${esc(banco)}</p>
+      <p>&nbsp;Att. Gerente</p>
+      <p>Assunto: Abertura de Conta para Crédito de Salário.</p>
+      <p>&nbsp;Prezado (a) senhor (a), apresentamos o (a) Sr. (a) ${esc(nome)} , Portador (a) do R.G. nº ${esc(sel.rg || '____________')} e CPF nº ${esc(sel.cpf || '____________')}, para abertura de uma Conta para Crédito de Salário. O mesmo é funcionário da empresa ${esc(empresa)}${cnpj.trim() ? `, CNPJ nº ${esc(cnpj)}` : ''}, sem mais, agradecemos.</p>
+      <p class="bloco0">CARGO: ${esc((sel.cargo || '').toUpperCase())}</p>
+      <p>SALÁRIO: ${salHtml}</p>
+      <p style="margin-top:44px">Atenciosamente,</p>
+      <div class="ass"><div class="linha"></div>Carimbo e assinatura do Gerente Responsável</div>
       <script>window.onload=function(){window.print()}</script></body></html>`
     const w = window.open('', '_blank', 'width=900,height=800'); if (!w) return; w.document.write(html); w.document.close(); w.focus()
   }

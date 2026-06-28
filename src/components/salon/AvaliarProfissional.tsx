@@ -5,22 +5,25 @@ import toast from 'react-hot-toast'
 import { Loader2, Plus, Save, Printer, Trash2, ArrowLeft } from 'lucide-react'
 
 const SECOES = [
-  { titulo: 'Competência Técnica', cor: '#5b4fcf', criterios: ['Executa os serviços com perfeição', 'Executa serviços no tempo adequado', 'Possui conhecimento técnico', 'Atualiza-se anualmente'] },
-  { titulo: 'Comprometimento', cor: '#0891b2', criterios: ['Atende pontualmente', 'Possui materiais pra executar os trabalhos', 'Participa das reuniões', 'Segue as regras da empresa'] },
-  { titulo: 'Comportamento', cor: '#db2777', criterios: ['Se relaciona bem com os colegas', 'Cuida da higiene de sua área de trabalho', 'Quando preciso, ajuda seu colega', 'É aberto a crescer como pessoa e profissional'] },
-  { titulo: 'Desempenho', cor: '#16a34a', criterios: ['Tem uma boa taxa de retorno (comparado c/ a equipe)', 'Rateio em Crescimento', 'Recebe indicação de clientes', 'Tem rateio superior à média da empresa'] },
+  { titulo: 'Comprometimento e Responsabilidade', cor: '#5b4fcf', criterios: ['Pontualidade e cumprimento dos horários', 'Presença e disponibilidade no salão', 'Baixa frequência de faltas e atrasos', 'Comprometimento com a agenda e clientes agendados', 'Não recusa/cancela atendimentos sem justificativa', 'Cumprimento das normas internas', 'Responsabilidade com materiais e patrimônio'] },
+  { titulo: 'Relacionamento Interpessoal e Cultura', cor: '#0891b2', criterios: ['Relacionamento saudável com colegas e gestores', 'Ausência de fofocas e conflitos internos', 'Respeito à equipe e aos clientes', 'Honestidade e transparência', 'Humildade para reconhecer erros e receber feedback', 'Sigilo sobre assuntos internos', 'Participação em ações, campanhas e eventos', 'Espírito de equipe e colaboração'] },
+  { titulo: 'Desenvolvimento Profissional e Inovação', cor: '#db2777', criterios: ['Participação em cursos e treinamentos', 'Busca constante por atualização técnica', 'Qualidade dos materiais utilizados', 'Conhecimento das tendências do mercado', 'Aplicação prática dos conhecimentos', 'Marketing pessoal e uso estratégico das redes', 'Qualidade e frequência das publicações'] },
+  { titulo: 'Qualidade no Atendimento e Experiência', cor: '#16a34a', criterios: ['Escuta ativa durante o atendimento', 'Excelência técnica e qualidade dos serviços', 'Respeito ao tempo de cada procedimento', 'Experiência diferenciada ao cliente', 'Priorização da saúde de cabelos/unhas/pele', 'Clareza na apresentação de serviços e valores', 'Resolução de conflitos e insatisfações', 'Pós-atendimento e acompanhamento'] },
+  { titulo: 'Fidelização e Relacionamento com Clientes', cor: '#ea580c', criterios: ['Taxa de fidelização (meta ≥ 55%)', 'Taxa de retorno dos clientes', 'Frequência média dos retornos', 'Índice de satisfação dos clientes', 'Baixo número de reclamações'] },
+  { titulo: 'Resultados e Crescimento Financeiro', cor: '#0d9488', criterios: ['Crescimento do faturamento (meta mín. 8%/mês)', 'Ticket médio', 'Quantidade de clientes atendidos', 'Taxa de ocupação da agenda', 'Venda de produtos e serviços complementares', 'Evolução do faturamento ao longo do tempo'] },
 ]
-const ESCALA = [{ n: 1, l: 'Muito Baixo' }, { n: 2, l: 'Baixo' }, { n: 3, l: 'Regular' }, { n: 4, l: 'Bom' }, { n: 5, l: 'Excelente' }]
+const TOTAL = SECOES.reduce((a, s) => a + s.criterios.length, 0)
+const ESCALA = [{ n: 1, l: 'Muito abaixo' }, { n: 2, l: 'Abaixo' }, { n: 3, l: 'Dentro do esperado' }, { n: 4, l: 'Acima' }, { n: 5, l: 'Excelente' }]
 const TEMPOS = ['Menos de 6 meses', '6 meses a 1 ano', '1 a 2 anos', '2 a 5 anos', 'Mais de 5 anos']
 
 interface Avaliacao { id: string; data: string; tempo: string; respostas: Record<string, number>; obs: string }
 
 function classificar(pct: number) {
-  if (pct >= 85) return { txt: 'Excelente', cor: '#16a34a', emoji: '🏆' }
-  if (pct >= 70) return { txt: 'Bom', cor: '#0891b2', emoji: '👍' }
-  if (pct >= 55) return { txt: 'Regular', cor: '#f59e0b', emoji: '⚠️' }
-  if (pct >= 40) return { txt: 'Abaixo do esperado', cor: '#f97316', emoji: '📉' }
-  return { txt: 'Crítico', cor: '#ef4444', emoji: '🚨' }
+  if (pct >= 90) return { txt: 'Profissional Destaque', cor: '#16a34a', emoji: '🏆' }
+  if (pct >= 80) return { txt: 'Excelente desempenho', cor: '#0891b2', emoji: '⭐' }
+  if (pct >= 70) return { txt: 'Bom desempenho', cor: '#65a30d', emoji: '👍' }
+  if (pct >= 60) return { txt: 'Necessita desenvolvimento', cor: '#f59e0b', emoji: '⚠️' }
+  return { txt: 'Plano de ação imediato', cor: '#ef4444', emoji: '🚨' }
 }
 
 function calcular(respostas: Record<string, number>) {
@@ -76,7 +79,7 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome }
   const totalRespondidas = Object.keys(respostas).length
 
   async function salvar() {
-    if (totalRespondidas < 16) { toast.error('Responda todos os 16 critérios antes de salvar.'); return }
+    if (totalRespondidas < TOTAL) { toast.error(`Responda todos os ${TOTAL} critérios antes de salvar.`); return }
     setSalvando(true)
     const nova: Avaliacao = { id: Date.now().toString(), data: dataAval, tempo, respostas, obs }
     const novoHist = [nova, ...historico]
@@ -140,7 +143,7 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome }
       <div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <button onClick={() => setView('lista')} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'transparent', border: 'none', color: '#6b6860', cursor: 'pointer', fontSize: 13 }}><ArrowLeft size={15} /> Voltar</button>
-          <span style={{ fontSize: 12, color: '#9ca3af' }}>{totalRespondidas}/16 respondidos</span>
+          <span style={{ fontSize: 12, color: '#9ca3af' }}>{totalRespondidas}/{TOTAL} respondidos</span>
         </div>
         <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: 16, marginBottom: 14, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
           <div><label style={{ fontSize: 12, fontWeight: 700, color: '#6b6860', display: 'block', marginBottom: 4 }}>Data da Avaliação</label><input type="date" value={dataAval} onChange={e => setDataAval(e.target.value)} style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13 }} /></div>
@@ -174,8 +177,8 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome }
           <label style={{ fontSize: 12, fontWeight: 700, color: '#6b6860', display: 'block', marginBottom: 5 }}>Observações (opcional)</label>
           <textarea value={obs} onChange={e => setObs(e.target.value)} rows={3} placeholder="Pontos fortes, pontos a desenvolver, plano de ação..." style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13, resize: 'vertical', fontFamily: 'inherit' }} />
         </div>
-        <button onClick={() => setView('resultado')} disabled={totalRespondidas < 16} style={{ width: '100%', padding: '14px', borderRadius: 10, border: 'none', background: totalRespondidas < 16 ? '#cbd5e1' : 'linear-gradient(135deg,#7c3aed,#5b4fcf)', color: '#fff', fontSize: 15, fontWeight: 800, cursor: totalRespondidas < 16 ? 'not-allowed' : 'pointer' }}>
-          {totalRespondidas < 16 ? `Responda os 16 critérios (${totalRespondidas}/16)` : 'Ver Resultado →'}
+        <button onClick={() => setView('resultado')} disabled={totalRespondidas < TOTAL} style={{ width: '100%', padding: '14px', borderRadius: 10, border: 'none', background: totalRespondidas < TOTAL ? '#cbd5e1' : 'linear-gradient(135deg,#7c3aed,#5b4fcf)', color: '#fff', fontSize: 15, fontWeight: 800, cursor: totalRespondidas < TOTAL ? 'not-allowed' : 'pointer' }}>
+          {totalRespondidas < TOTAL ? `Responda os ${TOTAL} critérios (${totalRespondidas}/${TOTAL})` : 'Ver Resultado →'}
         </button>
       </div>
     )
@@ -187,7 +190,7 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome }
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
         <div>
           <h3 style={{ fontSize: 18, fontWeight: 800, color: '#1a1a1a', margin: '0 0 4px' }}>Avaliações de {profissionalNome}</h3>
-          <p style={{ fontSize: 13, color: '#6b6860', margin: 0 }}>Avalie 16 critérios em 4 áreas e acompanhe a evolução.</p>
+          <p style={{ fontSize: 13, color: '#6b6860', margin: 0 }}>Avalie {TOTAL} critérios em 6 áreas (1 a 5) e acompanhe a evolução.</p>
         </div>
         <button onClick={novaAvaliacao} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 16px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#7c3aed,#5b4fcf)', color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}><Plus size={16} /> Nova Avaliação</button>
       </div>
