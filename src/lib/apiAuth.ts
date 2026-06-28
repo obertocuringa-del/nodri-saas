@@ -2,7 +2,7 @@ import { cookies } from 'next/headers'
 import { verifyJWT } from './auth'
 import { supabaseAdmin } from './supabase'
 
-export interface Sessao { salaoId: string; role: string; permissoes: string[] | null }
+export interface Sessao { salaoId: string; role: string; permissoes: string[] | null; profissionalId?: string }
 
 // Sessão atual com permissões AO VIVO (dono → permissoes null = pode tudo)
 export async function getSessao(): Promise<Sessao | null> {
@@ -15,6 +15,10 @@ export async function getSessao(): Promise<Sessao | null> {
     if (!data || data.ativo === false) return null
     return { salaoId: p.salaoId, role: 'sub', permissoes: Array.isArray(data.permissoes) ? data.permissoes : [] }
   }
+  if (p.role === 'profissional') {
+    // Profissional: somente leitura e escopo do próprio id
+    return { salaoId: p.salaoId, role: 'profissional', permissoes: null, profissionalId: (p as any).profissionalId || p.userId }
+  }
   return { salaoId: p.salaoId, role: p.role, permissoes: null }
 }
 
@@ -22,7 +26,8 @@ export async function getSessao(): Promise<Sessao | null> {
 // Retorna true quando a escrita deve ser bloqueada (usuário é 'sub'). Dono/master nunca bloqueiam.
 export async function escritaBloqueadaSub(): Promise<boolean> {
   const s = await getSessao()
-  return s?.role === 'sub'
+  // Sub e profissional são somente leitura — nunca podem escrever/alterar/excluir nada
+  return s?.role === 'sub' || s?.role === 'profissional'
 }
 
 // Retorna o salaoId se a sessão tem QUALQUER uma das chaves (dono sempre passa); senão null

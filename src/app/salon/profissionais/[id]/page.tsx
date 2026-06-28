@@ -2269,6 +2269,12 @@ export default function PerfilProfissionalPage() {
   const [form, setForm] = useState<Partial<Profissional>>({})
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
+  // Portal do profissional: quando o próprio profissional está logado, tudo fica somente leitura
+  const [souProf, setSouProf] = useState(false)
+  useEffect(() => { fetch('/api/auth/me').then(r => r.ok ? r.json() : null).then(d => setSouProf((d?.role || d?.user?.role) === 'profissional')).catch(() => { }) }, [])
+  // Itens que o salão escolheu ocultar deste profissional (só valem para a visão dele)
+  const ocultarProf: Record<string, boolean> = (souProf && prof && (prof as any).acesso_oculto && typeof (prof as any).acesso_oculto === 'object') ? (prof as any).acesso_oculto : {}
+  const podeVer = (chave: string) => !(souProf && ocultarProf[chave])
   // Categorias criadas/salvas em "Gerenciar Categorias" (puxadas aqui no perfil)
   const [catsCustom, setCatsCustom] = useState<string[]>([])
   useEffect(() => { fetch('/api/salon/grid?chave=prof_categorias').then(r => r.ok ? r.json() : null).then(d => { if (d && Array.isArray(d.lista)) setCatsCustom(d.lista) }).catch(() => { }) }, [])
@@ -3005,11 +3011,16 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
             <AlertTriangle size={10}/> {faltando.length} campo(s) obrigatório(s)
           </div>
         )}
-        {tab === 'cadastro' && !form.is_departamento && (
+        {tab === 'cadastro' && !form.is_departamento && !souProf && (
           <button onClick={salvar} disabled={salvando}
             className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-nodri-cyan text-nodri-dark text-[11px] font-bold hover:brightness-110 disabled:opacity-50">
             {salvando ? <Loader2 size={12} className="animate-spin"/> : <Save size={12}/>} Salvar
           </button>
+        )}
+        {souProf && (
+          <span className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold" style={{ background: '#eef2ff', color: '#4338ca' }}>
+            👁️ Somente leitura
+          </span>
         )}
       </div>
 
@@ -3054,7 +3065,7 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
 
       {/* Tabs */}
       {(() => {
-        const TABS = [
+        const TABS_ALL: [typeof tab, string][] = [
           ['cadastro','CADASTRO'],
           ['avaliar','AVALIAR'],
           ['faturamento','FATURAMENTO'],
@@ -3069,7 +3080,9 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
           ['corrida','CORRIDA INTERNA'],
           ['acoes','AÇÕES COMERCIAIS'],
           ['ia','IA'],
-        ] as const
+        ]
+        // Profissional logado: esconde a aba IA e o que o salão marcou para ocultar
+        const TABS = TABS_ALL.filter(([t]) => (souProf && (t === 'ia' || t === 'calendario_mkt' || t === 'avaliar')) ? false : podeVer(t))
         const labelAtivo = TABS.find(([t])=>t===tab)?.[1] ?? 'Menu'
         return (
           <div className="bg-nodri-surface border-b border-nodri-border" style={{ padding: '10px 12px' }}>
@@ -3109,10 +3122,10 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
 
         {/*  CORRIDA INTERNA / AÇÕES COMERCIAIS (planilha por profissional)  */}
         {tab === 'corrida' && (
-          <GridEditavel chave={`corrida_interna_${id}`} corTema="#16a34a" landscape defaultDoc={{ tabelas: [{ titulo: 'CORRIDA INTERNA', cabecalho: [cel('Meta'), cel('Realizado'), cel('Pontos'), cel('Período'), cel('Observação')], linhas: Array.from({ length: 10 }, () => [cel(''), cel(''), cel(''), cel(''), cel('')]), larguras: [180, 160, 120, 150, 260] }] }} />
+          <GridEditavel chave={`corrida_interna_${id}`} soLeitura={souProf} corTema="#16a34a" landscape defaultDoc={{ tabelas: [{ titulo: 'CORRIDA INTERNA', cabecalho: [cel('Meta'), cel('Realizado'), cel('Pontos'), cel('Período'), cel('Observação')], linhas: Array.from({ length: 10 }, () => [cel(''), cel(''), cel(''), cel(''), cel('')]), larguras: [180, 160, 120, 150, 260] }] }} />
         )}
         {tab === 'acoes' && (
-          <GridEditavel chave={`acoes_comerciais_${id}`} corTema="#db2777" landscape defaultDoc={{ tabelas: [{ titulo: 'AÇÕES COMERCIAIS', cabecalho: [cel('Ação / Campanha'), cel('Período'), cel('Meta'), cel('Resultado'), cel('Observação')], linhas: Array.from({ length: 10 }, () => [cel(''), cel(''), cel(''), cel(''), cel('')]), larguras: [240, 150, 150, 160, 260] }] }} />
+          <GridEditavel chave={`acoes_comerciais_${id}`} soLeitura={souProf} corTema="#db2777" landscape defaultDoc={{ tabelas: [{ titulo: 'AÇÕES COMERCIAIS', cabecalho: [cel('Ação / Campanha'), cel('Período'), cel('Meta'), cel('Resultado'), cel('Observação')], linhas: Array.from({ length: 10 }, () => [cel(''), cel(''), cel(''), cel(''), cel('')]), larguras: [240, 150, 150, 160, 260] }] }} />
         )}
 
         {/*  CADASTRO  */}
@@ -3751,11 +3764,11 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                               {/* Cards resumo */}
                               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                 {[
-                                  {label:'Total Visitas',  val: h.total_visitas || '—',        icon:'📅'},
-                                  {label:'Última Visita',  val: h.dias_desde_ultima != null ? `${h.dias_desde_ultima}d atrás` : h.ultima_visita || '—', icon:'🕐'},
-                                  {label:'Fat. Acumulado', val: fmt$(h.faturamento_acumulado),  icon:'💵'},
-                                  {label:'Ticket Médio',   val: fmt$(h.ticket_medio),           icon:'🎯'},
-                                ].map(c=>(
+                                  {label:'Total Visitas',  val: h.total_visitas || '—',        icon:'📅', k:'visitas'},
+                                  {label:'Última Visita',  val: h.dias_desde_ultima != null ? `${h.dias_desde_ultima}d atrás` : h.ultima_visita || '—', icon:'🕐', k:'visitas'},
+                                  {label:'Fat. Acumulado', val: fmt$(h.faturamento_acumulado),  icon:'💵', k:'fat_acumulado'},
+                                  {label:'Ticket Médio',   val: fmt$(h.ticket_medio),           icon:'🎯', k:'ticket_medio'},
+                                ].filter(c=>podeVer(c.k)).map(c=>(
                                   <div key={c.label} className="rounded-xl p-3 text-center" style={{background:'#fff',border:'1px solid #e5e7eb'}}>
                                     <p className="text-[18px]">{c.icon}</p>
                                     <p className="text-[13px] font-bold mt-0.5" style={{color:'#1a1a1a'}}>{c.val}</p>

@@ -18,39 +18,69 @@ export async function POST(req: NextRequest) {
       .eq('ativo', true)
       .maybeSingle()
 
-    // Se não for dono, tenta sub-usuário (login = usuario definido pelo dono)
+    // Se não for dono, tenta sub-usuário e depois profissional (login definidos pelo salão)
     if (!usuario) {
       const login = email.toLowerCase().trim()
       // 1) busca o sub-usuário (sem join — a tabela não tem FK pra saloes)
-      const { data: sub, error: subErr } = await supabaseAdmin
+      const { data: sub } = await supabaseAdmin
         .from('salao_usuarios')
         .select('*')
         .eq('usuario', login)
         .eq('ativo', true)
         .maybeSingle()
 
-      if (subErr || !sub) return NextResponse.json({ error: 'Usuário ou senha incorretos' }, { status: 401 })
-      const okSub = await verifyPassword(password, sub.senha_hash)
-      if (!okSub) return NextResponse.json({ error: 'Usuário ou senha incorretos' }, { status: 401 })
-
-      // 2) busca o salão separadamente
-      const { data: salaoSub } = await supabaseAdmin
-        .from('saloes')
-        .select('nome, status, plano:planos(slug)')
-        .eq('id', sub.salao_id)
-        .maybeSingle()
-      if (salaoSub?.status === 'bloqueado' || salaoSub?.status === 'vencido') {
-        return NextResponse.json({ error: 'A licença do salão está indisponível. Fale com o dono.' }, { status: 403 })
+      if (sub && await verifyPassword(password, sub.senha_hash)) {
+        // busca o salão separadamente
+        const { data: salaoSub } = await supabaseAdmin
+          .from('saloes')
+          .select('nome, status, plano:planos(slug)')
+          .eq('id', sub.salao_id)
+          .maybeSingle()
+        if (salaoSub?.status === 'bloqueado' || salaoSub?.status === 'vencido') {
+          return NextResponse.json({ error: 'A licença do salão está indisponível. Fale com o dono.' }, { status: 403 })
+        }
+        const tokenSub = await signJWT({
+          userId: sub.id, email: sub.usuario, role: 'sub', salaoId: sub.salao_id,
+          salaoNome: salaoSub?.nome, plano: (salaoSub?.plano as any)?.slug,
+          permissoes: Array.isArray(sub.permissoes) ? sub.permissoes : [], nome: sub.nome || sub.usuario,
+        })
+        const respSub = NextResponse.json({ user: { id: sub.id, nome: sub.nome || sub.usuario, role: 'sub' } })
+        respSub.cookies.set('nodri_token', tokenSub, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 60 * 60 * 24 * 7, path: '/' })
+        return respSub
       }
 
-      const tokenSub = await signJWT({
-        userId: sub.id, email: sub.usuario, role: 'sub', salaoId: sub.salao_id,
-        salaoNome: salaoSub?.nome, plano: (salaoSub?.plano as any)?.slug,
-        permissoes: Array.isArray(sub.permissoes) ? sub.permissoes : [], nome: sub.nome || sub.usuario,
-      })
-      const respSub = NextResponse.json({ user: { id: sub.id, nome: sub.nome || sub.usuario, role: 'sub' } })
-      respSub.cookies.set('nodri_token', tokenSub, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 60 * 60 * 24 * 7, path: '/' })
-      return respSub
+      // 2) PROFISSIONAL — portal somente leitura, login/senha definidos pelo salão
+      let prof: any = null
+      try {
+        const r = await supabaseAdmin
+          .from('profissionais')
+          .select('id, salao_id, nome_completo, apelido, acesso_senha_hash, acesso_liberado')
+          .eq('acesso_login', login)
+          .eq('acesso_liberado', true)
+          .maybeSingle()
+        prof = r.data
+      } catch { prof = null }
+
+      if (prof && prof.acesso_senha_hash && await verifyPassword(password, prof.acesso_senha_hash)) {
+        const { data: salaoP } = await supabaseAdmin
+          .from('saloes')
+          .select('nome, status, plano:planos(slug)')
+          .eq('id', prof.salao_id)
+          .maybeSingle()
+        if (salaoP?.status === 'bloqueado' || salaoP?.status === 'vencido') {
+          return NextResponse.json({ error: 'A licença do salão está indisponível. Fale com o dono.' }, { status: 403 })
+        }
+        const nomeP = prof.apelido || prof.nome_completo || login
+        const tokenP = await signJWT({
+          userId: prof.id, email: login, role: 'profissional', salaoId: prof.salao_id,
+          salaoNome: salaoP?.nome, plano: (salaoP?.plano as any)?.slug, profissionalId: prof.id, nome: nomeP,
+        })
+        const respP = NextResponse.json({ user: { id: prof.id, nome: nomeP, role: 'profissional', profissionalId: prof.id } })
+        respP.cookies.set('nodri_token', tokenP, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 60 * 60 * 24 * 7, path: '/' })
+        return respP
+      }
+
+      return NextResponse.json({ error: 'Usuário ou senha incorretos' }, { status: 401 })
     }
 
     // Verifica senha

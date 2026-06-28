@@ -31,7 +31,7 @@ function AutoTextarea({ value, onChange, onFocus, style }: { value: string; onCh
     style={{ resize: 'none', overflow: 'hidden', whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: 1.4, fontFamily: 'inherit', ...style }} />
 }
 
-export default function GridEditavel({ chave, defaultDoc, defaultDocFn, mensal, landscape, corTema = '#5b4fcf' }: { chave: string; defaultDoc?: Doc; defaultDocFn?: (mes: string) => Doc; mensal?: boolean; landscape?: boolean; corTema?: string }) {
+export default function GridEditavel({ chave, defaultDoc, defaultDocFn, mensal, landscape, corTema = '#5b4fcf', soLeitura }: { chave: string; defaultDoc?: Doc; defaultDocFn?: (mes: string) => Doc; mensal?: boolean; landscape?: boolean; corTema?: string; soLeitura?: boolean }) {
   const [mes, setMes] = useState(mesAtual())
   const [doc, setDoc] = useState<Doc>(() => defaultDocFn ? defaultDocFn(mesAtual()) : (defaultDoc || { tabelas: [] }))
   const [loading, setLoading] = useState(true)
@@ -154,6 +154,7 @@ export default function GridEditavel({ chave, defaultDoc, defaultDocFn, mensal, 
 
   const selCell = sel ? getCell(sel) : undefined
   const cellBox = (cell: Cell, s: Sel) => {
+    if (soLeitura) return <div style={{ width: '100%', padding: '5px 7px', whiteSpace: 'pre-wrap', wordBreak: 'break-word', ...cssCell(cell) }}>{cell.t}</div>
     const ativo = sel && sel.ti === s.ti && sel.ri === s.ri && sel.ci === s.ci
     return <AutoTextarea value={cell.t} onFocus={() => setSel(s)} onChange={v => setCellAt(s, { t: v })}
       style={{ width: '100%', border: ativo ? `2px solid ${corTema}` : '1px solid transparent', borderRadius: 4, padding: '5px 7px', background: 'transparent', outline: 'none', ...cssCell(cell) }} />
@@ -161,6 +162,8 @@ export default function GridEditavel({ chave, defaultDoc, defaultDocFn, mensal, 
 
   return (
     <div>
+      {soLeitura && <div style={{ marginBottom: 12 }}><button onClick={imprimir} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 8, border: '1px solid #d0cdc7', background: '#fff', color: '#374151', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}><Printer size={14} /> Imprimir A4</button></div>}
+      {!soLeitura && (<>
       <div style={{ position: 'sticky', top: 0, zIndex: 20, background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: '10px 12px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', boxShadow: '0 2px 8px rgba(0,0,0,.05)' }}>
         <div className="nodri-grid-ctrls" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', minWidth: 0 }}>
         {mensal && <><label style={{ fontSize: 12, fontWeight: 700, color: '#6b6860' }}>Mês:</label><input type="month" value={mes} onChange={e => setMes(e.target.value)} style={{ padding: '5px 8px', borderRadius: 6, border: '1px solid #d0cdc7', fontSize: 12 }} /><span style={{ width: 1, height: 20, background: '#eee' }} /></>}
@@ -195,48 +198,49 @@ export default function GridEditavel({ chave, defaultDoc, defaultDocFn, mensal, 
         <button onClick={salvar} disabled={salvando} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 16px', borderRadius: 8, border: 'none', background: dirty ? '#16a34a' : '#a3b3a3', color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>{salvando ? '...' : <><Save size={14} /> Salvar</>}</button>
       </div>
       <p style={{ fontSize: 11, color: '#9ca3af', margin: '0 0 10px' }}>Clique numa célula para: <strong>negrito/itálico</strong>, <strong>cor</strong> e <strong>fundo</strong>, <strong>alinhar</strong>, <strong>mesclar/desmesclar</strong> e <strong>borda</strong>. Para <strong>aumentar o tamanho</strong>: arraste a faixa roxa à direita do título (largura da coluna) ou a faixa cinza no fim da linha (altura da linha).</p>
+      </>)}
 
       {loading ? <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Loader2 size={24} className="animate-spin" style={{ color: corTema }} /></div> :
         doc.tabelas.map((t, ti) => (
           <div key={ti} style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: 14, marginBottom: 16, overflowX: 'auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-              <input value={t.titulo} onFocus={() => setSel(null)} onChange={e => mut(d => { d.tabelas[ti].titulo = e.target.value })}
+              <input value={t.titulo} readOnly={soLeitura} onFocus={() => setSel(null)} onChange={e => mut(d => { d.tabelas[ti].titulo = e.target.value })}
                 style={{ fontSize: 15, fontWeight: 800, color: corTema, border: 'none', outline: 'none', background: 'transparent', textTransform: 'uppercase', flex: 1 }} />
-              {doc.tabelas.length > 1 && <button onClick={() => delTabela(ti)} title="Excluir bloco" style={{ border: '1px solid #fca5a5', background: '#fff', color: '#dc2626', borderRadius: 6, padding: '4px 8px', cursor: 'pointer', fontSize: 11, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}><Trash2 size={12} /> Bloco</button>}
+              {doc.tabelas.length > 1 && !soLeitura && <button onClick={() => delTabela(ti)} title="Excluir bloco" style={{ border: '1px solid #fca5a5', background: '#fff', color: '#dc2626', borderRadius: 6, padding: '4px 8px', cursor: 'pointer', fontSize: 11, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}><Trash2 size={12} /> Bloco</button>}
             </div>
-            <table style={{ borderCollapse: 'collapse', tableLayout: 'fixed', width: t.cabecalho.reduce((a, _, ci) => a + largura(t, ci), 0) + 38 }}>
+            <table style={{ borderCollapse: 'collapse', tableLayout: 'fixed', width: t.cabecalho.reduce((a, _, ci) => a + largura(t, ci), 0) + (soLeitura ? 0 : 38) }}>
               <colgroup>
                 {t.cabecalho.map((_, ci) => <col key={ci} style={{ width: largura(t, ci) }} />)}
-                <col style={{ width: 38 }} />
+                {!soLeitura && <col style={{ width: 38 }} />}
               </colgroup>
               <thead>
                 <tr>
                   {t.cabecalho.map((cc, ci) => cc.h ? null : (
                     <th key={ci} colSpan={cc.cs || 1} rowSpan={cc.rs || 1} style={{ background: cc.bg || '#f1eefb', border: bordaCell(cc, '1px solid #ddd6f5'), padding: 2, position: 'relative', verticalAlign: 'top' }}>
-                      <div style={{ display: 'flex', alignItems: 'flex-start' }}>{cellBox(cc, { ti, ri: -1, ci })}<button onClick={() => delColuna(ti, ci)} title="Remover coluna" style={{ border: 'none', background: 'transparent', color: '#a99', cursor: 'pointer', padding: 2, flexShrink: 0 }}>×</button></div>
-                      <div onMouseDown={e => iniciarResize(ti, ci, e)} title="Arraste para aumentar/diminuir a largura da coluna" style={{ position: 'absolute', top: 0, right: 0, width: 7, height: '100%', cursor: 'col-resize', zIndex: 5, background: '#d8d4f0' }} />
+                      <div style={{ display: 'flex', alignItems: 'flex-start' }}>{cellBox(cc, { ti, ri: -1, ci })}{!soLeitura && <button onClick={() => delColuna(ti, ci)} title="Remover coluna" style={{ border: 'none', background: 'transparent', color: '#a99', cursor: 'pointer', padding: 2, flexShrink: 0 }}>×</button>}</div>
+                      {!soLeitura && <div onMouseDown={e => iniciarResize(ti, ci, e)} title="Arraste para aumentar/diminuir a largura da coluna" style={{ position: 'absolute', top: 0, right: 0, width: 7, height: '100%', cursor: 'col-resize', zIndex: 5, background: '#d8d4f0' }} />}
                     </th>
                   ))}
-                  <th style={{ border: '1px solid #ddd6f5', background: '#f1eefb', padding: 0, verticalAlign: 'top' }}><button onClick={() => addColuna(ti)} title="Adicionar coluna" style={{ border: 'none', background: 'transparent', color: corTema, cursor: 'pointer', width: '100%', padding: '6px 0' }}><Plus size={14} /></button></th>
+                  {!soLeitura && <th style={{ border: '1px solid #ddd6f5', background: '#f1eefb', padding: 0, verticalAlign: 'top' }}><button onClick={() => addColuna(ti)} title="Adicionar coluna" style={{ border: 'none', background: 'transparent', color: corTema, cursor: 'pointer', width: '100%', padding: '6px 0' }}><Plus size={14} /></button></th>}
                 </tr>
               </thead>
               <tbody>
                 {t.linhas.map((linha, ri) => (
                   <tr key={ri}>
                     {linha.map((cc, ci) => cc.h ? null : <td key={ci} colSpan={cc.cs || 1} rowSpan={cc.rs || 1} style={{ border: bordaCell(cc, '1px solid #eee'), padding: 2, background: cc.bg || 'transparent', verticalAlign: 'top', height: altura(t, ri) || undefined }}>{cellBox(cc, { ti, ri, ci })}</td>)}
-                    <td style={{ border: '1px solid #eee', textAlign: 'center', padding: 0, verticalAlign: 'top', position: 'relative' }}>
+                    {!soLeitura && <td style={{ border: '1px solid #eee', textAlign: 'center', padding: 0, verticalAlign: 'top', position: 'relative' }}>
                       <button onClick={() => delLinha(ti, ri)} title="Remover linha" style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', padding: 6 }}><Trash2 size={13} /></button>
                       <div onMouseDown={e => iniciarResizeLinha(ti, ri, e)} title="Arraste para aumentar/diminuir a altura da linha" style={{ position: 'absolute', left: 0, right: 0, bottom: -3, height: 9, cursor: 'row-resize', zIndex: 5, background: '#e6e2db' }} />
-                    </td>
+                    </td>}
                   </tr>
                 ))}
               </tbody>
             </table>
-            <button onClick={() => addLinha(ti)} style={{ marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 12px', borderRadius: 8, border: '1px dashed #d0cdc7', background: '#faf9f7', color: '#6b6860', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}><Plus size={13} /> Adicionar linha</button>
+            {!soLeitura && <button onClick={() => addLinha(ti)} style={{ marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 12px', borderRadius: 8, border: '1px dashed #d0cdc7', background: '#faf9f7', color: '#6b6860', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}><Plus size={13} /> Adicionar linha</button>}
           </div>
         ))}
 
-      {!loading && <button onClick={addTabela} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 16px', borderRadius: 10, border: `1px dashed ${corTema}`, background: '#f6f4ff', color: corTema, fontSize: 13, fontWeight: 800, cursor: 'pointer' }}><Plus size={15} /> Adicionar novo bloco/tabela</button>}
+      {!loading && !soLeitura && <button onClick={addTabela} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 16px', borderRadius: 10, border: `1px dashed ${corTema}`, background: '#f6f4ff', color: corTema, fontSize: 13, fontWeight: 800, cursor: 'pointer' }}><Plus size={15} /> Adicionar novo bloco/tabela</button>}
     </div>
   )
 }

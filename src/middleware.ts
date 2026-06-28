@@ -63,10 +63,33 @@ export async function middleware(request: NextRequest) {
   }
 
   // FIX: role desconhecido → login (evita loop infinito entre /salon e /admin)
-  if (!['master', 'salon', 'sub'].includes(payload.role)) {
+  if (!['master', 'salon', 'sub', 'profissional'].includes(payload.role)) {
     const response = NextResponse.redirect(new URL('/login', request.url))
     response.cookies.set('nodri_token', '', { maxAge: 0, path: '/' })
     return response
+  }
+
+  // PROFISSIONAL: portal somente leitura — só enxerga o PRÓPRIO perfil; nada mais.
+  if (payload.role === 'profissional') {
+    const meuId = (payload as any).profissionalId || payload.userId
+    const meuPerfil = `/salon/profissionais/${meuId}`
+    // Bloqueia listar todos os profissionais
+    if (pathname === '/api/profissionais' || pathname === '/api/profissionais/') {
+      return NextResponse.json({ error: 'Acesso negado' }, { status: 403 })
+    }
+    // Só pode acessar dados do próprio id em /api/profissionais/<id>/...
+    if (pathname.startsWith('/api/profissionais/')) {
+      const seg = pathname.split('/')[3] || ''
+      if (seg && seg !== meuId) return NextResponse.json({ error: 'Acesso negado' }, { status: 403 })
+    }
+    // Páginas: qualquer rota /salon que não seja o próprio perfil → manda pro perfil
+    if (pathname.startsWith('/salon') && !pathname.startsWith(meuPerfil)) {
+      return NextResponse.redirect(new URL(meuPerfil, request.url))
+    }
+    if (pathname.startsWith('/admin')) {
+      return NextResponse.redirect(new URL(meuPerfil, request.url))
+    }
+    return NextResponse.next()
   }
 
   // /admin é só do master
