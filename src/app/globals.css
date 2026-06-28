@@ -5,7 +5,7 @@
 @tailwind utilities;
 
 :root {
-  --nodri-dark:    #f5f4f0;
+  --nodri-dark:    #edeef0;
   --nodri-surface: #faf9f7;
   --nodri-card:    #ffffff;
   --nodri-border:  #e8e6e0;
