@@ -120,6 +120,15 @@ html, body {
          iguais. Marque a linha com .linha-form-mobile. */
   .linha-form-mobile { grid-template-columns: repeat(3, 1fr) !important; row-gap: 6px !important; }
   .linha-form-mobile > :first-child { grid-column: 1 / -1 !important; }
+
+  /* 16) Calendário continua com 7 colunas no celular (a regra geral de 2
+         colunas NÃO se aplica aqui — senão a semana ficaria quebrada). */
+  .nodri-cal-7 { grid-template-columns: repeat(7, minmax(0, 1fr)) !important; }
+
+  /* 17) Barras de abas (ex: Salão Administrativo): no celular viram uma faixa
+         única que rola de lado, em vez de várias linhas embaralhadas. */
+  .nodri-abas-topo { flex-wrap: nowrap !important; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 10px !important; }
+  .nodri-abas-topo > button { flex: 0 0 auto !important; }
 }
 
 /* Scrollbar customizada — mais larga e escura, fácil de pegar com o mouse */

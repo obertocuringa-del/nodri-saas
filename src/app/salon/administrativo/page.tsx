@@ -163,7 +163,7 @@ export default function SalaoAdministrativoPage() {
 
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: 16 }}>
         {/* Abas do topo */}
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 18, borderBottom: '1px solid #ece9e2', paddingBottom: 12 }}>
+        <div className="nodri-abas-topo" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 18, borderBottom: '1px solid #ece9e2', paddingBottom: 12 }}>
           {abasVisiveis.map(a => (
             <button key={a.key} onClick={() => setAbaTopo(a.key)}
               style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: abaTopo === a.key ? '1px solid #5b4fcf' : '1px solid #e0ddd8', background: abaTopo === a.key ? '#5b4fcf' : '#fff', color: abaTopo === a.key ? '#fff' : '#6b6860', fontSize: 13, fontWeight: 700, cursor: 'pointer', transition: 'all .15s' }}>

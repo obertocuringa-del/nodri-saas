@@ -120,10 +120,10 @@ export default function CalendarioEditavel({ chave, titulo, comResponsavel, camp
 
         {/* Grade do calendário */}
         <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: 12 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 4, marginBottom: 4 }}>
+          <div className="nodri-cal-7" style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 4, marginBottom: 4 }}>
             {SEM.map(s => <div key={s} style={{ textAlign: 'center', fontSize: 11, fontWeight: 800, color: '#9ca3af', padding: '4px 0' }}>{s}</div>)}
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 4 }}>
+          <div className="nodri-cal-7" style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 4 }}>
             {Array.from({ length: primDiaSemana }).map((_, i) => <div key={'e' + i} />)}
             {Array.from({ length: diasNoMes }, (_, i) => i + 1).map(d => {
               const data = mesStr(d)
