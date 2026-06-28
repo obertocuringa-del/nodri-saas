@@ -73,15 +73,32 @@ export async function middleware(request: NextRequest) {
   if (payload.role === 'profissional') {
     const meuId = (payload as any).profissionalId || payload.userId
     const meuPerfil = `/salon/profissionais/${meuId}`
-    // Bloqueia listar todos os profissionais
-    if (pathname === '/api/profissionais' || pathname === '/api/profissionais/') {
-      return NextResponse.json({ error: 'Acesso negado' }, { status: 403 })
+    const negar = () => NextResponse.json({ error: 'Acesso negado' }, { status: 403 })
+
+    if (pathname.startsWith('/api/')) {
+      // Rotas de autenticação sempre liberadas (me, etc.)
+      if (pathname.startsWith('/api/auth/')) return NextResponse.next()
+      // SOMENTE LEITURA: nenhum método de escrita é permitido (GET/HEAD apenas)
+      if (request.method !== 'GET' && request.method !== 'HEAD') return negar()
+      // Nunca pode listar todos os profissionais
+      if (pathname === '/api/profissionais' || pathname === '/api/profissionais/') return negar()
+      // Em /api/profissionais/<id>/... o id TEM que ser o dele
+      if (pathname.startsWith('/api/profissionais/')) {
+        const seg = pathname.split('/')[3] || ''
+        if (seg !== meuId) return negar()
+        return NextResponse.next()
+      }
+      // Qualquer endpoint que receba um id de profissional na query → só o próprio
+      const sp = request.nextUrl.searchParams
+      for (const k of ['profissional_id', 'prof_id', 'profId', 'profissionalId']) {
+        const v = sp.get(k)
+        if (v && v !== meuId) return negar()
+      }
+      const idsQ = sp.get('ids')
+      if (idsQ && idsQ.split(',').some(x => x.trim() && x.trim() !== meuId)) return negar()
+      return NextResponse.next()
     }
-    // Só pode acessar dados do próprio id em /api/profissionais/<id>/...
-    if (pathname.startsWith('/api/profissionais/')) {
-      const seg = pathname.split('/')[3] || ''
-      if (seg && seg !== meuId) return NextResponse.json({ error: 'Acesso negado' }, { status: 403 })
-    }
+
     // Páginas: qualquer rota /salon que não seja o próprio perfil → manda pro perfil
     if (pathname.startsWith('/salon') && !pathname.startsWith(meuPerfil)) {
       return NextResponse.redirect(new URL(meuPerfil, request.url))
