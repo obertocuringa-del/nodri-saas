@@ -118,26 +118,28 @@ export default function CalendarioEditavel({ chave, titulo, comResponsavel, camp
           <button onClick={() => mudarMes(1)} style={navBtn}><ChevronRight size={18} /></button>
         </div>
 
-        {/* Grade do calendário */}
-        <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: 12 }}>
-          <div className="nodri-cal-7" style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 4, marginBottom: 4 }}>
-            {SEM.map(s => <div key={s} style={{ textAlign: 'center', fontSize: 11, fontWeight: 800, color: '#9ca3af', padding: '4px 0' }}>{s}</div>)}
-          </div>
-          <div className="nodri-cal-7" style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 4 }}>
-            {Array.from({ length: primDiaSemana }).map((_, i) => <div key={'e' + i} />)}
-            {Array.from({ length: diasNoMes }, (_, i) => i + 1).map(d => {
-              const data = mesStr(d)
-              const tem = eventosDoDia(data)
-              const ehHoje = data === hojeStr()
-              const sel = selDia === data
-              return (
-                <button key={d} onClick={() => abrirDia(data)}
-                  style={{ aspectRatio: '1', borderRadius: 8, border: sel ? `2px solid ${corTema}` : '1px solid #ece9e2', background: tem.length ? '#fef2f2' : '#fff', color: tem.length ? '#dc2626' : '#374151', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontWeight: tem.length ? 800 : 500, position: 'relative', padding: 2 }}>
-                  <span style={{ fontSize: 13, ...(ehHoje ? { background: corTema, color: '#fff', borderRadius: '50%', width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center' } : {}) }}>{d}</span>
-                  {tem.length > 0 && <span style={{ fontSize: 9, fontWeight: 800 }}>{tem.length > 1 ? `${tem.length} itens` : '•'}</span>}
-                </button>
-              )
-            })}
+        {/* Grade do calendário — completa; no celular rola de lado mantendo o tamanho legível */}
+        <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: 10, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+          <div style={{ minWidth: 540 }}>
+            <div className="nodri-cal-7" style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 4, marginBottom: 4 }}>
+              {SEM.map(s => <div key={s} style={{ textAlign: 'center', fontSize: 11, fontWeight: 800, color: '#9ca3af', padding: '5px 0' }}>{s}</div>)}
+            </div>
+            <div className="nodri-cal-7" style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 4 }}>
+              {Array.from({ length: primDiaSemana }).map((_, i) => <div key={'e' + i} />)}
+              {Array.from({ length: diasNoMes }, (_, i) => i + 1).map(d => {
+                const data = mesStr(d)
+                const tem = eventosDoDia(data)
+                const ehHoje = data === hojeStr()
+                const sel = selDia === data
+                return (
+                  <button key={d} onClick={() => abrirDia(data)}
+                    style={{ minHeight: 66, borderRadius: 8, border: sel ? `2px solid ${corTema}` : '1px solid #ece9e2', background: tem.length ? '#fef2f2' : '#fff', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'stretch', justifyContent: 'flex-start', padding: '5px 6px', position: 'relative', textAlign: 'left', overflow: 'hidden' }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: ehHoje ? '#fff' : (tem.length ? '#dc2626' : '#374151'), alignSelf: 'flex-start', ...(ehHoje ? { background: corTema, borderRadius: '50%', width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center' } : {}) }}>{d}</span>
+                    {tem.length > 0 && <span style={{ fontSize: 10, fontWeight: 700, marginTop: 3, color: '#dc2626', lineHeight: 1.2, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }}>{tem.length > 1 ? `📌 ${tem.length} compromissos` : tem[0].texto}</span>}
+                  </button>
+                )
+              })}
+            </div>
           </div>
         </div>
 

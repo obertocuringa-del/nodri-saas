@@ -162,8 +162,13 @@ export default function SalaoAdministrativoPage() {
       </nav>
 
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: 16 }}>
-        {/* Abas do topo — aba ativa sublinhada; no PC quebra em linhas (mostra todas), no celular rola de lado */}
-        <div className="nodri-abas-topo" style={{ display: 'flex', flexWrap: 'wrap', gap: '2px 4px', marginBottom: 18, borderBottom: '1px solid #ece9e2' }}>
+        {/* Celular: dropdown de abas (uma linha só, limpo) */}
+        <select className="nodri-mob-only" value={abaTopo} onChange={e => setAbaTopo(e.target.value)} style={{ width: '100%', padding: '11px 12px', borderRadius: 10, border: '1.5px solid #5b4fcf', background: '#f0eefb', color: '#1a1a1a', fontSize: 14, fontWeight: 700, marginBottom: 16 }}>
+          {abasVisiveis.map(a => <option key={a.key} value={a.key}>{a.label}</option>)}
+        </select>
+
+        {/* PC: barra de abas com aba ativa sublinhada (quebra em linhas, mostra todas) */}
+        <div className="nodri-abas-topo nodri-desk-only" style={{ display: 'flex', flexWrap: 'wrap', gap: '2px 4px', marginBottom: 18, borderBottom: '1px solid #ece9e2' }}>
           {abasVisiveis.map(a => (
             <button key={a.key} onClick={() => setAbaTopo(a.key)}
               style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 13px', borderRadius: 0, border: 'none', borderBottom: abaTopo === a.key ? '2px solid #5b4fcf' : '2px solid transparent', background: 'transparent', color: abaTopo === a.key ? '#5b4fcf' : '#6b6860', fontSize: 13, fontWeight: 700, cursor: 'pointer', transition: 'all .15s', whiteSpace: 'nowrap', flexShrink: 0 }}>
