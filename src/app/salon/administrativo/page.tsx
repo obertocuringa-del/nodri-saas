@@ -17,6 +17,7 @@ const ABA_CHAVE: Record<string, string> = {
   listas: 'adm_listas', servicos_valores: 'adm_servicos_valores', tratamentos: 'adm_tratamentos',
   pacotes: 'adm_pacotes', telefones: 'adm_telefones', ata: 'adm_ata', escala: 'adm_escala',
   feriados: 'adm_feriados', pop: 'adm_pop', senhas: 'adm_senhas', cadastrar_produto: 'adm_cadastrar_produto',
+  desconto_profissional: 'adm_desconto_profissional',
 }
 
 interface ProfSalao { id: string; nome: string; telefone: string }
@@ -59,9 +60,11 @@ const ABAS_TOPO = [
   { key: 'pop', label: 'POP' },
   { key: 'senhas', label: 'Senhas' },
   { key: 'cadastrar_produto', label: 'Cadastrar Produto' },
+  { key: 'desconto_profissional', label: 'Desconto Profissional' },
 ]
 
 const DEFAULT_CAD_PRODUTO: GridDoc = { tabelas: [{ titulo: 'CADASTRO DE PRODUTOS', cabecalho: [cel('Produto'), cel('Marca'), cel('Categoria'), cel('Quantidade'), cel('Validade'), cel('Fornecedor'), cel('Custo'), cel('Preço de venda')], linhas: linhasVazias(14, 8), larguras: [220, 150, 150, 110, 120, 180, 110, 130] }] }
+const DEFAULT_DESC_PROF: GridDoc = { tabelas: [{ titulo: 'DESCONTO PROFISSIONAL', cabecalho: [cel('Profissional'), cel('Data'), cel('Motivo'), cel('Valor do desconto'), cel('Parcelas'), cel('Observação')], linhas: linhasVazias(14, 6), larguras: [200, 120, 280, 150, 110, 260] }] }
 
 const DEFAULT_ATA: GridDoc = { tabelas: [
   { titulo: 'PAUTA DA REUNIÃO', cabecalho: [cel('Nº'), cel('Ponto a apresentar'), cel('Responsável'), cel('Decisão / Encaminhamento')], linhas: Array.from({ length: 8 }, (_, i) => [cel(String(i + 1)), cel(''), cel(''), cel('')]) },
@@ -197,6 +200,7 @@ export default function SalaoAdministrativoPage() {
         {abaTopo === 'feriados' && <GridEditavel key="feriados" chave="feriados" defaultDoc={DEFAULT_FERIADOS} landscape />}
         {abaTopo === 'senhas' && <GridEditavel key="senhas" chave="senhas" defaultDoc={DEFAULT_SENHAS} />}
         {abaTopo === 'cadastrar_produto' && <GridEditavel key="cadprod" chave="cadastrar_produto" defaultDoc={DEFAULT_CAD_PRODUTO} landscape />}
+        {abaTopo === 'desconto_profissional' && <GridEditavel key="descprof" chave="desconto_profissional" defaultDoc={DEFAULT_DESC_PROF} landscape />}
 
         {abaTopo === 'pop' && (<>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>

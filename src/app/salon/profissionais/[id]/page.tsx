@@ -1743,7 +1743,7 @@ function AbaPendencias({ profissionalId }: { profissionalId: string }) {
   const [loading, setLoading] = useState(true)
   const [historicoAberto, setHistoricoAberto] = useState(false)
   const [novaMensagem, setNovaMensagem] = useState('')
-  const [novaDataLimite, setNovaDataLimite] = useState('')
+  const [novaDataLimite, setNovaDataLimite] = useState(() => new Date().toLocaleDateString('en-CA'))
   const [criando, setCriando] = useState(false)
   const [editandoData, setEditandoData] = useState<string | null>(null)
   const [novaData, setNovaData] = useState('')
@@ -1767,7 +1767,7 @@ function AbaPendencias({ profissionalId }: { profissionalId: string }) {
       const nova = await res.json()
       setPendencias(prev => [nova, ...prev])
       setNovaMensagem('')
-      setNovaDataLimite('')
+      setNovaDataLimite(new Date().toLocaleDateString('en-CA'))
       toast.success('Pendência adicionada!')
     } else {
       toast.error('Erro ao adicionar pendência')

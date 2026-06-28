@@ -49,6 +49,7 @@ export function permDaGrade(chave: string): string {
   if (c === 'precos_servicos') return 'adm_servicos_valores'
   if (c === 'tratamentos_dosagem') return 'adm_tratamentos'
   if (c === 'cadastrar_produto') return 'adm_cadastrar_produto'
+  if (c === 'desconto_profissional') return 'adm_desconto_profissional'
   if (c === 'exame_admissional') return 'clt_exame'
   if (c.startsWith('calendario_mkt')) return 'calendario_mkt'
   if (c.startsWith('calendario')) return 'calendario'

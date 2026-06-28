@@ -38,6 +38,7 @@ export const CATALOGO_PERMISSOES: PermGrupo[] = [
       { chave: 'adm_pop', label: 'POP (Procedimentos)' },
       { chave: 'adm_senhas', label: 'Senhas' },
       { chave: 'adm_cadastrar_produto', label: 'Cadastrar Produto' },
+      { chave: 'adm_desconto_profissional', label: 'Desconto Profissional' },
     ]
   },
   {

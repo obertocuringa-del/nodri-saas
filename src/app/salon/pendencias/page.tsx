@@ -50,7 +50,7 @@ export default function PendenciasPage() {
   // Form
   const [profId, setProfId] = useState('')
   const [mensagem, setMensagem] = useState('')
-  const [dataLimite, setDataLimite] = useState('')
+  const [dataLimite, setDataLimite] = useState(() => new Date().toLocaleDateString('en-CA')) // padrão: hoje
   const [criando, setCriando] = useState(false)
 
   // Editar data
@@ -92,7 +92,7 @@ export default function PendenciasPage() {
       nova.profissionais = prof ? { nome_completo: prof.nome_completo, apelido: prof.apelido } : null
       setPendencias(prev => [nova, ...prev])
       setMensagem('')
-      setDataLimite('')
+      setDataLimite(new Date().toLocaleDateString('en-CA'))
       toast.success('Pendência criada!')
     } else {
       toast.error('Erro ao criar pendência')
