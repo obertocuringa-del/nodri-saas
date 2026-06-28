@@ -9,6 +9,8 @@ const CHAVE = 'carta_abertura_conta'
 const norm = (s: string) => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim()
 const fmtData = (s?: string) => s ? String(s).slice(0, 10).split('-').reverse().join('/') : ''
 const esc = (v: any) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+const MESES_EXT = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
+const dataExtenso = () => { const d = new Date(); return `${d.getDate()} de ${MESES_EXT[d.getMonth()]} de ${d.getFullYear()}` }
 
 export default function CartaAberturaConta({ onClose }: { onClose: () => void }) {
   const [profs, setProfs] = useState<Prof[]>([])
@@ -17,10 +19,10 @@ export default function CartaAberturaConta({ onClose }: { onClose: () => void })
   const [selId, setSelId] = useState('')
   // Config (salva): logo + dados da empresa + banco/cidade
   const [logo, setLogo] = useState('')
-  const [empresa, setEmpresa] = useState('')
+  const [empresa, setEmpresa] = useState('OLIVEIRA E SCHNEIDER INSTITUTO DE BELEZA LTDA')
   const [cnpj, setCnpj] = useState('')
   const [banco, setBanco] = useState('Bradesco')
-  const [cidade, setCidade] = useState('Brasília (DF)')
+  const [cidade, setCidade] = useState('Brasília')
   const [salvandoCfg, setSalvandoCfg] = useState(false)
   // Salário (NÃO salva — editar a cada carta)
   const [salario, setSalario] = useState('')
@@ -62,32 +64,21 @@ export default function CartaAberturaConta({ onClose }: { onClose: () => void })
 
   const sel = profs.find(p => p.id === selId)
   const nome = sel?.nome_completo || sel?.apelido || ''
-  const dataHoje = new Date().toLocaleDateString('pt-BR')
 
   function imprimir() {
     if (!sel) { toast.error('Selecione o funcionário'); return }
-    const salTxt = salario.trim() ? esc(salario) : 'R$ __________ (preencher)'
-    const linha = (rot: string, val: string) => `<tr><td class="rot">${rot}</td><td>${val || '—'}</td></tr>`
-    const css = `@page{size:A4 portrait;margin:22mm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;font-size:13px;line-height:1.6}.logo{text-align:center;margin-bottom:18px}.logo img{max-height:90px;max-width:260px;object-fit:contain}.data{text-align:right;margin-bottom:18px}h1{font-size:15px;text-align:center;text-transform:uppercase;letter-spacing:.5px;margin:18px 0}.bloco{margin:14px 0}table{width:100%;border-collapse:collapse;margin:10px 0}td{padding:6px 8px;border-bottom:1px solid #e5e5e5;vertical-align:top}.rot{font-weight:700;width:38%;color:#444}.sal{color:#dc2626;font-weight:800}.ass{margin-top:60px;text-align:center}.linha{border-top:1px solid #333;width:280px;margin:0 auto;padding-top:5px}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}`
+    const salTxt = salario.trim() ? esc(salario) : '____________ (preencher)'
+    const css = `@page{size:A4 portrait;margin:25mm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Times New Roman',Georgia,serif;color:#000;font-size:14px;line-height:1.7}.logo{text-align:center;margin-bottom:26px}.logo img{max-height:100px;max-width:280px;object-fit:contain}.data{text-align:right;margin-bottom:26px}.bloco{margin:16px 0}.sal{color:#dc2626;font-weight:800}.cargo{margin:6px 0;font-weight:700}.ass{margin-top:70px;text-align:center}.linha{border-top:1px solid #000;width:340px;margin:0 auto;padding-top:6px;font-size:13px}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}`
     const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Carta de Abertura de Conta — ${esc(nome)}</title><style>${css}</style></head><body>
       ${logo ? `<div class="logo"><img src="${logo}" alt="logo"/></div>` : ''}
-      <div class="data">${esc(cidade)}, ${dataHoje}.</div>
-      <div class="bloco">À <strong>${esc(banco) || '____________'}</strong></div>
-      <h1>Carta para Abertura de Conta Salário</h1>
-      <p>Prezados Senhores,</p>
-      <p class="bloco">A empresa <strong>${esc(empresa) || '________________________'}</strong>, inscrita no CNPJ sob o nº <strong>${esc(cnpj) || '____________'}</strong>, vem por meio desta solicitar a <strong>abertura de conta salário</strong> para o(a) colaborador(a) abaixo identificado(a), pertencente ao nosso quadro de funcionários:</p>
-      <table>
-        ${linha('Nome completo', esc(nome))}
-        ${linha('CPF', esc(sel.cpf || ''))}
-        ${linha('RG', esc(sel.rg || ''))}
-        ${linha('Endereço', esc(sel.endereco || ''))}
-        ${linha('Cargo', esc(sel.cargo || ''))}
-        ${linha('Data de admissão', esc(fmtData(sel.data_admissao)))}
-        <tr><td class="rot">Salário</td><td class="sal">${salTxt}</td></tr>
-      </table>
-      <p class="bloco">Sem mais para o momento, colocamo-nos à disposição para eventuais esclarecimentos e agradecemos a atenção.</p>
-      <p>Atenciosamente,</p>
-      <div class="ass"><div class="linha">${esc(empresa) || 'Responsável pela empresa'}</div></div>
+      <div class="data">${esc(cidade)}, ${dataExtenso()}.</div>
+      <div class="bloco">Ao<br><strong>Banco ${esc(banco)}</strong><br>Att. Gerente</div>
+      <p class="bloco"><strong>Assunto:</strong> Abertura de Conta para Crédito de Salário.</p>
+      <p class="bloco">Prezado(a) senhor(a), apresentamos o(a) Sr.(a) <strong>${esc(nome)}</strong>, portador(a) do R.G. nº <strong>${esc(sel.rg || '____________')}</strong> e CPF nº <strong>${esc(sel.cpf || '____________')}</strong>, para abertura de uma Conta para Crédito de Salário. O(a) mesmo(a) é funcionário(a) da empresa <strong>${esc(empresa)}</strong>, sem mais, agradecemos.</p>
+      <p class="cargo">CARGO: ${esc((sel.cargo || '').toUpperCase())}</p>
+      <p class="cargo">SALÁRIO: <span class="sal">${salTxt}</span></p>
+      <p class="bloco" style="margin-top:44px">Atenciosamente,</p>
+      <div class="ass"><div class="linha">Carimbo e assinatura do Gerente Responsável</div></div>
       <script>window.onload=function(){window.print()}</script></body></html>`
     const w = window.open('', '_blank', 'width=900,height=800'); if (!w) return; w.document.write(html); w.document.close(); w.focus()
   }
