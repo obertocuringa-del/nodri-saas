@@ -99,12 +99,16 @@ export async function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
-    // Páginas: qualquer rota /salon que não seja o próprio perfil → manda pro perfil
-    if (pathname.startsWith('/salon') && !pathname.startsWith(meuPerfil)) {
-      return NextResponse.redirect(new URL(meuPerfil, request.url))
+    // Páginas: só o painel dele e o próprio perfil; o resto vai pro painel
+    const home = '/salon/meu-painel'
+    if (pathname.startsWith('/salon')) {
+      if (!pathname.startsWith(home) && !pathname.startsWith(meuPerfil)) {
+        return NextResponse.redirect(new URL(home, request.url))
+      }
+      return NextResponse.next()
     }
     if (pathname.startsWith('/admin')) {
-      return NextResponse.redirect(new URL(meuPerfil, request.url))
+      return NextResponse.redirect(new URL(home, request.url))
     }
     return NextResponse.next()
   }

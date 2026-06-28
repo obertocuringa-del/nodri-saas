@@ -18,5 +18,8 @@ export async function GET() {
       .maybeSingle()
     return NextResponse.json({ role: 'sub', nome: su?.nome || payload.nome, ativo: su?.ativo !== false, permissoes: Array.isArray(su?.permissoes) ? su!.permissoes : [] })
   }
+  if (payload.role === 'profissional') {
+    return NextResponse.json({ role: 'profissional', permissoes: [], profissionalId: (payload as any).profissionalId || payload.userId, nome: payload.nome || '' })
+  }
   return NextResponse.json({ role: payload.role, permissoes: null })
 }
