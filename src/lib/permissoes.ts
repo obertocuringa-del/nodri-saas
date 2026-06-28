@@ -21,6 +21,7 @@ export const CATALOGO_PERMISSOES: PermGrupo[] = [
       { chave: 'checklist', label: 'Check List' },
       { chave: 'calendario', label: 'Calendário' },
       { chave: 'calendario_mkt', label: 'Calendário de Marketing' },
+      { chave: 'mural', label: 'Mural de Avisos' },
       { chave: 'administrativo', label: 'Salão Administrativo' },
       { chave: 'ia', label: 'Assistente / IA' },
     ]

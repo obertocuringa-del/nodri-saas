@@ -469,6 +469,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               { href: '/salon/checklist', label: 'Check List', chave: 'checklist' },
               { href: '/salon/calendario', label: 'Calendário', chave: 'calendario' },
               { href: '/salon/calendario-mkt', label: 'Calendário de Marketing', chave: 'calendario_mkt' },
+              { href: '/salon/mural', label: 'Mural de Avisos', chave: 'mural' },
               { href: '/salon/usuarios', label: 'Usuários & Acessos', chave: 'cfg_usuarios' },
             ].filter(item => pode(item.chave)).map(item => (
               <a key={item.href} href={item.href}
