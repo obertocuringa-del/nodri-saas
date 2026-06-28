@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import toast from 'react-hot-toast'
-import { Loader2, Save, Plus, Trash2, X, MessageCircle, Search, Pencil, Eye, Send, Printer } from 'lucide-react'
+import { Loader2, Save, Plus, Trash2, X, MessageCircle, Search, Pencil, Eye, Send, Printer, FileText, RotateCcw } from 'lucide-react'
+import CartaAberturaConta from './CartaAberturaConta'
 
 interface Passo { id: string; titulo: string; texto: string }
 interface Secao { id: string; titulo: string; cor: string; passos: Passo[] }
@@ -16,20 +17,27 @@ const CHAVE = 'processo_contratacao_clt'
 const DEFAULT: Doc = {
   secoes: [
     {
-      id: rid(), titulo: 'CONTRATAÇÃO CLT', cor: '#16a34a', passos: [
-        { id: rid(), titulo: 'Passo 1', texto: 'Entrevista com gerente / Bruna / Vera.' },
-        { id: rid(), titulo: 'Passo 2', texto: 'Data de início / apresentação para o salão / documentação: Carteira de Trabalho, CPF, Título de Eleitor, Comprovante de Residência e PIS.' },
-        { id: rid(), titulo: 'Passo 3', texto: 'Enviar documentação para a contabilidade solicitando a contratação. Pagar alimentação e transporte até o primeiro dia útil do mês seguinte (até a data de contratação caso inicie no meio do mês).' },
-        { id: rid(), titulo: 'Passo 4', texto: 'Solicitar uniforme para a Bruna.' },
-        { id: rid(), titulo: 'Passo 5', texto: 'Carta para abertura da conta (Bradesco) — pedir para o profissional ir abrir.' },
-        { id: rid(), titulo: 'Passo 6', texto: 'Fazer exame admissional (clínica em frente ao Pátio Brasil). O salão paga o exame.' },
-        { id: rid(), titulo: 'Passo 7', texto: 'Luan cadastrar o login e o ponto eletrônico.' },
-        { id: rid(), titulo: 'Passo 8', texto: 'Ficar com a Carteira de Trabalho até o 3º mês de experiência.' },
+      id: rid(), titulo: 'RECRUTAMENTO, SELEÇÃO E ADMISSÃO', cor: '#16a34a', passos: [
+        { id: rid(), titulo: 'Etapa 1 — Abertura da Vaga', texto: 'Antes de iniciar o recrutamento:\n• Definir a necessidade da contratação.\n• Definir salário, benefícios, horário e jornada de trabalho.\n• Definir o perfil técnico e comportamental desejado.\n\nDescrição do Cargo: exibir os cargos cadastrados, selecionar o desejado e ver a descrição completa. Opções: visualizar, imprimir e editar (somente autorizados).' },
+        { id: rid(), titulo: 'Etapa 2 — Entrevista Inicial', texto: 'Ficha de Entrevista: perguntas padronizadas, respostas do candidato, observações do entrevistador e avaliação.\nCritérios: comunicação, postura profissional, experiência, disponibilidade, conhecimento técnico e perfil comportamental.\nBotões: salvar, imprimir e gerar PDF.' },
+        { id: rid(), titulo: 'Etapa 3 — Entrevista Final', texto: 'Entrevista com o gerente da unidade ou responsável administrativo.\nObjetivos: validar competências técnicas, verificar alinhamento à cultura da empresa, confirmar disponibilidade, remuneração e benefícios.' },
+        { id: rid(), titulo: 'Etapa 4 — Decisão da Contratação', texto: 'Registrar: Aprovado ou Reprovado.\nRetorno ao candidato: de preferência no mesmo dia (prazo máximo de 48 horas).\nO sistema registra a decisão, envia a mensagem de aprovação/reprovação e guarda o histórico do processo seletivo.' },
+        { id: rid(), titulo: 'Etapa 5 — Envio do Link para Cadastro', texto: 'Se aprovado, enviar ao candidato o link para preencher os dados pessoais: nome completo, endereço, estado civil, telefone, e-mail, dados bancários e contato de emergência.' },
+        { id: rid(), titulo: 'Etapa 6 — Recebimento e Conferência dos Documentos', texto: 'Checklist de documentos obrigatórios: RG, CPF, comprovante de residência, Carteira de Trabalho Digital, Título de Eleitor, Certificado de Reservista (quando aplicável), certidão de nascimento ou casamento, dados bancários e foto.\nControle: recebido, pendente e aprovado.' },
+        { id: rid(), titulo: 'Etapa 7 — Exame Admissional', texto: 'Agendar o exame admissional e registrar data, clínica e resultado.\nSomente após a aprovação no exame admissional o processo segue para a admissão.' },
+        { id: rid(), titulo: 'Etapa 8 — Cadastro nos Sistemas', texto: 'Cadastrar o colaborador nos sistemas: interno, NODRI, folha de pagamento e benefícios.' },
+        { id: rid(), titulo: 'Etapa 9 — Envio para Contabilidade', texto: 'Enviar toda a documentação para a contabilidade: elaboração do contrato, registro do colaborador e demais procedimentos legais.' },
+        { id: rid(), titulo: 'Etapa 10 — Definição da Data de Início', texto: 'Definir a data de início, registrar no sistema e comunicar o gestor e a equipe.' },
+        { id: rid(), titulo: 'Etapa 11 — Solicitação à TI', texto: 'A TI deverá providenciar: login do sistema, e-mail corporativo, senhas, liberação de acessos e cadastro biométrico.' },
+        { id: rid(), titulo: 'Etapa 12 — Preparação da Integração', texto: 'Antes do primeiro dia, conferir: uniforme separado, crachá confeccionado, mesa preparada, equipamentos e materiais de trabalho disponíveis, treinamentos agendados e escala definida.' },
+        { id: rid(), titulo: 'Etapa 13 — Primeiro Dia de Trabalho', texto: 'Assinatura do contrato e da ficha de registro, cadastro no ponto eletrônico, entrega do uniforme com termo de recebimento, apresentação da empresa e da equipe, integração institucional e treinamento inicial.' },
+        { id: rid(), titulo: 'Etapa 14 — Benefícios', texto: 'No primeiro dia: cadastro do vale-transporte e do vale-alimentação e pagamento proporcional dos benefícios até o final do mês.' },
+        { id: rid(), titulo: 'Etapa 15 — Documentação Bancária', texto: 'Quando necessário, emitir a carta para abertura de conta salário.\n👉 Use o botão “📄 Carta de Abertura de Conta” no topo desta página: escolha o funcionário, a carta vem preenchida e você só preenche o salário (em vermelho).' },
       ],
     },
     {
-      id: rid(), titulo: 'DESLIGAMENTO CLT (Parte Administrativa)', cor: '#dc2626', passos: [
-        { id: rid(), titulo: 'Desligamento', texto: 'Verificar se o profissional irá cumprir o aviso prévio. Solicitar para a contabilidade o desligamento e o motivo — a contabilidade enviará a documentação. Explicar o processo de saída para o caixa.' },
+      id: rid(), titulo: 'INDICADORES DE RH', cor: '#5b4fcf', passos: [
+        { id: rid(), titulo: 'Indicadores a acompanhar', texto: '• Tempo médio de contratação\n• Taxa de aprovação\n• Taxa de desistência\n• Tempo de preenchimento da vaga\n• Fonte de recrutamento\n• Avaliação do colaborador após 45 e 90 dias' },
       ],
     },
   ],
@@ -41,9 +49,11 @@ export default function ProcessoContratacao({ pessoas }: { pessoas: Pessoa[] }) 
   const [salvando, setSalvando] = useState(false)
   const [dirty, setDirty] = useState(false)
   const [editando, setEditando] = useState(false)
-  const [detalhe, setDetalhe] = useState<{ secao: string; cor: string; passo: Passo } | null>(null)
+  const [detalhe, setDetalhe] = useState<{ si: number; pi: number } | null>(null)
+  const [detEdit, setDetEdit] = useState(false)
   const [enviar, setEnviar] = useState<{ secao: string; passo: Passo } | null>(null)
   const [busca, setBusca] = useState('')
+  const [cartaAberta, setCartaAberta] = useState(false)
 
   const carregar = useCallback(async () => {
     try {
@@ -69,6 +79,7 @@ export default function ProcessoContratacao({ pessoas }: { pessoas: Pessoa[] }) 
   function setPasso(si: number, pi: number, campo: 'titulo' | 'texto', v: string) { mut(d => { (d.secoes[si].passos[pi] as any)[campo] = v }) }
   function setSecao(si: number, campo: 'titulo' | 'cor', v: string) { mut(d => { (d.secoes[si] as any)[campo] = v }) }
   function addSecao() { mut(d => { d.secoes.push({ id: rid(), titulo: 'NOVA ETAPA', cor: '#5b4fcf', passos: [{ id: rid(), titulo: 'Passo 1', texto: '' }] }) }) }
+  function restaurarModelo() { if (!confirm('Restaurar o modelo padrão (15 etapas)? Isso substitui o conteúdo atual — lembre de Salvar depois.')) return; setDoc(JSON.parse(JSON.stringify(DEFAULT))); setDirty(true) }
   function delSecao(si: number) { if (!confirm('Excluir esta etapa inteira?')) return; mut(d => { d.secoes.splice(si, 1) }) }
 
   function mensagem(secao: string, p: Passo) {
@@ -103,11 +114,14 @@ export default function ProcessoContratacao({ pessoas }: { pessoas: Pessoa[] }) 
           <p style={{ fontSize: 13, color: '#6b6860', margin: 0 }}>Clique em cada passo para ver os detalhes e enviar por WhatsApp. {editando ? 'Modo edição ligado.' : 'Use “Editar” para mudar/acrescentar.'}</p>
         </div>
         <div style={{ flex: 1 }} />
+        <button onClick={() => setCartaAberta(true)} style={{ ...btnSec, borderColor: '#16a34a', color: '#16a34a' }}><FileText size={14} /> Carta de Abertura de Conta</button>
         <button onClick={imprimir} style={btnSec}><Printer size={14} /> Imprimir</button>
+        {editando && <button onClick={restaurarModelo} style={btnSec}><RotateCcw size={14} /> Restaurar modelo</button>}
         {editando
           ? <button onClick={salvar} disabled={salvando} style={{ ...btnPrim, background: dirty ? '#16a34a' : '#a3b3a3' }}>{salvando ? '...' : <><Save size={14} /> Salvar</>}</button>
           : <button onClick={() => setEditando(true)} style={btnPrim}><Pencil size={14} /> Editar</button>}
       </div>
+      {cartaAberta && <CartaAberturaConta onClose={() => setCartaAberta(false)} />}
 
       {doc.secoes.map((s, si) => (
         <div key={s.id} style={{ marginBottom: 22 }}>
@@ -139,7 +153,7 @@ export default function ProcessoContratacao({ pessoas }: { pessoas: Pessoa[] }) 
                     <textarea value={p.texto} onChange={e => setPasso(si, pi, 'texto', e.target.value)} placeholder="O que precisa neste passo…" rows={3} style={{ width: '100%', border: '1px solid #d0cdc7', borderRadius: 6, padding: '8px 10px', fontSize: 13, resize: 'vertical', fontFamily: 'inherit' }} />
                   </div>
                 ) : (
-                  <button onClick={() => setDetalhe({ secao: s.titulo, cor: s.cor, passo: p })} style={{ width: '100%', textAlign: 'left', background: '#fff', border: '1px solid #e8e6e0', borderRadius: 10, padding: '12px 14px', cursor: 'pointer', transition: 'all .15s' }} onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 4px 14px rgba(0,0,0,.08)')} onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}>
+                  <button onClick={() => { setDetalhe({ si, pi }); setDetEdit(false) }} style={{ width: '100%', textAlign: 'left', background: '#fff', border: '1px solid #e8e6e0', borderRadius: 10, padding: '12px 14px', cursor: 'pointer', transition: 'all .15s' }} onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 4px 14px rgba(0,0,0,.08)')} onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}>
                     <div style={{ fontWeight: 800, fontSize: 14, color: s.cor, marginBottom: 2 }}>{p.titulo}</div>
                     <div style={{ fontSize: 13, color: '#374151', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.texto || 'Clique para ver os detalhes'}</div>
                     <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 6, display: 'inline-flex', alignItems: 'center', gap: 5 }}><Eye size={12} /> Ver detalhes · <MessageCircle size={12} color="#25D366" /> enviar no WhatsApp</div>
@@ -154,22 +168,38 @@ export default function ProcessoContratacao({ pessoas }: { pessoas: Pessoa[] }) 
 
       {editando && <button onClick={addSecao} style={{ ...btnDashed }}><Plus size={15} /> Adicionar etapa</button>}
 
-      {/* Modal de detalhe do passo */}
-      {detalhe && (
-        <div onClick={() => setDetalhe(null)} style={overlay}>
-          <div onClick={e => e.stopPropagation()} style={{ ...card, maxWidth: 480 }}>
-            <div style={{ background: detalhe.cor, color: '#fff', padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontWeight: 800, fontSize: 15 }}>{detalhe.passo.titulo}</span>
-              <button onClick={() => setDetalhe(null)} style={btnX}><X size={18} /></button>
-            </div>
-            <div style={{ padding: 18 }}>
-              <div style={{ fontSize: 11, fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6 }}>{detalhe.secao}</div>
-              <p style={{ fontSize: 14, color: '#1a1a1a', lineHeight: 1.55, whiteSpace: 'pre-wrap', margin: '0 0 16px' }}>{detalhe.passo.texto || 'Sem detalhes ainda.'}</p>
-              <button onClick={() => { setEnviar({ secao: detalhe.secao, passo: detalhe.passo }); setDetalhe(null) }} style={{ width: '100%', padding: '12px', borderRadius: 10, border: 'none', background: '#25D366', color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}><MessageCircle size={16} /> Enviar via WhatsApp</button>
+      {/* Modal de detalhe do passo (ver, editar e salvar, depois enviar) */}
+      {detalhe && doc.secoes[detalhe.si]?.passos[detalhe.pi] && (() => {
+        const s = doc.secoes[detalhe.si]; const p = s.passos[detalhe.pi]
+        return (
+          <div onClick={() => { setDetalhe(null); setDetEdit(false) }} style={overlay}>
+            <div onClick={e => e.stopPropagation()} style={{ ...card, maxWidth: 480 }}>
+              <div style={{ background: s.cor, color: '#fff', padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontWeight: 800, fontSize: 15 }}>{p.titulo}</span>
+                <button onClick={() => { setDetalhe(null); setDetEdit(false) }} style={btnX}><X size={18} /></button>
+              </div>
+              <div style={{ padding: 18 }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 8 }}>{s.titulo}</div>
+                {detEdit ? (
+                  <>
+                    <input value={p.titulo} onChange={e => setPasso(detalhe.si, detalhe.pi, 'titulo', e.target.value)} placeholder="Título" style={{ width: '100%', fontWeight: 800, fontSize: 14, color: s.cor, border: '1px solid #eee', borderRadius: 6, padding: '8px 10px', marginBottom: 8, outline: 'none' }} />
+                    <textarea value={p.texto} onChange={e => setPasso(detalhe.si, detalhe.pi, 'texto', e.target.value)} placeholder="O que precisa neste passo…" rows={7} style={{ width: '100%', border: '1.5px solid #d0cdc7', borderRadius: 8, padding: '10px 12px', fontSize: 14, resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.5, marginBottom: 12 }} />
+                    <button onClick={async () => { await salvar(); setDetEdit(false) }} disabled={salvando} style={{ width: '100%', padding: '11px', borderRadius: 10, border: 'none', background: '#16a34a', color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}><Save size={16} /> {salvando ? 'Salvando...' : 'Salvar alterações'}</button>
+                  </>
+                ) : (
+                  <>
+                    <p style={{ fontSize: 14, color: '#1a1a1a', lineHeight: 1.55, whiteSpace: 'pre-wrap', margin: '0 0 16px' }}>{p.texto || 'Sem detalhes ainda.'}</p>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button onClick={() => setDetEdit(true)} style={{ flex: '0 0 auto', padding: '12px 14px', borderRadius: 10, border: '1px solid #d0cdc7', background: '#fff', color: '#374151', fontSize: 14, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}><Pencil size={15} /> Editar</button>
+                      <button onClick={() => { setEnviar({ secao: s.titulo, passo: p }); setDetalhe(null) }} style={{ flex: 1, padding: '12px', borderRadius: 10, border: 'none', background: '#25D366', color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}><MessageCircle size={16} /> Enviar via WhatsApp</button>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* Picker de funcionário p/ WhatsApp */}
       {enviar && (
