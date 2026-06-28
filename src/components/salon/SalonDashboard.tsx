@@ -122,7 +122,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
   const [kpiPend, setKpiPend] = useState<number | null>(() => lerKpi('pend'))
   useEffect(() => {
     const mes = new Date().getMonth() + 1
-    fetch('/api/profissionais').then(r => r.ok ? r.json() : []).then((arr: any[]) => {
+    fetch('/api/profissionais?leve=1').then(r => r.ok ? r.json() : []).then((arr: any[]) => {
       const lista = Array.isArray(arr) ? arr : []
       const ativos = lista.filter(p => p.ativo !== false && !p.is_departamento)
       const niver = ativos.filter(p => { const d = String(p.data_aniversario || ''); const m = Number(d.slice(5, 7)); return m === mes }).length

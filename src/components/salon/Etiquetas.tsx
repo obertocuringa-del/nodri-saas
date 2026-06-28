@@ -15,7 +15,7 @@ export default function Etiquetas() {
   const carregar = useCallback(async () => {
     try {
       const [p, d] = await Promise.all([
-        fetch('/api/profissionais?ativo=true').then(r => r.ok ? r.json() : []).catch(() => []),
+        fetch('/api/profissionais?ativo=true&leve=1').then(r => r.ok ? r.json() : []).catch(() => []),
         fetch('/api/salon/despesas-catalogo', { credentials: 'include' }).then(r => r.ok ? r.json() : null).catch(() => null),
       ])
       const nomesP: string[] = (Array.isArray(p) ? p : []).filter((x: any) => x.ativo !== false && !x.is_departamento).map((x: any) => String(x.apelido || x.nome_completo || '').trim()).filter((s: string) => !!s)

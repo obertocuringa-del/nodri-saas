@@ -19,10 +19,12 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url)
   const ativo = searchParams.get('ativo')
+  // Modo leve: poucos campos e SEM a subconsulta de pendências (ex.: KPIs da tela inicial)
+  const leve = searchParams.get('leve') === '1'
 
   let query = supabaseAdmin
     .from('profissionais')
-    .select('*')
+    .select(leve ? 'id, nome_completo, apelido, ativo, is_departamento, data_aniversario, cargo, telefone' : '*')
     .eq('salao_id', salaoId)
     .order('nome_completo')
 
@@ -32,6 +34,8 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  if (leve) return NextResponse.json(data || [])
 
   // Injeta contagem de pendências abertas para TODOS os profissionais
   const lista = data || []
