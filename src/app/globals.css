@@ -125,8 +125,11 @@ html, body {
   .linha-form-mobile > :first-child { grid-column: 1 / -1 !important; }
 
   /* 16) Calendário continua com 7 colunas no celular (a regra geral de 2
-         colunas NÃO se aplica aqui — senão a semana ficaria quebrada). */
-  .nodri-cal-7 { grid-template-columns: repeat(7, minmax(0, 1fr)) !important; }
+         colunas NÃO se aplica aqui — senão a semana ficaria quebrada).
+         Usa [style*="repeat("] p/ ter a MESMA especificidade da regra geral
+         e vencer por vir depois. O quadro rola de lado mostrando a semana toda. */
+  .nodri-cal-7[style*="repeat("] { grid-template-columns: repeat(7, minmax(0, 1fr)) !important; }
+  .nodri-cal-wrap { min-width: 520px !important; max-width: none !important; }
 
   /* 17) Barras de abas (ex: Salão Administrativo): no celular viram uma faixa
          única que rola de lado, em vez de várias linhas embaralhadas. */

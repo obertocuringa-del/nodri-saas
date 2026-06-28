@@ -5,6 +5,10 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft, Loader2, Save, Plus, Trash2, Check, X, BarChart3, Copy, RotateCcw, Pencil } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { CHECKLIST_DEFAULT, FREQUENCIAS } from '@/components/salon/checklistDefaults'
+import { usePermissoes } from '@/lib/usePermissoes'
+
+// Ordem dos períodos: Diário, Semanal, Quinzenal, Mensal, Trimestral
+const ordemFreq = (f: string) => { const i = FREQUENCIAS.indexOf(f); return i < 0 ? 99 : i }
 
 interface Demanda { id: string; texto: string; freq: string; feito: boolean }
 interface Categoria { id: string; nome: string; demandas: Demanda[] }
@@ -24,6 +28,8 @@ const FREQ_COR: Record<string, { bg: string; bd: string; txt: string }> = {
 
 export default function ChecklistPage() {
   const router = useRouter()
+  const { ehSub } = usePermissoes()
+  const soLeitura = ehSub // usuário criado pelo salão: só visualiza (sem alterar/excluir) até liberação
   const [doc, setDoc] = useState<Doc>({ categorias: [] })
   const [catSel, setCatSel] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -44,7 +50,8 @@ export default function ChecklistPage() {
   function mut(fn: (d: Doc) => void) { setDoc(prev => { const n: Doc = JSON.parse(JSON.stringify(prev)); fn(n); return n }); setDirty(true) }
 
   function toggleFeito(ci: number, di: number) { mut(d => { d.categorias[ci].demandas[di].feito = !d.categorias[ci].demandas[di].feito }) }
-  function setDemanda(ci: number, di: number, campo: 'texto' | 'freq', v: string) { mut(d => { (d.categorias[ci].demandas[di] as any)[campo] = v }) }
+  function setDemanda(ci: number, di: number, campo: 'texto' | 'freq', v: string) { mut(d => { (d.categorias[ci].demandas[di] as any)[campo] = v; if (campo === 'freq') d.categorias[ci].demandas.sort((a, b) => ordemFreq(a.freq) - ordemFreq(b.freq)) }) }
+  function organizarCategoria(ci: number) { mut(d => { d.categorias[ci].demandas.sort((a, b) => ordemFreq(a.freq) - ordemFreq(b.freq)) }); toast.success('Organizado por período (Diário → Semanal → ...)') }
   function addDemanda(ci: number) { mut(d => { d.categorias[ci].demandas.push({ id: rid(), texto: '', freq: 'Diário', feito: false }) }) }
   function delDemanda(ci: number, di: number) { mut(d => { d.categorias[ci].demandas.splice(di, 1) }) }
   function addCategoria() { mut(d => { d.categorias.push({ id: rid(), nome: 'Nova categoria', demandas: [] }) }); setCatSel(doc.categorias.length) }
@@ -83,8 +90,9 @@ export default function ChecklistPage() {
         <div style={{ flex: 1 }} />
         <button onClick={() => { setVerComuns(v => !v); setVerRelatorio(false) }} style={btnNav(verComuns)}><Copy size={14} /> Demandas em comum</button>
         <button onClick={() => { setVerRelatorio(v => !v); setVerComuns(false) }} style={btnNav(verRelatorio)}><BarChart3 size={14} /> Relatório</button>
-        <button onClick={limparMarcacoes} style={btnNav(false)}><RotateCcw size={14} /> Limpar</button>
-        <button onClick={salvar} disabled={salvando} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 16px', borderRadius: 8, border: 'none', background: dirty ? '#16a34a' : '#a3b3a3', color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>{salvando ? '...' : <><Save size={14} /> Salvar geral</>}</button>
+        {!soLeitura && <button onClick={limparMarcacoes} style={btnNav(false)}><RotateCcw size={14} /> Limpar</button>}
+        {!soLeitura && <button onClick={salvar} disabled={salvando} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 16px', borderRadius: 8, border: 'none', background: dirty ? '#16a34a' : '#a3b3a3', color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>{salvando ? '...' : <><Save size={14} /> Salvar geral</>}</button>}
+        {soLeitura && <span style={{ fontSize: 12, color: '#6b6860', background: '#f1eefb', border: '1px solid #ddd6f5', borderRadius: 8, padding: '6px 12px' }}>👁️ Somente visualização</span>}
       </nav>
 
       <div style={{ maxWidth: 1000, margin: '0 auto', padding: 16 }}>
@@ -136,15 +144,16 @@ export default function ChecklistPage() {
                 </button>
               )
             })}
-            <button onClick={addCategoria} style={{ padding: '8px 14px', borderRadius: 10, border: '1px dashed #5b4fcf', background: '#f0eefb', color: '#5b4fcf', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}><Plus size={14} /> Categoria</button>
+            {!soLeitura && <button onClick={addCategoria} style={{ padding: '8px 14px', borderRadius: 10, border: '1px dashed #5b4fcf', background: '#f0eefb', color: '#5b4fcf', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}><Plus size={14} /> Categoria</button>}
           </div>
 
           {cat && (
             <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: 16 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                 <Pencil size={14} color="#9ca3af" />
-                <input value={cat.nome} onChange={e => renCategoria(catSel, e.target.value)} style={{ flex: 1, fontSize: 16, fontWeight: 800, color: '#5b4fcf', border: 'none', borderBottom: '1px solid #eee', outline: 'none', padding: '2px 0' }} />
-                <button onClick={() => delCategoria(catSel)} title="Excluir categoria" style={{ border: '1px solid #fca5a5', background: '#fff', color: '#dc2626', borderRadius: 6, padding: '5px 10px', cursor: 'pointer', fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Trash2 size={12} /> Categoria</button>
+                <input value={cat.nome} readOnly={soLeitura} onChange={e => renCategoria(catSel, e.target.value)} style={{ flex: 1, fontSize: 16, fontWeight: 800, color: '#5b4fcf', border: 'none', borderBottom: '1px solid #eee', outline: 'none', padding: '2px 0' }} />
+                {!soLeitura && <button onClick={() => organizarCategoria(catSel)} title="Organizar por período (Diário, Semanal, Quinzenal...)" style={{ border: '1px solid #c9c4f0', background: '#f6f4ff', color: '#5b4fcf', borderRadius: 6, padding: '5px 10px', cursor: 'pointer', fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>↕ Organizar por período</button>}
+                {!soLeitura && <button onClick={() => delCategoria(catSel)} title="Excluir categoria" style={{ border: '1px solid #fca5a5', background: '#fff', color: '#dc2626', borderRadius: 6, padding: '5px 10px', cursor: 'pointer', fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Trash2 size={12} /> Categoria</button>}
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -152,19 +161,19 @@ export default function ChecklistPage() {
                   const fc = FREQ_COR[dem.freq] || FREQ_COR['Diário']
                   return (
                   <div key={dem.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '6px 8px', borderRadius: 8, borderLeft: `4px solid ${fc.bd}`, background: dem.feito ? '#f0fdf4' : fc.bg, flexWrap: 'wrap' }}>
-                    <button onClick={() => toggleFeito(catSel, di)} title="Feito?" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 7, border: 'none', background: dem.feito ? '#16a34a' : '#e5e7eb', color: dem.feito ? '#fff' : '#6b7280', fontSize: 12, fontWeight: 800, cursor: 'pointer', flexShrink: 0, width: 70, justifyContent: 'center', marginTop: 2 }}>
+                    <button onClick={() => !soLeitura && toggleFeito(catSel, di)} disabled={soLeitura} title="Feito?" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 7, border: 'none', background: dem.feito ? '#16a34a' : '#e5e7eb', color: dem.feito ? '#fff' : '#6b7280', fontSize: 12, fontWeight: 800, cursor: soLeitura ? 'default' : 'pointer', flexShrink: 0, width: 70, justifyContent: 'center', marginTop: 2 }}>
                       {dem.feito ? <><Check size={13} /> Sim</> : <><X size={13} /> Não</>}
                     </button>
-                    <AutoTextarea value={dem.texto} onChange={v => setDemanda(catSel, di, 'texto', v)} feito={dem.feito} />
-                    <select value={dem.freq} onChange={e => setDemanda(catSel, di, 'freq', e.target.value)} style={{ padding: '5px 8px', borderRadius: 6, border: `1.5px solid ${fc.bd}`, background: '#fff', color: fc.txt, fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
+                    <AutoTextarea value={dem.texto} onChange={v => setDemanda(catSel, di, 'texto', v)} feito={dem.feito} readOnly={soLeitura} />
+                    <select value={dem.freq} disabled={soLeitura} onChange={e => setDemanda(catSel, di, 'freq', e.target.value)} style={{ padding: '5px 8px', borderRadius: 6, border: `1.5px solid ${fc.bd}`, background: '#fff', color: fc.txt, fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
                       {FREQUENCIAS.map(f => <option key={f} value={f}>{f}</option>)}
                     </select>
-                    <button onClick={() => delDemanda(catSel, di)} title="Excluir demanda" style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', padding: 6, flexShrink: 0 }}><Trash2 size={13} /></button>
+                    {!soLeitura && <button onClick={() => delDemanda(catSel, di)} title="Excluir demanda" style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', padding: 6, flexShrink: 0 }}><Trash2 size={13} /></button>}
                   </div>
                   )
                 })}
               </div>
-              <button onClick={() => addDemanda(catSel)} style={{ marginTop: 10, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 8, border: '1px dashed #d0cdc7', background: '#faf9f7', color: '#6b6860', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}><Plus size={14} /> Adicionar demanda</button>
+              {!soLeitura && <button onClick={() => addDemanda(catSel)} style={{ marginTop: 10, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 8, border: '1px dashed #d0cdc7', background: '#faf9f7', color: '#6b6860', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}><Plus size={14} /> Adicionar demanda</button>}
             </div>
           )}
         </>)}
@@ -174,10 +183,10 @@ export default function ChecklistPage() {
 }
 
 // Campo de texto que cresce com o conteúdo e quebra linha (demandas grandes não cortam)
-function AutoTextarea({ value, onChange, feito }: { value: string; onChange: (v: string) => void; feito: boolean }) {
+function AutoTextarea({ value, onChange, feito, readOnly }: { value: string; onChange: (v: string) => void; feito: boolean; readOnly?: boolean }) {
   const ref = useRef<HTMLTextAreaElement>(null)
   useEffect(() => { const el = ref.current; if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px' } }, [value])
-  return <textarea ref={ref} value={value} onChange={e => onChange(e.target.value)} placeholder="Descreva a demanda" rows={1}
+  return <textarea ref={ref} value={value} readOnly={readOnly} onChange={e => onChange(e.target.value)} placeholder="Descreva a demanda" rows={1}
     style={{ flex: 1, minWidth: 180, border: '1px solid transparent', borderRadius: 4, padding: '6px 8px', fontSize: 13, background: 'transparent', outline: 'none', resize: 'none', overflow: 'hidden', lineHeight: 1.4, fontFamily: 'inherit', whiteSpace: 'pre-wrap', wordBreak: 'break-word', textDecoration: feito ? 'line-through' : 'none', color: feito ? '#6b7280' : '#1a1a1a' }} />
 }
 
