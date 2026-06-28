@@ -6,6 +6,7 @@ import { ArrowLeft, Plus, Search, UserCheck, UserX, Edit2, Trash2, Upload, X, Ch
 import toast from 'react-hot-toast'
 import MateriaisTrabalho from '@/components/salon/MateriaisTrabalho'
 import ExameAdmissional from '@/components/salon/ExameAdmissional'
+import ProcessoContratacao from '@/components/salon/ProcessoContratacao'
 
 interface Profissional {
   id: string
@@ -161,7 +162,7 @@ const FORM_INITIAL = {
 export default function ProfissionaisPage() {
   const router = useRouter()
   const [secao, setSecao] = useState('lista')
-  const [cltSub, setCltSub] = useState<'clt' | 'exame'>('clt')
+  const [cltSub, setCltSub] = useState<'clt' | 'exame' | 'processo'>('clt')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   useEffect(() => {
@@ -1774,9 +1775,12 @@ ${montarContratoHTML()}
               <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', borderBottom: '1px solid #ece9e2', paddingBottom: 12 }}>
                 <button onClick={() => setCltSub('clt')} style={{ padding: '8px 16px', borderRadius: 8, border: cltSub === 'clt' ? '1px solid #0ea5e9' : '1px solid #e0ddd8', background: cltSub === 'clt' ? '#0ea5e9' : '#fff', color: cltSub === 'clt' ? '#fff' : '#6b6860', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Profissionais CLT</button>
                 <button onClick={() => setCltSub('exame')} style={{ padding: '8px 16px', borderRadius: 8, border: cltSub === 'exame' ? '1px solid #0ea5e9' : '1px solid #e0ddd8', background: cltSub === 'exame' ? '#0ea5e9' : '#fff', color: cltSub === 'exame' ? '#fff' : '#6b6860', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>🩺 Exame Admissional</button>
+                <button onClick={() => setCltSub('processo')} style={{ padding: '8px 16px', borderRadius: 8, border: cltSub === 'processo' ? '1px solid #0ea5e9' : '1px solid #e0ddd8', background: cltSub === 'processo' ? '#0ea5e9' : '#fff', color: cltSub === 'processo' ? '#fff' : '#6b6860', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>📝 Processo de Contratação</button>
               </div>
               {cltSub === 'exame' ? (
                 <ExameAdmissional pessoas={profissionais.map(p => ({ nome: p.apelido || p.nome_completo || '—', telefone: (p as any).telefone || (() => { try { return JSON.parse((p as any).contato_responsavel || '{}').tel || '' } catch { return '' } })() }))} />
+              ) : cltSub === 'processo' ? (
+                <ProcessoContratacao pessoas={profissionais.map(p => ({ nome: p.apelido || p.nome_completo || '—', telefone: (p as any).telefone || (() => { try { return JSON.parse((p as any).contato_responsavel || '{}').tel || '' } catch { return '' } })() }))} />
               ) : (<div>
               <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', marginBottom: '16px' }}>
                 <div>

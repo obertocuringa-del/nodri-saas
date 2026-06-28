@@ -53,6 +53,7 @@ export function permDaGrade(chave: string): string {
   if (c === 'tabela_precos_arquivos') return 'adm_tabela_precos'
   if (c === 'arquivos_envio_lista') return 'adm_arquivos_envio'
   if (c === 'exame_admissional') return 'clt_exame'
+  if (c === 'processo_contratacao_clt') return 'profissionais'
   if (c.startsWith('calendario_mkt')) return 'calendario_mkt'
   if (c.startsWith('calendario')) return 'calendario'
   if (c === 'prof_categorias') return 'profissionais'
