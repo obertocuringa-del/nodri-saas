@@ -88,6 +88,7 @@ export async function middleware(request: NextRequest) {
       ['/salon/calendario-mkt', 'calendario_mkt'],
       ['/salon/calendario', 'calendario'],
       ['/salon/mural', 'mural'],
+      ['/salon/consultoria', 'ia'],
       ['/salon/usuarios', 'cfg_usuarios'],
       ['/salon/profissionais', 'profissionais'],
       ['/salon/relatorios', 'relatorios'],
