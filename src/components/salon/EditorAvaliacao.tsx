@@ -33,7 +33,7 @@ export default function EditorAvaliacao() {
     setSalvando(false)
   }
 
-  function setFaixa(i: number, campo: 'min' | 'txt' | 'cor' | 'emoji', val: string | number) { mut(d => { if (!d.classificacao) d.classificacao = JSON.parse(JSON.stringify(CLASSIF_AVAL)); (d.classificacao[i] as any)[campo] = val }) }
+  function setFaixa(i: number, campo: 'min' | 'txt' | 'cor' | 'emoji', val: string | number) { mut(d => { const list = d.classificacao || (d.classificacao = JSON.parse(JSON.stringify(CLASSIF_AVAL))); (list[i] as any)[campo] = val }) }
   const totalCrit = doc.categorias.reduce((a, c) => a + c.criterios.length, 0)
 
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Loader2 size={26} className="animate-spin" style={{ color: '#5b4fcf' }} /></div>
@@ -84,10 +84,10 @@ export default function EditorAvaliacao() {
             <input value={c.emoji} onChange={e => setFaixa(i, 'emoji', e.target.value)} style={{ width: 44, padding: '7px 8px', borderRadius: 6, border: '1px solid #d0cdc7', fontSize: 15, textAlign: 'center' }} />
             <input value={c.txt} onChange={e => setFaixa(i, 'txt', e.target.value)} placeholder="Rótulo" style={{ flex: 1, minWidth: 160, padding: '7px 10px', borderRadius: 6, border: '1px solid #d0cdc7', fontSize: 13 }} />
             <input type="color" value={c.cor} onChange={e => setFaixa(i, 'cor', e.target.value)} title="Cor" style={{ width: 32, height: 32, border: 'none', background: 'transparent', cursor: 'pointer', padding: 0 }} />
-            <button onClick={() => mut(d => { (d.classificacao || (d.classificacao = [...CLASSIF_AVAL])).splice(i, 1) })} title="Remover faixa" style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', padding: 4 }}><Trash2 size={14} /></button>
+            <button onClick={() => mut(d => { const list = d.classificacao || (d.classificacao = JSON.parse(JSON.stringify(CLASSIF_AVAL))); list.splice(i, 1) })} title="Remover faixa" style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', padding: 4 }}><Trash2 size={14} /></button>
           </div>
         ))}
-        <button onClick={() => mut(d => { (d.classificacao || (d.classificacao = [...CLASSIF_AVAL])).push({ min: 0, txt: 'Novo nível', cor: '#5b4fcf', emoji: '•' }) })} style={{ ...btnDashed, marginTop: 4 }}><Plus size={13} /> Adicionar faixa</button>
+        <button onClick={() => mut(d => { const list = d.classificacao || (d.classificacao = JSON.parse(JSON.stringify(CLASSIF_AVAL))); list.push({ min: 0, txt: 'Novo nível', cor: '#5b4fcf', emoji: '•' }) })} style={{ ...btnDashed, marginTop: 4 }}><Plus size={13} /> Adicionar faixa</button>
       </div>
     </div>
   )
