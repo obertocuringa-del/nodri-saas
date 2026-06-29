@@ -2992,7 +2992,7 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
   })()
 
   return (
-    <div className="min-h-screen bg-nodri-dark">
+    <div className={`min-h-screen ${souProf ? '' : 'bg-nodri-dark'}`} style={souProf ? { background: 'linear-gradient(180deg,#f4f3fb 0%,#eef0f6 100%)' } : undefined}>
       {/* Header de gestão (dono / sub) */}
       {!souProf && (
       <div className="sticky top-0 z-20 bg-nodri-surface border-b border-nodri-border px-5 py-3 flex items-center gap-3">
@@ -3132,12 +3132,14 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
       )}
 
       {souProf && <style>{`
-        @keyframes profFade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-        .prof-skin{animation:profFade .45s ease both}
-        .prof-skin .rounded-2xl{border-radius:22px!important;border:1px solid #efeafc!important;box-shadow:0 12px 34px rgba(91,79,207,.15)!important;transition:transform .22s,box-shadow .22s}
-        .prof-skin .rounded-2xl:hover{transform:translateY(-4px);box-shadow:0 20px 46px rgba(91,79,207,.22)!important}
-        .prof-skin .rounded-xl{border-radius:16px!important;border-color:#efeafc!important;box-shadow:0 5px 16px rgba(91,79,207,.09)!important}
-        .prof-skin h2,.prof-skin h3{letter-spacing:.2px}
+        @keyframes profFade{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+        .prof-skin{animation:profFade .5s ease both}
+        .prof-skin > *{margin-bottom:18px}
+        .prof-skin .rounded-2xl{border-radius:24px!important;border:1px solid #efeafc!important;box-shadow:0 14px 38px rgba(91,79,207,.16)!important;transition:transform .22s,box-shadow .22s}
+        .prof-skin .rounded-2xl:hover{transform:translateY(-5px);box-shadow:0 24px 52px rgba(91,79,207,.24)!important}
+        .prof-skin .rounded-xl{border-radius:18px!important;border-color:#efeafc!important;box-shadow:0 6px 18px rgba(91,79,207,.10)!important}
+        .prof-skin h1,.prof-skin h2,.prof-skin h3{letter-spacing:.2px;color:#4b3fc4!important}
+        .prof-skin h2,.prof-skin h3{font-size:15px!important}
       `}</style>}
 
       <div className={`max-w-5xl mx-auto px-3 sm:px-5 py-4 sm:py-6 ${souProf ? 'prof-skin' : ''}`}>
