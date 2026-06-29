@@ -3132,11 +3132,12 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
       )}
 
       {souProf && <style>{`
-        @keyframes profFade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-        .prof-skin{animation:profFade .4s ease both}
-        .prof-skin .rounded-2xl,.prof-skin .rounded-xl{box-shadow:0 10px 28px rgba(80,70,160,.08)!important;border-color:#ece9f6!important}
-        .prof-skin .rounded-2xl{border-radius:20px!important}
-        .prof-skin .rounded-xl{border-radius:16px!important}
+        @keyframes profFade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+        .prof-skin{animation:profFade .45s ease both}
+        .prof-skin .rounded-2xl{border-radius:22px!important;border:1px solid #efeafc!important;box-shadow:0 12px 34px rgba(91,79,207,.15)!important;transition:transform .22s,box-shadow .22s}
+        .prof-skin .rounded-2xl:hover{transform:translateY(-4px);box-shadow:0 20px 46px rgba(91,79,207,.22)!important}
+        .prof-skin .rounded-xl{border-radius:16px!important;border-color:#efeafc!important;box-shadow:0 5px 16px rgba(91,79,207,.09)!important}
+        .prof-skin h2,.prof-skin h3{letter-spacing:.2px}
       `}</style>}
 
       <div className={`max-w-5xl mx-auto px-3 sm:px-5 py-4 sm:py-6 ${souProf ? 'prof-skin' : ''}`}>
