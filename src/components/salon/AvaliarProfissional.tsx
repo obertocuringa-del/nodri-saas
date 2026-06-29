@@ -37,7 +37,7 @@ function Gauge({ pct, cor, label }: { pct: number; cor: string; label: string })
   )
 }
 
-export default function AvaliarProfissional({ profissionalId, profissionalNome }: { profissionalId: string; profissionalNome: string }) {
+export default function AvaliarProfissional({ profissionalId, profissionalNome, soResultado }: { profissionalId: string; profissionalNome: string; soResultado?: boolean }) {
   const [secoes, setSecoes] = useState<CatAval[]>([])
   const [faixas, setFaixas] = useState<Faixa[]>(CLASSIF_AVAL)
   const [historico, setHistorico] = useState<Avaliacao[]>([])
@@ -206,9 +206,9 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome }
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
         <div>
           <h3 style={{ fontSize: 18, fontWeight: 800, color: '#1a1a1a', margin: '0 0 4px' }}>Avaliações de {profissionalNome}</h3>
-          <p style={{ fontSize: 13, color: '#6b6860', margin: 0 }}>Avalie {TOTAL} critérios em {secoes.length} áreas (1 a 5). Os critérios vêm de “Perfil e Avaliação de Desempenho”.</p>
+          <p style={{ fontSize: 13, color: '#6b6860', margin: 0 }}>{soResultado ? 'Veja o resultado das suas avaliações.' : `Avalie ${TOTAL} critérios em ${secoes.length} áreas (1 a 5). Os critérios vêm de “Perfil e Avaliação de Desempenho”.`}</p>
         </div>
-        <button onClick={novaAvaliacao} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 16px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#7c3aed,#5b4fcf)', color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}><Plus size={16} /> Nova Avaliação</button>
+        {!soResultado && <button onClick={novaAvaliacao} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 16px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#7c3aed,#5b4fcf)', color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}><Plus size={16} /> Nova Avaliação</button>}
       </div>
 
       {/* ── EVOLUÇÃO POR CATEGORIA (comparativo no tempo) ── */}
@@ -251,7 +251,7 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome }
 
       {historico.length === 0 ? (
         <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af', fontSize: 14, background: '#fff', border: '1px dashed #d0cdc7', borderRadius: 12 }}>
-          Nenhuma avaliação ainda. Clique em <strong>Nova Avaliação</strong> para começar.
+          {soResultado ? 'Você ainda não tem avaliações registradas.' : <>Nenhuma avaliação ainda. Clique em <strong>Nova Avaliação</strong> para começar.</>}
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -270,7 +270,7 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome }
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button onClick={() => setVendo(av)} style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid #d0cdc7', background: '#fff', color: '#5b4fcf', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Ver</button>
-                  <button onClick={() => excluir(av.id)} style={{ padding: '7px 10px', borderRadius: 8, border: '1px solid #fca5a5', background: '#fff', color: '#dc2626', cursor: 'pointer' }}><Trash2 size={14} /></button>
+                  {!soResultado && <button onClick={() => excluir(av.id)} style={{ padding: '7px 10px', borderRadius: 8, border: '1px solid #fca5a5', background: '#fff', color: '#dc2626', cursor: 'pointer' }}><Trash2 size={14} /></button>}
                 </div>
               </div>
             )

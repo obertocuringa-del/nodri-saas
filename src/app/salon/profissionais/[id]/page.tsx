@@ -3146,7 +3146,7 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
 
         {/*  AVALIAR PROFISSIONAL  */}
         {tab === 'avaliar' && (
-          <AvaliarProfissional profissionalId={id} profissionalNome={prof?.apelido || prof?.nome_completo || 'Profissional'} />
+          <AvaliarProfissional profissionalId={id} profissionalNome={prof?.apelido || prof?.nome_completo || 'Profissional'} soResultado={souProf && !((prof as any)?.acesso_oculto?.autoavaliacao)} />
         )}
 
         {/*  CALENDÁRIO DE MARKETING (o mesmo do menu, compartilhado pelo salão)  */}
