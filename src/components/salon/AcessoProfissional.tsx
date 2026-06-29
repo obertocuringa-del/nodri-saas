@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { KeyRound, Eye, EyeOff, Loader2, Check, Trash2, Star } from 'lucide-react'
+import { KeyRound, Eye, EyeOff, Loader2, Check, Star } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 // Itens que o salão pode OCULTAR da visão do próprio profissional (portal somente leitura)
@@ -24,16 +24,6 @@ export default function AcessoProfissional({ profId, prof, onSaved }: { profId: 
   const [temSenha, setTemSenha] = useState(false)
   const [oculto, setOculto] = useState<Record<string, boolean>>({})
   const [salvando, setSalvando] = useState(false)
-  // Envio de notificação
-  const [notifTexto, setNotifTexto] = useState('')
-  const [notifAlvo, setNotifAlvo] = useState<'este' | 'todos'>('este')
-  const [notifEnviando, setNotifEnviando] = useState(false)
-  const [notifLista, setNotifLista] = useState<any[]>([])
-
-  async function carregarNotifs() {
-    try { const d = await fetch('/api/salon/notificacoes').then(r => r.ok ? r.json() : null); setNotifLista(Array.isArray(d?.notificacoes) ? d.notificacoes : []) } catch { /* */ }
-  }
-  useEffect(() => { carregarNotifs() }, [])
 
   // Só o salão principal (role 'salon') gerencia acessos
   useEffect(() => {
@@ -140,46 +130,9 @@ export default function AcessoProfissional({ profId, prof, onSaved }: { profId: 
         {salvando ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />} Salvar acesso
       </button>
 
-      {/* Enviar notificação */}
-      <div style={{ marginTop: 18, paddingTop: 16, borderTop: '1px dashed #e0ddd8' }}>
-        <p style={{ fontSize: 13, fontWeight: 800, color: '#1a1a1a', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: 6 }}>Enviar notificação</p>
-        <textarea value={notifTexto} onChange={e => setNotifTexto(e.target.value)} placeholder="Escreva o aviso que aparecerá no painel do profissional…" rows={2}
-          style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 14, resize: 'vertical', marginBottom: 8 }} />
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-          <select value={notifAlvo} onChange={e => setNotifAlvo(e.target.value as any)} style={{ padding: '9px 10px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13 }}>
-            <option value="este">Só para {nomeProf}</option>
-            <option value="todos">Para todos os profissionais</option>
-          </select>
-          <button disabled={notifEnviando || !notifTexto.trim()} onClick={async () => {
-            setNotifEnviando(true)
-            try {
-              const res = await fetch('/api/salon/notificacoes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ texto: notifTexto.trim(), alvo: notifAlvo === 'todos' ? 'todos' : profId }) })
-              if (res.ok) { toast.success('Notificação enviada!'); setNotifTexto(''); carregarNotifs() } else toast.error('Erro ao enviar')
-            } catch { toast.error('Erro ao enviar') } finally { setNotifEnviando(false) }
-          }} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 18px', borderRadius: 8, border: 'none', background: notifTexto.trim() ? '#16a34a' : '#cbd5e1', color: '#fff', fontSize: 13, fontWeight: 800, cursor: notifTexto.trim() ? 'pointer' : 'not-allowed' }}>
-            {notifEnviando ? <Loader2 size={15} className="animate-spin" /> : 'Enviar'}
-          </button>
-        </div>
-
-        {/* Notificações já enviadas — com excluir */}
-        {notifLista.length > 0 && (
-          <div style={{ marginTop: 14 }}>
-            <p style={{ fontSize: 12, fontWeight: 700, color: '#6b6860', margin: '0 0 6px' }}>Enviadas ({notifLista.length})</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 220, overflowY: 'auto' }}>
-              {notifLista.map(n => (
-                <div key={n.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, background: '#faf9f7', border: '1px solid #ece9e2' }}>
-                  <span style={{ fontSize: 10, fontWeight: 800, padding: '2px 7px', borderRadius: 99, background: n.alvo === 'todos' ? '#e0e7ff' : '#dcfce7', color: n.alvo === 'todos' ? '#4338ca' : '#15803d', flexShrink: 0 }}>{n.alvo === 'todos' ? 'TODOS' : 'INDIVIDUAL'}</span>
-                  <span style={{ flex: 1, minWidth: 0, fontSize: 13, color: '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n.texto}</span>
-                  <button title="Excluir" onClick={async () => {
-                    if (!confirm('Excluir esta notificação?')) return
-                    try { const r = await fetch(`/api/salon/notificacoes?id=${encodeURIComponent(n.id)}`, { method: 'DELETE' }); if (r.ok) { toast.success('Excluída'); setNotifLista(l => l.filter(x => x.id !== n.id)) } else toast.error('Erro ao excluir') } catch { toast.error('Erro ao excluir') }
-                  }} style={{ border: '1px solid #fca5a5', background: '#fff', color: '#dc2626', borderRadius: 7, padding: '4px 7px', cursor: 'pointer', flexShrink: 0, display: 'inline-flex' }}><Trash2 size={13} /></button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
+      <p style={{ fontSize: 12, color: '#9ca3af', margin: '14px 0 0', paddingTop: 14, borderTop: '1px dashed #e0ddd8' }}>
+        Para enviar avisos a este (ou a todos) os profissionais, use a <strong>Central de Notificações</strong> na tela inicial do salão.
+      </p>
     </div>
   )
 }

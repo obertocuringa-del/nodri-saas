@@ -3022,16 +3022,12 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
       </div>
       )}
 
-      {/* Header limpo do profissional (com Voltar ao Início) */}
-      {souProf && (
-        <div className="sticky top-0 z-20 px-4 py-2.5 flex items-center gap-3" style={{ background: 'var(--nodri-surface,#fff)', borderBottom: '1px solid #ece9e2' }}>
-          {tab !== 'inicio' ? (
-            <button onClick={() => setTab('inicio')} className="flex items-center gap-1.5 text-[13px] font-extrabold" style={{ color: '#5b4fcf' }}>
-              <ArrowLeft size={16} /> Início
-            </button>
-          ) : (
-            <span className="font-syne font-bold text-[14px]" style={{ color: '#1a1a1a' }}>✨ Meu Painel</span>
-          )}
+      {/* Profissional: dentro das abas, só o botão Voltar (no Início não mostra nada) */}
+      {souProf && tab !== 'inicio' && (
+        <div className="sticky top-0 z-20 px-4 py-2.5 flex items-center gap-3" style={{ background: '#ffffff', borderBottom: '1px solid #ece9e2' }}>
+          <button onClick={() => setTab('inicio')} className="flex items-center gap-1.5 text-[13px] font-extrabold" style={{ color: '#5b4fcf' }}>
+            <ArrowLeft size={16} /> Voltar ao Início
+          </button>
           <span className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold" style={{ background: '#eef2ff', color: '#4338ca' }}>👁️ Somente leitura</span>
         </div>
       )}
@@ -3076,7 +3072,7 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
       )}
 
       {/* Tabs */}
-      {(() => {
+      {!souProf && (() => {
         const TABS_ALL: [typeof tab, string][] = [
           ['inicio','📊 INÍCIO'],
           ['cadastro','CADASTRO'],

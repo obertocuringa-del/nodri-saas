@@ -85,6 +85,7 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba }:
         .pr-root{font-family:'Segoe UI',system-ui,-apple-system,sans-serif}
         .pr-root *{box-sizing:border-box}
         @keyframes prUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes prGlow{0%,100%{box-shadow:0 0 0 0 rgba(245,158,11,.55)}50%{box-shadow:0 0 0 12px rgba(245,158,11,0)}}
         .pr-anim{animation:prUp .5s cubic-bezier(.2,.7,.3,1) both}
         .pr-avatar{width:54px;height:54px;border-radius:50%;object-fit:cover;background:linear-gradient(135deg,var(--accent),#b89bff);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:20px;flex-shrink:0}
         .pr-bell{width:46px;height:46px;border-radius:14px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--accent);color:#fff}
@@ -110,8 +111,8 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba }:
       </div>
 
       {/* Central de notificações (o salão envia; giram sozinhas) */}
-      <div className="pr-anim" style={{ animationDelay: '.05s', borderRadius: 20, padding: '16px 20px', marginBottom: 22, display: 'flex', alignItems: 'center', gap: 16, background: dark ? '#1b1f2b' : '#ffffff', border: '1px solid var(--bord)', boxShadow: '0 10px 30px rgba(91,79,207,.08)', minHeight: 84 }}>
-        <span className="pr-bell"><Bell size={22} /></span>
+      <div className="pr-anim" style={{ animationDelay: '.05s', borderRadius: 20, padding: '16px 20px', marginBottom: 22, display: 'flex', alignItems: 'center', gap: 16, background: notifAtual ? (dark ? '#3a2f12' : '#fff7e6') : (dark ? '#1b1f2b' : '#ffffff'), border: `1px solid ${notifAtual ? '#f5c97a' : 'var(--bord)'}`, boxShadow: notifAtual ? '0 10px 30px rgba(245,158,11,.18)' : '0 10px 30px rgba(91,79,207,.08)', minHeight: 84 }}>
+        <span className="pr-bell" style={{ background: notifAtual ? '#f59e0b' : 'var(--accent)', animation: notifAtual ? 'prGlow 1.5s ease-in-out infinite' : undefined }}><Bell size={22} /></span>
         <div style={{ flex: 1, minWidth: 0 }}>
           {notifAtual ? (
             <div key={notifIdx} style={{ animation: 'prUp .45s ease both' }}>

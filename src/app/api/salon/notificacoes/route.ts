@@ -44,6 +44,22 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ ok: true, notificacao: nova })
 }
 
+// PUT — edita o texto de uma notificação (somente salão)
+export async function PUT(req: NextRequest) {
+  const sess = await getSessao()
+  if (!sess) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  if (await escritaBloqueadaSub()) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
+  const body = await req.json()
+  const id = String(body?.id || '')
+  const texto = String(body?.texto || '').trim()
+  if (!id || !texto) return NextResponse.json({ error: 'Dados inválidos' }, { status: 400 })
+  const lista = await lerLista(sess.salaoId)
+  const atualizada = lista.map(n => n.id === id ? { ...n, texto, editado_em: Date.now() } : n)
+  const { error } = await supabaseAdmin.from('salao_config').upsert({ salao_id: sess.salaoId, chave: CHAVE, valor: atualizada, atualizado_em: new Date().toISOString() }, { onConflict: 'salao_id,chave' })
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ ok: true })
+}
+
 // DELETE — remove uma notificação por id (somente salão)
 export async function DELETE(req: NextRequest) {
   const sess = await getSessao()
