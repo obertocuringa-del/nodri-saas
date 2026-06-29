@@ -8,6 +8,7 @@ import { ArrowLeft, Save, Loader2, TrendingUp, TrendingDown, BarChart2,
 import ChatWidget from '@/components/salon/ChatWidget'
 import AvaliarProfissional from '@/components/salon/AvaliarProfissional'
 import AcessoProfissional from '@/components/salon/AcessoProfissional'
+import PainelResumoProf from '@/components/salon/PainelResumoProf'
 import toast from 'react-hot-toast'
 
 // Converte o markdown gerado pela IA num HTML estilizado (títulos, negrito real,
@@ -2271,7 +2272,7 @@ export default function PerfilProfissionalPage() {
   const [salvando, setSalvando] = useState(false)
   // Portal do profissional: quando o próprio profissional está logado, tudo fica somente leitura
   const [souProf, setSouProf] = useState(false)
-  useEffect(() => { fetch('/api/auth/me').then(r => r.ok ? r.json() : null).then(d => setSouProf((d?.role || d?.user?.role) === 'profissional')).catch(() => { }) }, [])
+  useEffect(() => { fetch('/api/auth/me').then(r => r.ok ? r.json() : null).then(d => { const ehP = (d?.role || d?.user?.role) === 'profissional'; setSouProf(ehP); if (ehP) setTab('inicio') }).catch(() => { }) }, [])
   // Itens que o salão escolheu ocultar deste profissional (só valem para a visão dele)
   const ocultarProf: Record<string, boolean> = (souProf && prof && (prof as any).acesso_oculto && typeof (prof as any).acesso_oculto === 'object') ? (prof as any).acesso_oculto : {}
   const podeVer = (chave: string) => !(souProf && ocultarProf[chave])
@@ -2283,7 +2284,7 @@ export default function PerfilProfissionalPage() {
   const [endCidade, setEndCidade] = useState('')
   const [endUf, setEndUf] = useState('')
   const [buscandoCep, setBuscandoCep] = useState(false)
-  const [tab, setTab] = useState<'cadastro'|'avaliar'|'desempenho'|'faturamento'|'metas'|'ia'|'dependencia'|'oportunidades'|'bundle'|'clientes-perdidos'|'agendamentos'|'calendario_mkt'|'corrida'|'acoes'>('cadastro')
+  const [tab, setTab] = useState<'inicio'|'cadastro'|'avaliar'|'desempenho'|'faturamento'|'metas'|'ia'|'dependencia'|'oportunidades'|'bundle'|'clientes-perdidos'|'agendamentos'|'calendario_mkt'|'corrida'|'acoes'>('cadastro')
   // ── Agendamentos ─────────────────────────────────────────────────────────────
   const [agendData, setAgendData] = useState<string>(() => { const h = new Date(); return `${String(h.getDate()).padStart(2,'0')}/${String(h.getMonth()+1).padStart(2,'0')}/${h.getFullYear()}` })
   const [agendamentos, setAgendamentos] = useState<any[]>([])
@@ -3018,12 +3019,9 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
           </button>
         )}
         {souProf && (
-          <div className="ml-auto flex items-center gap-2">
-            <a href="/salon/meu-painel" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold" style={{ background: '#7c5cfc', color: '#fff' }}>📊 Painel</a>
-            <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold" style={{ background: '#eef2ff', color: '#4338ca' }}>
-              👁️ Somente leitura
-            </span>
-          </div>
+          <span className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold" style={{ background: '#eef2ff', color: '#4338ca' }}>
+            👁️ Somente leitura
+          </span>
         )}
       </div>
 
@@ -3069,6 +3067,7 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
       {/* Tabs */}
       {(() => {
         const TABS_ALL: [typeof tab, string][] = [
+          ['inicio','📊 INÍCIO'],
           ['cadastro','CADASTRO'],
           ['avaliar','AVALIAR'],
           ['faturamento','FATURAMENTO'],
@@ -3085,7 +3084,11 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
           ['ia','IA'],
         ]
         // Profissional logado: esconde a aba IA e o que o salão marcou para ocultar
-        const TABS = TABS_ALL.filter(([t]) => (souProf && (t === 'ia' || t === 'calendario_mkt' || t === 'avaliar')) ? false : podeVer(t))
+        const TABS = TABS_ALL.filter(([t]) => {
+          if (t === 'inicio') return souProf // aba Início (resumo bonito) só para o profissional
+          if (souProf && (t === 'ia' || t === 'calendario_mkt' || t === 'avaliar')) return false
+          return podeVer(t)
+        })
         const labelAtivo = TABS.find(([t])=>t===tab)?.[1] ?? 'Menu'
         return (
           <div className="bg-nodri-surface border-b border-nodri-border" style={{ padding: '10px 12px' }}>
@@ -3110,6 +3113,13 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
           </div>
         )
       })()}
+
+      {/*  INÍCIO — resumo bonito (só profissional) */}
+      {tab === 'inicio' && (
+        <div className="max-w-6xl mx-auto px-3 sm:px-5 py-4 sm:py-6">
+          <PainelResumoProf pid={id} prof={prof} onIrAba={(a) => setTab(a as any)} />
+        </div>
+      )}
 
       <div className="max-w-5xl mx-auto px-3 sm:px-5 py-4 sm:py-6">
 
