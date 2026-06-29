@@ -60,12 +60,15 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba }:
         setNotifs(Array.isArray(no?.notificacoes) ? no.notificacoes : [])
         setAg(Array.isArray(agr?.agendamentos) ? agr.agendamentos : [])
         const linhasAc = ac?.tabelas?.[0]?.linhas || []
-        setAcoes(linhasAc.map((l: any[]) => ({ campanha: l?.[0]?.t || '', status: l?.[3]?.t || l?.[2]?.t || '' })).filter((x: any) => x.campanha).slice(0, 5))
+        setAcoes(linhasAc
+          .filter((l: any[]) => Array.isArray(l) && l.some(c => (c?.t || '').trim()))
+          .map((l: any[]) => ({ campanha: (l?.[0]?.t || '').trim() || (l.find((c: any) => (c?.t || '').trim())?.t || '').trim(), status: (l?.[3]?.t || l?.[2]?.t || '').trim() }))
+          .slice(0, 5))
         const pList = Array.isArray(pe) ? pe : (Array.isArray(pe?.pendencias) ? pe.pendencias : [])
         setPend(pList.filter((x: any) => !x.resolvido).map((x: any) => ({ titulo: x.titulo || x.descricao || x.texto || 'Pendência', status: x.em_andamento ? 'Em andamento' : 'Pendente' })).slice(0, 5))
         const linhasCo = co?.tabelas?.[0]?.linhas || []
-        const linhaCo = linhasCo.find((l: any[]) => (l?.[2]?.t || '').trim())
-        if (linhaCo) setCorrida({ pontos: linhaCo[2].t, periodo: linhaCo[3]?.t || '' })
+        const linhaCo = linhasCo.find((l: any[]) => Array.isArray(l) && l.some(c => (c?.t || '').trim()))
+        if (linhaCo) setCorrida({ pontos: (linhaCo[2]?.t || linhaCo[1]?.t || '').trim() || '✓', periodo: (linhaCo[3]?.t || '').trim() })
       } catch { }
       setLoading(false)
     })()
@@ -109,10 +112,11 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba }:
 
   // Cards de TODAS as áreas (abas) — respeitam o que o salão ocultou
   const oc: Record<string, boolean> = (prof?.acesso_oculto && typeof prof.acesso_oculto === 'object') ? prof.acesso_oculto : {}
-  const AREAS: { aba: string; label: string; icon: string; ocult?: string }[] = [
+  const AREAS: { aba: string; label: string; icon: string; ocult?: string; scroll?: string }[] = [
     { aba: 'faturamento', label: 'Faturamento', icon: '💰' },
     { aba: 'metas', label: 'Metas', icon: '🎯', ocult: 'metas' },
     { aba: 'agendamentos', label: 'Agendamentos', icon: '📅' },
+    { aba: 'pendencias', label: 'Pendências', icon: '📋', scroll: 'pr-pend' },
     { aba: 'desempenho', label: 'Ocorrências', icon: '⚠️' },
     { aba: 'dependencia', label: 'Dependência', icon: '👥', ocult: 'dependencia' },
     { aba: 'oportunidades', label: 'Oportunidades', icon: '💡', ocult: 'oportunidades' },
@@ -120,6 +124,9 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba }:
     { aba: 'clientes-perdidos', label: 'Clientes Perdidos', icon: '🔎' },
     { aba: 'corrida', label: 'Corrida Interna', icon: '🏆' },
     { aba: 'acoes', label: 'Ações Comerciais', icon: '📣' },
+    { aba: 'avaliar', label: 'Avaliações', icon: '⭐', ocult: 'avaliar' },
+    { aba: 'ia', label: 'IA / Assistente', icon: '🤖' },
+    { aba: 'calendario_mkt', label: 'Calendário MKT', icon: '🗓️' },
     { aba: 'cadastro', label: 'Meu Cadastro', icon: '📝' },
   ]
   const areasVis = AREAS.filter(a => !a.ocult || !oc[a.ocult])
@@ -207,7 +214,7 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba }:
           <h3 style={{ fontSize: 14, fontWeight: 800, margin: '2px 4px 10px', color: 'var(--txt2)' }}>Acessar minhas áreas</h3>
           <div className="pr-areas">
             {areasVis.map(a => (
-              <div key={a.aba} className="pr-area" onClick={() => irAba(a.aba)}>
+              <div key={a.aba} className="pr-area" onClick={() => a.scroll ? document.getElementById(a.scroll)?.scrollIntoView({ behavior: 'smooth', block: 'center' }) : irAba(a.aba)}>
                 <span style={{ fontSize: 22 }}>{a.icon}</span>
                 <span style={{ fontWeight: 700, fontSize: 14 }}>{a.label}</span>
               </div>
@@ -289,7 +296,7 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba }:
             {acoes.length === 0 ? <p style={{ color: 'var(--txt3)', fontSize: 13, margin: 0 }}>Nenhuma ação cadastrada.</p> :
               acoes.map((a, i) => { const [bg, cor] = statusCor(a.status); return <div key={i} className="pr-row"><span style={{ fontSize: 13.5, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.campanha}</span>{a.status && <span className="pr-tag" style={{ background: bg, color: cor }}>{cap(a.status)}</span>}</div> })}
           </section>
-          <section className="pr-card pr-anim" style={{ animationDelay: '.34s' }}>
+          <section id="pr-pend" className="pr-card pr-anim" style={{ animationDelay: '.34s' }}>
             <h3 style={{ margin: '0 0 12px', fontSize: 16, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 8 }}><ClipboardList size={18} color="var(--accent)" /> Pendências</h3>
             {pend.length === 0 ? <p style={{ color: 'var(--txt3)', fontSize: 13, margin: 0 }}>Tudo em dia! 🎉</p> :
               pend.map((p, i) => { const [bg, cor] = statusCor(p.status); return <div key={i} className="pr-row"><span style={{ fontSize: 13.5, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.titulo}</span><span className="pr-tag" style={{ background: bg, color: cor }}>{p.status}</span></div> })}

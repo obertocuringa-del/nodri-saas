@@ -9,11 +9,12 @@ export async function GET(req: NextRequest) {
   if (!chave) return NextResponse.json(null)
   const salaoId = await salaoIdSe(permDaGrade(chave))
   if (!salaoId) return NextResponse.json({ error: 'Sem acesso' }, { status: 403 })
-  // Profissional só lê grades do PRÓPRIO perfil (chave termina com o id dele)
+  // Profissional só lê grades do PRÓPRIO perfil (chave contém o id dele) ou calendários compartilhados
   const sessGet = await getSessao()
   if (sessGet?.role === 'profissional') {
     const pid = sessGet.profissionalId || ''
-    if (!pid || !chave.includes(pid)) return NextResponse.json({ error: 'Sem acesso' }, { status: 403 })
+    const compartilhada = chave === 'calendario' || chave === 'calendario_mkt'
+    if (!compartilhada && (!pid || !chave.includes(pid))) return NextResponse.json({ error: 'Sem acesso' }, { status: 403 })
   }
   const { data } = await supabaseAdmin.from('salao_config').select('valor').eq('salao_id', salaoId).eq('chave', `grid_${chave}`).maybeSingle()
   return NextResponse.json(data?.valor ?? null)

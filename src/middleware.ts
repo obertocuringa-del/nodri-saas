@@ -78,8 +78,10 @@ export async function middleware(request: NextRequest) {
     if (pathname.startsWith('/api/')) {
       // Rotas de autenticação sempre liberadas (me, etc.)
       if (pathname.startsWith('/api/auth/')) return NextResponse.next()
-      // SOMENTE LEITURA: nenhum método de escrita é permitido (GET/HEAD apenas)
-      if (request.method !== 'GET' && request.method !== 'HEAD') return negar()
+      // EXCEÇÃO somente-leitura: a IA do próprio profissional pode gerar (escrita do assistente)
+      const ehIaPropria = pathname === `/api/profissionais/${meuId}/ia-profissional` || pathname.startsWith('/api/ia/')
+      // SOMENTE LEITURA: nenhum método de escrita é permitido (GET/HEAD apenas), exceto a IA própria
+      if (request.method !== 'GET' && request.method !== 'HEAD' && !ehIaPropria) return negar()
       // Nunca pode listar todos os profissionais
       if (pathname === '/api/profissionais' || pathname === '/api/profissionais/') return negar()
       // Em /api/profissionais/<id>/... o id TEM que ser o dele

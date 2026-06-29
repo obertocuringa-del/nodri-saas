@@ -3097,7 +3097,6 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
         // Profissional logado: esconde a aba IA e o que o salão marcou para ocultar
         const TABS = TABS_ALL.filter(([t]) => {
           if (t === 'inicio') return souProf // aba Início (resumo bonito) só para o profissional
-          if (souProf && (t === 'ia' || t === 'calendario_mkt' || t === 'avaliar')) return false
           return podeVer(t)
         })
         const labelAtivo = TABS.find(([t])=>t===tab)?.[1] ?? 'Menu'
