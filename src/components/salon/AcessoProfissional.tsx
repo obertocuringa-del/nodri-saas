@@ -24,6 +24,10 @@ export default function AcessoProfissional({ profId, prof, onSaved }: { profId: 
   const [temSenha, setTemSenha] = useState(false)
   const [oculto, setOculto] = useState<Record<string, boolean>>({})
   const [salvando, setSalvando] = useState(false)
+  // Envio de notificação
+  const [notifTexto, setNotifTexto] = useState('')
+  const [notifAlvo, setNotifAlvo] = useState<'este' | 'todos'>('este')
+  const [notifEnviando, setNotifEnviando] = useState(false)
 
   // Só o salão principal (role 'salon') gerencia acessos
   useEffect(() => {
@@ -122,6 +126,28 @@ export default function AcessoProfissional({ profId, prof, onSaved }: { profId: 
       <button onClick={salvar} disabled={salvando} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '11px 22px', borderRadius: 10, border: 'none', background: '#5b4fcf', color: '#fff', fontSize: 14, fontWeight: 800, cursor: salvando ? 'wait' : 'pointer' }}>
         {salvando ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />} Salvar acesso
       </button>
+
+      {/* Enviar notificação */}
+      <div style={{ marginTop: 18, paddingTop: 16, borderTop: '1px dashed #e0ddd8' }}>
+        <p style={{ fontSize: 13, fontWeight: 800, color: '#1a1a1a', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: 6 }}>🔔 Enviar notificação</p>
+        <textarea value={notifTexto} onChange={e => setNotifTexto(e.target.value)} placeholder="Escreva o aviso que aparecerá no painel do profissional…" rows={2}
+          style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 14, resize: 'vertical', marginBottom: 8 }} />
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+          <select value={notifAlvo} onChange={e => setNotifAlvo(e.target.value as any)} style={{ padding: '9px 10px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13 }}>
+            <option value="este">Só para {nomeProf}</option>
+            <option value="todos">Para todos os profissionais</option>
+          </select>
+          <button disabled={notifEnviando || !notifTexto.trim()} onClick={async () => {
+            setNotifEnviando(true)
+            try {
+              const res = await fetch('/api/salon/notificacoes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ texto: notifTexto.trim(), alvo: notifAlvo === 'todos' ? 'todos' : profId }) })
+              if (res.ok) { toast.success('Notificação enviada!'); setNotifTexto('') } else toast.error('Erro ao enviar')
+            } catch { toast.error('Erro ao enviar') } finally { setNotifEnviando(false) }
+          }} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 18px', borderRadius: 8, border: 'none', background: notifTexto.trim() ? '#16a34a' : '#cbd5e1', color: '#fff', fontSize: 13, fontWeight: 800, cursor: notifTexto.trim() ? 'pointer' : 'not-allowed' }}>
+            {notifEnviando ? <Loader2 size={15} className="animate-spin" /> : '➤'} Enviar
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

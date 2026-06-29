@@ -19,7 +19,12 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba }:
   const [acoes, setAcoes] = useState<{ campanha: string; status: string }[]>([])
   const [pend, setPend] = useState<{ titulo: string; status: string }[]>([])
   const [corrida, setCorrida] = useState<{ pontos: string; periodo: string } | null>(null)
+  const [notifs, setNotifs] = useState<any[]>([])
+  const [notifIdx, setNotifIdx] = useState(0)
   const [loading, setLoading] = useState(true)
+
+  // Notificações giram sozinhas a cada 5s
+  useEffect(() => { if (notifs.length <= 1) return; const t = setInterval(() => setNotifIdx(i => (i + 1) % notifs.length), 5000); return () => clearInterval(t) }, [notifs.length])
 
   useEffect(() => { try { setDark(localStorage.getItem('mp_dark') === '1') } catch { } }, [])
   useEffect(() => { try { localStorage.setItem('mp_dark', dark ? '1' : '0') } catch { } }, [dark])
@@ -41,7 +46,7 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba }:
         const prev = `${prevD.getFullYear()}-${String(prevD.getMonth() + 1).padStart(2, '0')}`
         const hojeISO = hoje.toISOString().slice(0, 10)
 
-        const [p, mt, mm, agr, ac, pe, co] = await Promise.all([
+        const [p, mt, mm, agr, ac, pe, co, no] = await Promise.all([
           profProp ? Promise.resolve(profProp) : fetch(`/api/profissionais/${theId}`).then(r => r.ok ? r.json() : null).catch(() => null),
           fetch(`/api/profissionais/${theId}/metricas?p1_inicio=${prev}&p1_fim=${prev}&p2_inicio=${cur}&p2_fim=${cur}`).then(r => r.ok ? r.json() : null).catch(() => null),
           fetch(`/api/profissionais/${theId}/metas`).then(r => r.ok ? r.json() : null).catch(() => null),
@@ -49,8 +54,10 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba }:
           fetch(`/api/salon/grid?chave=acoes_comerciais_${theId}`).then(r => r.ok ? r.json() : null).catch(() => null),
           fetch(`/api/pendencias?profissional_id=${theId}`).then(r => r.ok ? r.json() : null).catch(() => null),
           fetch(`/api/salon/grid?chave=corrida_interna_${theId}`).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch('/api/salon/notificacoes').then(r => r.ok ? r.json() : null).catch(() => null),
         ])
         if (p) setProf(p); setMetr(mt); setMetas(mm)
+        setNotifs(Array.isArray(no?.notificacoes) ? no.notificacoes : [])
         setAg(Array.isArray(agr?.agendamentos) ? agr.agendamentos : [])
         const linhasAc = ac?.tabelas?.[0]?.linhas || []
         setAcoes(linhasAc.map((l: any[]) => ({ campanha: l?.[0]?.t || '', status: l?.[3]?.t || l?.[2]?.t || '' })).filter((x: any) => x.campanha).slice(0, 5))
@@ -100,6 +107,33 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba }:
 
   const irAba = (aba: string) => { if (onIrAba) onIrAba(aba) }
 
+  // Cards de TODAS as áreas (abas) — respeitam o que o salão ocultou
+  const oc: Record<string, boolean> = (prof?.acesso_oculto && typeof prof.acesso_oculto === 'object') ? prof.acesso_oculto : {}
+  const AREAS: { aba: string; label: string; icon: string; ocult?: string }[] = [
+    { aba: 'faturamento', label: 'Faturamento', icon: '💰' },
+    { aba: 'metas', label: 'Metas', icon: '🎯', ocult: 'metas' },
+    { aba: 'agendamentos', label: 'Agendamentos', icon: '📅' },
+    { aba: 'desempenho', label: 'Ocorrências', icon: '⚠️' },
+    { aba: 'dependencia', label: 'Dependência', icon: '👥', ocult: 'dependencia' },
+    { aba: 'oportunidades', label: 'Oportunidades', icon: '💡', ocult: 'oportunidades' },
+    { aba: 'bundle', label: 'Bundles', icon: '📦' },
+    { aba: 'clientes-perdidos', label: 'Clientes Perdidos', icon: '🔎' },
+    { aba: 'corrida', label: 'Corrida Interna', icon: '🏆' },
+    { aba: 'acoes', label: 'Ações Comerciais', icon: '📣' },
+    { aba: 'cadastro', label: 'Meu Cadastro', icon: '📝' },
+  ]
+  const areasVis = AREAS.filter(a => !a.ocult || !oc[a.ocult])
+
+  const tempoAtras = (em: number) => {
+    if (!em) return ''
+    const s = Math.floor((Date.now() - em) / 1000)
+    if (s < 60) return 'agora'
+    if (s < 3600) return `há ${Math.floor(s / 60)} min`
+    if (s < 86400) return `há ${Math.floor(s / 3600)} h`
+    return `há ${Math.floor(s / 86400)} d`
+  }
+  const notifAtual = notifs[notifIdx] || null
+
   return (
     <div className="pr-root" style={{ ...vars, background: 'var(--bg)', color: 'var(--txt)', borderRadius: 20, padding: 20 }}>
       <style>{`
@@ -125,7 +159,12 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba }:
         .pr-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 0;border-bottom:1px solid var(--bord)}
         .pr-row:last-child{border-bottom:none}
         .pr-avatar{width:54px;height:54px;border-radius:50%;object-fit:cover;background:linear-gradient(135deg,var(--accent),#b89bff);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:20px;flex-shrink:0}
-        @media(max-width:980px){.pr-cards{grid-template-columns:repeat(2,1fr);gap:12px}.pr-grid2{grid-template-columns:1fr;gap:14px}}
+        .pr-areas{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:22px}
+        .pr-area{background:var(--card);border:1px solid var(--bord);border-radius:18px;padding:15px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:transform .2s,box-shadow .2s,border-color .2s}
+        .pr-area:hover{transform:translateY(-4px);box-shadow:0 14px 30px rgba(80,70,160,.16);border-color:var(--accent)}
+        .pr-dot{width:7px;height:7px;border-radius:50%;background:var(--bord);transition:all .3s;cursor:pointer}
+        .pr-dot.on{background:var(--accent);width:20px;border-radius:99px}
+        @media(max-width:980px){.pr-cards{grid-template-columns:repeat(2,1fr);gap:12px}.pr-grid2{grid-template-columns:1fr;gap:14px}.pr-areas{grid-template-columns:repeat(2,1fr)}}
         @media(max-width:560px){.pr-cards{grid-template-columns:1fr}}
       `}</style>
 
@@ -139,14 +178,43 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba }:
         <button onClick={() => setDark(d => !d)} title={dark ? 'Modo claro' : 'Modo escuro'} style={{ width: 42, height: 42, borderRadius: 13, border: '1px solid var(--bord)', background: 'var(--card)', color: 'var(--txt2)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{dark ? <Sun size={18} /> : <Moon size={18} />}</button>
       </div>
 
-      {/* Banner */}
-      <div className="pr-anim" style={{ animationDelay: '.05s', borderRadius: 20, padding: '18px 24px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 16, background: 'linear-gradient(120deg,#efeaff,#f7f0ff 60%,#fdeffb)', border: '1px solid var(--bord)' }}>
+      {/* Central de notificações (o salão envia; giram sozinhas) */}
+      <div className="pr-anim" style={{ animationDelay: '.05s', borderRadius: 20, padding: '18px 24px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 16, background: 'linear-gradient(120deg,#efeaff,#f7f0ff 60%,#fdeffb)', border: '1px solid var(--bord)', minHeight: 84 }}>
+        <span style={{ fontSize: 30, flexShrink: 0, animation: notifs.length ? 'prFloat 2.5s ease-in-out infinite' : 'none' }}>{notifs.length ? '🔔' : '🚀'}</span>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ color: '#6b21a8', fontSize: 13, fontWeight: 600 }}>Foco na meta, confiança no processo</div>
-          <div style={{ color: '#3b0764', fontSize: 19, fontWeight: 900 }}>Você é imbatível!</div>
+          {notifAtual ? (
+            <div key={notifIdx} style={{ animation: 'prUp .45s ease both' }}>
+              <div style={{ color: '#6b21a8', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>Notificação {notifs.length > 1 ? `${notifIdx + 1}/${notifs.length}` : ''} <span style={{ color: '#a78bfa', fontWeight: 600 }}>· {notifAtual.de || 'Salão'} · {tempoAtras(notifAtual.em)}</span></div>
+              <div style={{ color: '#3b0764', fontSize: 17, fontWeight: 800, lineHeight: 1.25 }}>{notifAtual.texto}</div>
+            </div>
+          ) : (
+            <div>
+              <div style={{ color: '#6b21a8', fontSize: 13, fontWeight: 600 }}>Foco na meta, confiança no processo</div>
+              <div style={{ color: '#3b0764', fontSize: 19, fontWeight: 900 }}>Você é imbatível!</div>
+            </div>
+          )}
+          {notifs.length > 1 && (
+            <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+              {notifs.map((_, i) => <span key={i} className={`pr-dot ${i === notifIdx ? 'on' : ''}`} onClick={() => setNotifIdx(i)} />)}
+            </div>
+          )}
         </div>
-        <span style={{ fontSize: 42, animation: 'prFloat 3s ease-in-out infinite' }}>🚀</span>
       </div>
+
+      {/* Acessar todas as áreas */}
+      {onIrAba && (
+        <div className="pr-anim" style={{ animationDelay: '.08s' }}>
+          <h3 style={{ fontSize: 14, fontWeight: 800, margin: '2px 4px 10px', color: 'var(--txt2)' }}>Acessar minhas áreas</h3>
+          <div className="pr-areas">
+            {areasVis.map(a => (
+              <div key={a.aba} className="pr-area" onClick={() => irAba(a.aba)}>
+                <span style={{ fontSize: 22 }}>{a.icon}</span>
+                <span style={{ fontWeight: 700, fontSize: 14 }}>{a.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* KPIs */}
       <div className="pr-cards">
