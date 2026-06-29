@@ -133,7 +133,6 @@ export async function middleware(request: NextRequest) {
       ['/salon/checklist', 'checklist'],
       ['/salon/calendario-mkt', 'calendario_mkt'],
       ['/salon/calendario', 'calendario'],
-      ['/salon/mural', 'mural'],
       ['/salon/consultoria', 'ia'],
       ['/salon/auditoria', 'cfg_auditoria'],
       ['/salon/usuarios', 'cfg_usuarios'],

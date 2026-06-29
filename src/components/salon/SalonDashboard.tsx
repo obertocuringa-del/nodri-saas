@@ -470,7 +470,6 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               { href: '/salon/calendario', label: 'Calendário', chave: 'calendario' },
               { href: '/salon/calendario-mkt', label: 'Calendário de Marketing', chave: 'calendario_mkt' },
               { href: '/salon/notificacoes', label: 'Notificações (Profissionais)', chave: 'profissionais' },
-              { href: '/salon/mural', label: 'Mural de Avisos', chave: 'mural' },
               { href: '/salon/consultoria', label: 'Consultoria IA', chave: 'ia' },
               { href: '/salon/auditoria', label: 'Log de Auditoria', chave: 'cfg_auditoria' },
               { href: '/salon/usuarios', label: 'Usuários & Acessos', chave: 'cfg_usuarios' },
