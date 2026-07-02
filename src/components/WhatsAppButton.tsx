@@ -1,6 +1,18 @@
 'use client'
 
+import { useState, useEffect } from 'react'
+
 export default function WhatsAppButton() {
+  // Oculto no portal do profissional (o suporte é para donos de salão)
+  const [oculto, setOculto] = useState(false)
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (d?.role === 'profissional') setOculto(true) })
+      .catch(() => {})
+  }, [])
+  if (oculto) return null
+
   return (
     <a
       id="whatsapp-float-btn"
