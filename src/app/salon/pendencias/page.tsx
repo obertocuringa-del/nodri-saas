@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { Loader2, Trash2, Plus, ArrowLeft, Calendar, Link2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
+import WhatsPendencia from '@/components/salon/WhatsPendencia'
 
 interface Profissional {
   id: string
@@ -205,7 +206,7 @@ export default function PendenciasPage() {
               </div>
             </div>
           ) : (
-            <p className="text-[12px] text-nodri-t1 leading-relaxed">{p.mensagem}</p>
+            <p className="text-[12px] text-nodri-t1 leading-relaxed" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{p.mensagem}</p>
           )}
           {p.resolvido_em && (
             <p className="text-[9px] text-nodri-t3 mt-1">Resolvida em {new Date(p.resolvido_em).toLocaleDateString('pt-BR')}</p>
@@ -229,6 +230,7 @@ export default function PendenciasPage() {
         <div className="flex items-center gap-2 shrink-0">
           {!p.resolvido && (
             <>
+              <WhatsPendencia mensagem={p.mensagem} />
               <button
                 onClick={() => marcarResolvida(p.id, true)}
                 className="text-[10px] px-2 py-1 rounded-lg bg-green-500/10 text-green-400 border border-green-500/20 hover:bg-green-500/20 transition-colors">
