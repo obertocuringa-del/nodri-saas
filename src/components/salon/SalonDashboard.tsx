@@ -141,23 +141,12 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
   const [buscaFoco, setBuscaFoco] = useState(false)
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
   const [configPrograma, setConfigPrograma] = useState<{ link: string; link_atualizacao: string; atualizacao_ativa: boolean } | null>(null)
-  const [alertasIA, setAlertasIA] = useState<{ tipo: string; titulo: string; mensagem: string; icone: string; pct?: number; diasRestantes?: number }[]>([])
-  const [alertasDismissed, setAlertasDismissed] = useState<Set<string>>(new Set())
-  const [mostrarAlertasIA, setMostrarAlertasIA] = useState(false)
-
   useEffect(() => {
     fetch('/api/config/programa')
       .then(r => r.json())
       .then(d => {
         if (d && typeof d === 'object' && !Array.isArray(d)) setConfigPrograma(d)
       })
-      .catch(() => {})
-  }, [])
-
-  useEffect(() => {
-    fetch('/api/ia/alertas')
-      .then(r => r.json())
-      .then(d => { if (d.alertas) setAlertasIA(d.alertas) })
       .catch(() => {})
   }, [])
   const TABS_FIXAS = ['Todos os Módulos', 'Manual do Usuário', 'Dicas Nodri', 'Feedback de Cliente', 'Feedback Profissional']
@@ -734,91 +723,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
           )}
           </div>
 
-          {/* Alertas do dia — card único pulsando com dropdown */}
-          {alertasIA.filter(a => !alertasDismissed.has(a.titulo)).length > 0 && (() => {
-            const ativos = alertasIA.filter(a => !alertasDismissed.has(a.titulo))
-            const temCritico = ativos.some(a => a.tipo === 'critico')
-            const pulseColor = temCritico ? '#ef4444' : '#f59e0b'
 
-            return (
-              <div style={{ padding: '0 24px 28px', position: 'relative' }}>
-                {/* Card pulsando */}
-                <button
-                  onClick={() => setMostrarAlertasIA(v => !v)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 10,
-                    background: '#faf9f7', border: `1.5px solid ${pulseColor}40`,
-                    borderRadius: 12, padding: '10px 16px', cursor: 'pointer',
-                    boxShadow: mostrarAlertasIA ? `0 0 0 3px ${pulseColor}20` : 'none',
-                    transition: 'box-shadow 0.2s',
-                  }}>
-                  {/* Ponto pulsando */}
-                  <span style={{ position: 'relative', display: 'inline-flex', width: 10, height: 10, flexShrink: 0 }}>
-                    <span style={{
-                      position: 'absolute', inset: 0, borderRadius: '50%',
-                      background: pulseColor, opacity: 0.6,
-                      animation: 'ping 1.5s cubic-bezier(0,0,0.2,1) infinite',
-                    }}/>
-                    <span style={{ position: 'relative', borderRadius: '50%', width: 10, height: 10, background: pulseColor }}/>
-                  </span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#1a1a1a' }}>⚡ Alertas do dia</span>
-                  <span style={{ fontSize: 11, fontWeight: 600, background: `${pulseColor}20`, color: pulseColor, padding: '2px 10px', borderRadius: 99 }}>
-                    {ativos.length}
-                  </span>
-                  <span style={{ fontSize: 12, color: '#6b6860', marginLeft: 4 }}>{mostrarAlertasIA ? '▲' : '▼'}</span>
-                </button>
-
-                {/* Dropdown */}
-                {mostrarAlertasIA && (
-                  <div style={{
-                    position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50,
-                    maxWidth: 460, maxHeight: 420, overflowY: 'auto',
-                    background: '#faf9f7', border: '0.5px solid #f0ede8',
-                    borderRadius: 14, boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-                    marginTop: 6,
-                  }}>
-                    <div style={{ padding: '10px 16px', borderBottom: '0.5px solid #f0ede8', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: 12, fontWeight: 600, color: '#6b6860' }}>{ativos.length} alertas ativos</span>
-                      <button onClick={() => setMostrarAlertasIA(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b6860', fontSize: 16 }}>✕</button>
-                    </div>
-                    {ativos.map(alerta => {
-                      const isCritico = alerta.tipo === 'critico'
-                      const isInfo = alerta.tipo === 'info'
-                      const accentColor = isCritico ? '#ef4444' : isInfo ? '#22c55e' : '#f59e0b'
-                      const pillBg = isCritico ? 'rgba(239,68,68,0.12)' : isInfo ? 'rgba(34,197,94,0.12)' : 'rgba(245,158,11,0.12)'
-                      const pillColor = isCritico ? '#f87171' : isInfo ? '#4ade80' : '#fbbf24'
-                      const pillLabel = isCritico ? 'Crítico' : isInfo ? 'Meta batida' : 'Risco'
-                      return (
-                        <div key={alerta.titulo} style={{
-                          padding: '10px 16px', borderBottom: '0.5px solid #f0ede8',
-                          borderLeft: `3px solid ${accentColor}`, display: 'flex', flexDirection: 'column', gap: 6,
-                        }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <span style={{ fontSize: 12, fontWeight: 600, color: '#1a1a1a', flex: 1 }}>{alerta.titulo}</span>
-                            <span style={{ fontSize: 10, background: pillBg, color: pillColor, padding: '1px 7px', borderRadius: 99, flexShrink: 0 }}>{pillLabel}</span>
-                            <button onClick={() => setAlertasDismissed(prev => new Set([...prev, alerta.titulo]))}
-                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b6860', fontSize: 13, padding: '0 0 0 4px' }}>✕</button>
-                          </div>
-                          {alerta.pct !== undefined && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                              <div style={{ flex: 1, height: 4, background: '#f0ede8', borderRadius: 99, overflow: 'hidden' }}>
-                                <div style={{ width: `${Math.min(alerta.pct, 100)}%`, height: '100%', background: accentColor, borderRadius: 99 }}/>
-                              </div>
-                              <span style={{ fontSize: 11, color: '#6b6860', minWidth: 28, textAlign: 'right' }}>{alerta.pct}%</span>
-                            </div>
-                          )}
-                          <div style={{ fontSize: 11, color: '#6b6860' }}>
-                            {alerta.diasRestantes !== undefined ? `📅 ${alerta.diasRestantes} dias restantes` : alerta.mensagem}
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-                <style>{`@keyframes ping{75%,100%{transform:scale(2);opacity:0}}`}</style>
-              </div>
-            )
-          })()}
         </main>
       </div>
       <ChatWidget />
