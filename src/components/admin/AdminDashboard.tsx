@@ -359,6 +359,32 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
     setTimeout(() => { window.location.href = '/salon' }, 800)
   }
 
+  // ── SUITE NODRI: os 4 módulos do app desktop aparecem como um único card ──
+  const SUITE_NODRI_NOMES = ['confirmar agendamento', 'enviar feedback', 'enviar lista', 'enviar lista c/ arquivo']
+  const ehModuloSuite = (nome: string) => SUITE_NODRI_NOMES.includes((nome || '').toLowerCase().trim())
+  const modulosSuite = localModulos.filter(m => ehModuloSuite(m.nome))
+  const modulosSemSuite = localModulos.filter(m => !ehModuloSuite(m.nome))
+  const suiteEmManutencao = modulosSuite.some(m => !!m.em_manutencao)
+
+  async function toggleManutencaoSuite() {
+    const novoEstado = !suiteEmManutencao
+    setTogglingManutencao('suite-nodri')
+    try {
+      for (const m of modulosSuite) {
+        await fetch(`/api/modulos/${m.id}/manutencao`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ em_manutencao: novoEstado }),
+        })
+      }
+      setLocalModulos(prev => prev.map(m => ehModuloSuite(m.nome) ? { ...m, em_manutencao: novoEstado } : m))
+      toast.success(novoEstado ? 'Suite NODRI em manutenção' : 'Suite NODRI liberada!')
+    } catch {
+      toast.error('Erro de conexão ao alterar manutenção')
+    }
+    setTogglingManutencao(null)
+  }
+
   async function toggleManutencao(modulo: Modulo) {
     setTogglingManutencao(modulo.id)
     const novoEstado = !modulo.em_manutencao
@@ -1021,7 +1047,24 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                 </div>
                 <p className="text-[11px] text-nodri-t3 mb-4">Ative o modo manutenção para bloquear temporariamente um módulo para todos os salões</p>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                  {localModulos.map(m => (
+                  {modulosSuite.length > 0 && (
+                    <div className={`p-3 border rounded-xl transition-all ${suiteEmManutencao ? 'border-nodri-red/40 bg-nodri-red/5' : 'border-nodri-cyan/40 bg-nodri-cyan/5'}`}>
+                      <div className="flex items-start justify-between mb-2 gap-1">
+                        <div className="min-w-0">
+                          <div className="font-bold text-[10px] uppercase leading-tight truncate">🚀 Suite NODRI</div>
+                          <div className="text-[9px] text-nodri-t3">Confirmar Agend. · Feedback · Lista · Lista c/ Arquivo</div>
+                        </div>
+                        {suiteEmManutencao && <span className="text-[8px] bg-nodri-red text-gray-900 px-1.5 py-0.5 rounded font-bold shrink-0">MANUTENÇÃO</span>}
+                      </div>
+                      <div className="flex gap-1 mt-2">
+                        <button onClick={toggleManutencaoSuite}
+                          className={`flex-1 py-1 text-[9px] font-bold rounded border transition-all ${!suiteEmManutencao ? 'border-nodri-red/30 text-nodri-red bg-nodri-red/5 hover:bg-nodri-red/15' : 'border-nodri-green/30 text-nodri-green bg-nodri-green/5 hover:bg-nodri-green/15'}`}>
+                          {!suiteEmManutencao ? <><Wrench size={9} /> Manutenção</> : <><CheckCircle size={9} /> Encerrar</>}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {modulosSemSuite.map(m => (
                     <div key={m.id} className={`p-3 border rounded-xl transition-all ${m.em_manutencao ? 'border-nodri-red/40 bg-nodri-red/5' : 'border-nodri-border bg-nodri-surface'}`}>
                       <div className="flex items-start justify-between mb-2 gap-1">
                         <div className="min-w-0">
@@ -1049,9 +1092,9 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
               {/* Stats */}
               <div className="grid grid-cols-3 gap-3">
                 {[
-                  { label: 'Total de Módulos', value: localModulos.length, icon: <Settings size={22} /> },
-                  { label: 'Ativos', value: localModulos.filter(m => !m.em_manutencao).length, icon: <CheckCircle size={22} /> },
-                  { label: 'Em Manutenção', value: localModulos.filter(m => !!m.em_manutencao).length, icon: <Wrench size={22} /> },
+                  { label: 'Total de Módulos', value: modulosSemSuite.length + (modulosSuite.length > 0 ? 1 : 0), icon: <Settings size={22} /> },
+                  { label: 'Ativos', value: modulosSemSuite.filter(m => !m.em_manutencao).length + (modulosSuite.length > 0 && !suiteEmManutencao ? 1 : 0), icon: <CheckCircle size={22} /> },
+                  { label: 'Em Manutenção', value: modulosSemSuite.filter(m => !!m.em_manutencao).length + (suiteEmManutencao ? 1 : 0), icon: <Wrench size={22} /> },
                 ].map(s => (
                   <div key={s.label} className="nodri-card p-4 text-center">
                     <div className="flex justify-center mb-1 text-nodri-t2">{s.icon}</div>

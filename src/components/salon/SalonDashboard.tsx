@@ -255,11 +255,46 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [busca])
 
-  const modulosFiltrados = modulos.filter(m => {
+  // ── SUITE NODRI: junta os 4 módulos do app desktop em um único card ──────
+  const SUITE_NODRI_NOMES = ['confirmar agendamento', 'enviar feedback', 'enviar lista', 'enviar lista c/ arquivo']
+  const ehModuloSuite = (nome: string) => SUITE_NODRI_NOMES.includes((nome || '').toLowerCase().trim())
+  const modulosSuite = modulos.filter(m => ehModuloSuite(m.nome))
+  const moduloSuiteUnificado: ModuloComStatus | null = modulosSuite.length > 0 ? {
+    ...modulosSuite[0],
+    id: 'suite-nodri',
+    nome: 'Suite NODRI',
+    descricao: 'Confirmar Agendamento, Enviar Feedback, Enviar Lista e Enviar Lista c/ Arquivo — tudo em um só aplicativo.',
+    versao: '1.0',
+    habilitado: modulosSuite.some(m => m.habilitado),
+    em_manutencao: modulosSuite.some(m => !!m.em_manutencao),
+    msg_manutencao: modulosSuite.find(m => !!m.em_manutencao)?.msg_manutencao,
+  } : null
+
+  // Lista exibida: suite no lugar do primeiro dos 4; os outros 3 saem da grade
+  const modulosBase: ModuloComStatus[] = (() => {
+    if (!moduloSuiteUnificado) return modulos
+    const lista: ModuloComStatus[] = []
+    let inserido = false
+    for (const m of modulos) {
+      if (ehModuloSuite(m.nome)) {
+        if (!inserido) { lista.push(moduloSuiteUnificado); inserido = true }
+      } else lista.push(m)
+    }
+    return lista
+  })()
+
+  // Contadores exibidos consideram a Suite NODRI como 1 módulo só
+  const totalModulosExibidos = modulosBase.length
+  const totalAtivosExibidos = modulosBase.filter(m => m.habilitado).length
+
+  const modulosFiltrados = modulosBase.filter(m => {
     // FIX: combinação correta de filtro status + busca por nome
     const passaFiltro = filtro === 'ativos' ? m.habilitado : filtro === 'bloqueados' ? !m.habilitado : true
     const passaBusca = !busca || m.nome.toLowerCase().includes(busca.toLowerCase())
-    const passaPermissao = pode(chaveModulo(m.nome))
+    // Suite: visível se o usuário tiver permissão em qualquer um dos 4 módulos
+    const passaPermissao = m.id === 'suite-nodri'
+      ? modulosSuite.some(s => pode(chaveModulo(s.nome)))
+      : pode(chaveModulo(m.nome))
     return passaFiltro && passaBusca && passaPermissao
   })
 
@@ -319,6 +354,16 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
         style: { background: '#fff0f0', color: '#ff4444', border: '1px solid #ff4444', fontWeight: 'bold' },
         duration: 4000,
       })
+      return
+    }
+    // Suite NODRI: abre o aplicativo instalado via protocolo nodri://
+    if (modulo.id === 'suite-nodri') {
+      if (!modulo.habilitado) {
+        toast('Entre em contato para ativar este módulo.')
+        return
+      }
+      window.location.href = 'nodri://abrir'
+      toast('Abrindo a Suite NODRI... Se não abrir, instale o aplicativo.', { icon: '🚀', duration: 5000 })
       return
     }
     const webUrl = getModuloWebUrl(modulo.nome)
@@ -519,7 +564,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               </button>
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <h1 className="font-syne font-bold text-[13px] text-nodri-t1 truncate">Módulos</h1>
-                <span className="text-[11px] text-nodri-t2 hidden sm:inline"><span className="text-nodri-cyan font-bold">{totalAtivos}</span>/{totalModulos}</span>
+                <span className="text-[11px] text-nodri-t2 hidden sm:inline"><span className="text-nodri-cyan font-bold">{totalAtivosExibidos}</span>/{totalModulosExibidos}</span>
               </div>
               {configPrograma?.link && (
                 <div className="hidden md:flex items-center gap-2">
@@ -561,7 +606,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                 )}
               </div>
               <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-nodri-cyan/7 border border-nodri-cyan/17 rounded-lg text-[10.5px] text-nodri-cyan font-bold">
-                <CheckCircle size={12} />{totalAtivos}/{totalModulos}
+                <CheckCircle size={12} />{totalAtivosExibidos}/{totalModulosExibidos}
               </div>
             </div>
           </div>
