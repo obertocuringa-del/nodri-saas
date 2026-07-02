@@ -82,11 +82,50 @@ export default function ListaPrecoServicos({ chave = 'precos_servicos', titulo =
 
   function imprimir() {
     const esc = (v: any) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    const body = itens.map((it, i) => `<tr style="background:${i % 2 ? '#fffde7' : '#fff'}"><td>${esc(it.nome)}</td><td style="text-align:right;font-weight:700">${esc(it.valor)}</td></tr>`).join('')
-    const cab = logo ? `<img src="${logo}" style="max-height:64px"/>` : ''
-    const css = `@page{size:A4 portrait;margin:14mm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;font-size:12px}.hd{text-align:center;margin-bottom:10px}h1{text-align:center;font-size:22px;font-weight:900;margin-bottom:12px}table{width:100%;border-collapse:collapse}td{border:1px solid #999;padding:7px 12px;font-size:13px}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}`
-    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${esc(titulo)}</title><style>${css}</style></head><body><div class="hd">${cab}</div><h1>${esc(titulo.toUpperCase())}</h1><table><tbody>${body}</tbody></table><script>window.onload=function(){window.print()}</script></body></html>`
-    const w = window.open('', '_blank', 'width=800,height=700'); if (!w) return; w.document.write(html); w.document.close(); w.focus()
+    // impressão no MESMO visual dos cards da tela
+    const cards = itens.map(it => {
+      const cor = corDoNome(it.nome)
+      return `<div class="card" style="border-top-color:${cor.fg}">
+        <div class="topo">
+          <span class="av" style="background:${cor.bg};color:${cor.fg}">${esc(iniciais(it.nome))}</span>
+          <span class="nm">${esc(it.nome)}</span>
+        </div>
+        <div class="val" style="background:${cor.bg}">
+          <span class="vl" style="color:${cor.fg}">VALOR</span>
+          <b style="color:${cor.fg}">${esc(it.valor || '—')}</b>
+        </div>
+      </div>`
+    }).join('')
+    const cab = logo ? `<img src="${logo}" class="logo"/>` : `<div class="brand">NODRI</div>`
+    const hoje = new Date().toLocaleDateString('pt-BR')
+    const css = `
+@page{size:A4 portrait;margin:12mm}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.hd{display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid #5b4fcf;padding-bottom:10px;margin-bottom:6px}
+.logo{max-height:58px;max-width:200px;object-fit:contain}
+.brand{font-size:24px;font-weight:900;color:#5b4fcf;letter-spacing:1px}
+.hd .dt{font-size:10px;color:#777;text-align:right}
+h1{text-align:center;font-size:19px;font-weight:900;color:#1a1a2e;margin:10px 0 2px;text-transform:uppercase;letter-spacing:.5px}
+.sub{text-align:center;font-size:10px;color:#888;margin-bottom:14px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.card{border:1px solid #e5e2db;border-top:3px solid #5b4fcf;border-radius:10px;padding:8px 9px;break-inside:avoid;background:#fff}
+.topo{display:flex;align-items:center;gap:7px;margin-bottom:7px}
+.av{width:26px;height:26px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:10px;flex-shrink:0}
+.nm{font-weight:700;font-size:10.5px;line-height:1.25;word-break:break-word}
+.val{display:flex;align-items:center;justify-content:space-between;border-radius:8px;padding:5px 9px}
+.vl{font-size:8px;font-weight:800;letter-spacing:.5px}
+.val b{font-size:12.5px;font-weight:800}
+.ft{margin-top:14px;text-align:center;font-size:9px;color:#aaa;border-top:1px solid #eee;padding-top:8px}
+@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}`
+    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${esc(titulo)}</title><style>${css}</style></head><body>
+<div class="hd">${cab}<div class="dt"><b>${esc(titulo)}</b><br>${hoje}</div></div>
+<h1>${esc(titulo.toUpperCase())}</h1>
+<div class="sub">${itens.length} serviços · valores vigentes em ${hoje}</div>
+<div class="grid">${cards}</div>
+<div class="ft">Documento gerado pelo Sistema NODRI · ${hoje}</div>
+<script>window.onload=function(){window.print()}</script></body></html>`
+    const w = window.open('', '_blank', 'width=1000,height=700'); if (!w) return; w.document.write(html); w.document.close(); w.focus()
   }
 
   return (
