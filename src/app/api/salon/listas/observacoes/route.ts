@@ -26,17 +26,28 @@ export async function POST(req: NextRequest) {
     .limit(1)
     .maybeSingle()
 
+  // profissional_id da resposta referencia feedback_prof_profissionais (NÃO a
+  // tabela profissionais das listas) — casa pelo nome; sem par, vai null
+  const { data: profsFb } = await supabaseAdmin
+    .from('feedback_prof_profissionais')
+    .select('id, nome')
+    .eq('salao_id', salaoId)
+  const idPorNome = new Map((profsFb || []).map((p: any) => [String(p.nome).trim().toUpperCase(), p.id]))
+
   const rows = observacoes
     .filter((o: any) => o && String(o.profissional_nome || '').trim() && String(o.descricao || '').trim())
-    .map((o: any) => ({
-      formulario_id: form?.id || null,
-      salao_id: salaoId,
-      profissional_id: o.profissional_id || null,
-      profissional_nome: String(o.profissional_nome).trim().toUpperCase(),
-      tipo: o.tipo === 'positivo' ? 'positivo' : 'negativo',
-      ocorrido_descricao: `LISTA DE ${String(lista_label || '').trim().toUpperCase()}`.trim(),
-      descricao: String(o.descricao).trim(),
-    }))
+    .map((o: any) => {
+      const nome = String(o.profissional_nome).trim().toUpperCase()
+      return {
+        formulario_id: form?.id || null,
+        salao_id: salaoId,
+        profissional_id: idPorNome.get(nome) || null,
+        profissional_nome: nome,
+        tipo: o.tipo === 'positivo' ? 'positivo' : 'negativo',
+        ocorrido_descricao: `LISTA DE ${String(lista_label || '').trim().toUpperCase()}`.trim(),
+        descricao: String(o.descricao).trim(),
+      }
+    })
 
   if (rows.length === 0) return NextResponse.json({ error: 'Preencha profissional e descrição' }, { status: 400 })
 
