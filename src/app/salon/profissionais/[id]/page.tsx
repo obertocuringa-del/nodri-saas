@@ -4,7 +4,7 @@ import CalendarioEditavel from '@/components/salon/CalendarioEditavel'
 import GridEditavel, { cel } from '@/components/salon/GridEditavel'
 import { useRouter, useParams } from 'next/navigation'
 import { ArrowLeft, Save, Loader2, TrendingUp, TrendingDown, BarChart2,
-  MessageSquare, CheckSquare, Square, AlertTriangle } from 'lucide-react'
+  MessageSquare, CheckSquare, Square, AlertTriangle, MessageCircle } from 'lucide-react'
 import ChatWidget from '@/components/salon/ChatWidget'
 import AvaliarProfissional from '@/components/salon/AvaliarProfissional'
 import AcessoProfissional from '@/components/salon/AcessoProfissional'
@@ -1633,7 +1633,63 @@ function BlocoDiagnosticoResumido({ prof, form, metricas, p1, p2, fidel }: {
   )
 }
 
-//  PendenciasLateral — painel compacto para a aba Dados Cadastrais 
+//  WhatsPendencia — botão WhatsApp por pendência: abre lista dos profissionais
+//  cadastrados (com telefone) e envia o texto da pendência
+function WhatsPendencia({ mensagem }: { mensagem: string }) {
+  const [open, setOpen] = useState(false)
+  const [contatos, setContatos] = useState<{ id: string; nome: string; telefone: string }[]>([])
+  const [carregado, setCarregado] = useState(false)
+
+  async function abrir() {
+    setOpen(o => !o)
+    if (carregado) return
+    setCarregado(true)
+    try {
+      const arr = await fetch('/api/profissionais').then(r => r.ok ? r.json() : [])
+      const lista = (Array.isArray(arr) ? arr : []).map((p: any) => {
+        let tel = p.telefone || ''
+        if (!tel) { try { tel = JSON.parse(p.contato_responsavel || '{}').tel || '' } catch { /* */ } }
+        return { id: p.id, nome: p.apelido || p.nome_completo || '—', telefone: tel }
+      }).filter((c: any) => c.telefone)
+      setContatos(lista)
+    } catch { /* */ }
+  }
+
+  function enviar(c: { nome: string; telefone: string }) {
+    const fone = String(c.telefone).replace(/\D/g, '')
+    const numero = fone.startsWith('55') ? fone : '55' + fone
+    window.open(`https://wa.me/${numero}?text=${encodeURIComponent(`📋 *Pendência do salão:*\n\n${mensagem}`)}`, '_blank')
+    setOpen(false)
+  }
+
+  return (
+    <div className="relative shrink-0">
+      <button onClick={abrir} title="Enviar por WhatsApp"
+        style={{ width: 28, height: 28, borderRadius: 8, border: 'none', background: '#25D366', color: '#fff', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+        <MessageCircle size={14} />
+      </button>
+      {open && (
+        <>
+          <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />
+          <div style={{ position: 'absolute', top: '110%', right: 0, zIndex: 50, background: '#fff', border: '1px solid #e0ddd8', borderRadius: 10, boxShadow: '0 10px 30px rgba(0,0,0,.18)', minWidth: 220, maxHeight: 260, overflowY: 'auto', padding: 6 }}>
+            <div style={{ fontSize: 10, fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '.4px', padding: '4px 8px' }}>Enviar para...</div>
+            {!carregado || contatos.length === 0
+              ? <div style={{ padding: 10, fontSize: 12, color: '#9ca3af' }}>{carregado ? 'Nenhum profissional com telefone cadastrado.' : 'Carregando...'}</div>
+              : contatos.map(c => (
+                <button key={c.id} onClick={() => enviar(c)}
+                  style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 10px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 12.5, borderRadius: 6, color: '#1a1a1a' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = '#f0fdf4')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                  {c.nome} <span style={{ color: '#9ca3af', fontSize: 11 }}>· {c.telefone}</span>
+                </button>
+              ))}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+//  PendenciasLateral — painel compacto para a aba Dados Cadastrais
 function PendenciasLateral({ profissionalId }: { profissionalId: string }) {
   const [pendencias, setPendencias] = useState<Array<{
     id: string; mensagem: string; data_limite: string | null
@@ -1692,18 +1748,21 @@ function PendenciasLateral({ profissionalId }: { profissionalId: string }) {
           {abertas.map(p => (
             <div key={p.id} className="rounded-xl p-3 border space-y-1.5"
               style={{ background:'#ffffff', borderColor:'#e0ddd8' }}>
-              <p className="text-[11px] text-nodri-t1 leading-snug">{p.mensagem}</p>
+              <p className="text-[11px] text-nodri-t1 leading-snug" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{p.mensagem}</p>
               <div className="flex items-center justify-between gap-2">
                 {p.data_limite && (
                   <span className="text-[9px] text-nodri-t3">
                     Limite: {new Date(p.data_limite + 'T12:00:00').toLocaleDateString('pt-BR')}
                   </span>
                 )}
-                <button
-                  onClick={() => marcarFeito(p.id)}
-                  className="ml-auto text-[10px] px-2.5 py-1 rounded-lg bg-green-500/10 text-green-400 border border-green-500/20 hover:bg-green-500/20 transition-colors font-semibold">
-                   Feito
-                </button>
+                <div className="ml-auto flex items-center gap-2">
+                  <WhatsPendencia mensagem={p.mensagem} />
+                  <button
+                    onClick={() => marcarFeito(p.id)}
+                    className="text-[10px] px-2.5 py-1 rounded-lg bg-green-500/10 text-green-400 border border-green-500/20 hover:bg-green-500/20 transition-colors font-semibold">
+                     Feito
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -1722,7 +1781,7 @@ function PendenciasLateral({ profissionalId }: { profissionalId: string }) {
               {resolvidas.map(p => (
                 <div key={p.id} className="rounded-xl p-2.5 border"
                   style={{ background: 'rgba(34,197,94,0.04)', borderColor: 'rgba(34,197,94,0.12)' }}>
-                  <p className="text-[10px] text-nodri-t3 line-through">{p.mensagem}</p>
+                  <p className="text-[10px] text-nodri-t3 line-through" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{p.mensagem}</p>
                   {p.resolvido_em && (
                     <p className="text-[9px] text-nodri-t3/60 mt-0.5">
                       {new Date(p.resolvido_em).toLocaleDateString('pt-BR')}
@@ -1866,9 +1925,10 @@ function AbaPendencias({ profissionalId }: { profissionalId: string }) {
                     {isVencida(p) && <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20">VENCIDO</span>}
                     {p.data_limite && <span className="text-[9px] text-nodri-t3">Limite: {new Date(p.data_limite + 'T12:00:00').toLocaleDateString('pt-BR')}</span>}
                   </div>
-                  <p className="text-[12px] text-nodri-t1">{p.mensagem}</p>
+                  <p className="text-[12px] text-nodri-t1" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{p.mensagem}</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
+                  <WhatsPendencia mensagem={p.mensagem} />
                   <button
                     onClick={() => { setEditandoData(p.id); setNovaData(p.data_limite || '') }}
                     className="text-[10px] px-2 py-1 rounded-lg bg-nodri-surface border border-nodri-border text-nodri-t3 hover:text-nodri-t1 transition-colors">
@@ -1907,7 +1967,7 @@ function AbaPendencias({ profissionalId }: { profissionalId: string }) {
             <div className="space-y-2 mt-2">
               {resolvidas.map(p => (
                 <div key={p.id} className="rounded-xl p-3 border bg-green-500/5 border-green-500/15">
-                  <p className="text-[11px] text-nodri-t2 line-through">{p.mensagem}</p>
+                  <p className="text-[11px] text-nodri-t2 line-through" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{p.mensagem}</p>
                   {p.resolvido_em && <p className="text-[9px] text-nodri-t3 mt-0.5">Resolvida em {new Date(p.resolvido_em).toLocaleDateString('pt-BR')}</p>}
                 </div>
               ))}
