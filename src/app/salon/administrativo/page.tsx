@@ -473,10 +473,13 @@ function ListaServico({ servico, label, profsSalao, onMensagem }: { servico: str
             <div key={o.id} style={{ border: o.enviado ? '1px solid #bbf7d0' : '1px solid #e8e6e0', background: o.enviado ? '#f0fdf4' : '#faf9f7', borderRadius: 10, padding: 12, marginBottom: 10 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
                 <select value={o.profissional_id} disabled={!!o.enviado}
-                  onChange={e => { const p = profsSalao.find(x => x.id === e.target.value); updObs(o.id, { profissional_id: e.target.value, profissional_nome: p?.nome || '' }) }}
+                  onChange={e => { const p = doc.colunas.find(x => x.id === e.target.value); updObs(o.id, { profissional_id: e.target.value, profissional_nome: p?.nome || '' }) }}
                   style={{ padding: '8px 10px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13, fontWeight: 700, minWidth: 200, background: '#fff', cursor: o.enviado ? 'default' : 'pointer' }}>
                   <option value="">Selecione o profissional...</option>
-                  {profsSalao.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
+                  {/* dinâmico: só quem está NESTA lista (colunas acima) */}
+                  {doc.colunas.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                  {/* se o selecionado saiu da lista, mantém visível para não perder o rascunho */}
+                  {o.profissional_id && !doc.colunas.some(c => c.id === o.profissional_id) && <option value={o.profissional_id}>{o.profissional_nome}</option>}
                 </select>
                 <div style={{ display: 'flex', gap: 4 }}>
                   <button onClick={() => updObs(o.id, { tipo: 'positivo' })} disabled={!!o.enviado}
