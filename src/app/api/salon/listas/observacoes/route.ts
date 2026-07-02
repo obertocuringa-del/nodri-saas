@@ -51,7 +51,8 @@ export async function POST(req: NextRequest) {
 
   if (rows.length === 0) return NextResponse.json({ error: 'Preencha profissional e descrição' }, { status: 400 })
 
-  const { error } = await supabaseAdmin.from('feedback_prof_respostas').insert(rows)
+  // devolve os ids criados (na mesma ordem) para permitir editar/excluir depois
+  const { data: inseridas, error } = await supabaseAdmin.from('feedback_prof_respostas').insert(rows).select('id')
   if (error) {
     // banco pode exigir vínculo com formulário — orienta em vez de erro técnico
     if (!form && /formulario/i.test(error.message)) {
@@ -59,5 +60,5 @@ export async function POST(req: NextRequest) {
     }
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
-  return NextResponse.json({ ok: true, enviadas: rows.length })
+  return NextResponse.json({ ok: true, enviadas: rows.length, ids: (inseridas || []).map((r: any) => r.id) })
 }

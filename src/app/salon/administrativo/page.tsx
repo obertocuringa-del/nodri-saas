@@ -26,7 +26,7 @@ const ABA_CHAVE: Record<string, string> = {
 
 interface ProfSalao { id: string; nome: string; telefone: string }
 interface Coluna { id: string; nome: string; telefone: string }
-interface Obs { id: string; profissional_id: string; profissional_nome: string; tipo: 'positivo' | 'negativo'; texto: string; enviado?: boolean; criado_em?: string }
+interface Obs { id: string; profissional_id: string; profissional_nome: string; tipo: 'positivo' | 'negativo'; texto: string; enviado?: boolean; criado_em?: string; feedback_id?: string; editando?: boolean; orig?: { profissional_id: string; profissional_nome: string; tipo: 'positivo' | 'negativo'; texto: string } }
 interface Doc { colunas: Coluna[]; cells: Record<string, number>; obs?: Obs[] }
 
 const SERVICOS = [
@@ -323,8 +323,65 @@ function ListaServico({ servico, label, profsSalao, onMensagem }: { servico: str
   const [salvandoObs, setSalvandoObs] = useState(false)
   const obsList = doc.obs || []
   function addObs() { mut(d => { if (!d.obs) d.obs = []; d.obs.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5), profissional_id: '', profissional_nome: '', tipo: 'negativo', texto: '' }) }) }
-  function updObs(id: string, patch: Partial<Obs>) { mut(d => { const o = (d.obs || []).find(x => x.id === id); if (o && !o.enviado) Object.assign(o, patch) }) }
+  function updObs(id: string, patch: Partial<Obs>) { mut(d => { const o = (d.obs || []).find(x => x.id === id); if (o && (!o.enviado || o.editando)) Object.assign(o, patch) }) }
   function delObs(id: string) { mut(d => { d.obs = (d.obs || []).filter(x => x.id !== id) }) }
+
+  function editarObs(id: string) {
+    mut(d => {
+      const o = (d.obs || []).find(x => x.id === id); if (!o) return
+      o.orig = { profissional_id: o.profissional_id, profissional_nome: o.profissional_nome, tipo: o.tipo, texto: o.texto }
+      o.editando = true
+    })
+  }
+  function cancelarEdicaoObs(id: string) {
+    mut(d => {
+      const o = (d.obs || []).find(x => x.id === id); if (!o) return
+      if (o.orig) { o.profissional_id = o.orig.profissional_id; o.profissional_nome = o.orig.profissional_nome; o.tipo = o.orig.tipo; o.texto = o.orig.texto }
+      delete o.orig; o.editando = false
+    })
+  }
+
+  async function salvarEdicaoObs(id: string) {
+    const o = obsList.find(x => x.id === id)
+    if (!o || !o.feedback_id) return
+    if (!o.profissional_nome || !o.texto.trim()) { toast('Preencha o profissional e a descrição', { icon: '✍️' }); return }
+    setSalvandoObs(true)
+    try {
+      const res = await fetch('/api/feedback-prof/respostas', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: o.feedback_id, profissional_nome: o.profissional_nome, tipo: o.tipo, descricao: o.texto }),
+      })
+      const d = await res.json()
+      if (!res.ok) { toast.error(d?.error || 'Erro ao salvar alteração'); setSalvandoObs(false); return }
+      const novoDoc: Doc = JSON.parse(JSON.stringify(doc))
+      const alvo = (novoDoc.obs || []).find(x => x.id === id)
+      if (alvo) { alvo.editando = false; delete alvo.orig }
+      setDoc(novoDoc)
+      await fetch('/api/salon/listas', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ servico, mes, doc: novoDoc }) })
+      toast.success('Observação atualizada no Feedback do Profissional! ✅')
+    } catch { toast.error('Erro de conexão') }
+    setSalvandoObs(false)
+  }
+
+  async function excluirObs(id: string) {
+    const o = obsList.find(x => x.id === id)
+    if (!o) return
+    if (!confirm('Excluir esta observação? Ela também será removida do Feedback do Profissional.')) return
+    try {
+      if (o.feedback_id) {
+        const res = await fetch('/api/feedback-prof/respostas', {
+          method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: o.feedback_id }),
+        })
+        if (!res.ok) { const d = await res.json().catch(() => null); toast.error(d?.error || 'Erro ao excluir do feedback'); return }
+      }
+      const novoDoc: Doc = JSON.parse(JSON.stringify(doc))
+      novoDoc.obs = (novoDoc.obs || []).filter(x => x.id !== id)
+      setDoc(novoDoc)
+      await fetch('/api/salon/listas', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ servico, mes, doc: novoDoc }) })
+      toast.success('Observação excluída!')
+    } catch { toast.error('Erro de conexão') }
+  }
 
   async function salvarObs() {
     const pendentes = obsList.filter(o => !o.enviado && o.profissional_nome && o.texto.trim())
@@ -337,10 +394,13 @@ function ListaServico({ servico, label, profsSalao, onMensagem }: { servico: str
       })
       const d = await res.json()
       if (!res.ok) { toast.error(d?.error || 'Erro ao enviar'); setSalvandoObs(false); return }
-      // marca como enviadas e persiste na lista (ficam de histórico aqui também)
-      const ids = new Set(pendentes.map(o => o.id))
+      // marca como enviadas (guardando o id no feedback p/ editar/excluir) e persiste
+      const idsFeedback: string[] = Array.isArray(d.ids) ? d.ids : []
+      const posPorId = new Map(pendentes.map((o, i) => [o.id, i]))
       const novoDoc: Doc = JSON.parse(JSON.stringify(doc))
-      novoDoc.obs = (novoDoc.obs || []).map(o => ids.has(o.id) ? { ...o, enviado: true, criado_em: new Date().toISOString() } : o)
+      novoDoc.obs = (novoDoc.obs || []).map(o => posPorId.has(o.id)
+        ? { ...o, enviado: true, criado_em: new Date().toISOString(), feedback_id: idsFeedback[posPorId.get(o.id)!] }
+        : o)
       setDoc(novoDoc)
       await fetch('/api/salon/listas', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ servico, mes, doc: novoDoc }) })
       toast.success(`${pendentes.length} observação(ões) enviada(s) para o Feedback do Profissional! ✅`)
@@ -469,12 +529,14 @@ function ListaServico({ servico, label, profsSalao, onMensagem }: { servico: str
           </div>
           <p style={{ fontSize: 11.5, color: '#6b6860', margin: '0 0 12px' }}>Escolha o profissional, descreva o ocorrido, marque Positivo ou Negativo e clique em salvar.</p>
 
-          {obsList.map(o => (
-            <div key={o.id} style={{ border: o.enviado ? '1px solid #bbf7d0' : '1px solid #e8e6e0', background: o.enviado ? '#f0fdf4' : '#faf9f7', borderRadius: 10, padding: 12, marginBottom: 10 }}>
+          {obsList.map(o => {
+            const travada = !!o.enviado && !o.editando
+            return (
+            <div key={o.id} style={{ border: o.enviado ? '1px solid #bbf7d0' : '1px solid #e8e6e0', background: o.editando ? '#fffbeb' : o.enviado ? '#f0fdf4' : '#faf9f7', borderRadius: 10, padding: 12, marginBottom: 10 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
-                <select value={o.profissional_id} disabled={!!o.enviado}
+                <select value={o.profissional_id} disabled={travada}
                   onChange={e => { const p = doc.colunas.find(x => x.id === e.target.value); updObs(o.id, { profissional_id: e.target.value, profissional_nome: p?.nome || '' }) }}
-                  style={{ padding: '8px 10px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13, fontWeight: 700, minWidth: 200, background: '#fff', cursor: o.enviado ? 'default' : 'pointer' }}>
+                  style={{ padding: '8px 10px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13, fontWeight: 700, minWidth: 200, background: '#fff', cursor: travada ? 'default' : 'pointer' }}>
                   <option value="">Selecione o profissional...</option>
                   {/* dinâmico: só quem está NESTA lista (colunas acima) */}
                   {doc.colunas.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
@@ -482,26 +544,48 @@ function ListaServico({ servico, label, profsSalao, onMensagem }: { servico: str
                   {o.profissional_id && !doc.colunas.some(c => c.id === o.profissional_id) && <option value={o.profissional_id}>{o.profissional_nome}</option>}
                 </select>
                 <div style={{ display: 'flex', gap: 4 }}>
-                  <button onClick={() => updObs(o.id, { tipo: 'positivo' })} disabled={!!o.enviado}
-                    style={{ padding: '7px 12px', borderRadius: 8, border: o.tipo === 'positivo' ? 'none' : '1.5px solid #d0cdc7', background: o.tipo === 'positivo' ? '#16a34a' : '#fff', color: o.tipo === 'positivo' ? '#fff' : '#6b6860', fontSize: 12, fontWeight: 800, cursor: o.enviado ? 'default' : 'pointer' }}>
+                  <button onClick={() => updObs(o.id, { tipo: 'positivo' })} disabled={travada}
+                    style={{ padding: '7px 12px', borderRadius: 8, border: o.tipo === 'positivo' ? 'none' : '1.5px solid #d0cdc7', background: o.tipo === 'positivo' ? '#16a34a' : '#fff', color: o.tipo === 'positivo' ? '#fff' : '#6b6860', fontSize: 12, fontWeight: 800, cursor: travada ? 'default' : 'pointer' }}>
                     👍 Positivo
                   </button>
-                  <button onClick={() => updObs(o.id, { tipo: 'negativo' })} disabled={!!o.enviado}
-                    style={{ padding: '7px 12px', borderRadius: 8, border: o.tipo === 'negativo' ? 'none' : '1.5px solid #d0cdc7', background: o.tipo === 'negativo' ? '#ef4444' : '#fff', color: o.tipo === 'negativo' ? '#fff' : '#6b6860', fontSize: 12, fontWeight: 800, cursor: o.enviado ? 'default' : 'pointer' }}>
+                  <button onClick={() => updObs(o.id, { tipo: 'negativo' })} disabled={travada}
+                    style={{ padding: '7px 12px', borderRadius: 8, border: o.tipo === 'negativo' ? 'none' : '1.5px solid #d0cdc7', background: o.tipo === 'negativo' ? '#ef4444' : '#fff', color: o.tipo === 'negativo' ? '#fff' : '#6b6860', fontSize: 12, fontWeight: 800, cursor: travada ? 'default' : 'pointer' }}>
                     👎 Negativo
                   </button>
                 </div>
                 <div style={{ flex: 1 }} />
-                {o.enviado
-                  ? <span style={{ fontSize: 11, fontWeight: 800, color: '#16a34a' }}>✓ Enviado ao feedback {o.criado_em ? `· ${new Date(o.criado_em).toLocaleDateString('pt-BR')}` : ''}</span>
-                  : <button onClick={() => delObs(o.id)} title="Remover observação" style={{ border: 'none', background: 'transparent', color: '#ef4444', cursor: 'pointer', padding: 4 }}><X size={15} /></button>}
+                {!o.enviado && <button onClick={() => delObs(o.id)} title="Remover observação" style={{ border: 'none', background: 'transparent', color: '#ef4444', cursor: 'pointer', padding: 4 }}><X size={15} /></button>}
+                {travada && (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: '#16a34a' }}>✓ Enviado {o.criado_em ? `· ${new Date(o.criado_em).toLocaleDateString('pt-BR')}` : ''}</span>
+                    {o.feedback_id && (
+                      <button onClick={() => editarObs(o.id)} style={{ padding: '6px 12px', borderRadius: 8, border: '1.5px solid #5b4fcf', background: '#f0eefb', color: '#5b4fcf', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>
+                        ✏️ Editar
+                      </button>
+                    )}
+                    <button onClick={() => excluirObs(o.id)} style={{ padding: '6px 12px', borderRadius: 8, border: '1.5px solid #fca5a5', background: '#fff', color: '#dc2626', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>
+                      🗑️ Excluir
+                    </button>
+                  </span>
+                )}
               </div>
-              {o.enviado
+              {travada
                 ? <div style={{ fontSize: 13, color: '#374151', whiteSpace: 'pre-wrap', wordBreak: 'break-word', padding: '8px 10px', background: '#fff', border: '1px solid #e8e6e0', borderRadius: 8 }}>{o.texto}</div>
                 : <textarea value={o.texto} onChange={e => updObs(o.id, { texto: e.target.value })} rows={3} placeholder="Descreva o que aconteceu..."
                     style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13, resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }} />}
+              {o.editando && (
+                <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                  <button onClick={() => salvarEdicaoObs(o.id)} disabled={salvandoObs} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 8, border: 'none', background: '#16a34a', color: '#fff', fontSize: 12.5, fontWeight: 800, cursor: 'pointer' }}>
+                    {salvandoObs ? '...' : <><Save size={13} /> Salvar alterações</>}
+                  </button>
+                  <button onClick={() => cancelarEdicaoObs(o.id)} style={{ padding: '8px 14px', borderRadius: 8, border: '1.5px solid #d0cdc7', background: '#fff', color: '#6b6860', fontSize: 12.5, fontWeight: 800, cursor: 'pointer' }}>
+                    Cancelar
+                  </button>
+                </div>
+              )}
             </div>
-          ))}
+            )
+          })}
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
             <button onClick={addObs} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '9px 14px', borderRadius: 8, border: '1px dashed #5b4fcf', background: '#f0eefb', color: '#5b4fcf', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>
