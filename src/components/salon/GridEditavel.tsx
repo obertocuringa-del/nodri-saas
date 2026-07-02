@@ -42,15 +42,32 @@ export default function GridEditavel({ chave, defaultDoc, defaultDocFn, mensal, 
   const chaveEfetiva = mensal ? `${chave}_${mes}` : chave
   const baseDoc = useCallback(() => defaultDocFn ? defaultDocFn(mes) : JSON.parse(JSON.stringify(defaultDoc || { tabelas: [] })), [mes, defaultDocFn, defaultDoc])
 
+  // Lista que virou mensal: na 1ª vez herda o conteúdo antigo (sem mês) para
+  // nada se perder; após salvar a cópia do mês, o legado é esvaziado.
+  const herdouLegado = useRef(false)
   const carregar = useCallback(async () => {
     setLoading(true)
     try {
       const d = await fetch(`/api/salon/grid?chave=${encodeURIComponent(chaveEfetiva)}`).then(r => r.ok ? r.json() : null)
-      setDoc(d && Array.isArray(d.tabelas) ? d : baseDoc())
-    } catch { setDoc(baseDoc()) }
-    setDirty(false); setSel(null); setLoading(false)
-  }, [chaveEfetiva, baseDoc])
+      if (d && Array.isArray(d.tabelas)) { setDoc(d); setDirty(false) }
+      else if (mensal && chaveEfetiva !== chave) {
+        const legado = await fetch(`/api/salon/grid?chave=${encodeURIComponent(chave)}`).then(r => r.ok ? r.json() : null)
+        if (legado && Array.isArray(legado.tabelas) && legado.tabelas.length > 0) {
+          setDoc(legado); herdouLegado.current = true; setDirty(true) // auto-save grava no mês
+        } else { setDoc(baseDoc()); setDirty(false) }
+      } else { setDoc(baseDoc()); setDirty(false) }
+    } catch { setDoc(baseDoc()); setDirty(false) }
+    setSel(null); setLoading(false)
+  }, [chaveEfetiva, chave, mensal, baseDoc])
   useEffect(() => { carregar() }, [carregar])
+
+  // após persistir a cópia mensal herdada, esvazia a chave antiga (evita que
+  // o conteúdo legado reapareça nos meses seguintes)
+  const limparLegadoSePreciso = useCallback(() => {
+    if (!herdouLegado.current || !mensal) return
+    herdouLegado.current = false
+    fetch('/api/salon/grid', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chave, doc: { tabelas: [] } }) }).catch(() => {})
+  }, [chave, mensal])
 
   function mut(fn: (d: Doc) => void) { setDoc(prev => { const n: Doc = JSON.parse(JSON.stringify(prev)); fn(n); return n }); setDirty(true) }
   const getCell = (s: Sel): Cell | undefined => { const tab = doc.tabelas[s.ti]; if (!tab) return undefined; return s.ri === -1 ? tab.cabecalho[s.ci] : tab.linhas[s.ri]?.[s.ci] }
@@ -131,7 +148,7 @@ export default function GridEditavel({ chave, defaultDoc, defaultDocFn, mensal, 
     setSalvando(true)
     try {
       const res = await fetch('/api/salon/grid', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chave: chaveEfetiva, doc }) })
-      if (res.ok) { toast.success('Ajustes salvos!'); setDirty(false) } else toast.error('Erro ao salvar')
+      if (res.ok) { toast.success('Ajustes salvos!'); setDirty(false); limparLegadoSePreciso() } else toast.error('Erro ao salvar')
     } catch { toast.error('Erro de conexão') }
     setSalvando(false)
   }
@@ -146,12 +163,12 @@ export default function GridEditavel({ chave, defaultDoc, defaultDocFn, mensal, 
       setAutoStatus('salvando')
       try {
         const res = await fetch('/api/salon/grid', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chave: chaveEfetiva, doc }) })
-        if (res.ok) { setDirty(false); setAutoStatus('salvo'); setTimeout(() => setAutoStatus('idle'), 3000) }
+        if (res.ok) { setDirty(false); setAutoStatus('salvo'); setTimeout(() => setAutoStatus('idle'), 3000); limparLegadoSePreciso() }
         else setAutoStatus('idle')
       } catch { setAutoStatus('idle') }
     }, 2000)
     return () => { if (autoTimer.current) clearTimeout(autoTimer.current) }
-  }, [doc, dirty, soLeitura, loading, chaveEfetiva])
+  }, [doc, dirty, soLeitura, loading, chaveEfetiva, limparLegadoSePreciso])
 
   function imprimir() {
     const esc = (v: string) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>')

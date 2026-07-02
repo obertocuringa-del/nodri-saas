@@ -45,8 +45,8 @@ const DEFAULT_SERV_INT: GridDoc = { tabelas: [{ titulo: 'SERVIÇO INTERNO / PROD
 
 const GRIDS = [
   { key: 'alicates', label: 'Controle de Alicates', mensal: false, landscape: true, doc: DEFAULT_ALICATES },
-  { key: 'produtos', label: 'Consumo de Produtos', mensal: false, landscape: true, doc: DEFAULT_PRODUTOS },
-  { key: 'servinterno', label: 'Serviços Internos', mensal: false, landscape: false, doc: DEFAULT_SERV_INT },
+  { key: 'produtos', label: 'Consumo de Produtos', mensal: true, landscape: true, doc: DEFAULT_PRODUTOS },
+  { key: 'servinterno', label: 'Serviços Internos', mensal: true, landscape: false, doc: DEFAULT_SERV_INT },
 ]
 const TAB_GRIDS = [{ key: 'bebidas', label: 'Bebidas' }, ...GRIDS.map(g => ({ key: g.key, label: g.label }))]
 
