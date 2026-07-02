@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Loader2, DollarSign, Check } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { buscarComCache, buscarFresco } from '@/lib/fetchCache'
 
 const moeda = (v: number) => 'R$ ' + (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
@@ -14,20 +15,32 @@ export default function RecepcionistasCarteira() {
   const [adiantando, setAdiantando] = useState<string | null>(null)
   const [valorAdiant, setValorAdiant] = useState('')
 
-  const carregar = useCallback(async () => {
-    setLoading(true)
+  const aplicarRec = useCallback((rec: any) => {
+    const bonus: Record<string, number> = {}
+    for (const r of (rec?.ranking || [])) bonus[r.nome] = Number(r.bonus) || 0
+    setBonusPorNome(bonus)
+  }, [])
+
+  const carregar = useCallback(async (fresco = false) => {
     try {
-      const [rec, cart] = await Promise.all([
-        fetch('/api/relatorios/recuperacao?tipo=recuperados').then(r => r.ok ? r.json() : null).catch(() => null),
-        fetch('/api/salon/recepcionistas-carteira').then(r => r.ok ? r.json() : null).catch(() => null),
-      ])
-      const bonus: Record<string, number> = {}
-      for (const r of (rec?.ranking || [])) bonus[r.nome] = Number(r.bonus) || 0
-      setBonusPorNome(bonus)
-      setCarteira(cart?.carteira || {})
+      if (fresco) {
+        // após uma ação (creditar/pagar): busca direto do servidor
+        const [rec, cart] = await Promise.all([
+          buscarFresco('/api/relatorios/recuperacao?tipo=recuperados'),
+          buscarFresco('/api/salon/recepcionistas-carteira'),
+        ])
+        if (rec) aplicarRec(rec)
+        if (cart) setCarteira(cart.carteira || {})
+      } else {
+        // cache aparece na hora; dado fresco atualiza em seguida
+        await Promise.all([
+          buscarComCache('/api/relatorios/recuperacao?tipo=recuperados', rec => { aplicarRec(rec); setLoading(false) }),
+          buscarComCache('/api/salon/recepcionistas-carteira', cart => { setCarteira(cart?.carteira || {}); setLoading(false) }),
+        ])
+      }
     } catch { /* ignore */ }
     setLoading(false)
-  }, [])
+  }, [aplicarRec])
 
   useEffect(() => { carregar() }, [carregar])
 
@@ -44,7 +57,7 @@ export default function RecepcionistasCarteira() {
       if (acao === 'pagar') toast.success(`Pagamento realizado em ${d.data}: ${moeda(d.pago)}`)
       if (acao === 'adiantar') toast.success(`Adiantamento de ${moeda(d.pago)} em ${d.data}`)
       setAdiantando(null); setValorAdiant('')
-      await carregar()
+      await carregar(true)
     } catch { toast.error('Erro de conexão') }
     setBusy('')
   }

@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { Loader2, Sparkles, Trophy, AlertTriangle } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { buscarComCache, buscarFresco } from '@/lib/fetchCache'
 
 const moeda = (v: number) => 'R$ ' + (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
@@ -40,15 +41,18 @@ export default function SalaDeJogos() {
   const [minasQtd, setMinasQtd] = useState(3)
   const timer = useRef<any>(null)
 
-  const carregar = useCallback(async () => {
+  const carregar = useCallback(async (fresco = false) => {
+    const aplicar = (d: any) => {
+      if (!d) return
+      setCarteira(d.carteira || {})
+      setRoda(d.roda || [])
+      setLimite(d.limite_jogadas_dia || 3)
+      setNome((prev: string) => prev || Object.keys(d.carteira || {})[0] || '')
+      setLoading(false)
+    }
     try {
-      const d = await fetch('/api/salon/recepcionistas-carteira').then(r => r.ok ? r.json() : null).catch(() => null)
-      if (d) {
-        setCarteira(d.carteira || {})
-        setRoda(d.roda || [])
-        setLimite(d.limite_jogadas_dia || 3)
-        setNome((prev: string) => prev || Object.keys(d.carteira || {})[0] || '')
-      }
+      if (fresco) aplicar(await buscarFresco('/api/salon/recepcionistas-carteira'))
+      else await buscarComCache('/api/salon/recepcionistas-carteira', aplicar)
     } catch { /* ignore */ }
     setLoading(false)
   }, [])
@@ -81,7 +85,7 @@ export default function SalaDeJogos() {
         if (d.premio > d.aposta) toast.success(`🎉 ${d.label}! Ganhou ${moeda(d.premio)}`)
         else if (d.premio > 0) toast(`${d.label} — recebeu ${moeda(d.premio)}`)
         else toast(`${d.label} — não foi dessa vez`)
-        await carregar()
+        await carregar(true)
         setGirando(false)
       }
       if (jogo === 'roda') {

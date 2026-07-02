@@ -6,6 +6,7 @@ import RecepcionistasCarteira from './RecepcionistasCarteira'
 import SalaDeJogos from './SalaDeJogos'
 import DesafioMatch from './DesafioMatch'
 import ArenaNodri from './ArenaNodri'
+import { buscarComCache } from '@/lib/fetchCache'
 
 const moeda = (v: number) => 'R$ ' + (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
@@ -15,11 +16,8 @@ export default function RecuperadosReport() {
   const [vista, setVista] = useState<'recuperados' | 'carteira' | 'jogo' | 'desafios' | 'arena'>('recuperados')
 
   useEffect(() => {
-    setLoading(true)
-    fetch('/api/relatorios/recuperacao?tipo=recuperados')
-      .then(r => r.ok ? r.json() : null)
-      .then(setData)
-      .catch(() => setData(null))
+    // cache aparece na hora; dado fresco atualiza em seguida
+    buscarComCache('/api/relatorios/recuperacao?tipo=recuperados', d => { setData(d); setLoading(false) })
       .finally(() => setLoading(false))
   }, [])
 
@@ -42,13 +40,14 @@ export default function RecuperadosReport() {
         ))}
       </div>
 
-      {vista === 'carteira' && <RecepcionistasCarteira />}
-      {vista === 'jogo' && <SalaDeJogos />}
-      {vista === 'desafios' && <DesafioMatch />}
-      {vista === 'arena' && <ArenaNodri />}
+      {/* Abas sempre montadas (display:none) — cada uma carrega 1x e a troca é instantânea */}
+      <div style={{ display: vista === 'carteira' ? undefined : 'none' }}><RecepcionistasCarteira /></div>
+      <div style={{ display: vista === 'jogo' ? undefined : 'none' }}><SalaDeJogos /></div>
+      <div style={{ display: vista === 'desafios' ? undefined : 'none' }}><DesafioMatch /></div>
+      <div style={{ display: vista === 'arena' ? undefined : 'none' }}><ArenaNodri /></div>
 
       {vista === 'recuperados' && (
-        loading ? <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Loader2 size={24} className="animate-spin" style={{ color: '#5b4fcf' }} /></div>
+        loading && !data ? <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Loader2 size={24} className="animate-spin" style={{ color: '#5b4fcf' }} /></div>
         : !data ? <div style={{ textAlign: 'center', padding: 40, color: '#6b7280' }}>Não foi possível carregar.</div>
         : (
         <>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { Loader2, Crown, MessageCircle, DollarSign, Swords } from 'lucide-react'
+import { buscarComCache } from '@/lib/fetchCache'
 
 const moeda = (v: number) => 'R$ ' + (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
 
@@ -25,11 +26,11 @@ export default function ArenaNodri() {
 
   const carregar = useCallback(async () => {
     try {
-      const [a, b] = await Promise.all([
-        fetch('/api/relatorios/recuperacao?tipo=recuperados').then(r => r.ok ? r.json() : null).catch(() => null),
-        fetch('/api/salon/recepcionistas-carteira').then(r => r.ok ? r.json() : null).catch(() => null),
+      // cache aparece na hora; dado fresco atualiza em seguida
+      await Promise.all([
+        buscarComCache('/api/relatorios/recuperacao?tipo=recuperados', a => { setRec(a); setLoading(false) }),
+        buscarComCache('/api/salon/recepcionistas-carteira', b => { setCart(b); setLoading(false) }),
       ])
-      setRec(a); setCart(b)
     } catch { /* ignore */ }
     setLoading(false)
   }, [])

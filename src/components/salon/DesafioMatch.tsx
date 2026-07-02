@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Loader2, Swords, Trophy, X, Check } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { buscarComCache, buscarFresco } from '@/lib/fetchCache'
 
 const moeda = (v: number) => 'R$ ' + (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
@@ -16,16 +17,19 @@ export default function DesafioMatch() {
   const [aposta, setAposta] = useState('10')
   const [duelo, setDuelo] = useState<any>(null) // resultado recém-resolvido (animação)
 
-  const carregar = useCallback(async () => {
+  const carregar = useCallback(async (fresco = false) => {
+    const aplicar = (d: any) => {
+      if (!d) return
+      setCarteira(d.carteira || {})
+      setDesafios(d.desafios || [])
+      const ns = Object.keys(d.carteira || {})
+      setDesafiante((p: string) => p || ns[0] || '')
+      setDesafiado((p: string) => p || ns[1] || '')
+      setLoading(false)
+    }
     try {
-      const d = await fetch('/api/salon/recepcionistas-carteira').then(r => r.ok ? r.json() : null).catch(() => null)
-      if (d) {
-        setCarteira(d.carteira || {})
-        setDesafios(d.desafios || [])
-        const ns = Object.keys(d.carteira || {})
-        setDesafiante((p: string) => p || ns[0] || '')
-        setDesafiado((p: string) => p || ns[1] || '')
-      }
+      if (fresco) aplicar(await buscarFresco('/api/salon/recepcionistas-carteira'))
+      else await buscarComCache('/api/salon/recepcionistas-carteira', aplicar)
     } catch { /* ignore */ }
     setLoading(false)
   }, [])
@@ -43,7 +47,7 @@ export default function DesafioMatch() {
       if (payload.acao === 'desafio_criar') toast.success('Desafio criado! Aguardando aceite.')
       if (payload.acao === 'desafio_recusar') toast('Desafio recusado — aposta estornada.')
       if (payload.acao === 'desafio_aceitar') { setDuelo(d); toast.success(`🏆 ${d.vencedor} venceu o pote de ${moeda(d.pote)}!`) }
-      await carregar()
+      await carregar(true)
     } catch { toast.error('Erro de conexão') }
     setBusy('')
   }
