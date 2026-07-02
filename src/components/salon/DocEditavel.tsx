@@ -58,6 +58,23 @@ export default function DocEditavel({ chave, tituloPadrao, blocosPadrao, corTema
     setSalvando(false)
   }
 
+  // ── Auto-save: 2s depois que o usuário para de digitar, salva sozinho ──
+  const [autoStatus, setAutoStatus] = useState<'idle' | 'salvando' | 'salvo'>('idle')
+  const autoTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => {
+    if (!dirty || loading) return
+    if (autoTimer.current) clearTimeout(autoTimer.current)
+    autoTimer.current = setTimeout(async () => {
+      setAutoStatus('salvando')
+      try {
+        const res = await fetch('/api/salon/grid', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chave, doc: { titulo, blocos, logo } }) })
+        if (res.ok) { setDirty(false); setAutoStatus('salvo'); setTimeout(() => setAutoStatus('idle'), 3000) }
+        else setAutoStatus('idle')
+      } catch { setAutoStatus('idle') }
+    }, 2000)
+    return () => { if (autoTimer.current) clearTimeout(autoTimer.current) }
+  }, [titulo, blocos, logo, dirty, loading, chave])
+
   function imprimir() {
     const esc = (v: string) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>')
     const corpo = blocos.map(b => {
@@ -89,11 +106,13 @@ export default function DocEditavel({ chave, tituloPadrao, blocosPadrao, corTema
             🖼️ Anexar logo (clique para escolher a imagem)
           </button>
         )}
-        <p style={{ fontSize: 11, color: '#9ca3af', margin: '6px 0 0' }}>A logo aparece no topo e na impressão. Lembre de <strong>Salvar</strong>. (imagem até 1,5 MB)</p>
+        <p style={{ fontSize: 11, color: '#9ca3af', margin: '6px 0 0' }}>A logo aparece no topo e na impressão. Tudo é <strong>salvo automaticamente</strong>. (imagem até 1,5 MB)</p>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
         <input value={titulo} onChange={e => { setTitulo(e.target.value); setDirty(true) }} style={{ fontSize: 16, fontWeight: 800, color: corTema, border: 'none', background: 'transparent', outline: 'none', flex: 1, minWidth: 200 }} />
+        {autoStatus === 'salvando' && <span style={{ fontSize: 12, color: '#9ca3af', fontWeight: 700 }}>Salvando…</span>}
+        {autoStatus === 'salvo' && !dirty && <span style={{ fontSize: 12, color: '#16a34a', fontWeight: 700 }}>✓ Salvo</span>}
         <button onClick={imprimir} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 8, border: '1px solid #d0cdc7', background: '#fff', color: '#374151', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}><Printer size={14} /> Imprimir</button>
         <button onClick={salvar} disabled={salvando} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 16px', borderRadius: 8, border: 'none', background: dirty ? '#16a34a' : '#a3b3a3', color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>{salvando ? '...' : <><Save size={14} /> Salvar</>}</button>
       </div>

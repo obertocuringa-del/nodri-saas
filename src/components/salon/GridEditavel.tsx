@@ -136,6 +136,23 @@ export default function GridEditavel({ chave, defaultDoc, defaultDocFn, mensal, 
     setSalvando(false)
   }
 
+  // ── Auto-save: 2s depois que o usuário para de digitar, salva sozinho ──
+  const [autoStatus, setAutoStatus] = useState<'idle' | 'salvando' | 'salvo'>('idle')
+  const autoTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => {
+    if (!dirty || soLeitura || loading) return
+    if (autoTimer.current) clearTimeout(autoTimer.current)
+    autoTimer.current = setTimeout(async () => {
+      setAutoStatus('salvando')
+      try {
+        const res = await fetch('/api/salon/grid', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chave: chaveEfetiva, doc }) })
+        if (res.ok) { setDirty(false); setAutoStatus('salvo'); setTimeout(() => setAutoStatus('idle'), 3000) }
+        else setAutoStatus('idle')
+      } catch { setAutoStatus('idle') }
+    }, 2000)
+    return () => { if (autoTimer.current) clearTimeout(autoTimer.current) }
+  }, [doc, dirty, soLeitura, loading, chaveEfetiva])
+
   function imprimir() {
     const esc = (v: string) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>')
     const sty = (cell: Cell) => `font-weight:${cell.b ? 700 : 400};font-style:${cell.i ? 'italic' : 'normal'};color:${cell.cor || '#1a1a1a'};font-size:${cell.tam || 13}px;text-align:${cell.al || 'left'};${cell.bg ? `background:${cell.bg};` : ''}${cell.bd ? 'border:2px solid #333;' : ''}`
@@ -194,6 +211,8 @@ export default function GridEditavel({ chave, defaultDoc, defaultDocFn, mensal, 
         <button onClick={() => aplicar(c => ({ bd: !c.bd }))} disabled={!sel} title="Borda da célula (ligar/desligar)" style={fmtBtn(!!selCell?.bd, corTema)}><Square size={15} /></button>
         </div>
         <div style={{ flex: 1 }} />
+        {autoStatus === 'salvando' && <span style={{ fontSize: 12, color: '#9ca3af', fontWeight: 700 }}>Salvando…</span>}
+        {autoStatus === 'salvo' && !dirty && <span style={{ fontSize: 12, color: '#16a34a', fontWeight: 700 }}>✓ Salvo</span>}
         <button onClick={imprimir} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 8, border: '1px solid #d0cdc7', background: '#fff', color: '#374151', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}><Printer size={14} /> Imprimir A4</button>
         <button onClick={salvar} disabled={salvando} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 16px', borderRadius: 8, border: 'none', background: dirty ? '#16a34a' : '#a3b3a3', color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>{salvando ? '...' : <><Save size={14} /> Salvar</>}</button>
       </div>
