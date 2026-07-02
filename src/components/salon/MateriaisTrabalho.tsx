@@ -155,15 +155,15 @@ export default function MateriaisTrabalho() {
             <thead>
               <tr>
                 {t.cabecalho.map((cc, ci) => (
-                  <th key={ci} style={{ background: '#fce7f3', border: '1px solid #f3c5dc', padding: 2, verticalAlign: 'middle' }}>
+                  <th key={ci} style={{ background: '#faf9f7', border: '1px solid #eceae4', borderBottom: '2px solid #e8e6e0', padding: 2, verticalAlign: 'middle' }}>
                     <div style={{ display: 'flex', alignItems: 'center' }}>
                       {cellBox(cc, { ti, ri: -1, ci })}
                       <button onClick={() => delColuna(ti, ci)} title="Remover coluna" style={{ border: 'none', background: 'transparent', color: '#d16ba5', cursor: 'pointer', padding: 2, flexShrink: 0 }}>×</button>
                     </div>
                   </th>
                 ))}
-                <th style={{ width: 38, border: '1px solid #f3c5dc', background: '#fce7f3', padding: 0 }}>
-                  <button onClick={() => addColuna(ti)} title="Adicionar coluna" style={{ border: 'none', background: 'transparent', color: '#9d174d', cursor: 'pointer', width: '100%', height: '100%', padding: '6px 0' }}><Plus size={14} /></button>
+                <th style={{ width: 38, border: '1px solid #eceae4', borderBottom: '2px solid #e8e6e0', background: '#faf9f7', padding: 0 }}>
+                  <button onClick={() => addColuna(ti)} title="Adicionar coluna" style={{ border: 'none', background: 'transparent', color: '#ec4899', cursor: 'pointer', width: '100%', height: '100%', padding: '6px 0' }}><Plus size={14} /></button>
                 </th>
               </tr>
             </thead>
@@ -171,9 +171,9 @@ export default function MateriaisTrabalho() {
               {t.linhas.map((linha, ri) => (
                 <tr key={ri}>
                   {linha.map((cc, ci) => (
-                    <td key={ci} style={{ border: '1px solid #eee', padding: 2 }}>{cellBox(cc, { ti, ri, ci })}</td>
+                    <td key={ci} style={{ border: '1px solid #f0eee8', padding: 2 }}>{cellBox(cc, { ti, ri, ci })}</td>
                   ))}
-                  <td style={{ border: '1px solid #eee', textAlign: 'center', padding: 0 }}>
+                  <td style={{ border: '1px solid #f0eee8', textAlign: 'center', padding: 0 }}>
                     <button onClick={() => delLinha(ti, ri)} title="Remover linha" style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', padding: '6px' }}><Trash2 size={13} /></button>
                   </td>
                 </tr>

@@ -479,9 +479,9 @@ function ListaServico({ servico, label, profsSalao, onMensagem }: { servico: str
             <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 120 + doc.colunas.length * 130 }}>
               <thead>
                 <tr>
-                  <th style={{ ...thSt, width: 44, position: 'sticky', left: 0, background: '#f3f0ff', zIndex: 2 }}>DIA</th>
+                  <th style={{ ...thSt, width: 44, position: 'sticky', left: 0, background: '#faf9f7', zIndex: 2 }}>DIA</th>
                   {doc.colunas.map((c, i) => (
-                    <th key={c.id} style={{ ...thSt, background: proximoIdx === i ? '#fef2f2' : '#f3f0ff', borderTop: proximoIdx === i ? '3px solid #ef4444' : thSt.border }}>
+                    <th key={c.id} style={{ ...thSt, background: proximoIdx === i ? '#fef2f2' : '#faf9f7', borderTop: proximoIdx === i ? '3px solid #ef4444' : undefined }}>
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
                         {proximoIdx === i && <span style={{ fontSize: 9, fontWeight: 900, color: '#fff', background: '#ef4444', borderRadius: 10, padding: '1px 7px' }}>🔴 É A VEZ</span>}
                         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -497,7 +497,7 @@ function ListaServico({ servico, label, profsSalao, onMensagem }: { servico: str
               <tbody>
                 {Array.from({ length: dias }, (_, k) => k + 1).map(d => (
                   <tr key={d}>
-                    <td style={{ ...tdSt, fontWeight: 700, background: '#f7f6ff', position: 'sticky', left: 0, zIndex: 1 }}>{d}</td>
+                    <td style={{ ...tdSt, fontWeight: 700, background: '#faf9f7', color: '#6b6860', position: 'sticky', left: 0, zIndex: 1 }}>{d}</td>
                     {doc.colunas.map(c => {
                       const v = doc.cells[`${d}-${c.id}`] || 0
                       return (
@@ -515,8 +515,8 @@ function ListaServico({ servico, label, profsSalao, onMensagem }: { servico: str
               </tbody>
               <tfoot>
                 <tr>
-                  <td style={{ ...tdSt, fontWeight: 800, background: '#fce7f3', position: 'sticky', left: 0 }}>TOT</td>
-                  {doc.colunas.map((c, i) => <td key={c.id} style={{ ...tdSt, fontWeight: 900, fontSize: 15, background: '#fce7f3', color: '#9d174d' }}>{totais[i]}</td>)}
+                  <td style={{ ...tdSt, fontWeight: 800, background: '#f6f4ff', color: '#5b4fcf', borderTop: '2px solid #e8e6e0', position: 'sticky', left: 0 }}>TOT</td>
+                  {doc.colunas.map((c, i) => <td key={c.id} style={{ ...tdSt, fontWeight: 900, fontSize: 15, background: '#f6f4ff', color: '#5b4fcf', borderTop: '2px solid #e8e6e0' }}>{totais[i]}</td>)}
                 </tr>
               </tfoot>
             </table>
@@ -620,6 +620,6 @@ function ListaServico({ servico, label, profsSalao, onMensagem }: { servico: str
   )
 }
 
-const thSt: React.CSSProperties = { border: '1px solid #d8d4cd', padding: '6px 8px', fontSize: 12, color: '#1a1a1a' }
-const tdSt: React.CSSProperties = { border: '1px solid #ece9e2', padding: '3px 6px', textAlign: 'center' }
+const thSt: React.CSSProperties = { borderBottom: '2px solid #e8e6e0', padding: '8px 8px', fontSize: 11, fontWeight: 700, color: '#6b6860', textTransform: 'uppercase', letterSpacing: '.4px', background: '#faf9f7' }
+const tdSt: React.CSSProperties = { borderBottom: '1px solid #f0eee8', padding: '4px 6px', textAlign: 'center' }
 function miniBtn(cor: string): React.CSSProperties { return { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, borderRadius: 6, border: 'none', background: cor, color: '#fff', cursor: 'pointer', flexShrink: 0 } }

@@ -92,5 +92,5 @@ export default function ListaTelefones() {
   )
 }
 
-const thSt: React.CSSProperties = { border: '1px solid #ddd6f5', padding: '7px 9px', fontSize: 12, color: '#1a1a1a', background: '#f1eefb', textAlign: 'left' }
-const tdSt: React.CSSProperties = { border: '1px solid #ece9e2', padding: 2 }
+const thSt: React.CSSProperties = { borderBottom: '2px solid #e8e6e0', padding: '10px 10px', fontSize: 11, fontWeight: 700, color: '#6b6860', background: '#faf9f7', textAlign: 'left', textTransform: 'uppercase', letterSpacing: '.4px' }
+const tdSt: React.CSSProperties = { borderBottom: '1px solid #f0eee8', padding: '5px 6px' }

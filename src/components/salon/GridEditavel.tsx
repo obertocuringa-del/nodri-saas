@@ -255,19 +255,19 @@ export default function GridEditavel({ chave, defaultDoc, defaultDocFn, mensal, 
               <thead>
                 <tr>
                   {t.cabecalho.map((cc, ci) => cc.h ? null : (
-                    <th key={ci} colSpan={cc.cs || 1} rowSpan={cc.rs || 1} style={{ background: cc.bg || '#f1eefb', border: bordaCell(cc, '1px solid #ddd6f5'), padding: 2, position: 'relative', verticalAlign: 'top' }}>
+                    <th key={ci} colSpan={cc.cs || 1} rowSpan={cc.rs || 1} style={{ background: cc.bg || '#faf9f7', border: bordaCell(cc, '1px solid #eceae4'), borderBottom: cc.bd ? undefined : '2px solid #e8e6e0', padding: 2, position: 'relative', verticalAlign: 'top' }}>
                       <div style={{ display: 'flex', alignItems: 'flex-start' }}>{cellBox(cc, { ti, ri: -1, ci })}{!soLeitura && <button onClick={() => delColuna(ti, ci)} title="Remover coluna" style={{ border: 'none', background: 'transparent', color: '#a99', cursor: 'pointer', padding: 2, flexShrink: 0 }}>×</button>}</div>
-                      {!soLeitura && <div onMouseDown={e => iniciarResize(ti, ci, e)} title="Arraste para aumentar/diminuir a largura da coluna" style={{ position: 'absolute', top: 0, right: 0, width: 7, height: '100%', cursor: 'col-resize', zIndex: 5, background: '#d8d4f0' }} />}
+                      {!soLeitura && <div onMouseDown={e => iniciarResize(ti, ci, e)} title="Arraste para aumentar/diminuir a largura da coluna" style={{ position: 'absolute', top: 0, right: 0, width: 7, height: '100%', cursor: 'col-resize', zIndex: 5, background: '#e8e6e0' }} />}
                     </th>
                   ))}
-                  {!soLeitura && <th style={{ border: '1px solid #ddd6f5', background: '#f1eefb', padding: 0, verticalAlign: 'top' }}><button onClick={() => addColuna(ti)} title="Adicionar coluna" style={{ border: 'none', background: 'transparent', color: corTema, cursor: 'pointer', width: '100%', padding: '6px 0' }}><Plus size={14} /></button></th>}
+                  {!soLeitura && <th style={{ border: '1px solid #eceae4', borderBottom: '2px solid #e8e6e0', background: '#faf9f7', padding: 0, verticalAlign: 'top' }}><button onClick={() => addColuna(ti)} title="Adicionar coluna" style={{ border: 'none', background: 'transparent', color: corTema, cursor: 'pointer', width: '100%', padding: '6px 0' }}><Plus size={14} /></button></th>}
                 </tr>
               </thead>
               <tbody>
                 {t.linhas.map((linha, ri) => (
                   <tr key={ri}>
-                    {linha.map((cc, ci) => cc.h ? null : <td key={ci} colSpan={cc.cs || 1} rowSpan={cc.rs || 1} style={{ border: bordaCell(cc, '1px solid #eee'), padding: 2, background: cc.bg || 'transparent', verticalAlign: 'top', height: altura(t, ri) || undefined }}>{cellBox(cc, { ti, ri, ci })}</td>)}
-                    {!soLeitura && <td style={{ border: '1px solid #eee', textAlign: 'center', padding: 0, verticalAlign: 'top', position: 'relative' }}>
+                    {linha.map((cc, ci) => cc.h ? null : <td key={ci} colSpan={cc.cs || 1} rowSpan={cc.rs || 1} style={{ border: bordaCell(cc, '1px solid #f0eee8'), padding: 2, background: cc.bg || 'transparent', verticalAlign: 'top', height: altura(t, ri) || undefined }}>{cellBox(cc, { ti, ri, ci })}</td>)}
+                    {!soLeitura && <td style={{ border: '1px solid #f0eee8', textAlign: 'center', padding: 0, verticalAlign: 'top', position: 'relative' }}>
                       <button onClick={() => delLinha(ti, ri)} title="Remover linha" style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', padding: 6 }}><Trash2 size={13} /></button>
                       <div onMouseDown={e => iniciarResizeLinha(ti, ri, e)} title="Arraste para aumentar/diminuir a altura da linha" style={{ position: 'absolute', left: 0, right: 0, bottom: -3, height: 9, cursor: 'row-resize', zIndex: 5, background: '#e6e2db' }} />
                     </td>}

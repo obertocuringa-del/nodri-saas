@@ -79,11 +79,11 @@ export default function ListaBebidas({ profsSalao }: { profsSalao: ProfSalao[] }
             <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 360 }}>
               <thead>
                 <tr>
-                  <th style={{ ...thSt, position: 'sticky', left: 0, background: '#f1eefb', zIndex: 2, minWidth: 130, textAlign: 'left' }}>Profissional</th>
+                  <th style={{ ...thSt, position: 'sticky', left: 0, background: '#faf9f7', zIndex: 2, minWidth: 130, textAlign: 'left' }}>Profissional</th>
                   {colunas.map(c => (
                     <th key={c.id} style={{ ...thSt, minWidth: 110 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <input value={c.nome} onChange={e => renColuna(c.id, e.target.value)} style={{ width: '100%', border: 'none', background: 'transparent', textAlign: 'center', fontWeight: 800, fontSize: 13, color: '#3b2e7a', outline: 'none' }} />
+                        <input value={c.nome} onChange={e => renColuna(c.id, e.target.value)} style={{ width: '100%', border: 'none', background: 'transparent', textAlign: 'center', fontWeight: 800, fontSize: 13, color: '#374151', outline: 'none' }} />
                         <button onClick={() => delColuna(c.id)} title="Remover" style={{ border: 'none', background: 'transparent', color: '#a99', cursor: 'pointer', padding: 0 }}><X size={12} /></button>
                       </div>
                     </th>
@@ -93,7 +93,7 @@ export default function ListaBebidas({ profsSalao }: { profsSalao: ProfSalao[] }
               <tbody>
                 {profsLista.map(p => (
                   <tr key={p.id}>
-                    <td style={{ ...tdSt, fontWeight: 700, background: '#faf9ff', textAlign: 'left', position: 'sticky', left: 0, zIndex: 1 }}>{p.nome}</td>
+                    <td style={{ ...tdSt, fontWeight: 700, background: '#fff', textAlign: 'left', position: 'sticky', left: 0, zIndex: 1 }}>{p.nome}</td>
                     {colunas.map(c => {
                       const qt = Number(cells[`${p.id}::${c.id}`]) || 0
                       return (
@@ -116,6 +116,6 @@ export default function ListaBebidas({ profsSalao }: { profsSalao: ProfSalao[] }
   )
 }
 
-const thSt: React.CSSProperties = { border: '1px solid #ddd6f5', padding: '6px 8px', fontSize: 12, color: '#1a1a1a' }
-const tdSt: React.CSSProperties = { border: '1px solid #ece9e2', padding: 2, textAlign: 'center' }
+const thSt: React.CSSProperties = { borderBottom: '2px solid #e8e6e0', padding: '10px 8px', fontSize: 11, fontWeight: 700, color: '#6b6860', background: '#faf9f7', textTransform: 'uppercase', letterSpacing: '.4px' }
+const tdSt: React.CSSProperties = { borderBottom: '1px solid #f0eee8', padding: '6px 4px', textAlign: 'center' }
 const stepBtn: React.CSSProperties = { width: 26, height: 26, borderRadius: 7, border: '1px solid #d8d4f0', background: '#f5f3ff', color: '#5b4fcf', fontSize: 16, fontWeight: 800, cursor: 'pointer', lineHeight: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }
