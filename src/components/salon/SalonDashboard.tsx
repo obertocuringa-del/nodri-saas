@@ -93,6 +93,7 @@ if (typeof document !== 'undefined') {
     @keyframes shimmer { 0% { background-position: 0% 0 } 100% { background-position: 300% 0 } }
     @keyframes pulseDot { 0%,100% { transform: scale(1); opacity: 1 } 50% { transform: scale(1.4); opacity: 0.6 } }
     @keyframes nodriPulseBtn { 0%,100% { box-shadow: 0 0 0 0 rgba(234,179,8,0); opacity:1 } 50% { box-shadow: 0 0 0 5px rgba(234,179,8,0.25); opacity:0.85 } }
+    @keyframes nodriKpiPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(22,163,74,0.5) } 50% { box-shadow: 0 0 0 10px rgba(22,163,74,0) } }
     .nodri-salon-bg { background-color: #edeef0 !important; }
   `
   if (!document.getElementById('nodri-animations')) { style.id = 'nodri-animations'; document.head.appendChild(style) }
@@ -120,6 +121,8 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
   const [kpiAtivos, setKpiAtivos] = useState<number | null>(() => lerKpi('ativos'))
   const [kpiNiver, setKpiNiver] = useState<number | null>(() => lerKpi('niver'))
   const [kpiPend, setKpiPend] = useState<number | null>(() => lerKpi('pend'))
+  const [kpiFb, setKpiFb] = useState<number | null>(() => lerKpi('fb'))
+  const [fbNovos, setFbNovos] = useState(0) // respostas novas desde a última visita → card pisca
   useEffect(() => {
     const mes = new Date().getMonth() + 1
     fetch('/api/profissionais?leve=1').then(r => r.ok ? r.json() : []).then((arr: any[]) => {
@@ -131,6 +134,15 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
     fetch('/api/pendencias').then(r => r.ok ? r.json() : []).then((arr: any[]) => {
       const n = (Array.isArray(arr) ? arr : []).filter((p: any) => !p.resolvido).length
       setKpiPend(n); salvarKpi({ pend: n })
+    }).catch(() => { })
+    fetch('/api/feedback/contagem').then(r => r.ok ? r.json() : null).then(d => {
+      if (!d || typeof d.total !== 'number') return
+      setKpiFb(d.total); salvarKpi({ fb: d.total })
+      try {
+        const visto = localStorage.getItem('nodri_fb_visto')
+        if (visto === null) localStorage.setItem('nodri_fb_visto', String(d.total))
+        else setFbNovos(Math.max(0, d.total - Number(visto)))
+      } catch { /* */ }
     }).catch(() => { })
   }, [])
   const [notifDismissed, setNotifDismissed] = useState(false)
@@ -638,18 +650,26 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
           {busca.trim() === '' && (
             <div className="px-5 mt-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
               {[
-                { perm: 'profissionais', href: '/salon/profissionais', emoji: '👥', label: 'Profissionais ativos', valor: kpiAtivos, cor: '#5b4fcf' },
-                { perm: 'aniversariantes', href: '/salon/aniversariantes', emoji: '🎂', label: 'Aniversariantes do mês', valor: kpiNiver, cor: '#db2777' },
-                { perm: 'pendencias', href: '/salon/pendencias', emoji: '⚠️', label: 'Pendências abertas', valor: kpiPend, cor: '#ea580c' },
-                { perm: 'calendario', href: '/salon/calendario', emoji: '📅', label: 'Compromissos (2 dias)', valor: lembretesCal.length, cor: '#0891b2' },
+                { perm: 'profissionais', href: '/salon/profissionais', emoji: '👥', label: 'Profissionais ativos', valor: kpiAtivos, cor: '#5b4fcf', badge: 0 },
+                { perm: 'aniversariantes', href: '/salon/aniversariantes', emoji: '🎂', label: 'Aniversariantes do mês', valor: kpiNiver, cor: '#db2777', badge: 0 },
+                { perm: 'pendencias', href: '/salon/pendencias', emoji: '⚠️', label: 'Pendências abertas', valor: kpiPend, cor: '#ea580c', badge: 0 },
+                { perm: 'calendario', href: '/salon/calendario', emoji: '📅', label: 'Compromissos (2 dias)', valor: lembretesCal.length, cor: '#0891b2', badge: 0 },
+                { perm: 'feedback_cliente', href: '/salon/feedback', emoji: '⭐', label: 'Feedbacks de clientes', valor: kpiFb, cor: '#16a34a', badge: fbNovos },
               ].filter(k => pode(k.perm)).map(k => (
-                <a key={k.perm} href={k.href} style={{ textDecoration: 'none', background: '#fff', border: '1px solid #e8e6e0', borderLeft: `4px solid ${k.cor}`, borderRadius: 12, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12 }}
+                <a key={k.perm} href={k.href}
+                  onClick={() => { if (k.perm === 'feedback_cliente') { try { localStorage.setItem('nodri_fb_visto', String(kpiFb ?? 0)) } catch { /* */ } } }}
+                  style={{ textDecoration: 'none', background: k.badge > 0 ? '#f0fdf4' : '#fff', border: k.badge > 0 ? '1px solid #86efac' : '1px solid #e8e6e0', borderLeft: `4px solid ${k.cor}`, borderRadius: 12, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12, position: 'relative', animation: k.badge > 0 ? 'nodriKpiPulse 1.6s ease-in-out infinite' : undefined }}
                   onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 4px 14px rgba(0,0,0,.08)')} onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}>
                   <span style={{ fontSize: 24 }}>{k.emoji}</span>
                   <div>
                     <div style={{ fontSize: 22, fontWeight: 900, color: k.cor, lineHeight: 1 }}>{k.valor == null ? '—' : k.valor}</div>
                     <div style={{ fontSize: 11.5, color: '#6b6860', fontWeight: 600, marginTop: 2 }}>{k.label}</div>
                   </div>
+                  {k.badge > 0 && (
+                    <span style={{ position: 'absolute', top: -9, right: -6, background: '#16a34a', color: '#fff', fontSize: 10, fontWeight: 800, padding: '3px 9px', borderRadius: 99, animation: 'pulseDot 1.2s infinite', whiteSpace: 'nowrap', boxShadow: '0 3px 10px rgba(22,163,74,.4)' }}>
+                      +{k.badge} novo{k.badge > 1 ? 's' : ''} 🔔
+                    </span>
+                  )}
                 </a>
               ))}
             </div>
