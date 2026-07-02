@@ -363,7 +363,6 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
         return
       }
       window.location.href = 'nodri://abrir'
-      toast('Abrindo a Suite NODRI... Se não abrir, instale o aplicativo.', { icon: '🚀', duration: 5000 })
       return
     }
     const webUrl = getModuloWebUrl(modulo.nome)
