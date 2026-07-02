@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import {
   DollarSign, Target, Calendar, Trophy, Megaphone, ClipboardList, Moon, Sun, Bell,
-  AlertTriangle, Users, Lightbulb, Package, UserMinus, Star, Sparkles, CalendarRange, User, ArrowRight,
+  AlertTriangle, Users, Lightbulb, Package, UserMinus, Star, Sparkles, CalendarRange, User, ArrowRight, LogOut,
 } from 'lucide-react'
 
 // Tela inicial do profissional (estilo Nubank/Notion): saudação + central de notificações + atalhos.
@@ -14,6 +14,7 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba }:
   const [prof, setProf] = useState<any>(profProp || null)
   const [notifs, setNotifs] = useState<any[]>([])
   const [notifIdx, setNotifIdx] = useState(0)
+  const [ehProf, setEhProf] = useState(false) // logado como profissional → mostra Sair
 
   useEffect(() => { try { setDark(localStorage.getItem('mp_dark') === '1') } catch { } }, [])
   useEffect(() => { try { localStorage.setItem('mp_dark', dark ? '1' : '0') } catch { } }, [dark])
@@ -22,9 +23,10 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba }:
   useEffect(() => {
     (async () => {
       try {
+        const me = await fetch('/api/auth/me').then(r => r.ok ? r.json() : null).catch(() => null)
+        if (me?.role === 'profissional') setEhProf(true)
         let theId = pid
         if (!theId) {
-          const me = await fetch('/api/auth/me').then(r => r.ok ? r.json() : null)
           theId = me?.profissionalId; if (me?.nome) setNomeP(me.nome)
         }
         const [p, no] = await Promise.all([
@@ -108,6 +110,12 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba }:
           <p style={{ color: 'var(--txt2)', margin: '2px 0 0', fontSize: 13 }}>{cargo}</p>
         </div>
         <button onClick={() => setDark(d => !d)} title={dark ? 'Modo claro' : 'Modo escuro'} style={{ width: 42, height: 42, borderRadius: 13, border: '1px solid var(--bord)', background: 'var(--card)', color: 'var(--txt2)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{dark ? <Sun size={18} /> : <Moon size={18} />}</button>
+        {ehProf && (
+          <button onClick={() => { window.location.href = '/logout' }} title="Sair da conta"
+            style={{ height: 42, padding: '0 14px', borderRadius: 13, border: '1px solid rgba(239,68,68,.4)', background: 'var(--card)', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 13, fontWeight: 700, flexShrink: 0 }}>
+            <LogOut size={16} /> Sair
+          </button>
+        )}
       </div>
 
       {/* Central de notificações (o salão envia; giram sozinhas) */}
