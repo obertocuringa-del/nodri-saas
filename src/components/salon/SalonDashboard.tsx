@@ -123,6 +123,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
   const [kpiPend, setKpiPend] = useState<number | null>(() => lerKpi('pend'))
   const [kpiFb, setKpiFb] = useState<number | null>(() => lerKpi('fb'))
   const [fbNovos, setFbNovos] = useState(0) // respostas novas desde a última visita → card pisca
+  const [fbFormId, setFbFormId] = useState<string>('') // formulário p/ abrir direto os resultados
   useEffect(() => {
     const mes = new Date().getMonth() + 1
     fetch('/api/profissionais?leve=1').then(r => r.ok ? r.json() : []).then((arr: any[]) => {
@@ -138,6 +139,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
     fetch('/api/feedback/contagem').then(r => r.ok ? r.json() : null).then(d => {
       if (!d || typeof d.total !== 'number') return
       setKpiFb(d.total); salvarKpi({ fb: d.total })
+      if (d.formulario_id) setFbFormId(String(d.formulario_id))
       try {
         const visto = localStorage.getItem('nodri_fb_visto')
         if (visto === null) localStorage.setItem('nodri_fb_visto', String(d.total))
@@ -654,7 +656,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                 { perm: 'aniversariantes', href: '/salon/aniversariantes', emoji: '🎂', label: 'Aniversariantes do mês', valor: kpiNiver, cor: '#db2777', badge: 0 },
                 { perm: 'pendencias', href: '/salon/pendencias', emoji: '⚠️', label: 'Pendências abertas', valor: kpiPend, cor: '#ea580c', badge: 0 },
                 { perm: 'calendario', href: '/salon/calendario', emoji: '📅', label: 'Compromissos (2 dias)', valor: lembretesCal.length, cor: '#0891b2', badge: 0 },
-                { perm: 'feedback_cliente', href: '/salon/feedback', emoji: '⭐', label: 'Feedbacks de clientes', valor: kpiFb, cor: '#16a34a', badge: fbNovos },
+                { perm: 'feedback_cliente', href: fbFormId ? `/salon/feedback/resultados/${fbFormId}` : '/salon/feedback', emoji: '⭐', label: 'Feedbacks de clientes', valor: kpiFb, cor: '#16a34a', badge: fbNovos },
               ].filter(k => pode(k.perm)).map(k => (
                 <a key={k.perm} href={k.href}
                   onClick={() => { if (k.perm === 'feedback_cliente') { try { localStorage.setItem('nodri_fb_visto', String(kpiFb ?? 0)) } catch { /* */ } } }}
