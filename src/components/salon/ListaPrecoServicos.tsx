@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import toast from 'react-hot-toast'
 import { Loader2, Save, Printer, Plus, Trash2, RefreshCw } from 'lucide-react'
+import { getLogoSalao } from '@/lib/logoSalao'
 
 interface Item { id: string; nome: string; valor: string }
 // cor determinística p/ o avatar do card (mesmo nome = mesma cor)
@@ -80,7 +81,8 @@ export default function ListaPrecoServicos({ chave = 'precos_servicos', titulo =
     setSalvando(false)
   }
 
-  function imprimir() {
+  async function imprimir() {
+    const logoImpressao = logo || await getLogoSalao() // logo do documento > logo do salão > marca
     const esc = (v: any) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     // impressão no MESMO visual dos cards da tela
     const cards = itens.map(it => {
@@ -96,7 +98,7 @@ export default function ListaPrecoServicos({ chave = 'precos_servicos', titulo =
         </div>
       </div>`
     }).join('')
-    const cab = logo ? `<img src="${logo}" class="logo"/>` : `<div class="brand">NODRI</div>`
+    const cab = logoImpressao ? `<img src="${logoImpressao}" class="logo"/>` : `<div class="brand">NODRI</div>`
     const hoje = new Date().toLocaleDateString('pt-BR')
     const css = `
 @page{size:A4 portrait;margin:12mm}
@@ -123,7 +125,7 @@ h1{text-align:center;font-size:19px;font-weight:900;color:#1a1a2e;margin:10px 0 
 <h1>${esc(titulo.toUpperCase())}</h1>
 <div class="sub">${itens.length} serviços · valores vigentes em ${hoje}</div>
 <div class="grid">${cards}</div>
-<div class="ft">Documento gerado pelo Sistema NODRI · ${hoje}</div>
+<div class="ft">${logoImpressao ? `Documento gerado em ${hoje}` : `Documento gerado pelo Sistema NODRI · ${hoje}`}</div>
 <script>window.onload=function(){window.print()}</script></body></html>`
     const w = window.open('', '_blank', 'width=1000,height=700'); if (!w) return; w.document.write(html); w.document.close(); w.focus()
   }

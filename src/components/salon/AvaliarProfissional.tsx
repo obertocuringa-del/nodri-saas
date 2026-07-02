@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import toast from 'react-hot-toast'
 import { Loader2, Plus, Save, Printer, Trash2, ArrowLeft } from 'lucide-react'
 import { MODELO_AVAL_DEFAULT, CLASSIF_AVAL, classificarAval, type CatAval, type Faixa } from './avaliacaoModelo'
+import { getLogoSalao } from '@/lib/logoSalao'
 
 const ESCALA = [{ n: 1, l: 'Muito abaixo' }, { n: 2, l: 'Abaixo' }, { n: 3, l: 'Dentro do esperado' }, { n: 4, l: 'Acima' }, { n: 5, l: 'Excelente' }]
 const TEMPOS = ['Menos de 6 meses', '6 meses a 1 ano', '1 a 2 anos', '2 a 5 anos', 'Mais de 5 anos']
@@ -95,7 +96,8 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome, 
     } catch { toast.error('Erro') }
   }
 
-  function imprimir(av: Avaliacao) {
+  async function imprimir(av: Avaliacao) {
+    const logoSalao = await getLogoSalao()
     const r = calcular(av.respostas, secoes)
     const cl = classificarAval(r.overallPct, faixas)
     const linhas = secoes.map(s => {
@@ -104,7 +106,7 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome, 
       return `<div class="sec"><h3 style="color:${s.cor}">${s.titulo} <span style="font-weight:400;color:#666;font-size:11px">— média ${avg}%</span></h3>${s.criterios.map(cr => `<div class="cri"><span>${cr.texto.replace(/</g, '&lt;')}</span><b>${av.respostas[`${s.id}:${cr.id}`] ?? '-'} / 5</b></div>`).join('')}</div>`
     }).join('')
     const css = `@page{size:A4 portrait;margin:14mm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;font-size:12px}.hd{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #5b4fcf;padding-bottom:8px;margin-bottom:12px}.brand{font-size:22px;font-weight:900;color:#5b4fcf}.score{background:${cl.cor};color:#fff;border-radius:12px;padding:14px 18px;text-align:center;margin-bottom:14px}.score b{font-size:30px}.sec{margin-bottom:12px;break-inside:avoid}h3{font-size:13px;border-bottom:1px solid #ddd;padding-bottom:3px;margin-bottom:5px}.cri{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dotted #eee}.obs{background:#faf9f7;border-radius:8px;padding:10px;margin-top:10px;font-size:11px}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}`
-    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Avaliação ${profissionalNome}</title><style>${css}</style></head><body><div class="hd"><div class="brand">NODRI</div><div style="text-align:right;font-size:11px"><strong>Avaliação de Profissional</strong><br>${profissionalNome} · ${av.data.split('-').reverse().join('/')}</div></div><div class="score"><div>${cl.emoji} ${cl.txt}</div><b>${r.overall10.toFixed(1)}</b> / 10 &nbsp; (${r.overallPct}%)</div>${linhas}${av.obs ? `<div class="obs"><strong>Observações:</strong> ${av.obs.replace(/</g, '&lt;')}</div>` : ''}<script>window.onload=function(){window.print()}</script></body></html>`
+    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Avaliação ${profissionalNome}</title><style>${css}</style></head><body><div class="hd">${logoSalao ? `<img src="${logoSalao}" style="max-height:60px;max-width:210px;object-fit:contain"/>` : `<div class="brand">NODRI</div>`}<div style="text-align:right;font-size:11px"><strong>Avaliação de Profissional</strong><br>${profissionalNome} · ${av.data.split('-').reverse().join('/')}</div></div><div class="score"><div>${cl.emoji} ${cl.txt}</div><b>${r.overall10.toFixed(1)}</b> / 10 &nbsp; (${r.overallPct}%)</div>${linhas}${av.obs ? `<div class="obs"><strong>Observações:</strong> ${av.obs.replace(/</g, '&lt;')}</div>` : ''}<script>window.onload=function(){window.print()}</script></body></html>`
     const w = window.open('', '_blank', 'width=900,height=700'); if (!w) return; w.document.write(html); w.document.close(); w.focus()
   }
 

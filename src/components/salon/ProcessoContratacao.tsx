@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import toast from 'react-hot-toast'
 import { Loader2, Save, Plus, Trash2, X, MessageCircle, Search, Pencil, Eye, Send, Printer, FileText, RotateCcw } from 'lucide-react'
 import CartaAberturaConta from './CartaAberturaConta'
+import { getLogoSalao } from '@/lib/logoSalao'
 
 interface Passo { id: string; titulo: string; texto: string }
 interface Secao { id: string; titulo: string; cor: string; passos: Passo[] }
@@ -96,11 +97,12 @@ export default function ProcessoContratacao({ pessoas, chave = 'processo_contrat
     setEnviar(null); setBusca('')
   }
 
-  function imprimir() {
+  async function imprimir() {
+    const logoSalao = await getLogoSalao()
     const esc = (v: any) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>')
     const body = doc.secoes.map(s => `<div class="sec" style="border-color:${s.cor}"><div class="hd" style="background:${s.cor}">${esc(s.titulo)}</div>${s.passos.map((p, i) => `<div class="passo"><b>${esc(p.titulo)}</b><div>${esc(p.texto)}</div></div>`).join('')}</div>`).join('')
     const css = `@page{size:A4 portrait;margin:14mm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;font-size:12px}.brand{font-size:22px;font-weight:900;color:#5b4fcf;margin-bottom:12px}.sec{border:2px solid;border-radius:10px;overflow:hidden;margin-bottom:14px;break-inside:avoid}.hd{color:#fff;font-weight:800;padding:8px 12px;font-size:13px}.passo{padding:9px 12px;border-bottom:1px solid #eee}.passo b{color:#444}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}`
-    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Processo de Contratação</title><style>${css}</style></head><body><div class="brand">NODRI — Processo de Contratação</div>${body}<script>window.onload=function(){window.print()}</script></body></html>`
+    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Processo de Contratação</title><style>${css}</style></head><body>${logoSalao ? `<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px"><img src="${logoSalao}" style="max-height:56px;max-width:200px;object-fit:contain"/><span style="font-size:16px;font-weight:900;color:#5b4fcf">Processo de Contratação</span></div>` : `<div class="brand">NODRI — Processo de Contratação</div>`}${body}<script>window.onload=function(){window.print()}</script></body></html>`
     const w = window.open('', '_blank', 'width=900,height=700'); if (!w) return; w.document.write(html); w.document.close(); w.focus()
   }
 

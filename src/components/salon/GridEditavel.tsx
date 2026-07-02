@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react'
 import toast from 'react-hot-toast'
 import { Loader2, Save, Printer, Plus, Trash2, Bold, Italic, Type, PaintBucket, AlignLeft, AlignCenter, AlignRight, Square } from 'lucide-react'
+import { getLogoSalao } from '@/lib/logoSalao'
 
 export type Cell = { t: string; b?: boolean; i?: boolean; cor?: string; tam?: number; bg?: string; cs?: number; rs?: number; h?: boolean; al?: 'left' | 'center' | 'right'; bd?: boolean }
 export type Tabela = { titulo: string; cabecalho: Cell[]; linhas: Cell[][]; larguras?: number[]; alturas?: number[] }
@@ -170,7 +171,8 @@ export default function GridEditavel({ chave, defaultDoc, defaultDocFn, mensal, 
     return () => { if (autoTimer.current) clearTimeout(autoTimer.current) }
   }, [doc, dirty, soLeitura, loading, chaveEfetiva, limparLegadoSePreciso])
 
-  function imprimir() {
+  async function imprimir() {
+    const logoSalao = await getLogoSalao()
     const esc = (v: string) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>')
     const sty = (cell: Cell) => `font-weight:${cell.b ? 700 : 400};font-style:${cell.i ? 'italic' : 'normal'};color:${cell.cor || '#1a1a1a'};font-size:${cell.tam || 13}px;text-align:${cell.al || 'left'};${cell.bg ? `background:${cell.bg};` : ''}${cell.bd ? 'border:2px solid #333;' : ''}`
     const tabelas = doc.tabelas.map(t => {
@@ -182,7 +184,8 @@ export default function GridEditavel({ chave, defaultDoc, defaultDocFn, mensal, 
     }).join('')
     const css = `@page{size:A4 ${landscape ? 'landscape' : 'portrait'};margin:12mm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e}.hd{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid ${corTema};padding-bottom:8px;margin-bottom:14px}.brand{font-size:22px;font-weight:900;color:${corTema}}h2{font-size:14px;color:${corTema};margin:14px 0 6px;text-transform:uppercase;letter-spacing:.5px}table{width:100%;border-collapse:collapse;margin-bottom:6px;table-layout:fixed}th,td{border:1px solid #ccc;padding:5px 8px;font-size:11px;text-align:left;vertical-align:top;word-break:break-word;white-space:pre-wrap}th{background:#f1eefb;color:#3b2e7a}tr{break-inside:avoid}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}`
     const titulo = mensal ? `${doc.tabelas[0]?.titulo || 'Lista'} — ${mes.split('-').reverse().join('/')}` : (doc.tabelas[0]?.titulo || 'Lista')
-    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${esc(titulo)}</title><style>${css}</style></head><body><div class="hd"><div class="brand">NODRI</div><div style="text-align:right;font-size:11px"><strong>${esc(titulo)}</strong><br>${new Date().toLocaleDateString('pt-BR')}</div></div>${tabelas}<script>window.onload=function(){window.print()}</script></body></html>`
+    const cabec = logoSalao ? `<img src="${logoSalao}" style="max-height:60px;max-width:210px;object-fit:contain"/>` : `<div class="brand">NODRI</div>`
+    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${esc(titulo)}</title><style>${css}</style></head><body><div class="hd">${cabec}<div style="text-align:right;font-size:11px"><strong>${esc(titulo)}</strong><br>${new Date().toLocaleDateString('pt-BR')}</div></div>${tabelas}<script>window.onload=function(){window.print()}</script></body></html>`
     const w = window.open('', '_blank', 'width=1000,height=700'); if (!w) return; w.document.write(html); w.document.close(); w.focus()
   }
 

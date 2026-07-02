@@ -1,6 +1,6 @@
 'use client'
-import { useState, useEffect } from 'react'
-import { ArrowLeft, Save, Loader2, User, Mail, Phone, Key, Eye, EyeOff, FileText, MapPin } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { ArrowLeft, Save, Loader2, User, Mail, Phone, Key, Eye, EyeOff, FileText, MapPin, Image as ImageIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 
@@ -10,13 +10,35 @@ export default function PerfilSalaoPage() {
   const [saving, setSaving] = useState(false)
   const [showSenha, setShowSenha] = useState(false)
   const [form, setForm] = useState({ nome: '', responsavel: '', email: '', telefone: '', nova_senha: '', confirmar_senha: '', cnpj: '', endereco: '', cidade: '', rg_responsavel: '' })
+  const [logo, setLogo] = useState('')
+  const logoRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     fetch('/api/salon/perfil').then(r => r.json()).then(salao => {
       setForm(p => ({ ...p, nome: salao.nome || '', responsavel: salao.responsavel || '', email: salao.email || '', telefone: salao.telefone || '', cnpj: salao.cnpj || '', endereco: salao.endereco || '', cidade: salao.cidade || '', rg_responsavel: salao.rg_responsavel || '' }))
       setLoading(false)
     }).catch(() => setLoading(false))
+    // logo do salão (usada nas impressões no lugar da marca NODRI)
+    fetch('/api/salon/grid?chave=logo_salao').then(r => r.ok ? r.json() : null).then(d => { if (d?.logo) setLogo(d.logo) }).catch(() => {})
   }, [])
+
+  async function persistirLogo(novo: string) {
+    setLogo(novo)
+    try {
+      const res = await fetch('/api/salon/grid', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chave: 'logo_salao', doc: { logo: novo } }) })
+      if (res.ok) toast.success(novo ? 'Logo salva! Ela sai em todas as impressões.' : 'Logo removida — volta a sair NODRI.')
+      else toast.error('Erro ao salvar a logo')
+    } catch { toast.error('Erro de conexão') }
+  }
+
+  function onLogoFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0]; if (!f) return
+    if (!f.type.startsWith('image/')) { toast.error('Selecione uma imagem'); return }
+    if (f.size > 1.5 * 1024 * 1024) { toast.error('Imagem muito grande (máx. 1,5 MB)'); return }
+    const reader = new FileReader()
+    reader.onload = () => persistirLogo(String(reader.result || ''))
+    reader.readAsDataURL(f)
+  }
 
   async function handleSalvar(e: React.FormEvent) {
     e.preventDefault()
@@ -83,6 +105,27 @@ export default function PerfilSalaoPage() {
                     className="w-full bg-nodri-surface border border-nodri-border rounded-lg pl-8 pr-3 py-2.5 text-[13px] outline-none focus:border-nodri-cyan transition-colors" />
                 </div>
               </div>
+            </div>
+
+            <div className="nodri-card p-5 space-y-4">
+              <h2 className="font-syne font-bold text-[13px] text-nodri-cyan flex items-center gap-2"><ImageIcon size={14} /> Logo do Salão</h2>
+              <p className="text-nodri-t3 text-[11px]">Sua logo substitui a marca NODRI em todas as impressões (listas, preços, documentos). Imagem até 1,5 MB.</p>
+              <input ref={logoRef} type="file" accept="image/*" onChange={onLogoFile} className="hidden" />
+              {logo ? (
+                <div className="flex items-center gap-3 flex-wrap">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={logo} alt="Logo do salão" style={{ maxHeight: 64, maxWidth: 200, objectFit: 'contain', background: '#fff', borderRadius: 10, padding: 6 }} />
+                  <button type="button" onClick={() => logoRef.current?.click()}
+                    className="px-4 py-2 rounded-lg border border-nodri-border text-nodri-cyan text-[12px] font-bold hover:border-nodri-cyan transition-colors">Trocar</button>
+                  <button type="button" onClick={() => persistirLogo('')}
+                    className="px-4 py-2 rounded-lg border border-nodri-red/40 text-nodri-red text-[12px] font-bold hover:bg-nodri-red/10 transition-colors">Remover</button>
+                </div>
+              ) : (
+                <button type="button" onClick={() => logoRef.current?.click()}
+                  className="w-full py-4 rounded-xl border-2 border-dashed border-nodri-border text-nodri-t2 text-[13px] font-bold hover:border-nodri-cyan hover:text-nodri-cyan transition-colors">
+                  🖼️ Clique para anexar a logo do salão
+                </button>
+              )}
             </div>
 
             <div className="nodri-card p-5 space-y-4">

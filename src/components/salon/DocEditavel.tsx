@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react'
 import toast from 'react-hot-toast'
 import { Loader2, Save, Printer, Plus, Trash2, ChevronUp, ChevronDown } from 'lucide-react'
+import { getLogoSalao } from '@/lib/logoSalao'
 
 export interface Bloco { id: string; titulo: string; corpo: string; dataElab?: string; dataRev?: string }
 const rid = () => Math.random().toString(36).slice(2, 8)
@@ -75,14 +76,15 @@ export default function DocEditavel({ chave, tituloPadrao, blocosPadrao, corTema
     return () => { if (autoTimer.current) clearTimeout(autoTimer.current) }
   }, [titulo, blocos, logo, dirty, loading, chave])
 
-  function imprimir() {
+  async function imprimir() {
+    const logoImpressao = logo || await getLogoSalao() // logo do documento > logo do salão > marca
     const esc = (v: string) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>')
     const corpo = blocos.map(b => {
       const dt = comData ? `<div class="dt">Data de elaboração: <b>${esc(b.dataElab || '____/____/______')}</b> &nbsp;&nbsp; Data de revisão: <b>${esc(b.dataRev || '____/____/______')}</b></div>` : ''
       return `<div class="bl"><h2>${esc(b.titulo)}</h2>${dt}<div class="tx">${esc(b.corpo)}</div></div>`
     }).join('')
     const css = `@page{size:A4 portrait;margin:14mm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;font-size:12px;line-height:1.5}.hd{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid ${corTema};padding-bottom:8px;margin-bottom:14px}.brand{font-size:24px;font-weight:900;color:${corTema}}h1{font-size:16px;text-align:center;margin-bottom:14px;color:#1a1a2e}.bl{margin-bottom:14px;break-inside:avoid}h2{font-size:13px;color:${corTema};font-weight:800;border-bottom:1px solid #ddd;padding-bottom:3px;margin-bottom:5px}.dt{font-size:10px;color:#555;margin-bottom:5px}.tx{white-space:pre-wrap;font-size:11.5px}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}`
-    const cabec = logo ? `<img src="${logo}" style="max-height:64px;max-width:220px"/>` : `<div class="brand">NODRI</div>`
+    const cabec = logoImpressao ? `<img src="${logoImpressao}" style="max-height:64px;max-width:220px"/>` : `<div class="brand">NODRI</div>`
     const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${esc(titulo)}</title><style>${css}</style></head><body><div class="hd">${cabec}<div style="text-align:right;font-size:11px">${new Date().toLocaleDateString('pt-BR')}</div></div><h1>${esc(titulo)}</h1>${corpo}<script>window.onload=function(){window.print()}</script></body></html>`
     const w = window.open('', '_blank', 'width=900,height=700'); if (!w) return; w.document.write(html); w.document.close(); w.focus()
   }

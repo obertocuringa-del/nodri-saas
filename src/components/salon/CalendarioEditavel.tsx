@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft, Loader2, Save, Plus, Trash2, X, CalendarDays, ChevronLeft, ChevronRight, Bell, Printer } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { usePermissoes } from '@/lib/usePermissoes'
+import { getLogoSalao } from '@/lib/logoSalao'
 
 interface Evento { id: string; data: string; texto: string; responsavel?: string }
 const rid = () => Math.random().toString(36).slice(2, 8)
@@ -63,13 +64,14 @@ export default function CalendarioEditavel({ chave, titulo, comResponsavel, camp
     setEventos(lista); setDirty(true); salvar(lista)
   }
 
-  function imprimir() {
+  async function imprimir() {
+    const logoSalao = await getLogoSalao()
     const esc = (v: any) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>')
     const ordenados = [...eventos].sort((a, b) => a.data.localeCompare(b.data))
     const body = ordenados.map(e => `<tr><td class="d">${esc(e.data.split('-').reverse().join('/'))}</td><td>${esc(e.texto)}</td>${comResponsavel ? `<td>${esc(e.responsavel || '')}</td>` : ''}</tr>`).join('')
     const colResp = comResponsavel ? '<th>Responsável</th>' : ''
     const css = `@page{size:A4 portrait;margin:14mm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;font-size:12px}.hd{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid ${corTema};padding-bottom:8px;margin-bottom:14px}.brand{font-size:22px;font-weight:900;color:${corTema}}table{width:100%;border-collapse:collapse}th,td{border:1px solid #bbb;padding:7px 9px;text-align:left;vertical-align:top;word-break:break-word;white-space:pre-wrap}th{background:#f1eefb;color:#3b2e7a}.d{white-space:nowrap;font-weight:700;width:110px}tr{break-inside:avoid}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}`
-    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${esc(titulo)}</title><style>${css}</style></head><body><div class="hd"><div class="brand">NODRI</div><div style="text-align:right;font-size:11px"><strong>${esc(titulo)}</strong><br>${new Date().toLocaleDateString('pt-BR')}</div></div><table><thead><tr><th>Data</th><th>Compromisso</th>${colResp}</tr></thead><tbody>${body || `<tr><td colspan="3">Nenhum compromisso.</td></tr>`}</tbody></table><script>window.onload=function(){window.print()}</script></body></html>`
+    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${esc(titulo)}</title><style>${css}</style></head><body><div class="hd">${logoSalao ? `<img src="${logoSalao}" style="max-height:60px;max-width:210px;object-fit:contain"/>` : `<div class="brand">NODRI</div>`}<div style="text-align:right;font-size:11px"><strong>${esc(titulo)}</strong><br>${new Date().toLocaleDateString('pt-BR')}</div></div><table><thead><tr><th>Data</th><th>Compromisso</th>${colResp}</tr></thead><tbody>${body || `<tr><td colspan="3">Nenhum compromisso.</td></tr>`}</tbody></table><script>window.onload=function(){window.print()}</script></body></html>`
     const w = window.open('', '_blank', 'width=900,height=700'); if (!w) return; w.document.write(html); w.document.close(); w.focus()
   }
 

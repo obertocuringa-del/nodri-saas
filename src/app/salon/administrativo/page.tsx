@@ -13,6 +13,7 @@ import AnexosLista from '@/components/salon/AnexosLista'
 import Etiquetas from '@/components/salon/Etiquetas'
 import { CAFE_BLOCOS, POP_SALAO_BLOCOS } from '@/components/salon/popDefaults'
 import { usePermissoes } from '@/lib/usePermissoes'
+import { getLogoSalao } from '@/lib/logoSalao'
 
 // Mapeia cada aba do topo para a chave de permissão
 const ABA_CHAVE: Record<string, string> = {
@@ -429,14 +430,16 @@ function ListaServico({ servico, label, profsSalao, onMensagem }: { servico: str
     setMsgProf(null)
   }
 
-  function imprimir() {
+  async function imprimir() {
+    const logoSalao = await getLogoSalao()
     const esc = (v: any) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     const head = doc.colunas.map(c => `<th>${esc(c.nome)}</th>`).join('')
     let body = ''
     for (let d = 1; d <= dias; d++) body += `<tr><td class="dia">${d}</td>${doc.colunas.map(c => `<td>${doc.cells[`${d}-${c.id}`] || ''}</td>`).join('')}</tr>`
     const tot = doc.colunas.map((c, i) => `<td><b>${totais[i]}</b></td>`).join('')
-    const css = `@page{size:A4 portrait;margin:12mm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;font-size:11px}h1{text-align:center;font-size:15px;margin-bottom:8px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #999;text-align:center;padding:3px 4px}th{background:#eee}.dia{background:#f7f6ff;font-weight:700}tfoot td{background:#fce7f3;font-weight:800}`
-    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${esc(label)}</title><style>${css}</style></head><body><h1>${esc(label.toUpperCase())} — ${esc(mes.split('-').reverse().join('/'))}</h1><table><thead><tr><th>DIA</th>${head}</tr></thead><tbody>${body}</tbody><tfoot><tr><td>TOT</td>${tot}</tr></tfoot></table><script>window.onload=function(){window.print()}</script></body></html>`
+    const cab = logoSalao ? `<div style="display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid #5b4fcf;padding-bottom:8px;margin-bottom:10px"><img src="${logoSalao}" style="max-height:54px;max-width:190px;object-fit:contain"/><span style="font-size:10px;color:#777">${new Date().toLocaleDateString('pt-BR')}</span></div>` : ''
+    const css = `@page{size:A4 portrait;margin:12mm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;font-size:11px}h1{text-align:center;font-size:15px;margin-bottom:8px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #999;text-align:center;padding:3px 4px}th{background:#eee}.dia{background:#f7f6ff;font-weight:700}tfoot td{background:#fce7f3;font-weight:800}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}`
+    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${esc(label)}</title><style>${css}</style></head><body>${cab}<h1>${esc(label.toUpperCase())} — ${esc(mes.split('-').reverse().join('/'))}</h1><table><thead><tr><th>DIA</th>${head}</tr></thead><tbody>${body}</tbody><tfoot><tr><td>TOT</td>${tot}</tr></tfoot></table><script>window.onload=function(){window.print()}</script></body></html>`
     const w = window.open('', '_blank', 'width=900,height=700'); if (!w) return; w.document.write(html); w.document.close(); w.focus()
   }
 
