@@ -68,10 +68,70 @@ export default function FeedbackPage() {
   const [editTitle, setEditTitle] = useState('')
   const [editDesc, setEditDesc] = useState('')
 
+  // ── Mensagem padrão para enviar ao cliente (junto com o link) ──
+  const [nomeSalao, setNomeSalao] = useState('')
+  const [msgCliente, setMsgCliente] = useState('')      // texto salvo (vazio = usa o modelo)
+  const [msgEdit, setMsgEdit] = useState('')
+  const [msgEditando, setMsgEditando] = useState(false)
+  const [msgSalvando, setMsgSalvando] = useState(false)
+
   useEffect(() => {
-    setSalaoUrl(window.location.origin)
+    // domínio oficial fixo: o link enviado ao cliente sai sempre bonito,
+    // independente de você estar acessando pelo .vercel.app ou pelo nodri.com.br
+    setSalaoUrl('https://www.nodri.com.br')
     fetchFormularios()
+    fetch('/api/salon/perfil').then(r => r.ok ? r.json() : null).then(d => { if (d?.nome) setNomeSalao(d.nome) }).catch(() => {})
   }, [])
+
+  const modeloPadraoMsg = useCallback((nome: string) =>
+    `Passando pra agradecer pela sua visita aqui no *${nome || 'nosso salão'}*, foi um prazer te atender! ✨\n\nSua opinião é muito importante pra gente melhorar cada vez mais nosso atendimento.\n\nVocê pode me contar rapidinho como foi sua experiência?\n\n*É só clicar aqui:* {link}`, [])
+
+  useEffect(() => {
+    if (!selected?.id) return
+    setMsgEditando(false)
+    fetch(`/api/salon/grid?chave=feedback_msg_${selected.id}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => setMsgCliente(typeof d?.texto === 'string' ? d.texto : ''))
+      .catch(() => setMsgCliente(''))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected?.id])
+
+  const msgAtual = msgCliente || modeloPadraoMsg(nomeSalao)
+  // {link} é substituído pelo link real; sem {link}, o link entra no final
+  const montarMsg = useCallback((texto: string, link: string) =>
+    texto.includes('{link}') ? texto.split('{link}').join(link) : `${texto}\n\n${link}`, [])
+
+  async function salvarMsgCliente() {
+    if (!selected) return
+    setMsgSalvando(true)
+    try {
+      const res = await fetch('/api/salon/grid', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chave: `feedback_msg_${selected.id}`, doc: { texto: msgEdit } }) })
+      if (res.ok) { setMsgCliente(msgEdit); setMsgEditando(false); toast.success('Mensagem salva!') }
+      else toast.error('Erro ao salvar a mensagem')
+    } catch { toast.error('Erro de conexão') }
+    setMsgSalvando(false)
+  }
+
+  async function excluirMsgCliente() {
+    if (!selected) return
+    if (!confirm('Excluir a mensagem personalizada? O card volta ao modelo padrão.')) return
+    try {
+      await fetch('/api/salon/grid', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chave: `feedback_msg_${selected.id}`, doc: { texto: '' } }) })
+      setMsgCliente(''); setMsgEditando(false)
+      toast.success('Mensagem excluída — voltou ao modelo padrão.')
+    } catch { toast.error('Erro de conexão') }
+  }
+
+  // renderiza *negrito* e quebras de linha como ficará no WhatsApp
+  const renderWhats = (t: string) => t.split('\n').map((linha, i) => (
+    <span key={i}>
+      {linha.split(/(\*[^*]+\*)/g).map((seg, j) =>
+        seg.startsWith('*') && seg.endsWith('*') && seg.length > 2
+          ? <strong key={j}>{seg.slice(1, -1)}</strong>
+          : <span key={j}>{seg}</span>)}
+      <br />
+    </span>
+  ))
 
   const fetchFormularios = async () => {
     setLoading(true)
@@ -540,6 +600,71 @@ export default function FeedbackPage() {
                       </a>
                     </div>
                   </div>
+                  {/* ── Mensagem pronta para o cliente (com o link) ── */}
+                  <div className="p-5 rounded-2xl border mb-4" style={{ background: '#ffffff', borderColor: 'rgba(34,197,94,0.3)' }}>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Copy size={15} className="text-green-500" />
+                      <span className="font-semibold text-nodri-t1 text-sm">Mensagem para o cliente</span>
+                    </div>
+                    <p className="text-[11px] text-nodri-t3 mb-3">
+                      Mensagem pronta com o link — copie e cole no WhatsApp da cliente. Sai formatada com <strong>negrito</strong>, emojis e espaçamentos.
+                    </p>
+
+                    {!msgEditando ? (
+                      <>
+                        {/* Prévia estilo WhatsApp */}
+                        <div style={{ background: '#e7fbe0', border: '1px solid #c9ecbc', borderRadius: '14px 14px 14px 4px', padding: '12px 14px', fontSize: 13, color: '#1a1a1a', lineHeight: 1.55, whiteSpace: 'normal', wordBreak: 'break-word', overflowWrap: 'anywhere', maxWidth: 420 }}>
+                          {renderWhats(montarMsg(msgAtual, linkFeedback))}
+                        </div>
+                        <div className="mt-3 flex gap-2 flex-wrap">
+                          <button onClick={() => { navigator.clipboard.writeText(montarMsg(msgAtual, linkFeedback)); toast.success('Mensagem copiada! É só colar no WhatsApp. 💬') }}
+                            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[11px] font-bold transition-all"
+                            style={{ background: '#25D366', color: '#fff', border: 'none' }}>
+                            <Copy size={12} /> Copiar mensagem
+                          </button>
+                          <button onClick={() => { setMsgEdit(msgAtual); setMsgEditando(true) }}
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-semibold transition-all"
+                            style={{ background: 'rgba(139,92,246,0.1)', color: '#7c6fe0', border: '1px solid rgba(139,92,246,0.3)' }}>
+                            <Edit2 size={12} /> Editar
+                          </button>
+                          {msgCliente && (
+                            <button onClick={excluirMsgCliente}
+                              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-semibold transition-all"
+                              style={{ background: 'rgba(239,68,68,0.08)', color: '#dc2626', border: '1px solid rgba(239,68,68,0.3)' }}>
+                              <Trash2 size={12} /> Excluir
+                            </button>
+                          )}
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <textarea value={msgEdit} onChange={e => setMsgEdit(e.target.value)} rows={9}
+                          className="w-full bg-nodri-card border border-nodri-border rounded-lg px-3 py-2 text-[12px] text-nodri-t1 outline-none focus:border-nodri-cyan/40"
+                          style={{ whiteSpace: 'pre-wrap', lineHeight: 1.55, resize: 'vertical', fontFamily: 'inherit' }} />
+                        <p className="text-[10px] text-nodri-t3 mt-1 mb-2">
+                          Dicas: use <strong>*palavra*</strong> para negrito no WhatsApp · emojis valem · <strong>{'{link}'}</strong> marca onde o link do formulário entra (sem ele, o link vai no final).
+                        </p>
+                        <div className="flex gap-2">
+                          <button onClick={salvarMsgCliente} disabled={msgSalvando}
+                            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[11px] font-bold transition-all"
+                            style={{ background: 'rgba(34,197,94,0.15)', color: '#15803d', border: '1px solid rgba(34,197,94,0.35)' }}>
+                            <Check size={12} /> {msgSalvando ? 'Salvando...' : 'Salvar mensagem'}
+                          </button>
+                          <button onClick={() => setMsgEditando(false)}
+                            className="px-3 py-2 rounded-lg text-[11px] font-semibold text-nodri-t3 hover:text-nodri-t1 transition-colors"
+                            style={{ border: '1px solid #e0ddd8', background: '#fff' }}>
+                            Cancelar
+                          </button>
+                          <button onClick={() => setMsgEdit(modeloPadraoMsg(nomeSalao))}
+                            className="px-3 py-2 rounded-lg text-[11px] font-semibold transition-all"
+                            style={{ border: '1px dashed #c9c4f0', background: '#f6f4ff', color: '#5b4fcf' }}>
+                            Restaurar modelo
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
                   <div className="p-4 rounded-xl border" style={{ borderColor: 'rgba(255,200,0,0.2)', background: 'rgba(255,200,0,0.04)' }}>
                     <div className="text-[10px] font-bold text-yellow-400 mb-2">Dica de uso</div>
                     <ul className="text-[11px] text-nodri-t2 space-y-1.5">
