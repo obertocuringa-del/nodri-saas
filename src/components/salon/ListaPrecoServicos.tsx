@@ -5,6 +5,18 @@ import toast from 'react-hot-toast'
 import { Loader2, Save, Printer, Plus, Trash2, RefreshCw } from 'lucide-react'
 
 interface Item { id: string; nome: string; valor: string }
+// cor determinística p/ o avatar do card (mesmo nome = mesma cor)
+const PALETA = [
+  { bg: '#f0eefb', fg: '#5b4fcf' }, { bg: '#e1f5ee', fg: '#0f6e56' }, { bg: '#fbeaf0', fg: '#993556' },
+  { bg: '#faece7', fg: '#993c1d' }, { bg: '#e6f1fb', fg: '#185fa5' }, { bg: '#faeeda', fg: '#854f0b' },
+]
+function corDoNome(nome: string) {
+  let h = 0; for (const ch of (nome || '?')) h = (h * 31 + ch.charCodeAt(0)) >>> 0
+  return PALETA[h % PALETA.length]
+}
+function iniciais(nome: string) {
+  return (nome || '?').trim().split(/\s+/).map(p => p[0]).slice(0, 2).join('').toUpperCase() || '?'
+}
 interface Servico { id: string; nome: string; preco?: string; preco_fixo?: number | null; preco_min?: number | null }
 const rid = () => Math.random().toString(36).slice(2, 8)
 const norm = (s: string) => (s || '').toLowerCase().trim().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ')
@@ -23,6 +35,7 @@ export default function ListaPrecoServicos({ chave = 'precos_servicos', titulo =
   const [salvando, setSalvando] = useState(false)
   const [dirty, setDirty] = useState(false)
   const [pickerOpen, setPickerOpen] = useState(false)
+  const [busca, setBusca] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
   const carregar = useCallback(async () => {
@@ -110,26 +123,57 @@ export default function ListaPrecoServicos({ chave = 'precos_servicos', titulo =
       <p style={{ fontSize: 12, color: '#6b6860', marginBottom: 10 }}>Os itens vêm da página <strong>Serviços do Salão</strong>. O <strong>valor</strong> é editável. Use <strong>Adicionar da lista</strong> (mostra só o que ainda não está aqui), edite o nome ou <strong>exclua</strong> à vontade.</p>
 
       {loading ? <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Loader2 size={24} className="animate-spin" style={{ color: '#5b4fcf' }} /></div> : (
-        <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: 8, maxWidth: 680 }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead><tr><th style={thSt}>Serviço / Tratamento</th><th style={{ ...thSt, width: 150 }}>Valor</th><th style={{ ...thSt, width: 44 }}></th></tr></thead>
-            <tbody>
-              {itens.map((it, i) => (
-                <tr key={it.id} style={{ background: i % 2 ? '#fffdf2' : '#fff' }}>
-                  <td style={tdSt}><input value={it.nome} onChange={e => upd(it.id, 'nome', e.target.value)} placeholder="Nome" style={inp} /></td>
-                  <td style={tdSt}><input value={it.valor} onChange={e => upd(it.id, 'valor', e.target.value)} placeholder="R$ 0,00" style={{ ...inp, fontWeight: 700, textAlign: 'right' }} /></td>
-                  <td style={{ ...tdSt, textAlign: 'center' }}><button onClick={() => del(it.id)} title="Excluir" style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', padding: 6 }}><Trash2 size={13} /></button></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <button onClick={add} style={{ marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 12px', borderRadius: 8, border: '1px dashed #d0cdc7', background: '#faf9f7', color: '#6b6860', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}><Plus size={13} /> Adicionar linha manual</button>
-        </div>
+        <>
+          {/* Busca + contador */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
+            <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="🔎 Buscar serviço..."
+              style={{ flex: 1, minWidth: 200, maxWidth: 340, padding: '10px 14px', borderRadius: 12, border: '1.5px solid #e0ddd8', fontSize: 13, outline: 'none', background: '#fff' }}
+              onFocus={e => (e.currentTarget.style.borderColor = '#5b4fcf')} onBlur={e => (e.currentTarget.style.borderColor = '#e0ddd8')} />
+            <span style={{ fontSize: 12, fontWeight: 800, color: '#5b4fcf', background: '#f0eefb', padding: '5px 12px', borderRadius: 20 }}>{itens.length} itens</span>
+          </div>
+
+          {/* Grade de cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: 12 }}>
+            {itens.filter(it => !busca || norm(it.nome).includes(norm(busca))).map(it => {
+              const cor = corDoNome(it.nome)
+              return (
+                <div key={it.id}
+                  style={{ position: 'relative', background: '#fff', border: '1px solid #e8e6e0', borderTop: `3px solid ${cor.fg}`, borderRadius: 14, padding: '12px 14px', transition: 'box-shadow .15s, transform .15s' }}
+                  onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 10px 24px rgba(0,0,0,.10)'; e.currentTarget.style.transform = 'translateY(-2px)' }}
+                  onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'none' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                    <span style={{ width: 34, height: 34, borderRadius: 10, background: cor.bg, color: cor.fg, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 12, flexShrink: 0 }}>{iniciais(it.nome)}</span>
+                    <input value={it.nome} onChange={e => upd(it.id, 'nome', e.target.value)} placeholder="Nome do serviço"
+                      style={{ flex: 1, minWidth: 0, border: '1px solid transparent', borderRadius: 6, padding: '5px 6px', outline: 'none', fontSize: 13.5, fontWeight: 700, color: '#1a1a1a', background: 'transparent' }}
+                      onFocus={e => (e.currentTarget.style.borderColor = '#c9c4f0')} onBlur={e => (e.currentTarget.style.borderColor = 'transparent')} />
+                    <button onClick={() => del(it.id)} title="Excluir"
+                      style={{ border: 'none', background: 'transparent', color: '#d4cfc7', cursor: 'pointer', padding: 4, flexShrink: 0 }}
+                      onMouseEnter={e => (e.currentTarget.style.color = '#dc2626')} onMouseLeave={e => (e.currentTarget.style.color = '#d4cfc7')}>
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: cor.bg, borderRadius: 10, padding: '7px 12px' }}>
+                    <span style={{ fontSize: 10.5, fontWeight: 800, color: cor.fg, textTransform: 'uppercase', letterSpacing: '.4px' }}>Valor</span>
+                    <input value={it.valor} onChange={e => upd(it.id, 'valor', e.target.value)} placeholder="R$ 0,00"
+                      style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', fontSize: 15.5, fontWeight: 800, color: cor.fg, background: 'transparent', textAlign: 'right' }} />
+                  </div>
+                </div>
+              )
+            })}
+
+            {/* Card de adicionar */}
+            <button onClick={add}
+              style={{ minHeight: 104, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 14, border: '2px dashed #c9c4f0', background: '#faf9ff', color: '#5b4fcf', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}
+              onMouseEnter={e => (e.currentTarget.style.background = '#f0eefb')} onMouseLeave={e => (e.currentTarget.style.background = '#faf9ff')}>
+              <Plus size={20} /> Adicionar item manual
+            </button>
+          </div>
+
+          {busca && itens.filter(it => norm(it.nome).includes(norm(busca))).length === 0 && (
+            <div style={{ textAlign: 'center', padding: 30, color: '#9ca3af', fontSize: 13 }}>Nenhum serviço encontrado para &quot;{busca}&quot;.</div>
+          )}
+        </>
       )}
     </div>
   )
 }
-
-const thSt: React.CSSProperties = { border: '1px solid #e8e6e0', padding: '7px 10px', fontSize: 12, color: '#1a1a1a', background: '#f1eefb', textAlign: 'left' }
-const tdSt: React.CSSProperties = { border: '1px solid #f0eee8', padding: 2 }
-const inp: React.CSSProperties = { width: '100%', border: '1px solid transparent', borderRadius: 4, padding: '7px 8px', outline: 'none', fontSize: 13, background: 'transparent' }
