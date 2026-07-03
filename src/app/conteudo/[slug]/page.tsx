@@ -13,23 +13,24 @@ async function imprimirConteudoA4(titulo: string) {
   const hoje = new Date().toLocaleDateString('pt-BR')
   const esc = (v: string) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   const css = `
-@page{size:A4 portrait;margin:16mm 14mm}
+@page{size:A4 portrait;margin:18mm 16mm}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',Arial,sans-serif;color:#1f2430;font-size:12.5px;line-height:1.6;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-.hd{display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid #5b4fcf;padding-bottom:10px;margin-bottom:6px}
-.hd .logo{max-height:56px;max-width:200px;object-fit:contain}
-.hd .brand{font-size:23px;font-weight:900;color:#5b4fcf;letter-spacing:1px}
-.hd .dt{font-size:10px;color:#7a7a86;text-align:right}
-.ft{margin-top:16px;border-top:1px solid #e5e5ea;padding-top:8px;text-align:center;font-size:9px;color:#a0a0aa}
-h1{font-size:20px;color:#3b2e7a;margin:8px 0 12px;font-weight:800}
-h2{font-size:15px;color:#5b4fcf;margin:16px 0 6px;padding-bottom:3px;border-bottom:1px solid #ece9f7;font-weight:700;break-after:avoid}
-h3{font-size:13px;color:#374151;margin:10px 0 4px;font-weight:700;break-after:avoid}
-p{margin:5px 0}
-ul,ol{margin:5px 0 5px 20px}
-li{margin:2px 0;break-inside:avoid}
-blockquote{border-left:4px solid #5b4fcf;background:#f6f4ff;padding:8px 14px;margin:8px 0;font-style:italic;color:#4a4a58;border-radius:0 8px 8px 0;break-inside:avoid}
-strong{color:#1f2430}
-h2,h3,blockquote,div{break-inside:avoid}`
+body{font-family:'Segoe UI',Arial,sans-serif;color:#33313f;font-size:12px;line-height:1.65;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.hd{display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid #5b4fcf;padding-bottom:10px;margin-bottom:18px}
+.hd .logo{max-height:54px;max-width:190px;object-fit:contain}
+.hd .brand{font-size:22px;font-weight:900;color:#5b4fcf;letter-spacing:1px}
+.hd .dt{font-size:10px;color:#8480a0;text-align:right}
+.ft{margin-top:22px;border-top:1px solid #ececf2;padding-top:8px;text-align:center;font-size:9px;color:#a8a6b4}
+h1{font-size:20px;color:#2a2350;margin:0 0 4px;font-weight:800}
+h2{font-size:14.5px;color:#5b4fcf;margin:22px 0 8px;padding-bottom:6px;border-bottom:1.5px solid #efedf6;font-weight:700;break-after:avoid}
+h3{font-size:11px;color:#8480a0;margin:12px 0 4px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;break-after:avoid}
+p{margin:6px 0}
+ul,ol{margin:6px 0 6px 22px}
+li{margin:3px 0;break-inside:avoid}
+blockquote{border-left:3px solid #5b4fcf;background:#f7f6fb;padding:9px 15px;margin:10px 0;font-style:italic;color:#4a4760;border-radius:0 8px 8px 0;break-inside:avoid}
+strong{color:#2a2350}
+h2,h3,blockquote{break-inside:avoid}
+h2{break-before:auto}`
   const cab = logo ? `<img src="${logo}" class="logo"/>` : `<div class="brand">NODRI</div>`
   const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${esc(titulo)}</title><style>${css}</style></head><body>`
     + `<div class="hd">${cab}<div class="dt"><strong>${esc(titulo)}</strong><br>${hoje}</div></div>`
@@ -240,7 +241,21 @@ export default function ConteudoPage() {
         </button>
       </div>
 
-      <div id="conteudo-imprimivel" className="max-w-5xl mx-auto px-5 py-8">
+      <style>{`
+        .pop-doc{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:#33313f;font-size:14.5px;line-height:1.7}
+        .pop-doc>*:first-child{margin-top:0}
+        .pop-doc h1{font-size:24px;color:#2a2350;font-weight:800;margin:0 0 4px}
+        .pop-doc h2{font-size:16.5px;color:#5b4fcf;font-weight:700;margin:30px 0 10px;padding-bottom:7px;border-bottom:2px solid #efedf6}
+        .pop-doc h3{font-size:12.5px;color:#8480a0;font-weight:700;margin:16px 0 6px;text-transform:uppercase;letter-spacing:.6px}
+        .pop-doc p{margin:8px 0}
+        .pop-doc ul,.pop-doc ol{margin:8px 0;padding-left:24px}
+        .pop-doc ul{list-style:disc}.pop-doc ol{list-style:decimal}
+        .pop-doc li{margin:4px 0}
+        .pop-doc blockquote{border-left:3px solid #5b4fcf;background:#f7f6fb;padding:10px 16px;margin:12px 0;border-radius:0 10px 10px 0;font-style:italic;color:#4a4760}
+        .pop-doc strong{color:#2a2350;font-weight:700}
+      `}</style>
+
+      <div className="max-w-5xl mx-auto px-5 py-8">
 
         {/* Vídeo principal (campo legado) */}
         {!temBlocos && embedUrl && (
@@ -253,27 +268,25 @@ export default function ConteudoPage() {
 
         {/* NOVO: Blocos avançados */}
         {temBlocos ? (
-          <div className="flex flex-wrap gap-4">
+          <div id="conteudo-imprimivel" className="flex flex-wrap gap-4">
             {blocos.map((bloco: any) => (
               <RenderBloco key={bloco.id} bloco={bloco} />
             ))}
           </div>
-        ) : (
-          /* Legado: conteúdo antigo */
-          <div className="space-y-6">
-            {dados?.conteudo?.texto && (
-              <div className="nodri-card p-6">
-                <div className="prose prose-invert max-w-none text-nodri-t1 text-sm leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: dados.conteudo.texto }} />
-              </div>
-            )}
-            {!dados?.existe && !embedUrl && (
-              <div className="nodri-card p-10 text-center">
-                <div className="flex justify-center mb-3"><Video size={36} className="text-nodri-t3" /></div>
-                <p className="text-nodri-t2 text-sm">Conteúdo sendo preparado pelo administrador.</p>
-              </div>
-            )}
+        ) : dados?.conteudo?.texto ? (
+          /* Documento (POP / guia) — folha branca limpa e legível */
+          <div className="mx-auto" style={{ maxWidth: 840, background: '#ffffff', borderRadius: 16, overflow: 'hidden', boxShadow: '0 10px 40px rgba(0,0,0,.28)' }}>
+            <div style={{ height: 6, background: 'linear-gradient(90deg,#5b4fcf,#7c6fe0)' }} />
+            <div id="conteudo-imprimivel" className="pop-doc" style={{ padding: '40px 48px' }}
+              dangerouslySetInnerHTML={{ __html: dados.conteudo.texto }} />
           </div>
+        ) : (
+          !embedUrl && (
+            <div className="nodri-card p-10 text-center">
+              <div className="flex justify-center mb-3"><Video size={36} className="text-nodri-t3" /></div>
+              <p className="text-nodri-t2 text-sm">Conteúdo sendo preparado pelo administrador.</p>
+            </div>
+          )
         )}
       </div>
     </div>

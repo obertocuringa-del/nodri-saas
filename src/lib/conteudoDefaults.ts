@@ -2,203 +2,291 @@
 // e já vêm preenchidos no Editor de Páginas do admin para editar e salvar.
 // Chave = slug da página (/conteudo/<slug>). Some quando o admin salva a sua versão.
 
-const META = 'background:#faf9f7;border:1px solid #e8e6e0;border-left:4px solid #5b4fcf;border-radius:10px;padding:12px 16px;margin:0 0 18px'
-const BOX = 'background:#f6f4ff;border:1px solid #e0dbff;border-radius:10px;padding:10px 14px;margin:14px 0'
-const TEMPO = 'display:inline-block;background:#eef2ff;border:1px solid #c9d2ff;color:#3b3a86;border-radius:999px;padding:3px 12px;font-size:12px;font-weight:600;margin:6px 0 0'
-const CHECK = 'list-style:none;padding-left:0;margin:6px 0;line-height:2'
+const META = 'background:#f7f6fb;border:1px solid #e6e3f2;border-left:4px solid #5b4fcf;border-radius:12px;padding:16px 20px;margin:0 0 8px'
+const BOX = 'background:#f8f7fc;border:1px solid #e9e6f4;border-radius:12px;padding:14px 18px;margin:12px 0'
+const TEMPO = 'display:inline-block;background:#eef2ff;border:1px solid #cdd6ff;color:#3b3a86;border-radius:999px;padding:4px 14px;font-size:12px;font-weight:600'
+const CHECK = 'list-style:none;padding-left:0;margin:6px 0;line-height:2.1'
+const BOXH = 'color:#3b2e7a;font-size:13px;font-weight:700;margin:12px 0 4px;text-transform:uppercase;letter-spacing:.4px'
+const FIELD = 'display:inline-block;border-bottom:1px solid #b9b4d6;min-width:200px;height:14px'
 
 const MANICURE_HTML = `
-<h1>POP — Atendimento de Manicure</h1>
+<h1>Procedimento Operacional Padrão (POP)</h1>
+<p style="color:#6b6880;font-size:15px;margin:-4px 0 16px;font-weight:600">POP-MAN-001 — Atendimento de Manicure</p>
+
+<h2>1. Identificação</h2>
 <div style="${META}">
   <p style="margin:0"><strong>Código:</strong> POP-MAN-001 &nbsp;·&nbsp; <strong>Versão:</strong> 1.0 &nbsp;·&nbsp; <strong>Setor:</strong> Manicure</p>
-  <p style="margin:6px 0 0"><strong>Responsável:</strong> Gerência Técnica</p>
-  <p style="margin:6px 0 0"><strong>Objetivo:</strong> Padronizar o atendimento de manicure, garantindo excelência no atendimento, biossegurança, qualidade técnica e uma experiência diferenciada para todas as clientes.</p>
+  <p style="margin:8px 0 0"><strong>Responsável:</strong> <span style="${FIELD}"></span></p>
+  <p style="margin:8px 0 0"><strong>Data de Emissão:</strong> ___/___/______ &nbsp;·&nbsp; <strong>Última Revisão:</strong> ___/___/______ &nbsp;·&nbsp; <strong>Próxima Revisão:</strong> ___/___/______</p>
 </div>
 
-<h2>1. Apresentação da Profissional</h2>
-<h3>Objetivo</h3>
-<p>Criar conexão com a cliente, entender sua expectativa e transmitir segurança.</p>
-<p>A profissional deverá se posicionar de frente para a cliente, sorrir, manter contato visual e cumprimentá-la cordialmente.</p>
-<p><strong>Padrão de atendimento:</strong></p>
-<blockquote>"Olá, Ana! Seja bem-vinda. Meu nome é Maria e hoje serei a responsável pelo seu atendimento."</blockquote>
-<p>Em seguida:</p>
-<ul>
-  <li>Confirmar o serviço agendado.</li>
-  <li>Perguntar:
-    <ul>
-      <li>"Hoje iremos realizar o serviço de mãos, correto?"</li>
-      <li>"O que você pensou para hoje?"</li>
-      <li>"Tem alguma cor ou foto de referência?"</li>
-    </ul>
-  </li>
-  <li>Ouvir atentamente a cliente.</li>
-  <li>Fazer as orientações necessárias, explicando o que é possível realizar e quais limitações técnicas podem existir.</li>
-</ul>
-<p><span style="${TEMPO}">⏱ Tempo estimado: 2 minutos</span></p>
+<h2>2. Objetivo</h2>
+<p>Padronizar o atendimento de manicure, garantindo excelência no atendimento, segurança, biossegurança, qualidade técnica e uma experiência única para todas as clientes.</p>
 
-<h2>2. Preparação</h2>
-<h3>Objetivo</h3>
-<p>Garantir biossegurança e transmitir confiança antes do início do atendimento.</p>
-<h3>Aparência da Profissional</h3>
-<p>Antes de iniciar:</p>
+<h2>3. Campo de Aplicação</h2>
+<p>Este procedimento aplica-se a todas as profissionais responsáveis pelos serviços de manicure.</p>
+
+<h2>4. Responsabilidades</h2>
+<h3>Profissional</h3>
+<p>É responsabilidade da profissional:</p>
 <ul>
-  <li>Uniforme limpo.</li>
-  <li>Cabelo preso.</li>
-  <li>Mãos higienizadas.</li>
-  <li>Aparência organizada.</li>
-  <li>Não utilizar celular durante o atendimento.</li>
+  <li>Cumprir integralmente este POP.</li>
+  <li>Manter postura ética e profissional.</li>
+  <li>Zelar pela segurança da cliente.</li>
+  <li>Cumprir todas as normas de biossegurança.</li>
+  <li>Garantir a qualidade técnica do serviço.</li>
+  <li>Manter sua estação limpa e organizada.</li>
 </ul>
-<h3>Equipamentos de Proteção</h3>
+<h3>Recepção</h3>
 <ul>
-  <li>Colocar um par de luvas descartáveis novas.</li>
-  <li>Utilizar máscara limpa, quando necessário.</li>
+  <li>Confirmar o agendamento.</li>
+  <li>Recepcionar a cliente.</li>
+  <li>Registrar reagendamentos.</li>
+  <li>Informar à gerência qualquer ocorrência.</li>
+</ul>
+<h3>Gerência</h3>
+<ul>
+  <li>Fiscalizar o cumprimento deste POP.</li>
+  <li>Treinar continuamente a equipe.</li>
+  <li>Realizar auditorias periódicas.</li>
+</ul>
+
+<h2>5. Materiais Necessários</h2>
+<h3>EPIs</h3>
+<ul>
+  <li>Luvas descartáveis.</li>
+  <li>Máscara.</li>
+  <li>Avental.</li>
 </ul>
 <h3>Materiais</h3>
-<p>Apresentar para a cliente:</p>
 <ul>
   <li>Kit descartável lacrado.</li>
   <li>Alicates esterilizados.</li>
-  <li>Materiais limpos e organizados.</li>
+  <li>Lixas.</li>
+  <li>Palito.</li>
+  <li>Espátula.</li>
+  <li>Algodão.</li>
+  <li>Removedor de esmalte.</li>
+  <li>Base.</li>
+  <li>Esmaltes.</li>
+  <li>Spray secante ou óleo secante.</li>
+  <li>Toalha limpa.</li>
+  <li>Lixeira.</li>
 </ul>
-<p><strong>Nunca utilizar materiais sem esterilização ou sem identificação.</strong></p>
-<p><span style="${TEMPO}">⏱ Tempo estimado: 3 minutos</span></p>
 
-<h2>3. Execução do Procedimento</h2>
-<h3>Objetivo</h3>
-<p>Executar o procedimento de forma técnica e padronizada. Seguir rigorosamente esta sequência:</p>
+<h2>6. Biossegurança</h2>
+<h3>Antes do Atendimento</h3>
+<p>A profissional deverá:</p>
+<ul>
+  <li>Higienizar corretamente as mãos.</li>
+  <li>Manter uniforme limpo.</li>
+  <li>Manter cabelos presos.</li>
+  <li>Utilizar luvas descartáveis novas.</li>
+  <li>Utilizar máscara limpa.</li>
+  <li>Conferir a limpeza da bancada.</li>
+  <li>Conferir se todos os instrumentos estão esterilizados.</li>
+  <li>Conferir validade da esterilização.</li>
+  <li>Organizar todos os materiais antes do atendimento.</li>
+</ul>
+<p><strong>É proibido iniciar o atendimento utilizando materiais sem esterilização.</strong></p>
+<h3>Durante o Atendimento</h3>
+<ul>
+  <li>Manter a bancada organizada.</li>
+  <li>Não utilizar telefone celular.</li>
+  <li>Não consumir alimentos.</li>
+  <li>Trocar as luvas sempre que necessário.</li>
+  <li>Evitar contaminação cruzada.</li>
+</ul>
+<h3>Após o Atendimento</h3>
+<ul>
+  <li>Descartar corretamente os materiais descartáveis.</li>
+  <li>Encaminhar os instrumentos para esterilização.</li>
+  <li>Higienizar toda a bancada.</li>
+  <li>Higienizar as mãos.</li>
+  <li>Preparar a estação para a próxima cliente.</li>
+</ul>
+
+<h2>7. Script de Atendimento</h2>
+<p>A profissional deverá sempre iniciar o atendimento de frente para a cliente, demonstrando simpatia, cordialidade e profissionalismo.</p>
+<h3>Apresentação</h3>
+<blockquote>"Olá, Ana! Seja bem-vinda. Meu nome é Maria e hoje serei a profissional responsável pelo seu atendimento."</blockquote>
+<p>Em seguida perguntar:</p>
+<blockquote>"A senhora irá fazer as mãos hoje, correto?"</blockquote>
+<p>Depois perguntar:</p>
+<blockquote>"O que a senhora pensou para hoje?"</blockquote>
+<p>Em seguida:</p>
+<blockquote>"A senhora possui alguma preferência ou alguma foto de referência?"</blockquote>
+<p>Após ouvir atentamente a cliente, a profissional deverá explicar de forma clara e profissional:</p>
+<ul>
+  <li>O que é possível realizar.</li>
+  <li>O que não é recomendado realizar.</li>
+  <li>As limitações técnicas do procedimento.</li>
+  <li>Os cuidados necessários para preservar a saúde das unhas.</li>
+</ul>
+<p>Nenhum procedimento deverá ser iniciado antes que a cliente compreenda e concorde com o serviço que será realizado.</p>
+
+<h2>8. Preparação para o Procedimento</h2>
+<p>Antes de iniciar o atendimento, a profissional deverá:</p>
+<div style="${BOX}">
+  <div style="${BOXH}">Equipamentos de Proteção</div>
+  <ul style="${CHECK}">
+    <li>☐ Colocar um par de luvas descartáveis novas.</li>
+    <li>☐ Colocar máscara limpa e nova.</li>
+  </ul>
+  <div style="${BOXH}">Materiais</div>
+  <ul style="${CHECK}">
+    <li>☐ Apresentar à cliente que o kit descartável está lacrado.</li>
+    <li>☐ Apresentar os alicates esterilizados.</li>
+    <li>☐ Organizar todos os materiais sobre a bancada.</li>
+  </ul>
+</div>
+<p>Somente após estas etapas o procedimento poderá ser iniciado.</p>
+
+<h2>9. Execução do Procedimento</h2>
+<p>Executar exatamente na seguinte ordem:</p>
 <ol>
   <li>Remover completamente o esmalte anterior.</li>
-  <li>Cortar as unhas (quando necessário).</li>
-  <li>Lixar e definir o formato.</li>
-  <li>Aplicar luvas ou botinhas amolecedoras (quando aplicável).</li>
+  <li>Lixar e cortar as unhas conforme a necessidade e preferência da cliente.</li>
+  <li>Colocar a luva ou a botinha amolecedora (quando necessário).</li>
   <li>Realizar a cuticulagem.</li>
-  <li>Limpar resíduos.</li>
   <li>Aplicar a base.</li>
-  <li>Esmaltar conforme escolha da cliente.</li>
-  <li>Limpar os cantos.</li>
+  <li>Realizar a esmaltação.</li>
+  <li>Limpar cuidadosamente todos os cantos.</li>
   <li>Aplicar spray secante ou óleo secante.</li>
 </ol>
-<p>Durante todo o procedimento:</p>
-<ul>
-  <li>Confirmar se a cliente está confortável.</li>
-  <li>Manter postura profissional.</li>
-  <li>Evitar conversas inadequadas.</li>
-  <li>Não utilizar celular.</li>
-  <li>Manter bancada limpa e organizada.</li>
-</ul>
-<p><span style="${TEMPO}">⏱ Tempo estimado: 35 a 50 minutos</span></p>
 
-<h2>4. Controle de Qualidade</h2>
-<p>Antes da finalização, verificar obrigatoriamente:</p>
+<h2>10. Controle de Qualidade</h2>
+<p>Antes de apresentar o resultado para a cliente, a profissional deverá verificar cuidadosamente:</p>
 <div style="${BOX}">
   <ul style="${CHECK}">
-    <li>☐ Formato uniforme das unhas.</li>
-    <li>☐ Comprimento alinhado.</li>
-    <li>☐ Cutículas bem finalizadas.</li>
-    <li>☐ Esmaltação uniforme.</li>
-    <li>☐ Sem manchas.</li>
-    <li>☐ Sem bolhas.</li>
-    <li>☐ Sem borrões.</li>
-    <li>☐ Cantos limpos.</li>
+    <li>☐ Uniformidade da esmaltação.</li>
     <li>☐ Cobertura completa.</li>
+    <li>☐ Comprimento uniforme.</li>
+    <li>☐ Formato correto.</li>
+    <li>☐ Cutículas bem acabadas.</li>
+    <li>☐ Cantos limpos.</li>
+    <li>☐ Ausência de borrões.</li>
+    <li>☐ Ausência de bolhas.</li>
+    <li>☐ Ausência de resíduos.</li>
     <li>☐ Secagem adequada.</li>
   </ul>
 </div>
-<p>Caso exista qualquer imperfeição, realizar o ajuste antes de apresentar o resultado à cliente.</p>
+<p>Caso exista qualquer detalhe passível de ajuste, a correção deverá ser realizada antes da apresentação à cliente.</p>
 
-<h2>5. Validação da Cliente</h2>
-<p>Mostrar o resultado final. Perguntar:</p>
-<blockquote>"Gostou do resultado? Há algum detalhe que gostaria que ajustássemos?"</blockquote>
-<p>Caso haja qualquer observação, realizar o ajuste imediatamente. Somente considerar o atendimento finalizado após a aprovação da cliente.</p>
+<h2>11. Validação da Cliente</h2>
+<p>Após concluir o procedimento, apresentar o resultado à cliente. Perguntar obrigatoriamente:</p>
+<blockquote>"A senhora gostou do resultado?"</blockquote>
+<p>Em seguida:</p>
+<blockquote>"Existe algum detalhe que gostaria que ajustássemos?"</blockquote>
+<p>Caso a cliente solicite qualquer ajuste, este deverá ser realizado imediatamente. O atendimento somente poderá ser encerrado após a aprovação da cliente.</p>
 
-<h2>6. Reagendamento</h2>
-<p>Antes da cliente deixar o salão, perguntar:</p>
-<blockquote>"Gostaria de deixar seu próximo atendimento agendado? Assim garantimos o melhor horário para você."</blockquote>
+<h2>12. Reagendamento</h2>
+<p>Antes da saída da cliente, perguntar obrigatoriamente:</p>
+<blockquote>"A senhora deseja deixar seu próximo atendimento já agendado?"</blockquote>
 <p>Caso a cliente aceite:</p>
 <ul>
   <li>Registrar o agendamento.</li>
   <li>Confirmar data e horário.</li>
 </ul>
-<p>Caso não aceite: informar que será um prazer recebê-la novamente.</p>
+<p>Caso a cliente não aceite: agradecer normalmente pela preferência.</p>
 
-<h2>7. Finalização</h2>
-<p>A profissional deverá:</p>
+<h2>13. Finalização</h2>
+<p>Ao finalizar o atendimento, a profissional deverá:</p>
 <ul>
-  <li>Orientar sobre os cuidados para aumentar a durabilidade da esmaltação.</li>
+  <li>Orientar sobre os cuidados para aumentar a durabilidade do serviço.</li>
   <li>Organizar completamente a estação de trabalho.</li>
-  <li>Descartar corretamente os materiais utilizados.</li>
   <li>Encaminhar os instrumentos para esterilização.</li>
-  <li>Agradecer a preferência.</li>
+  <li>Descartar corretamente todos os resíduos.</li>
 </ul>
-<p><strong>Padrão de despedida:</strong></p>
-<blockquote>"Muito obrigada pela preferência! Foi um prazer atendê-la. Esperamos você novamente. Tenha um excelente dia!"</blockquote>
+<p>Finalizar dizendo:</p>
+<blockquote>"Muito obrigada pela preferência! Foi um prazer atendê-la. Esperamos revê-la em breve. Tenha um excelente dia!"</blockquote>
 
-<h2>8. Não Conformidades</h2>
-<p>Caso ocorra qualquer uma das situações abaixo, comunicar imediatamente a gerência:</p>
+<h2>14. Não Conformidades</h2>
+<p>Comunicar imediatamente à gerência quando ocorrer:</p>
 <ul>
-  <li>Cliente sofreu algum corte.</li>
-  <li>Instrumento caiu no chão.</li>
-  <li>Material apresentou defeito.</li>
-  <li>Esmalte vencido.</li>
-  <li>Cliente demonstrou insatisfação.</li>
-  <li>Falta de materiais.</li>
-  <li>Atraso superior ao tempo previsto.</li>
+  <li>Corte na cliente.</li>
+  <li>Sangramento.</li>
+  <li>Reação alérgica.</li>
+  <li>Instrumento sem esterilização.</li>
+  <li>Material vencido.</li>
+  <li>Reclamação da cliente.</li>
+  <li>Falta de material.</li>
+  <li>Quebra de equipamento.</li>
+  <li>Atraso superior ao previsto.</li>
 </ul>
 <p>Registrar a ocorrência conforme procedimento interno.</p>
 
-<h2>9. Indicadores de Qualidade</h2>
-<p>A equipe deverá acompanhar mensalmente:</p>
+<h2>15. Indicadores de Qualidade</h2>
+<p>A gerência deverá acompanhar:</p>
 <ul>
   <li>Tempo médio do atendimento.</li>
-  <li>Índice de retrabalho.</li>
+  <li>Número de retrabalhos.</li>
   <li>Número de reclamações.</li>
+  <li>Índice de satisfação da cliente.</li>
   <li>Percentual de reagendamentos.</li>
-  <li>Avaliação de satisfação da cliente.</li>
-  <li>Venda de serviços complementares.</li>
+  <li>Vendas adicionais realizadas.</li>
 </ul>
 
-<h2>✔ 10. Checklist Obrigatório</h2>
+<h2>16. Checklist de Auditoria</h2>
 <div style="${BOX}">
-  <h3 style="margin-top:0">Atendimento</h3>
+  <div style="${BOXH}">Atendimento</div>
   <ul style="${CHECK}">
-    <li>☐ Cumprimentou e se apresentou.</li>
+    <li>☐ Cumprimentou a cliente.</li>
+    <li>☐ Apresentou-se.</li>
     <li>☐ Confirmou o serviço.</li>
-    <li>☐ Entendeu a expectativa da cliente.</li>
-    <li>☐ Orientou sobre possibilidades e limitações.</li>
+    <li>☐ Perguntou o que a cliente desejava.</li>
+    <li>☐ Perguntou se havia preferência.</li>
+    <li>☐ Perguntou se havia referência.</li>
+    <li>☐ Explicou o que é possível fazer.</li>
+    <li>☐ Explicou o que não é recomendado.</li>
   </ul>
-  <h3>Biossegurança</h3>
+  <div style="${BOXH}">Biossegurança</div>
   <ul style="${CHECK}">
-    <li>☐ Luvas novas.</li>
-    <li>☐ Máscara limpa (quando aplicável).</li>
-    <li>☐ Kit lacrado apresentado.</li>
-    <li>☐ Alicates esterilizados apresentados.</li>
+    <li>☐ Utilizou luvas novas.</li>
+    <li>☐ Utilizou máscara limpa.</li>
+    <li>☐ Apresentou kit lacrado.</li>
+    <li>☐ Apresentou alicates esterilizados.</li>
+    <li>☐ Bancada limpa.</li>
   </ul>
-  <h3>Procedimento</h3>
+  <div style="${BOXH}">Procedimento</div>
   <ul style="${CHECK}">
     <li>☐ Removeu o esmalte.</li>
-    <li>☐ Cortou as unhas (quando necessário).</li>
-    <li>☐ Lixou.</li>
-    <li>☐ Cuticulagem.</li>
-    <li>☐ Aplicou base.</li>
+    <li>☐ Lixou e cortou.</li>
+    <li>☐ Colocou luva ou botinha.</li>
+    <li>☐ Realizou a cuticulagem.</li>
+    <li>☐ Aplicou a base.</li>
     <li>☐ Esmaltou.</li>
     <li>☐ Limpou os cantos.</li>
     <li>☐ Aplicou spray ou óleo secante.</li>
   </ul>
-  <h3>Controle de Qualidade</h3>
+  <div style="${BOXH}">Controle de Qualidade</div>
   <ul style="${CHECK}">
-    <li>☐ Conferiu acabamento.</li>
+    <li>☐ Conferiu todo o acabamento.</li>
     <li>☐ Corrigiu imperfeições.</li>
-    <li>☐ Cliente aprovou o resultado.</li>
+    <li>☐ Perguntou se a cliente gostou.</li>
+    <li>☐ Perguntou se havia necessidade de ajustes.</li>
   </ul>
-  <h3>Encerramento</h3>
+  <div style="${BOXH}">Encerramento</div>
   <ul style="${CHECK}">
     <li>☐ Ofereceu reagendamento.</li>
     <li>☐ Orientou sobre os cuidados.</li>
-    <li>☐ Agradeceu a cliente.</li>
-    <li>☐ Organizou a estação de trabalho.</li>
-    <li>☐ Encaminhou os materiais para esterilização.</li>
+    <li>☐ Organizou a bancada.</li>
+    <li>☐ Encaminhou os instrumentos para esterilização.</li>
+    <li>☐ Agradeceu pela preferência.</li>
   </ul>
 </div>
+
+<h2>17. Critérios para Considerar o Serviço Concluído</h2>
+<p>O atendimento somente poderá ser considerado concluído quando:</p>
+<ul>
+  <li>A cliente aprovar o resultado final.</li>
+  <li>Todos os critérios de qualidade forem atendidos.</li>
+  <li>Não houver necessidade de ajustes.</li>
+  <li>O reagendamento tiver sido oferecido.</li>
+  <li>Os instrumentos forem encaminhados para esterilização.</li>
+  <li>A bancada estiver limpa e organizada.</li>
+  <li>O atendimento for encerrado com cordialidade e agradecimento.</li>
+</ul>
 `.trim()
 
 export const CONTEUDO_DEFAULTS: Record<string, { titulo: string; conteudo: { texto: string } }> = {
