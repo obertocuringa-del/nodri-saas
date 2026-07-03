@@ -35,6 +35,8 @@ export const PROGRAMAS_DEFAULTS = {
     tempo_apos_relatorio: 15,
     tempo_apos_busca: 5,
     tempo_apos_exportar: 5,
+    whatsapp_espera: 120,
+    whatsapp_por_contato: 8,
   },
   relatorio: {
     timeout_login: 30,

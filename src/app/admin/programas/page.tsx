@@ -59,6 +59,8 @@ const SECOES: Secao[] = [
       { chave: 'tempo_apos_relatorio', label: 'Tempo após abrir o relatório (segundos)', tipo: 'numero' },
       { chave: 'tempo_apos_busca', label: 'Tempo após clicar em Buscar (segundos)', tipo: 'numero' },
       { chave: 'tempo_apos_exportar', label: 'Tempo após exportar (segundos)', tipo: 'numero' },
+      { chave: 'whatsapp_espera', label: 'Espera do WhatsApp abrir — máximo (segundos)', tipo: 'numero' },
+      { chave: 'whatsapp_por_contato', label: 'Tempo por contato no WhatsApp (segundos)', tipo: 'numero' },
     ],
   },
   {
