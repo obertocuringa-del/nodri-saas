@@ -33,6 +33,9 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/feedback-profissional') ||
     pathname.startsWith('/api/feedback/public') ||
     pathname.startsWith('/api/feedback-prof/public') ||
+    // Config remota dos programas desktop (GET é público e só leitura;
+    // o POST valida master dentro da própria rota)
+    pathname === '/api/config/programas' ||
     pathname.startsWith('/_next') ||
     pathname.startsWith('/favicon') ||
     pathname === '/'
