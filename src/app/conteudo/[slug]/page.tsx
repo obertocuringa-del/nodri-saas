@@ -1,7 +1,44 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Home, Loader2, Download, ExternalLink, FileText, BarChart3, CheckCircle, HelpCircle, Construction, Video } from 'lucide-react'
+import { ArrowLeft, Home, Loader2, Download, ExternalLink, FileText, BarChart3, CheckCircle, HelpCircle, Construction, Video, Printer } from 'lucide-react'
+import { getLogoSalao } from '@/lib/logoSalao'
+
+// Impressão A4 elegante do conteúdo da página (POPs, guias)
+async function imprimirConteudoA4(titulo: string) {
+  const alvo = document.getElementById('conteudo-imprimivel')
+  const corpo = alvo ? alvo.innerHTML : ''
+  if (!corpo) return
+  const logo = await getLogoSalao()
+  const hoje = new Date().toLocaleDateString('pt-BR')
+  const esc = (v: string) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const css = `
+@page{size:A4 portrait;margin:16mm 14mm}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;color:#1f2430;font-size:12.5px;line-height:1.6;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.hd{display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid #5b4fcf;padding-bottom:10px;margin-bottom:6px}
+.hd .logo{max-height:56px;max-width:200px;object-fit:contain}
+.hd .brand{font-size:23px;font-weight:900;color:#5b4fcf;letter-spacing:1px}
+.hd .dt{font-size:10px;color:#7a7a86;text-align:right}
+.ft{margin-top:16px;border-top:1px solid #e5e5ea;padding-top:8px;text-align:center;font-size:9px;color:#a0a0aa}
+h1{font-size:20px;color:#3b2e7a;margin:8px 0 12px;font-weight:800}
+h2{font-size:15px;color:#5b4fcf;margin:16px 0 6px;padding-bottom:3px;border-bottom:1px solid #ece9f7;font-weight:700;break-after:avoid}
+h3{font-size:13px;color:#374151;margin:10px 0 4px;font-weight:700;break-after:avoid}
+p{margin:5px 0}
+ul,ol{margin:5px 0 5px 20px}
+li{margin:2px 0;break-inside:avoid}
+blockquote{border-left:4px solid #5b4fcf;background:#f6f4ff;padding:8px 14px;margin:8px 0;font-style:italic;color:#4a4a58;border-radius:0 8px 8px 0;break-inside:avoid}
+strong{color:#1f2430}
+h2,h3,blockquote,div{break-inside:avoid}`
+  const cab = logo ? `<img src="${logo}" class="logo"/>` : `<div class="brand">NODRI</div>`
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${esc(titulo)}</title><style>${css}</style></head><body>`
+    + `<div class="hd">${cab}<div class="dt"><strong>${esc(titulo)}</strong><br>${hoje}</div></div>`
+    + `${corpo}`
+    + `<div class="ft">Documento gerado em ${hoje}${logo ? '' : ' pelo Sistema NODRI'}</div>`
+    + `<script>window.onload=function(){window.print()}</script></body></html>`
+  const w = window.open('', '_blank', 'width=1000,height=760'); if (!w) return
+  w.document.write(html); w.document.close(); w.focus()
+}
 
 function getYoutubeEmbed(url: string) {
   if (!url) return ''
@@ -196,9 +233,14 @@ export default function ConteudoPage() {
         </a>
         <div className="w-px h-5 bg-nodri-border shrink-0" />
         <h1 className="font-syne font-bold text-[15px] uppercase tracking-wide truncate">{titulo}</h1>
+        <div className="flex-1" />
+        <button onClick={() => imprimirConteudoA4(titulo)}
+          className="flex items-center gap-1.5 shrink-0 text-[12px] font-semibold px-3 py-1.5 rounded-lg border border-nodri-border text-nodri-t2 hover:text-nodri-cyan hover:border-nodri-cyan/40 transition-all">
+          <Printer size={14} /> Imprimir
+        </button>
       </div>
 
-      <div className="max-w-5xl mx-auto px-5 py-8">
+      <div id="conteudo-imprimivel" className="max-w-5xl mx-auto px-5 py-8">
 
         {/* Vídeo principal (campo legado) */}
         {!temBlocos && embedUrl && (
