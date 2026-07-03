@@ -946,6 +946,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
     { id: 'config', icon: <Settings size={14} />, label: 'Configurações' },
     { id: 'ia', icon: <Bot size={14} />, label: 'IA' },
     { id: 'academia', icon: <GraduationCap size={14} />, label: 'Academia' },
+    { id: 'programas', icon: <Wrench size={14} />, label: 'Programas' },
   ]
 
   return (
@@ -1119,6 +1120,18 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
 
           {/* LOGS DO SISTEMA */}
           {activeSection === 'logs' && <LogsSection />}
+
+          {/* PROGRAMAS (config remota da Suite) */}
+          {activeSection === 'programas' && (
+            <div className="flex flex-col items-center justify-center py-16 gap-4">
+              <Wrench size={64} className="text-nodri-cyan" />
+              <h2 className="text-xl font-bold text-gray-900">Programas — Configuração Remota</h2>
+              <p className="text-gray-500 text-sm text-center max-w-md">XPaths, links de relatórios e tempos de espera da Suite NODRI. O que você salvar aqui vale para TODOS os clientes na próxima abertura do programa — sem reinstalar nada.</p>
+              <a href="/admin/programas" className="bg-nodri-cyan hover:brightness-110 text-black font-semibold px-6 py-2.5 rounded-xl text-sm transition-all">
+                Abrir Configuração
+              </a>
+            </div>
+          )}
 
           {/* ACADEMIA */}
           {activeSection === 'academia' && (
