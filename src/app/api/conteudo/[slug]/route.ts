@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
+import { CONTEUDO_DEFAULTS } from '@/lib/conteudoDefaults'
 
 export async function GET(req: NextRequest, { params }: { params: { slug: string } }) {
   const { data, error } = await supabaseAdmin
@@ -11,6 +12,12 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
     .single()
 
   if (error || !data) {
+    // Se há um conteúdo padrão para este slug, entrega ele já formatado
+    // (aparece na página do salão e vem preenchido no Editor de Páginas).
+    const padrao = CONTEUDO_DEFAULTS[params.slug]
+    if (padrao) {
+      return NextResponse.json({ slug: params.slug, titulo: padrao.titulo, video_url: '', conteudo: padrao.conteudo, existe: true })
+    }
     return NextResponse.json({ slug: params.slug, titulo: '', video_url: '', conteudo: {}, existe: false })
   }
 
