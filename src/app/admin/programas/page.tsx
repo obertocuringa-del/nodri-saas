@@ -16,10 +16,29 @@ type Secao = { chave: string; titulo: string; emoji: string; descricao: string; 
 const SECOES: Secao[] = [
   {
     chave: 'listas_foto', emoji: '📷', titulo: 'Lista com Foto (WhatsApp)',
-    descricao: 'XPaths do WhatsApp Web usados para anexar a imagem — são os que mais mudam.',
+    descricao: 'XPaths do WhatsApp e os tempos de espera do envio (em segundos).',
     campos: [
       { chave: 'xpath_anexo', label: 'XPath do botão anexar (clipe)' },
       { chave: 'xpath_imagem', label: 'XPath da opção "Fotos e vídeos"' },
+      { chave: 'espera_whatsapp', label: 'Espera do WhatsApp abrir — máximo (segundos)', tipo: 'numero' },
+      { chave: 'abrir_conversa', label: 'Após abrir a conversa (segundos)', tipo: 'numero' },
+      { chave: 'apos_enter', label: 'Após enviar o texto (segundos)', tipo: 'numero' },
+      { chave: 'confirma_texto', label: 'Confirmar o texto (segundos)', tipo: 'numero' },
+      { chave: 'apos_anexo', label: 'Após clicar no clipe (segundos)', tipo: 'numero' },
+      { chave: 'apos_fotos', label: 'Após clicar em Fotos (segundos)', tipo: 'numero' },
+      { chave: 'apos_colar', label: 'Após colar a imagem (segundos)', tipo: 'numero' },
+      { chave: 'apos_enter_foto1', label: '1º Enter para enviar a foto (segundos)', tipo: 'numero' },
+      { chave: 'apos_enter_foto2', label: '2º Enter para enviar a foto (segundos)', tipo: 'numero' },
+      { chave: 'entre_contatos', label: 'Pausa entre um contato e outro (segundos)', tipo: 'numero' },
+    ],
+  },
+  {
+    chave: 'listas_sem_foto', emoji: '📄', titulo: 'Lista sem Foto (WhatsApp)',
+    descricao: 'Tempos de espera do envio de mensagens sem imagem (em segundos).',
+    campos: [
+      { chave: 'espera_whatsapp', label: 'Espera do WhatsApp abrir — máximo (segundos)', tipo: 'numero' },
+      { chave: 'carregar_conversa', label: 'Carregar a conversa do contato (segundos)', tipo: 'numero' },
+      { chave: 'apos_envio', label: 'Após enviar a mensagem (segundos)', tipo: 'numero' },
     ],
   },
   {

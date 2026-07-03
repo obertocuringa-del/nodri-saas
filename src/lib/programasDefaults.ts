@@ -4,6 +4,21 @@ export const PROGRAMAS_DEFAULTS = {
   listas_foto: {
     xpath_anexo: '//*[@id="main"]/footer/div[1]/div/span/div/div/div/div[1]/div/span/button/div/div/div[1]/span',
     xpath_imagem: '//*[@id="app"]/div/div/span[6]/div/ul/div/div/div[2]/li/div/span',
+    espera_whatsapp: 120,
+    abrir_conversa: 4,
+    apos_enter: 1,
+    confirma_texto: 1,
+    apos_anexo: 2,
+    apos_fotos: 2,
+    apos_colar: 2,
+    apos_enter_foto1: 2,
+    apos_enter_foto2: 3,
+    entre_contatos: 3,
+  },
+  listas_sem_foto: {
+    espera_whatsapp: 120,
+    carregar_conversa: 8,
+    apos_envio: 2,
   },
   confirmacao_feedback: {
     relatorio_url: 'https://admin.avec.beauty/admin/relatorio/0051',
