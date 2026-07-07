@@ -26,6 +26,7 @@ function linkWhatsappSalao(telefone: string): string {
 
 const COR = '#5b4fcf'
 const COR2 = '#0f766e'
+const PIN_CONFIGURACOES = '121314'
 
 const FORM_VAZIO = {
   nome: '', celular: '', data_aniversario: '', instagram: '',
@@ -140,6 +141,13 @@ export default function LojistaPublicoPage() {
     window.open(resultado.whatsapp_link, '_blank')
   }
 
+  function abrirConfiguracoes() {
+    const codigo = prompt('Digite o código de acesso para abrir as Configurações:')
+    if (codigo === null) return
+    if (codigo !== PIN_CONFIGURACOES) { alert('Código incorreto.'); return }
+    window.location.href = '/salon/lojistas/configuracoes'
+  }
+
   const fundo = { minHeight: '100vh', background: '#f4f3fa' }
 
   const estilosGlobais = (
@@ -224,12 +232,6 @@ export default function LojistaPublicoPage() {
         {estilosGlobais}
         <BotaoWhatsappSalao dados={dados} />
         <div style={{ position: 'relative', background: 'white', borderRadius: 24, padding: '36px 32px', maxWidth: 900, width: '100%', boxShadow: '0 20px 60px rgba(30,20,60,0.12)' }}>
-          {dados.dono_logado && (
-            <a href="/salon/lojistas/configuracoes" style={{ position: 'absolute', top: 20, right: 20, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 20, border: '1px solid #e5e7eb', color: '#6b7280', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>
-              <Settings size={13} /> Configurações
-            </a>
-          )}
-
           <div className="lj-capa-grid" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 32, alignItems: 'center' }}>
             <div>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: `${COR}12`, padding: '6px 14px', borderRadius: 20, marginBottom: 18 }}>
@@ -298,9 +300,9 @@ export default function LojistaPublicoPage() {
           <div style={{ flex: 1 }} />
           <span className="lj-obrigatorios" style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.8)', fontWeight: 600 }}>* Campos obrigatórios</span>
           {dados.dono_logado && (
-            <a href="/salon/lojistas/configuracoes" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 20, background: 'rgba(255,255,255,0.15)', color: 'white', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>
+            <button onClick={abrirConfiguracoes} className="lj-btn" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, border: 'none', padding: '7px 12px', borderRadius: 20, background: 'rgba(255,255,255,0.15)', color: 'white', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
               <Settings size={13} /> Configurações
-            </a>
+            </button>
           )}
         </div>
       </div>
