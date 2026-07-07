@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
-import { CheckCircle, ChevronRight, Store, User as UserIcon, MessageCircle, AtSign, Cake, Phone, MapPin, Tag, ClipboardList } from 'lucide-react'
+import { CheckCircle, ChevronRight, Store, User as UserIcon, MessageCircle, AtSign, Cake, Phone, MapPin, Tag, ClipboardList, Users, TrendingUp, Award, Settings, Plus } from 'lucide-react'
 import { capitalizarNome, maskCelular, formatInstagram, formatBloco } from '@/lib/lojistaFormatters'
 import MultiSelectBusca, { Opcao } from '@/components/lojistas/MultiSelectBusca'
 import SeletorDataNascimento from '@/components/lojistas/SeletorDataNascimento'
@@ -13,6 +13,7 @@ interface DadosPublicos {
   mensagem: string
   servicos: Opcao[]
   segmentos: string[]
+  dono_logado: boolean
 }
 
 const COR = '#5b4fcf'
@@ -32,6 +33,7 @@ export default function LojistaPublicoPage() {
   const [dados, setDados] = useState<DadosPublicos | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [mostrarFormulario, setMostrarFormulario] = useState(false)
   const [form, setForm] = useState(FORM_VAZIO)
   const [servicosIds, setServicosIds] = useState<string[]>([])
   const [servicosCatalogo, setServicosCatalogo] = useState<Opcao[]>([])
@@ -200,6 +202,70 @@ export default function LojistaPublicoPage() {
 
   const nomeIniciais = dados.salao_nome ? dados.salao_nome.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) : 'S'
 
+  if (!mostrarFormulario) {
+    return (
+      <div style={{ ...fundo, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+        {estilosGlobais}
+        <div style={{ position: 'relative', background: 'white', borderRadius: 24, padding: '36px 32px', maxWidth: 900, width: '100%', boxShadow: '0 20px 60px rgba(30,20,60,0.12)' }}>
+          {dados.dono_logado && (
+            <a href="/salon/lojistas/configuracoes" style={{ position: 'absolute', top: 20, right: 20, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 20, border: '1px solid #e5e7eb', color: '#6b7280', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>
+              <Settings size={13} /> Configurações
+            </a>
+          )}
+
+          <div className="lj-capa-grid" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 32, alignItems: 'center' }}>
+            <div>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: `${COR}12`, padding: '6px 14px', borderRadius: 20, marginBottom: 18 }}>
+                <Store size={14} color={COR} />
+                <span style={{ fontSize: 12, fontWeight: 800, color: COR, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Lojista Parceiro</span>
+              </div>
+              <h1 style={{ fontSize: 34, fontWeight: 800, color: '#1a1a1a', lineHeight: 1.15, marginBottom: 4 }}>Cadastro de</h1>
+              <h1 style={{ fontSize: 34, fontWeight: 800, color: COR, lineHeight: 1.15, marginBottom: 16 }}>Lojista Parceiro</h1>
+              <p style={{ fontSize: 15, color: '#6b7280', lineHeight: 1.6, marginBottom: 22, maxWidth: 420 }}>
+                Conecte sua loja ao sistema e receba clientes indicados{dados.salao_nome ? ` pelo ${dados.salao_nome}` : ''}.
+              </p>
+              <div style={{ height: 1, background: '#eee', marginBottom: 22 }} />
+
+              <div className="lj-capa-beneficios" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 26 }}>
+                <Beneficio icone={<Users size={16} color={COR} />} titulo="Mais clientes" texto="Receba indicações qualificadas" />
+                <Beneficio icone={<TrendingUp size={16} color={COR2} />} titulo="Acompanhe tudo" texto="Fique de olho nas novidades" />
+                <Beneficio icone={<Award size={16} color={COR} />} titulo="Parceria de valor" texto={`Cresça junto com${dados.salao_nome ? ' o ' + dados.salao_nome : ' a gente'}`} />
+              </div>
+
+              <button onClick={() => setMostrarFormulario(true)} className="lj-btn" style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 28px', borderRadius: 14,
+                border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${COR}, ${COR2})`, color: 'white',
+                fontWeight: 700, fontSize: 15, boxShadow: `0 8px 26px ${COR}40`,
+              }}>
+                <Plus size={18} /> Novo Cadastro
+              </button>
+            </div>
+
+            <div className="lj-capa-ilustracao" style={{ position: 'relative', height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ position: 'absolute', width: 220, height: 220, borderRadius: '50%', background: `linear-gradient(135deg, ${COR}12, ${COR2}12)` }} />
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <div style={{ width: 88, height: 88, borderRadius: 22, background: `linear-gradient(135deg, ${COR}, ${COR}99)`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 14px 34px ${COR}40`, marginRight: -14, zIndex: 2 }}>
+                  <Store size={38} color="white" />
+                </div>
+                <div style={{ width: 88, height: 88, borderRadius: 22, background: `linear-gradient(135deg, ${COR2}, ${COR2}99)`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 14px 34px ${COR2}40` }}>
+                  <Users size={38} color="white" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <style>{`
+          @media (max-width: 700px) {
+            .lj-capa-grid { grid-template-columns: 1fr !important; }
+            .lj-capa-ilustracao { height: 140px !important; order: -1; }
+            .lj-capa-beneficios { grid-template-columns: 1fr !important; }
+          }
+        `}</style>
+      </div>
+    )
+  }
+
   return (
     <div style={fundo}>
       {estilosGlobais}
@@ -302,6 +368,16 @@ export default function LojistaPublicoPage() {
           <p style={{ fontSize: 12, color: '#6b6860' }}>Cadastro feito com <span style={{ fontWeight: 700 }}>NODRI</span> · Gestão de Salões de Beleza</p>
         </div>
       </div>
+    </div>
+  )
+}
+
+function Beneficio({ icone, titulo, texto }: { icone: React.ReactNode; titulo: string; texto: string }) {
+  return (
+    <div>
+      <div style={{ width: 32, height: 32, borderRadius: 9, background: '#f4f3fa', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>{icone}</div>
+      <div style={{ fontSize: 13, fontWeight: 800, color: '#1a1a1a', marginBottom: 2 }}>{titulo}</div>
+      <div style={{ fontSize: 11.5, color: '#6b7280', lineHeight: 1.4 }}>{texto}</div>
     </div>
   )
 }
