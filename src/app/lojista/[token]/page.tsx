@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
-import { CheckCircle, ChevronRight, Store, User as UserIcon, MessageCircle, AtSign, Cake, Phone, MapPin, Tag, ClipboardList, Users, TrendingUp, Award, Settings, Plus } from 'lucide-react'
+import { CheckCircle, ChevronRight, ChevronLeft, Store, User as UserIcon, MessageCircle, AtSign, Cake, Phone, MapPin, Tag, ClipboardList, Users, TrendingUp, Award, Settings, Plus } from 'lucide-react'
 import { capitalizarNome, maskCelular, formatInstagram, formatBloco } from '@/lib/lojistaFormatters'
 import MultiSelectBusca, { Opcao } from '@/components/lojistas/MultiSelectBusca'
 import SeletorDataNascimento from '@/components/lojistas/SeletorDataNascimento'
@@ -143,8 +143,8 @@ export default function LojistaPublicoPage() {
         .lj-grid3 { grid-template-columns: 1fr; }
       }
       @media (max-width: 560px) {
-        .lj-header { padding: 24px 16px !important; }
-        .lj-header h1 { font-size: 20px !important; }
+        .lj-header { padding: 12px 14px !important; }
+        .lj-obrigatorios { display: none !important; }
         .lj-card-body { padding: 18px 16px !important; }
         .lj-botoes { flex-direction: column-reverse !important; }
         .lj-botoes button { width: 100%; justify-content: center; }
@@ -270,16 +270,21 @@ export default function LojistaPublicoPage() {
     <div style={fundo}>
       {estilosGlobais}
 
-      <div className="lj-header" style={{ background: `linear-gradient(115deg, ${COR} 0%, ${COR} 45%, ${COR2} 100%)`, padding: '28px 20px 34px', textAlign: 'center' }}>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.15)', padding: '6px 14px', borderRadius: 20, marginBottom: 16 }}>
-          <div style={{ width: 22, height: 22, borderRadius: 7, background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 11, color: COR }}>{nomeIniciais}</div>
-          <span style={{ fontSize: 12, fontWeight: 700, color: 'white', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{dados.salao_nome || 'NODRI'}</span>
+      <div className="lj-header" style={{ background: `linear-gradient(115deg, ${COR} 0%, ${COR} 45%, ${COR2} 100%)`, padding: '14px 20px' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button onClick={() => setMostrarFormulario(false)} className="lj-btn" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, border: 'none', background: 'rgba(255,255,255,0.15)', color: 'white', padding: '7px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+            <ChevronLeft size={14} /> Voltar
+          </button>
+          <div style={{ width: 26, height: 26, borderRadius: 8, background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 11, color: COR, flexShrink: 0 }}>{nomeIniciais}</div>
+          <span style={{ fontSize: 13, fontWeight: 700, color: 'white' }}>{dados.salao_nome || 'NODRI'}</span>
+          <div style={{ flex: 1 }} />
+          <span className="lj-obrigatorios" style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.8)', fontWeight: 600 }}>* Campos obrigatórios</span>
+          {dados.dono_logado && (
+            <a href="/salon/lojistas/configuracoes" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 20, background: 'rgba(255,255,255,0.15)', color: 'white', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>
+              <Settings size={13} /> Configurações
+            </a>
+          )}
         </div>
-        <h1 style={{ fontSize: 26, fontWeight: 800, color: 'white', marginBottom: 8, letterSpacing: '-0.3px' }}>Seja um Lojista Parceiro</h1>
-        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.85)', maxWidth: 480, margin: '0 auto', lineHeight: 1.6 }}>
-          Cadastre sua loja e receba promoções exclusivas de parceria.
-        </p>
-        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 12, fontWeight: 600 }}>* Campos obrigatórios</p>
       </div>
 
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '28px 16px 60px' }}>
