@@ -33,6 +33,9 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/feedback-profissional') ||
     pathname.startsWith('/api/feedback/public') ||
     pathname.startsWith('/api/feedback-prof/public') ||
+    // Autocadastro público de lojistas parceiros
+    pathname.startsWith('/lojista/') ||
+    pathname.startsWith('/api/lojistas/public') ||
     // Config remota dos programas desktop (GET é público e só leitura;
     // o POST valida master dentro da própria rota)
     pathname === '/api/config/programas' ||
@@ -138,6 +141,7 @@ export async function middleware(request: NextRequest) {
       ['/salon/calendario', 'calendario'],
       ['/salon/consultoria', 'ia'],
       ['/salon/auditoria', 'cfg_auditoria'],
+      ['/salon/lojistas', 'lojistas'],
       ['/salon/usuarios', 'cfg_usuarios'],
       ['/salon/profissionais', 'profissionais'],
       ['/salon/relatorios', 'relatorios'],

@@ -519,6 +519,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               { href: '/salon/notificacoes', label: 'Notificações (Profissionais)', chave: 'profissionais' },
               { href: '/salon/consultoria', label: 'Consultoria IA', chave: 'ia' },
               { href: '/salon/auditoria', label: 'Log de Auditoria', chave: 'cfg_auditoria' },
+              { href: '/salon/lojistas', label: 'Lojistas', chave: 'lojistas' },
               { href: '/salon/usuarios', label: 'Usuários & Acessos', chave: 'cfg_usuarios' },
             ].filter(item => pode(item.chave)).map(item => (
               <a key={item.href} href={item.href}
