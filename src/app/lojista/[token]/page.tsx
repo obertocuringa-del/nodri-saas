@@ -216,7 +216,7 @@ export default function LojistaPublicoPage() {
         <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 12, fontWeight: 600 }}>* Campos obrigatórios</p>
       </div>
 
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 16px 60px', marginTop: -18 }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '28px 16px 60px' }}>
 
         <div className="lj-grid3">
           <Cartao titulo="Dados Pessoais" icone={<UserIcon size={16} color="white" />} cor={COR}>
