@@ -9,11 +9,19 @@ import SeletorDataNascimento from '@/components/lojistas/SeletorDataNascimento'
 
 interface DadosPublicos {
   salao_nome: string
+  salao_telefone: string
   whatsapp_link: string
   mensagem: string
   servicos: Opcao[]
   segmentos: string[]
   dono_logado: boolean
+}
+
+function linkWhatsappSalao(telefone: string): string {
+  const digitos = (telefone || '').replace(/\D/g, '')
+  if (!digitos) return ''
+  const comPais = digitos.startsWith('55') && digitos.length >= 12 ? digitos : `55${digitos}`
+  return `https://wa.me/${comPais}`
 }
 
 const COR = '#5b4fcf'
@@ -40,6 +48,13 @@ export default function LojistaPublicoPage() {
   const [enviando, setEnviando] = useState(false)
   const [erroEnvio, setErroEnvio] = useState('')
   const [resultado, setResultado] = useState<{ whatsapp_link: string; id: string } | null>(null)
+
+  // O botão flutuante global é do suporte da NODRI — aqui o correto é o WhatsApp do próprio salão.
+  useEffect(() => {
+    const btn = document.getElementById('whatsapp-float-btn')
+    if (btn) btn.style.display = 'none'
+    return () => { if (btn) btn.style.display = '' }
+  }, [])
 
   useEffect(() => {
     if (!token) return
@@ -176,6 +191,7 @@ export default function LojistaPublicoPage() {
   if (resultado) {
     return (
       <div style={{ ...fundo, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+        {dados && <BotaoWhatsappSalao dados={dados} />}
         <div style={{ textAlign: 'center', maxWidth: 420 }}>
           <div style={{ width: 88, height: 88, borderRadius: '50%', background: `linear-gradient(135deg, ${COR}, ${COR2})`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 28px', boxShadow: `0 20px 60px ${COR}40` }}>
             <CheckCircle size={44} color="white" />
@@ -206,6 +222,7 @@ export default function LojistaPublicoPage() {
     return (
       <div style={{ ...fundo, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
         {estilosGlobais}
+        <BotaoWhatsappSalao dados={dados} />
         <div style={{ position: 'relative', background: 'white', borderRadius: 24, padding: '36px 32px', maxWidth: 900, width: '100%', boxShadow: '0 20px 60px rgba(30,20,60,0.12)' }}>
           {dados.dono_logado && (
             <a href="/salon/lojistas/configuracoes" style={{ position: 'absolute', top: 20, right: 20, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 20, border: '1px solid #e5e7eb', color: '#6b7280', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>
@@ -269,6 +286,7 @@ export default function LojistaPublicoPage() {
   return (
     <div style={fundo}>
       {estilosGlobais}
+      <BotaoWhatsappSalao dados={dados} />
 
       <div className="lj-header" style={{ background: `linear-gradient(115deg, ${COR} 0%, ${COR} 45%, ${COR2} 100%)`, padding: '14px 20px' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -374,6 +392,27 @@ export default function LojistaPublicoPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+function BotaoWhatsappSalao({ dados }: { dados: DadosPublicos }) {
+  const link = linkWhatsappSalao(dados.salao_telefone)
+  if (!link) return null
+  return (
+    <a
+      href={link}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={`Falar com ${dados.salao_nome || 'o salão'} no WhatsApp`}
+      style={{
+        position: 'fixed', bottom: 24, right: 24, zIndex: 9999,
+        width: 52, height: 52, borderRadius: '50%', background: '#25D366',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        boxShadow: '0 4px 20px rgba(37,211,102,0.5)',
+      }}
+    >
+      <MessageCircle size={26} color="white" />
+    </a>
   )
 }
 
