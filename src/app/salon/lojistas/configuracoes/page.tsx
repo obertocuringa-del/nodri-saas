@@ -18,6 +18,9 @@ export default function LojistasConfigPage() {
   const [servicos, setServicos] = useState<LojistaServico[]>([])
   const [novoServico, setNovoServico] = useState('')
   const [salvandoServicos, setSalvandoServicos] = useState(false)
+  const [segmentos, setSegmentos] = useState<string[]>([])
+  const [novoSegmento, setNovoSegmento] = useState('')
+  const [salvandoSegmentos, setSalvandoSegmentos] = useState(false)
 
   const carregar = useCallback(async () => {
     setLoading(true)
@@ -31,6 +34,10 @@ export default function LojistasConfigPage() {
       const s = await fetch('/api/salon/lojistas/servicos').then(r => r.json())
       setServicos(Array.isArray(s) ? s : [])
     } catch { toast.error('Erro ao carregar serviços') }
+    try {
+      const g = await fetch('/api/salon/lojistas/segmentos').then(r => r.json())
+      setSegmentos(Array.isArray(g) ? g : [])
+    } catch { toast.error('Erro ao carregar segmentos') }
     setLoading(false)
   }, [])
   useEffect(() => { carregar() }, [carregar])
@@ -112,6 +119,35 @@ export default function LojistasConfigPage() {
     salvarServicosNoServidor(renumerado)
   }
 
+  async function salvarSegmentosNoServidor(lista: string[]) {
+    setSalvandoSegmentos(true)
+    try {
+      const res = await fetch('/api/salon/lojistas/segmentos', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(lista),
+      })
+      if (!res.ok) toast.error('Erro ao salvar segmentos')
+    } catch { toast.error('Erro de conexão') }
+    setSalvandoSegmentos(false)
+  }
+
+  function adicionarSegmento() {
+    const nome = novoSegmento.trim()
+    if (!nome) return
+    if (nome.toLowerCase() === 'outro') { toast.error('"Outro" já está sempre disponível automaticamente'); return }
+    if (segmentos.some(s => s.toLowerCase() === nome.toLowerCase())) { toast.error('Esse segmento já existe'); return }
+    const atualizado = [...segmentos, nome]
+    setSegmentos(atualizado)
+    setNovoSegmento('')
+    salvarSegmentosNoServidor(atualizado)
+  }
+
+  function excluirSegmento(nome: string) {
+    if (!confirm(`Excluir o segmento "${nome}"?`)) return
+    const atualizado = segmentos.filter(s => s !== nome)
+    setSegmentos(atualizado)
+    salvarSegmentosNoServidor(atualizado)
+  }
+
   if (loading) return <div style={{ textAlign: 'center', padding: 60, color: '#9ca3af' }}>Carregando...</div>
 
   return (
@@ -175,6 +211,26 @@ export default function LojistasConfigPage() {
             ))}
           </div>
           {salvandoServicos && <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 6 }}>Salvando...</p>}
+        </div>
+
+        {/* SEGMENTOS */}
+        <div style={card}>
+          <h2 style={cardTitulo}>Segmentos da Loja</h2>
+          <p style={{ fontSize: 12, color: '#9ca3af', marginBottom: 8 }}>A opção &quot;Outro&quot; (com campo livre) aparece sempre por último, automaticamente.</p>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+            <input value={novoSegmento} onChange={e => setNovoSegmento(e.target.value)} placeholder="Novo segmento..." style={inp} onKeyDown={e => e.key === 'Enter' && adicionarSegmento()} />
+            <button onClick={adicionarSegmento} style={btnPrimary}><Plus size={14} /> Adicionar</button>
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {segmentos.map(s => (
+              <span key={s} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 10px', borderRadius: 20, background: '#f6f4ff', color: COR, fontSize: 13, fontWeight: 600 }}>
+                {s}
+                <button onClick={() => excluirSegmento(s)} style={{ border: 'none', background: 'transparent', color: COR, cursor: 'pointer', display: 'flex' }} title="Excluir"><Trash2 size={12} /></button>
+              </span>
+            ))}
+            <span style={{ display: 'inline-flex', alignItems: 'center', padding: '6px 10px', borderRadius: 20, background: '#f3f4f6', color: '#9ca3af', fontSize: 13, fontWeight: 600 }}>Outro (fixo)</span>
+          </div>
+          {salvandoSegmentos && <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 6 }}>Salvando...</p>}
         </div>
       </div>
     </div>

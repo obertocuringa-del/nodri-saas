@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { CheckCircle, ChevronRight, Store, User as UserIcon, MessageCircle, AtSign, Cake } from 'lucide-react'
-import { SEGMENTOS_LOJISTA } from '@/lib/lojistasServicosPadrao'
 import { capitalizarNome, maskCelular, formatInstagram, formatBloco } from '@/lib/lojistaFormatters'
 import MultiSelectBusca, { Opcao } from '@/components/lojistas/MultiSelectBusca'
 import SeletorDataNascimento from '@/components/lojistas/SeletorDataNascimento'
@@ -13,6 +12,7 @@ interface DadosPublicos {
   whatsapp_link: string
   mensagem: string
   servicos: Opcao[]
+  segmentos: string[]
 }
 
 const COR = '#5b4fcf'
@@ -243,7 +243,7 @@ export default function LojistaPublicoPage() {
           <Campo label="Segmento">
             <select className="lj-input lj-select" style={inputStyle} value={form.segmento} onChange={e => set('segmento', e.target.value)}>
               <option value="">Selecione...</option>
-              {SEGMENTOS_LOJISTA.map(s => <option key={s} value={s}>{s}</option>)}
+              {dados.segmentos.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </Campo>
           {form.segmento === 'Outro' && (

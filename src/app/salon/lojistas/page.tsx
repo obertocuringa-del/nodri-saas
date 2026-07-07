@@ -2,10 +2,9 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Settings, Download, Eye, Pencil, Trash2, X, Save, Users } from 'lucide-react'
+import { ArrowLeft, Settings, Download, Eye, Pencil, Trash2, X, Save, Users, BarChart3 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import * as XLSX from 'xlsx'
-import { SEGMENTOS_LOJISTA } from '@/lib/lojistasServicosPadrao'
 import { capitalizarNome, maskCelular, formatInstagram, formatBloco } from '@/lib/lojistaFormatters'
 import MultiSelectBusca, { Opcao } from '@/components/lojistas/MultiSelectBusca'
 import SeletorDataNascimento from '@/components/lojistas/SeletorDataNascimento'
@@ -24,6 +23,7 @@ export default function LojistasPage() {
   const [lista, setLista] = useState<Lojista[]>([])
   const [loading, setLoading] = useState(true)
   const [servicosCatalogo, setServicosCatalogo] = useState<Opcao[]>([])
+  const [segmentosCatalogo, setSegmentosCatalogo] = useState<string[]>([])
   const [editando, setEditando] = useState<Lojista | null>(null)
   const [somenteVisualizar, setSomenteVisualizar] = useState(false)
   const [salvando, setSalvando] = useState(false)
@@ -46,6 +46,7 @@ export default function LojistasPage() {
   useEffect(() => { carregar() }, [carregar])
   useEffect(() => {
     fetch('/api/salon/lojistas/servicos').then(r => r.ok ? r.json() : []).then(d => setServicosCatalogo(Array.isArray(d) ? d.map((s: any) => ({ id: s.id, nome: s.nome })) : []))
+    fetch('/api/salon/lojistas/segmentos').then(r => r.ok ? r.json() : []).then(d => setSegmentosCatalogo(Array.isArray(d) ? [...d, 'Outro'] : ['Outro']))
   }, [])
 
   function abrirVisualizar(l: Lojista) { setEditando(l); setSomenteVisualizar(true) }
@@ -110,6 +111,7 @@ export default function LojistasPage() {
         <span style={{ width: 1, height: 16, background: '#e0ddd8' }} />
         <span style={{ fontWeight: 800, fontSize: 15, color: '#1a1a1a', display: 'flex', alignItems: 'center', gap: 6 }}><Users size={16} color={COR} /> Lojistas</span>
         <div style={{ flex: 1 }} />
+        <button onClick={() => router.push('/salon/lojistas/relatorio')} style={btnGhost}><BarChart3 size={14} /> Relatório</button>
         <button onClick={exportarCSV} style={btnGhost}><Download size={14} /> CSV</button>
         <button onClick={exportarXLSX} style={btnGhost}><Download size={14} /> Excel</button>
         <button onClick={() => router.push('/salon/lojistas/configuracoes')} style={btnGhost}><Settings size={14} /> Configurações</button>
@@ -123,7 +125,7 @@ export default function LojistasPage() {
           <input placeholder="Loja" value={filtros.loja} onChange={e => setFiltros(f => ({ ...f, loja: e.target.value }))} style={inp} />
           <select value={filtros.segmento} onChange={e => setFiltros(f => ({ ...f, segmento: e.target.value }))} style={inp}>
             <option value="">Segmento (todos)</option>
-            {SEGMENTOS_LOJISTA.map(s => <option key={s} value={s}>{s}</option>)}
+            {segmentosCatalogo.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
           <input placeholder="Serviço" value={filtros.servico} onChange={e => setFiltros(f => ({ ...f, servico: e.target.value }))} style={inp} />
           <input type="date" title="Cadastrado de" value={filtros.data_de} onChange={e => setFiltros(f => ({ ...f, data_de: e.target.value }))} style={inp} />
@@ -196,6 +198,7 @@ export default function LojistasPage() {
           lojista={editando}
           somenteVisualizar={somenteVisualizar}
           servicosCatalogo={servicosCatalogo}
+          segmentosCatalogo={segmentosCatalogo}
           salvando={salvando}
           onFechar={fechar}
           onSalvar={salvarEdicao}
@@ -205,8 +208,8 @@ export default function LojistasPage() {
   )
 }
 
-function ModalLojista({ lojista, somenteVisualizar, servicosCatalogo, salvando, onFechar, onSalvar }: {
-  lojista: Lojista; somenteVisualizar: boolean; servicosCatalogo: Opcao[]; salvando: boolean
+function ModalLojista({ lojista, somenteVisualizar, servicosCatalogo, segmentosCatalogo, salvando, onFechar, onSalvar }: {
+  lojista: Lojista; somenteVisualizar: boolean; servicosCatalogo: Opcao[]; segmentosCatalogo: string[]; salvando: boolean
   onFechar: () => void; onSalvar: (patch: Partial<Lojista>) => void
 }) {
   const [nome, setNome] = useState(lojista.nome)
@@ -231,6 +234,13 @@ function ModalLojista({ lojista, somenteVisualizar, servicosCatalogo, salvando, 
   const [servicosIds, setServicosIds] = useState<string[]>(() =>
     (lojista.servicos_interesse || []).map(nomeServ => catalogoCompleto.find(c => c.nome === nomeServ)?.id || `extra_${nomeServ}`)
   )
+
+  // Se o segmento salvo for um texto customizado (digitado via "Outro" antes), mantém
+  // ele visível na lista mesmo que não esteja mais na config do salão.
+  const segmentosCompletos = useMemo(() => {
+    if (!segmento || segmentosCatalogo.includes(segmento)) return segmentosCatalogo
+    return [...segmentosCatalogo, segmento]
+  }, [segmentosCatalogo, segmento])
 
   function salvar() {
     const servicos_interesse = catalogoCompleto.filter(c => servicosIds.includes(c.id)).map(c => c.nome)
@@ -271,7 +281,7 @@ function ModalLojista({ lojista, somenteVisualizar, servicosCatalogo, salvando, 
           <Campo label="Segmento">
             <select disabled={dis} style={inp} value={segmento} onChange={e => setSegmento(e.target.value)}>
               <option value="">—</option>
-              {SEGMENTOS_LOJISTA.map(s => <option key={s} value={s}>{s}</option>)}
+              {segmentosCompletos.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </Campo>
           <Campo label="Bloco"><input disabled={dis} style={inp} value={bloco} onChange={e => setBloco(formatBloco(e.target.value))} /></Campo>

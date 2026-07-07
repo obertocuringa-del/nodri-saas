@@ -1,6 +1,6 @@
 import { randomBytes } from 'crypto'
 import { supabaseAdmin } from '@/lib/supabase'
-import { servicosLojistaPadrao, LojistaServico } from '@/lib/lojistasServicosPadrao'
+import { servicosLojistaPadrao, LojistaServico, SEGMENTOS_LOJISTA } from '@/lib/lojistasServicosPadrao'
 
 export interface LojistasConfig { token: string; slug: string; whatsapp_link: string; mensagem: string }
 
@@ -67,6 +67,21 @@ export async function getServicos(salaoId: string): Promise<LojistaServico[]> {
 
 export async function salvarServicos(salaoId: string, lista: LojistaServico[]): Promise<void> {
   await supabaseAdmin.from('salao_config').upsert({ salao_id: salaoId, chave: 'lojistas_servicos', valor: lista, atualizado_em: new Date().toISOString() }, { onConflict: 'salao_id,chave' })
+}
+
+// "Outro" nunca é armazenado na lista — é sempre acrescentado por quem exibe o
+// select, garantindo que o autocadastro sempre tenha a opção de digitar livre.
+export async function getSegmentos(salaoId: string): Promise<string[]> {
+  const { data } = await supabaseAdmin.from('salao_config').select('valor').eq('salao_id', salaoId).eq('chave', 'lojistas_segmentos').maybeSingle()
+  if (Array.isArray(data?.valor) && data.valor.length > 0) return data.valor as string[]
+  const padrao = SEGMENTOS_LOJISTA.filter(s => s !== 'Outro')
+  await supabaseAdmin.from('salao_config').upsert({ salao_id: salaoId, chave: 'lojistas_segmentos', valor: padrao, atualizado_em: new Date().toISOString() }, { onConflict: 'salao_id,chave' })
+  return padrao
+}
+
+export async function salvarSegmentos(salaoId: string, lista: string[]): Promise<void> {
+  const limpo = Array.from(new Set(lista.map(s => String(s || '').trim()).filter(s => s && s !== 'Outro')))
+  await supabaseAdmin.from('salao_config').upsert({ salao_id: salaoId, chave: 'lojistas_segmentos', valor: limpo, atualizado_em: new Date().toISOString() }, { onConflict: 'salao_id,chave' })
 }
 
 // Adiciona um serviço manual (dedupe case-insensitive), usado no autocadastro público.
