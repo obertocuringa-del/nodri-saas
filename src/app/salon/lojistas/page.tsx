@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Settings, Download, Eye, Pencil, Trash2, X, Save, Users, BarChart3 } from 'lucide-react'
+import { ArrowLeft, Settings, Download, Eye, Pencil, Trash2, X, Save, Users, BarChart3, Search, MessageCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import * as XLSX from 'xlsx'
-import { capitalizarNome, maskCelular, formatInstagram, formatBloco } from '@/lib/lojistaFormatters'
+import { capitalizarNome, maskCelular, formatInstagram, formatBloco, linkWhatsappSalao } from '@/lib/lojistaFormatters'
 import MultiSelectBusca, { Opcao } from '@/components/lojistas/MultiSelectBusca'
 import SeletorDataNascimento from '@/components/lojistas/SeletorDataNascimento'
 
@@ -17,6 +17,7 @@ interface Lojista {
 }
 
 const COR = '#5b4fcf'
+const COR2 = '#0f766e'
 
 export default function LojistasPage() {
   const router = useRouter()
@@ -27,6 +28,7 @@ export default function LojistasPage() {
   const [editando, setEditando] = useState<Lojista | null>(null)
   const [somenteVisualizar, setSomenteVisualizar] = useState(false)
   const [salvando, setSalvando] = useState(false)
+  const [telefoneSalao, setTelefoneSalao] = useState('')
 
   const [filtros, setFiltros] = useState({
     nome: '', loja: '', segmento: '', servico: '', data_de: '', data_ate: '',
@@ -47,6 +49,14 @@ export default function LojistasPage() {
   useEffect(() => {
     fetch('/api/salon/lojistas/servicos').then(r => r.ok ? r.json() : []).then(d => setServicosCatalogo(Array.isArray(d) ? d.map((s: any) => ({ id: s.id, nome: s.nome })) : []))
     fetch('/api/salon/lojistas/segmentos').then(r => r.ok ? r.json() : []).then(d => setSegmentosCatalogo(Array.isArray(d) ? [...d, 'Outro'] : ['Outro']))
+  }, [])
+
+  // O botão flutuante global é do suporte da NODRI — aqui o correto é o WhatsApp do próprio salão.
+  useEffect(() => {
+    const btn = document.getElementById('whatsapp-float-btn')
+    if (btn) btn.style.display = 'none'
+    fetch('/api/salon/perfil').then(r => r.ok ? r.json() : null).then(salao => { if (salao?.telefone) setTelefoneSalao(salao.telefone) }).catch(() => {})
+    return () => { if (btn) btn.style.display = '' }
   }, [])
 
   function abrirVisualizar(l: Lojista) { setEditando(l); setSomenteVisualizar(true) }
@@ -104,83 +114,117 @@ export default function LojistasPage() {
     XLSX.writeFile(wb, 'lojistas.xlsx')
   }
 
+  const linkZapSalao = linkWhatsappSalao(telefoneSalao)
+  const filtrosAtivos = Object.values(filtros).filter(Boolean).length
+
   return (
-    <div style={{ minHeight: '100vh', background: '#faf9f7' }}>
-      <nav style={{ background: '#faf9f7', borderBottom: '1px solid #e8e6e0', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 40, flexWrap: 'wrap' }}>
-        <button onClick={() => router.push('/salon')} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', color: '#6b6860', cursor: 'pointer', fontSize: 14 }}><ArrowLeft size={16} /> Voltar</button>
-        <span style={{ width: 1, height: 16, background: '#e0ddd8' }} />
-        <span style={{ fontWeight: 800, fontSize: 15, color: '#1a1a1a', display: 'flex', alignItems: 'center', gap: 6 }}><Users size={16} color={COR} /> Lojistas</span>
+    <div style={{ minHeight: '100vh', background: '#f4f3fa' }}>
+      <style>{`
+        @keyframes ljpFadeUp { from { opacity: 0; transform: translateY(10px) } to { opacity: 1; transform: translateY(0) } }
+        .ljp-card { animation: ljpFadeUp 0.35s ease both; }
+        .ljp-row:hover { background: #f9f8ff !important; }
+        .ljp-btn { transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease; }
+        .ljp-btn:hover { transform: translateY(-1px); }
+        .ljp-input:focus, .ljp-select:focus { border-color: ${COR} !important; box-shadow: 0 0 0 3px ${COR}15; }
+      `}</style>
+      {linkZapSalao && (
+        <a href={linkZapSalao} target="_blank" rel="noopener noreferrer" title="Falar com o salão no WhatsApp"
+          style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 9999, width: 52, height: 52, borderRadius: '50%', background: '#25D366', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 20px rgba(37,211,102,0.5)' }}>
+          <MessageCircle size={26} color="white" />
+        </a>
+      )}
+
+      <nav style={{ background: 'white', borderBottom: '1px solid #ece9f7', padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 40, flexWrap: 'wrap' }}>
+        <button onClick={() => router.push('/salon')} className="ljp-btn" style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', color: '#6b6860', cursor: 'pointer', fontSize: 14, fontWeight: 600 }}><ArrowLeft size={16} /> Voltar</button>
+        <span style={{ width: 1, height: 18, background: '#e0ddd8' }} />
+        <div style={{ width: 30, height: 30, borderRadius: 9, background: `linear-gradient(135deg, ${COR}, ${COR2})`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Users size={16} color="white" />
+        </div>
+        <div>
+          <div style={{ fontWeight: 800, fontSize: 15, color: '#1a1a1a', lineHeight: 1.2 }}>Lojistas</div>
+          <div style={{ fontSize: 11.5, color: '#9ca3af' }}>{lista.length} cadastrado(s)</div>
+        </div>
         <div style={{ flex: 1 }} />
-        <button onClick={() => router.push('/salon/lojistas/relatorio')} style={btnGhost}><BarChart3 size={14} /> Relatório</button>
-        <button onClick={exportarCSV} style={btnGhost}><Download size={14} /> CSV</button>
-        <button onClick={exportarXLSX} style={btnGhost}><Download size={14} /> Excel</button>
-        <button onClick={() => router.push('/salon/lojistas/configuracoes')} style={btnGhost}><Settings size={14} /> Configurações</button>
+        <button onClick={() => router.push('/salon/lojistas/relatorio')} className="ljp-btn" style={btnGhost}><BarChart3 size={14} /> Relatório</button>
+        <button onClick={exportarCSV} className="ljp-btn" style={btnGhost}><Download size={14} /> CSV</button>
+        <button onClick={exportarXLSX} className="ljp-btn" style={btnGhost}><Download size={14} /> Excel</button>
+        <button onClick={() => router.push('/salon/lojistas/configuracoes')} className="ljp-btn" style={btnPrimary}><Settings size={14} /> Configurações</button>
       </nav>
 
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: 16 }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 18 }}>
 
         {/* FILTROS */}
-        <div style={{ background: 'white', border: '1px solid #e8e6e0', borderRadius: 14, padding: 14, marginBottom: 16, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
-          <input placeholder="Nome" value={filtros.nome} onChange={e => setFiltros(f => ({ ...f, nome: e.target.value }))} style={inp} />
-          <input placeholder="Loja" value={filtros.loja} onChange={e => setFiltros(f => ({ ...f, loja: e.target.value }))} style={inp} />
-          <select value={filtros.segmento} onChange={e => setFiltros(f => ({ ...f, segmento: e.target.value }))} style={inp}>
-            <option value="">Segmento (todos)</option>
-            {segmentosCatalogo.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
-          <input placeholder="Serviço" value={filtros.servico} onChange={e => setFiltros(f => ({ ...f, servico: e.target.value }))} style={inp} />
-          <input type="date" title="Cadastrado de" value={filtros.data_de} onChange={e => setFiltros(f => ({ ...f, data_de: e.target.value }))} style={inp} />
-          <input type="date" title="Cadastrado até" value={filtros.data_ate} onChange={e => setFiltros(f => ({ ...f, data_ate: e.target.value }))} style={inp} />
-          <select value={filtros.grupo} onChange={e => setFiltros(f => ({ ...f, grupo: e.target.value }))} style={inp}>
-            <option value="">Participa do grupo (todos)</option>
-            <option value="sim">Entrou no grupo</option>
-            <option value="nao">Não entrou</option>
-          </select>
-          <select value={filtros.aniversariantes} onChange={e => setFiltros(f => ({ ...f, aniversariantes: e.target.value }))} style={inp}>
-            <option value="">Aniversariantes (todos)</option>
-            <option value="hoje">Hoje</option>
-            <option value="semana">Nos próximos 7 dias</option>
-            <option value="mes">Neste mês</option>
-          </select>
-          <select value={filtros.situacao} onChange={e => setFiltros(f => ({ ...f, situacao: e.target.value }))} style={inp}>
-            <option value="">Situação (todas)</option>
-            <option value="ativo">Ativo</option>
-            <option value="inativo">Inativo</option>
-          </select>
+        <div className="ljp-card" style={{ background: 'white', borderRadius: 16, padding: 18, boxShadow: '0 2px 14px rgba(30,20,60,0.05)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+            <div style={{ width: 26, height: 26, borderRadius: 8, background: `${COR}15`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Search size={14} color={COR} /></div>
+            <span style={{ fontSize: 13.5, fontWeight: 800, color: '#1a1a1a' }}>Filtros</span>
+            {filtrosAtivos > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: COR, background: `${COR}12`, borderRadius: 20, padding: '2px 8px' }}>{filtrosAtivos} ativo(s)</span>}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
+            <input className="ljp-input" placeholder="Nome" value={filtros.nome} onChange={e => setFiltros(f => ({ ...f, nome: e.target.value }))} style={inp} />
+            <input className="ljp-input" placeholder="Loja" value={filtros.loja} onChange={e => setFiltros(f => ({ ...f, loja: e.target.value }))} style={inp} />
+            <select className="ljp-select" value={filtros.segmento} onChange={e => setFiltros(f => ({ ...f, segmento: e.target.value }))} style={inp}>
+              <option value="">Segmento (todos)</option>
+              {segmentosCatalogo.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+            <input className="ljp-input" placeholder="Serviço" value={filtros.servico} onChange={e => setFiltros(f => ({ ...f, servico: e.target.value }))} style={inp} />
+            <input className="ljp-input" type="date" title="Cadastrado de" value={filtros.data_de} onChange={e => setFiltros(f => ({ ...f, data_de: e.target.value }))} style={inp} />
+            <input className="ljp-input" type="date" title="Cadastrado até" value={filtros.data_ate} onChange={e => setFiltros(f => ({ ...f, data_ate: e.target.value }))} style={inp} />
+            <select className="ljp-select" value={filtros.grupo} onChange={e => setFiltros(f => ({ ...f, grupo: e.target.value }))} style={inp}>
+              <option value="">Participa do grupo (todos)</option>
+              <option value="sim">Entrou no grupo</option>
+              <option value="nao">Não entrou</option>
+            </select>
+            <select className="ljp-select" value={filtros.aniversariantes} onChange={e => setFiltros(f => ({ ...f, aniversariantes: e.target.value }))} style={inp}>
+              <option value="">Aniversariantes (todos)</option>
+              <option value="hoje">Hoje</option>
+              <option value="semana">Nos próximos 7 dias</option>
+              <option value="mes">Neste mês</option>
+            </select>
+            <select className="ljp-select" value={filtros.situacao} onChange={e => setFiltros(f => ({ ...f, situacao: e.target.value }))} style={inp}>
+              <option value="">Situação (todas)</option>
+              <option value="ativo">Ativo</option>
+              <option value="inativo">Inativo</option>
+            </select>
+          </div>
         </div>
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: 50, color: '#9ca3af' }}>Carregando...</div>
+          <div style={{ textAlign: 'center', padding: 60, color: '#9ca3af' }}>Carregando...</div>
         ) : lista.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: 50, color: '#9ca3af', fontSize: 14, background: '#fff', border: '1px dashed #d0cdc7', borderRadius: 14 }}>
-            Nenhum lojista cadastrado ainda com esses filtros.
+          <div className="ljp-card" style={{ textAlign: 'center', padding: '56px 24px', color: '#9ca3af', fontSize: 14, background: '#fff', borderRadius: 16, boxShadow: '0 2px 14px rgba(30,20,60,0.05)' }}>
+            <div style={{ width: 48, height: 48, borderRadius: 14, background: `${COR}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
+              <Users size={22} color={COR} />
+            </div>
+            {filtrosAtivos > 0 ? 'Nenhum lojista encontrado com esses filtros.' : 'Nenhum lojista cadastrado ainda. Compartilhe o link público em Configurações para começar.'}
           </div>
         ) : (
-          <div style={{ background: 'white', border: '1px solid #e8e6e0', borderRadius: 14, overflowX: 'auto' }}>
+          <div className="ljp-card" style={{ background: 'white', borderRadius: 16, overflowX: 'auto', boxShadow: '0 2px 14px rgba(30,20,60,0.05)' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
-                <tr style={{ background: '#f6f4ff', textAlign: 'left' }}>
+                <tr style={{ background: `${COR}0d`, textAlign: 'left' }}>
                   {['Nome', 'Loja', 'Segmento', 'Telefone', 'Cadastro', 'Aniversário', 'Serviços', 'Grupo', 'Situação', ''].map(h => (
-                    <th key={h} style={{ padding: '10px 12px', fontWeight: 800, color: '#5b4fcf', whiteSpace: 'nowrap' }}>{h}</th>
+                    <th key={h} style={{ padding: '12px 14px', fontWeight: 800, color: COR, whiteSpace: 'nowrap', fontSize: 11.5, textTransform: 'uppercase', letterSpacing: '0.03em' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {lista.map((l, i) => (
-                  <tr key={l.id} style={{ background: i % 2 === 0 ? 'white' : '#fafafa', borderTop: '1px solid #f0eee9' }}>
-                    <td style={{ padding: '10px 12px', fontWeight: 700, color: '#1a1a1a' }}>{l.nome}</td>
-                    <td style={{ padding: '10px 12px' }}>{l.nome_loja}</td>
-                    <td style={{ padding: '10px 12px' }}>{l.segmento || '—'}</td>
-                    <td style={{ padding: '10px 12px' }}>{l.celular}</td>
-                    <td style={{ padding: '10px 12px', whiteSpace: 'nowrap' }}>{new Date(l.criado_em).toLocaleDateString('pt-BR')}</td>
-                    <td style={{ padding: '10px 12px', whiteSpace: 'nowrap' }}>{l.data_aniversario ? new Date(`${l.data_aniversario}T00:00:00`).toLocaleDateString('pt-BR') : '—'}</td>
-                    <td style={{ padding: '10px 12px', maxWidth: 200 }}>{(l.servicos_interesse || []).join(', ') || '—'}</td>
-                    <td style={{ padding: '10px 12px' }}>
-                      <span style={{ padding: '3px 8px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: l.entrou_grupo ? '#dcfce7' : '#f3f4f6', color: l.entrou_grupo ? '#16a34a' : '#6b7280' }}>{l.entrou_grupo ? 'Entrou' : 'Não entrou'}</span>
+                  <tr key={l.id} className="ljp-row" style={{ background: i % 2 === 0 ? 'white' : '#fbfaff', borderTop: '1px solid #f0eef9', transition: 'background 0.12s ease' }}>
+                    <td style={{ padding: '11px 14px', fontWeight: 700, color: '#1a1a1a' }}>{l.nome}</td>
+                    <td style={{ padding: '11px 14px' }}>{l.nome_loja}</td>
+                    <td style={{ padding: '11px 14px' }}>{l.segmento || '—'}</td>
+                    <td style={{ padding: '11px 14px' }}>{l.celular}</td>
+                    <td style={{ padding: '11px 14px', whiteSpace: 'nowrap' }}>{new Date(l.criado_em).toLocaleDateString('pt-BR')}</td>
+                    <td style={{ padding: '11px 14px', whiteSpace: 'nowrap' }}>{l.data_aniversario ? new Date(`${l.data_aniversario}T00:00:00`).toLocaleDateString('pt-BR') : '—'}</td>
+                    <td style={{ padding: '11px 14px', maxWidth: 200 }}>{(l.servicos_interesse || []).join(', ') || '—'}</td>
+                    <td style={{ padding: '11px 14px' }}>
+                      <span style={{ padding: '3px 9px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: l.entrou_grupo ? '#dcfce7' : '#f3f4f6', color: l.entrou_grupo ? '#16a34a' : '#6b7280' }}>{l.entrou_grupo ? 'Entrou' : 'Não entrou'}</span>
                     </td>
-                    <td style={{ padding: '10px 12px' }}>
-                      <span style={{ padding: '3px 8px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: l.situacao === 'ativo' ? '#dcfce7' : '#fee2e2', color: l.situacao === 'ativo' ? '#16a34a' : '#dc2626' }}>{l.situacao === 'ativo' ? 'Ativo' : 'Inativo'}</span>
+                    <td style={{ padding: '11px 14px' }}>
+                      <span style={{ padding: '3px 9px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: l.situacao === 'ativo' ? '#dcfce7' : '#fee2e2', color: l.situacao === 'ativo' ? '#16a34a' : '#dc2626' }}>{l.situacao === 'ativo' ? 'Ativo' : 'Inativo'}</span>
                     </td>
-                    <td style={{ padding: '10px 12px', whiteSpace: 'nowrap' }}>
+                    <td style={{ padding: '11px 14px', whiteSpace: 'nowrap' }}>
                       <button onClick={() => abrirVisualizar(l)} title="Visualizar" style={btnIcon}><Eye size={14} /></button>
                       <button onClick={() => abrirEditar(l)} title="Editar" style={btnIcon}><Pencil size={14} /></button>
                       <button onClick={() => excluir(l)} title="Excluir" style={{ ...btnIcon, color: '#dc2626' }}><Trash2 size={14} /></button>
@@ -336,4 +380,5 @@ function Campo({ label, children }: { label: string; children: React.ReactNode }
 
 const inp: React.CSSProperties = { width: '100%', padding: '9px 11px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13, outline: 'none' }
 const btnGhost: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, border: '1px solid #d0cdc7', background: '#fff', color: '#5b4fcf', fontSize: 13, fontWeight: 700, cursor: 'pointer' }
+const btnPrimary: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, border: 'none', background: COR, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }
 const btnIcon: React.CSSProperties = { border: 'none', background: 'transparent', color: '#6b7280', cursor: 'pointer', padding: 6 }

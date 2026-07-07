@@ -2,11 +2,13 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Save, Copy, Trash2, Plus, ArrowUp, ArrowDown, Eye, EyeOff, Settings } from 'lucide-react'
+import { ArrowLeft, Save, Copy, Trash2, Plus, ArrowUp, ArrowDown, Eye, EyeOff, Settings, Link2, MessageCircle, ListChecks, Tag } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { LojistaServico } from '@/lib/lojistasServicosPadrao'
+import { linkWhatsappSalao } from '@/lib/lojistaFormatters'
 
 const COR = '#5b4fcf'
+const COR2 = '#0f766e'
 
 export default function LojistasConfigPage() {
   const router = useRouter()
@@ -21,6 +23,7 @@ export default function LojistasConfigPage() {
   const [segmentos, setSegmentos] = useState<string[]>([])
   const [novoSegmento, setNovoSegmento] = useState('')
   const [salvandoSegmentos, setSalvandoSegmentos] = useState(false)
+  const [telefoneSalao, setTelefoneSalao] = useState('')
 
   const carregar = useCallback(async () => {
     setLoading(true)
@@ -41,6 +44,14 @@ export default function LojistasConfigPage() {
     setLoading(false)
   }, [])
   useEffect(() => { carregar() }, [carregar])
+
+  // O botão flutuante global é do suporte da NODRI — aqui o correto é o WhatsApp do próprio salão.
+  useEffect(() => {
+    const btn = document.getElementById('whatsapp-float-btn')
+    if (btn) btn.style.display = 'none'
+    fetch('/api/salon/perfil').then(r => r.ok ? r.json() : null).then(salao => { if (salao?.telefone) setTelefoneSalao(salao.telefone) }).catch(() => {})
+    return () => { if (btn) btn.style.display = '' }
+  }, [])
 
   async function salvarConfig() {
     setSalvandoConfig(true)
@@ -148,56 +159,74 @@ export default function LojistasConfigPage() {
     salvarSegmentosNoServidor(atualizado)
   }
 
-  if (loading) return <div style={{ textAlign: 'center', padding: 60, color: '#9ca3af' }}>Carregando...</div>
+  if (loading) return <div style={{ minHeight: '100vh', background: '#f4f3fa', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af' }}>Carregando...</div>
+
+  const linkZapSalao = linkWhatsappSalao(telefoneSalao)
 
   return (
-    <div style={{ minHeight: '100vh', background: '#faf9f7' }}>
-      <nav style={{ background: '#faf9f7', borderBottom: '1px solid #e8e6e0', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 40 }}>
-        <button onClick={() => router.push('/salon/lojistas')} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', color: '#6b6860', cursor: 'pointer', fontSize: 14 }}><ArrowLeft size={16} /> Voltar</button>
-        <span style={{ width: 1, height: 16, background: '#e0ddd8' }} />
-        <span style={{ fontWeight: 800, fontSize: 15, color: '#1a1a1a', display: 'flex', alignItems: 'center', gap: 6 }}><Settings size={16} color={COR} /> Configurações — Lojistas</span>
+    <div style={{ minHeight: '100vh', background: '#f4f3fa' }}>
+      <style>{`
+        @keyframes ljcFadeUp { from { opacity: 0; transform: translateY(10px) } to { opacity: 1; transform: translateY(0) } }
+        .ljc-card { animation: ljcFadeUp 0.35s ease both; }
+        .ljc-input:focus { border-color: ${COR} !important; box-shadow: 0 0 0 3px ${COR}15; }
+        .ljc-btn { transition: transform 0.15s ease, box-shadow 0.15s ease; }
+        .ljc-btn:hover:not(:disabled) { transform: translateY(-1px); }
+      `}</style>
+      {linkZapSalao && (
+        <a href={linkZapSalao} target="_blank" rel="noopener noreferrer" title="Falar com o salão no WhatsApp"
+          style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 9999, width: 52, height: 52, borderRadius: '50%', background: '#25D366', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 20px rgba(37,211,102,0.5)' }}>
+          <MessageCircle size={26} color="white" />
+        </a>
+      )}
+
+      <nav style={{ background: 'white', borderBottom: '1px solid #ece9f7', padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 40 }}>
+        <button onClick={() => router.push('/salon/lojistas')} className="ljc-btn" style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', color: '#6b6860', cursor: 'pointer', fontSize: 14, fontWeight: 600 }}><ArrowLeft size={16} /> Voltar</button>
+        <span style={{ width: 1, height: 18, background: '#e0ddd8' }} />
+        <div style={{ width: 30, height: 30, borderRadius: 9, background: `linear-gradient(135deg, ${COR}, ${COR2})`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Settings size={16} color="white" />
+        </div>
+        <div>
+          <div style={{ fontWeight: 800, fontSize: 15, color: '#1a1a1a', lineHeight: 1.2 }}>Configurações — Lojistas</div>
+          <div style={{ fontSize: 11.5, color: '#9ca3af' }}>Grupo, mensagem, serviços e segmentos</div>
+        </div>
       </nav>
 
-      <div style={{ maxWidth: 700, margin: '0 auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ maxWidth: 760, margin: '0 auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 18 }}>
 
         {/* LINK PÚBLICO */}
-        <div style={card}>
-          <h2 style={cardTitulo}>Link de Cadastro (autocadastro do lojista)</h2>
+        <SecaoConfig titulo="Link de Cadastro" subtitulo="Autocadastro do lojista, sem login" icone={<Link2 size={16} color="white" />} cor={COR}>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-            <code style={{ flex: 1, minWidth: 200, background: '#f6f4ff', padding: '10px 12px', borderRadius: 8, fontSize: 13, color: '#5b4fcf', wordBreak: 'break-all' }}>{linkPublico}</code>
-            <button onClick={copiarLink} style={btnGhost}><Copy size={14} /> Copiar</button>
+            <code style={{ flex: 1, minWidth: 200, background: '#f6f4ff', padding: '10px 12px', borderRadius: 8, fontSize: 13, color: COR, wordBreak: 'break-all' }}>{linkPublico}</code>
+            <button onClick={copiarLink} className="ljc-btn" style={btnGhost}><Copy size={14} /> Copiar</button>
           </div>
           <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 8 }}>Compartilhe esse link com os lojistas parceiros para que eles se cadastrem.</p>
-        </div>
+        </SecaoConfig>
 
         {/* GRUPO PROMOCIONAL */}
-        <div style={card}>
-          <h2 style={cardTitulo}>Grupo Promocional</h2>
+        <SecaoConfig titulo="Grupo Promocional" icone={<MessageCircle size={16} color="white" />} cor="#16a34a">
           <label style={lbl}>Link do Grupo WhatsApp</label>
-          <input value={whatsappLink} onChange={e => setWhatsappLink(e.target.value)} placeholder="https://chat.whatsapp.com/..." style={inp} />
+          <input className="ljc-input" value={whatsappLink} onChange={e => setWhatsappLink(e.target.value)} placeholder="https://chat.whatsapp.com/..." style={inp} />
           <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-            <button onClick={salvarConfig} disabled={salvandoConfig} style={btnPrimary}><Save size={14} /> Salvar</button>
-            {whatsappLink && <button onClick={removerGrupo} style={btnDanger}><Trash2 size={14} /> Remover</button>}
+            <button onClick={salvarConfig} disabled={salvandoConfig} className="ljc-btn" style={btnPrimary}><Save size={14} /> Salvar</button>
+            {whatsappLink && <button onClick={removerGrupo} className="ljc-btn" style={btnDanger}><Trash2 size={14} /> Remover</button>}
           </div>
           {!whatsappLink && <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 8 }}>Sem link configurado — o botão de entrar no grupo não aparece para os lojistas.</p>}
-        </div>
+        </SecaoConfig>
 
         {/* MENSAGEM AUTOMÁTICA */}
-        <div style={card}>
-          <h2 style={cardTitulo}>Mensagem Automática</h2>
+        <SecaoConfig titulo="Mensagem Automática" icone={<MessageCircle size={16} color="white" />} cor={COR2}>
           <p style={{ fontSize: 12, color: '#9ca3af', marginBottom: 8 }}>Texto exibido ao lojista na tela de confirmação, junto do convite ao grupo.</p>
-          <textarea value={mensagem} onChange={e => setMensagem(e.target.value)} rows={6} style={{ ...inp, resize: 'vertical' }} />
+          <textarea className="ljc-input" value={mensagem} onChange={e => setMensagem(e.target.value)} rows={6} style={{ ...inp, resize: 'vertical' }} />
           <div style={{ marginTop: 10 }}>
-            <button onClick={salvarConfig} disabled={salvandoConfig} style={btnPrimary}><Save size={14} /> Salvar mensagem</button>
+            <button onClick={salvarConfig} disabled={salvandoConfig} className="ljc-btn" style={btnPrimary}><Save size={14} /> Salvar mensagem</button>
           </div>
-        </div>
+        </SecaoConfig>
 
         {/* SERVIÇOS */}
-        <div style={card}>
-          <h2 style={cardTitulo}>Serviços de Interesse</h2>
+        <SecaoConfig titulo="Serviços de Interesse" icone={<ListChecks size={16} color="white" />} cor={COR}>
           <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-            <input value={novoServico} onChange={e => setNovoServico(e.target.value)} placeholder="Novo serviço..." style={inp} onKeyDown={e => e.key === 'Enter' && adicionarServico()} />
-            <button onClick={adicionarServico} style={btnPrimary}><Plus size={14} /> Adicionar</button>
+            <input className="ljc-input" value={novoServico} onChange={e => setNovoServico(e.target.value)} placeholder="Novo serviço..." style={inp} onKeyDown={e => e.key === 'Enter' && adicionarServico()} />
+            <button onClick={adicionarServico} className="ljc-btn" style={btnPrimary}><Plus size={14} /> Adicionar</button>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 400, overflowY: 'auto' }}>
             {[...servicos].sort((a, b) => a.ordem - b.ordem).map((s, i, arr) => (
@@ -211,15 +240,13 @@ export default function LojistasConfigPage() {
             ))}
           </div>
           {salvandoServicos && <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 6 }}>Salvando...</p>}
-        </div>
+        </SecaoConfig>
 
         {/* SEGMENTOS */}
-        <div style={card}>
-          <h2 style={cardTitulo}>Segmentos da Loja</h2>
-          <p style={{ fontSize: 12, color: '#9ca3af', marginBottom: 8 }}>A opção &quot;Outro&quot; (com campo livre) aparece sempre por último, automaticamente.</p>
+        <SecaoConfig titulo="Segmentos da Loja" subtitulo={'A opção "Outro" (com campo livre) aparece sempre por último, automaticamente'} icone={<Tag size={16} color="white" />} cor={COR2}>
           <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-            <input value={novoSegmento} onChange={e => setNovoSegmento(e.target.value)} placeholder="Novo segmento..." style={inp} onKeyDown={e => e.key === 'Enter' && adicionarSegmento()} />
-            <button onClick={adicionarSegmento} style={btnPrimary}><Plus size={14} /> Adicionar</button>
+            <input className="ljc-input" value={novoSegmento} onChange={e => setNovoSegmento(e.target.value)} placeholder="Novo segmento..." style={inp} onKeyDown={e => e.key === 'Enter' && adicionarSegmento()} />
+            <button onClick={adicionarSegmento} className="ljc-btn" style={btnPrimary}><Plus size={14} /> Adicionar</button>
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {segmentos.map(s => (
@@ -231,16 +258,29 @@ export default function LojistasConfigPage() {
             <span style={{ display: 'inline-flex', alignItems: 'center', padding: '6px 10px', borderRadius: 20, background: '#f3f4f6', color: '#9ca3af', fontSize: 13, fontWeight: 600 }}>Outro (fixo)</span>
           </div>
           {salvandoSegmentos && <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 6 }}>Salvando...</p>}
-        </div>
+        </SecaoConfig>
       </div>
     </div>
   )
 }
 
-const card: React.CSSProperties = { background: 'white', border: '1px solid #e8e6e0', borderRadius: 14, padding: 18 }
-const cardTitulo: React.CSSProperties = { fontSize: 15, fontWeight: 800, color: '#1a1a1a', marginBottom: 12 }
+function SecaoConfig({ titulo, subtitulo, icone, cor, children }: { titulo: string; subtitulo?: string; icone: React.ReactNode; cor: string; children: React.ReactNode }) {
+  return (
+    <div className="ljc-card" style={{ background: 'white', borderRadius: 16, padding: 20, boxShadow: '0 2px 14px rgba(30,20,60,0.05)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+        <div style={{ width: 32, height: 32, borderRadius: 9, background: cor, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{icone}</div>
+        <div>
+          <div style={{ fontSize: 14.5, fontWeight: 800, color: '#1a1a1a' }}>{titulo}</div>
+          {subtitulo && <div style={{ fontSize: 11.5, color: '#9ca3af' }}>{subtitulo}</div>}
+        </div>
+      </div>
+      {children}
+    </div>
+  )
+}
+
 const lbl: React.CSSProperties = { fontSize: 12, fontWeight: 700, color: '#6b7280', display: 'block', marginBottom: 4 }
-const inp: React.CSSProperties = { width: '100%', padding: '10px 12px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13, outline: 'none', fontFamily: 'inherit' }
+const inp: React.CSSProperties = { width: '100%', padding: '10px 12px', borderRadius: 8, border: '1.5px solid #e5e2f0', fontSize: 13, outline: 'none', fontFamily: 'inherit', transition: 'border-color 0.15s ease, box-shadow 0.15s ease' }
 const btnGhost: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 14px', borderRadius: 10, border: '1px solid #d0cdc7', background: '#fff', color: '#5b4fcf', fontSize: 13, fontWeight: 700, cursor: 'pointer' }
 const btnPrimary: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 10, border: 'none', background: COR, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }
 const btnDanger: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 10, border: '1px solid #fca5a5', background: '#fff', color: '#dc2626', fontSize: 13, fontWeight: 700, cursor: 'pointer' }
