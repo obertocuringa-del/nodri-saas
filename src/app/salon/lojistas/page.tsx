@@ -6,7 +6,9 @@ import { ArrowLeft, Settings, Download, Eye, Pencil, Trash2, X, Save, Users } fr
 import toast from 'react-hot-toast'
 import * as XLSX from 'xlsx'
 import { SEGMENTOS_LOJISTA } from '@/lib/lojistasServicosPadrao'
+import { capitalizarNome, maskCelular, formatInstagram, formatBloco } from '@/lib/lojistaFormatters'
 import MultiSelectBusca, { Opcao } from '@/components/lojistas/MultiSelectBusca'
+import SeletorDataNascimento from '@/components/lojistas/SeletorDataNascimento'
 
 interface Lojista {
   id: string; nome: string; celular: string; data_aniversario: string | null; email: string | null; instagram: string | null
@@ -209,7 +211,6 @@ function ModalLojista({ lojista, somenteVisualizar, servicosCatalogo, salvando, 
 }) {
   const [nome, setNome] = useState(lojista.nome)
   const [celular, setCelular] = useState(lojista.celular)
-  const [email, setEmail] = useState(lojista.email || '')
   const [instagram, setInstagram] = useState(lojista.instagram || '')
   const [dataAniversario, setDataAniversario] = useState(lojista.data_aniversario || '')
   const [nomeLoja, setNomeLoja] = useState(lojista.nome_loja)
@@ -234,7 +235,7 @@ function ModalLojista({ lojista, somenteVisualizar, servicosCatalogo, salvando, 
   function salvar() {
     const servicos_interesse = catalogoCompleto.filter(c => servicosIds.includes(c.id)).map(c => c.nome)
     onSalvar({
-      nome, celular, email: email || null, instagram: instagram || null,
+      nome, celular, instagram: instagram || null,
       data_aniversario: dataAniversario || null, nome_loja: nomeLoja, segmento: segmento || null,
       bloco: bloco || null, numero_loja: numeroLoja || null, observacoes: observacoes || null,
       servicos_interesse, situacao,
@@ -252,19 +253,28 @@ function ModalLojista({ lojista, somenteVisualizar, servicosCatalogo, salvando, 
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 14 }}>
-          <Campo label="Nome"><input disabled={dis} style={inp} value={nome} onChange={e => setNome(e.target.value)} /></Campo>
-          <Campo label="Celular"><input disabled={dis} style={inp} value={celular} onChange={e => setCelular(e.target.value)} /></Campo>
-          <Campo label="Data de Aniversário"><input disabled={dis} type="date" style={inp} value={dataAniversario} onChange={e => setDataAniversario(e.target.value)} /></Campo>
-          <Campo label="E-mail"><input disabled={dis} style={inp} value={email} onChange={e => setEmail(e.target.value)} /></Campo>
-          <Campo label="Instagram"><input disabled={dis} style={inp} value={instagram} onChange={e => setInstagram(e.target.value)} /></Campo>
-          <Campo label="Nome da Loja"><input disabled={dis} style={inp} value={nomeLoja} onChange={e => setNomeLoja(e.target.value)} /></Campo>
+          <Campo label="Nome">
+            <input disabled={dis} style={inp} value={nome} onChange={e => setNome(e.target.value)} onBlur={e => setNome(capitalizarNome(e.target.value))} />
+          </Campo>
+          <Campo label="Celular">
+            <input disabled={dis} style={inp} value={celular} onChange={e => setCelular(maskCelular(e.target.value))} />
+          </Campo>
+          <Campo label="Data de Aniversário">
+            {dis ? <input disabled style={inp} value={dataAniversario ? new Date(`${dataAniversario}T00:00:00`).toLocaleDateString('pt-BR') : ''} readOnly /> : <SeletorDataNascimento value={dataAniversario} onChange={setDataAniversario} />}
+          </Campo>
+          <Campo label="Instagram">
+            <input disabled={dis} style={inp} value={instagram} onChange={e => setInstagram(e.target.value)} onBlur={e => setInstagram(formatInstagram(e.target.value))} />
+          </Campo>
+          <Campo label="Nome da Loja">
+            <input disabled={dis} style={inp} value={nomeLoja} onChange={e => setNomeLoja(e.target.value)} onBlur={e => setNomeLoja(capitalizarNome(e.target.value))} />
+          </Campo>
           <Campo label="Segmento">
             <select disabled={dis} style={inp} value={segmento} onChange={e => setSegmento(e.target.value)}>
               <option value="">—</option>
               {SEGMENTOS_LOJISTA.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </Campo>
-          <Campo label="Bloco"><input disabled={dis} style={inp} value={bloco} onChange={e => setBloco(e.target.value)} /></Campo>
+          <Campo label="Bloco"><input disabled={dis} style={inp} value={bloco} onChange={e => setBloco(formatBloco(e.target.value))} /></Campo>
           <Campo label="Número da Loja"><input disabled={dis} style={inp} value={numeroLoja} onChange={e => setNumeroLoja(e.target.value)} /></Campo>
           <Campo label="Situação">
             <select disabled={dis} style={inp} value={situacao} onChange={e => setSituacao(e.target.value as 'ativo' | 'inativo')}>
