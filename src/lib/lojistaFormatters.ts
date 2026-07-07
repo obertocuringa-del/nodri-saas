@@ -31,3 +31,10 @@ export function formatInstagram(valor: string): string {
 export function formatBloco(valor: string): string {
   return valor.toUpperCase()
 }
+
+export function linkWhatsappSalao(telefone: string): string {
+  const digitos = (telefone || '').replace(/\D/g, '')
+  if (!digitos) return ''
+  const comPais = digitos.startsWith('55') && digitos.length >= 12 ? digitos : `55${digitos}`
+  return `https://wa.me/${comPais}`
+}

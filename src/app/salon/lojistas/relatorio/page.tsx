@@ -7,6 +7,7 @@ import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   PieChart, Pie, Cell, BarChart, Bar,
 } from 'recharts'
+import { linkWhatsappSalao } from '@/lib/lojistaFormatters'
 
 const COR = '#5b4fcf'
 const COR2 = '#0f766e'
@@ -27,6 +28,7 @@ export default function RelatorioLojistasPage() {
   const router = useRouter()
   const [dados, setDados] = useState<Relatorio | null>(null)
   const [loading, setLoading] = useState(true)
+  const [telefoneSalao, setTelefoneSalao] = useState('')
 
   const carregar = useCallback(async () => {
     setLoading(true)
@@ -37,6 +39,14 @@ export default function RelatorioLojistasPage() {
     setLoading(false)
   }, [])
   useEffect(() => { carregar() }, [carregar])
+
+  // O botão flutuante global é do suporte da NODRI — aqui o correto é o WhatsApp do próprio salão.
+  useEffect(() => {
+    const btn = document.getElementById('whatsapp-float-btn')
+    if (btn) btn.style.display = 'none'
+    fetch('/api/salon/perfil').then(r => r.ok ? r.json() : null).then(salao => { if (salao?.telefone) setTelefoneSalao(salao.telefone) }).catch(() => {})
+    return () => { if (btn) btn.style.display = '' }
+  }, [])
 
   const estilosGlobais = (
     <style>{`
@@ -74,9 +84,17 @@ export default function RelatorioLojistasPage() {
   const crescimentoFmt = dados.crescimento.map(c => ({ ...c, label: `${MESES_ABREV[Number(c.mes.slice(5, 7)) - 1]}/${c.mes.slice(2, 4)}` }))
   const CustomTooltip = tooltipStyle
 
+  const linkZapSalao = linkWhatsappSalao(telefoneSalao)
+
   return (
     <div style={{ minHeight: '100vh', background: '#f4f3fa' }}>
       {estilosGlobais}
+      {linkZapSalao && (
+        <a href={linkZapSalao} target="_blank" rel="noopener noreferrer" title="Falar com o salão no WhatsApp"
+          style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 9999, width: 52, height: 52, borderRadius: '50%', background: '#25D366', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 20px rgba(37,211,102,0.5)' }}>
+          <MessageCircle size={26} color="white" />
+        </a>
+      )}
 
       <nav style={{ background: 'white', borderBottom: '1px solid #ece9f7', padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 40 }}>
         <button onClick={() => router.push('/salon/lojistas')} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', color: '#6b6860', cursor: 'pointer', fontSize: 14, fontWeight: 600 }}><ArrowLeft size={16} /> Voltar</button>

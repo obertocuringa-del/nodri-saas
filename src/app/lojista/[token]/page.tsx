@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { CheckCircle, ChevronRight, ChevronLeft, Store, User as UserIcon, MessageCircle, AtSign, Cake, Phone, MapPin, Tag, ClipboardList, Users, TrendingUp, Award, Settings, Plus } from 'lucide-react'
-import { capitalizarNome, maskCelular, formatInstagram, formatBloco } from '@/lib/lojistaFormatters'
+import { capitalizarNome, maskCelular, formatInstagram, formatBloco, linkWhatsappSalao } from '@/lib/lojistaFormatters'
 import MultiSelectBusca, { Opcao } from '@/components/lojistas/MultiSelectBusca'
 import SeletorDataNascimento from '@/components/lojistas/SeletorDataNascimento'
 
@@ -15,13 +15,6 @@ interface DadosPublicos {
   servicos: Opcao[]
   segmentos: string[]
   dono_logado: boolean
-}
-
-function linkWhatsappSalao(telefone: string): string {
-  const digitos = (telefone || '').replace(/\D/g, '')
-  if (!digitos) return ''
-  const comPais = digitos.startsWith('55') && digitos.length >= 12 ? digitos : `55${digitos}`
-  return `https://wa.me/${comPais}`
 }
 
 const COR = '#5b4fcf'
