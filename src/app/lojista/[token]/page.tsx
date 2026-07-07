@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
-import { CheckCircle, ChevronRight, Store, User as UserIcon, MessageCircle, AtSign, Cake } from 'lucide-react'
+import { CheckCircle, ChevronRight, Store, User as UserIcon, MessageCircle, AtSign, Cake, Phone, MapPin, Tag, ClipboardList } from 'lucide-react'
 import { capitalizarNome, maskCelular, formatInstagram, formatBloco } from '@/lib/lojistaFormatters'
 import MultiSelectBusca, { Opcao } from '@/components/lojistas/MultiSelectBusca'
 import SeletorDataNascimento from '@/components/lojistas/SeletorDataNascimento'
@@ -16,6 +16,7 @@ interface DadosPublicos {
 }
 
 const COR = '#5b4fcf'
+const COR2 = '#0f766e'
 
 const FORM_VAZIO = {
   nome: '', celular: '', data_aniversario: '', instagram: '',
@@ -122,7 +123,7 @@ export default function LojistaPublicoPage() {
     window.open(resultado.whatsapp_link, '_blank')
   }
 
-  const fundo = { minHeight: '100vh', background: 'linear-gradient(160deg, #f5f3ff 0%, #eef2ff 40%, #eff6ff 70%, #f0f9ff 100%)' }
+  const fundo = { minHeight: '100vh', background: '#f4f3fa' }
 
   const estilosGlobais = (
     <style>{`
@@ -135,10 +136,14 @@ export default function LojistaPublicoPage() {
       .lj-btn { transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease; }
       .lj-btn:hover:not(:disabled) { transform: translateY(-1px); }
       .lj-btn-enviar:hover:not(:disabled) { box-shadow: 0 12px 34px ${COR}55 !important; }
+      .lj-grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; align-items: start; }
+      @media (max-width: 900px) {
+        .lj-grid3 { grid-template-columns: 1fr; }
+      }
       @media (max-width: 560px) {
-        .lj-header { padding: 20px 16px !important; }
-        .lj-header h1 { font-size: 19px !important; }
-        .lj-card { padding: 18px 16px !important; border-radius: 16px !important; }
+        .lj-header { padding: 24px 16px !important; }
+        .lj-header h1 { font-size: 20px !important; }
+        .lj-card-body { padding: 18px 16px !important; }
         .lj-botoes { flex-direction: column-reverse !important; }
         .lj-botoes button { width: 100%; justify-content: center; }
         .lj-grid-2 { grid-template-columns: 1fr !important; }
@@ -170,7 +175,7 @@ export default function LojistaPublicoPage() {
     return (
       <div style={{ ...fundo, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
         <div style={{ textAlign: 'center', maxWidth: 420 }}>
-          <div style={{ width: 88, height: 88, borderRadius: '50%', background: `linear-gradient(135deg, ${COR}, ${COR}99)`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 28px', boxShadow: `0 20px 60px ${COR}40` }}>
+          <div style={{ width: 88, height: 88, borderRadius: '50%', background: `linear-gradient(135deg, ${COR}, ${COR2})`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 28px', boxShadow: `0 20px 60px ${COR}40` }}>
             <CheckCircle size={44} color="white" />
           </div>
           <h1 style={{ color: '#1a1a1a', fontWeight: 800, fontSize: 26, marginBottom: 12 }}>Cadastro realizado com sucesso!</h1>
@@ -193,89 +198,103 @@ export default function LojistaPublicoPage() {
 
   if (!dados) return null
 
+  const nomeIniciais = dados.salao_nome ? dados.salao_nome.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) : 'S'
+
   return (
     <div style={fundo}>
       {estilosGlobais}
-      <div style={{ height: 4, background: `linear-gradient(90deg, ${COR}, ${COR}80, #a855f7, #60a5fa)` }} />
 
-      <div className="lj-header" style={{ background: 'white', borderBottom: '1px solid #ede9fe', padding: '32px 20px', textAlign: 'center', boxShadow: '0 1px 20px rgba(0,0,0,0.04)' }}>
-        <div style={{ width: 60, height: 60, borderRadius: 18, background: `linear-gradient(135deg, ${COR}, ${COR}80)`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px', boxShadow: `0 10px 28px ${COR}40` }}>
-          <Store size={28} color="white" />
+      <div className="lj-header" style={{ background: `linear-gradient(115deg, ${COR} 0%, ${COR} 45%, ${COR2} 100%)`, padding: '28px 20px 34px', textAlign: 'center' }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.15)', padding: '6px 14px', borderRadius: 20, marginBottom: 16 }}>
+          <div style={{ width: 22, height: 22, borderRadius: 7, background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 11, color: COR }}>{nomeIniciais}</div>
+          <span style={{ fontSize: 12, fontWeight: 700, color: 'white', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{dados.salao_nome || 'NODRI'}</span>
         </div>
-        {dados.salao_nome && (
-          <p style={{ fontSize: 13, fontWeight: 700, color: COR, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>{dados.salao_nome}</p>
-        )}
-        <h1 style={{ fontSize: 24, fontWeight: 800, color: '#1a1a1a', marginBottom: 8, letterSpacing: '-0.3px' }}>Cadastro de Parceria — Lojista</h1>
-        <p style={{ fontSize: 14, color: '#6b7280', maxWidth: 480, margin: '0 auto', lineHeight: 1.6 }}>
+        <h1 style={{ fontSize: 26, fontWeight: 800, color: 'white', marginBottom: 8, letterSpacing: '-0.3px' }}>Seja um Lojista Parceiro</h1>
+        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.85)', maxWidth: 480, margin: '0 auto', lineHeight: 1.6 }}>
           Cadastre sua loja e receba promoções exclusivas de parceria.
         </p>
-        <p style={{ fontSize: 12, color: '#ef4444', marginTop: 12, fontWeight: 600 }}>* Campos obrigatórios</p>
+        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 12, fontWeight: 600 }}>* Campos obrigatórios</p>
       </div>
 
-      <div style={{ maxWidth: 640, margin: '0 auto', padding: '28px 16px 60px' }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 16px 60px', marginTop: -18 }}>
 
-        <Secao titulo="Dados Pessoais" icone={<UserIcon size={17} color={COR} />}>
-          <Campo label="Nome Completo *">
-            <input className="lj-input" style={inputStyle} value={form.nome}
-              onChange={e => set('nome', e.target.value)}
-              onBlur={e => set('nome', capitalizarNome(e.target.value))} />
-          </Campo>
-          <Campo label="Celular com DDD *">
-            <input className="lj-input" style={inputStyle} value={form.celular} inputMode="numeric"
-              onChange={e => set('celular', maskCelular(e.target.value))} placeholder="(11) 91234-5678" />
-          </Campo>
-          <Campo label={<><Cake size={13} /> Data de Aniversário</>}>
-            <SeletorDataNascimento value={form.data_aniversario} onChange={v => set('data_aniversario', v)} />
-          </Campo>
-          <Campo label={<><AtSign size={13} /> Instagram</>}>
-            <input className="lj-input" style={inputStyle} value={form.instagram}
-              onChange={e => set('instagram', e.target.value)}
-              onBlur={e => set('instagram', formatInstagram(e.target.value))} placeholder="@sualoja" />
-          </Campo>
-        </Secao>
-
-        <Secao titulo="Dados da Loja" icone={<Store size={17} color={COR} />}>
-          <Campo label="Nome da Loja *">
-            <input className="lj-input" style={inputStyle} value={form.nome_loja}
-              onChange={e => set('nome_loja', e.target.value)}
-              onBlur={e => set('nome_loja', capitalizarNome(e.target.value))} />
-          </Campo>
-          <Campo label="Segmento">
-            <select className="lj-input lj-select" style={inputStyle} value={form.segmento} onChange={e => set('segmento', e.target.value)}>
-              <option value="">Selecione...</option>
-              {dados.segmentos.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-          </Campo>
-          {form.segmento === 'Outro' && (
-            <Campo label="Qual segmento?"><input className="lj-input" style={inputStyle} value={form.segmento_outro} onChange={e => set('segmento_outro', e.target.value)} /></Campo>
-          )}
-          <div className="lj-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <Campo label="Bloco">
-              <input className="lj-input" style={inputStyle} value={form.bloco} onChange={e => set('bloco', formatBloco(e.target.value))} />
+        <div className="lj-grid3">
+          <Cartao titulo="Dados Pessoais" icone={<UserIcon size={16} color="white" />} cor={COR}>
+            <Campo label="Nome Completo *">
+              <InputComIcone icone={<UserIcon size={15} />}>
+                <input className="lj-input" style={inputComIcone} value={form.nome}
+                  onChange={e => set('nome', e.target.value)}
+                  onBlur={e => set('nome', capitalizarNome(e.target.value))} />
+              </InputComIcone>
             </Campo>
-            <Campo label="Número da Loja"><input className="lj-input" style={inputStyle} value={form.numero_loja} onChange={e => set('numero_loja', e.target.value)} /></Campo>
-          </div>
-        </Secao>
+            <Campo label="Celular com DDD *">
+              <InputComIcone icone={<Phone size={15} />}>
+                <input className="lj-input" style={inputComIcone} value={form.celular} inputMode="numeric"
+                  onChange={e => set('celular', maskCelular(e.target.value))} placeholder="(11) 91234-5678" />
+              </InputComIcone>
+            </Campo>
+            <Campo label={<><Cake size={13} /> Data de Aniversário</>}>
+              <SeletorDataNascimento value={form.data_aniversario} onChange={v => set('data_aniversario', v)} />
+            </Campo>
+            <Campo label="Instagram">
+              <InputComIcone icone={<AtSign size={15} />}>
+                <input className="lj-input" style={inputComIcone} value={form.instagram}
+                  onChange={e => set('instagram', e.target.value)}
+                  onBlur={e => set('instagram', formatInstagram(e.target.value))} placeholder="@sualoja" />
+              </InputComIcone>
+            </Campo>
+          </Cartao>
 
-        <Secao titulo="Serviços de Interesse" icone={<CheckCircle size={17} color={COR} />}>
-          <MultiSelectBusca opcoes={servicosCatalogo} selecionados={servicosIds} onChange={setServicosIds} onAdicionarNovo={adicionarServicoNovo} corPrimaria={COR} />
-        </Secao>
+          <Cartao titulo="Dados da Loja" icone={<Store size={16} color="white" />} cor={COR2}>
+            <Campo label="Nome da Loja *">
+              <InputComIcone icone={<Store size={15} />}>
+                <input className="lj-input" style={inputComIcone} value={form.nome_loja}
+                  onChange={e => set('nome_loja', e.target.value)}
+                  onBlur={e => set('nome_loja', capitalizarNome(e.target.value))} />
+              </InputComIcone>
+            </Campo>
+            <Campo label="Segmento">
+              <InputComIcone icone={<Tag size={15} />}>
+                <select className="lj-input lj-select" style={{ ...inputComIcone, paddingRight: 34 }} value={form.segmento} onChange={e => set('segmento', e.target.value)}>
+                  <option value="">Selecione...</option>
+                  {dados.segmentos.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </InputComIcone>
+            </Campo>
+            {form.segmento === 'Outro' && (
+              <Campo label="Qual segmento?"><input className="lj-input" style={inputStyle} value={form.segmento_outro} onChange={e => set('segmento_outro', e.target.value)} /></Campo>
+            )}
+            <div className="lj-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <Campo label="Bloco">
+                <InputComIcone icone={<MapPin size={15} />}>
+                  <input className="lj-input" style={inputComIcone} value={form.bloco} onChange={e => set('bloco', formatBloco(e.target.value))} />
+                </InputComIcone>
+              </Campo>
+              <Campo label="Número da Loja"><input className="lj-input" style={inputStyle} value={form.numero_loja} onChange={e => set('numero_loja', e.target.value)} /></Campo>
+            </div>
+          </Cartao>
 
-        <Secao titulo="Observações">
-          <textarea className="lj-input" style={{ ...inputStyle, resize: 'none' }} rows={4} value={form.observacoes} onChange={e => set('observacoes', e.target.value)} placeholder="Alguma observação adicional..." />
-        </Secao>
+          <Cartao titulo="Serviços & Observações" icone={<ClipboardList size={16} color="white" />} cor={COR}>
+            <Campo label="Serviços de Interesse">
+              <MultiSelectBusca opcoes={servicosCatalogo} selecionados={servicosIds} onChange={setServicosIds} onAdicionarNovo={adicionarServicoNovo} corPrimaria={COR} />
+            </Campo>
+            <Campo label="Observações">
+              <textarea className="lj-input" style={{ ...inputStyle, resize: 'none' }} rows={4} value={form.observacoes} onChange={e => set('observacoes', e.target.value)} placeholder="Alguma observação adicional..." />
+            </Campo>
+          </Cartao>
+        </div>
 
         {erroEnvio && (
-          <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 14, padding: '14px 18px', marginBottom: 16, fontSize: 14, color: '#dc2626', fontWeight: 600 }}>
+          <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 14, padding: '14px 18px', margin: '16px 0', fontSize: 14, color: '#dc2626', fontWeight: 600 }}>
             {erroEnvio}
           </div>
         )}
 
-        <div className="lj-botoes" style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+        <div className="lj-botoes" style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap', marginTop: 20 }}>
           <button onClick={cancelar} className="lj-btn" style={{ padding: '14px 24px', borderRadius: 14, border: '1.5px solid #d1d5db', background: 'white', color: '#6b7280', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>Cancelar</button>
           <button onClick={salvarRascunho} className="lj-btn" style={{ padding: '14px 24px', borderRadius: 14, border: `1.5px solid ${COR}`, background: 'white', color: COR, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>Salvar</button>
-          <button onClick={enviar} disabled={enviando} className="lj-btn lj-btn-enviar" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '14px 32px', borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${COR}, ${COR}cc)`, color: 'white', fontWeight: 700, fontSize: 14, boxShadow: `0 8px 26px ${COR}40`, opacity: enviando ? 0.7 : 1 }}>
-            {enviando ? 'Enviando...' : <>Enviar <ChevronRight size={16} /></>}
+          <button onClick={enviar} disabled={enviando} className="lj-btn lj-btn-enviar" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '14px 32px', borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${COR}, ${COR2})`, color: 'white', fontWeight: 700, fontSize: 14, boxShadow: `0 8px 26px ${COR}40`, opacity: enviando ? 0.7 : 1 }}>
+            {enviando ? 'Enviando...' : <>Enviar Cadastro <ChevronRight size={16} /></>}
           </button>
         </div>
 
@@ -287,18 +306,14 @@ export default function LojistaPublicoPage() {
   )
 }
 
-function Secao({ titulo, icone, children }: { titulo: string; icone?: React.ReactNode; children: React.ReactNode }) {
+function Cartao({ titulo, icone, cor, children }: { titulo: string; icone: React.ReactNode; cor: string; children: React.ReactNode }) {
   return (
-    <div className="lj-card" style={{ background: 'white', borderRadius: 20, padding: '26px 24px', marginBottom: 16, boxShadow: '0 2px 20px rgba(0,0,0,0.06)', border: '1px solid rgba(255,255,255,0.8)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
-        {icone && (
-          <div style={{ width: 30, height: 30, borderRadius: 9, background: `${COR}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            {icone}
-          </div>
-        )}
-        <h2 style={{ fontSize: 15, fontWeight: 800, color: '#1a1a1a' }}>{titulo}</h2>
+    <div style={{ background: 'white', borderRadius: 18, overflow: 'hidden', boxShadow: '0 8px 30px rgba(30,20,60,0.1)' }}>
+      <div style={{ background: cor, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 10 }}>
+        {icone}
+        <h2 style={{ fontSize: 13, fontWeight: 800, color: 'white', letterSpacing: '0.04em', textTransform: 'uppercase' }}>{titulo}</h2>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>{children}</div>
+      <div className="lj-card-body" style={{ padding: '22px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>{children}</div>
     </div>
   )
 }
@@ -312,7 +327,18 @@ function Campo({ label, children }: { label: React.ReactNode; children: React.Re
   )
 }
 
+function InputComIcone({ icone, children }: { icone: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <div style={{ position: 'relative' }}>
+      <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', display: 'flex', pointerEvents: 'none' }}>{icone}</span>
+      {children}
+    </div>
+  )
+}
+
 const inputStyle: React.CSSProperties = {
   width: '100%', border: '2px solid #f3f4f6', borderRadius: 12, padding: '12px 14px',
   fontSize: 14.5, color: '#1a1a1a', background: '#f9fafb', fontFamily: 'inherit', outline: 'none',
 }
+
+const inputComIcone: React.CSSProperties = { ...inputStyle, paddingLeft: 38 }
