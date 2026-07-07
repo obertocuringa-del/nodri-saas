@@ -2,16 +2,37 @@ import { randomBytes } from 'crypto'
 import { supabaseAdmin } from '@/lib/supabase'
 import { servicosLojistaPadrao, LojistaServico } from '@/lib/lojistasServicosPadrao'
 
-export interface LojistasConfig { token: string; whatsapp_link: string; mensagem: string }
+export interface LojistasConfig { token: string; slug: string; whatsapp_link: string; mensagem: string }
 
 const MENSAGEM_PADRAO = 'Olá!\n\nObrigado por fazer parte das nossas parcerias.\n\nAtravés deste grupo você receberá promoções exclusivas, ações especiais e campanhas destinadas aos nossos parceiros.'
 
-// Lê a config do módulo; gera o token na primeira vez (autocadastro lazy).
+function gerarSlug(nomeSalao: string, token: string): string {
+  const base = (nomeSalao || 'salao')
+    .toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9\s]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+  return `${base}-${token.slice(0, 6)}`
+}
+
+// Lê a config do módulo; gera token + slug na primeira vez (autocadastro lazy).
+// Se já existir um token sem slug (config antiga), faz o upgrade automaticamente.
 export async function getOuCriarConfig(salaoId: string): Promise<LojistasConfig> {
   const { data } = await supabaseAdmin.from('salao_config').select('valor').eq('salao_id', salaoId).eq('chave', 'lojistas_config').maybeSingle()
   const atual = (data?.valor || {}) as Partial<LojistasConfig>
-  if (atual.token) return { token: atual.token, whatsapp_link: atual.whatsapp_link || '', mensagem: atual.mensagem || MENSAGEM_PADRAO }
-  const novo: LojistasConfig = { token: randomBytes(12).toString('hex'), whatsapp_link: '', mensagem: MENSAGEM_PADRAO }
+
+  if (atual.token && atual.slug) {
+    return { token: atual.token, slug: atual.slug, whatsapp_link: atual.whatsapp_link || '', mensagem: atual.mensagem || MENSAGEM_PADRAO }
+  }
+
+  const token = atual.token || randomBytes(12).toString('hex')
+  let slug = atual.slug
+  if (!slug) {
+    const { data: salao } = await supabaseAdmin.from('saloes').select('nome').eq('id', salaoId).maybeSingle()
+    slug = gerarSlug(salao?.nome || '', token)
+  }
+  const novo: LojistasConfig = { token, slug, whatsapp_link: atual.whatsapp_link || '', mensagem: atual.mensagem || MENSAGEM_PADRAO }
   await supabaseAdmin.from('salao_config').upsert({ salao_id: salaoId, chave: 'lojistas_config', valor: novo, atualizado_em: new Date().toISOString() }, { onConflict: 'salao_id,chave' })
   return novo
 }
@@ -23,13 +44,14 @@ export async function salvarConfig(salaoId: string, patch: Partial<Pick<Lojistas
   return novo
 }
 
-// Acha o salão dono de um token público (usado nas rotas /lojista/[token]).
-export async function getSalaoPorToken(token: string): Promise<{ salaoId: string; config: LojistasConfig } | null> {
+// Acha o salão dono de um token OU slug público (usado nas rotas /lojista/[token]).
+export async function getSalaoPorToken(tokenOuSlug: string): Promise<{ salaoId: string; config: LojistasConfig } | null> {
+  const chave = tokenOuSlug.replace(/[,()]/g, '')
   const { data } = await supabaseAdmin
     .from('salao_config')
     .select('salao_id, valor')
     .eq('chave', 'lojistas_config')
-    .contains('valor', { token })
+    .or(`valor->>token.eq.${chave},valor->>slug.eq.${chave}`)
     .maybeSingle()
   if (!data) return null
   return { salaoId: data.salao_id, config: data.valor as LojistasConfig }

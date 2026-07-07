@@ -64,8 +64,7 @@ export default function LojistasConfigPage() {
   }
 
   function copiarLink() {
-    const url = `${window.location.origin}${linkPublico}`
-    navigator.clipboard.writeText(url).then(() => toast.success('Link copiado!'))
+    navigator.clipboard.writeText(linkPublico).then(() => toast.success('Link copiado!'))
   }
 
   async function salvarServicosNoServidor(lista: LojistaServico[]) {
@@ -129,7 +128,7 @@ export default function LojistasConfigPage() {
         <div style={card}>
           <h2 style={cardTitulo}>Link de Cadastro (autocadastro do lojista)</h2>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-            <code style={{ flex: 1, minWidth: 200, background: '#f6f4ff', padding: '10px 12px', borderRadius: 8, fontSize: 13, color: '#5b4fcf', wordBreak: 'break-all' }}>{typeof window !== 'undefined' ? `${window.location.origin}${linkPublico}` : linkPublico}</code>
+            <code style={{ flex: 1, minWidth: 200, background: '#f6f4ff', padding: '10px 12px', borderRadius: 8, fontSize: 13, color: '#5b4fcf', wordBreak: 'break-all' }}>{linkPublico}</code>
             <button onClick={copiarLink} style={btnGhost}><Copy size={14} /> Copiar</button>
           </div>
           <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 8 }}>Compartilhe esse link com os lojistas parceiros para que eles se cadastrem.</p>

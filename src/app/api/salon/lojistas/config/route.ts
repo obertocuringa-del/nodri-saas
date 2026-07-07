@@ -7,7 +7,7 @@ export async function GET() {
   const salaoId = await salaoIdSe('lojistas')
   if (!salaoId) return NextResponse.json({ error: 'Sem acesso' }, { status: 403 })
   const config = await getOuCriarConfig(salaoId)
-  return NextResponse.json({ ...config, link_publico: `/lojista/${config.token}` })
+  return NextResponse.json({ ...config, link_publico: `https://www.nodri.com.br/lojista/${config.slug}` })
 }
 
 export async function PUT(req: NextRequest) {
@@ -22,5 +22,5 @@ export async function PUT(req: NextRequest) {
 
   const config = await salvarConfig(salaoId, patch)
   registrarAuditoria('Editou', 'Lojistas - Configurações', '')
-  return NextResponse.json({ ...config, link_publico: `/lojista/${config.token}` })
+  return NextResponse.json({ ...config, link_publico: `https://www.nodri.com.br/lojista/${config.slug}` })
 }
