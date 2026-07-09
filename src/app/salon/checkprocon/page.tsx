@@ -19,7 +19,7 @@ export default function CheckProconPage() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    fetch('/api/salon/checkprocon').then(r => r.ok ? r.json() : {}).then(d => setEstado(d && typeof d === 'object' ? d : {})).finally(() => setLoading(false))
+    fetch('/api/salon/checkprocon').then(r => r.ok ? r.json() : null).then(d => setEstado(d || {})).finally(() => setLoading(false))
   }, [])
 
   const salvar = useCallback((novoEstado: Estado) => {
