@@ -142,6 +142,7 @@ export async function middleware(request: NextRequest) {
       ['/salon/consultoria', 'ia'],
       ['/salon/auditoria', 'cfg_auditoria'],
       ['/salon/lojistas', 'lojistas'],
+      ['/salon/checkprocon', 'checkprocon'],
       ['/salon/usuarios', 'cfg_usuarios'],
       ['/salon/profissionais', 'profissionais'],
       ['/salon/relatorios', 'relatorios'],

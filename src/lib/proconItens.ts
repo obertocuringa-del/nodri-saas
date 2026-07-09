@@ -1,0 +1,46 @@
+// Itens de conferência do Auto de Constatação do PROCON/DF (modelo padrão de
+// fiscalização de estabelecimentos, Lei nº 8.078/1990 - CDC). Texto e citações
+// legais transcritos e conferidos item a item contra o documento oficial.
+
+export interface ItemProcon { id: string; texto: string }
+
+export const ITENS_PROCON: ItemProcon[] = [
+  { id: '1.1', texto: 'Não há disponibilização de nota fiscal ou documento equivalente ao consumidor (Art. 6º III c/c Art. 14 da Lei nº 8.078/1990).' },
+  { id: '1.2', texto: 'Ausência do telefone 151 e endereço do PROCON sede nas notas ou cupons fiscais de venda ao consumidor (art. 1º, Lei Distrital nº 4.029/07).' },
+  { id: '2', texto: 'Ausência de informações relativas aos tributos incidentes sobre o preço dos produtos e/ou serviços (art. 1º, Lei Federal 12.741/12, Decreto Federal nº 8.264/14 e Portaria Interministerial MF/MJ/SMPE Nº 85/2014).' },
+  { id: '3', texto: 'Ausência de exemplar do Código de Defesa do Consumidor (CDC – Lei Federal nº 8.078/1990) em local visível e de fácil acesso ao público (art. 1º, Lei Federal nº 12.291/10).' },
+  { id: '4', texto: 'Ausência de informação do telefone 151 do PROCON em local visível no estabelecimento (art. 1º, Lei Distrital nº 1.418/97).' },
+  { id: '5', texto: 'Ausência de informação sobre quais os meios de pagamento aceitos e não aceitos pelo fornecedor (art. 6º, III, e 31, Lei Federal nº 8.078/90).' },
+  { id: '6', texto: 'Ausência de informação adequada sobre o preço do produto e/ou serviço, de modo a garantir ao consumidor a correção, clareza, precisão, ostensividade e legibilidade (art. 6º, III e 31, Lei 8.078/90 c/c art. 2º, Decreto Federal nº 5.903/06).' },
+  { id: '6.1', texto: 'Ausência de informação do preço do produto e/ou serviço (art. 6º, III e 31, Lei nº 8.078/90 c/c art. 4º, Decreto Federal nº 5.903/06).' },
+  { id: '6.2', texto: 'Ausência de informação do preço visível no produto exposto em vitrine (art. 6º, III e 31, Lei nº 8.078/90 c/c art. 5º, Decreto Federal nº 5.903/06).' },
+  { id: '6.3', texto: 'Ausência de informações relativas ao parcelamento do preço do produto e/ou serviço, como o total a ser pago, o número, periodicidade e valor das prestações, os juros e os eventuais acréscimos e encargos (art. 6º, III e 31, Lei nº 8.078/90 c/c art. 3º, Decreto Federal nº 5.903/06).' },
+  { id: '6.4', texto: 'Utilização de relação de preços, quando possível a afixação do preço do produto de forma direta ou impressa na própria embalagem, por meio de código referencial ou por meio de código de barras (art. 6º, III e 31, Lei nº 8.078/90 c/c art. 8º, Decreto Federal nº 5.903/06).' },
+  { id: '6.5', texto: 'Atribuição de preços distintos para o mesmo item (art. 6º, III e 31, Lei nº 8078/90 c/c art. 9º, VII, Decreto Federal nº 5903/06).' },
+  { id: '6.6', texto: 'Ausência de informação do preço por unidade estabelecida pelo Sistema Internacional de Unidades (por quilo, por litro, por metro ou por outra unidade, conforme o caso) (art. 1º, Lei Distrital nº 4.538/2011 c/c Art. 6º XIII da Lei Federal nº 8.078/1990).' },
+  { id: '6.7', texto: 'Ausência de equipamentos de leitura ótica em perfeito estado de funcionamento (art. 7º caput, Decreto Federal nº 5.903/06).' },
+  { id: '6.8', texto: 'Ausência de indicação dos leitores óticos por cartazes suspensos (art. 7º §1º, Decreto Federal nº 5.903/06).' },
+  { id: '6.9', texto: 'Ausência do símbolo da moeda "R$" na indicação de preço (Art. 1º, § 1º da Lei Federal nº 9.069/1995).' },
+  { id: '7', texto: 'Ausência da divulgação da data de validade das mercadorias colocadas em promoção, em destaque e juntamente com o respectivo valor (art. 1º, Lei Distrital nº 4.621/11).' },
+  { id: '8', texto: 'Comercialização de produto deteriorado, alterado, adulterado, avariado, falsificado, nocivo à vida ou à saúde, perigoso ou, ainda, em desacordo com as normas regulamentares de fabricação, distribuição ou apresentação (art. 6º, I, art. 8º e art. 18, § 6º, II, Lei nº 8.078/90).' },
+  { id: '8.1', texto: 'Comercialização de produto com prazo de validade vencido (art. 6º, I, art. 8º e art. 18, §6º, I, Lei nº 8.078/90).' },
+  { id: '8.2', texto: 'Comercialização de produto sem indicação expressa ou com indicação ilegível, do prazo de validade e origem (art. 31, Lei nº 8.078/90).' },
+  { id: '9', texto: 'Ausência da advertência: "O uso de produtos químicos fora das especificações da legislação sanitária, em procedimentos de alisamento, permanente, descoloração e tintura de cabelos, é nocivo à saúde, proibido e pode ser considerado crime" (art. 1º, Lei Distrital nº 5.031/13).' },
+  { id: '10', texto: 'Lei da fila (Lei Distrital nº 2.529/2000).' },
+  { id: '10.1', texto: 'Inobservância do tempo máximo de espera para atendimento de consumidores (art. 1º e 2º).' },
+  { id: '10.2', texto: 'Indisponibilidade de senha ou outro instrumento que possibilite a identificação de data e horário de chegada e de atendimento final do usuário pelo fornecedor (art. 4º, § 1º).' },
+  { id: '10.3', texto: 'Ausência de cartaz informativo do tempo máximo para atendimento, juntamente com o número da Lei Distrital 2.529/00, em local visível ao público (art. 4º, § 2º).' },
+  { id: '11', texto: 'Contratos.' },
+  { id: '11.1', texto: 'Presença de cláusula abusiva em contrato elaborado pelo fornecedor (art. 51, Lei 8.078/90 c/c art. 22, Decreto Federal nº 2.181/97).' },
+  { id: '11.2', texto: 'Ausência de clareza, ostensividade ou legibilidade de contrato elaborado pelo fornecedor (art. 54, § 3º, Lei 8.078/90).' },
+  { id: '11.3', texto: 'Ausência de destaque de cláusula contratual que implica limitação de direito do consumidor (art. 54, § 4º, Lei 8.078/90).' },
+  { id: '12', texto: 'Atendimento prioritário (Lei Distrital nº 4.027/2007).' },
+  { id: '12.1', texto: 'Ausência de assentos prioritários (art. 1º, parágrafo único, I).' },
+  { id: '12.2', texto: 'Indisponibilidade de senha (art. 1º, parágrafo único, II).' },
+  { id: '12.3', texto: 'Ausência de bebedouro (art. 1º-A).' },
+  { id: '12.4', texto: 'Ausência do aviso e símbolo exigidos no art. 1º §5º e art. 2º.' },
+  { id: '13', texto: 'Lei Distrital nº 6.196/2018.' },
+  { id: '13.1', texto: 'Ausência de prioridade especial aos maiores de 80 anos (Art. 1º).' },
+  { id: '13.2', texto: 'Ausência do aviso (Parágrafo único).' },
+  { id: '14', texto: 'Infração de outras normas e regulamentos descritos nas observações.' },
+]

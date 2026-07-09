@@ -24,6 +24,7 @@ export const CATALOGO_PERMISSOES: PermGrupo[] = [
       { chave: 'administrativo', label: 'Salão Administrativo' },
       { chave: 'ia', label: 'Assistente / IA' },
       { chave: 'lojistas', label: 'Lojistas (Parcerias)' },
+      { chave: 'checkprocon', label: 'Check Procon' },
     ]
   },
   {
