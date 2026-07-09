@@ -40,7 +40,7 @@ interface ItemProduto { ano: number; mes: number; produto: string; quantidade: n
 interface ProfPag { ano: number; mes: number; profissional: string; categoria: string; valor_a_pagar: number }
 interface MetaRow { ano: number; mes: number; meta_faturamento: number; meta_clientes: number; meta_ticket: number; alcancado_faturamento: number; alcancado_clientes: number; alcancado_ticket: number }
 interface Feedback { ano: number; mes: number; profissional: string; tipo: string; oque_houve: string; comentario: string; data: string }
-interface ProfCadastrado { id: string; nome_completo: string; apelido?: string; cargo?: string }
+interface ProfCadastrado { id: string; nome_completo: string; apelido?: string; cargo?: string; vinculo?: string }
 
 // ─── RESOLVER NOME/APELIDO ──────────────────────────────────────────────────
 // Normaliza string: maiúsculo, sem acento, sem espaço extra
@@ -1714,7 +1714,8 @@ ${([['Faturamento Total',r1.fat_total,r2.fat_total],['Ticket Médio',r1.ticket,r
               // 2. Profissionais ativos via profsCadastrados (já carregado)
               // Cargos administrativos não recebem meta de produção — sua parcela é redistribuída aos demais
               const CARGOS_SEM_META = ['ADMINISTRATIVO', 'FINANCEIRO', 'GERENCIA', 'RECEPCAO']
-              const profsAtivos = profsCadastrados.filter(p => p.nome_completo && !CARGOS_SEM_META.includes(norm(p.cargo || '')))
+              // Meta Prof. e Redistribuição são só para PJ — profissionais CLT não entram
+              const profsAtivos = profsCadastrados.filter(p => p.nome_completo && !CARGOS_SEM_META.includes(norm(p.cargo || '')) && norm(p.vinculo || '') !== 'CLT')
               const totalProfsAtivos = profsAtivos.length || 1
 
               // 3. Todos os períodos disponíveis (para média histórica)
