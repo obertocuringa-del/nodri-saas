@@ -10,6 +10,8 @@ import WhatsPendencia from '@/components/salon/WhatsPendencia'
 import AvaliarProfissional from '@/components/salon/AvaliarProfissional'
 import AcessoProfissional from '@/components/salon/AcessoProfissional'
 import PainelResumoProf from '@/components/salon/PainelResumoProf'
+import EsterilizacaoPerfilProf from '@/components/salon/EsterilizacaoPerfilProf'
+import { mesmoProf } from '@/lib/esterilizacaoShared'
 import toast from 'react-hot-toast'
 
 // Converte o markdown gerado pela IA num HTML estilizado (títulos, negrito real,
@@ -2289,7 +2291,23 @@ export default function PerfilProfissionalPage() {
   const [endCidade, setEndCidade] = useState('')
   const [endUf, setEndUf] = useState('')
   const [buscandoCep, setBuscandoCep] = useState(false)
-  const [tab, setTab] = useState<'inicio'|'cadastro'|'avaliar'|'desempenho'|'faturamento'|'metas'|'ia'|'dependencia'|'oportunidades'|'bundle'|'clientes-perdidos'|'agendamentos'|'calendario_mkt'|'corrida'|'acoes'>('cadastro')
+  const [tab, setTab] = useState<'inicio'|'cadastro'|'avaliar'|'desempenho'|'faturamento'|'metas'|'ia'|'dependencia'|'oportunidades'|'bundle'|'clientes-perdidos'|'agendamentos'|'calendario_mkt'|'corrida'|'acoes'|'esterilizacao'>('cadastro')
+  // Aba Esterilização: só aparece pra quem realmente tem atendimento de
+  // manicure/pedicure/sobrancelha no mês (mesmo cruzamento usado no
+  // Administrativo) — a maioria dos profissionais não precisa dela.
+  const [temEsterilizacao, setTemEsterilizacao] = useState(false)
+  useEffect(() => {
+    const nome = prof?.nome_completo, ap = prof?.apelido
+    if (!nome && !ap) return
+    const d = new Date()
+    fetch(`/api/relatorios/esterilizacao?ano=${d.getFullYear()}&mes=${d.getMonth() + 1}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(res => {
+        const lista: any[] = Array.isArray(res?.profissionais) ? res.profissionais : []
+        setTemEsterilizacao(lista.some(p => (nome && mesmoProf(p.profissional, nome)) || (ap && mesmoProf(p.profissional, ap))))
+      })
+      .catch(() => setTemEsterilizacao(false))
+  }, [prof?.nome_completo, prof?.apelido])
   // ── Agendamentos ─────────────────────────────────────────────────────────────
   const [agendData, setAgendData] = useState<string>(() => { const h = new Date(); return `${String(h.getDate()).padStart(2,'0')}/${String(h.getMonth()+1).padStart(2,'0')}/${h.getFullYear()}` })
   const [agendamentos, setAgendamentos] = useState<any[]>([])
@@ -3085,6 +3103,7 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
           ['faturamento','FATURAMENTO'],
           ['desempenho','OCORRÊNCIAS'],
           ['metas','METAS'],
+          ['esterilizacao','ESTERILIZAÇÃO'],
           ['dependencia','DEPEND.'],
           ['oportunidades','OPORT.'],
           ['bundle','BUNDLES'],
@@ -3098,6 +3117,7 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
         // Profissional logado: esconde a aba IA e o que o salão marcou para ocultar
         const TABS = TABS_ALL.filter(([t]) => {
           if (t === 'inicio') return souProf // aba Início (resumo bonito) só para o profissional
+          if (t === 'esterilizacao') return temEsterilizacao // só quem tem atendimento de manicure/pedicure/sobrancelha no mês
           return podeVer(t)
         })
         const labelAtivo = TABS.find(([t])=>t===tab)?.[1] ?? 'Menu'
@@ -3148,6 +3168,11 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
         {/*  AVALIAR PROFISSIONAL  */}
         {tab === 'avaliar' && (
           <AvaliarProfissional profissionalId={id} profissionalNome={prof?.apelido || prof?.nome_completo || 'Profissional'} soResultado={souProf && !((prof as any)?.acesso_oculto?.autoavaliacao)} />
+        )}
+
+        {/*  ESTERILIZAÇÃO — atendimentos x esterilização e registro do mês, só deste profissional  */}
+        {tab === 'esterilizacao' && (
+          <EsterilizacaoPerfilProf nomeCompleto={prof?.nome_completo || ''} apelido={prof?.apelido} />
         )}
 
         {/*  CALENDÁRIO DE MARKETING (o mesmo do menu, compartilhado pelo salão)  */}

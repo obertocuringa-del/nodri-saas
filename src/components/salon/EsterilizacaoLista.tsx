@@ -5,22 +5,15 @@ import toast from 'react-hot-toast'
 import { Loader2, Save, Printer, Plus, Trash2, Pencil, X, Sparkles, ShieldCheck, ShieldAlert, Users, Scissors, RotateCcw, ChevronDown, ChevronUp, Clock3 } from 'lucide-react'
 import { useIsMobile } from '@/lib/useIsMobile'
 import { getLogoSalao } from '@/lib/logoSalao'
-import { cel, type Cell } from './GridEditavel'
+import {
+  type EsterilizacaoItem as Item, mesAtualEster as mesAtual, hojeBR, brToIso, isoToBr, mesmoProf, ridEster as rid,
+  linhasParaEsterilizacaoItems, esterilizacaoItemsParaTabela,
+} from '@/lib/esterilizacaoShared'
 
 interface ProfSalao { id: string; nome: string; telefone?: string }
-interface Item { id: string; profissional: string; quantidade: string; data: string; dataDevolucao: string; observacao: string }
 interface LinhaCruzamento { nome: string; atendimentos: number; esterilizacoes: number; registros: number; servicos: string[] }
 
 const COR = '#5b4fcf'
-const TITULO_TABELA = 'REGISTRO DE ESTERILIZAÇÃO'
-
-const rid = () => Math.random().toString(36).slice(2, 9)
-function mesAtual() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` }
-function hojeBR() { const d = new Date(); return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}` }
-function brToIso(s: string) { const m = String(s || '').match(/^(\d{2})\/(\d{2})\/(\d{4})$/); return m ? `${m[3]}-${m[2]}-${m[1]}` : '' }
-function isoToBr(s: string) { const m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? `${m[3]}/${m[2]}/${m[1]}` : s }
-function normaliza(s: string) { return (s || '').toString().normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim() }
-function mesmoProf(a: string, b: string) { const na = normaliza(a), nb = normaliza(b); if (!na || !nb) return false; return na === nb || na.includes(nb) || nb.includes(na) }
 
 export default function EsterilizacaoLista({ chave = 'esterilizacao', profsSalao = [] }: { chave?: string; profsSalao?: ProfSalao[] }) {
   const mobile = useIsMobile()
@@ -36,16 +29,11 @@ export default function EsterilizacaoLista({ chave = 'esterilizacao', profsSalao
 
   const chaveEfetiva = `${chave}_${mes}`
 
-  const linhasParaItems = (linhas: Cell[][]): Item[] =>
-    linhas.filter(l => l.some(c => (c?.t || '').trim())).map(l => ({
-      id: rid(), profissional: l[0]?.t || '', quantidade: l[1]?.t || '', data: l[2]?.t || '', dataDevolucao: l[3]?.t || '', observacao: l[4]?.t || '',
-    }))
-
   const carregar = useCallback(async () => {
     setLoading(true)
     try {
       const d = await fetch(`/api/salon/grid?chave=${encodeURIComponent(chaveEfetiva)}`).then(r => r.ok ? r.json() : null)
-      if (d && Array.isArray(d.tabelas) && d.tabelas[0]) setItems(linhasParaItems(d.tabelas[0].linhas || []))
+      if (d && Array.isArray(d.tabelas) && d.tabelas[0]) setItems(linhasParaEsterilizacaoItems(d.tabelas[0].linhas || []))
       else setItems([])
       setDirty(false)
     } catch { setItems([]); setDirty(false) }
@@ -67,11 +55,7 @@ export default function EsterilizacaoLista({ chave = 'esterilizacao', profsSalao
   async function salvar() {
     setSalvando(true)
     try {
-      const tabela = {
-        titulo: TITULO_TABELA,
-        cabecalho: [cel('Profissional'), cel('Quantidade'), cel('Data'), cel('Data devolução'), cel('Observação')],
-        linhas: items.map(it => [cel(it.profissional), cel(it.quantidade), cel(it.data), cel(it.dataDevolucao), cel(it.observacao)]),
-      }
+      const tabela = esterilizacaoItemsParaTabela(items)
       const res = await fetch('/api/salon/grid', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chave: chaveEfetiva, doc: { tabelas: [tabela] } }) })
       if (res.ok) { toast.success('Registros salvos!'); setDirty(false) }
       else toast.error('Erro ao salvar')
