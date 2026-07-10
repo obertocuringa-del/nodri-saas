@@ -6,6 +6,7 @@ import { ArrowLeft, Loader2, Save, Plus, Minus, X, MessageCircle, Send, Printer,
 import toast from 'react-hot-toast'
 import GridEditavel, { cel, type Doc as GridDoc } from '@/components/salon/GridEditavel'
 import ServicoInternoLista from '@/components/salon/ServicoInternoLista'
+import ControleAlicatesLista from '@/components/salon/ControleAlicatesLista'
 import ListaBebidas from '@/components/salon/ListaBebidas'
 import ListaTelefones from '@/components/salon/ListaTelefones'
 import ListaPrecoServicos from '@/components/salon/ListaPrecoServicos'
@@ -219,7 +220,9 @@ export default function SalaoAdministrativoPage() {
               ? <ListaBebidas key="bebidas" profsSalao={profsSalao} />
               : servico === 'servinterno'
                 ? <ServicoInternoLista key="servinterno" chave="servinterno" profsSalao={profsSalao} />
-                : (() => { const g = GRIDS.find(x => x.key === servico)!; return <GridEditavel key={servico} chave={g.key} defaultDoc={g.doc} mensal={g.mensal} landscape={g.landscape} /> })()}
+                : servico === 'alicates'
+                  ? <ControleAlicatesLista key="alicates" chave="alicates" profsSalao={profsSalao} />
+                  : (() => { const g = GRIDS.find(x => x.key === servico)!; return <GridEditavel key={servico} chave={g.key} defaultDoc={g.doc} mensal={g.mensal} landscape={g.landscape} /> })()}
         </>)}
 
         {abaTopo === 'servicos_valores' && <ListaPrecoServicos key="precos" />}
