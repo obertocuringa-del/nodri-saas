@@ -3,12 +3,12 @@
 import { useState, useEffect } from 'react'
 import {
   DollarSign, Target, Calendar, Trophy, Megaphone, ClipboardList, Moon, Sun, Bell,
-  AlertTriangle, Users, Lightbulb, Package, UserMinus, Star, Sparkles, CalendarRange, User, ArrowRight, LogOut,
+  AlertTriangle, Users, Lightbulb, Package, UserMinus, Star, Sparkles, CalendarRange, User, ArrowRight, LogOut, Hand,
 } from 'lucide-react'
 
 // Tela inicial do profissional (estilo Nubank/Notion): saudação + central de notificações + atalhos.
 // Sem cards grandes e sem emojis — ícones finos e elegantes. Tudo somente leitura.
-export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba }: { pid?: string; nome?: string; prof?: any; onIrAba?: (aba: string) => void }) {
+export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba, temKits }: { pid?: string; nome?: string; prof?: any; onIrAba?: (aba: string) => void; temKits?: boolean }) {
   const [dark, setDark] = useState(false)
   const [nomeP, setNomeP] = useState(nome || '')
   const [prof, setProf] = useState<any>(profProp || null)
@@ -53,7 +53,8 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba }:
   const irAba = (aba: string) => { if (onIrAba) onIrAba(aba) }
   const oc: Record<string, boolean> = (prof?.acesso_oculto && typeof prof.acesso_oculto === 'object') ? prof.acesso_oculto : {}
 
-  const AREAS: { aba: string; label: string; Ic: any; ocult?: string }[] = [
+  const AREAS: { aba: string; label: string; Ic: any; ocult?: string; so?: boolean }[] = [
+    { aba: 'kits', label: 'Kits Pé e Mão', Ic: Hand, so: !!temKits },
     { aba: 'faturamento', label: 'Faturamento', Ic: DollarSign },
     { aba: 'metas', label: 'Metas', Ic: Target, ocult: 'metas' },
     { aba: 'agendamentos', label: 'Agendamentos', Ic: Calendar },
@@ -69,7 +70,7 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba }:
     { aba: 'calendario_mkt', label: 'Calendário', Ic: CalendarRange },
     { aba: 'cadastro', label: 'Pendências & Cadastro', Ic: ClipboardList },
   ]
-  const areasVis = AREAS.filter(a => !a.ocult || !oc[a.ocult])
+  const areasVis = AREAS.filter(a => (a.so === undefined || a.so) && (!a.ocult || !oc[a.ocult]))
 
   const tempoAtras = (em: number) => {
     if (!em) return ''

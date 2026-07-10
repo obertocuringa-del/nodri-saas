@@ -11,6 +11,7 @@ import AvaliarProfissional from '@/components/salon/AvaliarProfissional'
 import AcessoProfissional from '@/components/salon/AcessoProfissional'
 import PainelResumoProf from '@/components/salon/PainelResumoProf'
 import EsterilizacaoPerfilProf from '@/components/salon/EsterilizacaoPerfilProf'
+import KitsProfissionalView from '@/components/salon/KitsProfissionalView'
 import { mesmoProf } from '@/lib/esterilizacaoShared'
 import toast from 'react-hot-toast'
 
@@ -2291,7 +2292,7 @@ export default function PerfilProfissionalPage() {
   const [endCidade, setEndCidade] = useState('')
   const [endUf, setEndUf] = useState('')
   const [buscandoCep, setBuscandoCep] = useState(false)
-  const [tab, setTab] = useState<'inicio'|'cadastro'|'avaliar'|'desempenho'|'faturamento'|'metas'|'ia'|'dependencia'|'oportunidades'|'bundle'|'clientes-perdidos'|'agendamentos'|'calendario_mkt'|'corrida'|'acoes'|'esterilizacao'>('cadastro')
+  const [tab, setTab] = useState<'inicio'|'cadastro'|'avaliar'|'desempenho'|'faturamento'|'metas'|'ia'|'dependencia'|'oportunidades'|'bundle'|'clientes-perdidos'|'agendamentos'|'calendario_mkt'|'corrida'|'acoes'|'esterilizacao'|'kits'>('cadastro')
   // Aba Esterilização: só aparece pra quem realmente tem atendimento de
   // manicure/pedicure/sobrancelha no mês (mesmo cruzamento usado no
   // Administrativo) — a maioria dos profissionais não precisa dela.
@@ -2307,6 +2308,21 @@ export default function PerfilProfissionalPage() {
         setTemEsterilizacao(lista.some(p => (nome && mesmoProf(p.profissional, nome)) || (ap && mesmoProf(p.profissional, ap))))
       })
       .catch(() => setTemEsterilizacao(false))
+  }, [prof?.nome_completo, prof?.apelido])
+  // Área "Kits Pé e Mão" (só na visão da própria profissional, via PainelResumoProf):
+  // só aparece pra quem atendeu manicure/pedicure no mês.
+  const [temKits, setTemKits] = useState(false)
+  useEffect(() => {
+    const nome = prof?.nome_completo, ap = prof?.apelido
+    if (!nome && !ap) return
+    const d = new Date()
+    fetch(`/api/relatorios/kits-atendimentos?ano=${d.getFullYear()}&mes=${d.getMonth() + 1}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(res => {
+        const lista: any[] = Array.isArray(res?.profissionais) ? res.profissionais : []
+        setTemKits(lista.some(p => (nome && mesmoProf(p.profissional, nome)) || (ap && mesmoProf(p.profissional, ap))))
+      })
+      .catch(() => setTemKits(false))
   }, [prof?.nome_completo, prof?.apelido])
   // ── Agendamentos ─────────────────────────────────────────────────────────────
   const [agendData, setAgendData] = useState<string>(() => { const h = new Date(); return `${String(h.getDate()).padStart(2,'0')}/${String(h.getMonth()+1).padStart(2,'0')}/${h.getFullYear()}` })
@@ -3148,7 +3164,7 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
       {/*  INÍCIO — resumo bonito (só profissional) */}
       {tab === 'inicio' && (
         <div className="max-w-6xl mx-auto px-3 sm:px-5 py-4 sm:py-6">
-          <PainelResumoProf pid={id} prof={prof} onIrAba={(a) => setTab(a as any)} />
+          <PainelResumoProf pid={id} prof={prof} onIrAba={(a) => setTab(a as any)} temKits={temKits} />
         </div>
       )}
 
@@ -3174,6 +3190,9 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
         {tab === 'esterilizacao' && (
           <EsterilizacaoPerfilProf nomeCompleto={prof?.nome_completo || ''} apelido={prof?.apelido} />
         )}
+
+        {/*  KITS PÉ E MÃO — pedido de kits pela própria profissional  */}
+        {tab === 'kits' && <KitsProfissionalView />}
 
         {/*  CALENDÁRIO DE MARKETING (o mesmo do menu, compartilhado pelo salão)  */}
         {tab === 'calendario_mkt' && (

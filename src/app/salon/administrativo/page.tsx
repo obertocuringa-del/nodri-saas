@@ -8,6 +8,7 @@ import GridEditavel, { cel, type Doc as GridDoc } from '@/components/salon/GridE
 import ServicoInternoLista from '@/components/salon/ServicoInternoLista'
 import ControleAlicatesLista from '@/components/salon/ControleAlicatesLista'
 import EsterilizacaoLista from '@/components/salon/EsterilizacaoLista'
+import KitsAdminLista from '@/components/salon/KitsAdminLista'
 import ListaBebidas from '@/components/salon/ListaBebidas'
 import ListaTelefones from '@/components/salon/ListaTelefones'
 import ListaPrecoServicos from '@/components/salon/ListaPrecoServicos'
@@ -26,6 +27,7 @@ const ABA_CHAVE: Record<string, string> = {
   desconto_profissional: 'adm_desconto_profissional', tabela_precos: 'adm_tabela_precos', arquivos_envio: 'adm_arquivos_envio',
   corrida_interna: 'adm_corrida_interna', acoes_comerciais: 'adm_acoes_comerciais', correios: 'adm_correios',
   etiquetas: 'adm_etiquetas', agendamentos_grandes: 'adm_agendamentos_grandes', esterilizacao: 'adm_esterilizacao',
+  kits: 'adm_kits',
 }
 
 interface ProfSalao { id: string; nome: string; telefone: string }
@@ -61,6 +63,7 @@ const ABAS_TOPO = [
   { key: 'listas', label: 'Listas' },
   { key: 'servicos_valores', label: 'Serviços Internos (Valores)' },
   { key: 'esterilizacao', label: 'Esterilização' },
+  { key: 'kits', label: 'Kits Pé e Mão' },
   { key: 'tratamentos', label: 'Tratamentos Dosagem' },
   { key: 'pacotes', label: 'Preço de Pacotes' },
   { key: 'telefones', label: 'Telefones Importantes' },
@@ -228,6 +231,7 @@ export default function SalaoAdministrativoPage() {
         </>)}
 
         {abaTopo === 'esterilizacao' && <EsterilizacaoLista key="esterilizacao" chave="esterilizacao" profsSalao={profsSalao} />}
+        {abaTopo === 'kits' && <KitsAdminLista key="kits" />}
         {abaTopo === 'servicos_valores' && <ListaPrecoServicos key="precos" />}
         {abaTopo === 'tratamentos' && <ListaPrecoServicos key="trat" chave="tratamentos_dosagem" titulo="Tratamentos — Dosagem" comLogo />}
         {abaTopo === 'pacotes' && <GridEditavel key="pacotes" chave="pacotes" defaultDoc={DEFAULT_PACOTES} landscape />}
