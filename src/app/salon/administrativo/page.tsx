@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft, Loader2, Save, Plus, Minus, X, MessageCircle, Send, Printer, ListChecks, History } from 'lucide-react'
 import toast from 'react-hot-toast'
 import GridEditavel, { cel, type Doc as GridDoc } from '@/components/salon/GridEditavel'
+import ServicoInternoLista from '@/components/salon/ServicoInternoLista'
 import ListaBebidas from '@/components/salon/ListaBebidas'
 import ListaTelefones from '@/components/salon/ListaTelefones'
 import ListaPrecoServicos from '@/components/salon/ListaPrecoServicos'
@@ -216,7 +217,9 @@ export default function SalaoAdministrativoPage() {
             ? <ListaServico key={servico} servico={servico} label={SERVICOS.find(s => s.key === servico)?.label || ''} profsSalao={profsSalao} onMensagem={carregarHistorico} />
             : servico === 'bebidas'
               ? <ListaBebidas key="bebidas" profsSalao={profsSalao} />
-              : (() => { const g = GRIDS.find(x => x.key === servico)!; return <GridEditavel key={servico} chave={g.key} defaultDoc={g.doc} mensal={g.mensal} landscape={g.landscape} /> })()}
+              : servico === 'servinterno'
+                ? <ServicoInternoLista key="servinterno" chave="servinterno" profsSalao={profsSalao} />
+                : (() => { const g = GRIDS.find(x => x.key === servico)!; return <GridEditavel key={servico} chave={g.key} defaultDoc={g.doc} mensal={g.mensal} landscape={g.landscape} /> })()}
         </>)}
 
         {abaTopo === 'servicos_valores' && <ListaPrecoServicos key="precos" />}
