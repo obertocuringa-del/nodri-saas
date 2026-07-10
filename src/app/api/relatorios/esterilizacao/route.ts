@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabase'
 import { salaoIdSe } from '@/lib/apiAuth'
+import { getAtendimentosRaw } from '@/lib/atendimentosCache'
 
 // Serviços que normalmente usam alicate/pinça (manicure, pedicure, sobrancelha…).
 // Casamento por palavra-chave (sem acento) no nome do serviço importado dos relatórios.
@@ -15,10 +15,11 @@ function usaAlicatePinca(servico: string) {
   return PALAVRAS_ALICATE.some(p => n.includes(p))
 }
 
-// Quantidade de atendimentos com uso de alicate/pinça por profissional, no mês —
-// vem do mesmo dado já usado em Relatórios (relatorio_periodos.prof_servicos),
-// filtrado pelas palavras-chave acima. Usado para cruzar com o registro de
-// esterilização (foco em manicures e quem faz sobrancelha).
+// Quantidade de ATENDIMENTOS (visitas de cliente) com uso de alicate/pinça por
+// profissional, no mês — vem do dado bruto dos Relatórios (atendimentos_raw),
+// agrupado por comanda (ou cliente, se a comanda não veio no import) pra não
+// contar mão + pé da mesma cliente como 2 esterilizações — ela usa só 1
+// alicate pra atender as duas coisas na mesma visita.
 export async function GET(req: NextRequest) {
   const salaoId = await salaoIdSe('adm_esterilizacao')
   if (!salaoId) return NextResponse.json({ error: 'Sem acesso' }, { status: 403 })
@@ -28,28 +29,29 @@ export async function GET(req: NextRequest) {
   const mes = parseInt(url.searchParams.get('mes') || '0')
   if (!ano || !mes) return NextResponse.json({ error: 'ano e mes obrigatórios' }, { status: 400 })
 
-  const { data: periodos } = await supabaseAdmin
-    .from('relatorio_periodos')
-    .select('prof_servicos')
-    .eq('salao_id', salaoId)
-    .eq('ano', ano)
-    .eq('mes', mes)
-  const itens = (periodos || []).flatMap((r: any) => Array.isArray(r.prof_servicos) ? r.prof_servicos : [])
+  const todasLinhas = await getAtendimentosRaw(salaoId)
+  const linhasDoMes = todasLinhas.filter((r: any) => Number(r.ano) === ano && Number(r.mes) === mes)
 
-  const porProf: Record<string, { atendimentos: number; servicos: Record<string, number> }> = {}
-  for (const it of itens) {
-    const servico = String(it.servico || '').trim()
+  const porProf: Record<string, { visitas: Set<string>; servicos: Record<string, number> }> = {}
+  for (const r of linhasDoMes) {
+    const servico = String(r.servico || '').trim()
     if (!servico || !usaAlicatePinca(servico)) continue
-    const prof = String(it.profissional || '').trim()
+    const prof = String(r.profissional || '').trim()
     if (!prof) continue
-    if (!porProf[prof]) porProf[prof] = { atendimentos: 0, servicos: {} }
-    const qtd = Number(it.quantidade || 0)
-    porProf[prof].atendimentos += qtd
-    porProf[prof].servicos[servico] = (porProf[prof].servicos[servico] || 0) + qtd
+    const numComanda = String(r.num_comanda || '').trim()
+    const cliente = String(r.cliente || '').trim().toLowerCase()
+    // Chave da visita: prefere nº da comanda (mesmo checkout); se não veio no
+    // import, cai pra cliente+data — ainda assim junta mão+pé da mesma pessoa.
+    const idVisita = numComanda ? `c:${numComanda}` : `cl:${cliente}`
+    const chaveVisita = `${r.data_comanda || ''}|${idVisita}`
+
+    if (!porProf[prof]) porProf[prof] = { visitas: new Set(), servicos: {} }
+    porProf[prof].visitas.add(chaveVisita)
+    porProf[prof].servicos[servico] = (porProf[prof].servicos[servico] || 0) + (Number(r.qtd) || 1)
   }
 
   const profissionais = Object.entries(porProf)
-    .map(([profissional, d]) => ({ profissional, atendimentos: d.atendimentos, servicos: d.servicos }))
+    .map(([profissional, d]) => ({ profissional, atendimentos: d.visitas.size, servicos: d.servicos }))
     .sort((a, b) => b.atendimentos - a.atendimentos)
 
   return NextResponse.json({ ano, mes, profissionais })
