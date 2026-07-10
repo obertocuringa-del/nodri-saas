@@ -4,7 +4,7 @@ import { salaoIdSe } from '@/lib/apiAuth'
 
 // Serviços que normalmente usam alicate/pinça (manicure, pedicure, sobrancelha…).
 // Casamento por palavra-chave (sem acento) no nome do serviço importado dos relatórios.
-const PALAVRAS_ALICATE = ['manicur', 'pedicur', 'unha', 'cutilagem', 'esmalt', 'sobrancelha', 'cilio', 'henna']
+const PALAVRAS_ALICATE = ['manicur', 'pedicur', 'unha', 'cutilagem', 'esmalt', 'sobrancelha']
 function normaliza(s: string) { return (s || '').toString().normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase() }
 function usaAlicatePinca(servico: string) { const n = normaliza(servico); return PALAVRAS_ALICATE.some(p => n.includes(p)) }
 

@@ -2,12 +2,12 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import toast from 'react-hot-toast'
-import { Loader2, Save, Plus, Trash2, Pencil, X, Sparkles, ShieldCheck, ShieldAlert, Users, Scissors } from 'lucide-react'
+import { Loader2, Save, Plus, Trash2, Pencil, X, Sparkles, ShieldCheck, ShieldAlert, Users, Scissors, RotateCcw, ChevronDown, ChevronUp, Clock3 } from 'lucide-react'
 import { useIsMobile } from '@/lib/useIsMobile'
 import { cel, type Cell } from './GridEditavel'
 
 interface ProfSalao { id: string; nome: string; telefone?: string }
-interface Item { id: string; profissional: string; quantidade: string; data: string; observacao: string }
+interface Item { id: string; profissional: string; quantidade: string; data: string; dataDevolucao: string; observacao: string }
 interface LinhaCruzamento { nome: string; atendimentos: number; esterilizacoes: number; registros: number; servicos: string[] }
 
 const COR = '#5b4fcf'
@@ -31,12 +31,13 @@ export default function EsterilizacaoLista({ chave = 'esterilizacao', profsSalao
   const [modal, setModal] = useState<Item | null>(null)
   const [cruzamento, setCruzamento] = useState<LinhaCruzamento[]>([])
   const [loadingCruzamento, setLoadingCruzamento] = useState(true)
+  const [aberto, setAberto] = useState<string | null>(null)
 
   const chaveEfetiva = `${chave}_${mes}`
 
   const linhasParaItems = (linhas: Cell[][]): Item[] =>
     linhas.filter(l => l.some(c => (c?.t || '').trim())).map(l => ({
-      id: rid(), profissional: l[0]?.t || '', quantidade: l[1]?.t || '', data: l[2]?.t || '', observacao: l[3]?.t || '',
+      id: rid(), profissional: l[0]?.t || '', quantidade: l[1]?.t || '', data: l[2]?.t || '', dataDevolucao: l[3]?.t || '', observacao: l[4]?.t || '',
     }))
 
   const carregar = useCallback(async () => {
@@ -67,8 +68,8 @@ export default function EsterilizacaoLista({ chave = 'esterilizacao', profsSalao
     try {
       const tabela = {
         titulo: TITULO_TABELA,
-        cabecalho: [cel('Profissional'), cel('Quantidade'), cel('Data'), cel('Observação')],
-        linhas: items.map(it => [cel(it.profissional), cel(it.quantidade), cel(it.data), cel(it.observacao)]),
+        cabecalho: [cel('Profissional'), cel('Quantidade'), cel('Data'), cel('Data devolução'), cel('Observação')],
+        linhas: items.map(it => [cel(it.profissional), cel(it.quantidade), cel(it.data), cel(it.dataDevolucao), cel(it.observacao)]),
       }
       const res = await fetch('/api/salon/grid', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chave: chaveEfetiva, doc: { tabelas: [tabela] } }) })
       if (res.ok) { toast.success('Registros salvos!'); setDirty(false) }
@@ -77,7 +78,7 @@ export default function EsterilizacaoLista({ chave = 'esterilizacao', profsSalao
     setSalvando(false)
   }
 
-  function abrirNovo() { setModal({ id: rid(), profissional: '', quantidade: '1', data: hojeBR(), observacao: '' }) }
+  function abrirNovo() { setModal({ id: rid(), profissional: '', quantidade: '1', data: hojeBR(), dataDevolucao: '', observacao: '' }) }
   function abrirEditar(it: Item) { setModal({ ...it }) }
   function salvarModal() {
     if (!modal) return
@@ -89,6 +90,8 @@ export default function EsterilizacaoLista({ chave = 'esterilizacao', profsSalao
     if (!confirm('Remover este registro?')) return
     setItems(prev => prev.filter(x => x.id !== id)); setDirty(true)
   }
+  function marcarDevolvido(id: string) { setItems(prev => prev.map(x => x.id === id ? { ...x, dataDevolucao: hojeBR() } : x)); setDirty(true) }
+  function reabrir(id: string) { setItems(prev => prev.map(x => x.id === id ? { ...x, dataDevolucao: '' } : x)); setDirty(true) }
 
   // Combina o cruzamento (atendimentos vindos dos Relatórios) com as
   // esterilizações registradas nesta lista, casando o nome do profissional
@@ -102,6 +105,7 @@ export default function EsterilizacaoLista({ chave = 'esterilizacao', profsSalao
   const totalAtendimentos = linhas.reduce((s, l) => s + l.atendimentos, 0)
   const totalEsterilizacoes = items.reduce((s, it) => s + (Number(String(it.quantidade).replace(',', '.')) || 0), 0)
   const emAlerta = linhas.filter(l => l.atendimentos > 0 && l.registros === 0).length
+  const pendentesDevolucao = items.filter(it => !it.dataDevolucao.trim()).length
   const profissionaisEnvolvidos = new Set(items.map(it => it.profissional.trim()).filter(Boolean)).size
 
   return (
@@ -123,14 +127,14 @@ export default function EsterilizacaoLista({ chave = 'esterilizacao', profsSalao
       </div>
 
       <p style={{ fontSize: 12, color: '#6b6860', margin: '0 0 16px' }}>
-        Cruza os atendimentos de manicure, pedicure e sobrancelha (mesmo dado dos Relatórios) com as esterilizações que você registrar aqui, pra ajudar a enxergar quem está deixando de esterilizar entre os clientes.
+        Cruza os atendimentos de manicure, pedicure e sobrancelha (mesmo dado dos Relatórios) com as esterilizações que você registrar aqui. Clique em cada profissional no painel abaixo para ver quais serviços entraram na conta.
       </p>
 
       {/* ── Dashboard resumido ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 18 }}>
         <StatCard icon={<Scissors size={16} />} label="Atendimentos c/ alicate" value={String(totalAtendimentos)} sub="manicure, pedicure, sobrancelha" />
         <StatCard icon={<Sparkles size={16} />} label="Esterilizações registradas" value={String(totalEsterilizacoes)} sub="itens de material" cor="#16a34a" />
-        <StatCard icon={<Users size={16} />} label="Profissionais no registro" value={String(profissionaisEnvolvidos)} sub="lançaram esterilização" cor="#2563eb" />
+        <StatCard icon={<Clock3 size={16} />} label="Pendentes de devolução" value={String(pendentesDevolucao)} sub="material ainda não voltou" cor={pendentesDevolucao > 0 ? '#b45309' : '#16a34a'} />
         <StatCard icon={<ShieldAlert size={16} />} label="Em alerta" value={String(emAlerta)} sub="atenderam e não registraram" cor={emAlerta > 0 ? '#dc2626' : '#16a34a'} />
       </div>
 
@@ -148,14 +152,26 @@ export default function EsterilizacaoLista({ chave = 'esterilizacao', profsSalao
                 const ok = !critico && !atencao
                 const cor = critico ? '#dc2626' : atencao ? '#b45309' : '#16a34a'
                 const bg = critico ? '#fef2f2' : atencao ? '#fffbeb' : '#f0fdf4'
+                const expandido = aberto === l.nome
                 return (
-                  <div key={l.nome} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 10, background: bg, flexWrap: 'wrap' }}>
-                    {critico ? <ShieldAlert size={16} color={cor} /> : ok ? <ShieldCheck size={16} color={cor} /> : <ShieldAlert size={16} color={cor} />}
-                    <strong style={{ fontSize: 13.5, color: '#1a1a1a', minWidth: 120 }}>{l.nome}</strong>
-                    <span style={{ fontSize: 12, color: '#374151' }}>{l.atendimentos} atendimento{l.atendimentos !== 1 ? 's' : ''}</span>
-                    <span style={{ fontSize: 12, color: '#374151' }}>· {l.esterilizacoes} esterilizaç{l.esterilizacoes !== 1 ? 'ões' : 'ão'} registrada{l.esterilizacoes !== 1 ? 's' : ''}</span>
-                    <div style={{ flex: 1 }} />
-                    <span style={{ fontSize: 11, fontWeight: 800, color: cor }}>{critico ? '🔴 Nunca registrou' : atencao ? '🟡 Abaixo do esperado' : '✓ Em dia'}</span>
+                  <div key={l.nome} style={{ borderRadius: 10, background: bg, overflow: 'hidden' }}>
+                    <div onClick={() => setAberto(expandido ? null : l.nome)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', flexWrap: 'wrap', cursor: 'pointer' }}>
+                      {critico ? <ShieldAlert size={16} color={cor} /> : ok ? <ShieldCheck size={16} color={cor} /> : <ShieldAlert size={16} color={cor} />}
+                      <strong style={{ fontSize: 13.5, color: '#1a1a1a', minWidth: 120 }}>{l.nome}</strong>
+                      <span style={{ fontSize: 12, color: '#374151' }}>{l.atendimentos} atendimento{l.atendimentos !== 1 ? 's' : ''}</span>
+                      <span style={{ fontSize: 12, color: '#374151' }}>· {l.esterilizacoes} esterilizaç{l.esterilizacoes !== 1 ? 'ões' : 'ão'} registrada{l.esterilizacoes !== 1 ? 's' : ''}</span>
+                      <div style={{ flex: 1 }} />
+                      <span style={{ fontSize: 11, fontWeight: 800, color: cor }}>{critico ? '🔴 Nunca registrou' : atencao ? '🟡 Abaixo do esperado' : '✓ Em dia'}</span>
+                      {expandido ? <ChevronUp size={14} color="#9ca3af" /> : <ChevronDown size={14} color="#9ca3af" />}
+                    </div>
+                    {expandido && (
+                      <div style={{ padding: '0 12px 12px 40px', fontSize: 12, color: '#6b6860' }}>
+                        <strong style={{ fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '.3px' }}>Serviços considerados no cálculo:</strong>
+                        <ul style={{ margin: '4px 0 0', paddingLeft: 18 }}>
+                          {l.servicos.map(s => <li key={s}>{s}</li>)}
+                        </ul>
+                      </div>
+                    )}
                   </div>
                 )
               })}
@@ -172,44 +188,61 @@ export default function EsterilizacaoLista({ chave = 'esterilizacao', profsSalao
           </div>
         ) : mobile ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {items.map(it => (
-              <div key={it.id} className="ester-card" style={{ background: '#fff', border: '1px solid #eceae4', borderRadius: 14, padding: 14 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af' }}>{it.data}</span>
-                  <div style={{ display: 'flex', gap: 4 }}>
-                    <button onClick={() => abrirEditar(it)} style={iconBtn('#5b4fcf')}><Pencil size={13} /></button>
-                    <button onClick={() => excluir(it.id)} style={iconBtn('#dc2626')}><Trash2 size={13} /></button>
+            {items.map(it => {
+              const pendente = !it.dataDevolucao.trim()
+              return (
+                <div key={it.id} className="ester-card" style={{ background: '#fff', border: '1px solid #eceae4', borderRadius: 14, padding: 14 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af' }}>Enviado em {it.data}</span>
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      <button onClick={() => abrirEditar(it)} style={iconBtn('#5b4fcf')}><Pencil size={13} /></button>
+                      <button onClick={() => excluir(it.id)} style={iconBtn('#dc2626')}><Trash2 size={13} /></button>
+                    </div>
+                  </div>
+                  <div style={{ fontWeight: 800, fontSize: 14.5, color: '#1a1a1a', marginBottom: 6 }}>{it.profissional}</div>
+                  <div style={{ fontSize: 12.5, color: '#374151' }}>Quantidade de material: <strong>{it.quantidade || '—'}</strong></div>
+                  {it.observacao && <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 6 }}>{it.observacao}</div>}
+                  <div style={{ marginTop: 10, padding: '8px 10px', background: pendente ? '#fef2f2' : '#f0fdf4', borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: pendente ? '#dc2626' : '#16a34a' }}>{pendente ? '🔴 PENDENTE' : `✓ DEVOLVIDO ${it.dataDevolucao}`}</span>
+                    {pendente
+                      ? <button onClick={() => marcarDevolvido(it.id)} style={{ padding: '5px 10px', borderRadius: 7, border: 'none', background: '#16a34a', color: '#fff', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>Marcar devolvido</button>
+                      : <button onClick={() => reabrir(it.id)} title="Reabrir" style={iconBtn('#6b6860')}><RotateCcw size={13} /></button>}
                   </div>
                 </div>
-                <div style={{ fontWeight: 800, fontSize: 14.5, color: '#1a1a1a', marginBottom: 6 }}>{it.profissional}</div>
-                <div style={{ fontSize: 12.5, color: '#374151' }}>Quantidade de material: <strong>{it.quantidade || '—'}</strong></div>
-                {it.observacao && <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 6 }}>{it.observacao}</div>}
-              </div>
-            ))}
+              )
+            })}
           </div>
         ) : (
           <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, overflowX: 'auto' }}>
-            <table className="ester-table" style={{ width: '100%', minWidth: 560, borderCollapse: 'collapse' }}>
+            <table className="ester-table" style={{ width: '100%', minWidth: 720, borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
-                  {['Profissional', 'Quantidade', 'Data', 'Observação', ''].map((h, i) => (
-                    <th key={i} style={{ textAlign: i === 1 || i === 2 ? 'center' : 'left', padding: '12px 16px', fontSize: 11, fontWeight: 800, color: '#6b6860', textTransform: 'uppercase', letterSpacing: '.4px', borderBottom: '1px solid #e8e6e0', background: '#faf9f7' }}>{h}</th>
+                  {['Profissional', 'Quantidade', 'Enviado em', 'Situação', 'Observação', ''].map((h, i) => (
+                    <th key={i} style={{ textAlign: i === 1 || i === 2 || i === 3 ? 'center' : 'left', padding: '12px 16px', fontSize: 11, fontWeight: 800, color: '#6b6860', textTransform: 'uppercase', letterSpacing: '.4px', borderBottom: '1px solid #e8e6e0', background: '#faf9f7' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {items.map(it => (
-                  <tr key={it.id} style={{ borderBottom: '1px solid #f0eee8' }}>
-                    <td style={{ padding: '12px 16px', fontWeight: 700, color: '#1a1a1a' }}>{it.profissional}</td>
-                    <td style={{ padding: '12px 16px', textAlign: 'center', color: '#374151' }}>{it.quantidade || '—'}</td>
-                    <td style={{ padding: '12px 16px', textAlign: 'center', color: '#6b6860', fontSize: 12.5 }}>{it.data || '—'}</td>
-                    <td style={{ padding: '12px 16px', color: '#9ca3af', fontSize: 12.5 }}>{it.observacao || '—'}</td>
-                    <td style={{ padding: '12px 16px', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                      <button onClick={() => abrirEditar(it)} style={iconBtn('#5b4fcf')}><Pencil size={13} /></button>
-                      <button onClick={() => excluir(it.id)} style={iconBtn('#dc2626')}><Trash2 size={13} /></button>
-                    </td>
-                  </tr>
-                ))}
+                {items.map(it => {
+                  const pendente = !it.dataDevolucao.trim()
+                  return (
+                    <tr key={it.id} style={{ borderBottom: '1px solid #f0eee8' }}>
+                      <td style={{ padding: '12px 16px', fontWeight: 700, color: '#1a1a1a' }}>{it.profissional}</td>
+                      <td style={{ padding: '12px 16px', textAlign: 'center', color: '#374151' }}>{it.quantidade || '—'}</td>
+                      <td style={{ padding: '12px 16px', textAlign: 'center', color: '#6b6860', fontSize: 12.5 }}>{it.data || '—'}</td>
+                      <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                        {pendente
+                          ? <button onClick={() => marcarDevolvido(it.id)} style={{ padding: '5px 10px', borderRadius: 7, border: 'none', background: '#fef2f2', color: '#dc2626', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>🔴 Pendente — marcar devolvido</button>
+                          : <button onClick={() => reabrir(it.id)} title="Clique para reabrir" style={{ padding: '5px 10px', borderRadius: 7, border: 'none', background: '#f0fdf4', color: '#16a34a', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>✓ Devolvido {it.dataDevolucao}</button>}
+                      </td>
+                      <td style={{ padding: '12px 16px', color: '#9ca3af', fontSize: 12.5 }}>{it.observacao || '—'}</td>
+                      <td style={{ padding: '12px 16px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                        <button onClick={() => abrirEditar(it)} style={iconBtn('#5b4fcf')}><Pencil size={13} /></button>
+                        <button onClick={() => excluir(it.id)} style={iconBtn('#dc2626')}><Trash2 size={13} /></button>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
@@ -218,7 +251,7 @@ export default function EsterilizacaoLista({ chave = 'esterilizacao', profsSalao
 
       {modal && (
         <div onClick={() => setModal(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 14 }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 420, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 420, padding: 20, maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
               <h3 style={{ fontSize: 15, fontWeight: 800, margin: 0, color: '#1a1a1a' }}>{items.some(x => x.id === modal.id) ? '✏️ Editar registro' : '🧽 Registrar esterilização'}</h3>
               <button onClick={() => setModal(null)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#9ca3af' }}><X size={18} /></button>
@@ -233,10 +266,14 @@ export default function EsterilizacaoLista({ chave = 'esterilizacao', profsSalao
               <Campo label="Quantidade de material">
                 <input value={modal.quantidade} onChange={e => setModal({ ...modal, quantidade: e.target.value })} placeholder="Ex: 3" style={inputSt} />
               </Campo>
-              <Campo label="Data">
+              <Campo label="Enviado em">
                 <input type="date" value={brToIso(modal.data)} onChange={e => setModal({ ...modal, data: isoToBr(e.target.value) })} style={inputSt} />
               </Campo>
             </div>
+
+            <Campo label="Data da devolução (deixe vazio se ainda não voltou)">
+              <input type="date" value={brToIso(modal.dataDevolucao)} onChange={e => setModal({ ...modal, dataDevolucao: isoToBr(e.target.value) })} style={inputSt} />
+            </Campo>
 
             <Campo label="Observação">
               <input value={modal.observacao} onChange={e => setModal({ ...modal, observacao: e.target.value })} placeholder="Opcional" style={inputSt} />
