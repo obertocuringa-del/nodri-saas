@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import toast from 'react-hot-toast'
-import { Loader2, Save, Package, Hand, Footprints, Wallet, Clock3, CheckCircle2 } from 'lucide-react'
+import { Loader2, Save, Package, Hand, Footprints, Wallet, Clock3, CheckCircle2, Trash2 } from 'lucide-react'
 import { useIsMobile } from '@/lib/useIsMobile'
 import { mesmoProf, type KitsSolicitacao, type KitsConfig } from '@/lib/kitsShared'
 
@@ -55,6 +55,15 @@ export default function KitsAdminLista() {
       const res = await fetch('/api/kits/solicitacoes', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, mes }) })
       if (res.ok) { toast.success('Separado! A profissional foi avisada.'); carregar() }
       else toast.error('Erro ao marcar separado')
+    } catch { toast.error('Erro de conexão') }
+  }
+
+  async function excluirSolicitacao(id: string) {
+    if (!confirm('Remover esta solicitação?')) return
+    try {
+      const res = await fetch(`/api/kits/solicitacoes?id=${id}&mes=${mes}`, { method: 'DELETE' })
+      if (res.ok) { toast.success('Removida!'); carregar() }
+      else toast.error('Erro ao remover')
     } catch { toast.error('Erro de conexão') }
   }
 
@@ -140,7 +149,10 @@ export default function KitsAdminLista() {
               <div key={s.id} style={{ background: '#fff', border: '1px solid #eceae4', borderRadius: 14, padding: 14 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                   <span style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af' }}>{s.data}</span>
-                  <span style={{ fontSize: 11, fontWeight: 800, color: s.status === 'pendente' ? '#b45309' : '#16a34a' }}>{s.status === 'pendente' ? '⏳ Pendente' : '✓ Separado'}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: s.status === 'pendente' ? '#b45309' : '#16a34a' }}>{s.status === 'pendente' ? '⏳ Pendente' : '✓ Separado'}</span>
+                    <button onClick={() => excluirSolicitacao(s.id)} title="Remover" style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', padding: 2 }}><Trash2 size={13} /></button>
+                  </div>
                 </div>
                 <div style={{ fontWeight: 800, fontSize: 14.5, color: '#1a1a1a', marginBottom: 6 }}>{s.profissionalNome}</div>
                 <div style={{ fontSize: 12.5, color: '#374151' }}>{s.kitsMao} kit(s) mão · {s.kitsPe} kit(s) pé</div>
@@ -156,7 +168,7 @@ export default function KitsAdminLista() {
             <table className="kits-table" style={{ width: '100%', minWidth: 640, borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
-                  {['Profissional', 'Kits mão', 'Kits pé', 'Valor', 'Data', 'Situação'].map((h, i) => (
+                  {['Profissional', 'Kits mão', 'Kits pé', 'Valor', 'Data', 'Situação', ''].map((h, i) => (
                     <th key={i} style={{ textAlign: i >= 1 && i <= 4 ? 'center' : 'left', padding: '12px 16px', fontSize: 11, fontWeight: 800, color: '#6b6860', textTransform: 'uppercase', letterSpacing: '.4px', borderBottom: '1px solid #e8e6e0', background: '#faf9f7' }}>{h}</th>
                   ))}
                 </tr>
@@ -173,6 +185,9 @@ export default function KitsAdminLista() {
                       {s.status === 'pendente'
                         ? <button onClick={() => marcarSeparado(s.id)} style={{ padding: '5px 10px', borderRadius: 7, border: 'none', background: '#fffbeb', color: '#b45309', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>⏳ Pendente — marcar separado</button>
                         : <span style={{ padding: '5px 10px', borderRadius: 7, background: '#f0fdf4', color: '#16a34a', fontSize: 11, fontWeight: 800 }}>✓ Separado {s.dataSeparado}</span>}
+                    </td>
+                    <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                      <button onClick={() => excluirSolicitacao(s.id)} title="Remover" style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', padding: 4 }}><Trash2 size={14} /></button>
                     </td>
                   </tr>
                 ))}

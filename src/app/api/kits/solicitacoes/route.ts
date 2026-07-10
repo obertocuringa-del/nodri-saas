@@ -108,3 +108,17 @@ export async function PATCH(req: NextRequest) {
 
   return NextResponse.json({ ok: true })
 }
+
+// DELETE ?id=&mes=YYYY-MM — dono/sub remove uma solicitação (ex: pedido em duplicidade ou por engano).
+export async function DELETE(req: NextRequest) {
+  const salaoId = await salaoIdSe('adm_kits')
+  if (!salaoId) return NextResponse.json({ error: 'Sem acesso' }, { status: 403 })
+  const url = new URL(req.url)
+  const id = url.searchParams.get('id') || ''
+  const mes = url.searchParams.get('mes') || ''
+  if (!id || !/^\d{4}-\d{2}$/.test(mes)) return NextResponse.json({ error: 'Dados inválidos' }, { status: 400 })
+  const lista = await lerLista(salaoId, mes)
+  const { error } = await gravarLista(salaoId, mes, lista.filter(s => s.id !== id))
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ ok: true })
+}
