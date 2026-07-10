@@ -48,6 +48,7 @@ export const CATALOGO_PERMISSOES: PermGrupo[] = [
       { chave: 'adm_correios', label: 'Correios' },
       { chave: 'adm_etiquetas', label: 'Etiquetas' },
       { chave: 'adm_agendamentos_grandes', label: 'Agendamentos Grandes' },
+      { chave: 'adm_esterilizacao', label: 'Esterilização' },
     ]
   },
   {
