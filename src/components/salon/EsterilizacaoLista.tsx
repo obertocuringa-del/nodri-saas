@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import toast from 'react-hot-toast'
-import { Loader2, Save, Plus, Trash2, Pencil, X, Sparkles, ShieldCheck, ShieldAlert, Users, Scissors, RotateCcw, ChevronDown, ChevronUp, Clock3 } from 'lucide-react'
+import { Loader2, Save, Printer, Plus, Trash2, Pencil, X, Sparkles, ShieldCheck, ShieldAlert, Users, Scissors, RotateCcw, ChevronDown, ChevronUp, Clock3 } from 'lucide-react'
 import { useIsMobile } from '@/lib/useIsMobile'
+import { getLogoSalao } from '@/lib/logoSalao'
 import { cel, type Cell } from './GridEditavel'
 
 interface ProfSalao { id: string; nome: string; telefone?: string }
@@ -93,6 +94,71 @@ export default function EsterilizacaoLista({ chave = 'esterilizacao', profsSalao
   function marcarDevolvido(id: string) { setItems(prev => prev.map(x => x.id === id ? { ...x, dataDevolucao: hojeBR() } : x)); setDirty(true) }
   function reabrir(id: string) { setItems(prev => prev.map(x => x.id === id ? { ...x, dataDevolucao: '' } : x)); setDirty(true) }
 
+  async function imprimir() {
+    const logoSalao = await getLogoSalao()
+    const esc = (v: any) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    const periodo = mes.split('-').reverse().join('/')
+
+    const linhasPainel = linhas.map(l => {
+      const critico = l.atendimentos > 0 && l.registros === 0
+      const atencao = !critico && l.registros > 0 && l.esterilizacoes < l.atendimentos
+      const situacao = critico ? '🔴 Nunca registrou' : atencao ? '🟡 Abaixo do esperado' : '✓ Em dia'
+      const classe = critico ? 'crit' : atencao ? 'atn' : 'ok'
+      return `<tr class="${classe}"><td>${esc(l.nome)}</td><td class="c">${l.atendimentos}</td><td class="c">${l.esterilizacoes}</td><td>${esc(l.servicos.join(', '))}</td><td class="c situacao">${situacao}</td></tr>`
+    }).join('')
+
+    const linhasRegistros = items.map(it => {
+      const pendente = !it.dataDevolucao.trim()
+      return `<tr><td>${esc(it.profissional)}</td><td class="c">${esc(it.quantidade)}</td><td class="c">${esc(it.data)}</td><td class="c">${pendente ? '🔴 Pendente' : `✓ ${esc(it.dataDevolucao)}`}</td><td>${esc(it.observacao)}</td></tr>`
+    }).join('')
+
+    const cab = logoSalao ? `<img src="${logoSalao}" class="logo"/>` : `<div class="brand">NODRI</div>`
+    const css = `
+@page{size:A4 portrait;margin:12mm}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;font-size:11px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.hd{display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid ${COR};padding-bottom:10px;margin-bottom:6px}
+.logo{max-height:56px;max-width:200px;object-fit:contain}
+.brand{font-size:22px;font-weight:900;color:${COR};letter-spacing:1px}
+.hd .dt{font-size:10px;color:#777;text-align:right}
+h1{text-align:center;font-size:17px;font-weight:900;color:#1a1a2e;margin:12px 0 2px;text-transform:uppercase;letter-spacing:.4px}
+.sub{text-align:center;font-size:11px;color:#888;margin-bottom:16px}
+.stats{display:flex;gap:8px;margin-bottom:18px}
+.stat{flex:1;border:1px solid #e5e2db;border-radius:10px;padding:9px 10px;background:#faf9f7}
+.stat b{display:block;font-size:16px;color:${COR}}
+.stat span{font-size:9.5px;color:#888;text-transform:uppercase;letter-spacing:.3px}
+h2{font-size:12.5px;color:${COR};margin:16px 0 6px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1.5px solid ${COR};padding-bottom:4px}
+table{width:100%;border-collapse:collapse;margin-bottom:6px}
+th,td{border:1px solid #f0ede6;padding:6px 8px;text-align:left;vertical-align:top}
+th{background:#f6f4ff;color:${COR};border-bottom:2px solid ${COR};font-size:9.5px;text-transform:uppercase;letter-spacing:.3px}
+td.c,th.c{text-align:center}
+tbody tr:nth-child(even) td{background:#fbfaf8}
+tr.crit td{background:#fef2f2!important}
+tr.atn td{background:#fffbeb!important}
+tr.crit .situacao{color:#dc2626;font-weight:800}
+tr.atn .situacao{color:#b45309;font-weight:800}
+tr.ok .situacao{color:#16a34a;font-weight:800}
+.vazio{color:#9ca3af;font-style:italic;padding:10px 0}
+`
+    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Esterilização — ${esc(periodo)}</title><style>${css}</style></head><body>
+<div class="hd">${cab}<span class="dt">${new Date().toLocaleDateString('pt-BR')}</span></div>
+<h1>Controle de Esterilização</h1>
+<div class="sub">Manicure, pedicure e sobrancelha — ${esc(periodo)}</div>
+<div class="stats">
+  <div class="stat"><b>${totalAtendimentos}</b><span>Atendimentos c/ alicate</span></div>
+  <div class="stat"><b>${totalEsterilizacoes}</b><span>Esterilizações registradas</span></div>
+  <div class="stat"><b>${pendentesDevolucao}</b><span>Pendentes de devolução</span></div>
+  <div class="stat"><b>${emAlerta}</b><span>Profissionais em alerta</span></div>
+</div>
+<h2>Atendimentos x Esterilização</h2>
+${linhas.length ? `<table><thead><tr><th>Profissional</th><th class="c">Atendimentos</th><th class="c">Esterilizações</th><th>Serviços considerados</th><th class="c">Situação</th></tr></thead><tbody>${linhasPainel}</tbody></table>` : '<div class="vazio">Nenhum atendimento de manicure/pedicure/sobrancelha neste mês.</div>'}
+<h2>Registros de Esterilização</h2>
+${items.length ? `<table><thead><tr><th>Profissional</th><th class="c">Quantidade</th><th class="c">Enviado em</th><th class="c">Devolução</th><th>Observação</th></tr></thead><tbody>${linhasRegistros}</tbody></table>` : '<div class="vazio">Nenhum registro de esterilização neste mês.</div>'}
+<script>window.onload=function(){window.print()}</script>
+</body></html>`
+    const w = window.open('', '_blank', 'width=1000,height=700'); if (!w) return; w.document.write(html); w.document.close(); w.focus()
+  }
+
   // Combina o cruzamento (atendimentos vindos dos Relatórios) com as
   // esterilizações registradas nesta lista, casando o nome do profissional
   // de forma flexível (o nome importado do Excel nem sempre é igual ao apelido).
@@ -122,6 +188,7 @@ export default function EsterilizacaoLista({ chave = 'esterilizacao', profsSalao
         <input type="month" value={mes} onChange={e => setMes(e.target.value)} style={{ padding: '7px 9px', borderRadius: 8, border: '1px solid #d0cdc7', fontSize: 13 }} />
         <div style={{ flex: 1 }} />
         {dirty && !salvando && <span style={{ fontSize: 12, color: '#b45309', fontWeight: 700 }}>Alterações não salvas</span>}
+        <button onClick={imprimir} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 8, border: '1px solid #d0cdc7', background: '#fff', color: '#374151', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}><Printer size={14} /> Imprimir A4</button>
         <button onClick={salvar} disabled={salvando} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 16px', borderRadius: 8, border: 'none', background: dirty ? '#16a34a' : '#a3b3a3', color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>{salvando ? '...' : <><Save size={14} /> Salvar</>}</button>
         <button onClick={abrirNovo} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 8, border: 'none', background: '#16a34a', color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}><Plus size={15} /> Registrar Esterilização</button>
       </div>
