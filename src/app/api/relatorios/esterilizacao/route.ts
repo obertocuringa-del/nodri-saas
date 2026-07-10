@@ -1,25 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { supabaseAdmin } from '@/lib/supabase'
 import { salaoIdSe } from '@/lib/apiAuth'
-import { getAtendimentosRaw } from '@/lib/atendimentosCache'
 
-// Serviços que normalmente usam alicate/pinça (manicure, pedicure, sobrancelha…).
-// Casamento por palavra-chave (sem acento) no nome do serviço importado dos relatórios.
-const PALAVRAS_ALICATE = ['manicur', 'pedicur', 'unha', 'cutilagem', 'esmalt', 'sobrancelha']
-// Serviços que batem numa palavra-chave acima mas NÃO usam alicate/pinça de
-// verdade (ex: só troca a cor do esmalte, sem mexer na cutícula) — ficam de fora.
-const PALAVRAS_EXCLUIR = ['troca de esmalte']
-function normaliza(s: string) { return (s || '').toString().normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase() }
-function usaAlicatePinca(servico: string) {
-  const n = normaliza(servico)
-  if (PALAVRAS_EXCLUIR.some(p => n.includes(p))) return false
-  return PALAVRAS_ALICATE.some(p => n.includes(p))
+// Só esses serviços contam pra esterilização (nada de correspondência ampla
+// por palavra-chave — evita pegar troca de esmalte, cílios, henna etc).
+const SERVICOS_ALICATE = ['manicure', 'pedicure', 'sobrancelhas', 'pedicure e cuidados especiais dos pes']
+function normaliza(s: string) {
+  return (s || '').toString().normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+    .replace(/[.,]/g, ' ').replace(/\s+/g, ' ').trim()
 }
+function usaAlicatePinca(servico: string) { return SERVICOS_ALICATE.includes(normaliza(servico)) }
 
 // Quantidade de ATENDIMENTOS (visitas de cliente) com uso de alicate/pinça por
 // profissional, no mês — vem do dado bruto dos Relatórios (atendimentos_raw),
-// agrupado por comanda (ou cliente, se a comanda não veio no import) pra não
-// contar mão + pé da mesma cliente como 2 esterilizações — ela usa só 1
-// alicate pra atender as duas coisas na mesma visita.
+// filtrado direto no banco por salão+ano+mês (rápido, usa o índice já existente
+// em vez de varrer todos os meses) e agrupado por comanda (ou cliente, se a
+// comanda não veio no import) pra não contar mão + pé da mesma cliente como 2
+// esterilizações — ela usa só 1 alicate pra atender as duas coisas na mesma visita.
 export async function GET(req: NextRequest) {
   const salaoId = await salaoIdSe('adm_esterilizacao')
   if (!salaoId) return NextResponse.json({ error: 'Sem acesso' }, { status: 403 })
@@ -29,11 +26,16 @@ export async function GET(req: NextRequest) {
   const mes = parseInt(url.searchParams.get('mes') || '0')
   if (!ano || !mes) return NextResponse.json({ error: 'ano e mes obrigatórios' }, { status: 400 })
 
-  const todasLinhas = await getAtendimentosRaw(salaoId)
-  const linhasDoMes = todasLinhas.filter((r: any) => Number(r.ano) === ano && Number(r.mes) === mes)
+  const { data: linhas, error } = await supabaseAdmin
+    .from('atendimentos_raw')
+    .select('profissional, servico, cliente, num_comanda, data_comanda, qtd')
+    .eq('salao_id', salaoId)
+    .eq('ano', ano)
+    .eq('mes', mes)
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   const porProf: Record<string, { visitas: Set<string>; servicos: Record<string, number> }> = {}
-  for (const r of linhasDoMes) {
+  for (const r of (linhas || [])) {
     const servico = String(r.servico || '').trim()
     if (!servico || !usaAlicatePinca(servico)) continue
     const prof = String(r.profissional || '').trim()

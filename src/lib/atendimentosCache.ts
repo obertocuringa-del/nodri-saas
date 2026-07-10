@@ -16,7 +16,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 
 // Colunas necessárias por todas as rotas que fazem varredura completa.
 const COLS =
-  'cliente, celular, telefone, profissional, data_comanda, servico, categoria, ano, mes, total, valor, num_comanda, qtd'
+  'cliente, celular, telefone, profissional, data_comanda, servico, categoria, ano, mes, total, valor'
 
 // Descarta entradas paradas há muito tempo (higiene de memória).
 const MAX_AGE_MS = 15 * 60 * 1000
