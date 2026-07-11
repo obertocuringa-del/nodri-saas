@@ -6,7 +6,6 @@ import { ArrowLeft, Loader2, Save, Plus, Minus, X, MessageCircle, Send, Printer,
 import toast from 'react-hot-toast'
 import GridEditavel, { cel, type Doc as GridDoc } from '@/components/salon/GridEditavel'
 import ServicoInternoLista from '@/components/salon/ServicoInternoLista'
-import ControleAlicatesLista from '@/components/salon/ControleAlicatesLista'
 import EsterilizacaoLista from '@/components/salon/EsterilizacaoLista'
 import KitsAdminLista from '@/components/salon/KitsAdminLista'
 import ListaBebidas from '@/components/salon/ListaBebidas'
@@ -45,12 +44,10 @@ const SERVICOS = [
 // Listas de preenchimento livre (sem contador)
 const linhasVazias = (qtd: number, cols: number): GridDoc['tabelas'][0]['linhas'] => Array.from({ length: qtd }, () => Array.from({ length: cols }, () => cel('')))
 
-const DEFAULT_ALICATES: GridDoc = { tabelas: [{ titulo: 'CONTROLE DE ALICATES', cabecalho: [cel('Data recebido'), cel('Responsável por receber'), cel('Profissional'), cel('Quantidade'), cel('Data da devolução'), cel('Assinatura')], linhas: linhasVazias(12, 6) }] }
 const DEFAULT_PRODUTOS: GridDoc = { tabelas: [{ titulo: 'CONSUMO DE PRODUTOS', cabecalho: [cel('Profissional'), cel('Data'), cel('Cliente'), cel('Produto'), cel('Quantidade')], linhas: linhasVazias(12, 5) }] }
 const DEFAULT_SERV_INT: GridDoc = { tabelas: [{ titulo: 'SERVIÇO INTERNO / PRODUTOS UTILIZADOS', cabecalho: [cel('Data'), cel('Produto'), cel('Quantidade'), cel('Profissional'), cel('Valor')], linhas: linhasVazias(14, 5) }] }
 
 const GRIDS = [
-  { key: 'alicates', label: 'Controle de Alicates', mensal: false, landscape: true, doc: DEFAULT_ALICATES },
   { key: 'produtos', label: 'Consumo de Produtos', mensal: true, landscape: true, doc: DEFAULT_PRODUTOS },
   { key: 'servinterno', label: 'Serviços Internos', mensal: true, landscape: false, doc: DEFAULT_SERV_INT },
 ]
@@ -225,9 +222,7 @@ export default function SalaoAdministrativoPage() {
               ? <ListaBebidas key="bebidas" profsSalao={profsSalao} />
               : servico === 'servinterno'
                 ? <ServicoInternoLista key="servinterno" chave="servinterno" profsSalao={profsSalao} />
-                : servico === 'alicates'
-                  ? <ControleAlicatesLista key="alicates" chave="alicates" profsSalao={profsSalao} />
-                  : (() => { const g = GRIDS.find(x => x.key === servico)!; return <GridEditavel key={servico} chave={g.key} defaultDoc={g.doc} mensal={g.mensal} landscape={g.landscape} /> })()}
+                : (() => { const g = GRIDS.find(x => x.key === servico)!; return <GridEditavel key={servico} chave={g.key} defaultDoc={g.doc} mensal={g.mensal} landscape={g.landscape} /> })()}
         </>)}
 
         {abaTopo === 'esterilizacao' && <EsterilizacaoLista key="esterilizacao" chave="esterilizacao" profsSalao={profsSalao} />}

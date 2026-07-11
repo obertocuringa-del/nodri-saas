@@ -26,7 +26,7 @@ export async function PUT(req: NextRequest) {
   const salaoId = await salaoIdSe(permDaGrade(chave))
   if (!salaoId) return NextResponse.json({ error: 'Sem acesso' }, { status: 403 })
   // Sub-usuário é somente leitura, EXCETO as Listas (bebidas, alicates, produtos, serviços internos)
-  const ehListasGrid = /^bebidas/.test(chave) || /^esterilizacao/.test(chave) || ['alicates', 'produtos', 'servinterno'].includes(chave)
+  const ehListasGrid = /^bebidas/.test(chave) || /^esterilizacao/.test(chave) || ['produtos', 'servinterno'].includes(chave)
   const sess = await getSessao()
   if (sess?.role === 'profissional') return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
   if (sess?.role === 'sub' && !ehListasGrid) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })

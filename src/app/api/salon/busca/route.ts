@@ -25,7 +25,6 @@ function mapaChave(chave: string): { label: string; rota: string } {
   if (c === 'feriados') return { label: 'Escala de Feriados', rota: '/salon/administrativo' }
   if (c.startsWith('escala')) return { label: 'Escala de Trabalho', rota: '/salon/administrativo' }
   if (c.startsWith('bebidas')) return { label: 'Bebidas', rota: '/salon/administrativo' }
-  if (c === 'alicates') return { label: 'Controle de Alicates', rota: '/salon/administrativo' }
   if (c === 'produtos') return { label: 'Consumo de Produtos', rota: '/salon/administrativo' }
   if (c === 'servinterno') return { label: 'Serviços Internos', rota: '/salon/administrativo' }
   if (c === 'precos_servicos') return { label: 'Serviços Internos (Valores)', rota: '/salon/administrativo' }
