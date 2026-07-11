@@ -50,8 +50,9 @@ export default function EnxovaisLista() {
   const [mes, setMes] = useState(mesAtual())
   const [cfg, setCfg] = useState<Config>(configVazia())
   const [precosStr, setPrecosStr] = useState<Record<string, string>>({})
-  const [addEstoqueStr, setAddEstoqueStr] = useState<Record<string, string>>({})
+  const [estoqueStr, setEstoqueStr] = useState<Record<string, string>>({})
   const [salvandoCfg, setSalvandoCfg] = useState(false)
+  const [salvandoEstoque, setSalvandoEstoque] = useState(false)
   const [registros, setRegistros] = useState<Registro[]>([])
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
@@ -71,6 +72,7 @@ export default function EnxovaisLista() {
       for (const i of ITENS) if (itens[i.chave]) nova[i.chave] = { precoUnitario: Number(itens[i.chave].precoUnitario) || 0, estoque: Number(itens[i.chave].estoque) || 0 }
       setCfg(nova)
       setPrecosStr(Object.fromEntries(ITENS.map(i => [i.chave, nova[i.chave].precoUnitario ? String(nova[i.chave].precoUnitario).replace('.', ',') : ''])))
+      setEstoqueStr(Object.fromEntries(ITENS.map(i => [i.chave, String(nova[i.chave].estoque || 0)])))
     } catch { /* mantém vazio */ }
   }, [])
   useEffect(() => { carregarConfig() }, [carregarConfig])
@@ -97,15 +99,15 @@ export default function EnxovaisLista() {
     setSalvandoCfg(false)
   }
 
-  async function adicionarEstoque(chave: string) {
-    const add = Math.round(Number(addEstoqueStr[chave]) || 0)
-    if (!add) return
-    const nova: Config = { ...cfg, [chave]: { precoUnitario: cfg[chave]?.precoUnitario || 0, estoque: (cfg[chave]?.estoque || 0) + add } }
+  async function salvarEstoque() {
+    setSalvandoEstoque(true)
     try {
+      const nova: Config = {}
+      for (const i of ITENS) nova[i.chave] = { precoUnitario: cfg[i.chave]?.precoUnitario || 0, estoque: Math.max(0, Math.round(Number(estoqueStr[i.chave]) || 0)) }
       const res = await fetch('/api/salon/grid', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chave: 'enxovais_config', doc: { itens: nova } }) })
-      if (res.ok) { setCfg(nova); setAddEstoqueStr(prev => ({ ...prev, [chave]: '' })); toast.success('Estoque atualizado!') }
-      else toast.error('Erro ao salvar')
+      if (res.ok) { toast.success('Estoque salvo!'); setCfg(nova) } else toast.error('Erro ao salvar')
     } catch { toast.error('Erro de conexão') }
+    setSalvandoEstoque(false)
   }
 
   async function salvar() {
@@ -272,20 +274,17 @@ export default function EnxovaisLista() {
           )}
         </div>
         {estoqueAberto && (
-          <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : 'repeat(3, 1fr)', gap: 10, marginTop: 12 }}>
-            {ITENS.map(i => (
-              <div key={i.chave} style={{ background: '#faf9f7', borderRadius: 10, padding: '10px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
-                <div>
-                  <div style={{ fontSize: 11.5, fontWeight: 700, color: '#6b6860', display: 'flex', alignItems: 'center' }}><span className="enx-dot" style={{ background: i.cor }} />{i.label}</div>
-                  <div style={{ fontSize: 20, fontWeight: 900, color: '#1a1a1a' }}>{cfg[i.chave]?.estoque || 0}</div>
+          <>
+            <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr 1fr' : 'repeat(6, 1fr)', gap: 10, margin: '12px 0' }}>
+              {ITENS.map(i => (
+                <div key={i.chave}>
+                  <label style={{ display: 'flex', alignItems: 'center', fontSize: 11, fontWeight: 700, color: '#6b6860', marginBottom: 5 }}><span className="enx-dot" style={{ background: i.cor }} />{i.label}</label>
+                  <input value={estoqueStr[i.chave] || ''} onChange={e => setEstoqueStr(prev => ({ ...prev, [i.chave]: e.target.value }))} inputMode="numeric" placeholder="0" style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13 }} />
                 </div>
-                <div style={{ display: 'flex', gap: 4 }}>
-                  <input value={addEstoqueStr[i.chave] || ''} onChange={e => setAddEstoqueStr(prev => ({ ...prev, [i.chave]: e.target.value }))} placeholder="+Qtd" style={{ width: 56, padding: '6px 8px', borderRadius: 7, border: '1.5px solid #d0cdc7', fontSize: 12.5 }} />
-                  <button onClick={() => adicionarEstoque(i.chave)} style={{ padding: '6px 10px', borderRadius: 7, border: 'none', background: '#16a34a', color: '#fff', cursor: 'pointer' }}><Plus size={13} /></button>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+            <button onClick={salvarEstoque} disabled={salvandoEstoque} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 16px', borderRadius: 9, border: 'none', background: '#5b4fcf', color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>{salvandoEstoque ? '...' : <><Save size={14} /> Salvar estoque</>}</button>
+          </>
         )}
       </div>
 
