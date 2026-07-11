@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import toast from 'react-hot-toast'
 import { Loader2, Save, Plus, Trash2, Pencil, X, Printer, Wallet, Send, CheckCircle2, RotateCcw, Package } from 'lucide-react'
 import { useIsMobile } from '@/lib/useIsMobile'
@@ -35,6 +35,9 @@ interface Registro {
   observacao: string
 }
 
+interface LinhaLote { enviado: string; recebido: string; devolvido: string }
+interface ModalLote { data: string; observacao: string; linhas: Record<string, LinhaLote> }
+
 const rid = () => Math.random().toString(36).slice(2, 9)
 function mesAtual() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` }
 function hojeBR() { const d = new Date(); return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}` }
@@ -53,7 +56,8 @@ export default function EnxovaisLista() {
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
   const [dirty, setDirty] = useState(false)
-  const [modal, setModal] = useState<Registro | null>(null)
+  const [modalLote, setModalLote] = useState<ModalLote | null>(null)
+  const [expandido, setExpandido] = useState<Set<string>>(new Set())
 
   const chaveMes = `enxovais_registros_${mes}`
 
@@ -111,18 +115,60 @@ export default function EnxovaisLista() {
     setSalvando(false)
   }
 
-  function abrirNovo() { setModal({ id: rid(), item: ITENS[0].chave, data: hojeBR(), qtdEnviada: 0, qtdRecebida: 0, qtdDevolvida: 0, precoUnitario: cfg[ITENS[0].chave]?.precoUnitario || 0, observacao: '' }) }
-  function abrirEditar(r: Registro) { setModal({ ...r }) }
-  function salvarModal() {
-    if (!modal) return
-    if (!modal.qtdEnviada && !modal.qtdRecebida && !modal.qtdDevolvida) { toast('Informe ao menos uma quantidade', { icon: '✍️' }); return }
-    const comPreco = { ...modal, precoUnitario: cfg[modal.item]?.precoUnitario || modal.precoUnitario || 0 }
-    setRegistros(prev => prev.some(x => x.id === comPreco.id) ? prev.map(x => x.id === comPreco.id ? comPreco : x) : [...prev, comPreco])
-    setDirty(true); setModal(null)
+  // Uma "visita" = todos os registros do mesmo dia. A empresa vem uma vez só e
+  // mexe em tudo, então o lançamento é uma tela única com os 6 itens, em vez de
+  // abrir um modal por item. O "Enviado" já vem sugerido com o estoque atual
+  // (o que normalmente vai tudo sujo) — só ajusta se for diferente.
+  function linhasVazias(): Record<string, LinhaLote> {
+    const linhas: Record<string, LinhaLote> = {}
+    for (const i of ITENS) linhas[i.chave] = { enviado: cfg[i.chave]?.estoque ? String(cfg[i.chave].estoque) : '', recebido: '', devolvido: '' }
+    return linhas
   }
-  function excluir(id: string) {
-    if (!confirm('Remover este registro?')) return
-    setRegistros(prev => prev.filter(x => x.id !== id)); setDirty(true)
+  function abrirNovo() { setModalLote({ data: hojeBR(), observacao: '', linhas: linhasVazias() }) }
+  function abrirEditarVisita(data: string) {
+    const regsData = registros.filter(r => r.data === data)
+    const linhas: Record<string, LinhaLote> = {}
+    for (const i of ITENS) {
+      const ex = regsData.find(r => r.item === i.chave)
+      linhas[i.chave] = { enviado: ex?.qtdEnviada ? String(ex.qtdEnviada) : '', recebido: ex?.qtdRecebida ? String(ex.qtdRecebida) : '', devolvido: ex?.qtdDevolvida ? String(ex.qtdDevolvida) : '' }
+    }
+    const observacao = regsData.find(r => r.observacao)?.observacao || ''
+    setModalLote({ data, observacao, linhas })
+  }
+  function salvarModalLote() {
+    if (!modalLote) return
+    const dataAlvo = modalLote.data
+    const semEssaData = registros.filter(r => r.data !== dataAlvo)
+    const novos: Registro[] = []
+    for (const i of ITENS) {
+      const l = modalLote.linhas[i.chave]
+      const enviado = Math.max(0, Math.round(Number(l.enviado) || 0))
+      const recebido = Math.max(0, Math.round(Number(l.recebido) || 0))
+      const devolvido = Math.max(0, Math.round(Number(l.devolvido) || 0))
+      if (!enviado && !recebido && !devolvido) continue
+      novos.push({ id: rid(), item: i.chave, data: dataAlvo, qtdEnviada: enviado, qtdRecebida: recebido, qtdDevolvida: devolvido, precoUnitario: cfg[i.chave]?.precoUnitario || 0, observacao: modalLote.observacao })
+    }
+    if (novos.length === 0) { toast('Informe ao menos uma quantidade em algum item', { icon: '✍️' }); return }
+    setRegistros([...semEssaData, ...novos])
+    setDirty(true); setModalLote(null)
+  }
+  function excluirVisita(data: string) {
+    if (!confirm('Remover todos os registros deste dia?')) return
+    setRegistros(prev => prev.filter(r => r.data !== data)); setDirty(true)
+  }
+  function editarLinha(chave: string, patch: Partial<LinhaLote>) {
+    setModalLote(prev => prev ? { ...prev, linhas: { ...prev.linhas, [chave]: { ...prev.linhas[chave], ...patch } } } : prev)
+  }
+  // Aviso (não bloqueia salvar) quando recebido+devolvido não bate com o enviado
+  // daquele item nessa visita — ajuda a pegar erro de digitação na hora.
+  function divergente(l: LinhaLote): boolean {
+    const enviado = Math.round(Number(l.enviado) || 0)
+    const recebido = Math.round(Number(l.recebido) || 0)
+    const devolvido = Math.round(Number(l.devolvido) || 0)
+    return enviado > 0 && (recebido + devolvido) !== enviado
+  }
+  function alternarExpandido(data: string) {
+    setExpandido(prev => { const n = new Set(prev); n.has(data) ? n.delete(data) : n.add(data); return n })
   }
 
   const totalEnviado = registros.reduce((s, r) => s + r.qtdEnviada, 0)
@@ -142,15 +188,35 @@ export default function EnxovaisLista() {
     }
   }).filter(i => i.enviado > 0 || i.recebido > 0 || i.devolvido > 0)
 
+  // Agrupa os registros (guardados um por item) por data — cada data representa
+  // uma visita da empresa, já que ela mexe em todos os itens de uma vez só.
+  const visitasDoMes = useMemo(() => {
+    const porData = new Map<string, Registro[]>()
+    for (const r of registros) {
+      if (!porData.has(r.data)) porData.set(r.data, [])
+      porData.get(r.data)!.push(r)
+    }
+    return Array.from(porData.entries()).map(([data, regs]) => ({
+      data,
+      regs,
+      observacao: regs.find(r => r.observacao)?.observacao || '',
+      enviado: regs.reduce((s, r) => s + r.qtdEnviada, 0),
+      recebido: regs.reduce((s, r) => s + r.qtdRecebida, 0),
+      devolvido: regs.reduce((s, r) => s + r.qtdDevolvida, 0),
+      valor: regs.reduce((s, r) => s + r.qtdEnviada * r.precoUnitario, 0) - regs.reduce((s, r) => s + r.qtdDevolvida * r.precoUnitario, 0),
+    })).sort((a, b) => brToIso(b.data).localeCompare(brToIso(a.data)))
+  }, [registros])
+
   async function imprimir() {
     const logoSalao = await getLogoSalao()
     const esc = (v: any) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     const periodo = mes.split('-').reverse().join('/')
     const linhasItem = porItem.map(i => `<tr><td>${esc(i.label)}</td><td class="c">${i.enviado}</td><td class="c">${i.recebido}</td><td class="c">${i.devolvido}</td></tr>`).join('')
+    const linhasVisita = visitasDoMes.map(v => `<tr><td>${esc(v.data)}</td><td class="c">${v.regs.length}</td><td class="c">${v.enviado}</td><td class="c">${v.recebido}</td><td class="c">${v.devolvido}</td><td class="c">R$ ${esc(fmtBRL(v.valor))}</td></tr>`).join('')
     const linhasReg = registros.map(r => `<tr><td>${esc(r.data)}</td><td>${esc(labelDe(r.item))}</td><td class="c">${r.qtdEnviada}</td><td class="c">${r.qtdRecebida}</td><td class="c">${r.qtdDevolvida}</td><td class="c">R$ ${esc(fmtBRL(r.qtdEnviada * r.precoUnitario))}</td></tr>`).join('')
     const cab = logoSalao ? `<img src="${logoSalao}" class="logo"/>` : `<div class="brand">NODRI</div>`
     const css = `@page{size:A4 portrait;margin:12mm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;font-size:11px;-webkit-print-color-adjust:exact;print-color-adjust:exact}.hd{display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid ${COR};padding-bottom:10px;margin-bottom:6px}.logo{max-height:56px;max-width:200px;object-fit:contain}.brand{font-size:22px;font-weight:900;color:${COR};letter-spacing:1px}h1{text-align:center;font-size:17px;font-weight:900;margin:12px 0 2px;text-transform:uppercase}.sub{text-align:center;font-size:11px;color:#888;margin-bottom:16px}.stats{display:flex;gap:8px;margin-bottom:18px}.stat{flex:1;border:1px solid #e5e2db;border-radius:10px;padding:9px 10px;background:#faf9f7}.stat b{display:block;font-size:16px;color:${COR}}.stat span{font-size:9.5px;color:#888;text-transform:uppercase}h2{font-size:12.5px;color:${COR};margin:16px 0 6px;text-transform:uppercase;border-bottom:1.5px solid ${COR};padding-bottom:4px}table{width:100%;border-collapse:collapse;margin-bottom:6px}th,td{border:1px solid #f0ede6;padding:6px 8px;text-align:left}th{background:#f6f4ff;color:${COR};border-bottom:2px solid ${COR};font-size:9.5px;text-transform:uppercase}td.c,th.c{text-align:center}`
-    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Enxovais — ${esc(periodo)}</title><style>${css}</style></head><body><div class="hd">${cab}<span style="font-size:10px;color:#777">${new Date().toLocaleDateString('pt-BR')}</span></div><h1>Controle de Enxovais</h1><div class="sub">${esc(periodo)}</div><div class="stats"><div class="stat"><b>${totalEnviado}</b><span>Enviados</span></div><div class="stat"><b>${totalRecebido}</b><span>Recebidos</span></div><div class="stat"><b>${totalDevolvido}</b><span>Devolvidos</span></div><div class="stat"><b>R$ ${fmtBRL(valorLiquido)}</b><span>Total líquido</span></div></div><h2>Por item</h2><table><thead><tr><th>Item</th><th class="c">Enviado</th><th class="c">Recebido</th><th class="c">Devolvido</th></tr></thead><tbody>${linhasItem}</tbody></table><h2>Registros do mês</h2><table><thead><tr><th>Data</th><th>Item</th><th class="c">Enviado</th><th class="c">Recebido</th><th class="c">Devolvido</th><th class="c">Valor</th></tr></thead><tbody>${linhasReg}</tbody></table><script>window.onload=function(){window.print()}</script></body></html>`
+    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Enxovais — ${esc(periodo)}</title><style>${css}</style></head><body><div class="hd">${cab}<span style="font-size:10px;color:#777">${new Date().toLocaleDateString('pt-BR')}</span></div><h1>Controle de Enxovais</h1><div class="sub">${esc(periodo)}</div><div class="stats"><div class="stat"><b>${totalEnviado}</b><span>Enviados</span></div><div class="stat"><b>${totalRecebido}</b><span>Recebidos</span></div><div class="stat"><b>${totalDevolvido}</b><span>Devolvidos</span></div><div class="stat"><b>R$ ${fmtBRL(valorLiquido)}</b><span>Total líquido</span></div></div><h2>Por item</h2><table><thead><tr><th>Item</th><th class="c">Enviado</th><th class="c">Recebido</th><th class="c">Devolvido</th></tr></thead><tbody>${linhasItem}</tbody></table><h2>Visitas do mês</h2><table><thead><tr><th>Data</th><th class="c">Itens</th><th class="c">Enviado</th><th class="c">Recebido</th><th class="c">Devolvido</th><th class="c">Valor</th></tr></thead><tbody>${linhasVisita}</tbody></table><h2>Detalhe por item</h2><table><thead><tr><th>Data</th><th>Item</th><th class="c">Enviado</th><th class="c">Recebido</th><th class="c">Devolvido</th><th class="c">Valor</th></tr></thead><tbody>${linhasReg}</tbody></table><script>window.onload=function(){window.print()}</script></body></html>`
     const w = window.open('', '_blank', 'width=1000,height=700'); if (!w) return; w.document.write(html); w.document.close(); w.focus()
   }
 
@@ -231,107 +297,114 @@ export default function EnxovaisLista() {
         </div>
       )}
 
-      {/* ── Registros ── */}
-      <h3 style={{ fontSize: 14, fontWeight: 800, color: '#1a1a1a', margin: '0 0 10px' }}>🧺 Registros do mês</h3>
+      {/* ── Visitas (registros agrupados por dia) ── */}
+      <h3 style={{ fontSize: 14, fontWeight: 800, color: '#1a1a1a', margin: '0 0 10px' }}>🧺 Visitas do mês</h3>
       {loading ? <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Loader2 size={24} className="animate-spin" style={{ color: COR }} /></div> : (
-        registros.length === 0 ? (
+        visitasDoMes.length === 0 ? (
           <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af', fontSize: 14, background: '#fff', border: '1px dashed #d0cdc7', borderRadius: 12 }}>
             Nenhum registro ainda. Clique em <strong style={{ color: COR }}>+ Registrar</strong> para começar.
           </div>
-        ) : mobile ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {registros.map(r => (
-              <div key={r.id} style={{ background: '#fff', border: '1px solid #eceae4', borderRadius: 14, padding: 14 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af' }}>{r.data}</span>
-                  <div style={{ display: 'flex', gap: 4 }}>
-                    <button onClick={() => abrirEditar(r)} style={iconBtn('#5b4fcf')}><Pencil size={13} /></button>
-                    <button onClick={() => excluir(r.id)} style={iconBtn('#dc2626')}><Trash2 size={13} /></button>
-                  </div>
-                </div>
-                <div style={{ fontWeight: 800, fontSize: 14.5, color: '#1a1a1a', marginBottom: 6, display: 'flex', alignItems: 'center' }}><span className="enx-dot" style={{ background: ITENS.find(i => i.chave === r.item)?.cor }} />{labelDe(r.item)}</div>
-                <div style={{ fontSize: 12.5, color: '#374151' }}>Enviado: {r.qtdEnviada} · Recebido: {r.qtdRecebida} · Devolvido: {r.qtdDevolvida}</div>
-                <div style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: 11, color: '#9ca3af' }}>{r.observacao}</span>
-                  <strong style={{ fontSize: 14, color: '#16a34a' }}>R$ {fmtBRL(r.qtdEnviada * r.precoUnitario)}</strong>
-                </div>
-              </div>
-            ))}
-          </div>
         ) : (
-          <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, overflowX: 'auto' }}>
-            <table className="enx-table" style={{ width: '100%', minWidth: 760, borderCollapse: 'collapse' }}>
-              <thead>
-                <tr>
-                  {['Item', 'Data', 'Enviado', 'Recebido', 'Devolvido', 'Valor', 'Observação', ''].map((h, i) => (
-                    <th key={i} style={{ textAlign: i >= 2 && i <= 5 ? 'center' : 'left', padding: '12px 16px', fontSize: 11, fontWeight: 800, color: '#6b6860', textTransform: 'uppercase', letterSpacing: '.4px', borderBottom: '1px solid #e8e6e0', background: '#faf9f7' }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {registros.map(r => (
-                  <tr key={r.id} style={{ borderBottom: '1px solid #f0eee8' }}>
-                    <td style={{ padding: '12px 16px', fontWeight: 700, color: '#1a1a1a', display: 'flex', alignItems: 'center' }}><span className="enx-dot" style={{ background: ITENS.find(i => i.chave === r.item)?.cor }} />{labelDe(r.item)}</td>
-                    <td style={{ padding: '12px 16px', color: '#6b6860', fontSize: 12.5 }}>{r.data}</td>
-                    <td style={{ padding: '12px 16px', textAlign: 'center', color: '#374151' }}>{r.qtdEnviada}</td>
-                    <td style={{ padding: '12px 16px', textAlign: 'center', color: '#16a34a' }}>{r.qtdRecebida}</td>
-                    <td style={{ padding: '12px 16px', textAlign: 'center', color: '#dc2626' }}>{r.qtdDevolvida}</td>
-                    <td style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 800, color: '#16a34a' }}>R$ {fmtBRL(r.qtdEnviada * r.precoUnitario)}</td>
-                    <td style={{ padding: '12px 16px', color: '#9ca3af', fontSize: 12.5 }}>{r.observacao || '—'}</td>
-                    <td style={{ padding: '12px 16px', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                      <button onClick={() => abrirEditar(r)} style={iconBtn('#5b4fcf')}><Pencil size={13} /></button>
-                      <button onClick={() => excluir(r.id)} style={iconBtn('#dc2626')}><Trash2 size={13} /></button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {visitasDoMes.map(v => {
+              const aberta = expandido.has(v.data)
+              return (
+                <div key={v.data} style={{ background: '#fff', border: '1px solid #eceae4', borderRadius: 14, overflow: 'hidden' }}>
+                  <div onClick={() => alternarExpandido(v.data)} style={{ display: 'flex', alignItems: 'center', gap: mobile ? 10 : 16, padding: '12px 16px', cursor: 'pointer', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 11, color: aberta ? COR : '#9ca3af', transition: 'transform .15s', transform: aberta ? 'rotate(90deg)' : 'none', display: 'inline-block' }}>▶</span>
+                    <strong style={{ fontSize: 14, color: '#1a1a1a', minWidth: 90 }}>{v.data}</strong>
+                    <span style={{ fontSize: 11.5, color: '#9ca3af' }}>{v.regs.length} {v.regs.length === 1 ? 'item' : 'itens'}</span>
+                    <span style={{ fontSize: 12, color: '#374151' }}>Enviado: <strong>{v.enviado}</strong></span>
+                    <span style={{ fontSize: 12, color: '#16a34a' }}>Recebido: <strong>{v.recebido}</strong></span>
+                    <span style={{ fontSize: 12, color: '#dc2626' }}>Devolvido: <strong>{v.devolvido}</strong></span>
+                    <div style={{ flex: 1 }} />
+                    <strong style={{ fontSize: 14.5, color: '#16a34a' }}>R$ {fmtBRL(v.valor)}</strong>
+                    <div style={{ display: 'flex', gap: 4 }} onClick={e => e.stopPropagation()}>
+                      <button onClick={() => abrirEditarVisita(v.data)} style={iconBtn('#5b4fcf')}><Pencil size={13} /></button>
+                      <button onClick={() => excluirVisita(v.data)} style={iconBtn('#dc2626')}><Trash2 size={13} /></button>
+                    </div>
+                  </div>
+                  {aberta && (
+                    <div style={{ borderTop: '1px solid #f0eee8', padding: '10px 16px 14px', background: '#faf9f7' }}>
+                      {v.observacao && <div style={{ fontSize: 12, color: '#6b6860', marginBottom: 8 }}>📝 {v.observacao}</div>}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {v.regs.map(r => (
+                          <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 12.5, flexWrap: 'wrap' }}>
+                            <span style={{ display: 'flex', alignItems: 'center', minWidth: 140, fontWeight: 700, color: '#1a1a1a' }}><span className="enx-dot" style={{ background: ITENS.find(i => i.chave === r.item)?.cor }} />{labelDe(r.item)}</span>
+                            <span style={{ color: '#374151' }}>Enviado: {r.qtdEnviada}</span>
+                            <span style={{ color: '#16a34a' }}>Recebido: {r.qtdRecebida}</span>
+                            <span style={{ color: '#dc2626' }}>Devolvido: {r.qtdDevolvida}</span>
+                            <span style={{ color: '#9ca3af' }}>R$ {fmtBRL(r.qtdEnviada * r.precoUnitario)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         )
       )}
 
-      {modal && (
-        <div onClick={() => setModal(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 14 }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 420, padding: 20, maxHeight: '90vh', overflowY: 'auto' }}>
+      {modalLote && (
+        <div onClick={() => setModalLote(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 14 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 640, padding: 20, maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <h3 style={{ fontSize: 15, fontWeight: 800, margin: 0, color: '#1a1a1a' }}>{registros.some(x => x.id === modal.id) ? '✏️ Editar registro' : '🧺 Registrar movimento'}</h3>
-              <button onClick={() => setModal(null)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#9ca3af' }}><X size={18} /></button>
+              <h3 style={{ fontSize: 15, fontWeight: 800, margin: 0, color: '#1a1a1a' }}>{registros.some(r => r.data === modalLote.data) ? '✏️ Editar visita' : '🧺 Registrar movimento'}</h3>
+              <button onClick={() => setModalLote(null)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#9ca3af' }}><X size={18} /></button>
             </div>
 
-            <Campo label="Item">
-              <select value={modal.item} onChange={e => setModal({ ...modal, item: e.target.value })} style={inputSt}>
-                {ITENS.map(i => <option key={i.chave} value={i.chave}>{i.label}</option>)}
-              </select>
-            </Campo>
-
             <Campo label="Data">
-              <input type="date" value={brToIso(modal.data)} onChange={e => setModal({ ...modal, data: isoToBr(e.target.value) })} style={inputSt} />
+              <input type="date" value={brToIso(modalLote.data)} onChange={e => setModalLote({ ...modalLote, data: isoToBr(e.target.value) })} style={{ ...inputSt, maxWidth: 220 }} />
             </Campo>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
-              <Campo label="Enviado">
-                <input value={modal.qtdEnviada || ''} onChange={e => setModal({ ...modal, qtdEnviada: Math.max(0, Math.round(Number(e.target.value) || 0)) })} placeholder="0" style={inputSt} />
-              </Campo>
-              <Campo label="Recebido">
-                <input value={modal.qtdRecebida || ''} onChange={e => setModal({ ...modal, qtdRecebida: Math.max(0, Math.round(Number(e.target.value) || 0)) })} placeholder="0" style={inputSt} />
-              </Campo>
-              <Campo label="Devolvido">
-                <input value={modal.qtdDevolvida || ''} onChange={e => setModal({ ...modal, qtdDevolvida: Math.max(0, Math.round(Number(e.target.value) || 0)) })} placeholder="0" style={inputSt} />
-              </Campo>
+            <p style={{ fontSize: 11.5, color: '#9ca3af', margin: '0 0 10px' }}>O campo "Enviado" já vem sugerido com o estoque atual — ajuste se for diferente. Linhas em laranja indicam que Recebido + Devolvido não bate com o Enviado (confira antes de salvar).</p>
+
+            <div style={{ overflowX: 'auto', marginBottom: 14 }}>
+              <table style={{ width: '100%', minWidth: 480, borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr>
+                    {['Item', 'Enviado', 'Recebido', 'Devolvido'].map((h, i) => (
+                      <th key={i} style={{ textAlign: i === 0 ? 'left' : 'center', padding: '6px 8px', fontSize: 10.5, fontWeight: 800, color: '#6b6860', textTransform: 'uppercase', letterSpacing: '.4px', borderBottom: '1px solid #e8e6e0' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {ITENS.map(i => {
+                    const l = modalLote.linhas[i.chave]
+                    const marcado = divergente(l)
+                    return (
+                      <tr key={i.chave} style={{ background: marcado ? '#fff7ed' : 'transparent' }}>
+                        <td style={{ padding: '6px 8px', fontWeight: 700, color: '#1a1a1a', fontSize: 12.5, display: 'flex', alignItems: 'center', whiteSpace: 'nowrap' }}><span className="enx-dot" style={{ background: i.cor }} />{i.label}</td>
+                        <td style={{ padding: '6px 6px' }}><input value={l.enviado} onChange={e => editarLinha(i.chave, { enviado: e.target.value })} placeholder="0" style={{ ...inputSt, textAlign: 'center', padding: '7px 6px' }} /></td>
+                        <td style={{ padding: '6px 6px' }}><input value={l.recebido} onChange={e => editarLinha(i.chave, { recebido: e.target.value })} placeholder="0" style={{ ...inputSt, textAlign: 'center', padding: '7px 6px' }} /></td>
+                        <td style={{ padding: '6px 6px' }}><input value={l.devolvido} onChange={e => editarLinha(i.chave, { devolvido: e.target.value })} placeholder="0" style={{ ...inputSt, textAlign: 'center', padding: '7px 6px' }} /></td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
             </div>
 
             <div style={{ background: '#f6f4ff', borderRadius: 10, padding: '10px 14px', marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: 12.5, color: '#5b4fcf', fontWeight: 700 }}>Valor deste envio</span>
-              <strong style={{ fontSize: 16, color: '#5b4fcf' }}>R$ {fmtBRL((modal.qtdEnviada || 0) * (cfg[modal.item]?.precoUnitario || 0))}</strong>
+              <span style={{ fontSize: 12.5, color: '#5b4fcf', fontWeight: 700 }}>Valor desta visita</span>
+              <strong style={{ fontSize: 16, color: '#5b4fcf' }}>
+                R$ {fmtBRL(ITENS.reduce((s, i) => {
+                  const l = modalLote.linhas[i.chave]
+                  const enviado = Math.round(Number(l.enviado) || 0), devolvido = Math.round(Number(l.devolvido) || 0)
+                  return s + (enviado - devolvido) * (cfg[i.chave]?.precoUnitario || 0)
+                }, 0))}
+              </strong>
             </div>
 
             <Campo label="Observação">
-              <input value={modal.observacao} onChange={e => setModal({ ...modal, observacao: e.target.value })} placeholder="Opcional" style={inputSt} />
+              <input value={modalLote.observacao} onChange={e => setModalLote({ ...modalLote, observacao: e.target.value })} placeholder="Opcional" style={inputSt} />
             </Campo>
 
             <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-              <button onClick={() => setModal(null)} style={{ flex: 1, padding: '11px', borderRadius: 10, border: '1.5px solid #d0cdc7', background: '#fff', color: '#6b6860', fontSize: 13.5, fontWeight: 800, cursor: 'pointer' }}>Cancelar</button>
-              <button onClick={salvarModal} style={{ flex: 1, padding: '11px', borderRadius: 10, border: 'none', background: '#16a34a', color: '#fff', fontSize: 13.5, fontWeight: 800, cursor: 'pointer' }}>Salvar</button>
+              <button onClick={() => setModalLote(null)} style={{ flex: 1, padding: '11px', borderRadius: 10, border: '1.5px solid #d0cdc7', background: '#fff', color: '#6b6860', fontSize: 13.5, fontWeight: 800, cursor: 'pointer' }}>Cancelar</button>
+              <button onClick={salvarModalLote} style={{ flex: 1, padding: '11px', borderRadius: 10, border: 'none', background: '#16a34a', color: '#fff', fontSize: 13.5, fontWeight: 800, cursor: 'pointer' }}>Salvar</button>
             </div>
           </div>
         </div>
