@@ -11,6 +11,7 @@ import KitsAdminLista from '@/components/salon/KitsAdminLista'
 import EnxovaisLista from '@/components/salon/EnxovaisLista'
 import SenhasLista from '@/components/salon/SenhasLista'
 import AtaReuniaoLista from '@/components/salon/AtaReuniaoLista'
+import EscalaTrabalhoLista from '@/components/salon/EscalaTrabalhoLista'
 import ListaBebidas from '@/components/salon/ListaBebidas'
 import ListaTelefones from '@/components/salon/ListaTelefones'
 import ListaPrecoServicos from '@/components/salon/ListaPrecoServicos'
@@ -90,22 +91,6 @@ const DEFAULT_CORRIDA: GridDoc = { tabelas: [{ titulo: 'CORRIDA INTERNA', cabeca
 const DEFAULT_ACOES: GridDoc = { tabelas: [{ titulo: 'AÇÕES COMERCIAIS', cabecalho: [cel('Ação / Campanha'), cel('Período'), cel('Responsável'), cel('Meta'), cel('Resultado'), cel('Observação')], linhas: linhasVazias(12, 6), larguras: [240, 150, 160, 140, 160, 240] }] }
 const DEFAULT_CORREIOS: GridDoc = { tabelas: [{ titulo: 'CORREIOS', cabecalho: [cel('Data'), cel('Tipo (carta/encomenda)'), cel('Remetente'), cel('Destinatário'), cel('Código de rastreio'), cel('Status'), cel('Observação')], linhas: linhasVazias(14, 7), larguras: [110, 170, 180, 180, 180, 130, 220] }] }
 const DEFAULT_AGENDA_GRANDE: GridDoc = { tabelas: [{ titulo: 'AGENDAMENTOS GRANDES', cabecalho: [cel('Data'), cel('Cliente'), cel('Serviço'), cel('Profissional'), cel('Valor'), cel('Observação')], linhas: linhasVazias(14, 6), larguras: [110, 200, 200, 180, 120, 240] }] }
-
-const SEM = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
-function escalaDoMes(mes: string): GridDoc {
-  const [y, m] = mes.split('-').map(Number)
-  const dias = new Date(y, m, 0).getDate()
-  const linhas = Array.from({ length: dias }, (_, i) => {
-    const d = i + 1, wd = new Date(y, m - 1, d).getDay()
-    const c0 = cel(`${String(d).padStart(2, '0')} - ${SEM[wd]}`); c0.b = true; if (wd === 0) c0.bg = '#fef08a'
-    return [c0, cel(''), cel('')]
-  })
-  return { tabelas: [
-    { titulo: 'ESCALA DE TRABALHO', cabecalho: [cel('Dia'), cel('Profissionais escalados'), cel('Obs')], linhas, larguras: [120, 560, 220] },
-    { titulo: 'VALE TRANSPORTE E ALIMENTAÇÃO', cabecalho: [cel('Nome'), cel('Dias'), cel('Valor'), cel('PIX')], linhas: linhasVazias(8, 4), larguras: [220, 120, 140, 220] },
-    { titulo: 'AJUDA DE CUSTO PARA PROFISSIONAIS', cabecalho: [cel('Nome'), cel('Cálculo'), cel('Valor'), cel('PIX')], linhas: linhasVazias(6, 4), larguras: [220, 180, 140, 220] },
-  ] }
-}
 
 const FERIADOS_2026: [string, string, string][] = [
   ['Carnaval', '02, 03 e 04/03/2026', 'FECHADO'],
@@ -221,7 +206,7 @@ export default function SalaoAdministrativoPage() {
         {abaTopo === 'pacotes' && <GridEditavel key="pacotes" chave="pacotes" defaultDoc={DEFAULT_PACOTES} landscape />}
         {abaTopo === 'telefones' && <ListaTelefones />}
         {abaTopo === 'ata' && <AtaReuniaoLista key="ata" chave="ata" profsSalao={profsSalao} />}
-        {abaTopo === 'escala' && <GridEditavel key="escala" chave="escala" defaultDocFn={escalaDoMes} mensal landscape />}
+        {abaTopo === 'escala' && <EscalaTrabalhoLista key="escala" chave="escala" />}
         {abaTopo === 'feriados' && <GridEditavel key="feriados" chave="feriados" defaultDoc={DEFAULT_FERIADOS} landscape />}
         {abaTopo === 'senhas' && <SenhasLista key="senhas" chave="senhas" />}
         {abaTopo === 'cadastrar_produto' && <GridEditavel key="cadprod" chave="cadastrar_produto" defaultDoc={DEFAULT_CAD_PRODUTO} landscape />}
