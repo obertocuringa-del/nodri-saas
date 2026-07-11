@@ -5,34 +5,26 @@ import toast from 'react-hot-toast'
 import { Loader2, Save, Printer, Wallet, Briefcase, CalendarDays, Plus, Trash2, Settings, X, PartyPopper } from 'lucide-react'
 import { getLogoSalao } from '@/lib/logoSalao'
 import { parseBRLNumber } from '@/lib/kitsShared'
+import { SeletorNomes, mesmoNome, nomeNaLista } from './SeletorNomes'
 
 interface DomingoRow { dia: number; data: string; fechado: boolean; motivo: string; cabeleireiro: string; assistente: string; manicure: string; recepcao: string }
 interface CltRow { id: string; nome: string; qtdDias: string; passagem: string; pix: string; manual?: boolean }
 interface PjRow { id: string; nome: string; qtdDias: string; passagem: string; pix: string; dataAdmissao: string; manual?: boolean }
 interface Profissional { id: string; nome_completo: string; apelido: string; vinculo?: string; ativo?: boolean; data_admissao?: string; conta_bancaria?: string; habilidades?: string }
-interface ConfigDias { ativo: boolean; domingoSemEscala: boolean; folgaSemanal: boolean; feriados: boolean; folgaCompensatoriaCltDomingo: boolean }
+interface ConfigDias { ativo: boolean; domingoSemEscala: boolean; folgaSemanal: boolean; feriados: boolean; folgaCompensatoriaClt: boolean }
 interface FeriadoRow { nome: string; data: string; horario: string; profissionais: string; fechado: boolean }
 interface ValoresPadrao { alimentacaoPorDia: string; passagemClt: string; passagemPj: string }
 
 const COR = '#5b4fcf'
-const CONFIG_PADRAO: ConfigDias = { ativo: true, domingoSemEscala: true, folgaSemanal: true, feriados: true, folgaCompensatoriaCltDomingo: true }
+const CONFIG_PADRAO: ConfigDias = { ativo: true, domingoSemEscala: true, folgaSemanal: true, feriados: true, folgaCompensatoriaClt: true }
 const VALORES_PADRAO_INICIAL: ValoresPadrao = { alimentacaoPorDia: '28,80', passagemClt: '11,00', passagemPj: '11,00' }
 const DIAS_SEMANA = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'] // índice = Date.getDay()
 const rid = () => Math.random().toString(36).slice(2, 9)
 function mesAtual() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` }
 function fmtBRL(n: number) { return n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }
 const nomeDe = (p: Profissional) => p.apelido || p.nome_completo || '—'
-const normaliza = (s: string) => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase()
-const mesmoNome = (a: string, b: string) => normaliza(a) === normaliza(b)
 function parseFolgas(habilidades?: string): string[] {
   try { return JSON.parse(habilidades || '{}').dias_folga || [] } catch { return [] }
-}
-// Um nome "está" numa lista de escalados (texto livre, nomes separados por / ou vírgula)
-// se aparecer como um dos pedaços — evita falso positivo tipo "ANA" casar com "MARIANA".
-function nomeNaLista(nome: string, lista: string): boolean {
-  const alvo = normaliza(nome)
-  if (!alvo) return false
-  return lista.split(/[/,]/).map(normaliza).some(n => n === alvo)
 }
 // Todas as datas dd/mm/aaaa dentro de um texto livre (ex: "02, 03 e 04/03/2026") caem no mesmo mês/ano do último bloco.
 function feriadoNoMes(dataTexto: string, mes: string): boolean {
@@ -45,11 +37,11 @@ function feriadoNoMes(dataTexto: string, mes: string): boolean {
   return false
 }
 // Sugestão de dias trabalhados no mês: total de dias - folga semanal fixa (exceto domingo,
-// tratado à parte pela escala) - domingos em que ele não está escalado - feriados fechados
-// ou em que ele não consta na lista de escalados. Pra CLT, quando ele TRABALHA no domingo
-// também desconta 1 dia — ele folga durante a semana pra compensar (folga compensatória),
-// então aquele domingo não soma um dia trabalhado a mais no mês.
-function diasSugeridosMes(nome: string, folgas: string[], mes: string, domingos: DomingoRow[], feriadosDoMes: FeriadoRow[], config: ConfigDias, compensarDomingoTrabalhado: boolean): number {
+// tratado à parte pela escala) - domingos/feriados em que ele não está escalado. Pra CLT,
+// quando ele TRABALHA no domingo ou no feriado também desconta 1 dia — ele folga durante a
+// semana pra compensar (folga compensatória), então aquele dia não soma um dia trabalhado a
+// mais no mês. Pra PJ isso não se aplica: só não conta a passagem do dia que ele não veio.
+function diasSugeridosMes(nome: string, folgas: string[], mes: string, domingos: DomingoRow[], feriadosDoMes: FeriadoRow[], config: ConfigDias, compensarClt: boolean): number {
   const [ano, m] = mes.split('-').map(Number)
   const totalDias = new Date(ano, m, 0).getDate()
   let dias = totalDias
@@ -68,7 +60,7 @@ function diasSugeridosMes(nome: string, folgas: string[], mes: string, domingos:
       const escalados = [dm.cabeleireiro, dm.assistente, dm.manicure, dm.recepcao].join('/')
       const trabalhou = nomeNaLista(nome, escalados)
       if (!trabalhou) dias--
-      else if (compensarDomingoTrabalhado) dias--
+      else if (compensarClt) dias--
     })
   } else if (config.folgaSemanal && folgaIdx.has(0)) {
     domingos.forEach(() => { dias-- })
@@ -77,7 +69,10 @@ function diasSugeridosMes(nome: string, folgas: string[], mes: string, domingos:
   if (config.feriados) {
     feriadosDoMes.forEach(f => {
       if (f.fechado) { dias--; return }
-      if (f.profissionais && !nomeNaLista(nome, f.profissionais)) dias--
+      if (!f.profissionais) return // ninguém escalado ainda pra esse feriado — não afeta a contagem
+      const trabalhou = nomeNaLista(nome, f.profissionais)
+      if (!trabalhou) dias--
+      else if (compensarClt) dias--
     })
   }
 
@@ -151,46 +146,6 @@ function migrarFormatoAntigo(doc: any): { domingos: DomingoRow[]; clt: CltRow[];
   })) : []
 
   return { domingos, clt, pj, alimentacaoPorDia }
-}
-
-// Célula com chips dos nomes escalados + botão "+" que abre uma lista suspensa
-// do cadastro pra escolher, em vez de digitar o nome na mão. O valor continua
-// sendo salvo como texto "Nome / Nome" pra manter compatibilidade com o que
-// já existia (mesmo formato que a impressão e o formato antigo usam).
-function SeletorNomes({ value, onChange, opcoes }: { value: string; onChange: (v: string) => void; opcoes: string[] }) {
-  const [aberto, setAberto] = useState(false)
-  const nomes = value ? value.split('/').map(s => s.trim()).filter(Boolean) : []
-  function add(nome: string) {
-    onChange([...nomes, nome].join(' / '))
-    setAberto(false)
-  }
-  function remover(nome: string) {
-    onChange(nomes.filter(n => n !== nome).join(' / '))
-  }
-  const disponiveis = opcoes.filter(o => !nomes.some(n => mesmoNome(n, o)))
-  return (
-    <div style={{ position: 'relative' }}>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center', minHeight: 26 }}>
-        {nomes.map(n => (
-          <span key={n} style={{ display: 'inline-flex', alignItems: 'center', gap: 3, background: '#f0eefb', color: COR, fontSize: 11, fontWeight: 700, padding: '2px 6px', borderRadius: 20, whiteSpace: 'nowrap' }}>
-            {n}
-            <button type="button" onClick={() => remover(n)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: COR, fontSize: 13, lineHeight: 1, padding: 0 }}>×</button>
-          </span>
-        ))}
-        <button type="button" onClick={() => setAberto(v => !v)} title="Adicionar profissional" style={{ border: '1px dashed #d0cdc7', background: 'transparent', borderRadius: 20, width: 20, height: 20, cursor: 'pointer', fontSize: 13, color: '#9ca3af', lineHeight: 1, flexShrink: 0 }}>+</button>
-      </div>
-      {aberto && (
-        <>
-          <div onClick={() => setAberto(false)} style={{ position: 'fixed', inset: 0, zIndex: 29 }} />
-          <div style={{ position: 'absolute', zIndex: 30, top: '100%', left: 0, background: '#fff', border: '1px solid #e8e6e0', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,.15)', minWidth: 170, maxHeight: 220, overflowY: 'auto', marginTop: 3 }}>
-            {disponiveis.length === 0 ? <div style={{ padding: 8, fontSize: 12, color: '#9ca3af' }}>Sem opções</div> : disponiveis.map(o => (
-              <div key={o} onClick={() => add(o)} style={{ padding: '7px 10px', fontSize: 12.5, cursor: 'pointer', whiteSpace: 'nowrap' }} onMouseEnter={e => (e.currentTarget.style.background = '#f8f7ff')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>{o}</div>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
-  )
 }
 
 export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: string }) {
@@ -312,17 +267,23 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
   }
 
   const nomesProfissionais = profissionais.filter(p => p.ativo !== false).map(nomeDe)
-  const feriadosDoMes: FeriadoRow[] = (feriadosDoc?.tabelas?.[0]?.linhas || []).filter((l: any[]) => feriadoNoMes(l[1]?.t || '', mes)).map((l: any[]) => ({
-    nome: l[0]?.t || '', data: l[1]?.t || '', horario: l[2]?.t || '', profissionais: l[3]?.t || '',
-    fechado: /fechado/i.test(l[2]?.t || '') || /fechado/i.test(l[4]?.t || ''),
-  }))
+  // Lê a Escala de Feriados no formato novo ({ feriados: [...] }); se ainda estiver no
+  // formato antigo (GridEditavel, página nunca aberta no editor novo), lê de lá também.
+  const feriadosDoMes: FeriadoRow[] = Array.isArray(feriadosDoc?.feriados)
+    ? feriadosDoc.feriados.filter((f: any) => feriadoNoMes(f?.data || '', mes)).map((f: any) => ({
+        nome: f.nome || '', data: f.data || '', horario: f.horario || '', profissionais: f.profissionais || '', fechado: !!f.fechado,
+      }))
+    : (feriadosDoc?.tabelas?.[0]?.linhas || []).filter((l: any[]) => feriadoNoMes(l[1]?.t || '', mes)).map((l: any[]) => ({
+        nome: l[0]?.t || '', data: l[1]?.t || '', horario: l[2]?.t || '', profissionais: l[3]?.t || '',
+        fechado: /fechado/i.test(l[2]?.t || '') || /fechado/i.test(l[4]?.t || ''),
+      }))
 
   const alimentacaoPorDia = parseBRLNumber(alimentacaoStr)
   const cltCalc = cltRows.map(r => {
     const dias = Number(r.qtdDias) || 0, passagem = parseBRLNumber(r.passagem)
     const porDia = alimentacaoPorDia + passagem
     const prof = profissionais.find(p => mesmoNome(nomeDe(p), r.nome))
-    const sugestao = config.ativo && prof ? diasSugeridosMes(r.nome, parseFolgas(prof.habilidades), mes, domingos, feriadosDoMes, config, config.folgaCompensatoriaCltDomingo) : null
+    const sugestao = config.ativo && prof ? diasSugeridosMes(r.nome, parseFolgas(prof.habilidades), mes, domingos, feriadosDoMes, config, config.folgaCompensatoriaClt) : null
     return { ...r, porDia, total: porDia * dias, sugestao }
   })
   const pjCalc = pjRows.map(r => {
@@ -414,8 +375,8 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
                 <span>Descontar domingos em que ele não está escalado (tabela acima) ou que estão marcados como fechado</span>
               </label>
               <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '7px 0', cursor: 'pointer', fontSize: 12.5, color: '#374151' }}>
-                <input type="checkbox" checked={config.folgaCompensatoriaCltDomingo} onChange={e => salvarConfig({ ...config, folgaCompensatoriaCltDomingo: e.target.checked })} style={{ width: 15, height: 15, marginTop: 2 }} />
-                <span>CLT: também descontar 1 dia quando ele trabalha no domingo (folga compensatória durante a semana)</span>
+                <input type="checkbox" checked={config.folgaCompensatoriaClt} onChange={e => salvarConfig({ ...config, folgaCompensatoriaClt: e.target.checked })} style={{ width: 15, height: 15, marginTop: 2 }} />
+                <span>CLT: também descontar 1 dia quando ele trabalha no domingo ou feriado (folga compensatória durante a semana)</span>
               </label>
               <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '7px 0', cursor: 'pointer', fontSize: 12.5, color: '#374151' }}>
                 <input type="checkbox" checked={config.feriados} onChange={e => salvarConfig({ ...config, feriados: e.target.checked })} style={{ width: 15, height: 15, marginTop: 2 }} />

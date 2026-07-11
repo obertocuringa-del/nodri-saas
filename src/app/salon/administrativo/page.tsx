@@ -12,6 +12,7 @@ import EnxovaisLista from '@/components/salon/EnxovaisLista'
 import SenhasLista from '@/components/salon/SenhasLista'
 import AtaReuniaoLista from '@/components/salon/AtaReuniaoLista'
 import EscalaTrabalhoLista from '@/components/salon/EscalaTrabalhoLista'
+import EscalaFeriadosLista from '@/components/salon/EscalaFeriadosLista'
 import ListaBebidas from '@/components/salon/ListaBebidas'
 import ListaTelefones from '@/components/salon/ListaTelefones'
 import ListaPrecoServicos from '@/components/salon/ListaPrecoServicos'
@@ -91,22 +92,6 @@ const DEFAULT_CORRIDA: GridDoc = { tabelas: [{ titulo: 'CORRIDA INTERNA', cabeca
 const DEFAULT_ACOES: GridDoc = { tabelas: [{ titulo: 'AÇÕES COMERCIAIS', cabecalho: [cel('Ação / Campanha'), cel('Período'), cel('Responsável'), cel('Meta'), cel('Resultado'), cel('Observação')], linhas: linhasVazias(12, 6), larguras: [240, 150, 160, 140, 160, 240] }] }
 const DEFAULT_CORREIOS: GridDoc = { tabelas: [{ titulo: 'CORREIOS', cabecalho: [cel('Data'), cel('Tipo (carta/encomenda)'), cel('Remetente'), cel('Destinatário'), cel('Código de rastreio'), cel('Status'), cel('Observação')], linhas: linhasVazias(14, 7), larguras: [110, 170, 180, 180, 180, 130, 220] }] }
 const DEFAULT_AGENDA_GRANDE: GridDoc = { tabelas: [{ titulo: 'AGENDAMENTOS GRANDES', cabecalho: [cel('Data'), cel('Cliente'), cel('Serviço'), cel('Profissional'), cel('Valor'), cel('Observação')], linhas: linhasVazias(14, 6), larguras: [110, 200, 200, 180, 120, 240] }] }
-
-const FERIADOS_2026: [string, string, string][] = [
-  ['Carnaval', '02, 03 e 04/03/2026', 'FECHADO'],
-  ['Tira Dentes', '21/04/2026', '10:00 às 18:00'],
-  ['Dia do Trabalhador', '01/05/2026', '10:00 às 18:00'],
-  ['Sete de Setembro', '07/09/2026', '10:00 às 18:00'],
-  ['Nossa Senhora', '12/10/2026', '10:00 às 18:00'],
-  ['Finados', '02/11/2026', '10:00 às 18:00'],
-  ['Proclamação da República', '15/11/2026', '10:00 às 18:00'],
-  ['Consciência Negra', '20/11/2026', '10:00 às 18:00'],
-  ['Natal', '24/12/2026', '10:00 às 18:00'],
-  ['Ano Novo', '31/12/2026', '10:00 às 18:00'],
-]
-const DEFAULT_FERIADOS: GridDoc = { tabelas: [
-  { titulo: 'ESCALA DE FERIADOS', cabecalho: [cel('Feriado'), cel('Data'), cel('Horário'), cel('Profissionais escalados (1 por linha ou separados por vírgula)'), cel('Obs')], linhas: FERIADOS_2026.map(([f, d, h]) => [cel(f), cel(d), cel(h), cel(''), cel('')]), larguras: [180, 150, 130, 640, 200] },
-] }
 
 function mesAtual() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` }
 function diasNoMes(mes: string) { const [y, m] = mes.split('-').map(Number); return new Date(y, m, 0).getDate() }
@@ -207,7 +192,7 @@ export default function SalaoAdministrativoPage() {
         {abaTopo === 'telefones' && <ListaTelefones />}
         {abaTopo === 'ata' && <AtaReuniaoLista key="ata" chave="ata" profsSalao={profsSalao} />}
         {abaTopo === 'escala' && <EscalaTrabalhoLista key="escala" chave="escala" />}
-        {abaTopo === 'feriados' && <GridEditavel key="feriados" chave="feriados" defaultDoc={DEFAULT_FERIADOS} landscape />}
+        {abaTopo === 'feriados' && <EscalaFeriadosLista key="feriados" chave="feriados" />}
         {abaTopo === 'senhas' && <SenhasLista key="senhas" chave="senhas" />}
         {abaTopo === 'cadastrar_produto' && <GridEditavel key="cadprod" chave="cadastrar_produto" defaultDoc={DEFAULT_CAD_PRODUTO} landscape />}
         {abaTopo === 'desconto_profissional' && <GridEditavel key="descprof" chave="desconto_profissional" defaultDoc={DEFAULT_DESC_PROF} landscape />}
