@@ -38,6 +38,20 @@ function mesesDesdeAdmissao(dataAdmissao: string, mesSelecionado: string): numbe
   return (anoSel - anoAdm) * 12 + (mesSel - mesAdm)
 }
 
+// Data exata em que os 3 meses de ajuda de custo acabam (admissão + 3 meses).
+// Se o dia não existir no mês de destino (ex: admissão dia 31 e o mês seguinte
+// só tem 30), usa o último dia daquele mês em vez de estourar pro mês seguinte.
+function dataLimitePJ(dataAdmissao: string): Date | null {
+  const m = String(dataAdmissao || '').match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (!m) return null
+  const ano = Number(m[1]), mes0 = Number(m[2]) - 1, dia = Number(m[3])
+  const alvo = new Date(ano, mes0 + 3, 1)
+  const ultimoDia = new Date(alvo.getFullYear(), alvo.getMonth() + 1, 0).getDate()
+  alvo.setDate(Math.min(dia, ultimoDia))
+  return alvo
+}
+function fmtDataBR(d: Date) { return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}` }
+
 // Lê o formato antigo (GridEditavel — tabelas/linhas) só na 1ª vez que abrir
 // este mês, pra não perder dados já preenchidos antes da página mudar. Só
 // migra cada bloco se as colunas baterem com o layout que o salão vinha
@@ -170,7 +184,10 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
   const pjCalc = pjRows.map(r => {
     const dias = Number(r.qtdDias) || 0, passagem = parseBRLNumber(r.passagem)
     const meses = mesesDesdeAdmissao(r.dataAdmissao, mes)
-    return { ...r, total: passagem * dias, mesElegibilidade: meses === null ? null : meses + 1 }
+    const limite = dataLimitePJ(r.dataAdmissao)
+    const hoje = new Date(); hoje.setHours(0, 0, 0, 0)
+    const diasRestantes = limite ? Math.round((limite.getTime() - hoje.getTime()) / 86400000) : null
+    return { ...r, total: passagem * dias, mesElegibilidade: meses === null ? null : meses + 1, limite, diasRestantes }
   })
   const totalClt = cltCalc.reduce((s, r) => s + r.total, 0)
   const totalPj = pjCalc.reduce((s, r) => s + r.total, 0)
@@ -198,10 +215,10 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
       : `<tr><td>${esc(d.data)}</td><td>${esc(d.cabeleireiro)}</td><td>${esc(d.assistente)}</td><td>${esc(d.manicure)}</td><td>${esc(d.recepcao)}</td></tr>`
     ).join('')
     const linhasClt = cltCalc.map(r => `<tr><td>${esc(r.nome)}</td><td class="c">${r.qtdDias || 0}</td><td class="c">R$ ${fmtBRL(alimentacaoPorDia)}</td><td class="c">R$ ${fmtBRL(parseBRLNumber(r.passagem))}</td><td class="c">R$ ${fmtBRL(r.porDia)}</td><td class="c">R$ ${fmtBRL(r.total)}</td><td>${esc(r.pix)}</td></tr>`).join('')
-    const linhasPj = pjCalc.map(r => `<tr><td>${esc(r.nome)}</td><td class="c">${r.qtdDias || 0}</td><td class="c">R$ ${fmtBRL(parseBRLNumber(r.passagem))}</td><td class="c">R$ ${fmtBRL(r.total)}</td><td>${esc(r.pix)}</td></tr>`).join('')
+    const linhasPj = pjCalc.map(r => `<tr><td>${esc(r.nome)}</td><td class="c">${r.qtdDias || 0}</td><td class="c">R$ ${fmtBRL(parseBRLNumber(r.passagem))}</td><td class="c">R$ ${fmtBRL(r.total)}</td><td class="c">${r.limite ? (r.diasRestantes !== null && r.diasRestantes < 0 ? `venceu ${esc(fmtDataBR(r.limite))}` : `${esc(fmtDataBR(r.limite))} (${r.diasRestantes}d)`) : '—'}</td><td>${esc(r.pix)}</td></tr>`).join('')
     const cab = logoSalao ? `<img src="${logoSalao}" class="logo"/>` : `<div class="brand">NODRI</div>`
     const css = `@page{size:A4 landscape;margin:12mm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;font-size:11px}.hd{display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid ${COR};padding-bottom:10px;margin-bottom:10px}.logo{max-height:56px;max-width:200px;object-fit:contain}.brand{font-size:22px;font-weight:900;color:${COR}}h1{font-size:16px;margin-bottom:12px;text-transform:uppercase}h2{font-size:12.5px;color:${COR};margin:16px 0 6px;text-transform:uppercase;border-bottom:1.5px solid ${COR};padding-bottom:4px}table{width:100%;border-collapse:collapse;margin-bottom:6px}th,td{border:1px solid #f0ede6;padding:6px 8px;text-align:left}th{background:#f6f4ff;color:${COR};border-bottom:2px solid ${COR};font-size:9.5px;text-transform:uppercase}td.c,th.c{text-align:center}td.fechado{text-align:center;font-weight:800;color:#0891b2;background:#ecfeff}tfoot td{background:#f6f4ff;color:${COR};font-weight:800;border-top:2px solid ${COR}}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}`
-    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Escala — ${esc(periodo)}</title><style>${css}</style></head><body><div class="hd">${cab}<span style="font-size:10px;color:#777">${new Date().toLocaleDateString('pt-BR')}</span></div><h1>Escala de Trabalho — ${esc(periodo)}</h1><h2>Domingos</h2><table><thead><tr><th>Data</th><th>Cabeleireiro</th><th>Assistente</th><th>Manicure</th><th>Recepção</th></tr></thead><tbody>${linhasDom}</tbody></table><h2>Vale Transporte e Alimentação — CLT</h2><table><thead><tr><th>Nome</th><th class="c">Dias</th><th class="c">Alimentação</th><th class="c">Passagem</th><th class="c">Alim.+Pass.</th><th class="c">Total</th><th>PIX</th></tr></thead><tbody>${linhasClt}</tbody><tfoot><tr><td colspan="5">TOTAL</td><td class="c">R$ ${fmtBRL(totalClt)}</td><td></td></tr></tfoot></table><h2>Ajuda de Custo — PJ (3 primeiros meses)</h2><table><thead><tr><th>Nome</th><th class="c">Dias</th><th class="c">Passagem</th><th class="c">Total</th><th>PIX</th></tr></thead><tbody>${linhasPj}</tbody><tfoot><tr><td colspan="3">TOTAL</td><td class="c">R$ ${fmtBRL(totalPj)}</td><td></td></tr></tfoot></table><script>window.onload=function(){window.print()}</script></body></html>`
+    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Escala — ${esc(periodo)}</title><style>${css}</style></head><body><div class="hd">${cab}<span style="font-size:10px;color:#777">${new Date().toLocaleDateString('pt-BR')}</span></div><h1>Escala de Trabalho — ${esc(periodo)}</h1><h2>Domingos</h2><table><thead><tr><th>Data</th><th>Cabeleireiro</th><th>Assistente</th><th>Manicure</th><th>Recepção</th></tr></thead><tbody>${linhasDom}</tbody></table><h2>Vale Transporte e Alimentação — CLT</h2><table><thead><tr><th>Nome</th><th class="c">Dias</th><th class="c">Alimentação</th><th class="c">Passagem</th><th class="c">Alim.+Pass.</th><th class="c">Total</th><th>PIX</th></tr></thead><tbody>${linhasClt}</tbody><tfoot><tr><td colspan="5">TOTAL</td><td class="c">R$ ${fmtBRL(totalClt)}</td><td></td></tr></tfoot></table><h2>Ajuda de Custo — PJ (3 primeiros meses)</h2><table><thead><tr><th>Nome</th><th class="c">Dias</th><th class="c">Passagem</th><th class="c">Total</th><th class="c">Vence em</th><th>PIX</th></tr></thead><tbody>${linhasPj}</tbody><tfoot><tr><td colspan="3">TOTAL</td><td class="c">R$ ${fmtBRL(totalPj)}</td><td></td><td></td></tr></tfoot></table><script>window.onload=function(){window.print()}</script></body></html>`
     const w = window.open('', '_blank', 'width=1100,height=750'); if (!w) return; w.document.write(html); w.document.close(); w.focus()
   }
 
@@ -316,7 +333,14 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
                         <td style={{ fontWeight: 700, color: '#1a1a1a' }}>
                           {r.manual ? <input value={r.nome} onChange={e => editPj(r.id, { nome: e.target.value })} className="esc-input" placeholder="Nome do profissional" style={{ fontWeight: 700 }} /> : r.nome}
                         </td>
-                        <td style={{ textAlign: 'center' }}>{r.mesElegibilidade ? <span style={{ fontSize: 11, fontWeight: 800, color: COR, background: '#f0eefb', padding: '3px 9px', borderRadius: 20 }}>{r.mesElegibilidade}/3</span> : '—'}</td>
+                        <td style={{ textAlign: 'center' }}>
+                          {r.mesElegibilidade ? <span style={{ fontSize: 11, fontWeight: 800, color: COR, background: '#f0eefb', padding: '3px 9px', borderRadius: 20 }}>{r.mesElegibilidade}/3</span> : '—'}
+                          {r.limite && (
+                            <div style={{ fontSize: 10, marginTop: 4, fontWeight: 700, whiteSpace: 'nowrap', color: r.diasRestantes !== null && r.diasRestantes < 0 ? '#dc2626' : r.diasRestantes !== null && r.diasRestantes <= 7 ? '#b45309' : '#9ca3af' }}>
+                              {r.diasRestantes !== null && r.diasRestantes < 0 ? `venceu ${fmtDataBR(r.limite)}` : `vence ${fmtDataBR(r.limite)} (${r.diasRestantes}d)`}
+                            </div>
+                          )}
+                        </td>
                         <td><input value={r.qtdDias} onChange={e => editPj(r.id, { qtdDias: e.target.value })} className="esc-input" style={{ textAlign: 'center' }} placeholder="0" /></td>
                         <td><input value={r.passagem} onChange={e => editPj(r.id, { passagem: e.target.value })} className="esc-input" style={{ textAlign: 'center' }} placeholder="0,00" /></td>
                         <td style={{ textAlign: 'center', fontWeight: 800, color: '#16a34a' }}>R$ {fmtBRL(r.total)}</td>
