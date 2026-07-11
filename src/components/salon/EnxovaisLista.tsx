@@ -58,6 +58,8 @@ export default function EnxovaisLista() {
   const [dirty, setDirty] = useState(false)
   const [modalLote, setModalLote] = useState<ModalLote | null>(null)
   const [expandido, setExpandido] = useState<Set<string>>(new Set())
+  const [precosAberto, setPrecosAberto] = useState(false)
+  const [estoqueAberto, setEstoqueAberto] = useState(false)
 
   const chaveMes = `enxovais_registros_${mes}`
 
@@ -230,35 +232,61 @@ export default function EnxovaisLista() {
 
       {/* ── Preço por lavagem ── */}
       <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 16, marginBottom: 16 }}>
-        <h3 style={{ fontSize: 13.5, fontWeight: 800, color: '#1a1a1a', margin: '0 0 12px' }}>💲 Valor unitário por lavagem</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr 1fr' : 'repeat(6, 1fr)', gap: 10, marginBottom: 12 }}>
-          {ITENS.map(i => (
-            <div key={i.chave}>
-              <label style={{ display: 'flex', alignItems: 'center', fontSize: 11, fontWeight: 700, color: '#6b6860', marginBottom: 5 }}><span className="enx-dot" style={{ background: i.cor }} />{i.label}</label>
-              <input value={precosStr[i.chave] || ''} onChange={e => setPrecosStr(prev => ({ ...prev, [i.chave]: e.target.value }))} inputMode="decimal" placeholder="0,00" style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13 }} />
+        <div onClick={() => setPrecosAberto(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 11, color: precosAberto ? COR : '#9ca3af', transition: 'transform .15s', transform: precosAberto ? 'rotate(90deg)' : 'none', display: 'inline-block' }}>▶</span>
+          <h3 style={{ fontSize: 13.5, fontWeight: 800, color: '#1a1a1a', margin: 0 }}>💲 Valor unitário por lavagem</h3>
+          {!precosAberto && (
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', fontSize: 11.5, color: '#6b6860' }}>
+              {ITENS.map(i => (
+                <span key={i.chave} style={{ display: 'flex', alignItems: 'center' }}><span className="enx-dot" style={{ background: i.cor }} />R$ {precosStr[i.chave] || '0,00'}</span>
+              ))}
             </div>
-          ))}
+          )}
         </div>
-        <button onClick={salvarConfig} disabled={salvandoCfg} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 16px', borderRadius: 9, border: 'none', background: '#5b4fcf', color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>{salvandoCfg ? '...' : <><Save size={14} /> Salvar preços</>}</button>
+        {precosAberto && (
+          <>
+            <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr 1fr' : 'repeat(6, 1fr)', gap: 10, margin: '12px 0' }}>
+              {ITENS.map(i => (
+                <div key={i.chave}>
+                  <label style={{ display: 'flex', alignItems: 'center', fontSize: 11, fontWeight: 700, color: '#6b6860', marginBottom: 5 }}><span className="enx-dot" style={{ background: i.cor }} />{i.label}</label>
+                  <input value={precosStr[i.chave] || ''} onChange={e => setPrecosStr(prev => ({ ...prev, [i.chave]: e.target.value }))} inputMode="decimal" placeholder="0,00" style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13 }} />
+                </div>
+              ))}
+            </div>
+            <button onClick={salvarConfig} disabled={salvandoCfg} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 16px', borderRadius: 9, border: 'none', background: '#5b4fcf', color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>{salvandoCfg ? '...' : <><Save size={14} /> Salvar preços</>}</button>
+          </>
+        )}
       </div>
 
       {/* ── Estoque ── */}
       <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 16, marginBottom: 20 }}>
-        <h3 style={{ fontSize: 13.5, fontWeight: 800, color: '#1a1a1a', margin: '0 0 12px' }}><Package size={15} style={{ verticalAlign: -2, marginRight: 5 }} />Estoque</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : 'repeat(3, 1fr)', gap: 10 }}>
-          {ITENS.map(i => (
-            <div key={i.chave} style={{ background: '#faf9f7', borderRadius: 10, padding: '10px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
-              <div>
-                <div style={{ fontSize: 11.5, fontWeight: 700, color: '#6b6860', display: 'flex', alignItems: 'center' }}><span className="enx-dot" style={{ background: i.cor }} />{i.label}</div>
-                <div style={{ fontSize: 20, fontWeight: 900, color: '#1a1a1a' }}>{cfg[i.chave]?.estoque || 0}</div>
-              </div>
-              <div style={{ display: 'flex', gap: 4 }}>
-                <input value={addEstoqueStr[i.chave] || ''} onChange={e => setAddEstoqueStr(prev => ({ ...prev, [i.chave]: e.target.value }))} placeholder="+Qtd" style={{ width: 56, padding: '6px 8px', borderRadius: 7, border: '1.5px solid #d0cdc7', fontSize: 12.5 }} />
-                <button onClick={() => adicionarEstoque(i.chave)} style={{ padding: '6px 10px', borderRadius: 7, border: 'none', background: '#16a34a', color: '#fff', cursor: 'pointer' }}><Plus size={13} /></button>
-              </div>
+        <div onClick={() => setEstoqueAberto(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 11, color: estoqueAberto ? COR : '#9ca3af', transition: 'transform .15s', transform: estoqueAberto ? 'rotate(90deg)' : 'none', display: 'inline-block' }}>▶</span>
+          <h3 style={{ fontSize: 13.5, fontWeight: 800, color: '#1a1a1a', margin: 0, display: 'flex', alignItems: 'center' }}><Package size={15} style={{ marginRight: 5 }} />Estoque</h3>
+          {!estoqueAberto && (
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', fontSize: 11.5, color: '#6b6860' }}>
+              {ITENS.map(i => (
+                <span key={i.chave} style={{ display: 'flex', alignItems: 'center' }}><span className="enx-dot" style={{ background: i.cor }} />{cfg[i.chave]?.estoque || 0}</span>
+              ))}
             </div>
-          ))}
+          )}
         </div>
+        {estoqueAberto && (
+          <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : 'repeat(3, 1fr)', gap: 10, marginTop: 12 }}>
+            {ITENS.map(i => (
+              <div key={i.chave} style={{ background: '#faf9f7', borderRadius: 10, padding: '10px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+                <div>
+                  <div style={{ fontSize: 11.5, fontWeight: 700, color: '#6b6860', display: 'flex', alignItems: 'center' }}><span className="enx-dot" style={{ background: i.cor }} />{i.label}</div>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: '#1a1a1a' }}>{cfg[i.chave]?.estoque || 0}</div>
+                </div>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <input value={addEstoqueStr[i.chave] || ''} onChange={e => setAddEstoqueStr(prev => ({ ...prev, [i.chave]: e.target.value }))} placeholder="+Qtd" style={{ width: 56, padding: '6px 8px', borderRadius: 7, border: '1.5px solid #d0cdc7', fontSize: 12.5 }} />
+                  <button onClick={() => adicionarEstoque(i.chave)} style={{ padding: '6px 10px', borderRadius: 7, border: 'none', background: '#16a34a', color: '#fff', cursor: 'pointer' }}><Plus size={13} /></button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ── Mês + ações ── */}
