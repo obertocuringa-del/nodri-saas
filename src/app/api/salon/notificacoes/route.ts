@@ -60,13 +60,22 @@ export async function PUT(req: NextRequest) {
   return NextResponse.json({ ok: true })
 }
 
-// DELETE — remove uma notificação por id (somente salão)
+// DELETE — remove uma notificação por id. O salão pode remover qualquer uma;
+// a própria profissional só pode remover uma notificação endereçada A ELA
+// (nunca um aviso "para todos", que também vale pras colegas dela).
 export async function DELETE(req: NextRequest) {
   const sess = await getSessao()
   if (!sess) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-  if (await escritaBloqueadaSub()) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
   const id = new URL(req.url).searchParams.get('id') || ''
   const lista = await lerLista(sess.salaoId)
+
+  if (sess.role === 'profissional') {
+    const alvo = lista.find(n => n.id === id)
+    if (!alvo || alvo.alvo !== sess.profissionalId) return NextResponse.json({ error: 'Sem acesso' }, { status: 403 })
+  } else if (await escritaBloqueadaSub()) {
+    return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
+  }
+
   const atualizada = lista.filter(n => n.id !== id)
   const { error } = await supabaseAdmin.from('salao_config').upsert({ salao_id: sess.salaoId, chave: CHAVE, valor: atualizada, atualizado_em: new Date().toISOString() }, { onConflict: 'salao_id,chave' })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

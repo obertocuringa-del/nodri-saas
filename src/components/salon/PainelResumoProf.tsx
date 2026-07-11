@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import {
   DollarSign, Target, Calendar, Trophy, Megaphone, ClipboardList, Moon, Sun, Bell,
-  AlertTriangle, Users, Lightbulb, Package, UserMinus, Star, Sparkles, CalendarRange, User, ArrowRight, LogOut, Hand,
+  AlertTriangle, Users, Lightbulb, Package, UserMinus, Star, Sparkles, CalendarRange, User, ArrowRight, LogOut, Hand, X, Check,
 } from 'lucide-react'
 
 // Tela inicial do profissional (estilo Nubank/Notion): saudação + central de notificações + atalhos.
@@ -14,11 +14,15 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba, t
   const [prof, setProf] = useState<any>(profProp || null)
   const [notifs, setNotifs] = useState<any[]>([])
   const [notifIdx, setNotifIdx] = useState(0)
+  const [fechadas, setFechadas] = useState<Set<string>>(new Set())
   const [ehProf, setEhProf] = useState(false) // logado como profissional → mostra Sair
 
   useEffect(() => { try { setDark(localStorage.getItem('mp_dark') === '1') } catch { } }, [])
   useEffect(() => { try { localStorage.setItem('mp_dark', dark ? '1' : '0') } catch { } }, [dark])
-  useEffect(() => { if (notifs.length <= 1) return; const t = setInterval(() => setNotifIdx(i => (i + 1) % notifs.length), 5000); return () => clearInterval(t) }, [notifs.length])
+  // "Fechar" só esconde nesta sessão (volta a aparecer quando reabrir o perfil);
+  // "Já peguei" remove de vez (chama a API) — só faz sentido pro aviso de kit.
+  const notifsVisiveis = notifs.filter(n => !fechadas.has(n.id))
+  useEffect(() => { if (notifsVisiveis.length <= 1) return; const t = setInterval(() => setNotifIdx(i => (i + 1) % notifsVisiveis.length), 5000); return () => clearInterval(t) }, [notifsVisiveis.length])
 
   useEffect(() => {
     (async () => {
@@ -80,7 +84,14 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba, t
     if (s < 86400) return `há ${Math.floor(s / 3600)} h`
     return `há ${Math.floor(s / 86400)} d`
   }
-  const notifAtual = notifs[notifIdx] || null
+  const notifAtual = notifsVisiveis[notifIdx] || null
+  const ehNotifKit = !!notifAtual?.texto?.includes('kits estão separados')
+
+  function fechar(id: string) { setFechadas(prev => new Set(prev).add(id)); setNotifIdx(0) }
+  async function jaPeguei(id: string) {
+    setNotifs(prev => prev.filter(n => n.id !== id)); setNotifIdx(0)
+    try { await fetch(`/api/salon/notificacoes?id=${id}`, { method: 'DELETE' }) } catch { }
+  }
 
   return (
     <div className="pr-root" style={{ ...vars, background: 'var(--bg)', color: 'var(--txt)', borderRadius: 22, padding: 22 }}>
@@ -125,8 +136,14 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba, t
         <div style={{ flex: 1, minWidth: 0 }}>
           {notifAtual ? (
             <div key={notifIdx} style={{ animation: 'prUp .45s ease both' }}>
-              <div style={{ color: 'var(--txt3)', fontSize: 12, fontWeight: 700, marginBottom: 2 }}>{notifAtual.de || 'Salão'} · {tempoAtras(notifAtual.em)} {notifs.length > 1 ? `· ${notifIdx + 1}/${notifs.length}` : ''}</div>
+              <div style={{ color: 'var(--txt3)', fontSize: 12, fontWeight: 700, marginBottom: 2 }}>{notifAtual.de || 'Salão'} · {tempoAtras(notifAtual.em)} {notifsVisiveis.length > 1 ? `· ${notifIdx + 1}/${notifsVisiveis.length}` : ''}</div>
               <div style={{ color: 'var(--txt)', fontSize: 16, fontWeight: 700, lineHeight: 1.3 }}>{notifAtual.texto}</div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                {ehNotifKit && (
+                  <button onClick={() => jaPeguei(notifAtual.id)} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 9, border: 'none', background: 'var(--accent)', color: '#fff', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}><Check size={13} /> Já peguei</button>
+                )}
+                <button onClick={() => fechar(notifAtual.id)} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 9, border: '1px solid var(--bord)', background: 'transparent', color: 'var(--txt2)', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}><X size={13} /> Fechar</button>
+              </div>
             </div>
           ) : (
             <div>
@@ -134,9 +151,9 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba, t
               <div style={{ color: 'var(--txt3)', fontSize: 13 }}>Você não tem novos avisos no momento.</div>
             </div>
           )}
-          {notifs.length > 1 && (
+          {notifsVisiveis.length > 1 && (
             <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-              {notifs.map((_, i) => <span key={i} className={`pr-dot ${i === notifIdx ? 'on' : ''}`} onClick={() => setNotifIdx(i)} />)}
+              {notifsVisiveis.map((_, i) => <span key={i} className={`pr-dot ${i === notifIdx ? 'on' : ''}`} onClick={() => setNotifIdx(i)} />)}
             </div>
           )}
         </div>

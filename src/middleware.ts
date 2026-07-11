@@ -88,8 +88,10 @@ export async function middleware(request: NextRequest) {
       const ehIaPropria = pathname === `/api/profissionais/${meuId}/ia-profissional` || pathname.startsWith('/api/ia/')
       // EXCEÇÃO somente-leitura: a profissional pode solicitar seus próprios kits (a rota valida o dono da solicitação)
       const ehKitsPropria = pathname === '/api/kits/solicitacoes' && request.method === 'POST'
+      // EXCEÇÃO somente-leitura: a profissional pode dispensar/marcar como lida uma notificação dela ("já peguei")
+      const ehNotifPropria = pathname === '/api/salon/notificacoes' && request.method === 'DELETE'
       // SOMENTE LEITURA: nenhum método de escrita é permitido (GET/HEAD apenas), exceto as exceções acima
-      if (request.method !== 'GET' && request.method !== 'HEAD' && !ehIaPropria && !ehKitsPropria) return negar()
+      if (request.method !== 'GET' && request.method !== 'HEAD' && !ehIaPropria && !ehKitsPropria && !ehNotifPropria) return negar()
       // Nunca pode listar todos os profissionais
       if (pathname === '/api/profissionais' || pathname === '/api/profissionais/') return negar()
       // Em /api/profissionais/<id>/... o id TEM que ser o dele
