@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import toast from 'react-hot-toast'
 import { Loader2, Save, Printer, Wallet, Briefcase, CalendarDays, Plus, Trash2, Settings, X, PartyPopper } from 'lucide-react'
 import { getLogoSalao } from '@/lib/logoSalao'
@@ -209,6 +209,10 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
   const [salvandoConfig, setSalvandoConfig] = useState(false)
   const [valoresPadrao, setValoresPadrao] = useState<ValoresPadrao>(VALORES_PADRAO_INICIAL)
   const [salvandoValores, setSalvandoValores] = useState(false)
+  // Ref pra `carregar` sempre ler o valor mais recente sem precisar recriar
+  // (e reexecutar) o callback a cada tecla digitada nos campos de padrão.
+  const valoresPadraoRef = useRef(valoresPadrao)
+  useEffect(() => { valoresPadraoRef.current = valoresPadrao }, [valoresPadrao])
 
   const chaveMes = `${chave}_${mes}`
 
@@ -235,7 +239,8 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
         const ex = salvoDomingos.find(r => r.dia === b.dia)
         return ex ? { ...ex, data: b.data } : { dia: b.dia, data: b.data, fechado: false, motivo: '', cabeleireiro: '', assistente: '', manicure: '', recepcao: '' }
       }))
-      setAlimentacaoStr(alimSalva ? String(alimSalva).replace('.', ',') : valoresPadrao.alimentacaoPorDia)
+      const padrao = valoresPadraoRef.current
+      setAlimentacaoStr(alimSalva ? String(alimSalva).replace('.', ',') : padrao.alimentacaoPorDia)
 
       // CLT: todo profissional com vínculo CLT e ativo, + linhas adicionadas manualmente
       // (rede de segurança pra quem tem cadastro incompleto, ex: sem "Vínculo Trabalhista" preenchido)
@@ -243,7 +248,7 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
       const cltAuto = cltProfs.map(p => {
         const nome = nomeDe(p)
         const ex = salvoClt.find(r => mesmoNome(r.nome, nome))
-        return ex ? { ...ex, nome, manual: false } : { id: rid(), nome, qtdDias: '', passagem: valoresPadrao.passagemClt, pix: p.conta_bancaria || '' }
+        return ex ? { ...ex, nome, manual: false } : { id: rid(), nome, qtdDias: '', passagem: padrao.passagemClt, pix: p.conta_bancaria || '' }
       })
       const cltManual = salvoClt.filter(r => r.manual && !cltProfs.some(p => mesmoNome(nomeDe(p), r.nome)))
       setCltRows([...cltAuto, ...cltManual])
@@ -257,7 +262,7 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
       const pjAuto = pjProfs.map(p => {
         const nome = nomeDe(p)
         const ex = salvoPj.find(r => mesmoNome(r.nome, nome))
-        return ex ? { ...ex, nome, dataAdmissao: p.data_admissao || '', manual: false } : { id: rid(), nome, qtdDias: '', passagem: valoresPadrao.passagemPj, pix: p.conta_bancaria || '', dataAdmissao: p.data_admissao || '' }
+        return ex ? { ...ex, nome, dataAdmissao: p.data_admissao || '', manual: false } : { id: rid(), nome, qtdDias: '', passagem: padrao.passagemPj, pix: p.conta_bancaria || '', dataAdmissao: p.data_admissao || '' }
       })
       const pjManual = salvoPj.filter(r => r.manual && !pjProfs.some(p => mesmoNome(nomeDe(p), r.nome)))
       setPjRows([...pjAuto, ...pjManual])
@@ -265,7 +270,7 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
       setDirty(false)
     } catch { /* mantém o que já tinha */ }
     setLoading(false)
-  }, [chaveMes, mes, profissionais, valoresPadrao])
+  }, [chaveMes, mes, profissionais])
   useEffect(() => { carregar() }, [carregar])
 
   function editDomingo(dia: number, patch: Partial<DomingoRow>) {
