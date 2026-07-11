@@ -12,9 +12,11 @@ interface PjRow { id: string; nome: string; qtdDias: string; passagem: string; p
 interface Profissional { id: string; nome_completo: string; apelido: string; vinculo?: string; ativo?: boolean; data_admissao?: string; conta_bancaria?: string; habilidades?: string }
 interface ConfigDias { ativo: boolean; domingoSemEscala: boolean; folgaSemanal: boolean; feriados: boolean; folgaCompensatoriaCltDomingo: boolean }
 interface FeriadoRow { nome: string; data: string; horario: string; profissionais: string; fechado: boolean }
+interface ValoresPadrao { alimentacaoPorDia: string; passagemClt: string; passagemPj: string }
 
 const COR = '#5b4fcf'
 const CONFIG_PADRAO: ConfigDias = { ativo: true, domingoSemEscala: true, folgaSemanal: true, feriados: true, folgaCompensatoriaCltDomingo: true }
+const VALORES_PADRAO_INICIAL: ValoresPadrao = { alimentacaoPorDia: '28,80', passagemClt: '11,00', passagemPj: '11,00' }
 const DIAS_SEMANA = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'] // índice = Date.getDay()
 const rid = () => Math.random().toString(36).slice(2, 9)
 function mesAtual() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` }
@@ -205,6 +207,8 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
   const [config, setConfig] = useState<ConfigDias>(CONFIG_PADRAO)
   const [configAberta, setConfigAberta] = useState(false)
   const [salvandoConfig, setSalvandoConfig] = useState(false)
+  const [valoresPadrao, setValoresPadrao] = useState<ValoresPadrao>(VALORES_PADRAO_INICIAL)
+  const [salvandoValores, setSalvandoValores] = useState(false)
 
   const chaveMes = `${chave}_${mes}`
 
@@ -212,6 +216,7 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
     fetch('/api/profissionais').then(r => r.ok ? r.json() : []).then((arr: any[]) => setProfissionais(Array.isArray(arr) ? arr : [])).catch(() => {})
     fetch('/api/salon/grid?chave=feriados').then(r => r.ok ? r.json() : null).then(setFeriadosDoc).catch(() => {})
     fetch('/api/salon/grid?chave=escala_config').then(r => r.ok ? r.json() : null).then(d => { if (d && typeof d.ativo === 'boolean') setConfig({ ...CONFIG_PADRAO, ...d }) }).catch(() => {})
+    fetch('/api/salon/grid?chave=escala_valores_padrao').then(r => r.ok ? r.json() : null).then(d => { if (d && d.alimentacaoPorDia) setValoresPadrao({ ...VALORES_PADRAO_INICIAL, ...d }) }).catch(() => {})
   }, [])
 
   const carregar = useCallback(async () => {
@@ -230,7 +235,7 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
         const ex = salvoDomingos.find(r => r.dia === b.dia)
         return ex ? { ...ex, data: b.data } : { dia: b.dia, data: b.data, fechado: false, motivo: '', cabeleireiro: '', assistente: '', manicure: '', recepcao: '' }
       }))
-      setAlimentacaoStr(alimSalva ? String(alimSalva).replace('.', ',') : '')
+      setAlimentacaoStr(alimSalva ? String(alimSalva).replace('.', ',') : valoresPadrao.alimentacaoPorDia)
 
       // CLT: todo profissional com vínculo CLT e ativo, + linhas adicionadas manualmente
       // (rede de segurança pra quem tem cadastro incompleto, ex: sem "Vínculo Trabalhista" preenchido)
@@ -238,7 +243,7 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
       const cltAuto = cltProfs.map(p => {
         const nome = nomeDe(p)
         const ex = salvoClt.find(r => mesmoNome(r.nome, nome))
-        return ex ? { ...ex, nome, manual: false } : { id: rid(), nome, qtdDias: '', passagem: '', pix: p.conta_bancaria || '' }
+        return ex ? { ...ex, nome, manual: false } : { id: rid(), nome, qtdDias: '', passagem: valoresPadrao.passagemClt, pix: p.conta_bancaria || '' }
       })
       const cltManual = salvoClt.filter(r => r.manual && !cltProfs.some(p => mesmoNome(nomeDe(p), r.nome)))
       setCltRows([...cltAuto, ...cltManual])
@@ -252,7 +257,7 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
       const pjAuto = pjProfs.map(p => {
         const nome = nomeDe(p)
         const ex = salvoPj.find(r => mesmoNome(r.nome, nome))
-        return ex ? { ...ex, nome, dataAdmissao: p.data_admissao || '', manual: false } : { id: rid(), nome, qtdDias: '', passagem: '', pix: p.conta_bancaria || '', dataAdmissao: p.data_admissao || '' }
+        return ex ? { ...ex, nome, dataAdmissao: p.data_admissao || '', manual: false } : { id: rid(), nome, qtdDias: '', passagem: valoresPadrao.passagemPj, pix: p.conta_bancaria || '', dataAdmissao: p.data_admissao || '' }
       })
       const pjManual = salvoPj.filter(r => r.manual && !pjProfs.some(p => mesmoNome(nomeDe(p), r.nome)))
       setPjRows([...pjAuto, ...pjManual])
@@ -260,7 +265,7 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
       setDirty(false)
     } catch { /* mantém o que já tinha */ }
     setLoading(false)
-  }, [chaveMes, mes, profissionais])
+  }, [chaveMes, mes, profissionais, valoresPadrao])
   useEffect(() => { carregar() }, [carregar])
 
   function editDomingo(dia: number, patch: Partial<DomingoRow>) {
@@ -273,13 +278,13 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
     setPjRows(prev => prev.map(r => r.id === id ? { ...r, ...patch } : r)); setDirty(true)
   }
   function adicionarCltManual() {
-    setCltRows(prev => [...prev, { id: rid(), nome: '', qtdDias: '', passagem: '', pix: '', manual: true }]); setDirty(true)
+    setCltRows(prev => [...prev, { id: rid(), nome: '', qtdDias: '', passagem: valoresPadrao.passagemClt, pix: '', manual: true }]); setDirty(true)
   }
   function removerClt(id: string) {
     setCltRows(prev => prev.filter(r => r.id !== id)); setDirty(true)
   }
   function adicionarPjManual() {
-    setPjRows(prev => [...prev, { id: rid(), nome: '', qtdDias: '', passagem: '', pix: '', dataAdmissao: '', manual: true }]); setDirty(true)
+    setPjRows(prev => [...prev, { id: rid(), nome: '', qtdDias: '', passagem: valoresPadrao.passagemPj, pix: '', dataAdmissao: '', manual: true }]); setDirty(true)
   }
   function removerPj(id: string) {
     setPjRows(prev => prev.filter(r => r.id !== id)); setDirty(true)
@@ -291,6 +296,14 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
       await fetch('/api/salon/grid', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chave: 'escala_config', doc: novo }) })
     } catch { /* mantém local mesmo se falhar salvar */ }
     setSalvandoConfig(false)
+  }
+  async function salvarValoresPadrao(novo: ValoresPadrao) {
+    setValoresPadrao(novo)
+    setSalvandoValores(true)
+    try {
+      await fetch('/api/salon/grid', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chave: 'escala_valores_padrao', doc: novo }) })
+    } catch { /* mantém local mesmo se falhar salvar */ }
+    setSalvandoValores(false)
   }
 
   const nomesProfissionais = profissionais.filter(p => p.ativo !== false).map(nomeDe)
@@ -405,6 +418,20 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
               </label>
             </div>
             {salvandoConfig && <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 8 }}>Salvando...</p>}
+
+            <div style={{ borderTop: '1px solid #f0eee8', marginTop: 16, paddingTop: 14 }}>
+              <h4 style={{ fontSize: 13, fontWeight: 800, color: '#1a1a1a', margin: '0 0 4px' }}>Valores padrão (R$)</h4>
+              <p style={{ fontSize: 11.5, color: '#9ca3af', margin: '0 0 10px' }}>Usados sempre que um mês novo ou profissional novo aparecer, sem sobrescrever mês já preenchido. Continuam editáveis linha a linha.</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '8px 10px', alignItems: 'center' }}>
+                <label style={{ fontSize: 12.5, color: '#374151' }}>Alimentação por dia — CLT</label>
+                <input value={valoresPadrao.alimentacaoPorDia} onChange={e => setValoresPadrao({ ...valoresPadrao, alimentacaoPorDia: e.target.value })} onBlur={e => salvarValoresPadrao({ ...valoresPadrao, alimentacaoPorDia: e.target.value })} inputMode="decimal" placeholder="0,00" style={{ width: 90, padding: '6px 8px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13, textAlign: 'center' }} />
+                <label style={{ fontSize: 12.5, color: '#374151' }}>Passagem por dia — CLT</label>
+                <input value={valoresPadrao.passagemClt} onChange={e => setValoresPadrao({ ...valoresPadrao, passagemClt: e.target.value })} onBlur={e => salvarValoresPadrao({ ...valoresPadrao, passagemClt: e.target.value })} inputMode="decimal" placeholder="0,00" style={{ width: 90, padding: '6px 8px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13, textAlign: 'center' }} />
+                <label style={{ fontSize: 12.5, color: '#374151' }}>Passagem por dia — PJ (ajuda de custo)</label>
+                <input value={valoresPadrao.passagemPj} onChange={e => setValoresPadrao({ ...valoresPadrao, passagemPj: e.target.value })} onBlur={e => salvarValoresPadrao({ ...valoresPadrao, passagemPj: e.target.value })} inputMode="decimal" placeholder="0,00" style={{ width: 90, padding: '6px 8px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13, textAlign: 'center' }} />
+              </div>
+              {salvandoValores && <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 8 }}>Salvando...</p>}
+            </div>
           </div>
         </div>
       )}
