@@ -2,13 +2,13 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import toast from 'react-hot-toast'
-import { Loader2, Save, Printer, Wallet, Briefcase, CalendarDays } from 'lucide-react'
+import { Loader2, Save, Printer, Wallet, Briefcase, CalendarDays, Plus, Trash2 } from 'lucide-react'
 import { getLogoSalao } from '@/lib/logoSalao'
 import { parseBRLNumber } from '@/lib/kitsShared'
 
 interface DomingoRow { dia: number; data: string; fechado: boolean; motivo: string; cabeleireiro: string; assistente: string; manicure: string; recepcao: string }
-interface CltRow { id: string; nome: string; qtdDias: string; passagem: string; pix: string }
-interface PjRow { id: string; nome: string; qtdDias: string; passagem: string; pix: string; dataAdmissao: string }
+interface CltRow { id: string; nome: string; qtdDias: string; passagem: string; pix: string; manual?: boolean }
+interface PjRow { id: string; nome: string; qtdDias: string; passagem: string; pix: string; dataAdmissao: string; manual?: boolean }
 interface Profissional { id: string; nome_completo: string; apelido: string; vinculo?: string; ativo?: boolean; data_admissao?: string; conta_bancaria?: string }
 
 const COR = '#5b4fcf'
@@ -108,25 +108,30 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
       }))
       setAlimentacaoStr(alimSalva ? String(alimSalva).replace('.', ',') : '')
 
-      // CLT: todo profissional com vínculo CLT e ativo
+      // CLT: todo profissional com vínculo CLT e ativo, + linhas adicionadas manualmente
+      // (rede de segurança pra quem tem cadastro incompleto, ex: sem "Vínculo Trabalhista" preenchido)
       const cltProfs = profissionais.filter(p => p.vinculo === 'CLT' && p.ativo !== false)
-      setCltRows(cltProfs.map(p => {
+      const cltAuto = cltProfs.map(p => {
         const nome = nomeDe(p)
         const ex = salvoClt.find(r => mesmoNome(r.nome, nome))
-        return ex ? { ...ex, nome } : { id: rid(), nome, qtdDias: '', passagem: '', pix: p.conta_bancaria || '' }
-      }))
+        return ex ? { ...ex, nome, manual: false } : { id: rid(), nome, qtdDias: '', passagem: '', pix: p.conta_bancaria || '' }
+      })
+      const cltManual = salvoClt.filter(r => r.manual && !cltProfs.some(p => mesmoNome(nomeDe(p), r.nome)))
+      setCltRows([...cltAuto, ...cltManual])
 
-      // PJ: vínculo MEI, ativo, dentro dos 3 primeiros meses de contrato (0, 1 ou 2)
+      // PJ: vínculo MEI, ativo, dentro dos 3 primeiros meses de contrato (0, 1 ou 2), + manuais
       const pjProfs = profissionais.filter(p => {
         if (p.vinculo !== 'MEI' || p.ativo === false) return false
         const meses = mesesDesdeAdmissao(p.data_admissao || '', mes)
         return meses !== null && meses >= 0 && meses < 3
       })
-      setPjRows(pjProfs.map(p => {
+      const pjAuto = pjProfs.map(p => {
         const nome = nomeDe(p)
         const ex = salvoPj.find(r => mesmoNome(r.nome, nome))
-        return ex ? { ...ex, nome, dataAdmissao: p.data_admissao || '' } : { id: rid(), nome, qtdDias: '', passagem: '', pix: p.conta_bancaria || '', dataAdmissao: p.data_admissao || '' }
-      }))
+        return ex ? { ...ex, nome, dataAdmissao: p.data_admissao || '', manual: false } : { id: rid(), nome, qtdDias: '', passagem: '', pix: p.conta_bancaria || '', dataAdmissao: p.data_admissao || '' }
+      })
+      const pjManual = salvoPj.filter(r => r.manual && !pjProfs.some(p => mesmoNome(nomeDe(p), r.nome)))
+      setPjRows([...pjAuto, ...pjManual])
 
       setDirty(false)
     } catch { /* mantém o que já tinha */ }
@@ -142,6 +147,18 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
   }
   function editPj(id: string, patch: Partial<PjRow>) {
     setPjRows(prev => prev.map(r => r.id === id ? { ...r, ...patch } : r)); setDirty(true)
+  }
+  function adicionarCltManual() {
+    setCltRows(prev => [...prev, { id: rid(), nome: '', qtdDias: '', passagem: '', pix: '', manual: true }]); setDirty(true)
+  }
+  function removerClt(id: string) {
+    setCltRows(prev => prev.filter(r => r.id !== id)); setDirty(true)
+  }
+  function adicionarPjManual() {
+    setPjRows(prev => [...prev, { id: rid(), nome: '', qtdDias: '', passagem: '', pix: '', dataAdmissao: '', manual: true }]); setDirty(true)
+  }
+  function removerPj(id: string) {
+    setPjRows(prev => prev.filter(r => r.id !== id)); setDirty(true)
   }
 
   const alimentacaoPorDia = parseBRLNumber(alimentacaoStr)
@@ -259,24 +276,28 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
             ) : (
               <div style={{ overflowX: 'auto' }}>
                 <table className="esc-table">
-                  <thead><tr><th>Nome</th><th className="c" style={{ width: 80 }}>Dias</th><th style={{ width: 90 }}>Alimentação</th><th style={{ width: 110 }}>Passagem/dia</th><th style={{ width: 110 }}>Alim.+Pass.</th><th style={{ width: 120 }}>Total a pagar</th><th style={{ width: 200 }}>PIX</th></tr></thead>
+                  <thead><tr><th>Nome</th><th className="c" style={{ width: 80 }}>Dias</th><th style={{ width: 90 }}>Alimentação</th><th style={{ width: 110 }}>Passagem/dia</th><th style={{ width: 110 }}>Alim.+Pass.</th><th style={{ width: 120 }}>Total a pagar</th><th style={{ width: 200 }}>PIX</th><th style={{ width: 36 }} /></tr></thead>
                   <tbody>
                     {cltCalc.map(r => (
                       <tr key={r.id}>
-                        <td style={{ fontWeight: 700, color: '#1a1a1a' }}>{r.nome}</td>
+                        <td style={{ fontWeight: 700, color: '#1a1a1a' }}>
+                          {r.manual ? <input value={r.nome} onChange={e => editClt(r.id, { nome: e.target.value })} className="esc-input" placeholder="Nome do profissional" style={{ fontWeight: 700 }} /> : r.nome}
+                        </td>
                         <td><input value={r.qtdDias} onChange={e => editClt(r.id, { qtdDias: e.target.value })} className="esc-input" style={{ textAlign: 'center' }} placeholder="0" /></td>
                         <td style={{ textAlign: 'center', color: '#6b6860' }}>R$ {fmtBRL(alimentacaoPorDia)}</td>
                         <td><input value={r.passagem} onChange={e => editClt(r.id, { passagem: e.target.value })} className="esc-input" style={{ textAlign: 'center' }} placeholder="0,00" /></td>
                         <td style={{ textAlign: 'center', color: '#6b6860' }}>R$ {fmtBRL(r.porDia)}</td>
                         <td style={{ textAlign: 'center', fontWeight: 800, color: '#16a34a' }}>R$ {fmtBRL(r.total)}</td>
                         <td><textarea value={r.pix} onChange={e => editClt(r.id, { pix: e.target.value })} className="esc-input" rows={2} style={{ resize: 'vertical', fontFamily: 'inherit', display: 'block' }} placeholder="Chave / dados PIX" /></td>
+                        <td style={{ textAlign: 'center' }}>{r.manual && <button onClick={() => removerClt(r.id)} title="Remover" style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#dc2626', padding: 4 }}><Trash2 size={15} /></button>}</td>
                       </tr>
                     ))}
                   </tbody>
-                  <tfoot><tr><td colSpan={5} style={{ padding: '10px 12px', fontWeight: 800, color: COR, textAlign: 'right' }}>TOTAL</td><td style={{ padding: '10px 12px', fontWeight: 900, color: '#16a34a', textAlign: 'center' }}>R$ {fmtBRL(totalClt)}</td><td /></tr></tfoot>
+                  <tfoot><tr><td colSpan={5} style={{ padding: '10px 12px', fontWeight: 800, color: COR, textAlign: 'right' }}>TOTAL</td><td style={{ padding: '10px 12px', fontWeight: 900, color: '#16a34a', textAlign: 'center' }}>R$ {fmtBRL(totalClt)}</td><td /><td /></tr></tfoot>
                 </table>
               </div>
             )}
+            <button onClick={adicionarCltManual} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 10, padding: '7px 12px', borderRadius: 8, border: `1.5px dashed ${COR}`, background: '#f8f7ff', color: COR, fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}><Plus size={14} /> Adicionar manualmente</button>
           </div>
 
           {/* ── PJ ── */}
@@ -288,23 +309,27 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
             ) : (
               <div style={{ overflowX: 'auto' }}>
                 <table className="esc-table">
-                  <thead><tr><th>Nome</th><th style={{ width: 90 }}>Mês</th><th className="c" style={{ width: 80 }}>Dias</th><th style={{ width: 110 }}>Passagem/dia</th><th style={{ width: 120 }}>Total a pagar</th><th style={{ width: 200 }}>PIX</th></tr></thead>
+                  <thead><tr><th>Nome</th><th style={{ width: 90 }}>Mês</th><th className="c" style={{ width: 80 }}>Dias</th><th style={{ width: 110 }}>Passagem/dia</th><th style={{ width: 120 }}>Total a pagar</th><th style={{ width: 200 }}>PIX</th><th style={{ width: 36 }} /></tr></thead>
                   <tbody>
                     {pjCalc.map(r => (
                       <tr key={r.id}>
-                        <td style={{ fontWeight: 700, color: '#1a1a1a' }}>{r.nome}</td>
+                        <td style={{ fontWeight: 700, color: '#1a1a1a' }}>
+                          {r.manual ? <input value={r.nome} onChange={e => editPj(r.id, { nome: e.target.value })} className="esc-input" placeholder="Nome do profissional" style={{ fontWeight: 700 }} /> : r.nome}
+                        </td>
                         <td style={{ textAlign: 'center' }}>{r.mesElegibilidade ? <span style={{ fontSize: 11, fontWeight: 800, color: COR, background: '#f0eefb', padding: '3px 9px', borderRadius: 20 }}>{r.mesElegibilidade}/3</span> : '—'}</td>
                         <td><input value={r.qtdDias} onChange={e => editPj(r.id, { qtdDias: e.target.value })} className="esc-input" style={{ textAlign: 'center' }} placeholder="0" /></td>
                         <td><input value={r.passagem} onChange={e => editPj(r.id, { passagem: e.target.value })} className="esc-input" style={{ textAlign: 'center' }} placeholder="0,00" /></td>
                         <td style={{ textAlign: 'center', fontWeight: 800, color: '#16a34a' }}>R$ {fmtBRL(r.total)}</td>
                         <td><textarea value={r.pix} onChange={e => editPj(r.id, { pix: e.target.value })} className="esc-input" rows={2} style={{ resize: 'vertical', fontFamily: 'inherit', display: 'block' }} placeholder="Chave / dados PIX" /></td>
+                        <td style={{ textAlign: 'center' }}>{r.manual && <button onClick={() => removerPj(r.id)} title="Remover" style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#dc2626', padding: 4 }}><Trash2 size={15} /></button>}</td>
                       </tr>
                     ))}
                   </tbody>
-                  <tfoot><tr><td colSpan={4} style={{ padding: '10px 12px', fontWeight: 800, color: COR, textAlign: 'right' }}>TOTAL</td><td style={{ padding: '10px 12px', fontWeight: 900, color: '#16a34a', textAlign: 'center' }}>R$ {fmtBRL(totalPj)}</td><td /></tr></tfoot>
+                  <tfoot><tr><td colSpan={4} style={{ padding: '10px 12px', fontWeight: 800, color: COR, textAlign: 'right' }}>TOTAL</td><td style={{ padding: '10px 12px', fontWeight: 900, color: '#16a34a', textAlign: 'center' }}>R$ {fmtBRL(totalPj)}</td><td /><td /></tr></tfoot>
                 </table>
               </div>
             )}
+            <button onClick={adicionarPjManual} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 10, padding: '7px 12px', borderRadius: 8, border: `1.5px dashed ${COR}`, background: '#f8f7ff', color: COR, fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}><Plus size={14} /> Adicionar manualmente</button>
           </div>
         </>
       )}
