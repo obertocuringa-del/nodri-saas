@@ -10,11 +10,11 @@ interface DomingoRow { dia: number; data: string; fechado: boolean; motivo: stri
 interface CltRow { id: string; nome: string; qtdDias: string; passagem: string; pix: string; manual?: boolean }
 interface PjRow { id: string; nome: string; qtdDias: string; passagem: string; pix: string; dataAdmissao: string; manual?: boolean }
 interface Profissional { id: string; nome_completo: string; apelido: string; vinculo?: string; ativo?: boolean; data_admissao?: string; conta_bancaria?: string; habilidades?: string }
-interface ConfigDias { ativo: boolean; domingoSemEscala: boolean; folgaSemanal: boolean; feriados: boolean }
+interface ConfigDias { ativo: boolean; domingoSemEscala: boolean; folgaSemanal: boolean; feriados: boolean; folgaCompensatoriaCltDomingo: boolean }
 interface FeriadoRow { nome: string; data: string; horario: string; profissionais: string; fechado: boolean }
 
 const COR = '#5b4fcf'
-const CONFIG_PADRAO: ConfigDias = { ativo: true, domingoSemEscala: true, folgaSemanal: true, feriados: true }
+const CONFIG_PADRAO: ConfigDias = { ativo: true, domingoSemEscala: true, folgaSemanal: true, feriados: true, folgaCompensatoriaCltDomingo: true }
 const DIAS_SEMANA = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'] // índice = Date.getDay()
 const rid = () => Math.random().toString(36).slice(2, 9)
 function mesAtual() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` }
@@ -44,8 +44,10 @@ function feriadoNoMes(dataTexto: string, mes: string): boolean {
 }
 // Sugestão de dias trabalhados no mês: total de dias - folga semanal fixa (exceto domingo,
 // tratado à parte pela escala) - domingos em que ele não está escalado - feriados fechados
-// ou em que ele não consta na lista de escalados.
-function diasSugeridosMes(nome: string, folgas: string[], mes: string, domingos: DomingoRow[], feriadosDoMes: FeriadoRow[], config: ConfigDias): number {
+// ou em que ele não consta na lista de escalados. Pra CLT, quando ele TRABALHA no domingo
+// também desconta 1 dia — ele folga durante a semana pra compensar (folga compensatória),
+// então aquele domingo não soma um dia trabalhado a mais no mês.
+function diasSugeridosMes(nome: string, folgas: string[], mes: string, domingos: DomingoRow[], feriadosDoMes: FeriadoRow[], config: ConfigDias, compensarDomingoTrabalhado: boolean): number {
   const [ano, m] = mes.split('-').map(Number)
   const totalDias = new Date(ano, m, 0).getDate()
   let dias = totalDias
@@ -62,7 +64,9 @@ function diasSugeridosMes(nome: string, folgas: string[], mes: string, domingos:
     domingos.forEach(dm => {
       if (dm.fechado) { dias--; return }
       const escalados = [dm.cabeleireiro, dm.assistente, dm.manicure, dm.recepcao].join('/')
-      if (!nomeNaLista(nome, escalados)) dias--
+      const trabalhou = nomeNaLista(nome, escalados)
+      if (!trabalhou) dias--
+      else if (compensarDomingoTrabalhado) dias--
     })
   } else if (config.folgaSemanal && folgaIdx.has(0)) {
     domingos.forEach(() => { dias-- })
@@ -300,7 +304,7 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
     const dias = Number(r.qtdDias) || 0, passagem = parseBRLNumber(r.passagem)
     const porDia = alimentacaoPorDia + passagem
     const prof = profissionais.find(p => mesmoNome(nomeDe(p), r.nome))
-    const sugestao = config.ativo && prof ? diasSugeridosMes(r.nome, parseFolgas(prof.habilidades), mes, domingos, feriadosDoMes, config) : null
+    const sugestao = config.ativo && prof ? diasSugeridosMes(r.nome, parseFolgas(prof.habilidades), mes, domingos, feriadosDoMes, config, config.folgaCompensatoriaCltDomingo) : null
     return { ...r, porDia, total: porDia * dias, sugestao }
   })
   const pjCalc = pjRows.map(r => {
@@ -310,7 +314,7 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
     const hoje = new Date(); hoje.setHours(0, 0, 0, 0)
     const diasRestantes = limite ? Math.round((limite.getTime() - hoje.getTime()) / 86400000) : null
     const prof = profissionais.find(p => mesmoNome(nomeDe(p), r.nome))
-    const sugestao = config.ativo && prof ? diasSugeridosMes(r.nome, parseFolgas(prof.habilidades), mes, domingos, feriadosDoMes, config) : null
+    const sugestao = config.ativo && prof ? diasSugeridosMes(r.nome, parseFolgas(prof.habilidades), mes, domingos, feriadosDoMes, config, false) : null
     return { ...r, total: passagem * dias, mesElegibilidade: meses === null ? null : meses + 1, limite, diasRestantes, sugestao }
   })
   const totalClt = cltCalc.reduce((s, r) => s + r.total, 0)
@@ -390,6 +394,10 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
               <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '7px 0', cursor: 'pointer', fontSize: 12.5, color: '#374151' }}>
                 <input type="checkbox" checked={config.domingoSemEscala} onChange={e => salvarConfig({ ...config, domingoSemEscala: e.target.checked })} style={{ width: 15, height: 15, marginTop: 2 }} />
                 <span>Descontar domingos em que ele não está escalado (tabela acima) ou que estão marcados como fechado</span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '7px 0', cursor: 'pointer', fontSize: 12.5, color: '#374151' }}>
+                <input type="checkbox" checked={config.folgaCompensatoriaCltDomingo} onChange={e => salvarConfig({ ...config, folgaCompensatoriaCltDomingo: e.target.checked })} style={{ width: 15, height: 15, marginTop: 2 }} />
+                <span>CLT: também descontar 1 dia quando ele trabalha no domingo (folga compensatória durante a semana)</span>
               </label>
               <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '7px 0', cursor: 'pointer', fontSize: 12.5, color: '#374151' }}>
                 <input type="checkbox" checked={config.feriados} onChange={e => salvarConfig({ ...config, feriados: e.target.checked })} style={{ width: 15, height: 15, marginTop: 2 }} />
