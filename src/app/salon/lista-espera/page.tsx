@@ -7,6 +7,16 @@ import toast from 'react-hot-toast'
 
 const moeda = (v: number) => 'R$ ' + (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
+// Horários de 30 em 30 min (07:00 às 21:00) pra escolher em vez de digitar.
+const HORARIOS_ESPERA: string[] = (() => {
+  const out: string[] = []
+  for (let h = 7; h <= 21; h++) {
+    out.push(`${String(h).padStart(2, '0')}:00`)
+    if (h < 21) out.push(`${String(h).padStart(2, '0')}:30`)
+  }
+  return out
+})()
+
 interface Servico { nome: string; preco: number }
 interface Item {
   id: string; cliente_nome: string; telefone?: string; servicos: Servico[]
@@ -334,8 +344,12 @@ export default function ListaEsperaPage() {
               </div>
               <div style={{ flex: 1 }}>
                 <label style={{ fontSize: 12, fontWeight: 700, color: '#6b6860', display: 'block', marginBottom: 4 }}>⏰ Horário</label>
-                <input value={fHora} onChange={e => setFHora(e.target.value)} placeholder="Ex: 14:00 / tarde"
-                  style={{ width: '100%', padding: '9px 10px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13 }} />
+                <select value={fHora} onChange={e => setFHora(e.target.value)}
+                  style={{ width: '100%', padding: '9px 10px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13, background: '#fff' }}>
+                  <option value="">Selecione...</option>
+                  {fHora && !HORARIOS_ESPERA.includes(fHora) && <option value={fHora}>{fHora}</option>}
+                  {HORARIOS_ESPERA.map(h => <option key={h} value={h}>{h}</option>)}
+                </select>
               </div>
             </div>
 
