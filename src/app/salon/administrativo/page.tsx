@@ -10,6 +10,7 @@ import EsterilizacaoLista from '@/components/salon/EsterilizacaoLista'
 import KitsAdminLista from '@/components/salon/KitsAdminLista'
 import EnxovaisLista from '@/components/salon/EnxovaisLista'
 import SenhasLista from '@/components/salon/SenhasLista'
+import AtaReuniaoLista from '@/components/salon/AtaReuniaoLista'
 import ListaBebidas from '@/components/salon/ListaBebidas'
 import ListaTelefones from '@/components/salon/ListaTelefones'
 import ListaPrecoServicos from '@/components/salon/ListaPrecoServicos'
@@ -89,11 +90,6 @@ const DEFAULT_CORRIDA: GridDoc = { tabelas: [{ titulo: 'CORRIDA INTERNA', cabeca
 const DEFAULT_ACOES: GridDoc = { tabelas: [{ titulo: 'AÇÕES COMERCIAIS', cabecalho: [cel('Ação / Campanha'), cel('Período'), cel('Responsável'), cel('Meta'), cel('Resultado'), cel('Observação')], linhas: linhasVazias(12, 6), larguras: [240, 150, 160, 140, 160, 240] }] }
 const DEFAULT_CORREIOS: GridDoc = { tabelas: [{ titulo: 'CORREIOS', cabecalho: [cel('Data'), cel('Tipo (carta/encomenda)'), cel('Remetente'), cel('Destinatário'), cel('Código de rastreio'), cel('Status'), cel('Observação')], linhas: linhasVazias(14, 7), larguras: [110, 170, 180, 180, 180, 130, 220] }] }
 const DEFAULT_AGENDA_GRANDE: GridDoc = { tabelas: [{ titulo: 'AGENDAMENTOS GRANDES', cabecalho: [cel('Data'), cel('Cliente'), cel('Serviço'), cel('Profissional'), cel('Valor'), cel('Observação')], linhas: linhasVazias(14, 6), larguras: [110, 200, 200, 180, 120, 240] }] }
-
-const DEFAULT_ATA: GridDoc = { tabelas: [
-  { titulo: 'PAUTA DA REUNIÃO', cabecalho: [cel('Nº'), cel('Ponto a apresentar'), cel('Responsável'), cel('Decisão / Encaminhamento')], linhas: Array.from({ length: 8 }, (_, i) => [cel(String(i + 1)), cel(''), cel(''), cel('')]) },
-  { titulo: 'ASSINATURAS DOS PROFISSIONAIS', cabecalho: [cel('Profissional'), cel('Assinatura')], linhas: linhasVazias(12, 2) },
-] }
 
 const SEM = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 function escalaDoMes(mes: string): GridDoc {
@@ -224,7 +220,7 @@ export default function SalaoAdministrativoPage() {
         {abaTopo === 'tratamentos' && <ListaPrecoServicos key="trat" chave="tratamentos_dosagem" titulo="Tratamentos — Dosagem" comLogo />}
         {abaTopo === 'pacotes' && <GridEditavel key="pacotes" chave="pacotes" defaultDoc={DEFAULT_PACOTES} landscape />}
         {abaTopo === 'telefones' && <ListaTelefones />}
-        {abaTopo === 'ata' && <GridEditavel key="ata" chave="ata" defaultDoc={DEFAULT_ATA} />}
+        {abaTopo === 'ata' && <AtaReuniaoLista key="ata" chave="ata" profsSalao={profsSalao} />}
         {abaTopo === 'escala' && <GridEditavel key="escala" chave="escala" defaultDocFn={escalaDoMes} mensal landscape />}
         {abaTopo === 'feriados' && <GridEditavel key="feriados" chave="feriados" defaultDoc={DEFAULT_FERIADOS} landscape />}
         {abaTopo === 'senhas' && <SenhasLista key="senhas" chave="senhas" />}

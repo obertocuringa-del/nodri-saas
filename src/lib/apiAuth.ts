@@ -47,7 +47,7 @@ export function permDaGrade(chave: string): string {
   if (c.startsWith('pop')) return 'adm_pop'
   if (c === 'senhas') return 'adm_senhas'
   if (c === 'pacotes') return 'adm_pacotes'
-  if (c === 'ata') return 'adm_ata'
+  if (c.startsWith('ata')) return 'adm_ata'
   if (c === 'feriados') return 'adm_feriados'
   if (c.startsWith('escala')) return 'adm_escala'
   if (c === 'telefones') return 'adm_telefones'
