@@ -9,6 +9,7 @@ import ServicoInternoLista from '@/components/salon/ServicoInternoLista'
 import EsterilizacaoLista from '@/components/salon/EsterilizacaoLista'
 import KitsAdminLista from '@/components/salon/KitsAdminLista'
 import EnxovaisLista from '@/components/salon/EnxovaisLista'
+import SenhasLista from '@/components/salon/SenhasLista'
 import ListaBebidas from '@/components/salon/ListaBebidas'
 import ListaTelefones from '@/components/salon/ListaTelefones'
 import ListaPrecoServicos from '@/components/salon/ListaPrecoServicos'
@@ -126,17 +127,6 @@ const DEFAULT_FERIADOS: GridDoc = { tabelas: [
   { titulo: 'ESCALA DE FERIADOS', cabecalho: [cel('Feriado'), cel('Data'), cel('Horário'), cel('Profissionais escalados (1 por linha ou separados por vírgula)'), cel('Obs')], linhas: FERIADOS_2026.map(([f, d, h]) => [cel(f), cel(d), cel(h), cel(''), cel('')]), larguras: [180, 150, 130, 640, 200] },
 ] }
 
-const DEFAULT_SENHAS: GridDoc = { tabelas: [
-  { titulo: 'DADOS E SENHAS DO SALÃO', cabecalho: [cel('Descrição'), cel('Informação')], linhas: [
-    [cel('PIX Salão'), cel('CNPJ: 29.789.033/0001-44 — OLIVEIRA E SCHNEIDER INSTITUTO DE BELEZA LTDA')],
-    [cel('Conta para transferência'), cel('Agência: 3426-6 · Conta corrente: 21949-5 · CNPJ: 29.789.033/0001-44')],
-    [cel('E-mail Salão'), cel('ROUGEHAIR110@GMAIL.COM')],
-    [cel('Senha do e-mail'), cel('')],
-    [cel('Wi-Fi'), cel('')],
-    [cel('Sistema NODRI'), cel('')],
-  ] },
-] }
-
 function mesAtual() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` }
 function diasNoMes(mes: string) { const [y, m] = mes.split('-').map(Number); return new Date(y, m, 0).getDate() }
 
@@ -237,7 +227,7 @@ export default function SalaoAdministrativoPage() {
         {abaTopo === 'ata' && <GridEditavel key="ata" chave="ata" defaultDoc={DEFAULT_ATA} />}
         {abaTopo === 'escala' && <GridEditavel key="escala" chave="escala" defaultDocFn={escalaDoMes} mensal landscape />}
         {abaTopo === 'feriados' && <GridEditavel key="feriados" chave="feriados" defaultDoc={DEFAULT_FERIADOS} landscape />}
-        {abaTopo === 'senhas' && <GridEditavel key="senhas" chave="senhas" defaultDoc={DEFAULT_SENHAS} />}
+        {abaTopo === 'senhas' && <SenhasLista key="senhas" chave="senhas" />}
         {abaTopo === 'cadastrar_produto' && <GridEditavel key="cadprod" chave="cadastrar_produto" defaultDoc={DEFAULT_CAD_PRODUTO} landscape />}
         {abaTopo === 'desconto_profissional' && <GridEditavel key="descprof" chave="desconto_profissional" defaultDoc={DEFAULT_DESC_PROF} landscape />}
         {abaTopo === 'tabela_precos' && <AnexosLista key="tabprecos" chave="tabela_precos_arquivos" titulo="Tabela de Preço Atualizada" campoNome="Marca" comData />}
