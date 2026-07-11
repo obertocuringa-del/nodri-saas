@@ -27,13 +27,14 @@ export function hojeBRKits() {
   return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
 }
 
-// Aceita vírgula OU ponto como separador decimal (ex: "1,99", "3.5") — os
-// kits custam valor com centavos, então o Number() puro (que só entende
-// ponto) não pode ser usado direto no que a pessoa digita.
+// Aceita vírgula OU ponto como separador decimal (ex: "1,99", "3.5", "R$ 28,80")
+// — o Number() puro só entende ponto e quebra com prefixo "R$" ou espaços, o
+// que aparece direto em dado digitado à mão ou migrado de planilha antiga.
 export function parseBRLNumber(s: string): number {
   const raw = String(s || '').trim()
   if (!raw) return 0
-  const cleaned = raw.includes(',') ? raw.replace(/\./g, '').replace(',', '.') : raw
+  const somenteNumero = raw.replace(/[^\d,.-]/g, '')
+  const cleaned = somenteNumero.includes(',') ? somenteNumero.replace(/\./g, '').replace(',', '.') : somenteNumero
   const n = Number(cleaned)
   return isNaN(n) ? 0 : n
 }

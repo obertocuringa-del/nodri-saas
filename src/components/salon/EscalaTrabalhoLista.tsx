@@ -269,7 +269,7 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
                         <td><input value={r.passagem} onChange={e => editClt(r.id, { passagem: e.target.value })} className="esc-input" style={{ textAlign: 'center' }} placeholder="0,00" /></td>
                         <td style={{ textAlign: 'center', color: '#6b6860' }}>R$ {fmtBRL(r.porDia)}</td>
                         <td style={{ textAlign: 'center', fontWeight: 800, color: '#16a34a' }}>R$ {fmtBRL(r.total)}</td>
-                        <td><input value={r.pix} onChange={e => editClt(r.id, { pix: e.target.value })} className="esc-input" placeholder="Chave / dados PIX" /></td>
+                        <td><textarea value={r.pix} onChange={e => editClt(r.id, { pix: e.target.value })} className="esc-input" rows={2} style={{ resize: 'vertical', fontFamily: 'inherit', display: 'block' }} placeholder="Chave / dados PIX" /></td>
                       </tr>
                     ))}
                   </tbody>
@@ -297,7 +297,7 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
                         <td><input value={r.qtdDias} onChange={e => editPj(r.id, { qtdDias: e.target.value })} className="esc-input" style={{ textAlign: 'center' }} placeholder="0" /></td>
                         <td><input value={r.passagem} onChange={e => editPj(r.id, { passagem: e.target.value })} className="esc-input" style={{ textAlign: 'center' }} placeholder="0,00" /></td>
                         <td style={{ textAlign: 'center', fontWeight: 800, color: '#16a34a' }}>R$ {fmtBRL(r.total)}</td>
-                        <td><input value={r.pix} onChange={e => editPj(r.id, { pix: e.target.value })} className="esc-input" placeholder="Chave / dados PIX" /></td>
+                        <td><textarea value={r.pix} onChange={e => editPj(r.id, { pix: e.target.value })} className="esc-input" rows={2} style={{ resize: 'vertical', fontFamily: 'inherit', display: 'block' }} placeholder="Chave / dados PIX" /></td>
                       </tr>
                     ))}
                   </tbody>
