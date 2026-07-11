@@ -30,7 +30,7 @@ const ABA_CHAVE: Record<string, string> = {
   feriados: 'adm_feriados', pop: 'adm_pop', senhas: 'adm_senhas', cadastrar_produto: 'adm_cadastrar_produto',
   desconto_profissional: 'adm_desconto_profissional', tabela_precos: 'adm_tabela_precos', arquivos_envio: 'adm_arquivos_envio',
   corrida_interna: 'adm_corrida_interna', acoes_comerciais: 'adm_acoes_comerciais', correios: 'adm_correios',
-  etiquetas: 'adm_etiquetas', agendamentos_grandes: 'adm_agendamentos_grandes', esterilizacao: 'adm_esterilizacao',
+  etiquetas: 'adm_etiquetas', esterilizacao: 'adm_esterilizacao',
   kits: 'adm_kits', enxovais: 'adm_enxovais',
 }
 
@@ -83,7 +83,6 @@ const ABAS_TOPO = [
   { key: 'acoes_comerciais', label: 'Ações Comerciais' },
   { key: 'correios', label: 'Correios' },
   { key: 'etiquetas', label: 'Etiquetas' },
-  { key: 'agendamentos_grandes', label: 'Agendamentos Grandes' },
 ]
 
 const DEFAULT_CAD_PRODUTO: GridDoc = { tabelas: [{ titulo: 'CADASTRO DE PRODUTOS', cabecalho: [cel('Produto'), cel('Marca'), cel('Categoria'), cel('Quantidade'), cel('Validade'), cel('Fornecedor'), cel('Custo'), cel('Preço de venda')], linhas: linhasVazias(14, 8), larguras: [220, 150, 150, 110, 120, 180, 110, 130] }] }
@@ -91,7 +90,6 @@ const DEFAULT_DESC_PROF: GridDoc = { tabelas: [{ titulo: 'DESCONTO PROFISSIONAL'
 const DEFAULT_CORRIDA: GridDoc = { tabelas: [{ titulo: 'CORRIDA INTERNA', cabecalho: [cel('Profissional'), cel('Meta'), cel('Realizado'), cel('Pontos'), cel('Posição'), cel('Observação')], linhas: linhasVazias(14, 6), larguras: [200, 140, 140, 100, 90, 240] }] }
 const DEFAULT_ACOES: GridDoc = { tabelas: [{ titulo: 'AÇÕES COMERCIAIS', cabecalho: [cel('Ação / Campanha'), cel('Período'), cel('Responsável'), cel('Meta'), cel('Resultado'), cel('Observação')], linhas: linhasVazias(12, 6), larguras: [240, 150, 160, 140, 160, 240] }] }
 const DEFAULT_CORREIOS: GridDoc = { tabelas: [{ titulo: 'CORREIOS', cabecalho: [cel('Data'), cel('Tipo (carta/encomenda)'), cel('Remetente'), cel('Destinatário'), cel('Código de rastreio'), cel('Status'), cel('Observação')], linhas: linhasVazias(14, 7), larguras: [110, 170, 180, 180, 180, 130, 220] }] }
-const DEFAULT_AGENDA_GRANDE: GridDoc = { tabelas: [{ titulo: 'AGENDAMENTOS GRANDES', cabecalho: [cel('Data'), cel('Cliente'), cel('Serviço'), cel('Profissional'), cel('Valor'), cel('Observação')], linhas: linhasVazias(14, 6), larguras: [110, 200, 200, 180, 120, 240] }] }
 
 function mesAtual() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` }
 function diasNoMes(mes: string) { const [y, m] = mes.split('-').map(Number); return new Date(y, m, 0).getDate() }
@@ -201,7 +199,6 @@ export default function SalaoAdministrativoPage() {
         {abaTopo === 'corrida_interna' && <GridEditavel key="corrida" chave="corrida_interna" defaultDoc={DEFAULT_CORRIDA} landscape />}
         {abaTopo === 'acoes_comerciais' && <GridEditavel key="acoes" chave="acoes_comerciais" defaultDoc={DEFAULT_ACOES} landscape />}
         {abaTopo === 'correios' && <GridEditavel key="correios" chave="correios" defaultDoc={DEFAULT_CORREIOS} landscape />}
-        {abaTopo === 'agendamentos_grandes' && <GridEditavel key="aggrande" chave="agendamentos_grandes" defaultDoc={DEFAULT_AGENDA_GRANDE} landscape />}
         {abaTopo === 'etiquetas' && <Etiquetas key="etiquetas" />}
 
         {abaTopo === 'pop' && (<>

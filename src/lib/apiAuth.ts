@@ -60,7 +60,6 @@ export function permDaGrade(chave: string): string {
   if (c.startsWith('acoes_comerciais_')) return 'profissionais'
   if (c === 'acoes_comerciais') return 'adm_acoes_comerciais'
   if (c === 'correios') return 'adm_correios'
-  if (c === 'agendamentos_grandes') return 'adm_agendamentos_grandes'
   if (c.startsWith('esterilizacao')) return 'adm_esterilizacao'
   if (c.startsWith('enxovais')) return 'adm_enxovais'
   if (c.startsWith('descricao_cargo')) return 'profissionais'
