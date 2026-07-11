@@ -2,21 +2,81 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import toast from 'react-hot-toast'
-import { Loader2, Save, Printer, Wallet, Briefcase, CalendarDays, Plus, Trash2 } from 'lucide-react'
+import { Loader2, Save, Printer, Wallet, Briefcase, CalendarDays, Plus, Trash2, Settings, X, PartyPopper } from 'lucide-react'
 import { getLogoSalao } from '@/lib/logoSalao'
 import { parseBRLNumber } from '@/lib/kitsShared'
 
 interface DomingoRow { dia: number; data: string; fechado: boolean; motivo: string; cabeleireiro: string; assistente: string; manicure: string; recepcao: string }
 interface CltRow { id: string; nome: string; qtdDias: string; passagem: string; pix: string; manual?: boolean }
 interface PjRow { id: string; nome: string; qtdDias: string; passagem: string; pix: string; dataAdmissao: string; manual?: boolean }
-interface Profissional { id: string; nome_completo: string; apelido: string; vinculo?: string; ativo?: boolean; data_admissao?: string; conta_bancaria?: string }
+interface Profissional { id: string; nome_completo: string; apelido: string; vinculo?: string; ativo?: boolean; data_admissao?: string; conta_bancaria?: string; habilidades?: string }
+interface ConfigDias { ativo: boolean; domingoSemEscala: boolean; folgaSemanal: boolean; feriados: boolean }
+interface FeriadoRow { nome: string; data: string; horario: string; profissionais: string; fechado: boolean }
 
 const COR = '#5b4fcf'
+const CONFIG_PADRAO: ConfigDias = { ativo: true, domingoSemEscala: true, folgaSemanal: true, feriados: true }
+const DIAS_SEMANA = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'] // índice = Date.getDay()
 const rid = () => Math.random().toString(36).slice(2, 9)
 function mesAtual() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` }
 function fmtBRL(n: number) { return n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }
 const nomeDe = (p: Profissional) => p.apelido || p.nome_completo || '—'
-const mesmoNome = (a: string, b: string) => (a || '').trim().toLowerCase() === (b || '').trim().toLowerCase()
+const normaliza = (s: string) => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase()
+const mesmoNome = (a: string, b: string) => normaliza(a) === normaliza(b)
+function parseFolgas(habilidades?: string): string[] {
+  try { return JSON.parse(habilidades || '{}').dias_folga || [] } catch { return [] }
+}
+// Um nome "está" numa lista de escalados (texto livre, nomes separados por / ou vírgula)
+// se aparecer como um dos pedaços — evita falso positivo tipo "ANA" casar com "MARIANA".
+function nomeNaLista(nome: string, lista: string): boolean {
+  const alvo = normaliza(nome)
+  if (!alvo) return false
+  return lista.split(/[/,]/).map(normaliza).some(n => n === alvo)
+}
+// Todas as datas dd/mm/aaaa dentro de um texto livre (ex: "02, 03 e 04/03/2026") caem no mesmo mês/ano do último bloco.
+function feriadoNoMes(dataTexto: string, mes: string): boolean {
+  const [anoSel, mesSel] = mes.split('-').map(Number)
+  const re = /(\d{2})\/(\d{2})\/(\d{4})/g
+  let m: RegExpExecArray | null
+  while ((m = re.exec(dataTexto || ''))) {
+    if (Number(m[2]) === mesSel && Number(m[3]) === anoSel) return true
+  }
+  return false
+}
+// Sugestão de dias trabalhados no mês: total de dias - folga semanal fixa (exceto domingo,
+// tratado à parte pela escala) - domingos em que ele não está escalado - feriados fechados
+// ou em que ele não consta na lista de escalados.
+function diasSugeridosMes(nome: string, folgas: string[], mes: string, domingos: DomingoRow[], feriadosDoMes: FeriadoRow[], config: ConfigDias): number {
+  const [ano, m] = mes.split('-').map(Number)
+  const totalDias = new Date(ano, m, 0).getDate()
+  let dias = totalDias
+  const folgaIdx = new Set(folgas.map(f => DIAS_SEMANA.indexOf(f)).filter(i => i >= 0))
+
+  if (config.folgaSemanal) {
+    for (let d = 1; d <= totalDias; d++) {
+      const dow = new Date(ano, m - 1, d).getDay()
+      if (dow !== 0 && folgaIdx.has(dow)) dias--
+    }
+  }
+
+  if (config.domingoSemEscala) {
+    domingos.forEach(dm => {
+      if (dm.fechado) { dias--; return }
+      const escalados = [dm.cabeleireiro, dm.assistente, dm.manicure, dm.recepcao].join('/')
+      if (!nomeNaLista(nome, escalados)) dias--
+    })
+  } else if (config.folgaSemanal && folgaIdx.has(0)) {
+    domingos.forEach(() => { dias-- })
+  }
+
+  if (config.feriados) {
+    feriadosDoMes.forEach(f => {
+      if (f.fechado) { dias--; return }
+      if (f.profissionais && !nomeNaLista(nome, f.profissionais)) dias--
+    })
+  }
+
+  return Math.max(0, dias)
+}
 
 function domingosDoMes(mes: string): { dia: number; data: string }[] {
   const [ano, m] = mes.split('-').map(Number)
@@ -87,6 +147,46 @@ function migrarFormatoAntigo(doc: any): { domingos: DomingoRow[]; clt: CltRow[];
   return { domingos, clt, pj, alimentacaoPorDia }
 }
 
+// Célula com chips dos nomes escalados + botão "+" que abre uma lista suspensa
+// do cadastro pra escolher, em vez de digitar o nome na mão. O valor continua
+// sendo salvo como texto "Nome / Nome" pra manter compatibilidade com o que
+// já existia (mesmo formato que a impressão e o formato antigo usam).
+function SeletorNomes({ value, onChange, opcoes }: { value: string; onChange: (v: string) => void; opcoes: string[] }) {
+  const [aberto, setAberto] = useState(false)
+  const nomes = value ? value.split('/').map(s => s.trim()).filter(Boolean) : []
+  function add(nome: string) {
+    onChange([...nomes, nome].join(' / '))
+    setAberto(false)
+  }
+  function remover(nome: string) {
+    onChange(nomes.filter(n => n !== nome).join(' / '))
+  }
+  const disponiveis = opcoes.filter(o => !nomes.some(n => mesmoNome(n, o)))
+  return (
+    <div style={{ position: 'relative' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center', minHeight: 26 }}>
+        {nomes.map(n => (
+          <span key={n} style={{ display: 'inline-flex', alignItems: 'center', gap: 3, background: '#f0eefb', color: COR, fontSize: 11, fontWeight: 700, padding: '2px 6px', borderRadius: 20, whiteSpace: 'nowrap' }}>
+            {n}
+            <button type="button" onClick={() => remover(n)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: COR, fontSize: 13, lineHeight: 1, padding: 0 }}>×</button>
+          </span>
+        ))}
+        <button type="button" onClick={() => setAberto(v => !v)} title="Adicionar profissional" style={{ border: '1px dashed #d0cdc7', background: 'transparent', borderRadius: 20, width: 20, height: 20, cursor: 'pointer', fontSize: 13, color: '#9ca3af', lineHeight: 1, flexShrink: 0 }}>+</button>
+      </div>
+      {aberto && (
+        <>
+          <div onClick={() => setAberto(false)} style={{ position: 'fixed', inset: 0, zIndex: 29 }} />
+          <div style={{ position: 'absolute', zIndex: 30, top: '100%', left: 0, background: '#fff', border: '1px solid #e8e6e0', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,.15)', minWidth: 170, maxHeight: 220, overflowY: 'auto', marginTop: 3 }}>
+            {disponiveis.length === 0 ? <div style={{ padding: 8, fontSize: 12, color: '#9ca3af' }}>Sem opções</div> : disponiveis.map(o => (
+              <div key={o} onClick={() => add(o)} style={{ padding: '7px 10px', fontSize: 12.5, cursor: 'pointer', whiteSpace: 'nowrap' }} onMouseEnter={e => (e.currentTarget.style.background = '#f8f7ff')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>{o}</div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
 export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: string }) {
   const [mes, setMes] = useState(mesAtual())
   const [profissionais, setProfissionais] = useState<Profissional[]>([])
@@ -97,11 +197,17 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
   const [dirty, setDirty] = useState(false)
+  const [feriadosDoc, setFeriadosDoc] = useState<any>(null)
+  const [config, setConfig] = useState<ConfigDias>(CONFIG_PADRAO)
+  const [configAberta, setConfigAberta] = useState(false)
+  const [salvandoConfig, setSalvandoConfig] = useState(false)
 
   const chaveMes = `${chave}_${mes}`
 
   useEffect(() => {
     fetch('/api/profissionais').then(r => r.ok ? r.json() : []).then((arr: any[]) => setProfissionais(Array.isArray(arr) ? arr : [])).catch(() => {})
+    fetch('/api/salon/grid?chave=feriados').then(r => r.ok ? r.json() : null).then(setFeriadosDoc).catch(() => {})
+    fetch('/api/salon/grid?chave=escala_config').then(r => r.ok ? r.json() : null).then(d => { if (d && typeof d.ativo === 'boolean') setConfig({ ...CONFIG_PADRAO, ...d }) }).catch(() => {})
   }, [])
 
   const carregar = useCallback(async () => {
@@ -174,12 +280,28 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
   function removerPj(id: string) {
     setPjRows(prev => prev.filter(r => r.id !== id)); setDirty(true)
   }
+  async function salvarConfig(novo: ConfigDias) {
+    setConfig(novo)
+    setSalvandoConfig(true)
+    try {
+      await fetch('/api/salon/grid', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chave: 'escala_config', doc: novo }) })
+    } catch { /* mantém local mesmo se falhar salvar */ }
+    setSalvandoConfig(false)
+  }
+
+  const nomesProfissionais = profissionais.filter(p => p.ativo !== false).map(nomeDe)
+  const feriadosDoMes: FeriadoRow[] = (feriadosDoc?.tabelas?.[0]?.linhas || []).filter((l: any[]) => feriadoNoMes(l[1]?.t || '', mes)).map((l: any[]) => ({
+    nome: l[0]?.t || '', data: l[1]?.t || '', horario: l[2]?.t || '', profissionais: l[3]?.t || '',
+    fechado: /fechado/i.test(l[2]?.t || '') || /fechado/i.test(l[4]?.t || ''),
+  }))
 
   const alimentacaoPorDia = parseBRLNumber(alimentacaoStr)
   const cltCalc = cltRows.map(r => {
     const dias = Number(r.qtdDias) || 0, passagem = parseBRLNumber(r.passagem)
     const porDia = alimentacaoPorDia + passagem
-    return { ...r, porDia, total: porDia * dias }
+    const prof = profissionais.find(p => mesmoNome(nomeDe(p), r.nome))
+    const sugestao = config.ativo && prof ? diasSugeridosMes(r.nome, parseFolgas(prof.habilidades), mes, domingos, feriadosDoMes, config) : null
+    return { ...r, porDia, total: porDia * dias, sugestao }
   })
   const pjCalc = pjRows.map(r => {
     const dias = Number(r.qtdDias) || 0, passagem = parseBRLNumber(r.passagem)
@@ -187,7 +309,9 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
     const limite = dataLimitePJ(r.dataAdmissao)
     const hoje = new Date(); hoje.setHours(0, 0, 0, 0)
     const diasRestantes = limite ? Math.round((limite.getTime() - hoje.getTime()) / 86400000) : null
-    return { ...r, total: passagem * dias, mesElegibilidade: meses === null ? null : meses + 1, limite, diasRestantes }
+    const prof = profissionais.find(p => mesmoNome(nomeDe(p), r.nome))
+    const sugestao = config.ativo && prof ? diasSugeridosMes(r.nome, parseFolgas(prof.habilidades), mes, domingos, feriadosDoMes, config) : null
+    return { ...r, total: passagem * dias, mesElegibilidade: meses === null ? null : meses + 1, limite, diasRestantes, sugestao }
   })
   const totalClt = cltCalc.reduce((s, r) => s + r.total, 0)
   const totalPj = pjCalc.reduce((s, r) => s + r.total, 0)
@@ -239,9 +363,43 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
         <input type="month" value={mes} onChange={e => setMes(e.target.value)} style={{ padding: '7px 9px', borderRadius: 8, border: '1px solid #d0cdc7', fontSize: 13 }} />
         <div style={{ flex: 1 }} />
         {dirty && !salvando && <span style={{ fontSize: 12, color: '#b45309', fontWeight: 700 }}>Alterações não salvas</span>}
+        <button onClick={() => setConfigAberta(true)} title="Configurações de cálculo automático" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 10px', borderRadius: 8, border: '1px solid #d0cdc7', background: '#fff', color: '#374151', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}><Settings size={14} /></button>
         <button onClick={imprimir} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 8, border: '1px solid #d0cdc7', background: '#fff', color: '#374151', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}><Printer size={14} /> Imprimir A4</button>
         <button onClick={salvar} disabled={salvando} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 16px', borderRadius: 8, border: 'none', background: dirty ? '#16a34a' : '#a3b3a3', color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>{salvando ? '...' : <><Save size={14} /> Salvar</>}</button>
       </div>
+
+      {configAberta && (
+        <div onClick={() => setConfigAberta(false)} style={{ position: 'fixed', inset: 0, zIndex: 90, background: 'rgba(0,0,0,.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, padding: 20, maxWidth: 440, width: '100%', boxShadow: '0 12px 40px rgba(0,0,0,.25)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+              <h3 style={{ fontSize: 15, fontWeight: 800, color: '#1a1a1a', display: 'flex', alignItems: 'center', gap: 6, margin: 0 }}><Settings size={16} color={COR} /> Configurações — Dias trabalhados</h3>
+              <button onClick={() => setConfigAberta(false)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#9ca3af' }}><X size={18} /></button>
+            </div>
+            <p style={{ fontSize: 12, color: '#9ca3af', margin: '4px 0 16px' }}>Calcula uma sugestão de dias trabalhados no mês pra cada profissional, com base no cadastro. Você sempre pode editar o número manualmente depois.</p>
+
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0', cursor: 'pointer', fontSize: 13, fontWeight: 700, color: '#1a1a1a' }}>
+              <input type="checkbox" checked={config.ativo} onChange={e => salvarConfig({ ...config, ativo: e.target.checked })} style={{ width: 16, height: 16 }} />
+              Sugerir dias automaticamente
+            </label>
+
+            <div style={{ marginLeft: 4, opacity: config.ativo ? 1 : 0.4, pointerEvents: config.ativo ? 'auto' : 'none' }}>
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '7px 0', cursor: 'pointer', fontSize: 12.5, color: '#374151' }}>
+                <input type="checkbox" checked={config.folgaSemanal} onChange={e => salvarConfig({ ...config, folgaSemanal: e.target.checked })} style={{ width: 15, height: 15, marginTop: 2 }} />
+                <span>Descontar o dia de folga semanal fixo (configurado no cadastro do profissional)</span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '7px 0', cursor: 'pointer', fontSize: 12.5, color: '#374151' }}>
+                <input type="checkbox" checked={config.domingoSemEscala} onChange={e => salvarConfig({ ...config, domingoSemEscala: e.target.checked })} style={{ width: 15, height: 15, marginTop: 2 }} />
+                <span>Descontar domingos em que ele não está escalado (tabela acima) ou que estão marcados como fechado</span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '7px 0', cursor: 'pointer', fontSize: 12.5, color: '#374151' }}>
+                <input type="checkbox" checked={config.feriados} onChange={e => salvarConfig({ ...config, feriados: e.target.checked })} style={{ width: 15, height: 15, marginTop: 2 }} />
+                <span>Descontar feriados fechados ou em que ele não consta escalado (Escala de Feriados)</span>
+              </label>
+            </div>
+            {salvandoConfig && <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 8 }}>Salvando...</p>}
+          </div>
+        </div>
+      )}
 
       {loading ? <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Loader2 size={24} className="animate-spin" style={{ color: COR }} /></div> : (
         <>
@@ -266,12 +424,37 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
                           </td>
                         ) : (
                           <>
-                            <td><input value={d.cabeleireiro} onChange={e => editDomingo(d.dia, { cabeleireiro: e.target.value })} className="esc-input" placeholder="—" /></td>
-                            <td><input value={d.assistente} onChange={e => editDomingo(d.dia, { assistente: e.target.value })} className="esc-input" placeholder="—" /></td>
-                            <td><input value={d.manicure} onChange={e => editDomingo(d.dia, { manicure: e.target.value })} className="esc-input" placeholder="—" /></td>
-                            <td><input value={d.recepcao} onChange={e => editDomingo(d.dia, { recepcao: e.target.value })} className="esc-input" placeholder="—" /></td>
+                            <td><SeletorNomes value={d.cabeleireiro} onChange={v => editDomingo(d.dia, { cabeleireiro: v })} opcoes={nomesProfissionais} /></td>
+                            <td><SeletorNomes value={d.assistente} onChange={v => editDomingo(d.dia, { assistente: v })} opcoes={nomesProfissionais} /></td>
+                            <td><SeletorNomes value={d.manicure} onChange={v => editDomingo(d.dia, { manicure: v })} opcoes={nomesProfissionais} /></td>
+                            <td><SeletorNomes value={d.recepcao} onChange={v => editDomingo(d.dia, { recepcao: v })} opcoes={nomesProfissionais} /></td>
                           </>
                         )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* ── Feriados (puxado direto da Escala de Feriados) ── */}
+          <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 16, marginBottom: 20 }}>
+            <h3 style={{ fontSize: 14, fontWeight: 800, color: '#1a1a1a', margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 6 }}><PartyPopper size={16} color={COR} /> Feriados — {mes.split('-').reverse().join('/')}</h3>
+            <p style={{ fontSize: 11.5, color: '#9ca3af', margin: '0 0 12px' }}>Puxado automaticamente da aba "Escala de Feriados". Pra editar, ajuste por lá.</p>
+            {feriadosDoMes.length === 0 ? (
+              <p style={{ fontSize: 13, color: '#9ca3af' }}>Nenhum feriado cadastrado neste mês.</p>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table className="esc-table">
+                  <thead><tr><th>Feriado</th><th style={{ width: 140 }}>Data</th><th style={{ width: 140 }}>Horário</th><th>Profissionais escalados</th></tr></thead>
+                  <tbody>
+                    {feriadosDoMes.map((f, i) => (
+                      <tr key={i}>
+                        <td style={{ fontWeight: 700, color: '#1a1a1a' }}>{f.nome}</td>
+                        <td>{f.data}</td>
+                        <td>{f.fechado ? <span style={{ color: '#dc2626', fontWeight: 800 }}>FECHADO</span> : f.horario}</td>
+                        <td style={{ color: '#6b6860' }}>{f.profissionais || '—'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -300,7 +483,14 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
                         <td style={{ fontWeight: 700, color: '#1a1a1a' }}>
                           {r.manual ? <input value={r.nome} onChange={e => editClt(r.id, { nome: e.target.value })} className="esc-input" placeholder="Nome do profissional" style={{ fontWeight: 700 }} /> : r.nome}
                         </td>
-                        <td><input value={r.qtdDias} onChange={e => editClt(r.id, { qtdDias: e.target.value })} className="esc-input" style={{ textAlign: 'center' }} placeholder="0" /></td>
+                        <td>
+                          <input value={r.qtdDias} onChange={e => editClt(r.id, { qtdDias: e.target.value })} className="esc-input" style={{ textAlign: 'center' }} placeholder="0" />
+                          {r.sugestao !== null && (
+                            <div style={{ fontSize: 9.5, color: '#9ca3af', textAlign: 'center', marginTop: -2 }}>
+                              sugestão {r.sugestao}{String(r.sugestao) !== r.qtdDias.trim() && <button type="button" onClick={() => editClt(r.id, { qtdDias: String(r.sugestao) })} style={{ marginLeft: 4, border: 'none', background: 'transparent', color: COR, fontWeight: 700, cursor: 'pointer', fontSize: 9.5, textDecoration: 'underline', padding: 0 }}>usar</button>}
+                            </div>
+                          )}
+                        </td>
                         <td style={{ textAlign: 'center', color: '#6b6860' }}>R$ {fmtBRL(alimentacaoPorDia)}</td>
                         <td><input value={r.passagem} onChange={e => editClt(r.id, { passagem: e.target.value })} className="esc-input" style={{ textAlign: 'center' }} placeholder="0,00" /></td>
                         <td style={{ textAlign: 'center', color: '#6b6860' }}>R$ {fmtBRL(r.porDia)}</td>
@@ -341,7 +531,14 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
                             </div>
                           )}
                         </td>
-                        <td><input value={r.qtdDias} onChange={e => editPj(r.id, { qtdDias: e.target.value })} className="esc-input" style={{ textAlign: 'center' }} placeholder="0" /></td>
+                        <td>
+                          <input value={r.qtdDias} onChange={e => editPj(r.id, { qtdDias: e.target.value })} className="esc-input" style={{ textAlign: 'center' }} placeholder="0" />
+                          {r.sugestao !== null && (
+                            <div style={{ fontSize: 9.5, color: '#9ca3af', textAlign: 'center', marginTop: -2 }}>
+                              sugestão {r.sugestao}{String(r.sugestao) !== r.qtdDias.trim() && <button type="button" onClick={() => editPj(r.id, { qtdDias: String(r.sugestao) })} style={{ marginLeft: 4, border: 'none', background: 'transparent', color: COR, fontWeight: 700, cursor: 'pointer', fontSize: 9.5, textDecoration: 'underline', padding: 0 }}>usar</button>}
+                            </div>
+                          )}
+                        </td>
                         <td><input value={r.passagem} onChange={e => editPj(r.id, { passagem: e.target.value })} className="esc-input" style={{ textAlign: 'center' }} placeholder="0,00" /></td>
                         <td style={{ textAlign: 'center', fontWeight: 800, color: '#16a34a' }}>R$ {fmtBRL(r.total)}</td>
                         <td><textarea value={r.pix} onChange={e => editPj(r.id, { pix: e.target.value })} className="esc-input" rows={2} style={{ resize: 'vertical', fontFamily: 'inherit', display: 'block' }} placeholder="Chave / dados PIX" /></td>
