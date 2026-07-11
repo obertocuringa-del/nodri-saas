@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import toast from 'react-hot-toast'
 import { Loader2, Send, Hand, Footprints, CheckCircle2, Clock3 } from 'lucide-react'
-import type { KitsSolicitacao, KitsConfig } from '@/lib/kitsShared'
+import { ultimosMeses, type KitsSolicitacao, type KitsConfig } from '@/lib/kitsShared'
 
 const COR = '#5b4fcf'
 
@@ -25,16 +25,24 @@ export default function KitsProfissionalView() {
   const carregar = useCallback(async () => {
     setLoading(true)
     try {
-      const [ano, mesNum] = mes.split('-').map(Number)
-      const [c, a, s] = await Promise.all([
+      const meses3 = ultimosMeses(mes, 3) // últimos 3 meses (incluindo o atual)
+      const [c, atendPorMes, s] = await Promise.all([
         fetch('/api/kits/config').then(r => r.ok ? r.json() : null),
-        fetch(`/api/relatorios/kits-atendimentos?ano=${ano}&mes=${mesNum}`).then(r => r.ok ? r.json() : null),
+        Promise.all(meses3.map(m => {
+          const [ano, mesNum] = m.split('-').map(Number)
+          return fetch(`/api/relatorios/kits-atendimentos?ano=${ano}&mes=${mesNum}`).then(r => r.ok ? r.json() : null)
+        })),
         fetch(`/api/kits/solicitacoes?mes=${mes}`).then(r => r.ok ? r.json() : null),
       ])
       if (c) setCfg(c)
-      const minha = Array.isArray(a?.profissionais) ? a.profissionais[0] : null
-      setAtendMao(minha?.atendimentosMao || 0)
-      setAtendPe(minha?.atendimentosPe || 0)
+      let somaMao = 0, somaPe = 0
+      for (const a of atendPorMes) {
+        const minha = Array.isArray(a?.profissionais) ? a.profissionais[0] : null
+        somaMao += minha?.atendimentosMao || 0
+        somaPe += minha?.atendimentosPe || 0
+      }
+      setAtendMao(Math.round(somaMao / 3))
+      setAtendPe(Math.round(somaPe / 3))
       setSolicitacoes(Array.isArray(s?.solicitacoes) ? s.solicitacoes : [])
     } catch { /* mantém o que já tinha */ }
     setLoading(false)
@@ -76,12 +84,12 @@ export default function KitsProfissionalView() {
         <div style={{ background: '#fff', border: '1px solid #eceae4', borderRadius: 14, padding: '14px 16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 6, color: COR }}><Hand size={16} /><span style={{ fontSize: 11.5, fontWeight: 700, color: '#6b6860' }}>Atendimentos de mão</span></div>
           <div style={{ fontSize: 20, fontWeight: 900, color: '#1a1a1a' }}>{atendMao}</div>
-          <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>este mês — sua média de referência</div>
+          <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>média/mês nos últimos 3 meses</div>
         </div>
         <div style={{ background: '#fff', border: '1px solid #eceae4', borderRadius: 14, padding: '14px 16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 6, color: COR }}><Footprints size={16} /><span style={{ fontSize: 11.5, fontWeight: 700, color: '#6b6860' }}>Atendimentos de pé</span></div>
           <div style={{ fontSize: 20, fontWeight: 900, color: '#1a1a1a' }}>{atendPe}</div>
-          <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>este mês — sua média de referência</div>
+          <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>média/mês nos últimos 3 meses</div>
         </div>
       </div>
 
@@ -100,9 +108,23 @@ export default function KitsProfissionalView() {
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#f6f4ff', borderRadius: 10, marginBottom: 14 }}>
-          <span style={{ fontSize: 12.5, color: '#5b4fcf', fontWeight: 700 }}>Você vai pagar</span>
-          <strong style={{ fontSize: 18, color: '#5b4fcf' }}>R$ {fmtBRL(totalPreview)}</strong>
+        <div style={{ background: '#f6f4ff', borderRadius: 10, marginBottom: 14, overflow: 'hidden' }}>
+          {qtdMao > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 14px', fontSize: 12.5, color: '#374151' }}>
+              <span>{qtdMao} kit(s) mão × R$ {fmtBRL(cfg.precoMao || 0)}</span>
+              <strong>R$ {fmtBRL(qtdMao * (cfg.precoMao || 0))}</strong>
+            </div>
+          )}
+          {qtdPe > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 14px', fontSize: 12.5, color: '#374151' }}>
+              <span>{qtdPe} kit(s) pé × R$ {fmtBRL(cfg.precoPe || 0)}</span>
+              <strong>R$ {fmtBRL(qtdPe * (cfg.precoPe || 0))}</strong>
+            </div>
+          )}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderTop: (qtdMao > 0 || qtdPe > 0) ? '1px solid #e0dbfa' : undefined }}>
+            <span style={{ fontSize: 12.5, color: '#5b4fcf', fontWeight: 700 }}>Você vai pagar</span>
+            <strong style={{ fontSize: 18, color: '#5b4fcf' }}>R$ {fmtBRL(totalPreview)}</strong>
+          </div>
         </div>
 
         <button onClick={solicitar} disabled={enviando} style={{ width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '12px', borderRadius: 10, border: 'none', background: '#16a34a', color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>{enviando ? '...' : <><Send size={15} /> Solicitar</>}</button>

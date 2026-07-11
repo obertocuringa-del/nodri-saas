@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import toast from 'react-hot-toast'
 import { Loader2, Save, Package, Hand, Footprints, Wallet, Clock3, CheckCircle2, Trash2 } from 'lucide-react'
 import { useIsMobile } from '@/lib/useIsMobile'
-import { mesmoProf, type KitsSolicitacao, type KitsConfig } from '@/lib/kitsShared'
+import { mesmoProf, parseBRLNumber, type KitsSolicitacao, type KitsConfig } from '@/lib/kitsShared'
 
 const COR = '#5b4fcf'
 
@@ -17,13 +17,17 @@ export default function KitsAdminLista() {
   const mobile = useIsMobile()
   const [mes, setMes] = useState(mesAtualKits())
   const [cfg, setCfg] = useState<KitsConfig>({ precoMao: 0, precoPe: 0 })
+  const [precoMaoStr, setPrecoMaoStr] = useState('')
+  const [precoPeStr, setPrecoPeStr] = useState('')
   const [salvandoCfg, setSalvandoCfg] = useState(false)
   const [solicitacoes, setSolicitacoes] = useState<KitsSolicitacao[]>([])
   const [atendimentos, setAtendimentos] = useState<{ profissional: string; atendimentosMao: number; atendimentosPe: number }[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/kits/config').then(r => r.ok ? r.json() : null).then(d => { if (d) setCfg(d) }).catch(() => { })
+    fetch('/api/kits/config').then(r => r.ok ? r.json() : null).then(d => {
+      if (d) { setCfg(d); setPrecoMaoStr(d.precoMao ? String(d.precoMao).replace('.', ',') : ''); setPrecoPeStr(d.precoPe ? String(d.precoPe).replace('.', ',') : '') }
+    }).catch(() => { })
   }, [])
 
   const carregar = useCallback(async () => {
@@ -44,8 +48,9 @@ export default function KitsAdminLista() {
   async function salvarConfig() {
     setSalvandoCfg(true)
     try {
-      const res = await fetch('/api/kits/config', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cfg) })
-      if (res.ok) toast.success('Preços salvos!'); else toast.error('Erro ao salvar')
+      const novoCfg: KitsConfig = { precoMao: parseBRLNumber(precoMaoStr), precoPe: parseBRLNumber(precoPeStr) }
+      const res = await fetch('/api/kits/config', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(novoCfg) })
+      if (res.ok) { toast.success('Preços salvos!'); setCfg(novoCfg) } else toast.error('Erro ao salvar')
     } catch { toast.error('Erro de conexão') }
     setSalvandoCfg(false)
   }
@@ -92,11 +97,11 @@ export default function KitsAdminLista() {
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div>
             <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#6b6860', marginBottom: 5 }}>Kit Mão (R$)</label>
-            <input value={cfg.precoMao || ''} onChange={e => setCfg({ ...cfg, precoMao: Number(e.target.value) || 0 })} placeholder="0,00" style={{ width: 120, padding: '9px 11px', borderRadius: 9, border: '1.5px solid #d0cdc7', fontSize: 13.5 }} />
+            <input value={precoMaoStr} onChange={e => setPrecoMaoStr(e.target.value)} inputMode="decimal" placeholder="Ex: 1,99" style={{ width: 120, padding: '9px 11px', borderRadius: 9, border: '1.5px solid #d0cdc7', fontSize: 13.5 }} />
           </div>
           <div>
             <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#6b6860', marginBottom: 5 }}>Kit Pé (R$)</label>
-            <input value={cfg.precoPe || ''} onChange={e => setCfg({ ...cfg, precoPe: Number(e.target.value) || 0 })} placeholder="0,00" style={{ width: 120, padding: '9px 11px', borderRadius: 9, border: '1.5px solid #d0cdc7', fontSize: 13.5 }} />
+            <input value={precoPeStr} onChange={e => setPrecoPeStr(e.target.value)} inputMode="decimal" placeholder="Ex: 3,50" style={{ width: 120, padding: '9px 11px', borderRadius: 9, border: '1.5px solid #d0cdc7', fontSize: 13.5 }} />
           </div>
           <button onClick={salvarConfig} disabled={salvandoCfg} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 9, border: 'none', background: '#5b4fcf', color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer', height: 38 }}>{salvandoCfg ? '...' : <><Save size={14} /> Salvar preço</>}</button>
         </div>
