@@ -3074,17 +3074,20 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
     <div className={`min-h-screen ${souProf ? '' : 'bg-nodri-dark'}`} style={souProf ? { background: 'linear-gradient(180deg,#f4f3fb 0%,#eef0f6 100%)' } : undefined}>
       {/* Header de gestão (dono / sub) */}
       {!souProf && (
-      <div className="sticky top-0 z-20 bg-nodri-surface border-b border-nodri-border px-5 py-3 flex items-center gap-3">
+      <div className="sticky top-0 z-20 bg-nodri-surface border-b border-nodri-border px-5 py-3 flex items-center gap-3 shadow-sm">
         <button onClick={()=>router.push('/salon/profissionais')}
           className="flex items-center gap-1.5 text-nodri-t2 hover:text-nodri-cyan transition-colors text-sm">
           <ArrowLeft size={15}/> Profissionais
         </button>
         <div className="w-px h-5 bg-nodri-border"/>
-        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#5b4fcf] to-[#f43f8e] flex items-center justify-center text-[#1a1a1a] text-[10px] font-bold shrink-0">
-          {(prof.apelido||prof.nome_completo).split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase()}
+        <div className="relative shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#5b4fcf] to-[#f43f8e] flex items-center justify-center text-white text-[11px] font-bold shadow-sm">
+            {(prof.apelido||prof.nome_completo).split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase()}
+          </div>
+          <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-nodri-surface" style={{ background: (prof as any).ativo === false ? '#9ca3af' : '#22c55e' }} title={(prof as any).ativo === false ? 'Inativo' : 'Ativo'}/>
         </div>
         <div>
-          <h1 className="font-syne font-bold text-[13px] leading-tight">{prof.nome_completo}</h1>
+          <h1 className="font-syne font-bold text-[14px] leading-tight tracking-tight">{prof.nome_completo}</h1>
           <p className="text-[10px] text-nodri-t3">{prof.cargo}</p>
         </div>
         {faltando.length > 0 && (
