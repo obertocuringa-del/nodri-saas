@@ -22,6 +22,7 @@ import AnexosLista from '@/components/salon/AnexosLista'
 import Etiquetas from '@/components/salon/Etiquetas'
 import { CAFE_BLOCOS, POP_SALAO_BLOCOS } from '@/components/salon/popDefaults'
 import { usePermissoes } from '@/lib/usePermissoes'
+import { useIsMobile } from '@/lib/useIsMobile'
 import { getLogoSalao } from '@/lib/logoSalao'
 
 // Mapeia cada aba do topo para a chave de permissão
@@ -87,6 +88,60 @@ const ABAS_TOPO = [
   { key: 'etiquetas', label: 'Etiquetas' },
 ]
 
+// ── Sidebar (desktop): tudo visível, por categoria, em MAIÚSCULAS ──
+// item.servico preenchido = abre a aba Listas já na lista certa
+interface SidebarItem { aba: string; servico?: string; label: string }
+const SIDEBAR_CATS: { cat: string; itens: SidebarItem[] }[] = [
+  {
+    cat: 'LISTAS DO DIA A DIA', itens: [
+      { aba: 'listas', servico: 'realinhamento', label: 'LISTA DE REALINHAMENTO' },
+      { aba: 'listas', servico: 'corte', label: 'LISTA DE CORTE' },
+      { aba: 'listas', servico: 'mechas', label: 'LISTA DE MECHAS' },
+      { aba: 'listas', servico: 'pigmentacao', label: 'LISTA DE PIGMENTAÇÃO' },
+      { aba: 'listas', servico: 'bebidas', label: 'BEBIDAS' },
+      { aba: 'listas', servico: 'produtos', label: 'CONSUMO DE PRODUTOS' },
+      { aba: 'listas', servico: 'servinterno', label: 'SERVIÇOS INTERNOS' },
+    ]
+  },
+  {
+    cat: 'PREÇOS E VALORES', itens: [
+      { aba: 'servicos_valores', label: 'SERVIÇOS INTERNOS (VALORES)' },
+      { aba: 'tratamentos', label: 'TRATAMENTOS DOSAGEM' },
+      { aba: 'pacotes', label: 'PREÇO DE PACOTES' },
+      { aba: 'valores_pacotes', label: 'VALORES DE PACOTES' },
+      { aba: 'tabela_precos', label: 'TABELA DE PREÇO ATUALIZADA' },
+    ]
+  },
+  {
+    cat: 'CONTROLE E ESTOQUE', itens: [
+      { aba: 'esterilizacao', label: 'ESTERILIZAÇÃO' },
+      { aba: 'kits', label: 'KITS PÉ E MÃO' },
+      { aba: 'enxovais', label: 'CONTROLE DE ENXOVAIS' },
+      { aba: 'cadastrar_produto', label: 'CADASTRAR PRODUTO' },
+      { aba: 'etiquetas', label: 'ETIQUETAS' },
+      { aba: 'correios', label: 'CORREIOS' },
+    ]
+  },
+  {
+    cat: 'EQUIPE', itens: [
+      { aba: 'escala', label: 'ESCALA DE TRABALHO' },
+      { aba: 'feriados', label: 'ESCALA DE FERIADOS' },
+      { aba: 'ata', label: 'ATA DE REUNIÃO' },
+      { aba: 'desconto_profissional', label: 'DESCONTO PROFISSIONAL' },
+      { aba: 'corrida_interna', label: 'CORRIDA INTERNA' },
+      { aba: 'acoes_comerciais', label: 'AÇÕES COMERCIAIS' },
+    ]
+  },
+  {
+    cat: 'DOCUMENTOS E ACESSOS', itens: [
+      { aba: 'pop', label: 'POP (PROCEDIMENTOS)' },
+      { aba: 'senhas', label: 'SENHAS' },
+      { aba: 'telefones', label: 'TELEFONES IMPORTANTES' },
+      { aba: 'arquivos_envio', label: 'ARQUIVOS PARA ENVIO' },
+    ]
+  },
+]
+
 const DEFAULT_CAD_PRODUTO: GridDoc = { tabelas: [{ titulo: 'CADASTRO DE PRODUTOS', cabecalho: [cel('Produto'), cel('Marca'), cel('Categoria'), cel('Quantidade'), cel('Validade'), cel('Fornecedor'), cel('Custo'), cel('Preço de venda')], linhas: linhasVazias(14, 8), larguras: [220, 150, 150, 110, 120, 180, 110, 130] }] }
 const DEFAULT_DESC_PROF: GridDoc = { tabelas: [{ titulo: 'DESCONTO PROFISSIONAL', cabecalho: [cel('Profissional'), cel('Data'), cel('Motivo'), cel('Valor do desconto'), cel('Parcelas'), cel('Observação')], linhas: linhasVazias(14, 6), larguras: [200, 120, 280, 150, 110, 260] }] }
 const DEFAULT_CORRIDA: GridDoc = { tabelas: [{ titulo: 'CORRIDA INTERNA', cabecalho: [cel('Profissional'), cel('Meta'), cel('Realizado'), cel('Pontos'), cel('Posição'), cel('Observação')], linhas: linhasVazias(14, 6), larguras: [200, 140, 140, 100, 90, 240] }] }
@@ -106,6 +161,7 @@ export default function SalaoAdministrativoPage() {
   const [historico, setHistorico] = useState<any[]>([])
   const [verHistorico, setVerHistorico] = useState(false)
   const { pode: podeP, carregado: permCarregado } = usePermissoes()
+  const isMobile = useIsMobile(900) // sidebar precisa de espaço; abaixo disso volta o menu suspenso
   const abasVisiveis = ABAS_TOPO.filter(a => podeP(ABA_CHAVE[a.key] || a.key))
   // se a aba atual não está liberada, vai pra primeira liberada
   useEffect(() => {
@@ -138,8 +194,35 @@ export default function SalaoAdministrativoPage() {
         <button onClick={() => { setVerHistorico(true); carregarHistorico() }} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'transparent', border: '1px solid #d0cdc7', borderRadius: 8, padding: '6px 12px', color: '#6b6860', cursor: 'pointer', fontSize: 13 }}><History size={14} /> Mensagens</button>
       </nav>
 
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: 16 }}>
-        {/* Lista suspensa de ferramentas (PC e celular): mostra a aba atual; ao clicar, abre todas */}
+      <div style={{ maxWidth: isMobile ? 1100 : 1380, margin: '0 auto', padding: 16, display: 'flex', gap: 18, alignItems: 'flex-start' }}>
+        {/* Sidebar (desktop): tudo visível, por categoria */}
+        {!isMobile && (
+          <aside style={{ width: 252, flexShrink: 0, position: 'sticky', top: 74, maxHeight: 'calc(100vh - 92px)', overflowY: 'auto', background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: '10px 8px' }}>
+            {SIDEBAR_CATS.map(grupo => {
+              const itens = grupo.itens.filter(it => podeP(ABA_CHAVE[it.aba] || it.aba))
+              if (!itens.length) return null
+              return (
+                <div key={grupo.cat} style={{ marginBottom: 10 }}>
+                  <div style={{ fontSize: 10.5, fontWeight: 900, color: '#9ca3af', letterSpacing: '.6px', padding: '6px 10px 4px' }}>{grupo.cat}</div>
+                  {itens.map(it => {
+                    const ativo = abaTopo === it.aba && (!it.servico || servico === it.servico)
+                    return (
+                      <button key={it.aba + (it.servico || '')} onClick={() => { setAbaTopo(it.aba); if (it.servico) setServico(it.servico) }}
+                        style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 10px', border: 'none', borderRadius: 8, background: ativo ? '#f0eefb' : 'transparent', color: ativo ? '#5b4fcf' : '#4b5563', fontSize: 11.5, fontWeight: ativo ? 900 : 700, letterSpacing: '.3px', cursor: 'pointer', borderLeft: ativo ? '3px solid #5b4fcf' : '3px solid transparent' }}
+                        onMouseEnter={e => { if (!ativo) e.currentTarget.style.background = '#faf9f7' }} onMouseLeave={e => { if (!ativo) e.currentTarget.style.background = 'transparent' }}>
+                        {it.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              )
+            })}
+          </aside>
+        )}
+
+        <div style={{ flex: 1, minWidth: 0 }}>
+        {/* Lista suspensa de ferramentas (celular): mostra a aba atual; ao clicar, abre todas */}
+        {isMobile && (
         <div style={{ position: 'relative', maxWidth: 420, marginBottom: 18 }}>
           {abasMenuOpen && <div onClick={() => setAbasMenuOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 49 }} />}
           <button onClick={() => setAbasMenuOpen(o => !o)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '12px 16px', borderRadius: 12, border: '1.5px solid #5b4fcf', background: '#f0eefb', color: '#1a1a1a', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>
@@ -158,9 +241,11 @@ export default function SalaoAdministrativoPage() {
             </div>
           )}
         </div>
+        )}
 
         {abaTopo === 'listas' && (<>
-          {/* Seletor de lista (dropdown organizado) */}
+          {/* Seletor de lista (celular; no desktop a sidebar já mostra tudo) */}
+          {isMobile && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 16 }}>
             <label style={{ fontSize: 13, fontWeight: 700, color: '#6b6860' }}>Escolha a lista:</label>
             <select value={servico} onChange={e => setServico(e.target.value)}
@@ -173,6 +258,7 @@ export default function SalaoAdministrativoPage() {
               </optgroup>
             </select>
           </div>
+          )}
 
           {SERVICOS.some(s => s.key === servico)
             ? <ListaServico key={servico} servico={servico} label={SERVICOS.find(s => s.key === servico)?.label || ''} profsSalao={profsSalao} onMensagem={carregarHistorico} />
@@ -216,6 +302,7 @@ export default function SalaoAdministrativoPage() {
           {abaPop === 'cafe' && <DocEditavel key="pop_cafe" chave="pop_cafe" tituloPadrao="PREPARO DE SERVIÇOS — CAFÉ" blocosPadrao={CAFE_BLOCOS} />}
           {abaPop === 'salao' && <DocEditavel key="pop_salao" chave="pop_salao" tituloPadrao="POP — PROCEDIMENTO DE OPERAÇÃO PADRÃO" blocosPadrao={POP_SALAO_BLOCOS} comData />}
         </>)}
+        </div>
       </div>
 
       {verHistorico && (
