@@ -9,6 +9,7 @@ import ProcessoContratacao from '@/components/salon/ProcessoContratacao'
 import { PJ_CONTRATACAO, PJ_DESLIGAMENTO } from '@/components/salon/processoDefaults'
 import EditorAvaliacao from '@/components/salon/EditorAvaliacao'
 import DescricaoCargo from '@/components/salon/DescricaoCargo'
+import PlanoCarreiraPJ from '@/components/salon/PlanoCarreiraPJ'
 
 interface Profissional {
   id: string
@@ -77,7 +78,6 @@ const CONTEUDO_INFO: Record<string, { titulo: string; texto: string }> = {
   contratacao:  { titulo: 'Processo de Contratação', texto: 'Etapas: 1. Entrevista inicial → 2. Período de teste (7 dias) → 3. Avaliação técnica → 4. Negociação de comissão → 5. Assinatura de contrato → 6. Cadastro no sistema → 7. Integração com a equipe.' },
   perfil:       { titulo: 'Perfil Ideal de Profissional', texto: 'Buscamos profissionais: ✅ Pontuais e comprometidos ✅ Com cartela de clientes ✅ Que valorizam higiene e organização ✅ Comunicativos e empáticos ✅ Com CNPJ ativo ✅ Abertos a feedback e treinamento contínuo.' },
   certificados: { titulo: 'Certificados', texto: 'Solicite cópias dos certificados de cursos concluídos: colorimetria, corte, escova, tratamentos capilares, manicure, podologia, etc. Guarde digitalmente na ficha do profissional. Incentive atualização constante.' },
-  carreira:     { titulo: 'Plano de Carreira', texto: 'Estruture crescimento por etapas: 🥉 Júnior (0-1 ano) → 🥈 Pleno (1-3 anos) → 🥇 Sênior (3+ anos) → 🏆 Referência. Defina metas de faturamento, satisfação de clientes e horas de capacitação para evolução em cada nível.' },
 }
 
 // Guia para entrevistas com novos profissionais (modelo fiel ao PDF)
@@ -1979,6 +1979,9 @@ ${montarContratoHTML()}
               <EditorAvaliacao />
             </div>
           )}
+
+          {/* ── PLANO DE CARREIRA PJ (trilha de níveis editável) ── */}
+          {secao === 'carreira' && <PlanoCarreiraPJ />}
 
           {/* ── SEÇÕES DE CONTEÚDO INFORMATIVO ── */}
           {CONTEUDO_INFO[secao] && secao !== 'perfil' && (
