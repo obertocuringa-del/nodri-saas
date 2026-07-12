@@ -215,8 +215,8 @@ export default function ChecklistPage() {
                       <AutoTextarea value={dem.texto} onChange={v => setDemanda(catSel, di, 'texto', v)} feito={dem.feito} readOnly={soLeitura} />
                     </div>
 
-                    {/* Linha 2 (celular) / mesma linha (PC): frequência, dias, transferir, excluir */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, flexWrap: 'wrap', paddingLeft: isMobile ? 78 : 0 }}>
+                    {/* Linha 2 (celular) / mesma linha (PC): frequência, dias, transferir, excluir — tudo numa linha só */}
+                    <div className="nodri-linha-1" style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, flexWrap: 'nowrap' }}>
                     <select value={dem.freq} disabled={soLeitura} onChange={e => setDemanda(catSel, di, 'freq', e.target.value)} style={{ padding: '5px 8px', borderRadius: 6, border: `1.5px solid ${fc.bd}`, background: '#fff', color: fc.txt, fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
                       {FREQUENCIAS.map(f => <option key={f} value={f}>{f}</option>)}
                     </select>
