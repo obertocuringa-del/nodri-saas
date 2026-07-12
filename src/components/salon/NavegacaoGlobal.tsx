@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { Home, ArrowLeft, Search, Loader2, FileText, User, Layers } from 'lucide-react'
+import { useIsMobile } from '@/lib/useIsMobile'
 
 // ── Navegação global (todas as páginas do painel do salão) ──
 // Canto inferior esquerdo: Voltar (histórico) · Início · Busca ultra inteligente.
@@ -95,9 +96,9 @@ const ATALHOS = ['/salon', '/salon/profissionais', '/salon/checklist', '/salon/r
 export default function NavegacaoGlobal() {
   const router = useRouter()
   const pathname = usePathname()
+  const isMobile = useIsMobile()
   const [role, setRole] = useState<string | null>(null)
   const [perms, setPerms] = useState<string[] | null>(null)
-  const [hoverIdx, setHoverIdx] = useState<number | null>(null)
   const [buscaAberta, setBuscaAberta] = useState(false)
   const [q, setQ] = useState('')
   const [apiRes, setApiRes] = useState<ResultadoApi[]>([])
@@ -186,33 +187,38 @@ export default function NavegacaoGlobal() {
 
   const naHome = pathname === '/salon'
 
-  const btnSt = (i: number): React.CSSProperties => ({
-    width: 38, height: 38, borderRadius: '50%', border: 'none',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    background: '#5b4fcf', color: '#fff', cursor: 'pointer',
-    opacity: hoverIdx === i ? 1 : 0.4,
-    boxShadow: '0 3px 12px rgba(91,79,207,0.35)', transition: 'opacity .15s', flexShrink: 0,
-  })
+  const pillSt: React.CSSProperties = {
+    display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0,
+    padding: isMobile ? '7px 10px' : '7px 14px', borderRadius: 999,
+    border: '1px solid #ddd9f2', background: '#fff', color: '#5b4fcf',
+    fontSize: 12.5, fontWeight: 800, cursor: 'pointer',
+    boxShadow: '0 1px 4px rgba(91,79,207,.08)', transition: 'background .12s',
+  }
 
   return (
     <>
-      {/* Barra flutuante: Voltar · Início · Buscar */}
-      <div style={{ position: 'fixed', left: 14, bottom: 14, zIndex: 9999, display: 'flex', gap: 8 }}>
+      {/* Barra global no TOPO de todas as páginas: Voltar · Início · Buscar */}
+      <div style={{ background: '#f4f2ee', borderBottom: '1px solid #e4e0d8', padding: isMobile ? '7px 10px' : '7px 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
         {!naHome && (
-          <button onClick={() => router.back()} aria-label="Voltar" title="Voltar à página anterior"
-            onMouseEnter={() => setHoverIdx(0)} onMouseLeave={() => setHoverIdx(null)} style={btnSt(0)}>
-            <ArrowLeft size={17} />
+          <button onClick={() => router.back()} aria-label="Voltar" title="Voltar à página anterior" style={pillSt}
+            onMouseEnter={e => (e.currentTarget.style.background = '#f0eefb')} onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>
+            <ArrowLeft size={15} />{!isMobile && 'Voltar'}
           </button>
         )}
         {!naHome && (
-          <button onClick={() => router.push('/salon')} aria-label="Ir para a página inicial" title="Início"
-            onMouseEnter={() => setHoverIdx(1)} onMouseLeave={() => setHoverIdx(null)} style={btnSt(1)}>
-            <Home size={17} />
+          <button onClick={() => router.push('/salon')} aria-label="Ir para a página inicial" title="Início" style={pillSt}
+            onMouseEnter={e => (e.currentTarget.style.background = '#f0eefb')} onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>
+            <Home size={15} />{!isMobile && 'Início'}
           </button>
         )}
+        <div style={{ flex: 1 }} />
+        {/* Campo de busca: no PC parece um campo de verdade; no celular vira pílula compacta */}
         <button onClick={() => setBuscaAberta(true)} aria-label="Buscar no sistema" title="Buscar em todo o sistema (Ctrl+K)"
-          onMouseEnter={() => setHoverIdx(2)} onMouseLeave={() => setHoverIdx(null)} style={btnSt(2)}>
-          <Search size={17} />
+          style={{ ...pillSt, color: '#8a859c', fontWeight: 600, minWidth: isMobile ? undefined : 280, justifyContent: 'flex-start' }}
+          onMouseEnter={e => (e.currentTarget.style.background = '#f0eefb')} onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>
+          <Search size={15} color="#5b4fcf" />
+          <span style={{ flex: 1, textAlign: 'left' }}>{isMobile ? 'Buscar' : 'Buscar em todo o sistema...'}</span>
+          {!isMobile && <span style={{ fontSize: 10, color: '#b9b4d6', border: '1px solid #e5e1f5', borderRadius: 5, padding: '1px 6px' }}>Ctrl+K</span>}
         </button>
       </div>
 
