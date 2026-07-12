@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import toast from 'react-hot-toast'
-import { Loader2, Save, Printer, ChevronDown, CheckCircle2, Pencil, Sparkles } from 'lucide-react'
+import { Loader2, Save, Printer, ChevronDown, CheckCircle2, Pencil, Sparkles, Users, X } from 'lucide-react'
 import { getLogoSalao } from '@/lib/logoSalao'
+import PlanoCarreiraProgresso from '@/components/salon/PlanoCarreiraProgresso'
 
 interface Nivel {
   id: string
@@ -80,6 +81,7 @@ const DEFAULT_DOC: Doc = {
 }
 
 export default function PlanoCarreiraPJ() {
+  const [abaTopo, setAbaTopo] = useState<'plano' | 'equipe'>('plano')
   const [doc, setDoc] = useState<Doc>(DEFAULT_DOC)
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
@@ -176,9 +178,17 @@ ${doc.niveis.map(blocoNivel).join('')}
     <div style={{ maxWidth: 900 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
         <h2 style={{ fontSize: 22, fontWeight: 800, color: '#1a1a1a', margin: 0 }}>🏆 Plano de Carreira — Profissionais PJ</h2>
-        <button onClick={imprimir} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, border: 'none', background: '#5b4fcf', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}><Printer size={14} /> Imprimir plano completo</button>
+        {abaTopo === 'plano' && <button onClick={imprimir} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, border: 'none', background: '#5b4fcf', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}><Printer size={14} /> Imprimir plano completo</button>}
       </div>
 
+      <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
+        <button onClick={() => setAbaTopo('plano')} style={{ padding: '8px 16px', borderRadius: 10, border: abaTopo === 'plano' ? 'none' : '1.5px solid #e0ddd8', background: abaTopo === 'plano' ? '#1a1a1a' : '#fff', color: abaTopo === 'plano' ? '#fff' : '#6b6860', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>📋 Plano</button>
+        <button onClick={() => setAbaTopo('equipe')} style={{ padding: '8px 16px', borderRadius: 10, border: abaTopo === 'equipe' ? 'none' : '1.5px solid #e0ddd8', background: abaTopo === 'equipe' ? '#1a1a1a' : '#fff', color: abaTopo === 'equipe' ? '#fff' : '#6b6860', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5 }}><Users size={14} /> Acompanhamento da Equipe</button>
+      </div>
+
+      {abaTopo === 'equipe' && <AcompanhamentoEquipe />}
+
+      {abaTopo === 'plano' && (<>
       {/* Intro motivacional */}
       <div style={{ background: 'linear-gradient(135deg,#7c3aed,#5b4fcf)', borderRadius: 14, padding: '16px 20px', color: '#fff', marginBottom: 18, position: 'relative' }}>
         {editandoIntro ? (
@@ -279,6 +289,78 @@ ${doc.niveis.map(blocoNivel).join('')}
           )
         })}
       </div>
+      </>)}
+    </div>
+  )
+}
+
+interface ProfLeve { id: string; nome_completo: string; apelido?: string; ativo: boolean; is_departamento?: boolean; cargo?: string }
+interface ProgressoLeve { nivelId?: string; historico?: { data: string; aprovado: boolean }[] }
+
+function AcompanhamentoEquipe() {
+  const [profs, setProfs] = useState<ProfLeve[]>([])
+  const [niveis, setNiveis] = useState<Nivel[]>([])
+  const [progressos, setProgressos] = useState<Record<string, ProgressoLeve>>({})
+  const [loading, setLoading] = useState(true)
+  const [selecionado, setSelecionado] = useState<ProfLeve | null>(null)
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const [lista, planoDoc] = await Promise.all([
+          fetch('/api/profissionais?ativo=true&leve=1').then(r => r.ok ? r.json() : []),
+          fetch('/api/salon/grid?chave=plano_carreira_pj').then(r => r.ok ? r.json() : null),
+        ])
+        const ativos = (Array.isArray(lista) ? lista : []).filter((p: ProfLeve) => !p.is_departamento)
+        setProfs(ativos)
+        if (planoDoc?.niveis) setNiveis(planoDoc.niveis)
+        const entradas = await Promise.all(ativos.map(async (p: ProfLeve) => {
+          const d = await fetch(`/api/salon/grid?chave=plano_carreira_prof_${p.id}`).then(r => r.ok ? r.json() : null)
+          return [p.id, d || {}] as const
+        }))
+        setProgressos(Object.fromEntries(entradas))
+      } catch { /* */ }
+      setLoading(false)
+    })()
+  }, [])
+
+  if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Loader2 size={22} className="animate-spin" style={{ color: '#5b4fcf' }} /></div>
+
+  return (
+    <div>
+      <p style={{ fontSize: 13, color: '#6b6860', margin: '0 0 14px' }}>Nível atual de cada profissional e última revisão registrada. Clique em alguém para ver o progresso completo e registrar uma revisão.</p>
+      {profs.length === 0 ? <div style={{ textAlign: 'center', padding: 30, color: '#9ca3af', fontSize: 13 }}>Nenhum profissional ativo.</div> : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {profs.map(p => {
+            const prog = progressos[p.id] || {}
+            const nivel = niveis.find(n => n.id === prog.nivelId) || niveis[0]
+            const ultimaRevisao = prog.historico?.[0]
+            return (
+              <button key={p.id} onClick={() => setSelecionado(p)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 12, border: '1px solid #e8e6e0', background: '#fff', cursor: 'pointer', textAlign: 'left' }}
+                onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 6px 18px rgba(0,0,0,.08)')} onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 800, fontSize: 14, color: '#1a1a1a' }}>{p.apelido || p.nome_completo}</div>
+                  <div style={{ fontSize: 11, color: '#9ca3af' }}>{p.cargo || '—'}</div>
+                </div>
+                {nivel && <span style={{ fontSize: 12, fontWeight: 700, color: nivel.cor, background: `${nivel.cor}18`, borderRadius: 8, padding: '5px 10px', flexShrink: 0 }}>{nivel.emoji} {nivel.titulo}</span>}
+                <span style={{ fontSize: 11, color: '#9ca3af', flexShrink: 0, minWidth: 90, textAlign: 'right' }}>{ultimaRevisao ? `Revisado em ${new Date(ultimaRevisao.data).toLocaleDateString('pt-BR')}` : 'Sem revisão ainda'}</span>
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {selecionado && (
+        <div onClick={() => setSelecionado(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 14, overflowY: 'auto' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#faf9f7', borderRadius: 16, width: '100%', maxWidth: 800, maxHeight: '88vh', overflowY: 'auto', padding: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+              <h3 style={{ fontSize: 16, fontWeight: 800, margin: 0 }}>{selecionado.apelido || selecionado.nome_completo}</h3>
+              <button onClick={() => setSelecionado(null)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#9ca3af' }}><X size={20} /></button>
+            </div>
+            <PlanoCarreiraProgresso profissionalId={selecionado.id} />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

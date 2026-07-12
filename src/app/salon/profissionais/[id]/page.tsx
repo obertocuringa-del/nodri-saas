@@ -8,6 +8,7 @@ import { ArrowLeft, Save, Loader2, TrendingUp, TrendingDown, BarChart2,
 import ChatWidget from '@/components/salon/ChatWidget'
 import WhatsPendencia from '@/components/salon/WhatsPendencia'
 import AvaliarProfissional from '@/components/salon/AvaliarProfissional'
+import PlanoCarreiraProgresso from '@/components/salon/PlanoCarreiraProgresso'
 import AcessoProfissional from '@/components/salon/AcessoProfissional'
 import PainelResumoProf from '@/components/salon/PainelResumoProf'
 import EsterilizacaoPerfilProf from '@/components/salon/EsterilizacaoPerfilProf'
@@ -2332,7 +2333,7 @@ export default function PerfilProfissionalPage() {
   const [endCidade, setEndCidade] = useState('')
   const [endUf, setEndUf] = useState('')
   const [buscandoCep, setBuscandoCep] = useState(false)
-  const [tab, setTab] = useState<'inicio'|'cadastro'|'avaliar'|'desempenho'|'faturamento'|'metas'|'ia'|'dependencia'|'oportunidades'|'bundle'|'clientes-perdidos'|'agendamentos'|'calendario_mkt'|'corrida'|'acoes'|'esterilizacao'|'kits'>('cadastro')
+  const [tab, setTab] = useState<'inicio'|'cadastro'|'avaliar'|'desempenho'|'faturamento'|'metas'|'ia'|'dependencia'|'oportunidades'|'bundle'|'clientes-perdidos'|'agendamentos'|'calendario_mkt'|'corrida'|'acoes'|'esterilizacao'|'kits'|'carreira'>('cadastro')
   // Aba Esterilização: só aparece pra quem realmente tem atendimento de
   // manicure/pedicure/sobrancelha no mês (mesmo cruzamento usado no
   // Administrativo) — a maioria dos profissionais não precisa dela.
@@ -3159,6 +3160,7 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
           ['inicio','📊 INÍCIO'],
           ['cadastro','CADASTRO'],
           ['avaliar','AVALIAR'],
+          ['carreira','🏆 CARREIRA'],
           ['faturamento','FATURAMENTO'],
           ['desempenho','OCORRÊNCIAS'],
           ['metas','METAS'],
@@ -3177,6 +3179,7 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
         const TABS = TABS_ALL.filter(([t]) => {
           if (t === 'inicio') return souProf // aba Início (resumo bonito) só para o profissional
           if (t === 'esterilizacao') return temEsterilizacao // só quem tem atendimento de manicure/pedicure/sobrancelha no mês
+          if (t === 'carreira') return !prof?.is_departamento && podeVer(t) // plano de carreira não se aplica a departamentos
           return podeVer(t)
         })
         const labelAtivo = TABS.find(([t])=>t===tab)?.[1] ?? 'Menu'
@@ -3227,6 +3230,11 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
         {/*  AVALIAR PROFISSIONAL  */}
         {tab === 'avaliar' && (
           <AvaliarProfissional profissionalId={id} profissionalNome={prof?.apelido || prof?.nome_completo || 'Profissional'} soResultado={souProf && !((prof as any)?.acesso_oculto?.autoavaliacao)} />
+        )}
+
+        {/*  PLANO DE CARREIRA — progresso real do profissional rumo ao próximo nível  */}
+        {tab === 'carreira' && (
+          <PlanoCarreiraProgresso profissionalId={id} somenteLeitura={souProf} />
         )}
 
         {/*  ESTERILIZAÇÃO — atendimentos x esterilização e registro do mês, só deste profissional  */}
