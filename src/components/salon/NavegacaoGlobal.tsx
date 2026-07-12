@@ -114,14 +114,18 @@ export default function NavegacaoGlobal() {
     }).catch(() => {})
   }, [])
 
-  // Atalho de teclado: Ctrl+K (ou Cmd+K) abre a busca em qualquer página
+  // Atalho de teclado: Ctrl+K (ou Cmd+K) abre a busca em qualquer página.
+  // O evento 'nodri-abrir-busca' permite outros componentes abrirem a busca
+  // (ex.: o campo da página inicial).
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setBuscaAberta(true) }
       if (e.key === 'Escape') setBuscaAberta(false)
     }
+    const abrir = () => setBuscaAberta(true)
     window.addEventListener('keydown', h)
-    return () => window.removeEventListener('keydown', h)
+    window.addEventListener('nodri-abrir-busca', abrir)
+    return () => { window.removeEventListener('keydown', h); window.removeEventListener('nodri-abrir-busca', abrir) }
   }, [])
 
   useEffect(() => { if (buscaAberta) { setQ(''); setApiRes([]); setSel(0); setTimeout(() => inputRef.current?.focus(), 50) } }, [buscaAberta])
@@ -189,38 +193,36 @@ export default function NavegacaoGlobal() {
 
   const pillSt: React.CSSProperties = {
     display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0,
-    padding: isMobile ? '7px 10px' : '7px 14px', borderRadius: 999,
+    padding: isMobile ? '6px 9px' : '6px 12px', borderRadius: 999,
     border: '1px solid #ddd9f2', background: '#fff', color: '#5b4fcf',
-    fontSize: 12.5, fontWeight: 800, cursor: 'pointer',
-    boxShadow: '0 1px 4px rgba(91,79,207,.08)', transition: 'background .12s',
+    fontSize: 12, fontWeight: 800, cursor: 'pointer',
+    boxShadow: '0 1px 5px rgba(91,79,207,.12)', transition: 'background .12s',
   }
 
   return (
     <>
-      {/* Barra global no TOPO de todas as páginas: Voltar · Início · Buscar */}
-      <div style={{ background: '#f4f2ee', borderBottom: '1px solid #e4e0d8', padding: isMobile ? '7px 10px' : '7px 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
-        {!naHome && (
-          <button onClick={() => router.back()} aria-label="Voltar" title="Voltar à página anterior" style={pillSt}
-            onMouseEnter={e => (e.currentTarget.style.background = '#f0eefb')} onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>
-            <ArrowLeft size={15} />{!isMobile && 'Voltar'}
-          </button>
-        )}
-        {!naHome && (
-          <button onClick={() => router.push('/salon')} aria-label="Ir para a página inicial" title="Início" style={pillSt}
-            onMouseEnter={e => (e.currentTarget.style.background = '#f0eefb')} onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>
-            <Home size={15} />{!isMobile && 'Início'}
-          </button>
-        )}
-        <div style={{ flex: 1 }} />
-        {/* Campo de busca: no PC parece um campo de verdade; no celular vira pílula compacta */}
+      {/* Conjunto global flutuante: fica NA MESMA LINHA da barra do topo de
+          cada página (canto direito) — o CSS global reserva o espaço.
+          Na página inicial não aparece (lá a busca fica no campo do painel). */}
+      {!naHome && (
+      <div style={{ position: 'fixed', top: 8, right: 10, zIndex: 45, display: 'flex', gap: 6 }}>
+        <button onClick={() => router.back()} aria-label="Voltar" title="Voltar à página anterior" style={pillSt}
+          onMouseEnter={e => (e.currentTarget.style.background = '#f0eefb')} onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>
+          <ArrowLeft size={15} />
+        </button>
+        <button onClick={() => router.push('/salon')} aria-label="Ir para a página inicial" title="Início" style={pillSt}
+          onMouseEnter={e => (e.currentTarget.style.background = '#f0eefb')} onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>
+          <Home size={15} />
+        </button>
         <button onClick={() => setBuscaAberta(true)} aria-label="Buscar no sistema" title="Buscar em todo o sistema (Ctrl+K)"
-          style={{ ...pillSt, color: '#8a859c', fontWeight: 600, minWidth: isMobile ? undefined : 280, justifyContent: 'flex-start' }}
+          style={{ ...pillSt, color: '#8a859c', fontWeight: 600, minWidth: isMobile ? undefined : 210, justifyContent: 'flex-start' }}
           onMouseEnter={e => (e.currentTarget.style.background = '#f0eefb')} onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>
           <Search size={15} color="#5b4fcf" />
-          <span style={{ flex: 1, textAlign: 'left' }}>{isMobile ? 'Buscar' : 'Buscar em todo o sistema...'}</span>
+          {!isMobile && <span style={{ flex: 1, textAlign: 'left' }}>Buscar no sistema...</span>}
           {!isMobile && <span style={{ fontSize: 10, color: '#b9b4d6', border: '1px solid #e5e1f5', borderRadius: 5, padding: '1px 6px' }}>Ctrl+K</span>}
         </button>
       </div>
+      )}
 
       {/* Busca ultra inteligente (overlay) */}
       {buscaAberta && (

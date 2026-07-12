@@ -151,7 +151,7 @@ html, body {
          linha só que rola de lado, em vez de empilhar em 2-3 linhas e roubar
          meia tela. [style][style] repete o seletor p/ vencer a regra 2
          (que força quebra) na especificidade. */
-  nav[style][style] { flex-wrap: nowrap !important; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-top: 10px !important; padding-bottom: 10px !important; }
+  nav[style][style] { flex-wrap: nowrap !important; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-top: 10px !important; padding-bottom: 10px !important; padding-right: 130px !important; }
   nav[style][style] > * { flex: 0 0 auto; }
   nav[style][style]::-webkit-scrollbar { display: none; }
 
@@ -162,6 +162,13 @@ html, body {
   /* 22) Fileiras marcadas para NUNCA quebrar linha (ex.: controles de cada
          demanda do Check List) — vence a regra 2 por vir depois no arquivo. */
   .nodri-linha-1[style] { flex-wrap: nowrap !important; }
+}
+
+/* No computador, as barras de topo (<nav>) reservam espaço à direita para o
+   conjunto global flutuante (Voltar · Início · Buscar) ficar na MESMA linha,
+   sem cobrir os botões da própria página. */
+@media (min-width: 641px) {
+  nav[style] { padding-right: 330px !important; }
 }
 
 /* Scrollbar customizada — mais larga e escura, fácil de pegar com o mouse */
