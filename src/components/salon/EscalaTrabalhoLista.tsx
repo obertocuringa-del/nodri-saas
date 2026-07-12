@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import toast from 'react-hot-toast'
-import { Loader2, Save, Printer, Wallet, Briefcase, CalendarDays, Plus, Trash2, Settings, X, PartyPopper } from 'lucide-react'
+import { Loader2, Save, Printer, Wallet, Briefcase, CalendarDays, Plus, Trash2, Settings, X, PartyPopper, MessageCircle, Mail } from 'lucide-react'
 import { getLogoSalao } from '@/lib/logoSalao'
 import { parseBRLNumber } from '@/lib/kitsShared'
 import { SeletorNomes, mesmoNome, nomeNaLista } from './SeletorNomes'
@@ -112,6 +112,18 @@ function dataLimitePJ(dataAdmissao: string): Date | null {
   return alvo
 }
 function fmtDataBR(d: Date) { return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}` }
+
+function textoDomingo(d: DomingoRow): string {
+  const linhas = [`📅 *Escala de Domingo — ${d.data}*`]
+  if (d.fechado) linhas.push(`Fechado${d.motivo ? ' — ' + d.motivo : ''}`)
+  else {
+    linhas.push(`Cabeleireiro: ${d.cabeleireiro || '—'}`)
+    linhas.push(`Assistente: ${d.assistente || '—'}`)
+    linhas.push(`Manicure: ${d.manicure || '—'}`)
+    linhas.push(`Recepção: ${d.recepcao || '—'}`)
+  }
+  return linhas.join('\n')
+}
 
 // Lê o formato antigo (GridEditavel — tabelas/linhas) só na 1ª vez que abrir
 // este mês, pra não perder dados já preenchidos antes da página mudar. Só
@@ -230,6 +242,12 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
 
   function editDomingo(dia: number, patch: Partial<DomingoRow>) {
     setDomingos(prev => prev.map(r => r.dia === dia ? { ...r, ...patch } : r)); setDirty(true)
+  }
+  function compartilharDomingoWhats(d: DomingoRow) {
+    window.open(`https://wa.me/?text=${encodeURIComponent(textoDomingo(d))}`, '_blank')
+  }
+  function compartilharDomingoEmail(d: DomingoRow) {
+    window.open(`mailto:?subject=${encodeURIComponent('Escala de Domingo — ' + d.data)}&body=${encodeURIComponent(textoDomingo(d))}`, '_blank')
   }
   function editClt(id: string, patch: Partial<CltRow>) {
     setCltRows(prev => prev.map(r => r.id === id ? { ...r, ...patch } : r)); setDirty(true)
@@ -413,7 +431,7 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
             ) : (
               <div style={{ overflowX: 'auto' }}>
                 <table className="esc-table">
-                  <thead><tr><th style={{ width: 120 }}>Data</th><th style={{ width: 90 }}>Fechado?</th><th>Cabeleireiro</th><th>Assistente</th><th>Manicure</th><th>Recepção</th></tr></thead>
+                  <thead><tr><th style={{ width: 120 }}>Data</th><th style={{ width: 90 }}>Fechado?</th><th>Cabeleireiro</th><th>Assistente</th><th>Manicure</th><th>Recepção</th><th style={{ width: 76 }}>Compartilhar</th></tr></thead>
                   <tbody>
                     {domingos.map(d => (
                       <tr key={d.dia}>
@@ -431,6 +449,12 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
                             <td><SeletorNomes value={d.recepcao} onChange={v => editDomingo(d.dia, { recepcao: v })} opcoes={nomesProfissionais} /></td>
                           </>
                         )}
+                        <td>
+                          <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
+                            <button onClick={() => compartilharDomingoWhats(d)} title="Compartilhar no WhatsApp" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: 7, border: 'none', background: '#e9f9ee', color: '#16a34a', cursor: 'pointer' }}><MessageCircle size={13} /></button>
+                            <button onClick={() => compartilharDomingoEmail(d)} title="Compartilhar por e-mail" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: 7, border: 'none', background: '#eef2ff', color: '#4f46e5', cursor: 'pointer' }}><Mail size={13} /></button>
+                          </div>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
