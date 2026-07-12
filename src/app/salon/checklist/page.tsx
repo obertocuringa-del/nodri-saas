@@ -6,6 +6,7 @@ import { ArrowLeft, Loader2, Save, Plus, Trash2, Check, X, BarChart3, Copy, Rota
 import toast from 'react-hot-toast'
 import { CHECKLIST_DEFAULT, FREQUENCIAS } from '@/components/salon/checklistDefaults'
 import { usePermissoes } from '@/lib/usePermissoes'
+import { useIsMobile } from '@/lib/useIsMobile'
 
 // Ordem dos períodos: Diário, Semanal, Quinzenal, Mensal, Trimestral
 const ordemFreq = (f: string) => { const i = FREQUENCIAS.indexOf(f); return i < 0 ? 99 : i }
@@ -30,6 +31,7 @@ const FREQ_COR: Record<string, { bg: string; bd: string; txt: string }> = {
 export default function ChecklistPage() {
   const router = useRouter()
   const { ehSub } = usePermissoes()
+  const isMobile = useIsMobile()
   const soLeitura = ehSub // usuário criado pelo salão: só visualiza (sem alterar/excluir) até liberação
   const [doc, setDoc] = useState<Doc>({ categorias: [] })
   const [catSel, setCatSel] = useState(0)
@@ -164,7 +166,19 @@ export default function ChecklistPage() {
             </div>
           )}
 
-          {/* Abas de categorias */}
+          {/* Abas de categorias — no celular vira caixa suspensa (economiza tela) */}
+          {isMobile ? (
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 14 }}>
+              <select value={catSel} onChange={e => setCatSel(Number(e.target.value))}
+                style={{ flex: 1, minWidth: 0, padding: '12px 14px', borderRadius: 12, border: '1.5px solid #5b4fcf', background: '#f0eefb', color: '#1a1a1a', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>
+                {doc.categorias.map((c, i) => {
+                  const ok = c.demandas.filter(x => x.feito).length
+                  return <option key={c.id} value={i}>{c.nome} — {ok}/{c.demandas.length}</option>
+                })}
+              </select>
+              {!soLeitura && <button onClick={addCategoria} title="Nova categoria" style={{ padding: '12px 14px', borderRadius: 12, border: '1px dashed #5b4fcf', background: '#f0eefb', color: '#5b4fcf', fontSize: 14, fontWeight: 800, cursor: 'pointer', flexShrink: 0, display: 'inline-flex', alignItems: 'center' }}><Plus size={16} /></button>}
+            </div>
+          ) : (
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
             {doc.categorias.map((c, i) => {
               const ok = c.demandas.filter(x => x.feito).length
@@ -176,6 +190,7 @@ export default function ChecklistPage() {
             })}
             {!soLeitura && <button onClick={addCategoria} style={{ padding: '8px 14px', borderRadius: 10, border: '1px dashed #5b4fcf', background: '#f0eefb', color: '#5b4fcf', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}><Plus size={14} /> Categoria</button>}
           </div>
+          )}
 
           {cat && (
             <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: 16 }}>
@@ -191,11 +206,17 @@ export default function ChecklistPage() {
                 {cat.demandas.map((dem, di) => {
                   const fc = FREQ_COR[dem.freq] || FREQ_COR['Diário']
                   return (
-                  <div key={dem.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '6px 8px', borderRadius: 8, borderLeft: `4px solid ${fc.bd}`, background: dem.feito ? '#f0fdf4' : fc.bg, flexWrap: 'wrap' }}>
-                    <button onClick={() => !soLeitura && toggleFeito(catSel, di)} disabled={soLeitura} title="Feito?" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 7, border: 'none', background: dem.feito ? '#16a34a' : '#e5e7eb', color: dem.feito ? '#fff' : '#6b7280', fontSize: 12, fontWeight: 800, cursor: soLeitura ? 'default' : 'pointer', flexShrink: 0, width: 70, justifyContent: 'center', marginTop: 2 }}>
-                      {dem.feito ? <><Check size={13} /> Sim</> : <><X size={13} /> Não</>}
-                    </button>
-                    <AutoTextarea value={dem.texto} onChange={v => setDemanda(catSel, di, 'texto', v)} feito={dem.feito} readOnly={soLeitura} />
+                  <div key={dem.id} style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'flex-start', gap: 8, padding: isMobile ? '10px' : '6px 8px', borderRadius: isMobile ? 12 : 8, borderLeft: `4px solid ${fc.bd}`, background: dem.feito ? '#f0fdf4' : fc.bg, flexWrap: isMobile ? undefined : 'wrap' }}>
+                    {/* Linha 1: feito + texto */}
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, flex: 1, minWidth: 0 }}>
+                      <button onClick={() => !soLeitura && toggleFeito(catSel, di)} disabled={soLeitura} title="Feito?" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 7, border: 'none', background: dem.feito ? '#16a34a' : '#e5e7eb', color: dem.feito ? '#fff' : '#6b7280', fontSize: 12, fontWeight: 800, cursor: soLeitura ? 'default' : 'pointer', flexShrink: 0, width: 70, justifyContent: 'center', marginTop: 2 }}>
+                        {dem.feito ? <><Check size={13} /> Sim</> : <><X size={13} /> Não</>}
+                      </button>
+                      <AutoTextarea value={dem.texto} onChange={v => setDemanda(catSel, di, 'texto', v)} feito={dem.feito} readOnly={soLeitura} />
+                    </div>
+
+                    {/* Linha 2 (celular) / mesma linha (PC): frequência, dias, transferir, excluir */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, flexWrap: 'wrap', paddingLeft: isMobile ? 78 : 0 }}>
                     <select value={dem.freq} disabled={soLeitura} onChange={e => setDemanda(catSel, di, 'freq', e.target.value)} style={{ padding: '5px 8px', borderRadius: 6, border: `1.5px solid ${fc.bd}`, background: '#fff', color: fc.txt, fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
                       {FREQUENCIAS.map(f => <option key={f} value={f}>{f}</option>)}
                     </select>
@@ -208,7 +229,7 @@ export default function ChecklistPage() {
                         </button>
                         {diasOpen === dem.id && (<>
                           <div onClick={() => setDiasOpen(null)} style={{ position: 'fixed', inset: 0, zIndex: 59 }} />
-                          <div style={{ position: 'absolute', top: '110%', right: 0, zIndex: 60, background: '#fff', border: '1px solid #e0ddd8', borderRadius: 10, boxShadow: '0 10px 30px rgba(0,0,0,.15)', padding: 8, display: 'flex', gap: 4 }}>
+                          <div style={{ position: 'absolute', top: '110%', ...(isMobile ? { left: 0 } : { right: 0 }), zIndex: 60, background: '#fff', border: '1px solid #e0ddd8', borderRadius: 10, boxShadow: '0 10px 30px rgba(0,0,0,.15)', padding: 8, display: 'flex', gap: 4, flexWrap: 'wrap', maxWidth: isMobile ? 240 : undefined }}>
                             {DIAS_SEMANA.map(dia => {
                               const on = !!dem.dias?.includes(dia)
                               return <button key={dia} onClick={() => toggleDia(catSel, di, dia)} style={{ border: 'none', borderRadius: 6, padding: '6px 8px', fontSize: 11, fontWeight: 800, cursor: 'pointer', background: on ? '#5b4fcf' : '#f3f2ee', color: on ? '#fff' : '#6b6860' }}>{dia}</button>
@@ -226,7 +247,7 @@ export default function ChecklistPage() {
                         </button>
                         {transferOpen === dem.id && (<>
                           <div onClick={() => setTransferOpen(null)} style={{ position: 'fixed', inset: 0, zIndex: 59 }} />
-                          <div style={{ position: 'absolute', top: '110%', right: 0, zIndex: 60, background: '#fff', border: '1px solid #e0ddd8', borderRadius: 10, boxShadow: '0 10px 30px rgba(0,0,0,.15)', minWidth: 200, maxHeight: 260, overflowY: 'auto', padding: 6 }}>
+                          <div style={{ position: 'absolute', top: '110%', ...(isMobile ? { left: 0 } : { right: 0 }), zIndex: 60, background: '#fff', border: '1px solid #e0ddd8', borderRadius: 10, boxShadow: '0 10px 30px rgba(0,0,0,.15)', minWidth: 200, maxHeight: 260, overflowY: 'auto', padding: 6 }}>
                             <div style={{ fontSize: 11, fontWeight: 800, color: '#9ca3af', padding: '4px 8px' }}>Mover para...</div>
                             {doc.categorias.filter(c => c.id !== cat.id).map(c => (
                               <button key={c.id} onClick={() => transferirDemanda(dem.id, c.id)} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 10px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13, borderRadius: 6 }}
@@ -238,6 +259,7 @@ export default function ChecklistPage() {
                     )}
 
                     {!soLeitura && <button onClick={() => delDemanda(catSel, di)} title="Excluir demanda" style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', padding: 6, flexShrink: 0 }}><Trash2 size={13} /></button>}
+                    </div>
                   </div>
                   )
                 })}

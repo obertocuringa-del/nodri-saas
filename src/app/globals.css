@@ -146,6 +146,17 @@ html, body {
          botão Salvar sempre visível à direita. */
   .nodri-grid-ctrls { flex-wrap: nowrap !important; overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; padding-bottom: 4px; }
   .nodri-grid-ctrls > * { flex: 0 0 auto; }
+
+  /* 20) Barras de navegação do TOPO (todas as páginas): no celular ficam numa
+         linha só que rola de lado, em vez de empilhar em 2-3 linhas e roubar
+         meia tela. Vence a regra 2 (que força quebra) por especificidade. */
+  nav[style] { flex-wrap: nowrap !important; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-top: 10px !important; padding-bottom: 10px !important; }
+  nav[style] > * { flex: 0 0 auto; }
+  nav[style]::-webkit-scrollbar { display: none; }
+
+  /* 21) Janelas/modais centralizados nunca passam da altura da tela — o
+         conteúdo interno rola (rede de segurança para todas as páginas). */
+  [style*="position: fixed"][style*="inset"] > div[style*="border-radius"] { max-height: 88vh !important; overflow-y: auto !important; }
 }
 
 /* Scrollbar customizada — mais larga e escura, fácil de pegar com o mouse */
