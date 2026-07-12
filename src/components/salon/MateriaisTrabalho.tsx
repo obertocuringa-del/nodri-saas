@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import toast from 'react-hot-toast'
 import { Loader2, Save, Printer, Plus, Trash2, Bold, Italic, Type } from 'lucide-react'
+import { useGuardaSalvar } from '@/lib/guardaSalvar'
 
 type Cell = { t: string; b?: boolean; i?: boolean; cor?: string; tam?: number }
 type Tabela = { titulo: string; cabecalho: Cell[]; linhas: Cell[][] }
@@ -53,6 +54,7 @@ export default function MateriaisTrabalho() {
   const [sel, setSel] = useState<Sel | null>(null)
   const [salvando, setSalvando] = useState(false)
   const [dirty, setDirty] = useState(false)
+  useGuardaSalvar(dirty, 'Materiais') // avisa "Deseja salvar?" antes de sair sem salvar
 
   const carregar = useCallback(async () => {
     try {

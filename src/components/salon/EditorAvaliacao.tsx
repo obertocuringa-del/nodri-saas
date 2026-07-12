@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import toast from 'react-hot-toast'
 import { Loader2, Save, Plus, Trash2, RotateCcw, GripVertical } from 'lucide-react'
 import { MODELO_AVAL_DEFAULT, CLASSIF_AVAL, type ModeloAval } from './avaliacaoModelo'
+import { useGuardaSalvar } from '@/lib/guardaSalvar'
 
 const CHAVE = 'avaliacao_modelo'
 const rid = () => 'a' + Math.random().toString(36).slice(2, 8)
@@ -13,6 +14,7 @@ export default function EditorAvaliacao() {
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
   const [dirty, setDirty] = useState(false)
+  useGuardaSalvar(dirty, 'Perfil de Avaliação') // avisa "Deseja salvar?" antes de sair sem salvar
 
   const carregar = useCallback(async () => {
     try {

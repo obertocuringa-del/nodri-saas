@@ -6,6 +6,7 @@ import { Loader2, Save, Printer, Plus, Trash2, Pencil, X, Sparkles, ShieldCheck,
 import { useIsMobile } from '@/lib/useIsMobile'
 import { getLogoSalao } from '@/lib/logoSalao'
 import {
+import { useGuardaSalvar } from '@/lib/guardaSalvar'
   type EsterilizacaoItem as Item, mesAtualEster as mesAtual, hojeBR, brToIso, isoToBr, mesmoProf, ridEster as rid,
   linhasParaEsterilizacaoItems, esterilizacaoItemsParaTabela,
 } from '@/lib/esterilizacaoShared'
@@ -22,6 +23,7 @@ export default function EsterilizacaoLista({ chave = 'esterilizacao', profsSalao
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
   const [dirty, setDirty] = useState(false)
+  useGuardaSalvar(dirty, 'Esterilização') // avisa "Deseja salvar?" antes de sair sem salvar
   const [modal, setModal] = useState<Item | null>(null)
   const [cruzamento, setCruzamento] = useState<LinhaCruzamento[]>([])
   const [loadingCruzamento, setLoadingCruzamento] = useState(true)

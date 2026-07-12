@@ -6,6 +6,7 @@ import { Loader2, Save, Printer, Plus, Trash2, Pencil, Search, X, Package, Users
 import { getLogoSalao } from '@/lib/logoSalao'
 import { useIsMobile } from '@/lib/useIsMobile'
 import { cel, type Cell } from './GridEditavel'
+import { useGuardaSalvar } from '@/lib/guardaSalvar'
 
 interface ProfSalao { id: string; nome: string; telefone?: string }
 interface Item { id: string; data: string; produto: string; quantidade: string; unidade: string; profissional: string; valor: string }
@@ -46,6 +47,7 @@ export default function ServicoInternoLista({ chave = 'servinterno', profsSalao 
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
   const [dirty, setDirty] = useState(false)
+  useGuardaSalvar(dirty, 'Serviços Internos') // avisa "Deseja salvar?" antes de sair sem salvar
   const [busca, setBusca] = useState('')
   const [modal, setModal] = useState<Item | null>(null)
   const [ultimaAtualizacao, setUltimaAtualizacao] = useState('')

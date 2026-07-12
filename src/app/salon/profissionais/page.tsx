@@ -10,6 +10,7 @@ import { PJ_CONTRATACAO, PJ_DESLIGAMENTO } from '@/components/salon/processoDefa
 import EditorAvaliacao from '@/components/salon/EditorAvaliacao'
 import DescricaoCargo from '@/components/salon/DescricaoCargo'
 import PlanoCarreiraPJ from '@/components/salon/PlanoCarreiraPJ'
+import { confirmarSaidaSemSalvar } from '@/lib/guardaSalvar'
 
 interface Profissional {
   id: string
@@ -911,7 +912,7 @@ ${montarContratoHTML()}
             const Icon = item.icon
             const ativo = secao === item.id
             return (
-              <button key={item.id} onClick={() => { setSecao(item.id); setSidebarOpen(false); if (item.id === 'cadastrar') { setEditando(null); setForm({ ...FORM_INITIAL }); setFotoPreview('') } }}
+              <button key={item.id} onClick={() => { if (!confirmarSaidaSemSalvar()) return; setSecao(item.id); setSidebarOpen(false); if (item.id === 'cadastrar') { setEditando(null); setForm({ ...FORM_INITIAL }); setFotoPreview('') } }}
                 style={{
                   width: '100%', display: 'flex', alignItems: 'center', gap: '9px',
                   padding: '9px 10px', borderRadius: '8px', border: 'none', cursor: 'pointer',

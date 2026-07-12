@@ -5,6 +5,7 @@ import toast from 'react-hot-toast'
 import { Loader2, Save, Plus, Trash2, Pencil, X, Eye, EyeOff, Copy, KeyRound, Printer } from 'lucide-react'
 import { getLogoSalao } from '@/lib/logoSalao'
 import { cel, type Cell } from './GridEditavel'
+import { useGuardaSalvar } from '@/lib/guardaSalvar'
 
 interface SenhaItem { id: string; descricao: string; informacao: string; senha: string }
 
@@ -18,6 +19,7 @@ export default function SenhasLista({ chave = 'senhas' }: { chave?: string }) {
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
   const [dirty, setDirty] = useState(false)
+  useGuardaSalvar(dirty, 'Senhas') // avisa "Deseja salvar?" antes de sair sem salvar
   const [modal, setModal] = useState<SenhaItem | null>(null)
   const [visiveis, setVisiveis] = useState<Set<string>>(new Set())
 

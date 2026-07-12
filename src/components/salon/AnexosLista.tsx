@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import toast from 'react-hot-toast'
 import { Loader2, Save, Plus, Trash2, Upload, Download, FileText } from 'lucide-react'
+import { useGuardaSalvar } from '@/lib/guardaSalvar'
 
 interface Item { id: string; nome: string; data?: string; url?: string; filename?: string; obs?: string }
 const rid = () => Math.random().toString(36).slice(2, 8)
@@ -13,6 +14,7 @@ export default function AnexosLista({ chave, titulo, campoNome, comData = true, 
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
   const [dirty, setDirty] = useState(false)
+  useGuardaSalvar(dirty, 'Arquivos') // avisa "Deseja salvar?" antes de sair sem salvar
   const [subindo, setSubindo] = useState<string | null>(null)
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({})
 

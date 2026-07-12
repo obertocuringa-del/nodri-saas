@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { Home, ArrowLeft, Search, Loader2, FileText, User, Layers } from 'lucide-react'
+import { Home, ArrowLeft, Search, Loader2, FileText, User, Layers, AlertTriangle } from 'lucide-react'
 import { useIsMobile } from '@/lib/useIsMobile'
+import { haNaoSalvo, nomesNaoSalvos } from '@/lib/guardaSalvar'
 
 // ── Navegação global (todas as páginas do painel do salão) ──
 // Canto inferior esquerdo: Voltar (histórico) · Início · Busca ultra inteligente.
@@ -167,13 +168,22 @@ export default function NavegacaoGlobal() {
 
   const totalItens = paginas.length + apiRes.length
 
+  // ── Guarda de salvamento: se há alterações não salvas, pergunta antes ──
+  const [avisoSalvar, setAvisoSalvar] = useState<{ destino: () => void; onde: string[] } | null>(null)
+  function navegarComGuarda(acao: () => void) {
+    if (haNaoSalvo()) { setAvisoSalvar({ destino: acao, onde: nomesNaoSalvos() }); return }
+    acao()
+  }
+
   function irPara(rota: string) {
     setBuscaAberta(false)
-    // Mesma página com outra aba (?aba=...): o Next não remonta o componente,
-    // então recarrega de verdade para o link direto ser aplicado
-    const alvoPath = rota.split('?')[0]
-    if (alvoPath === pathname && rota.includes('?')) { window.location.href = rota; return }
-    router.push(rota)
+    navegarComGuarda(() => {
+      // Mesma página com outra aba (?aba=...): o Next não remonta o componente,
+      // então recarrega de verdade para o link direto ser aplicado
+      const alvoPath = rota.split('?')[0]
+      if (alvoPath === pathname && rota.includes('?')) { window.location.href = rota; return }
+      router.push(rota)
+    })
   }
 
   function onKeyDown(e: React.KeyboardEvent) {
@@ -206,11 +216,11 @@ export default function NavegacaoGlobal() {
           Na página inicial não aparece (lá a busca fica no campo do painel). */}
       {!naHome && (
       <div style={{ position: 'fixed', top: 8, right: 10, zIndex: 45, display: 'flex', gap: 6 }}>
-        <button onClick={() => router.back()} aria-label="Voltar" title="Voltar à página anterior" style={pillSt}
+        <button onClick={() => navegarComGuarda(() => router.back())} aria-label="Voltar" title="Voltar à página anterior" style={pillSt}
           onMouseEnter={e => (e.currentTarget.style.background = '#f0eefb')} onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>
           <ArrowLeft size={15} />
         </button>
-        <button onClick={() => router.push('/salon')} aria-label="Ir para a página inicial" title="Início" style={pillSt}
+        <button onClick={() => navegarComGuarda(() => router.push('/salon'))} aria-label="Ir para a página inicial" title="Início" style={pillSt}
           onMouseEnter={e => (e.currentTarget.style.background = '#f0eefb')} onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>
           <Home size={15} />
         </button>
@@ -282,6 +292,32 @@ export default function NavegacaoGlobal() {
 
             <div style={{ display: 'flex', gap: 14, padding: '9px 18px', borderTop: '1px solid #f0eee8', fontSize: 10.5, color: '#9ca3af' }}>
               <span>↑↓ navegar</span><span>Enter abrir</span><span>Ctrl+K abre de qualquer página</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Aviso "Deseja salvar?" — alterações não salvas antes de sair da página */}
+      {avisoSalvar && (
+        <div onClick={() => setAvisoSalvar(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(15,12,40,.55)', zIndex: 10001, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 14 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 18, width: '100%', maxWidth: 430, padding: 22, boxShadow: '0 30px 80px rgba(0,0,0,.35)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+              <span style={{ width: 38, height: 38, borderRadius: 10, background: '#fff7ed', color: '#c2410c', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><AlertTriangle size={19} /></span>
+              <h3 style={{ fontSize: 15.5, fontWeight: 800, margin: 0, color: '#1a1a1a' }}>Você tem alterações não salvas!</h3>
+            </div>
+            <p style={{ fontSize: 13, color: '#6b6860', margin: '0 0 6px', lineHeight: 1.6 }}>
+              {avisoSalvar.onde.length > 0 ? <>Em: <strong>{avisoSalvar.onde.join(', ')}</strong>. </> : null}
+              Se sair agora, o que você mexeu será <strong style={{ color: '#dc2626' }}>perdido</strong>. Deseja salvar antes?
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 14 }}>
+              <button onClick={() => setAvisoSalvar(null)}
+                style={{ width: '100%', padding: '12px', borderRadius: 10, border: 'none', background: '#16a34a', color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>
+                ✓ Sim — ficar na página e salvar
+              </button>
+              <button onClick={() => { const acao = avisoSalvar.destino; setAvisoSalvar(null); acao() }}
+                style={{ width: '100%', padding: '11px', borderRadius: 10, border: '1.5px solid #fca5a5', background: '#fff', color: '#dc2626', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                Não — sair sem salvar (perde as alterações)
+              </button>
             </div>
           </div>
         </div>

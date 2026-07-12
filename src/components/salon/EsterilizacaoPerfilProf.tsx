@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import toast from 'react-hot-toast'
 import { Loader2, Save, Plus, Trash2, Pencil, X, Sparkles, ShieldCheck, ShieldAlert, RotateCcw, Scissors } from 'lucide-react'
 import {
+import { useGuardaSalvar } from '@/lib/guardaSalvar'
   type EsterilizacaoItem as Item, mesAtualEster as mesAtual, hojeBR, brToIso, isoToBr, mesmoProf, ridEster as rid,
   linhasParaEsterilizacaoItems, esterilizacaoItemsParaTabela,
 } from '@/lib/esterilizacaoShared'
@@ -21,6 +22,7 @@ export default function EsterilizacaoPerfilProf({ chave = 'esterilizacao', nomeC
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
   const [dirty, setDirty] = useState(false)
+  useGuardaSalvar(dirty, 'Esterilização') // avisa "Deseja salvar?" antes de sair sem salvar
   const [modal, setModal] = useState<Item | null>(null)
   const [atendimentos, setAtendimentos] = useState(0)
   const [servicos, setServicos] = useState<string[]>([])

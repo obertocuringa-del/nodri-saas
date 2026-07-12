@@ -6,6 +6,7 @@ import { Loader2, Save, Printer, Wallet, Briefcase, CalendarDays, Plus, Trash2, 
 import { getLogoSalao } from '@/lib/logoSalao'
 import { parseBRLNumber } from '@/lib/kitsShared'
 import { SeletorNomes, mesmoNome, nomeNaLista } from './SeletorNomes'
+import { useGuardaSalvar } from '@/lib/guardaSalvar'
 
 interface DomingoRow { dia: number; data: string; fechado: boolean; motivo: string; cabeleireiro: string; assistente: string; manicure: string; recepcao: string }
 interface CltRow { id: string; nome: string; qtdDias: string; passagem: string; pix: string; manual?: boolean }
@@ -170,6 +171,7 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
   const [dirty, setDirty] = useState(false)
+  useGuardaSalvar(dirty, 'Escala de Trabalho') // avisa "Deseja salvar?" antes de sair sem salvar
   const [feriadosDoc, setFeriadosDoc] = useState<any>(null)
   const [config, setConfig] = useState<ConfigDias>(CONFIG_PADRAO)
   const [configAberta, setConfigAberta] = useState(false)

@@ -5,6 +5,7 @@ import toast from 'react-hot-toast'
 import { Loader2, Save, Plus, Trash2, X, MessageCircle, Search, Pencil, Eye, Send, Printer, FileText, RotateCcw } from 'lucide-react'
 import CartaAberturaConta from './CartaAberturaConta'
 import { getLogoSalao } from '@/lib/logoSalao'
+import { useGuardaSalvar } from '@/lib/guardaSalvar'
 
 interface Passo { id: string; titulo: string; texto: string }
 interface Secao { id: string; titulo: string; cor: string; passos: Passo[] }
@@ -50,6 +51,7 @@ export default function ProcessoContratacao({ pessoas, chave = 'processo_contrat
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
   const [dirty, setDirty] = useState(false)
+  useGuardaSalvar(dirty, 'Processo de Contratação') // avisa "Deseja salvar?" antes de sair sem salvar
   const [editando, setEditando] = useState(false)
   const [detalhe, setDetalhe] = useState<{ si: number; pi: number } | null>(null)
   const [detEdit, setDetEdit] = useState(false)

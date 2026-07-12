@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import toast from 'react-hot-toast'
 import { Loader2, Save, Printer, Plus, X } from 'lucide-react'
+import { useGuardaSalvar } from '@/lib/guardaSalvar'
 
 interface ProfSalao { id: string; nome: string }
 interface ColBebida { id: string; nome: string }
@@ -22,6 +23,7 @@ export default function ListaBebidas({ profsSalao }: { profsSalao: ProfSalao[] }
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
   const [dirty, setDirty] = useState(false)
+  useGuardaSalvar(dirty, 'Bebidas') // avisa "Deseja salvar?" antes de sair sem salvar
 
   const carregar = useCallback(async () => {
     setLoading(true)

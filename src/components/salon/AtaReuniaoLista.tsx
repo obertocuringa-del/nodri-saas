@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import toast from 'react-hot-toast'
 import { Loader2, Save, Plus, Trash2, Pencil, X, Printer, FileText, CheckCircle2, Users } from 'lucide-react'
 import { getLogoSalao } from '@/lib/logoSalao'
+import { useGuardaSalvar } from '@/lib/guardaSalvar'
 
 interface ProfSalao { id: string; nome: string; telefone?: string }
 interface PautaItem { id: string; ponto: string; responsavel: string; decisao: string }
@@ -32,6 +33,7 @@ export default function AtaReuniaoLista({ chave = 'ata', profsSalao = [] }: { ch
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
   const [dirty, setDirty] = useState(false)
+  useGuardaSalvar(dirty, 'Ata de Reunião') // avisa "Deseja salvar?" antes de sair sem salvar
 
   const chaveMes = `${chave}_${mes}`
 

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react
 import toast from 'react-hot-toast'
 import { Loader2, Save, Printer, Plus, Trash2, ChevronUp, ChevronDown } from 'lucide-react'
 import { getLogoSalao } from '@/lib/logoSalao'
+import { useGuardaSalvar } from '@/lib/guardaSalvar'
 
 export interface Bloco { id: string; titulo: string; corpo: string; dataElab?: string; dataRev?: string }
 const rid = () => Math.random().toString(36).slice(2, 8)
@@ -22,6 +23,7 @@ export default function DocEditavel({ chave, tituloPadrao, blocosPadrao, corTema
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
   const [dirty, setDirty] = useState(false)
+  useGuardaSalvar(dirty, 'Documento') // avisa "Deseja salvar?" antes de sair sem salvar
   const fileRef = useRef<HTMLInputElement>(null)
 
   function onLogo(e: React.ChangeEvent<HTMLInputElement>) {

@@ -6,6 +6,7 @@ import { ArrowLeft, Loader2, Save, Plus, Trash2, X, CalendarDays, ChevronLeft, C
 import toast from 'react-hot-toast'
 import { usePermissoes } from '@/lib/usePermissoes'
 import { getLogoSalao } from '@/lib/logoSalao'
+import { useGuardaSalvar } from '@/lib/guardaSalvar'
 
 interface Evento { id: string; data: string; texto: string; responsavel?: string }
 const rid = () => Math.random().toString(36).slice(2, 8)
@@ -22,6 +23,7 @@ export default function CalendarioEditavel({ chave, titulo, comResponsavel, camp
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
   const [dirty, setDirty] = useState(false)
+  useGuardaSalvar(dirty, 'Calendário') // avisa "Deseja salvar?" antes de sair sem salvar
   const [ref, setRef] = useState(() => { const d = new Date(); return { ano: d.getFullYear(), mes: d.getMonth() } })
   const [selDia, setSelDia] = useState<string | null>(null)
   const [novoTexto, setNovoTexto] = useState('')

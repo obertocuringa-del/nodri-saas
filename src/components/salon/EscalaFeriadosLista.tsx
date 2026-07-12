@@ -5,6 +5,7 @@ import toast from 'react-hot-toast'
 import { Loader2, Save, Plus, Trash2, PartyPopper, Printer, MessageCircle, Mail, CalendarDays, Clock } from 'lucide-react'
 import { getLogoSalao } from '@/lib/logoSalao'
 import { SeletorNomes } from './SeletorNomes'
+import { useGuardaSalvar } from '@/lib/guardaSalvar'
 
 interface FeriadoItem { id: string; nome: string; data: string; horario: string; fechado: boolean; profissionais: string; obs: string }
 interface Profissional { id: string; nome_completo: string; apelido: string; ativo?: boolean }
@@ -59,6 +60,7 @@ export default function EscalaFeriadosLista({ chave = 'feriados' }: { chave?: st
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
   const [dirty, setDirty] = useState(false)
+  useGuardaSalvar(dirty, 'Escala de Feriados') // avisa "Deseja salvar?" antes de sair sem salvar
 
   useEffect(() => {
     fetch('/api/profissionais').then(r => r.ok ? r.json() : []).then((arr: any[]) => setProfissionais(Array.isArray(arr) ? arr : [])).catch(() => {})

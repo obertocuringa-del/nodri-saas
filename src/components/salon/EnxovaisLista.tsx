@@ -6,6 +6,7 @@ import { Loader2, Save, Plus, Trash2, Pencil, X, Printer, Wallet, Send, CheckCir
 import { useIsMobile } from '@/lib/useIsMobile'
 import { getLogoSalao } from '@/lib/logoSalao'
 import { parseBRLNumber } from '@/lib/kitsShared'
+import { useGuardaSalvar } from '@/lib/guardaSalvar'
 
 const COR = '#5b4fcf'
 
@@ -57,6 +58,7 @@ export default function EnxovaisLista() {
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
   const [dirty, setDirty] = useState(false)
+  useGuardaSalvar(dirty, 'Enxovais') // avisa "Deseja salvar?" antes de sair sem salvar
   const [modalLote, setModalLote] = useState<ModalLote | null>(null)
   const [expandido, setExpandido] = useState<Set<string>>(new Set())
   const [precosAberto, setPrecosAberto] = useState(false)
@@ -288,8 +290,8 @@ export default function EnxovaisLista() {
         )}
       </div>
 
-      {/* ── Mês + ações ── */}
-      <div style={{ position: 'sticky', top: 0, zIndex: 20, background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: '10px 12px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', boxShadow: '0 2px 8px rgba(0,0,0,.05)' }}>
+      {/* ── Mês + ações (uma linha só; rola de lado no celular se faltar espaço) ── */}
+      <div className="nodri-linha-rolavel" style={{ position: 'sticky', top: 0, zIndex: 20, background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: '10px 12px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', boxShadow: '0 2px 8px rgba(0,0,0,.05)' }}>
         <label style={{ fontSize: 12, fontWeight: 700, color: '#6b6860' }}>Mês:</label>
         <input type="month" value={mes} onChange={e => setMes(e.target.value)} style={{ padding: '7px 9px', borderRadius: 8, border: '1px solid #d0cdc7', fontSize: 13 }} />
         <div style={{ flex: 1 }} />

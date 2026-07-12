@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import toast from 'react-hot-toast'
 import { Loader2, Save, Printer, Plus, Trash2, MessageCircle, Search, X, Phone } from 'lucide-react'
 import { normaliza } from './SeletorNomes'
+import { useGuardaSalvar } from '@/lib/guardaSalvar'
 
 interface Contato { id: string; nome: string; servico: string; telefone: string }
 
@@ -28,6 +29,7 @@ export default function ListaTelefones() {
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
   const [dirty, setDirty] = useState(false)
+  useGuardaSalvar(dirty, 'Telefones') // avisa "Deseja salvar?" antes de sair sem salvar
   const [busca, setBusca] = useState('')
   const [sugestoesAbertas, setSugestoesAbertas] = useState(false)
 

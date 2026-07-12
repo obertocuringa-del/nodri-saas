@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react
 import toast from 'react-hot-toast'
 import { Loader2, Save, Printer, Plus, Trash2, Bold, Italic, Type, PaintBucket, AlignLeft, AlignCenter, AlignRight, Square } from 'lucide-react'
 import { getLogoSalao } from '@/lib/logoSalao'
+import { useGuardaSalvar } from '@/lib/guardaSalvar'
 
 export type Cell = { t: string; b?: boolean; i?: boolean; cor?: string; tam?: number; bg?: string; cs?: number; rs?: number; h?: boolean; al?: 'left' | 'center' | 'right'; bd?: boolean }
 export type Tabela = { titulo: string; cabecalho: Cell[]; linhas: Cell[][]; larguras?: number[]; alturas?: number[] }
@@ -39,6 +40,7 @@ export default function GridEditavel({ chave, defaultDoc, defaultDocFn, mensal, 
   const [sel, setSel] = useState<Sel | null>(null)
   const [salvando, setSalvando] = useState(false)
   const [dirty, setDirty] = useState(false)
+  useGuardaSalvar(dirty, 'Planilha') // avisa "Deseja salvar?" antes de sair sem salvar
 
   const chaveEfetiva = mensal ? `${chave}_${mes}` : chave
   const baseDoc = useCallback(() => defaultDocFn ? defaultDocFn(mes) : JSON.parse(JSON.stringify(defaultDoc || { tabelas: [] })), [mes, defaultDocFn, defaultDoc])

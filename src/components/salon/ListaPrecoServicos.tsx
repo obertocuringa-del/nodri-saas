@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import toast from 'react-hot-toast'
 import { Loader2, Save, Printer, Plus, Trash2, RefreshCw } from 'lucide-react'
 import { getLogoSalao } from '@/lib/logoSalao'
+import { useGuardaSalvar } from '@/lib/guardaSalvar'
 
 interface Item { id: string; nome: string; valor: string }
 // cor determinística p/ o avatar do card (mesmo nome = mesma cor)
@@ -35,6 +36,7 @@ export default function ListaPrecoServicos({ chave = 'precos_servicos', titulo =
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
   const [dirty, setDirty] = useState(false)
+  useGuardaSalvar(dirty, 'Valores de Serviços') // avisa "Deseja salvar?" antes de sair sem salvar
   const [pickerOpen, setPickerOpen] = useState(false)
   const [busca, setBusca] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)

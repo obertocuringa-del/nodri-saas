@@ -23,7 +23,9 @@ import Etiquetas from '@/components/salon/Etiquetas'
 import { CAFE_BLOCOS, POP_SALAO_BLOCOS } from '@/components/salon/popDefaults'
 import { usePermissoes } from '@/lib/usePermissoes'
 import { useIsMobile } from '@/lib/useIsMobile'
+import { confirmarSaidaSemSalvar } from '@/lib/guardaSalvar'
 import { getLogoSalao } from '@/lib/logoSalao'
+import { useGuardaSalvar } from '@/lib/guardaSalvar'
 
 // Mapeia cada aba do topo para a chave de permissão
 const ABA_CHAVE: Record<string, string> = {
@@ -215,7 +217,7 @@ export default function SalaoAdministrativoPage() {
                   {itens.map(it => {
                     const ativo = abaTopo === it.aba && (!it.servico || servico === it.servico)
                     return (
-                      <button key={it.aba + (it.servico || '')} onClick={() => { setAbaTopo(it.aba); if (it.servico) setServico(it.servico) }}
+                      <button key={it.aba + (it.servico || '')} onClick={() => { if (!confirmarSaidaSemSalvar()) return; setAbaTopo(it.aba); if (it.servico) setServico(it.servico) }}
                         style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 10px', border: 'none', borderRadius: 8, background: ativo ? '#f0eefb' : 'transparent', color: ativo ? '#5b4fcf' : '#4b5563', fontSize: 11.5, fontWeight: ativo ? 900 : 700, letterSpacing: '.3px', cursor: 'pointer', borderLeft: ativo ? '3px solid #5b4fcf' : '3px solid transparent' }}
                         onMouseEnter={e => { if (!ativo) e.currentTarget.style.background = '#faf9f7' }} onMouseLeave={e => { if (!ativo) e.currentTarget.style.background = 'transparent' }}>
                         {it.label}
@@ -251,7 +253,7 @@ export default function SalaoAdministrativoPage() {
                     {itens.map(it => {
                       const ativo = abaTopo === it.aba && (!it.servico || servico === it.servico)
                       return (
-                        <button key={it.aba + (it.servico || '')} onClick={() => { setAbaTopo(it.aba); if (it.servico) setServico(it.servico); setAbasMenuOpen(false) }}
+                        <button key={it.aba + (it.servico || '')} onClick={() => { if (!confirmarSaidaSemSalvar()) return; setAbaTopo(it.aba); if (it.servico) setServico(it.servico); setAbasMenuOpen(false) }}
                           style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 12px', border: 'none', borderRadius: 8, background: ativo ? '#f0eefb' : 'transparent', color: ativo ? '#5b4fcf' : '#374151', fontSize: 12.5, fontWeight: ativo ? 900 : 700, letterSpacing: '.3px', cursor: 'pointer', borderLeft: ativo ? '3px solid #5b4fcf' : '3px solid transparent' }}>
                           {it.label}
                         </button>
@@ -343,6 +345,7 @@ function ListaServico({ servico, label, profsSalao, onMensagem }: { servico: str
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
   const [dirty, setDirty] = useState(false)
+  useGuardaSalvar(dirty, 'Lista de serviços') // avisa "Deseja salvar?" antes de sair sem salvar
   const [addOpen, setAddOpen] = useState(false)
   const [msgProf, setMsgProf] = useState<Coluna | null>(null)
   const [msgTexto, setMsgTexto] = useState('')

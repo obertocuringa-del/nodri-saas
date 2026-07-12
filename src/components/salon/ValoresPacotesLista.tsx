@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import toast from 'react-hot-toast'
 import { Loader2, Save, Printer, Plus, Trash2, Share2, Pencil, Package } from 'lucide-react'
 import { getLogoSalao } from '@/lib/logoSalao'
+import { useGuardaSalvar } from '@/lib/guardaSalvar'
 
 interface Pacote { id: string; nome: string; sessoes: string; valor: string; obs?: string }
 interface Categoria { id: string; nome: string; pacotes: Pacote[] }
@@ -67,6 +68,7 @@ export default function ValoresPacotesLista({ chave = 'pacotes_valores' }: { cha
   const [salvando, setSalvando] = useState(false)
   const [gerandoPdf, setGerandoPdf] = useState<string | null>(null)
   const [dirty, setDirty] = useState(false)
+  useGuardaSalvar(dirty, 'Valores de Pacotes') // avisa "Deseja salvar?" antes de sair sem salvar
 
   const carregar = useCallback(async () => {
     setLoading(true)

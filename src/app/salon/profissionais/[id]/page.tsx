@@ -14,6 +14,7 @@ import PainelResumoProf from '@/components/salon/PainelResumoProf'
 import EsterilizacaoPerfilProf from '@/components/salon/EsterilizacaoPerfilProf'
 import KitsProfissionalView from '@/components/salon/KitsProfissionalView'
 import { mesmoProf } from '@/lib/esterilizacaoShared'
+import { confirmarSaidaSemSalvar } from '@/lib/guardaSalvar'
 import toast from 'react-hot-toast'
 
 // Converte o markdown gerado pela IA num HTML estilizado (títulos, negrito real,
@@ -3194,7 +3195,7 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
               {mobileMenuOpen && (
                 <div style={{ position: 'absolute', top: '108%', left: 0, right: 0, zIndex: 50, background: '#fff', border: '1px solid #e0ddd8', borderRadius: 12, boxShadow: '0 14px 36px rgba(0,0,0,.16)', maxHeight: 360, overflowY: 'auto', padding: 6 }}>
                   {TABS.map(([t,l])=>(
-                    <button key={t} onClick={()=>{setTab(t);setMobileMenuOpen(false)}}
+                    <button key={t} onClick={()=>{ if (!confirmarSaidaSemSalvar()) return; setTab(t); setMobileMenuOpen(false)}}
                       style={{ display: 'block', width: '100%', textAlign: 'left', padding: '11px 12px', border: 'none', borderRadius: 8, background: tab===t ? '#f0eefb' : 'transparent', color: tab===t ? '#5b4fcf' : '#374151', fontSize: 14, fontWeight: tab===t ? 800 : 600, cursor: 'pointer' }}
                       onMouseEnter={e=>{ if(tab!==t) e.currentTarget.style.background='#faf9f7' }} onMouseLeave={e=>{ if(tab!==t) e.currentTarget.style.background='transparent' }}>
                       {l}

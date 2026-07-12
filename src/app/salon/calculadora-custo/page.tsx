@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { ArrowLeft, Plus, Trash2, Calculator, Loader2, Save, ChevronDown, ChevronUp, History, CheckCircle, ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { usePermissoes } from '@/lib/usePermissoes'
+import { useGuardaSalvar } from '@/lib/guardaSalvar'
 
 const MESES_NOMES = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 
@@ -470,6 +471,9 @@ export default function CalculadoraCusto() {
   const [savedMsg,  setSavedMsg]  = useState('')
   const [mesesComDados, setMesesComDados] = useState<{ano:number,mes:number}[]>([])
   const [carregando, setCarregando] = useState(false)
+  // Alterações não salvas do mês (qualquer digitação nos campos marca como pendente)
+  const [dirtyCalc, setDirtyCalc] = useState(false)
+  useGuardaSalvar(dirtyCalc, 'Calculadora de Custo') // avisa "Deseja salvar?" antes de sair sem salvar
 
   // Aba ativa
   const [aba, setAba] = useState<'rd'|'pe'|'servicos'|'produto'|'catproduto'|'cadeira'|'metro'|'graficos'>('rd')
@@ -759,6 +763,7 @@ export default function CalculadoraCusto() {
       })
       if (res.ok) {
         setSavedMsg('Salvo!')
+        setDirtyCalc(false)
         setMesesComDados(prev => {
           const existe = prev.some(m=>m.ano===anoSel&&m.mes===mesSel)
           return existe ? prev : [...prev, {ano:anoSel,mes:mesSel}]
@@ -952,11 +957,20 @@ export default function CalculadoraCusto() {
     setTimeout(()=>setAtualizando(false), 800)
   }
 
+  // Trocar de mês com alteração pendente pergunta antes (senão perde o que digitou)
+  function podeTrocarMes(): boolean {
+    if (!dirtyCalc) return true
+    const ok = confirm(`⚠️ Você tem alterações NÃO SALVAS em ${MESES_NOMES[mesSel]}.\n\nClique em CANCELAR para voltar e salvar, ou em OK para trocar de mês sem salvar (as alterações serão perdidas).`)
+    if (ok) setDirtyCalc(false)
+    return ok
+  }
   function mesAnterior() {
+    if (!podeTrocarMes()) return
     if (mesSel === 1) { setMesSel(12); setAnoSel(a=>a-1) }
     else setMesSel(m=>m-1)
   }
   function mesProximo() {
+    if (!podeTrocarMes()) return
     if (mesSel === 12) { setMesSel(1); setAnoSel(a=>a+1) }
     else setMesSel(m=>m+1)
   }
@@ -1185,7 +1199,8 @@ Use números reais. Seja direto.`
   })()
 
   return (
-    <div className="min-h-screen" style={{background:'#f5f4f0',color:'#1a1a1a'}}>
+    <div className="min-h-screen" style={{background:'#f5f4f0',color:'#1a1a1a'}}
+      onInput={() => setDirtyCalc(true)} /* qualquer digitação marca o mês como não salvo */>
       <div className="max-w-5xl mx-auto px-4 py-8">
 
         {/* Header */}
@@ -1210,7 +1225,7 @@ Use números reais. Seja direto.`
           <div className="flex items-center gap-1">
             <button onClick={mesAnterior} className="p-1 rounded hover:bg-white/5" style={{color:'#767069'}}><ChevronLeft size={14}/></button>
             <div className="flex items-center gap-1">
-              <select value={mesSel} onChange={e=>setMesSel(Number(e.target.value))}
+              <select value={mesSel} onChange={e=>{ if (!podeTrocarMes()) return; setMesSel(Number(e.target.value)) }}
                 className="text-xs font-bold px-2 py-1 rounded-lg focus:outline-none"
                 style={{background:'#f5f4f0',color:'#1a1a1a',border:'1px solid #dedad4'}}>
                 {MESES_NOMES.slice(1).map((nome,i)=>{
@@ -1218,7 +1233,7 @@ Use números reais. Seja direto.`
                   return <option key={m} value={m}>{nome}{temDados?' ●':''}</option>
                 })}
               </select>
-              <select value={anoSel} onChange={e=>setAnoSel(Number(e.target.value))}
+              <select value={anoSel} onChange={e=>{ if (!podeTrocarMes()) return; setAnoSel(Number(e.target.value)) }}
                 className="text-xs font-bold px-2 py-1 rounded-lg focus:outline-none"
                 style={{background:'#f5f4f0',color:'#1a1a1a',border:'1px solid #dedad4'}}>
                 {[anoSel-1,anoSel,anoSel+1].map(a=><option key={a} value={a}>{a}</option>)}
@@ -1234,7 +1249,7 @@ Use números reais. Seja direto.`
             <div className="flex-1 flex items-center gap-1 overflow-x-auto">
               {mesesComDados.slice(0,6).map(m=>(
                 <button key={`${m.ano}-${m.mes}`}
-                  onClick={()=>{setAnoSel(m.ano);setMesSel(m.mes)}}
+                  onClick={()=>{ if (!podeTrocarMes()) return; setAnoSel(m.ano);setMesSel(m.mes)}}
                   className="flex-shrink-0 text-[10px] px-2 py-0.5 rounded-full font-bold transition-all"
                   style={{
                     background: m.ano===anoSel&&m.mes===mesSel ? '#5b4fcf' : '#5b4fcf20',

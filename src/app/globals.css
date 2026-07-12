@@ -162,6 +162,12 @@ html, body {
   /* 22) Fileiras marcadas para NUNCA quebrar linha (ex.: controles de cada
          demanda do Check List) — vence a regra 2 por vir depois no arquivo. */
   .nodri-linha-1[style] { flex-wrap: nowrap !important; }
+
+  /* 23) Igual à 22, mas com rolagem lateral quando não couber (barras de
+         ações com vários botões — ex.: Mês/Salvar/Registrar dos Enxovais). */
+  .nodri-linha-rolavel[style] { flex-wrap: nowrap !important; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .nodri-linha-rolavel[style] > * { flex: 0 0 auto; }
+  .nodri-linha-rolavel[style]::-webkit-scrollbar { display: none; }
 }
 
 /* No computador, as barras de topo (<nav>) reservam espaço à direita para o

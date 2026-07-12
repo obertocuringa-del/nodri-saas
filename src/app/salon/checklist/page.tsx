@@ -7,6 +7,7 @@ import toast from 'react-hot-toast'
 import { CHECKLIST_DEFAULT, FREQUENCIAS } from '@/components/salon/checklistDefaults'
 import { usePermissoes } from '@/lib/usePermissoes'
 import { useIsMobile } from '@/lib/useIsMobile'
+import { useGuardaSalvar } from '@/lib/guardaSalvar'
 
 // Ordem dos períodos: Diário, Semanal, Quinzenal, Mensal, Trimestral
 const ordemFreq = (f: string) => { const i = FREQUENCIAS.indexOf(f); return i < 0 ? 99 : i }
@@ -38,6 +39,7 @@ export default function ChecklistPage() {
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
   const [dirty, setDirty] = useState(false)
+  useGuardaSalvar(dirty, 'Check List') // avisa "Deseja salvar?" antes de sair sem salvar
   const [verRelatorio, setVerRelatorio] = useState(false)
   const [verComuns, setVerComuns] = useState(false)
   const [diasOpen, setDiasOpen] = useState<string | null>(null)
