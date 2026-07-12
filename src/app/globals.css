@@ -168,6 +168,15 @@ html, body {
   .nodri-linha-rolavel[style] { flex-wrap: nowrap !important; overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .nodri-linha-rolavel[style] > * { flex: 0 0 auto; }
   .nodri-linha-rolavel[style]::-webkit-scrollbar { display: none; }
+
+  /* 24) SALVAR SEMPRE VISÍVEL no celular: dentro de qualquer faixa que rola
+         de lado, o botão com ícone de salvar GRUDA na borda direita da tela
+         e o resto do conteúdo rola por baixo dele — nunca fica escondido.
+         Nas navs do topo ele gruda antes do conjunto global (Voltar/Início/
+         Busca), que ocupa os ~130px finais. */
+  nav[style][style] button:has(svg.lucide-save) { position: sticky !important; right: 132px; z-index: 6; box-shadow: -8px 0 10px -6px rgba(0,0,0,.28); }
+  .nodri-linha-rolavel[style] button:has(svg.lucide-save) { position: sticky !important; right: 0; z-index: 6; box-shadow: -8px 0 10px -6px rgba(0,0,0,.28); }
+  .nodri-grid-ctrls button:has(svg.lucide-save) { position: sticky !important; right: 0; z-index: 6; box-shadow: -8px 0 10px -6px rgba(0,0,0,.28); }
 }
 
 /* No computador, as barras de topo (<nav>) reservam espaço à direita para o
