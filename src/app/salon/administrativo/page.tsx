@@ -163,6 +163,14 @@ export default function SalaoAdministrativoPage() {
   const { pode: podeP, carregado: permCarregado } = usePermissoes()
   const isMobile = useIsMobile(900) // sidebar precisa de espaço; abaixo disso volta o menu suspenso
   const abasVisiveis = ABAS_TOPO.filter(a => podeP(ABA_CHAVE[a.key] || a.key))
+
+  // Link direto (busca global): /salon/administrativo?aba=senhas ou ?aba=listas&lista=corte
+  useEffect(() => {
+    const sp = new URLSearchParams(window.location.search)
+    const aba = sp.get('aba'); const lista = sp.get('lista')
+    if (aba && ABAS_TOPO.some(a => a.key === aba)) setAbaTopo(aba)
+    if (lista && [...SERVICOS.map(s => s.key), ...TAB_GRIDS.map(g => g.key)].includes(lista)) setServico(lista)
+  }, [])
   // se a aba atual não está liberada, vai pra primeira liberada
   useEffect(() => {
     if (permCarregado && abasVisiveis.length && !abasVisiveis.some(a => a.key === abaTopo)) setAbaTopo(abasVisiveis[0].key)

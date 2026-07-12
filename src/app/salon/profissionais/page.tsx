@@ -166,6 +166,11 @@ const FORM_INITIAL = {
 export default function ProfissionaisPage() {
   const router = useRouter()
   const [secao, setSecao] = useState('lista')
+  // Link direto (busca global): /salon/profissionais?secao=carreira
+  useEffect(() => {
+    const s = new URLSearchParams(window.location.search).get('secao')
+    if (s && SIDEBAR_ITEMS.some(i => i.id === s)) setSecao(s)
+  }, [])
   const [cltSub, setCltSub] = useState<'clt' | 'exame' | 'processo'>('clt')
   const [cnpjSub, setCnpjSub] = useState<'cnpj' | 'contratacao' | 'desligamento'>('cnpj')
   const [sidebarOpen, setSidebarOpen] = useState(false)
