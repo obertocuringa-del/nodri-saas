@@ -1638,6 +1638,18 @@ function BlocoDiagnosticoResumido({ prof, form, metricas, p1, p2, fidel }: {
 }
 
 //  PendenciasLateral — painel compacto para a aba Dados Cadastrais
+const normalizaPend = (s: string) => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase()
+
+function urgenciaPendencia(p: { data_limite: string | null }): 'atrasada' | 'proxima' | 'normal' {
+  if (!p.data_limite) return 'normal'
+  const hoje = new Date(); hoje.setHours(0, 0, 0, 0)
+  const limite = new Date(p.data_limite + 'T00:00:00')
+  const dias = Math.round((limite.getTime() - hoje.getTime()) / 86400000)
+  if (dias < 0) return 'atrasada'
+  if (dias <= 3) return 'proxima'
+  return 'normal'
+}
+
 function PendenciasLateral({ profissionalId }: { profissionalId: string }) {
   const [pendencias, setPendencias] = useState<Array<{
     id: string; mensagem: string; data_limite: string | null
@@ -1645,6 +1657,7 @@ function PendenciasLateral({ profissionalId }: { profissionalId: string }) {
   }>>([])
   const [loading, setLoading] = useState(true)
   const [historicoAberto, setHistoricoAberto] = useState(false)
+  const [busca, setBusca] = useState('')
 
   useEffect(() => {
     fetch(`/api/pendencias?profissional_id=${profissionalId}`)
@@ -1666,20 +1679,39 @@ function PendenciasLateral({ profissionalId }: { profissionalId: string }) {
     }
   }
 
-  const abertas = pendencias.filter(p => !p.resolvido)
+  const buscaNorm = normalizaPend(busca)
+  const todasAbertas = pendencias.filter(p => !p.resolvido)
   const resolvidas = pendencias.filter(p => p.resolvido)
+  const abertas = buscaNorm ? todasAbertas.filter(p => normalizaPend(p.mensagem).includes(buscaNorm)) : todasAbertas
+
+  const URGENCIA_ESTILO: Record<string, { borda: string; chip: string; chipTxt: string }> = {
+    atrasada: { borda: '#ef4444', chip: 'rgba(239,68,68,0.1)', chipTxt: '#dc2626' },
+    proxima: { borda: '#f59e0b', chip: 'rgba(245,158,11,0.12)', chipTxt: '#b45309' },
+    normal: { borda: '#e0ddd8', chip: 'rgba(91,79,207,0.08)', chipTxt: '#6b6860' },
+  }
 
   return (
-    <div className="rounded-2xl border sticky top-20 space-y-3 p-4"
+    <div className="rounded-2xl border sticky top-20 space-y-3 p-4 shadow-sm"
       style={{ background:'#ffffff', borderColor:'#e0ddd8' }}>
       <div className="flex items-center justify-between">
-        <h2 className="font-syne font-bold text-[12px] text-nodri-cyan"> Pendências</h2>
-        {abertas.length > 0 && (
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20">
-            {abertas.length}
+        <h2 className="font-syne font-bold text-[13px] text-nodri-cyan flex items-center gap-1.5">📋 Pendências</h2>
+        {todasAbertas.length > 0 && (
+          <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-red-500/10 text-red-500 border border-red-500/20">
+            {todasAbertas.length} aberta{todasAbertas.length !== 1 ? 's' : ''}
           </span>
         )}
       </div>
+
+      {!loading && pendencias.length > 6 && (
+        <div className="relative">
+          <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar pendência..."
+            className="w-full text-[11.5px] rounded-lg border px-3 py-2 pr-7 outline-none focus:border-nodri-cyan/50 transition-colors"
+            style={{ borderColor: '#e0ddd8', background: '#faf9f7' }} />
+          {busca && (
+            <button onClick={() => setBusca('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-nodri-t3 hover:text-nodri-t1 text-[13px]">✕</button>
+          )}
+        </div>
+      )}
 
       {loading && (
         <div className="flex justify-center py-4">
@@ -1687,33 +1719,41 @@ function PendenciasLateral({ profissionalId }: { profissionalId: string }) {
         </div>
       )}
 
-      {!loading && abertas.length === 0 && (
+      {!loading && todasAbertas.length === 0 && (
         <p className="text-[11px] text-nodri-t3 py-2">Nenhuma pendência ativa</p>
       )}
 
+      {!loading && todasAbertas.length > 0 && abertas.length === 0 && (
+        <p className="text-[11px] text-nodri-t3 py-2">Nenhuma pendência encontrada para "{busca}"</p>
+      )}
+
       {!loading && abertas.length > 0 && (
-        <div className="space-y-2">
-          {abertas.map(p => (
-            <div key={p.id} className="rounded-xl p-3 border space-y-1.5"
-              style={{ background:'#ffffff', borderColor:'#e0ddd8' }}>
-              <p className="text-[11px] text-nodri-t1 leading-snug" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{p.mensagem}</p>
-              <div className="flex items-center justify-between gap-2">
-                {p.data_limite && (
-                  <span className="text-[9px] text-nodri-t3">
-                    Limite: {new Date(p.data_limite + 'T12:00:00').toLocaleDateString('pt-BR')}
-                  </span>
-                )}
-                <div className="ml-auto flex items-center gap-2">
-                  <WhatsPendencia mensagem={p.mensagem} />
-                  <button
-                    onClick={() => marcarFeito(p.id)}
-                    className="text-[10px] px-2.5 py-1 rounded-lg bg-green-500/10 text-green-400 border border-green-500/20 hover:bg-green-500/20 transition-colors font-semibold">
-                     Feito
-                  </button>
+        <div className="space-y-2 max-h-[70vh] overflow-y-auto pr-1">
+          {abertas.map(p => {
+            const urg = urgenciaPendencia(p)
+            const est = URGENCIA_ESTILO[urg]
+            return (
+              <div key={p.id} className="rounded-xl p-3 border-l-[3px] border transition-shadow hover:shadow-md space-y-1.5"
+                style={{ background:'#ffffff', borderColor:'#e0ddd8', borderLeftColor: est.borda }}>
+                <p className="text-[11px] text-nodri-t1 leading-snug" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{p.mensagem}</p>
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  {p.data_limite && (
+                    <span className="text-[9.5px] font-semibold px-2 py-0.5 rounded-full" style={{ background: est.chip, color: est.chipTxt }}>
+                      {urg === 'atrasada' ? '⚠ Atrasada — ' : ''}Limite: {new Date(p.data_limite + 'T12:00:00').toLocaleDateString('pt-BR')}
+                    </span>
+                  )}
+                  <div className="ml-auto flex items-center gap-2">
+                    <WhatsPendencia mensagem={p.mensagem} />
+                    <button
+                      onClick={() => marcarFeito(p.id)}
+                      className="text-[10px] px-2.5 py-1 rounded-lg bg-green-500/10 text-green-500 border border-green-500/20 hover:bg-green-500/20 transition-colors font-semibold">
+                      ✓ Feito
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
@@ -1722,10 +1762,10 @@ function PendenciasLateral({ profissionalId }: { profissionalId: string }) {
           <button
             onClick={() => setHistoricoAberto(v => !v)}
             className="flex items-center gap-1 text-[10px] text-nodri-t3 hover:text-nodri-t1 transition-colors font-semibold py-1">
-            {historicoAberto ? '' : ''} Histórico ({resolvidas.length})
+            {historicoAberto ? '▾' : '▸'} Histórico ({resolvidas.length})
           </button>
           {historicoAberto && (
-            <div className="space-y-1.5 mt-2">
+            <div className="space-y-1.5 mt-2 max-h-[40vh] overflow-y-auto pr-1">
               {resolvidas.map(p => (
                 <div key={p.id} className="rounded-xl p-2.5 border"
                   style={{ background: 'rgba(34,197,94,0.04)', borderColor: 'rgba(34,197,94,0.12)' }}>
