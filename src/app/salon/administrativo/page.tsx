@@ -16,6 +16,7 @@ import EscalaFeriadosLista from '@/components/salon/EscalaFeriadosLista'
 import ListaBebidas from '@/components/salon/ListaBebidas'
 import ListaTelefones from '@/components/salon/ListaTelefones'
 import ListaPrecoServicos from '@/components/salon/ListaPrecoServicos'
+import ValoresPacotesLista from '@/components/salon/ValoresPacotesLista'
 import DocEditavel from '@/components/salon/DocEditavel'
 import AnexosLista from '@/components/salon/AnexosLista'
 import Etiquetas from '@/components/salon/Etiquetas'
@@ -26,7 +27,7 @@ import { getLogoSalao } from '@/lib/logoSalao'
 // Mapeia cada aba do topo para a chave de permissão
 const ABA_CHAVE: Record<string, string> = {
   listas: 'adm_listas', servicos_valores: 'adm_servicos_valores', tratamentos: 'adm_tratamentos',
-  pacotes: 'adm_pacotes', telefones: 'adm_telefones', ata: 'adm_ata', escala: 'adm_escala',
+  pacotes: 'adm_pacotes', valores_pacotes: 'adm_valores_pacotes', telefones: 'adm_telefones', ata: 'adm_ata', escala: 'adm_escala',
   feriados: 'adm_feriados', pop: 'adm_pop', senhas: 'adm_senhas', cadastrar_produto: 'adm_cadastrar_produto',
   desconto_profissional: 'adm_desconto_profissional', tabela_precos: 'adm_tabela_precos', arquivos_envio: 'adm_arquivos_envio',
   corrida_interna: 'adm_corrida_interna', acoes_comerciais: 'adm_acoes_comerciais', correios: 'adm_correios',
@@ -69,6 +70,7 @@ const ABAS_TOPO = [
   { key: 'enxovais', label: 'Controle de Enxovais' },
   { key: 'tratamentos', label: 'Tratamentos Dosagem' },
   { key: 'pacotes', label: 'Preço de Pacotes' },
+  { key: 'valores_pacotes', label: 'Valores de Pacotes' },
   { key: 'telefones', label: 'Telefones Importantes' },
   { key: 'ata', label: 'Ata de Reunião' },
   { key: 'escala', label: 'Escala de Trabalho' },
@@ -187,6 +189,7 @@ export default function SalaoAdministrativoPage() {
         {abaTopo === 'servicos_valores' && <ListaPrecoServicos key="precos" />}
         {abaTopo === 'tratamentos' && <ListaPrecoServicos key="trat" chave="tratamentos_dosagem" titulo="Tratamentos — Dosagem" comLogo />}
         {abaTopo === 'pacotes' && <GridEditavel key="pacotes" chave="pacotes" defaultDoc={DEFAULT_PACOTES} landscape />}
+        {abaTopo === 'valores_pacotes' && <ValoresPacotesLista key="valores_pacotes" />}
         {abaTopo === 'telefones' && <ListaTelefones />}
         {abaTopo === 'ata' && <AtaReuniaoLista key="ata" chave="ata" profsSalao={profsSalao} />}
         {abaTopo === 'escala' && <EscalaTrabalhoLista key="escala" chave="escala" />}

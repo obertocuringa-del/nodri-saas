@@ -33,6 +33,7 @@ export const CATALOGO_PERMISSOES: PermGrupo[] = [
       { chave: 'adm_servicos_valores', label: 'Serviços Internos (Valores)' },
       { chave: 'adm_tratamentos', label: 'Tratamentos Dosagem' },
       { chave: 'adm_pacotes', label: 'Preço de Pacotes' },
+      { chave: 'adm_valores_pacotes', label: 'Valores de Pacotes' },
       { chave: 'adm_telefones', label: 'Telefones Importantes' },
       { chave: 'adm_ata', label: 'Ata de Reunião' },
       { chave: 'adm_escala', label: 'Escala de Trabalho' },

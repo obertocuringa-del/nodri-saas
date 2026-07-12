@@ -21,6 +21,7 @@ function mapaChave(chave: string): { label: string; rota: string } {
   if (c === 'pop_salao') return { label: 'POP · Salão', rota: '/salon/administrativo' }
   if (c === 'senhas') return { label: 'Senhas', rota: '/salon/administrativo' }
   if (c === 'pacotes') return { label: 'Preço de Pacotes', rota: '/salon/administrativo' }
+  if (c === 'pacotes_valores') return { label: 'Valores de Pacotes', rota: '/salon/administrativo' }
   if (c === 'ata') return { label: 'Ata de Reunião', rota: '/salon/administrativo' }
   if (c === 'feriados') return { label: 'Escala de Feriados', rota: '/salon/administrativo' }
   if (c.startsWith('escala')) return { label: 'Escala de Trabalho', rota: '/salon/administrativo' }
