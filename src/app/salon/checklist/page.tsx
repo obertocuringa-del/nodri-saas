@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Loader2, Save, Plus, Trash2, Check, X, BarChart3, Copy, RotateCcw, Pencil } from 'lucide-react'
+import { ArrowLeft, Loader2, Save, Plus, Trash2, Check, X, BarChart3, Copy, RotateCcw, Pencil, Calendar, ArrowRightLeft, ArrowDownAZ } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { CHECKLIST_DEFAULT, FREQUENCIAS } from '@/components/salon/checklistDefaults'
 import { usePermissoes } from '@/lib/usePermissoes'
@@ -10,13 +10,14 @@ import { usePermissoes } from '@/lib/usePermissoes'
 // Ordem dos períodos: Diário, Semanal, Quinzenal, Mensal, Trimestral
 const ordemFreq = (f: string) => { const i = FREQUENCIAS.indexOf(f); return i < 0 ? 99 : i }
 
-interface Demanda { id: string; texto: string; freq: string; feito: boolean }
+interface Demanda { id: string; texto: string; freq: string; feito: boolean; dias?: string[] }
 interface Categoria { id: string; nome: string; demandas: Demanda[] }
 interface Doc { categorias: Categoria[] }
 
 const rid = () => Math.random().toString(36).slice(2, 8)
 const norm = (s: string) => (s || '').toLowerCase().trim().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ')
 const buildDefault = (): Doc => ({ categorias: CHECKLIST_DEFAULT.map(c => ({ id: rid(), nome: c.nome, demandas: c.demandas.map(t => ({ id: rid(), texto: t, freq: 'Diário', feito: false })) })) })
+const DIAS_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 
 const FREQ_COR: Record<string, { bg: string; bd: string; txt: string }> = {
   'Diário': { bg: '#f0fdf4', bd: '#16a34a', txt: '#15803d' },
@@ -37,6 +38,8 @@ export default function ChecklistPage() {
   const [dirty, setDirty] = useState(false)
   const [verRelatorio, setVerRelatorio] = useState(false)
   const [verComuns, setVerComuns] = useState(false)
+  const [diasOpen, setDiasOpen] = useState<string | null>(null)
+  const [transferOpen, setTransferOpen] = useState<string | null>(null)
 
   const carregar = useCallback(async () => {
     try {
@@ -52,6 +55,33 @@ export default function ChecklistPage() {
   function toggleFeito(ci: number, di: number) { mut(d => { d.categorias[ci].demandas[di].feito = !d.categorias[ci].demandas[di].feito }) }
   function setDemanda(ci: number, di: number, campo: 'texto' | 'freq', v: string) { mut(d => { (d.categorias[ci].demandas[di] as any)[campo] = v; if (campo === 'freq') d.categorias[ci].demandas.sort((a, b) => ordemFreq(a.freq) - ordemFreq(b.freq)) }) }
   function organizarCategoria(ci: number) { mut(d => { d.categorias[ci].demandas.sort((a, b) => ordemFreq(a.freq) - ordemFreq(b.freq)) }); toast.success('Organizado por período (Diário → Semanal → ...)') }
+  function organizarAZ(ci: number) { mut(d => { d.categorias[ci].demandas.sort((a, b) => norm(a.texto).localeCompare(norm(b.texto))) }); toast.success('Organizado em ordem alfabética — repare se aparecerem itens parecidos/repetidos') }
+  function toggleDia(ci: number, di: number, dia: string) {
+    mut(d => {
+      const dem = d.categorias[ci].demandas[di]
+      if (!dem.dias) dem.dias = []
+      const idx = dem.dias.indexOf(dia)
+      if (idx >= 0) dem.dias.splice(idx, 1); else dem.dias.push(dia)
+    })
+  }
+  async function transferirDemanda(demandaId: string, categoriaDestinoId: string) {
+    const novoDoc: Doc = JSON.parse(JSON.stringify(doc))
+    let item: Demanda | null = null
+    for (const c of novoDoc.categorias) {
+      const idx = c.demandas.findIndex((x: Demanda) => x.id === demandaId)
+      if (idx >= 0) { item = c.demandas.splice(idx, 1)[0]; break }
+    }
+    const destino = novoDoc.categorias.find(c => c.id === categoriaDestinoId)
+    if (!item || !destino) return
+    destino.demandas.push(item)
+    setDoc(novoDoc); setTransferOpen(null)
+    setSalvando(true)
+    try {
+      const res = await fetch('/api/salon/grid', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chave: 'checklist', doc: novoDoc }) })
+      if (res.ok) { toast.success(`Transferido para "${destino.nome}"!`); setDirty(false) } else toast.error('Erro ao transferir')
+    } catch { toast.error('Erro de conexão') }
+    setSalvando(false)
+  }
   function addDemanda(ci: number) { mut(d => { d.categorias[ci].demandas.push({ id: rid(), texto: '', freq: 'Diário', feito: false }) }) }
   function delDemanda(ci: number, di: number) { mut(d => { d.categorias[ci].demandas.splice(di, 1) }) }
   function addCategoria() { mut(d => { d.categorias.push({ id: rid(), nome: 'Nova categoria', demandas: [] }) }); setCatSel(doc.categorias.length) }
@@ -153,6 +183,7 @@ export default function ChecklistPage() {
                 <Pencil size={14} color="#9ca3af" />
                 <input value={cat.nome} readOnly={soLeitura} onChange={e => renCategoria(catSel, e.target.value)} style={{ flex: 1, fontSize: 16, fontWeight: 800, color: '#5b4fcf', border: 'none', borderBottom: '1px solid #eee', outline: 'none', padding: '2px 0' }} />
                 {!soLeitura && <button onClick={() => organizarCategoria(catSel)} title="Organizar por período (Diário, Semanal, Quinzenal...)" style={{ border: '1px solid #c9c4f0', background: '#f6f4ff', color: '#5b4fcf', borderRadius: 6, padding: '5px 10px', cursor: 'pointer', fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>↕ Organizar por período</button>}
+                {!soLeitura && <button onClick={() => organizarAZ(catSel)} title="Organizar em ordem alfabética (ajuda a achar duplicadas)" style={{ border: '1px solid #c9c4f0', background: '#f6f4ff', color: '#5b4fcf', borderRadius: 6, padding: '5px 10px', cursor: 'pointer', fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}><ArrowDownAZ size={13} /> Organizar A-Z</button>}
                 {!soLeitura && <button onClick={() => delCategoria(catSel)} title="Excluir categoria" style={{ border: '1px solid #fca5a5', background: '#fff', color: '#dc2626', borderRadius: 6, padding: '5px 10px', cursor: 'pointer', fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Trash2 size={12} /> Categoria</button>}
               </div>
 
@@ -168,6 +199,44 @@ export default function ChecklistPage() {
                     <select value={dem.freq} disabled={soLeitura} onChange={e => setDemanda(catSel, di, 'freq', e.target.value)} style={{ padding: '5px 8px', borderRadius: 6, border: `1.5px solid ${fc.bd}`, background: '#fff', color: fc.txt, fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
                       {FREQUENCIAS.map(f => <option key={f} value={f}>{f}</option>)}
                     </select>
+
+                    {!soLeitura && (
+                      <div style={{ position: 'relative', flexShrink: 0 }}>
+                        <button onClick={() => setDiasOpen(diasOpen === dem.id ? null : dem.id)} title="Dias da semana (opcional)"
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 4, border: '1px solid ' + (dem.dias?.length ? '#5b4fcf' : '#d0cdc7'), background: dem.dias?.length ? '#f0eefb' : '#fff', color: dem.dias?.length ? '#5b4fcf' : '#6b6860', borderRadius: 6, padding: '5px 8px', cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>
+                          <Calendar size={12} /> {dem.dias && dem.dias.length ? dem.dias.join(', ') : 'Dias'}
+                        </button>
+                        {diasOpen === dem.id && (<>
+                          <div onClick={() => setDiasOpen(null)} style={{ position: 'fixed', inset: 0, zIndex: 59 }} />
+                          <div style={{ position: 'absolute', top: '110%', right: 0, zIndex: 60, background: '#fff', border: '1px solid #e0ddd8', borderRadius: 10, boxShadow: '0 10px 30px rgba(0,0,0,.15)', padding: 8, display: 'flex', gap: 4 }}>
+                            {DIAS_SEMANA.map(dia => {
+                              const on = !!dem.dias?.includes(dia)
+                              return <button key={dia} onClick={() => toggleDia(catSel, di, dia)} style={{ border: 'none', borderRadius: 6, padding: '6px 8px', fontSize: 11, fontWeight: 800, cursor: 'pointer', background: on ? '#5b4fcf' : '#f3f2ee', color: on ? '#fff' : '#6b6860' }}>{dia}</button>
+                            })}
+                          </div>
+                        </>)}
+                      </div>
+                    )}
+
+                    {!soLeitura && (
+                      <div style={{ position: 'relative', flexShrink: 0 }}>
+                        <button onClick={() => setTransferOpen(transferOpen === dem.id ? null : dem.id)} title="Transferir para outra categoria"
+                          style={{ border: '1px solid #d0cdc7', background: '#fff', color: '#6b6860', borderRadius: 6, padding: '5px 8px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}>
+                          <ArrowRightLeft size={13} />
+                        </button>
+                        {transferOpen === dem.id && (<>
+                          <div onClick={() => setTransferOpen(null)} style={{ position: 'fixed', inset: 0, zIndex: 59 }} />
+                          <div style={{ position: 'absolute', top: '110%', right: 0, zIndex: 60, background: '#fff', border: '1px solid #e0ddd8', borderRadius: 10, boxShadow: '0 10px 30px rgba(0,0,0,.15)', minWidth: 200, maxHeight: 260, overflowY: 'auto', padding: 6 }}>
+                            <div style={{ fontSize: 11, fontWeight: 800, color: '#9ca3af', padding: '4px 8px' }}>Mover para...</div>
+                            {doc.categorias.filter(c => c.id !== cat.id).map(c => (
+                              <button key={c.id} onClick={() => transferirDemanda(dem.id, c.id)} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 10px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13, borderRadius: 6 }}
+                                onMouseEnter={e => (e.currentTarget.style.background = '#f0eefb')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>{c.nome}</button>
+                            ))}
+                          </div>
+                        </>)}
+                      </div>
+                    )}
+
                     {!soLeitura && <button onClick={() => delDemanda(catSel, di)} title="Excluir demanda" style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', padding: 6, flexShrink: 0 }}><Trash2 size={13} /></button>}
                   </div>
                   )
