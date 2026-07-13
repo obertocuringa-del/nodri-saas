@@ -36,7 +36,9 @@ export function useGuardaSalvar(dirty: boolean, nome = '') {
 
   useEffect(() => {
     registro.set(idRef.current, { dirty, nome })
-    return () => { registro.delete(idRef.current) }
+    // Avisa a barra global (botão Salvar do topo fixo do celular) que o estado mudou
+    window.dispatchEvent(new Event('nodri-dirty-change'))
+    return () => { registro.delete(idRef.current); window.dispatchEvent(new Event('nodri-dirty-change')) }
   }, [dirty, nome])
 
   // Fechar/recarregar a aba com alteração pendente → aviso nativo do navegador

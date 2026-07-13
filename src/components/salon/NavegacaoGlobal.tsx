@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { Home, ArrowLeft, Search, Loader2, FileText, User, Layers, AlertTriangle } from 'lucide-react'
+import { Home, ArrowLeft, Search, Loader2, FileText, User, Layers, AlertTriangle, Save } from 'lucide-react'
 import { useIsMobile } from '@/lib/useIsMobile'
 import { haNaoSalvo, nomesNaoSalvos } from '@/lib/guardaSalvar'
 
@@ -94,6 +94,25 @@ function pontuar(q: string, alvo: string): number {
 
 const ATALHOS = ['/salon', '/salon/profissionais', '/salon/checklist', '/salon/relatorios', '/salon/administrativo?aba=escala', '/salon/administrativo?aba=senhas']
 
+// Nome da página para a barra fixa do celular
+const TITULOS_EXTRAS: Record<string, string> = {
+  '/salon/administrativo': 'SALÃO ADMINISTRATIVO',
+  '/salon/meu-painel': 'MEU PAINEL',
+  '/salon/ia-config': 'CONFIGURAÇÃO DA IA',
+  '/salon/lojistas/relatorio': 'LOJISTAS — RELATÓRIO',
+  '/salon/lojistas/configuracoes': 'LOJISTAS — CONFIGURAÇÕES',
+  '/salon/relatorios/importar-excel': 'IMPORTAR RELATÓRIO',
+}
+function tituloDaRota(pathname: string): string {
+  if (TITULOS_EXTRAS[pathname]) return TITULOS_EXTRAS[pathname]
+  if (pathname.startsWith('/salon/profissionais/')) return 'PROFISSIONAL'
+  if (pathname.startsWith('/salon/academia/')) return 'ACADEMIA'
+  if (pathname.startsWith('/salon/feedback-profissional/')) return 'FEEDBACK PROFISSIONAL'
+  if (pathname.startsWith('/salon/feedback/')) return 'FEEDBACK DE CLIENTE'
+  const hit = CATALOGO.find(p => !p.rota.includes('?') && p.rota === pathname)
+  return hit?.label || ''
+}
+
 export default function NavegacaoGlobal() {
   const router = useRouter()
   const pathname = usePathname()
@@ -130,6 +149,37 @@ export default function NavegacaoGlobal() {
   }, [])
 
   useEffect(() => { if (buscaAberta) { setQ(''); setApiRes([]); setSel(0); setTimeout(() => inputRef.current?.focus(), 50) } }, [buscaAberta])
+
+  // ── Topo fixo do celular: estado do botão Salvar (proxy do Salvar da página) ──
+  const [dirtyGlobal, setDirtyGlobal] = useState(false)
+  const [temBotaoSalvar, setTemBotaoSalvar] = useState(false)
+  const acharBotoesSalvar = useCallback((): HTMLButtonElement[] => {
+    try {
+      return Array.from(document.querySelectorAll('button')).filter(b =>
+        b.querySelector('svg.lucide-save') && !b.closest('[data-nodri-topo]')
+      ) as HTMLButtonElement[]
+    } catch { return [] }
+  }, [])
+  useEffect(() => {
+    const checar = () => { setDirtyGlobal(haNaoSalvo()); setTemBotaoSalvar(acharBotoesSalvar().length > 0) }
+    checar()
+    const t1 = setTimeout(checar, 700); const t2 = setTimeout(checar, 2200)
+    window.addEventListener('nodri-dirty-change', checar)
+    return () => { clearTimeout(t1); clearTimeout(t2); window.removeEventListener('nodri-dirty-change', checar) }
+  }, [pathname, acharBotoesSalvar])
+  function salvarPagina() {
+    const btns = acharBotoesSalvar()
+    const alvo = btns.find(b => b.offsetParent !== null) || btns[0]
+    alvo?.click()
+  }
+
+  // Respiro no topo do body enquanto a barra fixa do celular está ativa
+  const barraMobileAtiva = isMobile && pathname !== '/salon' && role !== 'profissional'
+  useEffect(() => {
+    if (barraMobileAtiva) document.body.classList.add('nodri-topo-fixo')
+    else document.body.classList.remove('nodri-topo-fixo')
+    return () => document.body.classList.remove('nodri-topo-fixo')
+  }, [barraMobileAtiva])
 
   const pode = useCallback((chave: string | null) => {
     if (chave === null) return true
@@ -211,10 +261,9 @@ export default function NavegacaoGlobal() {
 
   return (
     <>
-      {/* Conjunto global flutuante: fica NA MESMA LINHA da barra do topo de
-          cada página (canto direito) — o CSS global reserva o espaço.
-          Na página inicial não aparece (lá a busca fica no campo do painel). */}
-      {!naHome && (
+      {/* PC: conjunto flutuante na mesma linha da barra do topo de cada página
+          (canto direito) — o CSS global reserva o espaço nos <nav>. */}
+      {!naHome && !isMobile && (
       <div style={{ position: 'fixed', top: 8, right: 10, zIndex: 45, display: 'flex', gap: 6 }}>
         <button onClick={() => navegarComGuarda(() => router.back())} aria-label="Voltar" title="Voltar à página anterior" style={pillSt}
           onMouseEnter={e => (e.currentTarget.style.background = '#f0eefb')} onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>
@@ -225,12 +274,30 @@ export default function NavegacaoGlobal() {
           <Home size={15} />
         </button>
         <button onClick={() => setBuscaAberta(true)} aria-label="Buscar no sistema" title="Buscar em todo o sistema (Ctrl+K)"
-          style={{ ...pillSt, color: '#8a859c', fontWeight: 600, minWidth: isMobile ? undefined : 210, justifyContent: 'flex-start' }}
+          style={{ ...pillSt, color: '#8a859c', fontWeight: 600, minWidth: 210, justifyContent: 'flex-start' }}
           onMouseEnter={e => (e.currentTarget.style.background = '#f0eefb')} onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>
           <Search size={15} color="#5b4fcf" />
-          {!isMobile && <span style={{ flex: 1, textAlign: 'left' }}>Buscar no sistema...</span>}
-          {!isMobile && <span style={{ fontSize: 10, color: '#b9b4d6', border: '1px solid #e5e1f5', borderRadius: 5, padding: '1px 6px' }}>Ctrl+K</span>}
+          <span style={{ flex: 1, textAlign: 'left' }}>Buscar no sistema...</span>
+          <span style={{ fontSize: 10, color: '#b9b4d6', border: '1px solid #e5e1f5', borderRadius: 5, padding: '1px 6px' }}>Ctrl+K</span>
         </button>
+      </div>
+      )}
+
+      {/* CELULAR: topo fixo limpo — nome da página + Salvar + Voltar/Início/Busca */}
+      {barraMobileAtiva && (
+      <div data-nodri-topo style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 52, zIndex: 45, background: '#faf9f7', borderBottom: '1px solid #e4e0d8', display: 'flex', alignItems: 'center', gap: 6, padding: '0 8px', boxShadow: '0 2px 8px rgba(0,0,0,.06)' }}>
+        <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: 900, color: '#1a1a1a', letterSpacing: '.3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {tituloDaRota(pathname)}
+        </span>
+        {temBotaoSalvar && (
+          <button onClick={salvarPagina} aria-label="Salvar"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, flexShrink: 0, padding: '7px 12px', borderRadius: 999, border: 'none', background: dirtyGlobal ? '#16a34a' : '#a3b3a3', color: '#fff', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>
+            <Save size={13} /> Salvar
+          </button>
+        )}
+        <button onClick={() => navegarComGuarda(() => router.back())} aria-label="Voltar" title="Voltar" style={pillSt}><ArrowLeft size={15} /></button>
+        <button onClick={() => navegarComGuarda(() => router.push('/salon'))} aria-label="Ir para a página inicial" title="Início" style={pillSt}><Home size={15} /></button>
+        <button onClick={() => setBuscaAberta(true)} aria-label="Buscar no sistema" title="Buscar" style={pillSt}><Search size={15} /></button>
       </div>
       )}
 

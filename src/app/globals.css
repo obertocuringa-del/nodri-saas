@@ -147,13 +147,11 @@ html, body {
   .nodri-grid-ctrls { flex-wrap: nowrap !important; overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; padding-bottom: 4px; }
   .nodri-grid-ctrls > * { flex: 0 0 auto; }
 
-  /* 20) Barras de navegação do TOPO (todas as páginas): no celular ficam numa
-         linha só que rola de lado, em vez de empilhar em 2-3 linhas e roubar
-         meia tela. [style][style] repete o seletor p/ vencer a regra 2
-         (que força quebra) na especificidade. */
-  nav[style][style] { flex-wrap: nowrap !important; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-top: 10px !important; padding-bottom: 10px !important; padding-right: 130px !important; }
-  nav[style][style] > * { flex: 0 0 auto; }
-  nav[style][style]::-webkit-scrollbar { display: none; }
+  /* 20) Barras de navegação do TOPO (todas as páginas): no celular DEIXAM de
+         ser fixas — rolam junto com a página (quebram linha normalmente, nada
+         fica escondido). O topo fixo do celular é a barra global compacta
+         (nome da página + Salvar + Voltar/Início/Busca). */
+  nav[style][style] { position: static !important; }
 
   /* 21) Janelas/modais centralizados nunca passam da altura da tela — o
          conteúdo interno rola (rede de segurança para todas as páginas). */
@@ -169,14 +167,11 @@ html, body {
   .nodri-linha-rolavel[style] > * { flex: 0 0 auto; }
   .nodri-linha-rolavel[style]::-webkit-scrollbar { display: none; }
 
-  /* 24) SALVAR SEMPRE VISÍVEL no celular: dentro de qualquer faixa que rola
-         de lado, o botão com ícone de salvar GRUDA na borda direita da tela
-         e o resto do conteúdo rola por baixo dele — nunca fica escondido.
-         Nas navs do topo ele gruda antes do conjunto global (Voltar/Início/
-         Busca), que ocupa os ~130px finais. */
-  nav[style][style] button:has(svg.lucide-save) { position: sticky !important; right: 132px; z-index: 6; box-shadow: -8px 0 10px -6px rgba(0,0,0,.28); }
-  .nodri-linha-rolavel[style] button:has(svg.lucide-save) { position: sticky !important; right: 0; z-index: 6; box-shadow: -8px 0 10px -6px rgba(0,0,0,.28); }
-  .nodri-grid-ctrls button:has(svg.lucide-save) { position: sticky !important; right: 0; z-index: 6; box-shadow: -8px 0 10px -6px rgba(0,0,0,.28); }
+  /* 24) A barra global fixa do celular tem ~52px: o body ganha esse respiro
+         (classe aplicada pelo NavegacaoGlobal fora da página inicial) e as
+         faixas sticky internas (ex.: barra dos Enxovais) colam logo abaixo. */
+  body.nodri-topo-fixo { padding-top: 52px !important; }
+  body.nodri-topo-fixo .nodri-linha-rolavel[style] { top: 52px !important; }
 }
 
 /* No computador, as barras de topo (<nav>) reservam espaço à direita para o
