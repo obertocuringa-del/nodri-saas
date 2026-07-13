@@ -4,6 +4,7 @@ import { Loader2, Trash2, Plus, ArrowLeft, Calendar, Link2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import WhatsPendencia from '@/components/salon/WhatsPendencia'
+import { urlPublica } from '@/lib/urlPublica'
 
 interface Profissional {
   id: string
@@ -280,7 +281,7 @@ export default function PendenciasPage() {
         {salaoId && (
           <button
             onClick={() => {
-              const link = `${window.location.origin}/pendencia-prof/${salaoId}`
+              const link = urlPublica(`/pendencia-prof/${salaoId}`)
               navigator.clipboard.writeText(link)
               toast.success('Link copiado! Envie para os profissionais.')
             }}

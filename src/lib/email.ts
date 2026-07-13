@@ -3,7 +3,7 @@
 
 const FROM_EMAIL = 'nodriestiloebeleza@gmail.com'
 const FROM_NAME = 'NODRI Estilo & Beleza'
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://nodri-saas-jsx4.vercel.app'
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.nodri.com.br'
 const WHATSAPP = '5561982195214'
 
 async function sendEmail({ to, subject, html }: { to: string; subject: string; html: string }) {

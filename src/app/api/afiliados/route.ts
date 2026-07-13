@@ -4,7 +4,7 @@ import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 import { sendEmailAfiliado } from '@/lib/email'
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://nodri-saas-jsx4.vercel.app'
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.nodri.com.br'
 
 function gerarCupom(nome: string): string {
   const primeiroNome = nome.trim().split(' ')[0].toUpperCase()

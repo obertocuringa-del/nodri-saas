@@ -173,7 +173,7 @@ export async function POST(req: NextRequest) {
   // Enviar email de boas-vindas
   if (email) {
     try {
-      const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://nodri-saas-jsx4.vercel.app'
+      const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.nodri.com.br'
       const LINK_DOWNLOAD = process.env.LINK_DOWNLOAD_PROGRAMA || ''
       await enviarEmailBoasVindas({
         email,

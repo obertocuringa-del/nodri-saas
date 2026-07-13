@@ -11,6 +11,7 @@ import EditorAvaliacao from '@/components/salon/EditorAvaliacao'
 import DescricaoCargo from '@/components/salon/DescricaoCargo'
 import PlanoCarreiraPJ from '@/components/salon/PlanoCarreiraPJ'
 import { confirmarSaidaSemSalvar } from '@/lib/guardaSalvar'
+import { urlPublica } from '@/lib/urlPublica'
 
 interface Profissional {
   id: string
@@ -681,7 +682,7 @@ ${montarContratoHTML()}
       const res = await fetch('/api/profissionais/link-cadastro')
       if (res.ok) {
         const d = await res.json()
-        setLinkCadastro(`${window.location.origin}/cadastro/${d.token}`)
+        setLinkCadastro(urlPublica(`/cadastro/${d.token}`))
       }
     } catch {}
   }
@@ -692,7 +693,7 @@ ${montarContratoHTML()}
     const res = await fetch('/api/profissionais/link-cadastro', { method: 'POST' })
     if (res.ok) {
       const d = await res.json()
-      setLinkCadastro(`${window.location.origin}/cadastro/${d.token}`)
+      setLinkCadastro(urlPublica(`/cadastro/${d.token}`))
       toast.success('Novo link gerado!')
     }
     setGerandoLink(false)

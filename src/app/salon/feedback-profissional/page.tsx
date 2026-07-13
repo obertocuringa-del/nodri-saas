@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Plus, Trash2, Edit2, Check, X, Copy, Eye, BarChart2, Users, ClipboardList, Upload, Lock, Settings2, Menu, Link, Pencil, Clock } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { DOMINIO_PUBLICO } from '@/lib/urlPublica'
 
 interface Formulario { id: string; titulo: string; token: string; ativo: boolean; criado_em: string }
 interface Profissional { id: string; nome: string; ativo: boolean }
@@ -37,7 +38,7 @@ export default function FeedbackProfissionalPage() {
   const [formLoading, setFormLoading] = useState(false)
 
   useEffect(() => {
-    setSalaoUrl(window.location.origin)
+    setSalaoUrl(DOMINIO_PUBLICO)
     fetch('/api/feedback-prof/formularios')
       .then(r => r.json())
       .then(data => {

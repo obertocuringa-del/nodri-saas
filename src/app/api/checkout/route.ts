@@ -8,7 +8,7 @@ const supabase = createClient(
 )
 
 const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN!
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://nodri-saas-jsx4.vercel.app'
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.nodri.com.br'
 
 const PLANOS: Record<string, { nome: string; preco: number }> = {
   'Básico':       { nome: 'NODRI Básico',      preco: 100 },
