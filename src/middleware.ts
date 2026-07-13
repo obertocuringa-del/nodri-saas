@@ -36,6 +36,9 @@ export async function middleware(request: NextRequest) {
     // Autocadastro público de lojistas parceiros
     pathname.startsWith('/lojista/') ||
     pathname.startsWith('/api/lojistas/public') ||
+    // Autocadastro público de profissionais (a pessoa que vai entrar ainda
+    // não tem login). A API valida o token e escopa pelo salão dono do link.
+    pathname.startsWith('/api/cadastro-publico') ||
     // Config remota dos programas desktop (GET é público e só leitura;
     // o POST valida master dentro da própria rota)
     pathname === '/api/config/programas' ||
