@@ -9,6 +9,7 @@ import {
   calcularSimuladorMeta, calcularDinheiroPerdido, calcularOportunidadesOcultas, buscarTendenciaFidelizacao,
 } from '@/lib/metasAnalitico'
 import Anthropic from '@anthropic-ai/sdk'
+import { escritaBloqueadaSub } from '@/lib/apiAuth'
 
 async function getSalaoId() {
   const token = cookies().get('nodri_token')?.value
@@ -53,6 +54,7 @@ async function chamarIA(apiKey: string, modelo: string, prompt: string): Promise
 
 // POST — gera (ou regenera) o planejamento estratégico para bater a meta do mês
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+    if (await escritaBloqueadaSub()) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
   const salaoId = await getSalaoId()
   if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
@@ -463,6 +465,7 @@ Exatamente 3, ordenadas por impacto financeiro estimado. Cada uma:
 
 // PUT — salva (persiste) o plano que já foi gerado e revisado
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+    if (await escritaBloqueadaSub()) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
   const salaoId = await getSalaoId()
   if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 

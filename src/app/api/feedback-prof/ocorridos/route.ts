@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
+import { escritaBloqueadaSub } from '@/lib/apiAuth'
 
 async function getPayload() {
   const token = cookies().get('nodri_token')?.value
@@ -18,6 +19,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+    if (await escritaBloqueadaSub()) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
   const p = await getPayload()
   if (!p) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   const { descricao } = await req.json()
@@ -28,6 +30,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+    if (await escritaBloqueadaSub()) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
   const p = await getPayload()
   if (!p) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   const { id, descricao, ativo } = await req.json()
@@ -40,6 +43,7 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+    if (await escritaBloqueadaSub()) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
   const p = await getPayload()
   if (!p) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   const { id } = await req.json()

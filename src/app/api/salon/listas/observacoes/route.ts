@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
+import { escritaBloqueadaSub } from '@/lib/apiAuth'
 
 // Observações das listas (Realinhamento/Corte/Mechas/Pigmentação) → viram
 // registros no Feedback do Profissional (feedback_prof_respostas), com
 // tipo positivo/negativo e a descrição do ocorrido.
 export async function POST(req: NextRequest) {
+    if (await escritaBloqueadaSub()) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
   const token = cookies().get('nodri_token')?.value
   const payload = token ? await verifyJWT(token) : null
   if (!payload || !payload.salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })

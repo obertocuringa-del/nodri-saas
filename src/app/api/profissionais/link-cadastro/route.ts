@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 import { randomUUID } from 'crypto'
+import { escritaBloqueadaSub } from '@/lib/apiAuth'
 
 async function getSalaoId() {
   const token = cookies().get('nodri_token')?.value
@@ -36,6 +37,7 @@ export async function GET() {
 
 // POST: regenera o token
 export async function POST() {
+    if (await escritaBloqueadaSub()) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
   const salaoId = await getSalaoId()
   if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 

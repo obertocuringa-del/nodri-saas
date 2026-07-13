@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
+import { escritaBloqueadaSub } from '@/lib/apiAuth'
 
 export async function POST(req: NextRequest) {
+    if (await escritaBloqueadaSub()) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
   // Autenticação: apenas admin master
   const token = cookies().get('nodri_token')?.value
   const payload = token ? await verifyJWT(token) : null

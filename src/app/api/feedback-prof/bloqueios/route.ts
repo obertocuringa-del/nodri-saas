@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
+import { escritaBloqueadaSub } from '@/lib/apiAuth'
 
 function getISOWeekRange() {
   const now = new Date()
@@ -193,6 +194,7 @@ export async function GET() {
 }
 
 export async function DELETE(req: NextRequest) {
+    if (await escritaBloqueadaSub()) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
   const token = cookies().get('nodri_token')?.value
   const payload = token ? await verifyJWT(token) : null
   if (!payload || !['salon','sub'].includes(payload.role) || !payload.salaoId)

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { verifyJWT } from '@/lib/auth'
 import { cookies } from 'next/headers'
+import { escritaBloqueadaSub } from '@/lib/apiAuth'
 
 // GET — busca metas salvas para a IA (usada pelo chat route)
 export async function GET(req: NextRequest) {
@@ -27,6 +28,7 @@ export async function GET(req: NextRequest) {
 
 // POST — salva metas do salão e por profissional
 export async function POST(req: NextRequest) {
+    if (await escritaBloqueadaSub()) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
   try {
     const token = cookies().get('nodri_token')?.value
     const payload = token ? await verifyJWT(token) : null

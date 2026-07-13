@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { verifyJWT } from '@/lib/auth'
 import { cookies } from 'next/headers'
+import { bloquearEdicao } from '@/lib/apiAuth'
 
 async function getSalaoId() {
   const token = cookies().get('nodri_token')?.value
@@ -11,6 +12,7 @@ async function getSalaoId() {
 }
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+    if (await bloquearEdicao('PUT')) return NextResponse.json({ error: 'Modo Caixa: você pode adicionar, mas não editar nem excluir.' }, { status: 403 })
   const salaoId = await getSalaoId()
   if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
@@ -29,6 +31,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 }
 
 export async function DELETE(_: NextRequest, { params }: { params: { id: string } }) {
+    if (await bloquearEdicao('PUT')) return NextResponse.json({ error: 'Modo Caixa: você pode adicionar, mas não editar nem excluir.' }, { status: 403 })
   const salaoId = await getSalaoId()
   if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 

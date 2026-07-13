@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { getSessao, salaoIdSe } from '@/lib/apiAuth'
+import { getSessao, salaoIdSe, bloquearEdicao } from '@/lib/apiAuth'
 import type { KitsConfig } from '@/lib/kitsShared'
 
 const CHAVE = 'kits_config'
@@ -18,6 +18,7 @@ export async function GET() {
 }
 
 export async function PUT(req: NextRequest) {
+    if (await bloquearEdicao('PUT')) return NextResponse.json({ error: 'Modo Caixa: você pode adicionar, mas não editar nem excluir.' }, { status: 403 })
   const salaoId = await salaoIdSe('adm_kits')
   if (!salaoId) return NextResponse.json({ error: 'Sem acesso' }, { status: 403 })
   const body = await req.json()

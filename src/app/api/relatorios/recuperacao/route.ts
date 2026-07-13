@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getAtendimentosRaw } from '@/lib/atendimentosCache'
+import { escritaBloqueadaSub } from '@/lib/apiAuth'
 
 // Configuração da recuperação de clientes
 const BONUS_PCT = 5      // % do valor da visita de retorno que vira bônus da recepção
@@ -178,6 +179,7 @@ export async function GET(req: NextRequest) {
 
 // Registra um contato (clique no botão WhatsApp)
 export async function POST(req: NextRequest) {
+    if (await escritaBloqueadaSub()) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
   const salaoId = await getSalaoId()
   if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   try {

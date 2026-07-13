@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
+import { escritaBloqueadaSub } from '@/lib/apiAuth'
 
 function getISOWeekKey(date: Date): string {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
@@ -31,6 +32,7 @@ function addDays(dateStr: string, days: number): string {
 }
 
 export async function POST() {
+    if (await escritaBloqueadaSub()) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
   const token = cookies().get('nodri_token')?.value
   const payload = token ? await verifyJWT(token) : null
   if (!payload || !['salon','sub'].includes(payload.role) || !payload.salaoId)

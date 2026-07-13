@@ -30,6 +30,17 @@ export async function escritaBloqueadaSub(): Promise<boolean> {
   return s?.role === 'sub' || s?.role === 'profissional'
 }
 
+// Bloqueia edição/exclusão para sub e profissional, mas o MODO CAIXA pode
+// ADICIONAR (POST). Use nos catálogos e lançamentos: POST → bloquearEdicao('POST'),
+// PUT/DELETE/PATCH → bloquearEdicao('PUT'). Dono (role 'salon') nunca é bloqueado.
+export async function bloquearEdicao(metodo: 'POST' | 'PUT' | 'DELETE' | 'PATCH'): Promise<boolean> {
+  const s = await getSessao()
+  if (!s || (s.role !== 'sub' && s.role !== 'profissional')) return false // dono/master: livre
+  if (s.role === 'profissional') return true                              // profissional: nunca escreve
+  if (sessaoModoCaixa(s) && metodo === 'POST') return false               // Caixa: pode ADICIONAR
+  return true                                                             // sub (ou Caixa em edição/exclusão): bloqueia
+}
+
 // ── MODO CAIXA ──────────────────────────────────────────────────────────────
 // Sub-usuário marcado como "Modo Caixa" pode EXECUTAR e ADICIONAR, mas nunca
 // editar ou excluir o que já existe. A flag vive no array de permissões.

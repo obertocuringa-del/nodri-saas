@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
+import { escritaBloqueadaSub } from '@/lib/apiAuth'
 
 async function getPayloadAndForm(id: string) {
   const token = cookies().get('nodri_token')?.value
@@ -33,6 +34,7 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
 }
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+    if (await escritaBloqueadaSub()) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
   const result = await getPayloadAndForm(params.id)
   if ('error' in result) return NextResponse.json({ error: result.error }, { status: result.status })
 
@@ -55,6 +57,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 }
 
 export async function DELETE(_: NextRequest, { params }: { params: { id: string } }) {
+    if (await escritaBloqueadaSub()) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
   const result = await getPayloadAndForm(params.id)
   if ('error' in result) return NextResponse.json({ error: result.error }, { status: result.status })
 

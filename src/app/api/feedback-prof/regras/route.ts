@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
+import { escritaBloqueadaSub } from '@/lib/apiAuth'
 
 const PADRAO = {
   atrasos_por_semana: 3,
@@ -31,6 +32,7 @@ export async function GET() {
 }
 
 export async function PUT(req: NextRequest) {
+    if (await escritaBloqueadaSub()) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
   const p = await getPayload()
   if (!p) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
@@ -55,6 +57,7 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE() {
+    if (await escritaBloqueadaSub()) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
   const p = await getPayload()
   if (!p) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
