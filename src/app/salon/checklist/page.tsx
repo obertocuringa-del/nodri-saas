@@ -440,9 +440,10 @@ export default function ChecklistPage() {
                 const aberto = !!secoesAbertas[freq]
                 const alertas = itens.filter(x => x.dem.dias?.includes(hojeAbrev) && !feitoNoPeriodo(x.dem) && x.dem.texto.trim()).length
                 return (
-                  <div key={freq} style={{ border: `1.5px solid ${completo ? '#bbf7d0' : alertas > 0 ? '#fca5a5' : '#e8e6e0'}`, borderRadius: 12, marginBottom: 10, overflow: 'hidden', background: '#fff' }}>
+                  {/* sem overflow:hidden — senão os menus "Dias" e "Mover para..." são cortados */}
+                  <div key={freq} style={{ border: `1.5px solid ${completo ? '#bbf7d0' : alertas > 0 ? '#fca5a5' : '#e8e6e0'}`, borderRadius: 12, marginBottom: 10, background: '#fff' }}>
                     <button onClick={() => setSecoesAbertas(s => ({ ...s, [freq]: !aberto }))}
-                      style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', border: 'none', background: completo ? '#ecfdf3' : fc.bg, cursor: 'pointer' }}>
+                      style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', border: 'none', borderRadius: aberto ? '11px 11px 0 0' : 11, background: completo ? '#ecfdf3' : fc.bg, cursor: 'pointer' }}>
                       <span style={{ width: 13, height: 13, borderRadius: 4, background: '#fff', border: `3.5px solid ${fc.bd}`, flexShrink: 0 }} />
                       <span style={{ fontWeight: 900, fontSize: 13.5, color: fc.txt, letterSpacing: '.5px' }}>{freq.toUpperCase()}</span>
                       {alertas > 0 && <span style={{ background: '#dc2626', color: '#fff', borderRadius: 10, padding: '2px 9px', fontSize: 10.5, fontWeight: 900, flexShrink: 0 }}>⚠ {alertas} de hoje</span>}
