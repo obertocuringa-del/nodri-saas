@@ -94,6 +94,7 @@ if (typeof document !== 'undefined') {
     @keyframes pulseDot { 0%,100% { transform: scale(1); opacity: 1 } 50% { transform: scale(1.4); opacity: 0.6 } }
     @keyframes nodriPulseBtn { 0%,100% { box-shadow: 0 0 0 0 rgba(234,179,8,0); opacity:1 } 50% { box-shadow: 0 0 0 5px rgba(234,179,8,0.25); opacity:0.85 } }
     @keyframes nodriKpiPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(22,163,74,0.5) } 50% { box-shadow: 0 0 0 10px rgba(22,163,74,0) } }
+    @keyframes nodriRedPulse { 0%,100% { background:#fef2f2 } 50% { background:#fee2e2 } }
     .nodri-salon-bg { background-color: #edeef0 !important; }
   `
   if (!document.getElementById('nodri-animations')) { style.id = 'nodri-animations'; document.head.appendChild(style) }
@@ -122,6 +123,33 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
       .then(d => { if (d?.eventos) setLembretesMkt(proximos(d.eventos)) }).catch(() => { })
   }, [])
   const totalCompromissos = lembretesCal.length + lembretesMkt.length
+
+  // Alerta do Check List na sidebar: tarefas marcadas para HOJE (dia da semana) e não feitas.
+  // Mesma lógica da página (feito_em dentro da janela do período), resumida aqui.
+  const [checklistAlertas, setChecklistAlertas] = useState(0)
+  useEffect(() => {
+    fetch('/api/salon/grid?chave=checklist').then(r => r.ok ? r.json() : null).then(d => {
+      if (!d || !Array.isArray(d.categorias)) return
+      const DIAS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
+      const hojeAb = DIAS[new Date().getDay()]
+      const ini = (freq: string): number => {
+        const a = new Date(); const d = new Date(a.getFullYear(), a.getMonth(), a.getDate())
+        if (freq === 'Semanal') { d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return d.getTime() }
+        if (freq === 'Quinzenal') return new Date(d.getFullYear(), d.getMonth(), d.getDate() <= 15 ? 1 : 16).getTime()
+        if (freq === 'Mensal') return new Date(d.getFullYear(), d.getMonth(), 1).getTime()
+        if (freq === 'Trimestral') return new Date(d.getFullYear(), Math.floor(d.getMonth() / 3) * 3, 1).getTime()
+        if (freq === 'Semestral') return new Date(d.getFullYear(), d.getMonth() < 6 ? 0 : 6, 1).getTime()
+        if (freq === 'Anual') return new Date(d.getFullYear(), 0, 1).getTime()
+        return d.getTime()
+      }
+      let n = 0
+      for (const c of d.categorias) for (const dem of (c.demandas || [])) {
+        const feitoOk = dem.feito_em && new Date(dem.feito_em).getTime() >= ini(dem.freq)
+        if (dem.texto?.trim() && Array.isArray(dem.dias) && dem.dias.includes(hojeAb) && !feitoOk) n++
+      }
+      setChecklistAlertas(n)
+    }).catch(() => { })
+  }, [])
   // KPIs da tela inicial (fontes leves) — mostra do cache na hora e atualiza em 2º plano
   const lerKpi = (k: string): number | null => { try { const c = JSON.parse(localStorage.getItem('nodri_kpis') || '{}'); return typeof c[k] === 'number' ? c[k] : null } catch { return null } }
   const salvarKpi = (patch: Record<string, number>) => { try { const c = JSON.parse(localStorage.getItem('nodri_kpis') || '{}'); localStorage.setItem('nodri_kpis', JSON.stringify({ ...c, ...patch })) } catch { /* */ } }
@@ -533,12 +561,19 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               { href: '/salon/lojistas', label: 'Lojistas', chave: 'lojistas' },
               { href: '/salon/checkprocon', label: 'Check Procon', chave: 'checkprocon' },
               { href: '/salon/usuarios', label: 'Usuários & Acessos', chave: 'cfg_usuarios' },
-            ].filter(item => pode(item.chave)).map(item => (
+            ].filter(item => pode(item.chave)).map(item => {
+              const alerta = item.chave === 'checklist' && checklistAlertas > 0
+              return (
               <a key={item.href} href={item.href}
-                className="w-full flex items-center px-3 py-2 rounded-md text-[11px] font-medium tracking-wide uppercase transition-colors text-nodri-t2 hover:text-nodri-t1 hover:bg-black/5">
-                {item.label}
+                className="w-full flex items-center px-3 py-2 rounded-md text-[11px] font-medium tracking-wide uppercase transition-colors hover:bg-black/5"
+                style={alerta ? { color: '#dc2626', fontWeight: 800, animation: 'nodriRedPulse 1.6s ease-in-out infinite' } : { color: undefined }}>
+                <span className={alerta ? '' : 'text-nodri-t2 hover:text-nodri-t1'} style={{ flex: 1, minWidth: 0 }}>{item.label}</span>
+                {alerta && (
+                  <span style={{ background: '#dc2626', color: '#fff', fontSize: 9.5, fontWeight: 900, borderRadius: 99, padding: '2px 7px', whiteSpace: 'nowrap', animation: 'pulseDot 1.2s infinite' }}>⚠ {checklistAlertas}</span>
+                )}
               </a>
-            ))}
+              )
+            })}
           </nav>
 
           {/* Rodapé da sidebar */}
