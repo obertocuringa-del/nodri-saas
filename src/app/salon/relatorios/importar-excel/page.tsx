@@ -1,5 +1,5 @@
 'use client'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Upload, CheckCircle, AlertCircle, Loader2, FileSpreadsheet } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -22,6 +22,9 @@ export default function ImportarExcelPage() {
   const [resetando, setResetando] = useState(false)
   const [reconstruindo, setReconstruindo] = useState(false)
   const [resultadoReconstrucao, setResultadoReconstrucao] = useState<any>(null)
+  // Nome do salão logado — usado para o usuário confirmar em QUAL salão está mexendo
+  const [nomeSalao, setNomeSalao] = useState('')
+  useEffect(() => { fetch('/api/salon/perfil').then(r => r.ok ? r.json() : null).then(d => { if (d?.nome) setNomeSalao(d.nome) }).catch(() => {}) }, [])
 
   async function reconstruirDoRaw() {
     if (!confirm('Reconstruir faturamento, clientes e serviços a partir dos atendimentos brutos?')) return
@@ -40,7 +43,10 @@ export default function ImportarExcelPage() {
   }
 
   async function resetarTudo() {
-    if (!confirm('Apagar TODOS os dados de relatório do banco? Você precisará reimportar tudo.')) return
+    // Nomeia o salão na confirmação — evita apagar os relatórios do salão errado
+    const salaoTxt = nomeSalao ? `do salão "${nomeSalao}"` : 'do salão que você está logado agora'
+    if (!confirm(`⚠️ ATENÇÃO: isto vai APAGAR TODOS os relatórios ${salaoTxt}.\n\nConfirme que você está logado no salão CERTO. Esta ação não pode ser desfeita — você precisará reimportar a planilha depois.\n\nApagar mesmo?`)) return
+    if (nomeSalao && !confirm(`Última confirmação: apagar os relatórios de "${nomeSalao}"?`)) return
     setResetando(true)
     const res = await fetch('/api/relatorios/reset', { method: 'DELETE' })
     const data = await res.json()
