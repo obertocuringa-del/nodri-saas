@@ -245,6 +245,28 @@ export default function ProfissionaisPage() {
   // Painel de CNPJ (status + observação por profissional)
   const [cnpjEdits, setCnpjEdits] = useState<Record<string, { status?: string; obs?: string }>>({})
   const [cnpjSalvando, setCnpjSalvando] = useState<string | null>(null)
+  const [aprovandoId, setAprovandoId] = useState<string | null>(null)
+
+  // Aprovar autocadastro público: marca como aprovado E ativa em uma tacada só.
+  async function aprovarCadastro(prof: Profissional) {
+    setAprovandoId(prof.id)
+    try {
+      const res = await fetch(`/api/profissionais/${prof.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status_cadastro: 'aprovado', ativo: true }) })
+      if (res.ok) { toast.success('Cadastro aprovado e ativado!'); carregarProfissionais() } else toast.error('Erro ao aprovar')
+    } catch { toast.error('Erro de conexão') }
+    setAprovandoId(null)
+  }
+
+  // Recusar autocadastro: mantém inativo e tira da fila (status "recusado").
+  async function recusarCadastro(prof: Profissional) {
+    if (!window.confirm(`Recusar o cadastro de ${prof.nome_completo || prof.apelido || 'este profissional'}? Ele ficará inativo e sairá da fila de aprovação.`)) return
+    setAprovandoId(prof.id)
+    try {
+      const res = await fetch(`/api/profissionais/${prof.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status_cadastro: 'recusado', ativo: false }) })
+      if (res.ok) { toast.success('Cadastro recusado.'); carregarProfissionais() } else toast.error('Erro ao recusar')
+    } catch { toast.error('Erro de conexão') }
+    setAprovandoId(null)
+  }
 
   async function salvarCnpj(prof: Profissional) {
     const e = cnpjEdits[prof.id] || {}
@@ -991,13 +1013,32 @@ ${montarContratoHTML()}
 
               {/* Pendentes de auto-cadastro */}
               {!loading && profissionais.filter(p => (p as any).status_cadastro === 'pendente').length > 0 && (
-                <div style={{ background: '#fffbeb', border: '1px solid #f59e0b', borderRadius: '10px', padding: '12px 16px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ fontSize: '18px' }}>⏳</span>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ color: '#92400e', fontWeight: 700, fontSize: '12px', margin: 0 }}>
-                      {profissionais.filter(p => (p as any).status_cadastro === 'pendente').length} cadastro(s) aguardando aprovação
-                    </p>
-                    <p style={{ color: '#b45309', fontSize: '11px', margin: '2px 0 0' }}>Clique no profissional para revisar e ativar</p>
+                <div style={{ background: '#fffbeb', border: '1px solid #f59e0b', borderRadius: '10px', padding: '12px 16px', marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                    <span style={{ fontSize: '18px' }}>⏳</span>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ color: '#92400e', fontWeight: 700, fontSize: '12px', margin: 0 }}>
+                        {profissionais.filter(p => (p as any).status_cadastro === 'pendente').length} cadastro(s) aguardando aprovação
+                      </p>
+                      <p style={{ color: '#b45309', fontSize: '11px', margin: '2px 0 0' }}>Clique em Aprovar para liberar, ou no nome para revisar antes.</p>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {profissionais.filter(p => (p as any).status_cadastro === 'pendente').map(p => (
+                      <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', border: '1px solid #fde68a', borderRadius: '8px', padding: '8px 10px', flexWrap: 'wrap' }}>
+                        <span style={{ flex: 1, minWidth: 140, fontSize: '13px', fontWeight: 600, color: '#1a1a1a', cursor: 'pointer' }} onClick={() => { try { sessionStorage.setItem('nodri_prof_' + p.id, JSON.stringify(p)) } catch(_){} router.push(`/salon/profissionais/${p.id}`) }}>
+                          {p.nome_completo || p.apelido || '(sem nome)'}
+                        </span>
+                        <button disabled={aprovandoId === p.id} onClick={() => aprovarCadastro(p)}
+                          style={{ background: '#16a34a', color: '#fff', border: 'none', borderRadius: '7px', padding: '6px 14px', fontSize: '12px', fontWeight: 700, cursor: aprovandoId === p.id ? 'default' : 'pointer', opacity: aprovandoId === p.id ? 0.6 : 1 }}>
+                          {aprovandoId === p.id ? 'Aprovando...' : '✓ Aprovar'}
+                        </button>
+                        <button disabled={aprovandoId === p.id} onClick={() => recusarCadastro(p)}
+                          style={{ background: '#fff', color: '#b91c1c', border: '1px solid #fca5a5', borderRadius: '7px', padding: '6px 12px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                          Recusar
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}

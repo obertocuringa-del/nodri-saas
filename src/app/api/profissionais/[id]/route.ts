@@ -49,6 +49,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     'is_departamento','departamento_cor',
     // Portal do profissional: login e visibilidade controlados pelo salão
     'acesso_login','acesso_liberado','acesso_oculto',
+    // Aprovação do autocadastro público (pendente → aprovado)
+    'status_cadastro',
   ])
 
   // Converte campos vazios para null e filtra apenas colunas conhecidas
