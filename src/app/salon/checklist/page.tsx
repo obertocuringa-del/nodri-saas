@@ -180,6 +180,8 @@ export default function ChecklistPage() {
   const pendPorCat: Record<number, number> = {}
   pendHoje.forEach(p => { pendPorCat[p.ci] = (pendPorCat[p.ci] || 0) + 1 })
   const temAlerta = pendHoje.length > 0
+  // Nomes dos check lists (categorias) com pendência de hoje — para saber DE QUEM é
+  const catsAlerta: [string, number][] = Object.entries(pendHoje.reduce((m, p) => { m[p.cat] = (m[p.cat] || 0) + 1; return m }, {} as Record<string, number>))
 
   // Demandas em comum (mesmo texto em mais de uma categoria)
   const mapa: Record<string, { texto: string; cats: Set<string> }> = {}
@@ -296,6 +298,11 @@ export default function ChecklistPage() {
               <span style={{ fontSize: 24, flexShrink: 0 }}>⚠️</span>
               <span style={{ flex: 1, minWidth: 0 }}>
                 <strong style={{ display: 'block', fontSize: 14.5, fontWeight: 900, letterSpacing: '.3px' }}>HOJE É {NOME_DIA[hojeIdx]} — {pendHoje.length} tarefa{pendHoje.length > 1 ? 's' : ''} de hoje ainda não {pendHoje.length > 1 ? 'foram feitas' : 'foi feita'}!</strong>
+                <span style={{ display: 'flex', gap: 6, flexWrap: 'wrap', margin: '6px 0' }}>
+                  {catsAlerta.map(([nome, n]) => (
+                    <span key={nome} style={{ background: 'rgba(255,255,255,.22)', border: '1px solid rgba(255,255,255,.45)', borderRadius: 20, padding: '2px 10px', fontSize: 11.5, fontWeight: 800 }}>📋 {nome}{n > 1 ? ` · ${n}` : ''}</span>
+                  ))}
+                </span>
                 <span style={{ fontSize: 12, opacity: .92 }}>Este aviso aparece para todos e só some quando tudo for marcado como feito. Toque aqui para ver e resolver.</span>
               </span>
             </button>
@@ -445,8 +452,8 @@ export default function ChecklistPage() {
                 const completo = ok === itens.length
                 const aberto = !!secoesAbertas[freq]
                 const alertas = itens.filter(x => x.dem.dias?.includes(hojeAbrev) && !feitoNoPeriodo(x.dem) && x.dem.texto.trim()).length
+                // sem overflow:hidden no card — senão os menus "Dias" e "Mover para..." são cortados
                 return (
-                  {/* sem overflow:hidden — senão os menus "Dias" e "Mover para..." são cortados */}
                   <div key={freq} style={{ border: `1.5px solid ${completo ? '#bbf7d0' : alertas > 0 ? '#fca5a5' : '#e8e6e0'}`, borderRadius: 12, marginBottom: 10, background: '#fff' }}>
                     <button onClick={() => setSecoesAbertas(s => ({ ...s, [freq]: !aberto }))}
                       style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', border: 'none', borderRadius: aberto ? '11px 11px 0 0' : 11, background: completo ? '#ecfdf3' : fc.bg, cursor: 'pointer' }}>
