@@ -73,6 +73,12 @@ export default function ChecklistPage() {
   const [verComuns, setVerComuns] = useState(false)
   const [diasOpen, setDiasOpen] = useState<string | null>(null)
   const [transferOpen, setTransferOpen] = useState<string | null>(null)
+  // Posição dos menus flutuantes (fixos na tela — não são cortados pela rolagem interna dos cards)
+  const [popPos, setPopPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 })
+  function ancorarPop(e: React.MouseEvent, larguraMenu: number) {
+    const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    setPopPos({ top: Math.min(r.bottom + 4, window.innerHeight - 300), left: Math.max(8, Math.min(r.left, window.innerWidth - larguraMenu - 8)) })
+  }
   // Cards por período: Diário nasce aberto (é o uso de toda hora), os demais fechados
   const [secoesAbertas, setSecoesAbertas] = useState<Record<string, boolean>>({ 'Diário': true })
 
@@ -210,13 +216,13 @@ export default function ChecklistPage() {
 
           {!soLeitura && (
             <div style={{ position: 'relative', flexShrink: 0 }}>
-              <button onClick={() => setDiasOpen(diasOpen === dem.id ? null : dem.id)} title="Dias da semana (opcional)"
+              <button onClick={e => { ancorarPop(e, 300); setDiasOpen(diasOpen === dem.id ? null : dem.id) }} title="Dias da semana (opcional)"
                 style={{ display: 'inline-flex', alignItems: 'center', gap: 4, border: '1px solid ' + (dem.dias?.length ? '#5b4fcf' : '#d0cdc7'), background: dem.dias?.length ? '#f0eefb' : '#fff', color: dem.dias?.length ? '#5b4fcf' : '#6b6860', borderRadius: 6, padding: '5px 8px', cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>
                 <Calendar size={12} /> {dem.dias && dem.dias.length ? dem.dias.join(', ') : 'Dias'}
               </button>
               {diasOpen === dem.id && (<>
                 <div onClick={() => setDiasOpen(null)} style={{ position: 'fixed', inset: 0, zIndex: 59 }} />
-                <div style={{ position: 'absolute', top: '110%', ...(isMobile ? { left: 0 } : { right: 0 }), zIndex: 60, background: '#fff', border: '1px solid #e0ddd8', borderRadius: 10, boxShadow: '0 10px 30px rgba(0,0,0,.15)', padding: 8, display: 'flex', gap: 4, flexWrap: 'wrap', maxWidth: isMobile ? 240 : undefined }}>
+                <div style={{ position: 'fixed', top: popPos.top, left: popPos.left, zIndex: 60, background: '#fff', border: '1px solid #e0ddd8', borderRadius: 10, boxShadow: '0 10px 30px rgba(0,0,0,.15)', padding: 8, display: 'flex', gap: 4, flexWrap: 'wrap', maxWidth: isMobile ? 240 : 300 }}>
                   {DIAS_SEMANA.map(dia => {
                     const on = !!dem.dias?.includes(dia)
                     return <button key={dia} onClick={() => toggleDia(catSel, di, dia)} style={{ border: 'none', borderRadius: 6, padding: '6px 8px', fontSize: 11, fontWeight: 800, cursor: 'pointer', background: on ? '#5b4fcf' : '#f3f2ee', color: on ? '#fff' : '#6b6860' }}>{dia}</button>
@@ -228,13 +234,13 @@ export default function ChecklistPage() {
 
           {!soLeitura && (
             <div style={{ position: 'relative', flexShrink: 0 }}>
-              <button onClick={() => setTransferOpen(transferOpen === dem.id ? null : dem.id)} title="Transferir para outra categoria"
+              <button onClick={e => { ancorarPop(e, 230); setTransferOpen(transferOpen === dem.id ? null : dem.id) }} title="Transferir para outra categoria"
                 style={{ border: '1px solid #d0cdc7', background: '#fff', color: '#6b6860', borderRadius: 6, padding: '5px 8px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}>
                 <ArrowRightLeft size={13} />
               </button>
               {transferOpen === dem.id && (<>
                 <div onClick={() => setTransferOpen(null)} style={{ position: 'fixed', inset: 0, zIndex: 59 }} />
-                <div style={{ position: 'absolute', top: '110%', ...(isMobile ? { left: 0 } : { right: 0 }), zIndex: 60, background: '#fff', border: '1px solid #e0ddd8', borderRadius: 10, boxShadow: '0 10px 30px rgba(0,0,0,.15)', minWidth: 200, maxHeight: 260, overflowY: 'auto', padding: 6 }}>
+                <div style={{ position: 'fixed', top: popPos.top, left: popPos.left, zIndex: 60, background: '#fff', border: '1px solid #e0ddd8', borderRadius: 10, boxShadow: '0 10px 30px rgba(0,0,0,.15)', minWidth: 200, maxHeight: 260, overflowY: 'auto', padding: 6 }}>
                   <div style={{ fontSize: 11, fontWeight: 800, color: '#9ca3af', padding: '4px 8px' }}>Mover para...</div>
                   {doc.categorias.filter(c => c.id !== cat!.id).map(c => (
                     <button key={c.id} onClick={() => transferirDemanda(dem.id, c.id)} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 10px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13, borderRadius: 6 }}
@@ -452,9 +458,11 @@ export default function ChecklistPage() {
                       <ChevronDown size={17} color={fc.txt} style={{ transform: aberto ? 'rotate(180deg)' : 'none', transition: 'transform .15s', flexShrink: 0 }} />
                     </button>
                     {aberto && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: 10 }}>
+                      // Lista com rolagem própria (barra visível para arrastar com o mouse) —
+                      // os menus Dias/Mover são fixos na tela, então não são cortados por ela
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: 10, maxHeight: '62vh', overflowY: 'auto' }}>
                         {itens.map(({ dem, di }) => <Fragment key={dem.id}>{LinhaDemanda({ dem, di })}</Fragment>)}
-                        {!soLeitura && <button onClick={() => addDemanda(catSel, freq)} style={{ alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 12px', borderRadius: 8, border: `1px dashed ${fc.bd}`, background: fc.bg, color: fc.txt, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}><Plus size={13} /> Adicionar em {freq}</button>}
+                        {!soLeitura && <button onClick={() => addDemanda(catSel, freq)} style={{ alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 12px', borderRadius: 8, border: `1px dashed ${fc.bd}`, background: fc.bg, color: fc.txt, fontSize: 12, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}><Plus size={13} /> Adicionar em {freq}</button>}
                       </div>
                     )}
                   </div>
