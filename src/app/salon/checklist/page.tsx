@@ -79,6 +79,18 @@ export default function ChecklistPage() {
     const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
     setPopPos({ top: Math.min(r.bottom + 4, window.innerHeight - 300), left: Math.max(8, Math.min(r.left, window.innerWidth - larguraMenu - 8)) })
   }
+  // Fecha os menus ao clicar em qualquer lugar fora deles — SEM engolir o clique
+  // (nada de fundo invisível bloqueando a página: o clique seguinte funciona normal)
+  useEffect(() => {
+    if (!diasOpen && !transferOpen) return
+    const h = (e: MouseEvent) => {
+      const alvo = e.target as HTMLElement
+      if (alvo.closest?.('[data-pop-root]')) return
+      setDiasOpen(null); setTransferOpen(null)
+    }
+    document.addEventListener('mousedown', h)
+    return () => document.removeEventListener('mousedown', h)
+  }, [diasOpen, transferOpen])
   // Cards por período: Diário nasce aberto (é o uso de toda hora), os demais fechados
   const [secoesAbertas, setSecoesAbertas] = useState<Record<string, boolean>>({ 'Diário': true })
 
@@ -217,13 +229,12 @@ export default function ChecklistPage() {
           </select>
 
           {!soLeitura && (
-            <div style={{ position: 'relative', flexShrink: 0 }}>
+            <div data-pop-root style={{ position: 'relative', flexShrink: 0 }}>
               <button onClick={e => { ancorarPop(e, 300); setDiasOpen(diasOpen === dem.id ? null : dem.id) }} title="Dias da semana (opcional)"
                 style={{ display: 'inline-flex', alignItems: 'center', gap: 4, border: '1px solid ' + (dem.dias?.length ? '#5b4fcf' : '#d0cdc7'), background: dem.dias?.length ? '#f0eefb' : '#fff', color: dem.dias?.length ? '#5b4fcf' : '#6b6860', borderRadius: 6, padding: '5px 8px', cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>
                 <Calendar size={12} /> {dem.dias && dem.dias.length ? dem.dias.join(', ') : 'Dias'}
               </button>
               {diasOpen === dem.id && (<>
-                <div onClick={() => setDiasOpen(null)} style={{ position: 'fixed', inset: 0, zIndex: 59 }} />
                 <div style={{ position: 'fixed', top: popPos.top, left: popPos.left, zIndex: 60, background: '#fff', border: '1px solid #e0ddd8', borderRadius: 10, boxShadow: '0 10px 30px rgba(0,0,0,.15)', padding: 8, display: 'flex', gap: 4, flexWrap: 'wrap', maxWidth: isMobile ? 240 : 300 }}>
                   {DIAS_SEMANA.map(dia => {
                     const on = !!dem.dias?.includes(dia)
@@ -235,13 +246,12 @@ export default function ChecklistPage() {
           )}
 
           {!soLeitura && (
-            <div style={{ position: 'relative', flexShrink: 0 }}>
+            <div data-pop-root style={{ position: 'relative', flexShrink: 0 }}>
               <button onClick={e => { ancorarPop(e, 230); setTransferOpen(transferOpen === dem.id ? null : dem.id) }} title="Transferir para outra categoria"
                 style={{ border: '1px solid #d0cdc7', background: '#fff', color: '#6b6860', borderRadius: 6, padding: '5px 8px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}>
                 <ArrowRightLeft size={13} />
               </button>
               {transferOpen === dem.id && (<>
-                <div onClick={() => setTransferOpen(null)} style={{ position: 'fixed', inset: 0, zIndex: 59 }} />
                 <div style={{ position: 'fixed', top: popPos.top, left: popPos.left, zIndex: 60, background: '#fff', border: '1px solid #e0ddd8', borderRadius: 10, boxShadow: '0 10px 30px rgba(0,0,0,.15)', minWidth: 200, maxHeight: 260, overflowY: 'auto', padding: 6 }}>
                   <div style={{ fontSize: 11, fontWeight: 800, color: '#9ca3af', padding: '4px 8px' }}>Mover para...</div>
                   {doc.categorias.filter(c => c.id !== cat!.id).map(c => (
@@ -277,7 +287,8 @@ export default function ChecklistPage() {
       </nav>
       )}
 
-      <div style={{ maxWidth: 1000, margin: '0 auto', padding: 16 }}>
+      {/* No computador o conteúdo usa a tela toda (sem trava de 1000px) */}
+      <div style={{ margin: '0 auto', padding: isMobile ? 16 : '16px 28px' }}>
         {loading ? <div style={{ display: 'flex', justifyContent: 'center', padding: 50 }}><Loader2 size={26} className="animate-spin" style={{ color: '#5b4fcf' }} /></div> : (<>
 
           {/* Celular: linha única e harmônica de ações (o Salvar fica na barra fixa
