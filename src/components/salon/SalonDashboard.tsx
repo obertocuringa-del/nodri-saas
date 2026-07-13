@@ -104,17 +104,24 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
   const pode = (chave: string) => !ehSub || (permissoes as string[]).includes(chave)
   const [filtro, setFiltro] = useState<'todos' | 'ativos' | 'bloqueados'>('ativos')
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  // Lembrete de compromissos do Calendário (faltam até 2 dias) — abre ao abrir o app
-  const [lembretesCal, setLembretesCal] = useState<{ id: string; data: string; texto: string }[]>([])
+  // Lembrete de compromissos dos DOIS calendários (faltam até 2 dias) — abre ao abrir o app
+  type CalEvt = { id: string; data: string; texto: string; dias: number }
+  const [lembretesCal, setLembretesCal] = useState<CalEvt[]>([])       // Central
+  const [lembretesMkt, setLembretesMkt] = useState<CalEvt[]>([])       // Marketing
   const [lembreteCalAberto, setLembreteCalAberto] = useState(true)
+  const [seletorCalAberto, setSeletorCalAberto] = useState(false)      // menu que abre ao clicar no card
   useEffect(() => {
-    fetch('/api/salon/grid?chave=calendario').then(r => r.ok ? r.json() : null).then(d => {
-      if (!d || !Array.isArray(d.eventos)) return
-      const h = new Date(); h.setHours(0, 0, 0, 0)
-      const prox = d.eventos.filter((e: any) => { const [y, m, dd] = String(e.data).split('-').map(Number); const n = Math.round((new Date(y, m - 1, dd).getTime() - h.getTime()) / 86400000); return n >= 0 && n <= 2 })
-      if (prox.length) setLembretesCal(prox)
-    }).catch(() => { })
+    const h = new Date(); h.setHours(0, 0, 0, 0)
+    const proximos = (eventos: any[]): CalEvt[] => (Array.isArray(eventos) ? eventos : [])
+      .map((e: any) => { const [y, m, dd] = String(e.data).split('-').map(Number); const dias = Math.round((new Date(y, m - 1, dd).getTime() - h.getTime()) / 86400000); return { id: e.id, data: e.data, texto: e.texto || '', dias } })
+      .filter(e => e.dias >= 0 && e.dias <= 2)
+      .sort((a, b) => a.dias - b.dias)
+    fetch('/api/salon/grid?chave=calendario').then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.eventos) setLembretesCal(proximos(d.eventos)) }).catch(() => { })
+    fetch('/api/salon/grid?chave=calendario_mkt').then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.eventos) setLembretesMkt(proximos(d.eventos)) }).catch(() => { })
   }, [])
+  const totalCompromissos = lembretesCal.length + lembretesMkt.length
   // KPIs da tela inicial (fontes leves) — mostra do cache na hora e atualiza em 2º plano
   const lerKpi = (k: string): number | null => { try { const c = JSON.parse(localStorage.getItem('nodri_kpis') || '{}'); return typeof c[k] === 'number' ? c[k] : null } catch { return null } }
   const salvarKpi = (patch: Record<string, number>) => { try { const c = JSON.parse(localStorage.getItem('nodri_kpis') || '{}'); localStorage.setItem('nodri_kpis', JSON.stringify({ ...c, ...patch })) } catch { /* */ } }
@@ -392,26 +399,30 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
   return (
     <div className="nodri-salon-bg h-screen flex flex-col overflow-hidden">
 
-      {/* ANÚNCIO — compromissos do Calendário chegando (faltam até 2 dias) */}
-      {lembretesCal.length > 0 && lembreteCalAberto && (
+      {/* ANÚNCIO — compromissos dos DOIS calendários chegando (faltam até 2 dias) */}
+      {totalCompromissos > 0 && lembreteCalAberto && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div style={{ background: '#fff', borderRadius: 18, maxWidth: 420, width: '100%', overflow: 'hidden', boxShadow: '0 24px 70px rgba(0,0,0,.35)' }}>
-            <div style={{ background: 'linear-gradient(135deg,#ef4444,#db2777)', color: '#fff', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontWeight: 800, fontSize: 16, display: 'flex', alignItems: 'center', gap: 8 }}>📅 Compromissos chegando!</span>
+          <div style={{ background: '#fff', borderRadius: 18, maxWidth: 440, width: '100%', overflow: 'hidden', boxShadow: '0 24px 70px rgba(0,0,0,.35)', maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ background: 'linear-gradient(135deg,#ef4444,#db2777)', color: '#fff', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+              <span style={{ fontWeight: 800, fontSize: 16, display: 'flex', alignItems: 'center', gap: 8 }}>📅 Compromissos chegando! ({totalCompromissos})</span>
               <button onClick={() => setLembreteCalAberto(false)} style={{ border: 'none', background: 'rgba(255,255,255,.25)', color: '#fff', borderRadius: 8, width: 30, height: 30, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={18} /></button>
             </div>
-            <div style={{ padding: 20 }}>
-              {lembretesCal.map(e => {
-                const [y, m, dd] = e.data.split('-').map(Number); const h = new Date(); h.setHours(0, 0, 0, 0)
-                const n = Math.round((new Date(y, m - 1, dd).getTime() - h.getTime()) / 86400000)
-                return (
-                  <div key={e.id} style={{ display: 'flex', gap: 10, padding: '10px 0', borderBottom: '1px solid #f0eee8' }}>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: '#fff', background: n === 0 ? '#dc2626' : '#f59e0b', borderRadius: 20, padding: '3px 10px', height: 'fit-content', whiteSpace: 'nowrap' }}>{n === 0 ? 'HOJE' : n === 1 ? 'AMANHÃ' : `${n} DIAS`}</span>
-                    <span style={{ fontSize: 14, color: '#1a1a1a' }}>{e.texto}</span>
-                  </div>
-                )
-              })}
-              <button onClick={() => { setLembreteCalAberto(false); window.location.href = '/salon/calendario' }} style={{ marginTop: 14, width: '100%', padding: '11px', borderRadius: 10, border: 'none', background: '#5b4fcf', color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>Ver no Calendário</button>
+            <div style={{ padding: 20, overflowY: 'auto' }}>
+              {[
+                { nome: 'Calendário Central', href: '/salon/calendario', cor: '#0891b2', evts: lembretesCal, perm: 'calendario' },
+                { nome: 'Calendário de Marketing', href: '/salon/calendario-mkt', cor: '#db2777', evts: lembretesMkt, perm: 'calendario_mkt' },
+              ].filter(c => c.evts.length > 0 && pode(c.perm)).map(c => (
+                <div key={c.href} style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 12, fontWeight: 900, color: c.cor, letterSpacing: '.4px', marginBottom: 6 }}>{c.nome} · {c.evts.length}</div>
+                  {c.evts.map(e => (
+                    <div key={e.id} style={{ display: 'flex', gap: 10, padding: '9px 0', borderBottom: '1px solid #f0eee8' }}>
+                      <span style={{ fontSize: 11, fontWeight: 800, color: '#fff', background: e.dias === 0 ? '#dc2626' : '#f59e0b', borderRadius: 20, padding: '3px 10px', height: 'fit-content', whiteSpace: 'nowrap' }}>{e.dias === 0 ? 'HOJE' : e.dias === 1 ? 'AMANHÃ' : `${e.dias} DIAS`}</span>
+                      <span style={{ fontSize: 14, color: '#1a1a1a' }}>{e.texto}</span>
+                    </div>
+                  ))}
+                  <button onClick={() => { setLembreteCalAberto(false); window.location.href = c.href }} style={{ marginTop: 8, padding: '8px 14px', borderRadius: 8, border: `1.5px solid ${c.cor}`, background: '#fff', color: c.cor, fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>Ver {c.nome} →</button>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -641,9 +652,65 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                 { perm: 'profissionais', href: '/salon/profissionais', emoji: '👥', label: 'Profissionais ativos', valor: kpiAtivos, cor: '#5b4fcf', badge: 0 },
                 { perm: 'aniversariantes', href: '/salon/aniversariantes', emoji: '🎂', label: 'Aniversariantes do mês', valor: kpiNiver, cor: '#db2777', badge: 0 },
                 { perm: 'pendencias', href: '/salon/pendencias', emoji: '⚠️', label: 'Pendências abertas', valor: kpiPend, cor: '#ea580c', badge: 0 },
-                { perm: 'calendario', href: '/salon/calendario', emoji: '📅', label: 'Compromissos (2 dias)', valor: lembretesCal.length, cor: '#0891b2', badge: 0 },
+                { perm: 'calendario', href: '/salon/calendario', emoji: '📅', label: 'Compromissos (2 dias)', valor: totalCompromissos, cor: '#0891b2', badge: 0, seletor: true as const },
                 { perm: 'feedback_cliente', href: fbFormId ? `/salon/feedback/resultados/${fbFormId}` : '/salon/feedback', emoji: '⭐', label: 'Feedbacks de clientes', valor: kpiFb, cor: '#16a34a', badge: fbNovos },
-              ].filter(k => pode(k.perm)).map(k => (
+              ].filter(k => pode(k.perm)).map(k => {
+                // Card de Compromissos: abre um seletor (Central / Marketing) em vez de navegar
+                if ((k as any).seletor) {
+                  const temAviso = totalCompromissos > 0
+                  return (
+                    <div key={k.perm} style={{ position: 'relative' }}>
+                      {seletorCalAberto && <div onClick={() => setSeletorCalAberto(false)} style={{ position: 'fixed', inset: 0, zIndex: 49 }} />}
+                      <button onClick={() => setSeletorCalAberto(o => !o)}
+                        style={{ width: '100%', textAlign: 'left', cursor: 'pointer', background: temAviso ? '#ecfeff' : '#fff', border: temAviso ? '1px solid #67e8f9' : '1px solid #e8e6e0', borderLeft: `4px solid ${k.cor}`, borderRadius: 12, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12, position: 'relative', animation: temAviso ? 'nodriKpiPulse 1.6s ease-in-out infinite' : undefined }}
+                        onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 4px 14px rgba(0,0,0,.08)')} onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}>
+                        <span style={{ fontSize: 24 }}>{k.emoji}</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 22, fontWeight: 900, color: k.cor, lineHeight: 1 }}>{k.valor}</div>
+                          <div style={{ fontSize: 11.5, color: '#6b6860', fontWeight: 600, marginTop: 2 }}>{k.label}</div>
+                        </div>
+                        <span style={{ color: '#5b4fcf', fontSize: 12, transition: 'transform .15s', transform: seletorCalAberto ? 'rotate(180deg)' : 'none' }}>▼</span>
+                        {temAviso && <span style={{ position: 'absolute', top: -9, right: -6, background: '#0891b2', color: '#fff', fontSize: 10, fontWeight: 800, padding: '3px 9px', borderRadius: 99, whiteSpace: 'nowrap', boxShadow: '0 3px 10px rgba(8,145,178,.4)' }}>🔔 {totalCompromissos}</span>}
+                      </button>
+
+                      {seletorCalAberto && (
+                        <div style={{ position: 'absolute', top: '108%', left: 0, right: 0, zIndex: 50, background: '#fff', border: '1px solid #e0ddd8', borderRadius: 12, boxShadow: '0 14px 40px rgba(0,0,0,.18)', overflow: 'hidden', minWidth: 260 }}>
+                          {[
+                            { chave: 'central', href: '/salon/calendario', emoji: '🗓️', nome: 'Calendário Central', cor: '#0891b2', bg: '#ecfeff', bd: '#67e8f9', evts: lembretesCal },
+                            { chave: 'mkt', href: '/salon/calendario-mkt', emoji: '📢', nome: 'Calendário de Marketing', cor: '#db2777', bg: '#fdf2f8', bd: '#f9a8d4', evts: lembretesMkt },
+                          ].filter(c => c.chave === 'central' ? pode('calendario') : pode('calendario_mkt')).map((c, i) => {
+                            const tem = c.evts.length > 0
+                            return (
+                              <a key={c.chave} href={c.href}
+                                style={{ display: 'block', textDecoration: 'none', padding: '12px 14px', borderTop: i > 0 ? '1px solid #f0eee8' : 'none', background: tem ? c.bg : '#fff', cursor: 'pointer' }}
+                                onMouseEnter={e => (e.currentTarget.style.filter = 'brightness(.97)')} onMouseLeave={e => (e.currentTarget.style.filter = 'none')}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                  <span style={{ fontSize: 17 }}>{c.emoji}</span>
+                                  <span style={{ flex: 1, fontSize: 13.5, fontWeight: 800, color: tem ? c.cor : '#9ca3af' }}>{c.nome}</span>
+                                  {tem
+                                    ? <span style={{ background: c.cor, color: '#fff', fontSize: 11, fontWeight: 900, borderRadius: 99, padding: '2px 9px' }}>{c.evts.length}</span>
+                                    : <span style={{ fontSize: 11, color: '#9ca3af' }}>tudo em dia</span>}
+                                  <span style={{ color: tem ? c.cor : '#c4c0b8', fontSize: 13 }}>→</span>
+                                </div>
+                                {tem && (
+                                  <div style={{ marginTop: 6, paddingLeft: 25, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                                    {c.evts.slice(0, 3).map(e => (
+                                      <div key={e.id} style={{ fontSize: 11.5, color: '#4b5563', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        <span style={{ fontWeight: 800, color: e.dias === 0 ? '#dc2626' : '#b45309' }}>{e.dias === 0 ? 'Hoje' : e.dias === 1 ? 'Amanhã' : `Em ${e.dias}d`}:</span> {e.texto}
+                                      </div>
+                                    ))}
+                                    {c.evts.length > 3 && <div style={{ fontSize: 11, color: '#9ca3af' }}>+{c.evts.length - 3} mais…</div>}
+                                  </div>
+                                )}
+                              </a>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )
+                }
+                return (
                 <a key={k.perm} href={k.href}
                   onClick={() => { if (k.perm === 'feedback_cliente') { try { localStorage.setItem('nodri_fb_visto', String(kpiFb ?? 0)) } catch { /* */ } } }}
                   style={{ textDecoration: 'none', background: k.badge > 0 ? '#f0fdf4' : '#fff', border: k.badge > 0 ? '1px solid #86efac' : '1px solid #e8e6e0', borderLeft: `4px solid ${k.cor}`, borderRadius: 12, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12, position: 'relative', animation: k.badge > 0 ? 'nodriKpiPulse 1.6s ease-in-out infinite' : undefined }}
@@ -659,7 +726,8 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                     </span>
                   )}
                 </a>
-              ))}
+                )
+              })}
             </div>
           )}
 
