@@ -253,6 +253,9 @@ export default function ChecklistPage() {
 
   return (
     <div className="nodri-salon-bg" style={{ minHeight: '100vh', background: temAlerta ? '#fbe9e9' : undefined, transition: 'background .4s' }}>
+      {/* No celular a barra fixa global já mostra o título e o Salvar — a nav
+          da página só aparece no computador (sem duplicação). */}
+      {!isMobile && (
       <nav style={{ background: temAlerta ? '#fdf1f1' : '#faf9f7', borderBottom: temAlerta ? '1px solid #f3c8c8' : '1px solid #e8e6e0', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 40, flexWrap: 'wrap' }}>
         <button onClick={() => router.push('/salon')} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', color: '#6b6860', cursor: 'pointer', fontSize: 14 }}><ArrowLeft size={16} /> Voltar</button>
         <span style={{ width: 1, height: 16, background: '#e0ddd8' }} />
@@ -264,9 +267,21 @@ export default function ChecklistPage() {
         {!soLeitura && <button onClick={salvar} disabled={salvando} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 16px', borderRadius: 8, border: 'none', background: dirty ? '#16a34a' : '#a3b3a3', color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>{salvando ? '...' : <><Save size={14} /> Salvar geral</>}</button>}
         {soLeitura && <span style={{ fontSize: 12, color: '#6b6860', background: '#f1eefb', border: '1px solid #ddd6f5', borderRadius: 8, padding: '6px 12px' }}>👁️ Somente visualização</span>}
       </nav>
+      )}
 
       <div style={{ maxWidth: 1000, margin: '0 auto', padding: 16 }}>
         {loading ? <div style={{ display: 'flex', justifyContent: 'center', padding: 50 }}><Loader2 size={26} className="animate-spin" style={{ color: '#5b4fcf' }} /></div> : (<>
+
+          {/* Celular: linha única e harmônica de ações (o Salvar fica na barra fixa
+              do topo; o botão real fica invisível aqui só para o topo acioná-lo) */}
+          {isMobile && (
+            <div className="nodri-linha-1" style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+              <button onClick={() => { setVerRelatorio(v => !v); setVerComuns(false) }} style={{ ...btnMob(verRelatorio), flex: 1 }}><BarChart3 size={14} /> Relatório{temAlerta ? ' ⚠️' : ''}</button>
+              <button onClick={() => { setVerComuns(v => !v); setVerRelatorio(false) }} style={{ ...btnMob(verComuns), flex: 1 }}><Copy size={14} /> Em comum</button>
+              {!soLeitura && <button onClick={limparMarcacoes} title="Reinício forçado" style={{ ...btnMob(false), width: 44, justifyContent: 'center' }}><RotateCcw size={15} /></button>}
+              {!soLeitura && <button onClick={salvar} aria-hidden tabIndex={-1} style={{ display: 'none' }}><Save size={12} /> Salvar</button>}
+            </div>
+          )}
 
           {/* 🔴 ALERTA DO DIA — some sozinho quando a última for marcada como feita */}
           {temAlerta && (
@@ -280,16 +295,30 @@ export default function ChecklistPage() {
             </button>
           )}
 
-          {/* Resumo geral sempre visível */}
+          {/* Resumo geral sempre visível — compacto no celular, com barra de progresso */}
+          {isMobile ? (
+            <div style={{ background: 'linear-gradient(135deg,#7c3aed,#5b4fcf)', borderRadius: 14, padding: '12px 16px', color: '#fff', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ fontSize: 26, fontWeight: 900, flexShrink: 0 }}>{pctGeral}%</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ height: 8, background: 'rgba(255,255,255,.28)', borderRadius: 5, overflow: 'hidden' }}>
+                  <div style={{ width: `${pctGeral}%`, height: '100%', background: '#fff', transition: 'width .3s' }} />
+                </div>
+                <div style={{ fontSize: 11.5, marginTop: 5, opacity: .92 }}>{okGeral} de {totGeral} no período · zera sozinho a cada período</div>
+              </div>
+            </div>
+          ) : (
           <div style={{ background: 'linear-gradient(135deg,#7c3aed,#5b4fcf)', borderRadius: 14, padding: '14px 18px', color: '#fff', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
             <div style={{ fontSize: 28, fontWeight: 900 }}>{pctGeral}%</div>
             <div style={{ fontSize: 13 }}>{okGeral} de {totGeral} demandas feitas no período<br /><span style={{ opacity: .85 }}>em {doc.categorias.length} categorias · cada período zera sozinho (dia, semana, quinzena, mês, trimestre, semestre, ano)</span></div>
           </div>
+          )}
 
-          {/* Legenda de cores por período */}
+          {/* Legenda de cores por período (só no PC — no celular as cores já aparecem nos cards) */}
+          {!isMobile && (
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14, fontSize: 11 }}>
             {FREQUENCIAS.map(f => { const c = FREQ_COR[f]; return <span key={f} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: '#6b6860' }}><span style={{ width: 12, height: 12, borderRadius: 3, background: c.bg, border: `2px solid ${c.bd}` }} />{f}</span> })}
           </div>
+          )}
 
           {/* 📊 RELATÓRIO: progresso por categoria + pendências por período com resolução na hora */}
           {verRelatorio && (() => {
@@ -394,11 +423,11 @@ export default function ChecklistPage() {
 
           {cat && (
             <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: 16 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-                <Pencil size={14} color="#9ca3af" />
-                <input value={cat.nome} readOnly={soLeitura} onChange={e => renCategoria(catSel, e.target.value)} style={{ flex: 1, minWidth: 140, fontSize: 16, fontWeight: 800, color: '#5b4fcf', border: 'none', borderBottom: '1px solid #eee', outline: 'none', padding: '2px 0' }} />
-                {!soLeitura && <button onClick={() => organizarAZ(catSel)} title="Organizar em ordem alfabética (ajuda a achar duplicadas)" style={{ border: '1px solid #c9c4f0', background: '#f6f4ff', color: '#5b4fcf', borderRadius: 6, padding: '5px 10px', cursor: 'pointer', fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}><ArrowDownAZ size={13} /> Organizar A-Z</button>}
-                {!soLeitura && <button onClick={() => delCategoria(catSel)} title="Excluir categoria" style={{ border: '1px solid #fca5a5', background: '#fff', color: '#dc2626', borderRadius: 6, padding: '5px 10px', cursor: 'pointer', fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Trash2 size={12} /> Categoria</button>}
+              <div className="nodri-linha-1" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+                <Pencil size={14} color="#9ca3af" style={{ flexShrink: 0 }} />
+                <input value={cat.nome} readOnly={soLeitura} onChange={e => renCategoria(catSel, e.target.value)} style={{ flex: 1, minWidth: 100, fontSize: 16, fontWeight: 800, color: '#5b4fcf', border: 'none', borderBottom: '1px solid #eee', outline: 'none', padding: '2px 0' }} />
+                {!soLeitura && <button onClick={() => organizarAZ(catSel)} title="Organizar em ordem alfabética (ajuda a achar duplicadas)" style={{ border: '1px solid #c9c4f0', background: '#f6f4ff', color: '#5b4fcf', borderRadius: 8, padding: isMobile ? '7px 9px' : '5px 10px', cursor: 'pointer', fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}><ArrowDownAZ size={14} />{!isMobile && ' Organizar A-Z'}</button>}
+                {!soLeitura && <button onClick={() => delCategoria(catSel)} title="Excluir categoria" style={{ border: '1px solid #fca5a5', background: '#fff', color: '#dc2626', borderRadius: 8, padding: isMobile ? '7px 9px' : '5px 10px', cursor: 'pointer', fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}><Trash2 size={13} />{!isMobile && ' Categoria'}</button>}
               </div>
 
               {/* ── Cards expansíveis por período ── */}
@@ -450,4 +479,9 @@ function AutoTextarea({ value, onChange, feito, readOnly }: { value: string; onC
 
 function btnNav(ativo: boolean): React.CSSProperties {
   return { display: 'inline-flex', alignItems: 'center', gap: 5, background: ativo ? '#5b4fcf' : 'transparent', border: '1px solid ' + (ativo ? '#5b4fcf' : '#d0cdc7'), borderRadius: 8, padding: '6px 12px', color: ativo ? '#fff' : '#6b6860', cursor: 'pointer', fontSize: 13 }
+}
+
+// Botões da linha de ações do celular (pílulas com fundo branco)
+function btnMob(ativo: boolean): React.CSSProperties {
+  return { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: ativo ? '#5b4fcf' : '#fff', border: '1px solid ' + (ativo ? '#5b4fcf' : '#e0ddd8'), borderRadius: 10, padding: '10px 10px', color: ativo ? '#fff' : '#4b5563', cursor: 'pointer', fontSize: 12.5, fontWeight: 700, minWidth: 0 }
 }
