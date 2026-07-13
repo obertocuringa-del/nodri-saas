@@ -169,4 +169,4 @@ export const CHECKLIST_DEFAULT: { nome: string; demandas: string[] }[] = [
   { nome: 'Padrão de Atendimento', demandas: [] },
 ]
 
-export const FREQUENCIAS = ['Diário', 'Semanal', 'Quinzenal', 'Mensal', 'Trimestral']
+export const FREQUENCIAS = ['Diário', 'Semanal', 'Quinzenal', 'Mensal', 'Trimestral', 'Semestral', 'Anual']

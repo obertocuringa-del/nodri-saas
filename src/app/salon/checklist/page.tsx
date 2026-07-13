@@ -25,10 +25,12 @@ const FREQ_COR: Record<string, { bg: string; bd: string; txt: string }> = {
   'Quinzenal': { bg: '#f5f3ff', bd: '#7c3aed', txt: '#6d28d9' },
   'Mensal': { bg: '#fff7ed', bd: '#ea580c', txt: '#c2410c' },
   'Trimestral': { bg: '#fdf2f8', bd: '#db2777', txt: '#be185d' },
+  'Semestral': { bg: '#eef2ff', bd: '#4f46e5', txt: '#4338ca' },
+  'Anual': { bg: '#fefce8', bd: '#ca8a04', txt: '#a16207' },
 }
 const ROTULO_PENDENTE: Record<string, string> = {
   'Diário': 'PENDENTE HOJE', 'Semanal': 'PENDENTE NESTA SEMANA', 'Quinzenal': 'PENDENTE NA QUINZENA',
-  'Mensal': 'PENDENTE NO MÊS', 'Trimestral': 'PENDENTE NO TRIMESTRE',
+  'Mensal': 'PENDENTE NO MÊS', 'Trimestral': 'PENDENTE NO TRIMESTRE', 'Semestral': 'PENDENTE NO SEMESTRE', 'Anual': 'PENDENTE NO ANO',
 }
 
 // ── Janelas de período (reset automático, sem robô agendado) ──
@@ -42,6 +44,8 @@ function inicioJanela(freq: string): Date {
   if (freq === 'Quinzenal') return new Date(d.getFullYear(), d.getMonth(), d.getDate() <= 15 ? 1 : 16)
   if (freq === 'Mensal') return new Date(d.getFullYear(), d.getMonth(), 1)
   if (freq === 'Trimestral') return new Date(d.getFullYear(), Math.floor(d.getMonth() / 3) * 3, 1)
+  if (freq === 'Semestral') return new Date(d.getFullYear(), d.getMonth() < 6 ? 0 : 6, 1)
+  if (freq === 'Anual') return new Date(d.getFullYear(), 0, 1)
   return d // Diário (e qualquer valor desconhecido)
 }
 const feitoNoPeriodo = (dem: Demanda): boolean => !!dem.feito_em && new Date(dem.feito_em) >= inicioJanela(dem.freq)
@@ -279,7 +283,7 @@ export default function ChecklistPage() {
           {/* Resumo geral sempre visível */}
           <div style={{ background: 'linear-gradient(135deg,#7c3aed,#5b4fcf)', borderRadius: 14, padding: '14px 18px', color: '#fff', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
             <div style={{ fontSize: 28, fontWeight: 900 }}>{pctGeral}%</div>
-            <div style={{ fontSize: 13 }}>{okGeral} de {totGeral} demandas feitas no período<br /><span style={{ opacity: .85 }}>em {doc.categorias.length} categorias · cada período zera sozinho (dia, semana, quinzena, mês, trimestre)</span></div>
+            <div style={{ fontSize: 13 }}>{okGeral} de {totGeral} demandas feitas no período<br /><span style={{ opacity: .85 }}>em {doc.categorias.length} categorias · cada período zera sozinho (dia, semana, quinzena, mês, trimestre, semestre, ano)</span></div>
           </div>
 
           {/* Legenda de cores por período */}
@@ -316,7 +320,7 @@ export default function ChecklistPage() {
             return (
               <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: 16, marginBottom: 16 }}>
                 <h3 style={{ fontSize: 15, fontWeight: 800, margin: '0 0 4px' }}>📊 Relatório do período</h3>
-                <p style={{ fontSize: 11.5, color: '#9ca3af', margin: '0 0 12px' }}>Cada tarefa zera sozinha quando o período vira: diárias à meia-noite, semanais na segunda, quinzenais nos dias 1 e 16, mensais no dia 1º e trimestrais em jan/abr/jul/out.</p>
+                <p style={{ fontSize: 11.5, color: '#9ca3af', margin: '0 0 12px' }}>Cada tarefa zera sozinha quando o período vira: diárias à meia-noite, semanais na segunda, quinzenais nos dias 1 e 16, mensais no dia 1º, trimestrais em jan/abr/jul/out, semestrais em jan/jul e anuais em janeiro.</p>
                 {relat.map((r, i) => (
                   <div key={i} style={{ marginBottom: 8 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 3 }}><span style={{ fontWeight: 700 }}>{r.nome}{(pendPorCat[i] || 0) > 0 ? ' ⚠️' : ''}</span><span style={{ color: '#6b6860' }}>{r.ok}/{r.tot} · {r.pct}%</span></div>
