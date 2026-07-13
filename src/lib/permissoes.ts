@@ -153,31 +153,25 @@ export function chaveModulo(nome: string): string {
   return 'modulo_' + n.replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 24)
 }
 
-// Papéis prontos (sugestões) — o dono aplica e ajusta como quiser
+// Config padrão da Recepção — capturada da configuração real do dono.
+// ⚠️ PLACEHOLDER: será substituída pelo array EXATO que o dono copiar do
+// usuário recepção (botão "Copiar esta configuração"). Não confiar até lá.
+export const RECEPCAO_PADRAO: string[] = [
+  'lista_espera', 'aniversariantes', 'checklist', 'servicos', 'pendencias', 'feedback_cliente', 'prof_horarios',
+]
+
+// Papéis prontos (sugestões) — o dono aplica e ajusta como quiser.
+// Apenas DOIS papéis: Recepção (config padrão definida pelo dono) e Gerente (tudo).
 export const PAPEIS_SUGERIDOS: { nome: string; permissoes: string[] }[] = [
   {
     nome: 'Recepção',
-    permissoes: ['lista_espera', 'aniversariantes', 'checklist', 'servicos', 'pendencias', 'feedback_cliente', 'prof_horarios'],
+    // Config EXATA definida no salão Rouge Hair e adotada como padrão de todos os salões.
+    // (inclui 'modo_caixa': recepção só executa e adiciona, nunca edita nem exclui)
+    permissoes: RECEPCAO_PADRAO,
   },
   {
     nome: 'Gerente',
-    // tudo, menos gerenciar usuários e as senhas do salão
-    permissoes: TODAS_CHAVES.filter(c => !['cfg_usuarios', 'adm_senhas', 'dado_senhas'].includes(c)),
-  },
-  {
-    nome: 'Dosadora',
-    permissoes: ['administrativo', 'adm_listas', 'adm_servicos_valores', 'adm_tratamentos', 'adm_pacotes', 'prof_materiais', 'checklist'],
-  },
-  {
-    nome: 'Lançador de Compras',
-    permissoes: ['calculadora', 'calc_desp_fixas'],
-  },
-  {
-    nome: 'Limpeza',
-    permissoes: ['checklist'],
-  },
-  {
-    nome: 'Caixa',
-    permissoes: ['servicos', 'lista_espera', 'aniversariantes', 'pendencias', 'calculadora', 'calc_desp_fixas'],
+    // Tudo liberado, sem exceção.
+    permissoes: TODAS_CHAVES,
   },
 ]

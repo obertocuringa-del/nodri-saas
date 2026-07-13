@@ -36,6 +36,19 @@ export default function UsuariosPage() {
   function abrirEdit(u: Usuario) { setEditando(u); setNome(u.nome || ''); setUsuario(u.usuario); setSenha(''); setPapel(u.papel || ''); setPerms(new Set(u.permissoes || [])) }
   function fechar() { setEditando(null) }
   function toggle(ch: string) { setPerms(p => { const n = new Set(p); n.has(ch) ? n.delete(ch) : n.add(ch); return n }) }
+
+  // Exporta a configuração exata deste usuário (para virar padrão de papel no código)
+  async function copiarConfig() {
+    const chaves = Array.from(perms).filter(c => c !== 'modo_caixa').sort()
+    const texto = JSON.stringify({ papel: papel || 'Recepção', modo_caixa: perms.has('modo_caixa'), permissoes: chaves }, null, 2)
+    try {
+      await navigator.clipboard.writeText(texto)
+      toast.success(`Copiado! ${chaves.length} liberações${perms.has('modo_caixa') ? ' + Modo Caixa' : ''}. Cole no chat.`)
+    } catch {
+      // Fallback: mostra num prompt para copiar manualmente (celular / sem permissão de clipboard)
+      window.prompt('Copie o texto abaixo (Ctrl+C / segurar e copiar) e cole no chat:', texto)
+    }
+  }
   function toggleGrupo(chaves: string[], ligar: boolean) { setPerms(p => { const n = new Set(p); chaves.forEach(c => ligar ? n.add(c) : n.delete(c)); return n }) }
 
   async function salvar() {
@@ -105,6 +118,7 @@ export default function UsuariosPage() {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, flexWrap: 'wrap', gap: 8 }}>
               <div style={{ fontSize: 13, fontWeight: 800, color: '#5b4fcf' }}>Liberações <span style={{ color: '#9ca3af', fontWeight: 600 }}>· {perms.size} de {TODAS_COM_MODULOS.length}</span></div>
               <div style={{ display: 'flex', gap: 6 }}>
+                <button onClick={copiarConfig} style={{ ...btnMini, borderColor: '#5b4fcf', color: '#5b4fcf' }}>📋 Copiar esta configuração</button>
                 <button onClick={() => setPerms(new Set(TODAS_COM_MODULOS))} style={btnMini}>Liberar tudo</button>
                 <button onClick={() => setPerms(new Set())} style={btnMini}>Bloquear tudo</button>
               </div>
