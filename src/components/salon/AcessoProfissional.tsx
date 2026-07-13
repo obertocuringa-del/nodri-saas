@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { KeyRound, Eye, EyeOff, Loader2, Check, Star } from 'lucide-react'
+import { KeyRound, Eye, EyeOff, Loader2, Check, Star, ChevronDown } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 // Itens que o salão pode OCULTAR da visão do próprio profissional (portal somente leitura)
@@ -24,6 +24,7 @@ export default function AcessoProfissional({ profId, prof, onSaved }: { profId: 
   const [temSenha, setTemSenha] = useState(false)
   const [oculto, setOculto] = useState<Record<string, boolean>>({})
   const [salvando, setSalvando] = useState(false)
+  const [aberto, setAberto] = useState(false) // card expansível: fechado por padrão (só o resumo)
 
   // Só o salão principal (role 'salon') gerencia acessos
   useEffect(() => {
@@ -69,12 +70,25 @@ export default function AcessoProfissional({ profId, prof, onSaved }: { profId: 
   const inp: React.CSSProperties = { width: '100%', padding: '10px 12px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 14 }
   const nomeProf = prof?.apelido || prof?.nome_completo || 'profissional'
 
+  const qtdOcultos = ITENS_OCULTAVEIS.filter(it => oculto[it.chave]).length
+
   return (
-    <div style={{ background: '#fff', border: '1.5px solid #e0ddd8', borderRadius: 14, padding: 18, marginBottom: 18 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-        <KeyRound size={18} color="#5b4fcf" />
-        <h3 style={{ fontSize: 16, fontWeight: 800, color: '#1a1a1a', margin: 0 }}>Acesso do Profissional</h3>
-      </div>
+    <div style={{ background: '#fff', border: '1.5px solid #e0ddd8', borderRadius: 14, marginBottom: 18, overflow: 'hidden' }}>
+      {/* Cabeçalho expansível: clique para abrir/fechar */}
+      <button onClick={() => setAberto(a => !a)}
+        style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '14px 18px', border: 'none', background: aberto ? '#f6f4ff' : '#fff', cursor: 'pointer', textAlign: 'left' }}>
+        <KeyRound size={18} color="#5b4fcf" style={{ flexShrink: 0 }} />
+        <span style={{ flex: 1, minWidth: 0 }}>
+          <span style={{ display: 'block', fontSize: 16, fontWeight: 800, color: '#1a1a1a' }}>Acesso do Profissional</span>
+          <span style={{ display: 'block', fontSize: 12, color: '#9ca3af' }}>
+            {liberado ? `✅ Liberado${login ? ` · login: ${login}` : ''}` : '🔒 Desligado'}{qtdOcultos > 0 ? ` · ${qtdOcultos} item(ns) oculto(s)` : ''}{oculto.autoavaliacao ? ' · autoavaliação ligada' : ''}
+          </span>
+        </span>
+        <ChevronDown size={18} color="#5b4fcf" style={{ transform: aberto ? 'rotate(180deg)' : 'none', transition: 'transform .15s', flexShrink: 0 }} />
+      </button>
+
+      {aberto && (
+      <div style={{ padding: '4px 18px 18px' }}>
       <p style={{ fontSize: 12.5, color: '#6b6860', margin: '0 0 14px' }}>
         Dê a {nomeProf} um login e senha para que veja <strong>apenas o próprio perfil</strong>, em modo <strong>somente leitura</strong>.
         Ele entra na tela de login normal do sistema. Você pode ligar/desligar este acesso quando quiser.
@@ -133,6 +147,8 @@ export default function AcessoProfissional({ profId, prof, onSaved }: { profId: 
       <p style={{ fontSize: 12, color: '#9ca3af', margin: '14px 0 0', paddingTop: 14, borderTop: '1px dashed #e0ddd8' }}>
         Para enviar avisos a este (ou a todos) os profissionais, use a <strong>Central de Notificações</strong> na tela inicial do salão.
       </p>
+      </div>
+      )}
     </div>
   )
 }
