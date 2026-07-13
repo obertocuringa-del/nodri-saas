@@ -91,8 +91,9 @@ const ABAS_TOPO = [
 ]
 
 // ── Sidebar (desktop): tudo visível, por categoria, em MAIÚSCULAS ──
-// item.servico preenchido = abre a aba Listas já na lista certa
-interface SidebarItem { aba: string; servico?: string; label: string }
+// item.servico = abre a aba Listas já na lista certa; item.rota = navega para
+// outra página (Calendário, Lojistas...) em vez de trocar a aba interna.
+interface SidebarItem { aba?: string; servico?: string; label: string; rota?: string; perm?: string }
 const SIDEBAR_CATS: { cat: string; itens: SidebarItem[] }[] = [
   {
     cat: 'LISTAS DO DIA A DIA', itens: [
@@ -140,6 +141,19 @@ const SIDEBAR_CATS: { cat: string; itens: SidebarItem[] }[] = [
       { aba: 'senhas', label: 'SENHAS' },
       { aba: 'telefones', label: 'TELEFONES IMPORTANTES' },
       { aba: 'arquivos_envio', label: 'ARQUIVOS PARA ENVIO' },
+    ]
+  },
+  {
+    cat: 'AGENDA', itens: [
+      { rota: '/salon/calendario', perm: 'calendario', label: 'CALENDÁRIO' },
+      { rota: '/salon/calendario-mkt', perm: 'calendario_mkt', label: 'CALENDÁRIO DE MARKETING' },
+    ]
+  },
+  {
+    cat: 'GESTÃO E PARCERIAS', itens: [
+      { rota: '/salon/lojistas', perm: 'lojistas', label: 'LOJISTAS (PARCERIAS)' },
+      { rota: '/salon/checkprocon', perm: 'checkprocon', label: 'CHECK PROCON' },
+      { rota: '/salon/auditoria', perm: 'cfg_auditoria', label: 'LOG DE AUDITORIA' },
     ]
   },
 ]
@@ -209,18 +223,19 @@ export default function SalaoAdministrativoPage() {
         {!isMobile && (
           <aside style={{ width: 252, flexShrink: 0, position: 'sticky', top: 74, maxHeight: 'calc(100vh - 92px)', overflowY: 'auto', background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: '10px 8px' }}>
             {SIDEBAR_CATS.map(grupo => {
-              const itens = grupo.itens.filter(it => podeP(ABA_CHAVE[it.aba] || it.aba))
+              const itens = grupo.itens.filter(it => podeP(it.perm || ABA_CHAVE[it.aba || ''] || it.aba || ''))
               if (!itens.length) return null
               return (
                 <div key={grupo.cat} style={{ marginBottom: 10 }}>
                   <div style={{ fontSize: 10.5, fontWeight: 900, color: '#9ca3af', letterSpacing: '.6px', padding: '6px 10px 4px' }}>{grupo.cat}</div>
                   {itens.map(it => {
-                    const ativo = abaTopo === it.aba && (!it.servico || servico === it.servico)
+                    const ativo = !it.rota && abaTopo === it.aba && (!it.servico || servico === it.servico)
+                    const irPara = () => { if (!confirmarSaidaSemSalvar()) return; if (it.rota) { router.push(it.rota) } else { setAbaTopo(it.aba!); if (it.servico) setServico(it.servico) } }
                     return (
-                      <button key={it.aba + (it.servico || '')} onClick={() => { if (!confirmarSaidaSemSalvar()) return; setAbaTopo(it.aba); if (it.servico) setServico(it.servico) }}
+                      <button key={(it.aba || it.rota || '') + (it.servico || '')} onClick={irPara}
                         style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 10px', border: 'none', borderRadius: 8, background: ativo ? '#f0eefb' : 'transparent', color: ativo ? '#5b4fcf' : '#4b5563', fontSize: 11.5, fontWeight: ativo ? 900 : 700, letterSpacing: '.3px', cursor: 'pointer', borderLeft: ativo ? '3px solid #5b4fcf' : '3px solid transparent' }}
                         onMouseEnter={e => { if (!ativo) e.currentTarget.style.background = '#faf9f7' }} onMouseLeave={e => { if (!ativo) e.currentTarget.style.background = 'transparent' }}>
-                        {it.label}
+                        {it.label}{it.rota ? ' →' : ''}
                       </button>
                     )
                   })}
@@ -238,24 +253,25 @@ export default function SalaoAdministrativoPage() {
           {abasMenuOpen && <div onClick={() => setAbasMenuOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 49 }} />}
           <button onClick={() => setAbasMenuOpen(o => !o)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '12px 16px', borderRadius: 12, border: '1.5px solid #5b4fcf', background: '#f0eefb', color: '#1a1a1a', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, minWidth: 0 }}><ListChecks size={16} color="#5b4fcf" /><span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {SIDEBAR_CATS.flatMap(g => g.itens).find(it => abaTopo === it.aba && (!it.servico || servico === it.servico))?.label || abasVisiveis.find(a => a.key === abaTopo)?.label || 'FERRAMENTAS'}
+              {SIDEBAR_CATS.flatMap(g => g.itens).find(it => !it.rota && abaTopo === it.aba && (!it.servico || servico === it.servico))?.label || abasVisiveis.find(a => a.key === abaTopo)?.label || 'FERRAMENTAS'}
             </span></span>
             <span style={{ color: '#5b4fcf', fontSize: 13, transition: 'transform .15s', transform: abasMenuOpen ? 'rotate(180deg)' : 'none' }}>▼</span>
           </button>
           {abasMenuOpen && (
             <div style={{ position: 'absolute', top: '108%', left: 0, right: 0, zIndex: 50, background: '#fff', border: '1px solid #e0ddd8', borderRadius: 12, boxShadow: '0 14px 36px rgba(0,0,0,.16)', maxHeight: 420, overflowY: 'auto', padding: 6 }}>
               {SIDEBAR_CATS.map(grupo => {
-                const itens = grupo.itens.filter(it => podeP(ABA_CHAVE[it.aba] || it.aba))
+                const itens = grupo.itens.filter(it => podeP(it.perm || ABA_CHAVE[it.aba || ''] || it.aba || ''))
                 if (!itens.length) return null
                 return (
                   <div key={grupo.cat} style={{ marginBottom: 4 }}>
                     <div style={{ fontSize: 10.5, fontWeight: 900, color: '#9ca3af', letterSpacing: '.6px', padding: '8px 12px 4px' }}>{grupo.cat}</div>
                     {itens.map(it => {
-                      const ativo = abaTopo === it.aba && (!it.servico || servico === it.servico)
+                      const ativo = !it.rota && abaTopo === it.aba && (!it.servico || servico === it.servico)
+                      const irPara = () => { if (!confirmarSaidaSemSalvar()) return; if (it.rota) { router.push(it.rota) } else { setAbaTopo(it.aba!); if (it.servico) setServico(it.servico); setAbasMenuOpen(false) } }
                       return (
-                        <button key={it.aba + (it.servico || '')} onClick={() => { if (!confirmarSaidaSemSalvar()) return; setAbaTopo(it.aba); if (it.servico) setServico(it.servico); setAbasMenuOpen(false) }}
+                        <button key={(it.aba || it.rota || '') + (it.servico || '')} onClick={irPara}
                           style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 12px', border: 'none', borderRadius: 8, background: ativo ? '#f0eefb' : 'transparent', color: ativo ? '#5b4fcf' : '#374151', fontSize: 12.5, fontWeight: ativo ? 900 : 700, letterSpacing: '.3px', cursor: 'pointer', borderLeft: ativo ? '3px solid #5b4fcf' : '3px solid transparent' }}>
-                          {it.label}
+                          {it.label}{it.rota ? ' →' : ''}
                         </button>
                       )
                     })}

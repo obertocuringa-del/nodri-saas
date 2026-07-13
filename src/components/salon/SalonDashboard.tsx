@@ -553,13 +553,11 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               { href: '/salon/lista-espera', label: 'Lista de Espera', chave: 'lista_espera' },
               { href: '/salon/administrativo', label: 'Salão Administrativo', chave: 'administrativo' },
               { href: '/salon/checklist', label: 'Check List', chave: 'checklist' },
-              { href: '/salon/calendario', label: 'Calendário', chave: 'calendario' },
-              { href: '/salon/calendario-mkt', label: 'Calendário de Marketing', chave: 'calendario_mkt' },
+              // Calendário, Calendário MKT, Lojistas, Check Procon e Log de Auditoria
+              // agora vivem dentro do Salão Administrativo (categorias AGENDA e
+              // GESTÃO E PARCERIAS) — tirados daqui para desafogar o menu inicial.
               { href: '/salon/notificacoes', label: 'Notificações (Profissionais)', chave: 'profissionais' },
               { href: '/salon/consultoria', label: 'Consultoria IA', chave: 'ia' },
-              { href: '/salon/auditoria', label: 'Log de Auditoria', chave: 'cfg_auditoria' },
-              { href: '/salon/lojistas', label: 'Lojistas', chave: 'lojistas' },
-              { href: '/salon/checkprocon', label: 'Check Procon', chave: 'checkprocon' },
               { href: '/salon/usuarios', label: 'Usuários & Acessos', chave: 'cfg_usuarios' },
             ].filter(item => pode(item.chave)).map(item => {
               const alerta = item.chave === 'checklist' && checklistAlertas > 0
