@@ -23,39 +23,19 @@ function corDoNome(nome: string) {
 function slug(s: string) { return (s || 'pacotes').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'pacotes' }
 function fmtReais(v: string) { const n = Number(String(v || '').replace(/\./g, '').replace(',', '.')); return isFinite(n) && n > 0 ? 'R$ ' + n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '' }
 
+// Modelo GENÉRICO (usado só quando o salão ainda não salvou os próprios
+// pacotes). NUNCA colocar aqui pacotes/preços de um salão específico.
 const DEFAULT_DOC: Doc = {
   categorias: [
     {
-      id: rid(), nome: 'Terapia Capilar', pacotes: [
-        { id: rid(), nome: 'Pacote Terapia Capilar', sessoes: '4', valor: '1.428,00' },
-        { id: rid(), nome: 'Pacote Terapia Capilar', sessoes: '8', valor: '2.856,00' },
-        { id: rid(), nome: 'Pacote Terapia Capilar', sessoes: '12', valor: '4.284,00' },
-      ]
-    },
-    {
       id: rid(), nome: 'Massagens', pacotes: [
-        { id: rid(), nome: 'Massagem Terapêutica', sessoes: '10', valor: '1.402,50' },
-        { id: rid(), nome: 'Massagem Ayurvédica', sessoes: '10', valor: '1.589,50' },
-        { id: rid(), nome: 'Massagem Drenagem Linfática', sessoes: '10', valor: '1.215,50' },
-        { id: rid(), nome: 'Massagem Drenagem Linfática', sessoes: '5', valor: '607,80' },
-        { id: rid(), nome: 'Massagem Facial', sessoes: '10', valor: '654,50' },
-        { id: rid(), nome: 'Massagem Relaxante', sessoes: '10', valor: '1.215,50' },
-        { id: rid(), nome: 'Massagem Relaxante', sessoes: '5', valor: '607,80' },
-        { id: rid(), nome: 'Pacote Massagem Facial', sessoes: '10', valor: '528,00' },
-        { id: rid(), nome: 'Pacote Massagem Modeladora', sessoes: '10', valor: '1.215,50' },
-        { id: rid(), nome: 'Pacote Massagem Modeladora', sessoes: '5', valor: '607,80' },
-        { id: rid(), nome: 'Pacote Modelagem', sessoes: '5', valor: '420,00' },
+        { id: rid(), nome: 'Pacote Massagem Relaxante', sessoes: '10', valor: '' },
+        { id: rid(), nome: 'Pacote Massagem Relaxante', sessoes: '5', valor: '' },
       ]
     },
     {
-      id: rid(), nome: 'Estética Facial', pacotes: [
-        { id: rid(), nome: 'Drenagem Facial', sessoes: '10', valor: '935,00', obs: 'Pós-operatório' },
-        { id: rid(), nome: 'Limpeza de Pele', sessoes: '10', valor: '935,00' },
-      ]
-    },
-    {
-      id: rid(), nome: 'Manicure', pacotes: [
-        { id: rid(), nome: 'Pacote Manicure', sessoes: '', valor: '200,00' },
+      id: rid(), nome: 'Terapia Capilar', pacotes: [
+        { id: rid(), nome: 'Pacote Terapia Capilar', sessoes: '4', valor: '' },
       ]
     },
   ]
