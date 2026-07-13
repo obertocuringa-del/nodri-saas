@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { salaoIdSe, permDaGrade, getSessao } from '@/lib/apiAuth'
+import { salaoIdSe, permDaGrade, getSessao, sessaoModoCaixa, apenasAcrescenta } from '@/lib/apiAuth'
 import { registrarAuditoria } from '@/lib/audit'
 
 // Grades editáveis genéricas (bebidas, alicates, produtos, senhas, pop...). Namespace 'grid_'.
@@ -29,7 +29,19 @@ export async function PUT(req: NextRequest) {
   const ehListasGrid = /^bebidas/.test(chave) || /^esterilizacao/.test(chave) || /^enxovais/.test(chave) || ['produtos', 'servinterno'].includes(chave)
   const sess = await getSessao()
   if (sess?.role === 'profissional') return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
-  if (sess?.role === 'sub' && !ehListasGrid) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
+  if (sess?.role === 'sub') {
+    const caixa = sessaoModoCaixa(sess)
+    // Modo Caixa também pode salvar o Check List (marcar feito / adicionar)
+    const permitido = ehListasGrid || (caixa && chave === 'checklist')
+    if (!permitido) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
+    if (caixa) {
+      // Trava do Modo Caixa: compara com o que está salvo — só aceita acréscimos/execução
+      const { data: atual } = await supabaseAdmin.from('salao_config').select('valor').eq('salao_id', salaoId).eq('chave', `grid_${chave}`).maybeSingle()
+      if (atual?.valor && !apenasAcrescenta(atual.valor, doc)) {
+        return NextResponse.json({ error: 'Modo Caixa: você pode marcar como feito e ADICIONAR, mas não pode editar nem excluir o que já existe.' }, { status: 403 })
+      }
+    }
+  }
   const { error } = await supabaseAdmin.from('salao_config').upsert({ salao_id: salaoId, chave: `grid_${chave}`, valor: doc, atualizado_em: new Date().toISOString() }, { onConflict: 'salao_id,chave' })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   registrarAuditoria('Editou', 'Planilha/Lista', chave)

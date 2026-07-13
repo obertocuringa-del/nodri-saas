@@ -60,9 +60,12 @@ function marcarAgora(dem: Demanda) {
 
 export default function ChecklistPage() {
   const router = useRouter()
-  const { ehSub } = usePermissoes()
+  const { ehSub, modoCaixa } = usePermissoes()
   const isMobile = useIsMobile()
-  const soLeitura = ehSub // usuário criado pelo salão: só visualiza (sem alterar/excluir) até liberação
+  // sub comum: só visualiza. Modo Caixa: executa (marca feito) e ADICIONA,
+  // mas não edita nem exclui (soExecuta esconde os controles destrutivos).
+  const soLeitura = ehSub && !modoCaixa
+  const soExecuta = ehSub && modoCaixa
   const [doc, setDoc] = useState<Doc>({ categorias: [] })
   const [catSel, setCatSel] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -217,18 +220,18 @@ export default function ChecklistPage() {
             {feitoOk ? <><Check size={13} /> Sim</> : <><X size={13} /> Não</>}
           </button>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <AutoTextarea value={dem.texto} onChange={v => setDemanda(catSel, di, 'texto', v)} feito={feitoOk} readOnly={soLeitura} />
+            <AutoTextarea value={dem.texto} onChange={v => setDemanda(catSel, di, 'texto', v)} feito={feitoOk} readOnly={soLeitura || soExecuta} />
             {alertaHoje && <div style={{ fontSize: 10.5, fontWeight: 900, color: '#dc2626', paddingLeft: 8 }}>⚠ MARCADA PARA HOJE ({hojeAbrev.toUpperCase()}) — AINDA NÃO FEITA</div>}
           </div>
         </div>
 
         {/* Linha 2 (celular) / mesma linha (PC): frequência, dias, transferir, excluir */}
         <div className="nodri-linha-1" style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, flexWrap: 'nowrap' }}>
-          <select value={dem.freq} disabled={soLeitura} onChange={e => setDemanda(catSel, di, 'freq', e.target.value)} style={{ padding: '5px 8px', borderRadius: 6, border: `1.5px solid ${fc.bd}`, background: '#fff', color: fc.txt, fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
+          <select value={dem.freq} disabled={soLeitura || soExecuta} onChange={e => setDemanda(catSel, di, 'freq', e.target.value)} style={{ padding: '5px 8px', borderRadius: 6, border: `1.5px solid ${fc.bd}`, background: '#fff', color: fc.txt, fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
             {FREQUENCIAS.map(f => <option key={f} value={f}>{f}</option>)}
           </select>
 
-          {!soLeitura && (
+          {!soLeitura && !soExecuta && (
             <div data-pop-root style={{ position: 'relative', flexShrink: 0 }}>
               <button onClick={e => { ancorarPop(e, 300); setDiasOpen(diasOpen === dem.id ? null : dem.id) }} title="Dias da semana (opcional)"
                 style={{ display: 'inline-flex', alignItems: 'center', gap: 4, border: '1px solid ' + (dem.dias?.length ? '#5b4fcf' : '#d0cdc7'), background: dem.dias?.length ? '#f0eefb' : '#fff', color: dem.dias?.length ? '#5b4fcf' : '#6b6860', borderRadius: 6, padding: '5px 8px', cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>
@@ -245,7 +248,7 @@ export default function ChecklistPage() {
             </div>
           )}
 
-          {!soLeitura && (
+          {!soLeitura && !soExecuta && (
             <div data-pop-root style={{ position: 'relative', flexShrink: 0 }}>
               <button onClick={e => { ancorarPop(e, 230); setTransferOpen(transferOpen === dem.id ? null : dem.id) }} title="Transferir para outra categoria"
                 style={{ border: '1px solid #d0cdc7', background: '#fff', color: '#6b6860', borderRadius: 6, padding: '5px 8px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}>
@@ -263,7 +266,7 @@ export default function ChecklistPage() {
             </div>
           )}
 
-          {!soLeitura && <button onClick={() => delDemanda(catSel, di)} title="Excluir demanda" style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', padding: 6, flexShrink: 0 }}><Trash2 size={13} /></button>}
+          {!soLeitura && !soExecuta && <button onClick={() => delDemanda(catSel, di)} title="Excluir demanda" style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', padding: 6, flexShrink: 0 }}><Trash2 size={13} /></button>}
         </div>
       </div>
     )
@@ -281,9 +284,10 @@ export default function ChecklistPage() {
         <div style={{ flex: 1 }} />
         <button onClick={() => { setVerComuns(v => !v); setVerRelatorio(false) }} style={btnNav(verComuns)}><Copy size={14} /> Demandas em comum</button>
         <button onClick={() => { setVerRelatorio(v => !v); setVerComuns(false) }} style={btnNav(verRelatorio)}><BarChart3 size={14} /> Relatório{temAlerta ? ' ⚠️' : ''}</button>
-        {!soLeitura && <button onClick={limparMarcacoes} title="Reinício forçado (os períodos já zeram sozinhos)" style={btnNav(false)}><RotateCcw size={14} /> Limpar</button>}
+        {!soLeitura && !soExecuta && <button onClick={limparMarcacoes} title="Reinício forçado (os períodos já zeram sozinhos)" style={btnNav(false)}><RotateCcw size={14} /> Limpar</button>}
         {!soLeitura && <button onClick={salvar} disabled={salvando} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 16px', borderRadius: 8, border: 'none', background: dirty ? '#16a34a' : '#a3b3a3', color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>{salvando ? '...' : <><Save size={14} /> Salvar geral</>}</button>}
         {soLeitura && <span style={{ fontSize: 12, color: '#6b6860', background: '#f1eefb', border: '1px solid #ddd6f5', borderRadius: 8, padding: '6px 12px' }}>👁️ Somente visualização</span>}
+        {soExecuta && <span style={{ fontSize: 12, color: '#b45309', background: '#fff7ed', border: '1px solid #fcd34d', borderRadius: 8, padding: '6px 12px' }}>🧾 Modo Caixa — só executa e adiciona</span>}
       </nav>
       )}
 
@@ -297,7 +301,7 @@ export default function ChecklistPage() {
             <div className="nodri-linha-1" style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
               <button onClick={() => { setVerRelatorio(v => !v); setVerComuns(false) }} style={{ ...btnMob(verRelatorio), flex: 1 }}><BarChart3 size={14} /> Relatório{temAlerta ? ' ⚠️' : ''}</button>
               <button onClick={() => { setVerComuns(v => !v); setVerRelatorio(false) }} style={{ ...btnMob(verComuns), flex: 1 }}><Copy size={14} /> Em comum</button>
-              {!soLeitura && <button onClick={limparMarcacoes} title="Reinício forçado" style={{ ...btnMob(false), width: 44, justifyContent: 'center' }}><RotateCcw size={15} /></button>}
+              {!soLeitura && !soExecuta && <button onClick={limparMarcacoes} title="Reinício forçado" style={{ ...btnMob(false), width: 44, justifyContent: 'center' }}><RotateCcw size={15} /></button>}
               {!soLeitura && <button onClick={salvar} aria-hidden tabIndex={-1} style={{ display: 'none' }}><Save size={12} /> Salvar</button>}
             </div>
           )}
@@ -449,9 +453,9 @@ export default function ChecklistPage() {
             <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: 16 }}>
               <div className="nodri-linha-1" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
                 <Pencil size={14} color="#9ca3af" style={{ flexShrink: 0 }} />
-                <input value={cat.nome} readOnly={soLeitura} onChange={e => renCategoria(catSel, e.target.value)} style={{ flex: 1, minWidth: 100, fontSize: 16, fontWeight: 800, color: '#5b4fcf', border: 'none', borderBottom: '1px solid #eee', outline: 'none', padding: '2px 0' }} />
-                {!soLeitura && <button onClick={() => organizarAZ(catSel)} title="Organizar em ordem alfabética (ajuda a achar duplicadas)" style={{ border: '1px solid #c9c4f0', background: '#f6f4ff', color: '#5b4fcf', borderRadius: 8, padding: isMobile ? '7px 9px' : '5px 10px', cursor: 'pointer', fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}><ArrowDownAZ size={14} />{!isMobile && ' Organizar A-Z'}</button>}
-                {!soLeitura && <button onClick={() => delCategoria(catSel)} title="Excluir categoria" style={{ border: '1px solid #fca5a5', background: '#fff', color: '#dc2626', borderRadius: 8, padding: isMobile ? '7px 9px' : '5px 10px', cursor: 'pointer', fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}><Trash2 size={13} />{!isMobile && ' Categoria'}</button>}
+                <input value={cat.nome} readOnly={soLeitura || soExecuta} onChange={e => renCategoria(catSel, e.target.value)} style={{ flex: 1, minWidth: 100, fontSize: 16, fontWeight: 800, color: '#5b4fcf', border: 'none', borderBottom: '1px solid #eee', outline: 'none', padding: '2px 0' }} />
+                {!soLeitura && !soExecuta && <button onClick={() => organizarAZ(catSel)} title="Organizar em ordem alfabética (ajuda a achar duplicadas)" style={{ border: '1px solid #c9c4f0', background: '#f6f4ff', color: '#5b4fcf', borderRadius: 8, padding: isMobile ? '7px 9px' : '5px 10px', cursor: 'pointer', fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}><ArrowDownAZ size={14} />{!isMobile && ' Organizar A-Z'}</button>}
+                {!soLeitura && !soExecuta && <button onClick={() => delCategoria(catSel)} title="Excluir categoria" style={{ border: '1px solid #fca5a5', background: '#fff', color: '#dc2626', borderRadius: 8, padding: isMobile ? '7px 9px' : '5px 10px', cursor: 'pointer', fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}><Trash2 size={13} />{!isMobile && ' Categoria'}</button>}
               </div>
 
               {/* ── Cards expansíveis por período ── */}

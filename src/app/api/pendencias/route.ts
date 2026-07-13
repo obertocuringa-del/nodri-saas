@@ -2,7 +2,7 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { verifyJWT } from '@/lib/auth'
 import { cookies } from 'next/headers'
-import { escritaBloqueadaSub } from '@/lib/apiAuth'
+import { escritaBloqueadaSub, getSessao, sessaoModoCaixa } from '@/lib/apiAuth'
 
 export async function GET(req: NextRequest) {
   try {
@@ -39,7 +39,11 @@ export async function POST(req: NextRequest) {
     const payload = token ? await verifyJWT(token) : null
     const salaoId = payload?.salaoId
     if (!salaoId) return NextResponse.json({ error: 'NÃ£o autorizado' }, { status: 401 })
-    if (await escritaBloqueadaSub()) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
+    // Modo Caixa pode ADICIONAR pendências; sub comum continua somente leitura
+    if (await escritaBloqueadaSub()) {
+      const sess = await getSessao()
+      if (!sessaoModoCaixa(sess)) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
+    }
 
     const body = await req.json()
     const { profissional_id, mensagem, data_limite } = body

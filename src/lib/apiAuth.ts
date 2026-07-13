@@ -30,6 +30,37 @@ export async function escritaBloqueadaSub(): Promise<boolean> {
   return s?.role === 'sub' || s?.role === 'profissional'
 }
 
+// ── MODO CAIXA ──────────────────────────────────────────────────────────────
+// Sub-usuário marcado como "Modo Caixa" pode EXECUTAR e ADICIONAR, mas nunca
+// editar ou excluir o que já existe. A flag vive no array de permissões.
+export function sessaoModoCaixa(s: Sessao | null): boolean {
+  return !!s && s.role === 'sub' && Array.isArray(s.permissoes) && s.permissoes.includes('modo_caixa')
+}
+
+// Campos "de execução" que o Modo Caixa PODE alterar livremente
+// (marcar feito, somar atendimentos, resolver pendência...)
+export const CAMPOS_LIVRES_CAIXA = new Set(['feito', 'feito_em', 'historico', 'cells', 'resolvido', 'atualizado_em', 'enviado', 'criado_em'])
+
+// Valida "só acrescenta": aceita o documento novo apenas se NADA do antigo
+// foi removido ou alterado — vazios podem ser preenchidos, arrays podem
+// crescer no fim, chaves novas podem surgir. Campos livres mudam à vontade.
+export function apenasAcrescenta(velho: any, novo: any, camposLivres: Set<string> = CAMPOS_LIVRES_CAIXA): boolean {
+  // O que era vazio pode ser preenchido
+  if (velho === null || velho === undefined || velho === '' || velho === 0 || velho === '0') return true
+  if (typeof velho !== 'object') return velho === novo
+  if (Array.isArray(velho)) {
+    if (!Array.isArray(novo) || novo.length < velho.length) return false // removeu item
+    for (let i = 0; i < velho.length; i++) if (!apenasAcrescenta(velho[i], novo[i], camposLivres)) return false
+    return true
+  }
+  if (typeof novo !== 'object' || novo === null || Array.isArray(novo)) return false
+  for (const k of Object.keys(velho)) {
+    if (camposLivres.has(k)) continue
+    if (!apenasAcrescenta((velho as any)[k], (novo as any)[k], camposLivres)) return false
+  }
+  return true
+}
+
 // Retorna o salaoId se a sessão tem QUALQUER uma das chaves (dono sempre passa); senão null
 export async function salaoIdSe(chaves: string | string[]): Promise<string | null> {
   const s = await getSessao()

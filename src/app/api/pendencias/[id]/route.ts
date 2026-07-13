@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { verifyJWT } from '@/lib/auth'
 import { cookies } from 'next/headers'
+import { getSessao, sessaoModoCaixa } from '@/lib/apiAuth'
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -11,6 +12,14 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
     const body = await req.json()
+
+    // Sub-usuário: comum não altera nada; Modo Caixa só pode RESOLVER (executar)
+    const sess = await getSessao()
+    if (sess?.role === 'sub' || sess?.role === 'profissional') {
+      const soResolver = sessaoModoCaixa(sess) && body.resolvido === true && body.mensagem === undefined && body.data_limite === undefined
+      if (!soResolver) return NextResponse.json({ error: 'Modo Caixa: você pode marcar como resolvida, mas não editar ou excluir pendências.' }, { status: 403 })
+    }
+
     const updates: Record<string, any> = {}
 
     if (body.resolvido === true) {
@@ -45,6 +54,10 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     const payload = token ? await verifyJWT(token) : null
     const salaoId = payload?.salaoId
     if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+
+    // Excluir é só para o dono/usuários completos — sub e profissional nunca
+    const sess = await getSessao()
+    if (sess?.role === 'sub' || sess?.role === 'profissional') return NextResponse.json({ error: 'Sem permissão para excluir' }, { status: 403 })
 
     const { error } = await supabaseAdmin
       .from('pendencias_profissionais')

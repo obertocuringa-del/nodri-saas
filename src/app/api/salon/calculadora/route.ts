@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { verifyJWT } from '@/lib/auth'
 import { cookies } from 'next/headers'
+import { getSessao, sessaoModoCaixa, apenasAcrescenta } from '@/lib/apiAuth'
 
 async function getSalaoId() {
   const token = cookies().get('nodri_token')?.value
@@ -50,6 +51,19 @@ export async function POST(req: NextRequest) {
 
   const { ano, mes, dados } = await req.json()
   if (!ano || !mes || !dados) return NextResponse.json({ error: 'ano, mes e dados são obrigatórios' }, { status: 400 })
+
+  // Modo Caixa: pode lançar despesas e preencher o mês, mas não pode alterar
+  // nem apagar valores já salvos — compara com o que existe antes de aceitar
+  const sess = await getSessao()
+  if (sess?.role === 'profissional') return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
+  if (sessaoModoCaixa(sess)) {
+    const { data: atual } = await supabaseAdmin
+      .from('calculadora_historico').select('dados')
+      .eq('salao_id', salaoId).eq('ano', Number(ano)).eq('mes', Number(mes)).maybeSingle()
+    if (atual?.dados && !apenasAcrescenta(atual.dados, dados)) {
+      return NextResponse.json({ error: 'Modo Caixa: você pode lançar e ADICIONAR despesas, mas não pode alterar nem excluir valores já salvos.' }, { status: 403 })
+    }
+  }
 
   const { error } = await supabaseAdmin
     .from('calculadora_historico')

@@ -20,5 +20,7 @@ export function usePermissoes() {
   }, [])
 
   const pode = (chave: string) => (perms === null || perms === undefined) ? true : perms.includes(chave)
-  return { pode, ehSub: Array.isArray(perms), carregado: perms !== undefined }
+  // Modo Caixa: sub-usuário que só executa/adiciona (não edita nem exclui)
+  const modoCaixa = Array.isArray(perms) && perms.includes('modo_caixa')
+  return { pode, ehSub: Array.isArray(perms), modoCaixa, carregado: perms !== undefined }
 }

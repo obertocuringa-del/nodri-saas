@@ -88,6 +88,20 @@ export default function UsuariosPage() {
               {PAPEIS_SUGERIDOS.map(p => <button key={p.nome} onClick={() => { setPerms(new Set(p.permissoes)); if (!papel) setPapel(p.nome) }} style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid #c9c4f0', background: '#fff', color: '#5b4fcf', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>{p.nome}</button>)}
               <span style={{ fontSize: 11, color: '#9ca3af' }}>(aplica uma sugestão; você ajusta depois)</span>
             </div>
+
+            {/* 🧾 MODO CAIXA — só executa e adiciona; nunca edita nem exclui */}
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 14px', borderRadius: 12, background: perms.has('modo_caixa') ? '#fff7ed' : '#faf9f7', border: `1.5px solid ${perms.has('modo_caixa') ? '#f59e0b' : '#e0ddd8'}`, cursor: 'pointer', marginBottom: 14 }}>
+              <input type="checkbox" checked={perms.has('modo_caixa')}
+                onChange={e => setPerms(p => { const n = new Set(p); if (e.target.checked) n.add('modo_caixa'); else n.delete('modo_caixa'); return n })}
+                style={{ width: 18, height: 18, accentColor: '#f59e0b', marginTop: 2, flexShrink: 0 }} />
+              <span style={{ minWidth: 0 }}>
+                <span style={{ display: 'block', fontSize: 14, fontWeight: 800, color: perms.has('modo_caixa') ? '#b45309' : '#374151' }}>🧾 Modo Caixa — só executa e adiciona</span>
+                <span style={{ display: 'block', fontSize: 12, color: '#6b6860', marginTop: 2 }}>
+                  Pode marcar tarefas do Check List como feitas, somar atendimentos nas listas, registrar esterilização/enxovais, adicionar pendências e lançar despesas na Calculadora (salvando o mês).
+                  <strong> Não consegue editar nem excluir NADA</strong> que já existe — os botões somem e o servidor também recusa qualquer tentativa.
+                </span>
+              </span>
+            </label>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, flexWrap: 'wrap', gap: 8 }}>
               <div style={{ fontSize: 13, fontWeight: 800, color: '#5b4fcf' }}>Liberações <span style={{ color: '#9ca3af', fontWeight: 600 }}>· {perms.size} de {TODAS_COM_MODULOS.length}</span></div>
               <div style={{ display: 'flex', gap: 6 }}>

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
+import { getSessao, sessaoModoCaixa, apenasAcrescenta } from '@/lib/apiAuth'
 
 async function getSalaoId() {
   const token = cookies().get('nodri_token')?.value
@@ -50,6 +51,16 @@ export async function PUT(req: NextRequest) {
   const { servico, mes, doc } = body
   if (!servico || !mes) return NextResponse.json({ error: 'Faltam servico/mes' }, { status: 400 })
   const chave = `lista_${servico}_${mes}`
+
+  // Modo Caixa: soma atendimentos e adiciona à vontade, mas não remove
+  // profissionais nem apaga observações já registradas
+  const sess = await getSessao()
+  if (sessaoModoCaixa(sess)) {
+    const { data: atual } = await supabaseAdmin.from('salao_config').select('valor').eq('salao_id', salaoId).eq('chave', chave).maybeSingle()
+    if (atual?.valor && !apenasAcrescenta(atual.valor, doc)) {
+      return NextResponse.json({ error: 'Modo Caixa: você pode somar atendimentos e ADICIONAR, mas não pode editar nem excluir o que já existe.' }, { status: 403 })
+    }
+  }
   const { error } = await supabaseAdmin.from('salao_config').upsert({ salao_id: salaoId, chave, valor: doc, atualizado_em: new Date().toISOString() }, { onConflict: 'salao_id,chave' })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ ok: true })
