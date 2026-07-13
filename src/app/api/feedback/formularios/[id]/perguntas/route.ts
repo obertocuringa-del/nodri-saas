@@ -2,14 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
-import { escritaBloqueadaSub } from '@/lib/apiAuth'
+import { escritaBloqueadaSub, salaoIdSeVer } from '@/lib/apiAuth'
 
 export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
-  const token = cookies().get('nodri_token')?.value
-  const payload = token ? await verifyJWT(token) : null
-  if (!payload || payload.role !== 'salon' || !payload.salaoId) {
-    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-  }
+  const salaoId = await salaoIdSeVer('feedback_cliente')
+  if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   const { data, error } = await supabaseAdmin
     .from('feedback_perguntas')

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
+import { salaoIdSeVer } from '@/lib/apiAuth'
 
 function getISOWeek(date: Date): string {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
@@ -13,11 +14,8 @@ function getISOWeek(date: Date): string {
 }
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
-  const token = cookies().get('nodri_token')?.value
-  const payload = token ? await verifyJWT(token) : null
-  if (!payload || payload.role !== 'salon' || !payload.salaoId) {
-    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-  }
+  const salaoId = await salaoIdSeVer('feedback_cliente')
+  if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   const { searchParams } = new URL(req.url)
   const dataInicio = searchParams.get('inicio')
@@ -27,7 +25,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     .from('feedback_formularios')
     .select('*, saloes(nome)')
     .eq('id', params.id)
-    .eq('salao_id', payload.salaoId)
+    .eq('salao_id', salaoId)
     .single()
 
   if (!form) return NextResponse.json({ error: 'Formulário não encontrado' }, { status: 404 })

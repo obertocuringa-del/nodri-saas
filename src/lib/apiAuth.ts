@@ -81,6 +81,17 @@ export async function salaoIdSe(chaves: string | string[]): Promise<string | nul
   return req.some(c => s.permissoes!.includes(c)) ? s.salaoId : null
 }
 
+// Leitura (GET) de uma área do salão: retorna o salaoId se a sessão pode VER.
+// Dono sempre; sub só com a permissão liberada; profissional nunca (portal próprio).
+// Corrige telas que exigiam role 'salon' e bloqueavam o sub de só visualizar.
+export async function salaoIdSeVer(chave: string): Promise<string | null> {
+  const s = await getSessao()
+  if (!s) return null
+  if (s.role === 'salon') return s.salaoId
+  if (s.role === 'sub' && Array.isArray(s.permissoes) && s.permissoes.includes(chave)) return s.salaoId
+  return null
+}
+
 // Mapeia a chave de uma grade (salao_config) para a permissão necessária
 export function permDaGrade(chave: string): string {
   const c = (chave || '').replace(/^grid_/, '')

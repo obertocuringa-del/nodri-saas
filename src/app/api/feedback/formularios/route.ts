@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
-import { escritaBloqueadaSub } from '@/lib/apiAuth'
+import { escritaBloqueadaSub, salaoIdSeVer } from '@/lib/apiAuth'
 
 const PERGUNTAS_PADRAO = [
   {
@@ -85,16 +85,14 @@ const PERGUNTAS_PADRAO = [
 ]
 
 export async function GET() {
-  const token = cookies().get('nodri_token')?.value
-  const payload = token ? await verifyJWT(token) : null
-  if (!payload || payload.role !== 'salon' || !payload.salaoId) {
-    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-  }
+  // Visualizar: dono OU sub com a permissão feedback_cliente (não bloqueia mais o sub)
+  const salaoId = await salaoIdSeVer('feedback_cliente')
+  if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   const { data, error } = await supabaseAdmin
     .from('feedback_formularios')
     .select('*')
-    .eq('salao_id', payload.salaoId)
+    .eq('salao_id', salaoId)
     .order('criado_em', { ascending: false })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
