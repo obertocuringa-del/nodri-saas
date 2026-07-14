@@ -2326,6 +2326,20 @@ function DemandasProfissional({ profId, souProf }: { profId: string; souProf: bo
   const [aberto, setAberto] = useState<Set<string>>(new Set())     // itens expandidos
   const [respId, setRespId] = useState<string | null>(null)         // demanda recebida sendo respondida
   const [respTxt, setRespTxt] = useState('')
+  // Dono atribui uma demanda diretamente a este profissional
+  const [atribMsg, setAtribMsg] = useState('')
+  const [atribPrio, setAtribPrio] = useState('normal')
+  const [atribuindo, setAtribuindo] = useState(false)
+  async function atribuir() {
+    if (!atribMsg.trim()) { toast.error('Escreva a demanda'); return }
+    setAtribuindo(true)
+    try {
+      const res = await fetch('/api/pendencias', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ profissional_id: profId, mensagem: atribMsg.trim(), prioridade: atribPrio, origem: 'demanda' }) })
+      if (res.ok) { toast.success('Demanda atribuída ao profissional!'); setAtribMsg(''); setAtribPrio('normal'); carregar() }
+      else { const d = await res.json().catch(() => ({})); toast.error(d.error || 'Erro ao atribuir') }
+    } catch { toast.error('Erro de conexão') }
+    setAtribuindo(false)
+  }
   const toggle = (id: string) => setAberto(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
 
   async function carregar() {
@@ -2398,6 +2412,21 @@ function DemandasProfissional({ profId, souProf }: { profId: string; souProf: bo
           <Barra pct={pctRec} cor="#0ea5e9" />
         </div>
       </div>
+
+      {/* Atribuir demanda a este profissional (só dono/gestão) */}
+      {!souProf && (
+        <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 14, padding: 16 }}>
+          <div style={{ fontSize: 13, fontWeight: 800, color: '#0369a1', marginBottom: 10 }}>➤ Atribuir demanda a este profissional</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <textarea value={atribMsg} onChange={e => setAtribMsg(e.target.value)} rows={2} placeholder="Descreva a tarefa/pendência para o profissional..." style={{ border: '1px solid #e0ddd8', borderRadius: 8, padding: '9px 10px', fontSize: 13, outline: 'none', resize: 'none' }} />
+            <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
+              <label style={{ fontSize: 12, color: '#374151', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}><input type="radio" checked={atribPrio === 'normal'} onChange={() => setAtribPrio('normal')} /> Normal</label>
+              <label style={{ fontSize: 12, color: '#b91c1c', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}><input type="radio" checked={atribPrio === 'urgente'} onChange={() => setAtribPrio('urgente')} /> Urgente</label>
+              <button disabled={atribuindo} onClick={atribuir} style={{ marginLeft: 'auto', background: '#0ea5e9', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: atribuindo ? 0.6 : 1 }}>{atribuindo ? 'Atribuindo...' : 'Atribuir'}</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Nova solicitação */}
       {deps.length > 0 && (
@@ -3523,8 +3552,8 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
               🖨️ Imprimir
             </button>
           </div>
-          <div ref={refCadastro} className={form.is_departamento || souProf ? "space-y-6" : "grid grid-cols-1 lg:grid-cols-3 gap-6"}>
-            <div className={form.is_departamento || souProf ? "space-y-5" : "lg:col-span-2 space-y-5"}>
+          <div ref={refCadastro} className="space-y-6">
+            <div className="space-y-5">
               {/* Banner de departamento */}
               {form.is_departamento && (
                 <div className="rounded-2xl p-5 flex items-center gap-4" style={{ background: (form.departamento_cor || '#5b4fcf') + '15', border: `1px solid ${form.departamento_cor || '#5b4fcf'}40` }}>
@@ -3797,13 +3826,6 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                 </label>
               </div>}
             </div>
-            {/* Painel de pendências: só para o dono/gestão. O profissional resolve
-                pela área Solicitação → Recebidas (mesmos dados). */}
-            {!souProf && (
-              <div>
-                <PendenciasLateral profissionalId={id}/>
-              </div>
-            )}
           </div>
           </div>
         )}
