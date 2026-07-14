@@ -3371,7 +3371,7 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
           ['esterilizacao','ESTERILIZAÇÃO'],
           ['dependencia','DEPEND.'],
           ['oportunidades','OPORT.'],
-          ['bundle','BUNDLES'],
+          ['bundle','AUMENTE SEU TICKET'],
           ['clientes-perdidos','PERDIDOS'],
           ['agendamentos','AGENDAMENTOS'],
           ['calendario_mkt','CALENDÁRIO MKT'],
@@ -5203,12 +5203,12 @@ ${nuncaRows?`<div class="sec"><div class="sec-title">🔴 Serviços que Nunca Of
               <button onClick={() => {
                 const d = analiseData.bundle
                 if (!d) return
-                const { wrap } = printBase('Bundles')
+                const { wrap } = printBase('Aumente seu Ticket')
                 const paresRows = (d.pares||[]).map((par:any,i:number)=>`<tr><td>${i+1}º</td><td><strong>${par.servico_a}</strong></td><td><strong>${par.servico_b}</strong></td><td style="font-weight:700;color:${par.pct>=70?'#22c55e':par.pct>=40?'#f59e0b':'#5b4fcf'}">${par.pct}%</td><td>${par.count} clientes</td></tr>`).join('')
                 const corpo = `<div class="sec"><div class="sec-title">🔗 Pares de Serviços com Alta Co-ocorrência</div>
 <p style="font-size:9pt;color:#666;margin-bottom:10px">Análise de ${d.total_comandas||0} comandas · Pares com ≥20% de co-ocorrência</p>
 ${paresRows?`<table class="tbl"><thead><tr><th>#</th><th>Serviço A</th><th>Serviço B</th><th>Co-ocorrência</th><th>Clientes</th></tr></thead><tbody>${paresRows}</tbody></table>
-<p style="font-size:9pt;color:#5b4fcf;font-weight:600;margin-top:12px">💡 Estratégia: Ofereça o Serviço B para clientes que vieram para o Serviço A</p>`:'<p style="color:#888">Dados insuficientes para análise de bundles.</p>'}
+<p style="font-size:9pt;color:#5b4fcf;font-weight:600;margin-top:12px">💡 Estratégia: Ofereça o Serviço B para clientes que vieram para o Serviço A</p>`:'<p style="color:#888">Dados insuficientes para esta análise.</p>'}
 </div>`
                 abrirImpressao(wrap(corpo))
               }}
@@ -5222,7 +5222,7 @@ ${paresRows?`<table class="tbl"><thead><tr><th>#</th><th>Serviço A</th><th>Serv
               if (!d.pares?.length) return (
                 <div className="text-center py-16 text-nodri-t3">
                   <span className="text-4xl"></span>
-                  <p className="text-[13px] mt-3">Dados insuficientes para análise de bundles.</p>
+                  <p className="text-[13px] mt-3">Dados insuficientes para esta análise.</p>
                   {d.total_comandas > 0 && <p className="text-[11px] mt-2">{d.total_comandas} comandas analisadas</p>}
                 </div>
               )
