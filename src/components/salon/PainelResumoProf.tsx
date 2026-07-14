@@ -90,7 +90,7 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba, t
     { aba: 'desempenho', label: 'Ocorrências', Ic: AlertTriangle },
     { aba: 'dependencia', label: 'Dependência', Ic: Users, ocult: 'dependencia' },
     { aba: 'oportunidades', label: 'Oportunidades', Ic: Lightbulb, ocult: 'oportunidades' },
-    { aba: 'bundle', label: 'Aumente seu Ticket', Ic: Package },
+    { aba: 'bundle', label: 'Combos que Vendem', Ic: Package },
     { aba: 'clientes-perdidos', label: 'Clientes Perdidos', Ic: UserMinus },
     { aba: 'corrida', label: 'Corrida Interna', Ic: Trophy },
     { aba: 'acoes', label: 'Ações Comerciais', Ic: Megaphone },

@@ -3371,7 +3371,7 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
           ['esterilizacao','ESTERILIZAÇÃO'],
           ['dependencia','DEPEND.'],
           ['oportunidades','OPORT.'],
-          ['bundle','AUMENTE SEU TICKET'],
+          ['bundle','COMBOS QUE VENDEM'],
           ['clientes-perdidos','PERDIDOS'],
           ['agendamentos','AGENDAMENTOS'],
           ['calendario_mkt','CALENDÁRIO MKT'],
@@ -5203,7 +5203,7 @@ ${nuncaRows?`<div class="sec"><div class="sec-title">🔴 Serviços que Nunca Of
               <button onClick={() => {
                 const d = analiseData.bundle
                 if (!d) return
-                const { wrap } = printBase('Aumente seu Ticket')
+                const { wrap } = printBase('Combos que Vendem')
                 const paresRows = (d.pares||[]).map((par:any,i:number)=>`<tr><td>${i+1}º</td><td><strong>${par.servico_a}</strong></td><td><strong>${par.servico_b}</strong></td><td style="font-weight:700;color:${par.pct>=70?'#22c55e':par.pct>=40?'#f59e0b':'#5b4fcf'}">${par.pct}%</td><td>${par.count} clientes</td></tr>`).join('')
                 const corpo = `<div class="sec"><div class="sec-title">🔗 Pares de Serviços com Alta Co-ocorrência</div>
 <p style="font-size:9pt;color:#666;margin-bottom:10px">Análise de ${d.total_comandas||0} comandas · Pares com ≥20% de co-ocorrência</p>
