@@ -1019,6 +1019,21 @@ ${montarContratoHTML()}
                   style={{ width: '100%', background: '#ffffff', border: '1px solid #e8e6e0', borderRadius: '8px', padding: '9px 12px 9px 36px', fontSize: '13px', color: '#1a1a1a', outline: 'none' }} />
               </div>
 
+              {/* ── CARD SOLICITAÇÃO (só no celular) ── */}
+              {isMobile && (
+                <button onClick={() => setSecao('solicitacao')}
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, background: 'linear-gradient(135deg,#7c3aed,#5b4fcf)', color: '#fff', border: 'none', borderRadius: 12, padding: '14px 16px', marginBottom: '16px', cursor: 'pointer', textAlign: 'left' }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(255,255,255,.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Send size={18} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 800, fontSize: 15 }}>Solicitação</div>
+                    <div style={{ fontSize: 11.5, opacity: .9 }}>Enviar um pedido a um departamento</div>
+                  </div>
+                  <ChevronRight size={18} style={{ opacity: .8 }} />
+                </button>
+              )}
+
               {/* ── DEPARTAMENTOS (setores internos, não são profissionais) ── */}
               {!loading && (
                 <div style={{ marginBottom: '16px' }}>
@@ -1187,6 +1202,9 @@ ${montarContratoHTML()}
           {/* ── SOLICITAÇÃO (dono envia em nome de um profissional) ── */}
           {secao === 'solicitacao' && (
             <div>
+              <button onClick={() => setSecao('lista')} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'transparent', border: 'none', color: '#6b6860', fontSize: 13, cursor: 'pointer', marginBottom: 10, padding: 0 }}>
+                <ArrowLeft size={15} /> Voltar para a lista
+              </button>
               <h2 style={{ color: '#1a1a1a', fontSize: '20px', fontWeight: 700, margin: 0 }}>Solicitação a um departamento</h2>
               <p style={{ color: '#767069', fontSize: '13px', margin: '4px 0 20px' }}>Envie um pedido para um setor. Ele entra como demanda com o nome do solicitante e, ao ser resolvido, o solicitante recebe a notificação.</p>
 
