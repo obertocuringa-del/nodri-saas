@@ -304,7 +304,7 @@ export default function PendenciasPage() {
                 const temPend = (d.pendencias_abertas || 0) > 0
                 return (
                   <div key={d.id}
-                    onClick={() => router.push(`/salon/profissionais/${d.id}`)}
+                    onClick={() => router.push(`/salon/departamentos/${d.id}`)}
                     className="cursor-pointer rounded-2xl p-4 flex flex-col items-center gap-2 text-center transition-all hover:scale-[1.02]"
                     style={{ background: temPend ? '#fff0f0' : cor + '10', border: `1px solid ${temPend ? '#7f1d1d' : cor + '40'}` }}>
                     <div className="text-3xl">{icone}</div>

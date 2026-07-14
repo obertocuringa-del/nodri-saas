@@ -93,8 +93,10 @@ export async function middleware(request: NextRequest) {
       const ehKitsPropria = pathname === '/api/kits/solicitacoes' && request.method === 'POST'
       // EXCEÇÃO somente-leitura: a profissional pode dispensar/marcar como lida uma notificação dela ("já peguei")
       const ehNotifPropria = pathname === '/api/salon/notificacoes' && request.method === 'DELETE'
+      // EXCEÇÃO: a profissional pode ENVIAR uma solicitação para um departamento (a rota escopa pelo id dela)
+      const ehSolicitacaoPropria = pathname === '/api/solicitacoes' && request.method === 'POST'
       // SOMENTE LEITURA: nenhum método de escrita é permitido (GET/HEAD apenas), exceto as exceções acima
-      if (request.method !== 'GET' && request.method !== 'HEAD' && !ehIaPropria && !ehKitsPropria && !ehNotifPropria) return negar()
+      if (request.method !== 'GET' && request.method !== 'HEAD' && !ehIaPropria && !ehKitsPropria && !ehNotifPropria && !ehSolicitacaoPropria) return negar()
       // Nunca pode listar todos os profissionais
       if (pathname === '/api/profissionais' || pathname === '/api/profissionais/') return negar()
       // Em /api/profissionais/<id>/... o id TEM que ser o dele
@@ -105,7 +107,7 @@ export async function middleware(request: NextRequest) {
       }
       // Qualquer endpoint que receba um id de profissional na query → só o próprio
       const sp = request.nextUrl.searchParams
-      for (const k of ['profissional_id', 'prof_id', 'profId', 'profissionalId']) {
+      for (const k of ['profissional_id', 'prof_id', 'profId', 'profissionalId', 'solicitante_id']) {
         const v = sp.get(k)
         if (v && v !== meuId) return negar()
       }
@@ -151,6 +153,7 @@ export async function middleware(request: NextRequest) {
       ['/salon/lojistas', 'lojistas'],
       ['/salon/checkprocon', 'checkprocon'],
       ['/salon/usuarios', 'cfg_usuarios'],
+      ['/salon/departamentos', 'profissionais'],
       ['/salon/profissionais', 'profissionais'],
       ['/salon/relatorios', 'relatorios'],
       ['/salon/servicos', 'servicos'],

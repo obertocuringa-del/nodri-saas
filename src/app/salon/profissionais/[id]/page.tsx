@@ -2312,6 +2312,136 @@ function AbaIA({ profissionalId, nomeProfissional }: { profissionalId: string; n
   )
 }
 
+// Aba DEMANDAS — histórico de demandas do profissional (% enviadas/resolvidas)
+// + envio de nova solicitação a um departamento.
+function DemandasProfissional({ profId, souProf }: { profId: string; souProf: boolean }) {
+  const [enviadas, setEnviadas] = useState<any[]>([])
+  const [recebidas, setRecebidas] = useState<any[]>([])
+  const [deps, setDeps] = useState<any[]>([])
+  const [carregando, setCarregando] = useState(true)
+  const [dep, setDep] = useState('')
+  const [msg, setMsg] = useState('')
+  const [prio, setPrio] = useState('normal')
+  const [enviando, setEnviando] = useState(false)
+
+  async function carregar() {
+    try {
+      const [env, rec, dp] = await Promise.all([
+        fetch(`/api/pendencias?solicitante_id=${profId}`).then(r => r.ok ? r.json() : []),
+        fetch(`/api/pendencias?profissional_id=${profId}`).then(r => r.ok ? r.json() : []),
+        fetch('/api/departamentos').then(r => r.ok ? r.json() : { departamentos: [] }),
+      ])
+      setEnviadas(Array.isArray(env) ? env : [])
+      setRecebidas(Array.isArray(rec) ? rec : [])
+      setDeps(dp?.departamentos || [])
+    } catch { /* */ }
+    setCarregando(false)
+  }
+  useEffect(() => { carregar() }, [profId])
+
+  const envResolv = enviadas.filter(d => d.resolvido).length
+  const recResolv = recebidas.filter(d => d.resolvido).length
+  const pctEnv = enviadas.length ? Math.round(envResolv / enviadas.length * 100) : 0
+  const pctRec = recebidas.length ? Math.round(recResolv / recebidas.length * 100) : 0
+
+  async function enviar() {
+    if (!dep || !msg.trim()) { toast.error('Escolha o departamento e escreva a solicitação'); return }
+    setEnviando(true)
+    try {
+      const res = await fetch('/api/solicitacoes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ departamento_id: dep, mensagem: msg.trim(), prioridade: prio, solicitante_id: profId }) })
+      if (res.ok) { toast.success('Solicitação enviada!'); setMsg(''); setPrio('normal'); setDep(''); carregar() }
+      else { const d = await res.json().catch(() => ({})); toast.error(d.error || 'Erro ao enviar') }
+    } catch { toast.error('Erro de conexão') }
+    setEnviando(false)
+  }
+
+  const Barra = ({ pct, cor }: { pct: number; cor: string }) => (
+    <div style={{ height: 8, background: '#eee', borderRadius: 999, overflow: 'hidden', marginTop: 6 }}>
+      <div style={{ width: `${pct}%`, height: '100%', background: cor, borderRadius: 999 }} />
+    </div>
+  )
+  const nomeDep = (id: string) => deps.find(d => d.id === id)?.nome_completo || 'Setor'
+
+  if (carregando) return <div style={{ padding: 40, textAlign: 'center', color: '#9ca3af' }}><Loader2 className="animate-spin" style={{ display: 'inline' }} /></div>
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* KPIs */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
+        <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 16 }}>
+          <div style={{ fontSize: 12, color: '#6b6860', fontWeight: 700 }}>Demandas enviadas</div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 4 }}>
+            <span style={{ fontSize: 28, fontWeight: 800, color: '#5b4fcf' }}>{enviadas.length}</span>
+            <span style={{ fontSize: 12, color: '#6b6860' }}>{envResolv} resolvidas · {pctEnv}%</span>
+          </div>
+          <Barra pct={pctEnv} cor="#5b4fcf" />
+        </div>
+        <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 16 }}>
+          <div style={{ fontSize: 12, color: '#6b6860', fontWeight: 700 }}>Demandas recebidas</div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 4 }}>
+            <span style={{ fontSize: 28, fontWeight: 800, color: '#0ea5e9' }}>{recebidas.length}</span>
+            <span style={{ fontSize: 12, color: '#6b6860' }}>{recResolv} resolvidas · {pctRec}%</span>
+          </div>
+          <Barra pct={pctRec} cor="#0ea5e9" />
+        </div>
+      </div>
+
+      {/* Nova solicitação */}
+      {deps.length > 0 && (
+        <div style={{ background: '#faf9ff', border: '1px solid #d9d3f5', borderRadius: 14, padding: 16 }}>
+          <div style={{ fontSize: 13, fontWeight: 800, color: '#5b4fcf', marginBottom: 10 }}>➤ Nova solicitação a um departamento</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <select value={dep} onChange={e => setDep(e.target.value)} style={{ border: '1px solid #e0ddd8', borderRadius: 8, padding: '9px 10px', fontSize: 13 }}>
+              <option value="">Selecione o setor...</option>
+              {deps.map(d => <option key={d.id} value={d.id}>{d.nome_completo}</option>)}
+            </select>
+            <textarea value={msg} onChange={e => setMsg(e.target.value)} rows={2} placeholder="Descreva sua solicitação..." style={{ border: '1px solid #e0ddd8', borderRadius: 8, padding: '9px 10px', fontSize: 13, outline: 'none', resize: 'none' }} />
+            <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
+              <label style={{ fontSize: 12, color: '#374151', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}><input type="radio" checked={prio === 'normal'} onChange={() => setPrio('normal')} /> Normal</label>
+              <label style={{ fontSize: 12, color: '#b91c1c', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}><input type="radio" checked={prio === 'urgente'} onChange={() => setPrio('urgente')} /> Urgente</label>
+              <button disabled={enviando} onClick={enviar} style={{ marginLeft: 'auto', background: 'linear-gradient(135deg,#7c3aed,#5b4fcf)', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: enviando ? 0.6 : 1 }}>{enviando ? 'Enviando...' : 'Enviar'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Lista de enviadas */}
+      <div>
+        <div style={{ fontSize: 12, fontWeight: 800, color: '#374151', marginBottom: 8, textTransform: 'uppercase', letterSpacing: .4 }}>Enviadas ({enviadas.length})</div>
+        {enviadas.length === 0 ? <p style={{ fontSize: 13, color: '#9ca3af' }}>Nenhuma solicitação enviada ainda.</p> : enviadas.map(d => (
+          <div key={d.id} style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 10, padding: 12, marginBottom: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#5b4fcf' }}>→ {nomeDep(d.profissional_id)}</span>
+              {d.prioridade === 'urgente' && !d.resolvido && <span style={{ fontSize: 9, fontWeight: 800, color: '#b91c1c', background: '#fef2f2', padding: '1px 7px', borderRadius: 999 }}>URGENTE</span>}
+              <span style={{ fontSize: 9, fontWeight: 800, padding: '1px 7px', borderRadius: 999, background: d.resolvido ? '#ecfdf5' : '#fffbeb', color: d.resolvido ? '#047857' : '#92400e' }}>{d.resolvido ? 'RESOLVIDA' : 'ABERTA'}</span>
+              <span style={{ fontSize: 10, color: '#9ca3af', marginLeft: 'auto' }}>{new Date(d.criado_em).toLocaleDateString('pt-BR')}</span>
+            </div>
+            <p style={{ fontSize: 13, color: '#1a1a1a', margin: 0, whiteSpace: 'pre-wrap' }}>{d.mensagem}</p>
+            {d.resposta && <p style={{ fontSize: 12, color: '#047857', margin: '6px 0 0', background: '#f0fdf4', padding: '5px 9px', borderRadius: 8 }}>💬 {d.resposta}</p>}
+          </div>
+        ))}
+      </div>
+
+      {/* Lista de recebidas */}
+      {recebidas.length > 0 && (
+        <div>
+          <div style={{ fontSize: 12, fontWeight: 800, color: '#374151', marginBottom: 8, textTransform: 'uppercase', letterSpacing: .4 }}>Recebidas ({recebidas.length})</div>
+          {recebidas.map(d => (
+            <div key={d.id} style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 10, padding: 12, marginBottom: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
+                {d.solicitante_nome && <span style={{ fontSize: 11, fontWeight: 700, color: '#0ea5e9' }}>👤 {d.solicitante_nome}</span>}
+                <span style={{ fontSize: 9, fontWeight: 800, padding: '1px 7px', borderRadius: 999, background: d.resolvido ? '#ecfdf5' : '#fffbeb', color: d.resolvido ? '#047857' : '#92400e' }}>{d.resolvido ? 'RESOLVIDA' : 'ABERTA'}</span>
+                <span style={{ fontSize: 10, color: '#9ca3af', marginLeft: 'auto' }}>{new Date(d.criado_em).toLocaleDateString('pt-BR')}</span>
+              </div>
+              <p style={{ fontSize: 13, color: '#1a1a1a', margin: 0, whiteSpace: 'pre-wrap' }}>{d.mensagem}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function PerfilProfissionalPage() {
   const router = useRouter()
   const { id } = useParams() as { id: string }
@@ -2334,7 +2464,7 @@ export default function PerfilProfissionalPage() {
   const [endCidade, setEndCidade] = useState('')
   const [endUf, setEndUf] = useState('')
   const [buscandoCep, setBuscandoCep] = useState(false)
-  const [tab, setTab] = useState<'inicio'|'cadastro'|'avaliar'|'desempenho'|'faturamento'|'metas'|'ia'|'dependencia'|'oportunidades'|'bundle'|'clientes-perdidos'|'agendamentos'|'calendario_mkt'|'corrida'|'acoes'|'esterilizacao'|'kits'|'carreira'>('cadastro')
+  const [tab, setTab] = useState<'inicio'|'cadastro'|'avaliar'|'desempenho'|'faturamento'|'metas'|'ia'|'dependencia'|'oportunidades'|'bundle'|'clientes-perdidos'|'agendamentos'|'calendario_mkt'|'corrida'|'acoes'|'esterilizacao'|'kits'|'carreira'|'demandas'>('cadastro')
   // Aba Esterilização: só aparece pra quem realmente tem atendimento de
   // manicure/pedicure/sobrancelha no mês (mesmo cruzamento usado no
   // Administrativo) — a maioria dos profissionais não precisa dela.
@@ -3160,6 +3290,7 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
         const TABS_ALL: [typeof tab, string][] = [
           ['inicio','📊 INÍCIO'],
           ['cadastro','CADASTRO'],
+          ['demandas','📋 DEMANDAS'],
           ['avaliar','AVALIAR'],
           ['carreira','🏆 CARREIRA'],
           ['faturamento','FATURAMENTO'],
@@ -3181,6 +3312,7 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
           if (t === 'inicio') return souProf // aba Início (resumo bonito) só para o profissional
           if (t === 'esterilizacao') return temEsterilizacao // só quem tem atendimento de manicure/pedicure/sobrancelha no mês
           if (t === 'carreira') return !prof?.is_departamento && podeVer(t) // plano de carreira não se aplica a departamentos
+          if (t === 'demandas') return !prof?.is_departamento && podeVer(t) // demandas do profissional (departamento tem página própria)
           return podeVer(t)
         })
         const labelAtivo = TABS.find(([t])=>t===tab)?.[1] ?? 'Menu'
@@ -3231,6 +3363,11 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
         {/*  AVALIAR PROFISSIONAL  */}
         {tab === 'avaliar' && (
           <AvaliarProfissional profissionalId={id} profissionalNome={prof?.apelido || prof?.nome_completo || 'Profissional'} soResultado={souProf && !((prof as any)?.acesso_oculto?.autoavaliacao)} />
+        )}
+
+        {/*  DEMANDAS — histórico (% enviadas/resolvidas) + nova solicitação  */}
+        {tab === 'demandas' && (
+          <DemandasProfissional profId={id} souProf={souProf} />
         )}
 
         {/*  PLANO DE CARREIRA — progresso real do profissional rumo ao próximo nível  */}

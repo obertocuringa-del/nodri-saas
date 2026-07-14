@@ -13,15 +13,19 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url)
     const profissionalId = searchParams.get('profissional_id')
+    const solicitanteId = searchParams.get('solicitante_id')
 
     let query = supabaseAdmin
       .from('pendencias_profissionais')
-      .select('id, profissional_id, mensagem, data_limite, resolvido, resolvido_em, criado_em')
+      .select('*')
       .eq('salao_id', salaoId)
       .order('criado_em', { ascending: false })
 
     if (profissionalId) {
       query = query.eq('profissional_id', profissionalId)
+    }
+    if (solicitanteId) {
+      query = query.eq('solicitante_id', solicitanteId)
     }
 
     const { data, error } = await query
@@ -46,7 +50,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { profissional_id, mensagem, data_limite } = body
+    const { profissional_id, mensagem, data_limite, solicitante_id, solicitante_nome, prioridade, origem } = body
 
     if (!profissional_id || !mensagem) {
       return NextResponse.json({ error: 'profissional_id e mensagem sÃ£o obrigatÃ³rios' }, { status: 400 })
@@ -60,8 +64,12 @@ export async function POST(req: NextRequest) {
         mensagem,
         data_limite: data_limite || null,
         resolvido: false,
+        solicitante_id: solicitante_id || null,
+        solicitante_nome: solicitante_nome || null,
+        prioridade: prioridade || null,
+        origem: origem || null,
       })
-      .select('id, profissional_id, mensagem, data_limite, resolvido, resolvido_em, criado_em')
+      .select('*')
       .single()
 
     if (error) throw error

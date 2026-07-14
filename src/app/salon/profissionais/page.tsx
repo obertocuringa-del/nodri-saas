@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Plus, Search, UserCheck, UserX, Edit2, Trash2, Upload, X, ChevronRight, Users, FileText, Briefcase, Clock, Award, BookOpen, FileSignature, AlertCircle, TrendingUp, Building2, Menu, Mail } from 'lucide-react'
+import { ArrowLeft, Plus, Search, UserCheck, UserX, Edit2, Trash2, Upload, X, ChevronRight, Users, FileText, Briefcase, Clock, Award, BookOpen, FileSignature, AlertCircle, TrendingUp, Building2, Menu, Mail, Send } from 'lucide-react'
 import toast from 'react-hot-toast'
 import MateriaisTrabalho from '@/components/salon/MateriaisTrabalho'
 import ProcessoContratacao from '@/components/salon/ProcessoContratacao'
@@ -50,6 +50,7 @@ interface Profissional {
 const SIDEBAR_ITEMS = [
   { id: 'cadastrar',    label: 'Cadastrar Profissional',          icon: Plus,           cor: '#5b4fcf', destaque: true },
   { id: 'lista',        label: 'Lista de Profissionais',          icon: Users,          cor: '#06b6d4' },
+  { id: 'solicitacao',  label: 'Solicitação',                     icon: Send,           cor: '#8b5cf6' },
   { id: 'ranking',      label: 'Ranking de Avaliações',           icon: TrendingUp,     cor: '#f59e0b' },
   { id: 'categorias',   label: 'Gerenciar Categorias',            icon: Award,          cor: '#f59e0b' },
   { id: 'abertura',     label: 'Abertura de Conta Bancária',      icon: Building2,      cor: '#10b981' },
@@ -246,6 +247,47 @@ export default function ProfissionaisPage() {
   const [cnpjEdits, setCnpjEdits] = useState<Record<string, { status?: string; obs?: string }>>({})
   const [cnpjSalvando, setCnpjSalvando] = useState<string | null>(null)
   const [aprovandoId, setAprovandoId] = useState<string | null>(null)
+
+  // Criar departamento
+  const [novoDep, setNovoDep] = useState(false)
+  const [novoDepNome, setNovoDepNome] = useState('')
+  const [novoDepCor, setNovoDepCor] = useState('#5b4fcf')
+  const [criandoDep, setCriandoDep] = useState(false)
+  async function criarDepartamento() {
+    const nome = novoDepNome.trim().toUpperCase()
+    if (!nome) { toast.error('Dê um nome ao departamento'); return }
+    setCriandoDep(true)
+    try {
+      const res = await fetch('/api/profissionais', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nome_completo: nome, is_departamento: true, departamento_cor: novoDepCor, ativo: true }) })
+      if (res.ok) { toast.success('Departamento criado!'); setNovoDep(false); setNovoDepNome(''); setNovoDepCor('#5b4fcf'); carregarProfissionais() }
+      else toast.error('Erro ao criar')
+    } catch { toast.error('Erro de conexão') }
+    setCriandoDep(false)
+  }
+  async function excluirDepartamento(dep: Profissional) {
+    if (!confirm(`Excluir o departamento "${dep.nome_completo}"? As demandas dele serão perdidas.`)) return
+    try {
+      const res = await fetch(`/api/profissionais/${dep.id}`, { method: 'DELETE' })
+      if (res.ok) { toast.success('Departamento excluído'); carregarProfissionais() } else toast.error('Erro ao excluir')
+    } catch { toast.error('Erro de conexão') }
+  }
+
+  // Enviar solicitação (dono escolhe o remetente)
+  const [solDep, setSolDep] = useState('')
+  const [solRemetente, setSolRemetente] = useState('')
+  const [solMsg, setSolMsg] = useState('')
+  const [solPrio, setSolPrio] = useState('normal')
+  const [enviandoSol, setEnviandoSol] = useState(false)
+  async function enviarSolicitacao() {
+    if (!solDep || !solRemetente || !solMsg.trim()) { toast.error('Preencha departamento, remetente e a solicitação'); return }
+    setEnviandoSol(true)
+    try {
+      const res = await fetch('/api/solicitacoes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ departamento_id: solDep, solicitante_id: solRemetente, mensagem: solMsg.trim(), prioridade: solPrio }) })
+      if (res.ok) { toast.success('Solicitação enviada ao departamento!'); setSolMsg(''); setSolPrio('normal'); carregarProfissionais() }
+      else { const d = await res.json().catch(() => ({})); toast.error(d.error || 'Erro ao enviar') }
+    } catch { toast.error('Erro de conexão') }
+    setEnviandoSol(false)
+  }
 
   // Aprovar autocadastro público: marca como aprovado E ativa em uma tacada só.
   async function aprovarCadastro(prof: Profissional) {
@@ -963,7 +1005,7 @@ ${montarContratoHTML()}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
                 <div>
                   <h2 style={{ color: '#1a1a1a', fontSize: '20px', fontWeight: 700, margin: 0 }}>Lista de Profissionais</h2>
-                  <p style={{ color: '#767069', fontSize: '13px', margin: '4px 0 0' }}>{profissionais.filter(p => p.ativo).length} ativos</p>
+                  <p style={{ color: '#767069', fontSize: '13px', margin: '4px 0 0' }}>{profissionais.filter(p => p.ativo && !p.is_departamento).length} ativos</p>
                 </div>
                 <button onClick={() => { setSecao('cadastrar'); setEditando(null); setForm({ ...FORM_INITIAL }) }}
                   style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'linear-gradient(135deg, #5b4fcf, #f43f8e)', color: 'white', border: 'none', borderRadius: '8px', padding: '9px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
@@ -977,35 +1019,57 @@ ${montarContratoHTML()}
                   style={{ width: '100%', background: '#ffffff', border: '1px solid #e8e6e0', borderRadius: '8px', padding: '9px 12px 9px 36px', fontSize: '13px', color: '#1a1a1a', outline: 'none' }} />
               </div>
 
-              {/* ── DEPARTAMENTOS VIRTUAIS (fixos no topo) ── */}
-              {!loading && departamentos.length > 0 && (
+              {/* ── DEPARTAMENTOS (setores internos, não são profissionais) ── */}
+              {!loading && (
                 <div style={{ marginBottom: '16px' }}>
-                  <p style={{ fontSize: '10px', color: '#6b6860', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, marginBottom: '8px' }}>Departamentos</p>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '8px' }}>
-                    {departamentos.map(d => {
-                      const cor = d.departamento_cor || '#5b4fcf'
-                      const icone = d.nome_completo === 'ADMINISTRATIVO' ? '🗂️' : d.nome_completo === 'FINANCEIRO' ? '💰' : d.nome_completo === 'RECEPÇÃO' ? '🛎️' : '🏢'
-                      const temPend = (d.pendencias_abertas || 0) > 0
-                      return (
-                        <div key={d.id}
-                          style={{ background: temPend ? '#fff0f0' : '#ffffff', border: `1px solid ${temPend ? '#7f1d1d' : cor + '40'}`, borderRadius: '10px', padding: '12px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', transition: 'all 0.2s' }}
-                          onClick={() => { try { sessionStorage.setItem('nodri_prof_' + d.id, JSON.stringify(d)) } catch(_){} router.push(`/salon/profissionais/${d.id}`) }}
-                          onMouseEnter={e => { e.currentTarget.style.borderColor = temPend ? '#ef4444' : cor; e.currentTarget.style.boxShadow = `0 0 0 2px ${temPend ? '#ef444420' : cor + '20'}` }}
-                          onMouseLeave={e => { e.currentTarget.style.borderColor = temPend ? '#7f1d1d' : cor + '40'; e.currentTarget.style.boxShadow = 'none' }}>
-                          <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: cor + '20', border: `1px solid ${cor}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>
-                            {icone}
-                          </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ color: '#1a1a1a', fontWeight: 700, fontSize: '12px' }}>{d.nome_completo}</div>
-                            {temPend
-                              ? <div style={{ color: '#ef4444', fontSize: '10px', marginTop: '2px', fontWeight: 600 }}>⚠ {d.pendencias_abertas} pendência{d.pendencias_abertas! > 1 ? 's' : ''}</div>
-                              : <div style={{ color: '#6b6860', fontSize: '10px', marginTop: '2px' }}>Sem pendências</div>
-                            }
-                          </div>
-                        </div>
-                      )
-                    })}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <p style={{ fontSize: '10px', color: '#6b6860', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, margin: 0 }}>Departamentos</p>
+                    <button onClick={() => setNovoDep(v => !v)} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#f0eefb', color: '#5b4fcf', border: '1px solid #d9d3f5', borderRadius: 8, padding: '4px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                      <Plus size={12} /> Novo departamento
+                    </button>
                   </div>
+
+                  {novoDep && (
+                    <div style={{ background: '#faf9ff', border: '1px solid #d9d3f5', borderRadius: 10, padding: 12, marginBottom: 10, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                      <input value={novoDepNome} onChange={e => setNovoDepNome(e.target.value)} placeholder="Nome do setor (ex: MARKETING)" autoFocus
+                        style={{ flex: 1, minWidth: 180, border: '1px solid #e0ddd8', borderRadius: 8, padding: '8px 10px', fontSize: 13, outline: 'none' }} />
+                      <input type="color" value={novoDepCor} onChange={e => setNovoDepCor(e.target.value)} title="Cor do setor"
+                        style={{ width: 38, height: 34, border: '1px solid #e0ddd8', borderRadius: 8, padding: 2, cursor: 'pointer' }} />
+                      <button disabled={criandoDep} onClick={criarDepartamento} style={{ background: '#5b4fcf', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer', opacity: criandoDep ? 0.6 : 1 }}>{criandoDep ? 'Criando...' : 'Criar'}</button>
+                      <button onClick={() => setNovoDep(false)} style={{ background: 'transparent', border: 'none', color: '#9ca3af', fontSize: 12, cursor: 'pointer' }}>Cancelar</button>
+                    </div>
+                  )}
+
+                  {departamentos.length > 0 && (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '8px' }}>
+                      {departamentos.map(d => {
+                        const cor = d.departamento_cor || '#5b4fcf'
+                        const icone = d.nome_completo === 'ADMINISTRATIVO' ? '🗂️' : d.nome_completo === 'FINANCEIRO' ? '💰' : d.nome_completo === 'RECEPÇÃO' ? '🛎️' : d.nome_completo === 'GERÊNCIA' ? '🏢' : '🏢'
+                        const temPend = (d.pendencias_abertas || 0) > 0
+                        return (
+                          <div key={d.id}
+                            style={{ background: temPend ? '#fff0f0' : '#ffffff', border: `1px solid ${temPend ? '#7f1d1d' : cor + '40'}`, borderRadius: '10px', padding: '12px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', transition: 'all 0.2s' }}
+                            onClick={() => router.push(`/salon/departamentos/${d.id}`)}
+                            onMouseEnter={e => { e.currentTarget.style.borderColor = temPend ? '#ef4444' : cor; e.currentTarget.style.boxShadow = `0 0 0 2px ${temPend ? '#ef444420' : cor + '20'}` }}
+                            onMouseLeave={e => { e.currentTarget.style.borderColor = temPend ? '#7f1d1d' : cor + '40'; e.currentTarget.style.boxShadow = 'none' }}>
+                            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: cor + '20', border: `1px solid ${cor}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>
+                              {icone}
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ color: '#1a1a1a', fontWeight: 700, fontSize: '12px' }}>{d.nome_completo}</div>
+                              {temPend
+                                ? <div style={{ color: '#ef4444', fontSize: '10px', marginTop: '2px', fontWeight: 600 }}>⚠ {d.pendencias_abertas} pendência{d.pendencias_abertas! > 1 ? 's' : ''}</div>
+                                : <div style={{ color: '#6b6860', fontSize: '10px', marginTop: '2px' }}>Sem pendências</div>
+                              }
+                            </div>
+                            <button onClick={e => { e.stopPropagation(); excluirDepartamento(d) }} title="Excluir setor" style={{ background: 'transparent', border: 'none', color: '#cbd5e1', cursor: 'pointer', padding: 2 }}>
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
                   <div style={{ borderBottom: '1px solid #e8e6e0', margin: '16px 0 8px' }}/>
                   <p style={{ fontSize: '10px', color: '#6b6860', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, marginBottom: '8px' }}>Profissionais</p>
                 </div>
@@ -1115,6 +1179,52 @@ ${montarContratoHTML()}
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── SOLICITAÇÃO (dono envia em nome de um profissional) ── */}
+          {secao === 'solicitacao' && (
+            <div>
+              <h2 style={{ color: '#1a1a1a', fontSize: '20px', fontWeight: 700, margin: 0 }}>Solicitação a um departamento</h2>
+              <p style={{ color: '#767069', fontSize: '13px', margin: '4px 0 20px' }}>Envie um pedido para um setor. Ele entra como demanda com o nome do solicitante e, ao ser resolvido, o solicitante recebe a notificação.</p>
+
+              {departamentos.length === 0 ? (
+                <div style={{ background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 12, padding: 16, color: '#92400e', fontSize: 13 }}>
+                  Você ainda não tem departamentos. Crie um em <strong>Lista de Profissionais → Novo departamento</strong> primeiro.
+                </div>
+              ) : (
+                <div style={{ maxWidth: 560, background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 18, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <div>
+                    <label style={{ fontSize: 11, color: '#6b6860', fontWeight: 700, display: 'block', marginBottom: 4 }}>Departamento *</label>
+                    <select value={solDep} onChange={e => setSolDep(e.target.value)} style={{ width: '100%', border: '1px solid #e0ddd8', borderRadius: 8, padding: '9px 10px', fontSize: 13 }}>
+                      <option value="">Selecione o setor...</option>
+                      {departamentos.map(d => <option key={d.id} value={d.id}>{d.nome_completo}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 11, color: '#6b6860', fontWeight: 700, display: 'block', marginBottom: 4 }}>Solicitante (quem está pedindo) *</label>
+                    <select value={solRemetente} onChange={e => setSolRemetente(e.target.value)} style={{ width: '100%', border: '1px solid #e0ddd8', borderRadius: 8, padding: '9px 10px', fontSize: 13 }}>
+                      <option value="">Selecione o profissional...</option>
+                      {profissionais.filter(p => p.ativo && !p.is_departamento).map(p => <option key={p.id} value={p.id}>{p.apelido || p.nome_completo}{p.cargo ? ` — ${p.cargo}` : ''}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 11, color: '#6b6860', fontWeight: 700, display: 'block', marginBottom: 4 }}>Solicitação *</label>
+                    <textarea value={solMsg} onChange={e => setSolMsg(e.target.value)} rows={3} placeholder="Descreva o que está sendo solicitado..." style={{ width: '100%', border: '1px solid #e0ddd8', borderRadius: 8, padding: '9px 10px', fontSize: 13, outline: 'none', resize: 'none' }} />
+                  </div>
+                  <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <label style={{ fontSize: 12, color: '#374151', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                      <input type="radio" checked={solPrio === 'normal'} onChange={() => setSolPrio('normal')} /> Normal
+                    </label>
+                    <label style={{ fontSize: 12, color: '#b91c1c', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontWeight: 700 }}>
+                      <input type="radio" checked={solPrio === 'urgente'} onChange={() => setSolPrio('urgente')} /> Urgente
+                    </label>
+                    <button disabled={enviandoSol} onClick={enviarSolicitacao} style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 6, background: 'linear-gradient(135deg,#7c3aed,#5b4fcf)', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: enviandoSol ? 0.6 : 1 }}>
+                      <Send size={14} /> {enviandoSol ? 'Enviando...' : 'Enviar solicitação'}
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
