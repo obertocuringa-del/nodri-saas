@@ -2326,6 +2326,9 @@ function DemandasProfissional({ profId, souProf }: { profId: string; souProf: bo
   const [aberto, setAberto] = useState<Set<string>>(new Set())     // itens expandidos
   const [respId, setRespId] = useState<string | null>(null)         // demanda recebida sendo respondida
   const [respTxt, setRespTxt] = useState('')
+  const [mostrarSolic, setMostrarSolic] = useState(false)           // form de nova solicitação (recolhido)
+  const [mostrarAtrib, setMostrarAtrib] = useState(false)           // form de atribuir (dono, recolhido)
+  const [mostrarHist, setMostrarHist] = useState(false)             // histórico (recolhido por padrão)
   // Dono atribui uma demanda diretamente a este profissional
   const [atribMsg, setAtribMsg] = useState('')
   const [atribPrio, setAtribPrio] = useState('normal')
@@ -2391,32 +2394,54 @@ function DemandasProfissional({ profId, souProf }: { profId: string; souProf: bo
 
   if (carregando) return <div style={{ padding: 40, textAlign: 'center', color: '#9ca3af' }}><Loader2 className="animate-spin" style={{ display: 'inline' }} /></div>
 
+  const pendentes = recebidas.filter(d => !d.resolvido)   // o que chegou e falta responder
+  const pillBase = { display: 'inline-flex', alignItems: 'center', gap: 6, border: '1px solid #d9d3f5', borderRadius: 999, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' } as const
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {/* KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
-        <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 16 }}>
-          <div style={{ fontSize: 12, color: '#6b6860', fontWeight: 700 }}>Demandas enviadas</div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 4 }}>
-            <span style={{ fontSize: 28, fontWeight: 800, color: '#5b4fcf' }}>{enviadas.length}</span>
-            <span style={{ fontSize: 12, color: '#6b6860' }}>{envResolv} resolvidas · {pctEnv}%</span>
-          </div>
-          <Barra pct={pctEnv} cor="#5b4fcf" />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+      {/* ── CHEGOU PRA VOCÊ: demandas recebidas em aberto, com Responder à vista ── */}
+      <div>
+        <div style={{ fontSize: 14, fontWeight: 800, color: '#1a1a1a', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
+          📥 Chegou pra você
+          {pendentes.length > 0 && <span style={{ background: '#f59e0b', color: '#fff', fontSize: 11, fontWeight: 800, borderRadius: 999, padding: '2px 10px' }}>{pendentes.length} pendente{pendentes.length > 1 ? 's' : ''}</span>}
         </div>
-        <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 16 }}>
-          <div style={{ fontSize: 12, color: '#6b6860', fontWeight: 700 }}>Demandas recebidas</div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 4 }}>
-            <span style={{ fontSize: 28, fontWeight: 800, color: '#0ea5e9' }}>{recebidas.length}</span>
-            <span style={{ fontSize: 12, color: '#6b6860' }}>{recResolv} resolvidas · {pctRec}%</span>
+        {pendentes.length === 0 ? (
+          <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 14, padding: 20, textAlign: 'center', color: '#047857', fontSize: 14, fontWeight: 600 }}>✓ Tudo em dia! Nenhuma demanda esperando resposta.</div>
+        ) : pendentes.map(d => (
+          <div key={d.id} style={{ background: '#fff', border: `1px solid ${d.prioridade === 'urgente' ? '#fecaca' : '#fde68a'}`, borderLeft: `5px solid ${d.prioridade === 'urgente' ? '#ef4444' : '#f59e0b'}`, borderRadius: 12, padding: 16, marginBottom: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+              {d.solicitante_nome && <span style={{ fontSize: 12, fontWeight: 700, color: '#0ea5e9' }}>👤 {d.solicitante_nome}</span>}
+              {d.prioridade === 'urgente' && <span style={{ fontSize: 10, fontWeight: 800, color: '#b91c1c', background: '#fef2f2', padding: '2px 8px', borderRadius: 999 }}>URGENTE</span>}
+              <span style={{ marginLeft: 'auto', fontSize: 10, color: '#9ca3af' }}>{new Date(d.criado_em).toLocaleDateString('pt-BR')}</span>
+            </div>
+            <p style={{ fontSize: 15, color: '#1a1a1a', margin: 0, whiteSpace: 'pre-wrap', lineHeight: 1.4 }}>{d.mensagem}</p>
+            {respId === d.id ? (
+              <div style={{ marginTop: 12 }}>
+                <textarea value={respTxt} onChange={e => setRespTxt(e.target.value)} rows={2} autoFocus placeholder="Escreva uma resposta (opcional) — vai na notificação de quem pediu" style={{ width: '100%', border: '1px solid #c9c4f0', borderRadius: 8, padding: '9px 10px', fontSize: 13, outline: 'none', resize: 'none' }} />
+                <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                  <button onClick={() => responder(d)} style={{ background: '#16a34a', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>✓ Concluir</button>
+                  <button onClick={() => { setRespId(null); setRespTxt('') }} style={{ background: 'transparent', border: 'none', color: '#9ca3af', fontSize: 13, cursor: 'pointer' }}>Cancelar</button>
+                </div>
+              </div>
+            ) : (
+              <button onClick={() => { setRespId(d.id); setRespTxt('') }} style={{ marginTop: 12, width: '100%', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 10, padding: 11, fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>Responder / Concluir</button>
+            )}
           </div>
-          <Barra pct={pctRec} cor="#0ea5e9" />
-        </div>
+        ))}
       </div>
 
-      {/* Atribuir demanda a este profissional (só dono/gestão) */}
-      {!souProf && (
+      {/* ── AÇÕES (abrem os formulários; tela limpa) ── */}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        {!souProf && <button onClick={() => { setMostrarAtrib(v => !v); setMostrarSolic(false) }} style={{ ...pillBase, background: mostrarAtrib ? '#0ea5e9' : '#f0f9ff', color: mostrarAtrib ? '#fff' : '#0369a1', borderColor: '#bae6fd' }}>＋ Atribuir demanda</button>}
+        {deps.length > 0 && <button onClick={() => { setMostrarSolic(v => !v); setMostrarAtrib(false) }} style={{ ...pillBase, background: mostrarSolic ? '#5b4fcf' : '#f0eefb', color: mostrarSolic ? '#fff' : '#5b4fcf' }}>＋ Nova solicitação</button>}
+        <button onClick={() => setMostrarHist(v => !v)} style={{ ...pillBase, background: mostrarHist ? '#374151' : '#f3f4f6', color: mostrarHist ? '#fff' : '#374151', borderColor: '#e5e7eb' }}>{mostrarHist ? 'Ocultar histórico' : `Ver histórico (${enviadas.length + recebidas.length})`}</button>
+      </div>
+
+      {/* Atribuir demanda (só dono/gestão) — recolhido */}
+      {!souProf && mostrarAtrib && (
         <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 14, padding: 16 }}>
-          <div style={{ fontSize: 13, fontWeight: 800, color: '#0369a1', marginBottom: 10 }}>➤ Atribuir demanda a este profissional</div>
+          <div style={{ fontSize: 13, fontWeight: 800, color: '#0369a1', marginBottom: 10 }}>Atribuir demanda a este profissional</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <textarea value={atribMsg} onChange={e => setAtribMsg(e.target.value)} rows={2} placeholder="Descreva a tarefa/pendência para o profissional..." style={{ border: '1px solid #e0ddd8', borderRadius: 8, padding: '9px 10px', fontSize: 13, outline: 'none', resize: 'none' }} />
             <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -2428,10 +2453,10 @@ function DemandasProfissional({ profId, souProf }: { profId: string; souProf: bo
         </div>
       )}
 
-      {/* Nova solicitação */}
-      {deps.length > 0 && (
+      {/* Nova solicitação — recolhido */}
+      {mostrarSolic && deps.length > 0 && (
         <div style={{ background: '#faf9ff', border: '1px solid #d9d3f5', borderRadius: 14, padding: 16 }}>
-          <div style={{ fontSize: 13, fontWeight: 800, color: '#5b4fcf', marginBottom: 10 }}>➤ Nova solicitação a um departamento</div>
+          <div style={{ fontSize: 13, fontWeight: 800, color: '#5b4fcf', marginBottom: 10 }}>Nova solicitação a um departamento</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <select value={dep} onChange={e => setDep(e.target.value)} style={{ border: '1px solid #e0ddd8', borderRadius: 8, padding: '9px 10px', fontSize: 13 }}>
               <option value="">Selecione o setor...</option>
@@ -2447,67 +2472,81 @@ function DemandasProfissional({ profId, souProf }: { profId: string; souProf: bo
         </div>
       )}
 
-      {/* Lista de enviadas — expansível */}
-      <div>
-        <div style={{ fontSize: 12, fontWeight: 800, color: '#374151', marginBottom: 8, textTransform: 'uppercase', letterSpacing: .4 }}>Enviadas ({enviadas.length})</div>
-        {enviadas.length === 0 ? <p style={{ fontSize: 13, color: '#9ca3af' }}>Nenhuma solicitação enviada ainda.</p> : enviadas.map(d => {
-          const exp = aberto.has(d.id)
-          return (
-            <div key={d.id} style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 10, marginBottom: 8, overflow: 'hidden' }}>
-              <div onClick={() => toggle(d.id)} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', padding: 12, cursor: 'pointer' }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: '#5b4fcf' }}>→ {nomeDep(d.profissional_id)}</span>
-                {d.prioridade === 'urgente' && !d.resolvido && <span style={{ fontSize: 9, fontWeight: 800, color: '#b91c1c', background: '#fef2f2', padding: '1px 7px', borderRadius: 999 }}>URGENTE</span>}
-                <span style={{ fontSize: 9, fontWeight: 800, padding: '1px 7px', borderRadius: 999, background: d.resolvido ? '#ecfdf5' : '#fffbeb', color: d.resolvido ? '#047857' : '#92400e' }}>{d.resolvido ? 'RESOLVIDA' : 'ABERTA'}</span>
-                {!exp && <span style={{ fontSize: 12, color: '#6b6860', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.mensagem}</span>}
-                <span style={{ fontSize: 10, color: '#9ca3af', marginLeft: exp ? 'auto' : 0 }}>{new Date(d.criado_em).toLocaleDateString('pt-BR')}</span>
-                <span style={{ color: '#9ca3af', fontSize: 11, transition: 'transform .15s', transform: exp ? 'rotate(180deg)' : 'none' }}>▼</span>
+      {/* ── HISTÓRICO — recolhido por padrão ── */}
+      {mostrarHist && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, borderTop: '1px dashed #e5e7eb', paddingTop: 14 }}>
+          {/* KPIs */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
+            <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 14 }}>
+              <div style={{ fontSize: 12, color: '#6b6860', fontWeight: 700 }}>Enviadas</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 4 }}>
+                <span style={{ fontSize: 24, fontWeight: 800, color: '#5b4fcf' }}>{enviadas.length}</span>
+                <span style={{ fontSize: 12, color: '#6b6860' }}>{envResolv} resolvidas · {pctEnv}%</span>
               </div>
-              {exp && (
-                <div style={{ padding: '0 12px 12px' }}>
-                  <p style={{ fontSize: 13, color: '#1a1a1a', margin: 0, whiteSpace: 'pre-wrap' }}>{d.mensagem}</p>
-                  {d.resposta && <p style={{ fontSize: 12, color: '#047857', margin: '8px 0 0', background: '#f0fdf4', padding: '6px 10px', borderRadius: 8 }}>💬 {d.resposta}</p>}
-                </div>
-              )}
+              <Barra pct={pctEnv} cor="#5b4fcf" />
             </div>
-          )
-        })}
-      </div>
-
-      {/* Lista de recebidas — expansível + responder */}
-      {recebidas.length > 0 && (
-        <div>
-          <div style={{ fontSize: 12, fontWeight: 800, color: '#374151', marginBottom: 8, textTransform: 'uppercase', letterSpacing: .4 }}>Recebidas ({recebidas.length})</div>
-          {recebidas.map(d => {
-            const exp = aberto.has(d.id)
-            return (
-              <div key={d.id} style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 10, marginBottom: 8, overflow: 'hidden' }}>
-                <div onClick={() => toggle(d.id)} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', padding: 12, cursor: 'pointer' }}>
-                  {d.solicitante_nome && <span style={{ fontSize: 11, fontWeight: 700, color: '#0ea5e9' }}>👤 {d.solicitante_nome}</span>}
-                  <span style={{ fontSize: 9, fontWeight: 800, padding: '1px 7px', borderRadius: 999, background: d.resolvido ? '#ecfdf5' : '#fffbeb', color: d.resolvido ? '#047857' : '#92400e' }}>{d.resolvido ? 'RESOLVIDA' : 'ABERTA'}</span>
-                  {!exp && <span style={{ fontSize: 12, color: '#6b6860', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.mensagem}</span>}
-                  <span style={{ fontSize: 10, color: '#9ca3af', marginLeft: exp ? 'auto' : 0 }}>{new Date(d.criado_em).toLocaleDateString('pt-BR')}</span>
-                  <span style={{ color: '#9ca3af', fontSize: 11, transition: 'transform .15s', transform: exp ? 'rotate(180deg)' : 'none' }}>▼</span>
-                </div>
-                {exp && (
-                  <div style={{ padding: '0 12px 12px' }}>
-                    <p style={{ fontSize: 13, color: '#1a1a1a', margin: 0, whiteSpace: 'pre-wrap' }}>{d.mensagem}</p>
-                    {d.resposta && <p style={{ fontSize: 12, color: '#047857', margin: '8px 0 0', background: '#f0fdf4', padding: '6px 10px', borderRadius: 8 }}>💬 {d.resposta}</p>}
-                    {!d.resolvido && (respId === d.id ? (
-                      <div style={{ marginTop: 10 }}>
-                        <textarea value={respTxt} onChange={e => setRespTxt(e.target.value)} rows={2} autoFocus placeholder="Resposta (opcional) — vai na notificação de quem pediu" style={{ width: '100%', border: '1px solid #c9c4f0', borderRadius: 8, padding: '8px 10px', fontSize: 13, outline: 'none', resize: 'none' }} />
-                        <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-                          <button onClick={() => responder(d)} style={{ background: '#16a34a', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>✓ Concluir</button>
-                          <button onClick={() => { setRespId(null); setRespTxt('') }} style={{ background: 'transparent', border: 'none', color: '#9ca3af', fontSize: 12, cursor: 'pointer' }}>Cancelar</button>
-                        </div>
-                      </div>
-                    ) : (
-                      <button onClick={() => { setRespId(d.id); setRespTxt('') }} style={{ marginTop: 10, display: 'inline-flex', alignItems: 'center', gap: 5, background: '#16a34a', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Responder / Concluir</button>
-                    ))}
-                  </div>
-                )}
+            <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 14 }}>
+              <div style={{ fontSize: 12, color: '#6b6860', fontWeight: 700 }}>Recebidas</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 4 }}>
+                <span style={{ fontSize: 24, fontWeight: 800, color: '#0ea5e9' }}>{recebidas.length}</span>
+                <span style={{ fontSize: 12, color: '#6b6860' }}>{recResolv} resolvidas · {pctRec}%</span>
               </div>
-            )
-          })}
+              <Barra pct={pctRec} cor="#0ea5e9" />
+            </div>
+          </div>
+
+          {/* Enviadas — expansível */}
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 800, color: '#374151', marginBottom: 8, textTransform: 'uppercase', letterSpacing: .4 }}>Enviadas ({enviadas.length})</div>
+            {enviadas.length === 0 ? <p style={{ fontSize: 13, color: '#9ca3af' }}>Nenhuma solicitação enviada ainda.</p> : enviadas.map(d => {
+              const exp = aberto.has(d.id)
+              return (
+                <div key={d.id} style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 10, marginBottom: 8, overflow: 'hidden' }}>
+                  <div onClick={() => toggle(d.id)} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', padding: 12, cursor: 'pointer' }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: '#5b4fcf' }}>→ {nomeDep(d.profissional_id)}</span>
+                    {d.prioridade === 'urgente' && !d.resolvido && <span style={{ fontSize: 9, fontWeight: 800, color: '#b91c1c', background: '#fef2f2', padding: '1px 7px', borderRadius: 999 }}>URGENTE</span>}
+                    <span style={{ fontSize: 9, fontWeight: 800, padding: '1px 7px', borderRadius: 999, background: d.resolvido ? '#ecfdf5' : '#fffbeb', color: d.resolvido ? '#047857' : '#92400e' }}>{d.resolvido ? 'RESOLVIDA' : 'ABERTA'}</span>
+                    {!exp && <span style={{ fontSize: 12, color: '#6b6860', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.mensagem}</span>}
+                    <span style={{ fontSize: 10, color: '#9ca3af', marginLeft: exp ? 'auto' : 0 }}>{new Date(d.criado_em).toLocaleDateString('pt-BR')}</span>
+                    <span style={{ color: '#9ca3af', fontSize: 11, transition: 'transform .15s', transform: exp ? 'rotate(180deg)' : 'none' }}>▼</span>
+                  </div>
+                  {exp && (
+                    <div style={{ padding: '0 12px 12px' }}>
+                      <p style={{ fontSize: 13, color: '#1a1a1a', margin: 0, whiteSpace: 'pre-wrap' }}>{d.mensagem}</p>
+                      {d.resposta && <p style={{ fontSize: 12, color: '#047857', margin: '8px 0 0', background: '#f0fdf4', padding: '6px 10px', borderRadius: 8 }}>💬 {d.resposta}</p>}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Recebidas — expansível */}
+          {recebidas.length > 0 && (
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 800, color: '#374151', marginBottom: 8, textTransform: 'uppercase', letterSpacing: .4 }}>Recebidas ({recebidas.length})</div>
+              {recebidas.map(d => {
+                const exp = aberto.has(d.id)
+                return (
+                  <div key={d.id} style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 10, marginBottom: 8, overflow: 'hidden' }}>
+                    <div onClick={() => toggle(d.id)} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', padding: 12, cursor: 'pointer' }}>
+                      {d.solicitante_nome && <span style={{ fontSize: 11, fontWeight: 700, color: '#0ea5e9' }}>👤 {d.solicitante_nome}</span>}
+                      <span style={{ fontSize: 9, fontWeight: 800, padding: '1px 7px', borderRadius: 999, background: d.resolvido ? '#ecfdf5' : '#fffbeb', color: d.resolvido ? '#047857' : '#92400e' }}>{d.resolvido ? 'RESOLVIDA' : 'ABERTA'}</span>
+                      {!exp && <span style={{ fontSize: 12, color: '#6b6860', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.mensagem}</span>}
+                      <span style={{ fontSize: 10, color: '#9ca3af', marginLeft: exp ? 'auto' : 0 }}>{new Date(d.criado_em).toLocaleDateString('pt-BR')}</span>
+                      <span style={{ color: '#9ca3af', fontSize: 11, transition: 'transform .15s', transform: exp ? 'rotate(180deg)' : 'none' }}>▼</span>
+                    </div>
+                    {exp && (
+                      <div style={{ padding: '0 12px 12px' }}>
+                        <p style={{ fontSize: 13, color: '#1a1a1a', margin: 0, whiteSpace: 'pre-wrap' }}>{d.mensagem}</p>
+                        {d.resposta && <p style={{ fontSize: 12, color: '#047857', margin: '8px 0 0', background: '#f0fdf4', padding: '6px 10px', borderRadius: 8 }}>💬 {d.resposta}</p>}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>
