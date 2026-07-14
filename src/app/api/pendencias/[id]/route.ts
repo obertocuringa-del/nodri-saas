@@ -30,19 +30,24 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     const body = await req.json()
     const ehTransferencia = body.profissional_id !== undefined
 
-    // Sub-usuário: comum não altera nada; Modo Caixa só pode RESOLVER (executar), nunca transferir
+    // Estado atual (para saber o solicitante/dono e registrar histórico de transferência)
     const sess = await getSessao()
-    if (sess?.role === 'sub' || sess?.role === 'profissional') {
-      const soResolver = sessaoModoCaixa(sess) && body.resolvido === true && body.mensagem === undefined && body.data_limite === undefined && !ehTransferencia
-      if (!soResolver) return NextResponse.json({ error: 'Modo Caixa: você pode marcar como resolvida, mas não editar, transferir ou excluir.' }, { status: 403 })
-    }
-
-    // Estado atual (para saber o solicitante e registrar histórico de transferência)
     const { data: atual } = await supabaseAdmin
       .from('pendencias_profissionais')
       .select('*')
       .eq('id', params.id).eq('salao_id', salaoId).maybeSingle()
     if (!atual) return NextResponse.json({ error: 'Pendência não encontrada' }, { status: 404 })
+
+    // Só RESPONDER/CONCLUIR (nunca editar texto/data/prioridade nem transferir)
+    const soResponde = !ehTransferencia && body.mensagem === undefined && body.data_limite === undefined && body.prioridade === undefined
+    if (sess?.role === 'profissional') {
+      // O profissional pode responder/concluir uma demanda que é DELE (recebida)
+      const dono = !!sess.profissionalId && (atual as any).profissional_id === sess.profissionalId
+      if (!(dono && soResponde)) return NextResponse.json({ error: 'Você só pode responder ou concluir demandas atribuídas a você.' }, { status: 403 })
+    } else if (sess?.role === 'sub') {
+      // Sub comum não altera; Modo Caixa pode resolver/responder (executar), nunca transferir/editar
+      if (!(sessaoModoCaixa(sess) && soResponde)) return NextResponse.json({ error: 'Modo Caixa: você pode marcar como resolvida/responder, mas não editar, transferir ou excluir.' }, { status: 403 })
+    }
 
     const updates: Record<string, any> = {}
 

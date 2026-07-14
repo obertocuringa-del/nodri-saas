@@ -2323,6 +2323,10 @@ function DemandasProfissional({ profId, souProf }: { profId: string; souProf: bo
   const [msg, setMsg] = useState('')
   const [prio, setPrio] = useState('normal')
   const [enviando, setEnviando] = useState(false)
+  const [aberto, setAberto] = useState<Set<string>>(new Set())     // itens expandidos
+  const [respId, setRespId] = useState<string | null>(null)         // demanda recebida sendo respondida
+  const [respTxt, setRespTxt] = useState('')
+  const toggle = (id: string) => setAberto(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
 
   async function carregar() {
     try {
@@ -2338,6 +2342,15 @@ function DemandasProfissional({ profId, souProf }: { profId: string; souProf: bo
     setCarregando(false)
   }
   useEffect(() => { carregar() }, [profId])
+
+  // Responder/concluir uma demanda recebida (o servidor valida que é do profissional)
+  async function responder(d: any) {
+    try {
+      const res = await fetch(`/api/pendencias/${d.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ resolvido: true, resposta: respTxt.trim() || undefined }) })
+      if (res.ok) { const at = await res.json(); setRecebidas(prev => prev.map(x => x.id === d.id ? { ...x, ...at } : x)); setRespId(null); setRespTxt(''); toast.success(d.solicitante_id ? 'Concluída! O solicitante foi avisado.' : 'Concluída!') }
+      else { const e = await res.json().catch(() => ({})); toast.error(e.error || 'Erro ao concluir') }
+    } catch { toast.error('Erro de conexão') }
+  }
 
   const envResolv = enviadas.filter(d => d.resolvido).length
   const recResolv = recebidas.filter(d => d.resolvido).length
@@ -2405,37 +2418,67 @@ function DemandasProfissional({ profId, souProf }: { profId: string; souProf: bo
         </div>
       )}
 
-      {/* Lista de enviadas */}
+      {/* Lista de enviadas — expansível */}
       <div>
         <div style={{ fontSize: 12, fontWeight: 800, color: '#374151', marginBottom: 8, textTransform: 'uppercase', letterSpacing: .4 }}>Enviadas ({enviadas.length})</div>
-        {enviadas.length === 0 ? <p style={{ fontSize: 13, color: '#9ca3af' }}>Nenhuma solicitação enviada ainda.</p> : enviadas.map(d => (
-          <div key={d.id} style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 10, padding: 12, marginBottom: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: '#5b4fcf' }}>→ {nomeDep(d.profissional_id)}</span>
-              {d.prioridade === 'urgente' && !d.resolvido && <span style={{ fontSize: 9, fontWeight: 800, color: '#b91c1c', background: '#fef2f2', padding: '1px 7px', borderRadius: 999 }}>URGENTE</span>}
-              <span style={{ fontSize: 9, fontWeight: 800, padding: '1px 7px', borderRadius: 999, background: d.resolvido ? '#ecfdf5' : '#fffbeb', color: d.resolvido ? '#047857' : '#92400e' }}>{d.resolvido ? 'RESOLVIDA' : 'ABERTA'}</span>
-              <span style={{ fontSize: 10, color: '#9ca3af', marginLeft: 'auto' }}>{new Date(d.criado_em).toLocaleDateString('pt-BR')}</span>
+        {enviadas.length === 0 ? <p style={{ fontSize: 13, color: '#9ca3af' }}>Nenhuma solicitação enviada ainda.</p> : enviadas.map(d => {
+          const exp = aberto.has(d.id)
+          return (
+            <div key={d.id} style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 10, marginBottom: 8, overflow: 'hidden' }}>
+              <div onClick={() => toggle(d.id)} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', padding: 12, cursor: 'pointer' }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#5b4fcf' }}>→ {nomeDep(d.profissional_id)}</span>
+                {d.prioridade === 'urgente' && !d.resolvido && <span style={{ fontSize: 9, fontWeight: 800, color: '#b91c1c', background: '#fef2f2', padding: '1px 7px', borderRadius: 999 }}>URGENTE</span>}
+                <span style={{ fontSize: 9, fontWeight: 800, padding: '1px 7px', borderRadius: 999, background: d.resolvido ? '#ecfdf5' : '#fffbeb', color: d.resolvido ? '#047857' : '#92400e' }}>{d.resolvido ? 'RESOLVIDA' : 'ABERTA'}</span>
+                {!exp && <span style={{ fontSize: 12, color: '#6b6860', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.mensagem}</span>}
+                <span style={{ fontSize: 10, color: '#9ca3af', marginLeft: exp ? 'auto' : 0 }}>{new Date(d.criado_em).toLocaleDateString('pt-BR')}</span>
+                <span style={{ color: '#9ca3af', fontSize: 11, transition: 'transform .15s', transform: exp ? 'rotate(180deg)' : 'none' }}>▼</span>
+              </div>
+              {exp && (
+                <div style={{ padding: '0 12px 12px' }}>
+                  <p style={{ fontSize: 13, color: '#1a1a1a', margin: 0, whiteSpace: 'pre-wrap' }}>{d.mensagem}</p>
+                  {d.resposta && <p style={{ fontSize: 12, color: '#047857', margin: '8px 0 0', background: '#f0fdf4', padding: '6px 10px', borderRadius: 8 }}>💬 {d.resposta}</p>}
+                </div>
+              )}
             </div>
-            <p style={{ fontSize: 13, color: '#1a1a1a', margin: 0, whiteSpace: 'pre-wrap' }}>{d.mensagem}</p>
-            {d.resposta && <p style={{ fontSize: 12, color: '#047857', margin: '6px 0 0', background: '#f0fdf4', padding: '5px 9px', borderRadius: 8 }}>💬 {d.resposta}</p>}
-          </div>
-        ))}
+          )
+        })}
       </div>
 
-      {/* Lista de recebidas */}
+      {/* Lista de recebidas — expansível + responder */}
       {recebidas.length > 0 && (
         <div>
           <div style={{ fontSize: 12, fontWeight: 800, color: '#374151', marginBottom: 8, textTransform: 'uppercase', letterSpacing: .4 }}>Recebidas ({recebidas.length})</div>
-          {recebidas.map(d => (
-            <div key={d.id} style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 10, padding: 12, marginBottom: 8 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
-                {d.solicitante_nome && <span style={{ fontSize: 11, fontWeight: 700, color: '#0ea5e9' }}>👤 {d.solicitante_nome}</span>}
-                <span style={{ fontSize: 9, fontWeight: 800, padding: '1px 7px', borderRadius: 999, background: d.resolvido ? '#ecfdf5' : '#fffbeb', color: d.resolvido ? '#047857' : '#92400e' }}>{d.resolvido ? 'RESOLVIDA' : 'ABERTA'}</span>
-                <span style={{ fontSize: 10, color: '#9ca3af', marginLeft: 'auto' }}>{new Date(d.criado_em).toLocaleDateString('pt-BR')}</span>
+          {recebidas.map(d => {
+            const exp = aberto.has(d.id)
+            return (
+              <div key={d.id} style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 10, marginBottom: 8, overflow: 'hidden' }}>
+                <div onClick={() => toggle(d.id)} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', padding: 12, cursor: 'pointer' }}>
+                  {d.solicitante_nome && <span style={{ fontSize: 11, fontWeight: 700, color: '#0ea5e9' }}>👤 {d.solicitante_nome}</span>}
+                  <span style={{ fontSize: 9, fontWeight: 800, padding: '1px 7px', borderRadius: 999, background: d.resolvido ? '#ecfdf5' : '#fffbeb', color: d.resolvido ? '#047857' : '#92400e' }}>{d.resolvido ? 'RESOLVIDA' : 'ABERTA'}</span>
+                  {!exp && <span style={{ fontSize: 12, color: '#6b6860', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.mensagem}</span>}
+                  <span style={{ fontSize: 10, color: '#9ca3af', marginLeft: exp ? 'auto' : 0 }}>{new Date(d.criado_em).toLocaleDateString('pt-BR')}</span>
+                  <span style={{ color: '#9ca3af', fontSize: 11, transition: 'transform .15s', transform: exp ? 'rotate(180deg)' : 'none' }}>▼</span>
+                </div>
+                {exp && (
+                  <div style={{ padding: '0 12px 12px' }}>
+                    <p style={{ fontSize: 13, color: '#1a1a1a', margin: 0, whiteSpace: 'pre-wrap' }}>{d.mensagem}</p>
+                    {d.resposta && <p style={{ fontSize: 12, color: '#047857', margin: '8px 0 0', background: '#f0fdf4', padding: '6px 10px', borderRadius: 8 }}>💬 {d.resposta}</p>}
+                    {!d.resolvido && (respId === d.id ? (
+                      <div style={{ marginTop: 10 }}>
+                        <textarea value={respTxt} onChange={e => setRespTxt(e.target.value)} rows={2} autoFocus placeholder="Resposta (opcional) — vai na notificação de quem pediu" style={{ width: '100%', border: '1px solid #c9c4f0', borderRadius: 8, padding: '8px 10px', fontSize: 13, outline: 'none', resize: 'none' }} />
+                        <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                          <button onClick={() => responder(d)} style={{ background: '#16a34a', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>✓ Concluir</button>
+                          <button onClick={() => { setRespId(null); setRespTxt('') }} style={{ background: 'transparent', border: 'none', color: '#9ca3af', fontSize: 12, cursor: 'pointer' }}>Cancelar</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button onClick={() => { setRespId(d.id); setRespTxt('') }} style={{ marginTop: 10, display: 'inline-flex', alignItems: 'center', gap: 5, background: '#16a34a', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Responder / Concluir</button>
+                    ))}
+                  </div>
+                )}
               </div>
-              <p style={{ fontSize: 13, color: '#1a1a1a', margin: 0, whiteSpace: 'pre-wrap' }}>{d.mensagem}</p>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>

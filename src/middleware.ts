@@ -95,8 +95,10 @@ export async function middleware(request: NextRequest) {
       const ehNotifPropria = pathname === '/api/salon/notificacoes' && request.method === 'DELETE'
       // EXCEÇÃO: a profissional pode ENVIAR uma solicitação para um departamento (a rota escopa pelo id dela)
       const ehSolicitacaoPropria = pathname === '/api/solicitacoes' && request.method === 'POST'
+      // EXCEÇÃO: a profissional pode RESPONDER/CONCLUIR uma demanda dela (a rota valida se é dona)
+      const ehResponderDemanda = pathname.startsWith('/api/pendencias/') && request.method === 'PUT'
       // SOMENTE LEITURA: nenhum método de escrita é permitido (GET/HEAD apenas), exceto as exceções acima
-      if (request.method !== 'GET' && request.method !== 'HEAD' && !ehIaPropria && !ehKitsPropria && !ehNotifPropria && !ehSolicitacaoPropria) return negar()
+      if (request.method !== 'GET' && request.method !== 'HEAD' && !ehIaPropria && !ehKitsPropria && !ehNotifPropria && !ehSolicitacaoPropria && !ehResponderDemanda) return negar()
       // Nunca pode listar todos os profissionais
       if (pathname === '/api/profissionais' || pathname === '/api/profissionais/') return negar()
       // Em /api/profissionais/<id>/... o id TEM que ser o dele
