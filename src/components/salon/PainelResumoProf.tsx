@@ -80,7 +80,7 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba, t
     { aba: 'avaliar', label: 'Avaliações', Ic: Star, ocult: 'avaliar' },
     { aba: 'ia', label: 'IA / Assistente', Ic: Sparkles },
     { aba: 'calendario_mkt', label: 'Calendário', Ic: CalendarRange },
-    { aba: 'cadastro', label: 'Pendências & Cadastro', Ic: ClipboardList },
+    { aba: 'cadastro', label: 'Cadastro', Ic: ClipboardList },
   ]
   const areasVis = AREAS.filter(a => (a.so === undefined || a.so) && (!a.ocult || !oc[a.ocult]))
 

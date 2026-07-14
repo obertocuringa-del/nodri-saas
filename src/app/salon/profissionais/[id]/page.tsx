@@ -3523,8 +3523,8 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
               🖨️ Imprimir
             </button>
           </div>
-          <div ref={refCadastro} className={form.is_departamento ? "space-y-6" : "grid grid-cols-1 lg:grid-cols-3 gap-6"}>
-            <div className={form.is_departamento ? "" : "lg:col-span-2 space-y-5"}>
+          <div ref={refCadastro} className={form.is_departamento || souProf ? "space-y-6" : "grid grid-cols-1 lg:grid-cols-3 gap-6"}>
+            <div className={form.is_departamento || souProf ? "space-y-5" : "lg:col-span-2 space-y-5"}>
               {/* Banner de departamento */}
               {form.is_departamento && (
                 <div className="rounded-2xl p-5 flex items-center gap-4" style={{ background: (form.departamento_cor || '#5b4fcf') + '15', border: `1px solid ${form.departamento_cor || '#5b4fcf'}40` }}>
@@ -3797,9 +3797,13 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                 </label>
               </div>}
             </div>
-            <div>
-              <PendenciasLateral profissionalId={id}/>
-            </div>
+            {/* Painel de pendências: só para o dono/gestão. O profissional resolve
+                pela área Solicitação → Recebidas (mesmos dados). */}
+            {!souProf && (
+              <div>
+                <PendenciasLateral profissionalId={id}/>
+              </div>
+            )}
           </div>
           </div>
         )}
