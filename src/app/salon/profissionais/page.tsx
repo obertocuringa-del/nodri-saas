@@ -247,6 +247,7 @@ export default function ProfissionaisPage() {
   const [cnpjEdits, setCnpjEdits] = useState<Record<string, { status?: string; obs?: string }>>({})
   const [cnpjSalvando, setCnpjSalvando] = useState<string | null>(null)
   const [aprovandoId, setAprovandoId] = useState<string | null>(null)
+  const [souDono, setSouDono] = useState(false)   // só o salão principal cria/exclui departamento
 
   // Criar departamento
   const [novoDep, setNovoDep] = useState(false)
@@ -632,7 +633,7 @@ ${montarContratoHTML()}
     carregarProfissionais()
   }
 
-  useEffect(() => { carregarProfissionais(); buscarLinkCadastro(); carregarServicos(); carregarSalao(); fetch('/api/salon/grid?chave=prof_categorias').then(r => r.ok ? r.json() : null).then(d => { if (d && Array.isArray(d.lista)) setCatsCustom(d.lista) }).catch(() => { }) }, [])
+  useEffect(() => { carregarProfissionais(); buscarLinkCadastro(); carregarServicos(); carregarSalao(); fetch('/api/auth/me').then(r => r.ok ? r.json() : null).then(d => setSouDono(d?.role === 'salon')).catch(() => { }); fetch('/api/salon/grid?chave=prof_categorias').then(r => r.ok ? r.json() : null).then(d => { if (d && Array.isArray(d.lista)) setCatsCustom(d.lista) }).catch(() => { }) }, [])
 
   async function carregarSalao() {
     try {
@@ -1039,9 +1040,11 @@ ${montarContratoHTML()}
                 <div style={{ marginBottom: '16px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                     <p style={{ fontSize: '10px', color: '#6b6860', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, margin: 0 }}>Departamentos</p>
-                    <button onClick={() => setNovoDep(v => !v)} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#f0eefb', color: '#5b4fcf', border: '1px solid #d9d3f5', borderRadius: 8, padding: '4px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
-                      <Plus size={12} /> Novo departamento
-                    </button>
+                    {souDono && (
+                      <button onClick={() => setNovoDep(v => !v)} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#f0eefb', color: '#5b4fcf', border: '1px solid #d9d3f5', borderRadius: 8, padding: '4px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                        <Plus size={12} /> Novo departamento
+                      </button>
+                    )}
                   </div>
 
                   {novoDep && (
@@ -1077,9 +1080,11 @@ ${montarContratoHTML()}
                                 : <div style={{ color: '#6b6860', fontSize: '10px', marginTop: '2px' }}>Sem pendências</div>
                               }
                             </div>
-                            <button onClick={e => { e.stopPropagation(); excluirDepartamento(d) }} title="Excluir setor" style={{ background: 'transparent', border: 'none', color: '#cbd5e1', cursor: 'pointer', padding: 2 }}>
-                              <Trash2 size={13} />
-                            </button>
+                            {souDono && (
+                              <button onClick={e => { e.stopPropagation(); excluirDepartamento(d) }} title="Excluir setor" style={{ background: 'transparent', border: 'none', color: '#cbd5e1', cursor: 'pointer', padding: 2 }}>
+                                <Trash2 size={13} />
+                              </button>
+                            )}
                           </div>
                         )
                       })}

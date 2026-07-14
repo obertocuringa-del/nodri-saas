@@ -23,6 +23,7 @@ export default function DepartamentoPage() {
   const [profs, setProfs] = useState<Prof[]>([])
   const [demandas, setDemandas] = useState<Demanda[]>([])
   const [loading, setLoading] = useState(true)
+  const [ehDono, setEhDono] = useState(false)   // só o salão principal exclui/transfere
 
   // Resolver com resposta
   const [respondendo, setRespondendo] = useState<string | null>(null)
@@ -33,14 +34,16 @@ export default function DepartamentoPage() {
 
   async function carregar() {
     try {
-      const [profList, pend] = await Promise.all([
+      const [profList, pend, me] = await Promise.all([
         fetch('/api/profissionais').then(r => r.ok ? r.json() : []),
         fetch(`/api/pendencias?profissional_id=${id}`).then(r => r.ok ? r.json() : []),
+        fetch('/api/auth/me').then(r => r.ok ? r.json() : null).catch(() => null),
       ])
       const lista: Prof[] = Array.isArray(profList) ? profList : []
       setProfs(lista)
       setDep(lista.find(p => p.id === id) || null)
       setDemandas(Array.isArray(pend) ? pend : [])
+      setEhDono(me?.role === 'salon')
     } catch { toast.error('Erro ao carregar') }
     setLoading(false)
   }
@@ -137,9 +140,9 @@ export default function DepartamentoPage() {
         ) : (
           <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
             {!d.resolvido && <button onClick={() => { setRespondendo(d.id); setRespostaTxt(''); setTransferindo(null) }} style={btn('#16a34a')}><Check size={13} /> Feito / Responder</button>}
-            {!d.resolvido && <button onClick={() => { setTransferindo(d.id); setDestino(''); setRespondendo(null) }} style={btn(cor)}><CornerUpRight size={13} /> Transferir</button>}
-            {d.resolvido && <button onClick={() => reabrir(d)} style={btnGhost()}>Reabrir</button>}
-            <button onClick={() => excluir(d)} style={{ ...btnGhost(), color: '#dc2626', marginLeft: 'auto' }}><Trash2 size={13} /></button>
+            {!d.resolvido && ehDono && <button onClick={() => { setTransferindo(d.id); setDestino(''); setRespondendo(null) }} style={btn(cor)}><CornerUpRight size={13} /> Transferir</button>}
+            {d.resolvido && ehDono && <button onClick={() => reabrir(d)} style={btnGhost()}>Reabrir</button>}
+            {ehDono && <button onClick={() => excluir(d)} style={{ ...btnGhost(), color: '#dc2626', marginLeft: 'auto' }}><Trash2 size={13} /></button>}
           </div>
         )}
       </div>
