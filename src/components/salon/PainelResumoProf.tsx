@@ -17,6 +17,8 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba, t
   const [fechadas, setFechadas] = useState<Set<string>>(new Set())
   const [meuId, setMeuId] = useState('')
   const [ehProf, setEhProf] = useState(false) // logado como profissional → mostra Sair
+  const [pendAbertas, setPendAbertas] = useState(0)     // demandas recebidas não resolvidas
+  const [compromissos2d, setCompromissos2d] = useState(0) // datas dos calendários faltando ≤ 2 dias
 
   useEffect(() => { try { setDark(localStorage.getItem('mp_dark') === '1') } catch { } }, [])
   useEffect(() => { try { localStorage.setItem('mp_dark', dark ? '1' : '0') } catch { } }, [dark])
@@ -46,6 +48,21 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba, t
         ])
         if (p) setProf(p)
         setNotifs(Array.isArray(no?.notificacoes) ? no.notificacoes : [])
+
+        // Alertas de piscar (igual à página inicial): demandas recebidas abertas + datas ≤ 2 dias
+        if (theId) {
+          fetch(`/api/pendencias?profissional_id=${theId}`).then(r => r.ok ? r.json() : []).then(d => {
+            setPendAbertas(Array.isArray(d) ? d.filter((x: any) => !x.resolvido).length : 0)
+          }).catch(() => { })
+        }
+        const hoje = new Date(); hoje.setHours(0, 0, 0, 0)
+        const proximos = (eventos: any[]): number => (Array.isArray(eventos) ? eventos : [])
+          .map((e: any) => { const [y, m, dd] = String(e.data).split('-').map(Number); return Math.round((new Date(y, m - 1, dd).getTime() - hoje.getTime()) / 86400000) })
+          .filter(dias => dias >= 0 && dias <= 2).length
+        Promise.all([
+          fetch('/api/salon/grid?chave=calendario').then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch('/api/salon/grid?chave=calendario_mkt').then(r => r.ok ? r.json() : null).catch(() => null),
+        ]).then(([cal, mkt]) => setCompromissos2d(proximos(cal?.eventos || []) + proximos(mkt?.eventos || [])))
       } catch { }
     })()
   }, [pid])
@@ -119,6 +136,8 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba, t
         .pr-root *{box-sizing:border-box}
         @keyframes prUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
         @keyframes prGlow{0%,100%{box-shadow:0 0 0 0 rgba(245,158,11,.55)}50%{box-shadow:0 0 0 12px rgba(245,158,11,0)}}
+        @keyframes prPulseRed{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.55)}50%{box-shadow:0 0 0 9px rgba(239,68,68,0)}}
+        @keyframes prPulseCyan{0%,100%{box-shadow:0 0 0 0 rgba(8,145,178,.5)}50%{box-shadow:0 0 0 9px rgba(8,145,178,0)}}
         .pr-anim{animation:prUp .5s cubic-bezier(.2,.7,.3,1) both}
         .pr-avatar{width:54px;height:54px;border-radius:50%;object-fit:cover;background:linear-gradient(135deg,var(--accent),#b89bff);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:20px;flex-shrink:0}
         .pr-bell{width:46px;height:46px;border-radius:14px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--accent);color:#fff}
@@ -183,13 +202,21 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba, t
         <div className="pr-anim" style={{ animationDelay: '.08s' }}>
           <h3 style={{ fontSize: 13, fontWeight: 700, margin: '2px 4px 12px', color: 'var(--txt2)', textTransform: 'uppercase', letterSpacing: '.5px' }}>Minhas áreas</h3>
           <div className="pr-areas">
-            {areasVis.map(a => (
-              <div key={a.aba} className="pr-area" onClick={() => irAba(a.aba)}>
-                <span className="pr-area-ic"><a.Ic size={20} /></span>
-                <span style={{ fontWeight: 700, fontSize: 14 }}>{a.label}</span>
-                <span className="pr-area-go"><ArrowRight size={16} /></span>
-              </div>
-            ))}
+            {areasVis.map(a => {
+              const alertaPend = a.aba === 'demandas' && pendAbertas > 0
+              const alertaCal = a.aba === 'calendario_mkt' && compromissos2d > 0
+              const anim = alertaPend ? 'prPulseRed 1.4s ease-in-out infinite' : alertaCal ? 'prPulseCyan 1.4s ease-in-out infinite' : undefined
+              const badge = alertaPend ? pendAbertas : alertaCal ? compromissos2d : 0
+              return (
+                <div key={a.aba} className="pr-area" onClick={() => irAba(a.aba)}
+                  style={{ position: 'relative', ...(anim ? { animation: anim, borderColor: alertaPend ? '#ef4444' : '#0891b2' } : {}) }}>
+                  <span className="pr-area-ic" style={alertaPend ? { background: '#fee2e2', color: '#dc2626' } : alertaCal ? { background: '#cffafe', color: '#0891b2' } : undefined}><a.Ic size={20} /></span>
+                  <span style={{ fontWeight: 700, fontSize: 14 }}>{a.label}</span>
+                  {badge > 0 && <span style={{ position: 'absolute', top: -8, right: -6, background: alertaPend ? '#dc2626' : '#0891b2', color: '#fff', fontSize: 10, fontWeight: 800, padding: '2px 8px', borderRadius: 99, boxShadow: '0 3px 10px rgba(0,0,0,.22)' }}>{alertaPend ? '⚠' : '🔔'} {badge}</span>}
+                  <span className="pr-area-go"><ArrowRight size={16} /></span>
+                </div>
+              )
+            })}
           </div>
         </div>
       )}
