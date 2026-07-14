@@ -15,11 +15,13 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba, t
   const [notifs, setNotifs] = useState<any[]>([])
   const [notifIdx, setNotifIdx] = useState(0)
   const [fechadas, setFechadas] = useState<Set<string>>(new Set())
+  const [meuId, setMeuId] = useState('')
   const [ehProf, setEhProf] = useState(false) // logado como profissional → mostra Sair
 
   useEffect(() => { try { setDark(localStorage.getItem('mp_dark') === '1') } catch { } }, [])
   useEffect(() => { try { localStorage.setItem('mp_dark', dark ? '1' : '0') } catch { } }, [dark])
-  // "Fechar" só esconde nesta sessão (volta a aparecer quando reabrir o perfil);
+  // "Fechar" persiste: aviso pessoal (alvo = este profissional) é apagado no
+  // servidor; aviso "todos" fica guardado no localStorage para não voltar ao recarregar.
   // "Já peguei" remove de vez (chama a API) — só faz sentido pro aviso de kit.
   const notifsVisiveis = notifs.filter(n => !fechadas.has(n.id))
   useEffect(() => { if (notifsVisiveis.length <= 1) return; const t = setInterval(() => setNotifIdx(i => (i + 1) % notifsVisiveis.length), 5000); return () => clearInterval(t) }, [notifsVisiveis.length])
@@ -32,6 +34,11 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba, t
         let theId = pid
         if (!theId) {
           theId = me?.profissionalId; if (me?.nome) setNomeP(me.nome)
+        }
+        if (theId) {
+          setMeuId(theId)
+          // Restaura as notificações que o profissional já fechou (persistem entre recargas)
+          try { const raw = localStorage.getItem('notif_fechadas_' + theId); if (raw) setFechadas(new Set(JSON.parse(raw))) } catch { }
         }
         const [p, no] = await Promise.all([
           profProp ? Promise.resolve(profProp) : (theId ? fetch(`/api/profissionais/${theId}`).then(r => r.ok ? r.json() : null).catch(() => null) : Promise.resolve(null)),
@@ -87,7 +94,18 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba, t
   const notifAtual = notifsVisiveis[notifIdx] || null
   const ehNotifKit = !!notifAtual?.texto?.includes('kits estão separados')
 
-  function fechar(id: string) { setFechadas(prev => new Set(prev).add(id)); setNotifIdx(0) }
+  function fechar(id: string) {
+    setFechadas(prev => {
+      const n = new Set(prev).add(id)
+      try { if (meuId) localStorage.setItem('notif_fechadas_' + meuId, JSON.stringify([...n])) } catch { }
+      return n
+    })
+    setNotifIdx(0)
+    // Se a notificação é dirigida a este profissional (ex.: solicitação resolvida),
+    // apaga no servidor para não voltar. Avisos "todos" ficam só no localStorage.
+    const n = notifs.find(x => x.id === id)
+    if (n && meuId && n.alvo === meuId) { fetch(`/api/salon/notificacoes?id=${id}`, { method: 'DELETE' }).catch(() => { }) }
+  }
   async function jaPeguei(id: string) {
     setNotifs(prev => prev.filter(n => n.id !== id)); setNotifIdx(0)
     try { await fetch(`/api/salon/notificacoes?id=${id}`, { method: 'DELETE' }) } catch { }
