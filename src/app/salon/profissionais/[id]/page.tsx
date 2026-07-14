@@ -2575,7 +2575,7 @@ export default function PerfilProfissionalPage() {
   const [endCidade, setEndCidade] = useState('')
   const [endUf, setEndUf] = useState('')
   const [buscandoCep, setBuscandoCep] = useState(false)
-  const [tab, setTab] = useState<'inicio'|'cadastro'|'avaliar'|'desempenho'|'faturamento'|'metas'|'ia'|'dependencia'|'oportunidades'|'bundle'|'clientes-perdidos'|'agendamentos'|'calendario_mkt'|'corrida'|'acoes'|'esterilizacao'|'kits'|'carreira'|'demandas'>('cadastro')
+  const [tab, setTab] = useState<'inicio'|'cadastro'|'avaliar'|'desempenho'|'faturamento'|'metas'|'ia'|'dependencia'|'oportunidades'|'bundle'|'clientes-perdidos'|'agendamentos'|'calendario'|'calendario_mkt'|'corrida'|'acoes'|'esterilizacao'|'kits'|'carreira'|'demandas'>('cadastro')
   // Aba Esterilização: só aparece pra quem realmente tem atendimento de
   // manicure/pedicure/sobrancelha no mês (mesmo cruzamento usado no
   // Administrativo) — a maioria dos profissionais não precisa dela.
@@ -3413,6 +3413,7 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
           ['bundle','COMBOS QUE VENDEM'],
           ['clientes-perdidos','PERDIDOS'],
           ['agendamentos','AGENDAMENTOS'],
+          ['calendario','CALENDÁRIO GERAL'],
           ['calendario_mkt','CALENDÁRIO MKT'],
           ['corrida','CORRIDA INTERNA'],
           ['acoes','AÇÕES COMERCIAIS'],
@@ -3493,6 +3494,11 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
 
         {/*  KITS PÉ E MÃO — pedido de kits pela própria profissional  */}
         {tab === 'kits' && <KitsProfissionalView />}
+
+        {/*  CALENDÁRIO GERAL (central, compartilhado pelo salão)  */}
+        {tab === 'calendario' && (
+          <CalendarioEditavel chave="calendario" titulo="Calendário Geral" corTema="#0891b2" comResponsavel camposGrandes mostrarLembrete embutido />
+        )}
 
         {/*  CALENDÁRIO DE MARKETING (o mesmo do menu, compartilhado pelo salão)  */}
         {tab === 'calendario_mkt' && (
