@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import {
   DollarSign, Target, Calendar, Trophy, Megaphone, ClipboardList, Moon, Sun, Bell,
-  AlertTriangle, Users, Lightbulb, Package, UserMinus, Star, Sparkles, CalendarRange, User, ArrowRight, LogOut, Hand, X, Check,
+  AlertTriangle, Users, Lightbulb, Package, UserMinus, Star, Sparkles, CalendarRange, User, ArrowRight, LogOut, Hand, X, Check, Send,
 } from 'lucide-react'
 
 // Tela inicial do profissional (estilo Nubank/Notion): saudação + central de notificações + atalhos.
@@ -65,6 +65,7 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba, t
   const oc: Record<string, boolean> = (prof?.acesso_oculto && typeof prof.acesso_oculto === 'object') ? prof.acesso_oculto : {}
 
   const AREAS: { aba: string; label: string; Ic: any; ocult?: string; so?: boolean }[] = [
+    { aba: 'demandas', label: 'Solicitação', Ic: Send },
     { aba: 'kits', label: 'Kits Pé e Mão', Ic: Hand, so: !!temKits },
     { aba: 'faturamento', label: 'Faturamento', Ic: DollarSign },
     { aba: 'metas', label: 'Metas', Ic: Target, ocult: 'metas' },
