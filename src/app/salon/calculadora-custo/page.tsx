@@ -201,7 +201,7 @@ const INFO: Record<string, {titulo: string, oque: string, como: string, exemplo:
     oque: 'O total de custos mensais do salão que precisa ser coberto pelo aluguel das cadeiras.',
     como: 'Se preencheu Receitas e Despesas, é preenchido automaticamente. Senão, some todas as despesas fixas mensais.',
     exemplo: 'Aluguel R$ 3.000 + Luz R$ 600 + Internet R$ 150 + ... = R$ 8.000 de custo total.',
-    porque: 'O aluguel de cadeira precisa, no mínimo, cobrir os custos. O valor sugerido acrescenta 50% de margem.',
+    porque: 'O aluguel de cadeira precisa, no mínimo, cobrir os custos. O valor sugerido aplica a margem escolhida sobre o preço e acrescenta as taxas de depreciação (5%) e vacância (30%).',
   },
   mTotal: {
     titulo: 'Metragem Total do Salão (m²)',
@@ -684,6 +684,9 @@ export default function CalculadoraCusto() {
   // ── Aluguel de Cadeira ───────────────────────────────────────────────────
   const [numCad,    setNumCad]    = useState('')
   const [custoOpCad,setCustoOpCad]= useState('')
+  const [horasSemCad, setHorasSemCad] = useState('40')   // horas de funcionamento por semana
+  const [margemCad,   setMargemCad]   = useState('35')   // margem % (25 a 55) — igual à calc de referência
+  const [aluguelAtualCad, setAluguelAtualCad] = useState('') // aluguel que cobra hoje (p/ diagnóstico)
 
   // ── Faturamento por M² ───────────────────────────────────────────────────
   const [mTotal,  setMTotal]  = useState('')
@@ -707,7 +710,7 @@ export default function CalculadoraCusto() {
       aquisicaoEq, distSocios, reservaEmerg, vlrProdEstoque,
       areaM2, numProfs, margemPE, metaLucroPE, fatPEManual, simDespesa,
       taxaCartao, abatProd, custOpServ, taxaAntesRateio, prodAntesRateio, salaoParceiro,
-      servicos, numCad, custoOpCad, mTotal, fatMinM2, mSala,
+      servicos, numCad, custoOpCad, horasSemCad, margemCad, aluguelAtualCad, mTotal, fatMinM2, mSala,
       servicosProd,
     }
   }
@@ -750,6 +753,9 @@ export default function CalculadoraCusto() {
     if (d.servicos) setServicos(d.servicos)
     if (d.numCad !== undefined) setNumCad(d.numCad)
     if (d.custoOpCad !== undefined) setCustoOpCad(d.custoOpCad)
+    if ((d as any).horasSemCad !== undefined) setHorasSemCad((d as any).horasSemCad)
+    if ((d as any).margemCad !== undefined) setMargemCad((d as any).margemCad)
+    if ((d as any).aluguelAtualCad !== undefined) setAluguelAtualCad((d as any).aluguelAtualCad)
     if (d.mTotal !== undefined) setMTotal(d.mTotal)
     if (d.fatMinM2 !== undefined) setFatMinM2(d.fatMinM2)
     if (d.mSala !== undefined) setMSala(d.mSala)
@@ -1249,10 +1255,22 @@ export default function CalculadoraCusto() {
     return emb > 0 ? (prec / emb) * usa : 0
   }
 
-  // ── Aluguel de Cadeira ───────────────────────────────────────────────────
+  // ── Aluguel de Cadeira (base de cálculo idêntica à calc dos criadores) ─────
+  // Interface enxuta: um único valor de custo operacional total (não itemiza).
   const custoOpCadN = n(custoOpCad) || custoOp
-  const custPorCad  = n(numCad) > 0 ? custoOpCadN / n(numCad) : 0
-  const alugSuger   = custPorCad * 1.5
+  const nCadeirasCad = n(numCad)
+  const custPorCad  = nCadeirasCad > 0 ? custoOpCadN / nCadeirasCad : 0   // custo base por cadeira (ponto de equilíbrio)
+  const margemCadN  = Math.min(0.55, Math.max(0.25, (n(margemCad) || 35) / 100)) // margem 25%–55%
+  const CAD_DEPREC  = 0.05  // taxa depreciação (5%)
+  const CAD_VACANC  = 0.30  // taxa vacância (30%)
+  const CAD_TAXAS   = 1 + CAD_DEPREC + CAD_VACANC  // multiplicador das taxas (1,35)
+  const horasMesCad = (n(horasSemCad) || 40) * 4.3
+  const custoHoraCad = (nCadeirasCad > 0 && horasMesCad > 0) ? custoOpCadN / (nCadeirasCad * horasMesCad) : 0
+  const precoBaseCad = custPorCad / (1 - margemCadN)            // preço com margem sobre o preço
+  const alugSuger    = precoBaseCad * CAD_TAXAS                 // Aluguel Limpo Sugerido (mensal)
+  const precoHoraCad = (custoHoraCad / (1 - margemCadN)) * CAD_TAXAS  // preço por hora com margem + taxas
+  const diariaCad    = precoHoraCad * 8                         // diária (8h)
+  const aluguelAtualCadN = n(aluguelAtualCad)
 
   // ── Faturamento por M² ───────────────────────────────────────────────────
   const fatMinM2N   = n(fatMinM2) || pe
@@ -2819,23 +2837,72 @@ Use números reais. Seja direto.`
                   <input type="number" value={numCad} onChange={e=>setNumCad(e.target.value)} placeholder="Ex: 10"
                     className="w-full px-4 py-3 rounded-xl text-[#1a1a1a] focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
                 </div>
+                <div>
+                  <div className="flex items-center gap-1.5 mb-1"><label className="text-xs font-bold" style={{color:'#767069'}}>Horas de Funcionamento por Semana</label></div>
+                  <p className="text-xs mb-2" style={{color:'#6b6860'}}>Usado para calcular o preço por hora e a diária.</p>
+                  <input type="number" value={horasSemCad} onChange={e=>setHorasSemCad(e.target.value)} placeholder="Ex: 40"
+                    className="w-full px-4 py-3 rounded-xl text-[#1a1a1a] focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-bold" style={{color:'#767069'}}>Ajustar Margem</label>
+                    <span className="text-sm font-bold" style={{color:'#5b4fcf'}}>{Math.round(margemCadN*100)}%</span>
+                  </div>
+                  <p className="text-xs mb-2" style={{color:'#6b6860'}}>Margem de lucro sobre o preço (recomendado 35%, entre 25% e 55%).</p>
+                  <input type="range" min={25} max={55} step={1} value={n(margemCad)||35} onChange={e=>setMargemCad(e.target.value)}
+                    className="w-full" style={{accentColor:'#5b4fcf'}}/>
+                </div>
+                <div>
+                  <div className="flex items-center gap-1.5 mb-1"><label className="text-xs font-bold" style={{color:'#767069'}}>Aluguel que você cobra hoje (R$) <span style={{fontWeight:400}}>— opcional</span></label></div>
+                  <p className="text-xs mb-2" style={{color:'#6b6860'}}>Se preencher, mostramos um diagnóstico comparando com o custo base.</p>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{color:'#767069'}}>R$</span>
+                    <input type="number" value={aluguelAtualCad} onChange={e=>setAluguelAtualCad(e.target.value)} placeholder="0,00"
+                      className="w-full pl-10 pr-4 py-3 rounded-xl text-[#1a1a1a] focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
+                  </div>
+                </div>
               </div>
               {custPorCad>0&&(
                 <div className="mt-6 space-y-3">
                   <div className="rounded-xl p-4 border" style={{background:'#f5f4f0',borderColor:'#f59e0b40'}}>
-                    <p className="text-xs mb-1" style={{color:'#767069'}}>📊 Custo por Cadeira (ponto de equilíbrio)</p>
+                    <p className="text-xs mb-1" style={{color:'#767069'}}>📊 Custo Base por Cadeira (ponto de equilíbrio)</p>
                     <p className="text-3xl font-bold" style={{color:'#b45309'}}>{fmtR(custPorCad)}</p>
-                    <p className="text-xs mt-1" style={{color:'#6b6860'}}>Valor que cada cadeira precisa gerar para cobrir os custos</p>
+                    <p className="text-xs mt-1" style={{color:'#6b6860'}}>Valor mínimo que cada cadeira precisa gerar só para cobrir os custos</p>
                   </div>
                   <div className="rounded-xl p-4 border" style={{background:'#f5f4f0',borderColor:'#10b98140'}}>
-                    <div className="flex items-center gap-2 mb-1"><span>⭐</span><p className="text-xs font-bold" style={{color:'#059669'}}>Aluguel Sugerido por Cadeira</p><span className="text-xs px-2 py-0.5 rounded-full" style={{background:'#10b98120',color:'#059669'}}>+50% lucro</span></div>
+                    <div className="flex items-center gap-2 mb-1"><span>💰</span><p className="text-xs font-bold" style={{color:'#059669'}}>Aluguel Limpo Sugerido (mensal)</p><span className="text-xs px-2 py-0.5 rounded-full" style={{background:'#10b98120',color:'#059669'}}>margem {Math.round(margemCadN*100)}%</span></div>
                     <p className="text-3xl font-bold" style={{color:'#059669'}}>{fmtR(alugSuger)}</p>
-                    <p className="text-xs mt-1" style={{color:'#6b6860'}}>Valor recomendado com margem de lucro de 50%</p>
+                    <p className="text-xs mt-1" style={{color:'#6b6860'}}>Com margem sobre o preço + depreciação (5%) + vacância (30%)</p>
                   </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="rounded-xl p-4 border" style={{background:'#f5f4f0',borderColor:'#e8e6e0'}}>
+                      <p className="text-[11px] mb-1" style={{color:'#767069'}}>Custo por Hora</p>
+                      <p className="text-lg font-bold" style={{color:'#b45309'}}>{fmtR(custoHoraCad)}</p>
+                    </div>
+                    <div className="rounded-xl p-4 border" style={{background:'#f5f4f0',borderColor:'#5b4fcf40'}}>
+                      <p className="text-[11px] mb-1" style={{color:'#767069'}}>Preço por Hora sugerido</p>
+                      <p className="text-lg font-bold" style={{color:'#5b4fcf'}}>{fmtR(precoHoraCad)}</p>
+                    </div>
+                    <div className="rounded-xl p-4 border" style={{background:'#f5f4f0',borderColor:'#10b98140'}}>
+                      <p className="text-[11px] mb-1" style={{color:'#767069'}}>Diária sugerida (8h)</p>
+                      <p className="text-lg font-bold" style={{color:'#059669'}}>{fmtR(diariaCad)}</p>
+                    </div>
+                  </div>
+                  {aluguelAtualCadN>0&&(
+                    aluguelAtualCadN<custPorCad
+                      ? <div className="rounded-xl p-4 text-xs" style={{background:'#ef444415',border:'1px solid #ef444450',color:'#b91c1c'}}>
+                          <p className="font-bold mb-1">🔴 Risco financeiro</p>
+                          <p>Seu aluguel atual de <strong>{fmtR(aluguelAtualCadN)}</strong> está <strong>abaixo</strong> do custo base de <strong>{fmtR(custPorCad)}</strong>. Você não está cobrindo os custos — reajuste o piso do aluguel.</p>
+                        </div>
+                      : <div className="rounded-xl p-4 text-xs" style={{background:'#10b98115',border:'1px solid #10b98150',color:'#059669'}}>
+                          <p className="font-bold mb-1">🟢 Saudável</p>
+                          <p>Seu aluguel atual de <strong>{fmtR(aluguelAtualCadN)}</strong> está <strong>acima</strong> do custo base de <strong>{fmtR(custPorCad)}</strong>. Sua operação cobre os custos.{alugSuger>aluguelAtualCadN && <> Ainda há espaço: o sugerido é <strong>{fmtR(alugSuger)}</strong>.</>}</p>
+                        </div>
+                  )}
                   <div className="rounded-xl p-4 text-xs space-y-1" style={{background:'#5b4fcf10',border:'1px solid #5b4fcf30',color:'#7c6fe0'}}>
                     <p><strong>💡 Resumo:</strong></p>
-                    <p>• {n(numCad)} cadeiras × {fmtR(alugSuger)} = <strong>{fmtR(alugSuger*n(numCad))}/mês arrecadado</strong></p>
-                    <p>• Lucro estimado: <strong style={{color:'#059669'}}>{fmtR(alugSuger*n(numCad)-custoOpCadN)}/mês</strong></p>
+                    <p>• {nCadeirasCad} cadeiras × {fmtR(alugSuger)} = <strong>{fmtR(alugSuger*nCadeirasCad)}/mês arrecadado</strong></p>
+                    <p>• Lucro estimado: <strong style={{color:'#059669'}}>{fmtR(alugSuger*nCadeirasCad-custoOpCadN)}/mês</strong></p>
                   </div>
                 </div>
               )}
