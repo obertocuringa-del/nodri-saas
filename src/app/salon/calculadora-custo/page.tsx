@@ -515,6 +515,8 @@ export default function CalculadoraCusto() {
   const [parcObs, setParcObs]           = useState('')
   const [parcLinhas, setParcLinhas]     = useState<{valor:string;venc:string}[]>([])
   const [parcSalvando, setParcSalvando] = useState(false)
+  const [notasAbertas, setNotasAbertas] = useState<Set<string>>(new Set())
+  const toggleNota = (k:string) => setNotasAbertas(prev=>{const s=new Set(prev); s.has(k)?s.delete(k):s.add(k); return s})
   const [reservaEmerg,  setReservaEmerg]  = useState('')
   const [totalReservaAcum, setTotalReservaAcum] = useState(0) // total acumulado de todos os meses
   const [mediaCustoOp, setMediaCustoOp] = useState(0) // média do custo operacional % de todos os meses
@@ -615,7 +617,7 @@ export default function CalculadoraCusto() {
   function coletarDados() {
     return {
       fat, custIndD, custDirD, lucroD, invInicial, totalDeprec,
-      despInd: despInd.map(d=>({nome:d.nome,valor:d.valor})),
+      despInd: despInd.map(d=>({nome:d.nome,valor:d.valor,obs:d.obs||''})),
       extrasDespInd: extrasDespInd.map(d=>({nome:d.nome,valor:d.valor,parcela:d.parcela||'',obs:d.obs||'',grupo:d.grupo||'',venc:d.venc||''})),
       extrasDiretas: extrasDiretas.map(d=>({nome:d.nome,valor:d.valor})),
       extrasOutras: extrasOutras.map(d=>({nome:d.nome,valor:d.valor})),
@@ -636,7 +638,7 @@ export default function CalculadoraCusto() {
     if (d.lucroD !== undefined) setLucroD(d.lucroD)
     if (d.invInicial !== undefined) setInvInicial(d.invInicial)
     if (d.totalDeprec !== undefined) setTotalDeprec(d.totalDeprec)
-    if (d.despInd) setDespInd(DESPESAS_INDIRETAS.map((di,i)=>({...di,valor:d.despInd[i]?.valor||''})))
+    if (d.despInd) setDespInd(DESPESAS_INDIRETAS.map((di,i)=>({...di,valor:d.despInd[i]?.valor||'',obs:(d.despInd[i] as any)?.obs||''})))
     if (d.extrasDespInd) setExtrasDespInd(d.extrasDespInd.map((x:any)=>({nome:x.nome,valor:x.valor,dica:'',parcela:x.parcela||'',obs:x.obs||'',grupo:x.grupo||'',venc:x.venc||''})))
     if ((d as any).extrasDiretas) setExtrasDiretas((d as any).extrasDiretas.map((x:any)=>({nome:x.nome,valor:x.valor,dica:''})))
     if ((d as any).extrasOutras) setExtrasOutras((d as any).extrasOutras.map((x:any)=>({nome:x.nome,valor:x.valor,dica:''})))
@@ -1502,9 +1504,10 @@ Use números reais. Seja direto.`
                   const cor=pctV>20?'#ef4444':pctV>10?'#f59e0b':'#10b981'
                   return(
                     <div key={i} className="grid linha-form-mobile gap-2 px-5 py-2 items-center" style={{gridTemplateColumns:'1fr 110px 70px 72px 24px',borderBottom:'1px solid #f59e0b20',background: v>0 ? '#fffdf5' : 'transparent'}}>
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="text-xs font-semibold" style={{color:'#78350f'}}>{d.nome}</span>
                         <InfoBtn id={d.nome==='Aluguel'?'aluguel':d.nome==='Energia Elétrica'?'energia':d.nome==='Água'?'agua':d.nome==='Contabilidade'?'contabilidade':''}/>
+                        <button onClick={()=>toggleNota('d'+i)} title="Observação" style={{fontSize:11,lineHeight:1,padding:'1px 3px',border:'none',background:'transparent',cursor:'pointer',opacity:d.obs?1:0.45}}>📝</button>
                       </div>
                       <div className="relative">
                         <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#b45309'}}>R$</span>
@@ -1524,6 +1527,11 @@ Use números reais. Seja direto.`
                           style={{background:'#fff',border:'1.5px solid #e8e6e0',color:d.parcela?'#b45309':'#aaa',fontWeight:d.parcela?700:400}}/>
                       </div>
                       <div/>
+                      {(notasAbertas.has('d'+i) || d.obs) && (
+                        <input value={d.obs||''} onChange={e=>{const nd=[...despInd];nd[i]={...nd[i],obs:e.target.value};setDespInd(nd)}}
+                          placeholder="Observação (ex: de quem, referência, motivo)…"
+                          style={{gridColumn:'1 / -1',background:'#fff',border:'1px dashed #f59e0b80',borderRadius:8,padding:'6px 10px',fontSize:11.5,color:'#78350f',outline:'none'}}/>
+                      )}
                     </div>
                   )
                 })}
@@ -1539,7 +1547,7 @@ Use números reais. Seja direto.`
                         {d.grupo
                           ? <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{background:'#dbeafe',color:'#1d4ed8'}}>💳 parcela {d.parcela}</span>
                           : <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{background:'#f59e0b20',color:'#b45309'}}>catálogo</span>}
-                        {d.obs && <span className="text-[10px]" style={{color:'#767069'}}>· {d.obs}</span>}
+                        <button onClick={()=>toggleNota('e'+i)} title="Observação" style={{fontSize:11,lineHeight:1,padding:'1px 3px',border:'none',background:'transparent',cursor:'pointer',opacity:d.obs?1:0.45}}>📝</button>
                       </div>
                       <div className="relative">
                         <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#b45309'}}>R$</span>
@@ -1560,6 +1568,11 @@ Use números reais. Seja direto.`
                       <div className="flex justify-end">
                         <button onClick={()=>setExtrasDespInd(prev=>prev.filter((_,idx)=>idx!==i))} style={{color:'#ef4444'}}><Trash2 size={12}/></button>
                       </div>
+                      {(notasAbertas.has('e'+i) || d.obs) && (
+                        <input value={d.obs||''} onChange={e=>{const nd=[...extrasDespInd];nd[i]={...nd[i],obs:e.target.value};setExtrasDespInd(nd)}}
+                          placeholder="Observação (ex: de quem, referência, motivo)…"
+                          style={{gridColumn:'1 / -1',background:'#fff',border:'1px dashed #f59e0b80',borderRadius:8,padding:'6px 10px',fontSize:11.5,color:'#78350f',outline:'none'}}/>
+                      )}
                     </div>
                   )
                 })}
