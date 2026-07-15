@@ -674,6 +674,10 @@ export default function CalculadoraCusto() {
   const [taxaAntesRateio, setTaxaAntesRateio] = useState(true)
   const [prodAntesRateio, setProdAntesRateio] = useState(true)
   const [salaoParceiro,   setSalaoParceiro]   = useState(true)
+  // Diagnóstico & Recomendações por serviço (meta de lucro por atendimento)
+  const [metaLucroServ, setMetaLucroServ] = useState('15')
+  const [diagAbertos, setDiagAbertos] = useState<Set<number>>(new Set())
+  const toggleDiag = (id:number) => setDiagAbertos(prev=>{const s=new Set(prev); s.has(id)?s.delete(id):s.add(id); return s})
 
   // ── Custo de Produto ─────────────────────────────────────────────────────
   const [servicosProd, setServicoProd] = useState<ServicoProd[]>([
@@ -714,7 +718,7 @@ export default function CalculadoraCusto() {
       sal13, ferias, fgtsR, imposto, produto, rateio, taxaC,
       aquisicaoEq, distSocios, reservaEmerg, vlrProdEstoque,
       areaM2, numProfs, margemPE, metaLucroPE, fatPEManual, simDespesa,
-      taxaCartao, abatProd, custOpServ, taxaAntesRateio, prodAntesRateio, salaoParceiro,
+      taxaCartao, abatProd, custOpServ, taxaAntesRateio, prodAntesRateio, salaoParceiro, metaLucroServ,
       servicos, numCad, cadCabel, cadManic, cadEstet, cadMaqui, custoOpCad, horasSemCad, margemCad, aluguelAtualCad, mTotal, fatMinM2, mSala,
       servicosProd,
     }
@@ -755,6 +759,7 @@ export default function CalculadoraCusto() {
     if (d.taxaAntesRateio !== undefined) setTaxaAntesRateio(d.taxaAntesRateio)
     if (d.prodAntesRateio !== undefined) setProdAntesRateio(d.prodAntesRateio)
     if (d.salaoParceiro !== undefined) setSalaoParceiro(d.salaoParceiro)
+    if ((d as any).metaLucroServ !== undefined) setMetaLucroServ((d as any).metaLucroServ)
     if (d.servicos) setServicos(d.servicos)
     if (d.numCad !== undefined) setNumCad(d.numCad)
     if ((d as any).cadCabel !== undefined) setCadCabel((d as any).cadCabel)
@@ -1260,6 +1265,55 @@ export default function CalculadoraCusto() {
 
     if (K - targetLucro <= 0) return null
     return F / (K - targetLucro)
+  }
+
+  // Recomendações de comissão (Diagnóstico por serviço, com meta de lucro por atendimento)
+  // Opção A: comissão máxima em R$ no preço atual para atingir a meta
+  // Opção B: novo preço mantendo a comissão do profissional fixa em R$
+  function calcRecom(s: Servico) {
+    const c = calcServ(s)
+    if (!c) return null
+    const preco = c.preco
+    const prod  = n(s.produto)
+    const imp   = n(s.imposto) / 100
+    const taxC  = n(taxaCartao) / 100
+    const abat  = prodAntesRateio ? n(abatProd) / 100 : 0
+    const co    = custOpServN
+    const meta  = Math.min(0.5, Math.max(0, n(metaLucroServ) / 100))
+    const den   = 1 - taxC - imp - co - meta   // coeficiente comum às duas opções
+    if (den <= 0) return { c, meta, impossivel: true } as any
+
+    // Opção A — comissão máxima (R$) mantendo o preço atual:
+    // resultado = preço − R − prod − cartão − imposto − custoOp = meta×preço
+    const numA = preco * den - prod
+    const comMaxR = salaoParceiro ? numA / (1 - imp) : numA
+    // % equivalente para digitar no campo Rateio (inverte a fórmula do rateio)
+    const baseRateioPct = preco * (1 - (taxaAntesRateio ? taxC : 0))
+    const comMaxPctCampo = baseRateioPct > 0 ? (comMaxR + prod * abat) / baseRateioPct : 0
+    const comMaxPctPreco = preco > 0 ? comMaxR / preco : 0
+
+    // Opção B — novo preço mantendo a comissão atual em R$ (C = rateio atual)
+    const C = c.rateioR
+    const novoPreco = (prod + C * (salaoParceiro ? (1 - imp) : 1)) / den
+    const lucroB = meta * novoPreco
+    const comPctEqB = novoPreco > 0 ? C / novoPreco : 0
+    const novoRateioPctCampo = novoPreco > 0
+      ? (C + prod * abat) / (novoPreco * (1 - (taxaAntesRateio ? taxC : 0)))
+      : 0
+    const aumento = preco > 0 ? novoPreco / preco - 1 : 0
+    // Sugestão de arredondamento (dezena abaixo) com lucro real recalculado
+    const arred = Math.floor(novoPreco / 10) * 10
+    let lucroArred = 0, pctArred = 0
+    if (arred > 0 && arred !== Math.round(novoPreco)) {
+      const impArred = salaoParceiro ? (arred - C) * imp : arred * imp
+      lucroArred = arred - C - prod - arred * taxC - impArred - arred * co
+      pctArred = lucroArred / arred
+    }
+
+    return { c, meta, impossivel: false, lucroAlvoAtual: meta * preco,
+      comMaxR, comMaxPctCampo, comMaxPctPreco,
+      C, novoPreco, lucroB, comPctEqB, novoRateioPctCampo, aumento,
+      arred, lucroArred, pctArred }
   }
 
   function custoIngred(i: Ingrediente): number {
@@ -2636,6 +2690,112 @@ Use números reais. Seja direto.`
                           <div>Imposto: {fmtR(c.impostR)}</div>
                           <div style={{color:c.resultado>0?'#10b981':'#ef4444',fontWeight:'bold'}}>{c.resultado>0?'✅ Lucrativo':'🚨 Prejuízo'}</div>
                         </div>
+                        <button onClick={()=>toggleDiag(s.id)}
+                          className="w-full py-2 text-[11px] font-bold border-t transition-all"
+                          style={{background:diagAbertos.has(s.id)?'#5b4fcf':'#5b4fcf12',color:diagAbertos.has(s.id)?'#fff':'#5b4fcf',borderColor:'#e8e6e0'}}>
+                          💡 {diagAbertos.has(s.id)?'Ocultar':'Ver'} Diagnóstico da Comissão &amp; Recomendações
+                        </button>
+                        {diagAbertos.has(s.id) && (()=>{
+                          const r: any = calcRecom(s)
+                          if (!r) return null
+                          const metaPct = (r.meta*100).toFixed(0)
+                          return (
+                            <div className="border-t p-4 space-y-3" style={{borderColor:'#e8e6e0',background:'#fff'}}>
+                              {/* Status da comissão atual */}
+                              {c.resultado < 0
+                                ? <div className="rounded-xl p-3 text-xs font-bold" style={{background:'#ef444415',border:'1px solid #ef444450',color:'#b91c1c'}}>
+                                    ⚠️ Sua comissão está gerando prejuízo para o salão! Perda de {fmtR(-c.resultado)} por atendimento (margem {(c.resultPct*100).toFixed(1)}%).
+                                  </div>
+                                : c.resultPct < r.meta
+                                  ? <div className="rounded-xl p-3 text-xs font-bold" style={{background:'#f59e0b15',border:'1px solid #f59e0b50',color:'#92400e'}}>
+                                      🟡 Lucro positivo ({fmtR(c.resultado)} · {(c.resultPct*100).toFixed(1)}%), mas abaixo da sua meta de {metaPct}%. Veja as opções abaixo.
+                                    </div>
+                                  : <div className="rounded-xl p-3 text-xs font-bold" style={{background:'#10b98115',border:'1px solid #10b98150',color:'#059669'}}>
+                                      🎯 Meta atingida! Lucro de {fmtR(c.resultado)} ({(c.resultPct*100).toFixed(1)}%) por atendimento.
+                                    </div>}
+                              {/* Meta de lucro */}
+                              <div className="rounded-xl p-3 border" style={{background:'#faf9f7',borderColor:'#5b4fcf30'}}>
+                                <div className="flex items-center justify-between mb-1">
+                                  <label className="text-[11px] font-bold" style={{color:'#5b4fcf'}}>🎯 META DE LUCRO POR ATENDIMENTO</label>
+                                  <span className="text-sm font-bold" style={{color:'#5b4fcf'}}>{metaPct}%</span>
+                                </div>
+                                <input type="range" min={0} max={50} step={1} value={n(metaLucroServ)||0} onChange={e=>setMetaLucroServ(e.target.value)}
+                                  className="w-full" style={{accentColor:'#5b4fcf'}}/>
+                                <div className="flex justify-between text-[9px]" style={{color:'#767069'}}>
+                                  <span>Só não perder dinheiro (0%)</span><span style={{color:'#f59e0b',fontWeight:700}}>⭐ Saudável (15%)</span><span>50%</span>
+                                </div>
+                              </div>
+                              {r.impossivel
+                                ? <div className="rounded-xl p-3 text-xs" style={{background:'#ef444415',border:'1px solid #ef444450',color:'#b91c1c'}}>
+                                    Meta impossível: custo operacional + imposto + cartão + meta ultrapassam 100% do preço. Reduza a meta ou os custos.
+                                  </div>
+                                : <>
+                              {/* Recomendações A / B */}
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div className="rounded-xl p-3 border" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
+                                  <p className="text-[10px] font-bold mb-2" style={{color:'#767069'}}>OPÇÃO A · AJUSTAR COMISSÃO</p>
+                                  {r.comMaxR < 0
+                                    ? <p className="text-xs" style={{color:'#b91c1c'}}>Nem zerando a comissão a meta é atingida neste preço. Use a Opção B.</p>
+                                    : <>
+                                        <p className="text-[10px]" style={{color:'#767069'}}>Comissão Máxima no Preço de {fmtR(c.preco)}:</p>
+                                        <p className="text-lg font-bold" style={{color:'#b45309'}}>{(r.comMaxPctPreco*100).toFixed(2)}% <span className="text-xs">({fmtR(r.comMaxR)})</span></p>
+                                        <p className="text-[10px] mt-1" style={{color:'#6b6860'}}>Para aplicar, digite <strong>{(r.comMaxPctCampo*100).toFixed(1)}%</strong> no campo Rateio deste serviço.</p>
+                                        {r.comMaxPctPreco < n(s.rateioP)/100 && (
+                                          <p className="text-[10px] mt-2 rounded-lg p-2" style={{background:'#f59e0b15',color:'#92400e',border:'1px solid #f59e0b40'}}>
+                                            ⚠️ Reduzir a comissão de forma brusca pode desmotivar o profissional e gerar debandada da equipe. Considere a Opção B (recomendada).
+                                          </p>
+                                        )}
+                                      </>}
+                                </div>
+                                <div className="rounded-xl p-3 border-2" style={{background:'#5b4fcf08',borderColor:'#5b4fcf60'}}>
+                                  <p className="text-[10px] font-bold mb-2" style={{color:'#5b4fcf'}}>⭐ OPÇÃO B · CORRIGIR O PREÇO (RECOMENDADA)</p>
+                                  <p className="text-[10px]" style={{color:'#767069'}}>Novo Preço:</p>
+                                  <p className="text-lg font-bold" style={{color:'#5b4fcf'}}>{fmtR(r.novoPreco)}</p>
+                                  <div className="text-[10px] mt-1 space-y-0.5" style={{color:'#3a3835'}}>
+                                    <p>Comissão do Profissional: <strong>{fmtR(r.C)}</strong> (mantida em R$)</p>
+                                    <p>Comissão Percentual Equivalente: <strong>{(r.comPctEqB*100).toFixed(1)}%</strong></p>
+                                    <p>Lucro Líquido do Salão: <strong style={{color:'#059669'}}>{fmtR(r.lucroB)}</strong> (Margem de {(r.meta*100).toFixed(1)}%)</p>
+                                  </div>
+                                  {r.arred > 0 && r.arred !== Math.round(r.novoPreco) && (
+                                    <p className="text-[10px] mt-2 rounded-lg p-2" style={{background:'#10b98110',color:'#059669',border:'1px solid #10b98140'}}>
+                                      💡 Sugestão de arredondamento: <strong>{fmtR(r.arred)}</strong> (lucro real estimado {(r.pctArred*100).toFixed(1)}%)
+                                    </p>
+                                  )}
+                                  {r.aumento > 0.3 && (
+                                    <p className="text-[10px] mt-2 rounded-lg p-2" style={{background:'#f59e0b15',color:'#92400e',border:'1px solid #f59e0b40'}}>
+                                      ⚠️ Aumento de {(r.aumento*100).toFixed(0)}% no preço! Reajustes acima de 30% exigem cautela — avalie se o mercado suporta esse valor antes de aplicar.
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                              {/* Técnica das Três Opções */}
+                              <div>
+                                <p className="text-[10px] font-bold mb-2" style={{color:'#767069'}}>🤝 TÉCNICA DAS TRÊS OPÇÕES — apresente ao profissional e deixe que ele escolha:</p>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                  <div className="rounded-xl p-3 border text-[10px] space-y-1" style={{background:'#faf9f7',borderColor:'#e8e6e0',color:'#3a3835'}}>
+                                    <p className="font-bold" style={{color:'#767069'}}>1️⃣ Manter Tudo Igual</p>
+                                    <p>Preço: <strong>{fmtR(c.preco)}</strong></p>
+                                    <p>Comissão: <strong>{n(s.rateioP)}% ({fmtR(c.rateioR)})</strong></p>
+                                    <p>Lucro do Salão: <strong style={{color:c.resultado>=0?'#059669':'#b91c1c'}}>{fmtR(c.resultado)} ({(c.resultPct*100).toFixed(1)}%)</strong></p>
+                                  </div>
+                                  <div className="rounded-xl p-3 border text-[10px] space-y-1" style={{background:'#faf9f7',borderColor:'#e8e6e0',color:'#3a3835'}}>
+                                    <p className="font-bold" style={{color:'#767069'}}>2️⃣ Ajustar Comissão no Preço Atual</p>
+                                    <p>Preço: <strong>{fmtR(c.preco)}</strong></p>
+                                    <p>Comissão: <strong>{r.comMaxR>=0?`${(r.comMaxPctPreco*100).toFixed(1)}% (${fmtR(r.comMaxR)})`:'—'}</strong></p>
+                                    <p>Lucro do Salão: <strong style={{color:'#059669'}}>{fmtR(r.lucroAlvoAtual)} ({metaPct}%)</strong></p>
+                                  </div>
+                                  <div className="rounded-xl p-3 border-2 text-[10px] space-y-1" style={{background:'#5b4fcf08',borderColor:'#5b4fcf60',color:'#3a3835'}}>
+                                    <p className="font-bold" style={{color:'#5b4fcf'}}>3️⃣ Preço Corrigido ⭐ Recomendado</p>
+                                    <p>Preço: <strong>{fmtR(r.novoPreco)}</strong></p>
+                                    <p>Comissão: <strong>{(r.comPctEqB*100).toFixed(1)}% ({fmtR(r.C)})</strong></p>
+                                    <p>Lucro do Salão: <strong style={{color:'#059669'}}>{fmtR(r.lucroB)} ({metaPct}%)</strong></p>
+                                  </div>
+                                </div>
+                              </div>
+                              </>}
+                            </div>
+                          )
+                        })()}
                       </div>
                     )}
                   </div>
@@ -2651,11 +2811,11 @@ Use números reais. Seja direto.`
             </div>
 
             <div className="rounded-xl p-4 text-xs space-y-1" style={{background:'#faf9f7',border:'1px solid #e8e6e0',color:'#767069'}}>
-              <p className="font-bold mb-1" style={{color:'#767069'}}>💡 💡 Fórmula do cálculo:</p>
-              <p>• <strong style={{color:'#1a1a1a'}}>Rateio R$</strong> = (Preço × Rateio%) − (Preço × Taxa_Cartão%) − (Produto × Abatimento%)</p>
+              <p className="font-bold mb-1" style={{color:'#767069'}}>💡 Fórmula do cálculo:</p>
+              <p>• <strong style={{color:'#1a1a1a'}}>Rateio R$</strong> = (Preço − Cartão R$, se abatido antes) × Rateio% − (Produto × Abatimento%)</p>
               <p>• <strong style={{color:'#1a1a1a'}}>Imposto</strong>: Salão Parceiro → (Preço − Rateio) × Imp%. Normal → Preço × Imp%</p>
               <p>• <strong style={{color:'#1a1a1a'}}>Resultado</strong> = Preço − Total Despesas − Custo Operacional</p>
-              <p style={{color:'#7c6fe0'}}>Verificado com PIGMENTAÇÃO da planilha: Preço R$280 | Rateio 44% | Produto R$70 | Cartão 5% | Imposto 5% → Rateio R$39,20 | Total R$135,24 | Resultado R$60,76</p>
+              <p style={{color:'#7c6fe0'}}>Verificado com a planilha: Preço R$100 | Rateio 50% | Produto R$10 | Cartão 5% | Imposto 8% → Rateio R$37,50 | Imposto R$5,00 | Total R$57,50 | Resultado R$12,50</p>
             </div>
           </div>
         )}
