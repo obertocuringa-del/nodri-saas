@@ -190,11 +190,11 @@ const INFO: Record<string, {titulo: string, oque: string, como: string, exemplo:
     porque: 'Pode reduzir significativamente a carga tributária do salão. Consulte seu contador para formalizar.',
   },
   numCad: {
-    titulo: 'Número de Cadeiras/Postos',
-    oque: 'Quantas cadeiras ou postos de atendimento existem no seu salão.',
-    como: 'Conte todas as cadeiras ativas — de corte, coloração, manicure, maquiagem, etc.',
-    exemplo: '3 cadeiras de corte + 2 de manicure + 1 de maquiagem = 6 postos.',
-    porque: 'Divide o custo total igualmente entre as cadeiras para saber quanto cada posto precisa gerar para o salão ser lucrativo.',
+    titulo: 'Cadeiras/Postos por tipo',
+    oque: 'Quantas cadeiras/postos existem, separados por tipo. Cada tipo tem um peso: cabeleireiro e estética valem 1 posto; manicure e maquiador valem meio posto (0,5), por gerarem menos faturamento.',
+    como: 'Informe a quantidade de cada tipo. O sistema soma aplicando os pesos e chega aos "postos efetivos".',
+    exemplo: '3 cabeleireiro (3,0) + 2 manicure (1,0) = 5 postos brutos, mas 4,0 postos efetivos.',
+    porque: 'Divide o custo total pelos postos efetivos para saber quanto cada posto precisa gerar. Os pesos evitam superestimar a capacidade de postos que faturam menos.',
   },
   custoOpCad: {
     titulo: 'Custo Operacional para Aluguel',
@@ -682,7 +682,12 @@ export default function CalculadoraCusto() {
   const [proxSP, setProxSP] = useState(2)
 
   // ── Aluguel de Cadeira ───────────────────────────────────────────────────
-  const [numCad,    setNumCad]    = useState('')
+  const [numCad,    setNumCad]    = useState('')   // legado (compat com meses salvos antigos)
+  // Postos por tipo, com pesos (igual à calc de referência): cabeleireiro/estética=1,0; manicure/maquiador=0,5
+  const [cadCabel, setCadCabel] = useState('')
+  const [cadManic, setCadManic] = useState('')
+  const [cadEstet, setCadEstet] = useState('')
+  const [cadMaqui, setCadMaqui] = useState('')
   const [custoOpCad,setCustoOpCad]= useState('')
   const [horasSemCad, setHorasSemCad] = useState('40')   // horas de funcionamento por semana
   const [margemCad,   setMargemCad]   = useState('35')   // margem % (25 a 55) — igual à calc de referência
@@ -710,7 +715,7 @@ export default function CalculadoraCusto() {
       aquisicaoEq, distSocios, reservaEmerg, vlrProdEstoque,
       areaM2, numProfs, margemPE, metaLucroPE, fatPEManual, simDespesa,
       taxaCartao, abatProd, custOpServ, taxaAntesRateio, prodAntesRateio, salaoParceiro,
-      servicos, numCad, custoOpCad, horasSemCad, margemCad, aluguelAtualCad, mTotal, fatMinM2, mSala,
+      servicos, numCad, cadCabel, cadManic, cadEstet, cadMaqui, custoOpCad, horasSemCad, margemCad, aluguelAtualCad, mTotal, fatMinM2, mSala,
       servicosProd,
     }
   }
@@ -752,6 +757,10 @@ export default function CalculadoraCusto() {
     if (d.salaoParceiro !== undefined) setSalaoParceiro(d.salaoParceiro)
     if (d.servicos) setServicos(d.servicos)
     if (d.numCad !== undefined) setNumCad(d.numCad)
+    if ((d as any).cadCabel !== undefined) setCadCabel((d as any).cadCabel)
+    if ((d as any).cadManic !== undefined) setCadManic((d as any).cadManic)
+    if ((d as any).cadEstet !== undefined) setCadEstet((d as any).cadEstet)
+    if ((d as any).cadMaqui !== undefined) setCadMaqui((d as any).cadMaqui)
     if (d.custoOpCad !== undefined) setCustoOpCad(d.custoOpCad)
     if ((d as any).horasSemCad !== undefined) setHorasSemCad((d as any).horasSemCad)
     if ((d as any).margemCad !== undefined) setMargemCad((d as any).margemCad)
@@ -1258,7 +1267,11 @@ export default function CalculadoraCusto() {
   // ── Aluguel de Cadeira (base de cálculo idêntica à calc dos criadores) ─────
   // Interface enxuta: um único valor de custo operacional total (não itemiza).
   const custoOpCadN = n(custoOpCad) || custoOp
-  const nCadeirasCad = n(numCad)
+  // Postos: brutos (soma simples) e efetivos (com pesos, igual à referência)
+  const rawPostosCad  = n(cadCabel) + n(cadManic) + n(cadEstet) + n(cadMaqui)
+  const efetPostosCad = n(cadCabel) * 1.0 + n(cadManic) * 0.5 + n(cadEstet) * 1.0 + n(cadMaqui) * 0.5
+  // Fallback legado: meses salvos antes desta mudança só têm "numCad" (sem peso)
+  const nCadeirasCad = efetPostosCad > 0 ? efetPostosCad : n(numCad)
   const custPorCad  = nCadeirasCad > 0 ? custoOpCadN / nCadeirasCad : 0   // custo base por cadeira (ponto de equilíbrio)
   const margemCadN  = Math.min(0.55, Math.max(0.25, (n(margemCad) || 35) / 100)) // margem 25%–55%
   const CAD_DEPREC  = 0.05  // taxa depreciação (5%)
@@ -2805,7 +2818,7 @@ Use números reais. Seja direto.`
           <div className="space-y-4">
             <GuiaPassos passos={[
               {titulo:'Custo Operacional',desc:'Vem automático da aba RD. Se não preencheu, informe manualmente',ok:custoOp>0||n(custoOpCad)>0,cor:'#10b981'},
-              {titulo:'Nº de Cadeiras',desc:'Quantas cadeiras ou postos de atendimento tem o salão',ok:n(numCad)>0,cor:'#f59e0b'},
+              {titulo:'Nº de Cadeiras',desc:'Quantas cadeiras ou postos de atendimento tem o salão',ok:rawPostosCad>0||n(numCad)>0,cor:'#f59e0b'},
               {titulo:'Ver Aluguel Sugerido',desc:'Valor mínimo e sugerido por cadeira aparecem automaticamente',ok:custPorCad>0,cor:'#5b4fcf'},
             ]}/>
             {custoOp>0&&<div className="rounded-xl p-3 text-xs" style={{background:'#5b4fcf15',border:'1px solid #5b4fcf30',color:'#7c6fe0'}}>✨ Custo operacional da aba Receitas e Despesas: <strong>{fmtR(custoOp)}</strong> — preenchido automaticamente</div>}
@@ -2832,10 +2845,28 @@ Use números reais. Seja direto.`
                   </div>
                 </div>
                 <div>
-                  <div className="flex items-center gap-1.5 mb-1"><label className="text-xs font-bold" style={{color:'#767069'}}>Número de Cadeiras / Postos</label><InfoBtn id="numCad"/></div>
-                  <p className="text-xs mb-2" style={{color:'#6b6860'}}>Quantas cadeiras ou postos de atendimento tem o salão?</p>
-                  <input type="number" value={numCad} onChange={e=>setNumCad(e.target.value)} placeholder="Ex: 10"
-                    className="w-full px-4 py-3 rounded-xl text-[#1a1a1a] focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
+                  <div className="flex items-center gap-1.5 mb-1"><label className="text-xs font-bold" style={{color:'#767069'}}>Cadeiras / Postos por tipo</label><InfoBtn id="numCad"/></div>
+                  <p className="text-xs mb-2" style={{color:'#6b6860'}}>Manicure e maquiador contam como <strong>meio posto (0,5)</strong> por gerarem menos; cabeleireiro e estética contam como <strong>1</strong>.</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      {lbl:'Cabeleireiro (peso 1)', val:cadCabel, set:setCadCabel},
+                      {lbl:'Estética (peso 1)',     val:cadEstet, set:setCadEstet},
+                      {lbl:'Manicure (peso 0,5)',   val:cadManic, set:setCadManic},
+                      {lbl:'Maquiador (peso 0,5)',  val:cadMaqui, set:setCadMaqui},
+                    ].map((c,idx)=>(
+                      <div key={idx}>
+                        <label className="text-[11px] block mb-1" style={{color:'#6b6860'}}>{c.lbl}</label>
+                        <input type="number" value={c.val} onChange={e=>c.set(e.target.value)} placeholder="0"
+                          className="w-full px-3 py-2 rounded-xl text-[#1a1a1a] focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
+                      </div>
+                    ))}
+                  </div>
+                  {rawPostosCad>0 && (
+                    <p className="text-[11px] mt-2" style={{color:'#767069'}}>Total: <strong>{rawPostosCad}</strong> postos brutos × pesos = <strong style={{color:'#b45309'}}>{efetPostosCad.toLocaleString('pt-BR',{maximumFractionDigits:1})}</strong> postos efetivos</p>
+                  )}
+                  {rawPostosCad===0 && n(numCad)>0 && (
+                    <p className="text-[11px] mt-2" style={{color:'#b45309'}}>Usando valor antigo salvo ({numCad} cadeiras). Preencha por tipo acima para aplicar os pesos.</p>
+                  )}
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5 mb-1"><label className="text-xs font-bold" style={{color:'#767069'}}>Horas de Funcionamento por Semana</label></div>
@@ -2901,7 +2932,7 @@ Use números reais. Seja direto.`
                   )}
                   <div className="rounded-xl p-4 text-xs space-y-1" style={{background:'#5b4fcf10',border:'1px solid #5b4fcf30',color:'#7c6fe0'}}>
                     <p><strong>💡 Resumo:</strong></p>
-                    <p>• {nCadeirasCad} cadeiras × {fmtR(alugSuger)} = <strong>{fmtR(alugSuger*nCadeirasCad)}/mês arrecadado</strong></p>
+                    <p>• {nCadeirasCad.toLocaleString('pt-BR',{maximumFractionDigits:1})} postos efetivos × {fmtR(alugSuger)} = <strong>{fmtR(alugSuger*nCadeirasCad)}/mês arrecadado</strong></p>
                     <p>• Lucro estimado: <strong style={{color:'#059669'}}>{fmtR(alugSuger*nCadeirasCad-custoOpCadN)}/mês</strong></p>
                   </div>
                 </div>
