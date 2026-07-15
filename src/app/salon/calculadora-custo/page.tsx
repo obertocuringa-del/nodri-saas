@@ -1216,14 +1216,14 @@ export default function CalculadoraCusto() {
     const taxC  = n(taxaCartao) / 100
     const abat  = n(abatProd) / 100
 
-    // Fórmula correta metodologia recomendada (verificada na célula E14 — PIGMENTAÇÃO):
-    // Rateio R$ = (Preço × Rateio%) - (Preço × Taxa_Cartão) - (Produto × Abatimento%)
-    // O valor TOTAL do cartão é descontado do rateio (não só a fração proporcional ao rateio%)
-    // Planilha usa =C14*G14 (preço×taxa), não =C14*D14*G14 (preço×rateio%×taxa)
-    const baseRateio = preco * rP
-    const abatTaxa   = taxaAntesRateio ? preco * taxC : 0
+    // Fórmula da planilha FERRAMENTA FINANCEIRA DV (e do site com as flags desligadas):
+    // Rateio R$ = (Preço - Cartão R$) × Rateio% - (Produto × Abatimento%)
+    // O cartão é abatido da BASE antes de aplicar o %, e o produto é abatido do
+    // rateio já calculado. Ex. planilha: (100-5)×50% - 10 = 37,50.
+    // Com as flags desligadas: Rateio = Preço × Rateio% (igual ao site de precificação).
+    const baseRateio = (preco - (taxaAntesRateio ? preco * taxC : 0)) * rP
     const abatProdR  = prodAntesRateio  ? prod * abat : 0
-    const rateioR    = baseRateio - abatTaxa - abatProdR
+    const rateioR    = baseRateio - abatProdR
 
     const cartaoR    = preco * taxC
     // Imposto: salão parceiro = (Preço - Rateio) × Imp%; senão Preço × Imp%
@@ -1240,20 +1240,23 @@ export default function CalculadoraCusto() {
 
   // Calcula preço mínimo para atingir lucro desejado
   // Fórmula: P = F / (K - targetLucro)
-  // K = 1 - rP - (1-rP+taxC)×imp - custOpPct  (coef. de preço no resultado)
-  // F = prod × [1 - abat×(1-imp)]              (custo fixo do produto)
+  // rP' = rateio efetivo (com cartão abatido da base, se flag ativa)
+  // K = 1 - rP' - taxC - imp_eff - custOpPct   (coef. de preço no resultado)
+  // F = prod × [1 - abat×(1-imp)]               (custo fixo do produto)
   function calcPrecoMinimo(s: Servico, targetLucro: number) {
     const rP   = n(s.rateioP) / 100
     const prod = n(s.produto)
     const imp  = n(s.imposto) / 100
     const taxC = n(taxaCartao) / 100
-    const abat = n(abatProd) / 100
+    const abat = prodAntesRateio ? n(abatProd) / 100 : 0
     const co   = custOpServN
 
-    // Coeficiente de P no resultado (com salão parceiro e flags ativas)
-    const K = 1 - rP - (salaoParceiro ? (1 - rP + taxC) * imp : imp) - co
+    // Rateio efetivo sobre o preço (cartão abatido da base antes do %, se flag ativa)
+    const rPEff = taxaAntesRateio ? rP * (1 - taxC) : rP
+    // Coeficiente de P no resultado
+    const K = 1 - rPEff - taxC - (salaoParceiro ? (1 - rPEff) * imp : imp) - co
     // Custo fixo (produto - parte do abatimento que gera custo fixo)
-    const F = prod * (1 - abat * (1 - imp))
+    const F = salaoParceiro ? prod * (1 - abat * (1 - imp)) : prod * (1 - abat)
 
     if (K - targetLucro <= 0) return null
     return F / (K - targetLucro)
