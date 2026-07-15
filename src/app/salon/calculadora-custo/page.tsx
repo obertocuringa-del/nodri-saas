@@ -456,7 +456,7 @@ const DESPESAS_INDIRETAS = [
 ]
 
 // ─── Tipos ──────────────────────────────────────────────────────────────────
-interface DespesaItem { nome: string; valor: string; dica: string; editavel?: boolean; parcela?: string }
+interface DespesaItem { nome: string; valor: string; dica: string; editavel?: boolean; parcela?: string; obs?: string; grupo?: string; venc?: string }
 interface Ingrediente  { id: number; nome: string; qtdEmb: string; qtdUsa: string; preco: string; unidade: string }
 interface ServicoProd  { id: number; nomeServico: string; ingredientes: Ingrediente[] }
 interface Servico      { id: number; nome: string; preco: string; rateioP: string; produto: string; imposto: string }
@@ -509,6 +509,12 @@ export default function CalculadoraCusto() {
   // Campos extras
   const [extrasDespInd, setExtrasDespInd] = useState<DespesaItem[]>([])
   const [modalCatalogoAberto, setModalCatalogoAberto] = useState(false)
+  // ── Parcelamento (lança uma despesa em N meses de uma vez) ──
+  const [parcAberto, setParcAberto]     = useState(false)
+  const [parcDespesa, setParcDespesa]   = useState('')
+  const [parcObs, setParcObs]           = useState('')
+  const [parcLinhas, setParcLinhas]     = useState<{valor:string;venc:string}[]>([])
+  const [parcSalvando, setParcSalvando] = useState(false)
   const [reservaEmerg,  setReservaEmerg]  = useState('')
   const [totalReservaAcum, setTotalReservaAcum] = useState(0) // total acumulado de todos os meses
   const [mediaCustoOp, setMediaCustoOp] = useState(0) // média do custo operacional % de todos os meses
@@ -610,7 +616,7 @@ export default function CalculadoraCusto() {
     return {
       fat, custIndD, custDirD, lucroD, invInicial, totalDeprec,
       despInd: despInd.map(d=>({nome:d.nome,valor:d.valor})),
-      extrasDespInd: extrasDespInd.map(d=>({nome:d.nome,valor:d.valor,parcela:d.parcela||''})),
+      extrasDespInd: extrasDespInd.map(d=>({nome:d.nome,valor:d.valor,parcela:d.parcela||'',obs:d.obs||'',grupo:d.grupo||'',venc:d.venc||''})),
       extrasDiretas: extrasDiretas.map(d=>({nome:d.nome,valor:d.valor})),
       extrasOutras: extrasOutras.map(d=>({nome:d.nome,valor:d.valor})),
       sal13, ferias, fgtsR, imposto, produto, rateio, taxaC,
@@ -631,7 +637,7 @@ export default function CalculadoraCusto() {
     if (d.invInicial !== undefined) setInvInicial(d.invInicial)
     if (d.totalDeprec !== undefined) setTotalDeprec(d.totalDeprec)
     if (d.despInd) setDespInd(DESPESAS_INDIRETAS.map((di,i)=>({...di,valor:d.despInd[i]?.valor||''})))
-    if (d.extrasDespInd) setExtrasDespInd(d.extrasDespInd.map((x:any)=>({nome:x.nome,valor:x.valor,dica:'',parcela:x.parcela||''})))
+    if (d.extrasDespInd) setExtrasDespInd(d.extrasDespInd.map((x:any)=>({nome:x.nome,valor:x.valor,dica:'',parcela:x.parcela||'',obs:x.obs||'',grupo:x.grupo||'',venc:x.venc||''})))
     if ((d as any).extrasDiretas) setExtrasDiretas((d as any).extrasDiretas.map((x:any)=>({nome:x.nome,valor:x.valor,dica:''})))
     if ((d as any).extrasOutras) setExtrasOutras((d as any).extrasOutras.map((x:any)=>({nome:x.nome,valor:x.valor,dica:''})))
     if (d.sal13 !== undefined) setSal13(d.sal13)
@@ -796,6 +802,73 @@ export default function CalculadoraCusto() {
         setTimeout(() => setSavedMsg(''), 3000)
       }
     } finally { setSalvando(false) }
+  }
+
+  // ── Abre o modal de parcelamento já com N linhas ──
+  function abrirParcelamento() {
+    setParcDespesa(''); setParcObs(''); setParcLinhas([{ valor: '', venc: '' }]); setParcAberto(true)
+  }
+  function setParcN(qtd: number) {
+    const q = Math.max(1, Math.min(48, qtd || 1))
+    setParcLinhas(prev => {
+      const arr = [...prev]
+      while (arr.length < q) arr.push({ valor: '', venc: '' })
+      return arr.slice(0, q)
+    })
+  }
+
+  // ── Lança a despesa parcelada: cada parcela vai pro mês do seu vencimento ──
+  // (soma ao que já existe no mês — nunca apaga). Salva tudo de uma vez.
+  async function lancarParcelamento() {
+    const nome = parcDespesa.trim()
+    const linhas = parcLinhas.filter(l => l.valor.trim() && l.venc)
+    if (!nome) { alert('Escolha ou digite a despesa.'); return }
+    if (linhas.length === 0) { alert('Preencha valor e vencimento de pelo menos uma parcela.'); return }
+    const N = linhas.length
+    const grupo = `parc_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+    const obs = parcObs.trim()
+
+    const resumo = linhas.map((l, i) => {
+      const [y, m] = l.venc.split('-').map(Number)
+      return `• ${MESES_NOMES[m]}/${String(y).slice(2)} — R$ ${l.valor}  (${i + 1}/${N})`
+    }).join('\n')
+    if (!confirm(`Lançar "${nome}" em ${N}x?\n\n${resumo}\n\nCada parcela é SOMADA ao mês (nada é apagado) e já fica salva. Confirmar?`)) return
+
+    setParcSalvando(true)
+    try {
+      // Agrupa parcelas por mês (caso caia mais de uma no mesmo mês)
+      const porMes = new Map<string, { ano: number; mes: number; itens: DespesaItem[] }>()
+      linhas.forEach((l, i) => {
+        const [y, m] = l.venc.split('-').map(Number)
+        const key = `${y}-${m}`
+        if (!porMes.has(key)) porMes.set(key, { ano: y, mes: m, itens: [] })
+        porMes.get(key)!.itens.push({ nome, valor: l.valor, dica: '', parcela: `${i + 1}/${N}`, obs, grupo, venc: l.venc })
+      })
+
+      for (const { ano, mes, itens } of porMes.values()) {
+        if (ano === anoSel && mes === mesSel) {
+          // Mês atual: soma no formulário aberto e salva o mês inteiro
+          const base = coletarDados()
+          const novo = { ...base, extrasDespInd: [...base.extrasDespInd, ...itens.map(it => ({ nome: it.nome, valor: it.valor, parcela: it.parcela || '', obs: it.obs || '', grupo: it.grupo || '', venc: it.venc || '' })) ] }
+          await fetch('/api/salon/calculadora', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ano, mes, dados: novo }) })
+          setExtrasDespInd(prev => [...prev, ...itens])
+          setDirtyCalc(false)
+        } else {
+          // Outro mês: carrega o que já existe, SOMA e salva
+          const r = await fetch(`/api/salon/calculadora?ano=${ano}&mes=${mes}`, { credentials: 'include' }).then(x => x.ok ? x.json() : { dados: null }).catch(() => ({ dados: null }))
+          const base = (r?.dados && typeof r.dados === 'object') ? r.dados : {}
+          const extras = Array.isArray(base.extrasDespInd) ? base.extrasDespInd : []
+          const novo = { ...base, extrasDespInd: [...extras, ...itens.map(it => ({ nome: it.nome, valor: it.valor, parcela: it.parcela || '', obs: it.obs || '', grupo: it.grupo || '', venc: it.venc || '' })) ] }
+          await fetch('/api/salon/calculadora', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ano, mes, dados: novo }) })
+          setMesesComDados(prev => prev.some(mm => mm.ano === ano && mm.mes === mes) ? prev : [...prev, { ano, mes }])
+        }
+      }
+      setParcAberto(false)
+      setSavedMsg(`${N} parcela(s) lançada(s) e salva(s)!`)
+      setTimeout(() => setSavedMsg(''), 4000)
+    } catch {
+      alert('Erro ao lançar as parcelas. Tente novamente.')
+    } finally { setParcSalvando(false) }
   }
 
   // ── Custo Direto Desejado automático = 100% - Indireto - Lucro (fórmula DV: =1-E5-M5) ──
@@ -1461,9 +1534,12 @@ Use números reais. Seja direto.`
                   const cor=pctV>20?'#ef4444':pctV>10?'#f59e0b':'#10b981'
                   return(
                     <div key={i} className="grid linha-form-mobile gap-2 px-5 py-2 items-center" style={{gridTemplateColumns:'1fr 110px 70px 72px 24px',borderBottom:'1px solid #f59e0b20',background:'#fffdf5'}}>
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="text-xs font-semibold" style={{color:'#78350f'}}>{d.nome}</span>
-                        <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{background:'#f59e0b20',color:'#b45309'}}>catálogo</span>
+                        {d.grupo
+                          ? <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{background:'#dbeafe',color:'#1d4ed8'}}>💳 parcela {d.parcela}</span>
+                          : <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{background:'#f59e0b20',color:'#b45309'}}>catálogo</span>}
+                        {d.obs && <span className="text-[10px]" style={{color:'#767069'}}>· {d.obs}</span>}
                       </div>
                       <div className="relative">
                         <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#b45309'}}>R$</span>
@@ -1488,17 +1564,83 @@ Use números reais. Seja direto.`
                   )
                 })}
 
-                {/* Botão adicionar + modal catálogo */}
-                <div className="px-5 py-3 border-t flex items-center justify-between" style={{borderColor:'#f59e0b40',background:'#fef9ec'}}>
+                {/* Botão adicionar + parcelar + modal catálogo */}
+                <div className="px-5 py-3 border-t flex items-center gap-2 flex-wrap" style={{borderColor:'#f59e0b40',background:'#fef9ec'}}>
                   <button onClick={()=>setModalCatalogoAberto(true)}
                     className="flex items-center gap-2 text-xs px-4 py-2 rounded-lg font-semibold transition-all"
                     style={{background:'#f59e0b',color:'#fff',border:'none',boxShadow:'0 2px 6px #f59e0b40'}}>
                     <Plus size={13}/> Adicionar despesa do catálogo
                   </button>
+                  <button onClick={abrirParcelamento}
+                    className="flex items-center gap-2 text-xs px-4 py-2 rounded-lg font-semibold transition-all"
+                    style={{background:'#fff',color:'#b45309',border:'1.5px solid #f59e0b'}}>
+                    💳 Lançar parcelado
+                  </button>
                   {despesasCatalogo.filter(c=>c.categoria==='indireta').length===0 && (
                     <span className="text-[10px]" style={{color:'#b45309'}}>⚠️ Cadastre despesas em <strong>Gerenciar Catálogo</strong> primeiro</span>
                   )}
                 </div>
+
+                {/* Modal de parcelamento */}
+                {parcAberto && (
+                  <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center',padding:16}} onClick={()=>!parcSalvando&&setParcAberto(false)}>
+                    <div style={{background:'#fff',borderRadius:16,padding:22,width:'100%',maxWidth:560,maxHeight:'88vh',display:'flex',flexDirection:'column',gap:12,overflowY:'auto'}} onClick={e=>e.stopPropagation()}>
+                      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                        <h3 style={{fontSize:16,fontWeight:800,color:'#1a1a1a',margin:0}}>💳 Lançar despesa parcelada</h3>
+                        <button onClick={()=>!parcSalvando&&setParcAberto(false)} style={{background:'none',border:'none',cursor:'pointer',color:'#767069'}}><X size={18}/></button>
+                      </div>
+                      <p style={{fontSize:12,color:'#767069',margin:0}}>Cada parcela cai no mês do seu vencimento e é <strong>somada</strong> ao mês (nada é apagado). Ao confirmar, tudo já fica salvo.</p>
+
+                      <div>
+                        <label style={{fontSize:11,fontWeight:700,color:'#78350f',display:'block',marginBottom:4}}>Despesa *</label>
+                        <input list="parc-cat-list" value={parcDespesa} onChange={e=>setParcDespesa(e.target.value)} placeholder="Escolha do catálogo ou digite (ex: DAVINES)"
+                          style={{width:'100%',border:'1.5px solid #f59e0b',borderRadius:8,padding:'9px 10px',fontSize:13,outline:'none'}}/>
+                        <datalist id="parc-cat-list">
+                          {despesasCatalogo.filter(c=>c.categoria==='indireta').map(c=><option key={c.id} value={c.nome}/>)}
+                        </datalist>
+                      </div>
+
+                      <div>
+                        <label style={{fontSize:11,fontWeight:700,color:'#78350f',display:'block',marginBottom:4}}>Observação (opcional)</label>
+                        <input value={parcObs} onChange={e=>setParcObs(e.target.value)} placeholder="ex: Empréstimo — João / cartão Nubank"
+                          style={{width:'100%',border:'1.5px solid #e8e6e0',borderRadius:8,padding:'9px 10px',fontSize:13,outline:'none'}}/>
+                      </div>
+
+                      <div style={{display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
+                        <label style={{fontSize:11,fontWeight:700,color:'#78350f'}}>Em quantas vezes?</label>
+                        <input type="number" min={1} max={48} value={parcLinhas.length} onChange={e=>setParcN(Number(e.target.value))}
+                          style={{width:70,border:'1.5px solid #f59e0b',borderRadius:8,padding:'7px 10px',fontSize:13,textAlign:'center',outline:'none'}}/>
+                        <span style={{fontSize:11,color:'#767069'}}>a referência (1/{parcLinhas.length}, 2/{parcLinhas.length}…) é gerada automática</span>
+                      </div>
+
+                      {/* Linhas das parcelas */}
+                      <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                        {parcLinhas.map((l,i)=>(
+                          <div key={i} style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',background:'#fffbf0',border:'1px solid #f59e0b30',borderRadius:10,padding:'8px 10px'}}>
+                            <span style={{fontSize:12,fontWeight:800,color:'#b45309',minWidth:34}}>{i+1}/{parcLinhas.length}</span>
+                            <div style={{position:'relative',flex:'1 1 110px'}}>
+                              <span style={{position:'absolute',left:8,top:'50%',transform:'translateY(-50%)',fontSize:11,color:'#b45309'}}>R$</span>
+                              <input type="number" value={l.valor} onChange={e=>{const nd=[...parcLinhas];nd[i]={...nd[i],valor:e.target.value};setParcLinhas(nd)}} placeholder="valor"
+                                style={{width:'100%',paddingLeft:26,paddingRight:8,paddingTop:8,paddingBottom:8,border:'1.5px solid #e8e6e0',borderRadius:8,fontSize:13,outline:'none'}}/>
+                            </div>
+                            <input type="date" value={l.venc} onChange={e=>{const nd=[...parcLinhas];nd[i]={...nd[i],venc:e.target.value};setParcLinhas(nd)}}
+                              onClick={e=>{try{(e.currentTarget as any).showPicker?.()}catch{}}}
+                              style={{flex:'1 1 140px',border:'1.5px solid #e8e6e0',borderRadius:8,padding:'7px 10px',fontSize:13,outline:'none',cursor:'pointer'}}/>
+                            {l.venc && <span style={{fontSize:10,color:'#b45309',fontWeight:700}}>{MESES_NOMES[Number(l.venc.split('-')[1])]}</span>}
+                          </div>
+                        ))}
+                      </div>
+
+                      <div style={{display:'flex',gap:8,justifyContent:'flex-end',marginTop:4}}>
+                        <button onClick={()=>!parcSalvando&&setParcAberto(false)} style={{background:'transparent',border:'none',color:'#767069',fontSize:13,cursor:'pointer',padding:'9px 14px'}}>Cancelar</button>
+                        <button onClick={lancarParcelamento} disabled={parcSalvando}
+                          style={{background:'#16a34a',color:'#fff',border:'none',borderRadius:8,padding:'9px 20px',fontSize:14,fontWeight:800,cursor:'pointer',opacity:parcSalvando?0.6:1}}>
+                          {parcSalvando?'Lançando...':'Lançar parcelas'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Modal seletor de catálogo */}
                 {modalCatalogoAberto && (
