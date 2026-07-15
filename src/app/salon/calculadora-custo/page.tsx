@@ -428,6 +428,66 @@ function GuiaPassos({ passos }: { passos: {titulo: string, desc: string, ok: boo
   )
 }
 
+// ─── Componente ObsComProf ───────────────────────────────────────────────────
+// Campo de observação: continua com digitação livre + botão que abre uma janela
+// suspensa com todos os profissionais cadastrados. Ao clicar num nome, ele é
+// inserido na observação (sem apagar o que já foi digitado).
+function ObsComProf({ valor, onChange, profs }: {
+  valor: string
+  onChange: (v: string) => void
+  profs: { id: string; nome: string }[]
+}) {
+  const [aberto, setAberto] = useState(false)
+  const [busca, setBusca] = useState('')
+  const filtrados = busca.trim()
+    ? profs.filter(p => p.nome.toLowerCase().includes(busca.trim().toLowerCase()))
+    : profs
+  const inserir = (nome: string) => {
+    const atual = (valor || '').trim()
+    onChange(atual ? `${atual} — ${nome}` : nome)
+    setAberto(false)
+    setBusca('')
+  }
+  return (
+    <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 6, alignItems: 'center', position: 'relative' }}>
+      <input value={valor || ''} onChange={e => onChange(e.target.value)}
+        placeholder="Observação (ex: de quem, referência, motivo)…"
+        style={{ flex: 1, minWidth: 0, background: '#fff', border: '1px dashed #f59e0b80', borderRadius: 8, padding: '6px 10px', fontSize: 11.5, color: '#78350f', outline: 'none' }} />
+      <button type="button" onClick={() => setAberto(a => !a)} title="Escolher profissional cadastrado"
+        style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4, background: aberto ? '#f59e0b' : '#fff', border: '1px solid #f59e0b80', borderRadius: 8, padding: '6px 9px', fontSize: 11, color: aberto ? '#fff' : '#b45309', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' }}>
+        👤 Profissional
+      </button>
+      {aberto && (
+        <>
+          <div onClick={() => setAberto(false)} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />
+          <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: 4, width: 230, maxHeight: 260, overflowY: 'auto', background: '#fff', border: '1px solid #f59e0b', borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.18)', zIndex: 41 }}>
+            <div style={{ padding: 6, borderBottom: '1px solid #f3ede0', position: 'sticky', top: 0, background: '#fff' }}>
+              <input autoFocus value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar profissional…"
+                style={{ width: '100%', padding: '5px 8px', fontSize: 11.5, border: '1px solid #e8e6e0', borderRadius: 6, outline: 'none' }} />
+            </div>
+            {profs.length === 0 && (
+              <div style={{ padding: '12px 10px', fontSize: 11, color: '#999', textAlign: 'center' }}>
+                Nenhum profissional cadastrado
+              </div>
+            )}
+            {profs.length > 0 && filtrados.length === 0 && (
+              <div style={{ padding: '12px 10px', fontSize: 11, color: '#999', textAlign: 'center' }}>
+                Nenhum resultado
+              </div>
+            )}
+            {filtrados.map(p => (
+              <button key={p.id} type="button" onClick={() => inserir(p.nome)}
+                style={{ display: 'block', width: '100%', textAlign: 'left', padding: '7px 12px', fontSize: 11.5, color: '#3a3835', background: 'transparent', border: 'none', borderBottom: '1px solid #f7f3ea', cursor: 'pointer' }}>
+                {p.nome}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
 // ─── Constantes ─────────────────────────────────────────────────────────────
 const DESPESAS_INDIRETAS = [
   {nome:'Aluguel',          dica:'Se imóvel próprio, considere o valor de mercado + condomínio.'},
@@ -551,6 +611,8 @@ export default function CalculadoraCusto() {
   const [atualizando, setAtualizando] = useState(false)
   // Histórico para comparativo mensal
   const [historicoMeses, setHistoricoMeses] = useState<any[]>([])
+  // Profissionais cadastrados (para preencher observação sem digitar)
+  const [profsLista, setProfsLista] = useState<{id:string,nome:string}[]>([])
   // Catálogo de despesas
   interface DespesaCat { id:string; nome:string; categoria:string; observacao?:string }
   const [despesasCatalogo, setDespesasCatalogo] = useState<DespesaCat[]>([])
@@ -673,6 +735,21 @@ export default function CalculadoraCusto() {
     if (d.mSala !== undefined) setMSala(d.mSala)
     if (d.servicosProd) setServicoProd(d.servicosProd)
   }
+
+  // Carrega os profissionais cadastrados (usado no seletor da observação)
+  useEffect(() => {
+    fetch('/api/profissionais?ativo=true&leve=1', { credentials: 'include' })
+      .then(r => r.ok ? r.json() : [])
+      .then((lista:any) => {
+        if (!Array.isArray(lista)) return
+        const profs = lista
+          .filter((p:any) => !p.is_departamento)
+          .map((p:any) => ({ id: String(p.id), nome: (p.apelido || p.nome_completo || '').trim() }))
+          .filter((p:any) => p.nome)
+        setProfsLista(profs)
+      })
+      .catch(() => {})
+  }, [])
 
   // Carrega lista de meses com dados, soma reserva e calcula média do custo operacional
   useEffect(() => {
@@ -1528,9 +1605,8 @@ Use números reais. Seja direto.`
                       </div>
                       <div/>
                       {(notasAbertas.has('d'+i) || d.obs) && (
-                        <input value={d.obs||''} onChange={e=>{const nd=[...despInd];nd[i]={...nd[i],obs:e.target.value};setDespInd(nd)}}
-                          placeholder="Observação (ex: de quem, referência, motivo)…"
-                          style={{gridColumn:'1 / -1',background:'#fff',border:'1px dashed #f59e0b80',borderRadius:8,padding:'6px 10px',fontSize:11.5,color:'#78350f',outline:'none'}}/>
+                        <ObsComProf valor={d.obs||''} profs={profsLista}
+                          onChange={val=>{const nd=[...despInd];nd[i]={...nd[i],obs:val};setDespInd(nd)}}/>
                       )}
                     </div>
                   )
@@ -1569,9 +1645,8 @@ Use números reais. Seja direto.`
                         <button onClick={()=>setExtrasDespInd(prev=>prev.filter((_,idx)=>idx!==i))} style={{color:'#ef4444'}}><Trash2 size={12}/></button>
                       </div>
                       {(notasAbertas.has('e'+i) || d.obs) && (
-                        <input value={d.obs||''} onChange={e=>{const nd=[...extrasDespInd];nd[i]={...nd[i],obs:e.target.value};setExtrasDespInd(nd)}}
-                          placeholder="Observação (ex: de quem, referência, motivo)…"
-                          style={{gridColumn:'1 / -1',background:'#fff',border:'1px dashed #f59e0b80',borderRadius:8,padding:'6px 10px',fontSize:11.5,color:'#78350f',outline:'none'}}/>
+                        <ObsComProf valor={d.obs||''} profs={profsLista}
+                          onChange={val=>{const nd=[...extrasDespInd];nd[i]={...nd[i],obs:val};setExtrasDespInd(nd)}}/>
                       )}
                     </div>
                   )
