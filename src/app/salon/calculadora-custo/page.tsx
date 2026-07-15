@@ -1,6 +1,6 @@
 ﻿'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { ArrowLeft, Plus, Trash2, Calculator, Loader2, Save, ChevronDown, ChevronUp, History, CheckCircle, ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { usePermissoes } from '@/lib/usePermissoes'
 import { useGuardaSalvar } from '@/lib/guardaSalvar'
@@ -439,6 +439,9 @@ function ObsComProf({ valor, onChange, profs }: {
 }) {
   const [aberto, setAberto] = useState(false)
   const [busca, setBusca] = useState('')
+  const btnRef = useRef<HTMLButtonElement>(null)
+  // Posição fixa do menu (calculada a partir do botão) — evita que o card corte
+  const [pos, setPos] = useState<{ left: number; top?: number; bottom?: number; width: number }>({ left: 0, top: 0, width: 230 })
   const filtrados = busca.trim()
     ? profs.filter(p => p.nome.toLowerCase().includes(busca.trim().toLowerCase()))
     : profs
@@ -448,19 +451,36 @@ function ObsComProf({ valor, onChange, profs }: {
     setAberto(false)
     setBusca('')
   }
+  const toggle = () => {
+    if (aberto) { setAberto(false); return }
+    const el = btnRef.current
+    const larg = 230, alt = 280
+    if (el) {
+      const r = el.getBoundingClientRect()
+      const winH = window.innerHeight, winW = window.innerWidth
+      const espacoAbaixo = winH - r.bottom
+      const abrirPraCima = espacoAbaixo < alt && r.top > espacoAbaixo
+      const left = Math.max(8, Math.min(r.right - larg, winW - larg - 8))
+      setPos(abrirPraCima
+        ? { left, bottom: winH - r.top + 4, width: larg }
+        : { left, top: r.bottom + 4, width: larg })
+    }
+    setAberto(true)
+    setBusca('')
+  }
   return (
-    <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 6, alignItems: 'center', position: 'relative' }}>
+    <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 6, alignItems: 'center' }}>
       <input value={valor || ''} onChange={e => onChange(e.target.value)}
         placeholder="Observação (ex: de quem, referência, motivo)…"
         style={{ flex: 1, minWidth: 0, background: '#fff', border: '1px dashed #f59e0b80', borderRadius: 8, padding: '6px 10px', fontSize: 11.5, color: '#78350f', outline: 'none' }} />
-      <button type="button" onClick={() => setAberto(a => !a)} title="Escolher profissional cadastrado"
+      <button ref={btnRef} type="button" onClick={toggle} title="Escolher profissional cadastrado"
         style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4, background: aberto ? '#f59e0b' : '#fff', border: '1px solid #f59e0b80', borderRadius: 8, padding: '6px 9px', fontSize: 11, color: aberto ? '#fff' : '#b45309', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' }}>
         👤 Profissional
       </button>
       {aberto && (
         <>
-          <div onClick={() => setAberto(false)} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />
-          <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: 4, width: 230, maxHeight: 260, overflowY: 'auto', background: '#fff', border: '1px solid #f59e0b', borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.18)', zIndex: 41 }}>
+          <div onClick={() => setAberto(false)} style={{ position: 'fixed', inset: 0, zIndex: 9998 }} />
+          <div style={{ position: 'fixed', left: pos.left, top: pos.top, bottom: pos.bottom, width: pos.width, maxHeight: 280, overflowY: 'auto', background: '#fff', border: '1px solid #f59e0b', borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.18)', zIndex: 9999 }}>
             <div style={{ padding: 6, borderBottom: '1px solid #f3ede0', position: 'sticky', top: 0, background: '#fff' }}>
               <input autoFocus value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar profissional…"
                 style={{ width: '100%', padding: '5px 8px', fontSize: 11.5, border: '1px solid #e8e6e0', borderRadius: 6, outline: 'none' }} />
