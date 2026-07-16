@@ -650,6 +650,7 @@ export default function CalculadoraCusto() {
   const [secOutras,     setSecOutras]     = useState(false)
   const [secResultado,  setSecResultado]  = useState(true)
   const [secConfigServ, setSecConfigServ] = useState(false)
+  const [secConfigRD,   setSecConfigRD]   = useState(false) // Configurações de RD começam fechadas
   const [editDespCat, setEditDespCat] = useState<DespesaCat|null>(null)
   const [fdNome, setFdNome] = useState(''); const [fdCat, setFdCat] = useState('indireta'); const [fdObs, setFdObs] = useState('')
   const [vlrProdEstoque,setVlrProdEstoque]= useState('')
@@ -1574,81 +1575,104 @@ Use números reais. Seja direto.`
               </div>
             </div>
 
-            {/* Card configurações */}
-            <div className="rounded-2xl p-5 border" style={{background:'#faf9f7',borderColor:'#5b4fcf40',...oculto(podeCalc('calc_config'))}}>
-              <h3 className="font-bold text-sm mb-4" style={{color:'#5b4fcf'}}>⚙️ Configurações</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <label className="text-xs font-bold" style={{color:'#767069'}}>💰 Faturamento Mensal (R$)</label>
-                    <InfoBtn id="faturamento"/>
-                    <AvisoDefault ativo={!fat||fat==='0'} padrao="não preenchido" onPreencher={()=>{}} onManter={()=>{}}/>
-                  </div>
-                  <p className="text-xs mb-1" style={{color:'#6b6860'}}>Pré-preenchido com a média real dos últimos 12 meses (até o mês anterior). Pode editar.</p>
-                  {mediaFat12 > 0 && !fat && (
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <span className="text-[10px]" style={{color:'#5b4fcf'}}>📊 Média calculada: <strong>R$ {mediaFat12.toLocaleString('pt-BR')}</strong></span>
-                      <button onClick={()=>setFat(String(mediaFat12))}
-                        className="text-[10px] px-2 py-0.5 rounded-full font-bold"
-                        style={{background:'#5b4fcf',color:'#fff'}}>Usar</button>
-                    </div>
-                  )}
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>R$</span>
-                    <input type="number" value={fat} onChange={e=>setFat(e.target.value)}
-                      placeholder={mediaFat12 > 0 ? String(mediaFat12) : 'Ex: 50000'}
-                      className="w-full pl-9 pr-3 py-2.5 rounded-xl text-[#1a1a1a] text-base font-bold focus:outline-none"
-                      style={{background:'#f5f4f0',border:'1px solid #5b4fcf60'}}/>
-                  </div>
+            {/* Card configurações — recolhível (fechado por padrão), campos em coluna única */}
+            <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#5b4fcf40',...oculto(podeCalc('calc_config'))}}>
+              <button onClick={()=>setSecConfigRD(p=>!p)} className="w-full flex items-center justify-between px-5 py-3 transition-colors"
+                style={{background:'linear-gradient(135deg,#faf9f7,#efedfb)'}}>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {secConfigRD ? <ChevronUp size={14} style={{color:'#5b4fcf'}}/> : <ChevronDown size={14} style={{color:'#5b4fcf'}}/>}
+                  <span className="font-bold text-sm" style={{color:'#5b4fcf'}}>⚙️ Configurações</span>
+                  {fatN>0
+                    ? <span className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{background:'#5b4fcf',color:'#fff'}}>Faturamento {fmtR(fatN)} · Lucro {n(lucroD)||0}%</span>
+                    : <AvisoDefault ativo={!fat||fat==='0'} padrao="não preenchido" onPreencher={()=>setSecConfigRD(true)} onManter={()=>{}}/>}
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <span className="text-[10px] flex-shrink-0" style={{color:'#767069'}}>{secConfigRD?'fechar ✕':'abrir ▾'}</span>
+              </button>
+              {secConfigRD && (
+              <div className="px-5 pb-6 pt-4 border-t" style={{borderColor:'#5b4fcf20'}}>
+                <div className="max-w-xl mx-auto space-y-5">
+                  {/* 1 — Faturamento */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{background:'#5b4fcf',color:'#fff'}}>1</span>
+                      <label className="text-xs font-bold" style={{color:'#5b4fcf'}}>💰 Faturamento Mensal (R$)</label>
+                      <InfoBtn id="faturamento"/>
+                    </div>
+                    <p className="text-xs mb-1.5 pl-7" style={{color:'#6b6860'}}>Quanto entra no caixa por mês. Pré-preenchido com a média real dos últimos 12 meses — pode editar.</p>
+                    {mediaFat12 > 0 && !fat && (
+                      <div className="flex items-center gap-2 mb-1.5 pl-7">
+                        <span className="text-[10px]" style={{color:'#5b4fcf'}}>📊 Média calculada: <strong>R$ {mediaFat12.toLocaleString('pt-BR')}</strong></span>
+                        <button onClick={()=>setFat(String(mediaFat12))}
+                          className="text-[10px] px-2 py-0.5 rounded-full font-bold"
+                          style={{background:'#5b4fcf',color:'#fff'}}>Usar</button>
+                      </div>
+                    )}
+                    <div className="relative pl-7">
+                      <span className="absolute left-10 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>R$</span>
+                      <input type="number" value={fat} onChange={e=>setFat(e.target.value)}
+                        placeholder={mediaFat12 > 0 ? String(mediaFat12) : 'Ex: 50000'}
+                        className="w-full pl-9 pr-3 py-2.5 rounded-xl text-[#1a1a1a] text-base font-bold focus:outline-none"
+                        style={{background:'#fff',border:'1.5px solid #5b4fcf60'}}/>
+                    </div>
+                  </div>
+                  {/* 2 — Custo Indireto / 3 — Lucro / 4 — Custo Direto (auto) */}
                   {[
-                    {l:'Custo Indireto Desejado',v:custIndD,set:setCustIndD,c:'#f59e0b',dica:'Recomendado: 30%',auto:false,info:'custIndD'},
-                    {l:'Custo Direto Desejado',v:custDirD,set:null,c:'#ef4444',dica:'Calculado: 100% − Indireto − Lucro',auto:true,info:'custDirD'},
-                    {l:'Lucro Desejado',v:lucroD,set:setLucroD,c:'#10b981',dica:'Recomendado: 15%',auto:false,info:'lucroD'},
+                    {num:'2',l:'Custo Indireto Desejado (%)',v:custIndD,set:setCustIndD,c:'#f59e0b',dica:'Quanto no máximo você quer gastar com custos fixos. Recomendado: 30%.',auto:false,info:'custIndD'},
+                    {num:'3',l:'Lucro Desejado (%)',v:lucroD,set:setLucroD,c:'#10b981',dica:'Quanto você quer que sobre de lucro no fim do mês. Recomendado: 15%.',auto:false,info:'lucroD'},
+                    {num:'4',l:'Custo Direto Desejado (%)',v:custDirD,set:null,c:'#ef4444',dica:'O que sobra para comissões, produtos, imposto e cartão. Calculado automaticamente: 100% − Indireto − Lucro.',auto:true,info:'custDirD'},
                   ].map((f:any)=>(
                     <div key={f.l}>
-                      <div className="flex items-center gap-1 mb-1">
-                        <label className="text-[10px] font-bold" style={{color:f.c}}>{f.l}</label>
-                        {f.auto && <span className="text-[8px] px-1 rounded font-bold" style={{background:'#ef444425',color:'#ef4444'}}>=auto</span>}
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{background:f.c,color:'#fff'}}>{f.num}</span>
+                        <label className="text-xs font-bold" style={{color:f.c}}>{f.l}</label>
+                        {f.auto && <span className="text-[8px] px-1.5 py-0.5 rounded-full font-bold" style={{background:'#ef444425',color:'#ef4444'}}>= automático</span>}
                         <InfoBtn id={f.info}/>
                       </div>
-                      <p className="text-[9px] mb-1" style={{color:'#6b6860'}}>{f.dica}</p>
-                      <div className="relative">
+                      <p className="text-xs mb-1.5 pl-7" style={{color:'#6b6860'}}>{f.dica}</p>
+                      <div className="relative pl-7">
                         <input type="number" value={f.v} onChange={e=>f.set&&f.set(e.target.value)} readOnly={f.auto}
-                          className="w-full pr-6 pl-2 py-1.5 rounded-lg text-xs text-[#1a1a1a] focus:outline-none"
-                          style={{background:'#f5f4f0',border:`1px solid ${f.c}40`}}/>
-                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#767069'}}>%</span>
+                          className="w-full pr-8 pl-3 py-2.5 rounded-xl text-sm font-bold text-[#1a1a1a] focus:outline-none"
+                          style={{background:f.auto?'#f5f4f0':'#fff',border:`1.5px solid ${f.c}50`}}/>
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>%</span>
                       </div>
                     </div>
                   ))}
-                </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <div className="flex items-center gap-2 mb-1"><label className="text-xs font-bold" style={{color:'#767069'}}>🏦 Investimento Inicial (R$)</label><InfoBtn id="invInicial"/></div>
-                  <p className="text-xs mb-1" style={{color:'#6b6860'}}>Valor total investido no negócio</p>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>R$</span>
-                    <input type="number" value={invInicial} onChange={e=>setInvInicial(e.target.value)} placeholder="Ex: 100000"
-                      className="w-full pl-9 pr-3 py-2 rounded-xl text-[#1a1a1a] text-sm focus:outline-none"
-                      style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
+                  {/* 5 — Investimento Inicial */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{background:'#7c6fe0',color:'#fff'}}>5</span>
+                      <label className="text-xs font-bold" style={{color:'#767069'}}>🏦 Investimento Inicial (R$)</label>
+                      <InfoBtn id="invInicial"/>
+                    </div>
+                    <p className="text-xs mb-1.5 pl-7" style={{color:'#6b6860'}}>Tudo que você gastou para montar o salão.</p>
+                    <div className="relative pl-7">
+                      <span className="absolute left-10 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>R$</span>
+                      <input type="number" value={invInicial} onChange={e=>setInvInicial(e.target.value)} placeholder="Ex: 100000"
+                        className="w-full pl-9 pr-3 py-2.5 rounded-xl text-[#1a1a1a] text-sm font-bold focus:outline-none"
+                        style={{background:'#fff',border:'1.5px solid #e8e6e0'}}/>
+                    </div>
+                  </div>
+                  {/* 6 — Total a ser Depreciado */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{background:'#7c6fe0',color:'#fff'}}>6</span>
+                      <label className="text-xs font-bold" style={{color:'#767069'}}>📉 Total a ser Depreciado (R$)</label>
+                      <InfoBtn id="totalDeprec"/>
+                    </div>
+                    <p className="text-xs mb-1.5 pl-7" style={{color:'#6b6860'}}>
+                      Equipamentos, móveis e reformas — dividido por 84 meses (7 anos)
+                      {n(totalDeprec)>0 && <span style={{color:'#7c6fe0'}}> → {fmtR(depMensal)}/mês</span>}
+                    </p>
+                    <div className="relative pl-7">
+                      <span className="absolute left-10 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>R$</span>
+                      <input type="number" value={totalDeprec} onChange={e=>setTotalDeprec(e.target.value)} placeholder="Ex: 10000"
+                        className="w-full pl-9 pr-3 py-2.5 rounded-xl text-[#1a1a1a] text-sm font-bold focus:outline-none"
+                        style={{background:'#fff',border:'1.5px solid #e8e6e0'}}/>
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <div className="flex items-center gap-2 mb-1"><label className="text-xs font-bold" style={{color:'#767069'}}>📉 Total a ser Depreciado (R$)</label><InfoBtn id="totalDeprec"/></div>
-                  <p className="text-xs mb-1" style={{color:'#6b6860'}}>
-                    Equipamentos, móveis, reformas — dividido por 84 meses (7 anos) — padrão recomendado
-                    {n(totalDeprec)>0 && <span style={{color:'#7c6fe0'}}> → {fmtR(depMensal)}/mês</span>}
-                  </p>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>R$</span>
-                    <input type="number" value={totalDeprec} onChange={e=>setTotalDeprec(e.target.value)} placeholder="Ex: 10000"
-                      className="w-full pl-9 pr-3 py-2 rounded-xl text-[#1a1a1a] text-sm focus:outline-none"
-                      style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
-                  </div>
-                </div>
               </div>
+              )}
             </div>
 
             {/* Despesas Indiretas */}
