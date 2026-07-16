@@ -1913,26 +1913,29 @@ Use números reais. Seja direto.`
                 </div>
                 <span className="font-bold text-sm" style={{color:'#7c6fe0'}}>{fmtR(totProvisao)}</span>
               </button>
-              {secProvisao && <><div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-5">
+              {secProvisao && <><div className="p-5">
+                <div className="max-w-xl mx-auto space-y-5">
                 {[
-                  {l:'13º Salário',v:sal13,set:setSal13,dica:'Auto: Salários ÷ 12',info:'sal13'},
-                  {l:'Férias',v:ferias,set:setFerias,dica:'Auto: Salários ÷ 36 (1/3 mensal)',info:'ferias'},
-                  {l:'FGTS Rescisório',v:fgtsR,set:setFgtsR,dica:'Auto: Salários × 4%',info:'fgtsR'},
+                  {num:'1',l:'13º Salário',v:sal13,set:setSal13,dica:'Todo mês, separe 1/12 dos salários para o 13º. Auto: Salários ÷ 12.',info:'sal13'},
+                  {num:'2',l:'Férias',v:ferias,set:setFerias,dica:'Separe também a provisão de férias (salário + 1/3). Auto: Salários ÷ 36.',info:'ferias'},
+                  {num:'3',l:'FGTS Rescisório',v:fgtsR,set:setFgtsR,dica:'Reserva para multa de 40% em caso de demissão. Auto: Salários × 4%.',info:'fgtsR'},
                 ].map((f:any)=>(
                   <div key={f.l}>
-                    <div className="flex items-center gap-1.5 mb-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{background:'#7c6fe0',color:'#fff'}}>{f.num}</span>
                       <label className="text-xs font-bold" style={{color:'#7c6fe0'}}>{f.l}</label>
                       <InfoBtn id={f.info}/>
                     </div>
-                    <p className="text-[10px] mb-1" style={{color:'#6b6860'}}>{f.dica}</p>
-                    <div className="relative">
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>R$</span>
+                    <p className="text-xs mb-1.5 pl-7" style={{color:'#6b6860'}}>{f.dica}</p>
+                    <div className="relative pl-7">
+                      <span className="absolute left-10 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>R$</span>
                       <input type="number" value={f.v} onChange={e=>f.set(e.target.value)} placeholder="0"
-                        className="w-full pl-8 pr-2 py-2 rounded-lg text-sm text-[#1a1a1a] focus:outline-none"
-                        style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
+                        className="w-full pl-9 pr-3 py-2.5 rounded-xl text-sm font-bold text-[#1a1a1a] focus:outline-none"
+                        style={{background:'#fff',border:'1.5px solid #7c6fe040'}}/>
                     </div>
                   </div>
                 ))}
+                </div>
               </div>
               {depMensal > 0 && (
                 <div className="px-5 pb-3 flex items-center gap-2 text-xs" style={{color:'#767069'}}>
@@ -1953,30 +1956,33 @@ Use números reais. Seja direto.`
                 </div>
                 <span className="font-bold text-sm" style={{color:'#ef4444'}}>{fmtR(totDiretas)}</span>
               </button>
-              {secDiretas && <><div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-5">
+              {secDiretas && <><div className="p-5">
+                <div className="max-w-xl mx-auto space-y-5">
                 {[
-                  {l:'Imposto (R$)',v:imposto,set:setImposto,dica:'Simples Nacional ou regime tributário do mês',info:'imposto'},
-                  {l:'Produto/Insumo (R$)',v:produto,set:setProduto,dica:'Total de produtos consumidos nos serviços',info:'produto'},
-                  {l:'Rateio/Comissão (R$)',v:rateio,set:setRateio,dica:'Comissões pagas aos profissionais',info:'rateio'},
-                  {l:'Taxa de Cartão (R$)',v:taxaC,set:setTaxaC,dica:'Total cobrado pelas maquininhas no mês',info:'taxaC'},
+                  {num:'1',l:'Imposto (R$)',v:imposto,set:setImposto,dica:'Quanto pagou de imposto no mês (Simples Nacional ou seu regime).',info:'imposto'},
+                  {num:'2',l:'Produto/Insumo (R$)',v:produto,set:setProduto,dica:'Total de produtos consumidos nos serviços do mês.',info:'produto'},
+                  {num:'3',l:'Rateio/Comissão (R$)',v:rateio,set:setRateio,dica:'Total de comissões pagas aos profissionais.',info:'rateio'},
+                  {num:'4',l:'Taxa de Cartão (R$)',v:taxaC,set:setTaxaC,dica:'Total cobrado pelas maquininhas no mês.',info:'taxaC'},
                 ].map((f:any)=>(
                   <div key={f.l}>
-                    <div className="flex items-center gap-1.5 mb-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{background:'#ef4444',color:'#fff'}}>{f.num}</span>
                       <label className="text-xs font-bold" style={{color:'#ef4444'}}>{f.l}</label>
                       <InfoBtn id={f.info}/>
                     </div>
-                    <p className="text-[10px] mb-1" style={{color:'#6b6860'}}>{f.dica}</p>
-                    <div className="relative">
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>R$</span>
+                    <p className="text-xs mb-1.5 pl-7" style={{color:'#6b6860'}}>{f.dica}</p>
+                    <div className="relative pl-7">
+                      <span className="absolute left-10 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>R$</span>
                       <input type="number" value={f.v} onChange={e=>f.set(e.target.value)} placeholder="0"
-                        className="w-full pl-8 pr-2 py-2 rounded-lg text-sm text-[#1a1a1a] focus:outline-none"
-                        style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
+                        className="w-full pl-9 pr-3 py-2.5 rounded-xl text-sm font-bold text-[#1a1a1a] focus:outline-none"
+                        style={{background:'#fff',border:'1.5px solid #ef444430'}}/>
                     </div>
                   </div>
                 ))}
                 {/* Extras Diretas */}
                 {extrasDiretas.map((d,i)=>(
-                  <div key={i} className="relative">
+                  <div key={i} className="relative pl-7">
+                    <span className="absolute left-0 top-0.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{background:'#ef444425',color:'#ef4444'}}>+</span>
                     <div className="flex items-center gap-1 mb-1">
                       <div className="flex-1 relative">
                         <input value={d.nome} onChange={e=>{const nd=[...extrasDiretas];nd[i]={...nd[i],nome:e.target.value};setExtrasDiretas(nd);setAutocomplDespesa(`dir-${i}`)}}
@@ -2001,6 +2007,7 @@ Use números reais. Seja direto.`
                     </div>
                   </div>
                 ))}
+                </div>
               </div>
               <div className="px-5 py-3 border-t" style={{borderColor:'#e8e6e0'}}>
                 <button onClick={()=>setExtrasDiretas(p=>[...p,{nome:'',valor:'',dica:''}])}
@@ -2022,28 +2029,31 @@ Use números reais. Seja direto.`
                 <span className="font-bold text-sm" style={{color:'#0891b2'}}>{fmtR(totOutras)}</span>
               </button>
               {secOutras && <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-5">
+              <div className="p-5">
+                <div className="max-w-xl mx-auto space-y-5">
                 {[
-                  {l:'Aquisição de Equipamento (R$)',v:aquisicaoEq,set:setAquisicaoEq,dica:'Compra de equipamentos, móveis, utensílios',info:'aquisicaoEq'},
-                  {l:'Distribuição de Sócios (R$)',v:distSocios,set:setDistSocios,dica:'Retirada de lucros pelos sócios',info:'distSocios'},
+                  {num:'1',l:'Aquisição de Equipamento (R$)',v:aquisicaoEq,set:setAquisicaoEq,dica:'Compras de equipamentos, móveis e utensílios feitas neste mês.',info:'aquisicaoEq'},
+                  {num:'2',l:'Distribuição de Sócios (R$)',v:distSocios,set:setDistSocios,dica:'Retirada de lucros pelos sócios (diferente do pró-labore).',info:'distSocios'},
                 ].map((f:any)=>(
                   <div key={f.l}>
-                    <div className="flex items-center gap-1.5 mb-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{background:'#0891b2',color:'#fff'}}>{f.num}</span>
                       <label className="text-xs font-bold" style={{color:'#0891b2'}}>{f.l}</label>
                       <InfoBtn id={f.info}/>
                     </div>
-                    <p className="text-[10px] mb-1" style={{color:'#6b6860'}}>{f.dica}</p>
-                    <div className="relative">
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>R$</span>
+                    <p className="text-xs mb-1.5 pl-7" style={{color:'#6b6860'}}>{f.dica}</p>
+                    <div className="relative pl-7">
+                      <span className="absolute left-10 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>R$</span>
                       <input type="number" value={f.v} onChange={e=>f.set(e.target.value)} placeholder="0"
-                        className="w-full pl-8 pr-2 py-2 rounded-lg text-sm text-[#1a1a1a] focus:outline-none"
-                        style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
+                        className="w-full pl-9 pr-3 py-2.5 rounded-xl text-sm font-bold text-[#1a1a1a] focus:outline-none"
+                        style={{background:'#fff',border:'1.5px solid #06b6d430'}}/>
                     </div>
                   </div>
                 ))}
                 {/* Extras Outras */}
                 {extrasOutras.map((d,i)=>(
-                  <div key={i} className="relative">
+                  <div key={i} className="relative pl-7">
+                    <span className="absolute left-0 top-0.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{background:'#06b6d425',color:'#0891b2'}}>+</span>
                     <div className="flex items-center gap-1 mb-1">
                       <div className="flex-1 relative">
                         <input value={d.nome} onChange={e=>{const nd=[...extrasOutras];nd[i]={...nd[i],nome:e.target.value};setExtrasOutras(nd);setAutocomplDespesa(`out-${i}`)}}
@@ -2068,6 +2078,7 @@ Use números reais. Seja direto.`
                     </div>
                   </div>
                 ))}
+                </div>
               </div>
               <div className="px-5 py-3 border-t" style={{borderColor:'#e8e6e0'}}>
                 <button onClick={()=>setExtrasOutras(p=>[...p,{nome:'',valor:'',dica:''}])}
@@ -2097,40 +2108,43 @@ Use números reais. Seja direto.`
                   </button>
                 </div>
                 {secResultado && <div className="space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="max-w-xl mx-auto space-y-3">
                   {[
-                    {l:'Custo Operacional Total',v:custoOp,pct:pctStr(custoOp,fatN),c:'#f59e0b',dica:'Indiretas + Provisão + Depreciação'},
-                    {l:'Margem Operacional',v:margOpR,pct:pctStr(margOpR,fatN),c:'#06b6d4',dica:'Faturamento − Despesas Diretas'},
-                    {l:'Resultado Operacional',v:resultOp,pct:pctStr(resultOp,fatN),c:corRes(resultOp),dica:'Margem − Custo Operacional'},
-                    {l:'Resultado Financeiro',v:resultFin,pct:pctStr(resultFin,fatN),c:corRes(resultFin),dica:'Resultado Op. − Outras Despesas + Depreciação'},
-                  ].map((c,i)=>(
-                    <div key={i} className="rounded-xl p-4 border" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
-                      <p className="text-xs mb-0.5" style={{color:'#767069'}}>{c.l}</p>
-                      <p className="text-[10px] mb-2" style={{color:'#767069'}}>{c.dica}</p>
-                      <p className="text-2xl font-bold" style={{color:c.c}}>{fmtR(c.v)}</p>
-                      <p className="text-xs mt-1" style={{color:c.c+'99'}}>{c.pct} do faturamento</p>
+                    {num:'1',l:'Custo Operacional Total',v:custoOp,pct:pctStr(custoOp,fatN),c:'#f59e0b',dica:'Tudo que o salão gasta para funcionar: Indiretas + Provisão + Depreciação'},
+                    {num:'2',l:'Margem Operacional',v:margOpR,pct:pctStr(margOpR,fatN),c:'#06b6d4',dica:'O que sobra do faturamento após pagar as Despesas Diretas'},
+                    {num:'3',l:'Resultado Operacional',v:resultOp,pct:pctStr(resultOp,fatN),c:corRes(resultOp),dica:'Margem − Custo Operacional = o lucro real da operação'},
+                    {num:'4',l:'Resultado Financeiro',v:resultFin,pct:pctStr(resultFin,fatN),c:corRes(resultFin),dica:'Resultado Op. − Outras Despesas + Depreciação = o que sobrou no caixa'},
+                  ].map((c:any)=>(
+                    <div key={c.num} className="rounded-xl p-4 border" style={{background:'#ffffff',borderColor:c.c+'30'}}>
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{background:c.c,color:'#fff'}}>{c.num}</span>
+                        <p className="text-xs font-bold" style={{color:'#767069'}}>{c.l}</p>
+                      </div>
+                      <p className="text-[10px] mb-2 pl-7" style={{color:'#767069'}}>{c.dica}</p>
+                      <p className="text-2xl font-bold pl-7" style={{color:c.c}}>{fmtR(c.v)} <span className="text-xs font-normal" style={{color:c.c+'99'}}>({c.pct} do faturamento)</span></p>
                     </div>
                   ))}
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[
-                    {l:'Ponto de Equilíbrio',v:fmtR(pe),c:'#10b981',dica:'Faturamento mínimo para cobrir tudo'},
-                    {l:`PE c/ Lucro de ${lucroD}%`,v:fmtR(peLucro),c:'#7c6fe0',dica:'Para cobrir custos + lucro desejado'},
-                    {l:'Rentabilidade',v:`${(rentab*100).toFixed(2)}%`,c:corRes(rentab),dica:'Resultado Op. / Investimento Inicial'},
-                    {l:'Capital de Giro Mínimo',v:fmtR(capGiro),c:'#06b6d4',dica:'Custo Operacional × 3 meses'},
-                  ].map((c,i)=>(
-                    <div key={i} className="rounded-xl p-4 border text-center" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
-                      <p className="text-[10px] mb-1" style={{color:'#767069'}}>{c.l}</p>
-                      <p className="text-lg font-bold" style={{color:c.c}}>{c.v}</p>
-                      <p className="text-[9px] mt-1" style={{color:'#767069'}}>{c.dica}</p>
+                    {num:'5',l:'Ponto de Equilíbrio',v:fmtR(pe),c:'#10b981',dica:'Faturamento mínimo para cobrir tudo — abaixo disso é prejuízo'},
+                    {num:'6',l:`Ponto de Equilíbrio c/ Lucro de ${lucroD}%`,v:fmtR(peLucro),c:'#7c6fe0',dica:'Quanto precisa faturar para cobrir custos E atingir o lucro desejado'},
+                    {num:'7',l:'Rentabilidade',v:`${(rentab*100).toFixed(2)}%`,c:corRes(rentab),dica:'Resultado Operacional ÷ Investimento Inicial'},
+                    {num:'8',l:'Capital de Giro Mínimo',v:fmtR(capGiro),c:'#06b6d4',dica:'Reserva ideal: Custo Operacional × 3 meses'},
+                  ].map((c:any)=>(
+                    <div key={c.num} className="rounded-xl p-4 border" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{background:c.c,color:'#fff'}}>{c.num}</span>
+                        <p className="text-xs font-bold" style={{color:'#767069'}}>{c.l}</p>
+                      </div>
+                      <p className="text-[10px] mb-1 pl-7" style={{color:'#767069'}}>{c.dica}</p>
+                      <p className="text-lg font-bold pl-7" style={{color:c.c}}>{c.v}</p>
                     </div>
                   ))}
                 </div>
 
                 {/* Verificação vs desejado */}
                 <div className="rounded-xl p-4 border" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
-                  <p className="text-xs font-bold mb-3" style={{color:'#767069'}}>📊 Realizado vs Desejado (Metodologia Recomendada)</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <p className="text-xs font-bold mb-3 text-center" style={{color:'#767069'}}>📊 Realizado vs Desejado (Metodologia Recomendada)</p>
+                  <div className="max-w-xl mx-auto grid grid-cols-1 gap-3">
                     {[
                       // Para CUSTOS: quanto MENOS, melhor. Ok = abaixo ou igual à meta
                       {l:'Custo Indireto',real:fatN>0?custoOp/fatN*100:0,desej:n(custIndD),c:'#f59e0b',tipo:'custo',
