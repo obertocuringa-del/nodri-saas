@@ -644,11 +644,12 @@ export default function CalculadoraCusto() {
   // Gerenciar catálogo de despesas
   const [showCatDespesa, setShowCatDespesa] = useState(false)
   // Seções colapsáveis
-  const [secIndiretas,  setSecIndiretas]  = useState(true)
+  // Todos os cards de RD começam FECHADOS (PC e celular) — o usuário abre o que precisar
+  const [secIndiretas,  setSecIndiretas]  = useState(false)
   const [secProvisao,   setSecProvisao]   = useState(false)
-  const [secDiretas,    setSecDiretas]    = useState(true)
+  const [secDiretas,    setSecDiretas]    = useState(false)
   const [secOutras,     setSecOutras]     = useState(false)
-  const [secResultado,  setSecResultado]  = useState(true)
+  const [secResultado,  setSecResultado]  = useState(false)
   const [secConfigServ, setSecConfigServ] = useState(false)
   const [secConfigRD,   setSecConfigRD]   = useState(false) // Configurações de RD começam fechadas
   const [editDespCat, setEditDespCat] = useState<DespesaCat|null>(null)
