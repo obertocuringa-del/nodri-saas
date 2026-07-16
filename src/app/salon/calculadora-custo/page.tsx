@@ -682,6 +682,11 @@ export default function CalculadoraCusto() {
   const [metaLucroServ, setMetaLucroServ] = useState('15')
   const [diagAbertos, setDiagAbertos] = useState<Set<number>>(new Set())
   const toggleDiag = (id:number) => setDiagAbertos(prev=>{const s=new Set(prev); s.has(id)?s.delete(id):s.add(id); return s})
+  // Cards de serviço/produto recolhíveis (começam fechados)
+  const [servAbertos, setServAbertos] = useState<Set<number>>(new Set())
+  const toggleServCard = (id:number) => setServAbertos(prev=>{const s=new Set(prev); s.has(id)?s.delete(id):s.add(id); return s})
+  const [prodAbertos, setProdAbertos] = useState<Set<number>>(new Set())
+  const toggleProdCard = (id:number) => setProdAbertos(prev=>{const s=new Set(prev); s.has(id)?s.delete(id):s.add(id); return s})
 
   // ── Custo de Produto ─────────────────────────────────────────────────────
   const [servicosProd, setServicoProd] = useState<ServicoProd[]>([
@@ -757,14 +762,10 @@ export default function CalculadoraCusto() {
     if (d.metaLucroPE !== undefined) setMetaLucroPE(d.metaLucroPE)
     if (d.fatPEManual !== undefined) setFatPEManual(d.fatPEManual)
     if (d.simDespesa !== undefined) setSimDespesa(d.simDespesa)
-    if (d.taxaCartao !== undefined) setTaxaCartao(d.taxaCartao)
-    if (d.abatProd !== undefined) setAbatProd(d.abatProd)
-    if (d.custOpServ !== undefined) setCustOpServ(d.custOpServ)
-    if (d.taxaAntesRateio !== undefined) setTaxaAntesRateio(d.taxaAntesRateio)
-    if (d.prodAntesRateio !== undefined) setProdAntesRateio(d.prodAntesRateio)
-    if (d.salaoParceiro !== undefined) setSalaoParceiro(d.salaoParceiro)
-    if ((d as any).metaLucroServ !== undefined) setMetaLucroServ((d as any).metaLucroServ)
-    if (d.servicos) setServicos(d.servicos)
+    // OBS: Calcular Serviços e Custo de Produto (servicos, servicosProd, taxaCartao,
+    // abatProd, custOpServ, flags, salaoParceiro, metaLucroServ) são GLOBAIS —
+    // valem para todos os meses e são carregados/salvos via grid 'calc_servicos_global',
+    // por isso NÃO são aplicados aqui ao trocar de mês.
     if (d.numCad !== undefined) setNumCad(d.numCad)
     if ((d as any).cadCabel !== undefined) setCadCabel((d as any).cadCabel)
     if ((d as any).cadManic !== undefined) setCadManic((d as any).cadManic)
@@ -777,8 +778,57 @@ export default function CalculadoraCusto() {
     if (d.mTotal !== undefined) setMTotal(d.mTotal)
     if (d.fatMinM2 !== undefined) setFatMinM2(d.fatMinM2)
     if (d.mSala !== undefined) setMSala(d.mSala)
-    if (d.servicosProd) setServicoProd(d.servicosProd)
   }
+
+  // ── Calcular Serviços + Custo de Produto: dados GLOBAIS (não mudam com o mês) ──
+  const globalCarregado = useRef(false)
+  function aplicarGlobais(d: any) {
+    if (!d) return
+    if (Array.isArray(d.servicos) && d.servicos.length) {
+      setServicos(d.servicos)
+      setProxServ(Math.max(...d.servicos.map((x:any)=>Number(x.id)||0)) + 1)
+    }
+    if (Array.isArray(d.servicosProd) && d.servicosProd.length) {
+      setServicoProd(d.servicosProd)
+      setProxSP(Math.max(...d.servicosProd.map((x:any)=>Number(x.id)||0)) + 1)
+    }
+    if (d.taxaCartao !== undefined) setTaxaCartao(d.taxaCartao)
+    if (d.abatProd !== undefined) setAbatProd(d.abatProd)
+    if (d.custOpServ !== undefined) setCustOpServ(d.custOpServ)
+    if (d.taxaAntesRateio !== undefined) setTaxaAntesRateio(d.taxaAntesRateio)
+    if (d.prodAntesRateio !== undefined) setProdAntesRateio(d.prodAntesRateio)
+    if (d.salaoParceiro !== undefined) setSalaoParceiro(d.salaoParceiro)
+    if (d.metaLucroServ !== undefined) setMetaLucroServ(d.metaLucroServ)
+    if (d.modoCustoOp) setModoCustoOp(d.modoCustoOp)
+  }
+  useEffect(() => {
+    fetch('/api/salon/grid?chave=calc_servicos_global', { credentials: 'include' })
+      .then(r => r.ok ? r.json() : null)
+      .then(async (g: any) => {
+        if (g) { aplicarGlobais(g); return }
+        // Migração: primeira vez sem dado global — herda o que estava salvo no mês atual
+        const r = await fetch(`/api/salon/calculadora?ano=${hoje.getFullYear()}&mes=${hoje.getMonth()+1}`, { credentials: 'include' })
+          .then(x => x.ok ? x.json() : null).catch(() => null)
+        if (r?.dados) aplicarGlobais(r.dados)
+      })
+      .catch(() => {})
+      .finally(() => { globalCarregado.current = true })
+  }, [])
+  // Auto-save (com debounce) sempre que algo das duas abas mudar
+  useEffect(() => {
+    if (!globalCarregado.current) return
+    const t = setTimeout(() => {
+      fetch('/api/salon/grid', {
+        method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chave: 'calc_servicos_global', doc: {
+          servicos, servicosProd, taxaCartao, abatProd, custOpServ,
+          taxaAntesRateio, prodAntesRateio, salaoParceiro, metaLucroServ, modoCustoOp,
+        }}),
+      }).catch(() => {})
+    }, 1200)
+    return () => clearTimeout(t)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [servicos, servicosProd, taxaCartao, abatProd, custOpServ, taxaAntesRateio, prodAntesRateio, salaoParceiro, metaLucroServ, modoCustoOp])
 
   // Carrega os profissionais cadastrados (usado no seletor da observação)
   useEffect(() => {
@@ -2575,25 +2625,32 @@ Use números reais. Seja direto.`
                 <ChevronDown size={14} style={{color:'#6b6860'}}/>
               </button>
               {secConfigServ && <div className="p-5">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+              <div className="max-w-xl mx-auto space-y-5 mb-4">
                 <div>
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <label className="text-xs font-bold" style={{color:'#767069'}}>Taxa do Cartão (%)</label>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{background:'#5b4fcf',color:'#fff'}}>1</span>
+                    <label className="text-xs font-bold" style={{color:'#5b4fcf'}}>Taxa do Cartão (%)</label>
                     <InfoBtn id="taxaCartaoServ"/>
                     <AvisoDefault ativo={taxaCartao==='5'} padrao="5% (padrão)" onPreencher={()=>{}} onManter={()=>{}}/>
                   </div>
-                  <p className="text-[10px] mb-1" style={{color:'#6b6860'}}>Média das maquininhas. Recomendado: 5%</p>
-                  <div className="relative"><input type="number" value={taxaCartao} onChange={e=>setTaxaCartao(e.target.value)} className="w-full pr-6 pl-3 py-2 rounded-lg text-sm text-[#1a1a1a] focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/><span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>%</span></div>
+                  <p className="text-xs mb-1.5 pl-7" style={{color:'#6b6860'}}>Média das taxas das suas maquininhas. Recomendado: 5%.</p>
+                  <div className="relative pl-7"><input type="number" value={taxaCartao} onChange={e=>setTaxaCartao(e.target.value)} className="w-full pr-9 pl-3 py-2.5 rounded-xl text-sm font-bold text-[#1a1a1a] focus:outline-none" style={{background:'#fff',border:'1.5px solid #5b4fcf30'}}/><span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>%</span></div>
                 </div>
                 <div>
-                  <div className="flex items-center gap-1.5 mb-1"><label className="text-xs font-bold" style={{color:'#767069'}}>Abatimento do Produto (%)</label><InfoBtn id="abatProd"/></div>
-                  <p className="text-[10px] mb-1" style={{color:'#6b6860'}}>% do produto abatido do rateio. Recomendado: 100%</p>
-                  <div className="relative"><input type="number" value={abatProd} onChange={e=>setAbatProd(e.target.value)} className="w-full pr-6 pl-3 py-2 rounded-lg text-sm text-[#1a1a1a] focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/><span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>%</span></div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{background:'#5b4fcf',color:'#fff'}}>2</span>
+                    <label className="text-xs font-bold" style={{color:'#5b4fcf'}}>Abatimento do Produto (%)</label><InfoBtn id="abatProd"/>
+                  </div>
+                  <p className="text-xs mb-1.5 pl-7" style={{color:'#6b6860'}}>Quanto do custo do produto é descontado da comissão. Recomendado: 100%.</p>
+                  <div className="relative pl-7"><input type="number" value={abatProd} onChange={e=>setAbatProd(e.target.value)} className="w-full pr-9 pl-3 py-2.5 rounded-xl text-sm font-bold text-[#1a1a1a] focus:outline-none" style={{background:'#fff',border:'1.5px solid #5b4fcf30'}}/><span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>%</span></div>
                 </div>
                 <div>
-                  <div className="flex items-center gap-1.5 mb-2"><label className="text-xs font-bold" style={{color:'#767069'}}>Custo Operacional (%)</label><InfoBtn id="custOpServ"/></div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{background:'#5b4fcf',color:'#fff'}}>3</span>
+                    <label className="text-xs font-bold" style={{color:'#5b4fcf'}}>Custo Operacional (%)</label><InfoBtn id="custOpServ"/>
+                  </div>
                   {/* Seletor de modo */}
-                  <div className="grid grid-cols-2 gap-2 mb-2">
+                  <div className="grid grid-cols-2 gap-2 mb-2 pl-7">
                     <button onClick={()=>setModoCustoOp('dani')}
                       className="py-2 px-3 rounded-xl text-[10px] font-bold text-left transition-all"
                       style={{
@@ -2631,7 +2688,7 @@ Use números reais. Seja direto.`
                       </p>
                     </button>
                   </div>
-                  <p className="text-[10px] mb-1" style={{color:'#6b6860'}}>
+                  <p className="text-xs mb-1.5 pl-7" style={{color:'#6b6860'}}>
                     {modoCustoOp==='dani'
                       ? <>Usando <strong style={{color:'#7c6fe0'}}>{n(custIndD)||30}%</strong> — padrão recomendado do mercado</>
                       : mediaCustoOp > 0
@@ -2640,33 +2697,44 @@ Use números reais. Seja direto.`
                           ? <>Usando mês atual: <strong style={{color:'#059669'}}>{(custoOp/fatN*100).toFixed(1)}%</strong></>
                           : <>Preencha a aba RD para usar seu valor real</>}
                   </p>
-                  <div className="relative">
+                  <div className="relative pl-7">
                     <input type="number" value={custOpServ}
                       onChange={e=>setCustOpServ(e.target.value)}
                       placeholder={fatN>0&&custoOp>0?(custoOp/fatN*100).toFixed(1):'30'}
-                      className="w-full pr-6 pl-3 py-2 rounded-lg text-sm text-[#1a1a1a] focus:outline-none"
-                      style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/>
-                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>%</span>
+                      className="w-full pr-9 pl-3 py-2.5 rounded-xl text-sm font-bold text-[#1a1a1a] focus:outline-none"
+                      style={{background:'#fff',border:'1.5px solid #5b4fcf30'}}/>
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>%</span>
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs font-bold block mb-1" style={{color:'#767069'}}>Lei do Salão Parceiro</label>
-                  <p className="text-[10px] mb-1" style={{color:'#6b6860'}}>Imposto incide sobre a margem, não o preço total</p>
-                  <button onClick={()=>setSalaoParceiro(p=>!p)} className="w-full py-2 rounded-lg text-sm font-bold transition-all"
-                    style={{background:salaoParceiro?'#10b981':'#ffffff',color:salaoParceiro?'white':'#767069',border:`1px solid ${salaoParceiro?'#10b981':'#dedad4'}`}}>
-                    {salaoParceiro?'✅ SIM':'NÃO'}
-                  </button>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{background:'#5b4fcf',color:'#fff'}}>4</span>
+                    <label className="text-xs font-bold" style={{color:'#5b4fcf'}}>Lei do Salão Parceiro</label>
+                  </div>
+                  <p className="text-xs mb-1.5 pl-7" style={{color:'#6b6860'}}>Com a lei, o imposto incide sobre a margem do salão, não sobre o preço total.</p>
+                  <div className="pl-7">
+                    <button onClick={()=>setSalaoParceiro(p=>!p)} className="w-full py-2.5 rounded-xl text-sm font-bold transition-all"
+                      style={{background:salaoParceiro?'#10b981':'#ffffff',color:salaoParceiro?'white':'#767069',border:`1.5px solid ${salaoParceiro?'#10b981':'#dedad4'}`}}>
+                      {salaoParceiro?'✅ SIM':'NÃO'}
+                    </button>
+                  </div>
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3 text-xs p-3 rounded-lg" style={{background:'#f5f4f0',color:'#767069'}}>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={taxaAntesRateio} onChange={e=>setTaxaAntesRateio(e.target.checked)} className="accent-purple-500"/>
-                  <span style={{color:'#3a3835'}}>✅ Taxa do cartão deve ser abatida do valor antes de calcular o rateio</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={prodAntesRateio} onChange={e=>setProdAntesRateio(e.target.checked)} className="accent-purple-500"/>
-                  <span style={{color:'#3a3835'}}>✅ Valor do produto deve ser abatido do rateio</span>
-                </label>
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{background:'#5b4fcf',color:'#fff'}}>5</span>
+                    <label className="text-xs font-bold" style={{color:'#5b4fcf'}}>Regras do rateio</label>
+                  </div>
+                  <div className="pl-7 space-y-2 text-xs p-0">
+                    <label className="flex items-center gap-2 cursor-pointer rounded-lg p-2.5" style={{background:'#f5f4f0'}}>
+                      <input type="checkbox" checked={taxaAntesRateio} onChange={e=>setTaxaAntesRateio(e.target.checked)} className="accent-purple-500"/>
+                      <span style={{color:'#3a3835'}}>Taxa do cartão deve ser abatida do valor antes de calcular o rateio</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer rounded-lg p-2.5" style={{background:'#f5f4f0'}}>
+                      <input type="checkbox" checked={prodAntesRateio} onChange={e=>setProdAntesRateio(e.target.checked)} className="accent-purple-500"/>
+                      <span style={{color:'#3a3835'}}>Valor do produto deve ser abatido do rateio</span>
+                    </label>
+                  </div>
+                </div>
               </div>
               </div>}
             </div>
@@ -2688,17 +2756,8 @@ Use números reais. Seja direto.`
               {buscaServico && <button onClick={()=>setBuscaServico('')} className="text-xs px-2 py-1 rounded" style={{color:'#767069'}}>✕ limpar</button>}
             </div>
 
-            {/* Tabela de serviços */}
+            {/* Lista de serviços — cards recolhíveis (fechados por padrão) */}
             <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
-              <div className="hidden sm:grid gap-2 px-5 py-3 text-[10px] font-bold uppercase tracking-wider border-b"
-                style={{background:'#ffffff',borderColor:'#e8e6e0',color:'#6b6860',gridTemplateColumns:'2fr 1fr 1fr 1fr 1fr 20px'}}>
-                <div>Serviço</div>
-                <div className="flex items-center gap-1">Preço (R$)<InfoBtn id="precoServico"/></div>
-                <div className="flex items-center gap-1">Rateio (%)<InfoBtn id="rateioServico"/></div>
-                <div className="flex items-center gap-1">Produto (R$)<InfoBtn id="produtoServico"/></div>
-                <div className="flex items-center gap-1">Imposto (%)<InfoBtn id="impostoServico"/></div>
-                <div></div>
-              </div>
               {[...servicos]
                 .filter(s=>!buscaServico||s.nome.toLowerCase().includes(buscaServico.toLowerCase()))
                 .sort((a,b)=>{
@@ -2711,33 +2770,57 @@ Use números reais. Seja direto.`
                 })
                 .map(s=>{
                 const c=calcServ(s)
+                const aberto=servAbertos.has(s.id)
                 return(
-                  <div key={s.id}>
-                    <div className="grid linha-form-mobile gap-2 px-5 py-3 items-center" style={{gridTemplateColumns:'2fr 1fr 1fr 1fr 1fr 20px'}}>
-                      <input value={s.nome} onChange={e=>setServicos(p=>p.map(x=>x.id===s.id?{...x,nome:e.target.value}:x))}
-                        placeholder="Ex: Coloração longo" className="px-3 py-2 rounded-lg text-sm text-[#1a1a1a] focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
-                      {[
-                        {k:'preco' as const,ph:'0',pre:'R$',aviso:false,padrao:''},
-                        {k:'rateioP' as const,ph:'50',suf:'%',aviso:!(s as any).rateioP,padrao:'50% (padrão)'},
-                        {k:'produto' as const,ph:'0',pre:'R$',aviso:false,padrao:''},
-                        {k:'imposto' as const,ph:'5',suf:'%',aviso:!(s as any).imposto,padrao:'5% (padrão)'},
-                      ].map((f:any)=>(
-                        <div key={f.k} className="relative">
-                          {f.aviso && (
-                            <div className="absolute -top-2 left-0 z-10">
-                              <AvisoDefault ativo={true} padrao={f.padrao} onPreencher={()=>{}} onManter={()=>{}}/>
+                  <div key={s.id} className="border-b" style={{borderColor:'#e8e6e0'}}>
+                    <button onClick={()=>toggleServCard(s.id)} className="w-full flex items-center justify-between gap-2 px-5 py-3 transition-colors" style={{background:'#ffffff'}}>
+                      <div className="flex items-center gap-2 min-w-0">
+                        {aberto ? <ChevronUp size={14} style={{color:'#5b4fcf',flexShrink:0}}/> : <ChevronDown size={14} style={{color:'#5b4fcf',flexShrink:0}}/>}
+                        <span className="font-bold text-sm truncate" style={{color:'#1a1a1a'}}>{s.nome||'Novo serviço'}</span>
+                        {c&&<span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold flex-shrink-0" style={{background:c.resultado>0?'#10b98120':'#ef444420',color:c.resultado>0?'#059669':'#ef4444'}}>{c.resultado>0?'✅ Lucrativo':'🚨 Prejuízo'}</span>}
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        {n(s.preco)>0&&<p className="text-xs font-bold" style={{color:'#5b4fcf'}}>{fmtR(n(s.preco))}</p>}
+                        {c&&<p className="text-[10px]" style={{color:corRes(c.resultado)}}>Lucro: {fmtR(c.resultado)} ({(c.resultPct*100).toFixed(1)}%)</p>}
+                      </div>
+                    </button>
+                    {aberto&&<>
+                    <div className="px-5 py-4">
+                      <div className="max-w-xl mx-auto space-y-4">
+                        {[
+                          {num:'1',k:'nome',l:'Nome do Serviço',ph:'Ex: Coloração longo',tipo:'texto',info:'',dica:'Como o serviço aparece na sua tabela.'},
+                          {num:'2',k:'preco',l:'Preço (R$)',ph:'0',tipo:'R$',info:'precoServico',dica:'Quanto o cliente paga por este serviço.'},
+                          {num:'3',k:'rateioP',l:'Rateio / Comissão (%)',ph:'50',tipo:'%',info:'rateioServico',dica:'Percentual que fica com o profissional.'},
+                          {num:'4',k:'produto',l:'Produto (R$)',ph:'0',tipo:'R$',info:'produtoServico',dica:'Custo do produto usado — calcule na aba Custo de Produto.'},
+                          {num:'5',k:'imposto',l:'Imposto (%)',ph:'5',tipo:'%',info:'impostoServico',dica:'Alíquota de imposto sobre este serviço.'},
+                        ].map((f:any)=>(
+                          <div key={f.k}>
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{background:'#5b4fcf',color:'#fff'}}>{f.num}</span>
+                              <label className="text-xs font-bold" style={{color:'#5b4fcf'}}>{f.l}</label>
+                              {f.info&&<InfoBtn id={f.info}/>}
                             </div>
-                          )}
-                          {f.pre&&<span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#767069'}}>{f.pre}</span>}
-                          <input type="number" value={(s as any)[f.k]}
-                            onChange={e=>setServicos(p=>p.map(x=>x.id===s.id?{...x,[f.k]:e.target.value}:x))}
-                            placeholder={f.ph}
-                            className={`w-full ${f.pre?'pl-7':'pl-3'} ${f.suf?'pr-6':'pr-2'} py-2 rounded-lg text-sm text-[#1a1a1a] focus:outline-none`}
-                            style={{background: '#ffffff', border: `1.5px solid ${f.aviso?'#f59e0b40':n((s as any)[f.k])>0?'#5b4fcf40':'#e8e6e0'}`}}/>
-                          {f.suf&&<span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#767069'}}>{f.suf}</span>}
-                        </div>
-                      ))}
-                      <button onClick={()=>setServicos(p=>p.filter(x=>x.id!==s.id))} style={{color:'#6b6860'}}><Trash2 size={13}/></button>
+                            <p className="text-xs mb-1.5 pl-7" style={{color:'#6b6860'}}>{f.dica}</p>
+                            <div className="relative pl-7">
+                              {f.tipo==='R$'&&<span className="absolute left-10 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>R$</span>}
+                              {f.tipo==='texto'
+                                ? <input value={s.nome} onChange={e=>setServicos(p=>p.map(x=>x.id===s.id?{...x,nome:e.target.value}:x))}
+                                    placeholder={f.ph} className="w-full px-3 py-2.5 rounded-xl text-sm font-bold text-[#1a1a1a] focus:outline-none"
+                                    style={{background:'#fff',border:'1.5px solid #5b4fcf30'}}/>
+                                : <input type="number" value={(s as any)[f.k]}
+                                    onChange={e=>setServicos(p=>p.map(x=>x.id===s.id?{...x,[f.k]:e.target.value}:x))}
+                                    placeholder={f.ph}
+                                    className={`w-full ${f.tipo==='R$'?'pl-9':'pl-3'} ${f.tipo==='%'?'pr-9':'pr-3'} py-2.5 rounded-xl text-sm font-bold text-[#1a1a1a] focus:outline-none`}
+                                    style={{background:'#fff',border:`1.5px solid ${n((s as any)[f.k])>0?'#5b4fcf40':'#e8e6e0'}`}}/>}
+                              {f.tipo==='%'&&<span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>%</span>}
+                            </div>
+                          </div>
+                        ))}
+                        <button onClick={()=>setServicos(p=>p.filter(x=>x.id!==s.id))}
+                          className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg" style={{color:'#ef4444',border:'1px dashed #ef444440'}}>
+                          <Trash2 size={12}/> Excluir este serviço
+                        </button>
+                      </div>
                     </div>
                     {c&&(
                       <div className="mx-4 mb-3 rounded-xl overflow-hidden border" style={{borderColor:'#e8e6e0'}}>
@@ -2870,11 +2953,12 @@ Use números reais. Seja direto.`
                         })()}
                       </div>
                     )}
+                    </>}
                   </div>
                 )
               })}
               <div className="px-5 py-3 border-t" style={{borderColor:'#e8e6e0'}}>
-                <button onClick={()=>{setServicos(p=>[...p,{id:proxServ,nome:'',preco:'',rateioP:'50',produto:'',imposto:'5'}]);setProxServ(p=>p+1)}}
+                <button onClick={()=>{setServicos(p=>[...p,{id:proxServ,nome:'',preco:'',rateioP:'50',produto:'',imposto:'5'}]);setProxServ(p=>p+1);setServAbertos(prev=>new Set(prev).add(proxServ))}}
                   className="flex items-center gap-2 text-sm px-4 py-2 rounded-lg"
                   style={{background:'#5b4fcf20',color:'#5b4fcf',border:'1px dashed #5b4fcf40'}}>
                   <Plus size={14}/> Adicionar serviço
@@ -2934,29 +3018,46 @@ Use números reais. Seja direto.`
               const total=sp.ingredientes.reduce((s,i)=>s+custoIngred(i),0)
               return(
                 <div key={sp.id} className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
-                  <div className="px-5 py-4 flex items-center gap-3 border-b" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
-                    <span className="text-lg">🧴</span>
-                    <input value={sp.nomeServico}
-                      onChange={e=>setServicoProd(p=>p.map(s=>s.id===sp.id?{...s,nomeServico:e.target.value}:s))}
-                      placeholder="Nome do serviço (ex: Coloração Longo)"
-                      className="flex-1 bg-transparent text-[#1a1a1a] font-bold text-sm focus:outline-none"
-                      style={{borderBottom:'1px solid #dedad4'}}/>
+                  <button onClick={()=>toggleProdCard(sp.id)} className="w-full px-5 py-4 flex items-center justify-between gap-3 transition-colors" style={{background:'#ffffff'}}>
+                    <div className="flex items-center gap-2 min-w-0">
+                      {prodAbertos.has(sp.id) ? <ChevronUp size={14} style={{color:'#b45309',flexShrink:0}}/> : <ChevronDown size={14} style={{color:'#b45309',flexShrink:0}}/>}
+                      <span className="text-lg">🧴</span>
+                      <span className="font-bold text-sm truncate" style={{color:'#1a1a1a'}}>{sp.nomeServico||'Novo serviço'}</span>
+                      <span className="text-[9px] px-1.5 py-0.5 rounded-full flex-shrink-0" style={{background:'#f59e0b20',color:'#b45309'}}>{sp.ingredientes.filter(i=>i.nome).length} produto(s)</span>
+                    </div>
                     {total>0&&<div className="text-right flex-shrink-0"><p className="text-[10px]" style={{color:'#767069'}}>Custo total</p><p className="font-bold text-lg" style={{color:'#b45309'}}>{fmtR(total)}</p></div>}
-                  </div>
-                  <div className="grid gap-2 px-5 py-2 text-[10px] font-bold uppercase tracking-wider border-b"
-                    style={{background:'#f5f4f0',borderColor:'#e8e6e0',color:'#6b6860',gridTemplateColumns:'2fr 0.7fr 1fr 1fr 1fr 1fr 20px'}}>
-                    <div>Produto/Insumo</div><div>Un.</div>
-                    <div className="flex items-center gap-1">Qtd embalagem<InfoBtn id="qtdEmb"/></div>
-                    <div className="flex items-center gap-1">Preço embalagem<InfoBtn id="precoEmb"/></div>
-                    <div className="flex items-center gap-1">Qtd usada<InfoBtn id="qtdUsa"/></div>
-                    <div>Custo/uso</div><div></div>
-                  </div>
+                  </button>
+                  {prodAbertos.has(sp.id)&&<>
+                  <div className="px-5 py-4 border-t" style={{borderColor:'#e8e6e0'}}>
+                    <div className="max-w-xl mx-auto space-y-4">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{background:'#b45309',color:'#fff'}}>1</span>
+                          <label className="text-xs font-bold" style={{color:'#b45309'}}>Nome do Serviço</label>
+                        </div>
+                        <div className="pl-7">
+                          <input value={sp.nomeServico}
+                            onChange={e=>setServicoProd(p=>p.map(s=>s.id===sp.id?{...s,nomeServico:e.target.value}:s))}
+                            placeholder="Ex: Coloração Longo"
+                            className="w-full px-3 py-2.5 rounded-xl text-sm font-bold text-[#1a1a1a] focus:outline-none"
+                            style={{background:'#fff',border:'1.5px solid #f59e0b40'}}/>
+                        </div>
+                      </div>
                   {sp.ingredientes.map((ing,idx)=>{
                     const custo=custoIngred(ing)
                     return(
-                      <div key={idx} className="grid gap-2 px-5 py-2 items-center hover:bg-white/2"
-                        style={{borderBottom:'1px solid #e8e6e010',gridTemplateColumns:'2fr 0.7fr 1fr 1fr 1fr 1fr 20px'}}>
+                      <div key={idx} className="rounded-xl border p-3" style={{background:'#fffdf5',borderColor:'#f59e0b30'}}>
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-[11px] font-bold" style={{color:'#b45309'}}>🧴 Produto {idx+1}</p>
+                          <div className="flex items-center gap-2">
+                            {custo>0&&<span className="text-xs font-bold" style={{color:'#f59e0b'}}>Custo/uso: {fmtR(custo)}</span>}
+                            <button onClick={()=>removerIngrediente(sp.id,idx)} style={{color:'#ef4444'}}><Trash2 size={12}/></button>
+                          </div>
+                        </div>
+                        <div className="space-y-3">
                         {/* Campo com autocomplete do catálogo */}
+                        <div>
+                          <label className="text-[11px] font-bold block mb-1" style={{color:'#767069'}}>Produto / Insumo <span style={{fontWeight:400}}>(busque no catálogo)</span></label>
                         <div className="relative">
                           <input value={ing.nome}
                             onChange={e=>{
@@ -3007,24 +3108,38 @@ Use números reais. Seja direto.`
                             </div>
                           )}
                         </div>
-                        <select value={ing.unidade} onChange={e=>atualizarIngrediente(sp.id,idx,'unidade',e.target.value)}
-                          className="px-2 py-1.5 rounded-lg text-xs text-[#1a1a1a] focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}>
-                          {['ml','g','und','L','kg'].map(u=><option key={u} value={u}>{u}</option>)}
-                        </select>
-                        <input type="number" value={ing.qtdEmb} onChange={e=>atualizarIngrediente(sp.id,idx,'qtdEmb',e.target.value)}
-                          placeholder="Ex: 60" className="px-3 py-1.5 rounded-lg text-xs text-[#1a1a1a] focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
-                        <div className="relative">
-                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#767069'}}>R$</span>
-                          <input type="number" value={ing.preco} onChange={e=>atualizarIngrediente(sp.id,idx,'preco',e.target.value)}
-                            placeholder="0" className="w-full pl-7 pr-2 py-1.5 rounded-lg text-xs text-[#1a1a1a] focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
                         </div>
-                        <input type="number" value={ing.qtdUsa} onChange={e=>atualizarIngrediente(sp.id,idx,'qtdUsa',e.target.value)}
-                          placeholder="Ex: 90" className="px-3 py-1.5 rounded-lg text-xs text-[#1a1a1a] focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
-                        <div className="text-xs font-bold text-center" style={{color:custo>0?'#f59e0b':'#dedad4'}}>{custo>0?fmtR(custo):'—'}</div>
-                        <button onClick={()=>removerIngrediente(sp.id,idx)} style={{color:'#6b6860'}}><Trash2 size={12}/></button>
+                        <div>
+                          <label className="text-[11px] font-bold block mb-1" style={{color:'#767069'}}>Unidade</label>
+                          <select value={ing.unidade} onChange={e=>atualizarIngrediente(sp.id,idx,'unidade',e.target.value)}
+                            className="w-full px-3 py-2 rounded-lg text-xs text-[#1a1a1a] focus:outline-none" style={{background:'#fff',border:'1px solid #e8e6e0'}}>
+                            {['ml','g','und','L','kg'].map(u=><option key={u} value={u}>{u}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-1 mb-1"><label className="text-[11px] font-bold" style={{color:'#767069'}}>Qtd na embalagem</label><InfoBtn id="qtdEmb"/></div>
+                          <input type="number" value={ing.qtdEmb} onChange={e=>atualizarIngrediente(sp.id,idx,'qtdEmb',e.target.value)}
+                            placeholder="Ex: 60" className="w-full px-3 py-2 rounded-lg text-xs text-[#1a1a1a] focus:outline-none" style={{background:'#fff',border:'1px solid #e8e6e0'}}/>
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-1 mb-1"><label className="text-[11px] font-bold" style={{color:'#767069'}}>Preço da embalagem (R$)</label><InfoBtn id="precoEmb"/></div>
+                          <div className="relative">
+                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#767069'}}>R$</span>
+                            <input type="number" value={ing.preco} onChange={e=>atualizarIngrediente(sp.id,idx,'preco',e.target.value)}
+                              placeholder="0" className="w-full pl-7 pr-2 py-2 rounded-lg text-xs text-[#1a1a1a] focus:outline-none" style={{background:'#fff',border:'1px solid #e8e6e0'}}/>
+                          </div>
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-1 mb-1"><label className="text-[11px] font-bold" style={{color:'#767069'}}>Qtd usada por serviço</label><InfoBtn id="qtdUsa"/></div>
+                          <input type="number" value={ing.qtdUsa} onChange={e=>atualizarIngrediente(sp.id,idx,'qtdUsa',e.target.value)}
+                            placeholder="Ex: 90" className="w-full px-3 py-2 rounded-lg text-xs text-[#1a1a1a] focus:outline-none" style={{background:'#fff',border:'1px solid #e8e6e0'}}/>
+                        </div>
+                        </div>
                       </div>
                     )
                   })}
+                    </div>
+                  </div>
                   <div className="px-5 py-3 flex items-center justify-between border-t" style={{borderColor:'#e8e6e0'}}>
                     <button onClick={()=>adicionarIngrediente(sp.id)} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg"
                       style={{background:'#f59e0b20',color:'#b45309',border:'1px dashed #f59e0b40'}}>
@@ -3032,10 +3147,11 @@ Use números reais. Seja direto.`
                     </button>
                     {total>0&&<div className="text-xs px-3 py-1.5 rounded-lg font-bold" style={{background:'#f59e0b20',color:'#b45309'}}>Total: {fmtR(total)}</div>}
                   </div>
+                  </>}
                 </div>
               )
             })}
-            <button onClick={()=>{setServicoProd(p=>[...p,{id:proxSP,nomeServico:'',ingredientes:[{id:1,nome:'',qtdEmb:'',qtdUsa:'',preco:'',unidade:'ml'}]}]);setProxSP(p=>p+1)}}
+            <button onClick={()=>{setServicoProd(p=>[...p,{id:proxSP,nomeServico:'',ingredientes:[{id:1,nome:'',qtdEmb:'',qtdUsa:'',preco:'',unidade:'ml'}]}]);setProxSP(p=>p+1);setProdAbertos(prev=>new Set(prev).add(proxSP))}}
               className="w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2"
               style={{background:'#5b4fcf20',color:'#5b4fcf',border:'1px dashed #5b4fcf40'}}>
               <Plus size={15}/> Adicionar outro serviço

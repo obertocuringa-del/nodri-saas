@@ -129,6 +129,7 @@ export function permDaGrade(chave: string): string {
   if (c.startsWith('calendario_mkt')) return 'calendario_mkt'
   if (c.startsWith('calendario')) return 'calendario'
   if (c === 'prof_categorias') return 'profissionais'
+  if (c === 'calc_servicos_global') return 'calc_abas_extras'
   // bebidas, alicates, produtos, servinterno → Listas
   return 'adm_listas'
 }
