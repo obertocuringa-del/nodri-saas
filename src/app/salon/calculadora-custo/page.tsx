@@ -539,7 +539,7 @@ const DESPESAS_INDIRETAS = [
 interface DespesaItem { nome: string; valor: string; dica: string; editavel?: boolean; parcela?: string; obs?: string; grupo?: string; venc?: string }
 interface Ingrediente  { id: number; nome: string; qtdEmb: string; qtdUsa: string; preco: string; unidade: string }
 interface ServicoProd  { id: number; nomeServico: string; ingredientes: Ingrediente[] }
-interface Servico      { id: number; nome: string; preco: string; rateioP: string; produto: string; imposto: string }
+interface Servico      { id: number; nome: string; preco: string; rateioP: string; produto: string; imposto: string; produtoNome?: string }
 
 // ─── Componente principal ────────────────────────────────────────────────────
 export default function CalculadoraCusto() {
@@ -687,6 +687,8 @@ export default function CalculadoraCusto() {
   const toggleServCard = (id:number) => setServAbertos(prev=>{const s=new Set(prev); s.has(id)?s.delete(id):s.add(id); return s})
   const [prodAbertos, setProdAbertos] = useState<Set<number>>(new Set())
   const toggleProdCard = (id:number) => setProdAbertos(prev=>{const s=new Set(prev); s.has(id)?s.delete(id):s.add(id); return s})
+  // Seletor de produto do catálogo no campo "Produto (R$)" de Calcular Serviços
+  const [prodSelKey, setProdSelKey] = useState<number|null>(null)
 
   // ── Custo de Produto ─────────────────────────────────────────────────────
   const [servicosProd, setServicoProd] = useState<ServicoProd[]>([
@@ -2791,7 +2793,7 @@ Use números reais. Seja direto.`
                           {num:'1',k:'nome',l:'Nome do Serviço',ph:'Ex: Coloração longo',tipo:'texto',info:'',dica:'Como o serviço aparece na sua tabela.'},
                           {num:'2',k:'preco',l:'Preço (R$)',ph:'0',tipo:'R$',info:'precoServico',dica:'Quanto o cliente paga por este serviço.'},
                           {num:'3',k:'rateioP',l:'Rateio / Comissão (%)',ph:'50',tipo:'%',info:'rateioServico',dica:'Percentual que fica com o profissional.'},
-                          {num:'4',k:'produto',l:'Produto (R$)',ph:'0',tipo:'R$',info:'produtoServico',dica:'Custo do produto usado — calcule na aba Custo de Produto.'},
+                          {num:'4',k:'produto',l:'Produto (R$)',ph:'0',tipo:'R$',info:'produtoServico',dica:'Clique para escolher um produto do catálogo, ou digite o valor manualmente.'},
                           {num:'5',k:'imposto',l:'Imposto (%)',ph:'5',tipo:'%',info:'impostoServico',dica:'Alíquota de imposto sobre este serviço.'},
                         ].map((f:any)=>(
                           <div key={f.k}>
@@ -2808,12 +2810,59 @@ Use números reais. Seja direto.`
                                     placeholder={f.ph} className="w-full px-3 py-2.5 rounded-xl text-sm font-bold text-[#1a1a1a] focus:outline-none"
                                     style={{background:'#fff',border:'1.5px solid #5b4fcf30'}}/>
                                 : <input type="number" value={(s as any)[f.k]}
+                                    onFocus={f.k==='produto'?()=>setProdSelKey(s.id):undefined}
+                                    onBlur={f.k==='produto'?()=>setTimeout(()=>setProdSelKey(k=>k===s.id?null:k),200):undefined}
                                     onChange={e=>setServicos(p=>p.map(x=>x.id===s.id?{...x,[f.k]:e.target.value}:x))}
                                     placeholder={f.ph}
                                     className={`w-full ${f.tipo==='R$'?'pl-9':'pl-3'} ${f.tipo==='%'?'pr-9':'pr-3'} py-2.5 rounded-xl text-sm font-bold text-[#1a1a1a] focus:outline-none`}
                                     style={{background:'#fff',border:`1.5px solid ${n((s as any)[f.k])>0?'#5b4fcf40':'#e8e6e0'}`}}/>}
                               {f.tipo==='%'&&<span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>%</span>}
+                              {/* Caixa de seleção: produtos do Catálogo de Produtos */}
+                              {f.k==='produto' && prodSelKey===s.id && (
+                                <div className="absolute left-7 right-0 top-full z-50 rounded-xl border overflow-hidden shadow-2xl mt-1"
+                                  style={{background:'#fff',borderColor:'#5b4fcf50',maxHeight:'240px',overflowY:'auto'}}>
+                                  {produtosCatalogo.length===0
+                                    ? <div className="px-4 py-4 text-center">
+                                        <p className="text-xs mb-1" style={{color:'#6b6860'}}>Nenhum produto cadastrado no catálogo.</p>
+                                        <button onMouseDown={()=>{setAba('catproduto');setProdSelKey(null)}}
+                                          className="text-xs font-bold" style={{color:'#5b4fcf'}}>
+                                          Favor cadastrar — clique aqui para ir ao Catálogo de Produtos
+                                        </button>
+                                      </div>
+                                    : <>
+                                        <div className="px-3 py-1.5 border-b text-[10px] font-bold sticky top-0" style={{background:'#faf9f7',borderColor:'#e8e6e0',color:'#767069'}}>
+                                          📦 Escolha um produto do catálogo ({produtosCatalogo.length})
+                                        </div>
+                                        {produtosCatalogo.map(p=>(
+                                          <button key={p.id}
+                                            onMouseDown={()=>{
+                                              setServicos(prev=>prev.map(x=>x.id===s.id?{...x,produto:String(p.preco),produtoNome:p.nome}:x))
+                                              setProdSelKey(null)
+                                            }}
+                                            className="w-full text-left px-3 py-2 flex items-center justify-between gap-2"
+                                            style={{borderBottom:'1px solid #f5f4f0'}}>
+                                            <span className="text-xs font-bold truncate" style={{color:'#1a1a1a'}}>{p.nome}{p.marca?<span className="font-normal text-[10px]" style={{color:'#b45309'}}> · {p.marca}</span>:null}</span>
+                                            <span className="text-[10px] flex-shrink-0" style={{color:'#059669'}}>{fmtR(p.preco)}</span>
+                                          </button>
+                                        ))}
+                                        <button onMouseDown={()=>{setAba('catproduto');setProdSelKey(null)}}
+                                          className="w-full text-center px-3 py-2 text-[11px] font-bold" style={{color:'#5b4fcf',background:'#faf9f7'}}>
+                                          + Não achou? Cadastrar novo produto no catálogo
+                                        </button>
+                                      </>}
+                                </div>
+                              )}
                             </div>
+                            {/* Nome do produto escolhido (só exibição — o cálculo usa apenas o valor) */}
+                            {f.k==='produto' && s.produtoNome && (
+                              <div className="flex items-center gap-1.5 mt-1.5 pl-7">
+                                <span className="text-[11px] px-2 py-1 rounded-lg font-bold" style={{background:'#5b4fcf12',color:'#5b4fcf',border:'1px solid #5b4fcf30'}}>
+                                  📦 {s.produtoNome} — {fmtR(n(s.produto))}
+                                </span>
+                                <button onClick={()=>setServicos(p=>p.map(x=>x.id===s.id?{...x,produtoNome:''}:x))}
+                                  title="Remover o nome (mantém o valor)" className="text-xs" style={{color:'#767069'}}>✕</button>
+                              </div>
+                            )}
                           </div>
                         ))}
                         <button onClick={()=>setServicos(p=>p.filter(x=>x.id!==s.id))}
