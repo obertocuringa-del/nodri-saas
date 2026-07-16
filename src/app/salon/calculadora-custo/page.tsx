@@ -652,6 +652,8 @@ export default function CalculadoraCusto() {
   const [secResultado,  setSecResultado]  = useState(false)
   const [secConfigServ, setSecConfigServ] = useState(false)
   const [secConfigRD,   setSecConfigRD]   = useState(false) // Configurações de RD começam fechadas
+  const [secParamsPE,   setSecParamsPE]   = useState(false) // Parâmetros do PE começam fechados
+  const [secResultPE,   setSecResultPE]   = useState(false) // Resultados do PE começam fechados
   const [editDespCat, setEditDespCat] = useState<DespesaCat|null>(null)
   const [fdNome, setFdNome] = useState(''); const [fdCat, setFdCat] = useState('indireta'); const [fdObs, setFdObs] = useState('')
   const [vlrProdEstoque,setVlrProdEstoque]= useState('')
@@ -2428,92 +2430,123 @@ Use números reais. Seja direto.`
                 ✨ Dados da aba Receitas e Despesas: Custo Op. <strong>{fmtR(custoOp)}</strong> | Margem <strong>{(margOpPct*100).toFixed(1)}%</strong> | Faturamento <strong>{fmtR(fatN)}</strong>
               </div>
             )}
-            <div className="rounded-2xl p-5 border" style={{background:'#faf9f7',borderColor:'#10b98140'}}>
-              <h3 className="font-bold text-sm mb-4" style={{color:'#059669'}}>⚙️ Parâmetros</h3>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#10b98140'}}>
+              <button onClick={()=>setSecParamsPE(p=>!p)} className="w-full flex items-center justify-between px-5 py-3 transition-colors"
+                style={{background:'linear-gradient(135deg,#faf9f7,#e9f9f2)'}}>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {secParamsPE ? <ChevronUp size={14} style={{color:'#059669'}}/> : <ChevronDown size={14} style={{color:'#059669'}}/>}
+                  <span className="font-bold text-sm" style={{color:'#059669'}}>⚙️ Parâmetros</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{background:'#10b981',color:'#fff'}}>Custo Op {fmtR(custoOpPE_)} · Meta {n(metaLucroPE)||n(lucroD)||15}%</span>
+                </div>
+                <span className="text-[10px] flex-shrink-0" style={{color:'#767069'}}>{secParamsPE?'fechar ✕':'abrir ▾'}</span>
+              </button>
+              {secParamsPE && (
+              <div className="px-5 pb-6 pt-4 border-t" style={{borderColor:'#10b98120'}}>
+                <div className="max-w-xl mx-auto space-y-5">
                 {[
-                  {l:'Custo Operacional (R$)',v:simDespesa,set:setSimDespesa,ph:custoOp>0?custoOp.toFixed(2):'0',tipo:'R$',info:'custoOpCad'},
-                  {l:'Margem Operacional (%)',v:margemPE,set:setMargemPE,ph:margOpPct>0?(margOpPct*100).toFixed(1):'44',tipo:'%',info:'margemPE'},
-                  {l:'Meta Lucro (%)',v:metaLucroPE,set:setMetaLucroPE,ph:n(lucroD)>0?lucroD:'15',tipo:'%',info:'metaLucroPE'},
-                  {l:'Área do Salão (M²)',v:areaM2,set:setAreaM2,ph:'100',tipo:'m²',info:'areaM2'},
-                  {l:'Nº de Profissionais',v:numProfs,set:setNumProfs,ph:'3',tipo:'',info:'numProfs'},
-                  {l:'Faturamento Atual (R$)',v:fatPEManual,set:setFatPEManual,ph:fatN>0?fatN.toFixed(2):'0',tipo:'R$',info:'faturamento'},
+                  {num:'1',l:'Custo Operacional (R$)',v:simDespesa,set:setSimDespesa,ph:custoOp>0?custoOp.toFixed(2):'0',tipo:'R$',info:'custoOpCad',dica:'Quanto o salão gasta por mês para funcionar. Vem automático da aba Receitas e Despesas.'},
+                  {num:'2',l:'Margem Operacional (%)',v:margemPE,set:setMargemPE,ph:margOpPct>0?(margOpPct*100).toFixed(1):'44',tipo:'%',info:'margemPE',dica:'O que sobra do faturamento após os custos diretos. Vem automático — referência do mercado: 44%.'},
+                  {num:'3',l:'Meta Lucro (%)',v:metaLucroPE,set:setMetaLucroPE,ph:n(lucroD)>0?lucroD:'15',tipo:'%',info:'metaLucroPE',dica:'Quanto você quer lucrar. Recomendado: 15%.'},
+                  {num:'4',l:'Área do Salão (M²)',v:areaM2,set:setAreaM2,ph:'100',tipo:'m²',info:'areaM2',dica:'A metragem total — para calcular quanto cada m² precisa gerar.'},
+                  {num:'5',l:'Nº de Profissionais',v:numProfs,set:setNumProfs,ph:'3',tipo:'',info:'numProfs',dica:'Quantos atendem clientes — para calcular a meta individual.'},
+                  {num:'6',l:'Faturamento Atual (R$)',v:fatPEManual,set:setFatPEManual,ph:fatN>0?fatN.toFixed(2):'0',tipo:'R$',info:'faturamento',dica:'Quanto o salão fatura hoje — para comparar com o Ponto de Equilíbrio.'},
                 ].map((f:any)=>(
                   <div key={f.l}>
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <label className="text-xs font-bold" style={{color:'#767069'}}>{f.l}</label>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{background:'#059669',color:'#fff'}}>{f.num}</span>
+                      <label className="text-xs font-bold" style={{color:'#059669'}}>{f.l}</label>
                       <InfoBtn id={f.info}/>
                       {!f.v && f.ph && <AvisoDefault ativo={true} padrao={`usando ${f.ph} (automático)`} onPreencher={()=>{}} onManter={()=>{}}/>}
                     </div>
-                    <div className="relative">
-                      {f.tipo==='R$'&&<span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#767069'}}>R$</span>}
+                    <p className="text-xs mb-1.5 pl-7" style={{color:'#6b6860'}}>{f.dica}</p>
+                    <div className="relative pl-7">
+                      {f.tipo==='R$'&&<span className="absolute left-10 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>R$</span>}
                       <input type="number" value={f.v} onChange={e=>f.set(e.target.value)} placeholder={f.ph}
-                        className={`w-full ${f.tipo==='R$'?'pl-7':'pl-3'} ${f.tipo&&f.tipo!=='R$'?'pr-7':'pr-3'} py-2 rounded-lg text-xs text-[#1a1a1a] focus:outline-none`}
-                        style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}/>
-                      {f.tipo&&f.tipo!=='R$'&&<span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#767069'}}>{f.tipo}</span>}
+                        className={`w-full ${f.tipo==='R$'?'pl-9':'pl-3'} ${f.tipo&&f.tipo!=='R$'?'pr-9':'pr-3'} py-2.5 rounded-xl text-sm font-bold text-[#1a1a1a] focus:outline-none`}
+                        style={{background:'#fff',border:'1.5px solid #10b98130'}}/>
+                      {f.tipo&&f.tipo!=='R$'&&<span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>{f.tipo}</span>}
                     </div>
                   </div>
                 ))}
+                </div>
               </div>
+              )}
             </div>
 
-            {/* Resultados PE */}
+            {/* Resultados PE — card recolhível (fechado por padrão), tudo em coluna única */}
             {custoOpPE_>0&&margPE_>0&&(
-              <div className="space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {[
-                    {l:'⚖️ Ponto de Equilíbrio',v:fmtR(PE_),sub:'Faturamento mínimo para cobrir todos os custos',c:'#10b981'},
-                    {l:`🎯 PE p/ Lucro de ${n(metaLucroPE)||n(lucroD)}%`,v:fmtR(PELucro_),sub:'Para cobrir custos E ter o lucro desejado',c:'#7c6fe0'},
-                  ].map((c,i)=>(
-                    <div key={i} className="rounded-2xl p-5 border" style={{background:'#ffffff',borderColor:`${c.c}30`}}>
-                      <p className="text-xs font-bold mb-1" style={{color:c.c}}>{c.l}</p>
-                      <p className="text-3xl font-bold mt-2" style={{color:c.c}}>{c.v}</p>
-                      <p className="text-xs mt-2" style={{color:'#6b6860'}}>{c.sub}</p>
-                      {fatPE_>0&&<p className="text-xs mt-1" style={{color:fatPE_>=PE_?'#10b981':'#ef4444'}}>{fatPE_>=PE_?`✅ Você fatura ${fmtR(fatPE_-PE_)} acima do PE`:`🚨 Falta ${fmtR(PE_-fatPE_)} para o PE`}</p>}
-                    </div>
-                  ))}
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="rounded-2xl p-4 border" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
-                    <p className="text-xs font-bold mb-3" style={{color:'#0891b2'}}>👤 PE por Profissional ({profs_} profissionais)</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {[
-                        {l:'PE por Profissional',v:fmtR(PEProf_)},
-                        {l:'PE c/ Lucro por Prof.',v:fmtR(PEProfLucro_)},
-                      ].map((c,i)=>(
-                        <div key={i}>
-                          <p className="text-[10px]" style={{color:'#767069'}}>{c.l}</p>
-                          <p className="text-lg font-bold" style={{color:'#0891b2'}}>{c.v}</p>
-                          <p className="text-[9px]" style={{color:'#767069'}}>cada profissional precisa gerar</p>
+              <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#10b98130'}}>
+                <button onClick={()=>setSecResultPE(p=>!p)} className="w-full flex items-center justify-between px-5 py-4 transition-colors">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {secResultPE ? <ChevronUp size={14} style={{color:'#059669'}}/> : <ChevronDown size={14} style={{color:'#059669'}}/>}
+                    <span className="font-bold text-sm" style={{color:'#059669'}}>📊 Resultados do Ponto de Equilíbrio</span>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-[10px]" style={{color:'#767069'}}>Ponto de Equilíbrio</p>
+                    <p className="text-lg font-bold" style={{color:'#10b981'}}>{fmtR(PE_)}</p>
+                  </div>
+                </button>
+                {secResultPE && (
+                <div className="px-5 pb-6 pt-4 border-t" style={{borderColor:'#10b98120'}}>
+                  <div className="max-w-xl mx-auto space-y-3">
+                    {[
+                      {num:'1',l:'⚖️ Ponto de Equilíbrio',v:fmtR(PE_),sub:'Faturamento mínimo para cobrir todos os custos — abaixo disso é prejuízo',c:'#10b981',comparar:true},
+                      {num:'2',l:`🎯 PE p/ Lucro de ${n(metaLucroPE)||n(lucroD)}%`,v:fmtR(PELucro_),sub:'Quanto precisa faturar para cobrir os custos E ter o lucro desejado',c:'#7c6fe0',comparar:false},
+                    ].map((c:any)=>(
+                      <div key={c.num} className="rounded-xl p-4 border" style={{background:'#ffffff',borderColor:`${c.c}30`}}>
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{background:c.c,color:'#fff'}}>{c.num}</span>
+                          <p className="text-xs font-bold" style={{color:c.c}}>{c.l}</p>
                         </div>
-                      ))}
+                        <p className="text-[10px] mb-1 pl-7" style={{color:'#767069'}}>{c.sub}</p>
+                        <p className="text-3xl font-bold pl-7" style={{color:c.c}}>{c.v}</p>
+                        {c.comparar&&fatPE_>0&&<p className="text-xs mt-1 pl-7" style={{color:fatPE_>=PE_?'#10b981':'#ef4444'}}>{fatPE_>=PE_?`✅ Você fatura ${fmtR(fatPE_-PE_)} acima do PE`:`🚨 Falta ${fmtR(PE_-fatPE_)} para o PE`}</p>}
+                      </div>
+                    ))}
+                    <div className="rounded-xl p-4 border" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{background:'#0891b2',color:'#fff'}}>3</span>
+                        <p className="text-xs font-bold" style={{color:'#0891b2'}}>👤 PE por Profissional ({profs_} profissionais)</p>
+                      </div>
+                      <div className="pl-7 space-y-2">
+                        {[
+                          {l:'PE por Profissional',v:fmtR(PEProf_)},
+                          {l:'PE c/ Lucro por Prof.',v:fmtR(PEProfLucro_)},
+                        ].map((c,i)=>(
+                          <div key={i}>
+                            <p className="text-[10px]" style={{color:'#767069'}}>{c.l} — cada profissional precisa gerar</p>
+                            <p className="text-lg font-bold" style={{color:'#0891b2'}}>{c.v}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="rounded-xl p-4 border" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{background:'#b45309',color:'#fff'}}>4</span>
+                        <p className="text-xs font-bold" style={{color:'#b45309'}}>📐 PE por M² ({n(areaM2)||100} m²)</p>
+                      </div>
+                      <div className="pl-7 space-y-2">
+                        {[
+                          {l:'PE por M²',v:`${fmtR(PEM2_)}/m²`},
+                          {l:'PE c/ Lucro por M²',v:`${fmtR(PEM2Lucro_)}/m²`},
+                        ].map((c,i)=>(
+                          <div key={i}>
+                            <p className="text-[10px]" style={{color:'#767069'}}>{c.l} — cada m² precisa gerar</p>
+                            <p className="text-lg font-bold" style={{color:'#b45309'}}>{c.v}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="rounded-xl p-4 text-xs space-y-1" style={{background:'#faf9f7',border:'1px solid #e8e6e0',color:'#767069'}}>
+                      <p className="font-bold mb-1" style={{color:'#767069'}}>💡 Como funciona:</p>
+                      <p>• <strong style={{color:'#1a1a1a'}}>PE</strong> = Custo Operacional ÷ Margem Operacional% — faturamento mínimo para não ter prejuízo</p>
+                      <p>• <strong style={{color:'#1a1a1a'}}>PE c/ Lucro</strong> = Custo Op ÷ (Margem% − Meta Lucro%) — para cobrir E lucrar</p>
+                      <p>• <strong style={{color:'#1a1a1a'}}>PE por Profissional</strong> = PE Total ÷ nº de profissionais — meta individual</p>
+                      <p>• <strong style={{color:'#1a1a1a'}}>PE por M²</strong> = PE Total ÷ área do salão — eficiência do espaço</p>
                     </div>
                   </div>
-                  <div className="rounded-2xl p-4 border" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
-                    <p className="text-xs font-bold mb-3" style={{color:'#b45309'}}>📐 PE por M² ({n(areaM2)||100} m²)</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {[
-                        {l:'PE por M²',v:`${fmtR(PEM2_)}/m²`},
-                        {l:'PE c/ Lucro por M²',v:`${fmtR(PEM2Lucro_)}/m²`},
-                      ].map((c,i)=>(
-                        <div key={i}>
-                          <p className="text-[10px]" style={{color:'#767069'}}>{c.l}</p>
-                          <p className="text-lg font-bold" style={{color:'#b45309'}}>{c.v}</p>
-                          <p className="text-[9px]" style={{color:'#767069'}}>cada m² precisa gerar</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
                 </div>
-
-                <div className="rounded-xl p-4 text-xs space-y-1" style={{background:'#faf9f7',border:'1px solid #e8e6e0',color:'#767069'}}>
-                  <p className="font-bold mb-1" style={{color:'#767069'}}>💡 Como funciona:</p>
-                  <p>• <strong style={{color:'#1a1a1a'}}>PE</strong> = Custo Operacional ÷ Margem Operacional% — faturamento mínimo para não ter prejuízo</p>
-                  <p>• <strong style={{color:'#1a1a1a'}}>PE c/ Lucro</strong> = Custo Op ÷ (Margem% − Meta Lucro%) — para cobrir E lucrar</p>
-                  <p>• <strong style={{color:'#1a1a1a'}}>PE por Profissional</strong> = PE Total ÷ nº de profissionais — meta individual</p>
-                  <p>• <strong style={{color:'#1a1a1a'}}>PE por M²</strong> = PE Total ÷ área do salão — eficiência do espaço</p>
-                </div>
+                )}
               </div>
             )}
             <button onClick={atualizar} className="w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all"
