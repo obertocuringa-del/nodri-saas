@@ -574,6 +574,398 @@ ${REC_INDICADORES([
 ])}
 `.trim()
 
+// Tabelas simples (frases padrão / oportunidades)
+const TBL = 'width:100%;border-collapse:collapse;margin:10px 0;font-size:13.5px'
+const TH = 'background:#f7f6fb;color:#3b2e7a;text-align:left;padding:8px 12px;border:1px solid #e6e3f2;font-weight:700'
+const TD = 'padding:8px 12px;border:1px solid #e6e3f2;vertical-align:top'
+
+const REC_CHEGADA_HTML = `
+<h1>Procedimento Operacional Padrão (POP)</h1>
+<p style="color:#6b6880;font-size:15px;margin:-4px 0 16px;font-weight:600">POP-REC-006 — Atendimento Presencial (Chegada do Cliente)</p>
+
+<h2>1. Identificação</h2>
+<div style="${META}">
+  <p style="margin:0"><strong>Código:</strong> POP-REC-006 &nbsp;·&nbsp; <strong>Versão:</strong> 1.0 &nbsp;·&nbsp; <strong>Setor:</strong> Recepção</p>
+  <p style="margin:8px 0 0"><strong>Responsável:</strong> <span style="${FIELD}"></span></p>
+  <p style="margin:8px 0 0"><strong>Data de Emissão:</strong> ___/___/______ &nbsp;·&nbsp; <strong>Última Revisão:</strong> ___/___/______ &nbsp;·&nbsp; <strong>Próxima Revisão:</strong> ___/___/______</p>
+</div>
+
+<h2>2. Objetivo</h2>
+<p>Padronizar o atendimento presencial no momento da chegada do cliente, garantindo um acolhimento humanizado, organização do fluxo de atendimento, conforto durante a espera, e identificação de oportunidades de vendas adicionais e fidelização.</p>
+
+<h2>3. Campo de Aplicação</h2>
+<p>Aplica-se a todos os recepcionistas do salão, no momento em que o cliente chega para seu atendimento.</p>
+
+<h2>4. Responsabilidades</h2>
+<h3>Recepcionista</h3>
+<ul>
+  <li>Recepcionar o cliente com cordialidade e entusiasmo.</li>
+  <li>Identificar o cliente e localizar seu agendamento.</li>
+  <li>Acomodar o cliente confortavelmente.</li>
+  <li>Oferecer bebidas e cardápio.</li>
+  <li>Comunicar o profissional sobre a chegada do cliente.</li>
+  <li>Acompanhar o fluxo do atendimento.</li>
+  <li>Identificar oportunidades de vendas adicionais.</li>
+  <li>Verificar procedimentos em atraso.</li>
+  <li>Divulgar campanhas vigentes.</li>
+</ul>
+<h3>Gerência</h3>
+<ul>
+  <li>Fiscalizar o cumprimento deste POP.</li>
+  <li>Treinar continuamente a equipe.</li>
+  <li>Acompanhar os indicadores de satisfação e conversão.</li>
+</ul>
+
+<h2>5. Materiais Necessários</h2>
+<ul style="${CHECK}">
+  <li>☐ Cardápio de bebidas (café, chá, água, capuccino, etc.).</li>
+  <li>☐ Bebidas disponíveis (café, chá, água, capuccino, etc.).</li>
+  <li>☐ Sistema de agendamento/comanda (digital ou físico).</li>
+  <li>☐ Lista de profissionais e suas áreas.</li>
+  <li>☐ Material de divulgação de campanhas.</li>
+  <li>☐ Produtos para demonstração (se disponível).</li>
+</ul>
+
+<h2>6. Procedimento Operacional</h2>
+<p><strong>Cliente chega ao salão:</strong></p>
+<ol>
+  <li>A recepcionista levanta-se imediatamente para recepcionar o cliente.</li>
+  <li>Saudação obrigatória:</li>
+</ol>
+<blockquote>"Olá, bom dia! Seja muito bem-vindo(a) ao [Nome do Salão]. No que podemos ajudar?"</blockquote>
+<h3>Identificação do Cliente</h3>
+<blockquote>"Qual é o seu nome, por favor?" · "A senhora tem agendamento conosco hoje?"</blockquote>
+<h3>Cliente COM agendamento</h3>
+<ul>
+  <li>Localizar o agendamento no sistema.</li>
+  <li>Abrir a comanda do cliente (digital ou física).</li>
+  <li>Verificar os serviços agendados.</li>
+  <li>Confirmar com o cliente:</li>
+</ul>
+<blockquote>"Confirmando, a senhora veio para [serviço] com [profissional], correto?"</blockquote>
+<h3>Cliente SEM agendamento (Espontâneo)</h3>
+<ul>
+  <li>Verificar disponibilidade na agenda.</li>
+  <li>Aplicar técnicas de recuperação de agenda (POP-REC-001).</li>
+  <li>Tentar encaixar o cliente.</li>
+  <li>Caso não seja possível, oferecer outro horário/data/profissional.</li>
+</ul>
+<h3>Acomodação do Cliente</h3>
+<ul>
+  <li>Conduzir o cliente à área de espera ou ao local onde será atendido.</li>
+  <li>Oferecer bebidas:</li>
+</ul>
+<blockquote>"Enquanto aguarda, gostaria de um café, chá, água ou capuccino?"</blockquote>
+<ul>
+  <li>Entregar o cardápio de bebidas e apresentar as opções disponíveis.</li>
+  <li>Oferecer algo diferenciado (ex.: capuccino especial, chá aromatizado).</li>
+</ul>
+<p>Garantir que o cliente esteja confortável:</p>
+<ul style="${CHECK}">
+  <li>☐ Assento disponível.</li>
+  <li>☐ Revistas/rede social disponível.</li>
+  <li>☐ Temperatura ambiente agradável.</li>
+  <li>☐ Wi-Fi disponível (informar senha se necessário).</li>
+</ul>
+
+<h2>7. Comunicação com o Profissional</h2>
+<p>A recepcionista deverá comunicar <strong>imediatamente</strong> o profissional sobre a chegada do cliente, informando obrigatoriamente: <strong>nome do cliente, procedimentos agendados e local onde o cliente está acomodado</strong>.</p>
+<blockquote>"[Nome do Profissional], o(a) cliente [Nome do Cliente] chegou para [serviço]. Ela está acomodada na [área de espera/estação]."</blockquote>
+
+<h2>8. Acompanhamento do Atendimento</h2>
+<p>A recepcionista que acomodou o cliente é a responsável por acompanhar todo o procedimento. Verificar durante o atendimento:</p>
+<ul style="${CHECK}">
+  <li>☐ Se o cliente deixou de fazer algum serviço.</li>
+  <li>☐ Se algum procedimento está em atraso (ex.: faz 45 dias que não faz hidratação).</li>
+  <li>☐ Se o cliente demonstrou interesse em algum serviço ou produto.</li>
+  <li>☐ Se há alguma campanha vigente que se aplique ao perfil do cliente.</li>
+</ul>
+
+<h2>9. Técnicas de Vendas e Identificação de Oportunidades (Durante a Espera)</h2>
+<h3>A. Identificação de Procedimentos em Atraso</h3>
+<p>A recepcionista deverá verificar no sistema o histórico do cliente:</p>
+<ul style="${CHECK}">
+  <li>☐ Última visita.</li>
+  <li>☐ Procedimentos realizados.</li>
+  <li>☐ Procedimentos que NUNCA foram realizados.</li>
+  <li>☐ Procedimentos que estão em atraso (ex.: hidratação há mais de 30 dias).</li>
+</ul>
+<h3>B. Perguntas Obrigatórias Durante a Espera</h3>
+<blockquote>"Percebi que já faz [X] dias que a senhora não faz um tratamento capilar. Gostaria de aproveitar hoje para fazer uma hidratação/nutrição?"</blockquote>
+<blockquote>"Enquanto aguarda, posso te mostrar nossa nova linha de produtos? Temos um shampoo específico para seu tipo de cabelo."</blockquote>
+<blockquote>"Aproveitando que você está aqui, temos uma campanha especial para quem faz [serviço A] + [serviço B]. Gostaria de conhecer?"</blockquote>
+<blockquote>"Sabe que seu retoque de coloração já está na hora? Podemos já deixar agendado para daqui a 30 dias."</blockquote>
+<h3>C. Sugestões Durante a Espera</h3>
+<table style="${TBL}">
+  <tr><th style="${TH}">Serviço Agendado</th><th style="${TH}">Oportunidade de Venda</th></tr>
+  <tr><td style="${TD}">Escova</td><td style="${TD}">Hidratação, Nutrição, Tratamento capilar</td></tr>
+  <tr><td style="${TD}">Coloração</td><td style="${TD}">Cauterização, Reconstrução, Retoque agendado</td></tr>
+  <tr><td style="${TD}">Corte</td><td style="${TD}">Tratamento capilar, Hidratação</td></tr>
+  <tr><td style="${TD}">Manicure</td><td style="${TD}">Pedicure, Esmaltação em gel</td></tr>
+  <tr><td style="${TD}">Pedicure</td><td style="${TD}">Manicure, Esfoliação nos pés</td></tr>
+  <tr><td style="${TD}">Design de sobrancelhas</td><td style="${TD}">Cílios (extensão ou coloração), Henna</td></tr>
+  <tr><td style="${TD}">Cílios</td><td style="${TD}">Design de sobrancelhas</td></tr>
+  <tr><td style="${TD}">Tratamento capilar</td><td style="${TD}">Corte, Escova, Coloração</td></tr>
+</table>
+<h3>D. Divulgação de Campanhas</h3>
+<blockquote>"Estamos com uma promoção especial: [descrição da campanha]. Gostaria de aproveitar?"</blockquote>
+<blockquote>"Este mês temos um combo de [serviços] com desconto especial. Posso te explicar?"</blockquote>
+
+<h2>10. Finalização da Chegada</h2>
+<p>Após acomodar o cliente e comunicar o profissional, a recepcionista deverá:</p>
+<ul style="${CHECK}">
+  <li>☐ Registrar a chegada no sistema.</li>
+  <li>☐ Marcar o cliente como "em atendimento".</li>
+  <li>☐ Informar a gerência se houver alguma oportunidade identificada.</li>
+  <li>☐ Acompanhar discretamente o fluxo do atendimento.</li>
+</ul>
+
+<h2>11. Frases de Encerramento da Chegada</h2>
+<blockquote>"Em breve o(a) [Profissional] irá te atender. Fique à vontade!"</blockquote>
+<blockquote>"Qualquer coisa, estou aqui para ajudar. Aproveite enquanto espera para dar uma olhada em nosso cardápio de serviços."</blockquote>
+<blockquote>"Se precisar de algo, é só me chamar."</blockquote>
+`.trim()
+
+const REC_FINALIZACAO_HTML = `
+<h1>Procedimento Operacional Padrão (POP)</h1>
+<p style="color:#6b6880;font-size:15px;margin:-4px 0 16px;font-weight:600">POP-REC-007 — Atendimento Presencial (Finalização do Procedimento)</p>
+
+<h2>1. Identificação</h2>
+<div style="${META}">
+  <p style="margin:0"><strong>Código:</strong> POP-REC-007 &nbsp;·&nbsp; <strong>Versão:</strong> 1.0 &nbsp;·&nbsp; <strong>Setor:</strong> Recepção</p>
+  <p style="margin:8px 0 0"><strong>Responsável:</strong> <span style="${FIELD}"></span></p>
+  <p style="margin:8px 0 0"><strong>Data de Emissão:</strong> ___/___/______ &nbsp;·&nbsp; <strong>Última Revisão:</strong> ___/___/______ &nbsp;·&nbsp; <strong>Próxima Revisão:</strong> ___/___/______</p>
+</div>
+
+<h2>2. Objetivo</h2>
+<p>Padronizar o atendimento presencial no momento da finalização do procedimento, garantindo uma experiência de fechamento com excelência, conferência correta dos serviços, aplicação de técnicas de vendas para aumento de ticket médio, fidelização através do reagendamento, e coleta de feedback para melhoria contínua.</p>
+
+<h2>3. Campo de Aplicação</h2>
+<p>Aplica-se a todos os recepcionistas do salão, no momento em que o cliente finaliza seu procedimento e se dirige ao caixa/recepção para pagamento.</p>
+
+<h2>4. Responsabilidades</h2>
+<h3>Recepcionista</h3>
+<ul>
+  <li>Recepcionar o cliente com cordialidade.</li>
+  <li>Identificar o cliente e localizar sua comanda.</li>
+  <li>Conferir todos os procedimentos realizados.</li>
+  <li>Verificar lançamentos com o profissional (se necessário).</li>
+  <li>Apresentar o valor total com clareza.</li>
+  <li>Registrar a forma de pagamento.</li>
+  <li>Emitir nota fiscal com CPF (se solicitado).</li>
+  <li>Entregar cupom para estacionamento (se aplicável).</li>
+  <li>Aplicar técnicas de vendas para serviços adicionais.</li>
+  <li>Oferecer reagendamento preventivo.</li>
+  <li>Enviar mensagem de feedback no dia seguinte.</li>
+  <li>Registrar indicadores de venda.</li>
+</ul>
+<h3>Gerência</h3>
+<ul>
+  <li>Fiscalizar o cumprimento deste POP.</li>
+  <li>Treinar continuamente a equipe.</li>
+  <li>Acompanhar os indicadores de conversão e ticket médio.</li>
+</ul>
+
+<h2>5. Materiais Necessários</h2>
+<ul style="${CHECK}">
+  <li>☐ Sistema de comanda/agendamento.</li>
+  <li>☐ Leitor de cartão/Máquina de cartão.</li>
+  <li>☐ Nota fiscal eletrônica (sistema).</li>
+  <li>☐ Cupom de estacionamento (se aplicável).</li>
+  <li>☐ Material de divulgação de campanhas.</li>
+  <li>☐ Produtos para venda (exibição).</li>
+  <li>☐ Lista de preços atualizada.</li>
+  <li>☐ Modelo de mensagem de feedback.</li>
+</ul>
+
+<h2>6. Procedimento Operacional</h2>
+<p><strong>Cliente finaliza o serviço e se dirige à recepção:</strong></p>
+<ol>
+  <li>A recepcionista levanta-se (se possível) para atender o cliente.</li>
+  <li>Saudação obrigatória:</li>
+</ol>
+<blockquote>"Olá, tudo bem? Qual é o seu nome, por favor?"</blockquote>
+<h3>Abertura da Comanda</h3>
+<p>Localizar a comanda do cliente no sistema e verificar se todos os serviços foram lançados corretamente. Verificar se há:</p>
+<ul style="${CHECK}">
+  <li>☐ Serviços adicionais realizados (ex.: o profissional ofereceu algo a mais).</li>
+  <li>☐ Produtos adicionais lançados (ex.: shampoo, condicionador, etc.).</li>
+  <li>☐ Descontos ou cortesias aplicados.</li>
+</ul>
+<h3>Conferência dos Procedimentos com o Cliente</h3>
+<blockquote>"Conferindo aqui, a senhora realizou os seguintes serviços hoje: [listar serviços]. Está correto?"</blockquote>
+<ul>
+  <li><strong>Caso o cliente confirme:</strong> prosseguir para o pagamento.</li>
+  <li><strong>Caso o cliente questione ou tenha dúvida:</strong></li>
+</ul>
+<blockquote>"Com licença, vou verificar esses lançamentos com o profissional e já volto."</blockquote>
+<p>Dirigir-se ao profissional para confirmar os serviços realizados; retornar ao cliente e explicar ou corrigir o lançamento.</p>
+<h3>Apresentação do Valor</h3>
+<blockquote>"O valor total do seu atendimento hoje ficou R$ [valor]."</blockquote>
+<p>Se o cliente demonstrar surpresa, explicar detalhadamente os valores de cada serviço:</p>
+<blockquote>"O valor é composto por [serviço A] R$ [valor] + [serviço B] R$ [valor]..."</blockquote>
+<h3>Forma de Pagamento</h3>
+<blockquote>"Qual será a forma de pagamento? Aceitamos dinheiro, cartão de crédito, débito e Pix."</blockquote>
+<ul>
+  <li><strong>Se cartão:</strong> perguntar se é crédito ou débito ("Será crédito ou débito?"), registrar o valor e finalizar a venda.</li>
+  <li><strong>Se dinheiro:</strong> confirmar o valor recebido e devolver o troco com agilidade e cortesia.</li>
+  <li><strong>Se Pix:</strong> apresentar o QR Code ("Aqui está o QR Code para pagamento via Pix.").</li>
+</ul>
+<h3>Perguntas Obrigatórias no Momento do Pagamento</h3>
+<p><strong>A. Nota Fiscal:</strong></p>
+<blockquote>"Gostaria de incluir o CPF na Nota Fiscal?"</blockquote>
+<p>Se sim: "Poderia me informar seu CPF, por favor?" e registrar no sistema. Se não: prosseguir sem nota.</p>
+<p><strong>B. Cupom de Estacionamento (se aplicável):</strong></p>
+<blockquote>"A senhora precisa do cupom de estacionamento?"</blockquote>
+<p>Se sim: "Aqui está o cupom para liberar na saída."</p>
+
+<h2>7. Técnicas de Vendas e Aumento de Ticket Médio no Momento do Pagamento</h2>
+<h3>A. Venda de Produtos (Cross-Selling)</h3>
+<p>A recepcionista deverá oferecer produtos antes de finalizar a venda.</p>
+<blockquote>"Gostaria de levar o shampoo/condicionador que usamos em seu atendimento? Ele é específico para seu tipo de cabelo."</blockquote>
+<blockquote>"Temos um kit de manutenção que vai ajudar seu resultado a durar muito mais. Posso te mostrar?"</blockquote>
+<blockquote>"Aproveite que está aqui e conheça nossos produtos com preço especial para clientes."</blockquote>
+<blockquote>"O óleo finalizador que usamos hoje é excelente para manter o brilho. Gostaria de levar?"</blockquote>
+<h3>B. Oferta de Serviços Futuros (Up-Selling)</h3>
+<blockquote>"Para a próxima visita, gostaria de incluir um tratamento diferenciado?"</blockquote>
+<blockquote>"Sabe que temos uma promoção especial para quem faz [serviço A] + [serviço B]? Gostaria de agendar para a próxima visita?"</blockquote>
+<blockquote>"A senhora já conhece nosso tratamento de [serviço]? Ele é excelente e tem feito muito sucesso."</blockquote>
+<h3>C. Ofertas Combinadas (Bundle)</h3>
+<blockquote>"Temos um combo especial: [serviço A] + [serviço B] por apenas R$ XXX. Gostaria de agendar para a próxima visita?"</blockquote>
+<blockquote>"Se levar este produto hoje, ganha um [brinde ou desconto] no próximo serviço."</blockquote>
+
+<h2>8. Finalização da Venda</h2>
+<ul>
+  <li>Registrar o pagamento no sistema.</li>
+  <li>Entregar o comprovante (se solicitado).</li>
+  <li>Agradecer o pagamento.</li>
+</ul>
+
+<h2>9. Técnicas de Fidelização e Reagendamento</h2>
+<h3>A. Reagendamento Imediato</h3>
+<p>Antes do cliente sair, a recepcionista deverá oferecer o próximo horário.</p>
+<blockquote>"A senhora gostaria de agendar uma próxima visita?"</blockquote>
+<div style="${BOX}">
+  <p style="${BOXH}">Exemplos por serviço</p>
+  <ul>
+    <li><strong>Cabelo (corte/coloração):</strong> "Normalmente recomendamos seu retorno em aproximadamente 30 dias. Posso deixar reservado?"</li>
+    <li><strong>Cabelo (hidratação/tratamento):</strong> "A manutenção do tratamento é recomendada a cada 15 dias. Posso agendar a próxima?"</li>
+    <li><strong>Unhas (manicure):</strong> "Posso deixar sua próxima manutenção agendada para daqui a 15 dias?"</li>
+    <li><strong>Sobrancelhas:</strong> "Recomendamos a manutenção em 30 dias. Já gostaria de garantir sua vaga?"</li>
+    <li><strong>Coloração (retoque):</strong> "Seu retoque costuma acontecer em cerca de 30 dias. Já gostaria de garantir sua vaga?"</li>
+  </ul>
+</div>
+<h3>B. Benefícios a Serem Destacados</h3>
+<ul style="${CHECK}">
+  <li>☐ Garantia do profissional preferido.</li>
+  <li>☐ Melhores horários disponíveis.</li>
+  <li>☐ Organização da rotina da cliente.</li>
+  <li>☐ Evita filas e espera.</li>
+  <li>☐ Condições especiais para quem reagenda.</li>
+</ul>
+
+<h2>10. Encerramento do Atendimento</h2>
+<blockquote>"Muito obrigado pela sua visita, (Nome)! Foi um prazer atender você hoje. Esperamos vê-la em breve."</blockquote>
+<ul>
+  <li><strong>Se agendou:</strong> "Não se esqueça: seu próximo agendamento já está reservado para [Data/Horário] com [Profissional]."</li>
+  <li><strong>Se não agendou:</strong> "Quando decidir voltar, é só nos chamar. Estaremos à disposição!"</li>
+</ul>
+<blockquote>"Tenha um excelente dia! Até a próxima."</blockquote>
+
+<h2>11. Pós-Atendimento (Dia Seguinte)</h2>
+<h3>A. Envio de Mensagem de Feedback</h3>
+<p>No dia seguinte ao atendimento, a recepcionista deverá enviar a mensagem padrão de feedback.</p>
+<blockquote>"Olá (Nome)! Tudo bem?<br/><br/>O [Nome do Salão] busca oferecer serviços de qualidade aos clientes. Gostaríamos de saber como foi a sua experiência no salão. Sua opinião é importante para nortear nossas ações em busca de um atendimento cada vez melhor. 🧡🎋<br/><br/>Agradecemos a colaboração!<br/><br/>Caso não queira se identificar, mande seu feedback pelo link:<br/>[Link da Pesquisa]"</blockquote>
+<h3>B. Agendamento Online (se disponível)</h3>
+<blockquote>"Lembre-se que você pode agendar online pelo site:<br/>[Link do Agendamento]"</blockquote>
+
+<h2>12. Indicadores de Qualidade (Acompanhamento da Gerência)</h2>
+<p>A gerência deverá acompanhar mensalmente:</p>
+<ul style="${CHECK}">
+  <li>☐ Percentual de reagendamento (pós-serviço).</li>
+  <li>☐ Ticket médio por cliente.</li>
+  <li>☐ Vendas de produtos adicionais.</li>
+  <li>☐ Vendas de serviços adicionais (up-selling).</li>
+  <li>☐ Número de clientes que compraram combos/bundles.</li>
+  <li>☐ Índice de satisfação do cliente (pesquisa de feedback).</li>
+  <li>☐ Taxa de retorno de pesquisas de satisfação.</li>
+  <li>☐ Número de clientes que utilizaram agendamento online.</li>
+  <li>☐ Percentual de CPF incluído na nota fiscal (controle fiscal).</li>
+  <li>☐ Reclamações ou dúvidas sobre valores.</li>
+</ul>
+
+<h2>13. Checklist de Auditoria (Chegada do Cliente — POP-REC-006)</h2>
+<ul style="${CHECK}">
+  <li>☐ Recepcionista levantou para recepcionar.</li>
+  <li>☐ Cumprimentou o cliente cordialmente.</li>
+  <li>☐ Identificou o cliente e localizou agendamento.</li>
+  <li>☐ Abriu a comanda corretamente.</li>
+  <li>☐ Acomodou o cliente com conforto.</li>
+  <li>☐ Ofereceu café, água, chá ou capuccino.</li>
+  <li>☐ Entregou o cardápio de bebidas.</li>
+  <li>☐ Comunicou o profissional (nome, serviço, local).</li>
+  <li>☐ Acompanhou o atendimento.</li>
+  <li>☐ Verificou procedimentos em atraso.</li>
+  <li>☐ Aplicou técnicas de vendas (complementares).</li>
+  <li>☐ Divulgou campanhas vigentes.</li>
+  <li>☐ Registrou a chegada no sistema.</li>
+</ul>
+
+<h2>14. Checklist de Auditoria (Finalização — POP-REC-007)</h2>
+<h3>Conferência e Pagamento</h3>
+<ul style="${CHECK}">
+  <li>☐ Recepcionista atendeu com cordialidade.</li>
+  <li>☐ Identificou o cliente.</li>
+  <li>☐ Abriu a comanda.</li>
+  <li>☐ Conferiu procedimentos com o cliente.</li>
+  <li>☐ Na dúvida, confirmou com o profissional.</li>
+  <li>☐ Apresentou o valor total com clareza.</li>
+  <li>☐ Perguntou a forma de pagamento.</li>
+  <li>☐ Perguntou se deseja CPF na nota.</li>
+  <li>☐ Perguntou se deseja cupom de estacionamento.</li>
+  <li>☐ Finalizou a venda corretamente.</li>
+</ul>
+<h3>Técnicas de Vendas e Fidelização</h3>
+<ul style="${CHECK}">
+  <li>☐ Ofereceu produtos complementares.</li>
+  <li>☐ Ofereceu serviços futuros.</li>
+  <li>☐ Ofereceu combos/pacotes.</li>
+  <li>☐ Ofereceu reagendamento preventivo.</li>
+  <li>☐ Destacou benefícios do reagendamento.</li>
+  <li>☐ Agradeceu e encerrou com cordialidade.</li>
+</ul>
+<h3>Pós-Atendimento</h3>
+<ul style="${CHECK}">
+  <li>☐ Enviou mensagem de feedback no dia seguinte.</li>
+  <li>☐ Incluiu link de agendamento online.</li>
+  <li>☐ Registrou indicadores no sistema.</li>
+</ul>
+
+<h2>15. Frases e Scripts Complementares</h2>
+<h3>A. Para Clientes com Agendamento</h3>
+<table style="${TBL}">
+  <tr><th style="${TH}">Situação</th><th style="${TH}">Frase Padrão</th></tr>
+  <tr><td style="${TD}">Chegada</td><td style="${TD}">"Olá, (Nome)! Seja bem-vinda! Vou abrir sua comanda e já avisar a [Profissional]."</td></tr>
+  <tr><td style="${TD}">Oferecendo bebida</td><td style="${TD}">"Enquanto aguarda, posso oferecer um café, chá, água ou capuccino?"</td></tr>
+  <tr><td style="${TD}">Comunicando profissional</td><td style="${TD}">"[Profissional], a [Cliente] chegou para [serviço]. Ela está acomodada na área de espera."</td></tr>
+  <tr><td style="${TD}">Identificando oportunidade</td><td style="${TD}">"Percebi que já faz 45 dias que a senhora não faz um tratamento capilar. Gostaria de aproveitar hoje?"</td></tr>
+</table>
+<h3>B. Para Clientes sem Agendamento</h3>
+<table style="${TBL}">
+  <tr><th style="${TH}">Situação</th><th style="${TH}">Frase Padrão</th></tr>
+  <tr><td style="${TD}">Chegada</td><td style="${TD}">"Olá! A senhora tem agendamento conosco hoje?"</td></tr>
+  <tr><td style="${TD}">Agenda cheia</td><td style="${TD}">"Hoje não temos disponibilidade com a [Profissional], mas tenho outra profissional altamente qualificada que pode atendê-la. Gostaria que eu verificasse?"</td></tr>
+  <tr><td style="${TD}">Sem horário</td><td style="${TD}">"Temos um horário amanhã às [horário], gostaria de agendar?"</td></tr>
+</table>
+<h3>C. Para Clientes com Dúvida no Pagamento</h3>
+<table style="${TBL}">
+  <tr><th style="${TH}">Situação</th><th style="${TH}">Frase Padrão</th></tr>
+  <tr><td style="${TD}">Dúvida no valor</td><td style="${TD}">"Com licença, vou verificar esses lançamentos com a [Profissional] e já volto."</td></tr>
+  <tr><td style="${TD}">Cliente questiona</td><td style="${TD}">"O valor é composto por [serviço A] R$ [valor] + [serviço B] R$ [valor]. Está correto?"</td></tr>
+  <tr><td style="${TD}">Cliente quer parcelar</td><td style="${TD}">"Aceitamos parcelamento em [X] vezes no cartão de crédito. Gostaria de parcelar?"</td></tr>
+</table>
+`.trim()
+
 export type ConteudoDoc = { id: string; titulo: string; texto: string }
 export const CONTEUDO_DEFAULTS: Record<string, { titulo: string; conteudo: { texto?: string; docs?: ConteudoDoc[] } }> = {
   manicure: { titulo: 'POP — Atendimento de Manicure', conteudo: { texto: MANICURE_HTML } },
@@ -584,6 +976,8 @@ export const CONTEUDO_DEFAULTS: Record<string, { titulo: string; conteudo: { tex
         { id: 'pop-rec-001', titulo: 'POP-REC-001 · Atendimento Presencial', texto: REC_PRESENCIAL_HTML },
         { id: 'pop-rec-002', titulo: 'POP-REC-002 · Atendimento via WhatsApp', texto: REC_WHATSAPP_HTML },
         { id: 'pop-rec-003', titulo: 'POP-REC-003 · Atendimento Telefônico', texto: REC_TELEFONE_HTML },
+        { id: 'pop-rec-006', titulo: 'POP-REC-006 · Chegada do Cliente', texto: REC_CHEGADA_HTML },
+        { id: 'pop-rec-007', titulo: 'POP-REC-007 · Finalização do Procedimento', texto: REC_FINALIZACAO_HTML },
       ],
     },
   },
