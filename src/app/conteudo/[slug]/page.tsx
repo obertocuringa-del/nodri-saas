@@ -190,6 +190,8 @@ export default function ConteudoPage() {
   const router = useRouter()
   const [dados, setDados] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  // Páginas com vários documentos (ex.: Recepção) — qual está aberto
+  const [docSel, setDocSel] = useState(0)
 
   useEffect(() => {
     fetch(`/api/conteudo/${slug}`)
@@ -216,6 +218,8 @@ export default function ConteudoPage() {
 
   const titulo = dados?.titulo || String(slug).replace(/-/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())
   const blocos: any[] = dados?.conteudo?.blocos || []
+  const docsPagina: any[] = Array.isArray(dados?.conteudo?.docs) ? dados.conteudo.docs : []
+  const tituloImpressao = docsPagina.length ? (docsPagina[Math.min(docSel, docsPagina.length - 1)]?.titulo || titulo) : titulo
   const embedUrl = getYoutubeEmbed(dados?.video_url || '')
 
   // Se tem blocos novos, usa o novo sistema
@@ -235,7 +239,7 @@ export default function ConteudoPage() {
         <div className="w-px h-5 bg-nodri-border shrink-0" />
         <h1 className="font-syne font-bold text-[15px] uppercase tracking-wide truncate">{titulo}</h1>
         <div className="flex-1" />
-        <button onClick={() => imprimirConteudoA4(titulo)}
+        <button onClick={() => imprimirConteudoA4(tituloImpressao)}
           className="flex items-center gap-1.5 shrink-0 text-[12px] font-semibold px-3 py-1.5 rounded-lg border border-nodri-border text-nodri-t2 hover:text-nodri-cyan hover:border-nodri-cyan/40 transition-all">
           <Printer size={14} /> Imprimir
         </button>
@@ -272,6 +276,36 @@ export default function ConteudoPage() {
             {blocos.map((bloco: any) => (
               <RenderBloco key={bloco.id} bloco={bloco} />
             ))}
+          </div>
+        ) : Array.isArray(dados?.conteudo?.docs) && dados.conteudo.docs.length > 0 ? (
+          /* Vários documentos (POPs) com sidebar de navegação */
+          <div className="flex gap-6 items-start flex-col lg:flex-row">
+            <aside className="w-full lg:w-72 shrink-0 lg:sticky lg:top-20">
+              <div className="nodri-card overflow-hidden">
+                <p className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-nodri-t3 border-b border-nodri-border">
+                  Processos deste setor
+                </p>
+                {dados.conteudo.docs.map((doc: any, i: number) => (
+                  <button key={doc.id || i}
+                    onClick={() => { setDocSel(i); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                    className={`w-full text-left px-4 py-3 text-[13px] border-b border-nodri-border last:border-b-0 transition-colors ${
+                      docSel === i ? 'bg-nodri-surface text-nodri-cyan font-bold' : 'text-nodri-t2 hover:text-nodri-cyan hover:bg-nodri-surface/50'
+                    }`}>
+                    <span className="flex items-center gap-2">
+                      <FileText size={14} className="shrink-0" />
+                      {doc.titulo}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </aside>
+            <div className="flex-1 min-w-0 w-full">
+              <div className="mx-auto" style={{ maxWidth: 840, background: '#ffffff', borderRadius: 16, overflow: 'hidden', boxShadow: '0 10px 40px rgba(0,0,0,.28)' }}>
+                <div style={{ height: 6, background: 'linear-gradient(90deg,#5b4fcf,#7c6fe0)' }} />
+                <div id="conteudo-imprimivel" className="pop-doc" style={{ padding: '40px 48px' }}
+                  dangerouslySetInnerHTML={{ __html: dados.conteudo.docs[Math.min(docSel, dados.conteudo.docs.length - 1)]?.texto || '' }} />
+              </div>
+            </div>
           </div>
         ) : dados?.conteudo?.texto ? (
           /* Documento (POP / guia) — folha branca limpa e legível */
