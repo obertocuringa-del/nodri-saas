@@ -966,9 +966,480 @@ const REC_FINALIZACAO_HTML = `
 </table>
 `.trim()
 
+const PRO_ATENDIMENTO_HTML = `
+<h1>Procedimento Operacional Padrão (POP)</h1>
+<p style="color:#6b6880;font-size:15px;margin:-4px 0 16px;font-weight:600">POP-PRO-001 — Atendimento do Profissional (Execução e Finalização do Serviço)</p>
+
+<h2>1. Identificação</h2>
+<div style="${META}">
+  <p style="margin:0"><strong>Código:</strong> POP-PRO-001 &nbsp;·&nbsp; <strong>Versão:</strong> 1.0 &nbsp;·&nbsp; <strong>Setor:</strong> Profissionais (Manicure, Cabeleireiro, Esteticista, etc.)</p>
+  <p style="margin:8px 0 0"><strong>Responsável:</strong> <span style="${FIELD}"></span></p>
+  <p style="margin:8px 0 0"><strong>Data de Emissão:</strong> ___/___/______ &nbsp;·&nbsp; <strong>Última Revisão:</strong> ___/___/______ &nbsp;·&nbsp; <strong>Próxima Revisão:</strong> ___/___/______</p>
+</div>
+
+<h2>2. Objetivo</h2>
+<p>Padronizar o atendimento do profissional durante a execução do serviço e finalização, garantindo excelência técnica, segurança, biossegurança, aplicação de técnicas de vendas para aumento de ticket médio, fidelização através do reagendamento e uma experiência única para o cliente.</p>
+
+<h2>3. Campo de Aplicação</h2>
+<p>Aplica-se a todos os profissionais responsáveis pelos serviços do salão (manicure, cabeleireiro, esteticista, designer de sobrancelhas, etc.).</p>
+
+<h2>4. Responsabilidades</h2>
+<h3>Profissional</h3>
+<ul>
+  <li>Cumprir integralmente este POP.</li>
+  <li>Manter postura ética e profissional.</li>
+  <li>Zelar pela segurança e bem-estar do cliente.</li>
+  <li>Cumprir todas as normas de biossegurança.</li>
+  <li>Garantir a qualidade técnica do serviço.</li>
+  <li>Aplicar técnicas de vendas (up-selling e cross-selling).</li>
+  <li>Oferecer reagendamento preventivo.</li>
+  <li>Manter sua estação limpa e organizada.</li>
+  <li>Realizar lançamento dos serviços no sistema.</li>
+  <li>Acompanhar o cliente até a recepção.</li>
+  <li>Oferecer produtos para venda.</li>
+</ul>
+<h3>Recepção</h3>
+<ul>
+  <li>Confirmar o agendamento.</li>
+  <li>Recepcionar o cliente.</li>
+  <li>Acomodar o cliente.</li>
+  <li>Registrar reagendamentos.</li>
+  <li>Informar à gerência qualquer ocorrência.</li>
+</ul>
+<h3>Gerência</h3>
+<ul>
+  <li>Fiscalizar o cumprimento deste POP.</li>
+  <li>Treinar continuamente a equipe.</li>
+  <li>Realizar auditorias periódicas.</li>
+  <li>Acompanhar os indicadores de conversão e ticket médio.</li>
+</ul>
+
+<h2>5. Materiais Necessários</h2>
+<h3>EPIs</h3>
+<ul style="${CHECK}">
+  <li>☐ Luvas descartáveis novas.</li>
+  <li>☐ Máscara limpa.</li>
+  <li>☐ Avental.</li>
+  <li>☐ Touca (se necessário).</li>
+</ul>
+<h3>Materiais (Manicure)</h3>
+<ul style="${CHECK}">
+  <li>☐ Kit descartável lacrado.</li>
+  <li>☐ Alicates esterilizados.</li>
+  <li>☐ Lixas.</li>
+  <li>☐ Palito.</li>
+  <li>☐ Espátula.</li>
+  <li>☐ Algodão.</li>
+  <li>☐ Removedor de esmalte.</li>
+  <li>☐ Base.</li>
+  <li>☐ Esmaltes.</li>
+  <li>☐ Spray secante ou óleo secante.</li>
+  <li>☐ Toalha limpa.</li>
+  <li>☐ Lixeira.</li>
+</ul>
+<h3>Materiais (Cabelo)</h3>
+<ul style="${CHECK}">
+  <li>☐ Kit descartável lacrado (toalha, capa).</li>
+  <li>☐ Tesouras esterilizadas.</li>
+  <li>☐ Pentes e escovas.</li>
+  <li>☐ Produtos químicos (tintas, descolorantes, etc.).</li>
+  <li>☐ Produtos de tratamento (máscaras, óleos, etc.).</li>
+  <li>☐ Toalhas limpas.</li>
+  <li>☐ Lixeira.</li>
+</ul>
+<h3>Materiais (Sobrancelhas/Cílios)</h3>
+<ul style="${CHECK}">
+  <li>☐ Kit descartável lacrado.</li>
+  <li>☐ Pinças esterilizadas.</li>
+  <li>☐ Tesouras esterilizadas.</li>
+  <li>☐ Produtos específicos (henna, coloração, etc.).</li>
+  <li>☐ Toalhas limpas.</li>
+  <li>☐ Lixeira.</li>
+</ul>
+
+<h2>6. Biossegurança</h2>
+<h3>Antes do Atendimento</h3>
+<ul style="${CHECK}">
+  <li>☐ Higienizar corretamente as mãos.</li>
+  <li>☐ Manter uniforme limpo.</li>
+  <li>☐ Manter cabelos presos.</li>
+  <li>☐ Utilizar luvas descartáveis novas.</li>
+  <li>☐ Utilizar máscara limpa.</li>
+  <li>☐ Conferir a limpeza da bancada.</li>
+  <li>☐ Conferir se todos os instrumentos estão esterilizados.</li>
+  <li>☐ Conferir validade da esterilização.</li>
+  <li>☐ Organizar todos os materiais antes do atendimento.</li>
+  <li>☐ Verificar se o kit descartável está lacrado.</li>
+</ul>
+<h3>Durante o Atendimento</h3>
+<ul style="${CHECK}">
+  <li>☐ Manter a bancada organizada.</li>
+  <li>☐ Não utilizar telefone celular.</li>
+  <li>☐ Não consumir alimentos.</li>
+  <li>☐ Trocar as luvas sempre que necessário.</li>
+  <li>☐ Evitar contaminação cruzada.</li>
+</ul>
+<h3>Após o Atendimento</h3>
+<ul style="${CHECK}">
+  <li>☐ Descartar corretamente os materiais descartáveis.</li>
+  <li>☐ Encaminhar os instrumentos para esterilização.</li>
+  <li>☐ Higienizar toda a bancada.</li>
+  <li>☐ Higienizar as mãos.</li>
+  <li>☐ Preparar a estação para a próxima cliente.</li>
+</ul>
+
+<h2>7. Procedimento Operacional</h2>
+
+<h3>PARTE A — Início do Atendimento</h3>
+<p><strong>Profissional é chamado pela recepção</strong> — recebe a informação: nome do cliente, procedimentos agendados e local onde o cliente está acomodado; e se dirige ao cliente.</p>
+<p><strong>1. Apresentação do Profissional</strong> — sempre iniciar o atendimento de frente para o cliente, demonstrando simpatia, cordialidade e profissionalismo.</p>
+<blockquote>"Olá (Nome do cliente), meu nome é (Nome do Profissional) e hoje eu serei o(a) responsável pelo seu atendimento."</blockquote>
+<p><strong>2. Confirmação do Serviço</strong></p>
+<blockquote>"A senhora irá fazer [serviço] hoje, correto?"</blockquote>
+<p><strong>3. Identificação da Necessidade</strong></p>
+<blockquote>"O que a senhora pensou para hoje?"</blockquote>
+<blockquote>"A senhora possui alguma preferência ou alguma foto de referência?"</blockquote>
+<p><strong>4. Ponderações e Orientações</strong> — após ouvir atentamente o cliente, explicar de forma clara e profissional:</p>
+<ul style="${CHECK}">
+  <li>☐ O que é possível realizar.</li>
+  <li>☐ O que não é recomendado realizar.</li>
+  <li>☐ As limitações técnicas do procedimento.</li>
+  <li>☐ Os cuidados necessários para preservar a saúde (unhas, cabelo, pele, etc.).</li>
+</ul>
+<blockquote>"Baseado no que a senhora deseja, é possível fazer [explicar o que dá para fazer]."</blockquote>
+<blockquote>"Não recomendamos [explicar o que não é recomendado] porque [explicar o motivo]."</blockquote>
+<blockquote>"Para manter o resultado por mais tempo, é importante [explicar os cuidados]."</blockquote>
+<p><strong>Nenhum procedimento deverá ser iniciado antes que o cliente compreenda e concorde com o serviço que será realizado.</strong></p>
+
+<h3>PARTE B — Preparação do Profissional e Materiais</h3>
+<p><strong>5. Preparação para o Procedimento</strong></p>
+<p><strong>A. Equipamentos de Proteção (EPIs):</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Colocar um par de luvas descartáveis novas.</li>
+  <li>☐ Colocar máscara limpa e nova.</li>
+  <li>☐ Colocar avental (se necessário).</li>
+  <li>☐ Colocar touca (se necessário).</li>
+</ul>
+<p><strong>B. Materiais:</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Apresentar ao cliente que o kit descartável está lacrado.</li>
+  <li>☐ Apresentar os alicates/instrumentos esterilizados.</li>
+  <li>☐ Organizar todos os materiais sobre a bancada.</li>
+  <li>☐ Verificar se todos os produtos estão dentro da validade.</li>
+</ul>
+<p><strong>C. Frases Obrigatórias ao Apresentar Materiais:</strong></p>
+<blockquote>"Todos os nossos instrumentos são esterilizados para sua segurança."</blockquote>
+<blockquote>"Este kit descartável é lacrado e utilizado exclusivamente para você."</blockquote>
+<blockquote>"Os alicates foram esterilizados em autoclave e estão prontos para uso."</blockquote>
+<p><strong>Somente após estas etapas o procedimento poderá ser iniciado.</strong></p>
+
+<h3>PARTE C — Execução do Procedimento</h3>
+<p><strong>6. Execução do Serviço (Exemplo: Manicure)</strong> — executar na seguinte ordem:</p>
+<ul style="${CHECK}">
+  <li>☐ Remover completamente o esmalte anterior.</li>
+  <li>☐ Lixar e cortar as unhas conforme a necessidade e preferência do cliente.</li>
+  <li>☐ Colocar a luva ou a botinha amolecedora (quando necessário).</li>
+  <li>☐ Realizar a cuticulagem.</li>
+  <li>☐ Aplicar a base.</li>
+  <li>☐ Realizar a esmaltação.</li>
+  <li>☐ Limpar cuidadosamente todos os cantos.</li>
+  <li>☐ Aplicar spray secante ou óleo secante.</li>
+</ul>
+<p><strong>7. Execução do Serviço (Exemplo: Cabelo)</strong> — executar na seguinte ordem:</p>
+<ul style="${CHECK}">
+  <li>☐ Lavar o cabelo com shampoo adequado.</li>
+  <li>☐ Aplicar condicionador ou máscara (se necessário).</li>
+  <li>☐ Realizar o corte/modelagem.</li>
+  <li>☐ Realizar coloração/descoloração (se aplicável).</li>
+  <li>☐ Aplicar tratamento (hidratação, nutrição, reconstrução).</li>
+  <li>☐ Finalizar com secagem e escova/modelagem.</li>
+  <li>☐ Aplicar produtos finalizadores (óleos, sprays, etc.).</li>
+</ul>
+<p><strong>8. Técnicas de Vendas Durante a Execução (Up-Selling e Cross-Selling)</strong></p>
+<p><strong>A. Oferecimento de Serviços Complementares:</strong></p>
+<blockquote>"Percebi que seu cabelo está precisando de uma hidratação profunda. Gostaria de incluir hoje?"</blockquote>
+<blockquote>"Já que estamos fazendo a coloração, recomendo uma reconstrução para selar a cutícula e prolongar a cor. O que acha?"</blockquote>
+<blockquote>"Suas unhas ficariam ainda mais bonitas com uma esmaltação em gel. Gostaria de experimentar?"</blockquote>
+<blockquote>"Enquanto fazemos o design de sobrancelhas, podemos fazer seus cílios também. Fica um resultado incrível!"</blockquote>
+<p><strong>B. Sugestões por Tipo de Serviço:</strong></p>
+<table style="${TBL}">
+  <tr><th style="${TH}">Serviço Agendado</th><th style="${TH}">Sugestão de Serviço Complementar</th></tr>
+  <tr><td style="${TD}">Escova</td><td style="${TD}">Hidratação, Nutrição, Tratamento capilar</td></tr>
+  <tr><td style="${TD}">Coloração</td><td style="${TD}">Cauterização, Reconstrução, Hidratação profunda</td></tr>
+  <tr><td style="${TD}">Corte</td><td style="${TD}">Tratamento capilar, Escova modeladora</td></tr>
+  <tr><td style="${TD}">Manicure</td><td style="${TD}">Pedicure, Esmaltação em gel</td></tr>
+  <tr><td style="${TD}">Pedicure</td><td style="${TD}">Manicure, Esfoliação nos pés</td></tr>
+  <tr><td style="${TD}">Design de sobrancelhas</td><td style="${TD}">Cílios (extensão ou coloração), Henna</td></tr>
+  <tr><td style="${TD}">Cílios</td><td style="${TD}">Design de sobrancelhas</td></tr>
+  <tr><td style="${TD}">Tratamento capilar</td><td style="${TD}">Corte, Escova, Coloração</td></tr>
+</table>
+<p><strong>C. Ofertas de Produtos (Cross-Selling) Durante o Atendimento:</strong></p>
+<blockquote>"Estou usando um shampoo específico para seu tipo de cabelo. Ele está disponível para venda. Gostaria de levar?"</blockquote>
+<blockquote>"Este óleo finalizador que estou usando é excelente para manter o brilho. Posso te mostrar onde encontrar."</blockquote>
+<blockquote>"Para manter o resultado, recomendo usar em casa a máscara de hidratação que aplicamos hoje. Temos disponível."</blockquote>
+<blockquote>"Este esmalte que escolhemos é de altíssima qualidade e está disponível para compra. Gostaria de levar?"</blockquote>
+
+<h3>PARTE D — Controle de Qualidade</h3>
+<p><strong>9. Verificação do Resultado</strong> — antes de apresentar o resultado para o cliente, verificar cuidadosamente:</p>
+<p><strong>Manicure:</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Uniformidade da esmaltação.</li>
+  <li>☐ Cobertura completa.</li>
+  <li>☐ Comprimento uniforme.</li>
+  <li>☐ Formato correto.</li>
+  <li>☐ Cutículas bem acabadas.</li>
+  <li>☐ Cantos limpos.</li>
+  <li>☐ Ausência de borrões.</li>
+  <li>☐ Ausência de bolhas.</li>
+  <li>☐ Ausência de resíduos.</li>
+  <li>☐ Secagem adequada.</li>
+</ul>
+<p><strong>Cabelo:</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Corte uniforme e simétrico.</li>
+  <li>☐ Coloração homogênea.</li>
+  <li>☐ Hidratação/nutrição visível.</li>
+  <li>☐ Modelagem perfeita.</li>
+  <li>☐ Ausência de fios soltos.</li>
+  <li>☐ Finalização adequada.</li>
+</ul>
+<p><strong>Sobrancelhas/Cílios:</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Simetria perfeita.</li>
+  <li>☐ Design adequado ao rosto.</li>
+  <li>☐ Coloração uniforme.</li>
+  <li>☐ Ausência de falhas.</li>
+  <li>☐ Cílios alinhados e volumosos.</li>
+</ul>
+<p><strong>Caso exista qualquer detalhe passível de ajuste, a correção deverá ser realizada ANTES da apresentação ao cliente.</strong></p>
+<p><strong>10. Validação do Cliente</strong> — após concluir o procedimento, apresentar o resultado ao cliente e perguntar obrigatoriamente:</p>
+<blockquote>"A senhora gostou do resultado?"</blockquote>
+<blockquote>"Existe algum detalhe que gostaria que ajustássemos?"</blockquote>
+<p>Caso o cliente solicite qualquer ajuste, este deverá ser realizado <strong>imediatamente</strong>. O atendimento somente poderá ser encerrado após a aprovação do cliente.</p>
+
+<h3>PARTE E — Finalização do Atendimento</h3>
+<p><strong>11. Finalização (Antes de Liberar o Cliente da Cadeira)</strong> — o profissional deverá pedir 1 minuto ao cliente para realizar os lançamentos.</p>
+<p><strong>A. Lançamento no Sistema:</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Registrar todos os serviços realizados.</li>
+  <li>☐ Registrar produtos utilizados.</li>
+  <li>☐ Registrar produtos vendidos (se houver).</li>
+  <li>☐ Verificar se há descontos ou cortesias.</li>
+  <li>☐ Salvar o lançamento no sistema.</li>
+</ul>
+<p><strong>B. Oferta de Produtos (Vitrine/Exposição)</strong> — levar o cliente até a vitrine ou área de exposição de produtos.</p>
+<blockquote>"Agora vou te mostrar os produtos que utilizei durante seu atendimento."</blockquote>
+<blockquote>"Para manter o resultado em casa, recomendo levar [produto específico]. Ele é ideal para seu tipo de [cabelo/unha/pele]."</blockquote>
+<blockquote>"Este shampoo e condicionador são os mesmos que usei hoje. Eles vão prolongar o resultado do seu tratamento."</blockquote>
+<blockquote>"Temos um kit de manutenção com [produtos]. Gostaria de conhecer?"</blockquote>
+<blockquote>"Se a senhora já tem alguns produtos em casa, posso sugerir um complemento que vai potencializar o resultado."</blockquote>
+<p>Oferecer o Kit Home Care ou Complemento:</p>
+<blockquote>"Posso montar um kit com os produtos essenciais para você cuidar em casa. O que acha?"</blockquote>
+<p><strong>C. Acompanhamento até a Recepção</strong> — durante o caminho: destacar os benefícios do serviço realizado, reforçar a importância dos cuidados em casa e perguntar se o cliente tem dúvidas sobre manutenção.</p>
+<p><strong>D. Despedida do Cliente:</strong></p>
+<blockquote>"Foi um prazer atender você, (Nome)! Espero vê-la em breve."</blockquote>
+<blockquote>"Não esqueça dos cuidados que te expliquei para manter o resultado."</blockquote>
+<blockquote>"Se precisar de algo, estou à disposição."</blockquote>
+<p>Aguardar o cliente ser atendido pela recepção para finalização.</p>
+<p><strong>12. Técnicas de Reagendamento (Realizada pelo Profissional)</strong> — antes de liberar o cliente da cadeira, oferecer o próximo horário.</p>
+<blockquote>"A senhora gostaria de deixar seu próximo atendimento já agendado?"</blockquote>
+<div style="${BOX}">
+  <p style="${BOXH}">Exemplos por serviço</p>
+  <ul>
+    <li><strong>Cabelo (corte/coloração):</strong> "Normalmente recomendamos seu retorno em aproximadamente 30 dias. Posso deixar reservado?"</li>
+    <li><strong>Cabelo (hidratação/tratamento):</strong> "A manutenção do tratamento é recomendada a cada 15 dias. Posso agendar a próxima?"</li>
+    <li><strong>Unhas (manicure):</strong> "Posso deixar sua próxima manutenção agendada para daqui a 15 dias?"</li>
+    <li><strong>Sobrancelhas:</strong> "Recomendamos a manutenção em 30 dias. Já gostaria de garantir sua vaga?"</li>
+    <li><strong>Coloração (retoque):</strong> "Seu retoque costuma acontecer em cerca de 30 dias. Já gostaria de garantir sua vaga?"</li>
+  </ul>
+  <p style="${BOXH}">Benefícios que podem ser destacados</p>
+  <ul>
+    <li>Garantia do profissional preferido.</li>
+    <li>Melhores horários disponíveis.</li>
+    <li>Organização da rotina do cliente.</li>
+    <li>Evita filas e espera.</li>
+  </ul>
+</div>
+<p><strong>Caso o cliente aceite:</strong> levar o cliente até a recepção, informar à recepcionista que o cliente deseja reagendar e aguardar o registro do agendamento.</p>
+<p><strong>Caso o cliente não aceite:</strong> agradecer normalmente pela preferência.</p>
+<blockquote>"Tudo bem! Quando decidir voltar, é só nos chamar. Estaremos à disposição."</blockquote>
+
+<h3>PARTE F — Organização Pós-Atendimento</h3>
+<p><strong>13. Limpeza e Organização da Estação</strong> — após liberar o cliente:</p>
+<ul style="${CHECK}">
+  <li>☐ Organizar completamente a estação de trabalho.</li>
+  <li>☐ Encaminhar os instrumentos para esterilização.</li>
+  <li>☐ Descartar corretamente todos os resíduos.</li>
+  <li>☐ Higienizar toda a bancada.</li>
+  <li>☐ Higienizar as mãos.</li>
+  <li>☐ Preparar a estação para a próxima cliente.</li>
+</ul>
+
+<h2>14. Técnicas de Vendas e Aumento de Ticket Médio (Resumo para o Profissional)</h2>
+<h3>A. Identificação de Oportunidades</h3>
+<ul style="${CHECK}">
+  <li>☐ Verificar se o cliente possui outros procedimentos em atraso.</li>
+  <li>☐ Sugerir procedimentos complementares ao serviço solicitado.</li>
+  <li>☐ Observar clientes que realizam apenas um serviço.</li>
+  <li>☐ Observar clientes sem retorno há mais de 45 dias.</li>
+  <li>☐ Observar clientes que nunca realizaram tratamentos.</li>
+  <li>☐ Observar clientes que compram serviços, mas não produtos.</li>
+</ul>
+<h3>B. Perguntas Obrigatórias</h3>
+<blockquote>"Gostaria de aproveitar sua visita para realizar mais algum procedimento?"</blockquote>
+<blockquote>"Tem interesse em conhecer nossos tratamentos capilares?"</blockquote>
+<blockquote>"Posso verificar uma condição especial para fazer os dois procedimentos no mesmo dia?"</blockquote>
+<blockquote>"Gostaria de levar os produtos que utilizei hoje para cuidar em casa?"</blockquote>
+<h3>C. Frases para Aumento de Ticket Médio</h3>
+<blockquote>"Para um resultado ainda melhor, recomendo adicionar [serviço complementar]. O que acha?"</blockquote>
+<blockquote>"Estamos com um combo especial de [serviço A] + [serviço B] por apenas R$ XXX. Gostaria de agendar para a próxima visita?"</blockquote>
+<blockquote>"Se levar este produto hoje, o resultado do seu tratamento vai durar muito mais tempo."</blockquote>
+
+<h2>15. Indicadores de Qualidade (Acompanhamento da Gerência)</h2>
+<p>A gerência deverá acompanhar mensalmente:</p>
+<ul style="${CHECK}">
+  <li>☐ Tempo médio do atendimento.</li>
+  <li>☐ Número de retrabalhos.</li>
+  <li>☐ Número de reclamações.</li>
+  <li>☐ Índice de satisfação do cliente.</li>
+  <li>☐ Percentual de reagendamentos (realizados pelo profissional).</li>
+  <li>☐ Vendas adicionais de serviços (up-selling) realizadas pelo profissional.</li>
+  <li>☐ Vendas de produtos (cross-selling) realizadas pelo profissional.</li>
+  <li>☐ Ticket médio por cliente (por profissional).</li>
+  <li>☐ Percentual de clientes que compraram produtos na vitrine.</li>
+  <li>☐ Número de clientes recuperadas.</li>
+  <li>☐ Conformidade com as normas de biossegurança.</li>
+</ul>
+
+<h2>16. Checklist de Auditoria (Atendimento do Profissional)</h2>
+<h3>Apresentação</h3>
+<ul style="${CHECK}">
+  <li>☐ Cumprimentou o cliente.</li>
+  <li>☐ Apresentou-se com nome.</li>
+  <li>☐ Confirmou o serviço.</li>
+  <li>☐ Perguntou o que o cliente desejava.</li>
+  <li>☐ Perguntou se havia preferência ou referência.</li>
+  <li>☐ Explicou o que é possível fazer.</li>
+  <li>☐ Explicou o que não é recomendado.</li>
+  <li>☐ Explicou os cuidados necessários.</li>
+</ul>
+<h3>Biossegurança</h3>
+<ul style="${CHECK}">
+  <li>☐ Utilizou luvas novas.</li>
+  <li>☐ Utilizou máscara limpa.</li>
+  <li>☐ Utilizou avental (se necessário).</li>
+  <li>☐ Apresentou kit lacrado.</li>
+  <li>☐ Apresentou instrumentos esterilizados.</li>
+  <li>☐ Bancada limpa e organizada.</li>
+</ul>
+<h3>Execução (Manicure)</h3>
+<ul style="${CHECK}">
+  <li>☐ Removeu o esmalte.</li>
+  <li>☐ Lixou e cortou.</li>
+  <li>☐ Colocou luva ou botinha.</li>
+  <li>☐ Realizou a cuticulagem.</li>
+  <li>☐ Aplicou a base.</li>
+  <li>☐ Esmaltou.</li>
+  <li>☐ Limpou os cantos.</li>
+  <li>☐ Aplicou spray ou óleo secante.</li>
+</ul>
+<h3>Controle de Qualidade</h3>
+<ul style="${CHECK}">
+  <li>☐ Conferiu todo o acabamento.</li>
+  <li>☐ Corrigiu imperfeições.</li>
+  <li>☐ Perguntou se o cliente gostou.</li>
+  <li>☐ Perguntou se havia necessidade de ajustes.</li>
+</ul>
+<h3>Vendas e Fidelização</h3>
+<ul style="${CHECK}">
+  <li>☐ Ofereceu serviços complementares durante o atendimento.</li>
+  <li>☐ Ofereceu produtos para venda.</li>
+  <li>☐ Levou o cliente até a vitrine.</li>
+  <li>☐ Sugeriu kit home care ou complemento.</li>
+  <li>☐ Ofereceu reagendamento.</li>
+  <li>☐ Destacou benefícios do reagendamento.</li>
+</ul>
+<h3>Finalização</h3>
+<ul style="${CHECK}">
+  <li>☐ Lançou os serviços no sistema.</li>
+  <li>☐ Acompanhou o cliente até a recepção.</li>
+  <li>☐ Despediu-se com cordialidade.</li>
+  <li>☐ Organizou a bancada.</li>
+  <li>☐ Encaminhou instrumentos para esterilização.</li>
+  <li>☐ Agradeceu pela preferência.</li>
+</ul>
+
+<h2>17. Critérios para Considerar o Serviço Concluído</h2>
+<p>O atendimento somente poderá ser considerado concluído quando:</p>
+<ul style="${CHECK}">
+  <li>☐ O cliente aprovar o resultado final.</li>
+  <li>☐ Todos os critérios de qualidade forem atendidos.</li>
+  <li>☐ Não houver necessidade de ajustes.</li>
+  <li>☐ Os serviços forem lançados no sistema.</li>
+  <li>☐ O reagendamento tiver sido oferecido.</li>
+  <li>☐ Os produtos tiverem sido oferecidos.</li>
+  <li>☐ O cliente for acompanhado até a recepção.</li>
+  <li>☐ Os instrumentos forem encaminhados para esterilização.</li>
+  <li>☐ A bancada estiver limpa e organizada.</li>
+  <li>☐ O atendimento for encerrado com cordialidade e agradecimento.</li>
+</ul>
+
+<h2>18. Frases e Scripts Complementares</h2>
+<h3>A. Apresentação</h3>
+<table style="${TBL}">
+  <tr><th style="${TH}">Situação</th><th style="${TH}">Frase Padrão</th></tr>
+  <tr><td style="${TD}">Chegada do cliente</td><td style="${TD}">"Olá (Nome), meu nome é [Profissional] e hoje eu serei o(a) responsável pelo seu atendimento."</td></tr>
+  <tr><td style="${TD}">Confirmando serviço</td><td style="${TD}">"A senhora irá fazer [serviço] hoje, correto?"</td></tr>
+  <tr><td style="${TD}">Perguntando preferência</td><td style="${TD}">"O que a senhora pensou para hoje? Tem alguma foto de referência?"</td></tr>
+</table>
+<h3>B. Ponderações</h3>
+<table style="${TBL}">
+  <tr><th style="${TH}">Situação</th><th style="${TH}">Frase Padrão</th></tr>
+  <tr><td style="${TD}">O que dá para fazer</td><td style="${TD}">"Baseado no que a senhora deseja, é possível fazer [explicar]."</td></tr>
+  <tr><td style="${TD}">O que não é recomendado</td><td style="${TD}">"Não recomendamos [explicar] porque [motivo]."</td></tr>
+  <tr><td style="${TD}">Cuidados necessários</td><td style="${TD}">"Para manter o resultado por mais tempo, é importante [explicar cuidados]."</td></tr>
+</table>
+<h3>C. Preparação e Materiais</h3>
+<table style="${TBL}">
+  <tr><th style="${TH}">Situação</th><th style="${TH}">Frase Padrão</th></tr>
+  <tr><td style="${TD}">Apresentando kit</td><td style="${TD}">"Este kit descartável é lacrado e utilizado exclusivamente para você."</td></tr>
+  <tr><td style="${TD}">Apresentando instrumentos</td><td style="${TD}">"Todos os nossos instrumentos são esterilizados para sua segurança."</td></tr>
+  <tr><td style="${TD}">Alicates esterilizados</td><td style="${TD}">"Os alicates foram esterilizados em autoclave e estão prontos para uso."</td></tr>
+</table>
+<h3>D. Vendas Durante o Atendimento</h3>
+<table style="${TBL}">
+  <tr><th style="${TH}">Situação</th><th style="${TH}">Frase Padrão</th></tr>
+  <tr><td style="${TD}">Serviço complementar</td><td style="${TD}">"Percebi que seu cabelo está precisando de uma hidratação. Gostaria de incluir hoje?"</td></tr>
+  <tr><td style="${TD}">Produto em uso</td><td style="${TD}">"Estou usando um shampoo específico para seu tipo de cabelo. Está disponível para venda."</td></tr>
+  <tr><td style="${TD}">Kit home care</td><td style="${TD}">"Posso montar um kit com os produtos essenciais para você cuidar em casa."</td></tr>
+</table>
+<h3>E. Validação e Finalização</h3>
+<table style="${TBL}">
+  <tr><th style="${TH}">Situação</th><th style="${TH}">Frase Padrão</th></tr>
+  <tr><td style="${TD}">Perguntando se gostou</td><td style="${TD}">"A senhora gostou do resultado?"</td></tr>
+  <tr><td style="${TD}">Oferecendo ajuste</td><td style="${TD}">"Existe algum detalhe que gostaria que ajustássemos?"</td></tr>
+  <tr><td style="${TD}">Reagendamento</td><td style="${TD}">"A senhora gostaria de deixar seu próximo atendimento já agendado?"</td></tr>
+</table>
+<h3>F. Despedida</h3>
+<table style="${TBL}">
+  <tr><th style="${TH}">Situação</th><th style="${TH}">Frase Padrão</th></tr>
+  <tr><td style="${TD}">Despedida</td><td style="${TD}">"Foi um prazer atender você, (Nome)! Espero vê-la em breve."</td></tr>
+  <tr><td style="${TD}">Cuidados</td><td style="${TD}">"Não esqueça dos cuidados que te expliquei para manter o resultado."</td></tr>
+  <tr><td style="${TD}">Disponibilidade</td><td style="${TD}">"Se precisar de algo, estou à disposição."</td></tr>
+</table>
+`.trim()
+
 export type ConteudoDoc = { id: string; titulo: string; texto: string }
 export const CONTEUDO_DEFAULTS: Record<string, { titulo: string; conteudo: { texto?: string; docs?: ConteudoDoc[] } }> = {
-  manicure: { titulo: 'POP — Atendimento de Manicure', conteudo: { texto: MANICURE_HTML } },
+  manicure: {
+    titulo: 'Processos — Manicure',
+    conteudo: {
+      docs: [
+        { id: 'pop-man-001', titulo: 'POP-MAN-001 · Atendimento de Manicure', texto: MANICURE_HTML },
+        { id: 'pop-pro-001', titulo: 'POP-PRO-001 · Atendimento do Profissional', texto: PRO_ATENDIMENTO_HTML },
+      ],
+    },
+  },
   recepcao: {
     titulo: 'Processos da Recepção',
     conteudo: {
