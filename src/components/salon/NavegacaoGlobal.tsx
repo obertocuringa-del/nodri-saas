@@ -33,6 +33,7 @@ const CATALOGO: PaginaCat[] = [
   { rota: '/salon/calculadora-custo', label: 'CALCULADORA DE CUSTO', grupo: 'Página', chave: 'calculadora', palavras: 'custo preco calculo margem lucro' },
   { rota: '/salon/academia', label: 'ACADEMIA', grupo: 'Página', chave: 'academia', palavras: 'cursos treinamento aulas videos capacitacao' },
   { rota: '/salon/checklist', label: 'CHECK LIST DIÁRIO', grupo: 'Página', chave: 'checklist', palavras: 'demandas tarefas gerente dosagem abertura fechamento coordenado' },
+  { rota: '/salon/curriculos', label: 'CURRÍCULOS', grupo: 'Página', chave: 'curriculos', palavras: 'vaga candidato contratacao trabalhe conosco recrutamento emprego' },
   { rota: '/salon/calendario', label: 'CALENDÁRIO', grupo: 'Página', chave: 'calendario', palavras: 'agenda datas eventos lembrete' },
   { rota: '/salon/calendario-mkt', label: 'CALENDÁRIO DE MARKETING', grupo: 'Página', chave: 'calendario_mkt', palavras: 'mkt posts redes sociais divulgacao' },
   { rota: '/salon/consultoria', label: 'CONSULTORIA IA', grupo: 'Página', chave: 'ia', palavras: 'inteligencia artificial chat assistente pergunta' },

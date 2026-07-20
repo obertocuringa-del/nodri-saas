@@ -127,6 +127,13 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
   // Alerta do Check List na sidebar: tarefas marcadas para HOJE (dia da semana) e não feitas.
   // Mesma lógica da página (feito_em dentro da janela do período), resumida aqui.
   const [checklistAlertas, setChecklistAlertas] = useState(0)
+  // Badge de currículos novos (desde a última visita do dono à página)
+  const [curriculosNovos, setCurriculosNovos] = useState(0)
+  useEffect(() => {
+    fetch('/api/salon/curriculos?count=1', { credentials: 'include' }).then(r => r.ok ? r.json() : null).then(d => {
+      if (d && typeof d.novos === 'number') setCurriculosNovos(d.novos)
+    }).catch(() => {})
+  }, [])
   useEffect(() => {
     fetch('/api/salon/grid?chave=checklist').then(r => r.ok ? r.json() : null).then(d => {
       if (!d || !Array.isArray(d.categorias)) return
@@ -553,6 +560,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               { href: '/salon/lista-espera', label: 'Lista de Espera', chave: 'lista_espera' },
               { href: '/salon/administrativo', label: 'Salão Administrativo', chave: 'administrativo' },
               { href: '/salon/checklist', label: 'Check List', chave: 'checklist' },
+              { href: '/salon/curriculos', label: 'Currículos', chave: 'curriculos' },
               // Calendário, Calendário MKT, Lojistas, Check Procon e Log de Auditoria
               // agora vivem dentro do Salão Administrativo (categorias AGENDA e
               // GESTÃO E PARCERIAS) — tirados daqui para desafogar o menu inicial.
@@ -561,13 +569,17 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               { href: '/salon/usuarios', label: 'Usuários & Acessos', chave: 'cfg_usuarios' },
             ].filter(item => pode(item.chave)).map(item => {
               const alerta = item.chave === 'checklist' && checklistAlertas > 0
+              const novoCur = item.chave === 'curriculos' && curriculosNovos > 0
+              const destaque = alerta || novoCur
+              const cor = alerta ? '#dc2626' : '#5b4fcf'
+              const badgeTxt = alerta ? `⚠ ${checklistAlertas}` : `${curriculosNovos} novo${curriculosNovos > 1 ? 's' : ''}`
               return (
               <a key={item.href} href={item.href}
                 className="w-full flex items-center px-3 py-2 rounded-md text-[11px] font-medium tracking-wide uppercase transition-colors hover:bg-black/5"
-                style={alerta ? { color: '#dc2626', fontWeight: 800, animation: 'nodriRedPulse 1.6s ease-in-out infinite' } : { color: undefined }}>
-                <span className={alerta ? '' : 'text-nodri-t2 hover:text-nodri-t1'} style={{ flex: 1, minWidth: 0 }}>{item.label}</span>
-                {alerta && (
-                  <span style={{ background: '#dc2626', color: '#fff', fontSize: 9.5, fontWeight: 900, borderRadius: 99, padding: '2px 7px', whiteSpace: 'nowrap', animation: 'pulseDot 1.2s infinite' }}>⚠ {checklistAlertas}</span>
+                style={destaque ? { color: cor, fontWeight: 800, animation: 'nodriRedPulse 1.6s ease-in-out infinite' } : { color: undefined }}>
+                <span className={destaque ? '' : 'text-nodri-t2 hover:text-nodri-t1'} style={{ flex: 1, minWidth: 0 }}>{item.label}</span>
+                {destaque && (
+                  <span style={{ background: cor, color: '#fff', fontSize: 9.5, fontWeight: 900, borderRadius: 99, padding: '2px 7px', whiteSpace: 'nowrap', animation: 'pulseDot 1.2s infinite' }}>{badgeTxt}</span>
                 )}
               </a>
               )
