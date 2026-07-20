@@ -8,7 +8,7 @@ import { ArrowLeft, Save, Loader2, TrendingUp, TrendingDown, BarChart2,
 import ChatWidget from '@/components/salon/ChatWidget'
 import WhatsPendencia from '@/components/salon/WhatsPendencia'
 import AvaliarProfissional from '@/components/salon/AvaliarProfissional'
-import { PopsDoProfissional, AvaliacaoPop } from '@/components/salon/PopsProfissional'
+import { PopsEAvaliacao } from '@/components/salon/PopsProfissional'
 import PlanoCarreiraProgresso from '@/components/salon/PlanoCarreiraProgresso'
 import AcessoProfissional from '@/components/salon/AcessoProfissional'
 import PainelResumoProf from '@/components/salon/PainelResumoProf'
@@ -3405,7 +3405,6 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
           ['demandas','📋 DEMANDAS'],
           ['avaliar','AVALIAR'],
           ['pops','📘 POPS'],
-          ['avaliacaopop','✅ AVALIAÇÃO POP'],
           ['carreira','🏆 CARREIRA'],
           ['faturamento','FATURAMENTO'],
           ['desempenho','OCORRÊNCIAS'],
@@ -3480,14 +3479,9 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
           <AvaliarProfissional profissionalId={id} profissionalNome={prof?.apelido || prof?.nome_completo || 'Profissional'} soResultado={souProf && !((prof as any)?.acesso_oculto?.autoavaliacao)} />
         )}
 
-        {/*  POPS — processos da categoria do profissional  */}
+        {/*  POPS — processos da categoria + Avaliação POP (sub-abas)  */}
         {tab === 'pops' && (
-          <PopsDoProfissional cargo={prof?.cargo} />
-        )}
-
-        {/*  AVALIAÇÃO POP — histórico de avaliações de processo  */}
-        {tab === 'avaliacaopop' && (
-          <AvaliacaoPop profId={id} profNome={prof?.apelido || prof?.nome_completo || 'Profissional'} cargo={prof?.cargo} />
+          <PopsEAvaliacao cargo={prof?.cargo} profId={id} profNome={prof?.apelido || prof?.nome_completo || 'Profissional'} />
         )}
 
         {/*  DEMANDAS — histórico (% enviadas/resolvidas) + nova solicitação  */}

@@ -96,6 +96,29 @@ export function usePopsDaCategoria(categoria: CategoriaPop | null) {
   return { docs, loading }
 }
 
+// ─── Combinado: POPs + Avaliação POP com sub-abas internas ──────────────────
+export function PopsEAvaliacao({ cargo, profId, profNome }: { cargo?: string | null; profId: string; profNome: string }) {
+  const [sub, setSub] = useState<'processos' | 'avaliacoes'>('processos')
+  const Pill = ({ id, label }: { id: 'processos' | 'avaliacoes'; label: string }) => (
+    <button onClick={() => setSub(id)}
+      className="text-[13px] font-bold px-4 py-2 rounded-lg transition-all"
+      style={{ background: sub === id ? '#5b4fcf' : '#fff', color: sub === id ? '#fff' : '#5b4fcf', border: '1.5px solid #5b4fcf40' }}>
+      {label}
+    </button>
+  )
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2">
+        <Pill id="processos" label="📘 Processos (POPs)" />
+        <Pill id="avaliacoes" label="✅ Avaliação POP" />
+      </div>
+      {sub === 'processos'
+        ? <PopsDoProfissional cargo={cargo} />
+        : <AvaliacaoPop profId={profId} profNome={profNome} cargo={cargo} />}
+    </div>
+  )
+}
+
 // ─── Aba "POPs" — documentos da categoria do profissional ────────────────────
 export function PopsDoProfissional({ cargo }: { cargo?: string | null }) {
   const categoria = categoriaDoCargo(cargo)
