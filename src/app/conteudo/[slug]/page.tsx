@@ -1,8 +1,9 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Home, Loader2, Download, ExternalLink, FileText, BarChart3, CheckCircle, HelpCircle, Construction, Video, Printer } from 'lucide-react'
+import { ArrowLeft, Home, Loader2, Download, ExternalLink, FileText, BarChart3, CheckCircle, HelpCircle, Construction, Video, Printer, ClipboardCheck, X } from 'lucide-react'
 import { getLogoSalao } from '@/lib/logoSalao'
+import { categoriaDoCargo, extrairChecklistPop, type GrupoChecklist } from '@/components/salon/PopsProfissional'
 
 // Impressão A4 elegante do conteúdo da página (POPs, guias)
 async function imprimirConteudoA4(titulo: string) {
@@ -192,11 +193,30 @@ export default function ConteudoPage() {
   const [loading, setLoading] = useState(true)
   // Páginas com vários documentos (ex.: Recepção) — qual está aberto
   const [docSel, setDocSel] = useState(0)
+  // Avaliação de POP: profissionais da categoria + modal
+  const [profs, setProfs] = useState<{ id: string; nome: string; cargo: string }[]>([])
+  const [avalDoc, setAvalDoc] = useState<any | null>(null)
 
   useEffect(() => {
     fetch(`/api/conteudo/${slug}`)
       .then(r => r.json())
       .then(d => { setDados(d); setLoading(false) })
+  }, [slug])
+
+  // Carrega profissionais e filtra pela categoria da página (slug)
+  useEffect(() => {
+    const cat = ['manicure', 'cabelereiro', 'recepcao'].includes(String(slug)) ? String(slug) : null
+    if (!cat) return
+    fetch('/api/profissionais?ativo=true&leve=1', { credentials: 'include' })
+      .then(r => r.ok ? r.json() : [])
+      .then((lista: any) => {
+        if (!Array.isArray(lista)) return
+        setProfs(lista
+          .filter((p: any) => !p.is_departamento && categoriaDoCargo(p.cargo) === cat)
+          .map((p: any) => ({ id: String(p.id), nome: (p.apelido || p.nome_completo || '').trim(), cargo: p.cargo || '' }))
+          .filter((p: any) => p.nome))
+      })
+      .catch(() => {})
   }, [slug])
 
   if (loading) return (
@@ -300,6 +320,16 @@ export default function ConteudoPage() {
               </div>
             </aside>
             <div className="flex-1 min-w-0 w-full">
+              {/* Botão Avaliar profissional — só nas páginas de categoria (manicure/cabelereiro/recepcao) */}
+              {['manicure', 'cabelereiro', 'recepcao'].includes(String(slug)) && (
+                <div className="mx-auto mb-3 flex justify-end" style={{ maxWidth: 840 }}>
+                  <button onClick={() => setAvalDoc(dados.conteudo.docs[Math.min(docSel, dados.conteudo.docs.length - 1)])}
+                    className="flex items-center gap-2 text-[13px] font-bold px-4 py-2 rounded-lg transition-all"
+                    style={{ background: '#5b4fcf', color: '#fff' }}>
+                    <ClipboardCheck size={15} /> Avaliar profissional
+                  </button>
+                </div>
+              )}
               <div className="mx-auto" style={{ maxWidth: 840, background: '#ffffff', borderRadius: 16, overflow: 'hidden', boxShadow: '0 10px 40px rgba(0,0,0,.28)' }}>
                 <div style={{ height: 6, background: 'linear-gradient(90deg,#5b4fcf,#7c6fe0)' }} />
                 <div id="conteudo-imprimivel" className="pop-doc" style={{ padding: '40px 48px' }}
@@ -322,6 +352,115 @@ export default function ConteudoPage() {
             </div>
           )
         )}
+      </div>
+
+      {avalDoc && (
+        <ModalAvaliarPop doc={avalDoc} profs={profs} onClose={() => setAvalDoc(null)} />
+      )}
+    </div>
+  )
+}
+
+// ─── Modal: avaliar profissional a partir do checklist automático do POP ─────
+function ModalAvaliarPop({ doc, profs, onClose }: { doc: any; profs: { id: string; nome: string; cargo: string }[]; onClose: () => void }) {
+  const [profId, setProfId] = useState('')
+  const grupos: GrupoChecklist[] = useMemo(() => extrairChecklistPop(doc?.texto || ''), [doc])
+  const totalItens = useMemo(() => grupos.reduce((s, g) => s + g.itens.length, 0), [grupos])
+  const [marcados, setMarcados] = useState<Record<string, boolean>>({})
+  const [salvando, setSalvando] = useState(false)
+  const [msg, setMsg] = useState('')
+
+  const chave = (gi: number, ii: number) => `${gi}-${ii}`
+  const marcadosCount = Object.values(marcados).filter(Boolean).length
+  const pct = totalItens > 0 ? Math.round((marcadosCount / totalItens) * 100) : 0
+
+  async function salvar() {
+    if (!profId) { setMsg('Selecione um profissional.'); return }
+    setSalvando(true); setMsg('')
+    const respostas: { secao: string; item: string; ok: boolean }[] = []
+    grupos.forEach((g, gi) => g.itens.forEach((item, ii) => respostas.push({ secao: g.secao, item, ok: !!marcados[chave(gi, ii)] })))
+    const nova = {
+      id: Date.now(),
+      popId: doc.id, popTitulo: doc.titulo, categoria: '',
+      data: new Date().toISOString(),
+      respostas, pct,
+    }
+    try {
+      const atualRes = await fetch(`/api/salon/grid?chave=avaliacao_pop_${profId}`, { credentials: 'include' })
+      const atual = atualRes.ok ? await atualRes.json() : null
+      const lista = Array.isArray(atual?.avaliacoes) ? atual.avaliacoes : []
+      const res = await fetch('/api/salon/grid', {
+        method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chave: `avaliacao_pop_${profId}`, doc: { avaliacoes: [...lista, nova] } }),
+      })
+      if (!res.ok) { setMsg('Erro ao salvar. Tente novamente.'); setSalvando(false); return }
+      setMsg('✅ Avaliação salva! Veja em Perfil do profissional → Avaliação POP.')
+      setTimeout(onClose, 1400)
+    } catch { setMsg('Erro de conexão.'); setSalvando(false) }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,.6)' }} onClick={onClose}>
+      <div className="w-full max-w-lg rounded-2xl overflow-hidden flex flex-col" style={{ background: '#faf9f7', maxHeight: '90vh' }} onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: '#e8e6e0', background: '#fff' }}>
+          <div className="min-w-0">
+            <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: '#5b4fcf' }}>Avaliar processo</p>
+            <p className="text-sm font-bold text-[#1a1a1a] truncate">{doc.titulo}</p>
+          </div>
+          <button onClick={onClose} className="p-1 rounded-lg" style={{ color: '#767069' }}><X size={18} /></button>
+        </div>
+
+        <div className="px-5 py-4 overflow-y-auto">
+          {/* Seleção do profissional */}
+          <label className="text-xs font-bold block mb-1" style={{ color: '#767069' }}>Profissional</label>
+          {profs.length === 0 ? (
+            <p className="text-xs mb-3 rounded-lg p-3" style={{ background: '#f59e0b15', color: '#92400e' }}>Nenhum profissional desta categoria encontrado. Verifique o cargo dos profissionais.</p>
+          ) : (
+            <select value={profId} onChange={e => setProfId(e.target.value)}
+              className="w-full mb-4 px-3 py-2.5 rounded-xl text-sm text-[#1a1a1a] focus:outline-none" style={{ background: '#fff', border: '1.5px solid #5b4fcf40' }}>
+              <option value="">— Selecione —</option>
+              {profs.map(p => <option key={p.id} value={p.id}>{p.nome}{p.cargo ? ` (${p.cargo})` : ''}</option>)}
+            </select>
+          )}
+
+          {/* Checklist automático */}
+          {totalItens === 0 ? (
+            <p className="text-xs rounded-lg p-3" style={{ background: '#f59e0b15', color: '#92400e' }}>Este POP não tem itens de checklist (☐) para avaliar.</p>
+          ) : (
+            <>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold" style={{ color: '#767069' }}>Checklist ({totalItens} itens)</span>
+                <span className="text-sm font-bold" style={{ color: pct >= 80 ? '#059669' : pct >= 50 ? '#b45309' : '#b91c1c' }}>{marcadosCount}/{totalItens} · {pct}%</span>
+              </div>
+              <div className="space-y-3">
+                {grupos.map((g, gi) => (
+                  <div key={gi} className="rounded-xl p-3" style={{ background: '#fff', border: '1px solid #e8e6e0' }}>
+                    <p className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: '#5b4fcf' }}>{g.secao}</p>
+                    <div className="space-y-1.5">
+                      {g.itens.map((item, ii) => (
+                        <label key={ii} className="flex items-start gap-2 cursor-pointer">
+                          <input type="checkbox" checked={!!marcados[chave(gi, ii)]}
+                            onChange={() => setMarcados(m => ({ ...m, [chave(gi, ii)]: !m[chave(gi, ii)] }))}
+                            className="mt-0.5 w-4 h-4 rounded accent-purple-600 shrink-0" />
+                          <span className="text-[12.5px]" style={{ color: marcados[chave(gi, ii)] ? '#059669' : '#3a3835' }}>{item}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+
+        <div className="px-5 py-3 border-t flex items-center justify-between gap-3" style={{ borderColor: '#e8e6e0', background: '#fff' }}>
+          <span className="text-[11px]" style={{ color: msg.startsWith('✅') ? '#059669' : '#b91c1c' }}>{msg}</span>
+          <button onClick={salvar} disabled={salvando || !profId || totalItens === 0}
+            className="flex items-center gap-2 text-sm font-bold px-5 py-2 rounded-xl transition-all"
+            style={{ background: '#5b4fcf', color: '#fff', opacity: (salvando || !profId || totalItens === 0) ? .5 : 1 }}>
+            {salvando ? <Loader2 size={15} className="animate-spin" /> : <CheckCircle size={15} />} Salvar avaliação
+          </button>
+        </div>
       </div>
     </div>
   )

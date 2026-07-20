@@ -8,6 +8,7 @@ import { ArrowLeft, Save, Loader2, TrendingUp, TrendingDown, BarChart2,
 import ChatWidget from '@/components/salon/ChatWidget'
 import WhatsPendencia from '@/components/salon/WhatsPendencia'
 import AvaliarProfissional from '@/components/salon/AvaliarProfissional'
+import { PopsDoProfissional, AvaliacaoPop } from '@/components/salon/PopsProfissional'
 import PlanoCarreiraProgresso from '@/components/salon/PlanoCarreiraProgresso'
 import AcessoProfissional from '@/components/salon/AcessoProfissional'
 import PainelResumoProf from '@/components/salon/PainelResumoProf'
@@ -2575,7 +2576,7 @@ export default function PerfilProfissionalPage() {
   const [endCidade, setEndCidade] = useState('')
   const [endUf, setEndUf] = useState('')
   const [buscandoCep, setBuscandoCep] = useState(false)
-  const [tab, setTab] = useState<'inicio'|'cadastro'|'avaliar'|'desempenho'|'faturamento'|'metas'|'ia'|'dependencia'|'oportunidades'|'bundle'|'clientes-perdidos'|'agendamentos'|'calendario'|'calendario_mkt'|'corrida'|'acoes'|'esterilizacao'|'kits'|'carreira'|'demandas'>('cadastro')
+  const [tab, setTab] = useState<'inicio'|'cadastro'|'avaliar'|'pops'|'avaliacaopop'|'desempenho'|'faturamento'|'metas'|'ia'|'dependencia'|'oportunidades'|'bundle'|'clientes-perdidos'|'agendamentos'|'calendario'|'calendario_mkt'|'corrida'|'acoes'|'esterilizacao'|'kits'|'carreira'|'demandas'>('cadastro')
   // Aba Esterilização: só aparece pra quem realmente tem atendimento de
   // manicure/pedicure/sobrancelha no mês (mesmo cruzamento usado no
   // Administrativo) — a maioria dos profissionais não precisa dela.
@@ -3403,6 +3404,8 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
           ['cadastro','CADASTRO'],
           ['demandas','📋 DEMANDAS'],
           ['avaliar','AVALIAR'],
+          ['pops','📘 POPS'],
+          ['avaliacaopop','✅ AVALIAÇÃO POP'],
           ['carreira','🏆 CARREIRA'],
           ['faturamento','FATURAMENTO'],
           ['desempenho','OCORRÊNCIAS'],
@@ -3475,6 +3478,16 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
         {/*  AVALIAR PROFISSIONAL  */}
         {tab === 'avaliar' && (
           <AvaliarProfissional profissionalId={id} profissionalNome={prof?.apelido || prof?.nome_completo || 'Profissional'} soResultado={souProf && !((prof as any)?.acesso_oculto?.autoavaliacao)} />
+        )}
+
+        {/*  POPS — processos da categoria do profissional  */}
+        {tab === 'pops' && (
+          <PopsDoProfissional cargo={prof?.cargo} />
+        )}
+
+        {/*  AVALIAÇÃO POP — histórico de avaliações de processo  */}
+        {tab === 'avaliacaopop' && (
+          <AvaliacaoPop profId={id} profNome={prof?.apelido || prof?.nome_completo || 'Profissional'} cargo={prof?.cargo} />
         )}
 
         {/*  DEMANDAS — histórico (% enviadas/resolvidas) + nova solicitação  */}
