@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { ArrowLeft, Home, Loader2, ChevronDown, ChevronUp, Copy, Check, Filter, Trash2, MessageCircle } from 'lucide-react'
-import { VAGAS, EXPERIENCIAS, ESTADOS_BR, whatsappLink, type Curriculo } from '@/lib/curriculos'
+import { VAGAS, EXPERIENCIAS, ESTADOS_BR, whatsappLink, type Curriculo } from '@/lib/curriculosShared'
 
 const COR = '#5b4fcf'
 const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
