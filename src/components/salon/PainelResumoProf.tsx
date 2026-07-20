@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import {
   DollarSign, Target, Calendar, Trophy, Megaphone, ClipboardList, Moon, Sun, Bell,
-  AlertTriangle, Users, Lightbulb, Package, UserMinus, Star, Sparkles, CalendarRange, User, ArrowRight, LogOut, Hand, X, Check, Send,
+  AlertTriangle, Users, Lightbulb, Package, UserMinus, Star, Sparkles, CalendarRange, User, ArrowRight, LogOut, Hand, X, Check, Send, BookOpen, ClipboardCheck,
 } from 'lucide-react'
 
 // Tela inicial do profissional (estilo Nubank/Notion): saudação + central de notificações + atalhos.
@@ -96,6 +96,8 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba, t
     { aba: 'corrida', label: 'Corrida Interna', Ic: Trophy },
     { aba: 'acoes', label: 'Ações Comerciais', Ic: Megaphone },
     { aba: 'avaliar', label: 'Avaliações', Ic: Star, ocult: 'avaliar' },
+    { aba: 'pops', label: 'POPs', Ic: BookOpen, ocult: 'pops' },
+    { aba: 'avaliacaopop', label: 'Avaliação POP', Ic: ClipboardCheck, ocult: 'avaliacaopop' },
     { aba: 'ia', label: 'IA / Assistente', Ic: Sparkles },
     { aba: 'calendario_mkt', label: 'Calendário', Ic: CalendarRange },
     { aba: 'cadastro', label: 'Cadastro', Ic: ClipboardList },
