@@ -21,6 +21,31 @@ const maskTel = (v: string) => {
   return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`
 }
 
+const inputCls = 'w-full px-4 py-3.5 rounded-2xl text-[15px] focus:outline-none transition-all'
+const inputSty: React.CSSProperties = { background: '#f7f6fc', border: '2px solid transparent', color: '#1a1a1a' }
+const onFocus = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => { e.currentTarget.style.borderColor = COR; e.currentTarget.style.background = '#fff' }
+const onBlur = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => { e.currentTarget.style.borderColor = 'transparent'; e.currentTarget.style.background = '#f7f6fc' }
+
+// Componentes fora do render (senão o input perde o foco a cada tecla)
+function Campo({ icon: Ic, label, children }: { icon: any; label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="flex items-center gap-2 text-[13px] font-bold mb-2" style={{ color: '#3a3550' }}>
+        <span className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: '#f0eefb' }}><Ic size={14} style={{ color: COR }} /></span>
+        {label}
+      </label>
+      {children}
+    </div>
+  )
+}
+function Fundo({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-screen py-8 px-4 flex items-center justify-center" style={{ background: 'radial-gradient(1200px 500px at 50% -10%, #ece9fb 0%, #f4f3fb 45%, #eef0f6 100%)' }}>
+      {children}
+    </div>
+  )
+}
+
 export default function CurriculoPublicoPage() {
   const params = useParams()
   const token = params?.token as string
@@ -79,26 +104,6 @@ export default function CurriculoPublicoPage() {
   }
 
   function candidatarOutra() { setVaga(''); setExperiencia(''); setErroEnvio(''); setModoOutra(true) }
-
-  const Campo = ({ icon: Ic, label, children }: { icon: any; label: string; children: React.ReactNode }) => (
-    <div>
-      <label className="flex items-center gap-2 text-[13px] font-bold mb-2" style={{ color: '#3a3550' }}>
-        <span className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: '#f0eefb' }}><Ic size={14} style={{ color: COR }} /></span>
-        {label}
-      </label>
-      {children}
-    </div>
-  )
-  const inputCls = 'w-full px-4 py-3.5 rounded-2xl text-[15px] focus:outline-none transition-all'
-  const inputSty: React.CSSProperties = { background: '#f7f6fc', border: '2px solid transparent', color: '#1a1a1a' }
-  const onFocus = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => { e.currentTarget.style.borderColor = COR; e.currentTarget.style.background = '#fff' }
-  const onBlur = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => { e.currentTarget.style.borderColor = 'transparent'; e.currentTarget.style.background = '#f7f6fc' }
-
-  const Fundo = ({ children }: { children: React.ReactNode }) => (
-    <div className="min-h-screen py-8 px-4 flex items-center justify-center" style={{ background: 'radial-gradient(1200px 500px at 50% -10%, #ece9fb 0%, #f4f3fb 45%, #eef0f6 100%)' }}>
-      {children}
-    </div>
-  )
 
   if (loading) return <Fundo><Loader2 className="animate-spin" style={{ color: COR }} size={34} /></Fundo>
   if (error) return <Fundo><div className="text-center"><p className="text-lg font-bold text-[#1a1a1a]">{error}</p><p className="text-sm text-[#767069] mt-1">Confira o link novamente.</p></div></Fundo>
