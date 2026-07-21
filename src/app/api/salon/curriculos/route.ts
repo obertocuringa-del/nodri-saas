@@ -15,11 +15,10 @@ export async function GET(req: NextRequest) {
   const soCount = url.searchParams.get('count') === '1'
   if (soCount) return NextResponse.json({ novos })
 
-  // Sempre usa o domínio oficial do salão (não o preview da Vercel)
-  const base = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.nodri.com.br'
+  // Domínio oficial fixo (mesmo do link público de lojistas), nunca o preview da Vercel
   return NextResponse.json({
     token: doc.token,
-    link: `${base}/curriculo/${doc.token}`,
+    link: `https://www.nodri.com.br/curriculo/${doc.token}`,
     itens: doc.itens || [],
     novos,
   })
