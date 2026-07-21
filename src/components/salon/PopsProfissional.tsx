@@ -193,7 +193,7 @@ export function AvaliacaoPop({ profId, profNome, cargo }: { profId: string; prof
   const ordenadas = useMemo(() => [...avaliacoes].sort((a, b) => (b.data || '').localeCompare(a.data || '')), [avaliacoes])
 
   // Usa as seções pontuadas salvas (novo formato); se não houver, cai no cálculo por respostas.
-  const statsPorSecao = (av: AvaliacaoPopItem) => {
+  const statsPorSecao = (av: AvaliacaoPopItem): { secao: string; total: number; ok: number; pct: number }[] => {
     if (Array.isArray((av as any).secoes) && (av as any).secoes.length) {
       return (av as any).secoes
         .filter((s: any) => s.aplica !== false)
