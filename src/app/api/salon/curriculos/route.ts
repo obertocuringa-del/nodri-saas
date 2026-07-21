@@ -12,10 +12,11 @@ export async function GET(req: NextRequest) {
   const novos = (doc.itens || []).filter(c => new Date(c.criado_em).getTime() > visto).length
 
   const url = new URL(req.url)
-  const base = `${url.protocol}//${url.host}`
   const soCount = url.searchParams.get('count') === '1'
   if (soCount) return NextResponse.json({ novos })
 
+  // Sempre usa o domínio oficial do salão (não o preview da Vercel)
+  const base = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.nodri.com.br'
   return NextResponse.json({
     token: doc.token,
     link: `${base}/curriculo/${doc.token}`,
