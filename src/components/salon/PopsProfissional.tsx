@@ -192,14 +192,20 @@ export function AvaliacaoPop({ profId, profNome, cargo }: { profId: string; prof
 
   const ordenadas = useMemo(() => [...avaliacoes].sort((a, b) => (b.data || '').localeCompare(a.data || '')), [avaliacoes])
 
+  // Usa as seções pontuadas salvas (novo formato); se não houver, cai no cálculo por respostas.
   const statsPorSecao = (av: AvaliacaoPopItem) => {
+    if (Array.isArray((av as any).secoes) && (av as any).secoes.length) {
+      return (av as any).secoes
+        .filter((s: any) => s.aplica !== false)
+        .map((s: any) => ({ secao: s.titulo, total: s.total ?? 0, ok: s.sim ?? 0, pct: s.pontos ? Math.round((s.nota / s.pontos) * 100) : 0 }))
+    }
     const map = new Map<string, { total: number; ok: number }>()
     for (const r of av.respostas || []) {
       const s = map.get(r.secao) || { total: 0, ok: 0 }
       s.total++; if (r.ok) s.ok++
       map.set(r.secao, s)
     }
-    return Array.from(map.entries()).map(([secao, s]) => ({ secao, total: s.total, ok: s.ok, pct: Math.round((s.ok / s.total) * 100) }))
+    return Array.from(map.entries()).map(([secao, s]) => ({ secao, total: s.total, ok: s.ok, pct: s.total ? Math.round((s.ok / s.total) * 100) : 0 }))
   }
 
   async function comoMelhorar(av: AvaliacaoPopItem) {
@@ -272,7 +278,10 @@ Seja específico e use os itens reais listados acima.`
             <button onClick={() => setAberta(expandida ? null : av.id)} className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left">
               <div className="min-w-0">
                 <p className="text-[13px] font-bold text-nodri-t1 truncate">{av.popTitulo}</p>
-                <p className="text-[11px] text-nodri-t3">{new Date(av.data).toLocaleDateString('pt-BR')} às {new Date(av.data).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
+                <p className="text-[11px] text-nodri-t3">
+                  {new Date(av.data).toLocaleDateString('pt-BR')} às {new Date(av.data).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                  {(av as any).faixa ? ` · ${(av as any).faixa}` : ''}
+                </p>
               </div>
               <div className="flex items-center gap-3 shrink-0">
                 <span className="text-xl font-bold" style={{ color: corPct(av.pct) }}>{av.pct}%</span>

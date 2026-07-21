@@ -3,7 +3,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { ArrowLeft, Home, Loader2, Download, ExternalLink, FileText, BarChart3, CheckCircle, HelpCircle, Construction, Video, Printer, ClipboardCheck, X } from 'lucide-react'
 import { getLogoSalao } from '@/lib/logoSalao'
-import { categoriaDoCargo, extrairChecklistPop, type GrupoChecklist } from '@/components/salon/PopsProfissional'
+import { categoriaDoCargo } from '@/components/salon/PopsProfissional'
+import { AVALIACOES_POP, faixaResultado, type ModeloAvaliacao } from '@/lib/popAvaliacoes'
 
 // Impressão A4 elegante do conteúdo da página (POPs, guias)
 async function imprimirConteudoA4(titulo: string) {
@@ -361,29 +362,52 @@ export default function ConteudoPage() {
   )
 }
 
-// ─── Modal: avaliar profissional a partir do checklist automático do POP ─────
+// ─── Modal: avaliação PONTUADA do profissional (seções com peso, Sim/Não) ────
 function ModalAvaliarPop({ doc, profs, onClose }: { doc: any; profs: { id: string; nome: string; cargo: string }[]; onClose: () => void }) {
   const [profId, setProfId] = useState('')
-  const grupos: GrupoChecklist[] = useMemo(() => extrairChecklistPop(doc?.texto || ''), [doc])
-  const totalItens = useMemo(() => grupos.reduce((s, g) => s + g.itens.length, 0), [grupos])
-  const [marcados, setMarcados] = useState<Record<string, boolean>>({})
+  const modelo: ModeloAvaliacao | undefined = AVALIACOES_POP[doc?.id]
+  const [respostas, setRespostas] = useState<Record<string, 'sim' | 'nao'>>({})
+  const [naoAplica, setNaoAplica] = useState<Record<number, boolean>>({})
   const [salvando, setSalvando] = useState(false)
   const [msg, setMsg] = useState('')
 
-  const chave = (gi: number, ii: number) => `${gi}-${ii}`
-  const marcadosCount = Object.values(marcados).filter(Boolean).length
-  const pct = totalItens > 0 ? Math.round((marcadosCount / totalItens) * 100) : 0
+  const chave = (si: number, ii: number) => `${si}-${ii}`
+
+  // Cálculo da nota
+  const calc = useMemo(() => {
+    if (!modelo) return { secoes: [] as any[], obtido: 0, possivel: 0, pct: 0 }
+    let obtido = 0, possivel = 0
+    const secoes = modelo.secoes.map((s, si) => {
+      const aplica = !(s.condicional && naoAplica[si])
+      const total = s.itens.length
+      const sim = s.itens.reduce((a, _it, ii) => a + (respostas[chave(si, ii)] === 'sim' ? 1 : 0), 0)
+      const nota = aplica && total ? (sim / total) * s.pontos : 0
+      if (aplica) { obtido += nota; possivel += s.pontos }
+      return { titulo: s.titulo, pontos: s.pontos, aplica, sim, total, nota: Math.round(nota * 10) / 10 }
+    })
+    const pct = possivel > 0 ? Math.round((obtido / possivel) * 100) : 0
+    return { secoes, obtido: Math.round(obtido * 10) / 10, possivel, pct }
+  }, [modelo, respostas, naoAplica])
+
+  const faixa = faixaResultado(calc.pct)
 
   async function salvar() {
     if (!profId) { setMsg('Selecione um profissional.'); return }
+    if (!modelo) return
     setSalvando(true); setMsg('')
-    const respostas: { secao: string; item: string; ok: boolean }[] = []
-    grupos.forEach((g, gi) => g.itens.forEach((item, ii) => respostas.push({ secao: g.secao, item, ok: !!marcados[chave(gi, ii)] })))
+    const respDetalhe: { secao: string; item: string; ok: boolean }[] = []
+    modelo.secoes.forEach((s, si) => {
+      if (s.condicional && naoAplica[si]) return
+      s.itens.forEach((item, ii) => respDetalhe.push({ secao: s.titulo, item, ok: respostas[chave(si, ii)] === 'sim' }))
+    })
     const nova = {
       id: Date.now(),
       popId: doc.id, popTitulo: doc.titulo, categoria: '',
       data: new Date().toISOString(),
-      respostas, pct,
+      pct: calc.pct, obtido: calc.obtido, possivel: calc.possivel,
+      faixa: faixa.label,
+      secoes: calc.secoes.map(s => ({ titulo: s.titulo, pontos: s.pontos, nota: s.nota, sim: s.sim, total: s.total, aplica: s.aplica })),
+      respostas: respDetalhe,
     }
     try {
       const atualRes = await fetch(`/api/salon/grid?chave=avaliacao_pop_${profId}`, { credentials: 'include' })
@@ -394,14 +418,14 @@ function ModalAvaliarPop({ doc, profs, onClose }: { doc: any; profs: { id: strin
         body: JSON.stringify({ chave: `avaliacao_pop_${profId}`, doc: { avaliacoes: [...lista, nova] } }),
       })
       if (!res.ok) { setMsg('Erro ao salvar. Tente novamente.'); setSalvando(false); return }
-      setMsg('✅ Avaliação salva! Veja em Perfil do profissional → Avaliação POP.')
-      setTimeout(onClose, 1400)
+      setMsg('✅ Avaliação salva! Veja em Perfil do profissional → POPs → Avaliação POP.')
+      setTimeout(onClose, 1500)
     } catch { setMsg('Erro de conexão.'); setSalvando(false) }
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,.6)' }} onClick={onClose}>
-      <div className="w-full max-w-lg rounded-2xl overflow-hidden flex flex-col" style={{ background: '#faf9f7', maxHeight: '90vh' }} onClick={e => e.stopPropagation()}>
+      <div className="w-full max-w-xl rounded-2xl overflow-hidden flex flex-col" style={{ background: '#faf9f7', maxHeight: '92vh' }} onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: '#e8e6e0', background: '#fff' }}>
           <div className="min-w-0">
             <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: '#5b4fcf' }}>Avaliar processo</p>
@@ -410,8 +434,7 @@ function ModalAvaliarPop({ doc, profs, onClose }: { doc: any; profs: { id: strin
           <button onClick={onClose} className="p-1 rounded-lg" style={{ color: '#767069' }}><X size={18} /></button>
         </div>
 
-        <div className="px-5 py-4 overflow-y-auto">
-          {/* Seleção do profissional */}
+        <div className="px-5 py-4 overflow-y-auto flex-1">
           <label className="text-xs font-bold block mb-1" style={{ color: '#767069' }}>Profissional</label>
           {profs.length === 0 ? (
             <p className="text-xs mb-3 rounded-lg p-3" style={{ background: '#f59e0b15', color: '#92400e' }}>Nenhum profissional desta categoria encontrado. Verifique o cargo dos profissionais.</p>
@@ -423,44 +446,77 @@ function ModalAvaliarPop({ doc, profs, onClose }: { doc: any; profs: { id: strin
             </select>
           )}
 
-          {/* Checklist automático */}
-          {totalItens === 0 ? (
-            <p className="text-xs rounded-lg p-3" style={{ background: '#f59e0b15', color: '#92400e' }}>Este POP não tem itens de checklist (☐) para avaliar.</p>
+          {!modelo ? (
+            <p className="text-xs rounded-lg p-3" style={{ background: '#f59e0b15', color: '#92400e' }}>
+              A avaliação deste POP ainda não foi cadastrada. Envie o modelo de avaliação (seções e itens) para este POP e ele aparece aqui.
+            </p>
           ) : (
-            <>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold" style={{ color: '#767069' }}>Checklist ({totalItens} itens)</span>
-                <span className="text-sm font-bold" style={{ color: pct >= 80 ? '#059669' : pct >= 50 ? '#b45309' : '#b91c1c' }}>{marcadosCount}/{totalItens} · {pct}%</span>
-              </div>
-              <div className="space-y-3">
-                {grupos.map((g, gi) => (
-                  <div key={gi} className="rounded-xl p-3" style={{ background: '#fff', border: '1px solid #e8e6e0' }}>
-                    <p className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: '#5b4fcf' }}>{g.secao}</p>
-                    <div className="space-y-1.5">
-                      {g.itens.map((item, ii) => (
-                        <label key={ii} className="flex items-start gap-2 cursor-pointer">
-                          <input type="checkbox" checked={!!marcados[chave(gi, ii)]}
-                            onChange={() => setMarcados(m => ({ ...m, [chave(gi, ii)]: !m[chave(gi, ii)] }))}
-                            className="mt-0.5 w-4 h-4 rounded accent-purple-600 shrink-0" />
-                          <span className="text-[12.5px]" style={{ color: marcados[chave(gi, ii)] ? '#059669' : '#3a3835' }}>{item}</span>
-                        </label>
-                      ))}
+            <div className="space-y-3">
+              {modelo.secoes.map((s, si) => {
+                const c = calc.secoes[si]
+                const desativada = s.condicional && naoAplica[si]
+                return (
+                  <div key={si} className="rounded-xl overflow-hidden border" style={{ borderColor: '#e8e6e0', background: '#fff', opacity: desativada ? .55 : 1 }}>
+                    <div className="flex items-center justify-between gap-2 px-3 py-2" style={{ background: '#f7f6fb' }}>
+                      <div className="min-w-0">
+                        <p className="text-[12px] font-bold" style={{ color: '#5b4fcf' }}>{si + 1}. {s.titulo} <span style={{ color: '#767069', fontWeight: 500 }}>({s.pontos} pts)</span></p>
+                        {s.nota && <p className="text-[10px]" style={{ color: '#8a8699' }}>{s.nota}</p>}
+                      </div>
+                      <span className="text-[12px] font-bold shrink-0" style={{ color: desativada ? '#a8a6b4' : (c.nota >= s.pontos * 0.8 ? '#059669' : c.nota >= s.pontos * 0.6 ? '#b45309' : '#b91c1c') }}>
+                        {desativada ? 'N/A' : `${c.nota} / ${s.pontos}`}
+                      </span>
                     </div>
+                    {s.condicional && (
+                      <label className="flex items-center gap-2 px-3 py-1.5 text-[11px] cursor-pointer" style={{ color: '#767069', borderBottom: '1px solid #f0eef7' }}>
+                        <input type="checkbox" checked={!!naoAplica[si]} onChange={() => setNaoAplica(m => ({ ...m, [si]: !m[si] }))} className="accent-purple-600" />
+                        Não se aplica nesta avaliação (não conta pontos)
+                      </label>
+                    )}
+                    {!desativada && (
+                      <div className="divide-y" style={{ borderColor: '#f2f0f7' }}>
+                        {s.itens.map((item, ii) => {
+                          const val = respostas[chave(si, ii)]
+                          return (
+                            <div key={ii} className="flex items-center justify-between gap-2 px-3 py-2">
+                              <span className="text-[12.5px] flex-1" style={{ color: '#3a3835' }}>{item}</span>
+                              <div className="flex gap-1 shrink-0">
+                                <button onClick={() => setRespostas(r => ({ ...r, [chave(si, ii)]: 'sim' }))}
+                                  className="w-11 py-1 rounded-lg text-[11px] font-bold" style={{ background: val === 'sim' ? '#10b981' : '#f0f0f2', color: val === 'sim' ? '#fff' : '#767069' }}>Sim</button>
+                                <button onClick={() => setRespostas(r => ({ ...r, [chave(si, ii)]: 'nao' }))}
+                                  className="w-11 py-1 rounded-lg text-[11px] font-bold" style={{ background: val === 'nao' ? '#ef4444' : '#f0f0f2', color: val === 'nao' ? '#fff' : '#767069' }}>Não</button>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
                   </div>
-                ))}
-              </div>
-            </>
+                )
+              })}
+            </div>
           )}
         </div>
 
-        <div className="px-5 py-3 border-t flex items-center justify-between gap-3" style={{ borderColor: '#e8e6e0', background: '#fff' }}>
-          <span className="text-[11px]" style={{ color: msg.startsWith('✅') ? '#059669' : '#b91c1c' }}>{msg}</span>
-          <button onClick={salvar} disabled={salvando || !profId || totalItens === 0}
-            className="flex items-center gap-2 text-sm font-bold px-5 py-2 rounded-xl transition-all"
-            style={{ background: '#5b4fcf', color: '#fff', opacity: (salvando || !profId || totalItens === 0) ? .5 : 1 }}>
-            {salvando ? <Loader2 size={15} className="animate-spin" /> : <CheckCircle size={15} />} Salvar avaliação
-          </button>
-        </div>
+        {/* Rodapé: nota final + faixa + salvar */}
+        {modelo && (
+          <div className="px-5 py-3 border-t" style={{ borderColor: '#e8e6e0', background: '#fff' }}>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-extrabold" style={{ color: faixa.cor }}>{calc.pct}%</span>
+                <span className="text-[12px] font-bold px-2 py-1 rounded-full" style={{ background: faixa.cor + '20', color: faixa.cor }}>{faixa.emoji} {faixa.label}</span>
+              </div>
+              <span className="text-[11px]" style={{ color: '#767069' }}>{calc.obtido} de {calc.possivel} pts</span>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[11px]" style={{ color: msg.startsWith('✅') ? '#059669' : '#b91c1c' }}>{msg}</span>
+              <button onClick={salvar} disabled={salvando || !profId}
+                className="flex items-center gap-2 text-sm font-bold px-5 py-2 rounded-xl transition-all"
+                style={{ background: '#5b4fcf', color: '#fff', opacity: (salvando || !profId) ? .5 : 1 }}>
+                {salvando ? <Loader2 size={15} className="animate-spin" /> : <CheckCircle size={15} />} Salvar avaliação
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
