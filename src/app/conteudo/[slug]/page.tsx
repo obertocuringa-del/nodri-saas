@@ -368,6 +368,7 @@ function ModalAvaliarPop({ doc, profs, onClose }: { doc: any; profs: { id: strin
   const modelo: ModeloAvaliacao | undefined = AVALIACOES_POP[doc?.id]
   const [respostas, setRespostas] = useState<Record<string, 'sim' | 'nao'>>({})
   const [naoAplica, setNaoAplica] = useState<Record<number, boolean>>({})
+  const [comp, setComp] = useState<Record<number, number>>({})
   const [salvando, setSalvando] = useState(false)
   const [msg, setMsg] = useState('')
 
@@ -391,6 +392,13 @@ function ModalAvaliarPop({ doc, profs, onClose }: { doc: any; profs: { id: strin
 
   const faixa = faixaResultado(calc.pct)
 
+  // Média comportamental (notas 1 a 5) — não entra na pontuação dos 100
+  const mediaComp = useMemo(() => {
+    const notas = (modelo?.comportamental || []).map((_c, i) => comp[i]).filter(n => !!n) as number[]
+    if (!notas.length) return 0
+    return Math.round((notas.reduce((a, b) => a + b, 0) / notas.length) * 10) / 10
+  }, [modelo, comp])
+
   async function salvar() {
     if (!profId) { setMsg('Selecione um profissional.'); return }
     if (!modelo) return
@@ -408,6 +416,8 @@ function ModalAvaliarPop({ doc, profs, onClose }: { doc: any; profs: { id: strin
       faixa: faixa.label,
       secoes: calc.secoes.map(s => ({ titulo: s.titulo, pontos: s.pontos, nota: s.nota, sim: s.sim, total: s.total, aplica: s.aplica })),
       respostas: respDetalhe,
+      comportamental: (modelo.comportamental || []).map((criterio, i) => ({ criterio, nota: comp[i] || 0 })),
+      mediaComportamental: mediaComp,
     }
     try {
       const atualRes = await fetch(`/api/salon/grid?chave=avaliacao_pop_${profId}`, { credentials: 'include' })
@@ -493,6 +503,35 @@ function ModalAvaliarPop({ doc, profs, onClose }: { doc: any; profs: { id: strin
                   </div>
                 )
               })}
+
+              {/* Avaliação comportamental (1 a 5) — não soma nos 100 pontos */}
+              {!!modelo.comportamental?.length && (
+                <div className="rounded-xl overflow-hidden border" style={{ borderColor: '#e8e6e0', background: '#fff' }}>
+                  <div className="flex items-center justify-between gap-2 px-3 py-2" style={{ background: '#f7f6fb' }}>
+                    <div className="min-w-0">
+                      <p className="text-[12px] font-bold" style={{ color: '#5b4fcf' }}>Avaliação Comportamental</p>
+                      <p className="text-[10px]" style={{ color: '#8a8699' }}>Nota de 1 a 5 · não entra nos 100 pontos</p>
+                    </div>
+                    <span className="text-[12px] font-bold shrink-0" style={{ color: mediaComp >= 4 ? '#059669' : mediaComp >= 3 ? '#b45309' : mediaComp ? '#b91c1c' : '#a8a6b4' }}>
+                      Média {mediaComp || '—'}
+                    </span>
+                  </div>
+                  <div className="divide-y" style={{ borderColor: '#f2f0f7' }}>
+                    {modelo.comportamental.map((criterio, ci) => (
+                      <div key={ci} className="flex items-center justify-between gap-2 px-3 py-2">
+                        <span className="text-[12.5px] flex-1" style={{ color: '#3a3835' }}>{criterio}</span>
+                        <div className="flex gap-1 shrink-0">
+                          {[1, 2, 3, 4, 5].map(n => (
+                            <button key={n} onClick={() => setComp(c => ({ ...c, [ci]: n }))}
+                              className="w-7 py-1 rounded-lg text-[11px] font-bold"
+                              style={{ background: comp[ci] === n ? '#5b4fcf' : '#f0f0f2', color: comp[ci] === n ? '#fff' : '#767069' }}>{n}</button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -505,7 +544,10 @@ function ModalAvaliarPop({ doc, profs, onClose }: { doc: any; profs: { id: strin
                 <span className="text-2xl font-extrabold" style={{ color: faixa.cor }}>{calc.pct}%</span>
                 <span className="text-[12px] font-bold px-2 py-1 rounded-full" style={{ background: faixa.cor + '20', color: faixa.cor }}>{faixa.emoji} {faixa.label}</span>
               </div>
-              <span className="text-[11px]" style={{ color: '#767069' }}>{calc.obtido} de {calc.possivel} pts</span>
+              <span className="text-[11px] text-right" style={{ color: '#767069' }}>
+                {calc.obtido} de {calc.possivel} pts
+                {!!modelo.comportamental?.length && <><br />Comportamental: <b>{mediaComp || '—'}</b> / 5</>}
+              </span>
             </div>
             <div className="flex items-center justify-between gap-3">
               <span className="text-[11px]" style={{ color: msg.startsWith('✅') ? '#059669' : '#b91c1c' }}>{msg}</span>

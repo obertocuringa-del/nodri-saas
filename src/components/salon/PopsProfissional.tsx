@@ -215,6 +215,9 @@ export function AvaliacaoPop({ profId, profNome, cargo }: { profId: string; prof
       const naoConformes = (av.respostas || []).filter(r => !r.ok)
       const porSecao = statsPorSecao(av).map(s => `- ${s.secao}: ${s.ok}/${s.total} (${s.pct}%)`).join('\n')
       const itens = naoConformes.map(r => `- [${r.secao}] ${r.item}`).join('\n') || '(nenhum — avaliação 100%)'
+      const comp = Array.isArray((av as any).comportamental)
+        ? (av as any).comportamental.filter((c: any) => c.nota > 0).map((c: any) => `- ${c.criterio}: ${c.nota}/5`).join('\n')
+        : ''
       const prompt = `Você é a NODRI IA, especialista em gestão e treinamento de equipes de salão de beleza.
 
 O(a) profissional ${profNome} foi avaliado(a) no processo "${av.popTitulo}" em ${new Date(av.data).toLocaleDateString('pt-BR')} e obteve ${av.pct}% de conformidade.
@@ -224,6 +227,7 @@ ${porSecao}
 
 ITENS NÃO CONFORMES:
 ${itens}
+${comp ? `\nAVALIAÇÃO COMPORTAMENTAL (1 a 5):\n${comp}\n` : ''}
 
 Gere um PLANO DE MELHORIA prático e direto, em português, com:
 1. As 3 prioridades de treinamento (com base nos itens não conformes)
@@ -307,6 +311,22 @@ Seja específico e use os itens reais listados acima.`
                     ))}
                   </div>
                 </div>
+                {/* Avaliação comportamental (1 a 5) */}
+                {Array.isArray((av as any).comportamental) && (av as any).comportamental.some((c: any) => c.nota > 0) && (
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-nodri-t3 mb-2">
+                      🧭 Comportamental · média <span style={{ color: corPct(((av as any).mediaComportamental || 0) * 20) }}>{(av as any).mediaComportamental || 0} / 5</span>
+                    </p>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                      {(av as any).comportamental.map((c: any, i: number) => (
+                        <div key={i} className="flex items-center justify-between text-[11px]">
+                          <span className="text-nodri-t2 truncate pr-2">{c.criterio}</span>
+                          <span className="font-bold shrink-0" style={{ color: c.nota ? corPct(c.nota * 20) : 'inherit' }}>{c.nota || '—'}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {/* Itens não conformes */}
                 <div>
                   <p className="text-[11px] font-bold uppercase tracking-wider text-nodri-t3 mb-2">
