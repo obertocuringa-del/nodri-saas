@@ -949,6 +949,110 @@ export const AVALIACOES_POP: Record<string, ModeloAvaliacao> = {
     ],
   },
 
+  // POP-PRO-006 — Tratamentos Capilares (Lavatório) — 100 pontos
+  'pop-pro-006': {
+    secoes: [
+      {
+        titulo: 'Biossegurança e Preparação do Lavatório', pontos: 10, itens: [
+          'Higienizou corretamente as mãos',
+          'Manteve o uniforme limpo e os cabelos presos',
+          'Utilizou máscara limpa',
+          'Conferiu a limpeza do lavatório',
+          'Organizou os produtos e verificou a validade',
+          'Conferiu o passo a passo da linha que seria utilizada',
+          'Separou o cronômetro e as toalhas limpas',
+        ],
+      },
+      {
+        titulo: 'Apresentação e Identificação da Necessidade', pontos: 10, itens: [
+          'Apresentou-se de frente para a cliente, pelo nome',
+          'Confirmou que o serviço era um tratamento',
+          'Perguntou o que a cliente pensou para o dia',
+          'Perguntou sobre preferência ou foto de referência',
+          'Escutou a cliente atentamente, sem interromper',
+        ],
+      },
+      {
+        titulo: 'Ponderações e Orientações', pontos: 10, itens: [
+          'Explicou o que era possível realizar',
+          'Explicou o que não era recomendado e o motivo',
+          'Explicou as limitações técnicas do tratamento',
+          'Informou o resultado esperado e em quantas sessões',
+          'Orientou sobre os cuidados para preservar a saúde do cabelo',
+          'Só iniciou após a cliente compreender e concordar',
+        ],
+      },
+      {
+        titulo: 'Avaliação Capilar, Terapia e Cronograma', pontos: 20, itens: [
+          'Acomodou a cliente confortavelmente no lavatório',
+          'Observou o estado geral do cabelo',
+          'Verificou o tipo e a porosidade do cabelo',
+          'Verificou a elasticidade e a resistência do fio',
+          'Verificou ressecamento, opacidade ou pontas duplas',
+          'Verificou a presença de química',
+          'Avaliou o couro cabeludo (oleosidade, caspa, sensibilidade)',
+          'Perguntou sobre os cuidados atuais e a frequência de tratamentos',
+          'Informou à cliente as necessidades identificadas',
+          'Indicou a terapia capilar adequada à necessidade',
+          'Ofereceu o cronograma capilar quando indicado',
+        ],
+      },
+      {
+        titulo: 'Produtos e Experiência Sensorial', pontos: 5, itens: [
+          'Informou todos os produtos que seriam utilizados e suas funções',
+          'Explicou o benefício de cada produto para o cabelo da cliente',
+          'Deixou a cliente sentir o cheiro dos produtos',
+        ],
+      },
+      {
+        titulo: 'Execução do Tratamento', pontos: 25, itens: [
+          'Verificou a temperatura da água (morna e agradável)',
+          'Soltou o cabelo da raiz e desembaraçou antes de iniciar',
+          'Aplicou o 1º shampoo, emulsionou bem e enxaguou completamente',
+          'Aplicou o 2º shampoo específico para o tipo de cabelo',
+          'Realizou a massagem no couro cabeludo por 10 a 15 minutos cronometrados',
+          'Verificou com a cliente se a pressão estava agradável',
+          'Aplicou o 3º shampoo quando o cabelo exigiu',
+          'Removeu o excesso de água antes de aplicar o tratamento',
+          'Aplicou mecha a mecha, do comprimento às pontas',
+          'Evitou a raiz, salvo indicação do produto',
+          'Seguiu o passo a passo exato da linha utilizada',
+          'Utilizou a touca térmica quando a linha indicou',
+          'Respeitou todos os tempos de pausa, sem reduzir para acelerar',
+          'Enxaguou completamente, sem deixar resíduos',
+        ],
+      },
+      {
+        titulo: 'Resultado, Manutenção e Fidelização', pontos: 10, itens: [
+          'Mostrou à cliente a diferença no fio',
+          'Explicou quanto tempo o resultado costuma durar',
+          'Orientou sobre os cuidados em casa',
+          'Informou a data ideal da próxima sessão do cronograma',
+          'Ofereceu os produtos de manutenção para levar para casa',
+        ],
+      },
+      {
+        titulo: 'Finalização, Organização e Registro', pontos: 10, itens: [
+          'Fez a touca e conduziu a cliente até a cadeira',
+          'Secou o excesso de água e preparou a cliente (capa, robe, penteado)',
+          'Chamou o profissional principal informando tratamento, produtos e cronograma',
+          'Organizou e higienizou o lavatório, guardando os produtos corretamente',
+          'Registrou o tratamento, o cronograma e o diagnóstico no sistema',
+        ],
+      },
+    ],
+    comportamental: [
+      'Simpatia',
+      'Comunicação',
+      'Cordialidade',
+      'Avaliação Capilar e Diagnóstico',
+      'Técnica de Aplicação',
+      'Higiene e Biossegurança',
+      'Capacidade de Venda',
+      'Postura Profissional',
+    ],
+  },
+
   // POP-PRO-002 — Atendimento de Pedicure — 100 pontos
   'pop-pro-002': {
     secoes: [
