@@ -438,4 +438,286 @@ export const AVALIACOES_POP: Record<string, ModeloAvaliacao> = {
       'Postura Profissional',
     ],
   },
+
+  // POP-MAN-001 — Atendimento de Manicure — 100 pontos
+  'pop-man-001': {
+    secoes: [
+      {
+        titulo: 'Biossegurança Antes do Atendimento', pontos: 20, itens: [
+          'Higienizou corretamente as mãos',
+          'Manteve o uniforme limpo e os cabelos presos',
+          'Utilizou luvas descartáveis novas',
+          'Utilizou máscara limpa',
+          'Conferiu a limpeza da bancada',
+          'Conferiu se todos os instrumentos estavam esterilizados',
+          'Conferiu a validade da esterilização',
+          'Organizou todos os materiais antes de iniciar',
+        ],
+      },
+      {
+        titulo: 'Apresentação e Script de Atendimento', pontos: 15, itens: [
+          'Iniciou o atendimento de frente para a cliente',
+          'Deu as boas-vindas usando o nome da cliente',
+          'Apresentou-se pelo nome como responsável pelo atendimento',
+          'Confirmou o serviço que seria realizado',
+          'Perguntou o que a cliente pensou para o dia',
+          'Perguntou sobre preferência ou foto de referência',
+          'Escutou a cliente atentamente, sem interromper',
+        ],
+      },
+      {
+        titulo: 'Ponderações e Orientações Técnicas', pontos: 10, itens: [
+          'Explicou o que era possível realizar',
+          'Explicou o que não era recomendado',
+          'Explicou as limitações técnicas do procedimento',
+          'Orientou sobre os cuidados para preservar a saúde das unhas',
+          'Só iniciou após a cliente compreender e concordar',
+        ],
+      },
+      {
+        titulo: 'Apresentação dos Materiais à Cliente', pontos: 10, itens: [
+          'Colocou luvas descartáveis novas diante da cliente',
+          'Colocou máscara limpa e nova',
+          'Apresentou o kit descartável lacrado à cliente',
+          'Apresentou os alicates esterilizados',
+          'Organizou os materiais sobre a bancada',
+        ],
+      },
+      {
+        titulo: 'Execução do Procedimento (ordem correta)', pontos: 20, itens: [
+          'Removeu completamente o esmalte anterior',
+          'Lixou e cortou as unhas conforme necessidade e preferência',
+          'Utilizou a luva ou botinha amolecedora quando necessário',
+          'Realizou a cuticulagem',
+          'Aplicou a base',
+          'Realizou a esmaltação',
+          'Limpou cuidadosamente todos os cantos',
+          'Aplicou spray ou óleo secante',
+          'Manteve a bancada organizada durante o atendimento',
+          'Não utilizou celular nem consumiu alimentos durante o atendimento',
+        ],
+      },
+      {
+        titulo: 'Controle de Qualidade', pontos: 15, itens: [
+          'Esmaltação uniforme e com cobertura completa',
+          'Comprimento uniforme e formato correto',
+          'Cutículas bem acabadas',
+          'Cantos limpos, sem borrões nem bolhas',
+          'Ausência de resíduos e secagem adequada',
+          'Corrigiu os ajustes antes de apresentar o resultado',
+        ],
+      },
+      {
+        titulo: 'Validação, Reagendamento e Finalização', pontos: 10, itens: [
+          'Perguntou se a cliente gostou do resultado',
+          'Perguntou se havia algum detalhe a ajustar',
+          'Realizou os ajustes solicitados imediatamente',
+          'Ofereceu deixar o próximo atendimento já agendado',
+          'Orientou sobre os cuidados para aumentar a durabilidade',
+          'Despediu-se agradecendo a preferência',
+          'Organizou a estação e encaminhou os instrumentos para esterilização',
+        ],
+      },
+    ],
+    comportamental: [
+      'Simpatia',
+      'Comunicação',
+      'Cordialidade',
+      'Técnica e Acabamento',
+      'Higiene e Biossegurança',
+      'Organização da Estação',
+      'Pontualidade',
+      'Postura Profissional',
+    ],
+  },
+
+  // POP-PRO-001 — Atendimento do Profissional (Execução e Finalização) — 100 pontos
+  'pop-pro-001': {
+    secoes: [
+      {
+        titulo: 'Biossegurança e Preparação', pontos: 15, itens: [
+          'Higienizou corretamente as mãos',
+          'Manteve o uniforme limpo e os cabelos presos',
+          'Utilizou os EPIs (luvas, máscara, avental)',
+          'Conferiu a limpeza da bancada / estação',
+          'Conferiu os instrumentos esterilizados e a validade da esterilização',
+          'Verificou se o kit descartável estava lacrado',
+          'Organizou todos os materiais antes do atendimento',
+        ],
+      },
+      {
+        titulo: 'Início do Atendimento', pontos: 15, itens: [
+          'Iniciou o atendimento de frente para o cliente, com simpatia',
+          'Apresentou-se pelo nome',
+          'Confirmou o serviço agendado',
+          'Identificou a necessidade do cliente',
+          'Perguntou sobre preferência ou referência',
+          'Escutou o cliente sem interromper',
+        ],
+      },
+      {
+        titulo: 'Ponderações e Consentimento', pontos: 10, itens: [
+          'Explicou o que era possível realizar',
+          'Explicou o que não era recomendado',
+          'Explicou as limitações técnicas',
+          'Orientou sobre os cuidados necessários',
+          'Só iniciou após o cliente compreender e concordar',
+        ],
+      },
+      {
+        titulo: 'Execução Técnica', pontos: 15, itens: [
+          'Executou o serviço na ordem correta prevista no POP',
+          'Manteve a bancada / estação organizada',
+          'Não utilizou telefone celular durante o atendimento',
+          'Não consumiu alimentos durante o atendimento',
+          'Trocou as luvas sempre que necessário',
+          'Evitou contaminação cruzada',
+        ],
+      },
+      {
+        titulo: 'Vendas Durante a Execução', pontos: 15, itens: [
+          'Ofereceu serviço complementar durante o atendimento',
+          'Fez sugestão adequada ao serviço em execução',
+          'Ofereceu os produtos utilizados no atendimento',
+          'Identificou procedimento em atraso',
+          'Divulgou campanha ou promoção vigente',
+        ],
+      },
+      {
+        titulo: 'Controle de Qualidade e Validação', pontos: 10, itens: [
+          'Verificou o resultado antes de apresentar ao cliente',
+          'Corrigiu os ajustes antes da apresentação',
+          'Perguntou se o cliente gostou do resultado',
+          'Perguntou se havia algum detalhe a ajustar',
+          'Realizou os ajustes imediatamente',
+        ],
+      },
+      {
+        titulo: 'Finalização e Lançamento no Sistema', pontos: 10, itens: [
+          'Pediu 1 minuto ao cliente para realizar os lançamentos',
+          'Registrou todos os serviços realizados',
+          'Registrou os produtos utilizados e vendidos',
+          'Verificou descontos ou cortesias',
+          'Salvou o lançamento no sistema',
+        ],
+      },
+      {
+        titulo: 'Reagendamento, Vitrine e Despedida', pontos: 10, itens: [
+          'Ofereceu o próximo atendimento antes de liberar o cliente da cadeira',
+          'Informou o período ideal de retorno do serviço',
+          'Destacou pelo menos um benefício de reagendar',
+          'Levou o cliente até a vitrine e ofereceu produtos',
+          'Acompanhou o cliente até a recepção',
+          'Despediu-se reforçando os cuidados em casa',
+        ],
+      },
+    ],
+    comportamental: [
+      'Simpatia',
+      'Comunicação',
+      'Cordialidade',
+      'Técnica e Acabamento',
+      'Higiene e Biossegurança',
+      'Organização da Estação',
+      'Capacidade de Venda',
+      'Postura Profissional',
+    ],
+  },
+
+  // POP-PRO-002 — Atendimento de Pedicure — 100 pontos
+  'pop-pro-002': {
+    secoes: [
+      {
+        titulo: 'Biossegurança Antes do Atendimento', pontos: 15, itens: [
+          'Higienizou corretamente as mãos',
+          'Manteve o uniforme limpo e os cabelos presos',
+          'Utilizou luvas descartáveis novas e máscara limpa',
+          'Conferiu a limpeza da bancada',
+          'Conferiu se os instrumentos estavam esterilizados e dentro da validade',
+          'Organizou todos os materiais antes de iniciar',
+        ],
+      },
+      {
+        titulo: 'Apresentação e Identificação da Necessidade', pontos: 15, itens: [
+          'Iniciou o atendimento de frente para a cliente',
+          'Deu as boas-vindas usando o nome da cliente',
+          'Apresentou-se pelo nome',
+          'Confirmou o serviço agendado',
+          'Perguntou o que a cliente pensou para o dia',
+          'Perguntou sobre preferência ou foto de referência',
+          'Escutou a cliente sem interromper',
+        ],
+      },
+      {
+        titulo: 'Ponderações e Orientações', pontos: 10, itens: [
+          'Explicou o que era possível realizar',
+          'Explicou o que não era recomendado',
+          'Explicou as limitações técnicas do procedimento',
+          'Orientou sobre os cuidados com os pés e as unhas',
+          'Só iniciou após a cliente compreender e concordar',
+        ],
+      },
+      {
+        titulo: 'Apresentação dos Materiais à Cliente', pontos: 10, itens: [
+          'Colocou luvas descartáveis novas diante da cliente',
+          'Colocou máscara limpa e nova',
+          'Apresentou o kit descartável lacrado',
+          'Apresentou os alicates esterilizados',
+          'Organizou os materiais sobre a bancada',
+        ],
+      },
+      {
+        titulo: 'Execução do Procedimento (ordem correta)', pontos: 20, itens: [
+          'Removeu completamente o esmalte anterior',
+          'Lixou e cortou as unhas no formato reto',
+          'Lixou ou esfoliou os pés',
+          'Utilizou a luva ou botinha amolecedora',
+          'Realizou a cuticulagem',
+          'Aplicou a base',
+          'Pintou e limpou cuidadosamente os cantos',
+          'Aplicou spray ou óleo secante',
+          'Manteve a bancada organizada, sem celular e sem alimentos',
+        ],
+      },
+      {
+        titulo: 'Vendas Durante o Atendimento', pontos: 10, itens: [
+          'Ofereceu serviço complementar (ex.: manicure, esfoliação)',
+          'Ofereceu os produtos utilizados no atendimento',
+          'Identificou oportunidade ou procedimento em atraso',
+          'Divulgou campanha ou promoção vigente',
+        ],
+      },
+      {
+        titulo: 'Controle de Qualidade', pontos: 10, itens: [
+          'Esmaltação uniforme e com cobertura completa',
+          'Comprimento uniforme e formato reto, sem cantos arredondados',
+          'Cutículas bem acabadas e cantos limpos',
+          'Sem borrões, bolhas ou resíduos, com secagem adequada',
+          'Pele dos pés macia e hidratada, sem calosidades ou peles soltas',
+          'Corrigiu os ajustes antes de apresentar o resultado',
+        ],
+      },
+      {
+        titulo: 'Validação, Finalização e Reagendamento', pontos: 10, itens: [
+          'Perguntou se a cliente gostou do resultado',
+          'Perguntou se havia detalhe a ajustar e ajustou imediatamente',
+          'Realizou os lançamentos no sistema',
+          'Levou a cliente até a vitrine e ofereceu produtos',
+          'Ofereceu o próximo atendimento já agendado',
+          'Despediu-se agradecendo e orientando os cuidados',
+          'Organizou a estação e encaminhou os instrumentos para esterilização',
+        ],
+      },
+    ],
+    comportamental: [
+      'Simpatia',
+      'Comunicação',
+      'Cordialidade',
+      'Técnica e Acabamento',
+      'Higiene e Biossegurança',
+      'Organização da Estação',
+      'Capacidade de Venda',
+      'Postura Profissional',
+    ],
+  },
 }
