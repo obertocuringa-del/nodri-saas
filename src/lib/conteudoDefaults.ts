@@ -4653,6 +4653,385 @@ const PRO_BABYLISS_HTML = `
 </div>
 `.trim()
 
+const PRO_PENTEADO_HTML = `
+<h1>Procedimento Operacional Padrão (POP)</h1>
+<p style="color:#6b6880;font-size:15px;margin:-4px 0 16px;font-weight:600">POP-PRO-011 — Penteado</p>
+
+<h2>1. Identificação</h2>
+<div style="${META}">
+  <p style="margin:0"><strong>Código:</strong> POP-PRO-011 &nbsp;·&nbsp; <strong>Versão:</strong> 1.0 &nbsp;·&nbsp; <strong>Setor:</strong> Profissionais (Cabeleireiro / Assistente)</p>
+  <p style="margin:8px 0 0"><strong>Responsável:</strong> <span style="${FIELD}"></span></p>
+  <p style="margin:8px 0 0"><strong>Data de Emissão:</strong> ___/___/______ &nbsp;·&nbsp; <strong>Última Revisão:</strong> ___/___/______ &nbsp;·&nbsp; <strong>Próxima Revisão:</strong> ___/___/______</p>
+</div>
+
+<h2>2. Objetivo</h2>
+<p>Padronizar o serviço de <strong>penteado</strong>, garantindo o entendimento exato do resultado desejado, a correta orientação do assistente durante toda a preparação, a construção de uma base adequada, firmeza e durabilidade do penteado, conforto da cliente e acompanhamento até a saída do salão.</p>
+
+<h2>3. Campo de Aplicação</h2>
+<p>Este procedimento aplica-se ao profissional responsável pelo penteado e ao assistente que auxilia na preparação e no acompanhamento.</p>
+
+<h2>4. Fluxo do Atendimento</h2>
+<div style="${BOX}">
+  <div style="${BOXH}">Atenção à composição da equipe</div>
+  <p style="margin:0"><strong>Sem assistente:</strong> o profissional executa todas as etapas e segue direto para o lavatório (PARTE C).</p>
+  <p style="margin:8px 0 0"><strong>Com assistente:</strong> o profissional deve <strong>orientar o assistente antes de iniciar</strong> (PARTE B) — como quer a preparação e qual produto será utilizado em todo o processo, do lavatório até a preparação final.</p>
+</div>
+
+<h2>5. Responsabilidades</h2>
+<h3>Profissional Responsável pelo Penteado</h3>
+<ul>
+  <li>Cumprir integralmente este POP.</li>
+  <li>Alinhar com a cliente o resultado desejado antes de iniciar.</li>
+  <li>Fazer as ponderações do que é possível e do que não é recomendado.</li>
+  <li>Orientar o assistente sobre a preparação e os produtos.</li>
+  <li>Executar o penteado.</li>
+  <li>Garantir firmeza, simetria e conforto.</li>
+  <li>Validar o resultado com a cliente.</li>
+</ul>
+<h3>Assistente</h3>
+<ul>
+  <li>Seguir exatamente a orientação do profissional responsável.</li>
+  <li>Utilizar apenas os produtos indicados por ele.</li>
+  <li>Executar o lavatório e a preparação conforme orientado.</li>
+  <li>Comunicar ao profissional qualquer alteração ou dificuldade.</li>
+  <li><strong>Permanecer no salão até a cliente ir embora</strong>, auxiliando no que for necessário.</li>
+</ul>
+<h3>Gerência</h3>
+<ul>
+  <li>Fiscalizar o cumprimento deste POP.</li>
+  <li>Garantir a escala de assistentes para os atendimentos de penteado.</li>
+  <li>Treinar continuamente a equipe.</li>
+</ul>
+
+<h2>6. Materiais Necessários</h2>
+<h3>Equipamentos</h3>
+<ul style="${CHECK}">
+  <li>☐ Secador com bico direcionador.</li>
+  <li>☐ Babyliss / modelador (quando necessário).</li>
+  <li>☐ Prancha (quando necessário).</li>
+  <li>☐ Escovas e pentes de dentes finos (para texturizar).</li>
+  <li>☐ Presilhas para separar as mechas.</li>
+  <li>☐ Grampos e ganchos em quantidade suficiente.</li>
+  <li>☐ Elásticos.</li>
+  <li>☐ Tela ou rede (quando necessário).</li>
+  <li>☐ Enchimento ou base (quando necessário).</li>
+  <li>☐ Base térmica para apoiar as ferramentas.</li>
+  <li>☐ Toalhas limpas, capa de proteção e robe.</li>
+  <li>☐ Espelho de mão.</li>
+</ul>
+<h3>Produtos</h3>
+<ul style="${CHECK}">
+  <li>☐ Shampoo 1 e Shampoo 2.</li>
+  <li>☐ Condicionador.</li>
+  <li>☐ <strong>Protetor térmico</strong> (obrigatório quando houver ferramenta térmica).</li>
+  <li>☐ Leave-in.</li>
+  <li>☐ Mousse ou spray texturizador.</li>
+  <li>☐ Pomada, cera ou pasta modeladora.</li>
+  <li>☐ Spray fixador.</li>
+  <li>☐ Spray de brilho.</li>
+</ul>
+
+<h2>7. Higiene e Segurança</h2>
+<h3>Antes do Atendimento</h3>
+<ul style="${CHECK}">
+  <li>☐ Higienizar corretamente as mãos.</li>
+  <li>☐ Manter uniforme limpo e cabelos presos.</li>
+  <li>☐ Conferir a limpeza da estação.</li>
+  <li>☐ Higienizar escovas e pentes entre as clientes.</li>
+  <li>☐ Separar grampos e elásticos limpos, em quantidade suficiente.</li>
+  <li>☐ Verificar o estado dos equipamentos térmicos.</li>
+  <li>☐ Organizar todos os produtos e verificar a validade.</li>
+</ul>
+<h3>Durante o Atendimento</h3>
+<ul style="${CHECK}">
+  <li>☐ Manter a estação organizada.</li>
+  <li>☐ Não utilizar telefone celular.</li>
+  <li>☐ Não consumir alimentos.</li>
+  <li>☐ Não usar ferramenta térmica em cabelo úmido nem sem protetor térmico.</li>
+  <li>☐ Nunca encostar a ferramenta quente no couro cabeludo, no rosto ou nas orelhas.</li>
+  <li>☐ Apoiar as ferramentas em base térmica.</li>
+  <li>☐ <strong>Não deixar grampos na boca</strong> — utilizar sempre um recipiente ou pulseira porta-grampos.</li>
+  <li>☐ Perguntar à cliente, ao longo do processo, se algum ponto está apertando ou incomodando.</li>
+</ul>
+<h3>Após o Atendimento</h3>
+<ul style="${CHECK}">
+  <li>☐ Desligar os equipamentos e aguardar o resfriamento.</li>
+  <li>☐ Limpar escovas, pentes e ferramentas.</li>
+  <li>☐ Recolher grampos e elásticos do chão e da bancada.</li>
+  <li>☐ Recolher os cabelos do chão e da cadeira.</li>
+  <li>☐ Higienizar a estação e as mãos.</li>
+  <li>☐ Preparar a estação para a próxima cliente.</li>
+</ul>
+
+<h2>8. Procedimento Operacional</h2>
+
+<h3>PARTE A — Início do Atendimento</h3>
+<p><strong>1. Apresentação do Profissional</strong> — sempre iniciar o atendimento de frente para a cliente, demonstrando simpatia, cordialidade e profissionalismo.</p>
+<blockquote>"Olá (Nome da cliente), meu nome é (Nome do Profissional) e hoje eu serei o(a) responsável pelo seu atendimento."</blockquote>
+<p><strong>2. Confirmação do Serviço</strong></p>
+<blockquote>"A senhora irá fazer um penteado hoje, correto?"</blockquote>
+<p><strong>3. Identificação da Necessidade</strong></p>
+<blockquote>"O que a senhora pensou para hoje?" · "A senhora possui alguma preferência ou alguma foto de referência?"</blockquote>
+<p><strong>Perguntas específicas do penteado:</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Qual é a ocasião?</li>
+  <li>☐ Quantas horas o penteado precisa durar?</li>
+  <li>☐ Vai usar algum acessório, véu ou tiara?</li>
+  <li>☐ Como é o decote ou a gola da roupa?</li>
+  <li>☐ Prefere o penteado preso, semipreso ou solto?</li>
+  <li>☐ Prefere um resultado mais estruturado ou mais desconstruído?</li>
+</ul>
+<blockquote>"Para qual ocasião é o penteado, e por quantas horas a senhora precisa que ele dure?"</blockquote>
+<blockquote>"A senhora vai usar véu, tiara ou algum acessório? Se sim, precisamos deixar a base preparada para ele."</blockquote>
+<p><strong>4. Ponderações e Orientações</strong> — após ouvir atentamente a cliente, explicar de forma clara e profissional:</p>
+<ul style="${CHECK}">
+  <li>☐ O que é possível realizar.</li>
+  <li>☐ O que não é recomendado realizar.</li>
+  <li>☐ As limitações técnicas (comprimento, densidade, textura e condição do fio).</li>
+  <li>☐ Se será necessário enchimento, aplique ou acessório para chegar ao resultado.</li>
+  <li>☐ Quanto tempo o penteado tende a durar.</li>
+</ul>
+<blockquote>"Baseado no que a senhora deseja, é possível fazer [explicar o que dá para fazer]."</blockquote>
+<blockquote>"Não recomendamos [explicar o que não é recomendado] porque [explicar o motivo]."</blockquote>
+<div style="${BOX}">
+  <p style="margin:0">Quando a referência não for possível no cabelo da cliente, <strong>explicar o motivo e apresentar uma alternativa antes de iniciar</strong>. Penteado é o serviço em que a frustração aparece só no final — o alinhamento tem que ser feito no começo.</p>
+</div>
+<p><strong>Nenhum procedimento deverá ser iniciado antes que a cliente compreenda e concorde com o resultado que será realizado.</strong></p>
+
+<h3>PARTE B — Orientação ao Assistente</h3>
+<p style="color:#6b6880"><em>Executar somente quando houver assistente. Sem assistente, seguir direto para a PARTE C.</em></p>
+<p><strong>5. Briefing do Assistente</strong> — antes de a cliente ir para o lavatório, o profissional responsável deverá orientar o assistente sobre <strong>toda a preparação</strong>, do lavatório até a entrega na cadeira.</p>
+<ul style="${CHECK}">
+  <li>☐ Informar qual é o penteado que será executado.</li>
+  <li>☐ Informar quais produtos utilizar no lavatório.</li>
+  <li>☐ Informar se deve ou não aplicar condicionador, e onde.</li>
+  <li>☐ Informar quais produtos finalizadores aplicar e em qual quantidade.</li>
+  <li>☐ Informar como quer a preparação: secagem, modelagem ou babyliss.</li>
+  <li>☐ Informar o sentido, o volume e a repartição desejados.</li>
+  <li>☐ Informar se o cabelo deve ficar mais liso ou mais texturizado.</li>
+  <li>☐ Informar o que <strong>não</strong> deve ser feito.</li>
+  <li>☐ Confirmar se o assistente entendeu antes de liberar.</li>
+</ul>
+<blockquote>"Vamos fazer um [penteado]. No lavatório, usa o [shampoo] e o [condicionador] só no comprimento — não pode pesar a raiz. Depois seca com [produto] e faz [modelagem/babyliss] no sentido [X]. Qualquer dúvida, me chama antes de continuar."</blockquote>
+<div style="${BOX}">
+  <p style="margin:0"><strong>O assistente não decide produto nem preparação por conta própria.</strong> Toda alteração deve ser comunicada ao profissional responsável antes de ser executada.</p>
+</div>
+
+<h3>PARTE C — Higienização no Lavatório</h3>
+<p><strong>6. Avaliação do Cabelo e Informação das Necessidades</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Observar o estado geral do cabelo.</li>
+  <li>☐ Verificar o tipo de cabelo (liso, ondulado, cacheado, crespo).</li>
+  <li>☐ Verificar a porosidade e a densidade do fio.</li>
+  <li>☐ Verificar se há ressecamento, danos ou pontas duplas.</li>
+  <li>☐ Verificar se há química.</li>
+  <li>☐ Verificar o couro cabeludo (oleosidade, caspa, sensibilidade).</li>
+  <li>☐ Informar à cliente as necessidades identificadas.</li>
+</ul>
+<p><strong>7. Oferta de Tratamento</strong> — perguntar se a cliente deseja realizar algum tratamento de acordo com a necessidade identificada.</p>
+<blockquote>"A senhora gostaria de fazer um tratamento de [hidratação/nutrição/reconstrução] de acordo com a necessidade do seu cabelo?"</blockquote>
+<p><strong>8. Informar os Produtos e Experiência Sensorial</strong> — informar todos os produtos que serão utilizados e deixar a cliente sentir o cheiro.</p>
+<p><strong>9. Execução da Higienização</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Verificar a temperatura da água (morna, agradável).</li>
+  <li>☐ Soltar um pouco o cabelo da raiz e desembaraçar suavemente.</li>
+  <li>☐ Aplicar o 1º shampoo, emulsionar bem e enxaguar completamente.</li>
+  <li>☐ Aplicar o 2º shampoo + massagem no couro cabeludo por 3 minutos.</li>
+  <li>☐ Enxaguar completamente.</li>
+  <li>☐ Aguardar o tempo de pausa recomendado pela marca.</li>
+  <li>☐ Aplicar o condicionador conforme a orientação do profissional responsável.</li>
+  <li>☐ Aguardar o tempo recomendado pela marca.</li>
+  <li>☐ Enxaguar completamente, sem deixar resíduos.</li>
+</ul>
+<div style="${BOX}">
+  <p style="margin:0">Para penteado, <strong>não aplicar condicionador ou máscara na raiz</strong>. Cabelo escorregadio não segura grampo e o penteado cai. Quando o profissional indicar, o condicionador deve ser aplicado somente nas pontas — ou dispensado.</p>
+</div>
+<p><strong>10. Finalização da Higienização</strong> — fazer a touca com a toalha e conduzir a cliente até a cadeira.</p>
+
+<h3>PARTE D — Preparação da Base</h3>
+<p><strong>11. Preparação da Cliente</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Ajudar a cliente a se sentar confortavelmente.</li>
+  <li>☐ Remover a touca de toalha.</li>
+  <li>☐ Secar com a toalha, retirando o excesso de água (pressionar, nunca esfregar).</li>
+  <li>☐ Colocar a capa de proteção.</li>
+  <li>☐ Colocar o robe ou avental.</li>
+</ul>
+<p><strong>12. Aplicação dos Produtos Finalizadores</strong> — conforme a orientação do profissional responsável.</p>
+<ul style="${CHECK}">
+  <li>☐ Desembaraçar com pente de dentes largos, das pontas para a raiz.</li>
+  <li>☐ Aplicar o protetor térmico quando houver ferramenta térmica.</li>
+  <li>☐ Aplicar mousse, texturizador ou leave-in conforme o penteado.</li>
+  <li>☐ Distribuir bem o produto, mecha a mecha.</li>
+</ul>
+<p><strong>13. Penteia e alinha o cabelo</strong> — pentear, alinhar e definir a repartição.</p>
+<p><strong>14. Modelagem ou Secagem</strong> — executar conforme o penteado escolhido (POP-PRO-007 ou POP-PRO-008), no sentido e volume orientados.</p>
+<p><strong>15. Babyliss (quando necessário)</strong> — executar conforme o POP-PRO-010, para dar textura e sustentação ao penteado.</p>
+<ul style="${CHECK}">
+  <li>☐ Conferir se o cabelo está 100% seco.</li>
+  <li>☐ Aguardar o cabelo esfriar completamente antes de iniciar o penteado.</li>
+</ul>
+<div style="${BOX}">
+  <p style="margin:0"><strong>Cabelo quente não segura penteado.</strong> É preciso esperar esfriar por completo antes de começar a montar — caso contrário, o penteado cede nas primeiras horas.</p>
+</div>
+
+<h3>PARTE E — Execução do Penteado</h3>
+<p><strong>16. Definição da Estrutura</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Confirmar em voz alta o penteado que será executado.</li>
+  <li>☐ Definir a repartição e o ponto de apoio do penteado.</li>
+  <li>☐ Separar o cabelo em seções com presilhas.</li>
+  <li>☐ Posicionar o enchimento ou a base, quando houver.</li>
+  <li>☐ Posicionar o acessório ou o véu na altura combinada, antes de fechar a estrutura.</li>
+</ul>
+<p><strong>17. Montagem</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Texturizar as mechas quando o penteado exigir sustentação.</li>
+  <li>☐ Montar por seções, fixando cada parte antes de passar para a próxima.</li>
+  <li>☐ Utilizar grampos na quantidade necessária, sempre escondidos.</li>
+  <li>☐ Cruzar os grampos nos pontos de maior sustentação.</li>
+  <li>☐ Testar a firmeza de cada seção antes de seguir.</li>
+  <li>☐ Conferir a simetria entre os dois lados durante a execução.</li>
+  <li>☐ Verificar o resultado de todos os ângulos: frente, laterais e nuca.</li>
+  <li>☐ Perguntar à cliente se algum ponto está apertando.</li>
+  <li>☐ Mostrar o andamento à cliente em pontos-chave, antes de finalizar.</li>
+</ul>
+<blockquote>"Está apertando em algum ponto? Se estiver, me avise agora, que eu ajusto."</blockquote>
+<blockquote>"Olha como está ficando por aqui. É essa a ideia que a senhora tinha?"</blockquote>
+<div style="${BOX}">
+  <p style="margin:0"><strong>Consultar a cliente durante a execução, não só no final.</strong> Refazer um penteado inteiro custa muito mais caro do que ajustar no meio do caminho.</p>
+</div>
+
+<h3>PARTE F — Acabamento, Fixação e Validação</h3>
+<p><strong>18. Acabamento</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Ajustar os fios soltos conforme o resultado desejado.</li>
+  <li>☐ Verificar se não há grampo aparecendo.</li>
+  <li>☐ Verificar se não há falhas ou pontos irregulares.</li>
+  <li>☐ Conferir a simetria e o caimento.</li>
+  <li>☐ Ajustar o acessório ou o véu.</li>
+  <li>☐ Aplicar spray de brilho, quando desejado.</li>
+</ul>
+<p><strong>19. Fixação</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Aplicar o fixador em camadas, à distância.</li>
+  <li>☐ Não encharcar o penteado.</li>
+  <li>☐ Proteger o rosto da cliente ao aplicar.</li>
+  <li>☐ Reforçar a fixação nos pontos de maior movimento.</li>
+</ul>
+<p><strong>20. Validação da Cliente</strong> — apresentar o resultado e perguntar obrigatoriamente:</p>
+<blockquote>"A senhora gostou do resultado?"</blockquote>
+<blockquote>"Existe algum detalhe que gostaria que ajustássemos?"</blockquote>
+<blockquote>"Está confortável? Não está apertando em nenhum lugar?"</blockquote>
+<p>Utilizar o espelho de mão para mostrar a parte de trás e as laterais. <strong>Caso a cliente solicite qualquer ajuste, este deverá ser realizado imediatamente.</strong> O atendimento somente poderá ser encerrado após a aprovação da cliente.</p>
+
+<h3>PARTE G — Acompanhamento e Encerramento</h3>
+<p><strong>21. Permanência do Assistente</strong> — o assistente deverá <strong>permanecer no salão até a cliente ir embora</strong>, disponível para:</p>
+<ul style="${CHECK}">
+  <li>☐ Auxiliar em ajustes de última hora.</li>
+  <li>☐ Ajudar a cliente a vestir a roupa sem desmanchar o penteado.</li>
+  <li>☐ Auxiliar na colocação do véu ou do acessório.</li>
+  <li>☐ Retocar a fixação, se necessário.</li>
+  <li>☐ Acompanhar a cliente até a recepção.</li>
+</ul>
+<p><strong>22. Orientações de Manutenção</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Explicar como preservar o penteado ao longo do evento.</li>
+  <li>☐ Orientar sobre o que evitar (passar a mão, umidade, vento).</li>
+  <li>☐ Entregar alguns grampos extras à cliente.</li>
+  <li>☐ Oferecer o fixador para retoque.</li>
+  <li>☐ Oferecer o reagendamento.</li>
+</ul>
+<blockquote>"Vou te dar alguns grampos extras, caso precise de um retoque durante o evento."</blockquote>
+<p><strong>23. Encerramento</strong> — retirar a capa com cuidado para não desmanchar o penteado, agradecer a preferência e acompanhar a cliente até a recepção.</p>
+<blockquote>"Foi um prazer atender você, (Nome)! Aproveite muito o seu dia."</blockquote>
+
+<h3>PARTE H — Organização Pós-Atendimento</h3>
+<p><strong>24. Limpeza e Registro</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Desligar os equipamentos e aguardar o resfriamento.</li>
+  <li>☐ Limpar as escovas, os pentes e as ferramentas.</li>
+  <li>☐ Recolher grampos e elásticos do chão e da bancada.</li>
+  <li>☐ Recolher os cabelos do chão e da cadeira.</li>
+  <li>☐ Higienizar a estação.</li>
+  <li>☐ Guardar os produtos corretamente.</li>
+  <li>☐ Registrar o serviço e os produtos no sistema.</li>
+  <li>☐ Registrar o penteado executado para consulta em atendimentos futuros.</li>
+</ul>
+
+<h2>9. Indicadores de Qualidade</h2>
+<p>A gerência deverá acompanhar mensalmente:</p>
+<ul style="${CHECK}">
+  <li>☐ Tempo médio de penteado.</li>
+  <li>☐ Número de retrabalhos (penteado refeito).</li>
+  <li>☐ Número de reclamações sobre durabilidade ou desconforto.</li>
+  <li>☐ Índice de satisfação da cliente.</li>
+  <li>☐ Cumprimento da orientação ao assistente.</li>
+  <li>☐ Permanência do assistente até a saída da cliente.</li>
+  <li>☐ Percentual de reagendamento.</li>
+  <li>☐ Vendas de produtos de fixação.</li>
+</ul>
+
+<h2>10. Checklist de Auditoria</h2>
+<div style="${BOX}">
+  <div style="${BOXH}">Apresentação</div>
+  <ul style="${CHECK}">
+    <li>☐ Apresentou-se de frente para a cliente, com nome.</li>
+    <li>☐ Confirmou o serviço (penteado).</li>
+    <li>☐ Perguntou o que a cliente desejava.</li>
+    <li>☐ Perguntou se havia preferência ou referência.</li>
+    <li>☐ Perguntou a ocasião e a duração necessária.</li>
+    <li>☐ Perguntou sobre acessório, véu e decote da roupa.</li>
+    <li>☐ Fez as ponderações do que dá e do que não dá para fazer.</li>
+  </ul>
+  <div style="${BOXH}">Orientação ao Assistente (quando houver)</div>
+  <ul style="${CHECK}">
+    <li>☐ Informou qual penteado seria executado.</li>
+    <li>☐ Informou os produtos do lavatório.</li>
+    <li>☐ Informou os produtos finalizadores e a quantidade.</li>
+    <li>☐ Informou como queria a preparação (secagem, modelagem, babyliss).</li>
+    <li>☐ Informou sentido, volume e repartição.</li>
+    <li>☐ Informou o que não deveria ser feito.</li>
+    <li>☐ Confirmou se o assistente entendeu.</li>
+  </ul>
+  <div style="${BOXH}">Lavatório e Preparação</div>
+  <ul style="${CHECK}">
+    <li>☐ Realizou avaliação capilar e informou as necessidades.</li>
+    <li>☐ Perguntou se deseja tratamento.</li>
+    <li>☐ Informou os produtos e deixou sentir o cheiro.</li>
+    <li>☐ Aplicou o 1º e o 2º shampoo + massagem de 3 minutos.</li>
+    <li>☐ Aplicou o condicionador conforme orientado, sem pesar a raiz.</li>
+    <li>☐ Aplicou os finalizadores orientados.</li>
+    <li>☐ Executou a secagem, modelagem ou babyliss conforme orientado.</li>
+    <li>☐ Aguardou o cabelo esfriar antes de montar.</li>
+  </ul>
+  <div style="${BOXH}">Execução</div>
+  <ul style="${CHECK}">
+    <li>☐ Confirmou em voz alta o penteado a ser executado.</li>
+    <li>☐ Definiu a repartição e o ponto de apoio.</li>
+    <li>☐ Posicionou acessório ou véu antes de fechar a estrutura.</li>
+    <li>☐ Montou por seções, fixando antes de prosseguir.</li>
+    <li>☐ Manteve os grampos escondidos.</li>
+    <li>☐ Testou a firmeza de cada seção.</li>
+    <li>☐ Conferiu a simetria e todos os ângulos.</li>
+    <li>☐ Perguntou se algum ponto estava apertando.</li>
+    <li>☐ Mostrou o andamento à cliente antes de finalizar.</li>
+  </ul>
+  <div style="${BOXH}">Finalização e Acompanhamento</div>
+  <ul style="${CHECK}">
+    <li>☐ Verificou grampos aparecendo, falhas e simetria.</li>
+    <li>☐ Aplicou o fixador em camadas, protegendo o rosto.</li>
+    <li>☐ Mostrou o resultado com o espelho de mão.</li>
+    <li>☐ Perguntou se a cliente gostou e se estava confortável.</li>
+    <li>☐ Realizou os ajustes imediatamente.</li>
+    <li>☐ Entregou grampos extras.</li>
+    <li>☐ Orientou sobre a manutenção durante o evento.</li>
+    <li>☐ O assistente permaneceu até a cliente ir embora.</li>
+    <li>☐ Organizou a estação e registrou no sistema.</li>
+  </ul>
+</div>
+`.trim()
+
 export type ConteudoDoc = { id: string; titulo: string; texto: string }
 export const CONTEUDO_DEFAULTS: Record<string, { titulo: string; conteudo: { texto?: string; docs?: ConteudoDoc[] } }> = {
   manicure: {
@@ -4677,6 +5056,7 @@ export const CONTEUDO_DEFAULTS: Record<string, { titulo: string; conteudo: { tex
         { id: 'pop-pro-008', titulo: 'POP-PRO-008 · Modelagem', texto: PRO_MODELAGEM_HTML },
         { id: 'pop-pro-009', titulo: 'POP-PRO-009 · Chapinha', texto: PRO_CHAPINHA_HTML },
         { id: 'pop-pro-010', titulo: 'POP-PRO-010 · Babyliss', texto: PRO_BABYLISS_HTML },
+        { id: 'pop-pro-011', titulo: 'POP-PRO-011 · Penteado', texto: PRO_PENTEADO_HTML },
       ],
     },
   },

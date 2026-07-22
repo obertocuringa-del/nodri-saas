@@ -1493,6 +1493,122 @@ export const AVALIACOES_POP: Record<string, ModeloAvaliacao> = {
     ],
   },
 
+  // POP-PRO-011 — Penteado — 100 pontos
+  'pop-pro-011': {
+    secoes: [
+      {
+        titulo: 'Apresentação e Identificação da Necessidade', pontos: 10, itens: [
+          'Apresentou-se de frente para a cliente, pelo nome',
+          'Confirmou que o serviço era o penteado',
+          'Perguntou o que a cliente pensou para o dia',
+          'Perguntou sobre preferência ou foto de referência',
+          'Perguntou a ocasião e por quantas horas precisa durar',
+          'Perguntou sobre acessório, véu ou tiara',
+          'Perguntou sobre o decote ou a gola da roupa',
+          'Escutou a cliente atentamente, sem interromper',
+        ],
+      },
+      {
+        titulo: 'Ponderações e Orientações', pontos: 10, itens: [
+          'Explicou o que era possível realizar',
+          'Explicou o que não era recomendado e o motivo',
+          'Explicou as limitações técnicas (comprimento, densidade e textura)',
+          'Informou se seria necessário enchimento, aplique ou acessório',
+          'Apresentou alternativa quando a referência não era possível',
+          'Só iniciou após a cliente compreender e concordar',
+        ],
+      },
+      {
+        titulo: 'Orientação ao Assistente', pontos: 10, condicional: true,
+        nota: 'Somente quando houver assistente na preparação.',
+        itens: [
+          'Informou ao assistente qual penteado seria executado',
+          'Informou quais produtos utilizar no lavatório',
+          'Informou se e onde aplicar o condicionador',
+          'Informou os produtos finalizadores e a quantidade',
+          'Informou como queria a preparação (secagem, modelagem ou babyliss)',
+          'Informou o sentido, o volume e a repartição desejados',
+          'Informou o que não deveria ser feito',
+          'Confirmou se o assistente entendeu antes de liberar',
+        ],
+      },
+      {
+        titulo: 'Higienização no Lavatório', pontos: 10, itens: [
+          'Realizou a avaliação capilar e informou as necessidades',
+          'Ofereceu tratamento de acordo com a necessidade',
+          'Informou os produtos e deixou a cliente sentir o cheiro',
+          'Verificou a temperatura da água e soltou o cabelo da raiz',
+          'Aplicou o 1º shampoo, emulsionou bem e enxaguou',
+          'Aplicou o 2º shampoo + massagem de 3 minutos',
+          'Respeitou os tempos de pausa da marca',
+          'Aplicou o condicionador conforme orientado, sem pesar a raiz',
+        ],
+      },
+      {
+        titulo: 'Preparação da Base', pontos: 15, itens: [
+          'Secou com a toalha pressionando, sem esfregar',
+          'Desembaraçou com pente de dentes largos, das pontas para a raiz',
+          'Aplicou o protetor térmico quando usou ferramenta térmica',
+          'Aplicou os finalizadores orientados, na quantidade certa',
+          'Penteou, alinhou e definiu a repartição',
+          'Executou a secagem ou modelagem no sentido e volume orientados',
+          'Executou o babyliss quando necessário',
+          'Conferiu se o cabelo estava 100% seco',
+          'Aguardou o cabelo esfriar completamente antes de montar',
+        ],
+      },
+      {
+        titulo: 'Execução do Penteado', pontos: 25, itens: [
+          'Confirmou em voz alta o penteado que seria executado',
+          'Definiu a repartição e o ponto de apoio do penteado',
+          'Separou o cabelo em seções com presilhas',
+          'Posicionou o enchimento ou a base quando necessário',
+          'Posicionou o acessório ou véu antes de fechar a estrutura',
+          'Texturizou as mechas quando o penteado exigia sustentação',
+          'Montou por seções, fixando cada parte antes de prosseguir',
+          'Utilizou grampos na quantidade necessária, sempre escondidos',
+          'Testou a firmeza de cada seção antes de seguir',
+          'Conferiu a simetria entre os dois lados durante a execução',
+          'Verificou o resultado de todos os ângulos (frente, laterais e nuca)',
+          'Perguntou à cliente se algum ponto estava apertando',
+          'Mostrou o andamento à cliente antes de finalizar',
+          'Não deixou grampos na boca durante a execução',
+        ],
+      },
+      {
+        titulo: 'Acabamento, Fixação e Validação', pontos: 15, itens: [
+          'Ajustou os fios soltos conforme o resultado desejado',
+          'Verificou se não havia grampo aparecendo',
+          'Verificou falhas, simetria e caimento',
+          'Ajustou o acessório ou o véu',
+          'Aplicou o fixador em camadas, à distância, protegendo o rosto',
+          'Mostrou o resultado com o espelho de mão',
+          'Perguntou se a cliente gostou e se estava confortável',
+          'Realizou os ajustes imediatamente',
+        ],
+      },
+      {
+        titulo: 'Acompanhamento e Encerramento', pontos: 5, itens: [
+          'O assistente permaneceu no salão até a cliente ir embora',
+          'Auxiliou a cliente em ajustes, roupa, véu ou acessório',
+          'Entregou grampos extras e orientou sobre a manutenção',
+          'Retirou a capa sem desmanchar o penteado e acompanhou até a recepção',
+          'Organizou a estação e registrou o serviço no sistema',
+        ],
+      },
+    ],
+    comportamental: [
+      'Simpatia',
+      'Comunicação',
+      'Cordialidade',
+      'Técnica do Penteado',
+      'Acabamento e Simetria',
+      'Orientação da Equipe',
+      'Cuidado com o Conforto da Cliente',
+      'Postura Profissional',
+    ],
+  },
+
   // POP-PRO-002 — Atendimento de Pedicure — 100 pontos
   'pop-pro-002': {
     secoes: [
