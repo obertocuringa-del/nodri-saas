@@ -2288,6 +2288,325 @@ const PRO_LAVATORIO_HTML = `
 </table>
 `.trim()
 
+const PRO_LAVATORIO_ESPECIAL_HTML = `
+<h1>Procedimento Operacional Padrão (POP)</h1>
+<p style="color:#6b6880;font-size:15px;margin:-4px 0 16px;font-weight:600">POP-PRO-004 — Atendimento de Higienização Especial (Lavatório)</p>
+
+<h2>1. Identificação</h2>
+<div style="${META}">
+  <p style="margin:0"><strong>Código:</strong> POP-PRO-004 &nbsp;·&nbsp; <strong>Versão:</strong> 1.0 &nbsp;·&nbsp; <strong>Setor:</strong> Profissionais (Lavatório / Auxiliar de Cabeleireiro)</p>
+  <p style="margin:8px 0 0"><strong>Responsável:</strong> <span style="${FIELD}"></span> (Profissional do Lavatório)</p>
+  <p style="margin:8px 0 0"><strong>Data de Emissão:</strong> ___/___/______ &nbsp;·&nbsp; <strong>Última Revisão:</strong> ___/___/______ &nbsp;·&nbsp; <strong>Próxima Revisão:</strong> ___/___/______</p>
+</div>
+
+<h2>2. Objetivo</h2>
+<p>Padronizar o atendimento de <strong>higienização especial</strong> no lavatório, um serviço diferenciado que utiliza produtos específicos, massagem prolongada e maior tempo de execução, garantindo uma experiência sensorial premium, relaxamento, avaliação capilar detalhada e resultado superior ao da higienização comum.</p>
+
+<h2>3. Campo de Aplicação</h2>
+<p>Este procedimento aplica-se a todos os profissionais responsáveis pelos serviços de higienização especial no lavatório.</p>
+
+<h2>4. Diferenciais da Higienização Especial</h2>
+<div style="${BOX}">
+  <div style="${BOXH}">O que diferencia este serviço da higienização comum</div>
+  <ul>
+    <li><strong>Produtos específicos</strong> — selecionados conforme a necessidade identificada na avaliação.</li>
+    <li><strong>Tempo de execução de 10 a 15 minutos</strong> — o serviço não deve ser apressado.</li>
+    <li><strong>Pode ter um shampoo a mais</strong> — aplicação de um 3º shampoo quando o cabelo exigir.</li>
+    <li><strong>A cliente pode trazer os próprios produtos</strong> — devem ser utilizados conforme a orientação dela.</li>
+    <li><strong>Massagem de 10 minutos</strong> no couro cabeludo (na higienização comum são 3 minutos).</li>
+  </ul>
+</div>
+<table style="${TBL}">
+  <tr><th style="${TH}">Etapa</th><th style="${TH}">Higienização Comum</th><th style="${TH}">Higienização Especial</th></tr>
+  <tr><td style="${TD}">Produtos</td><td style="${TD}">Linha padrão do salão</td><td style="${TD}">Produtos específicos ou os da própria cliente</td></tr>
+  <tr><td style="${TD}">Quantidade de shampoos</td><td style="${TD}">2 shampoos</td><td style="${TD}">2 shampoos (+ 1 adicional quando necessário)</td></tr>
+  <tr><td style="${TD}">Massagem</td><td style="${TD}">3 minutos</td><td style="${TD}">10 minutos</td></tr>
+  <tr><td style="${TD}">Tempo total</td><td style="${TD}">Conforme o fluxo</td><td style="${TD}">De 10 a 15 minutos</td></tr>
+  <tr><td style="${TD}">Finalização</td><td style="${TD}">Condicionador</td><td style="${TD}">Condicionador ou máscara, conforme a necessidade</td></tr>
+</table>
+
+<h2>5. Responsabilidades</h2>
+<h3>Profissional do Lavatório</h3>
+<ul>
+  <li>Cumprir integralmente este POP.</li>
+  <li>Manter postura ética e profissional.</li>
+  <li>Zelar pela segurança e bem-estar da cliente.</li>
+  <li>Realizar avaliação capilar detalhada.</li>
+  <li>Selecionar e aplicar corretamente os produtos específicos.</li>
+  <li>Respeitar o tempo mínimo de execução do serviço.</li>
+  <li>Executar a massagem de 10 minutos com técnica adequada.</li>
+  <li>Garantir conforto durante todo o procedimento.</li>
+  <li>Oferecer tratamentos complementares.</li>
+  <li>Manter o lavatório limpo e organizado.</li>
+</ul>
+<h3>Cabeleireiro / Profissional Principal</h3>
+<ul>
+  <li>Aguardar a cliente ser preparada.</li>
+  <li>Realizar o procedimento principal (corte, coloração, escova, etc.).</li>
+</ul>
+<h3>Recepção</h3>
+<ul>
+  <li>Confirmar o agendamento da higienização especial.</li>
+  <li>Recepcionar e acomodar a cliente.</li>
+  <li>Reservar o tempo adequado na agenda.</li>
+</ul>
+<h3>Gerência</h3>
+<ul>
+  <li>Fiscalizar o cumprimento deste POP.</li>
+  <li>Treinar continuamente a equipe.</li>
+  <li>Garantir a disponibilidade dos produtos específicos.</li>
+  <li>Acompanhar os indicadores de satisfação e ticket médio.</li>
+</ul>
+
+<h2>6. Materiais Necessários</h2>
+<h3>Equipamentos</h3>
+<ul style="${CHECK}">
+  <li>☐ Lavatório (cadeira e pia).</li>
+  <li>☐ Toalhas limpas.</li>
+  <li>☐ Capa de proteção.</li>
+  <li>☐ Robe ou avental.</li>
+  <li>☐ Touca descartável.</li>
+  <li>☐ Pentes e escovas.</li>
+  <li>☐ Cronômetro ou timer (obrigatório para a massagem e as pausas).</li>
+</ul>
+<h3>Produtos</h3>
+<ul style="${CHECK}">
+  <li>☐ Shampoo 1 (limpeza profunda).</li>
+  <li>☐ Shampoo 2 (específico para o tipo de cabelo).</li>
+  <li>☐ Shampoo 3 (adicional, quando o cabelo exigir).</li>
+  <li>☐ Condicionador.</li>
+  <li>☐ Máscara de hidratação.</li>
+  <li>☐ Máscara de nutrição.</li>
+  <li>☐ Máscara de reconstrução.</li>
+  <li>☐ Óleos e finalizadores.</li>
+  <li>☐ Produtos trazidos pela cliente (quando houver).</li>
+</ul>
+
+<h2>7. Biossegurança e Higiene</h2>
+<h3>Antes do Atendimento</h3>
+<ul style="${CHECK}">
+  <li>☐ Higienizar corretamente as mãos.</li>
+  <li>☐ Manter uniforme limpo.</li>
+  <li>☐ Manter cabelos presos.</li>
+  <li>☐ Manter as unhas curtas e sem asperezas (a massagem é prolongada).</li>
+  <li>☐ Utilizar máscara limpa.</li>
+  <li>☐ Conferir a limpeza do lavatório.</li>
+  <li>☐ Organizar todos os produtos e materiais.</li>
+  <li>☐ Verificar a validade dos produtos.</li>
+  <li>☐ Preparar toalhas limpas.</li>
+</ul>
+<h3>Durante o Atendimento</h3>
+<ul style="${CHECK}">
+  <li>☐ Manter o lavatório organizado.</li>
+  <li>☐ Não utilizar telefone celular.</li>
+  <li>☐ Não consumir alimentos.</li>
+  <li>☐ Evitar respingos no rosto da cliente.</li>
+  <li>☐ Manter a temperatura da água adequada.</li>
+  <li>☐ Não conversar em excesso durante a massagem (preservar o relaxamento).</li>
+</ul>
+<h3>Após o Atendimento</h3>
+<ul style="${CHECK}">
+  <li>☐ Descartar corretamente os materiais descartáveis.</li>
+  <li>☐ Higienizar o lavatório.</li>
+  <li>☐ Higienizar as mãos.</li>
+  <li>☐ Devolver à cliente os produtos que ela trouxe.</li>
+  <li>☐ Preparar o lavatório para a próxima cliente.</li>
+</ul>
+
+<h2>8. Procedimento Operacional</h2>
+
+<h3>PARTE A — Início do Atendimento</h3>
+<p><strong>1. Apresentação do Profissional</strong> — sempre iniciar o atendimento de frente para a cliente, demonstrando simpatia, cordialidade e profissionalismo.</p>
+<blockquote>"Olá (Nome da cliente), meu nome é (Nome do Profissional) e hoje eu serei o(a) responsável pelo seu atendimento."</blockquote>
+<p><strong>2. Confirmação do Serviço</strong></p>
+<blockquote>"A senhora irá fazer a higienização especial hoje, correto?"</blockquote>
+<p><strong>3. Identificação da Necessidade</strong></p>
+<blockquote>"O que a senhora pensou para hoje?" · "A senhora possui alguma preferência ou alguma foto de referência?" · "A senhora trouxe algum produto que gostaria que eu utilizasse?"</blockquote>
+<p><strong>4. Ponderações e Orientações</strong> — após ouvir atentamente a cliente, explicar de forma clara e profissional o que é possível fazer e o que não é recomendado:</p>
+<ul style="${CHECK}">
+  <li>☐ O que é possível realizar.</li>
+  <li>☐ O que não é recomendado realizar.</li>
+  <li>☐ As limitações técnicas do procedimento.</li>
+  <li>☐ Os cuidados necessários para preservar a saúde do cabelo.</li>
+</ul>
+<blockquote>"Baseado no que a senhora deseja, é possível fazer [explicar o que dá para fazer]."</blockquote>
+<blockquote>"Não recomendamos [explicar o que não é recomendado] porque [explicar o motivo]."</blockquote>
+<p><strong>Nenhum procedimento deverá ser iniciado antes que a cliente compreenda e concorde com o serviço que será realizado.</strong></p>
+
+<h3>PARTE B — Avaliação Capilar</h3>
+<p><strong>5. Cliente vai para o lavatório</strong> — conduzir a cliente, ajudá-la a se acomodar confortavelmente, ajustar a cadeira e verificar se ela está confortável.</p>
+<p><strong>6. Avaliação do Cabelo e Informação das Necessidades</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Observar o estado geral do cabelo.</li>
+  <li>☐ Verificar o tipo de cabelo (liso, ondulado, cacheado, crespo).</li>
+  <li>☐ Verificar a porosidade do cabelo.</li>
+  <li>☐ Verificar se há ressecamento, danos ou pontas duplas.</li>
+  <li>☐ Verificar se há química (coloração, descoloração, etc.).</li>
+  <li>☐ Verificar o couro cabeludo (oleosidade, caspa, sensibilidade).</li>
+  <li>☐ Informar à cliente as necessidades identificadas.</li>
+</ul>
+<blockquote>"Percebi que seu cabelo está [descrever a condição]. Para melhorar a saúde do seu cabelo, recomendamos [sugerir tratamento]."</blockquote>
+<p><strong>7. Oferta de Tratamento</strong> — perguntar se a cliente deseja realizar algum tratamento de acordo com a necessidade identificada.</p>
+<blockquote>"A senhora gostaria de fazer um tratamento de [hidratação/nutrição/reconstrução] de acordo com a necessidade do seu cabelo?"</blockquote>
+<p><strong>8. Informar os Produtos Utilizados</strong> — informar todos os produtos que serão utilizados e a função de cada um.</p>
+<blockquote>"Hoje vou utilizar o Shampoo [nome] para [função], o Condicionador [nome] para [função], e um tratamento de [nome]."</blockquote>
+<p><strong>Caso a cliente tenha trazido os próprios produtos:</strong> conferir com ela quais devem ser utilizados e em qual ordem.</p>
+<blockquote>"Vou utilizar os produtos que a senhora trouxe. Confirmando: primeiro o [produto], depois o [produto], correto?"</blockquote>
+<p><strong>9. Experiência Sensorial</strong> — deixar a cliente sentir o cheiro dos produtos.</p>
+<blockquote>"Antes de começar, gostaria que a senhora sentisse o cheiro do shampoo que vou utilizar. Temos outras opções de aroma, caso prefira."</blockquote>
+
+<h3>PARTE C — Execução da Higienização Especial</h3>
+<p><strong>10. Preparação</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Verificar a temperatura da água (morna, agradável).</li>
+  <li>☐ Posicionar a cliente corretamente no lavatório.</li>
+  <li>☐ Colocar a capa de proteção.</li>
+  <li>☐ Soltar um pouco o cabelo da raiz e desembaraçar suavemente.</li>
+</ul>
+<p><strong>11. Aplicação do 1º Shampoo</strong> — objetivo: remover impurezas e oleosidade.</p>
+<ul style="${CHECK}">
+  <li>☐ Aplicar o 1º shampoo em todo o cabelo.</li>
+  <li>☐ Emulsionar bem o produto.</li>
+  <li>☐ Massagear suavemente o couro cabeludo.</li>
+  <li>☐ Enxaguar completamente.</li>
+</ul>
+<p><strong>12. Aplicação do 2º Shampoo + Massagem de 10 Minutos</strong> — esta é a etapa central do serviço especial.</p>
+<ul style="${CHECK}">
+  <li>☐ Aplicar o 2º shampoo (específico para o tipo de cabelo).</li>
+  <li>☐ Realizar a massagem no couro cabeludo por <strong>10 minutos</strong>, cronometrados.</li>
+  <li>☐ Utilizar movimentos circulares, firmes e constantes, com as polpas dos dedos.</li>
+  <li>☐ Cobrir toda a extensão do couro cabeludo (nuca, laterais e topo).</li>
+  <li>☐ Verificar com a cliente se a pressão está agradável.</li>
+  <li>☐ Enxaguar completamente.</li>
+</ul>
+<blockquote>"Agora vou fazer uma massagem de 10 minutos no couro cabeludo. Ela estimula a circulação, potencializa a limpeza e ajuda muito no relaxamento. Fique à vontade para fechar os olhos."</blockquote>
+<blockquote>"A pressão está boa para a senhora, ou prefere um pouco mais suave?"</blockquote>
+<p><strong>13. Aplicação do 3º Shampoo</strong> (somente quando o cabelo exigir)</p>
+<ul style="${CHECK}">
+  <li>☐ Avaliar se o cabelo necessita de uma limpeza adicional.</li>
+  <li>☐ Aplicar o 3º shampoo.</li>
+  <li>☐ Enxaguar completamente.</li>
+</ul>
+<p><strong>14. Tempo de Pausa</strong> — aguardar o tempo de pausa recomendado pela marca do produto, utilizando o cronômetro.</p>
+<p><strong>15. Aplicação do Condicionador ou Máscara</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Escolher entre condicionador ou máscara conforme a necessidade identificada.</li>
+  <li>☐ Aplicar no comprimento e nas pontas, evitando a raiz (a menos que indicado).</li>
+  <li>☐ Aguardar o tempo recomendado pela marca.</li>
+  <li>☐ Enxaguar completamente.</li>
+</ul>
+<p><strong>16. Tempo Total do Serviço</strong> — a higienização especial deve durar <strong>de 10 a 15 minutos</strong>. O serviço não deve ser apressado nem interrompido.</p>
+
+<h3>PARTE D — Finalização da Higienização Especial</h3>
+<p><strong>17. Finalização</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Enxaguar completamente todos os produtos.</li>
+  <li>☐ Verificar se não há resíduos de shampoo, condicionador ou máscara.</li>
+  <li>☐ Fazer a touca com a toalha para proteger o cabelo.</li>
+</ul>
+<blockquote>"Finalizamos a higienização especial. O cabelo está limpo e preparado para o próximo procedimento."</blockquote>
+<p><strong>18. Levar para a Cadeira</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Conduzir a cliente até a cadeira do profissional principal.</li>
+  <li>☐ Ajudar a cliente a se sentar.</li>
+  <li>☐ Remover a touca de toalha.</li>
+  <li>☐ Secar com a toalha, retirando o excesso de água.</li>
+</ul>
+<p><strong>19. Preparação para o Procedimento Principal</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Colocar a capa de proteção.</li>
+  <li>☐ Colocar o robe ou avental.</li>
+  <li>☐ Pentear e alinhar o cabelo.</li>
+  <li>☐ Verificar se a cliente está confortável.</li>
+</ul>
+<blockquote>"Seu cabelo está pronto para o procedimento. O(A) [Cabeleireiro] vai te atender em instantes. Fique à vontade."</blockquote>
+<p><strong>20. Chamar o Profissional Principal</strong> — informar obrigatoriamente:</p>
+<ul style="${CHECK}">
+  <li>☐ Nome da cliente.</li>
+  <li>☐ Procedimentos agendados.</li>
+  <li>☐ Produtos e tratamentos utilizados no lavatório.</li>
+  <li>☐ Observações sobre o cabelo da cliente.</li>
+</ul>
+<blockquote>"[Nome do Cabeleireiro], a cliente [Nome da Cliente] está pronta. Foi feita a higienização especial com [produtos/tratamento]. O cabelo está [descrição]."</blockquote>
+
+<h3>PARTE E — Organização Pós-Atendimento</h3>
+<p><strong>21. Limpeza e Organização do Lavatório</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Organizar completamente o lavatório.</li>
+  <li>☐ Descartar corretamente os resíduos.</li>
+  <li>☐ Higienizar toda a pia e a cadeira.</li>
+  <li>☐ Devolver à cliente os produtos que ela trouxe.</li>
+  <li>☐ Higienizar as mãos.</li>
+  <li>☐ Preparar o lavatório para a próxima cliente.</li>
+</ul>
+<p><strong>22. Registro no Sistema</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Registrar a higienização especial.</li>
+  <li>☐ Registrar os produtos utilizados.</li>
+  <li>☐ Registrar os tratamentos realizados.</li>
+  <li>☐ Registrar os produtos vendidos (se houver).</li>
+</ul>
+
+<h2>9. Indicadores de Qualidade</h2>
+<p>A gerência deverá acompanhar mensalmente:</p>
+<ul style="${CHECK}">
+  <li>☐ Tempo médio da higienização especial (meta: 10 a 15 minutos).</li>
+  <li>☐ Cumprimento da massagem de 10 minutos.</li>
+  <li>☐ Índice de satisfação da cliente (conforto, relaxamento, experiência).</li>
+  <li>☐ Número de reclamações sobre o lavatório.</li>
+  <li>☐ Conversão de higienização comum em higienização especial.</li>
+  <li>☐ Vendas de tratamentos a partir da avaliação capilar.</li>
+  <li>☐ Ticket médio por cliente.</li>
+  <li>☐ Conformidade com as normas de biossegurança.</li>
+</ul>
+
+<h2>10. Checklist de Auditoria</h2>
+<div style="${BOX}">
+  <div style="${BOXH}">Apresentação</div>
+  <ul style="${CHECK}">
+    <li>☐ Apresentou-se de frente para a cliente, com nome.</li>
+    <li>☐ Confirmou o serviço (higienização especial).</li>
+    <li>☐ Perguntou o que a cliente desejava.</li>
+    <li>☐ Perguntou se havia preferência ou referência.</li>
+    <li>☐ Fez as ponderações do que dá e do que não dá para fazer.</li>
+  </ul>
+  <div style="${BOXH}">Avaliação</div>
+  <ul style="${CHECK}">
+    <li>☐ Realizou avaliação capilar e informou as necessidades.</li>
+    <li>☐ Perguntou se deseja tratamento conforme a necessidade.</li>
+    <li>☐ Informou todos os produtos que seriam utilizados.</li>
+    <li>☐ Deixou a cliente sentir o cheiro dos produtos.</li>
+    <li>☐ Confirmou o uso dos produtos trazidos pela cliente (quando houver).</li>
+  </ul>
+  <div style="${BOXH}">Execução</div>
+  <ul style="${CHECK}">
+    <li>☐ Soltou o cabelo da raiz.</li>
+    <li>☐ Aplicou o 1º shampoo corretamente.</li>
+    <li>☐ Aplicou o 2º shampoo + massagem de 10 minutos.</li>
+    <li>☐ Aplicou o 3º shampoo quando necessário.</li>
+    <li>☐ Respeitou o tempo de pausa da marca.</li>
+    <li>☐ Aplicou o condicionador ou a máscara.</li>
+    <li>☐ Cumpriu o tempo de execução de 10 a 15 minutos.</li>
+    <li>☐ Enxaguou completamente.</li>
+  </ul>
+  <div style="${BOXH}">Finalização</div>
+  <ul style="${CHECK}">
+    <li>☐ Fez a touca.</li>
+    <li>☐ Levou a cliente para a cadeira.</li>
+    <li>☐ Secou com a toalha.</li>
+    <li>☐ Preparou para o procedimento (capa, robe, penteado).</li>
+    <li>☐ Penteou e alinhou o cabelo.</li>
+    <li>☐ Chamou o profissional principal.</li>
+  </ul>
+  <div style="${BOXH}">Organização</div>
+  <ul style="${CHECK}">
+    <li>☐ Organizou e higienizou o lavatório.</li>
+    <li>☐ Devolveu os produtos da cliente.</li>
+    <li>☐ Registrou o serviço no sistema.</li>
+  </ul>
+</div>
+`.trim()
+
 export type ConteudoDoc = { id: string; titulo: string; texto: string }
 export const CONTEUDO_DEFAULTS: Record<string, { titulo: string; conteudo: { texto?: string; docs?: ConteudoDoc[] } }> = {
   manicure: {
@@ -2305,6 +2624,7 @@ export const CONTEUDO_DEFAULTS: Record<string, { titulo: string; conteudo: { tex
     conteudo: {
       docs: [
         { id: 'pop-pro-003', titulo: 'POP-PRO-003 · Higienização Capilar (Lavatório)', texto: PRO_LAVATORIO_HTML },
+        { id: 'pop-pro-004', titulo: 'POP-PRO-004 · Higienização Especial (Lavatório)', texto: PRO_LAVATORIO_ESPECIAL_HTML },
         { id: 'pop-pro-001', titulo: 'POP-PRO-001 · Atendimento do Profissional', texto: PRO_ATENDIMENTO_HTML },
       ],
     },

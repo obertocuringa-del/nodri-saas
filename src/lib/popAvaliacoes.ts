@@ -739,6 +739,110 @@ export const AVALIACOES_POP: Record<string, ModeloAvaliacao> = {
     ],
   },
 
+  // POP-PRO-004 — Atendimento de Higienização Especial (Lavatório) — 100 pontos
+  'pop-pro-004': {
+    secoes: [
+      {
+        titulo: 'Biossegurança e Preparação do Lavatório', pontos: 10, itens: [
+          'Higienizou corretamente as mãos',
+          'Manteve o uniforme limpo e os cabelos presos',
+          'Manteve as unhas curtas e sem asperezas',
+          'Utilizou máscara limpa',
+          'Conferiu a limpeza do lavatório',
+          'Organizou os produtos e verificou a validade',
+          'Separou o cronômetro e as toalhas limpas',
+        ],
+      },
+      {
+        titulo: 'Apresentação e Identificação da Necessidade', pontos: 10, itens: [
+          'Apresentou-se de frente para a cliente, pelo nome',
+          'Confirmou que o serviço era a higienização especial',
+          'Perguntou o que a cliente pensou para o dia',
+          'Perguntou sobre preferência ou foto de referência',
+          'Perguntou se a cliente trouxe produtos próprios',
+          'Escutou a cliente atentamente, sem interromper',
+        ],
+      },
+      {
+        titulo: 'Ponderações e Orientações', pontos: 10, itens: [
+          'Explicou o que era possível realizar',
+          'Explicou o que não era recomendado e o motivo',
+          'Explicou as limitações técnicas do procedimento',
+          'Orientou sobre os cuidados para preservar a saúde do cabelo',
+          'Só iniciou após a cliente compreender e concordar',
+        ],
+      },
+      {
+        titulo: 'Avaliação Capilar e Oferta de Tratamento', pontos: 15, itens: [
+          'Conduziu e acomodou a cliente confortavelmente no lavatório',
+          'Observou o estado geral do cabelo',
+          'Verificou o tipo e a porosidade do cabelo',
+          'Verificou ressecamento, danos ou pontas duplas',
+          'Verificou a presença de química',
+          'Avaliou o couro cabeludo (oleosidade, caspa, sensibilidade)',
+          'Informou à cliente as necessidades identificadas',
+          'Ofereceu tratamento de acordo com a necessidade identificada',
+        ],
+      },
+      {
+        titulo: 'Produtos e Experiência Sensorial', pontos: 10, itens: [
+          'Selecionou produtos específicos conforme a avaliação',
+          'Informou todos os produtos que seriam utilizados e suas funções',
+          'Confirmou com a cliente o uso e a ordem dos produtos que ela trouxe',
+          'Deixou a cliente sentir o cheiro dos produtos',
+          'Ofereceu outras opções de aroma',
+        ],
+      },
+      {
+        titulo: 'Execução da Higienização Especial', pontos: 25, itens: [
+          'Verificou a temperatura da água (morna e agradável)',
+          'Soltou o cabelo da raiz e desembaraçou antes de iniciar',
+          'Aplicou o 1º shampoo, emulsionou bem e enxaguou completamente',
+          'Aplicou o 2º shampoo específico para o tipo de cabelo',
+          'Realizou a massagem no couro cabeludo por 10 minutos cronometrados',
+          'Usou movimentos circulares firmes, cobrindo todo o couro cabeludo',
+          'Verificou com a cliente se a pressão estava agradável',
+          'Aplicou o 3º shampoo quando o cabelo exigiu',
+          'Respeitou o tempo de pausa recomendado pela marca',
+          'Aplicou o condicionador ou a máscara conforme a necessidade',
+          'Cumpriu o tempo de execução de 10 a 15 minutos, sem apressar',
+          'Enxaguou completamente, sem deixar resíduos',
+          'Evitou respingos no rosto da cliente',
+          'Preservou o relaxamento (sem celular, alimentos ou conversa em excesso)',
+        ],
+      },
+      {
+        titulo: 'Finalização e Encaminhamento', pontos: 10, itens: [
+          'Fez a touca com a toalha',
+          'Conduziu a cliente até a cadeira e ajudou-a a se sentar',
+          'Secou com a toalha, retirando o excesso de água',
+          'Preparou a cliente (capa, robe, penteado)',
+          'Penteou e alinhou o cabelo',
+          'Chamou o profissional principal informando produtos, tratamentos e observações',
+        ],
+      },
+      {
+        titulo: 'Organização e Registro', pontos: 10, itens: [
+          'Organizou e higienizou completamente o lavatório',
+          'Descartou corretamente os resíduos',
+          'Devolveu à cliente os produtos que ela trouxe',
+          'Preparou o lavatório para a próxima cliente',
+          'Registrou o serviço, os produtos e os tratamentos no sistema',
+        ],
+      },
+    ],
+    comportamental: [
+      'Simpatia',
+      'Comunicação',
+      'Cordialidade',
+      'Técnica da Massagem',
+      'Avaliação Capilar e Técnica',
+      'Higiene e Biossegurança',
+      'Cuidado com o Conforto da Cliente',
+      'Postura Profissional',
+    ],
+  },
+
   // POP-PRO-002 — Atendimento de Pedicure — 100 pontos
   'pop-pro-002': {
     secoes: [
