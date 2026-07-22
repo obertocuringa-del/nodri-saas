@@ -1380,6 +1380,119 @@ export const AVALIACOES_POP: Record<string, ModeloAvaliacao> = {
     ],
   },
 
+  // POP-PRO-010 — Babyliss — 100 pontos
+  'pop-pro-010': {
+    secoes: [
+      {
+        titulo: 'Apresentação e Identificação da Necessidade', pontos: 10, itens: [
+          'Apresentou-se de frente para a cliente, pelo nome',
+          'Confirmou que o serviço era o babyliss',
+          'Perguntou o que a cliente pensou para o dia',
+          'Perguntou sobre preferência ou foto de referência',
+          'Perguntou se a cliente já veio com o cabelo limpo',
+          'Escutou a cliente atentamente, sem interromper',
+        ],
+      },
+      {
+        titulo: 'Ponderações e Orientações', pontos: 10, itens: [
+          'Explicou o que era possível realizar',
+          'Explicou o que não era recomendado e o motivo',
+          'Explicou as limitações técnicas (comprimento, densidade e condição do fio)',
+          'Apresentou alternativa quando a referência não era possível',
+          'Informou quanto tempo o cacho tende a durar',
+          'Só iniciou após a cliente compreender e concordar',
+        ],
+      },
+      {
+        titulo: 'Higienização no Lavatório', pontos: 15, condicional: true,
+        nota: 'Somente quando a cliente não chega com o cabelo limpo.',
+        itens: [
+          'Realizou a avaliação capilar e informou as necessidades',
+          'Ofereceu tratamento de acordo com a necessidade',
+          'Informou os produtos e deixou a cliente sentir o cheiro',
+          'Verificou a temperatura da água e soltou o cabelo da raiz',
+          'Aplicou o 1º shampoo, emulsionou bem e enxaguou',
+          'Aplicou o 2º shampoo + massagem de 3 minutos',
+          'Respeitou os tempos de pausa da marca',
+          'Aplicou o condicionador sem pesar o fio e enxaguou completamente',
+        ],
+      },
+      {
+        titulo: 'Definição do Babyliss e Preparação', pontos: 15, itens: [
+          'Secou com a toalha pressionando, sem esfregar',
+          'Perguntou o tamanho do cacho desejado',
+          'Perguntou se preferia o resultado mais solto ou mais definido',
+          'Perguntou o lado da repartição e o volume desejado',
+          'Confirmou em voz alta o que seria feito, antes de começar',
+          'Desembaraçou com pente de dentes largos, das pontas para a raiz',
+          'Aplicou o protetor térmico em todo o comprimento',
+          'Aplicou o modelador na medida certa, sem exagerar',
+          'Secou o cabelo completamente antes de usar a ferramenta',
+          'Penteou, definiu a repartição e separou em seções',
+        ],
+      },
+      {
+        titulo: 'Execução do Babyliss', pontos: 25, itens: [
+          'Selecionou o diâmetro da ponteira conforme o combinado',
+          'Ajustou a temperatura à condição do fio',
+          'Aguardou o aquecimento completo antes de iniciar',
+          'Testou em uma mecha da nuca antes das áreas visíveis',
+          'Perguntou à cliente se a temperatura estava agradável',
+          'Trabalhou mecha a mecha, da nuca para cima',
+          'Manteve a espessura das mechas uniforme',
+          'Penteou cada mecha antes de enrolar',
+          'Não iniciou a ponteira colada à raiz',
+          'Enrolou no sentido combinado com a cliente',
+          'Manteve o mesmo tempo de permanência em todas as mechas',
+          'Prendeu os cachos com presilha para esfriarem',
+          'Não encostou a ponteira no couro cabeludo, rosto, orelhas ou pescoço',
+          'Apoiou o babyliss em base térmica, fora do alcance da cliente',
+          'Conferiu a simetria entre os dois lados durante a execução',
+        ],
+      },
+      {
+        titulo: 'Abertura, Acabamento e Fixação', pontos: 10, itens: [
+          'Aguardou os cachos esfriarem completamente antes de soltar',
+          'Abriu e afrouxou os cachos com os dedos',
+          'Ajustou o volume da raiz e a repartição',
+          'Verificou a uniformidade dos cachos e a simetria',
+          'Verificou se não havia mechas sem cacho',
+          'Aplicou óleo ou sérum nas pontas com moderação',
+          'Aplicou o fixador à distância, sem encharcar',
+        ],
+      },
+      {
+        titulo: 'Validação e Encaminhamento', pontos: 10, itens: [
+          'Mostrou o resultado com o espelho de mão',
+          'Perguntou se a cliente gostou do resultado',
+          'Perguntou se havia algum detalhe a ajustar',
+          'Realizou os ajustes imediatamente',
+          'Orientou sobre a manutenção e a durabilidade',
+          'Ofereceu os produtos utilizados e o reagendamento',
+          'Encerrou ou chamou o profissional principal com as informações',
+        ],
+      },
+      {
+        titulo: 'Organização e Registro', pontos: 5, itens: [
+          'Desligou o babyliss e aguardou o resfriamento antes de guardar',
+          'Limpou a ponteira, as escovas e os pentes',
+          'Recolheu os cabelos do chão e higienizou a estação',
+          'Registrou o serviço e os produtos no sistema',
+        ],
+      },
+    ],
+    comportamental: [
+      'Simpatia',
+      'Comunicação',
+      'Cordialidade',
+      'Técnica do Babyliss',
+      'Uniformidade e Simetria dos Cachos',
+      'Higiene e Segurança',
+      'Cuidado com o Conforto da Cliente',
+      'Postura Profissional',
+    ],
+  },
+
   // POP-PRO-002 — Atendimento de Pedicure — 100 pontos
   'pop-pro-002': {
     secoes: [

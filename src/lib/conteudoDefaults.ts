@@ -4298,6 +4298,361 @@ const PRO_CHAPINHA_HTML = `
 </div>
 `.trim()
 
+const PRO_BABYLISS_HTML = `
+<h1>Procedimento Operacional Padrão (POP)</h1>
+<p style="color:#6b6880;font-size:15px;margin:-4px 0 16px;font-weight:600">POP-PRO-010 — Babyliss</p>
+
+<h2>1. Identificação</h2>
+<div style="${META}">
+  <p style="margin:0"><strong>Código:</strong> POP-PRO-010 &nbsp;·&nbsp; <strong>Versão:</strong> 1.0 &nbsp;·&nbsp; <strong>Setor:</strong> Profissionais (Cabeleireiro / Auxiliar)</p>
+  <p style="margin:8px 0 0"><strong>Responsável:</strong> <span style="${FIELD}"></span></p>
+  <p style="margin:8px 0 0"><strong>Data de Emissão:</strong> ___/___/______ &nbsp;·&nbsp; <strong>Última Revisão:</strong> ___/___/______ &nbsp;·&nbsp; <strong>Próxima Revisão:</strong> ___/___/______</p>
+</div>
+
+<h2>2. Objetivo</h2>
+<p>Padronizar o serviço de <strong>babyliss</strong>, garantindo o entendimento exato do tipo de cacho desejado, a proteção do fio contra o calor, uniformidade e simetria dos cachos, fixação e durabilidade do resultado, e validação pela cliente.</p>
+
+<h2>3. Campo de Aplicação</h2>
+<p>Este procedimento aplica-se a todos os profissionais responsáveis pelo serviço de babyliss.</p>
+
+<h2>4. Fluxo do Atendimento</h2>
+<div style="${BOX}">
+  <div style="${BOXH}">Atenção ao ponto de partida</div>
+  <p style="margin:0"><strong>Cliente chega com o cabelo sujo:</strong> realizar a higienização no lavatório (PARTE B) e seguir o fluxo completo.</p>
+  <p style="margin:8px 0 0"><strong>Cliente já chega com o cabelo limpo:</strong> <strong>pular a PARTE B</strong> e ir direto para a preparação do procedimento (PARTE C).</p>
+</div>
+
+<h2>5. Materiais Necessários</h2>
+<h3>Equipamentos</h3>
+<ul style="${CHECK}">
+  <li>☐ Babyliss / modelador com controle de temperatura.</li>
+  <li>☐ Ponteiras de diâmetros variados.</li>
+  <li>☐ Secador com bico direcionador.</li>
+  <li>☐ Escovas.</li>
+  <li>☐ Pentes de dentes largos.</li>
+  <li>☐ Presilhas para separar as mechas.</li>
+  <li>☐ Presilhas ou grampos para prender os cachos enquanto esfriam.</li>
+  <li>☐ Base térmica para apoiar o babyliss.</li>
+  <li>☐ Toalhas limpas.</li>
+  <li>☐ Capa de proteção.</li>
+  <li>☐ Robe ou avental.</li>
+  <li>☐ Espelho de mão (para mostrar o resultado).</li>
+</ul>
+<h3>Produtos</h3>
+<ul style="${CHECK}">
+  <li>☐ Shampoo 1 e Shampoo 2.</li>
+  <li>☐ Condicionador.</li>
+  <li>☐ <strong>Protetor térmico</strong> (obrigatório).</li>
+  <li>☐ Leave-in.</li>
+  <li>☐ Mousse ou spray modelador.</li>
+  <li>☐ Óleo ou sérum finalizador.</li>
+  <li>☐ Spray fixador.</li>
+</ul>
+
+<h2>6. Higiene e Segurança</h2>
+<h3>Antes do Atendimento</h3>
+<ul style="${CHECK}">
+  <li>☐ Higienizar corretamente as mãos.</li>
+  <li>☐ Manter uniforme limpo e cabelos presos.</li>
+  <li>☐ Conferir a limpeza da estação.</li>
+  <li>☐ Higienizar escovas e pentes entre as clientes.</li>
+  <li>☐ Limpar a ponteira do babyliss — resíduo de produto queima o fio.</li>
+  <li>☐ Verificar se o aquecimento está uniforme e o revestimento não está danificado.</li>
+  <li>☐ Verificar o estado do fio e da tomada.</li>
+  <li>☐ Organizar todos os produtos e verificar a validade.</li>
+</ul>
+<h3>Durante o Atendimento</h3>
+<ul style="${CHECK}">
+  <li>☐ Manter a estação organizada.</li>
+  <li>☐ Não utilizar telefone celular.</li>
+  <li>☐ Não consumir alimentos.</li>
+  <li>☐ <strong>Nunca usar o babyliss em cabelo úmido</strong> — a água ferve dentro do fio e provoca quebra.</li>
+  <li>☐ <strong>Nunca usar o babyliss sem protetor térmico.</strong></li>
+  <li>☐ Nunca encostar a ponteira no couro cabeludo, no rosto, nas orelhas ou no pescoço.</li>
+  <li>☐ Apoiar o babyliss sempre em base térmica, nunca sobre a bancada.</li>
+  <li>☐ Não deixar o babyliss quente ao alcance da cliente.</li>
+  <li>☐ Perguntar à cliente se a temperatura está agradável.</li>
+</ul>
+<h3>Após o Atendimento</h3>
+<ul style="${CHECK}">
+  <li>☐ Desligar o babyliss da tomada.</li>
+  <li>☐ Aguardar o resfriamento antes de guardar.</li>
+  <li>☐ Limpar a ponteira, as escovas e os pentes.</li>
+  <li>☐ Recolher os cabelos do chão e da cadeira.</li>
+  <li>☐ Higienizar a estação e as mãos.</li>
+  <li>☐ Preparar a estação para a próxima cliente.</li>
+</ul>
+
+<h2>7. Procedimento Operacional</h2>
+
+<h3>PARTE A — Início do Atendimento</h3>
+<p><strong>1. Apresentação do Profissional</strong> — sempre iniciar o atendimento de frente para a cliente, demonstrando simpatia, cordialidade e profissionalismo.</p>
+<blockquote>"Olá (Nome da cliente), meu nome é (Nome do Profissional) e hoje eu serei o(a) responsável pelo seu atendimento."</blockquote>
+<p><strong>2. Confirmação do Serviço</strong></p>
+<blockquote>"A senhora irá fazer um babyliss hoje, correto?"</blockquote>
+<p><strong>3. Identificação da Necessidade</strong></p>
+<blockquote>"O que a senhora pensou para hoje?" · "A senhora possui alguma preferência ou alguma foto de referência?"</blockquote>
+<p><strong>4. Ponderações e Orientações</strong> — após ouvir atentamente a cliente, explicar de forma clara e profissional:</p>
+<ul style="${CHECK}">
+  <li>☐ O que é possível realizar.</li>
+  <li>☐ O que não é recomendado realizar.</li>
+  <li>☐ As limitações técnicas (tipo, comprimento, densidade e condição do fio).</li>
+  <li>☐ Quanto tempo o cacho tende a durar.</li>
+  <li>☐ Os cuidados necessários para preservar a saúde do cabelo.</li>
+</ul>
+<blockquote>"Baseado no que a senhora deseja, é possível fazer [explicar o que dá para fazer]."</blockquote>
+<blockquote>"Não recomendamos [explicar o que não é recomendado] porque [explicar o motivo]."</blockquote>
+<div style="${BOX}">
+  <p style="margin:0">Quando a referência não for possível no cabelo da cliente — por comprimento, densidade ou condição do fio — <strong>explicar o motivo e apresentar uma alternativa antes de iniciar</strong>. Cabelo muito curto, muito fino ou muito liso segura menos o cacho: informar isso <strong>antes</strong>, não depois.</p>
+</div>
+<p><strong>Nenhum procedimento deverá ser iniciado antes que a cliente compreenda e concorde com o serviço que será realizado.</strong></p>
+<p><strong>5. Verificar o ponto de partida</strong> — perguntar se a cliente já veio com o cabelo lavado.</p>
+<blockquote>"A senhora já veio com o cabelo limpo, ou vamos passar pelo lavatório antes?"</blockquote>
+<p><strong>Se a cliente já estiver com o cabelo limpo, seguir direto para a PARTE C.</strong></p>
+
+<h3>PARTE B — Higienização no Lavatório</h3>
+<p style="color:#6b6880"><em>Executar somente quando a cliente não chega com o cabelo limpo.</em></p>
+<p><strong>6. Avaliação do Cabelo e Informação das Necessidades</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Observar o estado geral do cabelo.</li>
+  <li>☐ Verificar o tipo de cabelo (liso, ondulado, cacheado, crespo).</li>
+  <li>☐ Verificar a porosidade e a elasticidade do fio.</li>
+  <li>☐ Verificar se há ressecamento, danos ou pontas duplas.</li>
+  <li>☐ Verificar se há química (coloração, descoloração, alisamento).</li>
+  <li>☐ Verificar o couro cabeludo (oleosidade, caspa, sensibilidade).</li>
+  <li>☐ Informar à cliente as necessidades identificadas.</li>
+</ul>
+<p><strong>7. Oferta de Tratamento</strong> — perguntar se a cliente deseja realizar algum tratamento de acordo com a necessidade identificada.</p>
+<blockquote>"A senhora gostaria de fazer um tratamento de [hidratação/nutrição/reconstrução] de acordo com a necessidade do seu cabelo?"</blockquote>
+<p><strong>8. Informar os Produtos e Experiência Sensorial</strong> — informar todos os produtos que serão utilizados e deixar a cliente sentir o cheiro.</p>
+<p><strong>9. Execução da Higienização</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Verificar a temperatura da água (morna, agradável).</li>
+  <li>☐ Soltar um pouco o cabelo da raiz e desembaraçar suavemente.</li>
+  <li>☐ Aplicar o 1º shampoo, emulsionar bem e enxaguar completamente.</li>
+  <li>☐ Aplicar o 2º shampoo + massagem no couro cabeludo por 3 minutos.</li>
+  <li>☐ Enxaguar completamente.</li>
+  <li>☐ Aguardar o tempo de pausa recomendado pela marca.</li>
+  <li>☐ Aplicar o condicionador no comprimento e nas pontas, evitando a raiz.</li>
+  <li>☐ Aguardar o tempo recomendado pela marca.</li>
+  <li>☐ Enxaguar completamente, sem deixar resíduos.</li>
+</ul>
+<div style="${BOX}">
+  <p style="margin:0">Para babyliss, <strong>não aplicar condicionador ou máscara na raiz</strong> e evitar excesso no comprimento. Cabelo pesado demais não segura o cacho.</p>
+</div>
+<p><strong>10. Finalização da Higienização</strong> — fazer a touca com a toalha e conduzir a cliente até a cadeira.</p>
+
+<h3>PARTE C — Definição do Babyliss e Preparação</h3>
+<p><strong>11. Preparação da Cliente</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Ajudar a cliente a se sentar confortavelmente.</li>
+  <li>☐ Remover a touca de toalha.</li>
+  <li>☐ Secar com a toalha, retirando o excesso de água (pressionar, nunca esfregar).</li>
+  <li>☐ Colocar a capa de proteção.</li>
+  <li>☐ Colocar o robe ou avental.</li>
+</ul>
+<p><strong>12. Verificar Como a Cliente Gosta e Como Quer o Babyliss</strong> — antes de qualquer produto ou ferramenta, alinhar exatamente o resultado esperado.</p>
+<ul style="${CHECK}">
+  <li>☐ Perguntar o tamanho do cacho desejado (aberto, médio ou bem marcado).</li>
+  <li>☐ Perguntar se prefere o resultado mais solto e natural ou mais definido.</li>
+  <li>☐ Perguntar o lado da repartição.</li>
+  <li>☐ Perguntar o volume desejado na raiz.</li>
+  <li>☐ Perguntar se quer as pontas cacheadas ou mais retas.</li>
+  <li>☐ Observar a foto de referência, quando houver.</li>
+  <li>☐ Confirmar em voz alta o que será feito, antes de começar.</li>
+</ul>
+<blockquote>"A senhora prefere o cacho mais aberto e natural, ou mais marcado?"</blockquote>
+<blockquote>"Então vamos fazer [descrever o resultado], com a repartição do lado [X] e volume [natural/médio/alto]. É isso mesmo?"</blockquote>
+<table style="${TBL}">
+  <tr><th style="${TH}">Resultado desejado</th><th style="${TH}">Diâmetro da ponteira</th><th style="${TH}">Observação</th></tr>
+  <tr><td style="${TD}">Ondas soltas e naturais</td><td style="${TD}">Maior</td><td style="${TD}">Mechas mais grossas, movimento leve</td></tr>
+  <tr><td style="${TD}">Cachos médios</td><td style="${TD}">Médio</td><td style="${TD}">Mechas médias e uniformes</td></tr>
+  <tr><td style="${TD}">Cachos bem marcados</td><td style="${TD}">Menor</td><td style="${TD}">Mechas finas, exige mais tempo</td></tr>
+  <tr><td style="${TD}">Efeito praia / desconstruído</td><td style="${TD}">Maior</td><td style="${TD}">Alternar o sentido e deixar as pontas livres</td></tr>
+</table>
+<p><strong>13. Aplicação dos Produtos</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Desembaraçar com pente de dentes largos, das pontas para a raiz.</li>
+  <li>☐ Aplicar o <strong>protetor térmico</strong> em todo o comprimento — <strong>obrigatório</strong>.</li>
+  <li>☐ Aplicar leave-in, mousse ou modelador conforme o resultado desejado.</li>
+  <li>☐ Distribuir bem o produto, mecha a mecha.</li>
+  <li>☐ Não exagerar na quantidade — excesso pesa e desmancha o cacho.</li>
+  <li>☐ Evitar produto na raiz quando o objetivo for volume.</li>
+</ul>
+<p><strong>14. Secagem Completa</strong> — <strong>o babyliss só pode ser usado com o cabelo 100% seco.</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Secar completamente o cabelo com o secador.</li>
+  <li>☐ Direcionar o ar da raiz para as pontas.</li>
+  <li>☐ Conferir se não restou nenhuma mecha úmida, principalmente na nuca.</li>
+</ul>
+<p><strong>15. Penteia e alinha o cabelo</strong> — pentear, definir a repartição combinada e separar o cabelo em seções com presilhas, de baixo para cima.</p>
+
+<h3>PARTE D — Execução do Babyliss</h3>
+<p><strong>16. Ajuste da Ferramenta</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Selecionar o diâmetro da ponteira conforme o resultado combinado.</li>
+  <li>☐ Ajustar a temperatura conforme a condição do fio.</li>
+  <li>☐ Aguardar o aquecimento completo antes de iniciar.</li>
+  <li>☐ Testar em uma mecha da nuca antes de trabalhar as áreas visíveis.</li>
+  <li>☐ Perguntar à cliente se a temperatura está agradável.</li>
+</ul>
+<table style="${TBL}">
+  <tr><th style="${TH}">Condição do fio</th><th style="${TH}">Temperatura recomendada</th></tr>
+  <tr><td style="${TD}">Cabelo virgem, grosso e resistente</td><td style="${TD}">Alta</td></tr>
+  <tr><td style="${TD}">Cabelo com coloração, saudável</td><td style="${TD}">Média</td></tr>
+  <tr><td style="${TD}">Cabelo fino</td><td style="${TD}">Baixa a média</td></tr>
+  <tr><td style="${TD}">Cabelo descolorido, sensibilizado ou quebradiço</td><td style="${TD}">Baixa</td></tr>
+</table>
+<p><strong>17. Execução por Seções</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Trabalhar mecha a mecha, começando pela nuca e subindo.</li>
+  <li>☐ Manter as demais seções presas com presilhas.</li>
+  <li>☐ <strong>Manter a espessura das mechas uniforme</strong> — mechas desiguais geram cachos desiguais.</li>
+  <li>☐ Pentear cada mecha antes de enrolar.</li>
+  <li>☐ Não iniciar a ponteira colada à raiz.</li>
+  <li>☐ Enrolar a mecha no sentido combinado.</li>
+  <li>☐ Não sobrepor o cabelo sobre si mesmo na ponteira.</li>
+  <li>☐ Respeitar o tempo de permanência — contar os segundos, sempre igual em todas as mechas.</li>
+  <li>☐ Soltar a mecha com cuidado, preservando o formato do cacho.</li>
+  <li>☐ Conferir a simetria entre os dois lados durante a execução.</li>
+</ul>
+<div style="${BOX}">
+  <div style="${BOXH}">Dois pontos que definem a durabilidade</div>
+  <p style="margin:0"><strong>Tempo igual em todas as mechas:</strong> contar os segundos. Mechas com tempos diferentes resultam em cachos com formatos e durações diferentes.</p>
+  <p style="margin:8px 0 0"><strong>Prender o cacho enquanto esfria:</strong> ao soltar da ponteira, enrolar o cacho sobre si mesmo e prender com presilha até esfriar por completo. É ao esfriar que o fio fixa o formato — essa é a diferença entre um babyliss que dura horas e um que dura o dia inteiro.</p>
+</div>
+<p><strong>18. Alternância do Sentido</strong> — para um resultado mais natural, alternar o sentido do enrolamento entre as mechas. Para um resultado mais uniforme e alinhado, manter todas no mesmo sentido. <strong>Definir isso com a cliente antes de começar.</strong></p>
+
+<h3>PARTE E — Abertura, Acabamento e Fixação</h3>
+<p><strong>19. Abertura dos Cachos</strong></p>
+<ul style="${CHECK}">
+  <li>☐ <strong>Aguardar todos os cachos esfriarem completamente</strong> antes de soltar as presilhas.</li>
+  <li>☐ Soltar as presilhas com cuidado.</li>
+  <li>☐ Abrir e afrouxar os cachos com os dedos, conforme o resultado desejado.</li>
+  <li>☐ Não pentear os cachos quando a cliente quiser um resultado definido.</li>
+  <li>☐ Usar escova ou pente apenas quando o resultado desejado for bem solto.</li>
+  <li>☐ Ajustar o volume da raiz.</li>
+</ul>
+<p><strong>20. Acabamento Final</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Ajustar a repartição conforme combinado.</li>
+  <li>☐ Verificar se não há mechas sem cacho.</li>
+  <li>☐ Verificar a uniformidade dos cachos.</li>
+  <li>☐ Verificar a simetria entre os dois lados.</li>
+  <li>☐ Verificar frizz e fios armados.</li>
+  <li>☐ Aplicar óleo ou sérum nas pontas, com moderação.</li>
+  <li>☐ Aplicar spray fixador à distância, sem encharcar.</li>
+</ul>
+<blockquote>"Vou aplicar um fixador para os cachos durarem mais. A senhora prefere uma fixação mais leve ou mais firme?"</blockquote>
+
+<h3>PARTE F — Validação e Encerramento</h3>
+<p><strong>21. Validação da Cliente</strong> — apresentar o resultado e perguntar obrigatoriamente:</p>
+<blockquote>"A senhora gostou do resultado?"</blockquote>
+<blockquote>"Existe algum detalhe que gostaria que ajustássemos?"</blockquote>
+<p>Utilizar o espelho de mão para mostrar a parte de trás e as laterais. <strong>Caso a cliente solicite qualquer ajuste, este deverá ser realizado imediatamente.</strong> O atendimento somente poderá ser encerrado após a aprovação da cliente.</p>
+<p><strong>22. Orientações de Manutenção</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Explicar quanto tempo os cachos tendem a durar.</li>
+  <li>☐ Orientar a passar a mão o mínimo possível.</li>
+  <li>☐ Orientar sobre umidade, chuva e transpiração.</li>
+  <li>☐ Orientar como dormir para preservar o formato.</li>
+  <li>☐ Oferecer os produtos utilizados para venda.</li>
+  <li>☐ Oferecer o reagendamento.</li>
+</ul>
+<blockquote>"Para durar mais, evite passar a mão no cabelo e umidade. Gostaria de já deixar seu próximo horário agendado?"</blockquote>
+<p><strong>23. Encerramento</strong></p>
+<ul>
+  <li><strong>Se o babyliss for o último serviço:</strong> retirar a capa, agradecer a preferência e acompanhar a cliente até a recepção.</li>
+  <li><strong>Se houver outro procedimento na sequência:</strong> chamar o profissional principal, informando nome da cliente, procedimentos agendados, produtos utilizados e observações sobre o cabelo.</li>
+</ul>
+<blockquote>"Foi um prazer atender você, (Nome)! Espero vê-la em breve."</blockquote>
+
+<h3>PARTE G — Organização Pós-Atendimento</h3>
+<p><strong>24. Limpeza e Registro</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Desligar o babyliss da tomada.</li>
+  <li>☐ Aguardar o resfriamento antes de guardar.</li>
+  <li>☐ Limpar a ponteira, as escovas e os pentes.</li>
+  <li>☐ Recolher os cabelos do chão e da cadeira.</li>
+  <li>☐ Higienizar a estação.</li>
+  <li>☐ Guardar os produtos corretamente.</li>
+  <li>☐ Registrar o serviço e os produtos no sistema.</li>
+  <li>☐ Registrar os produtos vendidos (se houver).</li>
+</ul>
+
+<h2>8. Indicadores de Qualidade</h2>
+<p>A gerência deverá acompanhar mensalmente:</p>
+<ul style="${CHECK}">
+  <li>☐ Tempo médio de babyliss.</li>
+  <li>☐ Número de retrabalhos (cliente pediu ajuste após finalizar).</li>
+  <li>☐ Número de reclamações sobre durabilidade dos cachos.</li>
+  <li>☐ Índice de satisfação da cliente.</li>
+  <li>☐ Percentual de reagendamento.</li>
+  <li>☐ Conversão de babyliss em tratamento capilar.</li>
+  <li>☐ Vendas de finalizadores e fixadores.</li>
+  <li>☐ Uso do protetor térmico em 100% dos atendimentos.</li>
+</ul>
+
+<h2>9. Checklist de Auditoria</h2>
+<div style="${BOX}">
+  <div style="${BOXH}">Apresentação</div>
+  <ul style="${CHECK}">
+    <li>☐ Apresentou-se de frente para a cliente, com nome.</li>
+    <li>☐ Confirmou o serviço (babyliss).</li>
+    <li>☐ Perguntou o que a cliente desejava.</li>
+    <li>☐ Perguntou se havia preferência ou referência.</li>
+    <li>☐ Fez as ponderações do que dá e do que não dá para fazer.</li>
+    <li>☐ Verificou se a cliente já veio com o cabelo limpo.</li>
+  </ul>
+  <div style="${BOXH}">Lavatório (quando aplicável)</div>
+  <ul style="${CHECK}">
+    <li>☐ Realizou avaliação capilar e informou as necessidades.</li>
+    <li>☐ Perguntou se deseja tratamento.</li>
+    <li>☐ Informou os produtos e deixou sentir o cheiro.</li>
+    <li>☐ Aplicou o 1º shampoo.</li>
+    <li>☐ Aplicou o 2º shampoo + massagem de 3 minutos.</li>
+    <li>☐ Respeitou os tempos de pausa.</li>
+    <li>☐ Aplicou o condicionador sem pesar o fio.</li>
+  </ul>
+  <div style="${BOXH}">Definição e Preparação</div>
+  <ul style="${CHECK}">
+    <li>☐ Perguntou o tamanho do cacho desejado.</li>
+    <li>☐ Perguntou se queria mais solto ou mais definido.</li>
+    <li>☐ Perguntou o lado da repartição e o volume.</li>
+    <li>☐ Confirmou em voz alta o que seria feito.</li>
+    <li>☐ Aplicou o protetor térmico.</li>
+    <li>☐ Secou o cabelo 100% antes da ferramenta.</li>
+    <li>☐ Penteou, definiu a repartição e separou em seções.</li>
+  </ul>
+  <div style="${BOXH}">Execução</div>
+  <ul style="${CHECK}">
+    <li>☐ Selecionou o diâmetro correto da ponteira.</li>
+    <li>☐ Ajustou a temperatura à condição do fio.</li>
+    <li>☐ Testou em uma mecha da nuca.</li>
+    <li>☐ Trabalhou mecha a mecha, da nuca para cima.</li>
+    <li>☐ Manteve a espessura das mechas uniforme.</li>
+    <li>☐ Enrolou no sentido combinado.</li>
+    <li>☐ Manteve o mesmo tempo de permanência em todas as mechas.</li>
+    <li>☐ Prendeu os cachos com presilha para esfriar.</li>
+    <li>☐ Não encostou a ponteira no couro cabeludo.</li>
+    <li>☐ Apoiou o babyliss em base térmica.</li>
+    <li>☐ Conferiu a simetria durante a execução.</li>
+  </ul>
+  <div style="${BOXH}">Acabamento e Finalização</div>
+  <ul style="${CHECK}">
+    <li>☐ Aguardou os cachos esfriarem antes de soltar as presilhas.</li>
+    <li>☐ Abriu os cachos com os dedos.</li>
+    <li>☐ Verificou uniformidade, simetria e mechas sem cacho.</li>
+    <li>☐ Aplicou o fixador à distância.</li>
+    <li>☐ Mostrou o resultado com o espelho de mão.</li>
+    <li>☐ Perguntou se a cliente gostou e se havia ajustes.</li>
+    <li>☐ Realizou os ajustes imediatamente.</li>
+    <li>☐ Orientou sobre a manutenção e ofereceu reagendamento.</li>
+    <li>☐ Organizou a estação e registrou no sistema.</li>
+  </ul>
+</div>
+`.trim()
+
 export type ConteudoDoc = { id: string; titulo: string; texto: string }
 export const CONTEUDO_DEFAULTS: Record<string, { titulo: string; conteudo: { texto?: string; docs?: ConteudoDoc[] } }> = {
   manicure: {
@@ -4321,6 +4676,7 @@ export const CONTEUDO_DEFAULTS: Record<string, { titulo: string; conteudo: { tex
         { id: 'pop-pro-007', titulo: 'POP-PRO-007 · Secagem', texto: PRO_SECAGEM_HTML },
         { id: 'pop-pro-008', titulo: 'POP-PRO-008 · Modelagem', texto: PRO_MODELAGEM_HTML },
         { id: 'pop-pro-009', titulo: 'POP-PRO-009 · Chapinha', texto: PRO_CHAPINHA_HTML },
+        { id: 'pop-pro-010', titulo: 'POP-PRO-010 · Babyliss', texto: PRO_BABYLISS_HTML },
       ],
     },
   },
