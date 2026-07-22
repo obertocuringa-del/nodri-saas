@@ -1910,6 +1910,384 @@ const PRO_PEDICURE_HTML = `
 </div>
 `.trim()
 
+const PRO_LAVATORIO_HTML = `
+<h1>Procedimento Operacional Padrão (POP)</h1>
+<p style="color:#6b6880;font-size:15px;margin:-4px 0 16px;font-weight:600">POP-PRO-003 — Atendimento de Higienização Capilar (Lavatório)</p>
+
+<h2>1. Identificação</h2>
+<div style="${META}">
+  <p style="margin:0"><strong>Código:</strong> POP-PRO-003 &nbsp;·&nbsp; <strong>Versão:</strong> 1.0 &nbsp;·&nbsp; <strong>Setor:</strong> Profissionais (Lavatório / Auxiliar de Cabeleireiro)</p>
+  <p style="margin:8px 0 0"><strong>Responsável:</strong> <span style="${FIELD}"></span> (Profissional do Lavatório)</p>
+  <p style="margin:8px 0 0"><strong>Data de Emissão:</strong> ___/___/______ &nbsp;·&nbsp; <strong>Última Revisão:</strong> ___/___/______ &nbsp;·&nbsp; <strong>Próxima Revisão:</strong> ___/___/______</p>
+</div>
+
+<h2>2. Objetivo</h2>
+<p>Padronizar o atendimento de higienização capilar no lavatório, garantindo excelência no serviço, avaliação precisa das necessidades do cabelo, aplicação correta dos produtos, conforto da cliente, técnicas de vendas para aumento de ticket médio e uma experiência sensorial única.</p>
+
+<h2>3. Campo de Aplicação</h2>
+<p>Este procedimento aplica-se a todos os profissionais responsáveis pelos serviços de higienização capilar no lavatório.</p>
+
+<h2>4. Responsabilidades</h2>
+<h3>Profissional do Lavatório</h3>
+<ul>
+  <li>Cumprir integralmente este POP.</li>
+  <li>Manter postura ética e profissional.</li>
+  <li>Zelar pela segurança e bem-estar da cliente.</li>
+  <li>Realizar avaliação capilar detalhada.</li>
+  <li>Aplicar corretamente os produtos.</li>
+  <li>Garantir conforto durante todo o procedimento.</li>
+  <li>Aplicar técnicas de vendas (up-selling e cross-selling).</li>
+  <li>Oferecer tratamentos complementares.</li>
+  <li>Manter o lavatório limpo e organizado.</li>
+</ul>
+<h3>Cabeleireiro / Profissional Principal</h3>
+<ul>
+  <li>Aguardar a cliente ser preparada.</li>
+  <li>Realizar o procedimento principal (corte, coloração, escova, etc.).</li>
+  <li>Aplicar técnicas de vendas durante o atendimento.</li>
+</ul>
+<h3>Recepção</h3>
+<ul>
+  <li>Confirmar o agendamento.</li>
+  <li>Recepcionar e acomodar a cliente.</li>
+  <li>Registrar reagendamentos.</li>
+</ul>
+<h3>Gerência</h3>
+<ul>
+  <li>Fiscalizar o cumprimento deste POP.</li>
+  <li>Treinar continuamente a equipe.</li>
+  <li>Realizar auditorias periódicas.</li>
+  <li>Acompanhar os indicadores de conversão e ticket médio.</li>
+</ul>
+
+<h2>5. Materiais Necessários</h2>
+<h3>Equipamentos</h3>
+<ul style="${CHECK}">
+  <li>☐ Lavatório (cadeira e pia).</li>
+  <li>☐ Toalhas limpas.</li>
+  <li>☐ Capa de proteção.</li>
+  <li>☐ Robe ou avental.</li>
+  <li>☐ Touca descartável.</li>
+  <li>☐ Pentes e escovas.</li>
+  <li>☐ Cronômetro ou timer.</li>
+</ul>
+<h3>Produtos</h3>
+<ul style="${CHECK}">
+  <li>☐ Shampoo 1 (limpeza profunda).</li>
+  <li>☐ Shampoo 2 (específico para o tipo de cabelo).</li>
+  <li>☐ Condicionador.</li>
+  <li>☐ Máscara de hidratação.</li>
+  <li>☐ Máscara de nutrição.</li>
+  <li>☐ Máscara de reconstrução.</li>
+  <li>☐ Óleos e finalizadores.</li>
+  <li>☐ Produtos para demonstração (cheiros).</li>
+</ul>
+
+<h2>6. Biossegurança e Higiene</h2>
+<h3>Antes do Atendimento</h3>
+<ul style="${CHECK}">
+  <li>☐ Higienizar corretamente as mãos.</li>
+  <li>☐ Manter uniforme limpo.</li>
+  <li>☐ Manter cabelos presos.</li>
+  <li>☐ Utilizar máscara limpa.</li>
+  <li>☐ Conferir a limpeza do lavatório.</li>
+  <li>☐ Organizar todos os produtos e materiais.</li>
+  <li>☐ Verificar a validade dos produtos.</li>
+  <li>☐ Preparar toalhas limpas.</li>
+</ul>
+<h3>Durante o Atendimento</h3>
+<ul style="${CHECK}">
+  <li>☐ Manter o lavatório organizado.</li>
+  <li>☐ Não utilizar telefone celular.</li>
+  <li>☐ Não consumir alimentos.</li>
+  <li>☐ Evitar respingos no rosto da cliente.</li>
+  <li>☐ Manter a temperatura da água adequada.</li>
+</ul>
+<h3>Após o Atendimento</h3>
+<ul style="${CHECK}">
+  <li>☐ Descartar corretamente os materiais descartáveis.</li>
+  <li>☐ Higienizar o lavatório.</li>
+  <li>☐ Higienizar as mãos.</li>
+  <li>☐ Preparar o lavatório para a próxima cliente.</li>
+</ul>
+
+<h2>7. Procedimento Operacional</h2>
+
+<h3>PARTE A — Início do Atendimento</h3>
+<p><strong>Profissional é chamado pela recepção</strong> — recebe a informação: nome da cliente, procedimentos agendados e local onde a cliente está acomodada. Em seguida, dirige-se à cliente.</p>
+<p><strong>1. Apresentação do Profissional</strong> — sempre iniciar o atendimento de frente para a cliente, demonstrando simpatia, cordialidade e profissionalismo.</p>
+<blockquote>"Olá (Nome da cliente), meu nome é (Nome do Profissional) e hoje eu serei o(a) responsável pela higienização do seu cabelo."</blockquote>
+<p><strong>2. Confirmação do Serviço</strong></p>
+<blockquote>"A senhora irá fazer a higienização do seu cabelo hoje, correto?"</blockquote>
+<p><strong>3. Identificação da Necessidade</strong></p>
+<blockquote>"O que a senhora pensou para hoje?" · "A senhora possui alguma preferência ou alguma foto de referência?" · "Tem algum produto ou cheiro preferido?"</blockquote>
+<p><strong>4. Ponderações e Orientações</strong> — após ouvir atentamente a cliente, explicar de forma clara e profissional:</p>
+<ul style="${CHECK}">
+  <li>☐ O que é possível realizar.</li>
+  <li>☐ O que não é recomendado realizar.</li>
+  <li>☐ As limitações técnicas do procedimento.</li>
+  <li>☐ Os cuidados necessários para preservar a saúde do cabelo.</li>
+</ul>
+<blockquote>"Baseado no que a senhora deseja, é possível fazer [explicar o que dá para fazer]."</blockquote>
+<blockquote>"Não recomendamos [explicar o que não é recomendado] porque [explicar o motivo]."</blockquote>
+<blockquote>"Para manter o resultado por mais tempo, é importante [explicar os cuidados]."</blockquote>
+<p><strong>Nenhum procedimento deverá ser iniciado antes que a cliente compreenda e concorde com o serviço que será realizado.</strong></p>
+
+<h3>PARTE B — Avaliação Capilar</h3>
+<p><strong>5. Cliente vai para o lavatório</strong></p>
+<ul>
+  <li>Conduzir a cliente até o lavatório.</li>
+  <li>Ajudar a cliente a se acomodar confortavelmente.</li>
+  <li>Ajustar a cadeira para a posição correta.</li>
+  <li>Colocar a capa de proteção (se necessário).</li>
+  <li>Verificar se a cliente está confortável.</li>
+</ul>
+<p><strong>6. Avaliação do Cabelo</strong> — realizar uma avaliação detalhada:</p>
+<ul style="${CHECK}">
+  <li>☐ Observar o estado geral do cabelo.</li>
+  <li>☐ Verificar o tipo de cabelo (liso, ondulado, cacheado, crespo).</li>
+  <li>☐ Verificar a porosidade do cabelo.</li>
+  <li>☐ Verificar se há ressecamento.</li>
+  <li>☐ Verificar se há danos ou pontas duplas.</li>
+  <li>☐ Verificar se há química (coloração, descoloração, etc.).</li>
+  <li>☐ Verificar o couro cabeludo (oleosidade, caspa, etc.).</li>
+  <li>☐ Perguntar sobre os cuidados atuais da cliente.</li>
+</ul>
+<p><strong>7. Informar as Necessidades</strong> — após a avaliação, informar a cliente sobre o que foi identificado.</p>
+<blockquote>"Percebi que seu cabelo está [descrever a condição: ressecado, com pontas duplas, com pouca hidratação]."</blockquote>
+<blockquote>"Seu couro cabeludo está [descrever a condição, ex.: com um pouco de oleosidade]."</blockquote>
+<blockquote>"Para melhorar a saúde do seu cabelo, recomendamos [sugerir tratamento]."</blockquote>
+<p><strong>8. Técnicas de Vendas — Oferta de Tratamentos</strong></p>
+<blockquote>"A senhora gostaria de fazer um tratamento de [hidratação/nutrição/reconstrução] de acordo com a necessidade do seu cabelo?"</blockquote>
+<blockquote>"Percebi que seu cabelo está precisando de uma hidratação profunda. Podemos incluir hoje?"</blockquote>
+<blockquote>"Temos um tratamento específico para [tipo de cabelo] que vai deixar seu cabelo ainda mais bonito. Gostaria de conhecer?"</blockquote>
+<p><strong>9. Informar os Produtos Utilizados</strong></p>
+<blockquote>"Hoje vou utilizar o Shampoo [nome] para [função], o Condicionador [nome] para [função], e um tratamento de [nome]."</blockquote>
+<blockquote>"Este shampoo é específico para [tipo de cabelo] e vai ajudar a [benefício]."</blockquote>
+<p><strong>10. Experiência Sensorial</strong> — deixar a cliente sentir o cheiro dos produtos.</p>
+<blockquote>"Antes de começar, gostaria que a senhora sentisse o cheiro do shampoo que vou utilizar."</blockquote>
+<blockquote>"Este produto tem um aroma maravilhoso de [descrever o cheiro]. O que acha?"</blockquote>
+<blockquote>"Temos outras opções de cheiros. A senhora prefere algum em específico?"</blockquote>
+<p><strong>11. Soltar um pouco o cabelo da raiz</strong> — soltar o cabelo da raiz para facilitar a aplicação dos produtos, verificar se não há nós ou embaraços e desembaraçar suavemente com os dedos ou pente.</p>
+
+<h3>PARTE C — Execução da Higienização</h3>
+<p><strong>12. Preparação do Lavatório</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Verificar a temperatura da água (morna, agradável).</li>
+  <li>☐ Posicionar a cliente corretamente no lavatório.</li>
+  <li>☐ Verificar se a cliente está confortável.</li>
+  <li>☐ Colocar a capa de proteção.</li>
+</ul>
+<p><strong>13. Aplicação do 1º Shampoo</strong> — objetivo: remover impurezas e oleosidade.</p>
+<ul style="${CHECK}">
+  <li>☐ Aplicar o 1º shampoo em todo o cabelo.</li>
+  <li>☐ Massagear suavemente o couro cabeludo.</li>
+  <li>☐ Emulsionar bem o produto.</li>
+  <li>☐ Enxaguar completamente.</li>
+</ul>
+<blockquote>"Vamos começar com o primeiro shampoo para fazer uma limpeza profunda e remover as impurezas."</blockquote>
+<p><strong>14. Aplicação do 2º Shampoo</strong> — objetivo: limpeza específica para o tipo de cabelo.</p>
+<ul style="${CHECK}">
+  <li>☐ Aplicar o 2º shampoo (específico para o tipo de cabelo).</li>
+  <li>☐ Massagear o couro cabeludo por 3 minutos.</li>
+  <li>☐ Enxaguar completamente.</li>
+</ul>
+<blockquote>"Agora vamos aplicar o segundo shampoo, específico para seu tipo de cabelo."</blockquote>
+<blockquote>"Vou fazer uma massagem no couro cabeludo por 3 minutos para estimular a circulação e garantir uma limpeza profunda. Essa massagem também ajuda a relaxar e aliviar o estresse."</blockquote>
+<p><strong>15. Aplicação do Condicionador</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Aplicar o condicionador no comprimento e nas pontas do cabelo.</li>
+  <li>☐ Evitar a raiz (a menos que indicado).</li>
+  <li>☐ Aguardar o tempo recomendado pela marca.</li>
+  <li>☐ Enxaguar completamente.</li>
+</ul>
+<blockquote>"Vamos aplicar o condicionador para hidratar e desembaraçar seu cabelo. Vamos aguardar alguns minutos para ele agir."</blockquote>
+<p><strong>16. Aplicação de Tratamento</strong> (se ofertado e aceito)</p>
+<ul style="${CHECK}">
+  <li>☐ Aplicar a máscara de tratamento (hidratação, nutrição ou reconstrução).</li>
+  <li>☐ Aguardar o tempo recomendado pela marca.</li>
+  <li>☐ Enxaguar completamente.</li>
+</ul>
+<blockquote>"Agora vamos aplicar a máscara de [hidratação/nutrição/reconstrução] que falamos. Vamos aguardar [X] minutos para o tratamento agir profundamente."</blockquote>
+<p><strong>17. Finalização da Higienização</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Enxaguar completamente todos os produtos.</li>
+  <li>☐ Verificar se não há resíduos de shampoo, condicionador ou máscara.</li>
+  <li>☐ Fazer a touca com a toalha para proteger o cabelo.</li>
+</ul>
+<blockquote>"Finalizamos a higienização. O cabelo está limpo e preparado para o próximo procedimento."</blockquote>
+<p><strong>18. Levar para a Cadeira</strong> — conduzir a cliente até a cadeira do profissional principal.</p>
+<ul style="${CHECK}">
+  <li>☐ Ajudar a cliente a se sentar.</li>
+  <li>☐ Remover a touca de toalha.</li>
+  <li>☐ Secar com a toalha, retirando o excesso de água.</li>
+  <li>☐ Preparar para o procedimento que a cliente irá fazer.</li>
+</ul>
+<p><strong>19. Preparação para o Procedimento Principal</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Colocar a capa de proteção.</li>
+  <li>☐ Colocar o robe ou avental.</li>
+  <li>☐ Pentear e alinhar o cabelo.</li>
+  <li>☐ Verificar se a cliente está confortável.</li>
+</ul>
+<blockquote>"Seu cabelo está pronto para o procedimento. O(A) [Cabeleireiro] vai te atender em instantes. Fique à vontade."</blockquote>
+<p><strong>20. Chamar o Profissional Principal</strong> — informar obrigatoriamente:</p>
+<ul style="${CHECK}">
+  <li>☐ Nome da cliente.</li>
+  <li>☐ Procedimentos agendados.</li>
+  <li>☐ Tratamentos realizados no lavatório.</li>
+  <li>☐ Observações sobre o cabelo da cliente.</li>
+</ul>
+<blockquote>"[Nome do Cabeleireiro], a cliente [Nome da Cliente] está pronta. O cabelo está [descrição, ex.: hidratado, preparado para coloração]."</blockquote>
+
+<h3>PARTE D — Técnicas de Vendas Durante o Lavatório</h3>
+<p><strong>21. Identificação de Oportunidades</strong> — durante o procedimento, identificar oportunidades de venda.</p>
+<p><strong>A. Sugestões de Tratamentos:</strong></p>
+<table style="${TBL}">
+  <tr><th style="${TH}">Condição do Cabelo</th><th style="${TH}">Tratamento Sugerido</th></tr>
+  <tr><td style="${TD}">Cabelo ressecado</td><td style="${TD}">Hidratação profunda</td></tr>
+  <tr><td style="${TD}">Cabelo sem brilho</td><td style="${TD}">Nutrição</td></tr>
+  <tr><td style="${TD}">Cabelo quimicamente danificado</td><td style="${TD}">Reconstrução</td></tr>
+  <tr><td style="${TD}">Cabelo opaco e sem vida</td><td style="${TD}">Hidratação + Nutrição</td></tr>
+  <tr><td style="${TD}">Cabelo frágil e quebradiço</td><td style="${TD}">Reconstrução + Hidratação</td></tr>
+  <tr><td style="${TD}">Cabelo com pontas duplas</td><td style="${TD}">Corte + Tratamento</td></tr>
+  <tr><td style="${TD}">Cabelo com química recente</td><td style="${TD}">Cauterização</td></tr>
+</table>
+<p><strong>B. Perguntas Obrigatórias:</strong></p>
+<blockquote>"Percebi que seu cabelo está precisando de uma hidratação profunda. Gostaria de incluir hoje?"</blockquote>
+<blockquote>"Seu cabelo ficaria ainda mais bonito com uma nutrição. O que acha?"</blockquote>
+<blockquote>"Temos um tratamento de reconstrução que vai devolver a força do seu cabelo. Gostaria de experimentar?"</blockquote>
+<blockquote>"Além de hidratar, podemos fazer uma cauterização para selar a cutícula. Gostaria de conhecer?"</blockquote>
+<p><strong>C. Sugestões de Produtos (Cross-Selling):</strong></p>
+<blockquote>"Este shampoo e condicionador que estou usando são específicos para seu tipo de cabelo. Estão disponíveis para venda."</blockquote>
+<blockquote>"A máscara de hidratação que apliquei hoje é excelente para manter o resultado em casa. Gostaria de levar?"</blockquote>
+<blockquote>"Para potencializar o tratamento, recomendo levar o shampoo e condicionador da mesma linha."</blockquote>
+
+<h3>PARTE E — Organização Pós-Atendimento</h3>
+<p><strong>22. Limpeza e Organização do Lavatório</strong> — após liberar a cliente:</p>
+<ul style="${CHECK}">
+  <li>☐ Organizar completamente o lavatório.</li>
+  <li>☐ Descartar corretamente os resíduos.</li>
+  <li>☐ Higienizar toda a pia e a cadeira.</li>
+  <li>☐ Higienizar as mãos.</li>
+  <li>☐ Preparar o lavatório para a próxima cliente.</li>
+</ul>
+<p><strong>23. Registro no Sistema</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Registrar os serviços realizados no lavatório.</li>
+  <li>☐ Registrar os produtos utilizados.</li>
+  <li>☐ Registrar os produtos vendidos (se houver).</li>
+  <li>☐ Registrar os tratamentos realizados.</li>
+</ul>
+
+<h2>8. Indicadores de Qualidade</h2>
+<p>A gerência deverá acompanhar mensalmente:</p>
+<ul style="${CHECK}">
+  <li>☐ Tempo médio de higienização.</li>
+  <li>☐ Número de reclamações sobre o lavatório.</li>
+  <li>☐ Índice de satisfação da cliente (conforto, experiência).</li>
+  <li>☐ Vendas adicionais de tratamentos (up-selling) realizadas no lavatório.</li>
+  <li>☐ Vendas de produtos (cross-selling) realizadas no lavatório.</li>
+  <li>☐ Ticket médio por cliente (impacto do lavatório).</li>
+  <li>☐ Conformidade com as normas de biossegurança.</li>
+</ul>
+
+<h2>9. Checklist de Auditoria</h2>
+<div style="${BOX}">
+  <div style="${BOXH}">Apresentação</div>
+  <ul style="${CHECK}">
+    <li>☐ Cumprimentou a cliente.</li>
+    <li>☐ Apresentou-se com nome.</li>
+    <li>☐ Confirmou o serviço (higienização).</li>
+    <li>☐ Perguntou o que a cliente desejava.</li>
+    <li>☐ Perguntou se havia preferência ou referência.</li>
+    <li>☐ Explicou o que é possível fazer.</li>
+    <li>☐ Explicou o que não é recomendado.</li>
+    <li>☐ Explicou os cuidados necessários.</li>
+  </ul>
+  <div style="${BOXH}">Avaliação</div>
+  <ul style="${CHECK}">
+    <li>☐ Realizou avaliação capilar detalhada.</li>
+    <li>☐ Informou as necessidades identificadas.</li>
+    <li>☐ Perguntou se deseja tratamento.</li>
+    <li>☐ Informou os produtos que serão utilizados.</li>
+    <li>☐ Deixou a cliente sentir o cheiro dos produtos.</li>
+    <li>☐ Soltou o cabelo da raiz.</li>
+  </ul>
+  <div style="${BOXH}">Execução</div>
+  <ul style="${CHECK}">
+    <li>☐ Aplicou o 1º shampoo corretamente.</li>
+    <li>☐ Aplicou o 2º shampoo + massagem de 3 minutos.</li>
+    <li>☐ Aguardou o tempo de pausa.</li>
+    <li>☐ Aplicou o condicionador.</li>
+    <li>☐ Aguardou o tempo recomendado.</li>
+    <li>☐ Aplicou tratamento (se ofertado e aceito).</li>
+    <li>☐ Enxaguou completamente.</li>
+  </ul>
+  <div style="${BOXH}">Finalização</div>
+  <ul style="${CHECK}">
+    <li>☐ Fez a touca.</li>
+    <li>☐ Levou a cliente para a cadeira.</li>
+    <li>☐ Secou com a toalha.</li>
+    <li>☐ Preparou para o procedimento (capa, robe, penteado).</li>
+    <li>☐ Penteou e alinhou o cabelo.</li>
+    <li>☐ Chamou o profissional principal.</li>
+  </ul>
+  <div style="${BOXH}">Vendas e Fidelização</div>
+  <ul style="${CHECK}">
+    <li>☐ Ofereceu tratamentos complementares.</li>
+    <li>☐ Ofereceu produtos para venda.</li>
+    <li>☐ Informou sobre os benefícios dos produtos.</li>
+    <li>☐ Registrou serviços e produtos no sistema.</li>
+  </ul>
+  <div style="${BOXH}">Organização</div>
+  <ul style="${CHECK}">
+    <li>☐ Organizou o lavatório.</li>
+    <li>☐ Higienizou a pia e a cadeira.</li>
+    <li>☐ Descartou os resíduos corretamente.</li>
+    <li>☐ Preparou para a próxima cliente.</li>
+  </ul>
+</div>
+
+<h2>10. Frases e Scripts Complementares</h2>
+<h3>A. Apresentação</h3>
+<table style="${TBL}">
+  <tr><th style="${TH}">Situação</th><th style="${TH}">Frase Padrão</th></tr>
+  <tr><td style="${TD}">Chegada da cliente</td><td style="${TD}">"Olá (Nome), meu nome é [Profissional] e hoje eu serei o(a) responsável pela higienização do seu cabelo."</td></tr>
+  <tr><td style="${TD}">Confirmando o serviço</td><td style="${TD}">"A senhora irá fazer a higienização hoje, correto?"</td></tr>
+  <tr><td style="${TD}">Perguntando a preferência</td><td style="${TD}">"O que a senhora pensou para hoje? Tem alguma preferência?"</td></tr>
+</table>
+<h3>B. Avaliação e Ponderações</h3>
+<table style="${TBL}">
+  <tr><th style="${TH}">Situação</th><th style="${TH}">Frase Padrão</th></tr>
+  <tr><td style="${TD}">Avaliação</td><td style="${TD}">"Percebi que seu cabelo está [descrever a condição]."</td></tr>
+  <tr><td style="${TD}">Necessidade</td><td style="${TD}">"Para melhorar a saúde do seu cabelo, recomendamos [sugerir tratamento]."</td></tr>
+  <tr><td style="${TD}">Oferta de tratamento</td><td style="${TD}">"Percebi que seu cabelo está precisando de uma hidratação. Gostaria de incluir hoje?"</td></tr>
+</table>
+<h3>C. Produtos</h3>
+<table style="${TBL}">
+  <tr><th style="${TH}">Situação</th><th style="${TH}">Frase Padrão</th></tr>
+  <tr><td style="${TD}">Informando produtos</td><td style="${TD}">"Hoje vou utilizar o Shampoo [nome] para [função]."</td></tr>
+  <tr><td style="${TD}">Experiência sensorial</td><td style="${TD}">"Antes de começar, gostaria que a senhora sentisse o cheiro do shampoo."</td></tr>
+  <tr><td style="${TD}">Venda de produtos</td><td style="${TD}">"Este shampoo e condicionador estão disponíveis para venda. Gostaria de levar?"</td></tr>
+</table>
+<h3>D. Execução</h3>
+<table style="${TBL}">
+  <tr><th style="${TH}">Situação</th><th style="${TH}">Frase Padrão</th></tr>
+  <tr><td style="${TD}">1º shampoo</td><td style="${TD}">"Vamos começar com o primeiro shampoo para fazer uma limpeza profunda."</td></tr>
+  <tr><td style="${TD}">2º shampoo</td><td style="${TD}">"Agora vamos aplicar o segundo shampoo, específico para seu tipo de cabelo."</td></tr>
+  <tr><td style="${TD}">Massagem</td><td style="${TD}">"Vou fazer uma massagem no couro cabeludo por 3 minutos."</td></tr>
+  <tr><td style="${TD}">Condicionador</td><td style="${TD}">"Vamos aplicar o condicionador para hidratar e desembaraçar seu cabelo."</td></tr>
+</table>
+<h3>E. Finalização</h3>
+<table style="${TBL}">
+  <tr><th style="${TH}">Situação</th><th style="${TH}">Frase Padrão</th></tr>
+  <tr><td style="${TD}">Finalizando</td><td style="${TD}">"Finalizamos a higienização. O cabelo está limpo e preparado."</td></tr>
+  <tr><td style="${TD}">Preparação</td><td style="${TD}">"Seu cabelo está pronto para o procedimento."</td></tr>
+  <tr><td style="${TD}">Chamando o profissional</td><td style="${TD}">"[Cabeleireiro], a cliente [Nome] está pronta."</td></tr>
+</table>
+`.trim()
+
 export type ConteudoDoc = { id: string; titulo: string; texto: string }
 export const CONTEUDO_DEFAULTS: Record<string, { titulo: string; conteudo: { texto?: string; docs?: ConteudoDoc[] } }> = {
   manicure: {
@@ -1919,6 +2297,15 @@ export const CONTEUDO_DEFAULTS: Record<string, { titulo: string; conteudo: { tex
         { id: 'pop-man-001', titulo: 'POP-MAN-001 · Atendimento de Manicure', texto: MANICURE_HTML },
         { id: 'pop-pro-001', titulo: 'POP-PRO-001 · Atendimento do Profissional', texto: PRO_ATENDIMENTO_HTML },
         { id: 'pop-pro-002', titulo: 'POP-PRO-002 · Atendimento de Pedicure', texto: PRO_PEDICURE_HTML },
+      ],
+    },
+  },
+  cabelereiro: {
+    titulo: 'Processos — Cabeleireiro',
+    conteudo: {
+      docs: [
+        { id: 'pop-pro-003', titulo: 'POP-PRO-003 · Higienização Capilar (Lavatório)', texto: PRO_LAVATORIO_HTML },
+        { id: 'pop-pro-001', titulo: 'POP-PRO-001 · Atendimento do Profissional', texto: PRO_ATENDIMENTO_HTML },
       ],
     },
   },
