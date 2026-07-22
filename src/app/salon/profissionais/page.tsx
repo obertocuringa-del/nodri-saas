@@ -10,8 +10,7 @@ import { PJ_CONTRATACAO, PJ_DESLIGAMENTO } from '@/components/salon/processoDefa
 import EditorAvaliacao from '@/components/salon/EditorAvaliacao'
 import DescricaoCargo from '@/components/salon/DescricaoCargo'
 import PlanoCarreiraPJ from '@/components/salon/PlanoCarreiraPJ'
-import DocEditavel from '@/components/salon/DocEditavel'
-import { NORMA_CONDUTA_BLOCOS } from '@/lib/normaConduta'
+import NormaConduta from '@/components/salon/NormaConduta'
 import { confirmarSaidaSemSalvar } from '@/lib/guardaSalvar'
 import { urlPublica } from '@/lib/urlPublica'
 
@@ -2172,14 +2171,9 @@ ${montarContratoHTML()}
             <div style={{ maxWidth: 1000 }}>
               <h2 style={{ color: '#1a1a1a', fontSize: 20, fontWeight: 700, margin: '0 0 4px' }}>Norma de Conduta</h2>
               <p style={{ color: '#767069', fontSize: 13, margin: '0 0 18px' }}>
-                Manual de conduta do salão. Edite o texto conforme a sua realidade — tudo é salvo automaticamente. Use <strong>Imprimir</strong> para gerar o documento em A4 com a logo do salão para assinatura.
+                Manual de conduta do salão. Clique em <strong>Editar</strong> para adaptar o texto à sua realidade — tudo é salvo automaticamente. Use <strong>Imprimir</strong> para gerar o documento em A4 com a logo do salão para assinatura.
               </p>
-              <DocEditavel
-                chave="norma_conduta"
-                tituloPadrao="Manual de Conduta"
-                blocosPadrao={NORMA_CONDUTA_BLOCOS}
-                corTema="#e11d48"
-              />
+              <NormaConduta />
             </div>
           )}
 
