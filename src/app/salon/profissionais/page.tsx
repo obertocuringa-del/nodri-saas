@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Plus, Search, UserCheck, UserX, Edit2, Trash2, Upload, X, ChevronRight, Users, FileText, Briefcase, Clock, Award, BookOpen, FileSignature, AlertCircle, TrendingUp, Building2, Menu, Mail, Send } from 'lucide-react'
+import { ArrowLeft, Plus, Search, UserCheck, UserX, Edit2, Trash2, Upload, X, ChevronRight, Users, FileText, Briefcase, Clock, Award, BookOpen, FileSignature, AlertCircle, TrendingUp, Building2, Menu, Mail, Send, ScrollText } from 'lucide-react'
 import toast from 'react-hot-toast'
 import MateriaisTrabalho from '@/components/salon/MateriaisTrabalho'
 import ProcessoContratacao from '@/components/salon/ProcessoContratacao'
@@ -10,6 +10,8 @@ import { PJ_CONTRATACAO, PJ_DESLIGAMENTO } from '@/components/salon/processoDefa
 import EditorAvaliacao from '@/components/salon/EditorAvaliacao'
 import DescricaoCargo from '@/components/salon/DescricaoCargo'
 import PlanoCarreiraPJ from '@/components/salon/PlanoCarreiraPJ'
+import DocEditavel from '@/components/salon/DocEditavel'
+import { NORMA_CONDUTA_BLOCOS } from '@/lib/normaConduta'
 import { confirmarSaidaSemSalvar } from '@/lib/guardaSalvar'
 import { urlPublica } from '@/lib/urlPublica'
 
@@ -63,6 +65,7 @@ const SIDEBAR_ITEMS = [
   { id: 'horarios',     label: 'Horários e Folgas',               icon: Clock,          cor: '#f97316' },
   { id: 'distrato',     label: 'Distrato',                        icon: AlertCircle,    cor: '#ef4444' },
   { id: 'contrato',     label: 'Contrato de Trabalho',            icon: FileText,       cor: '#6366f1' },
+  { id: 'conduta',      label: 'Norma de Conduta',                icon: ScrollText,     cor: '#e11d48' },
   { id: 'certificados', label: 'Certificados',                    icon: Award,          cor: '#d946ef' },
   { id: 'carreira',     label: 'Plano de Carreira',               icon: TrendingUp,     cor: '#22c55e' },
   { id: 'descricao_cargo', label: 'Descrição de Cargo',           icon: FileText,       cor: '#0891b2' },
@@ -2163,6 +2166,22 @@ ${montarContratoHTML()}
 
           {/* ── PLANO DE CARREIRA PJ (trilha de níveis editável) ── */}
           {secao === 'carreira' && <PlanoCarreiraPJ />}
+
+          {/* ── NORMA DE CONDUTA (manual completo, editável por salão) ── */}
+          {secao === 'conduta' && (
+            <div style={{ maxWidth: 1000 }}>
+              <h2 style={{ color: '#1a1a1a', fontSize: 20, fontWeight: 700, margin: '0 0 4px' }}>Norma de Conduta</h2>
+              <p style={{ color: '#767069', fontSize: 13, margin: '0 0 18px' }}>
+                Manual de conduta do salão. Edite o texto conforme a sua realidade — tudo é salvo automaticamente. Use <strong>Imprimir</strong> para gerar o documento em A4 com a logo do salão para assinatura.
+              </p>
+              <DocEditavel
+                chave="norma_conduta"
+                tituloPadrao="Manual de Conduta"
+                blocosPadrao={NORMA_CONDUTA_BLOCOS}
+                corTema="#e11d48"
+              />
+            </div>
+          )}
 
           {/* ── SEÇÕES DE CONTEÚDO INFORMATIVO ── */}
           {CONTEUDO_INFO[secao] && secao !== 'perfil' && (
