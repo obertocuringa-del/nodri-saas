@@ -5422,6 +5422,317 @@ const PRO_PIGMENTACAO_HTML = `
 </div>
 `.trim()
 
+// ── POP-PRO-013 · Ganhar Habilidade ────────────────────────────────────────
+// Documento informativo (sem modelo de avaliação — não abre o botão "Avaliar").
+// Fica disponível para TODAS as categorias: entra nos três setores.
+const CHECKD = 'list-style:none;padding-left:0;margin:6px 0 16px;line-height:1.65'
+const HAB = (n: number, titulo: string, modelos: string, curso: string, pontos: [string, string][]) => `
+<h3>${n}. ${titulo}</h3>
+<div style="${BOX}">
+  <p style="margin:0"><strong>✅ Quantidade de modelos:</strong> ${modelos}</p>
+  <p style="margin:8px 0 0"><strong>📚 Curso:</strong> ${curso}</p>
+</div>
+<p style="margin:10px 0 2px"><strong>Pontos de avaliação:</strong></p>
+<ul style="${CHECKD}">
+${pontos.map(([t, dsc]) => `  <li>☐ <strong>${t}</strong><br><span style="color:#6b6880">${dsc}</span></li>`).join('\n')}
+</ul>`
+
+const PRO_GANHAR_HABILIDADE_HTML = `
+<h1>Procedimento Operacional Padrão (POP)</h1>
+<p style="color:#6b6880;font-size:15px;margin:-4px 0 16px;font-weight:600">POP-PRO-013 — Ganhar Habilidade (Liberação de Habilidade)</p>
+
+<h2>1. Identificação</h2>
+<div style="${META}">
+  <p style="margin:0"><strong>Código:</strong> POP-PRO-013 &nbsp;·&nbsp; <strong>Versão:</strong> 1.0 &nbsp;·&nbsp; <strong>Setor:</strong> Todos os profissionais</p>
+  <p style="margin:8px 0 0"><strong>Responsável:</strong> Diretora Técnica</p>
+  <p style="margin:8px 0 0"><strong>Data de Emissão:</strong> ___/___/______ &nbsp;·&nbsp; <strong>Última Revisão:</strong> ___/___/______ &nbsp;·&nbsp; <strong>Próxima Revisão:</strong> ___/___/______</p>
+</div>
+
+<h2>2. Finalidade</h2>
+<p>Garantir que os profissionais do salão estejam devidamente qualificados para executar determinados serviços, assegurando a excelência nos atendimentos. Esse processo envolve a avaliação técnica do profissional, a certificação de sua aptidão e a autorização para a realização do serviço em clientes.</p>
+
+<h2>3. Fluxo do Processo</h2>
+
+<p><strong>0. Solicitação da habilidade</strong> — o profissional interessado deve manifestar o desejo de obter uma nova habilidade e seguir os critérios estabelecidos para sua liberação.</p>
+
+<p><strong>1. Tem disponibilidade e espaço físico para executar esse procedimento no salão?</strong></p>
+<div style="${BOX}">
+  <p style="margin:0"><strong>1.1 SIM:</strong> Caso haja espaço físico e compatibilidade com o perfil do salão, o profissional deve consultar a Diretora Técnica da área. Ela indicará o curso mais adequado para seu desenvolvimento profissional e técnico. Após a conclusão, o profissional deverá apresentar o certificado impresso à Diretora Técnica.</p>
+  <p style="margin:10px 0 0"><strong>1.2 NÃO:</strong> Se não houver espaço físico disponível ou se o curso não estiver alinhado com o perfil do salão, a habilidade não poderá ser adquirida no momento.</p>
+</div>
+
+<p><strong>2. Definição da quantidade de modelos</strong> — a Diretora Técnica definirá a quantidade de modelos necessários e os diferentes tipos de execução que o profissional deverá realizar para demonstrar sua aptidão. Esse processo garante que o profissional esteja preparado para oferecer o serviço com excelência e segurança.</p>
+
+<p><strong>3. Calendário de produção</strong> — nessa etapa, o profissional deverá cumprir as datas e a quantidade de modelos previamente estabelecidas para a avaliação prática.</p>
+<div style="${BOX}">
+  <p style="margin:0"><strong>Observação:</strong> Para garantir a organização interna do salão, caso o profissional não apresente as modelos dentro das datas estipuladas ou não complete a quantidade exigida até a última data prevista, será necessária uma reunião entre o profissional e a Diretora Técnica. Durante essa reunião, será definido um novo calendário, porém esse agendamento dependerá da disponibilidade da Diretora Técnica. Isso significa que o novo cronograma poderá ser ajustado imediatamente ou poderá levar algumas semanas ou até meses para ser remarcado.</p>
+</div>
+
+<p><strong>4. Teste conforme a quantidade e as técnicas solicitadas</strong> — o profissional realizará o teste conforme a quantidade e as técnicas exigidas.</p>
+<div style="${BOX}">
+  <p style="margin:0"><strong>4.1 NÃO:</strong> Se o profissional não for aprovado pela Diretora Técnica, será solicitado que retome o processo:</p>
+  <ol style="margin:8px 0 0 22px">
+    <li>Fazer o curso de capacitação + apresentação do certificado.</li>
+    <li>Trazer modelos pré-estabelecidas pela Diretora Técnica.</li>
+    <li>Fazer novo teste.</li>
+  </ol>
+  <p style="margin:10px 0 0"><strong>Observação:</strong> O processo de capacitação será repetido até que o profissional seja considerado apto para executar o serviço com qualidade e segurança.</p>
+</div>
+
+<p><strong>5. Conferência de material</strong> — se o profissional for aprovado no teste, será verificado se ele possui todos os materiais necessários para a execução da habilidade.</p>
+<div style="${BOX}">
+  <p style="margin:0"><strong>5.1 SIM:</strong> Habilidade liberada temporariamente por três meses, para avaliação do desempenho técnico.</p>
+  <p style="margin:10px 0 0"><strong>5.2 NÃO:</strong> O profissional deve aguardar até apresentar o material completo à Diretora Técnica.</p>
+</div>
+
+<p><strong>6. Habilidade temporária — 3 meses</strong></p>
+<div style="${BOX}">
+  <p style="margin:0"><strong>6.1 SIM:</strong> Se o profissional passar três meses sem reclamações de clientes, a habilidade será concedida de forma definitiva.</p>
+  <p style="margin:10px 0 0"><strong>6.2 NÃO:</strong> Se houver recorrência de feedbacks negativos, a habilidade será retirada, e o profissional precisará reiniciar o processo.</p>
+</div>
+
+<h2>4. Cursos Necessários e Modelos por Habilidade</h2>
+${HAB(1, 'MECHAS', '5 (1 loira global, 1 iluminado, 1 retoque de raiz, 1 correção de cor, 1 mechas desfiadas)', 'Colorimetria e técnicas avançadas de mechas; Color Creator.', [
+  ['Quantidade e diversidade de modelos', 'Avaliar se há variedade nas técnicas de mechas do momento (ex.: esfumar raiz etc.).'],
+  ['Precisão na aplicação', 'Verificar se as mechas estão bem distribuídas e aplicadas com precisão nas seções de cabelo.'],
+  ['Distribuição e uniformidade da cor', 'Analisar se as mechas estão bem distribuídas e sem manchas.'],
+  ['Resultado da correção de cor', 'Avaliar se as mechas corrigem ou equilibram a cor de forma eficaz.'],
+  ['Tempo de processamento adequado', 'Verificar se o tempo de exposição do produto é adequado ao tipo de cabelo e à técnica aplicada.'],
+  ['Controle da temperatura da ferramenta', 'Garantir que as ferramentas (secador, chapinha, etc.) estejam na temperatura correta para não danificar o cabelo.'],
+  ['Cuidados durante a aplicação de descoloração', 'Avaliar o uso de produtos de proteção durante a aplicação.'],
+  ['Controle do impacto do processo no cabelo', 'Verificar o impacto do processo de descoloração no cabelo, se ele se manteve saudável.'],
+  ['Técnica de acabamento das mechas', 'Avaliar o acabamento das mechas, a saúde do cabelo e a finalização.'],
+])}
+${HAB(2, 'PIGMENTAÇÃO', '5 (3 correção de cor, 1 retoque de raiz exceto preto ou castanho, 1 tonalizar cobertura de brancos)', 'Pigmentação avançada e neutralização de cores.', [
+  ['Quantidade e diversidade de cores utilizadas', 'Avaliar se há variedade nas cores e se foram utilizadas as técnicas corretas de pigmentação.'],
+  ['Precisão na aplicação da pigmentação', 'Verificar se a aplicação da cor foi feita com precisão, sem manchas ou falhas.'],
+  ['Cobertura e uniformidade da cor', 'Analisar se a cor foi distribuída de maneira uniforme e se cobre completamente o cabelo, sem falhas.'],
+  ['Resultado da correção de cor', 'Avaliar se a pigmentação corrige ou equilibra a cor de forma eficaz, deixando o cabelo com aparência natural.'],
+  ['Tempo de processamento adequado', 'Verificar o tempo de ação da coloração de acordo com o fabricante.'],
+  ['Controle da temperatura da ferramenta', 'Garantir que as ferramentas estejam na temperatura correta para não interferir no resultado da pigmentação.'],
+  ['Uso de produtos de proteção durante a aplicação', 'Avaliar se foi utilizado algum produto de proteção.'],
+  ['Durabilidade da cor', 'Analisar se a cor aplicada se manteve vibrante e intensa por um período satisfatório após o processo.'],
+  ['Acabamento da pigmentação', 'Avaliar o acabamento final da cor, se o cabelo apresenta brilho, suavidade e uma aparência saudável.'],
+])}
+${HAB(3, 'BARBA', '5 (1 barba completa e modelada, 1 barba degradê/fade beard, 1 barba lenhador/full beard, 1 barba baixa/designer beard, 1 barba com navalha + toalha quente)', 'Técnicas de barbearia e design de barba.', [
+  ['Forma e contorno da barba', 'Avaliar se o formato da barba foi feito de acordo com o estilo solicitado e se o contorno está bem definido.'],
+  ['Simetria e equilíbrio', 'Verificar se ambos os lados da barba estão simétricos e equilibrados, sem falhas ou desníveis.'],
+  ['Aparência geral da barba', 'Analisar se a barba está bem aparada e com um acabamento natural, sem áreas desleixadas.'],
+  ['Textura e maciez', 'Avaliar se a textura da barba está macia ao toque, livre de aspereza ou fios ressecados.'],
+  ['Uso adequado de produtos de cuidados', 'Verificar se foram utilizados produtos adequados para o tipo de barba, como óleos ou cremes de hidratação.'],
+  ['Manutenção do comprimento e volume', 'Avaliar se o comprimento e o volume foram mantidos de acordo com o desejado, sem excessos ou falta de densidade.'],
+  ['Precisão no corte', 'Verificar se o corte foi feito com precisão, respeitando os detalhes e evitando imperfeições visíveis.'],
+  ['Evitação de irritação na pele', 'Avaliar se o processo de aparar e modelar a barba foi feito de maneira a evitar irritações ou cortes na pele.'],
+  ['Hidratação e cuidados com a pele', 'Verificar se a pele foi devidamente hidratada durante e após o processo, para evitar ressecamento ou desconforto.'],
+])}
+${HAB(4, 'CORTE', '30 femininos (corte reto/blunt cut, corte em camadas/repicado ou long layers, chanel clássico ou assimétrico, long bob ou short bob, corte pixie/joãozinho) e 30 masculinos (corte clássico, buzz cut ou militar)', 'Técnicas de corte (clássico, moderno e texturizado).', [
+  ['Análise do formato do rosto e estilo pessoal', 'Avaliar se o corte foi escolhido levando em consideração o formato do rosto do cliente e seu estilo pessoal.'],
+  ['Simetria do corte', 'Verificar se o corte está simétrico, sem desníveis ou irregularidades.'],
+  ['Precisão no corte das listras ou camadas', 'Avaliar se as listras ou camadas foram cortadas com precisão, sem transições abruptas ou linhas desiguais.'],
+  ['Adequação ao tipo de cabelo', 'Analisar se o corte foi feito considerando o tipo de cabelo (liso, cacheado, crespo, ondulado), facilitando o estilo e a manutenção.'],
+  ['Texturização do cabelo', 'Verificar se a texturização foi feita de forma equilibrada, conferindo volume e movimento natural ao corte.'],
+  ['Finalização do corte', 'Avaliar a finalização do corte, se as pontas estão bem acabadas e o cabelo com um aspecto saudável.'],
+  ['Resultado de ajustes e correções', 'Analisar a eficácia dos ajustes e correções durante o corte, se ele ficou perfeito ao final das alterações.'],
+  ['Equilíbrio entre estilo e praticidade', 'Verificar se o corte consegue equilibrar o estilo desejado com a praticidade para o cliente no dia a dia.'],
+])}
+${HAB(5, 'DEPILAÇÃO', '4 (depilação completa de perna, depilação de buço, depilação de virilha, depilação de axilas)', 'Depilação corporal completa; depilação facial (sobrancelha, buço, etc.); depilação com cera quente e fria; depilação a laser; depilação de áreas sensíveis (virilha e axilas).', [
+  ['Escolha do método de depilação adequado', 'Verificar se o método foi escolhido corretamente, considerando o tipo de pele e pelos da cliente (cera, lâmina, laser, etc.).'],
+  ['Higiene e preparação da pele', 'Avaliar se a pele foi bem higienizada antes do procedimento, com o uso de produtos adequados para evitar infecções.'],
+  ['Temperatura da cera ou produto utilizado', 'Verificar se a cera ou o produto está na temperatura correta para evitar queimaduras ou desconforto.'],
+  ['Aplicação e remoção da cera', 'Analisar se a cera foi aplicada uniformemente e removida com a técnica correta, sem causar dor excessiva ou irritações.'],
+  ['Evitar quebra ou fratura dos pelos', 'Avaliar se os pelos foram removidos pela raiz sem causar quebras ou fraturas, o que pode resultar em pelos encravados.'],
+  ['Cuidados pós-depilação', 'Verificar se os cuidados pós-depilação foram realizados corretamente, com produtos calmantes e hidratantes para evitar irritações e vermelhidão.'],
+  ['Precisão no contorno', 'Avaliar a precisão do contorno no local da depilação, como nas sobrancelhas ou na linha do biquíni, para garantir um resultado simétrico e bem-feito.'],
+  ['Conforto durante o procedimento', 'Verificar se o cliente se sentiu confortável durante o processo, com o mínimo de dor ou desconforto possível.'],
+  ['Segurança e cuidados com a pele sensível', 'Avaliar se o processo foi realizado de maneira segura, sem reações adversas, especialmente em áreas de pele mais sensível.'],
+])}
+${HAB(6, 'MASSAGEM', '6 (drenagem linfática corporal completa, massagem relaxante nas costas e ombros, massagem modeladora — abdômen, coxas e glúteos, reflexologia nos pés, massagem terapêutica para alívio de tensão)', 'Drenagem linfática; massagem relaxante; massagem modeladora; reflexologia; massagem terapêutica.', [
+  ['Escolha da técnica adequada', 'Verificar se a técnica de massagem foi escolhida de acordo com as necessidades do cliente (relaxante, terapêutica, drenagem linfática, etc.).'],
+  ['Ambiente confortável', 'Avaliar se o ambiente está adequado, com iluminação suave, temperatura agradável e sem ruídos excessivos.'],
+  ['Higiene e preparação do espaço', 'Verificar se o espaço está limpo e organizado, com toalhas e roupas de cama higienizadas e os produtos prontos para uso.'],
+  ['Postura e técnica do profissional', 'Avaliar se o profissional está utilizando a postura correta e a técnica adequada, garantindo a eficácia e o conforto do cliente.'],
+  ['Pressão aplicada', 'Verificar se a pressão está adequada às preferências e necessidades do cliente, sem causar dor excessiva ou desconforto.'],
+  ['Tempo de duração da sessão', 'Avaliar se o tempo está adequado ao tipo de massagem e às necessidades do cliente, proporcionando relaxamento sem pressa.'],
+  ['Uso de óleos ou cremes', 'Verificar se os óleos ou cremes são apropriados para o tipo de massagem e a pele do cliente, além de estarem em boas condições de uso.'],
+  ['Comunicação durante o procedimento', 'Avaliar se o profissional manteve boa comunicação, verificando constantemente se o cliente está confortável e se a pressão está adequada.'],
+  ['Relaxamento e bem-estar do cliente', 'Verificar se o cliente parece relaxado e confortável, com sinais de alívio da tensão muscular — e sempre perguntar se está bem.'],
+  ['Cuidados pós-massagem', 'Avaliar se o profissional forneceu orientações adequadas após a massagem, como recomendação de hidratação ou alongamentos, caso necessário.'],
+])}
+${HAB(7, 'BROW LAMINATION', '10 (2 brow lamination completo — desembaraço e alinhamento, 2 design de sobrancelha com brow lamination, 2 hidratação e nutrição de sobrancelhas, 2 correção de sobrancelha desalinhada, 2 brow lamination com tintura)', 'Brow lamination; design de sobrancelhas; hidratação e nutrição para sobrancelhas; alisamento de sobrancelhas; correção de sobrancelhas desalinhadas.', [
+  ['Avaliação da estrutura das sobrancelhas', 'Verificar se o formato e o estado das sobrancelhas foram avaliados corretamente para determinar a técnica mais adequada para a laminação.'],
+  ['Escolha dos produtos adequados', 'Avaliar se os produtos são de boa qualidade, específicos para sobrancelhas e adequados ao tipo de pele e pelo do cliente (produtos aprovados pela Anvisa).'],
+  ['Preparo da pele e sobrancelhas', 'Verificar se a pele foi adequadamente limpa e preparada antes da aplicação, garantindo que os pelos fiquem livres de impurezas.'],
+  ['Aplicação do produto de laminação', 'Avaliar se o produto foi aplicado de maneira uniforme e precisa, respeitando a direção do crescimento dos pelos e evitando o contato com a pele.'],
+  ['Tempo de processamento adequado', 'Verificar se o tempo de exposição foi respeitado conforme as instruções do fabricante, considerando o tipo de pelo do cliente.'],
+  ['Uso de protetor de pele', 'Garantir que um protetor de pele (como vaselina) tenha sido utilizado para evitar irritação ou queimaduras durante a aplicação.'],
+  ['Fixação do resultado', 'Verificar se os pelos ficaram bem fixados e alinhados, proporcionando um efeito natural e uniforme de sobrancelhas mais volumosas e definidas.'],
+  ['Hidratação pós-procedimento', 'Avaliar se houve aplicação de hidratante ou óleo nutritivo para garantir que os pelos fiquem saudáveis e com brilho após a laminação.'],
+  ['Instruções de cuidados pós-procedimento', 'Verificar se foram passadas as orientações corretas, como evitar água nas sobrancelhas nas primeiras horas e o uso de produtos específicos para manutenção.'],
+])}
+${HAB(8, 'DESPIGMENTAÇÃO DE SOBRANCELHA / REMOÇÃO DE TATUAGEM', '10 (2 despigmentação com laser, 2 despigmentação com ácido, 2 remoção de tatuagem de sobrancelha, 2 correção de sobrancelha com despigmentação, 2 despigmentação com técnica de clareamento)', 'Despigmentação de sobrancelha; remoção de pigmento em sobrancelhas; correção de sobrancelha; design de sobrancelha e despigmentação; remoção de tatuagens de sobrancelha.', [
+  ['Avaliação da tatuagem ou pigmentação', 'Verificar o tipo de tatuagem ou pigmentação (cor, profundidade e técnica) para escolher o método adequado de remoção.'],
+  ['Escolha do método de remoção', 'Avaliar se foi escolhido o método correto (laser, peeling químico, remoção mecânica, etc.) para o tipo de pigmentação presente.'],
+  ['Anamnese e avaliação da saúde da pele', 'Certificar-se de que foi realizada avaliação da saúde da pele, considerando histórico de reações alérgicas ou problemas de cicatrização.'],
+  ['Proteção da pele ao redor das sobrancelhas', 'Verificar se foi utilizado um protetor de pele (como vaselina ou outra barreira) para evitar danos ou irritações na área ao redor.'],
+  ['Aplicação adequada do produto/procedimento', 'Avaliar se foi aplicado corretamente, respeitando as instruções e o cuidado com a área — sempre higienizar a pele antes de iniciar.'],
+  ['Ajuste de intensidade do tratamento', 'Verificar se a intensidade foi ajustada de acordo com o grau de pigmentação e o tipo de pele, para evitar danos ou excessos.'],
+  ['Uso de equipamentos de segurança', 'Garantir que foram utilizados todos os equipamentos de segurança necessários, como óculos de proteção quando realizado com laser.'],
+  ['Monitoramento do processo de remoção', 'Acompanhar atentamente a resposta da pele para ajustar a técnica ou interromper, se necessário, a fim de evitar efeitos adversos.'],
+  ['Cuidados pós-procedimento', 'Avaliar se foram fornecidas instruções adequadas, como uso de cremes calmantes e a proibição de exposição solar nas primeiras semanas.'],
+  ['Acompanhamento de resultados e sessões adicionais', 'Verificar a necessidade de sessões adicionais e o acompanhamento dos resultados, para garantir remoção segura e eficaz.'],
+])}
+${HAB(9, 'LIMPEZA DE PELE', '10 (2 limpeza completa, 2 limpeza com extração, 2 limpeza com máscaras nutritivas, 2 limpeza hidratante, 2 limpeza profunda com tecnologia — ultrassom, etc.)', 'Limpeza de pele completa; limpeza com extração; limpeza com máscaras faciais; limpeza profunda; limpeza com tecnologia (ultrassom, dermaroller, etc.).', [
+  ['Avaliação do tipo de pele', 'Verificar o tipo de pele da cliente (seca, oleosa, mista, sensível) para escolher os produtos e técnicas mais adequados.'],
+  ['Higienização inicial da pele', 'Certificar-se de que a pele foi higienizada com demaquilante e sabonete específico para remover maquiagem, impurezas e oleosidade excessiva.'],
+  ['Esfoliação', 'Avaliar se a esfoliação foi feita de maneira adequada, com esfoliante suave, removendo células mortas sem causar irritação ou dano.'],
+  ['Aplicação de tônico', 'Garantir que um tônico adequado foi aplicado para equilibrar o pH da pele e preparar para os próximos passos.'],
+  ['Extração de comedões', 'Avaliar a execução correta da extração de cravos, quando necessário, com técnicas e ferramentas esterilizadas para evitar lesões ou infecções.'],
+  ['Aplicação de máscara facial', 'Verificar se a máscara foi escolhida conforme a necessidade da pele (hidratante, purificante, calmante) e aplicada uniformemente, seguindo o tempo de pausa do produto.'],
+  ['Massagem facial', 'Avaliar a aplicação de massagem facial suave, estimulando a circulação sanguínea e promovendo o relaxamento durante o procedimento.'],
+  ['Uso de produtos calmantes', 'Verificar se produtos calmantes e hidratantes foram aplicados após a limpeza — utilizar alta frequência após a extração da máscara.'],
+  ['Proteção solar', 'Garantir que um protetor solar adequado foi aplicado ao final, especialmente se houver exposição ao sol após o procedimento.'],
+  ['Orientações pós-tratamento', 'Certificar-se de que foram passadas as instruções corretas, como evitar produtos agressivos ou exposição ao sol por período determinado.'],
+])}
+${HAB(10, 'LASH LIFTING', '10 (2 lash lifting completo — curvatura e alinhamento, 2 lash lifting com tintura, 2 permanente de cílios, 2 lash lifting para cílios curvados, 2 lash lifting para cílios naturais)', 'Lash lifting completo; alongamento e curvatura de cílios; permanente de cílios; lash lifting com tintura; técnicas avançadas de lash lifting.', [
+  ['Avaliação dos cílios naturais', 'Verificar o comprimento, a espessura e a curvatura dos cílios naturais para determinar a técnica e o produto mais adequados.'],
+  ['Seleção do curvex (papel de lifting)', 'Garantir que o curvex escolhido seja adequado ao comprimento e à curvatura dos cílios, garantindo um efeito natural.'],
+  ['Preparação dos cílios', 'Certificar-se de que os cílios foram limpos e desengordurados para garantir a aderência adequada dos produtos.'],
+  ['Aplicação do gel de lifting', 'Avaliar se o gel foi aplicado corretamente na base dos cílios, respeitando o tempo de processamento, sem causar danos.'],
+  ['Fixação e distribuição correta dos cílios', 'Verificar se os cílios estão corretamente posicionados no curvex, sem sobreposição, para garantir curvatura uniforme e natural.'],
+  ['Tempo de processamento adequado', 'Garantir que o tempo de ação do gel foi seguido conforme o tipo de cílio, sem ultrapassar o recomendado, para evitar danos.'],
+  ['Aplicação do gel de fixação', 'Avaliar a aplicação do gel de fixação, que deve ser precisa, para manter a curvatura de maneira duradoura.'],
+  ['Hidratação dos cílios após o procedimento', 'Verificar se foi aplicada camada de produto hidratante ou nutritivo, para garantir a saúde e o brilho dos fios.'],
+  ['Finalização e teste de curvatura', 'Garantir que a curvatura final esteja de acordo com o desejado, com cílios bem levantados, mas naturais.'],
+  ['Orientações pós-procedimento', 'Fornecer orientações claras sobre os cuidados, como evitar exposição à água, calor e maquiagem por período determinado.'],
+])}
+${HAB(11, 'SOBRANCELHAS', '25 (5 design completo, 5 design com henna, 5 design com microblading, 5 correção de sobrancelhas assimétricas, 5 design com fios — técnica manual)', 'Design de sobrancelha; design com henna; microblading; design com fios; correção de sobrancelhas assimétricas.', [
+  ['Avaliação do formato natural das sobrancelhas', 'Verificar o formato natural e identificar as áreas que precisam de ajustes para um design harmonioso e proporcional.'],
+  ['Definição do design das sobrancelhas', 'Avaliar se o design foi escolhido de acordo com o formato do rosto da cliente, respeitando preferências e características naturais.'],
+  ['Uso de medidas para proporção', 'Garantir que o design seja simétrico, utilizando medidas para assegurar proporcionalidade e equilíbrio entre ambas as sobrancelhas.'],
+  ['Preparação da área', 'Certificar-se de que a área foi higienizada corretamente antes do procedimento, removendo sujeira ou resíduos de maquiagem.'],
+  ['Escolha e aplicação da técnica de depilação', 'Avaliar a técnica escolhida (pinça, cera, linha) e garantir que foi aplicada de maneira cuidadosa e eficaz, sem desconforto excessivo.'],
+  ['Cuidados ao remover pelos', 'Garantir que os pelos sejam removidos de forma suave, respeitando a direção natural do crescimento, para evitar danos ou irritações.'],
+  ['Preenchimento e correção (caso necessário)', 'Avaliar se o preenchimento com lápis, pó ou pomada foi feito de maneira natural, sem exageros, corrigindo falhas.'],
+  ['Uso de produtos de fixação', 'Verificar se foi aplicado gel ou fixador para manter os fios no lugar e garantir sobrancelhas bem definidas durante o dia.'],
+  ['Orientações pós-procedimento', 'Fornecer orientações sobre cuidados, como evitar toque excessivo, exposição ao sol e uso de maquiagem nas primeiras horas.'],
+])}
+${HAB(12, 'FIBRA DE VIDRO OU SERVIÇOS EM GEL', 'Pode ser feita na própria unha da profissional, podendo também ser apenas 2 unhas de cada procedimento (2 aplicação de fibra de vidro, 2 unhas de gel com alongamento, manutenção de unhas de gel, 2 aplicação de gel para cobertura, 2 unhas de gel com design artístico, 2 manutenção de unhas de fibra de vidro)', 'Aplicação de fibra de vidro; unhas de gel; unhas de gel com alongamento; técnicas avançadas em gel; manutenção de unhas de fibra de vidro e gel.', [
+  ['Escolha da técnica adequada', 'Verificar se a escolha entre fibra de vidro ou gel foi feita de acordo com o tipo de unha e as necessidades da cliente (força, comprimento, aparência).'],
+  ['Preparação das unhas naturais', 'Avaliar se as unhas foram preparadas adequadamente, com remoção de cutículas, lixamento e desidratação, para garantir boa aderência.'],
+  ['Aplicação da base', 'Certificar-se de que a base foi aplicada de maneira uniforme e sem excessos, criando uma camada firme.'],
+  ['Aplicação da fibra de vidro ou gel', 'Verificar se a aplicação foi precisa, sem bolhas de ar, com espessura correta e cobertura completa.'],
+  ['Modelagem e espessura das unhas', 'Avaliar a espessura após a aplicação, garantindo que não fiquem nem muito finas nem grossas demais, mantendo equilíbrio e naturalidade.'],
+  ['Controle de tempo de cura (UV/LED)', 'Garantir que o tempo de cura foi adequado para cada camada, evitando unhas mal fixadas ou danificadas.'],
+  ['Acabamento liso e uniforme', 'Verificar se o acabamento ficou liso, sem irregularidades ou rachaduras, com superfície de aparência natural.'],
+  ['Correção de imperfeições (caso necessário)', 'Avaliar se foram feitas correções em falhas de aplicação ou espessura, garantindo unhas perfeitas antes da finalização.'],
+  ['Lixamento e modelagem final', 'Verificar se o lixamento e a modelagem final foram feitos corretamente, com o formato desejado e bordas suaves.'],
+  ['Orientações pós-procedimento', 'Oferecer orientações sobre cuidados, como evitar uso excessivo de produtos de limpeza e contato com água quente por períodos prolongados.'],
+])}
+${HAB(13, 'MANICURE / PEDICURE', '6 (1 manicure completa, 1 pedicure completa, 1 manicure artística, 1 pedicure artística, 1 unhas decoradas, 1 cuidados especiais para unhas — hidratantes e tratamentos)', 'Manicure e pedicure completa; unhas artísticas; unhas decoradas; cuidados especiais para unhas; biossegurança.', [
+  ['Avaliação da saúde das unhas', 'Verificar se as unhas estão saudáveis, sem sinais de infecção, fungos ou outros problemas. Caso necessário, orientar a cliente sobre cuidados médicos.'],
+  ['Limpeza e higienização das mãos/pés', 'Certificar-se de que mãos e pés foram higienizados adequadamente antes de iniciar, para garantir um serviço seguro e sem contaminação.'],
+  ['Remoção de esmalte anterior (se houver)', 'Avaliar se o esmalte antigo foi removido completamente sem danificar a superfície das unhas, com removedores adequados.'],
+  ['Cuidados com as cutículas', 'Avaliar a técnica utilizada para empurrar ou remover as cutículas, garantindo que não ocorra lesão ou irritação — devem ser tratadas de forma suave.'],
+  ['Forma e comprimento das unhas', 'Avaliar se as unhas foram aparadas conforme o desejo da cliente, mantendo formato e comprimento adequados, sem quebras ou irregularidades.'],
+  ['Esfoliação das mãos/pés', 'Verificar se foi realizada esfoliação suave para remover células mortas e deixar a pele mais macia e renovada, especialmente nos pés.'],
+  ['Hidratação da pele', 'Garantir que a pele das mãos e pés foi hidratada adequadamente após a esfoliação, com cremes ou óleos específicos.'],
+  ['Preparação das unhas para o esmalte', 'Avaliar se as unhas foram bem preparadas, incluindo limpeza da superfície, remoção de resíduos e aplicação de base (se necessário).'],
+  ['Aplicação do esmalte', 'Verificar se o esmalte foi aplicado de forma uniforme, sem falhas, bolhas ou excesso, em camadas finas para garantir durabilidade.'],
+  ['Secagem adequada', 'Garantir que o esmalte secou adequadamente, sem marcas ou borrões, respeitando o tempo de secagem.'],
+  ['Finalização do serviço', 'Avaliar se a finalização foi feita com aplicação de top coat para brilho e proteção, garantindo que as unhas estejam secas ao toque.'],
+  ['Orientações pós-procedimento', 'Oferecer orientações sobre cuidados, como evitar contato com produtos químicos agressivos e manter as unhas hidratadas.'],
+])}
+${HAB(14, 'PLÁSTICA DOS PÉS', '4 (tratamento de rachaduras e hidratação profunda)', 'Cuidados podológicos.', [
+  ['Higienização inicial dos pés', 'Avaliar se os pés foram corretamente higienizados antes do início, para garantir que o processo seja realizado de forma limpa e segura.'],
+  ['Avaliação das condições da pele', 'Verificar a condição geral da pele, observando ressecamento, rachaduras, calos ou outras anomalias que possam afetar o tratamento.'],
+  ['Esfoliação dos pés', 'Garantir que foi realizada esfoliação eficaz para remover células mortas, deixando a pele mais suave e preparada para a hidratação.'],
+  ['Tratamento de calos e calosidades', 'Avaliar se as áreas de calos foram tratadas corretamente, com produtos específicos ou raspagem suave, sem causar danos.'],
+  ['Hidratação profunda', 'Verificar se a hidratação foi aplicada de forma eficaz, com produtos específicos para pés secos, que promovam maciez e restauração da pele.'],
+  ['Massagem relaxante nos pés', 'Avaliar a técnica de massagem aplicada para relaxamento, estimulando a circulação e promovendo alívio de tensões.'],
+  ['Aplicação de máscara hidratante ou revitalizante', 'Garantir que uma máscara específica foi aplicada para revitalização da pele, com hidratação profunda das áreas ressecadas.'],
+  ['Proteção das unhas e cutículas', 'Verificar se houve cuidado especial para evitar danos às unhas e cutículas, mantendo a saúde e a aparência.'],
+  ['Finalização e cuidados pós-procedimento', 'Avaliar se a finalização foi bem executada, com os pés de aparência saudável e macia, e produtos que selam a hidratação.'],
+  ['Orientações pós-tratamento', 'Oferecer orientações claras, como evitar ambientes muito quentes ou agressivos e a importância de continuar a hidratação em casa.'],
+])}
+${HAB(15, 'SPA DAS MÃOS / SPA DOS PÉS', '2 (protocolos de SPA e finalização)', 'Técnicas de hidratação e relaxamento.', [
+  ['Higienização inicial', 'Garantir que mãos e pés sejam devidamente higienizados antes do procedimento, com sabonetes e produtos adequados.'],
+  ['Avaliação das condições da pele', 'Verificar a saúde da pele das mãos e dos pés, observando ressecamento, rachaduras, calos ou outras imperfeições.'],
+  ['Esfoliação', 'Avaliar se a esfoliação foi bem realizada em mãos e pés, removendo células mortas e deixando a pele mais suave.'],
+  ['Hidratação profunda', 'Avaliar a aplicação de cremes ou máscaras hidratantes específicas, proporcionando hidratação intensa e restauradora.'],
+  ['Cuidados com as cutículas', 'Verificar se as cutículas foram tratadas com cuidado, sem causar danos, com hidratação e remoção adequada quando necessário.'],
+  ['Massagem relaxante', 'Verificar a execução de massagem relaxante nas mãos, pulsos, pés e tornozelos, proporcionando alívio de tensões e bem-estar.'],
+  ['Tratamento de calos e calosidades', 'Verificar se as áreas de calos foram tratadas de forma eficaz, com técnicas suaves e sem causar desconforto.'],
+  ['Aplicação de máscara ou óleo revitalizante', 'Garantir que a máscara ou óleo revitalizante foi aplicado corretamente, hidratando e rejuvenescendo a pele.'],
+  ['Proteção das unhas', 'Garantir que as unhas das mãos e dos pés foram tratadas corretamente, com atenção especial para evitar danos durante o processo.'],
+  ['Finalização e cuidados pós-procedimento', 'Avaliar a finalização com creme protetor ou óleo para manter a hidratação, e as orientações sobre cuidados pós-tratamento.'],
+])}
+${HAB(16, 'MAQUIAGEM', '14 (2 maquiagem básica, 2 para noivas, 2 para eventos — dia e noite, 2 artística, 2 de correção de imperfeições, 2 para pele negra e morena, 2 de olhos — esfumado, cut crease, etc.)', 'Maquiagem básica; maquiagem profissional; para noivas; para eventos; artística; de correção de imperfeições; para pele negra e morena.', [
+  ['Preparação da pele', 'Verificar se a pele foi devidamente limpa, tonificada e hidratada antes de aplicar a maquiagem.'],
+  ['Escolha da base adequada', 'Avaliar se a base foi escolhida de acordo com o tom de pele, textura e necessidades da cliente (matificante, hidratante, etc.).'],
+  ['Aplicação da base', 'Verificar se a base foi aplicada de forma uniforme, sem marcas, com cobertura natural e duradoura.'],
+  ['Corretivo e contorno', 'Avaliar o uso adequado de corretivo para cobrir imperfeições e o contorno para realçar os traços faciais, sem excessos.'],
+  ['Sombra e delineado', 'Verificar se a aplicação das sombras e do delineado está bem executada, com cores harmonizadas e linha bem definida.'],
+  ['Aplicação de blush e iluminador', 'Avaliar o uso adequado do blush e do iluminador para dar vida ao rosto, com acabamento saudável e iluminado.'],
+  ['Preenchimento das sobrancelhas', 'Garantir que as sobrancelhas foram preenchidas e modeladas corretamente, respeitando o formato natural do rosto.'],
+  ['Máscara de cílios', 'Verificar se a máscara foi aplicada de forma eficaz, sem borrões, proporcionando volume e definição.'],
+  ['Acabamento da maquiagem', 'Avaliar o acabamento final, garantindo que não haja linhas visíveis, manchas ou falhas.'],
+  ['Fixação e durabilidade', 'Verificar se a maquiagem está bem fixada e se a durabilidade é satisfatória, sem necessidade de retoques constantes.'],
+])}
+${HAB(17, 'MODELAGEM', '20 (2 escova básica, 2 escova modeladora, 2 escova de volume, 2 escova para cabelos cacheados, 2 escova para cabelos afro, 4 escova para cabelos curtos, 2 escova para cabelos lisos, 2 escova para cabelos ondulados, 2 escova babyliss)', 'Escova básica; escova modeladora; técnica de uso de produtos finalizadores.', [
+  ['Análise do formato do rosto', 'Avaliar se foi feito um estudo do formato do rosto da cliente para escolher o estilo de modelagem mais adequado.'],
+  ['Escolha do estilo de modelagem', 'Verificar se o estilo escolhido está alinhado com o desejo da cliente e suas características faciais.'],
+  ['Uso de ferramentas apropriadas', 'Garantir que as ferramentas usadas foram adequadas ao tipo de cabelo, sobrancelha ou barba.'],
+  ['Manutenção da saúde do cabelo', 'Verificar se a modelagem foi realizada sem prejudicar a saúde dos fios.'],
+  ['Respeito ao estilo pessoal da cliente', 'Garantir que a modelagem foi realizada de acordo com o gosto e as preferências da cliente, respeitando suas características pessoais.'],
+  ['Finalização e toque final', 'Garantir que a modelagem foi finalizada com o toque adequado, com fixador, pomada ou outro produto para o acabamento desejado.'],
+])}
+${HAB(18, 'NUTRIÇÕES', '10 (2 nutrição capilar básica, 2 nutrição capilar profunda, tratamento de nutrição para cabelos danificados, 2 nutrição com foco em hidratação, 2 nutrição para cabelos ressecados, 2 tratamento nutritivo com máscaras profundas)', 'Tratamentos capilares intensivos.', [
+  ['Análise das necessidades do cabelo', 'Verificar se foi feita análise detalhada das necessidades específicas do cabelo para escolher o tratamento mais adequado.'],
+  ['Escolha do produto apropriado', 'Garantir que o produto seja adequado ao tipo de cabelo ou pele (seco, danificado, oleoso, com processo químico, etc.).'],
+  ['Aplicação uniforme do produto', 'Avaliar se o produto foi aplicado de forma uniforme em toda a área de tratamento, garantindo que todos os fios recebam a quantidade necessária.'],
+  ['Tempo de ação do produto', 'Verificar se o tempo de ação foi respeitado conforme o produto, permitindo que os ingredientes penetrem e nutram adequadamente.'],
+  ['Controle de quantidade de produto usado', 'Verificar se a quantidade utilizada foi adequada, evitando excessos ou falta de produto durante o tratamento.'],
+  ['Uso de equipamentos adicionais (se necessário)', 'Avaliar se, no uso de equipamentos ou vapor, foi feito de forma correta e sem prejudicar a integridade do cabelo ou da pele.'],
+  ['Compreensão dos resultados esperados', 'Garantir que o tratamento foi realizado com o objetivo de melhorar a saúde do cabelo ou da pele, proporcionando brilho, maciez e hidratação.'],
+  ['Avaliação da textura após o tratamento', 'Analisar a melhora na textura após o tratamento, verificando se houve aumento de brilho e suavidade.'],
+  ['Recomendação de cuidados pós-tratamento', 'Garantir que o profissional forneceu recomendações claras para a manutenção em casa com produtos adequados, evitando danos.'],
+])}
+${HAB(19, 'TERAPIA CAPILAR', '12 (2 para cabelos danificados, 2 para queda de cabelo, 2 para cabelos oleosos, 2 para cabelos secos, 2 com máscaras e ampolas, 2 com uso de tecnologias — laser, LED, etc.)', 'Terapias para couro cabeludo e fios.', [
+  ['Análise do tipo de cabelo e do problema capilar', 'Avaliar se foi realizada análise detalhada do tipo de cabelo e se os problemas específicos (queda, quebra, ressecamento) foram identificados corretamente.'],
+  ['Escolha da terapia adequada', 'Verificar se a terapia escolhida é a mais indicada para o problema identificado, considerando os ativos e ingredientes do tratamento.'],
+  ['Higienização inicial do cabelo', 'Avaliar se o processo de higienização antes da aplicação foi adequado, com produtos específicos para o tipo de cabelo.'],
+  ['Aplicação do produto de forma uniforme', 'Garantir que o produto foi aplicado de forma uniforme em todo o couro cabeludo e fios, respeitando as áreas afetadas.'],
+  ['Massagem e estímulo no couro cabeludo', 'Verificar se a massagem foi realizada corretamente para estimular a circulação e facilitar a penetração do produto.'],
+  ['Uso de equipamentos para potencializar a terapia', 'Avaliar se, quando necessário, foram utilizados equipamentos como toucas térmicas, vapor ou infravermelho.'],
+  ['Tempo de ação do produto', 'Garantir que o tempo de ação foi respeitado, permitindo que os ativos agissem da melhor forma no cabelo e no couro cabeludo.'],
+  ['Avaliação do resultado imediato', 'Analisar se houve melhora visível na textura, brilho, maciez e saúde geral do cabelo após o tratamento.'],
+  ['Recomendações pós-tratamento', 'Verificar se foram fornecidas orientações adequadas para cuidados em casa, com produtos específicos ou hábitos para manter os resultados.'],
+  ['Acompanhamento e resultados a longo prazo', 'Avaliar se foi sugerida uma programação de sessões para continuar o tratamento, com monitoramento contínuo dos resultados.'],
+])}
+${HAB(20, 'PENTEADO', '16 (2 penteado básico, 2 para noivas, 2 para festas, 2 com tranças, 2 com coque, 2 para cabelos cacheados, 2 para cabelos lisos e ondulados, 2 para cabelos longos e curtos)', 'Penteado básico; para noivas; para festas e eventos; com tranças; com coque; para cabelos cacheados; para cabelos lisos e ondulados.', [
+  ['Análise do tipo de cabelo e estilo desejado', 'Avaliar se o profissional considerou o tipo de cabelo e as preferências do cliente para definir o estilo de penteado.'],
+  ['Hidratação e preparação do cabelo', 'Verificar se o cabelo foi devidamente hidratado e preparado antes do penteado, saudável, brilhante e sem frizz.'],
+  ['Escolha dos produtos adequados', 'Garantir que os produtos usados (fixadores, sprays, mousses, géis) são adequados ao tipo de cabelo e ao estilo desejado — saber as quantidades e formas de aplicar.'],
+  ['Execução da técnica de penteado', 'Avaliar se a técnica foi executada corretamente (tranças, coques, ondas, cachos), respeitando a estrutura do cabelo e o estilo escolhido.'],
+  ['Precaução com a fixação', 'Verificar se o penteado foi fixado corretamente, sem pesar o cabelo, e se o uso de grampos ou presilhas não danificou o fio.'],
+  ['Volume e textura', 'Avaliar a criação de volume ou textura necessária, garantindo um efeito natural e bem equilibrado.'],
+  ['Finalização e toque final', 'Verificar se o penteado recebeu acabamento adequado, com produtos que garantem brilho, leveza e toque natural.'],
+  ['Ajuste ao formato do rosto e estilo do cliente', 'Avaliar se o penteado foi personalizado para o formato do rosto e o estilo da cliente, considerando corte de cabelo e tipo de evento.'],
+  ['Conforto e segurança', 'Garantir que o penteado não cause desconforto, como apertar demais ou gerar tensão no couro cabeludo, e que os acessórios estejam bem fixados.'],
+])}
+${HAB(21, 'REALINHAMENTO', '4 modelos — avaliação em alinhamento, raiz, coloração e chapinha', 'Técnicas de realinhamento capilar; coloração intermediário.', [
+  ['Análise do tipo de cabelo e necessidade do realinhamento', 'Avaliar se foi feita análise detalhada do tipo de cabelo e identificada a necessidade (redução de volume, eliminação de frizz, selagem de cutículas).'],
+  ['Escolha do produto adequado', 'Verificar se o produto é adequado para o tipo de cabelo e atende às expectativas do cliente, seja alisamento, redução de volume ou tratamento.'],
+  ['Preparação do cabelo', 'Avaliar se o cabelo foi adequadamente lavado e tratado antes da aplicação, com os fios limpos e sem resíduos de outros produtos.'],
+  ['Aplicação do produto', 'Verificar se o produto foi aplicado de maneira uniforme, respeitando o tempo de pausa necessário para garantir a eficácia do tratamento.'],
+  ['Controle do tempo de ação do produto', 'Avaliar se o tempo de ação foi seguido conforme as instruções do fabricante, para evitar danos e garantir o melhor resultado.'],
+  ['Uso de ferramentas adequadas', 'Garantir que foram utilizadas as ferramentas corretas (pente, escova, chapinha) e que as temperaturas foram controladas.'],
+  ['Técnica de escovação e prensagem', 'Avaliar se a escovação e a prensagem foram feitas de maneira precisa, com a quantidade correta de mechas e o cuidado necessário.'],
+  ['Acabamento e brilho', 'Verificar se o cabelo ficou com acabamento liso, sem frizz e com brilho natural, refletindo um visual saudável e hidratado.'],
+  ['Conforto durante o procedimento', 'Verificar se o cliente se sentiu confortável, sem irritações no couro cabeludo ou desconforto pela temperatura ou tempo de exposição.'],
+])}
+`.trim()
+
 export type ConteudoDoc = { id: string; titulo: string; texto: string }
 export const CONTEUDO_DEFAULTS: Record<string, { titulo: string; conteudo: { texto?: string; docs?: ConteudoDoc[] } }> = {
   manicure: {
@@ -5431,6 +5742,7 @@ export const CONTEUDO_DEFAULTS: Record<string, { titulo: string; conteudo: { tex
         { id: 'pop-man-001', titulo: 'POP-MAN-001 · Atendimento de Manicure', texto: MANICURE_HTML },
         { id: 'pop-pro-001', titulo: 'POP-PRO-001 · Atendimento do Profissional', texto: PRO_ATENDIMENTO_HTML },
         { id: 'pop-pro-002', titulo: 'POP-PRO-002 · Atendimento de Pedicure', texto: PRO_PEDICURE_HTML },
+        { id: 'pop-pro-013', titulo: 'POP-PRO-013 · Ganhar Habilidade', texto: PRO_GANHAR_HABILIDADE_HTML },
       ],
     },
   },
@@ -5448,6 +5760,7 @@ export const CONTEUDO_DEFAULTS: Record<string, { titulo: string; conteudo: { tex
         { id: 'pop-pro-010', titulo: 'POP-PRO-010 · Babyliss', texto: PRO_BABYLISS_HTML },
         { id: 'pop-pro-011', titulo: 'POP-PRO-011 · Penteado', texto: PRO_PENTEADO_HTML },
         { id: 'pop-pro-012', titulo: 'POP-PRO-012 · Pigmentação', texto: PRO_PIGMENTACAO_HTML },
+        { id: 'pop-pro-013', titulo: 'POP-PRO-013 · Ganhar Habilidade', texto: PRO_GANHAR_HABILIDADE_HTML },
       ],
     },
   },
@@ -5460,6 +5773,7 @@ export const CONTEUDO_DEFAULTS: Record<string, { titulo: string; conteudo: { tex
         { id: 'pop-rec-003', titulo: 'POP-REC-003 · Atendimento Telefônico', texto: REC_TELEFONE_HTML },
         { id: 'pop-rec-006', titulo: 'POP-REC-006 · Chegada do Cliente', texto: REC_CHEGADA_HTML },
         { id: 'pop-rec-007', titulo: 'POP-REC-007 · Finalização do Procedimento', texto: REC_FINALIZACAO_HTML },
+        { id: 'pop-pro-013', titulo: 'POP-PRO-013 · Ganhar Habilidade', texto: PRO_GANHAR_HABILIDADE_HTML },
       ],
     },
   },

@@ -321,8 +321,10 @@ export default function ConteudoPage() {
               </div>
             </aside>
             <div className="flex-1 min-w-0 w-full">
-              {/* Botão Avaliar profissional — só nas páginas de categoria (manicure/cabelereiro/recepcao) */}
-              {['manicure', 'cabelereiro', 'recepcao'].includes(String(slug)) && (
+              {/* Botão Avaliar profissional — só nas páginas de categoria (manicure/cabelereiro/recepcao)
+                  e só para POPs que têm modelo de avaliação cadastrado (POPs informativos não avaliam). */}
+              {['manicure', 'cabelereiro', 'recepcao'].includes(String(slug))
+                && !!AVALIACOES_POP[dados.conteudo.docs[Math.min(docSel, dados.conteudo.docs.length - 1)]?.id] && (
                 <div className="mx-auto mb-3 flex justify-end" style={{ maxWidth: 840 }}>
                   <button onClick={() => setAvalDoc(dados.conteudo.docs[Math.min(docSel, dados.conteudo.docs.length - 1)])}
                     className="flex items-center gap-2 text-[13px] font-bold px-4 py-2 rounded-lg transition-all"
