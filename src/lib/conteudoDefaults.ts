@@ -5733,6 +5733,303 @@ ${HAB(21, 'REALINHAMENTO', '4 modelos — avaliação em alinhamento, raiz, colo
 ])}
 `.trim()
 
+const PRO_HENNA_HTML = `
+<h1>Procedimento Operacional Padrão (POP)</h1>
+<p style="color:#6b6880;font-size:15px;margin:-4px 0 16px;font-weight:600">POP-PRO-014 — Henna Capilar</p>
+
+<h2>1. Identificação</h2>
+<div style="${META}">
+  <p style="margin:0"><strong>Código:</strong> POP-PRO-014 &nbsp;·&nbsp; <strong>Versão:</strong> 1.0 &nbsp;·&nbsp; <strong>Setor:</strong> Profissionais (Cabeleireiro / Auxiliar)</p>
+  <p style="margin:8px 0 0"><strong>Responsável:</strong> <span style="${FIELD}"></span></p>
+  <p style="margin:8px 0 0"><strong>Data de Emissão:</strong> ___/___/______ &nbsp;·&nbsp; <strong>Última Revisão:</strong> ___/___/______ &nbsp;·&nbsp; <strong>Próxima Revisão:</strong> ___/___/______</p>
+</div>
+
+<h2>2. Objetivo</h2>
+<p>Padronizar o serviço de <strong>henna capilar</strong>, garantindo a avaliação prévia do fio, a realização dos testes de segurança, a aplicação uniforme do produto no lavatório, o cumprimento do tempo de pausa, a remoção correta e o registro do produto utilizado.</p>
+
+<h2>3. Campo de Aplicação</h2>
+<p>Este procedimento aplica-se a todos os profissionais responsáveis pela aplicação de henna capilar.</p>
+
+<h2>4. Diferencial do Procedimento</h2>
+<div style="${BOX}">
+  <p style="margin:0"><strong>A aplicação do produto é feita no próprio lavatório</strong> — a cliente não passa pela cadeira antes. Isso agiliza o atendimento e evita respingos pelo salão, já que a henna mancha com facilidade.</p>
+  <p style="margin:8px 0 0">Por isso, toda a avaliação capilar, a oferta de tratamento e a apresentação dos produtos acontecem <strong>com a cliente já acomodada no lavatório</strong>, antes de aplicar.</p>
+</div>
+
+<h2>5. Materiais Necessários</h2>
+<h3>Equipamentos e Materiais</h3>
+<ul style="${CHECK}">
+  <li>☐ Tigela e pincel de aplicação (não metálicos).</li>
+  <li>☐ Cronômetro ou timer (obrigatório).</li>
+  <li>☐ Pente de ponta fina para as divisões.</li>
+  <li>☐ Presilhas para separar as mechas.</li>
+  <li>☐ <strong>Luvas para o manuseio do produto</strong> (a henna mancha a pele e as unhas).</li>
+  <li>☐ Capa impermeável.</li>
+  <li>☐ Toalhas escuras.</li>
+  <li>☐ Algodão.</li>
+  <li>☐ Creme de barreira para a linha do couro cabeludo.</li>
+  <li>☐ Touca (quando a marca indicar).</li>
+  <li>☐ Espelho de mão.</li>
+  <li>☐ Ficha de registro do produto utilizado.</li>
+</ul>
+<h3>Produtos</h3>
+<ul style="${CHECK}">
+  <li>☐ Henna capilar.</li>
+  <li>☐ Shampoo 1 e Shampoo 2.</li>
+  <li>☐ Condicionador.</li>
+  <li>☐ Máscara de hidratação, nutrição ou reconstrução.</li>
+  <li>☐ Protetor térmico e finalizadores.</li>
+  <li>☐ Removedor de mancha de pele.</li>
+</ul>
+
+<h2>6. Segurança e Cuidados</h2>
+<div style="${BOX}">
+  <div style="${BOXH}">Antes de qualquer aplicação</div>
+  <ul style="${CHECK}">
+    <li>☐ Realizar o <strong>teste de sensibilidade (teste de toque)</strong> conforme a instrução do fabricante, no prazo indicado por ele.</li>
+    <li>☐ Realizar o <strong>teste de mecha</strong> — a henna reage de forma diferente em cada base e o resultado não é previsível só pela embalagem.</li>
+    <li>☐ Conferir a validade do produto.</li>
+    <li>☐ Preparar a mistura somente no momento da aplicação, conforme a proporção da marca.</li>
+  </ul>
+</div>
+<h3>Anamnese Obrigatória</h3>
+<ul style="${CHECK}">
+  <li>☐ A senhora já teve alguma reação alérgica a henna ou tintura?</li>
+  <li>☐ Tem alergia a algum produto ou cosmético?</li>
+  <li>☐ Qual foi a última química realizada e há quanto tempo?</li>
+  <li>☐ Pretende fazer coloração, descoloração ou alisamento nos próximos meses?</li>
+  <li>☐ Tem alguma ferida, irritação ou coceira no couro cabeludo?</li>
+  <li>☐ Está gestante ou amamentando?</li>
+</ul>
+<div style="${BOX}">
+  <div style="${BOXH}">Aviso obrigatório à cliente</div>
+  <p style="margin:0">A henna se deposita no fio e <strong>pode interferir em processos químicos futuros</strong> — coloração, descoloração e alisamento podem apresentar resultado imprevisível ou comprometer a fibra. A cliente deve ser informada disso <strong>antes</strong> da aplicação, e o uso da henna deve ficar registrado na ficha para consulta em atendimentos futuros.</p>
+  <p style="margin:8px 0 0"><strong>Não realizar o procedimento</strong> quando houver histórico de reação alérgica ao produto ou ferida/irritação no couro cabeludo. Nesses casos, informar a cliente, comunicar a gerência e registrar a recusa técnica.</p>
+</div>
+<h3>Durante o Atendimento</h3>
+<ul style="${CHECK}">
+  <li>☐ Manter o lavatório organizado.</li>
+  <li>☐ Não utilizar telefone celular.</li>
+  <li>☐ Não consumir alimentos.</li>
+  <li>☐ Utilizar luvas durante todo o manuseio do produto.</li>
+  <li>☐ Não deixar o produto entrar em contato com os olhos.</li>
+  <li>☐ Evitar respingos no rosto e na roupa da cliente.</li>
+  <li>☐ Perguntar à cliente, ao longo da pausa, se está sentindo ardência ou incômodo.</li>
+  <li>☐ <strong>Em caso de ardência, coceira intensa ou vermelhidão, remover o produto imediatamente</strong> e comunicar a gerência.</li>
+</ul>
+<h3>Após o Atendimento</h3>
+<ul style="${CHECK}">
+  <li>☐ Descartar corretamente os resíduos do produto.</li>
+  <li>☐ Lavar a tigela e o pincel imediatamente (a henna mancha).</li>
+  <li>☐ Higienizar o lavatório, a pia e a cadeira.</li>
+  <li>☐ Higienizar as mãos.</li>
+  <li>☐ Preparar o lavatório para a próxima cliente.</li>
+</ul>
+
+<h2>7. Procedimento Operacional</h2>
+
+<h3>PARTE A — Início do Atendimento</h3>
+<p><strong>1. Apresentação do Profissional</strong> — sempre iniciar o atendimento de frente para a cliente, demonstrando simpatia, cordialidade e profissionalismo.</p>
+<blockquote>"Olá (Nome da cliente), meu nome é (Nome do Profissional) e hoje eu serei o(a) responsável pelo seu atendimento."</blockquote>
+<p><strong>2. Confirmação do Serviço</strong></p>
+<blockquote>"A senhora irá aplicar a henna hoje, correto?"</blockquote>
+<p><strong>3. Identificação da Necessidade</strong></p>
+<blockquote>"O que a senhora pensou para hoje?" · "A senhora possui alguma preferência ou alguma foto de referência?"</blockquote>
+<p><strong>4. Anamnese</strong> — aplicar todas as perguntas do item 6 antes de qualquer procedimento.</p>
+<p><strong>5. Ponderações e Orientações</strong> — após ouvir atentamente a cliente e avaliar o cabelo, explicar de forma clara e profissional:</p>
+<ul style="${CHECK}">
+  <li>☐ O que é possível realizar.</li>
+  <li>☐ O que não é recomendado realizar.</li>
+  <li>☐ As limitações técnicas — cor de base, química anterior e condição do fio.</li>
+  <li>☐ Que a henna pode interferir em químicas futuras.</li>
+  <li>☐ Quanto tempo a cor tende a durar e como fazer a manutenção.</li>
+</ul>
+<blockquote>"Baseado no que a senhora deseja, é possível fazer [explicar o que dá para fazer]."</blockquote>
+<blockquote>"Não recomendamos [explicar o que não é recomendado] porque [explicar o motivo]."</blockquote>
+<p><strong>Nenhum procedimento deverá ser iniciado antes que a cliente compreenda e concorde com o resultado que será realizado.</strong></p>
+
+<h3>PARTE B — Cliente vai para o Lavatório</h3>
+<p><strong>6. Acomodação</strong> — conduzir a cliente até o lavatório, ajudá-la a se acomodar confortavelmente, ajustar a cadeira e verificar se está confortável.</p>
+<p><strong>7. Avaliação do Cabelo e Informação das Necessidades</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Observar o estado geral do cabelo.</li>
+  <li>☐ Verificar o tipo de cabelo (liso, ondulado, cacheado, crespo).</li>
+  <li>☐ Verificar a porosidade do cabelo.</li>
+  <li>☐ Verificar se há ressecamento, danos ou pontas duplas.</li>
+  <li>☐ Verificar se há química (coloração, descoloração, alisamento).</li>
+  <li>☐ Verificar o couro cabeludo (oleosidade, caspa, sensibilidade, lesões).</li>
+  <li>☐ Informar à cliente as necessidades identificadas.</li>
+</ul>
+<blockquote>"Percebi que seu cabelo está [descrever a condição]. Para melhorar a saúde do seu cabelo, recomendamos [sugerir tratamento]."</blockquote>
+<p><strong>8. Oferta de Tratamento</strong> — perguntar se a cliente deseja realizar algum tratamento de acordo com a necessidade identificada.</p>
+<blockquote>"A senhora gostaria de fazer um tratamento de [hidratação/nutrição/reconstrução] de acordo com a necessidade do seu cabelo?"</blockquote>
+<p><strong>9. Informar os Produtos Utilizados</strong> — informar todos os produtos que serão utilizados e a função de cada um.</p>
+<blockquote>"Hoje vou utilizar a henna [nome], o Shampoo [nome] para [função] e o Condicionador [nome]."</blockquote>
+<p><strong>10. Experiência Sensorial</strong> — deixar a cliente sentir o cheiro dos produtos.</p>
+<blockquote>"Antes de começar, gostaria que a senhora sentisse o cheiro dos produtos que vou utilizar."</blockquote>
+
+<h3>PARTE C — Aplicação da Henna</h3>
+<p><strong>11. Preparação da Cliente</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Colocar a capa impermeável.</li>
+  <li>☐ Posicionar a toalha escura sobre os ombros.</li>
+  <li>☐ Aplicar creme de barreira na linha do couro cabeludo, na testa, nas orelhas e na nuca.</li>
+  <li>☐ Retirar brincos e acessórios, quando necessário.</li>
+  <li>☐ Desembaraçar e dividir o cabelo em seções com o pente de ponta fina.</li>
+</ul>
+<p><strong>12. Preparo da Mistura</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Conferir a proporção indicada pela marca.</li>
+  <li>☐ Utilizar tigela e pincel não metálicos.</li>
+  <li>☐ Misturar até obter consistência homogênea.</li>
+  <li>☐ Preparar somente no momento da aplicação.</li>
+  <li>☐ Calçar as luvas antes de iniciar.</li>
+</ul>
+<p><strong>13. Aplicação</strong> — realizada com a cliente já no lavatório.</p>
+<ul style="${CHECK}">
+  <li>☐ Trabalhar em mechas finas e uniformes.</li>
+  <li>☐ Aplicar o produto de forma homogênea, sem falhas.</li>
+  <li>☐ Respeitar a ordem definida entre raiz e comprimento.</li>
+  <li>☐ Não deixar produto acumulado nem escorrendo.</li>
+  <li>☐ Limpar imediatamente qualquer respingo na pele.</li>
+  <li>☐ Conferir se todas as seções foram cobertas, inclusive a nuca e as laterais.</li>
+  <li>☐ Colocar a touca quando a marca indicar.</li>
+</ul>
+<p><strong>14. Tempo de Pausa</strong> — aguardar o tempo indicado pela marca, cronometrado.</p>
+<ul style="${CHECK}">
+  <li>☐ Iniciar o cronômetro somente após conferir a aplicação.</li>
+  <li>☐ Registrar o horário de início.</li>
+  <li>☐ Acompanhar a cliente durante a pausa.</li>
+  <li>☐ Perguntar se está sentindo ardência ou incômodo.</li>
+  <li>☐ <strong>Não ultrapassar o tempo indicado pelo fabricante.</strong></li>
+  <li>☐ Oferecer bebida e garantir o conforto durante a espera.</li>
+</ul>
+<blockquote>"Vou deixar agir por [X] minutos. Qualquer ardência ou incômodo, me chame na hora, por favor."</blockquote>
+
+<h3>PARTE D — Remoção do Produto e Higienização</h3>
+<p><strong>15. Remoção</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Enxaguar com água morna, nunca quente, até a água sair limpa.</li>
+  <li>☐ Aplicar o 1º shampoo, emulsionar bem e enxaguar completamente.</li>
+  <li>☐ Aplicar o 2º shampoo + massagem no couro cabeludo por <strong>10 minutos</strong>.</li>
+  <li>☐ Enxaguar completamente.</li>
+  <li>☐ Verificar se não restou resíduo de henna no cabelo, na pele, nas orelhas ou na nuca.</li>
+  <li>☐ Remover manchas da pele com o produto adequado.</li>
+</ul>
+<p><strong>16. Condicionador ou Máscara</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Aguardar o tempo de pausa recomendado pela marca.</li>
+  <li>☐ Aplicar o condicionador ou a máscara no comprimento e nas pontas, evitando a raiz.</li>
+  <li>☐ Aguardar o tempo recomendado pela marca.</li>
+  <li>☐ Enxaguar completamente, sem deixar resíduos.</li>
+</ul>
+<p><strong>17. Finalização da Higienização</strong> — fazer a touca com a toalha e conduzir a cliente até a cadeira.</p>
+
+<h3>PARTE E — Finalização</h3>
+<p><strong>18. Preparação</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Secar com a toalha, retirando o excesso de água (pressionar, nunca esfregar).</li>
+  <li>☐ Colocar a capa de proteção e o robe.</li>
+  <li>☐ Aplicar o protetor térmico e os finalizadores.</li>
+  <li>☐ Pentear e alinhar o cabelo.</li>
+</ul>
+<p><strong>19. Modelagem ou Secagem</strong> — finalizar conforme o POP-PRO-007 (Secagem) ou POP-PRO-008 (Modelagem).</p>
+<p><strong>20. Validação da Cliente</strong> — apresentar o resultado e perguntar obrigatoriamente:</p>
+<blockquote>"A senhora gostou do resultado?"</blockquote>
+<blockquote>"Existe algum detalhe que gostaria que ajustássemos?"</blockquote>
+<p>Utilizar o espelho de mão para mostrar a parte de trás e as laterais. <strong>O atendimento somente poderá ser encerrado após a aprovação da cliente.</strong></p>
+<p><strong>21. Orientações de Manutenção</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Orientar a aguardar o tempo indicado antes da próxima lavagem.</li>
+  <li>☐ Orientar o uso de shampoo sem sal.</li>
+  <li>☐ Orientar sobre sol, piscina e mar.</li>
+  <li>☐ Reforçar que a henna pode interferir em químicas futuras.</li>
+  <li>☐ Informar a data ideal da manutenção.</li>
+  <li>☐ Oferecer os produtos de manutenção para venda e o reagendamento.</li>
+</ul>
+
+<h3>PARTE F — Registro e Organização</h3>
+<p><strong>22. Registro</strong> — obrigatório em todo atendimento com henna.</p>
+<ul style="${CHECK}">
+  <li>☐ Registrar a marca e o tom da henna utilizada.</li>
+  <li>☐ Registrar o tempo de pausa efetivo.</li>
+  <li>☐ Registrar o resultado obtido e as observações.</li>
+  <li>☐ <strong>Registrar na ficha que a cliente usou henna</strong>, para consulta antes de qualquer química futura.</li>
+  <li>☐ Registrar qualquer reação ou intercorrência.</li>
+  <li>☐ Registrar o serviço e os produtos vendidos no sistema.</li>
+</ul>
+<p><strong>23. Organização</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Descartar corretamente os resíduos do produto.</li>
+  <li>☐ Lavar a tigela e o pincel imediatamente.</li>
+  <li>☐ Higienizar o lavatório, a pia e a cadeira.</li>
+  <li>☐ Recolher os cabelos do chão.</li>
+  <li>☐ Guardar os produtos corretamente.</li>
+  <li>☐ Preparar o lavatório para a próxima cliente.</li>
+</ul>
+
+<h2>8. Indicadores de Qualidade</h2>
+<p>A gerência deverá acompanhar mensalmente:</p>
+<ul style="${CHECK}">
+  <li>☐ Registro do uso de henna na ficha em 100% dos atendimentos.</li>
+  <li>☐ Realização do teste de mecha e do teste de sensibilidade.</li>
+  <li>☐ Número de correções ou reclamações sobre o resultado.</li>
+  <li>☐ Número de reações ou intercorrências.</li>
+  <li>☐ Índice de satisfação da cliente.</li>
+  <li>☐ Percentual de retorno para manutenção.</li>
+  <li>☐ Conversão de henna em tratamento capilar.</li>
+  <li>☐ Tempo médio de execução.</li>
+</ul>
+
+<h2>9. Checklist de Auditoria</h2>
+<div style="${BOX}">
+  <div style="${BOXH}">Apresentação e Segurança</div>
+  <ul style="${CHECK}">
+    <li>☐ Apresentou-se de frente para a cliente, com nome.</li>
+    <li>☐ Confirmou o serviço (henna).</li>
+    <li>☐ Perguntou o que a cliente desejava e se havia referência.</li>
+    <li>☐ Realizou a anamnese completa.</li>
+    <li>☐ Realizou o teste de sensibilidade e o teste de mecha.</li>
+    <li>☐ Avisou que a henna pode interferir em químicas futuras.</li>
+    <li>☐ Fez as ponderações do que dá e do que não dá para fazer.</li>
+  </ul>
+  <div style="${BOXH}">Lavatório e Avaliação</div>
+  <ul style="${CHECK}">
+    <li>☐ Acomodou a cliente confortavelmente no lavatório.</li>
+    <li>☐ Realizou a avaliação capilar e informou as necessidades.</li>
+    <li>☐ Ofereceu tratamento conforme a necessidade.</li>
+    <li>☐ Informou todos os produtos que seriam utilizados.</li>
+    <li>☐ Deixou a cliente sentir o cheiro dos produtos.</li>
+  </ul>
+  <div style="${BOXH}">Aplicação</div>
+  <ul style="${CHECK}">
+    <li>☐ Colocou capa impermeável e toalha escura.</li>
+    <li>☐ Aplicou creme de barreira na linha do couro.</li>
+    <li>☐ Dividiu o cabelo em seções.</li>
+    <li>☐ Preparou a mistura na hora, em tigela não metálica.</li>
+    <li>☐ Utilizou luvas durante todo o manuseio.</li>
+    <li>☐ Aplicou em mechas finas e uniformes, sem falhas.</li>
+    <li>☐ Limpou os respingos na pele imediatamente.</li>
+    <li>☐ Cronometrou o tempo de pausa e não ultrapassou o do fabricante.</li>
+    <li>☐ Perguntou sobre ardência durante a pausa.</li>
+  </ul>
+  <div style="${BOXH}">Remoção e Finalização</div>
+  <ul style="${CHECK}">
+    <li>☐ Enxaguou com água morna até sair limpa.</li>
+    <li>☐ Aplicou o 1º shampoo.</li>
+    <li>☐ Aplicou o 2º shampoo + massagem de 10 minutos.</li>
+    <li>☐ Aplicou o condicionador ou a máscara respeitando os tempos.</li>
+    <li>☐ Removeu as manchas da pele.</li>
+    <li>☐ Fez a touca e levou a cliente para a cadeira.</li>
+    <li>☐ Preparou para o procedimento (capa, robe, penteado).</li>
+    <li>☐ Finalizou com secagem ou modelagem.</li>
+    <li>☐ Mostrou o resultado e perguntou se a cliente gostou.</li>
+    <li>☐ <strong>Registrou o uso da henna na ficha.</strong></li>
+    <li>☐ Lavou a tigela e o pincel e organizou o lavatório.</li>
+  </ul>
+</div>
+`.trim()
+
 export type ConteudoDoc = { id: string; titulo: string; texto: string }
 export const CONTEUDO_DEFAULTS: Record<string, { titulo: string; conteudo: { texto?: string; docs?: ConteudoDoc[] } }> = {
   manicure: {
@@ -5761,6 +6058,7 @@ export const CONTEUDO_DEFAULTS: Record<string, { titulo: string; conteudo: { tex
         { id: 'pop-pro-011', titulo: 'POP-PRO-011 · Penteado', texto: PRO_PENTEADO_HTML },
         { id: 'pop-pro-012', titulo: 'POP-PRO-012 · Pigmentação', texto: PRO_PIGMENTACAO_HTML },
         { id: 'pop-pro-013', titulo: 'POP-PRO-013 · Ganhar Habilidade', texto: PRO_GANHAR_HABILIDADE_HTML },
+        { id: 'pop-pro-014', titulo: 'POP-PRO-014 · Henna Capilar', texto: PRO_HENNA_HTML },
       ],
     },
   },

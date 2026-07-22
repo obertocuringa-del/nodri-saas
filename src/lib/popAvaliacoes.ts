@@ -1732,6 +1732,118 @@ export const AVALIACOES_POP: Record<string, ModeloAvaliacao> = {
     ],
   },
 
+  // POP-PRO-014 — Henna Capilar — 100 pontos
+  'pop-pro-014': {
+    secoes: [
+      {
+        titulo: 'Apresentação e Identificação da Necessidade', pontos: 10, itens: [
+          'Apresentou-se de frente para a cliente, pelo nome',
+          'Confirmou que o serviço era a aplicação de henna',
+          'Perguntou o que a cliente pensou para o dia',
+          'Perguntou sobre preferência ou foto de referência',
+          'Escutou a cliente atentamente, sem interromper',
+        ],
+      },
+      {
+        titulo: 'Anamnese, Ponderações e Testes de Segurança', pontos: 15, itens: [
+          'Perguntou sobre reação alérgica anterior a henna ou tintura',
+          'Perguntou sobre a última química realizada e há quanto tempo',
+          'Perguntou se pretende fazer coloração, descoloração ou alisamento',
+          'Verificou ferida, irritação ou coceira no couro cabeludo',
+          'Perguntou sobre gestação e amamentação',
+          'Realizou o teste de sensibilidade conforme o fabricante',
+          'Realizou o teste de mecha antes da aplicação',
+          'Avisou que a henna pode interferir em químicas futuras',
+          'Explicou o que era possível e o que não era recomendado',
+          'Conferiu a validade do produto',
+          'Só iniciou após a cliente compreender e concordar',
+        ],
+      },
+      {
+        titulo: 'Avaliação Capilar e Oferta de Tratamento', pontos: 10, itens: [
+          'Conduziu e acomodou a cliente confortavelmente no lavatório',
+          'Observou o estado geral do cabelo',
+          'Verificou o tipo e a porosidade do cabelo',
+          'Verificou ressecamento, danos ou química anterior',
+          'Avaliou o couro cabeludo (oleosidade, caspa, sensibilidade, lesões)',
+          'Informou à cliente as necessidades identificadas',
+          'Ofereceu tratamento de acordo com a necessidade identificada',
+        ],
+      },
+      {
+        titulo: 'Produtos e Experiência Sensorial', pontos: 10, itens: [
+          'Informou todos os produtos que seriam utilizados e suas funções',
+          'Explicou o benefício de cada produto para o cabelo da cliente',
+          'Deixou a cliente sentir o cheiro dos produtos',
+        ],
+      },
+      {
+        titulo: 'Aplicação da Henna no Lavatório', pontos: 25, itens: [
+          'Colocou a capa impermeável e a toalha escura',
+          'Aplicou creme de barreira na linha do couro, testa, orelhas e nuca',
+          'Desembaraçou e dividiu o cabelo em seções com pente de ponta fina',
+          'Preparou a mistura na proporção da marca, somente no momento da aplicação',
+          'Utilizou tigela e pincel não metálicos',
+          'Utilizou luvas durante todo o manuseio do produto',
+          'Trabalhou em mechas finas e uniformes',
+          'Aplicou o produto de forma homogênea, sem falhas',
+          'Respeitou a ordem definida entre raiz e comprimento',
+          'Não deixou produto acumulado nem escorrendo',
+          'Limpou imediatamente os respingos na pele',
+          'Conferiu a cobertura de todas as seções, inclusive nuca e laterais',
+          'Colocou a touca quando a marca indicou',
+          'Cronometrou o tempo de pausa e registrou o horário de início',
+          'Perguntou à cliente se estava sentindo ardência ou incômodo',
+          'Não ultrapassou o tempo indicado pelo fabricante',
+        ],
+      },
+      {
+        titulo: 'Remoção e Higienização', pontos: 15, itens: [
+          'Enxaguou com água morna, nunca quente, até a água sair limpa',
+          'Aplicou o 1º shampoo, emulsionou bem e enxaguou completamente',
+          'Aplicou o 2º shampoo + massagem no couro cabeludo por 10 minutos',
+          'Enxaguou completamente',
+          'Verificou se não restou resíduo de henna no cabelo e na pele',
+          'Removeu as manchas da pele com o produto adequado',
+          'Respeitou o tempo de pausa antes do condicionador ou máscara',
+          'Aplicou o condicionador ou a máscara evitando a raiz',
+          'Respeitou o tempo recomendado pela marca e enxaguou sem deixar resíduos',
+        ],
+      },
+      {
+        titulo: 'Finalização e Validação', pontos: 10, itens: [
+          'Fez a touca e conduziu a cliente até a cadeira',
+          'Secou com a toalha pressionando, sem esfregar',
+          'Aplicou o protetor térmico e os finalizadores',
+          'Penteou, alinhou e finalizou com secagem ou modelagem',
+          'Mostrou o resultado com o espelho de mão',
+          'Perguntou se a cliente gostou e se havia ajustes',
+          'Realizou os ajustes imediatamente',
+          'Orientou sobre a manutenção e ofereceu produtos e reagendamento',
+        ],
+      },
+      {
+        titulo: 'Registro e Organização', pontos: 5, itens: [
+          'Registrou a marca e o tom da henna utilizada',
+          'Registrou o tempo de pausa efetivo e o resultado obtido',
+          'Registrou na ficha que a cliente usou henna, para químicas futuras',
+          'Lavou a tigela e o pincel imediatamente',
+          'Higienizou o lavatório e preparou para a próxima cliente',
+        ],
+      },
+    ],
+    comportamental: [
+      'Simpatia',
+      'Comunicação',
+      'Cordialidade',
+      'Técnica de Aplicação',
+      'Precisão e Segurança Química',
+      'Higiene e Organização',
+      'Cuidado com o Conforto da Cliente',
+      'Postura Profissional',
+    ],
+  },
+
   // POP-PRO-002 — Atendimento de Pedicure — 100 pontos
   'pop-pro-002': {
     secoes: [
