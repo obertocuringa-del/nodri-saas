@@ -1989,7 +1989,6 @@ const PRO_LAVATORIO_HTML = `
   <li>☐ Higienizar corretamente as mãos.</li>
   <li>☐ Manter uniforme limpo.</li>
   <li>☐ Manter cabelos presos.</li>
-  <li>☐ Utilizar máscara limpa.</li>
   <li>☐ Conferir a limpeza do lavatório.</li>
   <li>☐ Organizar todos os produtos e materiais.</li>
   <li>☐ Verificar a validade dos produtos.</li>
@@ -2389,7 +2388,6 @@ const PRO_LAVATORIO_ESPECIAL_HTML = `
   <li>☐ Manter uniforme limpo.</li>
   <li>☐ Manter cabelos presos.</li>
   <li>☐ Manter as unhas curtas e sem asperezas (a massagem é prolongada).</li>
-  <li>☐ Utilizar máscara limpa.</li>
   <li>☐ Conferir a limpeza do lavatório.</li>
   <li>☐ Organizar todos os produtos e materiais.</li>
   <li>☐ Verificar a validade dos produtos.</li>
@@ -2721,7 +2719,6 @@ const PRO_SHIATSU_HTML = `
   <li>☐ Manter cabelos presos.</li>
   <li>☐ Manter as unhas curtas e sem asperezas (a massagem é longa e por pressão).</li>
   <li>☐ Retirar anéis, pulseiras e relógio.</li>
-  <li>☐ Utilizar máscara limpa.</li>
   <li>☐ Conferir a limpeza do lavatório.</li>
   <li>☐ Organizar todos os produtos e verificar a validade.</li>
   <li>☐ Preparar toalhas limpas e o apoio de pescoço.</li>
@@ -3052,7 +3049,6 @@ const PRO_TRATAMENTOS_HTML = `
   <li>☐ Higienizar corretamente as mãos.</li>
   <li>☐ Manter uniforme limpo.</li>
   <li>☐ Manter cabelos presos.</li>
-  <li>☐ Utilizar máscara limpa.</li>
   <li>☐ Conferir a limpeza do lavatório.</li>
   <li>☐ Organizar todos os produtos e materiais.</li>
   <li>☐ Verificar a validade dos produtos.</li>
@@ -3620,6 +3616,354 @@ const PRO_SECAGEM_HTML = `
 </div>
 `.trim()
 
+const PRO_MODELAGEM_HTML = `
+<h1>Procedimento Operacional Padrão (POP)</h1>
+<p style="color:#6b6880;font-size:15px;margin:-4px 0 16px;font-weight:600">POP-PRO-008 — Modelagem</p>
+
+<h2>1. Identificação</h2>
+<div style="${META}">
+  <p style="margin:0"><strong>Código:</strong> POP-PRO-008 &nbsp;·&nbsp; <strong>Versão:</strong> 1.0 &nbsp;·&nbsp; <strong>Setor:</strong> Profissionais (Cabeleireiro / Auxiliar)</p>
+  <p style="margin:8px 0 0"><strong>Responsável:</strong> <span style="${FIELD}"></span></p>
+  <p style="margin:8px 0 0"><strong>Data de Emissão:</strong> ___/___/______ &nbsp;·&nbsp; <strong>Última Revisão:</strong> ___/___/______ &nbsp;·&nbsp; <strong>Próxima Revisão:</strong> ___/___/______</p>
+</div>
+
+<h2>2. Objetivo</h2>
+<p>Padronizar o serviço de <strong>modelagem</strong>, garantindo o entendimento exato do resultado desejado pela cliente, a proteção do fio contra o calor, técnica correta no uso das ferramentas térmicas, fixação e durabilidade do formato, simetria e validação do resultado.</p>
+
+<h2>3. Campo de Aplicação</h2>
+<p>Este procedimento aplica-se a todos os profissionais responsáveis pelo serviço de modelagem.</p>
+
+<h2>4. Fluxo do Atendimento</h2>
+<div style="${BOX}">
+  <div style="${BOXH}">Atenção ao ponto de partida</div>
+  <p style="margin:0"><strong>Cliente chega com o cabelo sujo:</strong> realizar a higienização no lavatório (PARTE B) e seguir o fluxo completo.</p>
+  <p style="margin:8px 0 0"><strong>Cliente já chega com o cabelo limpo:</strong> <strong>pular a PARTE B</strong> e ir direto para a preparação do procedimento (PARTE C).</p>
+</div>
+
+<h2>5. Materiais Necessários</h2>
+<h3>Equipamentos</h3>
+<ul style="${CHECK}">
+  <li>☐ Secador com bico direcionador.</li>
+  <li>☐ Modelador ou babyliss (diâmetros variados).</li>
+  <li>☐ Prancha.</li>
+  <li>☐ Escovas (conforme o resultado desejado).</li>
+  <li>☐ Pentes.</li>
+  <li>☐ Presilhas para separar as mechas.</li>
+  <li>☐ Toalhas limpas.</li>
+  <li>☐ Capa de proteção.</li>
+  <li>☐ Robe ou avental.</li>
+  <li>☐ Espelho de mão (para mostrar o resultado).</li>
+</ul>
+<h3>Produtos</h3>
+<ul style="${CHECK}">
+  <li>☐ Shampoo 1 e Shampoo 2.</li>
+  <li>☐ Condicionador.</li>
+  <li>☐ <strong>Protetor térmico</strong> (obrigatório).</li>
+  <li>☐ Leave-in.</li>
+  <li>☐ Mousse, creme ou spray modelador.</li>
+  <li>☐ Óleo ou sérum finalizador.</li>
+  <li>☐ Spray fixador.</li>
+</ul>
+
+<h2>6. Higiene e Segurança</h2>
+<h3>Antes do Atendimento</h3>
+<ul style="${CHECK}">
+  <li>☐ Higienizar corretamente as mãos.</li>
+  <li>☐ Manter uniforme limpo e cabelos presos.</li>
+  <li>☐ Conferir a limpeza da estação.</li>
+  <li>☐ Higienizar escovas e pentes entre as clientes.</li>
+  <li>☐ Limpar as placas da prancha e do modelador (resíduo de produto queima o fio).</li>
+  <li>☐ Verificar o estado dos equipamentos (fio, tomada, aquecimento uniforme).</li>
+  <li>☐ Organizar todos os produtos e verificar a validade.</li>
+</ul>
+<h3>Durante o Atendimento</h3>
+<ul style="${CHECK}">
+  <li>☐ Manter a estação organizada.</li>
+  <li>☐ Não utilizar telefone celular.</li>
+  <li>☐ Não consumir alimentos.</li>
+  <li>☐ <strong>Nunca encostar a ferramenta quente no couro cabeludo, no rosto ou nas orelhas.</strong></li>
+  <li>☐ Apoiar a ferramenta sempre em base térmica, nunca sobre a bancada.</li>
+  <li>☐ Não deixar a ferramenta quente ao alcance da cliente.</li>
+  <li>☐ Perguntar à cliente se a temperatura está agradável.</li>
+  <li>☐ <strong>Nunca usar ferramenta térmica sem protetor térmico.</strong></li>
+  <li>☐ <strong>Nunca usar prancha ou modelador em cabelo úmido.</strong></li>
+</ul>
+<h3>Após o Atendimento</h3>
+<ul style="${CHECK}">
+  <li>☐ Desligar os equipamentos da tomada.</li>
+  <li>☐ Aguardar o resfriamento antes de guardar.</li>
+  <li>☐ Limpar escovas, pentes e placas.</li>
+  <li>☐ Recolher os cabelos do chão e da cadeira.</li>
+  <li>☐ Higienizar a estação e as mãos.</li>
+  <li>☐ Preparar a estação para a próxima cliente.</li>
+</ul>
+
+<h2>7. Procedimento Operacional</h2>
+
+<h3>PARTE A — Início do Atendimento</h3>
+<p><strong>1. Apresentação do Profissional</strong> — sempre iniciar o atendimento de frente para a cliente, demonstrando simpatia, cordialidade e profissionalismo.</p>
+<blockquote>"Olá (Nome da cliente), meu nome é (Nome do Profissional) e hoje eu serei o(a) responsável pelo seu atendimento."</blockquote>
+<p><strong>2. Confirmação do Serviço</strong></p>
+<blockquote>"A senhora irá modelar o cabelo hoje, correto?"</blockquote>
+<p><strong>3. Identificação da Necessidade</strong></p>
+<blockquote>"O que a senhora pensou para hoje?" · "A senhora possui alguma preferência ou alguma foto de referência?"</blockquote>
+<p><strong>4. Ponderações e Orientações</strong> — após ouvir atentamente a cliente, explicar de forma clara e profissional:</p>
+<ul style="${CHECK}">
+  <li>☐ O que é possível realizar.</li>
+  <li>☐ O que não é recomendado realizar.</li>
+  <li>☐ As limitações técnicas (tipo, comprimento, densidade e condição do fio).</li>
+  <li>☐ Quanto tempo a modelagem tende a durar.</li>
+  <li>☐ Os cuidados necessários para preservar a saúde do cabelo.</li>
+</ul>
+<blockquote>"Baseado no que a senhora deseja, é possível fazer [explicar o que dá para fazer]."</blockquote>
+<blockquote>"Não recomendamos [explicar o que não é recomendado] porque [explicar o motivo]."</blockquote>
+<p><strong>Quando a referência não for possível no cabelo da cliente, explicar o motivo e apresentar uma alternativa antes de iniciar.</strong> Nenhum procedimento deverá ser iniciado antes que a cliente compreenda e concorde com o serviço que será realizado.</p>
+<p><strong>5. Verificar o ponto de partida</strong> — perguntar se a cliente já veio com o cabelo lavado.</p>
+<blockquote>"A senhora já veio com o cabelo limpo, ou vamos passar pelo lavatório antes?"</blockquote>
+<p><strong>Se a cliente já estiver com o cabelo limpo, seguir direto para a PARTE C.</strong></p>
+
+<h3>PARTE B — Higienização no Lavatório</h3>
+<p style="color:#6b6880"><em>Executar somente quando a cliente não chega com o cabelo limpo.</em></p>
+<p><strong>6. Avaliação do Cabelo e Informação das Necessidades</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Observar o estado geral do cabelo.</li>
+  <li>☐ Verificar o tipo de cabelo (liso, ondulado, cacheado, crespo).</li>
+  <li>☐ Verificar a porosidade do cabelo.</li>
+  <li>☐ Verificar se há ressecamento, danos ou pontas duplas.</li>
+  <li>☐ Verificar se há química (coloração, descoloração, alisamento).</li>
+  <li>☐ Verificar o couro cabeludo (oleosidade, caspa, sensibilidade).</li>
+  <li>☐ Informar à cliente as necessidades identificadas.</li>
+</ul>
+<p><strong>7. Oferta de Tratamento</strong> — perguntar se a cliente deseja realizar algum tratamento de acordo com a necessidade identificada.</p>
+<blockquote>"A senhora gostaria de fazer um tratamento de [hidratação/nutrição/reconstrução] de acordo com a necessidade do seu cabelo?"</blockquote>
+<p><strong>8. Informar os Produtos e Experiência Sensorial</strong> — informar todos os produtos que serão utilizados e deixar a cliente sentir o cheiro.</p>
+<p><strong>9. Execução da Higienização</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Verificar a temperatura da água (morna, agradável).</li>
+  <li>☐ Soltar um pouco o cabelo da raiz e desembaraçar suavemente.</li>
+  <li>☐ Aplicar o 1º shampoo, emulsionar bem e enxaguar completamente.</li>
+  <li>☐ Aplicar o 2º shampoo + massagem no couro cabeludo por 3 minutos.</li>
+  <li>☐ Enxaguar completamente.</li>
+  <li>☐ Aguardar o tempo de pausa recomendado pela marca.</li>
+  <li>☐ Aplicar o condicionador no comprimento e nas pontas, evitando a raiz.</li>
+  <li>☐ Aguardar o tempo recomendado pela marca.</li>
+  <li>☐ Enxaguar completamente, sem deixar resíduos.</li>
+</ul>
+<div style="${BOX}">
+  <p style="margin:0">Para modelagem, <strong>não aplicar condicionador ou máscara na raiz</strong> e evitar excesso no comprimento. Cabelo pesado demais não segura o formato.</p>
+</div>
+<p><strong>10. Finalização da Higienização</strong> — fazer a touca com a toalha e conduzir a cliente até a cadeira.</p>
+
+<h3>PARTE C — Definição da Modelagem e Preparação</h3>
+<p><strong>11. Preparação da Cliente</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Ajudar a cliente a se sentar confortavelmente.</li>
+  <li>☐ Remover a touca de toalha.</li>
+  <li>☐ Secar com a toalha, retirando o excesso de água (pressionar, nunca esfregar).</li>
+  <li>☐ Colocar a capa de proteção.</li>
+  <li>☐ Colocar o robe ou avental.</li>
+</ul>
+<p><strong>12. Verificar Como a Cliente Gosta e Como Quer a Modelagem</strong> — antes de qualquer produto ou ferramenta, alinhar exatamente o resultado esperado.</p>
+<ul style="${CHECK}">
+  <li>☐ Perguntar qual tipo de modelagem deseja.</li>
+  <li>☐ Perguntar o volume desejado (natural, médio ou bastante volume).</li>
+  <li>☐ Perguntar o lado da repartição.</li>
+  <li>☐ Perguntar se prefere o movimento mais solto ou mais marcado.</li>
+  <li>☐ Perguntar se costuma prender o cabelo depois.</li>
+  <li>☐ Observar a foto de referência, quando houver.</li>
+  <li>☐ Confirmar em voz alta o que será feito, antes de começar.</li>
+</ul>
+<blockquote>"A senhora prefere as ondas mais soltas e naturais, ou mais marcadas?"</blockquote>
+<blockquote>"De que lado a senhora costuma repartir o cabelo?"</blockquote>
+<blockquote>"Então vamos fazer [descrever a modelagem], com a repartição do lado [X] e volume [natural/médio/alto]. É isso mesmo?"</blockquote>
+<table style="${TBL}">
+  <tr><th style="${TH}">Modelagem desejada</th><th style="${TH}">Ferramenta indicada</th><th style="${TH}">Observação</th></tr>
+  <tr><td style="${TD}">Ondas soltas / praia</td><td style="${TD}">Modelador de maior diâmetro</td><td style="${TD}">Alternar o sentido das mechas dá naturalidade</td></tr>
+  <tr><td style="${TD}">Cachos definidos</td><td style="${TD}">Modelador de menor diâmetro</td><td style="${TD}">Mechas mais finas, formato mais firme</td></tr>
+  <tr><td style="${TD}">Ondas na prancha</td><td style="${TD}">Prancha</td><td style="${TD}">Movimento contínuo, sem parar na mecha</td></tr>
+  <tr><td style="${TD}">Escova modelada com movimento</td><td style="${TD}">Secador + escova redonda</td><td style="${TD}">Resultado mais leve e natural</td></tr>
+  <tr><td style="${TD}">Liso modelado com pontas viradas</td><td style="${TD}">Prancha ou escova</td><td style="${TD}">Definir se as pontas viram para dentro ou para fora</td></tr>
+  <tr><td style="${TD}">Volume na raiz</td><td style="${TD}">Secador + escova ou modelador</td><td style="${TD}">Trabalhar a raiz antes do comprimento</td></tr>
+</table>
+<p><strong>13. Aplicação dos Produtos</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Desembaraçar com pente de dentes largos, das pontas para a raiz.</li>
+  <li>☐ Aplicar o <strong>protetor térmico</strong> em todo o comprimento — <strong>obrigatório</strong>.</li>
+  <li>☐ Aplicar leave-in, mousse ou creme modelador conforme o resultado desejado.</li>
+  <li>☐ Distribuir bem o produto, mecha a mecha.</li>
+  <li>☐ Não exagerar na quantidade — excesso pesa e desmancha a modelagem.</li>
+  <li>☐ Evitar produto na raiz quando o objetivo for volume.</li>
+</ul>
+<p><strong>14. Secagem Prévia</strong> — <strong>a modelagem com ferramenta térmica só pode ser feita com o cabelo 100% seco.</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Secar completamente o cabelo com o secador.</li>
+  <li>☐ Direcionar o ar da raiz para as pontas.</li>
+  <li>☐ Conferir se não restou nenhuma mecha úmida, principalmente na nuca.</li>
+</ul>
+<p><strong>15. Penteia e alinha o cabelo</strong> — pentear, definir a repartição combinada e separar o cabelo em seções com presilhas, de baixo para cima.</p>
+
+<h3>PARTE D — Execução da Modelagem</h3>
+<p><strong>16. Ajuste da Ferramenta</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Selecionar a ferramenta e o diâmetro conforme o resultado combinado.</li>
+  <li>☐ Ajustar a temperatura conforme a condição do fio.</li>
+  <li>☐ Aguardar o aquecimento completo antes de iniciar.</li>
+  <li>☐ Testar em uma mecha da nuca antes de trabalhar as áreas visíveis.</li>
+</ul>
+<table style="${TBL}">
+  <tr><th style="${TH}">Condição do fio</th><th style="${TH}">Temperatura recomendada</th></tr>
+  <tr><td style="${TD}">Cabelo saudável, sem química, grosso</td><td style="${TD}">Alta</td></tr>
+  <tr><td style="${TD}">Cabelo com coloração</td><td style="${TD}">Média</td></tr>
+  <tr><td style="${TD}">Cabelo fino, descolorido ou danificado</td><td style="${TD}">Baixa</td></tr>
+</table>
+<p><strong>17. Execução por Seções</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Trabalhar mecha a mecha, começando pela nuca e subindo.</li>
+  <li>☐ Manter as demais seções presas com presilhas.</li>
+  <li>☐ Manter a espessura das mechas uniforme (mechas desiguais geram formatos desiguais).</li>
+  <li>☐ Não iniciar a ferramenta colada à raiz.</li>
+  <li>☐ Respeitar o tempo de permanência da ferramenta na mecha.</li>
+  <li>☐ Não repassar a ferramenta várias vezes na mesma mecha.</li>
+  <li>☐ Seguir o sentido combinado com a cliente.</li>
+  <li>☐ Conferir a simetria entre os dois lados durante a execução.</li>
+</ul>
+<div style="${BOX}">
+  <p style="margin:0"><strong>Deixar a mecha esfriar antes de mexer.</strong> É ao esfriar que o fio fixa o formato. Pentear ou soltar a mecha ainda quente desmancha a modelagem e reduz a durabilidade.</p>
+</div>
+<p><strong>18. Abertura e Definição</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Aguardar todo o cabelo esfriar antes de mexer.</li>
+  <li>☐ Soltar e abrir o movimento com os dedos, conforme o resultado desejado.</li>
+  <li>☐ Usar o pente ou a escova apenas quando a cliente quiser um resultado mais solto.</li>
+  <li>☐ Ajustar o volume da raiz.</li>
+  <li>☐ Conferir se o movimento ficou uniforme dos dois lados.</li>
+</ul>
+
+<h3>PARTE E — Acabamento e Fixação</h3>
+<p><strong>19. Acabamento Final</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Ajustar a repartição conforme combinado.</li>
+  <li>☐ Verificar a simetria e o caimento.</li>
+  <li>☐ Verificar se não há mechas sem modelagem.</li>
+  <li>☐ Verificar frizz ou fios armados.</li>
+  <li>☐ Aplicar óleo ou sérum nas pontas, com moderação.</li>
+  <li>☐ Aplicar spray fixador conforme a durabilidade desejada.</li>
+  <li>☐ Aplicar o fixador à distância, sem encharcar.</li>
+</ul>
+<blockquote>"Vou aplicar um fixador para a modelagem durar mais. A senhora prefere uma fixação mais leve ou mais firme?"</blockquote>
+
+<h3>PARTE F — Validação e Finalização</h3>
+<p><strong>20. Validação da Cliente</strong> — apresentar o resultado e perguntar obrigatoriamente:</p>
+<blockquote>"A senhora gostou do resultado?"</blockquote>
+<blockquote>"Existe algum detalhe que gostaria que ajustássemos?"</blockquote>
+<p>Utilizar o espelho de mão para mostrar a parte de trás e as laterais. <strong>Caso a cliente solicite qualquer ajuste, este deverá ser realizado imediatamente.</strong> O atendimento somente poderá ser encerrado após a aprovação da cliente.</p>
+<p><strong>21. Orientações de Manutenção</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Explicar quanto tempo a modelagem tende a durar.</li>
+  <li>☐ Orientar como dormir para preservar o formato.</li>
+  <li>☐ Orientar sobre umidade, chuva e transpiração.</li>
+  <li>☐ Oferecer os produtos utilizados para venda.</li>
+  <li>☐ Oferecer o reagendamento.</li>
+</ul>
+<blockquote>"Para durar mais, evite umidade e passe a mão o mínimo possível. Gostaria de já deixar seu próximo horário agendado?"</blockquote>
+<p><strong>22. Encerramento</strong></p>
+<ul>
+  <li><strong>Se a modelagem for o último serviço:</strong> retirar a capa, agradecer a preferência e acompanhar a cliente até a recepção.</li>
+  <li><strong>Se houver outro procedimento na sequência:</strong> chamar o profissional principal, informando nome da cliente, procedimentos agendados, produtos utilizados e observações sobre o cabelo.</li>
+</ul>
+<blockquote>"Foi um prazer atender você, (Nome)! Espero vê-la em breve."</blockquote>
+
+<h3>PARTE G — Organização Pós-Atendimento</h3>
+<p><strong>23. Limpeza e Registro</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Desligar os equipamentos da tomada.</li>
+  <li>☐ Aguardar o resfriamento antes de guardar.</li>
+  <li>☐ Limpar as escovas, os pentes e as placas.</li>
+  <li>☐ Recolher os cabelos do chão e da cadeira.</li>
+  <li>☐ Higienizar a estação.</li>
+  <li>☐ Guardar os produtos corretamente.</li>
+  <li>☐ Registrar o serviço e os produtos no sistema.</li>
+  <li>☐ Registrar os produtos vendidos (se houver).</li>
+</ul>
+
+<h2>8. Indicadores de Qualidade</h2>
+<p>A gerência deverá acompanhar mensalmente:</p>
+<ul style="${CHECK}">
+  <li>☐ Tempo médio de modelagem.</li>
+  <li>☐ Número de retrabalhos (cliente pediu ajuste após finalizar).</li>
+  <li>☐ Número de reclamações sobre durabilidade.</li>
+  <li>☐ Índice de satisfação da cliente.</li>
+  <li>☐ Percentual de reagendamento.</li>
+  <li>☐ Conversão de modelagem em tratamento capilar.</li>
+  <li>☐ Vendas de produtos finalizadores e fixadores.</li>
+  <li>☐ Uso do protetor térmico em 100% dos atendimentos.</li>
+</ul>
+
+<h2>9. Checklist de Auditoria</h2>
+<div style="${BOX}">
+  <div style="${BOXH}">Apresentação</div>
+  <ul style="${CHECK}">
+    <li>☐ Apresentou-se de frente para a cliente, com nome.</li>
+    <li>☐ Confirmou o serviço (modelagem).</li>
+    <li>☐ Perguntou o que a cliente desejava.</li>
+    <li>☐ Perguntou se havia preferência ou referência.</li>
+    <li>☐ Fez as ponderações do que dá e do que não dá para fazer.</li>
+    <li>☐ Verificou se a cliente já veio com o cabelo limpo.</li>
+  </ul>
+  <div style="${BOXH}">Lavatório (quando aplicável)</div>
+  <ul style="${CHECK}">
+    <li>☐ Realizou avaliação capilar e informou as necessidades.</li>
+    <li>☐ Perguntou se deseja tratamento.</li>
+    <li>☐ Informou os produtos e deixou sentir o cheiro.</li>
+    <li>☐ Aplicou o 1º shampoo.</li>
+    <li>☐ Aplicou o 2º shampoo + massagem de 3 minutos.</li>
+    <li>☐ Respeitou os tempos de pausa.</li>
+    <li>☐ Aplicou o condicionador e enxaguou completamente.</li>
+  </ul>
+  <div style="${BOXH}">Definição da Modelagem</div>
+  <ul style="${CHECK}">
+    <li>☐ Perguntou qual tipo de modelagem desejava.</li>
+    <li>☐ Perguntou o volume desejado.</li>
+    <li>☐ Perguntou o lado da repartição.</li>
+    <li>☐ Perguntou se prefere o movimento solto ou marcado.</li>
+    <li>☐ Confirmou em voz alta o que seria feito.</li>
+  </ul>
+  <div style="${BOXH}">Preparação</div>
+  <ul style="${CHECK}">
+    <li>☐ Secou com a toalha sem esfregar.</li>
+    <li>☐ Colocou capa e robe.</li>
+    <li>☐ Desembaraçou das pontas para a raiz.</li>
+    <li>☐ Aplicou o protetor térmico.</li>
+    <li>☐ Aplicou o modelador sem exagerar na quantidade.</li>
+    <li>☐ Secou o cabelo completamente antes da ferramenta.</li>
+    <li>☐ Penteou, definiu a repartição e separou em seções.</li>
+  </ul>
+  <div style="${BOXH}">Execução</div>
+  <ul style="${CHECK}">
+    <li>☐ Selecionou a ferramenta e o diâmetro corretos.</li>
+    <li>☐ Ajustou a temperatura à condição do fio.</li>
+    <li>☐ Trabalhou mecha a mecha, da nuca para cima.</li>
+    <li>☐ Manteve a espessura das mechas uniforme.</li>
+    <li>☐ Não encostou a ferramenta no couro cabeludo.</li>
+    <li>☐ Não repassou a ferramenta várias vezes na mesma mecha.</li>
+    <li>☐ Deixou as mechas esfriarem antes de mexer.</li>
+    <li>☐ Conferiu a simetria durante a execução.</li>
+  </ul>
+  <div style="${BOXH}">Acabamento e Finalização</div>
+  <ul style="${CHECK}">
+    <li>☐ Abriu o movimento com os dedos.</li>
+    <li>☐ Ajustou o volume da raiz e a repartição.</li>
+    <li>☐ Verificou simetria, caimento e mechas sem modelagem.</li>
+    <li>☐ Aplicou o fixador à distância.</li>
+    <li>☐ Mostrou o resultado com o espelho de mão.</li>
+    <li>☐ Perguntou se a cliente gostou e se havia ajustes.</li>
+    <li>☐ Realizou os ajustes imediatamente.</li>
+    <li>☐ Orientou sobre a manutenção e ofereceu reagendamento.</li>
+    <li>☐ Organizou a estação e registrou no sistema.</li>
+  </ul>
+</div>
+`.trim()
+
 export type ConteudoDoc = { id: string; titulo: string; texto: string }
 export const CONTEUDO_DEFAULTS: Record<string, { titulo: string; conteudo: { texto?: string; docs?: ConteudoDoc[] } }> = {
   manicure: {
@@ -3641,6 +3985,7 @@ export const CONTEUDO_DEFAULTS: Record<string, { titulo: string; conteudo: { tex
         { id: 'pop-pro-005', titulo: 'POP-PRO-005 · Shiatsu Capilar (Lavatório)', texto: PRO_SHIATSU_HTML },
         { id: 'pop-pro-006', titulo: 'POP-PRO-006 · Tratamentos Capilares (Lavatório)', texto: PRO_TRATAMENTOS_HTML },
         { id: 'pop-pro-007', titulo: 'POP-PRO-007 · Secagem', texto: PRO_SECAGEM_HTML },
+        { id: 'pop-pro-008', titulo: 'POP-PRO-008 · Modelagem', texto: PRO_MODELAGEM_HTML },
       ],
     },
   },
