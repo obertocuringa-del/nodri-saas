@@ -6030,6 +6030,316 @@ const PRO_HENNA_HTML = `
 </div>
 `.trim()
 
+const PRO_MECHAS_HTML = `
+<h1>Procedimento Operacional Padrão (POP)</h1>
+<p style="color:#6b6880;font-size:15px;margin:-4px 0 16px;font-weight:600">POP-PRO-015 — Mechas</p>
+
+<h2>1. Identificação</h2>
+<div style="${META}">
+  <p style="margin:0"><strong>Código:</strong> POP-PRO-015 &nbsp;·&nbsp; <strong>Versão:</strong> 1.0 &nbsp;·&nbsp; <strong>Setor:</strong> Profissionais (Cabeleireiro / Auxiliar)</p>
+  <p style="margin:8px 0 0"><strong>Responsável:</strong> <span style="${FIELD}"></span></p>
+  <p style="margin:8px 0 0"><strong>Data de Emissão:</strong> ___/___/______ &nbsp;·&nbsp; <strong>Última Revisão:</strong> ___/___/______ &nbsp;·&nbsp; <strong>Próxima Revisão:</strong> ___/___/______</p>
+</div>
+
+<h2>2. Objetivo</h2>
+<p>Padronizar o serviço de <strong>mechas</strong>, garantindo a avaliação prévia do fio, o teste de mecha obrigatório, a aplicação uniforme da descoloração, o controle do tempo de ação, a remoção correta, o esfumado e a tonalização quando indicados, preservando a saúde do cabelo e registrando a fórmula utilizada.</p>
+
+<h2>3. Campo de Aplicação</h2>
+<p>Este procedimento aplica-se a todos os profissionais responsáveis pela realização de mechas.</p>
+
+<h2>4. Visão Geral do Fluxo e Tempos</h2>
+<div style="${BOX}">
+  <div style="${BOXH}">Este é um serviço longo — combinar a duração com a cliente antes de iniciar</div>
+  <table style="${TBL}">
+    <tr><th style="${TH}">Etapa</th><th style="${TH}">Tempo médio</th></tr>
+    <tr><td style="${TD}">Teste de mecha</td><td style="${TD}">30 minutos</td></tr>
+    <tr><td style="${TD}">Higienização de preparação</td><td style="${TD}">Conforme o fluxo</td></tr>
+    <tr><td style="${TD}">Aplicação do produto das mechas</td><td style="${TD}">1 hora</td></tr>
+    <tr><td style="${TD}">Tempo de ação e reaplicação</td><td style="${TD}">1 a 2 horas</td></tr>
+    <tr><td style="${TD}">Remoção, esfumar e tonalização</td><td style="${TD}">Conforme o resultado</td></tr>
+    <tr><td style="${TD}">Finalização (modelagem ou secagem)</td><td style="${TD}">Conforme o serviço</td></tr>
+  </table>
+</div>
+
+<h2>5. Materiais Necessários</h2>
+<h3>Equipamentos e Materiais</h3>
+<ul style="${CHECK}">
+  <li>☐ Tigela e pincel de aplicação (não metálicos).</li>
+  <li>☐ Balança ou medidor para a proporção correta.</li>
+  <li>☐ Papel alumínio, papel filme ou touca de mechas.</li>
+  <li>☐ Cronômetro ou timer (obrigatório).</li>
+  <li>☐ Pente de ponta fina para as divisões.</li>
+  <li>☐ Presilhas para separar as mechas.</li>
+  <li>☐ <strong>Luvas para o manuseio dos produtos químicos.</strong></li>
+  <li>☐ Capa impermeável e toalhas escuras.</li>
+  <li>☐ Algodão e creme de barreira para a linha do couro cabeludo.</li>
+  <li>☐ Secador, escovas e prancha.</li>
+  <li>☐ Espelho de mão.</li>
+  <li>☐ Ficha de registro da fórmula.</li>
+</ul>
+<h3>Produtos</h3>
+<ul style="${CHECK}">
+  <li>☐ Pó descolorante.</li>
+  <li>☐ Oxidante na volumagem indicada.</li>
+  <li>☐ Aditivos de proteção do fio (quando utilizados).</li>
+  <li>☐ Tonalizante / matizador.</li>
+  <li>☐ Shampoo pós-química (sem sal, pH ácido).</li>
+  <li>☐ Condicionador, máscara ou passo a passo da linha.</li>
+  <li>☐ Protetor térmico e finalizadores.</li>
+  <li>☐ Removedor de mancha de pele.</li>
+</ul>
+
+<h2>6. Segurança e Cuidados</h2>
+<div style="${BOX}">
+  <div style="${BOXH}">Antes de qualquer aplicação</div>
+  <ul style="${CHECK}">
+    <li>☐ Realizar o <strong>teste de mecha</strong> — obrigatório: a descoloração reage conforme a base, a química anterior e a saúde do fio.</li>
+    <li>☐ Realizar o <strong>teste de sensibilidade</strong> quando a linha do tonalizante indicar.</li>
+    <li>☐ Conferir a validade dos produtos.</li>
+    <li>☐ Seguir a proporção exata indicada pelo fabricante.</li>
+    <li>☐ Preparar a mistura somente no momento da aplicação.</li>
+  </ul>
+</div>
+<h3>Anamnese Obrigatória</h3>
+<ul style="${CHECK}">
+  <li>☐ Qual foi a última química realizada e há quanto tempo?</li>
+  <li>☐ Já usou henna ou produtos com metais no cabelo?</li>
+  <li>☐ Já teve reação alérgica a coloração ou descolorante?</li>
+  <li>☐ Tem alguma ferida, irritação ou coceira no couro cabeludo?</li>
+  <li>☐ O cabelo já quebrou ou "borrachudou" em algum processo anterior?</li>
+  <li>☐ Está gestante ou amamentando?</li>
+</ul>
+<div style="${BOX}">
+  <p style="margin:0"><strong>Não realizar o procedimento</strong> quando houver histórico de reação alérgica, ferida ou irritação no couro cabeludo, ou suspeita de henna/metais no fio (risco de reação e quebra). Nesses casos, informar a cliente, comunicar a gerência e registrar a recusa técnica.</p>
+</div>
+<h3>Durante o Atendimento</h3>
+<ul style="${CHECK}">
+  <li>☐ Manter a estação organizada e ventilada.</li>
+  <li>☐ Utilizar luvas durante todo o manuseio do produto.</li>
+  <li>☐ Não deixar o produto entrar em contato com os olhos.</li>
+  <li>☐ Acompanhar a evolução da descoloração de perto — <strong>nunca abandonar a cliente durante o tempo de ação</strong>.</li>
+  <li>☐ Perguntar à cliente, ao longo da pausa, se está sentindo ardência ou incômodo.</li>
+  <li>☐ <strong>Em caso de ardência, coceira intensa ou vermelhidão, remover o produto imediatamente</strong> e comunicar a gerência.</li>
+  <li>☐ Interromper o processo se o fio apresentar sinal de fragilidade excessiva (elasticidade anormal).</li>
+</ul>
+<h3>Após o Atendimento</h3>
+<ul style="${CHECK}">
+  <li>☐ Descartar corretamente os resíduos do produto.</li>
+  <li>☐ Lavar a tigela e o pincel imediatamente.</li>
+  <li>☐ Higienizar a estação, o lavatório e a cadeira.</li>
+  <li>☐ Higienizar as mãos.</li>
+  <li>☐ Preparar a estação para a próxima cliente.</li>
+</ul>
+
+<h2>7. Procedimento Operacional</h2>
+
+<h3>PARTE A — Início do Atendimento</h3>
+<p><strong>1. Apresentação do Profissional</strong> — sempre iniciar o atendimento de frente para a cliente, demonstrando simpatia, cordialidade e profissionalismo.</p>
+<blockquote>"Olá (Nome da cliente), meu nome é (Nome do Profissional) e hoje eu serei o(a) responsável pelo seu atendimento."</blockquote>
+<p><strong>2. Confirmação do Serviço</strong></p>
+<blockquote>"A senhora irá fazer as mechas hoje, correto?"</blockquote>
+<p><strong>3. Identificação da Necessidade</strong></p>
+<blockquote>"O que a senhora pensou para hoje?" · "A senhora possui alguma preferência ou alguma foto de referência?"</blockquote>
+<p><strong>4. Anamnese</strong> — aplicar todas as perguntas do item 6 antes de qualquer procedimento.</p>
+<p><strong>5. Ponderações e Orientações</strong> — após ouvir atentamente a cliente e avaliar o cabelo, explicar de forma clara e profissional:</p>
+<ul style="${CHECK}">
+  <li>☐ O que é possível realizar.</li>
+  <li>☐ O que não é recomendado realizar.</li>
+  <li>☐ As limitações técnicas — cor de base, química anterior e condição do fio.</li>
+  <li>☐ Quantas sessões serão necessárias para chegar ao resultado desejado.</li>
+  <li>☐ A duração aproximada do atendimento de hoje.</li>
+  <li>☐ Os cuidados de manutenção após o processo.</li>
+</ul>
+<blockquote>"Para chegar exatamente nessa referência, vamos precisar de [X] sessões. Hoje conseguimos chegar em [resultado], e o atendimento leva em torno de [tempo]."</blockquote>
+<p><strong>Nenhum procedimento deverá ser iniciado antes que a cliente compreenda e concorde com o resultado que será realizado.</strong></p>
+
+<h3>PARTE B — Teste de Mecha (tempo médio: 30 minutos)</h3>
+<p>O teste de mecha é obrigatório e define a viabilidade e o tempo de ação do processo.</p>
+<ol>
+  <li>Faz uma avaliação do cabelo da cliente e informa as necessidades.</li>
+  <li>Informa todos os produtos que serão utilizados.</li>
+  <li>Deixa a cliente sentir o cheiro dos produtos.</li>
+</ol>
+<ul style="${CHECK}">
+  <li>☐ Separar uma mecha discreta (na nuca ou por baixo).</li>
+  <li>☐ Preparar a mistura na proporção da marca.</li>
+  <li>☐ Aplicar e acompanhar a reação do fio ao longo do tempo.</li>
+  <li>☐ Avaliar o ponto de clareamento alcançado e a resistência do fio.</li>
+  <li>☐ Definir a volumagem, o tempo de ação e a viabilidade do resultado desejado.</li>
+</ul>
+<div style="${BOX}">
+  <p style="margin:0">Se o teste indicar risco de quebra ou que o resultado não é possível com segurança, <strong>informar a cliente e propor uma alternativa</strong> (menos clareamento, mais sessões, tratamento antes). Não prosseguir em condições que comprometam o fio.</p>
+</div>
+
+<h3>PARTE C — Higienização de Preparação</h3>
+<ul style="${CHECK}">
+  <li>☐ Aplicar o 1º shampoo, emulsionar bem e enxaguar completamente.</li>
+  <li>☐ Aplicar o 2º shampoo + massagem no couro cabeludo por 10 minutos.</li>
+  <li>☐ Enxaguar completamente.</li>
+  <li>☐ Aguardar o tempo de pausa recomendado pela marca.</li>
+  <li>☐ Aplicar o condicionador ou a máscara conforme a necessidade.</li>
+  <li>☐ Aguardar o tempo recomendado e enxaguar completamente.</li>
+  <li>☐ Fazer a touca com a toalha e conduzir a cliente até a cadeira.</li>
+</ul>
+<p><strong>Preparação para o procedimento:</strong> colocar a capa e o robe, pentear e alinhar o cabelo, e <strong>secar completamente com o secador</strong> antes da aplicação das mechas.</p>
+
+<h3>PARTE D — Aplicação das Mechas (tempo médio: 1 hora)</h3>
+<ul style="${CHECK}">
+  <li>☐ Aplicar creme de barreira na linha do couro, orelhas e nuca.</li>
+  <li>☐ Dividir o cabelo em seções com o pente de ponta fina.</li>
+  <li>☐ Preparar a mistura (pó + oxidante) na proporção exata da marca, em tigela não metálica.</li>
+  <li>☐ Calçar as luvas antes de iniciar.</li>
+  <li>☐ Selecionar as mechas conforme a técnica combinada, mantendo espessura uniforme.</li>
+  <li>☐ Aplicar o produto de forma homogênea, sem encostar na raiz além do combinado.</li>
+  <li>☐ Isolar cada mecha (papel alumínio, filme ou touca), evitando contato entre elas.</li>
+  <li>☐ Limpar imediatamente qualquer respingo na pele.</li>
+  <li>☐ Conferir se todas as seções foram cobertas, inclusive nuca e laterais.</li>
+</ul>
+
+<h3>PARTE E — Tempo de Ação e Reaplicação (tempo médio: 1 a 2 horas)</h3>
+<ul style="${CHECK}">
+  <li>☐ Iniciar o cronômetro após concluir a aplicação.</li>
+  <li>☐ Registrar o horário de início.</li>
+  <li>☐ Acompanhar a evolução do clareamento de perto, sem abandonar a cliente.</li>
+  <li>☐ Reaplicar o produto nas áreas que precisarem, conforme a evolução.</li>
+  <li>☐ Perguntar à cliente se está sentindo ardência ou incômodo.</li>
+  <li>☐ <strong>Não ultrapassar o tempo máximo indicado pelo fabricante.</strong></li>
+  <li>☐ Interromper imediatamente se o fio apresentar fragilidade excessiva.</li>
+</ul>
+
+<h3>PARTE F — Remoção do Produto</h3>
+<ul style="${CHECK}">
+  <li>☐ Retirar o papel/filme e enxaguar com água morna, nunca quente, até a água sair limpa.</li>
+  <li>☐ Aplicar o 1º shampoo, emulsionar bem e enxaguar completamente.</li>
+  <li>☐ Aplicar o 2º shampoo + massagem no couro cabeludo por 10 minutos.</li>
+  <li>☐ Enxaguar completamente.</li>
+  <li>☐ Aguardar o tempo de pausa recomendado pela marca.</li>
+  <li>☐ Aplicar o condicionador ou a máscara conforme a necessidade.</li>
+  <li>☐ Aguardar o tempo recomendado e enxaguar sem deixar resíduos.</li>
+  <li>☐ Desembaraçar com cuidado (o fio está mais sensível após a descoloração).</li>
+  <li>☐ Fazer a touca e conduzir a cliente até a cadeira.</li>
+</ul>
+
+<h3>PARTE G — Esfumar</h3>
+<p>Na cadeira, realizar o esfumado da raiz para suavizar a transição e naturalizar o resultado, conforme a técnica combinada com a cliente.</p>
+<ul style="${CHECK}">
+  <li>☐ Avaliar a necessidade e a intensidade do esfumado.</li>
+  <li>☐ Aplicar o produto na raiz de forma esfumada, sem marcar linha.</li>
+  <li>☐ Controlar o tempo de ação e acompanhar a evolução.</li>
+</ul>
+
+<h3>PARTE H — Lavatório: Remoção e Tonalização (quando indicada)</h3>
+<p>Retornar ao lavatório para retirar o produto do esfumado. Nesta etapa também pode ser feita a tonalização/matização.</p>
+<ol>
+  <li>Faz uma avaliação do cabelo da cliente e informa as necessidades.</li>
+  <li>Pergunta se a mesma deseja fazer algum tratamento de acordo com a necessidade.</li>
+  <li>Informa todos os produtos que serão utilizados.</li>
+  <li>Deixa a cliente sentir o cheiro dos produtos.</li>
+</ol>
+<ul style="${CHECK}">
+  <li>☐ Aplicar o tonalizante/matizador quando indicado, respeitando o tempo do fabricante.</li>
+  <li>☐ Enxaguar até a água sair limpa.</li>
+  <li>☐ Aplicar o 1º shampoo, emulsionar bem e enxaguar completamente.</li>
+  <li>☐ Aplicar o 2º shampoo + massagem no couro cabeludo por 10 minutos.</li>
+  <li>☐ Enxaguar completamente.</li>
+  <li>☐ Aguardar o tempo de pausa recomendado pela marca.</li>
+  <li>☐ Aplicar o condicionador ou a máscara conforme a necessidade.</li>
+  <li>☐ Aguardar o tempo recomendado e enxaguar sem deixar resíduos.</li>
+  <li>☐ Verificar se não restou produto na pele, nas orelhas ou na nuca; remover manchas.</li>
+  <li>☐ Fazer a touca e conduzir a cliente até a cadeira.</li>
+</ul>
+
+<h3>PARTE I — Finalização</h3>
+<ul style="${CHECK}">
+  <li>☐ Secar com a toalha, retirando o excesso de água (pressionar, nunca esfregar).</li>
+  <li>☐ Colocar a capa de proteção e o robe.</li>
+  <li>☐ Aplicar o protetor térmico e os finalizadores.</li>
+  <li>☐ Pentear e alinhar o cabelo.</li>
+</ul>
+<p><strong>Modelagem ou Secagem</strong> — finalizar conforme o POP-PRO-007 (Secagem) ou POP-PRO-008 (Modelagem).</p>
+<p><strong>Validação da Cliente</strong> — apresentar o resultado e perguntar obrigatoriamente:</p>
+<blockquote>"A senhora gostou do resultado?"</blockquote>
+<blockquote>"Existe algum detalhe que gostaria que ajustássemos?"</blockquote>
+<p>Utilizar o espelho de mão para mostrar a parte de trás e as laterais. <strong>O atendimento somente poderá ser encerrado após a aprovação da cliente.</strong></p>
+<p><strong>Orientações de Manutenção</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Orientar o uso de shampoo sem sal e produtos para cabelos com química.</li>
+  <li>☐ Recomendar o cronograma capilar para manter a saúde do fio.</li>
+  <li>☐ Orientar sobre o matizador de manutenção em casa (quando indicado).</li>
+  <li>☐ Orientar sobre sol, piscina e mar.</li>
+  <li>☐ Informar a data ideal da manutenção da raiz.</li>
+  <li>☐ Oferecer os produtos de manutenção e o reagendamento.</li>
+</ul>
+
+<h3>PARTE J — Registro e Organização</h3>
+<ul style="${CHECK}">
+  <li>☐ Registrar a volumagem, a proporção e o pó utilizado.</li>
+  <li>☐ Registrar o tom do tonalizante e o tempo de ação efetivo.</li>
+  <li>☐ Registrar o resultado obtido e as observações.</li>
+  <li>☐ Registrar qualquer reação ou intercorrência.</li>
+  <li>☐ Registrar o serviço e os produtos vendidos no sistema.</li>
+  <li>☐ Lavar a tigela e o pincel, higienizar a estação e o lavatório.</li>
+</ul>
+
+<h2>8. Indicadores de Qualidade</h2>
+<p>A gerência deverá acompanhar mensalmente:</p>
+<ul style="${CHECK}">
+  <li>☐ Realização do teste de mecha em 100% dos atendimentos.</li>
+  <li>☐ Registro da fórmula em 100% dos atendimentos.</li>
+  <li>☐ Número de correções de cor.</li>
+  <li>☐ Número de casos de quebra ou danos ao fio.</li>
+  <li>☐ Número de reclamações sobre o resultado.</li>
+  <li>☐ Índice de satisfação da cliente.</li>
+  <li>☐ Percentual de retorno para manutenção.</li>
+  <li>☐ Adesão ao cronograma capilar pós-química.</li>
+</ul>
+
+<h2>9. Checklist de Auditoria</h2>
+<div style="${BOX}">
+  <div style="${BOXH}">Apresentação e Segurança</div>
+  <ul style="${CHECK}">
+    <li>☐ Apresentou-se de frente para a cliente, com nome.</li>
+    <li>☐ Confirmou o serviço (mechas).</li>
+    <li>☐ Perguntou o que a cliente desejava e se havia referência.</li>
+    <li>☐ Realizou a anamnese completa (henna, química anterior, alergia, couro).</li>
+    <li>☐ Realizou o teste de mecha.</li>
+    <li>☐ Informou quantas sessões e a duração do atendimento.</li>
+    <li>☐ Fez as ponderações do que dá e do que não dá para fazer.</li>
+  </ul>
+  <div style="${BOXH}">Preparação e Aplicação</div>
+  <ul style="${CHECK}">
+    <li>☐ Fez a higienização de preparação (1º e 2º shampoo + massagem).</li>
+    <li>☐ Secou o cabelo completamente antes da aplicação.</li>
+    <li>☐ Aplicou creme de barreira na linha do couro.</li>
+    <li>☐ Preparou a mistura na proporção exata, em tigela não metálica.</li>
+    <li>☐ Utilizou luvas durante todo o manuseio.</li>
+    <li>☐ Manteve espessura uniforme das mechas.</li>
+    <li>☐ Aplicou de forma homogênea e isolou as mechas.</li>
+    <li>☐ Limpou os respingos na pele imediatamente.</li>
+  </ul>
+  <div style="${BOXH}">Ação, Remoção e Esfumar</div>
+  <ul style="${CHECK}">
+    <li>☐ Cronometrou o tempo de ação e acompanhou de perto.</li>
+    <li>☐ Reaplicou nas áreas necessárias.</li>
+    <li>☐ Não ultrapassou o tempo do fabricante.</li>
+    <li>☐ Removeu com água morna e fez a higienização.</li>
+    <li>☐ Desembaraçou com cuidado.</li>
+    <li>☐ Realizou o esfumar sem marcar linha.</li>
+  </ul>
+  <div style="${BOXH}">Tonalização e Finalização</div>
+  <ul style="${CHECK}">
+    <li>☐ Fez a avaliação e ofereceu tratamento no lavatório.</li>
+    <li>☐ Aplicou o tonalizante respeitando o tempo (quando indicado).</li>
+    <li>☐ Removeu as manchas da pele.</li>
+    <li>☐ Aplicou protetor térmico e finalizou com secagem ou modelagem.</li>
+    <li>☐ Mostrou o resultado e perguntou se a cliente gostou.</li>
+    <li>☐ Orientou sobre a manutenção e o cronograma.</li>
+    <li>☐ Registrou a fórmula utilizada.</li>
+    <li>☐ Lavou a tigela e o pincel e organizou a estação.</li>
+  </ul>
+</div>
+`.trim()
+
 export type ConteudoDoc = { id: string; titulo: string; texto: string }
 export const CONTEUDO_DEFAULTS: Record<string, { titulo: string; conteudo: { texto?: string; docs?: ConteudoDoc[] } }> = {
   manicure: {
@@ -6059,6 +6369,7 @@ export const CONTEUDO_DEFAULTS: Record<string, { titulo: string; conteudo: { tex
         { id: 'pop-pro-012', titulo: 'POP-PRO-012 · Pigmentação', texto: PRO_PIGMENTACAO_HTML },
         { id: 'pop-pro-013', titulo: 'POP-PRO-013 · Ganhar Habilidade', texto: PRO_GANHAR_HABILIDADE_HTML },
         { id: 'pop-pro-014', titulo: 'POP-PRO-014 · Henna Capilar', texto: PRO_HENNA_HTML },
+        { id: 'pop-pro-015', titulo: 'POP-PRO-015 · Mechas', texto: PRO_MECHAS_HTML },
       ],
     },
   },

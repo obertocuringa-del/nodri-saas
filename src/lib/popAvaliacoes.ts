@@ -1844,6 +1844,111 @@ export const AVALIACOES_POP: Record<string, ModeloAvaliacao> = {
     ],
   },
 
+  // POP-PRO-015 — Mechas — 100 pontos
+  'pop-pro-015': {
+    secoes: [
+      {
+        titulo: 'Apresentação e Identificação da Necessidade', pontos: 10, itens: [
+          'Apresentou-se de frente para a cliente, pelo nome',
+          'Confirmou que o serviço eram as mechas',
+          'Perguntou o que a cliente pensou para o dia',
+          'Perguntou sobre preferência ou foto de referência',
+          'Escutou a cliente atentamente, sem interromper',
+        ],
+      },
+      {
+        titulo: 'Anamnese, Ponderações e Teste de Mecha', pontos: 15, itens: [
+          'Perguntou sobre a última química realizada e há quanto tempo',
+          'Perguntou sobre uso de henna ou produtos com metais',
+          'Perguntou sobre reação alérgica anterior a coloração ou descolorante',
+          'Verificou ferida, irritação ou coceira no couro cabeludo',
+          'Perguntou sobre quebra ou "borrachudo" em processos anteriores',
+          'Explicou o que era possível e o que não era recomendado',
+          'Informou quantas sessões seriam necessárias e a duração do atendimento',
+          'Realizou o teste de mecha e avaliou o clareamento e a resistência do fio',
+          'Definiu a volumagem, o tempo de ação e a viabilidade a partir do teste',
+          'Só iniciou após a cliente compreender e concordar',
+        ],
+      },
+      {
+        titulo: 'Higienização de Preparação', pontos: 10, itens: [
+          'Aplicou o 1º shampoo, emulsionou bem e enxaguou',
+          'Aplicou o 2º shampoo + massagem de 10 minutos',
+          'Respeitou os tempos de pausa da marca',
+          'Aplicou o condicionador ou a máscara conforme a necessidade',
+          'Fez a touca e conduziu a cliente até a cadeira',
+          'Preparou a cliente (capa, robe, penteado)',
+          'Secou o cabelo completamente antes da aplicação das mechas',
+        ],
+      },
+      {
+        titulo: 'Aplicação das Mechas', pontos: 25, itens: [
+          'Aplicou creme de barreira na linha do couro, orelhas e nuca',
+          'Dividiu o cabelo em seções com o pente de ponta fina',
+          'Preparou a mistura (pó + oxidante) na proporção exata da marca',
+          'Utilizou tigela e pincel não metálicos',
+          'Utilizou luvas durante todo o manuseio do produto',
+          'Selecionou as mechas conforme a técnica, com espessura uniforme',
+          'Aplicou o produto de forma homogênea, sem falhas',
+          'Respeitou a distância combinada da raiz',
+          'Isolou cada mecha, evitando contato entre elas',
+          'Limpou imediatamente os respingos na pele',
+          'Conferiu a cobertura de todas as seções, inclusive nuca e laterais',
+        ],
+      },
+      {
+        titulo: 'Tempo de Ação e Reaplicação', pontos: 15, itens: [
+          'Iniciou o cronômetro e registrou o horário de início',
+          'Acompanhou a evolução do clareamento de perto, sem abandonar a cliente',
+          'Reaplicou o produto nas áreas que precisaram',
+          'Perguntou à cliente se estava sentindo ardência ou incômodo',
+          'Não ultrapassou o tempo máximo indicado pelo fabricante',
+          'Interromperia o processo diante de fragilidade excessiva do fio',
+        ],
+      },
+      {
+        titulo: 'Remoção, Higienização e Esfumar', pontos: 10, itens: [
+          'Retirou o papel/filme e enxaguou com água morna até sair limpa',
+          'Aplicou o 1º e o 2º shampoo + massagem de 10 minutos',
+          'Aplicou o condicionador ou a máscara respeitando os tempos',
+          'Desembaraçou com cuidado, respeitando a sensibilidade do fio',
+          'Realizou o esfumar da raiz sem marcar linha',
+          'Controlou o tempo de ação do esfumado',
+        ],
+      },
+      {
+        titulo: 'Tonalização e Finalização', pontos: 10, itens: [
+          'Fez a avaliação e ofereceu tratamento no lavatório',
+          'Aplicou o tonalizante respeitando o tempo do fabricante (quando indicado)',
+          'Removeu as manchas da pele',
+          'Secou com a toalha, aplicou protetor térmico e finalizadores',
+          'Finalizou com secagem ou modelagem',
+          'Mostrou o resultado com o espelho de mão e perguntou se a cliente gostou',
+          'Orientou sobre a manutenção, o cronograma e o matizador de casa',
+        ],
+      },
+      {
+        titulo: 'Registro e Organização', pontos: 5, itens: [
+          'Registrou a volumagem, a proporção e o pó utilizado',
+          'Registrou o tom do tonalizante e o tempo de ação efetivo',
+          'Registrou o resultado, as observações e qualquer intercorrência',
+          'Lavou a tigela e o pincel imediatamente',
+          'Higienizou a estação e o lavatório para a próxima cliente',
+        ],
+      },
+    ],
+    comportamental: [
+      'Simpatia',
+      'Comunicação',
+      'Cordialidade',
+      'Técnica de Aplicação',
+      'Precisão e Segurança Química',
+      'Cuidado com a Saúde do Fio',
+      'Higiene e Organização',
+      'Postura Profissional',
+    ],
+  },
+
   // POP-PRO-002 — Atendimento de Pedicure — 100 pontos
   'pop-pro-002': {
     secoes: [
