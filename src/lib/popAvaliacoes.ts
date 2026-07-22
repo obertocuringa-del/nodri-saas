@@ -843,6 +843,112 @@ export const AVALIACOES_POP: Record<string, ModeloAvaliacao> = {
     ],
   },
 
+  // POP-PRO-005 — Shiatsu Capilar (Lavatório) — 100 pontos
+  'pop-pro-005': {
+    secoes: [
+      {
+        titulo: 'Biossegurança e Preparação do Lavatório', pontos: 10, itens: [
+          'Higienizou corretamente as mãos',
+          'Manteve o uniforme limpo e os cabelos presos',
+          'Manteve as unhas curtas e sem asperezas',
+          'Retirou anéis, pulseiras e relógio',
+          'Conferiu a limpeza do lavatório',
+          'Organizou os produtos e verificou a validade',
+          'Separou o cronômetro, as toalhas e o apoio de pescoço',
+        ],
+      },
+      {
+        titulo: 'Apresentação e Identificação da Necessidade', pontos: 10, itens: [
+          'Apresentou-se de frente para a cliente, pelo nome',
+          'Confirmou que o serviço era o shiatsu capilar',
+          'Perguntou o que a cliente pensou para o dia',
+          'Perguntou sobre preferência ou foto de referência',
+          'Perguntou se a cliente trouxe produtos próprios',
+          'Escutou a cliente atentamente, sem interromper',
+        ],
+      },
+      {
+        titulo: 'Contraindicações, Ponderações e Orientações', pontos: 10, itens: [
+          'Verificou lesões, feridas ou irritação no couro cabeludo',
+          'Perguntou sobre dor cervical, tontura, enxaqueca ou gestação',
+          'Perguntou sobre alergia a produtos',
+          'Explicou o que era possível realizar e o que não era recomendado',
+          'Orientou sobre os cuidados para preservar a saúde do cabelo',
+          'Só iniciou após a cliente compreender e concordar',
+        ],
+      },
+      {
+        titulo: 'Avaliação Capilar e Oferta de Tratamento', pontos: 15, itens: [
+          'Acomodou a cliente e ajustou o apoio do pescoço',
+          'Confirmou com a cliente se a posição estava confortável',
+          'Observou o estado geral do cabelo',
+          'Verificou o tipo e a porosidade do cabelo',
+          'Verificou ressecamento, danos ou química',
+          'Avaliou o couro cabeludo (oleosidade, caspa, sensibilidade)',
+          'Informou à cliente as necessidades identificadas',
+          'Ofereceu tratamento de acordo com a necessidade identificada',
+        ],
+      },
+      {
+        titulo: 'Produtos e Experiência Sensorial', pontos: 10, itens: [
+          'Selecionou produtos específicos conforme a avaliação',
+          'Informou todos os produtos que seriam utilizados e suas funções',
+          'Confirmou com a cliente o uso e a ordem dos produtos que ela trouxe',
+          'Deixou a cliente sentir o cheiro dos produtos',
+          'Ofereceu outras opções de aroma',
+        ],
+      },
+      {
+        titulo: 'Execução do Shiatsu Capilar', pontos: 25, itens: [
+          'Verificou a temperatura da água (morna e agradável)',
+          'Posicionou a cliente com a cervical apoiada',
+          'Soltou o cabelo da raiz e desembaraçou antes de iniciar',
+          'Aplicou o 1º shampoo, emulsionou bem e enxaguou completamente',
+          'Aplicou o 2º shampoo específico para o tipo de cabelo',
+          'Executou a massagem por 15 a 25 minutos cronometrados',
+          'Aplicou pressão com as polpas dos dedos, sem usar as unhas',
+          'Manteve pressão firme, constante e ritmada',
+          'Percorreu todas as regiões (frontal, topo, têmporas, orelhas, nuca)',
+          'Verificou com a cliente se a pressão estava agradável',
+          'Manteve o silêncio e não interrompeu a massagem',
+          'Aplicou o 3º shampoo quando o cabelo exigiu',
+          'Respeitou o tempo de pausa recomendado pela marca',
+          'Aplicou o condicionador ou a máscara conforme a necessidade',
+          'Enxaguou completamente, sem deixar resíduos',
+        ],
+      },
+      {
+        titulo: 'Finalização e Encaminhamento', pontos: 10, itens: [
+          'Avisou a cliente que a massagem terminou antes de movimentá-la',
+          'Ergueu a cliente lentamente',
+          'Fez a touca com a toalha',
+          'Conduziu a cliente até a cadeira e secou o excesso de água',
+          'Preparou a cliente (capa, robe, penteado) e alinhou o cabelo',
+          'Chamou o profissional principal informando produtos, tratamentos e observações',
+        ],
+      },
+      {
+        titulo: 'Organização e Registro', pontos: 10, itens: [
+          'Organizou e higienizou completamente o lavatório',
+          'Descartou corretamente os resíduos',
+          'Devolveu à cliente os produtos que ela trouxe',
+          'Preparou o lavatório para a próxima cliente',
+          'Registrou o serviço, os produtos e as observações no sistema',
+        ],
+      },
+    ],
+    comportamental: [
+      'Simpatia',
+      'Comunicação',
+      'Cordialidade',
+      'Técnica do Shiatsu',
+      'Avaliação Capilar e Técnica',
+      'Higiene e Biossegurança',
+      'Cuidado com o Conforto da Cliente',
+      'Postura Profissional',
+    ],
+  },
+
   // POP-PRO-002 — Atendimento de Pedicure — 100 pontos
   'pop-pro-002': {
     secoes: [
