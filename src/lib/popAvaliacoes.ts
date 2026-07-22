@@ -117,20 +117,22 @@ export const AVALIACOES_POP: Record<string, ModeloAvaliacao> = {
     ],
   },
 
-  // POP-REC-002 — Atendimento via WhatsApp (Primeiro Contato)
+  // POP-REC-002 — Atendimento via WhatsApp (Primeiro Contato) — 100 pontos
   'pop-rec-002': {
     secoes: [
       {
-        titulo: 'Abordagem Inicial', pontos: 15, itens: [
+        titulo: 'Abordagem Inicial', pontos: 20, itens: [
+          'Respondeu a mensagem com agilidade',
           'Cumprimentou o cliente cordialmente',
           'Apresentou-se pelo nome',
           'Informou que é responsável pelo atendimento/agendamento',
           'Utilizou o nome do cliente durante a conversa',
           'Manteve linguagem educada e profissional',
+          'Escreveu de forma clara, sem abreviações ou erros',
         ],
       },
       {
-        titulo: 'Cadastro do Cliente', pontos: 15, itens: [
+        titulo: 'Cadastro do Cliente', pontos: 10, itens: [
           'Verificou se o cliente já possuía cadastro',
           'Atualizou os dados quando necessário',
           'Coletou nome completo',
@@ -150,13 +152,13 @@ export const AVALIACOES_POP: Record<string, ModeloAvaliacao> = {
         ],
       },
       {
-        titulo: 'Recuperação de Agenda', pontos: 10, condicional: true,
-        nota: 'Somente quando não houver a vaga solicitada.',
-        itens: [
-          'Ofereceu outro horário',
-          'Ofereceu outra data',
-          'Ofereceu outro profissional',
-          'Inseriu em lista de espera',
+        titulo: 'Consulta de Agenda e Recuperação', pontos: 15, itens: [
+          'Consultou corretamente a agenda',
+          'Confirmou disponibilidade antes de prometer o horário',
+          'Quando necessário, ofereceu outro horário',
+          'Quando necessário, ofereceu outra data',
+          'Quando necessário, ofereceu outro profissional',
+          'Inseriu o cliente na lista de espera',
         ],
       },
       {
@@ -170,9 +172,10 @@ export const AVALIACOES_POP: Record<string, ModeloAvaliacao> = {
         ],
       },
       {
-        titulo: 'Reagendamento', pontos: 10, itens: [
-          'Ofereceu próximo agendamento',
-          'Explicou a importância de garantir vaga',
+        titulo: 'Reagendamento Preventivo', pontos: 10, itens: [
+          'Ofereceu o próximo agendamento',
+          'Explicou o período ideal de retorno',
+          'Explicou a importância de garantir a vaga',
         ],
       },
       {
@@ -184,6 +187,16 @@ export const AVALIACOES_POP: Record<string, ModeloAvaliacao> = {
           'Perguntou se desejava agendar algo mais',
         ],
       },
+    ],
+    comportamental: [
+      'Simpatia',
+      'Comunicação Escrita',
+      'Cordialidade',
+      'Agilidade na Resposta',
+      'Proatividade',
+      'Capacidade de Venda',
+      'Conhecimento dos Serviços',
+      'Postura Profissional',
     ],
   },
 
