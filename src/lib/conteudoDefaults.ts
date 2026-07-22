@@ -5032,6 +5032,396 @@ const PRO_PENTEADO_HTML = `
 </div>
 `.trim()
 
+const PRO_PIGMENTACAO_HTML = `
+<h1>Procedimento Operacional Padrão (POP)</h1>
+<p style="color:#6b6880;font-size:15px;margin:-4px 0 16px;font-weight:600">POP-PRO-012 — Pigmentação</p>
+
+<h2>1. Identificação</h2>
+<div style="${META}">
+  <p style="margin:0"><strong>Código:</strong> POP-PRO-012 &nbsp;·&nbsp; <strong>Versão:</strong> 1.0 &nbsp;·&nbsp; <strong>Setor:</strong> Profissionais (Cabeleireiro / Assistente)</p>
+  <p style="margin:8px 0 0"><strong>Responsável:</strong> <span style="${FIELD}"></span></p>
+  <p style="margin:8px 0 0"><strong>Data de Emissão:</strong> ___/___/______ &nbsp;·&nbsp; <strong>Última Revisão:</strong> ___/___/______ &nbsp;·&nbsp; <strong>Próxima Revisão:</strong> ___/___/______</p>
+</div>
+
+<h2>2. Objetivo</h2>
+<p>Padronizar o serviço de <strong>pigmentação</strong>, garantindo a avaliação prévia da cliente e do fio, a realização dos testes de segurança, a aplicação uniforme do produto, o cumprimento do tempo de pausa, a remoção correta, o registro da fórmula utilizada e o acompanhamento da cliente até a saída do salão.</p>
+
+<h2>3. Campo de Aplicação</h2>
+<p>Este procedimento aplica-se ao profissional responsável pela pigmentação e ao assistente que auxilia na aplicação e no acompanhamento.</p>
+
+<h2>4. Definição da Rota</h2>
+<div style="${BOX}">
+  <div style="${BOXH}">Este POP tem duas rotas — definir qual será usada antes de iniciar</div>
+  <p style="margin:0"><strong>ROTA A — Lavar antes da aplicação:</strong> lavatório → secagem → aplicação da pigmentação → pausa → lavatório de remoção → finalização.</p>
+  <p style="margin:8px 0 0"><strong>ROTA B — Lavar depois da aplicação:</strong> preparação → aplicação da pigmentação → pausa → lavatório de remoção → finalização.</p>
+  <p style="margin:8px 0 0">A escolha depende da orientação do fabricante do produto e da avaliação do profissional. <strong>Seguir sempre a instrução da marca utilizada.</strong></p>
+</div>
+<div style="${BOX}">
+  <div style="${BOXH}">Composição da equipe</div>
+  <p style="margin:0"><strong>Com assistente:</strong> o assistente aplica a tinta, sob orientação do profissional responsável.</p>
+  <p style="margin:8px 0 0"><strong>Sem assistente:</strong> o próprio profissional aplica a tinta.</p>
+  <p style="margin:8px 0 0">Havendo assistente, ele deverá <strong>dar suporte até a cliente ir embora</strong>.</p>
+</div>
+
+<h2>5. Responsabilidades</h2>
+<h3>Profissional Responsável</h3>
+<ul>
+  <li>Cumprir integralmente este POP.</li>
+  <li>Realizar a anamnese e os testes de segurança.</li>
+  <li>Definir a fórmula, a proporção e o tempo de pausa.</li>
+  <li>Orientar o assistente sobre a aplicação.</li>
+  <li>Acompanhar e conferir a aplicação.</li>
+  <li>Controlar o tempo de pausa.</li>
+  <li>Registrar a fórmula utilizada.</li>
+  <li>Validar o resultado com a cliente.</li>
+</ul>
+<h3>Assistente</h3>
+<ul>
+  <li>Aplicar a tinta conforme a orientação do profissional responsável.</li>
+  <li>Não alterar produto, proporção ou tempo por conta própria.</li>
+  <li>Comunicar imediatamente qualquer reação, ardência ou irregularidade.</li>
+  <li><strong>Dar suporte até a cliente ir embora.</strong></li>
+</ul>
+<h3>Gerência</h3>
+<ul>
+  <li>Fiscalizar o cumprimento deste POP.</li>
+  <li>Garantir a disponibilidade dos produtos e dos materiais de proteção.</li>
+  <li>Treinar continuamente a equipe.</li>
+  <li>Manter o registro das fórmulas e das ocorrências.</li>
+</ul>
+
+<h2>6. Materiais Necessários</h2>
+<h3>Equipamentos e Materiais</h3>
+<ul style="${CHECK}">
+  <li>☐ Tigela e pincel de aplicação (não metálicos).</li>
+  <li>☐ Balança ou medidor para a proporção correta.</li>
+  <li>☐ Cronômetro ou timer (obrigatório).</li>
+  <li>☐ Pente de ponta fina para as divisões.</li>
+  <li>☐ Presilhas para separar as mechas.</li>
+  <li>☐ <strong>Luvas para a aplicação do produto químico.</strong></li>
+  <li>☐ Capa impermeável.</li>
+  <li>☐ Toalhas escuras.</li>
+  <li>☐ Algodão.</li>
+  <li>☐ Creme de barreira para a linha do couro cabeludo.</li>
+  <li>☐ Touca (quando a marca indicar).</li>
+  <li>☐ Espelho de mão.</li>
+  <li>☐ Ficha de registro da fórmula.</li>
+</ul>
+<h3>Produtos</h3>
+<ul style="${CHECK}">
+  <li>☐ Coloração / pigmentação.</li>
+  <li>☐ Oxidante na volumagem indicada.</li>
+  <li>☐ Shampoo pós-coloração (sem sal, pH ácido).</li>
+  <li>☐ Condicionador.</li>
+  <li>☐ Máscara ou passo a passo da linha.</li>
+  <li>☐ Protetor térmico e finalizadores.</li>
+  <li>☐ Removedor de mancha de pele.</li>
+</ul>
+
+<h2>7. Segurança e Cuidados</h2>
+<div style="${BOX}">
+  <div style="${BOXH}">Antes de qualquer aplicação</div>
+  <ul style="${CHECK}">
+    <li>☐ Realizar o <strong>teste de sensibilidade (teste de toque)</strong> conforme a instrução do fabricante, no prazo indicado por ele.</li>
+    <li>☐ Realizar o <strong>teste de mecha</strong> quando houver dúvida sobre o resultado ou sobre a resistência do fio.</li>
+    <li>☐ Conferir a validade dos produtos.</li>
+    <li>☐ Seguir a proporção exata indicada pelo fabricante.</li>
+    <li>☐ Preparar a mistura somente no momento da aplicação.</li>
+  </ul>
+</div>
+<h3>Anamnese Obrigatória</h3>
+<ul style="${CHECK}">
+  <li>☐ A senhora já teve alguma reação alérgica a tintura?</li>
+  <li>☐ Tem alergia a algum produto ou cosmético?</li>
+  <li>☐ Qual foi a última química realizada e há quanto tempo?</li>
+  <li>☐ Já usou henna ou produtos com metais no cabelo?</li>
+  <li>☐ Tem alguma ferida, irritação ou coceira no couro cabeludo?</li>
+  <li>☐ Está gestante ou amamentando?</li>
+  <li>☐ Faz uso de algum medicamento ou tratamento em curso?</li>
+</ul>
+<div style="${BOX}">
+  <p style="margin:0"><strong>Não realizar o procedimento</strong> quando houver histórico de reação alérgica ao produto, ferida ou irritação no couro cabeludo, ou suspeita de henna/metais no fio. Nesses casos, informar a cliente, comunicar a gerência e registrar a recusa técnica.</p>
+</div>
+<h3>Durante o Atendimento</h3>
+<ul style="${CHECK}">
+  <li>☐ Manter a estação organizada e ventilada.</li>
+  <li>☐ Não utilizar telefone celular.</li>
+  <li>☐ Não consumir alimentos.</li>
+  <li>☐ Utilizar luvas durante todo o manuseio do produto.</li>
+  <li>☐ Não deixar o produto entrar em contato com os olhos.</li>
+  <li>☐ Perguntar à cliente, ao longo da pausa, se está sentindo ardência ou incômodo.</li>
+  <li>☐ <strong>Em caso de ardência, coceira intensa ou vermelhidão, remover o produto imediatamente</strong> e comunicar a gerência.</li>
+  <li>☐ Não aplicar calor sem indicação do fabricante.</li>
+</ul>
+<h3>Após o Atendimento</h3>
+<ul style="${CHECK}">
+  <li>☐ Descartar corretamente os resíduos do produto.</li>
+  <li>☐ Lavar a tigela e o pincel imediatamente.</li>
+  <li>☐ Higienizar a estação, a pia e a cadeira.</li>
+  <li>☐ Higienizar as mãos.</li>
+  <li>☐ Preparar a estação para a próxima cliente.</li>
+</ul>
+
+<h2>8. Procedimento Operacional</h2>
+
+<h3>PARTE A — Início do Atendimento</h3>
+<p><strong>1. Apresentação do Profissional</strong> — sempre iniciar o atendimento de frente para a cliente, demonstrando simpatia, cordialidade e profissionalismo.</p>
+<blockquote>"Olá (Nome da cliente), meu nome é (Nome do Profissional) e hoje eu serei o(a) responsável pelo seu atendimento."</blockquote>
+<p><strong>2. Confirmação do Serviço</strong></p>
+<blockquote>"A senhora irá pigmentar hoje, correto?"</blockquote>
+<p><strong>3. Identificação da Necessidade</strong></p>
+<blockquote>"O que a senhora pensou para hoje?" · "A senhora possui alguma preferência ou alguma foto de referência?"</blockquote>
+<p><strong>4. Anamnese</strong> — aplicar todas as perguntas do item 7 antes de qualquer procedimento.</p>
+<p><strong>5. Ponderações e Orientações</strong> — após ouvir atentamente a cliente e avaliar o cabelo, explicar de forma clara e profissional:</p>
+<ul style="${CHECK}">
+  <li>☐ O que é possível realizar.</li>
+  <li>☐ O que não é recomendado realizar.</li>
+  <li>☐ As limitações técnicas — cor de base, química anterior e condição do fio.</li>
+  <li>☐ Quantas sessões serão necessárias para chegar ao resultado desejado.</li>
+  <li>☐ Quanto tempo a cor tende a durar.</li>
+  <li>☐ A necessidade de manutenção e de cuidados específicos.</li>
+</ul>
+<blockquote>"Baseado no que a senhora deseja, é possível fazer [explicar o que dá para fazer]."</blockquote>
+<blockquote>"Não recomendamos [explicar o que não é recomendado] porque [explicar o motivo]."</blockquote>
+<blockquote>"Para chegar exatamente nessa referência, vamos precisar de [X] sessões. Hoje conseguimos chegar em [resultado]."</blockquote>
+<p><strong>Nenhum procedimento deverá ser iniciado antes que a cliente compreenda e concorde com o resultado que será realizado.</strong></p>
+<p><strong>6. Definição da Rota</strong> — definir, conforme a orientação do fabricante, se o cabelo será lavado <strong>antes</strong> (Rota A) ou <strong>depois</strong> (Rota B) da aplicação, e informar a cliente.</p>
+
+<h3>PARTE B — Orientação ao Assistente</h3>
+<p style="color:#6b6880"><em>Executar somente quando houver assistente.</em></p>
+<p><strong>7. Briefing do Assistente</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Informar a fórmula e a proporção exatas.</li>
+  <li>☐ Informar a volumagem do oxidante.</li>
+  <li>☐ Informar por onde começar a aplicação e em qual sentido.</li>
+  <li>☐ Informar se deve ou não aplicar na raiz e no comprimento.</li>
+  <li>☐ Informar o tempo de pausa.</li>
+  <li>☐ Informar quais produtos usar no lavatório de remoção.</li>
+  <li>☐ Informar o que <strong>não</strong> deve ser feito.</li>
+  <li>☐ Confirmar se o assistente entendeu antes de liberar.</li>
+</ul>
+<div style="${BOX}">
+  <p style="margin:0"><strong>O assistente não altera fórmula, proporção nem tempo por conta própria.</strong> Qualquer dúvida ou alteração deve ser comunicada ao profissional responsável antes de prosseguir.</p>
+</div>
+
+<h3>PARTE C — Higienização Prévia (somente na ROTA A)</h3>
+<p style="color:#6b6880"><em>Executar somente quando o protocolo exigir lavar antes da aplicação.</em></p>
+<p><strong>8. Avaliação do Cabelo e Informação das Necessidades</strong> — observar o estado geral, o tipo e a porosidade do fio, verificar danos, química anterior e a condição do couro cabeludo, e informar à cliente as necessidades identificadas.</p>
+<p><strong>9. Informar os Produtos e Experiência Sensorial</strong> — informar todos os produtos que serão utilizados e deixar a cliente sentir o cheiro.</p>
+<p><strong>10. Execução da Higienização</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Verificar a temperatura da água (morna, agradável).</li>
+  <li>☐ Soltar um pouco o cabelo da raiz e desembaraçar suavemente.</li>
+  <li>☐ Aplicar o 1º shampoo, emulsionar bem e enxaguar completamente.</li>
+  <li>☐ Aplicar o 2º shampoo + massagem no couro cabeludo por 3 minutos.</li>
+  <li>☐ Enxaguar completamente.</li>
+  <li>☐ Aguardar o tempo de pausa recomendado pela marca.</li>
+  <li>☐ Aplicar o condicionador no comprimento e nas pontas, evitando a raiz.</li>
+  <li>☐ Aguardar o tempo recomendado pela marca.</li>
+  <li>☐ Enxaguar completamente, sem deixar resíduos.</li>
+</ul>
+<div style="${BOX}">
+  <p style="margin:0"><strong>Massagem suave no couro cabeludo.</strong> Antes de aplicar química, não esfregar nem arranhar o couro — a fricção sensibiliza e aumenta a ardência durante a pausa.</p>
+</div>
+<p><strong>11. Finalização</strong> — fazer a touca com a toalha, conduzir a cliente até a cadeira, secar com a toalha, pentear, alinhar e <strong>secar o cabelo completamente</strong> antes da aplicação.</p>
+
+<h3>PARTE D — Preparação para a Aplicação</h3>
+<p><strong>12. Preparação da Cliente</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Colocar o robe ou avental.</li>
+  <li>☐ Colocar a capa impermeável.</li>
+  <li>☐ Posicionar a toalha escura sobre os ombros.</li>
+  <li>☐ Aplicar creme de barreira na linha do couro cabeludo, na testa, nas orelhas e na nuca.</li>
+  <li>☐ Retirar brincos e acessórios, quando necessário.</li>
+  <li>☐ Verificar se a cliente está confortável.</li>
+</ul>
+<p><strong>13. Penteia e alinha o cabelo</strong> — pentear, desembaraçar e dividir o cabelo em quatro seções com o pente de ponta fina.</p>
+<p><strong>14. Preparo da Mistura</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Conferir a fórmula definida pelo profissional responsável.</li>
+  <li>☐ Medir o produto e o oxidante na proporção exata da marca.</li>
+  <li>☐ Utilizar tigela e pincel não metálicos.</li>
+  <li>☐ Misturar até obter consistência homogênea.</li>
+  <li>☐ Preparar somente no momento da aplicação.</li>
+  <li>☐ Calçar as luvas antes de iniciar.</li>
+</ul>
+
+<h3>PARTE E — Aplicação da Pigmentação</h3>
+<p><strong>15. Aplicação</strong> — executada pelo assistente sob orientação, ou pelo próprio profissional.</p>
+<ul style="${CHECK}">
+  <li>☐ Iniciar pela região definida pelo profissional responsável.</li>
+  <li>☐ Trabalhar em mechas finas e uniformes.</li>
+  <li>☐ Aplicar o produto de forma homogênea, sem falhas.</li>
+  <li>☐ Respeitar a ordem definida entre raiz e comprimento.</li>
+  <li>☐ Não deixar produto acumulado nem escorrendo.</li>
+  <li>☐ Limpar imediatamente qualquer respingo na pele.</li>
+  <li>☐ Conferir se todas as seções foram cobertas, inclusive a nuca e as laterais.</li>
+  <li>☐ O profissional responsável deve conferir a aplicação antes de iniciar a contagem.</li>
+</ul>
+<p><strong>16. Tempo de Pausa</strong> — em média <strong>30 minutos</strong>, sempre conforme a indicação da marca.</p>
+<ul style="${CHECK}">
+  <li>☐ Iniciar o cronômetro somente após a conferência da aplicação.</li>
+  <li>☐ Registrar o horário de início.</li>
+  <li>☐ Acompanhar a cliente durante a pausa.</li>
+  <li>☐ Perguntar se está sentindo ardência ou incômodo.</li>
+  <li>☐ Verificar a evolução da cor quando a marca permitir.</li>
+  <li>☐ <strong>Não ultrapassar o tempo indicado pelo fabricante.</strong></li>
+  <li>☐ Oferecer bebida e garantir o conforto durante a espera.</li>
+</ul>
+<blockquote>"Vou deixar agir por [X] minutos. Qualquer ardência ou incômodo, me chame na hora, por favor."</blockquote>
+
+<h3>PARTE F — Lavatório de Remoção</h3>
+<p><strong>17. Avaliação e Oferta de Tratamento</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Realizar a avaliação do cabelo e informar as necessidades.</li>
+  <li>☐ Oferecer terapia capilar ou cronograma de acordo com a necessidade.</li>
+  <li>☐ Informar todos os produtos que serão utilizados.</li>
+  <li>☐ Deixar a cliente sentir o cheiro dos produtos.</li>
+</ul>
+<blockquote>"Depois de uma química, o cabelo pede uma reposição. A senhora gostaria que eu montasse um cronograma para manter a cor e a saúde do fio?"</blockquote>
+<p><strong>18. Remoção do Produto</strong></p>
+<ul style="${CHECK}">
+  <li>☐ <strong>Emulsionar o produto com um pouco de água antes de enxaguar</strong>, massageando suavemente.</li>
+  <li>☐ Utilizar água morna, nunca quente.</li>
+  <li>☐ Enxaguar até a água sair limpa.</li>
+  <li>☐ Aplicar o 1º shampoo (pós-coloração) e enxaguar.</li>
+  <li>☐ Aplicar o 2º shampoo + massagem no couro cabeludo por <strong>10 a 15 minutos</strong>.</li>
+  <li>☐ Enxaguar completamente.</li>
+  <li>☐ Aguardar o tempo de pausa recomendado pela marca.</li>
+  <li>☐ Aplicar o condicionador, a máscara <strong>ou o passo a passo completo da linha</strong>.</li>
+  <li>☐ Aguardar o tempo recomendado pela marca.</li>
+  <li>☐ Enxaguar completamente, sem deixar resíduos.</li>
+  <li>☐ Verificar se não restou pigmento na pele, nas orelhas ou na nuca.</li>
+  <li>☐ Remover manchas da pele com o produto adequado.</li>
+</ul>
+<p><strong>19. Finalização da Higienização</strong> — fazer a touca com a toalha e conduzir a cliente até a cadeira.</p>
+
+<h3>PARTE G — Finalização</h3>
+<p><strong>20. Preparação</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Secar com a toalha, retirando o excesso de água (pressionar, nunca esfregar).</li>
+  <li>☐ Colocar a capa de proteção e o robe.</li>
+  <li>☐ Aplicar o protetor térmico e os finalizadores.</li>
+  <li>☐ Pentear e alinhar o cabelo.</li>
+</ul>
+<p><strong>21. Modelagem ou Secagem</strong> — finalizar conforme o POP-PRO-007 (Secagem) ou POP-PRO-008 (Modelagem).</p>
+<p><strong>22. Validação da Cliente</strong> — apresentar o resultado e perguntar obrigatoriamente:</p>
+<blockquote>"A senhora gostou do resultado?"</blockquote>
+<blockquote>"Existe algum detalhe que gostaria que ajustássemos?"</blockquote>
+<p>Utilizar o espelho de mão para mostrar a parte de trás e as laterais. <strong>O atendimento somente poderá ser encerrado após a aprovação da cliente.</strong></p>
+<p><strong>23. Orientações de Manutenção</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Orientar a aguardar o tempo indicado antes da próxima lavagem.</li>
+  <li>☐ Orientar o uso de shampoo sem sal e produtos para cabelos coloridos.</li>
+  <li>☐ Orientar sobre sol, piscina e mar.</li>
+  <li>☐ Informar a data ideal da manutenção da cor e da raiz.</li>
+  <li>☐ Oferecer os produtos de manutenção para venda.</li>
+  <li>☐ Oferecer o reagendamento da manutenção e do cronograma.</li>
+</ul>
+<blockquote>"Para a cor durar mais, use shampoo sem sal e evite água muito quente. A manutenção da raiz costuma ser em [X] dias — posso já deixar agendado?"</blockquote>
+
+<h3>PARTE H — Registro, Acompanhamento e Organização</h3>
+<p><strong>24. Registro da Fórmula</strong> — obrigatório em todo atendimento de pigmentação.</p>
+<ul style="${CHECK}">
+  <li>☐ Registrar a cor e a numeração utilizadas.</li>
+  <li>☐ Registrar a volumagem do oxidante e a proporção.</li>
+  <li>☐ Registrar o tempo de pausa efetivo.</li>
+  <li>☐ Registrar o resultado obtido e as observações.</li>
+  <li>☐ Registrar qualquer reação ou intercorrência.</li>
+  <li>☐ Registrar o serviço e os produtos vendidos no sistema.</li>
+</ul>
+<div style="${BOX}">
+  <p style="margin:0"><strong>O registro da fórmula é o que permite repetir ou corrigir a cor na próxima visita.</strong> Sem ele, cada atendimento recomeça do zero e o resultado fica inconsistente.</p>
+</div>
+<p><strong>25. Acompanhamento pelo Assistente</strong> — havendo assistente, ele deverá dar suporte até a cliente ir embora, auxiliando no que for necessário e acompanhando-a até a recepção.</p>
+<p><strong>26. Organização</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Descartar corretamente os resíduos do produto.</li>
+  <li>☐ Lavar a tigela e o pincel imediatamente.</li>
+  <li>☐ Limpar as escovas e os pentes.</li>
+  <li>☐ Recolher os cabelos do chão e da cadeira.</li>
+  <li>☐ Higienizar a estação, a pia e a cadeira.</li>
+  <li>☐ Guardar os produtos corretamente.</li>
+  <li>☐ Preparar a estação para a próxima cliente.</li>
+</ul>
+
+<h2>9. Indicadores de Qualidade</h2>
+<p>A gerência deverá acompanhar mensalmente:</p>
+<ul style="${CHECK}">
+  <li>☐ Registro da fórmula em 100% dos atendimentos.</li>
+  <li>☐ Realização do teste de sensibilidade quando indicado.</li>
+  <li>☐ Número de correções de cor.</li>
+  <li>☐ Número de reclamações sobre o resultado.</li>
+  <li>☐ Número de reações ou intercorrências.</li>
+  <li>☐ Índice de satisfação da cliente.</li>
+  <li>☐ Percentual de retorno para manutenção.</li>
+  <li>☐ Adesão ao cronograma capilar pós-química.</li>
+  <li>☐ Vendas de produtos para cabelos coloridos.</li>
+</ul>
+
+<h2>10. Checklist de Auditoria</h2>
+<div style="${BOX}">
+  <div style="${BOXH}">Apresentação e Segurança</div>
+  <ul style="${CHECK}">
+    <li>☐ Apresentou-se de frente para a cliente, com nome.</li>
+    <li>☐ Confirmou o serviço (pigmentação).</li>
+    <li>☐ Perguntou o que a cliente desejava e se havia referência.</li>
+    <li>☐ Realizou a anamnese completa.</li>
+    <li>☐ Verificou alergias, química anterior e couro cabeludo.</li>
+    <li>☐ Realizou o teste de sensibilidade quando indicado.</li>
+    <li>☐ Realizou o teste de mecha quando havia dúvida.</li>
+    <li>☐ Fez as ponderações e informou quantas sessões seriam necessárias.</li>
+    <li>☐ Definiu a rota (lavar antes ou depois) conforme a marca.</li>
+  </ul>
+  <div style="${BOXH}">Orientação ao Assistente (quando houver)</div>
+  <ul style="${CHECK}">
+    <li>☐ Informou a fórmula, a proporção e a volumagem.</li>
+    <li>☐ Informou por onde começar e em qual sentido.</li>
+    <li>☐ Informou o tempo de pausa.</li>
+    <li>☐ Informou o que não deveria ser feito.</li>
+    <li>☐ Confirmou se o assistente entendeu.</li>
+  </ul>
+  <div style="${BOXH}">Preparação e Aplicação</div>
+  <ul style="${CHECK}">
+    <li>☐ Colocou capa impermeável, robe e toalha escura.</li>
+    <li>☐ Aplicou creme de barreira na linha do couro.</li>
+    <li>☐ Dividiu o cabelo em seções.</li>
+    <li>☐ Mediu o produto na proporção exata.</li>
+    <li>☐ Usou tigela e pincel não metálicos.</li>
+    <li>☐ Preparou a mistura na hora da aplicação.</li>
+    <li>☐ Utilizou luvas durante todo o manuseio.</li>
+    <li>☐ Aplicou em mechas finas e uniformes, sem falhas.</li>
+    <li>☐ Limpou os respingos na pele imediatamente.</li>
+    <li>☐ O profissional conferiu a aplicação antes de iniciar a contagem.</li>
+  </ul>
+  <div style="${BOXH}">Pausa e Remoção</div>
+  <ul style="${CHECK}">
+    <li>☐ Cronometrou o tempo de pausa.</li>
+    <li>☐ Perguntou sobre ardência ou incômodo durante a pausa.</li>
+    <li>☐ Não ultrapassou o tempo do fabricante.</li>
+    <li>☐ Emulsionou antes de enxaguar.</li>
+    <li>☐ Usou água morna, nunca quente.</li>
+    <li>☐ Aplicou o shampoo pós-coloração.</li>
+    <li>☐ Aplicou o 2º shampoo + massagem de 10 a 15 minutos.</li>
+    <li>☐ Aplicou a máscara ou o passo a passo da linha.</li>
+    <li>☐ Removeu as manchas da pele.</li>
+    <li>☐ Ofereceu terapia capilar ou cronograma.</li>
+  </ul>
+  <div style="${BOXH}">Finalização e Registro</div>
+  <ul style="${CHECK}">
+    <li>☐ Aplicou protetor térmico e finalizadores.</li>
+    <li>☐ Finalizou com secagem ou modelagem.</li>
+    <li>☐ Mostrou o resultado com o espelho de mão.</li>
+    <li>☐ Perguntou se a cliente gostou e se havia ajustes.</li>
+    <li>☐ Orientou sobre a manutenção da cor.</li>
+    <li>☐ Ofereceu produtos e reagendamento.</li>
+    <li>☐ <strong>Registrou a fórmula utilizada.</strong></li>
+    <li>☐ O assistente deu suporte até a cliente ir embora.</li>
+    <li>☐ Lavou a tigela e o pincel e organizou a estação.</li>
+  </ul>
+</div>
+`.trim()
+
 export type ConteudoDoc = { id: string; titulo: string; texto: string }
 export const CONTEUDO_DEFAULTS: Record<string, { titulo: string; conteudo: { texto?: string; docs?: ConteudoDoc[] } }> = {
   manicure: {
@@ -5057,6 +5447,7 @@ export const CONTEUDO_DEFAULTS: Record<string, { titulo: string; conteudo: { tex
         { id: 'pop-pro-009', titulo: 'POP-PRO-009 · Chapinha', texto: PRO_CHAPINHA_HTML },
         { id: 'pop-pro-010', titulo: 'POP-PRO-010 · Babyliss', texto: PRO_BABYLISS_HTML },
         { id: 'pop-pro-011', titulo: 'POP-PRO-011 · Penteado', texto: PRO_PENTEADO_HTML },
+        { id: 'pop-pro-012', titulo: 'POP-PRO-012 · Pigmentação', texto: PRO_PIGMENTACAO_HTML },
       ],
     },
   },

@@ -1609,6 +1609,129 @@ export const AVALIACOES_POP: Record<string, ModeloAvaliacao> = {
     ],
   },
 
+  // POP-PRO-012 — Pigmentação — 100 pontos
+  'pop-pro-012': {
+    secoes: [
+      {
+        titulo: 'Apresentação e Identificação da Necessidade', pontos: 10, itens: [
+          'Apresentou-se de frente para a cliente, pelo nome',
+          'Confirmou que o serviço era a pigmentação',
+          'Perguntou o que a cliente pensou para o dia',
+          'Perguntou sobre preferência ou foto de referência',
+          'Escutou a cliente atentamente, sem interromper',
+        ],
+      },
+      {
+        titulo: 'Anamnese, Ponderações e Testes de Segurança', pontos: 15, itens: [
+          'Perguntou sobre reação alérgica anterior a tintura',
+          'Perguntou sobre a última química realizada e há quanto tempo',
+          'Perguntou sobre uso de henna ou produtos com metais',
+          'Verificou ferida, irritação ou coceira no couro cabeludo',
+          'Perguntou sobre gestação, amamentação e medicamentos',
+          'Realizou o teste de sensibilidade quando indicado pelo fabricante',
+          'Realizou o teste de mecha quando havia dúvida sobre o fio',
+          'Explicou o que era possível e o que não era recomendado',
+          'Informou quantas sessões seriam necessárias',
+          'Conferiu a validade dos produtos',
+          'Definiu a rota (lavar antes ou depois) conforme a marca',
+        ],
+      },
+      {
+        titulo: 'Orientação ao Assistente', pontos: 10, condicional: true,
+        nota: 'Somente quando houver assistente na aplicação.',
+        itens: [
+          'Informou a fórmula e a proporção exatas',
+          'Informou a volumagem do oxidante',
+          'Informou por onde começar a aplicação e em qual sentido',
+          'Informou a ordem entre raiz e comprimento',
+          'Informou o tempo de pausa',
+          'Informou os produtos do lavatório de remoção',
+          'Informou o que não deveria ser feito',
+          'Confirmou se o assistente entendeu antes de liberar',
+        ],
+      },
+      {
+        titulo: 'Higienização Prévia', pontos: 10, condicional: true,
+        nota: 'Somente na Rota A — quando o protocolo exige lavar antes da aplicação.',
+        itens: [
+          'Realizou a avaliação do cabelo e informou as necessidades',
+          'Informou os produtos e deixou a cliente sentir o cheiro',
+          'Verificou a temperatura da água e soltou o cabelo da raiz',
+          'Aplicou o 1º shampoo e enxaguou completamente',
+          'Aplicou o 2º shampoo + massagem suave de 3 minutos',
+          'Não esfregou nem arranhou o couro cabeludo',
+          'Aplicou o condicionador e respeitou os tempos de pausa',
+          'Secou o cabelo completamente antes da aplicação',
+        ],
+      },
+      {
+        titulo: 'Preparação e Aplicação da Pigmentação', pontos: 25, itens: [
+          'Colocou o robe, a capa impermeável e a toalha escura',
+          'Aplicou creme de barreira na linha do couro, testa, orelhas e nuca',
+          'Penteou e dividiu o cabelo em seções com pente de ponta fina',
+          'Mediu o produto e o oxidante na proporção exata da marca',
+          'Utilizou tigela e pincel não metálicos',
+          'Preparou a mistura somente no momento da aplicação',
+          'Utilizou luvas durante todo o manuseio do produto',
+          'Trabalhou em mechas finas e uniformes',
+          'Aplicou o produto de forma homogênea, sem falhas',
+          'Respeitou a ordem definida entre raiz e comprimento',
+          'Não deixou produto acumulado nem escorrendo',
+          'Limpou imediatamente os respingos na pele',
+          'Conferiu a cobertura de todas as seções, inclusive nuca e laterais',
+          'O profissional responsável conferiu a aplicação antes da contagem',
+        ],
+      },
+      {
+        titulo: 'Tempo de Pausa e Remoção', pontos: 15, itens: [
+          'Cronometrou o tempo de pausa e registrou o horário de início',
+          'Acompanhou a cliente durante a pausa',
+          'Perguntou se estava sentindo ardência ou incômodo',
+          'Não ultrapassou o tempo indicado pelo fabricante',
+          'Ofereceu bebida e garantiu o conforto durante a espera',
+          'Ofereceu terapia capilar ou cronograma no lavatório',
+          'Emulsionou o produto com água antes de enxaguar',
+          'Utilizou água morna, nunca quente',
+          'Aplicou o shampoo pós-coloração',
+          'Aplicou o 2º shampoo + massagem de 10 a 15 minutos',
+          'Aplicou o condicionador, a máscara ou o passo a passo da linha',
+          'Verificou e removeu manchas na pele, orelhas e nuca',
+        ],
+      },
+      {
+        titulo: 'Finalização e Validação', pontos: 10, itens: [
+          'Secou com a toalha pressionando, sem esfregar',
+          'Aplicou o protetor térmico e os finalizadores',
+          'Penteou, alinhou e finalizou com secagem ou modelagem',
+          'Mostrou o resultado com o espelho de mão',
+          'Perguntou se a cliente gostou e se havia ajustes',
+          'Realizou os ajustes imediatamente',
+          'Orientou sobre a manutenção da cor e os cuidados em casa',
+          'Ofereceu os produtos e o reagendamento da manutenção',
+        ],
+      },
+      {
+        titulo: 'Registro, Acompanhamento e Organização', pontos: 5, itens: [
+          'Registrou a cor, a numeração, a volumagem e a proporção',
+          'Registrou o tempo de pausa efetivo e o resultado obtido',
+          'Registrou qualquer reação ou intercorrência',
+          'O assistente deu suporte até a cliente ir embora',
+          'Lavou a tigela e o pincel e higienizou a estação',
+        ],
+      },
+    ],
+    comportamental: [
+      'Simpatia',
+      'Comunicação',
+      'Cordialidade',
+      'Técnica de Aplicação',
+      'Precisão e Segurança Química',
+      'Orientação da Equipe',
+      'Cuidado com o Conforto da Cliente',
+      'Postura Profissional',
+    ],
+  },
+
   // POP-PRO-002 — Atendimento de Pedicure — 100 pontos
   'pop-pro-002': {
     secoes: [
