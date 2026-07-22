@@ -3307,6 +3307,319 @@ const PRO_TRATAMENTOS_HTML = `
 </div>
 `.trim()
 
+const PRO_SECAGEM_HTML = `
+<h1>Procedimento Operacional Padrão (POP)</h1>
+<p style="color:#6b6880;font-size:15px;margin:-4px 0 16px;font-weight:600">POP-PRO-007 — Secagem</p>
+
+<h2>1. Identificação</h2>
+<div style="${META}">
+  <p style="margin:0"><strong>Código:</strong> POP-PRO-007 &nbsp;·&nbsp; <strong>Versão:</strong> 1.0 &nbsp;·&nbsp; <strong>Setor:</strong> Profissionais (Cabeleireiro / Auxiliar)</p>
+  <p style="margin:8px 0 0"><strong>Responsável:</strong> <span style="${FIELD}"></span></p>
+  <p style="margin:8px 0 0"><strong>Data de Emissão:</strong> ___/___/______ &nbsp;·&nbsp; <strong>Última Revisão:</strong> ___/___/______ &nbsp;·&nbsp; <strong>Próxima Revisão:</strong> ___/___/______</p>
+</div>
+
+<h2>2. Objetivo</h2>
+<p>Padronizar o serviço de <strong>secagem</strong>, garantindo a proteção do fio contra o calor, técnica correta de manuseio do secador, acabamento alinhado e com brilho, cuidado especial com a franja e validação do resultado pela cliente.</p>
+
+<h2>3. Campo de Aplicação</h2>
+<p>Este procedimento aplica-se a todos os profissionais responsáveis pelo serviço de secagem.</p>
+
+<h2>4. Fluxo do Atendimento</h2>
+<div style="${BOX}">
+  <div style="${BOXH}">Atenção ao ponto de partida</div>
+  <p style="margin:0"><strong>Cliente chega com o cabelo sujo:</strong> realizar a higienização no lavatório (PARTE B) e seguir o fluxo completo.</p>
+  <p style="margin:8px 0 0"><strong>Cliente já chega com o cabelo limpo:</strong> <strong>pular a PARTE B</strong> e ir direto para a preparação do procedimento (PARTE C).</p>
+</div>
+
+<h2>5. Materiais Necessários</h2>
+<h3>Equipamentos</h3>
+<ul style="${CHECK}">
+  <li>☐ Secador com bico direcionador.</li>
+  <li>☐ Escovas (conforme o resultado desejado).</li>
+  <li>☐ Pentes.</li>
+  <li>☐ Presilhas para separar as mechas.</li>
+  <li>☐ Toalhas limpas.</li>
+  <li>☐ Capa de proteção.</li>
+  <li>☐ Robe ou avental.</li>
+  <li>☐ Espelho de mão (para mostrar o resultado).</li>
+</ul>
+<h3>Produtos</h3>
+<ul style="${CHECK}">
+  <li>☐ Shampoo 1 e Shampoo 2.</li>
+  <li>☐ Condicionador.</li>
+  <li>☐ <strong>Protetor térmico</strong> (obrigatório).</li>
+  <li>☐ Leave-in.</li>
+  <li>☐ Óleo ou sérum finalizador.</li>
+  <li>☐ Produtos de fixação ou controle de frizz.</li>
+</ul>
+
+<h2>6. Biossegurança e Segurança</h2>
+<h3>Antes do Atendimento</h3>
+<ul style="${CHECK}">
+  <li>☐ Higienizar corretamente as mãos.</li>
+  <li>☐ Manter uniforme limpo e cabelos presos.</li>
+  <li>☐ Conferir a limpeza da estação.</li>
+  <li>☐ Higienizar escovas e pentes entre as clientes.</li>
+  <li>☐ Verificar o estado do secador (fio, tomada, filtro traseiro limpo).</li>
+  <li>☐ Organizar todos os produtos e verificar a validade.</li>
+</ul>
+<h3>Durante o Atendimento</h3>
+<ul style="${CHECK}">
+  <li>☐ Manter a estação organizada.</li>
+  <li>☐ Não utilizar telefone celular.</li>
+  <li>☐ Não consumir alimentos.</li>
+  <li>☐ <strong>Nunca aproximar o secador do couro cabeludo</strong> — risco de queimadura.</li>
+  <li>☐ Não direcionar o ar quente para o rosto, os olhos ou as orelhas da cliente.</li>
+  <li>☐ Perguntar à cliente se a temperatura está agradável.</li>
+  <li>☐ Não secar sem antes aplicar o protetor térmico.</li>
+</ul>
+<h3>Após o Atendimento</h3>
+<ul style="${CHECK}">
+  <li>☐ Desligar e guardar o secador.</li>
+  <li>☐ Limpar escovas e pentes.</li>
+  <li>☐ Recolher os cabelos do chão e da cadeira.</li>
+  <li>☐ Higienizar a estação e as mãos.</li>
+  <li>☐ Preparar a estação para a próxima cliente.</li>
+</ul>
+
+<h2>7. Procedimento Operacional</h2>
+
+<h3>PARTE A — Início do Atendimento</h3>
+<p><strong>1. Apresentação do Profissional</strong> — sempre iniciar o atendimento de frente para a cliente, demonstrando simpatia, cordialidade e profissionalismo.</p>
+<blockquote>"Olá (Nome da cliente), meu nome é (Nome do Profissional) e hoje eu serei o(a) responsável pelo seu atendimento."</blockquote>
+<p><strong>2. Confirmação do Serviço</strong></p>
+<blockquote>"A senhora irá secar o cabelo hoje, correto?"</blockquote>
+<p><strong>3. Identificação da Necessidade</strong></p>
+<blockquote>"O que a senhora pensou para hoje?" · "A senhora possui alguma preferência ou alguma foto de referência?"</blockquote>
+<p><strong>4. Ponderações e Orientações</strong> — após ouvir atentamente a cliente, explicar de forma clara e profissional:</p>
+<ul style="${CHECK}">
+  <li>☐ O que é possível realizar.</li>
+  <li>☐ O que não é recomendado realizar.</li>
+  <li>☐ As limitações técnicas do procedimento (tipo, comprimento e condição do fio).</li>
+  <li>☐ Quanto tempo o resultado tende a durar.</li>
+  <li>☐ Os cuidados necessários para preservar a saúde do cabelo.</li>
+</ul>
+<blockquote>"Baseado no que a senhora deseja, é possível fazer [explicar o que dá para fazer]."</blockquote>
+<blockquote>"Não recomendamos [explicar o que não é recomendado] porque [explicar o motivo]."</blockquote>
+<p><strong>Nenhum procedimento deverá ser iniciado antes que a cliente compreenda e concorde com o serviço que será realizado.</strong></p>
+<p><strong>5. Verificar o ponto de partida</strong> — perguntar se a cliente já veio com o cabelo lavado.</p>
+<blockquote>"A senhora já veio com o cabelo limpo, ou vamos passar pelo lavatório antes?"</blockquote>
+<p><strong>Se a cliente já estiver com o cabelo limpo, seguir direto para a PARTE C.</strong></p>
+
+<h3>PARTE B — Higienização no Lavatório</h3>
+<p style="color:#6b6880"><em>Executar somente quando a cliente não chega com o cabelo limpo.</em></p>
+<p><strong>6. Avaliação do Cabelo e Informação das Necessidades</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Observar o estado geral do cabelo.</li>
+  <li>☐ Verificar o tipo de cabelo (liso, ondulado, cacheado, crespo).</li>
+  <li>☐ Verificar a porosidade do cabelo.</li>
+  <li>☐ Verificar se há ressecamento, danos ou pontas duplas.</li>
+  <li>☐ Verificar se há química (coloração, descoloração, alisamento).</li>
+  <li>☐ Verificar o couro cabeludo (oleosidade, caspa, sensibilidade).</li>
+  <li>☐ Informar à cliente as necessidades identificadas.</li>
+</ul>
+<p><strong>7. Oferta de Tratamento</strong> — perguntar se a cliente deseja realizar algum tratamento de acordo com a necessidade identificada.</p>
+<blockquote>"A senhora gostaria de fazer um tratamento de [hidratação/nutrição/reconstrução] de acordo com a necessidade do seu cabelo?"</blockquote>
+<p><strong>8. Informar os Produtos e Experiência Sensorial</strong> — informar todos os produtos que serão utilizados e deixar a cliente sentir o cheiro.</p>
+<blockquote>"Hoje vou utilizar o Shampoo [nome] para [função] e o Condicionador [nome]. Gostaria de sentir o cheiro antes de começarmos?"</blockquote>
+<p><strong>9. Execução da Higienização</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Verificar a temperatura da água (morna, agradável).</li>
+  <li>☐ Soltar um pouco o cabelo da raiz e desembaraçar suavemente.</li>
+  <li>☐ Aplicar o 1º shampoo, emulsionar bem e enxaguar completamente.</li>
+  <li>☐ Aplicar o 2º shampoo + massagem no couro cabeludo por 3 minutos.</li>
+  <li>☐ Enxaguar completamente.</li>
+  <li>☐ Aguardar o tempo de pausa recomendado pela marca.</li>
+  <li>☐ Aplicar o condicionador no comprimento e nas pontas, evitando a raiz.</li>
+  <li>☐ Aguardar o tempo recomendado pela marca.</li>
+  <li>☐ Enxaguar completamente, sem deixar resíduos.</li>
+</ul>
+<p><strong>10. Finalização da Higienização</strong> — fazer a touca com a toalha e conduzir a cliente até a cadeira.</p>
+
+<h3>PARTE C — Preparação para a Secagem</h3>
+<p><strong>11. Preparação da Cliente</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Ajudar a cliente a se sentar confortavelmente.</li>
+  <li>☐ Remover a touca de toalha.</li>
+  <li>☐ Secar com a toalha, retirando o excesso de água.</li>
+  <li>☐ Colocar a capa de proteção.</li>
+  <li>☐ Colocar o robe ou avental.</li>
+  <li>☐ Verificar se a cliente está confortável.</li>
+</ul>
+<div style="${BOX}">
+  <p style="margin:0"><strong>Ao secar com a toalha:</strong> pressionar e absorver, <strong>nunca esfregar</strong>. Esfregar abre a cutícula, gera frizz e quebra o fio.</p>
+</div>
+<p><strong>12. Aplicação dos Produtos Finalizadores</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Desembaraçar o cabelo com pente de dentes largos, das pontas para a raiz.</li>
+  <li>☐ Aplicar o <strong>protetor térmico</strong> em todo o comprimento — <strong>obrigatório antes de qualquer calor</strong>.</li>
+  <li>☐ Aplicar leave-in ou finalizador conforme o tipo de cabelo.</li>
+  <li>☐ Distribuir bem o produto, mecha a mecha.</li>
+  <li>☐ Evitar excesso de produto na raiz.</li>
+</ul>
+<blockquote>"Vou aplicar um protetor térmico antes de secar. Ele protege o fio do calor e evita o ressecamento."</blockquote>
+<p><strong>13. Penteia e alinha o cabelo</strong> — pentear, alinhar e separar o cabelo em seções com presilhas, de baixo para cima.</p>
+
+<h3>PARTE D — Execução da Secagem</h3>
+<p><strong>14. Pré-secagem</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Encaixar o bico direcionador no secador.</li>
+  <li>☐ Ajustar a temperatura conforme o tipo e a condição do fio.</li>
+  <li>☐ Pré-secar o cabelo até cerca de 70% a 80%, antes de iniciar a escova.</li>
+  <li>☐ Manter o secador a uma distância segura do couro cabeludo.</li>
+  <li>☐ Perguntar à cliente se a temperatura está agradável.</li>
+</ul>
+<table style="${TBL}">
+  <tr><th style="${TH}">Condição do fio</th><th style="${TH}">Temperatura recomendada</th></tr>
+  <tr><td style="${TD}">Cabelo saudável, sem química</td><td style="${TD}">Média a quente</td></tr>
+  <tr><td style="${TD}">Cabelo com química (coloração, alisamento)</td><td style="${TD}">Média</td></tr>
+  <tr><td style="${TD}">Cabelo descolorido, fino ou danificado</td><td style="${TD}">Baixa</td></tr>
+  <tr><td style="${TD}">Finalização (últimos minutos)</td><td style="${TD}">Ar frio, para selar e fixar</td></tr>
+</table>
+<p><strong>15. Secagem por Seções</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Trabalhar mecha a mecha, começando pela nuca e subindo.</li>
+  <li>☐ Manter as demais seções presas com presilhas.</li>
+  <li>☐ Direcionar o fluxo de ar <strong>da raiz para as pontas</strong>, acompanhando a escova.</li>
+  <li>☐ Manter o secador em movimento, sem concentrar o calor em um só ponto.</li>
+  <li>☐ Secar cada mecha completamente antes de passar para a próxima.</li>
+  <li>☐ Não deixar nenhuma região úmida.</li>
+</ul>
+<div style="${BOX}">
+  <p style="margin:0">Direcionar o ar <strong>da raiz para as pontas</strong> fecha a cutícula, e é isso que dá brilho e reduz o frizz. Ar direcionado no sentido contrário abre a cutícula e deixa o cabelo armado.</p>
+</div>
+<p><strong>16. Ar Frio Final</strong> — nos últimos minutos, passar o ar frio em todo o cabelo para selar a cutícula e fixar o resultado.</p>
+
+<h3>PARTE E — Franja e Acabamento</h3>
+<p><strong>17. Franja</strong> — a franja exige atenção especial: seca mais rápido que o restante e marca com facilidade.</p>
+<ul style="${CHECK}">
+  <li>☐ Verificar se a cliente tem franja e qual o caimento desejado.</li>
+  <li>☐ Utilizar temperatura mais baixa na franja.</li>
+  <li>☐ Secar com escova pequena, no sentido do caimento desejado.</li>
+  <li>☐ Ajustar o caimento antes que a franja esfrie por completo.</li>
+  <li>☐ Finalizar a franja com ar frio para fixar.</li>
+  <li>☐ Confirmar com a cliente se o caimento ficou como ela gosta.</li>
+</ul>
+<blockquote>"A senhora prefere a franja mais para o lado, ou mais para a frente?"</blockquote>
+<p><strong>18. Acabamento Final</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Pentear e alinhar todo o cabelo.</li>
+  <li>☐ Verificar se não há mechas úmidas.</li>
+  <li>☐ Verificar se não há frizz ou fios armados.</li>
+  <li>☐ Verificar a simetria e o caimento.</li>
+  <li>☐ Aplicar óleo, sérum ou finalizador, se necessário — com moderação.</li>
+  <li>☐ Ajustar a repartição conforme a preferência da cliente.</li>
+</ul>
+
+<h3>PARTE F — Validação e Finalização</h3>
+<p><strong>19. Validação da Cliente</strong> — apresentar o resultado e perguntar obrigatoriamente:</p>
+<blockquote>"A senhora gostou do resultado?"</blockquote>
+<blockquote>"Existe algum detalhe que gostaria que ajustássemos?"</blockquote>
+<p>Utilizar o espelho de mão para mostrar a parte de trás. <strong>Caso a cliente solicite qualquer ajuste, este deverá ser realizado imediatamente.</strong> O atendimento somente poderá ser encerrado após a aprovação da cliente.</p>
+<p><strong>20. Orientações de Manutenção</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Explicar quanto tempo o resultado tende a durar.</li>
+  <li>☐ Orientar sobre como preservar em casa.</li>
+  <li>☐ Oferecer os produtos utilizados para venda.</li>
+  <li>☐ Oferecer o reagendamento da próxima secagem.</li>
+</ul>
+<blockquote>"Para manter esse resultado por mais tempo, evite [orientação]. Gostaria de já deixar sua próxima secagem agendada?"</blockquote>
+<p><strong>21. Encerramento</strong></p>
+<ul>
+  <li><strong>Se a secagem for o último serviço:</strong> retirar a capa, agradecer a preferência, acompanhar a cliente até a recepção.</li>
+  <li><strong>Se houver outro procedimento na sequência:</strong> chamar o profissional principal, informando nome da cliente, procedimentos agendados, produtos utilizados e observações sobre o cabelo.</li>
+</ul>
+<blockquote>"Foi um prazer atender você, (Nome)! Espero vê-la em breve."</blockquote>
+<blockquote>"[Nome do Cabeleireiro], a cliente [Nome] está pronta. O cabelo está seco e alinhado."</blockquote>
+
+<h3>PARTE G — Organização Pós-Atendimento</h3>
+<p><strong>22. Limpeza e Registro</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Desligar e guardar o secador.</li>
+  <li>☐ Limpar as escovas e os pentes.</li>
+  <li>☐ Recolher os cabelos do chão e da cadeira.</li>
+  <li>☐ Higienizar a estação.</li>
+  <li>☐ Guardar os produtos corretamente.</li>
+  <li>☐ Registrar o serviço e os produtos no sistema.</li>
+  <li>☐ Registrar os produtos vendidos (se houver).</li>
+</ul>
+
+<h2>8. Indicadores de Qualidade</h2>
+<p>A gerência deverá acompanhar mensalmente:</p>
+<ul style="${CHECK}">
+  <li>☐ Tempo médio de secagem.</li>
+  <li>☐ Número de retrabalhos (cliente pediu ajuste após finalizar).</li>
+  <li>☐ Número de reclamações.</li>
+  <li>☐ Índice de satisfação da cliente.</li>
+  <li>☐ Percentual de reagendamento.</li>
+  <li>☐ Conversão de secagem em tratamento capilar.</li>
+  <li>☐ Vendas de produtos finalizadores.</li>
+  <li>☐ Uso do protetor térmico em 100% dos atendimentos.</li>
+</ul>
+
+<h2>9. Checklist de Auditoria</h2>
+<div style="${BOX}">
+  <div style="${BOXH}">Apresentação</div>
+  <ul style="${CHECK}">
+    <li>☐ Apresentou-se de frente para a cliente, com nome.</li>
+    <li>☐ Confirmou o serviço (secagem).</li>
+    <li>☐ Perguntou o que a cliente desejava.</li>
+    <li>☐ Perguntou se havia preferência ou referência.</li>
+    <li>☐ Fez as ponderações do que dá e do que não dá para fazer.</li>
+    <li>☐ Verificou se a cliente já veio com o cabelo limpo.</li>
+  </ul>
+  <div style="${BOXH}">Lavatório (quando aplicável)</div>
+  <ul style="${CHECK}">
+    <li>☐ Realizou avaliação capilar e informou as necessidades.</li>
+    <li>☐ Perguntou se deseja tratamento.</li>
+    <li>☐ Informou os produtos e deixou sentir o cheiro.</li>
+    <li>☐ Aplicou o 1º shampoo.</li>
+    <li>☐ Aplicou o 2º shampoo + massagem de 3 minutos.</li>
+    <li>☐ Respeitou os tempos de pausa.</li>
+    <li>☐ Aplicou o condicionador e enxaguou completamente.</li>
+  </ul>
+  <div style="${BOXH}">Preparação</div>
+  <ul style="${CHECK}">
+    <li>☐ Secou com a toalha sem esfregar.</li>
+    <li>☐ Colocou capa e robe.</li>
+    <li>☐ Desembaraçou das pontas para a raiz.</li>
+    <li>☐ Aplicou o protetor térmico.</li>
+    <li>☐ Aplicou o leave-in ou finalizador.</li>
+    <li>☐ Penteou, alinhou e separou em seções.</li>
+  </ul>
+  <div style="${BOXH}">Secagem</div>
+  <ul style="${CHECK}">
+    <li>☐ Utilizou o bico direcionador.</li>
+    <li>☐ Ajustou a temperatura à condição do fio.</li>
+    <li>☐ Pré-secou antes de iniciar a escova.</li>
+    <li>☐ Trabalhou mecha a mecha.</li>
+    <li>☐ Direcionou o ar da raiz para as pontas.</li>
+    <li>☐ Manteve distância segura do couro cabeludo.</li>
+    <li>☐ Perguntou se a temperatura estava agradável.</li>
+    <li>☐ Finalizou com ar frio.</li>
+  </ul>
+  <div style="${BOXH}">Franja e Acabamento</div>
+  <ul style="${CHECK}">
+    <li>☐ Perguntou o caimento desejado da franja.</li>
+    <li>☐ Usou temperatura mais baixa na franja.</li>
+    <li>☐ Ajustou o caimento antes de esfriar.</li>
+    <li>☐ Verificou se não havia mechas úmidas.</li>
+    <li>☐ Verificou frizz, simetria e caimento.</li>
+    <li>☐ Ajustou a repartição conforme a preferência.</li>
+  </ul>
+  <div style="${BOXH}">Finalização</div>
+  <ul style="${CHECK}">
+    <li>☐ Mostrou o resultado com o espelho de mão.</li>
+    <li>☐ Perguntou se a cliente gostou.</li>
+    <li>☐ Perguntou se havia ajustes.</li>
+    <li>☐ Realizou os ajustes imediatamente.</li>
+    <li>☐ Orientou sobre a manutenção.</li>
+    <li>☐ Ofereceu produtos e reagendamento.</li>
+    <li>☐ Organizou a estação e registrou no sistema.</li>
+  </ul>
+</div>
+`.trim()
+
 export type ConteudoDoc = { id: string; titulo: string; texto: string }
 export const CONTEUDO_DEFAULTS: Record<string, { titulo: string; conteudo: { texto?: string; docs?: ConteudoDoc[] } }> = {
   manicure: {
@@ -3327,6 +3640,7 @@ export const CONTEUDO_DEFAULTS: Record<string, { titulo: string; conteudo: { tex
         { id: 'pop-pro-004', titulo: 'POP-PRO-004 · Higienização Especial (Lavatório)', texto: PRO_LAVATORIO_ESPECIAL_HTML },
         { id: 'pop-pro-005', titulo: 'POP-PRO-005 · Shiatsu Capilar (Lavatório)', texto: PRO_SHIATSU_HTML },
         { id: 'pop-pro-006', titulo: 'POP-PRO-006 · Tratamentos Capilares (Lavatório)', texto: PRO_TRATAMENTOS_HTML },
+        { id: 'pop-pro-007', titulo: 'POP-PRO-007 · Secagem', texto: PRO_SECAGEM_HTML },
       ],
     },
   },

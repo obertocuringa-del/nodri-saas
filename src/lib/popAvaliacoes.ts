@@ -1053,6 +1053,112 @@ export const AVALIACOES_POP: Record<string, ModeloAvaliacao> = {
     ],
   },
 
+  // POP-PRO-007 — Secagem — 100 pontos
+  'pop-pro-007': {
+    secoes: [
+      {
+        titulo: 'Apresentação e Identificação da Necessidade', pontos: 10, itens: [
+          'Apresentou-se de frente para a cliente, pelo nome',
+          'Confirmou que o serviço era a secagem',
+          'Perguntou o que a cliente pensou para o dia',
+          'Perguntou sobre preferência ou foto de referência',
+          'Perguntou se a cliente já veio com o cabelo limpo',
+          'Escutou a cliente atentamente, sem interromper',
+        ],
+      },
+      {
+        titulo: 'Ponderações e Orientações', pontos: 10, itens: [
+          'Explicou o que era possível realizar',
+          'Explicou o que não era recomendado e o motivo',
+          'Explicou as limitações técnicas (tipo, comprimento e condição do fio)',
+          'Informou quanto tempo o resultado tende a durar',
+          'Orientou sobre os cuidados para preservar a saúde do cabelo',
+          'Só iniciou após a cliente compreender e concordar',
+        ],
+      },
+      {
+        titulo: 'Higienização no Lavatório', pontos: 15, condicional: true,
+        nota: 'Somente quando a cliente não chega com o cabelo limpo.',
+        itens: [
+          'Realizou a avaliação capilar e informou as necessidades',
+          'Ofereceu tratamento de acordo com a necessidade',
+          'Informou os produtos e deixou a cliente sentir o cheiro',
+          'Verificou a temperatura da água e soltou o cabelo da raiz',
+          'Aplicou o 1º shampoo, emulsionou bem e enxaguou',
+          'Aplicou o 2º shampoo + massagem de 3 minutos',
+          'Respeitou os tempos de pausa da marca',
+          'Aplicou o condicionador e enxaguou completamente',
+        ],
+      },
+      {
+        titulo: 'Preparação e Produtos Finalizadores', pontos: 15, itens: [
+          'Acomodou a cliente e colocou a capa e o robe',
+          'Secou com a toalha pressionando, sem esfregar',
+          'Desembaraçou com pente de dentes largos, das pontas para a raiz',
+          'Aplicou o protetor térmico em todo o comprimento',
+          'Aplicou leave-in ou finalizador conforme o tipo de cabelo',
+          'Distribuiu bem o produto, mecha a mecha, sem excesso na raiz',
+          'Penteou, alinhou e separou o cabelo em seções',
+        ],
+      },
+      {
+        titulo: 'Execução da Secagem', pontos: 25, itens: [
+          'Utilizou o bico direcionador no secador',
+          'Ajustou a temperatura à condição do fio',
+          'Pré-secou o cabelo antes de iniciar a escova',
+          'Manteve distância segura do couro cabeludo',
+          'Não direcionou o ar quente para o rosto, olhos ou orelhas',
+          'Perguntou à cliente se a temperatura estava agradável',
+          'Trabalhou mecha a mecha, prendendo as demais seções',
+          'Direcionou o fluxo de ar da raiz para as pontas',
+          'Manteve o secador em movimento, sem concentrar o calor',
+          'Secou cada mecha completamente antes de passar para a próxima',
+          'Finalizou com ar frio para selar e fixar',
+        ],
+      },
+      {
+        titulo: 'Franja e Acabamento', pontos: 10, itens: [
+          'Perguntou o caimento desejado da franja',
+          'Utilizou temperatura mais baixa na franja',
+          'Ajustou o caimento antes que a franja esfriasse',
+          'Confirmou com a cliente se a franja ficou como ela gosta',
+          'Verificou se não havia mechas úmidas',
+          'Verificou frizz, simetria e caimento',
+          'Ajustou a repartição conforme a preferência da cliente',
+        ],
+      },
+      {
+        titulo: 'Validação e Encaminhamento', pontos: 10, itens: [
+          'Mostrou o resultado com o espelho de mão',
+          'Perguntou se a cliente gostou do resultado',
+          'Perguntou se havia algum detalhe a ajustar',
+          'Realizou os ajustes imediatamente',
+          'Orientou sobre a manutenção em casa',
+          'Ofereceu os produtos utilizados e o reagendamento',
+          'Encerrou ou chamou o profissional principal com as informações',
+        ],
+      },
+      {
+        titulo: 'Organização e Registro', pontos: 5, itens: [
+          'Desligou e guardou o secador',
+          'Limpou as escovas e os pentes',
+          'Recolheu os cabelos do chão e higienizou a estação',
+          'Registrou o serviço e os produtos no sistema',
+        ],
+      },
+    ],
+    comportamental: [
+      'Simpatia',
+      'Comunicação',
+      'Cordialidade',
+      'Técnica de Secagem',
+      'Acabamento e Alinhamento',
+      'Higiene e Segurança',
+      'Cuidado com o Conforto da Cliente',
+      'Postura Profissional',
+    ],
+  },
+
   // POP-PRO-002 — Atendimento de Pedicure — 100 pontos
   'pop-pro-002': {
     secoes: [
