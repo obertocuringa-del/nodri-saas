@@ -1268,6 +1268,118 @@ export const AVALIACOES_POP: Record<string, ModeloAvaliacao> = {
     ],
   },
 
+  // POP-PRO-009 — Chapinha — 100 pontos
+  'pop-pro-009': {
+    secoes: [
+      {
+        titulo: 'Apresentação e Identificação da Necessidade', pontos: 10, itens: [
+          'Apresentou-se de frente para a cliente, pelo nome',
+          'Confirmou que o serviço era a chapinha',
+          'Perguntou o que a cliente pensou para o dia',
+          'Perguntou sobre preferência ou foto de referência',
+          'Perguntou se a cliente já veio com o cabelo limpo',
+          'Escutou a cliente atentamente, sem interromper',
+        ],
+      },
+      {
+        titulo: 'Ponderações e Avaliação da Viabilidade', pontos: 10, itens: [
+          'Explicou o que era possível realizar',
+          'Explicou o que não era recomendado e o motivo',
+          'Avaliou se a condição do fio permitia o procedimento',
+          'Propôs alternativa quando o fio estava comprometido',
+          'Informou quanto tempo o liso tende a durar',
+          'Só iniciou após a cliente compreender e concordar',
+        ],
+      },
+      {
+        titulo: 'Higienização no Lavatório', pontos: 15, condicional: true,
+        nota: 'Somente quando a cliente não chega com o cabelo limpo.',
+        itens: [
+          'Realizou a avaliação capilar e informou as necessidades',
+          'Ofereceu tratamento de acordo com a necessidade',
+          'Informou os produtos e deixou a cliente sentir o cheiro',
+          'Verificou a temperatura da água e soltou o cabelo da raiz',
+          'Aplicou o 1º shampoo, emulsionou bem e enxaguou',
+          'Aplicou o 2º shampoo + massagem de 3 minutos',
+          'Respeitou os tempos de pausa da marca',
+          'Aplicou o condicionador e enxaguou completamente',
+        ],
+      },
+      {
+        titulo: 'Definição do Resultado e Preparação', pontos: 15, itens: [
+          'Secou com a toalha pressionando, sem esfregar',
+          'Perguntou se preferia o liso reto ou com movimento nas pontas',
+          'Perguntou o lado da repartição',
+          'Confirmou em voz alta o que seria feito, antes de começar',
+          'Desembaraçou com pente de dentes largos, das pontas para a raiz',
+          'Aplicou o protetor térmico em todo o comprimento',
+          'Aplicou o finalizador sem exagerar na quantidade',
+          'Secou o cabelo completamente e modelou com a escova',
+          'Conferiu se não restou nenhuma mecha úmida',
+          'Penteou, definiu a repartição e separou em seções',
+        ],
+      },
+      {
+        titulo: 'Execução da Chapinha', pontos: 25, itens: [
+          'Limpou as placas antes de iniciar',
+          'Ajustou a temperatura à condição do fio',
+          'Aguardou o aquecimento completo da prancha',
+          'Testou em uma mecha da nuca antes das áreas visíveis',
+          'Perguntou à cliente se a temperatura estava agradável',
+          'Trabalhou mecha a mecha, da nuca para cima',
+          'Manteve as demais seções presas com presilhas',
+          'Utilizou mechas finas',
+          'Penteou cada mecha antes de passar a placa',
+          'Iniciou a placa a uma distância segura da raiz',
+          'Deslizou a prancha em movimento contínuo, sem parar na mecha',
+          'Fez no máximo 1 a 2 passadas por mecha',
+          'Não encostou a placa no couro cabeludo, rosto ou orelhas',
+          'Apoiou a prancha em base térmica, fora do alcance da cliente',
+          'Conferiu a simetria entre os dois lados durante a execução',
+        ],
+      },
+      {
+        titulo: 'Acabamento e Finalização', pontos: 10, itens: [
+          'Aguardou o cabelo esfriar antes de pentear',
+          'Ajustou a repartição conforme combinado',
+          'Verificou se não havia mechas sem alisar, principalmente na nuca',
+          'Verificou se não havia marcas de placa no fio',
+          'Verificou frizz, simetria e caimento',
+          'Aplicou finalizador nas pontas com moderação, sem pesar a raiz',
+        ],
+      },
+      {
+        titulo: 'Validação e Encaminhamento', pontos: 10, itens: [
+          'Mostrou o resultado com o espelho de mão',
+          'Perguntou se a cliente gostou do resultado',
+          'Perguntou se havia algum detalhe a ajustar',
+          'Realizou os ajustes imediatamente',
+          'Orientou sobre a manutenção e a frequência segura de uso',
+          'Ofereceu os produtos utilizados e o reagendamento',
+          'Encerrou ou chamou o profissional principal com as informações',
+        ],
+      },
+      {
+        titulo: 'Organização e Registro', pontos: 5, itens: [
+          'Desligou a prancha e aguardou o resfriamento antes de guardar',
+          'Limpou as placas, as escovas e os pentes',
+          'Recolheu os cabelos do chão e higienizou a estação',
+          'Registrou o serviço e as observações sobre o fio no sistema',
+        ],
+      },
+    ],
+    comportamental: [
+      'Simpatia',
+      'Comunicação',
+      'Cordialidade',
+      'Técnica da Chapinha',
+      'Cuidado com a Saúde do Fio',
+      'Acabamento e Alinhamento',
+      'Higiene e Segurança',
+      'Postura Profissional',
+    ],
+  },
+
   // POP-PRO-002 — Atendimento de Pedicure — 100 pontos
   'pop-pro-002': {
     secoes: [

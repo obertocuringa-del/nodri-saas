@@ -3964,6 +3964,340 @@ const PRO_MODELAGEM_HTML = `
 </div>
 `.trim()
 
+const PRO_CHAPINHA_HTML = `
+<h1>Procedimento Operacional Padrão (POP)</h1>
+<p style="color:#6b6880;font-size:15px;margin:-4px 0 16px;font-weight:600">POP-PRO-009 — Chapinha</p>
+
+<h2>1. Identificação</h2>
+<div style="${META}">
+  <p style="margin:0"><strong>Código:</strong> POP-PRO-009 &nbsp;·&nbsp; <strong>Versão:</strong> 1.0 &nbsp;·&nbsp; <strong>Setor:</strong> Profissionais (Cabeleireiro / Auxiliar)</p>
+  <p style="margin:8px 0 0"><strong>Responsável:</strong> <span style="${FIELD}"></span></p>
+  <p style="margin:8px 0 0"><strong>Data de Emissão:</strong> ___/___/______ &nbsp;·&nbsp; <strong>Última Revisão:</strong> ___/___/______ &nbsp;·&nbsp; <strong>Próxima Revisão:</strong> ___/___/______</p>
+</div>
+
+<h2>2. Objetivo</h2>
+<p>Padronizar o serviço de <strong>chapinha</strong>, garantindo a proteção do fio contra o calor, temperatura adequada à condição do cabelo, técnica correta de deslizamento das placas, acabamento liso, alinhado e com brilho, e validação do resultado pela cliente — <strong>sem comprometer a saúde do fio</strong>.</p>
+
+<h2>3. Campo de Aplicação</h2>
+<p>Este procedimento aplica-se a todos os profissionais responsáveis pelo serviço de chapinha.</p>
+
+<h2>4. Fluxo do Atendimento</h2>
+<div style="${BOX}">
+  <div style="${BOXH}">Atenção ao ponto de partida</div>
+  <p style="margin:0"><strong>Cliente chega com o cabelo sujo:</strong> realizar a higienização no lavatório (PARTE B) e seguir o fluxo completo.</p>
+  <p style="margin:8px 0 0"><strong>Cliente já chega com o cabelo limpo:</strong> <strong>pular a PARTE B</strong> e ir direto para a preparação do procedimento (PARTE C).</p>
+</div>
+
+<h2>5. Materiais Necessários</h2>
+<h3>Equipamentos</h3>
+<ul style="${CHECK}">
+  <li>☐ Prancha (chapinha) com controle de temperatura.</li>
+  <li>☐ Secador com bico direcionador.</li>
+  <li>☐ Escovas.</li>
+  <li>☐ Pentes de dentes finos e largos.</li>
+  <li>☐ Presilhas para separar as mechas.</li>
+  <li>☐ Base térmica para apoiar a prancha.</li>
+  <li>☐ Toalhas limpas.</li>
+  <li>☐ Capa de proteção.</li>
+  <li>☐ Robe ou avental.</li>
+  <li>☐ Espelho de mão (para mostrar o resultado).</li>
+</ul>
+<h3>Produtos</h3>
+<ul style="${CHECK}">
+  <li>☐ Shampoo 1 e Shampoo 2.</li>
+  <li>☐ Condicionador.</li>
+  <li>☐ <strong>Protetor térmico</strong> (obrigatório).</li>
+  <li>☐ Leave-in.</li>
+  <li>☐ Óleo ou sérum finalizador.</li>
+  <li>☐ Spray de brilho ou anti-frizz.</li>
+</ul>
+
+<h2>6. Higiene e Segurança</h2>
+<h3>Antes do Atendimento</h3>
+<ul style="${CHECK}">
+  <li>☐ Higienizar corretamente as mãos.</li>
+  <li>☐ Manter uniforme limpo e cabelos presos.</li>
+  <li>☐ Conferir a limpeza da estação.</li>
+  <li>☐ Higienizar escovas e pentes entre as clientes.</li>
+  <li>☐ <strong>Limpar as placas da prancha</strong> — resíduo acumulado queima o fio e marca o cabelo.</li>
+  <li>☐ Verificar se as placas aquecem de forma uniforme e não estão lascadas.</li>
+  <li>☐ Verificar o estado do fio e da tomada.</li>
+  <li>☐ Organizar todos os produtos e verificar a validade.</li>
+</ul>
+<h3>Durante o Atendimento</h3>
+<ul style="${CHECK}">
+  <li>☐ Manter a estação organizada.</li>
+  <li>☐ Não utilizar telefone celular.</li>
+  <li>☐ Não consumir alimentos.</li>
+  <li>☐ <strong>Nunca passar a chapinha em cabelo úmido</strong> — a água ferve dentro do fio e provoca quebra.</li>
+  <li>☐ <strong>Nunca usar a chapinha sem protetor térmico.</strong></li>
+  <li>☐ Nunca encostar a placa no couro cabeludo, no rosto ou nas orelhas.</li>
+  <li>☐ Apoiar a prancha sempre em base térmica, nunca sobre a bancada.</li>
+  <li>☐ Não deixar a prancha quente ao alcance da cliente.</li>
+  <li>☐ Perguntar à cliente se a temperatura está agradável.</li>
+</ul>
+<h3>Após o Atendimento</h3>
+<ul style="${CHECK}">
+  <li>☐ Desligar a prancha da tomada.</li>
+  <li>☐ Aguardar o resfriamento antes de guardar.</li>
+  <li>☐ Limpar as placas, as escovas e os pentes.</li>
+  <li>☐ Recolher os cabelos do chão e da cadeira.</li>
+  <li>☐ Higienizar a estação e as mãos.</li>
+  <li>☐ Preparar a estação para a próxima cliente.</li>
+</ul>
+
+<h2>7. Procedimento Operacional</h2>
+
+<h3>PARTE A — Início do Atendimento</h3>
+<p><strong>1. Apresentação do Profissional</strong> — sempre iniciar o atendimento de frente para a cliente, demonstrando simpatia, cordialidade e profissionalismo.</p>
+<blockquote>"Olá (Nome da cliente), meu nome é (Nome do Profissional) e hoje eu serei o(a) responsável pelo seu atendimento."</blockquote>
+<p><strong>2. Confirmação do Serviço</strong></p>
+<blockquote>"A senhora irá fazer chapinha hoje, correto?"</blockquote>
+<p><strong>3. Identificação da Necessidade</strong></p>
+<blockquote>"O que a senhora pensou para hoje?" · "A senhora possui alguma preferência ou alguma foto de referência?"</blockquote>
+<p><strong>4. Ponderações e Orientações</strong> — após ouvir atentamente a cliente, explicar de forma clara e profissional:</p>
+<ul style="${CHECK}">
+  <li>☐ O que é possível realizar.</li>
+  <li>☐ O que não é recomendado realizar.</li>
+  <li>☐ As limitações técnicas (tipo, densidade e condição do fio).</li>
+  <li>☐ Quanto tempo o liso tende a durar.</li>
+  <li>☐ Os cuidados necessários para preservar a saúde do cabelo.</li>
+</ul>
+<blockquote>"Baseado no que a senhora deseja, é possível fazer [explicar o que dá para fazer]."</blockquote>
+<blockquote>"Não recomendamos [explicar o que não é recomendado] porque [explicar o motivo]."</blockquote>
+<div style="${BOX}">
+  <div style="${BOXH}">Quando o fio não permite</div>
+  <p style="margin:0">Se o cabelo estiver <strong>muito danificado, quebradiço ou com descoloração recente</strong>, informar a cliente com clareza e propor uma alternativa — temperatura mais baixa, tratamento antes, ou outro dia. <strong>Não realizar o procedimento em condições que comprometam o fio.</strong> Comunicar a gerência quando houver recusa técnica.</p>
+</div>
+<blockquote>"Seu cabelo está bastante sensibilizado. Se passarmos a chapinha hoje, o risco de quebra é alto. Recomendo fazermos um tratamento primeiro. Posso te explicar?"</blockquote>
+<p><strong>Nenhum procedimento deverá ser iniciado antes que a cliente compreenda e concorde com o serviço que será realizado.</strong></p>
+<p><strong>5. Verificar o ponto de partida</strong> — perguntar se a cliente já veio com o cabelo lavado.</p>
+<blockquote>"A senhora já veio com o cabelo limpo, ou vamos passar pelo lavatório antes?"</blockquote>
+<p><strong>Se a cliente já estiver com o cabelo limpo, seguir direto para a PARTE C.</strong></p>
+
+<h3>PARTE B — Higienização no Lavatório</h3>
+<p style="color:#6b6880"><em>Executar somente quando a cliente não chega com o cabelo limpo.</em></p>
+<p><strong>6. Avaliação do Cabelo e Informação das Necessidades</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Observar o estado geral do cabelo.</li>
+  <li>☐ Verificar o tipo de cabelo (liso, ondulado, cacheado, crespo).</li>
+  <li>☐ Verificar a porosidade e a elasticidade do fio.</li>
+  <li>☐ Verificar se há ressecamento, danos ou pontas duplas.</li>
+  <li>☐ Verificar se há química (coloração, descoloração, alisamento).</li>
+  <li>☐ Verificar o couro cabeludo (oleosidade, caspa, sensibilidade).</li>
+  <li>☐ Informar à cliente as necessidades identificadas.</li>
+</ul>
+<p><strong>7. Oferta de Tratamento</strong> — perguntar se a cliente deseja realizar algum tratamento de acordo com a necessidade identificada.</p>
+<blockquote>"A senhora gostaria de fazer um tratamento de [hidratação/nutrição/reconstrução] de acordo com a necessidade do seu cabelo?"</blockquote>
+<p><strong>8. Informar os Produtos e Experiência Sensorial</strong> — informar todos os produtos que serão utilizados e deixar a cliente sentir o cheiro.</p>
+<p><strong>9. Execução da Higienização</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Verificar a temperatura da água (morna, agradável).</li>
+  <li>☐ Soltar um pouco o cabelo da raiz e desembaraçar suavemente.</li>
+  <li>☐ Aplicar o 1º shampoo, emulsionar bem e enxaguar completamente.</li>
+  <li>☐ Aplicar o 2º shampoo + massagem no couro cabeludo por 3 minutos.</li>
+  <li>☐ Enxaguar completamente.</li>
+  <li>☐ Aguardar o tempo de pausa recomendado pela marca.</li>
+  <li>☐ Aplicar o condicionador no comprimento e nas pontas, evitando a raiz.</li>
+  <li>☐ Aguardar o tempo recomendado pela marca.</li>
+  <li>☐ Enxaguar completamente, sem deixar resíduos.</li>
+</ul>
+<p><strong>10. Finalização da Higienização</strong> — fazer a touca com a toalha e conduzir a cliente até a cadeira.</p>
+
+<h3>PARTE C — Definição do Resultado e Preparação</h3>
+<p><strong>11. Preparação da Cliente</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Ajudar a cliente a se sentar confortavelmente.</li>
+  <li>☐ Remover a touca de toalha.</li>
+  <li>☐ Secar com a toalha, retirando o excesso de água (pressionar, nunca esfregar).</li>
+  <li>☐ Colocar a capa de proteção.</li>
+  <li>☐ Colocar o robe ou avental.</li>
+</ul>
+<p><strong>12. Verificar Como a Cliente Gosta e Como Quer o Resultado</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Perguntar se prefere o liso totalmente reto ou com movimento nas pontas.</li>
+  <li>☐ Perguntar se as pontas devem virar para dentro ou ficar retas.</li>
+  <li>☐ Perguntar o lado da repartição.</li>
+  <li>☐ Perguntar se quer volume na raiz ou o liso desde a raiz.</li>
+  <li>☐ Observar a foto de referência, quando houver.</li>
+  <li>☐ Confirmar em voz alta o que será feito, antes de começar.</li>
+</ul>
+<blockquote>"A senhora prefere o liso bem reto, ou com as pontas viradas para dentro?"</blockquote>
+<blockquote>"Então vamos fazer [descrever o resultado], com a repartição do lado [X]. É isso mesmo?"</blockquote>
+<p><strong>13. Aplicação dos Produtos</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Desembaraçar com pente de dentes largos, das pontas para a raiz.</li>
+  <li>☐ Aplicar o <strong>protetor térmico</strong> em todo o comprimento — <strong>obrigatório</strong>.</li>
+  <li>☐ Aplicar leave-in ou finalizador conforme o tipo de cabelo.</li>
+  <li>☐ Distribuir bem o produto, mecha a mecha.</li>
+  <li>☐ Não exagerar na quantidade — excesso de produto queima na placa e deixa o fio pesado.</li>
+</ul>
+<p><strong>14. Secagem Completa e Modelagem Prévia</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Secar completamente o cabelo com o secador.</li>
+  <li>☐ Direcionar o ar da raiz para as pontas.</li>
+  <li>☐ Modelar com a escova, já alinhando o fio.</li>
+  <li>☐ <strong>Conferir se não restou nenhuma mecha úmida</strong>, principalmente na nuca e nas laterais.</li>
+</ul>
+<div style="${BOX}">
+  <p style="margin:0"><strong>O cabelo precisa estar 100% seco antes da chapinha.</strong> Passar a placa em fio úmido faz a água ferver dentro da fibra e provoca quebra imediata — o estalo ao passar a prancha é o sinal.</p>
+</div>
+<p><strong>15. Penteia e alinha o cabelo</strong> — pentear, definir a repartição combinada e separar o cabelo em seções com presilhas, de baixo para cima.</p>
+
+<h3>PARTE D — Execução da Chapinha</h3>
+<p><strong>16. Ajuste da Temperatura</strong> — a temperatura deve ser definida pela condição do fio, nunca por hábito.</p>
+<table style="${TBL}">
+  <tr><th style="${TH}">Condição do fio</th><th style="${TH}">Temperatura recomendada</th></tr>
+  <tr><td style="${TD}">Cabelo virgem, grosso e resistente</td><td style="${TD}">Alta</td></tr>
+  <tr><td style="${TD}">Cabelo com coloração, saudável</td><td style="${TD}">Média</td></tr>
+  <tr><td style="${TD}">Cabelo fino</td><td style="${TD}">Baixa a média</td></tr>
+  <tr><td style="${TD}">Cabelo descolorido, sensibilizado ou quebradiço</td><td style="${TD}">Baixa</td></tr>
+</table>
+<ul style="${CHECK}">
+  <li>☐ Aguardar o aquecimento completo da prancha antes de iniciar.</li>
+  <li>☐ Testar em uma mecha da nuca antes de trabalhar as áreas visíveis.</li>
+  <li>☐ Perguntar à cliente se a temperatura está agradável.</li>
+</ul>
+<p><strong>17. Execução por Seções</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Trabalhar mecha a mecha, começando pela nuca e subindo.</li>
+  <li>☐ Manter as demais seções presas com presilhas.</li>
+  <li>☐ Utilizar <strong>mechas finas</strong> — mecha grossa não alisa por igual e obriga a repassar.</li>
+  <li>☐ Pentear cada mecha antes de passar a placa.</li>
+  <li>☐ Iniciar a placa a uma distância segura da raiz.</li>
+  <li>☐ <strong>Deslizar a prancha em movimento contínuo, sem parar na mecha.</strong></li>
+  <li>☐ Manter a pressão firme e constante.</li>
+  <li>☐ <strong>No máximo 1 a 2 passadas por mecha.</strong></li>
+  <li>☐ Não repassar a placa repetidamente para "melhorar" o resultado.</li>
+  <li>☐ Definir o acabamento das pontas conforme o combinado.</li>
+  <li>☐ Conferir a simetria entre os dois lados durante a execução.</li>
+</ul>
+<div style="${BOX}">
+  <p style="margin:0"><strong>Parar a prancha sobre a mecha marca o fio e queima.</strong> Se uma mecha não alisou, o problema é a espessura ou a temperatura — não a quantidade de passadas.</p>
+</div>
+<p><strong>18. Resfriamento</strong> — aguardar o cabelo esfriar antes de pentear ou ajustar. É ao esfriar que o fio fixa o formato.</p>
+
+<h3>PARTE E — Acabamento e Finalização</h3>
+<p><strong>19. Acabamento Final</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Ajustar a repartição conforme combinado.</li>
+  <li>☐ Verificar se não há mechas sem alisar, principalmente na nuca.</li>
+  <li>☐ Verificar se não há marcas de placa no fio.</li>
+  <li>☐ Verificar frizz e fios armados.</li>
+  <li>☐ Verificar a simetria e o caimento.</li>
+  <li>☐ Aplicar óleo, sérum ou spray de brilho nas pontas, com moderação.</li>
+  <li>☐ Não aplicar produto pesado na raiz.</li>
+</ul>
+
+<h3>PARTE F — Validação e Encerramento</h3>
+<p><strong>20. Validação da Cliente</strong> — apresentar o resultado e perguntar obrigatoriamente:</p>
+<blockquote>"A senhora gostou do resultado?"</blockquote>
+<blockquote>"Existe algum detalhe que gostaria que ajustássemos?"</blockquote>
+<p>Utilizar o espelho de mão para mostrar a parte de trás e as laterais. <strong>Caso a cliente solicite qualquer ajuste, este deverá ser realizado imediatamente.</strong> O atendimento somente poderá ser encerrado após a aprovação da cliente.</p>
+<p><strong>21. Orientações de Manutenção</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Explicar quanto tempo o liso tende a durar.</li>
+  <li>☐ Orientar sobre umidade, chuva e transpiração.</li>
+  <li>☐ Orientar como dormir para preservar o resultado.</li>
+  <li>☐ Reforçar a importância do protetor térmico em casa.</li>
+  <li>☐ Orientar sobre a frequência segura de uso da chapinha.</li>
+  <li>☐ Oferecer os produtos utilizados para venda.</li>
+  <li>☐ Oferecer o reagendamento e o tratamento de manutenção.</li>
+</ul>
+<blockquote>"Para manter a saúde do fio, o ideal é intercalar a chapinha com tratamentos. Gostaria de já deixar agendado?"</blockquote>
+<p><strong>22. Encerramento</strong></p>
+<ul>
+  <li><strong>Se a chapinha for o último serviço:</strong> retirar a capa, agradecer a preferência e acompanhar a cliente até a recepção.</li>
+  <li><strong>Se houver outro procedimento na sequência:</strong> chamar o profissional principal, informando nome da cliente, procedimentos agendados, produtos utilizados, temperatura usada e observações sobre o cabelo.</li>
+</ul>
+<blockquote>"Foi um prazer atender você, (Nome)! Espero vê-la em breve."</blockquote>
+
+<h3>PARTE G — Organização Pós-Atendimento</h3>
+<p><strong>23. Limpeza e Registro</strong></p>
+<ul style="${CHECK}">
+  <li>☐ Desligar a prancha da tomada.</li>
+  <li>☐ Aguardar o resfriamento antes de guardar.</li>
+  <li>☐ Limpar as placas, as escovas e os pentes.</li>
+  <li>☐ Recolher os cabelos do chão e da cadeira.</li>
+  <li>☐ Higienizar a estação.</li>
+  <li>☐ Guardar os produtos corretamente.</li>
+  <li>☐ Registrar o serviço e os produtos no sistema.</li>
+  <li>☐ Registrar observações sobre a condição do fio para a próxima visita.</li>
+</ul>
+
+<h2>8. Indicadores de Qualidade</h2>
+<p>A gerência deverá acompanhar mensalmente:</p>
+<ul style="${CHECK}">
+  <li>☐ Tempo médio de chapinha.</li>
+  <li>☐ Número de retrabalhos (cliente pediu ajuste após finalizar).</li>
+  <li>☐ Número de reclamações sobre quebra, marca de placa ou durabilidade.</li>
+  <li>☐ Índice de satisfação da cliente.</li>
+  <li>☐ Percentual de reagendamento.</li>
+  <li>☐ Conversão de chapinha em tratamento capilar.</li>
+  <li>☐ Vendas de protetor térmico e finalizadores.</li>
+  <li>☐ Uso do protetor térmico em 100% dos atendimentos.</li>
+</ul>
+
+<h2>9. Checklist de Auditoria</h2>
+<div style="${BOX}">
+  <div style="${BOXH}">Apresentação</div>
+  <ul style="${CHECK}">
+    <li>☐ Apresentou-se de frente para a cliente, com nome.</li>
+    <li>☐ Confirmou o serviço (chapinha).</li>
+    <li>☐ Perguntou o que a cliente desejava.</li>
+    <li>☐ Perguntou se havia preferência ou referência.</li>
+    <li>☐ Fez as ponderações do que dá e do que não dá para fazer.</li>
+    <li>☐ Avaliou se a condição do fio permitia o procedimento.</li>
+    <li>☐ Verificou se a cliente já veio com o cabelo limpo.</li>
+  </ul>
+  <div style="${BOXH}">Lavatório (quando aplicável)</div>
+  <ul style="${CHECK}">
+    <li>☐ Realizou avaliação capilar e informou as necessidades.</li>
+    <li>☐ Perguntou se deseja tratamento.</li>
+    <li>☐ Informou os produtos e deixou sentir o cheiro.</li>
+    <li>☐ Aplicou o 1º shampoo.</li>
+    <li>☐ Aplicou o 2º shampoo + massagem de 3 minutos.</li>
+    <li>☐ Respeitou os tempos de pausa.</li>
+    <li>☐ Aplicou o condicionador e enxaguou completamente.</li>
+  </ul>
+  <div style="${BOXH}">Preparação</div>
+  <ul style="${CHECK}">
+    <li>☐ Perguntou como a cliente queria o resultado.</li>
+    <li>☐ Confirmou em voz alta o que seria feito.</li>
+    <li>☐ Secou com a toalha sem esfregar.</li>
+    <li>☐ Aplicou o protetor térmico.</li>
+    <li>☐ Secou o cabelo 100% antes da prancha.</li>
+    <li>☐ Conferiu se não havia mechas úmidas.</li>
+    <li>☐ Penteou, definiu a repartição e separou em seções.</li>
+  </ul>
+  <div style="${BOXH}">Execução</div>
+  <ul style="${CHECK}">
+    <li>☐ Limpou as placas antes de iniciar.</li>
+    <li>☐ Ajustou a temperatura à condição do fio.</li>
+    <li>☐ Testou em uma mecha da nuca.</li>
+    <li>☐ Trabalhou mecha a mecha, da nuca para cima.</li>
+    <li>☐ Utilizou mechas finas.</li>
+    <li>☐ Deslizou a prancha sem parar na mecha.</li>
+    <li>☐ Fez no máximo 1 a 2 passadas por mecha.</li>
+    <li>☐ Não encostou a placa no couro cabeludo.</li>
+    <li>☐ Apoiou a prancha em base térmica.</li>
+    <li>☐ Conferiu a simetria durante a execução.</li>
+  </ul>
+  <div style="${BOXH}">Finalização</div>
+  <ul style="${CHECK}">
+    <li>☐ Aguardou o cabelo esfriar antes de pentear.</li>
+    <li>☐ Verificou mechas sem alisar e marcas de placa.</li>
+    <li>☐ Aplicou finalizador com moderação.</li>
+    <li>☐ Mostrou o resultado com o espelho de mão.</li>
+    <li>☐ Perguntou se a cliente gostou e se havia ajustes.</li>
+    <li>☐ Realizou os ajustes imediatamente.</li>
+    <li>☐ Orientou sobre manutenção e frequência segura.</li>
+    <li>☐ Ofereceu produtos e reagendamento.</li>
+    <li>☐ Organizou a estação e registrou no sistema.</li>
+  </ul>
+</div>
+`.trim()
+
 export type ConteudoDoc = { id: string; titulo: string; texto: string }
 export const CONTEUDO_DEFAULTS: Record<string, { titulo: string; conteudo: { texto?: string; docs?: ConteudoDoc[] } }> = {
   manicure: {
@@ -3986,6 +4320,7 @@ export const CONTEUDO_DEFAULTS: Record<string, { titulo: string; conteudo: { tex
         { id: 'pop-pro-006', titulo: 'POP-PRO-006 · Tratamentos Capilares (Lavatório)', texto: PRO_TRATAMENTOS_HTML },
         { id: 'pop-pro-007', titulo: 'POP-PRO-007 · Secagem', texto: PRO_SECAGEM_HTML },
         { id: 'pop-pro-008', titulo: 'POP-PRO-008 · Modelagem', texto: PRO_MODELAGEM_HTML },
+        { id: 'pop-pro-009', titulo: 'POP-PRO-009 · Chapinha', texto: PRO_CHAPINHA_HTML },
       ],
     },
   },
