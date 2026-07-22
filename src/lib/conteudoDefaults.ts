@@ -3327,7 +3327,6 @@ export const CONTEUDO_DEFAULTS: Record<string, { titulo: string; conteudo: { tex
         { id: 'pop-pro-004', titulo: 'POP-PRO-004 · Higienização Especial (Lavatório)', texto: PRO_LAVATORIO_ESPECIAL_HTML },
         { id: 'pop-pro-005', titulo: 'POP-PRO-005 · Shiatsu Capilar (Lavatório)', texto: PRO_SHIATSU_HTML },
         { id: 'pop-pro-006', titulo: 'POP-PRO-006 · Tratamentos Capilares (Lavatório)', texto: PRO_TRATAMENTOS_HTML },
-        { id: 'pop-pro-001', titulo: 'POP-PRO-001 · Atendimento do Profissional', texto: PRO_ATENDIMENTO_HTML },
       ],
     },
   },
