@@ -186,4 +186,256 @@ export const AVALIACOES_POP: Record<string, ModeloAvaliacao> = {
       },
     ],
   },
+
+  // POP-REC-003 — Atendimento Telefônico (Primeiro Contato) — 100 pontos
+  'pop-rec-003': {
+    secoes: [
+      {
+        titulo: 'Atendimento e Saudação', pontos: 15, itens: [
+          'Atendeu a ligação até o terceiro toque',
+          'Utilizou a saudação padrão completa',
+          'Informou o nome do salão',
+          'Apresentou-se pelo nome',
+          'Perguntou como poderia ajudar',
+          'Manteve tom de voz cordial, claro e audível',
+        ],
+      },
+      {
+        titulo: 'Cadastro do Cliente', pontos: 10, itens: [
+          'Verificou se já possuía cadastro',
+          'Atualizou as informações quando necessário',
+          'Confirmou telefone',
+          'Solicitou data de nascimento',
+          'Solicitou e-mail',
+          'Perguntou como conheceu o salão',
+        ],
+      },
+      {
+        titulo: 'Identificação da Necessidade', pontos: 15, itens: [
+          'Perguntou qual procedimento deseja realizar',
+          'Perguntou profissional de preferência',
+          'Perguntou disponibilidade de dias',
+          'Perguntou disponibilidade de horários',
+          'Escutou o cliente sem interromper',
+        ],
+      },
+      {
+        titulo: 'Consulta de Agenda e Recuperação', pontos: 15, itens: [
+          'Consultou corretamente a agenda',
+          'Confirmou disponibilidade antes de prometer o horário',
+          'Quando necessário, ofereceu outro horário',
+          'Quando necessário, ofereceu outra data',
+          'Quando necessário, ofereceu outro profissional',
+          'Inseriu o cliente na lista de espera',
+        ],
+      },
+      {
+        titulo: 'Confirmação Final', pontos: 10, itens: [
+          'Confirmou o procedimento',
+          'Confirmou a data',
+          'Confirmou o horário',
+          'Confirmou o profissional',
+        ],
+      },
+      {
+        titulo: 'Vendas e Consultoria', pontos: 15, itens: [
+          'Verificou procedimentos em atraso',
+          'Ofereceu serviço complementar para o mesmo dia',
+          'Apresentou os tratamentos capilares',
+          'Divulgou campanha ou promoção vigente',
+          'Demonstrou conhecimento dos serviços do salão',
+        ],
+      },
+      {
+        titulo: 'Reagendamento Preventivo', pontos: 10, itens: [
+          'Ofereceu o próximo horário antes de encerrar',
+          'Explicou o período ideal de retorno',
+          'Destacou o benefício de garantir a vaga',
+        ],
+      },
+      {
+        titulo: 'Encerramento e Confirmação por WhatsApp', pontos: 10, itens: [
+          'Encerrou a ligação com a frase padrão de despedida',
+          'Agradeceu a preferência',
+          'Enviou a confirmação por WhatsApp imediatamente após a ligação',
+          'A mensagem continha data, horário, serviços e profissional',
+          'Programou o lembrete de um dia antes',
+        ],
+      },
+    ],
+    comportamental: [
+      'Simpatia',
+      'Comunicação e Clareza Vocal',
+      'Cordialidade',
+      'Agilidade no Atendimento',
+      'Proatividade',
+      'Capacidade de Venda',
+      'Conhecimento dos Serviços',
+      'Postura Profissional',
+    ],
+  },
+
+  // POP-REC-006 — Atendimento Presencial (Chegada do Cliente) — 100 pontos
+  'pop-rec-006': {
+    secoes: [
+      {
+        titulo: 'Recepção e Acolhimento', pontos: 20, itens: [
+          'Levantou-se imediatamente para recepcionar o cliente',
+          'Utilizou a saudação de boas-vindas padrão',
+          'Informou o nome do salão',
+          'Perguntou o nome do cliente',
+          'Demonstrou simpatia e entusiasmo',
+          'Manteve contato visual',
+          'Manteve postura profissional',
+        ],
+      },
+      {
+        titulo: 'Identificação e Abertura da Comanda', pontos: 15, itens: [
+          'Perguntou se o cliente tinha agendamento',
+          'Localizou o agendamento no sistema',
+          'Abriu a comanda do cliente (digital ou física)',
+          'Verificou os serviços agendados',
+          'Confirmou serviço e profissional com o cliente',
+        ],
+      },
+      {
+        titulo: 'Cliente sem Agendamento (Encaixe)', pontos: 10, condicional: true,
+        nota: 'Somente quando o cliente chega sem agendamento.',
+        itens: [
+          'Verificou a disponibilidade na agenda',
+          'Tentou encaixar o cliente',
+          'Ofereceu outro horário, data ou profissional',
+          'Inseriu na lista de espera quando não foi possível',
+        ],
+      },
+      {
+        titulo: 'Acomodação e Conforto', pontos: 15, itens: [
+          'Conduziu o cliente à área de espera ou à estação',
+          'Ofereceu bebidas (café, chá, água, capuccino)',
+          'Entregou e apresentou o cardápio de bebidas',
+          'Ofereceu algo diferenciado',
+          'Garantiu assento disponível e ambiente confortável',
+          'Informou o Wi-Fi quando necessário',
+        ],
+      },
+      {
+        titulo: 'Comunicação com o Profissional', pontos: 10, itens: [
+          'Comunicou imediatamente a chegada do cliente',
+          'Informou o nome do cliente',
+          'Informou os procedimentos agendados',
+          'Informou o local onde o cliente está acomodado',
+        ],
+      },
+      {
+        titulo: 'Vendas e Oportunidades Durante a Espera', pontos: 20, itens: [
+          'Consultou o histórico do cliente no sistema',
+          'Identificou procedimentos em atraso',
+          'Ofereceu tratamento capilar ou hidratação',
+          'Apresentou produtos ou a nova linha',
+          'Divulgou campanha ou combo vigente',
+          'Sugeriu serviço complementar ao agendado',
+          'Demonstrou conhecimento dos serviços do salão',
+        ],
+      },
+      {
+        titulo: 'Registro e Acompanhamento', pontos: 10, itens: [
+          'Registrou a chegada no sistema',
+          'Marcou o cliente como "em atendimento"',
+          'Informou a gerência sobre a oportunidade identificada',
+          'Acompanhou discretamente o fluxo do atendimento',
+          'Encerrou a chegada com frase de cortesia',
+        ],
+      },
+    ],
+    comportamental: [
+      'Simpatia',
+      'Comunicação',
+      'Cordialidade',
+      'Organização',
+      'Proatividade',
+      'Atenção ao Conforto do Cliente',
+      'Capacidade de Venda',
+      'Postura Profissional',
+    ],
+  },
+
+  // POP-REC-007 — Atendimento Presencial (Finalização do Procedimento) — 100 pontos
+  'pop-rec-007': {
+    secoes: [
+      {
+        titulo: 'Recepção no Caixa', pontos: 10, itens: [
+          'Levantou-se (quando possível) para atender o cliente',
+          'Cumprimentou o cliente cordialmente',
+          'Perguntou o nome do cliente',
+          'Manteve postura profissional e simpática',
+        ],
+      },
+      {
+        titulo: 'Conferência da Comanda', pontos: 15, itens: [
+          'Localizou a comanda no sistema',
+          'Verificou se todos os serviços foram lançados',
+          'Verificou serviços adicionais realizados',
+          'Verificou produtos lançados',
+          'Verificou descontos ou cortesias aplicados',
+          'Conferiu os procedimentos junto com o cliente',
+          'Checou os lançamentos com o profissional quando houve dúvida',
+        ],
+      },
+      {
+        titulo: 'Apresentação do Valor e Pagamento', pontos: 15, itens: [
+          'Apresentou o valor total com clareza',
+          'Detalhou os valores quando o cliente demonstrou dúvida',
+          'Perguntou a forma de pagamento',
+          'Conduziu corretamente o pagamento (cartão, dinheiro ou Pix)',
+          'Registrou o pagamento no sistema',
+          'Entregou o comprovante quando solicitado',
+        ],
+      },
+      {
+        titulo: 'Perguntas Obrigatórias', pontos: 10, itens: [
+          'Perguntou sobre a inclusão do CPF na nota fiscal',
+          'Registrou o CPF no sistema quando solicitado',
+          'Ofereceu o cupom de estacionamento (quando aplicável)',
+        ],
+      },
+      {
+        titulo: 'Vendas e Ticket Médio', pontos: 20, itens: [
+          'Ofereceu produtos antes de finalizar a venda',
+          'Relacionou o produto ao atendimento realizado',
+          'Ofereceu serviço adicional para a próxima visita',
+          'Apresentou combo ou oferta combinada',
+          'Divulgou campanha vigente',
+          'Demonstrou conhecimento dos produtos e serviços',
+        ],
+      },
+      {
+        titulo: 'Reagendamento Preventivo', pontos: 20, itens: [
+          'Ofereceu o próximo agendamento antes de o cliente sair',
+          'Informou o período ideal de retorno para o serviço realizado',
+          'Destacou pelo menos um benefício de reagendar',
+          'Efetivou o reagendamento no sistema',
+          'Confirmou data, horário e profissional do próximo agendamento',
+        ],
+      },
+      {
+        titulo: 'Encerramento e Pós-Atendimento', pontos: 10, itens: [
+          'Agradeceu a visita usando o nome do cliente',
+          'Relembrou o próximo agendamento ou convidou o cliente a retornar',
+          'Despediu-se cordialmente',
+          'Enviou a mensagem de feedback no dia seguinte',
+          'Informou o link de agendamento online (quando disponível)',
+        ],
+      },
+    ],
+    comportamental: [
+      'Simpatia',
+      'Comunicação',
+      'Cordialidade',
+      'Organização e Precisão no Caixa',
+      'Agilidade',
+      'Capacidade de Venda',
+      'Conhecimento dos Produtos e Serviços',
+      'Postura Profissional',
+    ],
+  },
 }
