@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Plus, Search, UserCheck, UserX, Edit2, Trash2, Upload, X, ChevronRight, Users, FileText, Briefcase, Clock, Award, BookOpen, FileSignature, AlertCircle, TrendingUp, Building2, Menu, Mail, Send, ScrollText } from 'lucide-react'
+import { ArrowLeft, Plus, Search, UserCheck, UserX, Edit2, Trash2, Upload, X, ChevronRight, Users, FileText, Briefcase, Clock, Award, BookOpen, FileSignature, AlertCircle, TrendingUp, Building2, Menu, Mail, Send, ScrollText, KeyRound } from 'lucide-react'
 import toast from 'react-hot-toast'
 import MateriaisTrabalho from '@/components/salon/MateriaisTrabalho'
 import ProcessoContratacao from '@/components/salon/ProcessoContratacao'
@@ -11,6 +11,7 @@ import EditorAvaliacao from '@/components/salon/EditorAvaliacao'
 import DescricaoCargo from '@/components/salon/DescricaoCargo'
 import PlanoCarreiraPJ from '@/components/salon/PlanoCarreiraPJ'
 import NormaConduta from '@/components/salon/NormaConduta'
+import AcessoGlobalProfissionais from '@/components/salon/AcessoGlobalProfissionais'
 import { confirmarSaidaSemSalvar } from '@/lib/guardaSalvar'
 import { urlPublica } from '@/lib/urlPublica'
 
@@ -52,6 +53,7 @@ const SIDEBAR_ITEMS = [
   { id: 'cadastrar',    label: 'Cadastrar Profissional',          icon: Plus,           cor: '#5b4fcf', destaque: true },
   { id: 'lista',        label: 'Lista de Profissionais',          icon: Users,          cor: '#06b6d4' },
   { id: 'solicitacao',  label: 'Solicitação',                     icon: Send,           cor: '#8b5cf6' },
+  { id: 'acesso_global', label: 'Acesso dos Profissionais',        icon: KeyRound,       cor: '#5b4fcf' },
   { id: 'ranking',      label: 'Ranking de Avaliações',           icon: TrendingUp,     cor: '#f59e0b' },
   { id: 'categorias',   label: 'Gerenciar Categorias',            icon: Award,          cor: '#f59e0b' },
   { id: 'abertura',     label: 'Abertura de Conta Bancária',      icon: Building2,      cor: '#10b981' },
@@ -2165,6 +2167,9 @@ ${montarContratoHTML()}
 
           {/* ── PLANO DE CARREIRA PJ (trilha de níveis editável) ── */}
           {secao === 'carreira' && <PlanoCarreiraPJ />}
+
+          {/* ── ACESSO GLOBAL (o que todos os profissionais veem no portal) ── */}
+          {secao === 'acesso_global' && <AcessoGlobalProfissionais />}
 
           {/* ── NORMA DE CONDUTA (manual completo, editável por salão) ── */}
           {secao === 'conduta' && (

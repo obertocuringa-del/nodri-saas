@@ -101,7 +101,10 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba, t
     { aba: 'calendario_mkt', label: 'Calendário', Ic: CalendarRange },
     { aba: 'cadastro', label: 'Cadastro', Ic: ClipboardList },
   ]
-  const areasVis = AREAS.filter(a => (a.so === undefined || a.so) && (!a.ocult || !oc[a.ocult]))
+  // Esconde a área quando o acesso_oculto (já fundido com o padrão global do
+  // salão pela API) marcar a chave. Usa a própria `aba` como chave — assim toda
+  // área é controlável pelo painel global, e card novo já entra automaticamente.
+  const areasVis = AREAS.filter(a => (a.so === undefined || a.so) && !oc[a.ocult || a.aba])
 
   const tempoAtras = (em: number) => {
     if (!em) return ''

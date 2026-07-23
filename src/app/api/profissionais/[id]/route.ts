@@ -4,6 +4,7 @@ import { verifyJWT, hashPassword } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 import { escritaBloqueadaSub } from '@/lib/apiAuth'
 import { registrarAuditoria } from '@/lib/audit'
+import { fundirOcultos } from '@/lib/areasPortal'
 
 async function getSalaoId() {
   const token = cookies().get('nodri_token')?.value
@@ -13,8 +14,21 @@ async function getSalaoId() {
   return payload.salaoId
 }
 
+async function getSessaoRole() {
+  const token = cookies().get('nodri_token')?.value
+  if (!token) return { salaoId: null as string | null, role: null as string | null }
+  const payload = await verifyJWT(token)
+  return { salaoId: (payload?.salaoId as string) || null, role: (payload?.role as string) || null }
+}
+
+async function lerOcultoGlobal(salaoId: string): Promise<Record<string, boolean>> {
+  const { data } = await supabaseAdmin.from('salao_config').select('valor').eq('salao_id', salaoId).eq('chave', 'acesso_oculto_global').maybeSingle()
+  const v = (data as any)?.valor
+  return v && typeof v === 'object' ? v : {}
+}
+
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
-  const salaoId = await getSalaoId()
+  const { salaoId, role } = await getSessaoRole()
   if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   const { data, error } = await supabaseAdmin
@@ -27,6 +41,15 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   if (error) return NextResponse.json({ error: error.message }, { status: 404 })
   // Nunca expõe o hash da senha; só informa se já existe uma senha definida
   const { acesso_senha_hash, ...semHash } = (data as any) || {}
+
+  // Quando é a PRÓPRIA profissional carregando o portal, aplica o padrão global
+  // do salão por cima do ajuste individual (oculta se qualquer um dos dois pedir).
+  // Para o dono/sub, devolve o acesso_oculto cru — ele edita o individual.
+  if (role === 'profissional') {
+    const global = await lerOcultoGlobal(salaoId)
+    semHash.acesso_oculto = fundirOcultos(global, semHash.acesso_oculto)
+  }
+
   return NextResponse.json({ ...semHash, acesso_tem_senha: !!acesso_senha_hash })
 }
 
