@@ -57,7 +57,7 @@ function BlocoLeitura({ bloco, n }: { bloco: Bloco; n: number }) {
             <p key={i} style={{ fontSize: 12, fontWeight: 800, color: ROXO, letterSpacing: .6, margin: '14px 0 6px' }}>{l.v}</p>
           )
           if (l.t === 'item') {
-            const m = l.v.match(/^([^:]{3,70}):\s*(.*)$/s)
+            const m = l.v.match(/^([^:]{3,70}):\s*([\s\S]*)$/)
             return (
               <div key={i} style={{ display: 'flex', gap: 10, margin: '0 0 9px' }}>
                 <span style={{ color: ROXO, fontWeight: 900, lineHeight: 1.7 }}>·</span>
@@ -167,7 +167,7 @@ export default function NormaConduta() {
         if (l.t === 'vazio') return '<div class="sp"></div>'
         if (l.t === 'sub') return `<p class="sub">${esc(l.v)}</p>`
         if (l.t === 'item') {
-          const m = l.v.match(/^([^:]{3,70}):\s*(.*)$/s)
+          const m = l.v.match(/^([^:]{3,70}):\s*([\s\S]*)$/)
           return `<p class="it">${m ? `<b>${esc(m[1])}:</b> ${esc(m[2])}` : esc(l.v)}</p>`
         }
         if (l.t === 'sub-item') return `<p class="si">${esc(l.v)}</p>`
