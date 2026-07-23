@@ -12,10 +12,32 @@ export interface KitsSolicitacao {
   kitsMao: number
   kitsPe: number
   valor: number
+  parcelas?: number  // em quantas vezes a profissional quer dividir (1 = à vista)
   data: string      // dd/mm/yyyy
   em: number         // timestamp de criação (ordenação)
   status: 'pendente' | 'separado'
   dataSeparado?: string
+}
+
+// Máximo de parcelas permitido: só libera 2× quando o total pedido atinge o
+// DOBRO da média mensal de atendimentos, 3× no triplo, e assim por diante.
+// Ex.: média 108 → até 215 = 1×; 216 a 323 = 2×; 324+ = 3×.
+export function parcelasMax(totalKits: number, mediaMensal: number): number {
+  const t = Math.max(0, Math.floor(Number(totalKits) || 0))
+  const m = Math.floor(Number(mediaMensal) || 0)
+  if (t <= 0 || m <= 0) return 1
+  return Math.max(1, Math.floor(t / m))
+}
+
+// Divide o valor em N parcelas com 2 casas; a última parcela absorve o
+// arredondamento para o somatório fechar exatamente no total.
+export function valorParcelas(total: number, n: number): number[] {
+  const parc = Math.max(1, Math.floor(Number(n) || 1))
+  const centavosTotal = Math.round(Number(total || 0) * 100)
+  const base = Math.floor(centavosTotal / parc)
+  const out = Array(parc).fill(base)
+  out[parc - 1] = centavosTotal - base * (parc - 1)
+  return out.map(c => c / 100)
 }
 
 export function calcularValor(kitsMao: number, kitsPe: number, cfg: KitsConfig): number {

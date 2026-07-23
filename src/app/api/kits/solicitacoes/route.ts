@@ -1,7 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getSessao, salaoIdSe } from '@/lib/apiAuth'
-import { calcularValor, hojeBRKits, type KitsConfig, type KitsSolicitacao } from '@/lib/kitsShared'
+import { calcularValor, hojeBRKits, parcelasMax, type KitsConfig, type KitsSolicitacao } from '@/lib/kitsShared'
+import { servicosPorProfissional } from '@/lib/profServicosMatch'
+
+// Mesmos critérios da tela e do relatório de kits-atendimentos.
+const SERVICOS_MAO = ['manicure']
+const SERVICOS_PE = ['pedicure', 'pedicure e cuidados especiais dos pes']
+function normServ(s: string) {
+  return (s || '').toString().normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[.,]/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
+// Média mensal (mão+pé) de UM profissional nos últimos 3 meses — mesma base
+// exibida na tela dela. Usada para validar o máximo de parcelas no servidor,
+// sem confiar no número que veio do cliente.
+async function mediaMensalProf(salaoId: string, profissionalId: string): Promise<number> {
+  const hoje = new Date()
+  let soma = 0
+  for (let i = 0; i < 3; i++) {
+    const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1)
+    try {
+      const lista = await servicosPorProfissional(salaoId, d.getFullYear(), d.getMonth() + 1)
+      const p = lista.find(x => x.profissionalId === profissionalId)
+      if (p) for (const [servico, qtd] of Object.entries(p.servicos)) {
+        const n = normServ(servico)
+        if (SERVICOS_MAO.includes(n) || SERVICOS_PE.includes(n)) soma += qtd
+      }
+    } catch { /* mês sem dados não soma */ }
+  }
+  return Math.round(soma / 3)
+}
 
 const chaveMes = (mes: string) => `kits_solicitacoes_${mes}` // mes = 'YYYY-MM'
 
@@ -66,11 +94,18 @@ export async function POST(req: NextRequest) {
   const agora = new Date()
   const mes = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}`
   const cfg = await lerConfig(sess.salaoId)
+
+  // Parcelas: valida contra a média real da profissional (nunca confia no cliente).
+  const media = profissionalId ? await mediaMensalProf(sess.salaoId, profissionalId) : 0
+  const teto = parcelasMax(kitsMao + kitsPe, media)
+  const parcelas = Math.min(Math.max(1, Math.round(Number(body?.parcelas) || 1)), teto)
+
   const nova: KitsSolicitacao = {
     id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
     profissionalId, profissionalNome,
     kitsMao, kitsPe,
     valor: calcularValor(kitsMao, kitsPe, cfg),
+    parcelas,
     data: hojeBRKits(), em: Date.now(), status: 'pendente',
   }
   const lista = await lerLista(sess.salaoId, mes)

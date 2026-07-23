@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import toast from 'react-hot-toast'
 import { Loader2, Save, Package, Hand, Footprints, Wallet, Clock3, CheckCircle2, Trash2 } from 'lucide-react'
 import { useIsMobile } from '@/lib/useIsMobile'
-import { mesmoProf, parseBRLNumber, type KitsSolicitacao, type KitsConfig } from '@/lib/kitsShared'
+import { mesmoProf, parseBRLNumber, valorParcelas, type KitsSolicitacao, type KitsConfig } from '@/lib/kitsShared'
 
 const COR = '#5b4fcf'
 
@@ -162,7 +162,10 @@ export default function KitsAdminLista() {
                 <div style={{ fontWeight: 800, fontSize: 14.5, color: '#1a1a1a', marginBottom: 6 }}>{s.profissionalNome}</div>
                 <div style={{ fontSize: 12.5, color: '#374151' }}>{s.kitsMao} kit(s) mão · {s.kitsPe} kit(s) pé</div>
                 <div style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <strong style={{ fontSize: 14, color: '#16a34a' }}>R$ {fmtBRL(s.valor)}</strong>
+                  <div>
+                    <strong style={{ fontSize: 14, color: '#16a34a' }}>R$ {fmtBRL(s.valor)}</strong>
+                    {(s.parcelas || 1) > 1 && <div style={{ fontSize: 11.5, color: '#5b4fcf', fontWeight: 700 }}>💳 em {s.parcelas}× de R$ {fmtBRL(valorParcelas(s.valor, s.parcelas || 1)[0])}</div>}
+                  </div>
                   {s.status === 'pendente' && <button onClick={() => marcarSeparado(s.id)} style={{ padding: '7px 12px', borderRadius: 8, border: 'none', background: '#16a34a', color: '#fff', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>Marcar separado</button>}
                 </div>
               </div>
@@ -184,7 +187,10 @@ export default function KitsAdminLista() {
                     <td style={{ padding: '12px 16px', fontWeight: 700, color: '#1a1a1a' }}>{s.profissionalNome}</td>
                     <td style={{ padding: '12px 16px', textAlign: 'center', color: '#374151' }}>{s.kitsMao}</td>
                     <td style={{ padding: '12px 16px', textAlign: 'center', color: '#374151' }}>{s.kitsPe}</td>
-                    <td style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 800, color: '#16a34a' }}>R$ {fmtBRL(s.valor)}</td>
+                    <td style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 800, color: '#16a34a' }}>
+                      R$ {fmtBRL(s.valor)}
+                      {(s.parcelas || 1) > 1 && <div style={{ fontSize: 11, color: '#5b4fcf', fontWeight: 700 }}>{s.parcelas}× de R$ {fmtBRL(valorParcelas(s.valor, s.parcelas || 1)[0])}</div>}
+                    </td>
                     <td style={{ padding: '12px 16px', textAlign: 'center', color: '#6b6860', fontSize: 12.5 }}>{s.data}</td>
                     <td style={{ padding: '12px 16px', textAlign: 'center' }}>
                       {s.status === 'pendente'
