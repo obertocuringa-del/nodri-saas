@@ -15,6 +15,7 @@ import AcessoProfissional from '@/components/salon/AcessoProfissional'
 import PainelResumoProf from '@/components/salon/PainelResumoProf'
 import EsterilizacaoPerfilProf from '@/components/salon/EsterilizacaoPerfilProf'
 import KitsProfissionalView from '@/components/salon/KitsProfissionalView'
+import EsterilizacaoFluxoProf from '@/components/salon/EsterilizacaoFluxoProf'
 import { mesmoProf } from '@/lib/esterilizacaoShared'
 import { confirmarSaidaSemSalvar } from '@/lib/guardaSalvar'
 import toast from 'react-hot-toast'
@@ -2577,7 +2578,7 @@ export default function PerfilProfissionalPage() {
   const [endCidade, setEndCidade] = useState('')
   const [endUf, setEndUf] = useState('')
   const [buscandoCep, setBuscandoCep] = useState(false)
-  const [tab, setTab] = useState<'inicio'|'cadastro'|'avaliar'|'pops'|'avaliacaopop'|'desempenho'|'faturamento'|'metas'|'ia'|'dependencia'|'oportunidades'|'bundle'|'clientes-perdidos'|'agendamentos'|'calendario'|'calendario_mkt'|'corrida'|'acoes'|'esterilizacao'|'kits'|'carreira'|'demandas'>('cadastro')
+  const [tab, setTab] = useState<'inicio'|'cadastro'|'avaliar'|'pops'|'avaliacaopop'|'desempenho'|'faturamento'|'metas'|'ia'|'dependencia'|'oportunidades'|'bundle'|'clientes-perdidos'|'agendamentos'|'calendario'|'calendario_mkt'|'corrida'|'acoes'|'esterilizacao'|'kits'|'ester_fluxo'|'carreira'|'demandas'>('cadastro')
   // Aba Esterilização: só aparece pra quem realmente tem atendimento de
   // manicure/pedicure/sobrancelha no mês (mesmo cruzamento usado no
   // Administrativo) — a maioria dos profissionais não precisa dela.
@@ -3500,6 +3501,7 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
 
         {/*  KITS PÉ E MÃO — pedido de kits pela própria profissional  */}
         {tab === 'kits' && <KitsProfissionalView />}
+        {tab === 'ester_fluxo' && <EsterilizacaoFluxoProf />}
 
         {/*  CALENDÁRIO GERAL (central, compartilhado pelo salão)  */}
         {tab === 'calendario' && (

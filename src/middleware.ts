@@ -106,8 +106,10 @@ export async function middleware(request: NextRequest) {
       const ehMetaPropria = pathname === `/api/profissionais/${meuId}/metas` && request.method === 'PUT'
       // EXCEÇÃO: a profissional pode gerar/salvar a PRÓPRIA estratégia de meta (a rota valida o id dela)
       const ehEstrategiaPropria = pathname === `/api/profissionais/${meuId}/estrategia-meta` && (request.method === 'POST' || request.method === 'PUT')
+      // EXCEÇÃO: a profissional envia alicates p/ esterilizar e confirma o recebimento (a rota valida o id dela)
+      const ehEsterFluxo = pathname === '/api/salon/esterilizacao-fluxo' && (request.method === 'POST' || request.method === 'PATCH')
       // SOMENTE LEITURA: nenhum método de escrita é permitido (GET/HEAD apenas), exceto as exceções acima
-      if (request.method !== 'GET' && request.method !== 'HEAD' && !ehIaPropria && !ehKitsPropria && !ehNotifPropria && !ehSolicitacaoPropria && !ehResponderDemanda && !ehMetricaAcao && !ehMetaPropria && !ehEstrategiaPropria) return negar()
+      if (request.method !== 'GET' && request.method !== 'HEAD' && !ehIaPropria && !ehKitsPropria && !ehNotifPropria && !ehSolicitacaoPropria && !ehResponderDemanda && !ehMetricaAcao && !ehMetaPropria && !ehEstrategiaPropria && !ehEsterFluxo) return negar()
       // Nunca pode listar todos os profissionais
       if (pathname === '/api/profissionais' || pathname === '/api/profissionais/') return negar()
       // Em /api/profissionais/<id>/... o id TEM que ser o dele

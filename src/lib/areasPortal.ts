@@ -12,6 +12,7 @@ export interface AreaPortal { chave: string; label: string }
 export const AREAS_PORTAL: AreaPortal[] = [
   { chave: 'demandas',          label: 'Solicitação' },
   { chave: 'kits',              label: 'Kits Pé e Mão' },
+  { chave: 'ester_fluxo',       label: 'Esterilização (solicitação)' },
   { chave: 'faturamento',       label: 'Faturamento' },
   { chave: 'metas',             label: 'Metas' },
   { chave: 'agendamentos',      label: 'Agendamentos' },

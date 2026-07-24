@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import {
   DollarSign, Target, Calendar, Trophy, Megaphone, ClipboardList, Moon, Sun, Bell,
-  AlertTriangle, Users, Lightbulb, Package, UserMinus, Star, Sparkles, CalendarRange, User, ArrowRight, LogOut, Hand, X, Check, Send, BookOpen,
+  AlertTriangle, Users, Lightbulb, Package, UserMinus, Star, Sparkles, CalendarRange, User, ArrowRight, LogOut, Hand, X, Check, Send, BookOpen, ShieldCheck,
 } from 'lucide-react'
 
 // Tela inicial do profissional (estilo Nubank/Notion): saudação + central de notificações + atalhos.
@@ -85,6 +85,7 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba, t
   const AREAS: { aba: string; label: string; Ic: any; ocult?: string; so?: boolean }[] = [
     { aba: 'demandas', label: 'Solicitação', Ic: Send },
     { aba: 'kits', label: 'Kits Pé e Mão', Ic: Hand, so: !!temKits },
+    { aba: 'ester_fluxo', label: 'Esterilização', Ic: ShieldCheck },
     { aba: 'faturamento', label: 'Faturamento', Ic: DollarSign },
     { aba: 'metas', label: 'Metas', Ic: Target, ocult: 'metas' },
     { aba: 'agendamentos', label: 'Agendamentos', Ic: Calendar },

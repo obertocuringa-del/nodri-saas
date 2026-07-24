@@ -7,6 +7,7 @@ import toast from 'react-hot-toast'
 import GridEditavel, { cel, type Doc as GridDoc } from '@/components/salon/GridEditavel'
 import ServicoInternoLista from '@/components/salon/ServicoInternoLista'
 import EsterilizacaoLista from '@/components/salon/EsterilizacaoLista'
+import EsterilizacaoFluxoAdmin from '@/components/salon/EsterilizacaoFluxoAdmin'
 import KitsAdminLista from '@/components/salon/KitsAdminLista'
 import EnxovaisLista from '@/components/salon/EnxovaisLista'
 import SenhasLista from '@/components/salon/SenhasLista'
@@ -34,7 +35,7 @@ const ABA_CHAVE: Record<string, string> = {
   feriados: 'adm_feriados', pop: 'adm_pop', senhas: 'adm_senhas', cadastrar_produto: 'adm_cadastrar_produto',
   desconto_profissional: 'adm_desconto_profissional', tabela_precos: 'adm_tabela_precos', arquivos_envio: 'adm_arquivos_envio',
   corrida_interna: 'adm_corrida_interna', acoes_comerciais: 'adm_acoes_comerciais', correios: 'adm_correios',
-  etiquetas: 'adm_etiquetas', esterilizacao: 'adm_esterilizacao',
+  etiquetas: 'adm_etiquetas', esterilizacao: 'adm_esterilizacao', esterilizacao_fluxo: 'adm_esterilizacao',
   kits: 'adm_kits', enxovais: 'adm_enxovais',
 }
 
@@ -118,6 +119,7 @@ const SIDEBAR_CATS: { cat: string; itens: SidebarItem[] }[] = [
   {
     cat: 'CONTROLE E ESTOQUE', itens: [
       { aba: 'esterilizacao', label: 'ESTERILIZAÇÃO' },
+      { aba: 'esterilizacao_fluxo', label: 'SOLICITAÇÕES DE ESTERILIZAÇÃO' },
       { aba: 'kits', label: 'KITS PÉ E MÃO' },
       { aba: 'enxovais', label: 'CONTROLE DE ENXOVAIS' },
       { aba: 'cadastrar_produto', label: 'CADASTRAR PRODUTO' },
@@ -295,6 +297,7 @@ export default function SalaoAdministrativoPage() {
         </>)}
 
         {abaTopo === 'esterilizacao' && <EsterilizacaoLista key="esterilizacao" chave="esterilizacao" profsSalao={profsSalao} />}
+        {abaTopo === 'esterilizacao_fluxo' && <EsterilizacaoFluxoAdmin key="ester_fluxo" profsSalao={profsSalao} />}
         {abaTopo === 'kits' && <KitsAdminLista key="kits" />}
         {abaTopo === 'enxovais' && <EnxovaisLista key="enxovais" />}
         {abaTopo === 'servicos_valores' && <ListaPrecoServicos key="precos" />}
