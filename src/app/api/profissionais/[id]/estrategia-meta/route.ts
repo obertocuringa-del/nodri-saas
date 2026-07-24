@@ -9,7 +9,17 @@ import {
   calcularSimuladorMeta, calcularDinheiroPerdido, calcularOportunidadesOcultas, buscarTendenciaFidelizacao,
 } from '@/lib/metasAnalitico'
 import Anthropic from '@anthropic-ai/sdk'
-import { escritaBloqueadaSub } from '@/lib/apiAuth'
+import { getSessao } from '@/lib/apiAuth'
+
+// Sub-usuário é somente leitura. A profissional pode gerar/salvar a PRÓPRIA
+// estratégia de meta (só o próprio id). Dono nunca é bloqueado.
+async function bloqueioEstrategia(idAlvo: string): Promise<NextResponse | null> {
+  const sess = await getSessao()
+  if (sess?.role === 'sub') return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
+  if (sess?.role === 'profissional' && sess.profissionalId !== idAlvo)
+    return NextResponse.json({ error: 'Você só pode gerar a sua própria estratégia' }, { status: 403 })
+  return null
+}
 
 async function getSalaoId() {
   const token = cookies().get('nodri_token')?.value
@@ -54,7 +64,7 @@ async function chamarIA(apiKey: string, modelo: string, prompt: string): Promise
 
 // POST — gera (ou regenera) o planejamento estratégico para bater a meta do mês
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-    if (await escritaBloqueadaSub()) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
+  const bloq = await bloqueioEstrategia(params.id); if (bloq) return bloq
   const salaoId = await getSalaoId()
   if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
@@ -465,7 +475,7 @@ Exatamente 3, ordenadas por impacto financeiro estimado. Cada uma:
 
 // PUT — salva (persiste) o plano que já foi gerado e revisado
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
-    if (await escritaBloqueadaSub()) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
+  const bloq = await bloqueioEstrategia(params.id); if (bloq) return bloq
   const salaoId = await getSalaoId()
   if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
