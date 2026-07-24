@@ -3,7 +3,7 @@ import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 import Anthropic from '@anthropic-ai/sdk'
-import { escritaBloqueadaSub } from '@/lib/apiAuth'
+import { getSessao } from '@/lib/apiAuth'
 
 async function getSalaoId() {
   const token = cookies().get('nodri_token')?.value
@@ -71,7 +71,12 @@ function deduplicarPorCategoria(lista: any[]): any[] {
 }
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-    if (await escritaBloqueadaSub()) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
+  // Sub-usuário é somente leitura. A profissional pode gerar análises de IA do
+  // PRÓPRIO perfil (Ver Impacto, Gerar com IA em meta/oportunidades/combos).
+  const sess = await getSessao()
+  if (sess?.role === 'sub') return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
+  if (sess?.role === 'profissional' && sess.profissionalId !== params.id)
+    return NextResponse.json({ error: 'Você só pode gerar análises do seu próprio perfil' }, { status: 403 })
   const salaoId = await getSalaoId()
   if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
