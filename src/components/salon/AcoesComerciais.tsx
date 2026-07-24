@@ -149,7 +149,7 @@ export default function AcoesComerciais({ soLeitura = false }: { soLeitura?: boo
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
-          {filtradas.map(c => <CardCampanha key={c.id} c={c} soLeitura={soLeitura} onAbrir={() => abrir(c)} onEditar={() => setEditando(c)} onExcluir={() => excluir(c.id)} onCopiar={() => copiarTexto(c)} onWhats={() => compartilharTexto(c, bumpMetrica)} onArquivos={() => abrir(c)} />)}
+          {filtradas.map(c => <CardCampanha key={c.id} c={c} soLeitura={soLeitura} onAbrir={() => abrir(c)} onEditar={() => setEditando(c)} onExcluir={() => excluir(c.id)} onCopiar={() => copiarTexto(c)} onWhats={() => compartilharTexto(c, bumpMetrica)} />)}
         </div>
       )}
 
