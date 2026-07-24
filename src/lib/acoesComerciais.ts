@@ -24,6 +24,9 @@ export interface Campanha {
   capaId?: string          // qual arquivo é a capa
   views: number
   shares: number
+  // Quem compartilhou e quantas vezes (profissionais, sub-usuários e o salão).
+  // chave = `prof:<id>` | `sub:<id>` | `salon`
+  sharesPor?: Record<string, { nome: string; papel: string; n: number }>
   criadoEm: number
 }
 
@@ -61,6 +64,11 @@ export function textoCampanha(c: Campanha): string {
   if (c.descricao?.trim()) linhas.push('', c.descricao.trim())
   if (c.comoFunciona?.trim()) linhas.push('', c.comoFunciona.trim())
   return linhas.join('\n')
+}
+
+// Texto de VÁRIAS campanhas juntas (compartilhar seleção para o mesmo cliente).
+export function textoCampanhas(cs: Campanha[]): string {
+  return cs.map(textoCampanha).join('\n\n———\n\n')
 }
 
 export function normalizaServico(s: string): string {

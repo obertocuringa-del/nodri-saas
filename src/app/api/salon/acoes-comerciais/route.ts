@@ -1,8 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getSessao } from '@/lib/apiAuth'
+import { verifyJWT } from '@/lib/auth'
 import { registrarAuditoria } from '@/lib/audit'
 import type { Campanha } from '@/lib/acoesComerciais'
+
+// Identifica quem está compartilhando, com nome, para o placar por profissional.
+async function identificarUsuario(): Promise<{ chave: string; nome: string; papel: string } | null> {
+  const token = cookies().get('nodri_token')?.value
+  if (!token) return null
+  const p: any = await verifyJWT(token)
+  if (!p || !p.salaoId) return null
+  if (p.role === 'profissional') {
+    const id = p.profissionalId || p.userId
+    const { data } = await supabaseAdmin.from('profissionais').select('apelido, nome_completo').eq('id', id).maybeSingle()
+    return { chave: `prof:${id}`, nome: (data as any)?.apelido || (data as any)?.nome_completo || 'Profissional', papel: 'Profissional' }
+  }
+  if (p.role === 'sub') {
+    const { data } = await supabaseAdmin.from('salao_usuarios').select('nome, usuario').eq('id', p.userId).maybeSingle()
+    return { chave: `sub:${p.userId}`, nome: (data as any)?.nome || (data as any)?.usuario || 'Usuário', papel: 'Usuário' }
+  }
+  return { chave: 'salon', nome: 'Administração', papel: 'Salão' }
+}
 
 const CHAVE = 'acoes_comerciais'
 
@@ -54,7 +74,18 @@ export async function PATCH(req: NextRequest) {
   const lista = await ler(sess.salaoId)
   const i = lista.findIndex(c => c.id === id)
   if (i < 0) return NextResponse.json({ error: 'Campanha não encontrada' }, { status: 404 })
-  lista[i] = { ...lista[i], [metrica]: (Number(lista[i][metrica]) || 0) + 1 }
+  const atual = { ...lista[i], [metrica]: (Number(lista[i][metrica]) || 0) + 1 }
+  // No compartilhamento, registra também QUEM compartilhou (placar por pessoa).
+  if (metrica === 'shares') {
+    const u = await identificarUsuario()
+    if (u) {
+      const por = { ...(atual.sharesPor || {}) }
+      const ant = por[u.chave]
+      por[u.chave] = { nome: u.nome, papel: u.papel, n: (ant?.n || 0) + 1 }
+      atual.sharesPor = por
+    }
+  }
+  lista[i] = atual
   const { error } = await gravar(sess.salaoId, lista)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ ok: true, [metrica]: lista[i][metrica] })

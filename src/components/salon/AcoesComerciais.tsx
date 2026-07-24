@@ -7,8 +7,8 @@ import {
   ChevronLeft, ChevronRight, Share2, BarChart3, Megaphone, Eye, Save,
 } from 'lucide-react'
 import {
-  CATEGORIAS_ACOES, STATUS_INFO, statusCampanha, capaDaCampanha, textoCampanha, rid,
-  type Campanha, type ArquivoCampanha, type StatusCampanha,
+  CATEGORIAS_ACOES, STATUS_INFO, statusCampanha, capaDaCampanha, textoCampanha, textoCampanhas, rid,
+  type Campanha, type ArquivoCampanha,
 } from '@/lib/acoesComerciais'
 
 const ROXO = '#5b4fcf'
@@ -33,12 +33,20 @@ export default function AcoesComerciais({ soLeitura = false }: { soLeitura?: boo
   const [ordem, setOrdem] = useState<'recentes' | 'compartilhadas'>('recentes')
   const [aberta, setAberta] = useState<Campanha | null>(null)
   const [editando, setEditando] = useState<Campanha | null>(null)
+  const [vendidos, setVendidos] = useState<Record<string, number>>({})
+  const [verShares, setVerShares] = useState<Campanha | null>(null)   // placar de quem compartilhou
+  const [modoSel, setModoSel] = useState(false)                       // multi-seleção p/ enviar juntas
+  const [selec, setSelec] = useState<Set<string>>(new Set())
 
   const carregar = useCallback(async () => {
     setLoading(true)
     try {
-      const d = await fetch('/api/salon/acoes-comerciais').then(r => r.ok ? r.json() : null)
+      const [d, v] = await Promise.all([
+        fetch('/api/salon/acoes-comerciais').then(r => r.ok ? r.json() : null),
+        fetch('/api/salon/acoes-comerciais/vendidos').then(r => r.ok ? r.json() : null),
+      ])
       setCampanhas(Array.isArray(d?.campanhas) ? d.campanhas : [])
+      setVendidos(v?.vendidos && typeof v.vendidos === 'object' ? v.vendidos : {})
     } catch { /* mantém */ }
     setLoading(false)
   }, [])
@@ -93,6 +101,21 @@ export default function AcoesComerciais({ soLeitura = false }: { soLeitura?: boo
 
   function abrir(c: Campanha) { setAberta(c); bumpMetrica(c.id, 'views') }
 
+  function toggleSel(id: string) { setSelec(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n }) }
+
+  // Compartilhar VÁRIAS campanhas juntas para o mesmo cliente: junta os textos
+  // (copiados) e todas as imagens num envio só.
+  async function compartilharSelecionadas() {
+    const cs = campanhas.filter(c => selec.has(c.id))
+    if (!cs.length) return
+    const texto = textoCampanhas(cs)
+    const arqs = cs.flatMap(c => c.arquivos.map(a => ({ url: a.url, nome: a.nome })))
+    if (arqs.length) await enviarArquivos(arqs, texto)
+    else { window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank') }
+    cs.forEach(c => bumpMetrica(c.id, 'shares'))
+    setModoSel(false); setSelec(new Set())
+  }
+
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><Loader2 size={26} className="animate-spin" style={{ color: ROXO }} /></div>
 
   return (
@@ -140,6 +163,10 @@ export default function AcoesComerciais({ soLeitura = false }: { soLeitura?: boo
           style={{ marginLeft: 'auto', padding: '5px 11px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', border: '1px solid #e0ddd8', background: '#fff', color: '#6b6860' }}>
           {ordem === 'recentes' ? '↕ Mais recentes' : '↕ Mais compartilhadas'}
         </button>
+        <button onClick={() => { setModoSel(m => !m); setSelec(new Set()) }}
+          style={{ padding: '5px 11px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', border: 'none', background: modoSel ? ROXO : '#eef2ff', color: modoSel ? '#fff' : ROXO }}>
+          {modoSel ? '✕ Cancelar seleção' : '☑ Selecionar várias'}
+        </button>
       </div>
 
       {/* Grade de cards */}
@@ -149,7 +176,23 @@ export default function AcoesComerciais({ soLeitura = false }: { soLeitura?: boo
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
-          {filtradas.map(c => <CardCampanha key={c.id} c={c} soLeitura={soLeitura} onAbrir={() => abrir(c)} onEditar={() => setEditando(c)} onExcluir={() => excluir(c.id)} onCopiar={() => copiarTexto(c)} onWhats={() => compartilharTexto(c, bumpMetrica)} />)}
+          {filtradas.map(c => <CardCampanha key={c.id} c={c} soLeitura={soLeitura}
+            vendidos={vendidos[c.id]} modoSel={modoSel} selecionada={selec.has(c.id)}
+            onToggleSel={() => toggleSel(c.id)}
+            onAbrir={() => modoSel ? toggleSel(c.id) : abrir(c)}
+            onEditar={() => setEditando(c)} onExcluir={() => excluir(c.id)}
+            onCopiar={() => copiarTexto(c)} onWhats={() => compartilharTexto(c, bumpMetrica)}
+            onVerShares={() => setVerShares(c)} />)}
+        </div>
+      )}
+
+      {/* Barra flutuante de seleção múltipla */}
+      {modoSel && selec.size > 0 && (
+        <div style={{ position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)', zIndex: 55, background: '#1a1a2e', color: '#fff', borderRadius: 14, padding: '12px 18px', display: 'flex', alignItems: 'center', gap: 14, boxShadow: '0 12px 34px rgba(0,0,0,.3)' }}>
+          <span style={{ fontSize: 13.5, fontWeight: 700 }}>{selec.size} selecionada(s)</span>
+          <button onClick={compartilharSelecionadas} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 10, border: 'none', background: '#16a34a', color: '#fff', fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>
+            <Share2 size={15} /> Enviar juntas ao cliente
+          </button>
         </div>
       )}
 
@@ -160,36 +203,79 @@ export default function AcoesComerciais({ soLeitura = false }: { soLeitura?: boo
         <MiniStat icon={<Eye size={18} />} n={totalViews} label="Visualizações" cor={ROXO} />
       </div>
 
-      {aberta && <PainelCampanha c={aberta} soLeitura={soLeitura} onClose={() => setAberta(null)} onEditar={() => { setEditando(aberta); setAberta(null) }} onShare={() => bumpMetrica(aberta.id, 'shares')} />}
+      {aberta && <PainelCampanha c={aberta} soLeitura={soLeitura} vendidos={vendidos[aberta.id]} onClose={() => setAberta(null)} onEditar={() => { setEditando(aberta); setAberta(null) }} onShare={() => bumpMetrica(aberta.id, 'shares')} onVerShares={() => setVerShares(aberta)} />}
       {editando && !soLeitura && <ModalEditar inicial={editando} onSalvar={salvarCampanha} onClose={() => setEditando(null)} />}
+      {verShares && <ModalPlacarShares c={verShares} onClose={() => setVerShares(null)} />}
+    </div>
+  )
+}
+
+/* ─────────────── Placar: quem compartilhou e quantas vezes ─────────────── */
+function ModalPlacarShares({ c, onClose }: { c: Campanha; onClose: () => void }) {
+  const linhas = Object.values(c.sharesPor || {}).sort((a, b) => b.n - a.n)
+  const total = linhas.reduce((s, x) => s + x.n, 0) || c.shares || 0
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 95, background: 'rgba(20,15,45,.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 18, padding: 20, width: 'min(420px,100%)', maxHeight: '84vh', overflowY: 'auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
+          <b style={{ fontSize: 16, color: '#1a1a2e' }}>Quem compartilhou</b>
+          <button onClick={onClose} style={{ marginLeft: 'auto', border: 'none', background: 'transparent', cursor: 'pointer', color: '#6b6860' }}><X size={18} /></button>
+        </div>
+        <p style={{ fontSize: 12.5, color: '#8a857c', margin: '0 0 14px' }}>{c.titulo} · {total} compartilhamento(s)</p>
+        {linhas.length === 0 ? (
+          <p style={{ fontSize: 13.5, color: '#8a857c', textAlign: 'center', padding: 20 }}>Ninguém compartilhou ainda.</p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {linhas.map((u, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: 10, background: '#f7f6fb' }}>
+                <span style={{ width: 30, height: 30, borderRadius: 999, background: ROXO + '20', color: ROXO, fontWeight: 800, fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{(u.nome || '?').charAt(0).toUpperCase()}</span>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 700, color: '#1a1a2e' }}>{u.nome}</div>
+                  <div style={{ fontSize: 11, color: '#9ca3af' }}>{u.papel}</div>
+                </div>
+                <span style={{ fontSize: 14, fontWeight: 900, color: '#16a34a' }}>{u.n}×</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
 
 /* ─────────────── Card ─────────────── */
-function CardCampanha({ c, soLeitura, onAbrir, onEditar, onExcluir, onCopiar, onWhats }: {
-  c: Campanha; soLeitura: boolean; onAbrir: () => void; onEditar: () => void; onExcluir: () => void; onCopiar: () => void; onWhats: () => void
+function CardCampanha({ c, soLeitura, vendidos, modoSel, selecionada, onToggleSel, onAbrir, onEditar, onExcluir, onCopiar, onWhats, onVerShares }: {
+  c: Campanha; soLeitura: boolean; vendidos?: number; modoSel?: boolean; selecionada?: boolean; onToggleSel?: () => void
+  onAbrir: () => void; onEditar: () => void; onExcluir: () => void; onCopiar: () => void; onWhats: () => void; onVerShares?: () => void
 }) {
   const capa = capaDaCampanha(c)
   const st = statusCampanha(c)
   const si = STATUS_INFO[st]
   const btn: React.CSSProperties = { flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '8px 0', borderRadius: 8, border: 'none', background: '#f5f4f8', cursor: 'pointer', color: '#4b5563' }
   return (
-    <div style={{ background: '#fff', border: '1px solid #eceae4', borderRadius: 16, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ background: '#fff', border: selecionada ? `2px solid ${ROXO}` : '1px solid #eceae4', borderRadius: 16, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       <button onClick={onAbrir} style={{ position: 'relative', height: 150, border: 'none', cursor: 'pointer', padding: 0, background: capa ? '#000' : '#f0eee8', overflow: 'hidden' }}>
         {capa
           // eslint-disable-next-line @next/next/no-img-element
           ? <img src={capa.url} alt={c.titulo} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#b9b4a8' }}><Images size={34} /></div>}
         <span style={{ position: 'absolute', top: 10, left: 10, padding: '3px 10px', borderRadius: 999, fontSize: 10.5, fontWeight: 900, textTransform: 'uppercase', letterSpacing: .5, background: si.bg, color: si.cor, backdropFilter: 'blur(4px)' }}>{si.label}</span>
+        {modoSel && (
+          <span style={{ position: 'absolute', top: 10, right: 10, width: 26, height: 26, borderRadius: 999, background: selecionada ? ROXO : 'rgba(255,255,255,.9)', color: selecionada ? '#fff' : '#9ca3af', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 14 }}>{selecionada ? '✓' : ''}</span>
+        )}
       </button>
       <div style={{ padding: '12px 14px', flex: 1, display: 'flex', flexDirection: 'column' }}>
         <div style={{ fontSize: 15, fontWeight: 800, color: '#1a1a2e', lineHeight: 1.25 }}>{c.titulo || 'Sem título'}</div>
         <div style={{ fontSize: 12, fontWeight: 700, color: ROSA, margin: '3px 0 8px' }}>{c.categoria}</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, fontSize: 12, color: '#8a857c', marginTop: 'auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 12, color: '#8a857c', marginTop: 'auto', flexWrap: 'wrap' }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Images size={13} /> {c.arquivos.length}</span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Eye size={13} /> {c.views || 0}</span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Share2 size={13} /> {c.shares || 0}</span>
+          {/* Compartilhamentos — clicável: abre o placar de quem compartilhou */}
+          <button onClick={e => { e.stopPropagation(); onVerShares?.() }} title="Ver quem compartilhou" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, border: 'none', background: 'transparent', cursor: 'pointer', color: '#8a857c', padding: 0, fontSize: 12 }}>
+            <Share2 size={13} /> {c.shares || 0}
+          </button>
+          {/* Serviços vendidos (do relatório), ao lado do compartilhar */}
+          <span title="Serviços vendidos no período (relatório)" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#16a34a', fontWeight: 800 }}>💰 {vendidos ?? 0}</span>
         </div>
       </div>
       <div style={{ display: 'flex', gap: 6, padding: '0 14px 14px' }}>
@@ -223,42 +309,42 @@ function compartilharTexto(c: Campanha, bump?: (id: string, m: 'views' | 'shares
   window.open(`https://wa.me/?text=${encodeURIComponent(textoCampanha(c))}`, '_blank')
   bump?.(c.id, 'shares')
 }
+// Compartilha arquivos de UMA campanha (ou de várias, quando `textoExtra` já vem
+// montado). O WhatsApp NÃO aceita imagem + legenda pelo compartilhamento do
+// navegador — a legenda é sempre descartada. Por isso, sempre que houver texto,
+// ele é COPIADO para a área de transferência e o usuário cola como legenda.
 async function compartilharArquivos(c: Campanha, ids: string[], comTexto: boolean, bump?: () => void) {
   const sel = c.arquivos.filter(a => ids.includes(a.id))
   if (!sel.length) { toast('Selecione ao menos um arquivo', { icon: '📷' }); return }
-  const files = sel.map(a => new File([dataURLparaBlob(a.url)], a.nome || 'imagem.png', { type: dataURLparaBlob(a.url).type }))
-  const texto = comTexto ? textoCampanha(c) : undefined
-  const nav = navigator as any
-  if (nav.canShare && nav.canShare({ files })) {
-    try { await nav.share({ files, text: texto }); bump?.(); return } catch { /* cancelou ou falhou → baixa */ }
-  }
-  // PC / navegador sem share de arquivo: baixa os arquivos e, se houver texto, copia
-  sel.forEach(a => { const link = document.createElement('a'); link.href = a.url; link.download = a.nome || 'imagem.png'; link.click() })
-  if (comTexto) { navigator.clipboard?.writeText(textoCampanha(c)); toast('Arquivos baixados. Texto copiado — anexe no WhatsApp.', { icon: '📥', duration: 5000 }) }
-  else toast('Arquivos baixados — anexe no WhatsApp.', { icon: '📥', duration: 5000 })
+  await enviarArquivos(sel.map(a => ({ url: a.url, nome: a.nome })), comTexto ? textoCampanha(c) : '')
   bump?.()
 }
 
+// Núcleo de envio: compartilha os arquivos e copia o texto (para colar como legenda).
+async function enviarArquivos(arqs: { url: string; nome: string }[], texto: string) {
+  if (texto) { try { await navigator.clipboard?.writeText(texto) } catch { /* segue */ } }
+  const files = arqs.map(a => { const b = dataURLparaBlob(a.url); return new File([b], a.nome || 'imagem.png', { type: b.type }) })
+  const nav = navigator as any
+  if (nav.canShare && nav.canShare({ files })) {
+    try {
+      await nav.share({ files })
+      if (texto) toast('Imagem(ns) no WhatsApp. O texto foi COPIADO — cole como legenda.', { icon: '📋', duration: 6000 })
+      return
+    } catch { /* cancelou ou não deu → baixa */ }
+  }
+  // PC / sem compartilhamento de arquivo: baixa as imagens.
+  arqs.forEach(a => { const link = document.createElement('a'); link.href = a.url; link.download = a.nome || 'imagem.png'; link.click() })
+  toast(texto ? 'Imagens baixadas e texto COPIADO — anexe no WhatsApp e cole o texto.' : 'Imagens baixadas — anexe no WhatsApp.', { icon: '📥', duration: 6000 })
+}
+
 /* ─────────────── Painel/detalhe da campanha ─────────────── */
-function PainelCampanha({ c, soLeitura, onClose, onEditar, onShare }: { c: Campanha; soLeitura: boolean; onClose: () => void; onEditar: () => void; onShare: () => void }) {
+function PainelCampanha({ c, soLeitura, vendidos, onClose, onEditar, onShare, onVerShares }: { c: Campanha; soLeitura: boolean; vendidos?: number; onClose: () => void; onEditar: () => void; onShare: () => void; onVerShares?: () => void }) {
   const [idx, setIdx] = useState(0)
   const [tela, setTela] = useState(false)      // fullscreen
   const [modalArq, setModalArq] = useState(false)
   const [sel, setSel] = useState<string[]>([])
-  const [stats, setStats] = useState<{ vendidos: number } | null>(null)
-  const [carregandoStats, setCarregandoStats] = useState(false)
   const capaIdx = Math.min(idx, Math.max(0, c.arquivos.length - 1))
   const atual = c.arquivos[capaIdx]
-
-  async function verEstatisticas() {
-    setCarregandoStats(true)
-    try {
-      const p = new URLSearchParams({ titulo: c.titulo, inicio: c.dataInicio || '', fim: c.dataFim || '' })
-      const d = await fetch(`/api/salon/acoes-comerciais/estatisticas?${p}`).then(r => r.ok ? r.json() : null)
-      setStats({ vendidos: Number(d?.vendidos) || 0 })
-    } catch { setStats({ vendidos: 0 }) }
-    setCarregandoStats(false)
-  }
 
   const box: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderRadius: 12, border: '1px solid #e8e6e0', background: '#fff', cursor: 'pointer', textAlign: 'left', width: '100%' }
 
@@ -316,23 +402,19 @@ function PainelCampanha({ c, soLeitura, onClose, onEditar, onShare }: { c: Campa
 
           {/* Estatísticas */}
           <div style={{ marginTop: 18 }}>
-            {!stats ? (
-              <button onClick={verEstatisticas} disabled={carregandoStats} style={{ width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 13, borderRadius: 12, border: 'none', background: `linear-gradient(135deg,${ROXO},${ROSA})`, color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>
-                {carregandoStats ? <Loader2 size={16} className="animate-spin" /> : <BarChart3 size={16} />} Ver estatísticas da campanha
-              </button>
-            ) : (
-              <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 16 }}>
-                <p style={{ fontSize: 11.5, fontWeight: 800, color: ROXO, letterSpacing: .5, margin: '0 0 12px' }}>ESTATÍSTICAS</p>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, textAlign: 'center' }}>
-                  <div><div style={{ fontSize: 22, fontWeight: 900, color: '#16a34a' }}>{stats.vendidos}</div><div style={{ fontSize: 11, color: '#8a857c' }}>Serviços vendidos</div></div>
-                  <div><div style={{ fontSize: 22, fontWeight: 900, color: ROXO }}>{c.views || 0}</div><div style={{ fontSize: 11, color: '#8a857c' }}>Visualizações</div></div>
-                  <div><div style={{ fontSize: 22, fontWeight: 900, color: ROSA }}>{c.shares || 0}</div><div style={{ fontSize: 11, color: '#8a857c' }}>Compartilhamentos</div></div>
-                </div>
-                <p style={{ fontSize: 11, color: '#9ca3af', margin: '12px 0 0', textAlign: 'center' }}>
-                  Serviços vendidos: soma do serviço <b>“{c.titulo}”</b> no relatório, no período da campanha.
-                </p>
+            <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 16 }}>
+              <p style={{ fontSize: 11.5, fontWeight: 800, color: ROXO, letterSpacing: .5, margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: 6 }}><BarChart3 size={14} /> ESTATÍSTICAS</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, textAlign: 'center' }}>
+                <div><div style={{ fontSize: 22, fontWeight: 900, color: '#16a34a' }}>{vendidos ?? 0}</div><div style={{ fontSize: 11, color: '#8a857c' }}>Serviços vendidos</div></div>
+                <div><div style={{ fontSize: 22, fontWeight: 900, color: ROXO }}>{c.views || 0}</div><div style={{ fontSize: 11, color: '#8a857c' }}>Visualizações</div></div>
+                <button onClick={onVerShares} style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: ROSA }}>{c.shares || 0}</div><div style={{ fontSize: 11, color: ROXO, fontWeight: 700 }}>Compartilhamentos ›</div>
+                </button>
               </div>
-            )}
+              <p style={{ fontSize: 11, color: '#9ca3af', margin: '12px 0 0', textAlign: 'center' }}>
+                Serviços vendidos: soma do serviço <b>“{c.titulo}”</b> no relatório, no período da campanha.
+              </p>
+            </div>
           </div>
         </div>
       </div>
