@@ -4724,9 +4724,14 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                               }
                             })
                           })
-                          const json = await res.json()
-                          setOcorrImpacto(json.analise || null)
-                        } catch { setOcorrImpacto(null) }
+                          const json = await res.json().catch(() => null)
+                          if (!res.ok || !json?.analise) {
+                            toast.error(json?.error || 'A IA não respondeu. Verifique se a IA está configurada e ativa.')
+                            setOcorrImpacto(null)
+                          } else {
+                            setOcorrImpacto(json.analise)
+                          }
+                        } catch { toast.error('Erro de conexão ao chamar a IA') ; setOcorrImpacto(null) }
                         finally { setLoadOcorrImpacto(false) }
                       }}
                       className="shrink-0 flex items-center gap-2 bg-red-600 text-[#1a1a1a] text-[11px] font-semibold px-4 py-2 rounded-xl hover:opacity-90 transition"
