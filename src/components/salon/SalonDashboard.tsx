@@ -278,6 +278,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
   const PAGINAS_BUSCA = [
     { nome: 'Profissionais', rota: '/salon/profissionais', palavras: 'profissional cadastro cnpj clt avaliar ficha entrevista materiais perfil horarios contrato distrato certificados carreira aniversario' },
     { nome: 'Serviços do Salão', rota: '/salon/servicos', palavras: 'servico preco comissao valor' },
+    { nome: 'Ações Comerciais', rota: '/salon/acoes-comerciais', palavras: 'acao comercial campanha promocao marketing divulgacao whatsapp material combo' },
     { nome: 'Lista de Espera', rota: '/salon/lista-espera', palavras: 'espera fila cliente' },
     { nome: 'Aniversariantes do Mês', rota: '/salon/aniversariantes', palavras: 'aniversario niver parabens whatsapp' },
     { nome: 'Salão Administrativo', rota: '/salon/administrativo', palavras: 'administrativo listas telefones ata reuniao escala feriados senhas pop pacotes tratamentos bebidas alicates produtos corte mechas pigmentacao realinhamento cafe' },
@@ -557,6 +558,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               { href: '/salon/feedback', label: 'Feedback de Cliente', chave: 'feedback_cliente' },
               { href: '/salon/feedback-profissional', label: 'Feedback Profissional', chave: 'feedback_prof' },
               { href: '/salon/servicos', label: 'Serviços', chave: 'servicos' },
+              { href: '/salon/acoes-comerciais', label: 'Ações Comerciais', chave: 'acoes_comerciais' },
               { href: '/salon/lista-espera', label: 'Lista de Espera', chave: 'lista_espera' },
               { href: '/salon/administrativo', label: 'Salão Administrativo', chave: 'administrativo' },
               { href: '/salon/checklist', label: 'Check List', chave: 'checklist' },

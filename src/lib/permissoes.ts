@@ -10,6 +10,7 @@ export const CATALOGO_PERMISSOES: PermGrupo[] = [
     grupo: 'Páginas principais', itens: [
       { chave: 'profissionais', label: 'Profissionais' },
       { chave: 'servicos', label: 'Serviços do Salão' },
+      { chave: 'acoes_comerciais', label: 'Ações Comerciais' },
       { chave: 'lista_espera', label: 'Lista de Espera' },
       { chave: 'aniversariantes', label: 'Aniversariantes do Mês' },
       { chave: 'pendencias', label: 'Pendências' },

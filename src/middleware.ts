@@ -100,8 +100,10 @@ export async function middleware(request: NextRequest) {
       const ehSolicitacaoPropria = pathname === '/api/solicitacoes' && request.method === 'POST'
       // EXCEÇÃO: a profissional pode RESPONDER/CONCLUIR uma demanda dela (a rota valida se é dona)
       const ehResponderDemanda = pathname.startsWith('/api/pendencias/') && request.method === 'PUT'
+      // EXCEÇÃO: contabilizar visualização/compartilhamento de uma Ação Comercial (só incrementa contador)
+      const ehMetricaAcao = pathname === '/api/salon/acoes-comerciais' && request.method === 'PATCH'
       // SOMENTE LEITURA: nenhum método de escrita é permitido (GET/HEAD apenas), exceto as exceções acima
-      if (request.method !== 'GET' && request.method !== 'HEAD' && !ehIaPropria && !ehKitsPropria && !ehNotifPropria && !ehSolicitacaoPropria && !ehResponderDemanda) return negar()
+      if (request.method !== 'GET' && request.method !== 'HEAD' && !ehIaPropria && !ehKitsPropria && !ehNotifPropria && !ehSolicitacaoPropria && !ehResponderDemanda && !ehMetricaAcao) return negar()
       // Nunca pode listar todos os profissionais
       if (pathname === '/api/profissionais' || pathname === '/api/profissionais/') return negar()
       // Em /api/profissionais/<id>/... o id TEM que ser o dele

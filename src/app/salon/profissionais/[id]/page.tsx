@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import CalendarioEditavel from '@/components/salon/CalendarioEditavel'
 import GridEditavel, { cel } from '@/components/salon/GridEditavel'
+import AcoesComerciais from '@/components/salon/AcoesComerciais'
 import { useRouter, useParams } from 'next/navigation'
 import { ArrowLeft, Save, Loader2, TrendingUp, TrendingDown, BarChart2,
   MessageSquare, CheckSquare, Square, AlertTriangle } from 'lucide-react'
@@ -3517,7 +3518,11 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
           <GridEditavel chave={`corrida_interna_${id}`} soLeitura={souProf} corTema="#16a34a" landscape defaultDoc={{ tabelas: [{ titulo: 'CORRIDA INTERNA', cabecalho: [cel('Meta'), cel('Realizado'), cel('Pontos'), cel('Período'), cel('Observação')], linhas: Array.from({ length: 10 }, () => [cel(''), cel(''), cel(''), cel(''), cel('')]), larguras: [180, 160, 120, 150, 260] }] }} />
         )}
         {tab === 'acoes' && (
-          <GridEditavel chave={`acoes_comerciais_${id}`} soLeitura={souProf} corTema="#db2777" landscape defaultDoc={{ tabelas: [{ titulo: 'AÇÕES COMERCIAIS', cabecalho: [cel('Ação / Campanha'), cel('Período'), cel('Meta'), cel('Resultado'), cel('Observação')], linhas: Array.from({ length: 10 }, () => [cel(''), cel(''), cel(''), cel(''), cel('')]), larguras: [240, 150, 150, 160, 260] }] }} />
+          souProf
+            // Portal do profissional: campanhas cadastradas pela administração (só leitura).
+            ? <AcoesComerciais soLeitura />
+            // Dono/sub: planilha de acompanhamento por profissional.
+            : <GridEditavel chave={`acoes_comerciais_${id}`} soLeitura={souProf} corTema="#db2777" landscape defaultDoc={{ tabelas: [{ titulo: 'AÇÕES COMERCIAIS', cabecalho: [cel('Ação / Campanha'), cel('Período'), cel('Meta'), cel('Resultado'), cel('Observação')], linhas: Array.from({ length: 10 }, () => [cel(''), cel(''), cel(''), cel(''), cel('')]), larguras: [240, 150, 150, 160, 260] }] }} />
         )}
 
         {/*  CADASTRO  */}
