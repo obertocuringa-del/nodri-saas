@@ -35,6 +35,7 @@ export default function AcoesComerciais({ soLeitura = false }: { soLeitura?: boo
   const [editando, setEditando] = useState<Campanha | null>(null)
   const [vendidos, setVendidos] = useState<Record<string, number>>({})
   const [verShares, setVerShares] = useState<Campanha | null>(null)   // placar de quem compartilhou
+  const [arqModal, setArqModal] = useState<Campanha | null>(null)     // selecionar arquivos direto do card
   const [modoSel, setModoSel] = useState(false)                       // multi-seleção p/ enviar juntas
   const [selec, setSelec] = useState<Set<string>>(new Set())
 
@@ -182,6 +183,8 @@ export default function AcoesComerciais({ soLeitura = false }: { soLeitura?: boo
             onAbrir={() => modoSel ? toggleSel(c.id) : abrir(c)}
             onEditar={() => setEditando(c)} onExcluir={() => excluir(c.id)}
             onCopiar={() => copiarTexto(c)} onWhats={() => compartilharTexto(c, bumpMetrica)}
+            onSelecArquivos={() => setArqModal(c)}
+            onTudo={() => compartilharArquivos(c, c.arquivos.map(a => a.id), true, () => bumpMetrica(c.id, 'shares'))}
             onVerShares={() => setVerShares(c)} />)}
         </div>
       )}
@@ -206,6 +209,7 @@ export default function AcoesComerciais({ soLeitura = false }: { soLeitura?: boo
       {aberta && <PainelCampanha c={aberta} soLeitura={soLeitura} vendidos={vendidos[aberta.id]} onClose={() => setAberta(null)} onEditar={() => { setEditando(aberta); setAberta(null) }} onShare={() => bumpMetrica(aberta.id, 'shares')} onVerShares={() => setVerShares(aberta)} />}
       {editando && !soLeitura && <ModalEditar inicial={editando} onSalvar={salvarCampanha} onClose={() => setEditando(null)} />}
       {verShares && <ModalPlacarShares c={verShares} onClose={() => setVerShares(null)} />}
+      {arqModal && <ModalArquivos c={arqModal} onClose={() => setArqModal(null)} onShare={() => bumpMetrica(arqModal.id, 'shares')} />}
     </div>
   )
 }
@@ -244,14 +248,15 @@ function ModalPlacarShares({ c, onClose }: { c: Campanha; onClose: () => void })
 }
 
 /* ─────────────── Card ─────────────── */
-function CardCampanha({ c, soLeitura, vendidos, modoSel, selecionada, onToggleSel, onAbrir, onEditar, onExcluir, onCopiar, onWhats, onVerShares }: {
+function CardCampanha({ c, soLeitura, vendidos, modoSel, selecionada, onToggleSel, onAbrir, onEditar, onExcluir, onCopiar, onWhats, onSelecArquivos, onTudo, onVerShares }: {
   c: Campanha; soLeitura: boolean; vendidos?: number; modoSel?: boolean; selecionada?: boolean; onToggleSel?: () => void
-  onAbrir: () => void; onEditar: () => void; onExcluir: () => void; onCopiar: () => void; onWhats: () => void; onVerShares?: () => void
+  onAbrir: () => void; onEditar: () => void; onExcluir: () => void; onCopiar: () => void; onWhats: () => void
+  onSelecArquivos: () => void; onTudo: () => void; onVerShares?: () => void
 }) {
   const capa = capaDaCampanha(c)
   const st = statusCampanha(c)
   const si = STATUS_INFO[st]
-  const btn: React.CSSProperties = { flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '8px 0', borderRadius: 8, border: 'none', background: '#f5f4f8', cursor: 'pointer', color: '#4b5563' }
+  const btn: React.CSSProperties = { flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '7px 0', borderRadius: 8, border: 'none', background: '#f5f4f8', cursor: 'pointer', color: '#4b5563', fontSize: 10.5, fontWeight: 700 }
   return (
     <div style={{ background: '#fff', border: selecionada ? `2px solid ${ROXO}` : '1px solid #eceae4', borderRadius: 16, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       <button onClick={onAbrir} style={{ position: 'relative', height: 150, border: 'none', cursor: 'pointer', padding: 0, background: capa ? '#000' : '#f0eee8', overflow: 'hidden' }}>
@@ -278,13 +283,19 @@ function CardCampanha({ c, soLeitura, vendidos, modoSel, selecionada, onToggleSe
           <span title="Serviços vendidos no período (relatório)" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#16a34a', fontWeight: 800 }}>💰 {vendidos ?? 0}</span>
         </div>
       </div>
-      <div style={{ display: 'flex', gap: 6, padding: '0 14px 14px' }}>
-        <button title="Copiar texto" onClick={onCopiar} style={btn}><Copy size={15} /></button>
-        <button title="WhatsApp (texto)" onClick={onWhats} style={{ ...btn, background: '#dcfce7', color: '#16a34a' }}><MessageCircle size={15} /></button>
-        <button title="Arquivos" onClick={onAbrir} style={btn}><Images size={15} /></button>
-        {!soLeitura && <button title="Editar" onClick={onEditar} style={btn}><Pencil size={15} /></button>}
-        {!soLeitura && <button title="Excluir" onClick={onExcluir} style={{ ...btn, background: '#fef2f2', color: '#dc2626' }}><Trash2 size={15} /></button>}
+      {/* Mesmos 4 botões de enviar que aparecem ao abrir a campanha — direto no card */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, padding: '0 12px 8px' }}>
+        <button title="Copia toda a descrição" onClick={onCopiar} style={btn}><Copy size={13} /> Copiar texto</button>
+        <button title="Enviar só o texto" onClick={onWhats} style={{ ...btn, background: '#dcfce7', color: '#16a34a' }}><MessageCircle size={13} /> Compart. texto</button>
+        <button title="Escolher o que enviar" onClick={onSelecArquivos} style={{ ...btn, background: '#fce7f3', color: ROSA }}><Images size={13} /> Selec. arquivos</button>
+        <button title="Texto + arquivos" onClick={onTudo} style={{ ...btn, background: '#eef2ff', color: ROXO }}><Share2 size={13} /> Compart. tudo</button>
       </div>
+      {!soLeitura && (
+        <div style={{ display: 'flex', gap: 6, padding: '0 12px 12px' }}>
+          <button title="Editar" onClick={onEditar} style={{ ...btn, fontSize: 11 }}><Pencil size={13} /> Editar</button>
+          <button title="Excluir" onClick={onExcluir} style={{ ...btn, fontSize: 11, background: '#fef2f2', color: '#dc2626' }}><Trash2 size={13} /> Excluir</button>
+        </div>
+      )}
     </div>
   )
 }
@@ -342,7 +353,6 @@ function PainelCampanha({ c, soLeitura, vendidos, onClose, onEditar, onShare, on
   const [idx, setIdx] = useState(0)
   const [tela, setTela] = useState(false)      // fullscreen
   const [modalArq, setModalArq] = useState(false)
-  const [sel, setSel] = useState<string[]>([])
   const capaIdx = Math.min(idx, Math.max(0, c.arquivos.length - 1))
   const atual = c.arquivos[capaIdx]
 
@@ -396,7 +406,7 @@ function PainelCampanha({ c, soLeitura, vendidos, onClose, onEditar, onShare, on
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 18 }}>
             <button onClick={() => copiarTexto(c)} style={box}><Copy size={17} color={ROXO} /><span><b style={{ fontSize: 13 }}>Copiar texto</b><br /><span style={{ fontSize: 11, color: '#8a857c' }}>Copia toda a descrição</span></span></button>
             <button onClick={() => { compartilharTexto(c); onShare() }} style={box}><MessageCircle size={17} color="#16a34a" /><span><b style={{ fontSize: 13 }}>Compartilhar texto</b><br /><span style={{ fontSize: 11, color: '#8a857c' }}>Enviar só o texto</span></span></button>
-            <button onClick={() => { setSel(c.arquivos.map(a => a.id)); setModalArq(true) }} style={box}><Images size={17} color={ROSA} /><span><b style={{ fontSize: 13 }}>Selecionar arquivos</b><br /><span style={{ fontSize: 11, color: '#8a857c' }}>Escolher o que enviar</span></span></button>
+            <button onClick={() => setModalArq(true)} style={box}><Images size={17} color={ROSA} /><span><b style={{ fontSize: 13 }}>Selecionar arquivos</b><br /><span style={{ fontSize: 11, color: '#8a857c' }}>Escolher o que enviar</span></span></button>
             <button onClick={() => { compartilharArquivos(c, c.arquivos.map(a => a.id), true, onShare) }} style={box}><Share2 size={17} color={ROXO} /><span><b style={{ fontSize: 13 }}>Compartilhar tudo</b><br /><span style={{ fontSize: 11, color: '#8a857c' }}>Texto + arquivos</span></span></button>
           </div>
 
@@ -431,39 +441,46 @@ function PainelCampanha({ c, soLeitura, vendidos, onClose, onEditar, onShare, on
       )}
 
       {/* Modal de seleção de arquivos */}
-      {modalArq && (
-        <div onClick={() => setModalArq(false)} style={{ position: 'fixed', inset: 0, zIndex: 80, background: 'rgba(20,15,45,.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 18, padding: 20, width: 'min(440px,100%)', maxHeight: '86vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
-              <b style={{ fontSize: 16, color: '#1a1a2e' }}>Compartilhar arquivos</b>
-              <button onClick={() => setModalArq(false)} style={{ marginLeft: 'auto', border: 'none', background: 'transparent', cursor: 'pointer', color: '#6b6860' }}><X size={18} /></button>
-            </div>
-            {c.arquivos.length === 0 ? <p style={{ fontSize: 13, color: '#8a857c' }}>Esta campanha não tem arquivos.</p> : (
-              <>
-                <button onClick={() => setSel(sel.length === c.arquivos.length ? [] : c.arquivos.map(a => a.id))} style={{ fontSize: 12.5, fontWeight: 700, color: ROXO, border: 'none', background: 'transparent', cursor: 'pointer', padding: 0, marginBottom: 8 }}>
-                  {sel.length === c.arquivos.length ? 'Limpar seleção' : 'Selecionar todos'}
-                </button>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(90px,1fr))', gap: 8, marginBottom: 14 }}>
-                  {c.arquivos.map(a => {
-                    const on = sel.includes(a.id)
-                    return (
-                      <button key={a.id} onClick={() => setSel(s => on ? s.filter(x => x !== a.id) : [...s, a.id])} style={{ position: 'relative', border: on ? `2.5px solid ${ROXO}` : '2px solid #eee', borderRadius: 10, overflow: 'hidden', cursor: 'pointer', padding: 0, aspectRatio: '1', background: '#000' }}>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={a.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: on ? 1 : .7 }} />
-                        {on && <span style={{ position: 'absolute', top: 4, right: 4, width: 20, height: 20, borderRadius: 999, background: ROXO, color: '#fff', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✓</span>}
-                      </button>
-                    )
-                  })}
-                </div>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button onClick={() => { compartilharArquivos(c, sel, false, onShare); setModalArq(false) }} style={{ flex: 1, padding: 11, borderRadius: 10, border: 'none', background: '#16a34a', color: '#fff', fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>Enviar arquivos</button>
-                  <button onClick={() => { compartilharArquivos(c, sel, true, onShare); setModalArq(false) }} style={{ flex: 1, padding: 11, borderRadius: 10, border: 'none', background: ROXO, color: '#fff', fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>Arquivos + texto</button>
-                </div>
-              </>
-            )}
-          </div>
+      {modalArq && <ModalArquivos c={c} onClose={() => setModalArq(false)} onShare={onShare} />}
+    </div>
+  )
+}
+
+/* ─────────────── Modal: selecionar arquivos para enviar ─────────────── */
+function ModalArquivos({ c, onClose, onShare }: { c: Campanha; onClose: () => void; onShare?: () => void }) {
+  const [sel, setSel] = useState<string[]>(c.arquivos.map(a => a.id))
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 96, background: 'rgba(20,15,45,.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 18, padding: 20, width: 'min(440px,100%)', maxHeight: '86vh', overflowY: 'auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
+          <b style={{ fontSize: 16, color: '#1a1a2e' }}>Compartilhar arquivos</b>
+          <button onClick={onClose} style={{ marginLeft: 'auto', border: 'none', background: 'transparent', cursor: 'pointer', color: '#6b6860' }}><X size={18} /></button>
         </div>
-      )}
+        <p style={{ fontSize: 12, color: '#8a857c', margin: '0 0 12px' }}>{c.titulo}</p>
+        {c.arquivos.length === 0 ? <p style={{ fontSize: 13, color: '#8a857c' }}>Esta campanha não tem arquivos.</p> : (
+          <>
+            <button onClick={() => setSel(sel.length === c.arquivos.length ? [] : c.arquivos.map(a => a.id))} style={{ fontSize: 12.5, fontWeight: 700, color: ROXO, border: 'none', background: 'transparent', cursor: 'pointer', padding: 0, marginBottom: 8 }}>
+              {sel.length === c.arquivos.length ? 'Limpar seleção' : 'Selecionar todos'}
+            </button>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(90px,1fr))', gap: 8, marginBottom: 14 }}>
+              {c.arquivos.map(a => {
+                const on = sel.includes(a.id)
+                return (
+                  <button key={a.id} onClick={() => setSel(s => on ? s.filter(x => x !== a.id) : [...s, a.id])} style={{ position: 'relative', border: on ? `2.5px solid ${ROXO}` : '2px solid #eee', borderRadius: 10, overflow: 'hidden', cursor: 'pointer', padding: 0, aspectRatio: '1', background: '#000' }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={a.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: on ? 1 : .7 }} />
+                    {on && <span style={{ position: 'absolute', top: 4, right: 4, width: 20, height: 20, borderRadius: 999, background: ROXO, color: '#fff', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✓</span>}
+                  </button>
+                )
+              })}
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => { compartilharArquivos(c, sel, false, onShare); onClose() }} style={{ flex: 1, padding: 11, borderRadius: 10, border: 'none', background: '#16a34a', color: '#fff', fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>Enviar arquivos</button>
+              <button onClick={() => { compartilharArquivos(c, sel, true, onShare); onClose() }} style={{ flex: 1, padding: 11, borderRadius: 10, border: 'none', background: ROXO, color: '#fff', fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>Arquivos + texto</button>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   )
 }
