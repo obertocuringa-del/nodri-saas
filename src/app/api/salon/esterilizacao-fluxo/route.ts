@@ -1,9 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getSessao } from '@/lib/apiAuth'
+import { servicosPorProfissional } from '@/lib/profServicosMatch'
 import { hojeBREster, ridEster, type PedidoEster } from '@/lib/esterilizacaoFluxo'
 
 const CHAVE = 'esterilizacao_fluxo'
+
+// Mesmos serviços que usam alicate/pinça (igual ao relatório de esterilização).
+const SERVICOS_ALICATE = ['manicure', 'pedicure', 'sobrancelhas', 'pedicure e cuidados especiais dos pes']
+const normAli = (s: string) => (s || '').toString().normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[.,]/g, ' ').replace(/\s+/g, ' ').trim()
+
+// Atendimentos do mês (que usam alicate/pinça) de UMA profissional.
+async function atendimentosDoMes(salaoId: string, profissionalId: string): Promise<number> {
+  const d = new Date()
+  try {
+    const lista = await servicosPorProfissional(salaoId, d.getFullYear(), d.getMonth() + 1)
+    const p = lista.find(x => x.profissionalId === profissionalId)
+    if (!p) return 0
+    return Object.entries(p.servicos).reduce((tot, [serv, qtd]) => tot + (SERVICOS_ALICATE.includes(normAli(serv)) ? Number(qtd || 0) : 0), 0)
+  } catch { return 0 }
+}
 
 async function ler(salaoId: string): Promise<PedidoEster[]> {
   const { data } = await supabaseAdmin.from('salao_config').select('valor').eq('salao_id', salaoId).eq('chave', CHAVE).maybeSingle()
@@ -42,7 +58,10 @@ export async function GET() {
   const sess = await getSessao()
   if (!sess) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   const lista = await ler(sess.salaoId)
-  if (sess.role === 'profissional') return NextResponse.json({ pedidos: lista.filter(p => p.profissionalId === sess.profissionalId) })
+  if (sess.role === 'profissional') {
+    const atendimentos = await atendimentosDoMes(sess.salaoId, sess.profissionalId!)
+    return NextResponse.json({ pedidos: lista.filter(p => p.profissionalId === sess.profissionalId), atendimentos })
+  }
   return NextResponse.json({ pedidos: lista })
 }
 
@@ -126,8 +145,15 @@ export async function PATCH(req: NextRequest) {
     lista[i] = { ...p, status: 'recebido', qtdRecebida: qtd, obsRecebimento: obs || undefined, dataRecebimento: hojeBREster() }
     const { error } = await gravar(sess.salaoId, lista)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    // Se houver observação (ex.: divergência), a profissional é avisada.
-    if (obs) await notificar(sess.salaoId, p.profissionalId, `📋 Sobre seus alicates (${qtd} recebido(s)): ${obs}`, id)
+    // Avisa a profissional quando a quantidade DIVERGE do que ela informou
+    // e/ou quando o salão escreve uma observação.
+    const divergiu = typeof p.qtdEnviada === 'number' && qtd !== p.qtdEnviada
+    if (divergiu || obs) {
+      const base = divergiu
+        ? `📋 Atenção: você informou ${p.qtdEnviada} alicate(s), mas o salão recebeu ${qtd}.`
+        : `📋 Sobre seus alicates (${qtd} recebido(s)).`
+      await notificar(sess.salaoId, p.profissionalId, obs ? `${base} Observação do salão: ${obs}` : base, id)
+    }
     return NextResponse.json({ ok: true })
   }
 

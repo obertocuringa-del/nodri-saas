@@ -25,8 +25,9 @@ export default function EsterilizacaoFluxoAdmin({ profsSalao = [] }: { profsSala
   }, [])
   useEffect(() => { carregar() }, [carregar])
 
-  const profs = profsSalao.filter(p => p.ativo !== false && !p.is_departamento)
-  const nomeProf = (p: any) => p.apelido || p.nome_completo || 'Profissional'
+  // profsSalao vem como { id, nome, telefone } — o nome já é apelido||nome_completo.
+  const profs = profsSalao.filter(p => (p.nome || '').trim() && p.nome !== '—')
+  const nomeProf = (p: any) => p.nome || p.apelido || p.nome_completo || 'Profissional'
 
   async function acao(id: string, corpo: any, msg: string) {
     try {

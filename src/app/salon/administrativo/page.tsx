@@ -6,8 +6,7 @@ import { ArrowLeft, Loader2, Save, Plus, Minus, X, MessageCircle, Send, Printer,
 import toast from 'react-hot-toast'
 import GridEditavel, { cel, type Doc as GridDoc } from '@/components/salon/GridEditavel'
 import ServicoInternoLista from '@/components/salon/ServicoInternoLista'
-import EsterilizacaoLista from '@/components/salon/EsterilizacaoLista'
-import EsterilizacaoFluxoAdmin from '@/components/salon/EsterilizacaoFluxoAdmin'
+import EsterilizacaoPainel from '@/components/salon/EsterilizacaoPainel'
 import KitsAdminLista from '@/components/salon/KitsAdminLista'
 import EnxovaisLista from '@/components/salon/EnxovaisLista'
 import SenhasLista from '@/components/salon/SenhasLista'
@@ -118,8 +117,7 @@ const SIDEBAR_CATS: { cat: string; itens: SidebarItem[] }[] = [
   },
   {
     cat: 'CONTROLE E ESTOQUE', itens: [
-      { aba: 'esterilizacao', label: 'ESTERILIZAÇÃO' },
-      { aba: 'esterilizacao_fluxo', label: 'SOLICITAÇÕES DE ESTERILIZAÇÃO' },
+      { aba: 'esterilizacao_fluxo', label: 'ESTERILIZAÇÃO' },
       { aba: 'kits', label: 'KITS PÉ E MÃO' },
       { aba: 'enxovais', label: 'CONTROLE DE ENXOVAIS' },
       { aba: 'cadastrar_produto', label: 'CADASTRAR PRODUTO' },
@@ -296,8 +294,7 @@ export default function SalaoAdministrativoPage() {
                 : (() => { const g = GRIDS.find(x => x.key === servico)!; return <GridEditavel key={servico} chave={g.key} defaultDoc={g.doc} mensal={g.mensal} landscape={g.landscape} /> })()}
         </>)}
 
-        {abaTopo === 'esterilizacao' && <EsterilizacaoLista key="esterilizacao" chave="esterilizacao" profsSalao={profsSalao} />}
-        {abaTopo === 'esterilizacao_fluxo' && <EsterilizacaoFluxoAdmin key="ester_fluxo" profsSalao={profsSalao} />}
+        {abaTopo === 'esterilizacao_fluxo' && <EsterilizacaoPainel key="ester_painel" profsSalao={profsSalao} />}
         {abaTopo === 'kits' && <KitsAdminLista key="kits" />}
         {abaTopo === 'enxovais' && <EnxovaisLista key="enxovais" />}
         {abaTopo === 'servicos_valores' && <ListaPrecoServicos key="precos" />}

@@ -9,6 +9,7 @@ const COR = '#5b4fcf'
 
 export default function EsterilizacaoFluxoProf() {
   const [pedidos, setPedidos] = useState<PedidoEster[]>([])
+  const [atendimentos, setAtendimentos] = useState(0)
   const [loading, setLoading] = useState(true)
   const [qtd, setQtd] = useState('')
   const [enviando, setEnviando] = useState(false)
@@ -17,6 +18,7 @@ export default function EsterilizacaoFluxoProf() {
     try {
       const d = await fetch('/api/salon/esterilizacao-fluxo').then(r => r.ok ? r.json() : null)
       setPedidos(Array.isArray(d?.pedidos) ? d.pedidos : [])
+      setAtendimentos(Number(d?.atendimentos) || 0)
     } catch { /* mantém */ }
     setLoading(false)
   }, [])
@@ -45,9 +47,24 @@ export default function EsterilizacaoFluxoProf() {
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Loader2 size={24} className="animate-spin" style={{ color: COR }} /></div>
 
   const aConfirmar = pedidos.filter(p => p.status === 'entregue')
+  const travado = aConfirmar.length > 0   // não pode enviar enquanto houver entrega não confirmada
+  const totalEnviado = pedidos.filter(p => p.origem === 'profissional').reduce((s, p) => s + (p.qtdEnviada || 0), 0)
 
   return (
     <div>
+      {/* Atendimentos x Esterilização — individual */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 12, marginBottom: 18 }}>
+        <div style={{ background: '#fff', border: '1px solid #eceae4', borderRadius: 14, padding: '14px 16px' }}>
+          <div style={{ fontSize: 11.5, fontWeight: 700, color: '#6b6860', marginBottom: 4 }}>Atendimentos do mês</div>
+          <div style={{ fontSize: 22, fontWeight: 900, color: '#1a1a1a' }}>{atendimentos}</div>
+          <div style={{ fontSize: 11, color: '#9ca3af' }}>manicure · pedicure · sobrancelha</div>
+        </div>
+        <div style={{ background: '#fff', border: '1px solid #eceae4', borderRadius: 14, padding: '14px 16px' }}>
+          <div style={{ fontSize: 11.5, fontWeight: 700, color: '#6b6860', marginBottom: 4 }}>Alicates enviados p/ esterilizar</div>
+          <div style={{ fontSize: 22, fontWeight: 900, color: COR }}>{totalEnviado}</div>
+          <div style={{ fontSize: 11, color: '#9ca3af' }}>no total dos seus envios</div>
+        </div>
+      </div>
       {/* Confirmações pendentes em destaque */}
       {aConfirmar.map(p => (
         <div key={p.id} style={{ background: '#f5f3ff', border: '1px solid #c4b5fd', borderRadius: 14, padding: '14px 16px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
@@ -69,16 +86,25 @@ export default function EsterilizacaoFluxoProf() {
           <h3 style={{ fontSize: 14.5, fontWeight: 800, color: '#1a1a1a', margin: 0 }}>Enviar alicates para esterilização</h3>
         </div>
         <p style={{ fontSize: 12, color: '#6b6860', margin: '0 0 14px' }}>Informe quantos alicates você está deixando. O salão confirma o recebimento e avisa quando estiver pronto.</p>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-          <div style={{ flex: 1, minWidth: 160 }}>
-            <label style={{ fontSize: 12, fontWeight: 700, color: '#6b6860', display: 'block', marginBottom: 5 }}>Quantidade de alicates</label>
-            <input value={qtd} onChange={e => setQtd(e.target.value)} placeholder="0" inputMode="numeric"
-              style={{ width: '100%', padding: '10px 12px', borderRadius: 9, border: '1.5px solid #d0cdc7', fontSize: 15 }} />
+        {travado ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, padding: '12px 14px' }}>
+            <AlertTriangle size={20} color="#dc2626" />
+            <p style={{ margin: 0, fontSize: 13, color: '#b91c1c', fontWeight: 600 }}>
+              Confirme o recebimento das demandas anteriores para fazer um novo envio.
+            </p>
           </div>
-          <button onClick={enviar} disabled={enviando} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '11px 20px', borderRadius: 10, border: 'none', background: '#16a34a', color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer', opacity: enviando ? .6 : 1 }}>
-            {enviando ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />} Enviar
-          </button>
-        </div>
+        ) : (
+          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: 160 }}>
+              <label style={{ fontSize: 12, fontWeight: 700, color: '#6b6860', display: 'block', marginBottom: 5 }}>Quantidade de alicates</label>
+              <input value={qtd} onChange={e => setQtd(e.target.value)} placeholder="0" inputMode="numeric"
+                style={{ width: '100%', padding: '10px 12px', borderRadius: 9, border: '1.5px solid #d0cdc7', fontSize: 15 }} />
+            </div>
+            <button onClick={enviar} disabled={enviando} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '11px 20px', borderRadius: 10, border: 'none', background: '#16a34a', color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer', opacity: enviando ? .6 : 1 }}>
+              {enviando ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />} Enviar
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Histórico */}
