@@ -14,6 +14,25 @@ import {
 const ROXO = '#5b4fcf'
 const ROSA = '#db2777'
 
+// CSS responsivo do módulo (bonito no celular e no PC).
+const ACOES_CSS = `
+.ac-head { display:flex; align-items:flex-start; gap:12px; margin-bottom:14px; }
+.ac-chips { display:flex; gap:8px; overflow-x:auto; padding-bottom:6px; margin-bottom:10px; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+.ac-chips::-webkit-scrollbar { display:none; }
+.ac-status { display:flex; align-items:center; gap:8px; margin-bottom:18px; }
+.ac-status > div:first-child { flex:1; min-width:0; }
+.ac-status > div:last-child { flex-shrink:0; }
+.ac-cards { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:16px; }
+.ac-acoes { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:0 12px 10px; }
+.ac-acoes button { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:10px 4px; border-radius:12px; border:none; cursor:pointer; font-size:11.5px; font-weight:700; line-height:1.1; text-align:center; }
+@media (max-width: 560px) {
+  .ac-head { flex-wrap:wrap; }
+  .ac-nova { width:100%; }
+  .ac-status { flex-direction:column; align-items:stretch; }
+  .ac-cards { grid-template-columns:1fr; }
+}
+`
+
 const dataURLparaBlob = (url: string): Blob => {
   const [meta, b64] = url.split(',')
   const mime = /:(.*?);/.exec(meta)?.[1] || 'image/png'
@@ -120,54 +139,62 @@ export default function AcoesComerciais({ soLeitura = false }: { soLeitura?: boo
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><Loader2 size={26} className="animate-spin" style={{ color: ROXO }} /></div>
 
   return (
-    <div>
+    <div className="ac-root">
+      <style>{ACOES_CSS}</style>
+
       {/* Cabeçalho */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap', marginBottom: 18 }}>
-        <div style={{ flex: 1, minWidth: 200 }}>
-          <h1 style={{ fontSize: 24, fontWeight: 900, color: '#1a1a2e', margin: 0, letterSpacing: -.4 }}>Ações Comerciais</h1>
-          <p style={{ color: '#767069', fontSize: 13.5, margin: '4px 0 0' }}>
-            {soLeitura ? 'Campanhas prontas para você divulgar aos clientes.' : 'Crie campanhas, promoções e materiais para toda a equipe divulgar.'}
+      <div className="ac-head">
+        <div style={{ flex: 1, minWidth: 180 }}>
+          <h1 style={{ fontSize: 22, fontWeight: 900, color: '#1a1a2e', margin: 0, letterSpacing: -.4 }}>Ações Comerciais</h1>
+          <p style={{ color: '#767069', fontSize: 13, margin: '4px 0 0' }}>
+            {soLeitura ? 'Campanhas prontas para você divulgar aos clientes.' : 'Crie campanhas e materiais para toda a equipe divulgar.'}
           </p>
         </div>
         {!soLeitura && (
-          <button onClick={novaCampanha} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '11px 18px', borderRadius: 12, border: 'none', background: `linear-gradient(135deg,${ROXO},${ROSA})`, color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>
+          <button onClick={novaCampanha} className="ac-nova" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '11px 18px', borderRadius: 12, border: 'none', background: `linear-gradient(135deg,${ROXO},${ROSA})`, color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>
             <Plus size={17} /> Nova Campanha
           </button>
         )}
       </div>
 
-      {/* Filtros de categoria + busca */}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 12 }}>
+      {/* Busca — linha própria, largura total */}
+      <div style={{ position: 'relative', marginBottom: 10 }}>
+        <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
+        <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Pesquisar campanha..."
+          style={{ width: '100%', padding: '11px 12px 11px 36px', borderRadius: 12, border: '1px solid #e0ddd8', fontSize: 14, background: '#fff' }} />
+      </div>
+
+      {/* Categorias — rolagem horizontal (não quebra linha no celular) */}
+      <div className="ac-chips">
         {['', ...CATEGORIAS_ACOES].map(cat => (
           <button key={cat || 'todas'} onClick={() => setFCategoria(cat)}
-            style={{ padding: '6px 12px', borderRadius: 999, fontSize: 12.5, fontWeight: 700, cursor: 'pointer',
+            style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 999, fontSize: 13, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
               border: fCategoria === cat ? `1.5px solid ${ROXO}` : '1px solid #e5e2dc',
               background: fCategoria === cat ? '#f2f0ff' : '#fff', color: fCategoria === cat ? ROXO : '#6b6860' }}>
             {cat || 'Todas'}
           </button>
         ))}
-        <div style={{ marginLeft: 'auto', position: 'relative', minWidth: 220 }}>
-          <Search size={15} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
-          <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Pesquisar campanha..."
-            style={{ width: '100%', padding: '9px 12px 9px 32px', borderRadius: 10, border: '1px solid #e0ddd8', fontSize: 13 }} />
-        </div>
       </div>
 
-      {/* Filtros de status + ordem */}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 18 }}>
-        {([['todas', 'Todas'], ['ativa', 'Ativas'], ['agendada', 'Futuras'], ['encerrada', 'Encerradas']] as const).map(([k, l]) => (
-          <button key={k} onClick={() => setFStatus(k)}
-            style={{ padding: '5px 11px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', border: 'none',
-              background: fStatus === k ? '#1a1a2e' : '#f0eee8', color: fStatus === k ? '#fff' : '#6b6860' }}>{l}</button>
-        ))}
-        <button onClick={() => setOrdem(o => o === 'recentes' ? 'compartilhadas' : 'recentes')}
-          style={{ marginLeft: 'auto', padding: '5px 11px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', border: '1px solid #e0ddd8', background: '#fff', color: '#6b6860' }}>
-          {ordem === 'recentes' ? '↕ Mais recentes' : '↕ Mais compartilhadas'}
-        </button>
-        <button onClick={() => { setModoSel(m => !m); setSelec(new Set()) }}
-          style={{ padding: '5px 11px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', border: 'none', background: modoSel ? ROXO : '#eef2ff', color: modoSel ? '#fff' : ROXO }}>
-          {modoSel ? '✕ Cancelar seleção' : '☑ Selecionar várias'}
-        </button>
+      {/* Status + ordem + seleção */}
+      <div className="ac-status">
+        <div style={{ display: 'flex', gap: 6, overflowX: 'auto' }}>
+          {([['todas', 'Todas'], ['ativa', 'Ativas'], ['agendada', 'Futuras'], ['encerrada', 'Encerradas']] as const).map(([k, l]) => (
+            <button key={k} onClick={() => setFStatus(k)}
+              style={{ flexShrink: 0, padding: '6px 12px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', border: 'none',
+                background: fStatus === k ? '#1a1a2e' : '#f0eee8', color: fStatus === k ? '#fff' : '#6b6860' }}>{l}</button>
+          ))}
+        </div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button onClick={() => setOrdem(o => o === 'recentes' ? 'compartilhadas' : 'recentes')}
+            style={{ flex: 1, padding: '6px 10px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', border: '1px solid #e0ddd8', background: '#fff', color: '#6b6860', whiteSpace: 'nowrap' }}>
+            {ordem === 'recentes' ? '↕ Recentes' : '↕ Compartilhadas'}
+          </button>
+          <button onClick={() => { setModoSel(m => !m); setSelec(new Set()) }}
+            style={{ flex: 1, padding: '6px 10px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', border: 'none', background: modoSel ? ROXO : '#eef2ff', color: modoSel ? '#fff' : ROXO, whiteSpace: 'nowrap' }}>
+            {modoSel ? '✕ Cancelar' : '☑ Selecionar'}
+          </button>
+        </div>
       </div>
 
       {/* Grade de cards */}
@@ -176,7 +203,7 @@ export default function AcoesComerciais({ soLeitura = false }: { soLeitura?: boo
           {campanhas.length === 0 ? (soLeitura ? 'Nenhuma campanha publicada ainda.' : 'Nenhuma campanha ainda. Clique em “Nova Campanha”.') : 'Nenhuma campanha para esse filtro.'}
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+        <div className="ac-cards">
           {filtradas.map(c => <CardCampanha key={c.id} c={c} soLeitura={soLeitura}
             vendidos={vendidos[c.id]} modoSel={modoSel} selecionada={selec.has(c.id)}
             onToggleSel={() => toggleSel(c.id)}
@@ -256,10 +283,9 @@ function CardCampanha({ c, soLeitura, vendidos, modoSel, selecionada, onToggleSe
   const capa = capaDaCampanha(c)
   const st = statusCampanha(c)
   const si = STATUS_INFO[st]
-  const btn: React.CSSProperties = { flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '7px 0', borderRadius: 8, border: 'none', background: '#f5f4f8', cursor: 'pointer', color: '#4b5563', fontSize: 10.5, fontWeight: 700 }
   return (
     <div style={{ background: '#fff', border: selecionada ? `2px solid ${ROXO}` : '1px solid #eceae4', borderRadius: 16, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-      <button onClick={onAbrir} style={{ position: 'relative', height: 150, border: 'none', cursor: 'pointer', padding: 0, background: capa ? '#000' : '#f0eee8', overflow: 'hidden' }}>
+      <button onClick={onAbrir} style={{ position: 'relative', width: '100%', aspectRatio: '4 / 3', border: 'none', cursor: 'pointer', padding: 0, background: capa ? '#000' : '#f0eee8', overflow: 'hidden' }}>
         {capa
           // eslint-disable-next-line @next/next/no-img-element
           ? <img src={capa.url} alt={c.titulo} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -284,16 +310,16 @@ function CardCampanha({ c, soLeitura, vendidos, modoSel, selecionada, onToggleSe
         </div>
       </div>
       {/* Mesmos 4 botões de enviar que aparecem ao abrir a campanha — direto no card */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, padding: '0 12px 8px' }}>
-        <button title="Copia toda a descrição" onClick={onCopiar} style={btn}><Copy size={13} /> Copiar texto</button>
-        <button title="Enviar só o texto" onClick={onWhats} style={{ ...btn, background: '#dcfce7', color: '#16a34a' }}><MessageCircle size={13} /> Compart. texto</button>
-        <button title="Escolher o que enviar" onClick={onSelecArquivos} style={{ ...btn, background: '#fce7f3', color: ROSA }}><Images size={13} /> Selec. arquivos</button>
-        <button title="Texto + arquivos" onClick={onTudo} style={{ ...btn, background: '#eef2ff', color: ROXO }}><Share2 size={13} /> Compart. tudo</button>
+      <div className="ac-acoes">
+        <button title="Copia toda a descrição" onClick={onCopiar} style={{ background: '#f4f3f8', color: '#4b5563' }}><Copy size={17} /> Copiar</button>
+        <button title="Enviar só o texto" onClick={onWhats} style={{ background: '#dcfce7', color: '#16a34a' }}><MessageCircle size={17} /> Texto</button>
+        <button title="Escolher arquivos" onClick={onSelecArquivos} style={{ background: '#fce7f3', color: ROSA }}><Images size={17} /> Arquivos</button>
+        <button title="Texto + arquivos" onClick={onTudo} style={{ background: '#eef2ff', color: ROXO }}><Share2 size={17} /> Tudo</button>
       </div>
       {!soLeitura && (
-        <div style={{ display: 'flex', gap: 6, padding: '0 12px 12px' }}>
-          <button title="Editar" onClick={onEditar} style={{ ...btn, fontSize: 11 }}><Pencil size={13} /> Editar</button>
-          <button title="Excluir" onClick={onExcluir} style={{ ...btn, fontSize: 11, background: '#fef2f2', color: '#dc2626' }}><Trash2 size={13} /> Excluir</button>
+        <div style={{ display: 'flex', gap: 8, padding: '0 12px 12px' }}>
+          <button title="Editar" onClick={onEditar} style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '8px 0', borderRadius: 10, border: 'none', background: '#f4f3f8', color: '#4b5563', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}><Pencil size={14} /> Editar</button>
+          <button title="Excluir" onClick={onExcluir} style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '8px 0', borderRadius: 10, border: 'none', background: '#fef2f2', color: '#dc2626', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}><Trash2 size={14} /> Excluir</button>
         </div>
       )}
     </div>
