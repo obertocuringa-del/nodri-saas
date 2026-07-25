@@ -5362,8 +5362,9 @@ ${paresRows?`<table class="tbl"><thead><tr><th>#</th><th>Serviço A</th><th>Serv
               const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
               function exportarExcel(lista: any[], filename: string) {
-                const linhas = ['sep=;\nCliente;Celular']
-                for (const r of lista) linhas.push(`${r.cliente};${r.celular || ''}`)
+                const comTel = podeVer('clientes_telefone')
+                const linhas = [comTel ? 'sep=;\nCliente;Celular' : 'sep=;\nCliente']
+                for (const r of lista) linhas.push(comTel ? `${r.cliente};${r.celular || ''}` : `${r.cliente}`)
                 const blob = new Blob([linhas.join('\n')], { type: 'text/csv;charset=utf-8;' })
                 const url = URL.createObjectURL(blob)
                 const a = document.createElement('a'); a.href = url; a.download = filename; a.click()
@@ -5539,7 +5540,7 @@ ${paresRows?`<table class="tbl"><thead><tr><th>#</th><th>Serviço A</th><th>Serv
                               {subTabPerdidos === 'outro-servico' && <th className="text-left px-4 py-2 text-nodri-t3 font-semibold">Vai agora com</th>}
                               {subTabPerdidos === 'saiu-salao' && <ThSort label="Dias ausente" col="dias_ausente" />}
                               <th className="text-left px-4 py-2 text-nodri-t3 font-semibold">Faz agora</th>
-                              <th className="text-left px-4 py-2 text-nodri-t3 font-semibold">Celular</th>
+                              {podeVer('clientes_telefone') && <th className="text-left px-4 py-2 text-nodri-t3 font-semibold">Celular</th>}
                             </tr>
                           </thead>
                           <tbody>
@@ -5563,7 +5564,7 @@ ${paresRows?`<table class="tbl"><thead><tr><th>#</th><th>Serviço A</th><th>Serv
                                   </td>
                                 )}
                                 <td className="px-4 py-2 text-nodri-t3">{r.faz_agora || '—'}</td>
-                                <td className="px-4 py-2 text-nodri-t3">{r.celular || '—'}</td>
+                                {podeVer('clientes_telefone') && <td className="px-4 py-2 text-nodri-t3">{r.celular || '—'}</td>}
                               </tr>
                             ))}
                           </tbody>

@@ -11,6 +11,21 @@ async function getSalaoId() {
   return payload?.salaoId || null
 }
 
+// Cache do RESULTADO computado (a conta é pesada: percorre todos os atendimentos
+// para montar centenas de clientes). Guardado por salão+profissional+período por
+// alguns minutos — a 1ª abertura computa, as seguintes são instantâneas.
+const cpCache = new Map<string, { ts: number; data: any }>()
+const CP_TTL = 3 * 60 * 1000
+function cpGet(key: string) {
+  const e = cpCache.get(key)
+  if (e && Date.now() - e.ts < CP_TTL) return e.data
+  return null
+}
+function cpSet(key: string, data: any) {
+  cpCache.set(key, { ts: Date.now(), data })
+  if (cpCache.size > 200) { const k = cpCache.keys().next().value; if (k) cpCache.delete(k) }
+}
+
 function parseDataBR(d: string): Date | null {
   if (!d) return null
   const p = d.split('/')
@@ -65,6 +80,11 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
   const inicio = parseAnoMes(dataInicio)
   const fim    = parseAnoMes(dataFim)
+
+  // Resposta em cache (instantânea) se já foi computada há pouco.
+  const cacheKey = `${salaoId}:${params.id}:${dataInicio}:${dataFim}`
+  const cacheado = cpGet(cacheKey)
+  if (cacheado) return NextResponse.json(cacheado)
 
   const { data: prof } = await supabaseAdmin
     .from('profissionais')
@@ -347,7 +367,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     return (db?.getTime() || 0) - (da?.getTime() || 0)
   }
 
-  return NextResponse.json({
+  const payload = {
     outro_servico: sub1.sort(sortData),
     saiu_salao: sub2.sort((a, b) => b.dias_ausente - a.dias_ausente),
     outra_manicure: sub3.sort(sortData),
@@ -356,5 +376,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     ticket_visita: Math.round(ticketVisitaCalc * 100) / 100,
     comissao_media: Math.round(comissaoMedia * 100) / 100,
     periodo: { dataInicio, dataFim },
-  })
+  }
+  cpSet(cacheKey, payload)
+  return NextResponse.json(payload)
 }

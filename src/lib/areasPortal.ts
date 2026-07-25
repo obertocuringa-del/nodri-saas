@@ -31,6 +31,7 @@ export const AREAS_PORTAL: AreaPortal[] = [
   // Informações sensíveis dentro do resumo (não são cards, mas o salão pode ocultar)
   { chave: 'fat_acumulado',     label: 'Faturamento Acumulado (no resumo)' },
   { chave: 'ticket_medio',      label: 'Ticket Médio (no resumo)' },
+  { chave: 'clientes_telefone', label: 'Telefone dos clientes (em Clientes Perdidos)' },
 ]
 
 // Funde o padrão global do salão com a configuração individual do profissional.
