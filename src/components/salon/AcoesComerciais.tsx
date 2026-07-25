@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import toast from 'react-hot-toast'
 import {
   Loader2, Plus, Search, Copy, MessageCircle, Images, Pencil, Trash2, X, Star,
-  ChevronLeft, ChevronRight, Share2, BarChart3, Megaphone, Eye, Save,
+  ChevronLeft, ChevronRight, ChevronDown, Share2, BarChart3, Megaphone, Eye, Save, ListChecks,
 } from 'lucide-react'
 import {
   CATEGORIAS_ACOES, STATUS_INFO, statusCampanha, capaDaCampanha, textoCampanha, textoCampanhas, rid,
@@ -17,19 +17,22 @@ const ROSA = '#db2777'
 // CSS responsivo do módulo (bonito no celular e no PC).
 const ACOES_CSS = `
 .ac-head { display:flex; align-items:flex-start; gap:12px; margin-bottom:14px; }
-.ac-chips { display:flex; gap:8px; overflow-x:auto; padding-bottom:6px; margin-bottom:10px; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
-.ac-chips::-webkit-scrollbar { display:none; }
 .ac-status { display:flex; align-items:center; gap:8px; margin-bottom:18px; }
 .ac-status > div:first-child { flex:1; min-width:0; }
 .ac-status > div:last-child { flex-shrink:0; }
-.ac-cards { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:16px; }
-.ac-acoes { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:0 12px 10px; }
-.ac-acoes button { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:10px 4px; border-radius:12px; border:none; cursor:pointer; font-size:11.5px; font-weight:700; line-height:1.1; text-align:center; }
-@media (max-width: 560px) {
+.ac-cards { display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:14px; }
+.ac-acoes { display:grid; grid-template-columns:1fr 1fr; gap:7px; padding:0 10px 10px; }
+.ac-acoes button { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:9px 3px; border-radius:11px; border:none; cursor:pointer; font-size:11px; font-weight:700; line-height:1.1; text-align:center; }
+.ac-stats { display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; margin-top:22px; }
+.ac-lancar { margin:0 10px 12px; border-top:1px solid #f0eee8; }
+.ac-lancar-btn { width:100%; display:flex; align-items:center; justify-content:space-between; gap:6px; padding:10px 2px; border:none; background:transparent; cursor:pointer; font-size:12.5px; font-weight:800; color:#5b4fcf; }
+.ac-lancar-corpo { font-size:12.5px; line-height:1.6; color:#4a4560; white-space:pre-wrap; background:#f7f6fb; border-radius:10px; padding:10px 12px; margin-bottom:4px; }
+@media (max-width: 640px) {
   .ac-head { flex-wrap:wrap; }
   .ac-nova { width:100%; }
   .ac-status { flex-direction:column; align-items:stretch; }
-  .ac-cards { grid-template-columns:1fr; }
+  .ac-cards { grid-template-columns:1fr 1fr; gap:10px; }
+  .ac-stats { gap:7px; }
 }
 `
 
@@ -164,17 +167,12 @@ export default function AcoesComerciais({ soLeitura = false }: { soLeitura?: boo
           style={{ width: '100%', padding: '11px 12px 11px 36px', borderRadius: 12, border: '1px solid #e0ddd8', fontSize: 14, background: '#fff' }} />
       </div>
 
-      {/* Categorias — rolagem horizontal (não quebra linha no celular) */}
-      <div className="ac-chips">
-        {['', ...CATEGORIAS_ACOES].map(cat => (
-          <button key={cat || 'todas'} onClick={() => setFCategoria(cat)}
-            style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 999, fontSize: 13, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
-              border: fCategoria === cat ? `1.5px solid ${ROXO}` : '1px solid #e5e2dc',
-              background: fCategoria === cat ? '#f2f0ff' : '#fff', color: fCategoria === cat ? ROXO : '#6b6860' }}>
-            {cat || 'Todas'}
-          </button>
-        ))}
-      </div>
+      {/* Categoria — lista suspensa */}
+      <select value={fCategoria} onChange={e => setFCategoria(e.target.value)}
+        style={{ width: '100%', padding: '11px 12px', borderRadius: 12, border: '1px solid #e0ddd8', fontSize: 14, background: '#fff', color: '#1a1a2e', marginBottom: 10, fontWeight: 600 }}>
+        <option value="">Todas as categorias</option>
+        {CATEGORIAS_ACOES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+      </select>
 
       {/* Status + ordem + seleção */}
       <div className="ac-status">
@@ -226,11 +224,11 @@ export default function AcoesComerciais({ soLeitura = false }: { soLeitura?: boo
         </div>
       )}
 
-      {/* Rodapé de estatísticas */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginTop: 22 }}>
-        <MiniStat icon={<Megaphone size={18} />} n={totalAtivas} label="Campanhas ativas" cor={ROSA} />
-        <MiniStat icon={<Share2 size={18} />} n={totalShares} label="Compartilhamentos" cor="#16a34a" />
-        <MiniStat icon={<Eye size={18} />} n={totalViews} label="Visualizações" cor={ROXO} />
+      {/* Rodapé de estatísticas — 3 lado a lado */}
+      <div className="ac-stats">
+        <MiniStat icon={<Megaphone size={17} />} n={totalAtivas} label="Ativas" cor={ROSA} />
+        <MiniStat icon={<Share2 size={17} />} n={totalShares} label="Compart." cor="#16a34a" />
+        <MiniStat icon={<Eye size={17} />} n={totalViews} label="Visualiz." cor={ROXO} />
       </div>
 
       {aberta && <PainelCampanha c={aberta} soLeitura={soLeitura} vendidos={vendidos[aberta.id]} onClose={() => setAberta(null)} onEditar={() => { setEditando(aberta); setAberta(null) }} onShare={() => bumpMetrica(aberta.id, 'shares')} onVerShares={() => setVerShares(aberta)} />}
@@ -283,6 +281,7 @@ function CardCampanha({ c, soLeitura, vendidos, modoSel, selecionada, onToggleSe
   const capa = capaDaCampanha(c)
   const st = statusCampanha(c)
   const si = STATUS_INFO[st]
+  const [lancarOpen, setLancarOpen] = useState(false)
   return (
     <div style={{ background: '#fff', border: selecionada ? `2px solid ${ROXO}` : '1px solid #eceae4', borderRadius: 16, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       <button onClick={onAbrir} style={{ position: 'relative', width: '100%', aspectRatio: '4 / 3', border: 'none', cursor: 'pointer', padding: 0, background: capa ? '#000' : '#f0eee8', overflow: 'hidden' }}>
@@ -316,6 +315,22 @@ function CardCampanha({ c, soLeitura, vendidos, modoSel, selecionada, onToggleSe
         <button title="Escolher arquivos" onClick={onSelecArquivos} style={{ background: '#fce7f3', color: ROSA }}><Images size={17} /> Arquivos</button>
         <button title="Texto + arquivos" onClick={onTudo} style={{ background: '#eef2ff', color: ROXO }}><Share2 size={17} /> Tudo</button>
       </div>
+
+      {/* Como lançar no sistema — expansível */}
+      {(c.comoLancar?.trim() || !soLeitura) && (
+        <div className="ac-lancar">
+          <button className="ac-lancar-btn" onClick={() => setLancarOpen(o => !o)}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ListChecks size={15} /> Como lançar no sistema</span>
+            <ChevronDown size={16} style={{ transform: lancarOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }} />
+          </button>
+          {lancarOpen && (
+            <div className="ac-lancar-corpo">
+              {c.comoLancar?.trim() || 'Ainda não preenchido. Clique em Editar para descrever como lançar esta campanha no sistema.'}
+            </div>
+          )}
+        </div>
+      )}
+
       {!soLeitura && (
         <div style={{ display: 'flex', gap: 8, padding: '0 12px 12px' }}>
           <button title="Editar" onClick={onEditar} style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '8px 0', borderRadius: 10, border: 'none', background: '#f4f3f8', color: '#4b5563', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}><Pencil size={14} /> Editar</button>
@@ -328,12 +343,10 @@ function CardCampanha({ c, soLeitura, vendidos, modoSel, selecionada, onToggleSe
 
 function MiniStat({ icon, n, label, cor }: { icon: React.ReactNode; n: number; label: string; cor: string }) {
   return (
-    <div style={{ background: '#fff', border: '1px solid #eceae4', borderRadius: 14, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
-      <div style={{ width: 40, height: 40, borderRadius: 11, background: cor + '18', color: cor, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{icon}</div>
-      <div>
-        <div style={{ fontSize: 20, fontWeight: 900, color: '#1a1a2e' }}>{n}</div>
-        <div style={{ fontSize: 12, color: '#8a857c' }}>{label}</div>
-      </div>
+    <div style={{ background: '#fff', border: '1px solid #eceae4', borderRadius: 14, padding: '12px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, textAlign: 'center' }}>
+      <div style={{ width: 34, height: 34, borderRadius: 10, background: cor + '18', color: cor, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 2 }}>{icon}</div>
+      <div style={{ fontSize: 20, fontWeight: 900, color: '#1a1a2e', lineHeight: 1 }}>{n}</div>
+      <div style={{ fontSize: 11.5, color: '#8a857c' }}>{label}</div>
     </div>
   )
 }
@@ -563,6 +576,9 @@ function ModalEditar({ inicial, onSalvar, onClose }: { inicial: Campanha; onSalv
 
         <label style={lab}>Como funciona</label>
         <textarea value={c.comoFunciona} onChange={e => up('comoFunciona', e.target.value)} rows={4} placeholder={'Ex.: Na compra da Escova, 50% de desconto na Hidratação.\nVálido até 31/08.'} style={{ ...inp, resize: 'vertical' }} />
+
+        <label style={lab}>Como lançar no sistema</label>
+        <textarea value={c.comoLancar || ''} onChange={e => up('comoLancar', e.target.value)} rows={3} placeholder={'Passo a passo para o profissional lançar esta campanha no sistema.\nEx.: 1) Abrir a comanda  2) Adicionar serviço "Escova"  3) Aplicar desconto 50% na Hidratação.'} style={{ ...inp, resize: 'vertical' }} />
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <div>

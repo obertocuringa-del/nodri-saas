@@ -16,6 +16,7 @@ export interface Campanha {
   titulo: string
   descricao: string        // resumo (aparece no card)
   comoFunciona: string     // texto rico simples (quebras de linha)
+  comoLancar?: string      // passo a passo de como lançar no sistema (expansível no card)
   categoria: string
   dataInicio?: string      // 'YYYY-MM-DD'
   dataFim?: string         // 'YYYY-MM-DD'
