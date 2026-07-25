@@ -2,21 +2,22 @@
 
 import { useState, useEffect } from 'react'
 
+const SUPORTE_NODRI = '5561982195214' // fallback quando o salão não tem telefone
+
 export default function WhatsAppButton() {
-  // Oculto no portal do profissional (o suporte é para donos de salão)
-  const [oculto, setOculto] = useState(false)
+  // Usa o telefone cadastrado do salão logado; se não houver, cai no suporte NODRI.
+  const [telefone, setTelefone] = useState(SUPORTE_NODRI)
   useEffect(() => {
-    fetch('/api/auth/me')
+    fetch('/api/salon/whatsapp')
       .then(r => (r.ok ? r.json() : null))
-      .then(d => { if (d?.role === 'profissional') setOculto(true) })
+      .then(d => { if (d?.telefone) setTelefone(d.telefone) })
       .catch(() => {})
   }, [])
-  if (oculto) return null
 
   return (
     <a
       id="whatsapp-float-btn"
-      href="https://wa.me/5561982195214"
+      href={`https://wa.me/${telefone}`}
       target="_blank"
       rel="noopener noreferrer"
       title="Suporte via WhatsApp"
