@@ -28,6 +28,7 @@ export default function CorridasInternas() {
   const [corridas, setCorridas] = useState<CorridaInterna[]>([])
   const [rankings, setRankings] = useState<Record<string, LinhaRanking[]>>({})
   const [profs, setProfs] = useState<ProfLeve[]>([])
+  const [servicosRel, setServicosRel] = useState<{ nome: string; quantidade: number }[]>([])
   const [loading, setLoading] = useState(true)
   const [edit, setEdit] = useState<CorridaInterna | null>(null)
   const [saving, setSaving] = useState(false)
@@ -49,6 +50,9 @@ export default function CorridasInternas() {
         .filter(p => p.ativo !== false && !p.is_departamento)
         .map(p => ({ id: p.id, nome: p.apelido || p.nome_completo || p.nome || 'Profissional' }))
       setProfs(lista)
+    }).catch(() => {})
+    fetch('/api/salon/corridas/servicos', { credentials: 'include' }).then(r => r.ok ? r.json() : null).then(d => {
+      if (d && Array.isArray(d.servicos)) setServicosRel(d.servicos)
     }).catch(() => {})
   }, [])
 
@@ -126,7 +130,7 @@ export default function CorridasInternas() {
       )}
 
       {edit && (
-        <FormCorrida corrida={edit} profs={profs} saving={saving}
+        <FormCorrida corrida={edit} profs={profs} servicosRel={servicosRel} saving={saving}
           onCancel={() => setEdit(null)} onSalvar={salvarCorrida} />
       )}
     </div>
@@ -213,8 +217,8 @@ function Ranking({ ranking, c, destacarId }: { ranking: LinhaRanking[]; c: Corri
 export { Ranking }
 
 // ── Formulário (modal) ──
-function FormCorrida({ corrida, profs, saving, onCancel, onSalvar }: {
-  corrida: CorridaInterna; profs: ProfLeve[]; saving: boolean
+function FormCorrida({ corrida, profs, servicosRel, saving, onCancel, onSalvar }: {
+  corrida: CorridaInterna; profs: ProfLeve[]; servicosRel: { nome: string; quantidade: number }[]; saving: boolean
   onCancel: () => void; onSalvar: (c: CorridaInterna) => void
 }) {
   const [c, setC] = useState<CorridaInterna>(corrida)
@@ -252,9 +256,23 @@ function FormCorrida({ corrida, profs, saving, onCancel, onSalvar }: {
 
           {info.precisaServico && (
             <div>
-              <label className="ci-lbl">Nome do serviço *</label>
-              <input className="ci-inp" value={c.servico || ''} onChange={e => set({ servico: e.target.value })} placeholder="Ex.: Escova Progressiva" />
-              <div style={{ fontSize: 11.5, color: '#9ca3af', marginTop: 4 }}>Digite exatamente como aparece no relatório de serviços.</div>
+              <label className="ci-lbl">Serviço (do relatório "mais vendidos") *</label>
+              {servicosRel.length > 0 ? (
+                <>
+                  <select className="ci-inp" value={c.servico || ''} onChange={e => set({ servico: e.target.value })}>
+                    <option value="">— escolha o serviço —</option>
+                    {servicosRel.map(s => (
+                      <option key={s.nome} value={s.nome}>{s.nome} ({s.quantidade} vendido{s.quantidade !== 1 ? 's' : ''})</option>
+                    ))}
+                  </select>
+                  <div style={{ fontSize: 11.5, color: '#9ca3af', marginTop: 4 }}>Lista puxada do relatório de serviços vendidos. Ordenada do mais vendido para o menos.</div>
+                </>
+              ) : (
+                <>
+                  <input className="ci-inp" value={c.servico || ''} onChange={e => set({ servico: e.target.value })} placeholder="Ex.: Escova Progressiva" />
+                  <div style={{ fontSize: 11.5, color: '#9ca3af', marginTop: 4 }}>Nenhum relatório importado ainda — digite o nome exatamente como aparece no relatório.</div>
+                </>
+              )}
             </div>
           )}
 
