@@ -256,23 +256,17 @@ function FormCorrida({ corrida, profs, servicosRel, saving, onCancel, onSalvar }
 
           {info.precisaServico && (
             <div>
-              <label className="ci-lbl">Serviço (do relatório "mais vendidos") *</label>
-              {servicosRel.length > 0 ? (
-                <>
-                  <select className="ci-inp" value={c.servico || ''} onChange={e => set({ servico: e.target.value })}>
-                    <option value="">— escolha o serviço —</option>
-                    {servicosRel.map(s => (
-                      <option key={s.nome} value={s.nome}>{s.nome} ({s.quantidade} vendido{s.quantidade !== 1 ? 's' : ''})</option>
-                    ))}
-                  </select>
-                  <div style={{ fontSize: 11.5, color: '#9ca3af', marginTop: 4 }}>Lista puxada do relatório de serviços vendidos. Ordenada do mais vendido para o menos.</div>
-                </>
-              ) : (
-                <>
-                  <input className="ci-inp" value={c.servico || ''} onChange={e => set({ servico: e.target.value })} placeholder="Ex.: Escova Progressiva" />
-                  <div style={{ fontSize: 11.5, color: '#9ca3af', marginTop: 4 }}>Nenhum relatório importado ainda — digite o nome exatamente como aparece no relatório.</div>
-                </>
+              <label className="ci-lbl">Nome do serviço *</label>
+              <input className="ci-inp" value={c.servico || ''} onChange={e => set({ servico: e.target.value })}
+                list="ci-servicos-sugestoes" placeholder="Ex.: Escova Progressiva" />
+              {servicosRel.length > 0 && (
+                <datalist id="ci-servicos-sugestoes">
+                  {servicosRel.map(s => <option key={s.nome} value={s.nome} />)}
+                </datalist>
               )}
+              <div style={{ fontSize: 11.5, color: '#9ca3af', marginTop: 4 }}>
+                Digite igual ao nome do serviço no sistema. O ranking conta sozinho quantos foram vendidos — mesmo que a corrida comece com zero (igual às Ações Comerciais).
+              </div>
             </div>
           )}
 
