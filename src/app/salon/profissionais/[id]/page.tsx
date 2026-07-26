@@ -16,6 +16,7 @@ import PainelResumoProf from '@/components/salon/PainelResumoProf'
 import EsterilizacaoPerfilProf from '@/components/salon/EsterilizacaoPerfilProf'
 import KitsProfissionalView from '@/components/salon/KitsProfissionalView'
 import EsterilizacaoFluxoProf from '@/components/salon/EsterilizacaoFluxoProf'
+import CorridasProf from '@/components/salon/CorridasProf'
 import { mesmoProf } from '@/lib/esterilizacaoShared'
 import { confirmarSaidaSemSalvar } from '@/lib/guardaSalvar'
 import toast from 'react-hot-toast'
@@ -3513,9 +3514,9 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
           <CalendarioEditavel chave="calendario_mkt" titulo="Calendário de Marketing" corTema="#db2777" comResponsavel camposGrandes mostrarLembrete embutido />
         )}
 
-        {/*  CORRIDA INTERNA / AÇÕES COMERCIAIS (planilha por profissional)  */}
+        {/*  CORRIDA INTERNA — ranking automático das competições criadas no salão  */}
         {tab === 'corrida' && (
-          <GridEditavel chave={`corrida_interna_${id}`} soLeitura={souProf} corTema="#16a34a" landscape defaultDoc={{ tabelas: [{ titulo: 'CORRIDA INTERNA', cabecalho: [cel('Meta'), cel('Realizado'), cel('Pontos'), cel('Período'), cel('Observação')], linhas: Array.from({ length: 10 }, () => [cel(''), cel(''), cel(''), cel(''), cel('')]), larguras: [180, 160, 120, 150, 260] }] }} />
+          <CorridasProf destacarId={id} />
         )}
         {tab === 'acoes' && (
           souProf
