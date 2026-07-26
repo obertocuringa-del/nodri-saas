@@ -21,8 +21,11 @@ const ACOES_CSS = `
 .ac-status > div:first-child { flex:1; min-width:0; }
 .ac-status > div:last-child { flex-shrink:0; }
 .ac-cards { display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:14px; }
-.ac-acoes { display:grid; grid-template-columns:1fr 1fr; gap:7px; padding:0 10px 10px; }
-.ac-acoes button { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:9px 3px; border-radius:11px; border:none; cursor:pointer; font-size:11px; font-weight:700; line-height:1.1; text-align:center; }
+.ac-acoes { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:0 10px 8px; }
+.ac-acoes > button { display:flex; align-items:center; justify-content:center; gap:6px; padding:11px 6px; border-radius:12px; border:none; cursor:pointer; font-size:12.5px; font-weight:800; }
+.ac-menu { padding:0 10px 10px; display:flex; flex-direction:column; gap:6px; }
+.ac-menu button { display:flex; align-items:center; gap:9px; width:100%; text-align:left; padding:11px 12px; border-radius:11px; border:1px solid #efedf5; background:#fbfaff; cursor:pointer; font-size:13px; font-weight:600; color:#3a3550; }
+.ac-menu button:active { background:#f2f0ff; }
 .ac-stats { display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; margin-top:22px; }
 .ac-lancar { margin:0 10px 12px; border-top:1px solid #f0eee8; }
 .ac-lancar-btn { width:100%; display:flex; align-items:center; justify-content:space-between; gap:6px; padding:10px 2px; border:none; background:transparent; cursor:pointer; font-size:12.5px; font-weight:800; color:#5b4fcf; }
@@ -282,6 +285,8 @@ function CardCampanha({ c, soLeitura, vendidos, modoSel, selecionada, onToggleSe
   const st = statusCampanha(c)
   const si = STATUS_INFO[st]
   const [lancarOpen, setLancarOpen] = useState(false)
+  const [menu, setMenu] = useState<'copiar' | 'compartilhar' | null>(null)
+  const copiarTxt = (t: string) => { navigator.clipboard?.writeText(t).then(() => toast.success('Copiado!')).catch(() => toast.error('Não foi possível copiar')) }
   return (
     <div style={{ background: '#fff', border: selecionada ? `2px solid ${ROXO}` : '1px solid #eceae4', borderRadius: 16, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       <button onClick={onAbrir} style={{ position: 'relative', width: '100%', aspectRatio: '4 / 3', border: 'none', cursor: 'pointer', padding: 0, background: capa ? '#000' : '#f0eee8', overflow: 'hidden' }}>
@@ -308,13 +313,24 @@ function CardCampanha({ c, soLeitura, vendidos, modoSel, selecionada, onToggleSe
           <span title="Serviços vendidos no período (relatório)" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#16a34a', fontWeight: 800 }}>💰 {vendidos ?? 0}</span>
         </div>
       </div>
-      {/* Mesmos 4 botões de enviar que aparecem ao abrir a campanha — direto no card */}
+      {/* 2 botões harmônicos: Copiar e Compartilhar — cada um abre um menu de opções */}
       <div className="ac-acoes">
-        <button title="Copia toda a descrição" onClick={onCopiar} style={{ background: '#f4f3f8', color: '#4b5563' }}><Copy size={17} /> Copiar</button>
-        <button title="Enviar só o texto" onClick={onWhats} style={{ background: '#dcfce7', color: '#16a34a' }}><MessageCircle size={17} /> Texto</button>
-        <button title="Escolher arquivos" onClick={onSelecArquivos} style={{ background: '#fce7f3', color: ROSA }}><Images size={17} /> Arquivos</button>
-        <button title="Texto + arquivos" onClick={onTudo} style={{ background: '#eef2ff', color: ROXO }}><Share2 size={17} /> Tudo</button>
+        <button onClick={() => setMenu(m => m === 'copiar' ? null : 'copiar')} style={{ background: menu === 'copiar' ? '#e9e7f5' : '#f4f3f8', color: '#4b5563' }}><Copy size={16} /> Copiar <ChevronDown size={14} style={{ transform: menu === 'copiar' ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }} /></button>
+        <button onClick={() => setMenu(m => m === 'compartilhar' ? null : 'compartilhar')} style={{ background: menu === 'compartilhar' ? '#dcece0' : '#dcfce7', color: '#16a34a' }}><Share2 size={16} /> Compartilhar <ChevronDown size={14} style={{ transform: menu === 'compartilhar' ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }} /></button>
       </div>
+      {menu === 'copiar' && (
+        <div className="ac-menu">
+          <button onClick={() => { onCopiar(); setMenu(null) }}><Copy size={16} color={ROXO} /> Copiar descrição da campanha</button>
+          {c.comoLancar?.trim() && <button onClick={() => { copiarTxt(c.comoLancar!.trim()); setMenu(null) }}><ListChecks size={16} color={ROXO} /> Copiar “Como lançar no sistema”</button>}
+        </div>
+      )}
+      {menu === 'compartilhar' && (
+        <div className="ac-menu">
+          <button onClick={() => { onWhats(); setMenu(null) }}><MessageCircle size={16} color="#16a34a" /> Compartilhar texto (WhatsApp)</button>
+          <button onClick={() => { onSelecArquivos(); setMenu(null) }}><Images size={16} color={ROSA} /> Selecionar arquivos</button>
+          <button onClick={() => { onTudo(); setMenu(null) }}><Share2 size={16} color={ROXO} /> Compartilhar tudo (texto + arquivos)</button>
+        </div>
+      )}
 
       {/* Como lançar no sistema — expansível */}
       {(c.comoLancar?.trim() || !soLeitura) && (
