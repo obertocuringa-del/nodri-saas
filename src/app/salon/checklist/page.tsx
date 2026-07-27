@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, Fragment } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Loader2, Save, Plus, Trash2, Check, X, BarChart3, Copy, RotateCcw, Pencil, Calendar, ArrowRightLeft, ArrowDownAZ, ChevronDown, CheckCircle2, HandCoins } from 'lucide-react'
+import { ArrowLeft, Loader2, Save, Plus, Trash2, Check, X, BarChart3, Copy, RotateCcw, Pencil, Calendar, ArrowRightLeft, ArrowDownAZ, ChevronDown, CheckCircle2, HandCoins, Circle, Star, Route, Settings2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { CHECKLIST_DEFAULT, FREQUENCIAS } from '@/components/salon/checklistDefaults'
 import { usePermissoes } from '@/lib/usePermissoes'
@@ -10,7 +10,7 @@ import { useIsMobile } from '@/lib/useIsMobile'
 import { useGuardaSalvar } from '@/lib/guardaSalvar'
 import ConsolidadoDescontos from '@/components/salon/ConsolidadoDescontos'
 
-interface Demanda { id: string; texto: string; freq: string; feito: boolean; dias?: string[]; feito_em?: string; historico?: string[] }
+interface Demanda { id: string; texto: string; freq: string; feito: boolean; dias?: string[]; feito_em?: string; historico?: string[]; fixa?: boolean }
 interface Categoria { id: string; nome: string; demandas: Demanda[] }
 interface Doc { categorias: Categoria[] }
 
@@ -76,6 +76,9 @@ export default function ChecklistPage() {
   const [verRelatorio, setVerRelatorio] = useState(false)
   const [verComuns, setVerComuns] = useState(false)
   const [descontoOpen, setDescontoOpen] = useState(false)
+  // "Fazer" = roteiro guiado (limpo, pra quem executa/cobre); "Editar" = configurar.
+  // Sub/recepção não configura, então fica sempre no roteiro.
+  const [modo, setModo] = useState<'fazer' | 'editar'>('fazer')
   const [diasOpen, setDiasOpen] = useState<string | null>(null)
   const [transferOpen, setTransferOpen] = useState<string | null>(null)
   // Posição dos menus flutuantes (fixos na tela — não são cortados pela rolagem interna dos cards)
@@ -121,6 +124,7 @@ export default function ChecklistPage() {
       else marcarAgora(dem)
     })
   }
+  function toggleFixa(ci: number, di: number) { mut(d => { const dem = d.categorias[ci].demandas[di]; dem.fixa = !dem.fixa }) }
   function setDemanda(ci: number, di: number, campo: 'texto' | 'freq', v: string) { mut(d => { (d.categorias[ci].demandas[di] as any)[campo] = v }) }
   function organizarAZ(ci: number) { mut(d => { d.categorias[ci].demandas.sort((a, b) => norm(a.texto).localeCompare(norm(b.texto))) }); toast.success('Organizado em ordem alfabética — repare se aparecerem itens parecidos/repetidos') }
   function toggleDia(ci: number, di: number, dia: string) {
@@ -268,8 +272,27 @@ export default function ChecklistPage() {
             </div>
           )}
 
+          {!soLeitura && !soExecuta && <button onClick={() => toggleFixa(catSel, di)} title={dem.fixa ? 'Tirar da rotina fixa' : 'Fixar na rotina (aparece no topo do roteiro)'} style={{ border: 'none', background: 'transparent', color: dem.fixa ? '#f59e0b' : '#c4c0b8', cursor: 'pointer', padding: 6, flexShrink: 0 }}><Star size={14} fill={dem.fixa ? '#f59e0b' : 'none'} /></button>}
           {!soLeitura && !soExecuta && <button onClick={() => delDemanda(catSel, di)} title="Excluir demanda" style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', padding: 6, flexShrink: 0 }}><Trash2 size={13} /></button>}
         </div>
+      </div>
+    )
+  }
+
+  // Linha limpa do modo Roteiro: círculo de feito + texto (sem controles de edição)
+  function LinhaRoteiro({ dem, di, numero }: { dem: Demanda; di: number; numero?: number }) {
+    const feitoOk = feitoNoPeriodo(dem)
+    const alertaHoje = !!dem.dias?.includes(hojeAbrev) && !feitoOk
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: isMobile ? '11px 10px' : '10px 12px', borderRadius: 10, background: feitoOk ? '#f6faf6' : alertaHoje ? '#fee2e2' : '#fff', border: '1px solid ' + (feitoOk ? '#e3efe3' : alertaHoje ? '#fca5a5' : '#eceae4') }}>
+        {numero != null && <span style={{ width: 22, height: 22, borderRadius: '50%', background: '#eef0fb', color: '#5b4fcf', fontSize: 12, fontWeight: 800, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{numero}</span>}
+        <button onClick={() => !soLeitura && toggleFeito(catSel, di)} disabled={soLeitura} title="Feito?" style={{ border: 'none', background: 'transparent', cursor: soLeitura ? 'default' : 'pointer', padding: 0, flexShrink: 0, display: 'inline-flex', lineHeight: 0 }}>
+          {feitoOk ? <CheckCircle2 size={24} color="#16a34a" /> : <Circle size={24} color={alertaHoje ? '#dc2626' : '#c4c0b8'} />}
+        </button>
+        <span style={{ flex: 1, minWidth: 0, fontSize: 14, color: feitoOk ? '#9ca3af' : '#1a1a1a', textDecoration: feitoOk ? 'line-through' : 'none', lineHeight: 1.35 }}>
+          {dem.texto}
+          {alertaHoje && <span style={{ display: 'block', fontSize: 10.5, fontWeight: 900, color: '#dc2626' }}>⚠ marcada para hoje</span>}
+        </span>
       </div>
     )
   }
@@ -283,6 +306,12 @@ export default function ChecklistPage() {
         <button onClick={() => router.push('/salon')} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', color: '#6b6860', cursor: 'pointer', fontSize: 14 }}><ArrowLeft size={16} /> Voltar</button>
         <span style={{ width: 1, height: 16, background: '#e0ddd8' }} />
         <span style={{ fontWeight: 800, fontSize: 15, color: '#1a1a1a' }}>✅ Check List Diário</span>
+        {!soLeitura && (
+          <div style={{ display: 'inline-flex', border: '1.5px solid #d8d4f0', borderRadius: 9, overflow: 'hidden', marginLeft: 4 }}>
+            <button onClick={() => setModo('fazer')} title="Roteiro guiado — para executar/cobrir" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 12px', border: 'none', background: modo === 'fazer' ? '#5b4fcf' : '#fff', color: modo === 'fazer' ? '#fff' : '#6b6860', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}><Route size={14} /> Fazer</button>
+            <button onClick={() => setModo('editar')} title="Configurar as demandas" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 12px', border: 'none', background: modo === 'editar' ? '#5b4fcf' : '#fff', color: modo === 'editar' ? '#fff' : '#6b6860', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}><Settings2 size={14} /> Editar</button>
+          </div>
+        )}
         <div style={{ flex: 1 }} />
         <button onClick={() => { setVerComuns(v => !v); setVerRelatorio(false) }} style={btnNav(verComuns)}><Copy size={14} /> Demandas em comum</button>
         <button onClick={() => { setVerRelatorio(v => !v); setVerComuns(false) }} style={btnNav(verRelatorio)}><BarChart3 size={14} /> Relatório{temAlerta ? ' ⚠️' : ''}</button>
@@ -309,6 +338,14 @@ export default function ChecklistPage() {
               </span>
               <span style={{ fontSize: 22, opacity: .9, flexShrink: 0 }}>›</span>
             </button>
+          )}
+
+          {/* Celular: alterna Roteiro (Fazer) x Editar */}
+          {isMobile && !soLeitura && (
+            <div style={{ display: 'flex', border: '1.5px solid #d8d4f0', borderRadius: 12, overflow: 'hidden', marginBottom: 12 }}>
+              <button onClick={() => setModo('fazer')} style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '11px', border: 'none', background: modo === 'fazer' ? '#5b4fcf' : '#fff', color: modo === 'fazer' ? '#fff' : '#6b6860', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}><Route size={16} /> Fazer</button>
+              <button onClick={() => setModo('editar')} style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '11px', border: 'none', background: modo === 'editar' ? '#5b4fcf' : '#fff', color: modo === 'editar' ? '#fff' : '#6b6860', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}><Settings2 size={16} /> Editar</button>
+            </div>
           )}
 
           {/* Celular: linha única e harmônica de ações (o Salvar fica na barra fixa
@@ -465,7 +502,7 @@ export default function ChecklistPage() {
           </div>
           )}
 
-          {cat && (
+          {cat && modo === 'editar' && !soLeitura && (
             <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: 16 }}>
               <div className="nodri-linha-1" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
                 <Pencil size={14} color="#9ca3af" style={{ flexShrink: 0 }} />
@@ -510,6 +547,75 @@ export default function ChecklistPage() {
               {!soLeitura && <button onClick={() => addDemanda(catSel)} style={{ marginTop: 6, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 8, border: '1px dashed #d0cdc7', background: '#faf9f7', color: '#6b6860', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}><Plus size={14} /> Adicionar demanda</button>}
             </div>
           )}
+
+          {/* ── MODO ROTEIRO (Fazer): guia limpo, rotina fixa no topo, feitos descem ── */}
+          {cat && (modo === 'fazer' || soLeitura) && (() => {
+            const todos = cat.demandas.map((dem, di) => ({ dem, di })).filter(x => x.dem.texto.trim())
+            const feitosDescem = (arr: { dem: Demanda; di: number }[]) => [...arr].sort((a, b) => Number(feitoNoPeriodo(a.dem)) - Number(feitoNoPeriodo(b.dem)))
+            const fixas = feitosDescem(todos.filter(x => x.dem.fixa))
+            const porFreq = FREQUENCIAS.map(freq => ({ freq, itens: feitosDescem(todos.filter(x => !x.dem.fixa && x.dem.freq === freq)) })).filter(g => g.itens.length)
+            const proximo = [...fixas, ...porFreq.flatMap(g => g.itens)].find(x => !feitoNoPeriodo(x.dem))
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Route size={17} color="#5b4fcf" style={{ flexShrink: 0 }} />
+                  <span style={{ fontSize: 16, fontWeight: 800, color: '#5b4fcf' }}>{cat.nome}</span>
+                  <span style={{ fontSize: 12, color: '#9ca3af' }}>siga a ordem e marque conforme faz</span>
+                </div>
+
+                {fixas.length > 0 && (
+                  <div style={{ background: '#fff', border: '1.5px solid #d8d4f0', borderRadius: 12, padding: 14 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                      <Star size={16} color="#f59e0b" fill="#f59e0b" style={{ flexShrink: 0 }} />
+                      <span style={{ fontSize: 13.5, fontWeight: 800, color: '#1a1a1a' }}>Rotina fixa</span>
+                      <span style={{ fontSize: 12, color: '#9ca3af' }}>o essencial, sempre nesta ordem</span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {fixas.map((x, idx) => <Fragment key={x.dem.id}>{LinhaRoteiro({ dem: x.dem, di: x.di, numero: idx + 1 })}</Fragment>)}
+                    </div>
+                  </div>
+                )}
+
+                {proximo && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff7ed', border: '1px solid #fcd34d', borderRadius: 12, padding: '11px 14px' }}>
+                    <span style={{ fontSize: 10.5, fontWeight: 900, color: '#b45309', background: '#fef3c7', borderRadius: 6, padding: '3px 8px', flexShrink: 0 }}>PRÓXIMO</span>
+                    <span style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: 700, color: '#1a1a1a' }}>{proximo.dem.texto}</span>
+                    {!soLeitura && <button onClick={() => toggleFeito(catSel, proximo.di)} style={{ border: 'none', background: '#16a34a', color: '#fff', borderRadius: 8, padding: '7px 12px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', flexShrink: 0 }}>Marcar feito</button>}
+                  </div>
+                )}
+
+                {porFreq.map(({ freq, itens }) => {
+                  const fc = FREQ_COR[freq]
+                  const ok = itens.filter(x => feitoNoPeriodo(x.dem)).length
+                  const completo = ok === itens.length
+                  const aberto = secoesAbertas[freq] !== false
+                  return (
+                    <div key={freq} style={{ border: `1.5px solid ${completo ? '#bbf7d0' : '#e8e6e0'}`, borderRadius: 12, background: '#fff' }}>
+                      <button onClick={() => setSecoesAbertas(s => ({ ...s, [freq]: !aberto }))}
+                        style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', border: 'none', borderRadius: aberto ? '11px 11px 0 0' : 11, background: completo ? '#ecfdf3' : fc.bg, cursor: 'pointer' }}>
+                        <span style={{ width: 11, height: 11, borderRadius: 4, background: '#fff', border: `3px solid ${fc.bd}`, flexShrink: 0 }} />
+                        <span style={{ fontWeight: 900, fontSize: 13, color: fc.txt, letterSpacing: '.4px' }}>{freq.toUpperCase()}</span>
+                        <span style={{ flex: 1 }} />
+                        <span style={{ fontSize: 13, fontWeight: 900, color: completo ? '#16a34a' : fc.txt }}>{completo ? '✓ ' : ''}{ok}/{itens.length}</span>
+                        <ChevronDown size={17} color={fc.txt} style={{ transform: aberto ? 'rotate(180deg)' : 'none', transition: 'transform .15s', flexShrink: 0 }} />
+                      </button>
+                      {aberto && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: 10 }}>
+                          {itens.map(x => <Fragment key={x.dem.id}>{LinhaRoteiro({ dem: x.dem, di: x.di })}</Fragment>)}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+
+                {todos.length === 0 && (
+                  <div style={{ textAlign: 'center', padding: 30, color: '#9ca3af', fontSize: 13.5, background: '#fff', border: '1px dashed #d0cdc7', borderRadius: 12 }}>
+                    Nenhuma demanda nesta categoria ainda.{!soLeitura && <> Use o modo <strong style={{ color: '#5b4fcf' }}>Editar</strong> para adicionar.</>}
+                  </div>
+                )}
+              </div>
+            )
+          })()}
         </>)}
       </div>
 
