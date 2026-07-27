@@ -3,11 +3,12 @@ import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 
-async function getSalaoId() {
+async function getSessao(): Promise<{ salaoId: string; role: string } | null> {
   const token = cookies().get('nodri_token')?.value
   if (!token) return null
   const payload = await verifyJWT(token)
-  return payload?.salaoId || null
+  if (!payload?.salaoId) return null
+  return { salaoId: payload.salaoId, role: (payload as any).role || '' }
 }
 
 function mesesEntreDatas(inicio: string, fim: string) {
@@ -26,8 +27,10 @@ function mesesEntreDatas(inicio: string, fim: string) {
 }
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
-  const salaoId = await getSalaoId()
-  if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  const sess = await getSessao()
+  if (!sess) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  const salaoId = sess.salaoId
+  const ehProf = sess.role === 'profissional'
 
   const url = new URL(req.url)
   const p2_inicio = url.searchParams.get('p2_inicio') || ''
@@ -147,23 +150,39 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     media[k] = todos.reduce((s, m) => s + (m[k] || 0), 0) / todos.length
   }
 
+  // PRIVACIDADE:
+  // • Salão principal → recebe os VALORES dos colegas (sem nome), para gerir.
+  // • Portal do profissional → NÃO recebe valores de colega nenhum. Recebe só
+  //   o PERCENTUAL de cada colega em relação a ele (quanto está à frente/atrás).
+  //   Assim os números dos outros nunca saem do servidor para o profissional.
+  const colegasSaida = ehProf
+    ? metricasColegas.map(c => {
+        const rel: Record<string, number | null> = {}
+        for (const k of keys) {
+          const meu = Number((metricasAtual as any)?.[k] || 0)
+          const val = Number((c as any)[k] || 0)
+          rel[k] = meu ? Number((((val - meu) / meu) * 100).toFixed(1)) : (val > 0 ? null : 0)
+        }
+        return rel
+      })
+    : metricasColegas.map(c => ({
+        faturamento: c.faturamento,
+        ticket_medio: c.ticket_medio,
+        clientes_preferencia: c.clientes_preferencia,
+        clientes_sem_preferencia: c.clientes_sem_preferencia,
+        dias_trabalhados: c.dias_trabalhados,
+        taxa_ocupacao: c.taxa_ocupacao,
+        total_servicos: c.total_servicos,
+        total_produtos: c.total_produtos,
+      }))
+
   return NextResponse.json({
     cargo: profAtual.cargo,
     total_prof_categoria: totalProfCat,
     prof_com_dados: todos.length,
     media,
     atual: metricasAtual,
-    // PRIVACIDADE: enviamos apenas os VALORES dos colegas, SEM o nome.
-    // Assim o profissional vê onde está no ranking sem saber de quem são os dados.
-    colegas: metricasColegas.map(c => ({
-      faturamento: c.faturamento,
-      ticket_medio: c.ticket_medio,
-      clientes_preferencia: c.clientes_preferencia,
-      clientes_sem_preferencia: c.clientes_sem_preferencia,
-      dias_trabalhados: c.dias_trabalhados,
-      taxa_ocupacao: c.taxa_ocupacao,
-      total_servicos: c.total_servicos,
-      total_produtos: c.total_produtos,
-    })),
+    relativo: ehProf,
+    colegas: colegasSaida,
   })
 }

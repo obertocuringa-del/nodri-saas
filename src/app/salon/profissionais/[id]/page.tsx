@@ -3936,7 +3936,7 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                           {categoriaMedia.prof_com_dados} de {categoriaMedia.total_prof_categoria} profissional(is) com dados
                         </span>
                       </div>
-                      <p className="text-[9px] text-nodri-t3 mb-3">Clique em qualquer card para ver onde você está no ranking da categoria (os outros profissionais aparecem anônimos).</p>
+                      <p className="text-[9px] text-nodri-t3 mb-3">{souProf ? 'Clique em qualquer card para ver sua posição na categoria — os colegas aparecem só como o quanto estão à frente ou atrás de você (%), sem valores.' : 'Clique em qualquer card para ver onde você está no ranking da categoria (os outros profissionais aparecem anônimos).'}</p>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                         {itens.map(item => {
                           const d = deltaCat(item.a, item.med)
@@ -3944,10 +3944,20 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                           // Detalhamento ANÔNIMO: valores de todos os colegas + o próprio (nomeado),
                           // ordenados. Cada profissional só vê o PRÓPRIO nome; os demais = "Colega N".
                           let cc = 0
+                          // Portal do profissional: o servidor manda o % vs você (os valores dos
+                          // colegas nem chegam ao navegador). Salão: manda os valores reais.
+                          const meuVal = item.a
                           const linhas = [
-                            ...colegasVals.map(c => ({ val: Number(c[item.k] || 0), eh: false })),
-                            { val: item.a, eh: true },
-                          ].sort((x, y) => y.val - x.val)
+                            ...colegasVals.map(c => {
+                              const raw = (c as any)[item.k]
+                              if (souProf) {
+                                const pct = raw === null || raw === undefined ? null : Number(raw)
+                                return { eh: false, pct, val: null as number | null, sortKey: pct === null ? Number.POSITIVE_INFINITY : pct }
+                              }
+                              return { eh: false, pct: null as number | null, val: Number(raw || 0), sortKey: Number(raw || 0) }
+                            }),
+                            { eh: true, pct: (souProf ? 0 : null) as number | null, val: meuVal, sortKey: souProf ? 0 : meuVal },
+                          ].sort((x, y) => y.sortKey - x.sortKey)
                             .map(l => ({ ...l, rotulo: l.eh ? `${nomeProprio} (você)` : `Colega ${++cc}` }))
                           const minhaPos = linhas.findIndex(l => l.eh) + 1
                           return (
@@ -3966,13 +3976,28 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                                 <div className="text-[8px] text-nodri-purple mt-1">🔎 {minhaPos}º de {linhas.length} · ver detalhamento</div>
                               </summary>
                               <div className="mt-2 rounded-lg border border-nodri-border overflow-hidden">
-                                {linhas.map((l, i) => (
+                                {linhas.map((l, i) => {
+                                  // Portal do profissional: colega exibe só o % vs você (sem valor).
+                                  const aFrente = (l.pct ?? 0) > 0
+                                  return (
                                   <div key={i} className="flex items-center justify-between px-2 py-1 text-[10px]"
                                     style={{ background: l.eh ? '#f0eefb' : (i % 2 === 0 ? '#fff' : '#faf9f7'), color: '#1a1a1a' }}>
                                     <span style={{ fontWeight: l.eh ? 700 : 500 }}>{i+1}º {l.rotulo}</span>
-                                    <span style={{ fontWeight: l.eh ? 700 : 500 }}>{item.f(l.val)}</span>
+                                    {souProf && !l.eh ? (
+                                      l.pct === null
+                                        ? <span style={{ color: '#9ca3af' }}>—</span>
+                                        : Math.abs(l.pct) < 0.05
+                                          ? <span style={{ color: '#6b7280', fontWeight: 600 }}>empatado com você</span>
+                                          : <span className="flex items-center gap-1" style={{ fontWeight: 600, color: aFrente ? '#ef4444' : '#16a34a' }}>
+                                              {aFrente ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
+                                              {Math.abs(l.pct).toFixed(1)}% {aFrente ? 'a mais que você' : 'a menos que você'}
+                                            </span>
+                                    ) : (
+                                      <span style={{ fontWeight: l.eh ? 700 : 500 }}>{item.f(l.val || 0)}</span>
+                                    )}
                                   </div>
-                                ))}
+                                  )
+                                })}
                                 <div className="flex items-center justify-between px-2 py-1.5 text-[10px] font-bold" style={{ background: '#1a1a1a', color: '#fff' }}>
                                   <span>Média ({linhas.length})</span>
                                   <span>{item.f(item.med)}</span>
