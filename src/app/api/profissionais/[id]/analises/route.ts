@@ -4,6 +4,9 @@ import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getAtendimentosRaw } from '@/lib/atendimentosCache'
 
+// O bundle varre todos os atendimentos do profissional — pode passar de 10s.
+export const maxDuration = 60
+
 async function getSessao(): Promise<{ salaoId: string; role: string } | null> {
   const token = cookies().get('nodri_token')?.value
   if (!token) return null

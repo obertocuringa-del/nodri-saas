@@ -2978,17 +2978,28 @@ export default function PerfilProfissionalPage() {
     if (tab === 'metas') buscarMeta()
   }, [tab])
 
+  // Carrega uma análise (dependência/oportunidades/bundle). Resposta de erro ou
+  // vazia vira { _erro:true } — a tela mostra "tentar de novo" em vez de mascarar
+  // como "dados insuficientes". Reutilizada pelo botão de retry.
+  const carregarAnalise = useCallback((tipo: 'dependencia'|'oportunidades'|'bundle') => {
+    setLoadAnalise(prev => ({...prev,[tipo]:true}))
+    setAnaliseData(prev => ({...prev,[tipo]:null}))
+    fetch(`/api/profissionais/${id}/analises?tipo=${tipo}`)
+      .then(async r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json() })
+      .then(d => {
+        if (!d || d.error) throw new Error(d?.error || 'sem dados')
+        setAnaliseData(prev => ({...prev,[tipo]:d}))
+      })
+      .catch(() => setAnaliseData(prev => ({...prev,[tipo]:{ _erro: true }})))
+      .finally(() => setLoadAnalise(prev => ({...prev,[tipo]:false})))
+  }, [id])
+
   useEffect(() => {
     const analises: Array<'dependencia'|'oportunidades'|'bundle'> = ['dependencia','oportunidades','bundle']
     if (!analises.includes(tab as any)) return
     const tipo = tab as 'dependencia'|'oportunidades'|'bundle'
     if (analiseData[tipo]) return
-    setLoadAnalise(prev => ({...prev,[tipo]:true}))
-    fetch(`/api/profissionais/${id}/analises?tipo=${tipo}`)
-      .then(r => r.json())
-      .then(d => setAnaliseData(prev => ({...prev,[tipo]:d})))
-      .catch(() => {})
-      .finally(() => setLoadAnalise(prev => ({...prev,[tipo]:false})))
+    carregarAnalise(tipo)
   }, [tab, id])
 
   function buscarClientesPerdidos(inicio: string, fim: string) {
@@ -5215,6 +5226,14 @@ ${paresRows?`<table class="tbl"><thead><tr><th>#</th><th>Serviço A</th><th>Serv
             {loadAnalise.bundle && <div className="flex justify-center py-10"><Loader2 size={24} className="animate-spin text-nodri-cyan"/></div>}
             {!loadAnalise.bundle && analiseData.bundle && (() => {
               const d = analiseData.bundle
+              if (d._erro) return (
+                <div className="text-center py-16 text-nodri-t3">
+                  <p className="text-[13px]">Não foi possível carregar esta análise agora.</p>
+                  <p className="text-[11px] mt-1 opacity-70">Pode ter sido a conexão. Tente novamente.</p>
+                  <button onClick={() => carregarAnalise('bundle')}
+                    className="mt-4 px-4 py-2 rounded-lg text-[12px] font-bold bg-nodri-cyan text-white">🔄 Tentar de novo</button>
+                </div>
+              )
               if (!d.pares?.length) return (
                 <div className="text-center py-16 text-nodri-t3">
                   <span className="text-4xl"></span>
@@ -5258,7 +5277,7 @@ ${paresRows?`<table class="tbl"><thead><tr><th>#</th><th>Serviço A</th><th>Serv
             })()}
 
             {/* Card IA — Mais Opções de Bundle */}
-            {analiseData.bundle && (
+            {analiseData.bundle && !analiseData.bundle._erro && (
               <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
                 <div className="flex items-start justify-between mb-3 gap-3">
                   <div>
