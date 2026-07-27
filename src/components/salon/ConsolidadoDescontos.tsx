@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Loader2, X, Printer, Coffee, Scissors, HandCoins, Wallet } from 'lucide-react'
+import { Loader2, X, Printer, Coffee, Scissors, HandCoins, Wallet, Hand } from 'lucide-react'
 
 interface Prof { id: string; nome: string }
 
@@ -11,9 +11,10 @@ interface Cel { t?: string }
 interface DocServ { tabelas?: { linhas?: Cel[][] }[] }
 interface DespItem { nome?: string; valor?: string; obs?: string }
 interface DadosCalc { despInd?: DespItem[]; extrasDespInd?: DespItem[] }
+interface KitSol { profissionalNome?: string; valor?: number; status?: string }
 
 interface LinhaBebida { nome: string; valor: number }
-interface LinhaDesconto { nome: string; bebidas: LinhaBebida[]; bebidasTot: number; serv: number; emp: number; total: number }
+interface LinhaDesconto { nome: string; bebidas: LinhaBebida[]; bebidasTot: number; serv: number; emp: number; kits: number; total: number }
 
 const COR = '#5b4fcf'
 function mesAtual() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` }
@@ -50,11 +51,12 @@ export default function ConsolidadoDescontos({ open, onClose }: { open: boolean;
     setLoading(true)
     try {
       const [ano, mesNum] = mes.split('-').map(Number)
-      const [profsRaw, bebidas, serv, calc] = await Promise.all([
+      const [profsRaw, bebidas, serv, calc, kitsResp] = await Promise.all([
         fetch('/api/profissionais').then(r => r.ok ? r.json() : []).catch(() => []),
         fetch(`/api/salon/grid?chave=bebidas_${mes}`).then(r => r.ok ? r.json() : null).catch(() => null) as Promise<DocBebidas | null>,
         fetch(`/api/salon/grid?chave=servinterno_${mes}`).then(r => r.ok ? r.json() : null).catch(() => null) as Promise<DocServ | null>,
         fetch(`/api/salon/calculadora?ano=${ano}&mes=${mesNum}`, { credentials: 'include' }).then(r => r.ok ? r.json() : null).catch(() => null),
+        fetch(`/api/kits/solicitacoes?mes=${mes}`).then(r => r.ok ? r.json() : null).catch(() => null),
       ])
       const profs: Prof[] = (Array.isArray(profsRaw) ? profsRaw : []).map((p: any) => ({ id: p.id, nome: p.apelido || p.nome_completo || '—' }))
       const nomePorId = new Map(profs.map(p => [p.id, p.nome]))
@@ -62,7 +64,7 @@ export default function ConsolidadoDescontos({ open, onClose }: { open: boolean;
       const acc = new Map<string, LinhaDesconto>()
       const pega = (nome: string): LinhaDesconto => {
         const k = norm(nome)
-        if (!acc.has(k)) acc.set(k, { nome, bebidas: [], bebidasTot: 0, serv: 0, emp: 0, total: 0 })
+        if (!acc.has(k)) acc.set(k, { nome, bebidas: [], bebidasTot: 0, serv: 0, emp: 0, kits: 0, total: 0 })
         return acc.get(k)!
       }
 
@@ -105,8 +107,19 @@ export default function ConsolidadoDescontos({ open, onClose }: { open: boolean;
         pega(profNome).emp += valor
       }
 
+      // 4) KITS PÉ E MÃO — só os já SEPARADOS pelo salão; várias solicitações no
+      //    mesmo mês vão somando no total da manicure
+      const kitsList: KitSol[] = Array.isArray(kitsResp?.solicitacoes) ? kitsResp.solicitacoes : []
+      for (const k of kitsList) {
+        if (k.status !== 'separado') continue
+        const valor = Number(k.valor) || 0
+        const nome = (k.profissionalNome || '').trim()
+        if (valor <= 0 || !nome) continue
+        pega(nome).kits += valor
+      }
+
       const lista = Array.from(acc.values())
-        .map(r => ({ ...r, total: r.bebidasTot + r.serv + r.emp }))
+        .map(r => ({ ...r, total: r.bebidasTot + r.serv + r.emp + r.kits }))
         .filter(r => r.total > 0)
         .sort((a, b) => b.total - a.total)
       setLinhas(lista)
@@ -124,11 +137,12 @@ export default function ConsolidadoDescontos({ open, onClose }: { open: boolean;
       const partes: string[] = []
       r.bebidas.forEach(b => partes.push(`${esc(b.nome)} R$ ${fmtBRL(b.valor)}`))
       if (r.serv > 0) partes.push(`serviço interno R$ ${fmtBRL(r.serv)}`)
+      if (r.kits > 0) partes.push(`kit pé e mão R$ ${fmtBRL(r.kits)}`)
       if (r.emp > 0) partes.push(`empréstimo R$ ${fmtBRL(r.emp)}`)
       return `<tr><td class="nm">${esc(r.nome)}</td><td class="det">${partes.join('  ·  ') || '—'}</td><td class="tot">R$ ${fmtBRL(r.total)}</td></tr>`
     }).join('')
     const css = `@page{size:A4 portrait;margin:12mm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;font-size:11px}h1{text-align:center;font-size:16px;color:${COR};margin-bottom:4px}.sub{text-align:center;font-size:11px;color:#777;margin-bottom:12px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #f0ede6;padding:7px 9px;text-align:left;vertical-align:top}th{background:#f6f4ff;color:${COR};border-bottom:2px solid ${COR};font-size:10px;text-transform:uppercase}.nm{font-weight:800;white-space:nowrap}.det{font-size:10.5px;color:#555}.tot{font-weight:800;color:#15803d;text-align:right;white-space:nowrap}tfoot td{background:#f0fdf4;color:#15803d;font-weight:900;border-top:2px solid ${COR}}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}`
-    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Desconto do mês</title><style>${css}</style></head><body><h1>DESCONTO DO MÊS — CONSOLIDADO</h1><div class="sub">${esc(mes.split('-').reverse().join('/'))} · bebidas + serviços internos + empréstimos</div><table><thead><tr><th>Profissional</th><th>Descontos</th><th style="text-align:right">Total devido</th></tr></thead><tbody>${rows}</tbody><tfoot><tr><td colspan="2">TOTAL GERAL</td><td style="text-align:right">R$ ${fmtBRL(totalGeral)}</td></tr></tfoot></table><script>window.onload=function(){window.print()}</script></body></html>`
+    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Desconto do mês</title><style>${css}</style></head><body><h1>DESCONTO DO MÊS — CONSOLIDADO</h1><div class="sub">${esc(mes.split('-').reverse().join('/'))} · bebidas + serviços internos + kits pé e mão + empréstimos</div><table><thead><tr><th>Profissional</th><th>Descontos</th><th style="text-align:right">Total devido</th></tr></thead><tbody>${rows}</tbody><tfoot><tr><td colspan="2">TOTAL GERAL</td><td style="text-align:right">R$ ${fmtBRL(totalGeral)}</td></tr></tfoot></table><script>window.onload=function(){window.print()}</script></body></html>`
     const w = window.open('', '_blank', 'width=900,height=700'); if (!w) return; w.document.write(html); w.document.close(); w.focus()
   }
 
@@ -143,7 +157,7 @@ export default function ConsolidadoDescontos({ open, onClose }: { open: boolean;
             <HandCoins size={20} />
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 16, fontWeight: 900 }}>Lançar Desconto — consolidado do mês</div>
-              <div style={{ fontSize: 11.5, opacity: .9 }}>Tudo que cada profissional deve, numa lista só: bebidas + serviços internos + empréstimos</div>
+              <div style={{ fontSize: 11.5, opacity: .9 }}>Tudo que cada profissional deve, numa lista só: bebidas + serviços internos + kits pé e mão + empréstimos</div>
             </div>
             <button onClick={onClose} style={{ border: 'none', background: 'rgba(255,255,255,.2)', color: '#fff', cursor: 'pointer', borderRadius: 8, width: 32, height: 32, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><X size={18} /></button>
           </div>
@@ -162,7 +176,7 @@ export default function ConsolidadoDescontos({ open, onClose }: { open: boolean;
           ) : linhas.length === 0 ? (
             <div style={{ textAlign: 'center', padding: 34, color: '#9ca3af', fontSize: 13.5, background: '#fff', border: '1px dashed #d0cdc7', borderRadius: 12 }}>
               Nenhum valor a descontar neste mês.<br />
-              <span style={{ fontSize: 12 }}>Cadastre o preço das bebidas, lance serviços internos e/ou empréstimos (na calculadora, com o nome do profissional) para que apareçam aqui.</span>
+              <span style={{ fontSize: 12 }}>Cadastre o preço das bebidas, lance serviços internos, empréstimos (na calculadora, com o nome do profissional) e/ou separe kits pé e mão para que apareçam aqui.</span>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -175,6 +189,7 @@ export default function ConsolidadoDescontos({ open, onClose }: { open: boolean;
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                     {r.bebidas.map((b, i) => <Chip key={'b' + i} icon={<Coffee size={12} />} cor="#b45309" bg="#fff7ed" bd="#fed7aa">{b.nome} R$ {fmtBRL(b.valor)}</Chip>)}
                     {r.serv > 0 && <Chip icon={<Scissors size={12} />} cor="#0e7490" bg="#ecfeff" bd="#a5f3fc">serviço interno R$ {fmtBRL(r.serv)}</Chip>}
+                    {r.kits > 0 && <Chip icon={<Hand size={12} />} cor="#be185d" bg="#fdf2f8" bd="#fbcfe8">kit pé e mão R$ {fmtBRL(r.kits)}</Chip>}
                     {r.emp > 0 && <Chip icon={<Wallet size={12} />} cor="#9333ea" bg="#faf5ff" bd="#e9d5ff">empréstimo R$ {fmtBRL(r.emp)}</Chip>}
                   </div>
                 </div>
