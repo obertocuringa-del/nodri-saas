@@ -541,6 +541,7 @@ interface DespesaItem { nome: string; valor: string; dica: string; editavel?: bo
 // Datas do lançamento (dd/mm/yyyy) <-> input type=date (yyyy-mm-dd)
 const isoParaBR = (iso: string) => { const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? `${m[3]}/${m[2]}/${m[1]}` : '' }
 const brParaISO = (br: string) => { const m = String(br || '').match(/^(\d{2})\/(\d{2})\/(\d{4})$/); return m ? `${m[3]}-${m[2]}-${m[1]}` : '' }
+const hojeBRCalc = () => { const d = new Date(); return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}` }
 interface Ingrediente  { id: number; nome: string; qtdEmb: string; qtdUsa: string; preco: string; unidade: string }
 interface ServicoProd  { id: number; nomeServico: string; ingredientes: Ingrediente[] }
 interface Servico      { id: number; nome: string; preco: string; rateioP: string; produto: string; imposto: string; produtoNome?: string }
@@ -1951,7 +1952,7 @@ Use números reais. Seja direto.`
                             return(
                               <button key={cat.id}
                                 onClick={()=>{
-                                  setExtrasDespInd(p=>[...p,{nome:cat.nome,valor:'',dica:cat.observacao||'',parcela:''}])
+                                  setExtrasDespInd(p=>[...p,{nome:cat.nome,valor:'',dica:cat.observacao||'',parcela:'',data:hojeBRCalc()}])
                                   setModalCatalogoAberto(false)
                                 }}
                                 style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 14px',border:'1.5px solid',borderColor:'#f59e0b',borderRadius:'8px',background:'#fffbf0',cursor:'pointer'}}>

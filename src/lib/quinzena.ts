@@ -28,14 +28,18 @@ export function nomeQuinzena(q: Quinzena): string {
   return q === 1 ? '1ª quinzena' : q === 2 ? '2ª quinzena' : 'Mês inteiro'
 }
 
-// Uma data 'dd/mm/yyyy' cai na quinzena q do mês 'YYYY-MM'?
-// Datas inválidas/vazias só contam no "mês inteiro" (q = 0), para nunca sumir
-// um lançamento antigo que não tem dia registrado.
-export function dataNaQuinzena(dataBR: string, mesStr: string, q: Quinzena): boolean {
-  const m = String(dataBR || '').match(/^(\d{2})\/(\d{2})\/(\d{4})$/)
+// Uma data cai na quinzena q do mês 'YYYY-MM'? Aceita 'dd/mm/aaaa' e 'aaaa-mm-dd'
+// (o input type=date às vezes deixa no formato ISO). Datas inválidas/vazias só
+// contam no "mês inteiro" (q = 0), para nunca sumir um lançamento sem dia.
+export function dataNaQuinzena(dataStr: string, mesStr: string, q: Quinzena): boolean {
+  const s = String(dataStr || '').trim()
+  const br = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/)
+  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/)
   const [ano, mes] = mesStr.split('-').map(Number)
-  if (!m) return q === 0
-  const dia = Number(m[1]), mesD = Number(m[2]), anoD = Number(m[3])
+  let dia: number, mesD: number, anoD: number
+  if (br) { dia = +br[1]; mesD = +br[2]; anoD = +br[3] }
+  else if (iso) { anoD = +iso[1]; mesD = +iso[2]; dia = +iso[3] }
+  else return q === 0
   if (mesD !== mes || anoD !== ano) return false
   const [ini, fim] = diasQuinzena(ano, mes, q)
   return dia >= ini && dia <= fim
