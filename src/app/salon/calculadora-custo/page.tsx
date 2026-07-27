@@ -536,7 +536,11 @@ const DESPESAS_INDIRETAS = [
 ]
 
 // ─── Tipos ──────────────────────────────────────────────────────────────────
-interface DespesaItem { nome: string; valor: string; dica: string; editavel?: boolean; parcela?: string; obs?: string; grupo?: string; venc?: string }
+interface DespesaItem { nome: string; valor: string; dica: string; editavel?: boolean; parcela?: string; obs?: string; grupo?: string; venc?: string; data?: string }
+
+// Datas do lançamento (dd/mm/yyyy) <-> input type=date (yyyy-mm-dd)
+const isoParaBR = (iso: string) => { const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? `${m[3]}/${m[2]}/${m[1]}` : '' }
+const brParaISO = (br: string) => { const m = String(br || '').match(/^(\d{2})\/(\d{2})\/(\d{4})$/); return m ? `${m[3]}-${m[2]}-${m[1]}` : '' }
 interface Ingrediente  { id: number; nome: string; qtdEmb: string; qtdUsa: string; preco: string; unidade: string }
 interface ServicoProd  { id: number; nomeServico: string; ingredientes: Ingrediente[] }
 interface Servico      { id: number; nome: string; preco: string; rateioP: string; produto: string; imposto: string; produtoNome?: string }
@@ -723,7 +727,7 @@ export default function CalculadoraCusto() {
     return {
       fat, custIndD, custDirD, lucroD, invInicial, totalDeprec,
       despInd: despInd.map(d=>({nome:d.nome,valor:d.valor,obs:d.obs||''})),
-      extrasDespInd: extrasDespInd.map(d=>({nome:d.nome,valor:d.valor,parcela:d.parcela||'',obs:d.obs||'',grupo:d.grupo||'',venc:d.venc||''})),
+      extrasDespInd: extrasDespInd.map(d=>({nome:d.nome,valor:d.valor,parcela:d.parcela||'',obs:d.obs||'',grupo:d.grupo||'',venc:d.venc||'',data:d.data||''})),
       extrasDiretas: extrasDiretas.map(d=>({nome:d.nome,valor:d.valor})),
       extrasOutras: extrasOutras.map(d=>({nome:d.nome,valor:d.valor})),
       sal13, ferias, fgtsR, imposto, produto, rateio, taxaC,
@@ -744,7 +748,7 @@ export default function CalculadoraCusto() {
     if (d.invInicial !== undefined) setInvInicial(d.invInicial)
     if (d.totalDeprec !== undefined) setTotalDeprec(d.totalDeprec)
     if (d.despInd) setDespInd(DESPESAS_INDIRETAS.map((di,i)=>({...di,valor:d.despInd[i]?.valor||'',obs:(d.despInd[i] as any)?.obs||''})))
-    if (d.extrasDespInd) setExtrasDespInd(d.extrasDespInd.map((x:any)=>({nome:x.nome,valor:x.valor,dica:'',parcela:x.parcela||'',obs:x.obs||'',grupo:x.grupo||'',venc:x.venc||''})))
+    if (d.extrasDespInd) setExtrasDespInd(d.extrasDespInd.map((x:any)=>({nome:x.nome,valor:x.valor,dica:'',parcela:x.parcela||'',obs:x.obs||'',grupo:x.grupo||'',venc:x.venc||'',data:x.data||''})))
     if ((d as any).extrasDiretas) setExtrasDiretas((d as any).extrasDiretas.map((x:any)=>({nome:x.nome,valor:x.valor,dica:''})))
     if ((d as any).extrasOutras) setExtrasOutras((d as any).extrasOutras.map((x:any)=>({nome:x.nome,valor:x.valor,dica:''})))
     if (d.sal13 !== undefined) setSal13(d.sal13)
@@ -1831,9 +1835,17 @@ Use números reais. Seja direto.`
                       <div className="flex justify-end">
                         <button onClick={()=>setExtrasDespInd(prev=>prev.filter((_,idx)=>idx!==i))} style={{color:'#ef4444'}}><Trash2 size={12}/></button>
                       </div>
-                      {(notasAbertas.has('e'+i) || d.obs) && (
-                        <ObsComProf valor={d.obs||''} profs={profsLista}
-                          onChange={val=>{const nd=[...extrasDespInd];nd[i]={...nd[i],obs:val};setExtrasDespInd(nd)}}/>
+                      {(notasAbertas.has('e'+i) || d.obs || d.data) && (
+                        <>
+                          <ObsComProf valor={d.obs||''} profs={profsLista}
+                            onChange={val=>{const nd=[...extrasDespInd];nd[i]={...nd[i],obs:val};setExtrasDespInd(nd)}}/>
+                          <div style={{gridColumn:'1 / -1',display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+                            <label style={{fontSize:11,fontWeight:700,color:'#78350f'}}>📅 Data do lançamento (para separar por quinzena):</label>
+                            <input type="date" value={brParaISO(d.data||'')} onChange={e=>{const nd=[...extrasDespInd];nd[i]={...nd[i],data:isoParaBR(e.target.value)};setExtrasDespInd(nd);setDirtyCalc(true)}}
+                              style={{border:'1px solid #f59e0b80',borderRadius:8,padding:'5px 9px',fontSize:11.5,color:'#78350f',background:'#fff'}}/>
+                            {d.data && <span style={{fontSize:10.5,color:'#9a7b3a'}}>sem data = conta no “mês inteiro”</span>}
+                          </div>
+                        </>
                       )}
                     </div>
                   )

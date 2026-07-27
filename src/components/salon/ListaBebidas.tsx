@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import toast from 'react-hot-toast'
 import { Loader2, Save, Printer, Plus, X } from 'lucide-react'
 import { useGuardaSalvar } from '@/lib/guardaSalvar'
+import { quinzenaDeHoje, labelQuinzena } from '@/lib/quinzena'
 
 interface ProfSalao { id: string; nome: string }
 interface ColBebida { id: string; nome: string; preco?: string }
@@ -23,6 +24,7 @@ const ADMIN_RE = /(administra|financeir|ger[êe]nci|recep)/i
 export default function ListaBebidas({ profsSalao }: { profsSalao: ProfSalao[] }) {
   const profsLista = (profsSalao || []).filter(p => !ADMIN_RE.test(p.nome || ''))
   const [mes, setMes] = useState(mesAtual())
+  const [quinzena, setQuinzena] = useState<1 | 2>(quinzenaDeHoje())
   const [colunas, setColunas] = useState<ColBebida[]>(PADRAO)
   const [cells, setCells] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
@@ -30,15 +32,33 @@ export default function ListaBebidas({ profsSalao }: { profsSalao: ProfSalao[] }
   const [dirty, setDirty] = useState(false)
   useGuardaSalvar(dirty, 'Bebidas') // avisa "Deseja salvar?" antes de sair sem salvar
 
+  const chaveQ = (q: number) => `bebidas_${mes}_q${q}`
+
   const carregar = useCallback(async () => {
     setLoading(true)
     try {
-      const d: Doc | null = await fetch(`/api/salon/grid?chave=bebidas_${mes}`).then(r => r.ok ? r.json() : null)
-      if (d && Array.isArray(d.colunas) && d.colunas.length) { setColunas(d.colunas.map(c => ({ ...c, preco: c.preco || '' }))); setCells(d.cells || {}) }
-      else { setColunas(PADRAO); setCells({}) }
+      const get = (chave: string): Promise<Doc | null> => fetch(`/api/salon/grid?chave=${chave}`).then(r => r.ok ? r.json() : null).catch(() => null)
+      const d = await get(chaveQ(quinzena))
+      if (d && Array.isArray(d.colunas) && d.colunas.length) {
+        setColunas(d.colunas.map(c => ({ ...c, preco: c.preco || '' }))); setCells(d.cells || {})
+      } else {
+        // Grade da quinzena ainda não existe. Herda a LISTA de bebidas + preços
+        // (contagens zeradas). Na transição, a 1ª quinzena recebe o que já
+        // existia na grade mensal antiga (bebidas_${mes}); a 2ª começa limpa.
+        const outra = await get(chaveQ(quinzena === 1 ? 2 : 1))
+        const legado = await get(`bebidas_${mes}`)
+        if (quinzena === 1 && legado && Array.isArray(legado.colunas) && legado.colunas.length && Object.keys(legado.cells || {}).length) {
+          setColunas(legado.colunas.map(c => ({ ...c, preco: c.preco || '' }))); setCells(legado.cells || {})
+        } else {
+          const template = (outra && Array.isArray(outra.colunas) && outra.colunas.length) ? outra
+            : (legado && Array.isArray(legado.colunas) && legado.colunas.length) ? legado : null
+          setColunas(template ? template.colunas.map(c => ({ ...c, preco: c.preco || '' })) : PADRAO)
+          setCells({})
+        }
+      }
     } catch { setColunas(PADRAO); setCells({}) }
     setDirty(false); setLoading(false)
-  }, [mes])
+  }, [mes, quinzena])
   useEffect(() => { carregar() }, [carregar])
 
   function setCell(profId: string, colId: string, v: string) { setCells(p => ({ ...p, [`${profId}::${colId}`]: v })); setDirty(true) }
@@ -50,6 +70,11 @@ export default function ListaBebidas({ profsSalao }: { profsSalao: ProfSalao[] }
   function delColuna(id: string) { setColunas(c => c.length <= 1 ? c : c.filter(x => x.id !== id)); setDirty(true) }
   function renColuna(id: string, nome: string) { setColunas(c => c.map(x => x.id === id ? { ...x, nome } : x)); setDirty(true) }
   function setPreco(id: string, preco: string) { setColunas(c => c.map(x => x.id === id ? { ...x, preco } : x)); setDirty(true) }
+  function trocarQuinzena(q: 1 | 2) {
+    if (q === quinzena) return
+    if (dirty && !confirm('Você tem alterações não salvas nesta quinzena. Trocar mesmo assim? (as alterações serão descartadas)')) return
+    setQuinzena(q)
+  }
 
   // Valor de uma célula = quantidade × preço da bebida
   const valorCell = (profId: string, col: ColBebida) => (Number(cells[`${profId}::${col.id}`]) || 0) * parseValor(col.preco || '')
@@ -61,7 +86,7 @@ export default function ListaBebidas({ profsSalao }: { profsSalao: ProfSalao[] }
   async function salvar() {
     setSalvando(true)
     try {
-      const res = await fetch('/api/salon/grid', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chave: `bebidas_${mes}`, doc: { colunas, cells } }) })
+      const res = await fetch('/api/salon/grid', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chave: chaveQ(quinzena), doc: { colunas, cells } }) })
       if (res.ok) { toast.success('Salvo!'); setDirty(false) } else toast.error('Erro ao salvar')
     } catch { toast.error('Erro de conexão') }
     setSalvando(false)
@@ -73,7 +98,7 @@ export default function ListaBebidas({ profsSalao }: { profsSalao: ProfSalao[] }
     const body = profsLista.map(p => `<tr><td class="nm">${esc(p.nome)}</td>${colunas.map(c => `<td>${esc(cells[`${p.id}::${c.id}`] || '')}</td>`).join('')}${temPreco ? `<td class="tot">R$ ${fmtBRL(totalProf(p.id))}</td>` : ''}</tr>`).join('')
     const foot = temPreco ? `<tfoot><tr><td class="nm">TOTAL</td>${colunas.map(c => `<td>R$ ${fmtBRL(totalColuna(c))}</td>`).join('')}<td class="tot">R$ ${fmtBRL(totalGeral)}</td></tr></tfoot>` : ''
     const css = `@page{size:A4 portrait;margin:12mm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;font-size:11px}h1{text-align:center;font-size:15px;color:#5b4fcf;margin-bottom:8px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #f0ede6;padding:5px 7px;text-align:center}th{background:#f6f4ff;color:#5b4fcf;border-bottom:2px solid #5b4fcf;font-size:10px;text-transform:uppercase;letter-spacing:.3px}.pr{font-size:9px;color:#16a34a;font-weight:700}.nm{text-align:left;font-weight:700;background:#faf9f7}.tot{font-weight:800;color:#16a34a;background:#f0fdf4}tfoot td{font-weight:800;background:#f6f4ff;color:#5b4fcf;border-top:2px solid #5b4fcf}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}`
-    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Consumo de Bebidas</title><style>${css}</style></head><body><h1>CONSUMO DE BEBIDAS — ${esc(mes.split('-').reverse().join('/'))}</h1><table><thead><tr><th>Profissional</th>${head}${temPreco ? '<th>Total devido</th>' : ''}</tr></thead><tbody>${body}</tbody>${foot}</table><script>window.onload=function(){window.print()}</script></body></html>`
+    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Consumo de Bebidas</title><style>${css}</style></head><body><h1>CONSUMO DE BEBIDAS — ${esc(quinzena)}ª QUINZENA (${esc(labelQuinzena(mes, quinzena))})</h1><table><thead><tr><th>Profissional</th>${head}${temPreco ? '<th>Total devido</th>' : ''}</tr></thead><tbody>${body}</tbody>${foot}</table><script>window.onload=function(){window.print()}</script></body></html>`
     const w = window.open('', '_blank', 'width=900,height=700'); if (!w) return; w.document.write(html); w.document.close(); w.focus()
   }
 
@@ -82,12 +107,21 @@ export default function ListaBebidas({ profsSalao }: { profsSalao: ProfSalao[] }
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
         <label style={{ fontSize: 13, fontWeight: 700, color: '#6b6860' }}>Mês:</label>
         <input type="month" value={mes} onChange={e => setMes(e.target.value)} style={{ padding: '7px 10px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13 }} />
+        <div style={{ display: 'inline-flex', border: '1.5px solid #d0cdc7', borderRadius: 8, overflow: 'hidden' }}>
+          {([1, 2] as const).map(q => (
+            <button key={q} onClick={() => trocarQuinzena(q)}
+              style={{ padding: '7px 11px', border: 'none', background: quinzena === q ? '#5b4fcf' : '#fff', color: quinzena === q ? '#fff' : '#6b6860', fontSize: 12.5, fontWeight: 800, cursor: 'pointer' }}>
+              {q}ª quinzena
+            </button>
+          ))}
+        </div>
+        <span style={{ fontSize: 12, fontWeight: 700, color: '#5b4fcf', background: '#f0eefb', borderRadius: 20, padding: '4px 11px' }}>{labelQuinzena(mes, quinzena)}</span>
         <button onClick={addColuna} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 8, border: '1px dashed #5b4fcf', background: '#f0eefb', color: '#5b4fcf', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}><Plus size={14} /> Adicionar bebida</button>
         <div style={{ flex: 1 }} />
         <button onClick={imprimir} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 8, border: '1px solid #d0cdc7', background: '#fff', color: '#374151', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}><Printer size={14} /> Imprimir</button>
         <button onClick={salvar} disabled={salvando} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 16px', borderRadius: 8, border: 'none', background: dirty ? '#16a34a' : '#a3b3a3', color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>{salvando ? '...' : <><Save size={14} /> Salvar</>}</button>
       </div>
-      <p style={{ fontSize: 12, color: '#6b6860', marginBottom: 10 }}>Os nomes vêm <strong>automaticamente do cadastro</strong> de profissionais. Preencha o consumo em cada célula e cadastre o <strong>valor de cada bebida</strong> (no cabeçalho) — o sistema soma o <strong>total devido</strong> de cada um. Lembre de <strong>Salvar</strong>.</p>
+      <p style={{ fontSize: 12, color: '#6b6860', marginBottom: 10 }}>Os nomes vêm <strong>automaticamente do cadastro</strong> de profissionais. Preencha o consumo da <strong>{quinzena}ª quinzena ({labelQuinzena(mes, quinzena)})</strong> e cadastre o <strong>valor de cada bebida</strong> (no cabeçalho) — o sistema soma o <strong>total devido</strong> de cada um. Cada quinzena é separada e fica no histórico. Lembre de <strong>Salvar</strong>.</p>
 
       {loading ? <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Loader2 size={24} className="animate-spin" style={{ color: '#5b4fcf' }} /></div> :
         profsLista.length === 0 ? <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af', fontSize: 14, background: '#fff', border: '1px dashed #d0cdc7', borderRadius: 12 }}>Nenhum profissional cadastrado ainda.</div> : (

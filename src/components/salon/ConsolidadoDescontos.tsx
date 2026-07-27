@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { Loader2, X, Printer, Coffee, Scissors, HandCoins, Wallet, Hand } from 'lucide-react'
+import { quinzenaDeHoje, labelQuinzena, nomeQuinzena, dataNaQuinzena, type Quinzena } from '@/lib/quinzena'
 
 interface Prof { id: string; nome: string }
 
@@ -9,9 +10,9 @@ interface Prof { id: string; nome: string }
 interface DocBebidas { colunas: { id: string; nome: string; preco?: string }[]; cells: Record<string, string> }
 interface Cel { t?: string }
 interface DocServ { tabelas?: { linhas?: Cel[][] }[] }
-interface DespItem { nome?: string; valor?: string; obs?: string }
+interface DespItem { nome?: string; valor?: string; obs?: string; data?: string }
 interface DadosCalc { despInd?: DespItem[]; extrasDespInd?: DespItem[] }
-interface KitSol { profissionalNome?: string; valor?: number; status?: string }
+interface KitSol { profissionalNome?: string; valor?: number; status?: string; data?: string }
 
 interface LinhaBebida { nome: string; valor: number }
 interface LinhaDesconto { nome: string; bebidas: LinhaBebida[]; bebidasTot: number; serv: number; emp: number; kits: number; total: number }
@@ -42,8 +43,31 @@ function matchProf(obs: string, profs: Prof[]): string | null {
   return best
 }
 
+const fetchGrid = (chave: string): Promise<any> => fetch(`/api/salon/grid?chave=${chave}`).then(r => r.ok ? r.json() : null).catch(() => null)
+
+// Bebidas da quinzena escolhida. Mês inteiro (q=0) junta 1ª+2ª; a 1ª cai de
+// volta na grade mensal antiga (bebidas_${mes}) quando ainda não migrou.
+async function bebidasDoPeriodo(mes: string, q: Quinzena): Promise<DocBebidas | null> {
+  const legado = () => fetchGrid(`bebidas_${mes}`)
+  if (q === 1) return (await fetchGrid(`bebidas_${mes}_q1`)) || (await legado())
+  if (q === 2) return await fetchGrid(`bebidas_${mes}_q2`)
+  // mês inteiro: soma as duas quinzenas
+  const [q1raw, q2] = await Promise.all([fetchGrid(`bebidas_${mes}_q1`), fetchGrid(`bebidas_${mes}_q2`)])
+  const q1 = q1raw || (await legado())
+  return mesclarBebidas(q1, q2)
+}
+function mesclarBebidas(a: DocBebidas | null, b: DocBebidas | null): DocBebidas | null {
+  if (!a && !b) return null
+  const colunas = [...(a?.colunas || [])]
+  for (const c of (b?.colunas || [])) { const j = colunas.find(x => x.id === c.id); if (!j) colunas.push(c); else if (!j.preco && c.preco) j.preco = c.preco }
+  const cells: Record<string, string> = {}
+  for (const src of [a?.cells || {}, b?.cells || {}]) for (const [k, v] of Object.entries(src)) cells[k] = String((Number(cells[k]) || 0) + (Number(v) || 0))
+  return { colunas, cells }
+}
+
 export default function ConsolidadoDescontos({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [mes, setMes] = useState(mesAtual())
+  const [quinzena, setQuinzena] = useState<Quinzena>(quinzenaDeHoje())
   const [loading, setLoading] = useState(false)
   const [linhas, setLinhas] = useState<LinhaDesconto[]>([])
 
@@ -53,8 +77,8 @@ export default function ConsolidadoDescontos({ open, onClose }: { open: boolean;
       const [ano, mesNum] = mes.split('-').map(Number)
       const [profsRaw, bebidas, serv, calc, kitsResp] = await Promise.all([
         fetch('/api/profissionais').then(r => r.ok ? r.json() : []).catch(() => []),
-        fetch(`/api/salon/grid?chave=bebidas_${mes}`).then(r => r.ok ? r.json() : null).catch(() => null) as Promise<DocBebidas | null>,
-        fetch(`/api/salon/grid?chave=servinterno_${mes}`).then(r => r.ok ? r.json() : null).catch(() => null) as Promise<DocServ | null>,
+        bebidasDoPeriodo(mes, quinzena),
+        fetchGrid(`servinterno_${mes}`) as Promise<DocServ | null>,
         fetch(`/api/salon/calculadora?ano=${ano}&mes=${mesNum}`, { credentials: 'include' }).then(r => r.ok ? r.json() : null).catch(() => null),
         fetch(`/api/kits/solicitacoes?mes=${mes}`).then(r => r.ok ? r.json() : null).catch(() => null),
       ])
@@ -87,34 +111,38 @@ export default function ConsolidadoDescontos({ open, onClose }: { open: boolean;
         }
       }
 
-      // 2) SERVIÇOS INTERNOS — soma de todos os lançamentos de cada profissional
+      // 2) SERVIÇOS INTERNOS — soma dos lançamentos da quinzena (pela data do item)
       const linhasServ = serv?.tabelas?.[0]?.linhas || []
       for (const l of linhasServ) {
         const profNome = (l[3]?.t || '').trim()
         const valor = parseValor(l[4]?.t || '')
         if (!profNome || valor <= 0) continue
+        if (!dataNaQuinzena(l[0]?.t || '', mes, quinzena)) continue
         pega(profNome).serv += valor
       }
 
-      // 3) EMPRÉSTIMOS — despesas indiretas com nome do profissional na observação
+      // 3) EMPRÉSTIMOS — despesas indiretas com nome do profissional na observação.
+      //    Filtra pela data do lançamento; sem data cai só no "mês inteiro".
       const dados: DadosCalc = calc?.dados || {}
       const itensCalc = [...(dados.despInd || []), ...(dados.extrasDespInd || [])]
       for (const it of itensCalc) {
         const valor = parseValor(it.valor || '')
         if (valor <= 0 || !ehEmprestimo(it.nome || '')) continue
+        if (!dataNaQuinzena(it.data || '', mes, quinzena)) continue
         const profNome = matchProf(it.obs || '', profs)
         if (!profNome) continue
         pega(profNome).emp += valor
       }
 
-      // 4) KITS PÉ E MÃO — só os já SEPARADOS pelo salão; várias solicitações no
-      //    mesmo mês vão somando no total da manicure
+      // 4) KITS PÉ E MÃO — só os já SEPARADOS pelo salão, na quinzena do PEDIDO;
+      //    várias solicitações no mesmo período vão somando no total da manicure
       const kitsList: KitSol[] = Array.isArray(kitsResp?.solicitacoes) ? kitsResp.solicitacoes : []
       for (const k of kitsList) {
         if (k.status !== 'separado') continue
         const valor = Number(k.valor) || 0
         const nome = (k.profissionalNome || '').trim()
         if (valor <= 0 || !nome) continue
+        if (!dataNaQuinzena(k.data || '', mes, quinzena)) continue
         pega(nome).kits += valor
       }
 
@@ -125,7 +153,7 @@ export default function ConsolidadoDescontos({ open, onClose }: { open: boolean;
       setLinhas(lista)
     } catch { setLinhas([]) }
     setLoading(false)
-  }, [mes])
+  }, [mes, quinzena])
 
   useEffect(() => { if (open) carregar() }, [open, carregar])
 
@@ -142,7 +170,7 @@ export default function ConsolidadoDescontos({ open, onClose }: { open: boolean;
       return `<tr><td class="nm">${esc(r.nome)}</td><td class="det">${partes.join('  ·  ') || '—'}</td><td class="tot">R$ ${fmtBRL(r.total)}</td></tr>`
     }).join('')
     const css = `@page{size:A4 portrait;margin:12mm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;font-size:11px}h1{text-align:center;font-size:16px;color:${COR};margin-bottom:4px}.sub{text-align:center;font-size:11px;color:#777;margin-bottom:12px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #f0ede6;padding:7px 9px;text-align:left;vertical-align:top}th{background:#f6f4ff;color:${COR};border-bottom:2px solid ${COR};font-size:10px;text-transform:uppercase}.nm{font-weight:800;white-space:nowrap}.det{font-size:10.5px;color:#555}.tot{font-weight:800;color:#15803d;text-align:right;white-space:nowrap}tfoot td{background:#f0fdf4;color:#15803d;font-weight:900;border-top:2px solid ${COR}}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}`
-    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Desconto do mês</title><style>${css}</style></head><body><h1>DESCONTO DO MÊS — CONSOLIDADO</h1><div class="sub">${esc(mes.split('-').reverse().join('/'))} · bebidas + serviços internos + kits pé e mão + empréstimos</div><table><thead><tr><th>Profissional</th><th>Descontos</th><th style="text-align:right">Total devido</th></tr></thead><tbody>${rows}</tbody><tfoot><tr><td colspan="2">TOTAL GERAL</td><td style="text-align:right">R$ ${fmtBRL(totalGeral)}</td></tr></tfoot></table><script>window.onload=function(){window.print()}</script></body></html>`
+    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Desconto do mês</title><style>${css}</style></head><body><h1>DESCONTO DO MÊS — CONSOLIDADO</h1><div class="sub">${esc(nomeQuinzena(quinzena))} · ${esc(labelQuinzena(mes, quinzena))} · bebidas + serviços internos + kits pé e mão + empréstimos</div><table><thead><tr><th>Profissional</th><th>Descontos</th><th style="text-align:right">Total devido</th></tr></thead><tbody>${rows}</tbody><tfoot><tr><td colspan="2">TOTAL GERAL</td><td style="text-align:right">R$ ${fmtBRL(totalGeral)}</td></tr></tfoot></table><script>window.onload=function(){window.print()}</script></body></html>`
     const w = window.open('', '_blank', 'width=900,height=700'); if (!w) return; w.document.write(html); w.document.close(); w.focus()
   }
 
@@ -164,6 +192,15 @@ export default function ConsolidadoDescontos({ open, onClose }: { open: boolean;
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
             <label style={{ fontSize: 12, fontWeight: 700 }}>Mês:</label>
             <input type="month" value={mes} onChange={e => setMes(e.target.value)} style={{ padding: '6px 9px', borderRadius: 8, border: 'none', fontSize: 13, color: '#1a1a1a' }} />
+            <div style={{ display: 'inline-flex', borderRadius: 8, overflow: 'hidden', border: '1px solid rgba(255,255,255,.5)' }}>
+              {([1, 2, 0] as const).map(q => (
+                <button key={q} onClick={() => setQuinzena(q)}
+                  style={{ padding: '6px 10px', border: 'none', background: quinzena === q ? '#fff' : 'rgba(255,255,255,.12)', color: quinzena === q ? COR : '#fff', fontSize: 12, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                  {q === 0 ? 'Mês inteiro' : `${q}ª quinzena`}
+                </button>
+              ))}
+            </div>
+            <span style={{ fontSize: 11.5, fontWeight: 700, background: 'rgba(255,255,255,.2)', borderRadius: 20, padding: '4px 10px', whiteSpace: 'nowrap' }}>{labelQuinzena(mes, quinzena)}</span>
             <div style={{ flex: 1 }} />
             <button onClick={imprimir} disabled={loading || linhas.length === 0} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 13px', borderRadius: 8, border: 'none', background: '#fff', color: COR, fontSize: 12.5, fontWeight: 800, cursor: linhas.length ? 'pointer' : 'default', opacity: linhas.length ? 1 : .6 }}><Printer size={14} /> Imprimir</button>
           </div>
@@ -175,7 +212,7 @@ export default function ConsolidadoDescontos({ open, onClose }: { open: boolean;
             <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Loader2 size={26} className="animate-spin" style={{ color: COR }} /></div>
           ) : linhas.length === 0 ? (
             <div style={{ textAlign: 'center', padding: 34, color: '#9ca3af', fontSize: 13.5, background: '#fff', border: '1px dashed #d0cdc7', borderRadius: 12 }}>
-              Nenhum valor a descontar neste mês.<br />
+              Nenhum valor a descontar na {nomeQuinzena(quinzena).toLowerCase()} ({labelQuinzena(mes, quinzena)}).<br />
               <span style={{ fontSize: 12 }}>Cadastre o preço das bebidas, lance serviços internos, empréstimos (na calculadora, com o nome do profissional) e/ou separe kits pé e mão para que apareçam aqui.</span>
             </div>
           ) : (

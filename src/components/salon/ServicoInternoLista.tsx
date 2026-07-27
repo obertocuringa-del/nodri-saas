@@ -7,6 +7,7 @@ import { getLogoSalao } from '@/lib/logoSalao'
 import { useIsMobile } from '@/lib/useIsMobile'
 import { cel, type Cell } from './GridEditavel'
 import { useGuardaSalvar } from '@/lib/guardaSalvar'
+import { quinzenaDeHoje, labelQuinzena, nomeQuinzena, dataNaQuinzena, type Quinzena } from '@/lib/quinzena'
 
 interface ProfSalao { id: string; nome: string; telefone?: string }
 interface Item { id: string; data: string; produto: string; quantidade: string; unidade: string; profissional: string; valor: string }
@@ -43,6 +44,7 @@ function fmtBRL(n: number) { return n.toLocaleString('pt-BR', { minimumFractionD
 export default function ServicoInternoLista({ chave = 'servinterno', profsSalao = [] }: { chave?: string; profsSalao?: ProfSalao[] }) {
   const mobile = useIsMobile()
   const [mes, setMes] = useState(mesAtual())
+  const [quinzena, setQuinzena] = useState<Quinzena>(quinzenaDeHoje())
   const [items, setItems] = useState<Item[]>([])
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
@@ -117,17 +119,25 @@ export default function ServicoInternoLista({ chave = 'servinterno', profsSalao 
     setItems(prev => prev.filter(x => x.id !== id)); setDirty(true)
   }
 
+  // Só os lançamentos da quinzena escolhida (o mês inteiro fica salvo; a virada
+  // "zera" a vista e o histórico segue acessível pelo seletor de quinzena).
+  const itensPeriodo = items.filter(it => dataNaQuinzena(it.data, mes, quinzena))
   const buscaN = busca.trim().toLowerCase()
-  const itensFiltrados = buscaN ? items.filter(it => it.produto.toLowerCase().includes(buscaN) || it.profissional.toLowerCase().includes(buscaN)) : items
+  const itensFiltrados = buscaN ? itensPeriodo.filter(it => it.produto.toLowerCase().includes(buscaN) || it.profissional.toLowerCase().includes(buscaN)) : itensPeriodo
 
-  const valorTotal = items.reduce((a, it) => a + parseValor(it.valor), 0)
-  const profissionaisEnvolvidos = new Set(items.map(it => it.profissional.trim()).filter(Boolean)).size
+  const valorTotal = itensPeriodo.reduce((a, it) => a + parseValor(it.valor), 0)
+  const profissionaisEnvolvidos = new Set(itensPeriodo.map(it => it.profissional.trim()).filter(Boolean)).size
   const produtosSugeridos = Array.from(new Set(items.map(it => it.produto).filter(Boolean)))
 
-  // ── Resumo por profissional (total devido) — soma tudo de cada um ──
+  function trocarQuinzena(q: Quinzena) {
+    if (q === quinzena) return
+    setQuinzena(q)
+  }
+
+  // ── Resumo por profissional (total devido) — soma tudo de cada um na quinzena ──
   const resumoProf = (() => {
     const mapa = new Map<string, { nome: string; total: number; itens: number }>()
-    items.forEach(it => {
+    itensPeriodo.forEach(it => {
       const nome = it.profissional.trim()
       if (!nome) return
       const chave = nome.toLowerCase()
@@ -141,12 +151,12 @@ export default function ServicoInternoLista({ chave = 'servinterno', profsSalao 
   async function imprimir() {
     const logoSalao = await getLogoSalao()
     const esc = (v: any) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    const linhas = items.map(it => `<tr><td>${esc(it.data)}</td><td>${esc(it.produto)}</td><td>${esc(fmtQtd(it.quantidade, it.unidade))}</td><td>${esc(it.profissional)}</td><td>R$ ${esc(it.valor)}</td></tr>`).join('')
+    const linhas = itensPeriodo.map(it => `<tr><td>${esc(it.data)}</td><td>${esc(it.produto)}</td><td>${esc(fmtQtd(it.quantidade, it.unidade))}</td><td>${esc(it.profissional)}</td><td>R$ ${esc(it.valor)}</td></tr>`).join('')
     const cab = logoSalao ? `<img src="${logoSalao}" style="max-height:54px;max-width:190px;object-fit:contain"/>` : `<div style="font-size:22px;font-weight:900;color:${COR}">NODRI</div>`
     const css = `@page{size:A4 portrait;margin:12mm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;font-size:11px}.hd{display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid ${COR};padding-bottom:8px;margin-bottom:12px}h1{font-size:15px;margin-bottom:10px;text-transform:uppercase}table{width:100%;border-collapse:collapse}th,td{border:1px solid #f0ede6;text-align:left;padding:6px 8px}th{background:#f6f4ff;color:${COR};border-bottom:2px solid ${COR};font-size:10px;text-transform:uppercase}tfoot td{background:#f6f4ff;color:${COR};font-weight:800;border-top:2px solid ${COR}}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}`
     const resumoLinhas = resumoProf.map(r => `<tr><td class="nm">${esc(r.nome)}</td><td style="text-align:right;font-weight:800;color:#15803d">R$ ${fmtBRL(r.total)}</td></tr>`).join('')
     const resumoHtml = resumoProf.length ? `<h1 style="margin-top:22px">TOTAL DEVIDO POR PROFISSIONAL</h1><table class="resumo"><thead><tr><th>Profissional</th><th style="text-align:right">Total devido</th></tr></thead><tbody>${resumoLinhas}</tbody><tfoot><tr><td>TOTAL GERAL</td><td style="text-align:right">R$ ${fmtBRL(valorTotal)}</td></tr></tfoot></table>` : ''
-    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Serviço Interno</title><style>${css}.resumo .nm{font-weight:700}.resumo td{font-size:12px}</style></head><body><div class="hd">${cab}<span style="font-size:10px;color:#777">${new Date().toLocaleDateString('pt-BR')}</span></div><h1>${esc(TITULO_TABELA)} — ${esc(mes.split('-').reverse().join('/'))}</h1><table><thead><tr><th>Data</th><th>Produto</th><th>Quantidade</th><th>Profissional</th><th>Valor</th></tr></thead><tbody>${linhas}</tbody><tfoot><tr><td colspan="4">TOTAL</td><td>R$ ${fmtBRL(valorTotal)}</td></tr></tfoot></table>${resumoHtml}<script>window.onload=function(){window.print()}</script></body></html>`
+    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Serviço Interno</title><style>${css}.resumo .nm{font-weight:700}.resumo td{font-size:12px}</style></head><body><div class="hd">${cab}<span style="font-size:10px;color:#777">${new Date().toLocaleDateString('pt-BR')}</span></div><h1>${esc(TITULO_TABELA)} — ${esc(nomeQuinzena(quinzena))} (${esc(labelQuinzena(mes, quinzena))})</h1><table><thead><tr><th>Data</th><th>Produto</th><th>Quantidade</th><th>Profissional</th><th>Valor</th></tr></thead><tbody>${linhas}</tbody><tfoot><tr><td colspan="4">TOTAL</td><td>R$ ${fmtBRL(valorTotal)}</td></tr></tfoot></table>${resumoHtml}<script>window.onload=function(){window.print()}</script></body></html>`
     const w = window.open('', '_blank', 'width=900,height=700'); if (!w) return; w.document.write(html); w.document.close(); w.focus()
   }
 
@@ -162,6 +172,15 @@ export default function ServicoInternoLista({ chave = 'servinterno', profsSalao 
       <div style={{ position: 'sticky', top: 0, zIndex: 20, background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: '10px 12px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', boxShadow: '0 2px 8px rgba(0,0,0,.05)' }}>
         <label style={{ fontSize: 12, fontWeight: 700, color: '#6b6860' }}>Mês:</label>
         <input type="month" value={mes} onChange={e => setMes(e.target.value)} style={{ padding: '7px 9px', borderRadius: 8, border: '1px solid #d0cdc7', fontSize: 13 }} />
+        <div style={{ display: 'inline-flex', border: '1px solid #d0cdc7', borderRadius: 8, overflow: 'hidden' }}>
+          {([1, 2, 0] as const).map(q => (
+            <button key={q} onClick={() => trocarQuinzena(q)}
+              style={{ padding: '7px 10px', border: 'none', background: quinzena === q ? '#5b4fcf' : '#fff', color: quinzena === q ? '#fff' : '#6b6860', fontSize: 12, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+              {q === 0 ? 'Mês inteiro' : `${q}ª quinz.`}
+            </button>
+          ))}
+        </div>
+        <span style={{ fontSize: 11.5, fontWeight: 700, color: '#5b4fcf', background: '#f0eefb', borderRadius: 20, padding: '4px 10px', whiteSpace: 'nowrap' }}>{labelQuinzena(mes, quinzena)}</span>
         <div style={{ position: 'relative', flex: '1 1 200px', minWidth: 180 }}>
           <Search size={14} color="#9ca3af" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)' }} />
           <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar produto, profissional..."
@@ -185,7 +204,9 @@ export default function ServicoInternoLista({ chave = 'servinterno', profsSalao 
       {loading ? <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Loader2 size={24} className="animate-spin" style={{ color: COR }} /></div> : (
         itensFiltrados.length === 0 ? (
           <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af', fontSize: 14, background: '#fff', border: '1px dashed #d0cdc7', borderRadius: 12 }}>
-            {items.length === 0 ? <>Nenhum produto ainda. Clique em <strong style={{ color: COR }}>+ Adicionar Produto</strong> para começar.</> : 'Nenhum item encontrado para essa busca.'}
+            {items.length === 0 ? <>Nenhum produto ainda. Clique em <strong style={{ color: COR }}>+ Adicionar Produto</strong> para começar.</>
+              : itensPeriodo.length === 0 ? <>Nenhum lançamento na <strong>{nomeQuinzena(quinzena)}</strong> ({labelQuinzena(mes, quinzena)}). Veja em <strong>Mês inteiro</strong> ou na outra quinzena.</>
+              : 'Nenhum item encontrado para essa busca.'}
           </div>
         ) : mobile ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
