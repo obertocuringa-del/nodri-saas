@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useCallback, useRef, Fragment } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Loader2, Save, Plus, Trash2, Check, X, BarChart3, Copy, RotateCcw, Pencil, Calendar, ArrowRightLeft, ArrowDownAZ, ChevronDown, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, Loader2, Save, Plus, Trash2, Check, X, BarChart3, Copy, RotateCcw, Pencil, Calendar, ArrowRightLeft, ArrowDownAZ, ChevronDown, CheckCircle2, HandCoins } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { CHECKLIST_DEFAULT, FREQUENCIAS } from '@/components/salon/checklistDefaults'
 import { usePermissoes } from '@/lib/usePermissoes'
 import { useIsMobile } from '@/lib/useIsMobile'
 import { useGuardaSalvar } from '@/lib/guardaSalvar'
+import ConsolidadoDescontos from '@/components/salon/ConsolidadoDescontos'
 
 interface Demanda { id: string; texto: string; freq: string; feito: boolean; dias?: string[]; feito_em?: string; historico?: string[] }
 interface Categoria { id: string; nome: string; demandas: Demanda[] }
@@ -74,6 +75,7 @@ export default function ChecklistPage() {
   useGuardaSalvar(dirty, 'Check List') // avisa "Deseja salvar?" antes de sair sem salvar
   const [verRelatorio, setVerRelatorio] = useState(false)
   const [verComuns, setVerComuns] = useState(false)
+  const [descontoOpen, setDescontoOpen] = useState(false)
   const [diasOpen, setDiasOpen] = useState<string | null>(null)
   const [transferOpen, setTransferOpen] = useState<string | null>(null)
   // Posição dos menus flutuantes (fixos na tela — não são cortados pela rolagem interna dos cards)
@@ -295,6 +297,20 @@ export default function ChecklistPage() {
       <div style={{ margin: '0 auto', padding: isMobile ? 16 : '16px 28px' }}>
         {loading ? <div style={{ display: 'flex', justifyContent: 'center', padding: 50 }}><Loader2 size={26} className="animate-spin" style={{ color: '#5b4fcf' }} /></div> : (<>
 
+          {/* 💸 LANÇAR DESCONTO — fixo no topo: consolida o desconto mensal de cada
+              profissional (bebidas + serviços internos + empréstimos) numa lista só */}
+          {!soLeitura && (
+            <button onClick={() => setDescontoOpen(true)}
+              style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 12, background: 'linear-gradient(135deg,#16a34a,#15803d)', color: '#fff', border: 'none', borderRadius: 14, padding: isMobile ? '13px 15px' : '15px 18px', marginBottom: 14, cursor: 'pointer', boxShadow: '0 8px 22px rgba(22,163,74,.28)' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, borderRadius: 10, background: 'rgba(255,255,255,.22)', flexShrink: 0 }}><HandCoins size={22} /></span>
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <strong style={{ display: 'block', fontSize: 15, fontWeight: 900, letterSpacing: '.2px' }}>💸 LANÇAR DESCONTO (mensal)</strong>
+                <span style={{ fontSize: 12, opacity: .95 }}>Puxa tudo a ser descontado de cada profissional — bebidas, serviços internos e empréstimos — numa lista só.</span>
+              </span>
+              <span style={{ fontSize: 22, opacity: .9, flexShrink: 0 }}>›</span>
+            </button>
+          )}
+
           {/* Celular: linha única e harmônica de ações (o Salvar fica na barra fixa
               do topo; o botão real fica invisível aqui só para o topo acioná-lo) */}
           {isMobile && (
@@ -496,6 +512,8 @@ export default function ChecklistPage() {
           )}
         </>)}
       </div>
+
+      <ConsolidadoDescontos open={descontoOpen} onClose={() => setDescontoOpen(false)} />
     </div>
   )
 }

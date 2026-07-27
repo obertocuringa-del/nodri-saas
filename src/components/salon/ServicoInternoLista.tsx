@@ -124,13 +124,29 @@ export default function ServicoInternoLista({ chave = 'servinterno', profsSalao 
   const profissionaisEnvolvidos = new Set(items.map(it => it.profissional.trim()).filter(Boolean)).size
   const produtosSugeridos = Array.from(new Set(items.map(it => it.produto).filter(Boolean)))
 
+  // ── Resumo por profissional (total devido) — soma tudo de cada um ──
+  const resumoProf = (() => {
+    const mapa = new Map<string, { nome: string; total: number; itens: number }>()
+    items.forEach(it => {
+      const nome = it.profissional.trim()
+      if (!nome) return
+      const chave = nome.toLowerCase()
+      const r = mapa.get(chave) || { nome, total: 0, itens: 0 }
+      r.total += parseValor(it.valor); r.itens += 1
+      mapa.set(chave, r)
+    })
+    return Array.from(mapa.values()).sort((a, b) => b.total - a.total)
+  })()
+
   async function imprimir() {
     const logoSalao = await getLogoSalao()
     const esc = (v: any) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     const linhas = items.map(it => `<tr><td>${esc(it.data)}</td><td>${esc(it.produto)}</td><td>${esc(fmtQtd(it.quantidade, it.unidade))}</td><td>${esc(it.profissional)}</td><td>R$ ${esc(it.valor)}</td></tr>`).join('')
     const cab = logoSalao ? `<img src="${logoSalao}" style="max-height:54px;max-width:190px;object-fit:contain"/>` : `<div style="font-size:22px;font-weight:900;color:${COR}">NODRI</div>`
     const css = `@page{size:A4 portrait;margin:12mm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;font-size:11px}.hd{display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid ${COR};padding-bottom:8px;margin-bottom:12px}h1{font-size:15px;margin-bottom:10px;text-transform:uppercase}table{width:100%;border-collapse:collapse}th,td{border:1px solid #f0ede6;text-align:left;padding:6px 8px}th{background:#f6f4ff;color:${COR};border-bottom:2px solid ${COR};font-size:10px;text-transform:uppercase}tfoot td{background:#f6f4ff;color:${COR};font-weight:800;border-top:2px solid ${COR}}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}`
-    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Serviço Interno</title><style>${css}</style></head><body><div class="hd">${cab}<span style="font-size:10px;color:#777">${new Date().toLocaleDateString('pt-BR')}</span></div><h1>${esc(TITULO_TABELA)} — ${esc(mes.split('-').reverse().join('/'))}</h1><table><thead><tr><th>Data</th><th>Produto</th><th>Quantidade</th><th>Profissional</th><th>Valor</th></tr></thead><tbody>${linhas}</tbody><tfoot><tr><td colspan="4">TOTAL</td><td>R$ ${fmtBRL(valorTotal)}</td></tr></tfoot></table><script>window.onload=function(){window.print()}</script></body></html>`
+    const resumoLinhas = resumoProf.map(r => `<tr><td class="nm">${esc(r.nome)}</td><td style="text-align:right;font-weight:800;color:#15803d">R$ ${fmtBRL(r.total)}</td></tr>`).join('')
+    const resumoHtml = resumoProf.length ? `<h1 style="margin-top:22px">TOTAL DEVIDO POR PROFISSIONAL</h1><table class="resumo"><thead><tr><th>Profissional</th><th style="text-align:right">Total devido</th></tr></thead><tbody>${resumoLinhas}</tbody><tfoot><tr><td>TOTAL GERAL</td><td style="text-align:right">R$ ${fmtBRL(valorTotal)}</td></tr></tfoot></table>` : ''
+    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Serviço Interno</title><style>${css}.resumo .nm{font-weight:700}.resumo td{font-size:12px}</style></head><body><div class="hd">${cab}<span style="font-size:10px;color:#777">${new Date().toLocaleDateString('pt-BR')}</span></div><h1>${esc(TITULO_TABELA)} — ${esc(mes.split('-').reverse().join('/'))}</h1><table><thead><tr><th>Data</th><th>Produto</th><th>Quantidade</th><th>Profissional</th><th>Valor</th></tr></thead><tbody>${linhas}</tbody><tfoot><tr><td colspan="4">TOTAL</td><td>R$ ${fmtBRL(valorTotal)}</td></tr></tfoot></table>${resumoHtml}<script>window.onload=function(){window.print()}</script></body></html>`
     const w = window.open('', '_blank', 'width=900,height=700'); if (!w) return; w.document.write(html); w.document.close(); w.focus()
   }
 
@@ -222,6 +238,31 @@ export default function ServicoInternoLista({ chave = 'servinterno', profsSalao 
             </table>
           </div>
         )
+      )}
+
+      {/* ── Total devido por profissional (soma de todos os lançamentos de cada um) ── */}
+      {!loading && resumoProf.length > 0 && (
+        <div style={{ marginTop: 18, background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', background: '#f0fdf4', borderBottom: '1px solid #dcfce7' }}>
+            <Users size={16} color="#16a34a" />
+            <strong style={{ fontSize: 13.5, color: '#15803d' }}>Total devido por profissional</strong>
+            <span style={{ flex: 1 }} />
+            <span style={{ fontSize: 12, color: '#6b6860' }}>{resumoProf.length} profissional{resumoProf.length > 1 ? 'is' : ''}</span>
+          </div>
+          <div>
+            {resumoProf.map((r, i) => (
+              <div key={r.nome} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 16px', borderTop: i === 0 ? 'none' : '1px solid #f0eee8' }}>
+                <span style={{ fontWeight: 700, color: '#1a1a1a', fontSize: 13.5, flex: 1 }}>{r.nome}</span>
+                <span style={{ fontSize: 11.5, color: '#9ca3af' }}>{r.itens} item{r.itens > 1 ? 's' : ''}</span>
+                <strong style={{ fontSize: 15, color: '#16a34a', minWidth: 96, textAlign: 'right' }}>R$ {fmtBRL(r.total)}</strong>
+              </div>
+            ))}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderTop: '2px solid #dcfce7', background: '#f6fef9' }}>
+              <span style={{ fontWeight: 900, color: '#15803d', fontSize: 13.5, flex: 1 }}>TOTAL GERAL</span>
+              <strong style={{ fontSize: 16, color: '#15803d', minWidth: 96, textAlign: 'right' }}>R$ {fmtBRL(valorTotal)}</strong>
+            </div>
+          </div>
+        </div>
       )}
 
       {modal && (
