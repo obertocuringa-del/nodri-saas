@@ -980,7 +980,12 @@ export default function CalculadoraCusto() {
             }
           }).catch(()=>{})
         setTimeout(() => setSavedMsg(''), 3000)
+      } else {
+        const e = await res.json().catch(() => ({} as any))
+        alert(e?.error || 'Não foi possível salvar. Tente novamente.')
       }
+    } catch {
+      alert('Erro de conexão ao salvar. Verifique a internet e tente novamente.')
     } finally { setSalvando(false) }
   }
 

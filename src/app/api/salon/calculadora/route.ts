@@ -52,15 +52,18 @@ export async function POST(req: NextRequest) {
   const { ano, mes, dados } = await req.json()
   if (!ano || !mes || !dados) return NextResponse.json({ error: 'ano, mes e dados são obrigatórios' }, { status: 400 })
 
-  // Modo Caixa: pode lançar despesas e preencher o mês, mas não pode alterar
-  // nem apagar valores já salvos — compara com o que existe antes de aceitar
+  // Modo Caixa: pode LANÇAR/ADICIONAR despesas (inclusive a data), mas não pode
+  // alterar nem apagar o que já foi lançado. Protegemos SÓ as listas de despesas
+  // — o resto (faturamento, serviços globais, config, campos recalculados) é
+  // livre, senão qualquer variação global travava até uma adição legítima.
   const sess = await getSessao()
   if (sess?.role === 'profissional') return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
   if (sessaoModoCaixa(sess)) {
     const { data: atual } = await supabaseAdmin
       .from('calculadora_historico').select('dados')
       .eq('salao_id', salaoId).eq('ano', Number(ano)).eq('mes', Number(mes)).maybeSingle()
-    if (atual?.dados && !apenasAcrescenta(atual.dados, dados)) {
+    const soDespesas = (d: any) => ({ despInd: d?.despInd, extrasDespInd: d?.extrasDespInd })
+    if (atual?.dados && !apenasAcrescenta(soDespesas(atual.dados), soDespesas(dados))) {
       return NextResponse.json({ error: 'Modo Caixa: você pode lançar e ADICIONAR despesas, mas não pode alterar nem excluir valores já salvos.' }, { status: 403 })
     }
   }
