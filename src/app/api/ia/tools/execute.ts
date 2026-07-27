@@ -17,14 +17,32 @@ function encontrarProfissional(nome: string, profissionais: any[]) {
   )
 }
 
-export async function executarFerramenta(nome: string, args: any, salaoId: string): Promise<string> {
+export async function executarFerramenta(nome: string, args: any, salaoId: string, profissionalId?: string): Promise<string> {
   try {
+    // 🔒 MODO PROFISSIONAL: ferramentas que expõem dados do salão ou de colegas
+    // são BLOQUEADAS no servidor (não confiar só no prompt). O profissional só
+    // enxerga a si mesmo.
+    if (profissionalId) {
+      const bloqueadasNoProf = new Set([
+        'buscar_indicadores_salao',
+        'buscar_comparativo_profissionais',
+        'buscar_feedbacks_clientes',
+        'buscar_faturamento_por_dia_semana',
+      ])
+      if (bloqueadasNoProf.has(nome)) {
+        return 'Neste chat consigo mostrar apenas os seus próprios dados. Dados de outros profissionais ou do salão como um todo só ficam disponíveis no painel do gestor.'
+      }
+    }
     switch (nome) {
 
       case 'buscar_dados_profissional': {
         const { data: profs } = await supabaseAdmin.from('profissionais').select('*').eq('salao_id', salaoId)
         const prof = encontrarProfissional(args.nome || '', profs || [])
         if (!prof) return `Profissional "${args.nome}" não encontrado.`
+        // 🔒 MODO PROFISSIONAL: só pode consultar a si mesmo.
+        if (profissionalId && prof.id !== profissionalId) {
+          return 'Neste chat consigo mostrar apenas os seus próprios dados. Para ver dados de outros profissionais, o gestor pode acessar o painel principal.'
+        }
 
         const [{ data: periodos }, { data: ocorrs }, { data: pendencias }] = await Promise.all([
           // FONTE CORRETA: relatorio_periodos (mesma fonte da tela de Faturamento)

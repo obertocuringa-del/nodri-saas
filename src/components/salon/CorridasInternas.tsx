@@ -74,7 +74,7 @@ export default function CorridasInternas() {
   function novo() {
     const hoje = new Date()
     const ym = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`
-    setEdit({ id: ridC(), titulo: '', metrica: 'faturamento', de: ym, ate: ym, topPremiado: 3, ativa: true, criadoEm: Date.now() })
+    setEdit({ id: ridC(), titulo: '', metrica: 'faturamento', de: ym, ate: ym, topPremiado: 3, ocultarValores: true, ativa: true, criadoEm: Date.now() })
   }
 
   async function salvarCorrida(c: CorridaInterna) {

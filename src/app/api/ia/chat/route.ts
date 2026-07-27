@@ -68,7 +68,8 @@ async function executarLoopFerramentas(
   history: any[],
   modelo: string,
   apiKey: string,
-  salaoId: string
+  salaoId: string,
+  profissionalId?: string,
 ): Promise<any[]> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${apiKey}`
   let loop = [...history]
@@ -95,7 +96,7 @@ async function executarLoopFerramentas(
       funcCalls.map(async (p: any) => ({
         functionResponse: {
           name: p.functionCall.name,
-          response: { result: await executarFerramenta(p.functionCall.name, p.functionCall.args, salaoId) },
+          response: { result: await executarFerramenta(p.functionCall.name, p.functionCall.args, salaoId, profissionalId) },
         },
       }))
     )
@@ -441,24 +442,28 @@ function formatarDadosSalao(dados: any, profissionalId?: string): string {
   // Metas do salão e por profissional (salvas pelo gestor)
   if (dados.metas_salao?.length) {
     const MESES_M = ['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
-    linhas.push('## METAS DO SALÃO (configuradas pelo gestor)')
-    for (const m of dados.metas_salao) {
-      const per = `${MESES_M[m.mes]}/${m.ano}`
-      linhas.push(`### Metas de ${per}`)
-      linhas.push(`  Meta bruta total: R$${Number(m.meta_valor||0).toFixed(2)} | Meta em comissões: R$${Number(m.meta_em_comissoes||0).toFixed(2)}`)
-      if (m.metas_profissionais?.length) {
-        linhas.push(`  META POR PROFISSIONAL (${per}):`)
-        linhas.push(`  Nome | Cargo | Meta Original | Meta Redistribuída | Realizado | Tipo`)
-        for (const mp of m.metas_profissionais) {
-          const realPct = mp.meta_redistribuida > 0 ? ` (${Math.round(mp.realizado/mp.meta_redistribuida*100)}% atingido)` : ''
-          linhas.push(`  ${mp.nome} (${mp.cargo}): Meta=${fmtR(mp.meta_original)}, Meta Redistribuída=${fmtR(mp.meta_redistribuida)}, Realizado=${fmtR(mp.realizado)}${realPct}, Tipo=${mp.tipo_redistribuicao}`)
-          if (mp.motivo_redistribuicao && mp.tipo_redistribuicao !== 'neutro') {
-            linhas.push(`    → ${mp.motivo_redistribuicao}`)
+    // 🔒 A tabela com nome+meta+realizado de TODOS só no modo gestor. No modo
+    // profissional isso vazaria dados dos colegas — só entra o bloco dele abaixo.
+    if (!profissionalId) {
+      linhas.push('## METAS DO SALÃO (configuradas pelo gestor)')
+      for (const m of dados.metas_salao) {
+        const per = `${MESES_M[m.mes]}/${m.ano}`
+        linhas.push(`### Metas de ${per}`)
+        linhas.push(`  Meta bruta total: R$${Number(m.meta_valor||0).toFixed(2)} | Meta em comissões: R$${Number(m.meta_em_comissoes||0).toFixed(2)}`)
+        if (m.metas_profissionais?.length) {
+          linhas.push(`  META POR PROFISSIONAL (${per}):`)
+          linhas.push(`  Nome | Cargo | Meta Original | Meta Redistribuída | Realizado | Tipo`)
+          for (const mp of m.metas_profissionais) {
+            const realPct = mp.meta_redistribuida > 0 ? ` (${Math.round(mp.realizado/mp.meta_redistribuida*100)}% atingido)` : ''
+            linhas.push(`  ${mp.nome} (${mp.cargo}): Meta=${fmtR(mp.meta_original)}, Meta Redistribuída=${fmtR(mp.meta_redistribuida)}, Realizado=${fmtR(mp.realizado)}${realPct}, Tipo=${mp.tipo_redistribuicao}`)
+            if (mp.motivo_redistribuicao && mp.tipo_redistribuicao !== 'neutro') {
+              linhas.push(`    → ${mp.motivo_redistribuicao}`)
+            }
+            if (mp.fonte) linhas.push(`    → Base de cálculo: ${mp.fonte}`)
           }
-          if (mp.fonte) linhas.push(`    → Base de cálculo: ${mp.fonte}`)
         }
+        linhas.push('')
       }
-      linhas.push('')
     }
     // Se há profissional em foco, destacar especificamente a meta dele
     if (profissionalId) {
@@ -550,7 +555,17 @@ export async function POST(req: NextRequest) {
     if (!salaoId) return NextResponse.json({ error: 'NÃ£o autorizado' }, { status: 401 })
 
     const body = await req.json()
-    const { mensagens, profissional_id, conversa_id, modo } = body
+    let { profissional_id, modo } = body
+    const { mensagens, conversa_id } = body
+    // 🔒 SEGURANÇA: se quem chama é um PROFISSIONAL (JWT), forçamos o modo dele e
+    // o próprio id — ignorando o que veio no body. Assim ele não consegue pedir
+    // modo "gestor" nem dados de outro profissional pela API.
+    const ehProfissional = (payload as any)?.role === 'profissional'
+    const idProfJWT = (payload as any)?.profissionalId || (payload as any)?.userId
+    if (ehProfissional) {
+      profissional_id = idProfJWT
+      modo = 'profissional'
+    }
     const modoGestor = modo === 'gestor'
 
     if (!mensagens?.length) {
@@ -710,8 +725,9 @@ export async function POST(req: NextRequest) {
         const memorias = await buscarMemoriaSemântica(embeddingQuery, salaoId)
         return memorias ? `\nCONVERSAS ANTERIORES RELEVANTES (memória semântica):\n${memorias}\n` : ''
       })(),
-      // Memória evolutiva do salão
+      // Memória evolutiva do salão (contexto do negócio) — NÃO no modo profissional
       (async (): Promise<string> => {
+        if (ehProfissional) return ''
         const { data: memoriaData } = await supabaseAdmin
           .from('ia_memoria_usuario')
           .select('memoria')
@@ -2915,7 +2931,8 @@ ${dadosFormatados}`
         parts: [{ text: m.content }],
       }))
       const historyFinal = await executarLoopFerramentas(
-        systemPrompt, historyBase, modelo, config.api_key, salaoId
+        systemPrompt, historyBase, modelo, config.api_key, salaoId,
+        ehProfissional ? profissional_id : undefined,
       )
 
       // Fase 2: streaming da resposta final (sem tools para não re-executar)
