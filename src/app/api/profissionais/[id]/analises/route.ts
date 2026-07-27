@@ -4,11 +4,12 @@ import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getAtendimentosRaw } from '@/lib/atendimentosCache'
 
-async function getSalaoId() {
+async function getSessao(): Promise<{ salaoId: string; role: string } | null> {
   const token = cookies().get('nodri_token')?.value
   if (!token) return null
   const payload = await verifyJWT(token)
-  return payload?.salaoId || null
+  if (!payload?.salaoId) return null
+  return { salaoId: payload.salaoId, role: (payload as any).role || '' }
 }
 
 const STOPWORDS = new Set(['da', 'de', 'do', 'das', 'dos', 'e'])
@@ -24,8 +25,10 @@ function matchProf(item: any, tokens: string[], apelido: string, nomeCompleto: s
 }
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
-  const salaoId = await getSalaoId()
-  if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  const sess = await getSessao()
+  if (!sess) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  const salaoId = sess.salaoId
+  const ehProf = sess.role === 'profissional'
 
   const tipo = new URL(req.url).searchParams.get('tipo') || ''
 
@@ -236,6 +239,17 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     const nunca_oferece = habilitados
       .filter((s: any) => !servMap[s.nome.toUpperCase()])
       .map((s: any) => ({ servico: s.nome, categoria: s.categoria, comissao: s.comissao_valor }))
+
+    // PRIVACIDADE: no portal do profissional os VALORES em R$ não saem do
+    // servidor — só a proporção (%) e as quantidades. O salão vê os R$ reais.
+    if (ehProf) {
+      return NextResponse.json({
+        mais_vende: mais_vende.map(m => ({ servico: m.servico, quantidade: m.quantidade, pct: m.pct })),
+        deveria_vender: deveria_vender.map((d: any) => ({ servico: d.servico, categoria: d.categoria, qtd_historico: d.qtd_historico, motivo: d.motivo })),
+        nunca_oferece: nunca_oferece.map((n: any) => ({ servico: n.servico, categoria: n.categoria })),
+        ocultarValores: true,
+      })
+    }
 
     return NextResponse.json({ mais_vende, deveria_vender, nunca_oferece })
   }

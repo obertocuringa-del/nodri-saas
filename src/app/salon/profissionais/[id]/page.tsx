@@ -5032,12 +5032,13 @@ ${fieisRows?`<div class="sec"><div class="sec-title">Clientes Fiéis ❤️ (${d
                 if (!d) return
                 const { wrap } = printBase('Oportunidades')
                 const fmtV = (v:number) => `R$ ${(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}`
-                const maisVendeRows = (d.mais_vende||[]).map((item:any,i:number)=>`<tr><td>${i+1}º</td><td><strong>${item.servico}</strong></td><td>${item.quantidade}</td><td>${item.pct}%</td><td>${fmtV(item.valor)}</td></tr>`).join('')
-                const deveriaRows = (d.deveria_vender||[]).map((item:any)=>`<tr><td><strong>${item.servico}</strong></td><td>${item.motivo}</td><td>${item.comissao>0?fmtV(item.comissao):'-'}</td></tr>`).join('')
-                const nuncaRows = (d.nunca_oferece||[]).map((item:any)=>`<tr><td><strong>${item.servico}</strong></td><td>${item.comissao>0?fmtV(item.comissao):'-'}</td></tr>`).join('')
-                const corpo = `${maisVendeRows?`<div class="sec"><div class="sec-title">🏆 Serviços que Mais Vende</div><table class="tbl"><thead><tr><th>#</th><th>Serviço</th><th>Qtd</th><th>%</th><th>Valor</th></tr></thead><tbody>${maisVendeRows}</tbody></table></div>`:''}
-${deveriaRows?`<div class="sec"><div class="sec-title">🎯 Serviços que Deveria Vender</div><table class="tbl"><thead><tr><th>Serviço</th><th>Motivo</th><th>Comissão</th></tr></thead><tbody>${deveriaRows}</tbody></table></div>`:''}
-${nuncaRows?`<div class="sec"><div class="sec-title">🔴 Serviços que Nunca Oferece</div><table class="tbl"><thead><tr><th>Serviço</th><th>Comissão potencial</th></tr></thead><tbody>${nuncaRows}</tbody></table></div>`:''}`
+                // No portal do profissional, a impressão sai sem as colunas de R$.
+                const maisVendeRows = (d.mais_vende||[]).map((item:any,i:number)=>`<tr><td>${i+1}º</td><td><strong>${item.servico}</strong></td><td>${item.quantidade}</td><td>${item.pct}%</td>${souProf?'':`<td>${fmtV(item.valor)}</td>`}</tr>`).join('')
+                const deveriaRows = (d.deveria_vender||[]).map((item:any)=>`<tr><td><strong>${item.servico}</strong></td><td>${item.motivo}</td>${souProf?'':`<td>${item.comissao>0?fmtV(item.comissao):'-'}</td>`}</tr>`).join('')
+                const nuncaRows = (d.nunca_oferece||[]).map((item:any)=>`<tr><td><strong>${item.servico}</strong></td>${souProf?'':`<td>${item.comissao>0?fmtV(item.comissao):'-'}</td>`}</tr>`).join('')
+                const corpo = `${maisVendeRows?`<div class="sec"><div class="sec-title">🏆 Serviços que Mais Vende</div><table class="tbl"><thead><tr><th>#</th><th>Serviço</th><th>Qtd</th><th>%</th>${souProf?'':'<th>Valor</th>'}</tr></thead><tbody>${maisVendeRows}</tbody></table></div>`:''}
+${deveriaRows?`<div class="sec"><div class="sec-title">🎯 Serviços que Deveria Vender</div><table class="tbl"><thead><tr><th>Serviço</th><th>Motivo</th>${souProf?'':'<th>Comissão</th>'}</tr></thead><tbody>${deveriaRows}</tbody></table></div>`:''}
+${nuncaRows?`<div class="sec"><div class="sec-title">🔴 Serviços que Nunca Oferece</div><table class="tbl"><thead><tr><th>Serviço</th>${souProf?'':'<th>Comissão potencial</th>'}</tr></thead><tbody>${nuncaRows}</tbody></table></div>`:''}`
                 abrirImpressao(wrap(corpo))
               }}
                 className="flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold rounded-lg border border-nodri-border text-nodri-t2 hover:border-nodri-cyan hover:text-nodri-cyan transition-colors">
@@ -5060,9 +5061,11 @@ ${nuncaRows?`<div class="sec"><div class="sec-title">🔴 Serviços que Nunca Of
                               <div className="text-[12px] text-nodri-t1 font-semibold">{item.servico}</div>
                               <div className="text-[10px] text-nodri-t3">{item.quantidade} realizações · {item.pct}% do total</div>
                             </div>
-                            <div className="text-right">
-                              <div className="text-[12px] font-bold text-nodri-green">{fmt$(item.valor)}</div>
-                            </div>
+                            {!souProf && (
+                              <div className="text-right">
+                                <div className="text-[12px] font-bold text-nodri-green">{fmt$(item.valor)}</div>
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -5081,7 +5084,7 @@ ${nuncaRows?`<div class="sec"><div class="sec-title">🔴 Serviços que Nunca Of
                               <div className="text-[12px] text-nodri-t1 font-semibold">{item.servico}</div>
                               <div className="text-[10px] text-nodri-t3">{item.motivo}</div>
                             </div>
-                            {item.comissao > 0 && (
+                            {!souProf && item.comissao > 0 && (
                               <div className="text-[11px] font-bold text-amber-400">{fmt$(item.comissao)}</div>
                             )}
                           </div>
@@ -5098,7 +5101,7 @@ ${nuncaRows?`<div class="sec"><div class="sec-title">🔴 Serviços que Nunca Of
                         {d.nunca_oferece.map((item:any) => (
                           <div key={item.servico} className="p-3 bg-nodri-card rounded-xl border border-red-500/10">
                             <div className="text-[11px] text-nodri-t1 font-semibold">{item.servico}</div>
-                            {item.comissao > 0 && <div className="text-[10px] text-red-400 mt-0.5">{fmt$(item.comissao)}/comissão</div>}
+                            {!souProf && item.comissao > 0 && <div className="text-[10px] text-red-400 mt-0.5">{fmt$(item.comissao)}/comissão</div>}
                           </div>
                         ))}
                       </div>
