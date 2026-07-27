@@ -137,13 +137,19 @@ function formatarDadosSalao(dados: any, profissionalId?: string): string {
       const profApelido = dados.prof_especifico?.dados?.apelido || ''
       const STOPWORDS = new Set(['da','de','do','das','dos','e'])
       const tokens = profNome.toLowerCase().split(/\s+/).filter((t: string) => t && !STOPWORDS.has(t)).slice(0, 2)
+      // Mesma regra do restante do sistema (metricas/categoria-media): exato,
+      // OU apelido (inclusivo), OU os 2 primeiros tokens batendo. Antes era mais
+      // rígido (apelido exato + todos os tokens) e subcontava o profissional.
       function matchProf(item: any): boolean {
-        const n = (item.profissional || '').toLowerCase().trim()
+        const n = (item.profissional || item.profissional_original || '').toLowerCase().trim()
         if (!n) return false
         if (n === profNome.toLowerCase()) return true
-        if (profApelido && n === profApelido.toLowerCase()) return true
+        const ap = (profApelido || '').toLowerCase().trim()
+        if (ap && (n === ap || n.includes(ap) || ap.includes(n))) return true
         const nTokens = n.split(/\s+/).filter((t: string) => t && !STOPWORDS.has(t))
-        return tokens.length >= 2 && tokens.every((t: string) => nTokens.some((nt: string) => nt.startsWith(t) || t.startsWith(nt)))
+        if (tokens.length === 0 || nTokens.length === 0) return false
+        const matchCount = tokens.filter((t: string) => nTokens.some((nt: string) => nt.startsWith(t) || t.startsWith(nt))).length
+        return matchCount >= Math.min(tokens.length, 2)
       }
       linhas.push(`## DADOS FINANCEIROS — ${profNome.toUpperCase()}`)
       for (const per of dados.periodos_raw) {

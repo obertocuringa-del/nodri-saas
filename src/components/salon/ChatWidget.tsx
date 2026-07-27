@@ -524,7 +524,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
           </div>
 
           {/* Layout: sidebar + chat */}
-          <div style={{ flex: 1, display: 'flex', overflow: 'hidden', position: 'relative' }}>
+          <div style={{ flex: 1, minHeight: 0, display: 'flex', overflow: 'hidden', position: 'relative' }}>
 
           {/* Overlay mobile para fechar sidebar ao clicar fora */}
           {isMobile && sidebarChatAberta && (
@@ -598,10 +598,10 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
           </div>
 
           {/* ── Área do chat ── */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
           {/* Mensagens */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '16px 12px' : '24px max(24px, calc(50% - 400px))', display: 'flex', flexDirection: 'column', gap: 0 }}>
+          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: isMobile ? '16px 12px' : '24px max(24px, calc(50% - 400px))', display: 'flex', flexDirection: 'column', gap: 0 }}>
             {mensagens.map((msg, i) => (
               <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start', marginBottom: 20 }}>
                 {/* Rótulo */}
