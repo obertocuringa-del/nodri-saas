@@ -3,6 +3,9 @@ import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 import { escritaBloqueadaSub } from '@/lib/apiAuth'
+import { iaGerar, extrairJSON } from '@/lib/iaClient'
+
+export const maxDuration = 60
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
     if (await escritaBloqueadaSub()) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
@@ -67,17 +70,11 @@ Responda APENAS com JSON válido, sem markdown:
 }`
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 2000, messages: [{ role: 'user', content: prompt }] }),
-    })
-    if (!res.ok) return NextResponse.json({ error: 'Erro na IA' }, { status: 500 })
-    const data = await res.json()
-    const text = data.content?.[0]?.text || ''
-    try { return NextResponse.json(JSON.parse(text)) }
-    catch { return NextResponse.json({ error: 'Formato inesperado da IA', raw: text }, { status: 500 }) }
+    const text = await iaGerar(apiKey, 'claude-haiku-4-5-20251001', prompt, { maxTokens: 2000 })
+    const parsed = extrairJSON(text)
+    if (!parsed) return NextResponse.json({ error: 'Formato inesperado da IA', raw: text }, { status: 500 })
+    return NextResponse.json(parsed)
   } catch {
-    return NextResponse.json({ error: 'Falha na conexão com a IA.' }, { status: 500 })
+    return NextResponse.json({ error: 'A IA está sobrecarregada. Tente novamente em instantes.' }, { status: 503 })
   }
 }

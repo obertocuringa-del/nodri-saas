@@ -8,8 +8,11 @@ import {
   identificarCausaRaiz, buscarPendencias, buscarVendaProdutos,
   calcularSimuladorMeta, calcularDinheiroPerdido, calcularOportunidadesOcultas, buscarTendenciaFidelizacao,
 } from '@/lib/metasAnalitico'
-import Anthropic from '@anthropic-ai/sdk'
 import { getSessao } from '@/lib/apiAuth'
+import { iaGerar } from '@/lib/iaClient'
+
+// Prompt longo + retry pode passar de 10s; garante margem de tempo na função.
+export const maxDuration = 60
 
 // Sub-usuário é somente leitura. A profissional pode gerar/salvar a PRÓPRIA
 // estratégia de meta (só o próprio id). Dono nunca é bloqueado.
@@ -27,39 +30,10 @@ async function getSalaoId() {
   return payload?.salaoId || null
 }
 
+// Prompt longo (15 seções): tokens altos e thinkingBudget:0 no Gemini para não
+// gastar o orçamento "pensando" e voltar vazio. Retry/backoff vêm do iaGerar.
 async function chamarIA(apiKey: string, modelo: string, prompt: string): Promise<string> {
-  if (modelo.startsWith('claude')) {
-    const anthropic = new Anthropic({ apiKey })
-    const resp = await anthropic.messages.create({
-      model: modelo,
-      max_tokens: 4096,
-      messages: [{ role: 'user', content: prompt }],
-    })
-    const bloco = resp.content.find((b: any) => b.type === 'text') as any
-    return bloco?.text || ''
-  }
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${apiKey}`
-  const r = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      // Prompt ficou bem mais longo (15 seções); sem isso o modelo 2.5 gasta o
-      // orçamento de tokens "pensando" e retorna texto vazio (finishReason MAX_TOKENS).
-      generationConfig: { maxOutputTokens: 16000, thinkingConfig: { thinkingBudget: 0 } },
-    }),
-  })
-  const j = await r.json()
-
-  if (j?.error) throw new Error(`Gemini: ${j.error.message || JSON.stringify(j.error)}`)
-  if (j?.promptFeedback?.blockReason) throw new Error(`Gemini bloqueou o prompt: ${j.promptFeedback.blockReason}`)
-
-  const texto = j?.candidates?.[0]?.content?.parts?.map((p: any) => p.text).filter(Boolean).join('') || ''
-  if (!texto) {
-    const finishReason = j?.candidates?.[0]?.finishReason || 'desconhecido'
-    throw new Error(`Gemini não retornou texto (finishReason: ${finishReason})`)
-  }
-  return texto
+  return iaGerar(apiKey, modelo, prompt, { maxTokens: 16000, geminiThinkingBudget: 0 })
 }
 
 // POST — gera (ou regenera) o planejamento estratégico para bater a meta do mês

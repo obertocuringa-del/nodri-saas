@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
-import Anthropic from '@anthropic-ai/sdk'
 import { getSessao } from '@/lib/apiAuth'
+import { iaGerar, extrairJSON } from '@/lib/iaClient'
+
+// A geração + retry pode passar de 10s; garante margem de tempo na função.
+export const maxDuration = 60
 
 async function getSalaoId() {
   const token = cookies().get('nodri_token')?.value
@@ -29,29 +32,10 @@ REGRA DE GÊNERO — NUNCA vincule BARBA (ou serviços masculinos) com procedime
 ÚNICA EXCEÇÃO: quando a intenção for explicitamente PRESENTEAR alguém (ex: uma cliente comprando
 barba de presente para um homem). Fora o caso de presente, manter serviços masculinos e femininos separados.`
 
-// Chama a IA configurada — Claude (Anthropic) ou Gemini (Google), conforme o modelo.
+// Chama a IA central (com retry + backoff). Gemini com thinkingBudget:0 para
+// não gastar o orçamento de tokens "pensando" e devolver vazio.
 async function iaCall(apiKey: string, modelo: string, prompt: string): Promise<string> {
-  if (modelo.startsWith('claude')) {
-    const anthropic = new Anthropic({ apiKey })
-    const msg = await anthropic.messages.create({
-      model: modelo,
-      max_tokens: 4096,
-      messages: [{ role: 'user', content: prompt }],
-    })
-    const txt = msg.content.find((c: any) => c.type === 'text') as any
-    return txt?.text || ''
-  }
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${apiKey}`
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      generationConfig: { maxOutputTokens: 4096 },
-    }),
-  })
-  const json = await res.json()
-  return json?.candidates?.[0]?.content?.parts?.[0]?.text || ''
+  return iaGerar(apiKey, modelo, prompt, { maxTokens: 4096, geminiThinkingBudget: 0 })
 }
 
 function buildListaServicos(lista: any[]): string {
@@ -152,19 +136,17 @@ FORMATO (JSON puro, sem markdown, sem texto fora do array):
   }
 ]`
 
-    const resposta = await iaCall(config.api_key, modelo, prompt)
-    try {
-      const limpo = resposta.replace(/```json[\s\S]*?```|```/g, '').trim()
-      const sugestoes = JSON.parse(limpo)
-      // Valida que os nomes estão na lista
-      const nomesSet = new Set(servicosDed.map((s: any) => s.nome.toUpperCase()))
-      const validas = sugestoes.filter((s: any) =>
-        nomesSet.has((s.servico_a || '').toUpperCase()) && nomesSet.has((s.servico_b || '').toUpperCase())
-      )
-      return NextResponse.json({ sugestoes: validas.length > 0 ? validas : sugestoes })
-    } catch {
-      return NextResponse.json({ error: 'IA retornou formato inválido', raw: resposta }, { status: 500 })
-    }
+    let resposta = ''
+    try { resposta = await iaCall(config.api_key, modelo, prompt) }
+    catch (e: any) { return NextResponse.json({ error: 'A IA está sobrecarregada. Tente novamente em instantes.', detalhe: String(e?.message || e) }, { status: 503 }) }
+    const sugestoes = extrairJSON<any[]>(resposta)
+    if (!Array.isArray(sugestoes)) return NextResponse.json({ error: 'IA retornou formato inválido', raw: resposta }, { status: 500 })
+    // Valida que os nomes estão na lista
+    const nomesSet = new Set(servicosDed.map((s: any) => s.nome.toUpperCase()))
+    const validas = sugestoes.filter((s: any) =>
+      nomesSet.has((s.servico_a || '').toUpperCase()) && nomesSet.has((s.servico_b || '').toUpperCase())
+    )
+    return NextResponse.json({ sugestoes: validas.length > 0 ? validas : sugestoes })
   }
 
   // ── OPORTUNIDADES IA ──────────────────────────────────────────────────────
@@ -223,16 +205,14 @@ FORMATO (JSON puro, sem markdown):
   }
 ]`
 
-    const resposta = await iaCall(config.api_key, modelo, prompt)
-    try {
-      const limpo = resposta.replace(/```json[\s\S]*?```|```/g, '').trim()
-      const oportunidades = JSON.parse(limpo)
-      const nomesSet = new Set(servicosDed.map((s: any) => s.nome.toUpperCase()))
-      const validas = oportunidades.filter((s: any) => nomesSet.has((s.servico || '').toUpperCase()))
-      return NextResponse.json({ oportunidades: validas.length > 0 ? validas : oportunidades })
-    } catch {
-      return NextResponse.json({ error: 'IA retornou formato inválido', raw: resposta }, { status: 500 })
-    }
+    let resposta = ''
+    try { resposta = await iaCall(config.api_key, modelo, prompt) }
+    catch (e: any) { return NextResponse.json({ error: 'A IA está sobrecarregada. Tente novamente em instantes.', detalhe: String(e?.message || e) }, { status: 503 }) }
+    const oportunidades = extrairJSON<any[]>(resposta)
+    if (!Array.isArray(oportunidades)) return NextResponse.json({ error: 'IA retornou formato inválido', raw: resposta }, { status: 500 })
+    const nomesSet = new Set(servicosDed.map((s: any) => s.nome.toUpperCase()))
+    const validas = oportunidades.filter((s: any) => nomesSet.has((s.servico || '').toUpperCase()))
+    return NextResponse.json({ oportunidades: validas.length > 0 ? validas : oportunidades })
   }
 
   // ── META IA ───────────────────────────────────────────────────────────────
@@ -305,14 +285,12 @@ FORMATO (JSON puro, sem markdown):
   "dica_tatica": "1 dica prática e específica para este profissional converter mais agora"
 }`
 
-    const resposta = await iaCall(config.api_key, modelo, prompt)
-    try {
-      const limpo = resposta.replace(/```json[\s\S]*?```|```/g, '').trim()
-      const plano = JSON.parse(limpo)
-      return NextResponse.json({ plano })
-    } catch {
-      return NextResponse.json({ error: 'IA retornou formato inválido', raw: resposta }, { status: 500 })
-    }
+    let resposta = ''
+    try { resposta = await iaCall(config.api_key, modelo, prompt) }
+    catch (e: any) { return NextResponse.json({ error: 'A IA está sobrecarregada. Tente novamente em instantes.', detalhe: String(e?.message || e) }, { status: 503 }) }
+    const plano = extrairJSON(resposta)
+    if (!plano) return NextResponse.json({ error: 'IA retornou formato inválido', raw: resposta }, { status: 500 })
+    return NextResponse.json({ plano })
   }
 
   // ── OCORRÊNCIAS IA ────────────────────────────────────────────────────────
@@ -343,14 +321,12 @@ FORMATO (JSON puro, sem markdown):
   "mensagem_profissional": "Mensagem direta ao profissional — consultor falando pessoalmente. Máx 4 frases. Sem ser agressivo, mas sem papas na língua."
 }`
 
-    const resposta = await iaCall(config.api_key, modelo, prompt)
-    try {
-      const limpo = resposta.replace(/```json[\s\S]*?```|```/g, '').trim()
-      const analise = JSON.parse(limpo)
-      return NextResponse.json({ analise })
-    } catch {
-      return NextResponse.json({ error: 'IA retornou formato inválido', raw: resposta }, { status: 500 })
-    }
+    let resposta = ''
+    try { resposta = await iaCall(config.api_key, modelo, prompt) }
+    catch (e: any) { return NextResponse.json({ error: 'A IA está sobrecarregada. Tente novamente em instantes.', detalhe: String(e?.message || e) }, { status: 503 }) }
+    const analise = extrairJSON(resposta)
+    if (!analise) return NextResponse.json({ error: 'IA retornou formato inválido', raw: resposta }, { status: 500 })
+    return NextResponse.json({ analise })
   }
 
   return NextResponse.json({ error: 'tipo inválido' }, { status: 400 })

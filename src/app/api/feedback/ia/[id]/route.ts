@@ -3,6 +3,9 @@ import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 import { escritaBloqueadaSub } from '@/lib/apiAuth'
+import { iaGerar, extrairJSON } from '@/lib/iaClient'
+
+export const maxDuration = 60
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
     if (await escritaBloqueadaSub()) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
@@ -204,37 +207,13 @@ Forneça sua análise no seguinte formato JSON (responda APENAS com JSON válido
 }`
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 4000,
-        messages: [{ role: 'user', content: prompt }],
-      }),
-    })
-
-    if (!res.ok) {
-      const err = await res.text()
-      console.error('[IA] Anthropic error:', err)
-      return NextResponse.json({ error: 'Erro ao consultar a IA. Tente novamente.' }, { status: 500 })
-    }
-
-    const data = await res.json()
-    const text = data.content?.[0]?.text || ''
-
-    try {
-      const parsed = JSON.parse(text)
-      return NextResponse.json(parsed)
-    } catch {
-      return NextResponse.json({ error: 'A IA retornou um formato inesperado.', raw: text }, { status: 500 })
-    }
+    // iaGerar cuida do retry/backoff em 429/5xx/529 e resposta vazia.
+    const text = await iaGerar(apiKey, 'claude-sonnet-4-6', prompt, { maxTokens: 4000 })
+    const parsed = extrairJSON(text)
+    if (!parsed) return NextResponse.json({ error: 'A IA retornou um formato inesperado.', raw: text }, { status: 500 })
+    return NextResponse.json(parsed)
   } catch (e) {
-    console.error('[IA] fetch error:', e)
-    return NextResponse.json({ error: 'Falha na conexão com a IA.' }, { status: 500 })
+    console.error('[IA] erro:', e)
+    return NextResponse.json({ error: 'A IA está sobrecarregada. Tente novamente em instantes.' }, { status: 503 })
   }
 }
