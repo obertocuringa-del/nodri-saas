@@ -36,9 +36,7 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json()
   const departamentoId = String(body?.departamento_id || '').trim()
-  const mensagem = String(body?.mensagem || '').trim()
-  const prioridade = body?.prioridade === 'urgente' ? 'urgente' : 'normal'
-  if (!departamentoId || !mensagem) return NextResponse.json({ error: 'Escolha o departamento e escreva a solicitação' }, { status: 400 })
+  const ehEmprestimo = body?.tipo === 'emprestimo'
 
   // Quem está solicitando
   let solicitanteId = ''
@@ -48,21 +46,46 @@ export async function POST(req: NextRequest) {
     solicitanteId = String(body?.solicitante_id || '').trim()
   }
   if (!solicitanteId) return NextResponse.json({ error: 'Informe quem está solicitando' }, { status: 400 })
+  if (!departamentoId) return NextResponse.json({ error: 'Escolha o departamento' }, { status: 400 })
+
+  // Monta a solicitação (comum) ou o pedido de empréstimo (urgente, com valor + motivo obrigatório)
+  let mensagem = String(body?.mensagem || '').trim()
+  let prioridade = body?.prioridade === 'urgente' ? 'urgente' : 'normal'
+  let tipo: string | null = null
+  let emprestimo: any = null
+
+  if (ehEmprestimo) {
+    const valor = Number(body?.valor) || 0
+    const motivo = String(body?.motivo || '').trim()
+    if (valor <= 0) return NextResponse.json({ error: 'Informe o valor do empréstimo' }, { status: 400 })
+    if (!motivo) return NextResponse.json({ error: 'A observação (motivo) é obrigatória' }, { status: 400 })
+    tipo = 'emprestimo'
+    prioridade = 'urgente'
+    emprestimo = { valor, motivo, status: 'pendente' }
+    mensagem = `💰 Pedido de empréstimo: R$ ${valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} — Motivo: ${motivo}`
+  } else {
+    if (!mensagem) return NextResponse.json({ error: 'Escreva a solicitação' }, { status: 400 })
+  }
 
   const solicitanteNome = await nomeDe(sess.salaoId, solicitanteId)
 
+  // Só inclui tipo/emprestimo quando for empréstimo — assim uma solicitação
+  // normal continua funcionando mesmo se as colunas novas ainda não existirem.
+  const registro: Record<string, any> = {
+    salao_id: sess.salaoId,
+    profissional_id: departamentoId,
+    mensagem,
+    resolvido: false,
+    solicitante_id: solicitanteId,
+    solicitante_nome: solicitanteNome,
+    prioridade,
+    origem: 'solicitacao',
+  }
+  if (ehEmprestimo) { registro.tipo = tipo; registro.emprestimo = emprestimo }
+
   const { data, error } = await supabaseAdmin
     .from('pendencias_profissionais')
-    .insert({
-      salao_id: sess.salaoId,
-      profissional_id: departamentoId,
-      mensagem,
-      resolvido: false,
-      solicitante_id: solicitanteId,
-      solicitante_nome: solicitanteNome,
-      prioridade,
-      origem: 'solicitacao',
-    })
+    .insert(registro)
     .select('*')
     .single()
 

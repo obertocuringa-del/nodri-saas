@@ -1,15 +1,17 @@
 'use client'
 import { useState, useEffect, useMemo, CSSProperties } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { ArrowLeft, Loader2, Check, Trash2, CornerUpRight } from 'lucide-react'
+import { ArrowLeft, Loader2, Check, Trash2, CornerUpRight, Wallet, X, Calendar } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 interface Prof { id: string; nome_completo: string; apelido?: string; cargo?: string; ativo?: boolean; is_departamento?: boolean; departamento_cor?: string }
+interface Emprestimo { valor: number; motivo: string; status: 'pendente' | 'negado' | 'liberado'; motivoNegado?: string; modo?: string; parcelas?: { valor: number; data: string; label: string }[]; liberadoEm?: string }
 interface Demanda {
   id: string; profissional_id: string; mensagem: string; data_limite: string | null
   resolvido: boolean; resolvido_em: string | null; criado_em: string
   solicitante_id?: string | null; solicitante_nome?: string | null
   resposta?: string | null; prioridade?: string | null; origem?: string | null
+  tipo?: string | null; emprestimo?: Emprestimo | null
 }
 
 function iconeDe(nome: string) {
@@ -52,7 +54,9 @@ export default function DepartamentoPage() {
   const departamentos = useMemo(() => profs.filter(p => p.is_departamento && p.id !== id), [profs, id])
   const profissionais = useMemo(() => profs.filter(p => !p.is_departamento && p.ativo !== false), [profs])
 
-  const abertas = demandas.filter(d => !d.resolvido)
+  // Pedidos de empréstimo pendentes vão sempre no topo (urgência do financeiro)
+  const pesoTopo = (d: Demanda) => (d.tipo === 'emprestimo' && d.emprestimo?.status === 'pendente' ? 0 : d.prioridade === 'urgente' ? 1 : 2)
+  const abertas = demandas.filter(d => !d.resolvido).sort((a, b) => pesoTopo(a) - pesoTopo(b))
   const resolvidas = demandas.filter(d => d.resolvido)
 
   async function resolver(d: Demanda) {
@@ -97,6 +101,7 @@ export default function DepartamentoPage() {
   if (loading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#faf9f7' }}><Loader2 className="animate-spin" style={{ color: '#5b4fcf' }} /></div>
 
   function DemandaCard({ d }: { d: Demanda }) {
+    if (d.tipo === 'emprestimo') return <EmprestimoCard d={d} onDone={carregar} />
     const urgente = d.prioridade === 'urgente'
     const vencida = !d.resolvido && d.data_limite && new Date(d.data_limite + 'T23:59:59') < new Date()
     return (
@@ -200,4 +205,155 @@ function btn(cor: string): CSSProperties {
 }
 function btnGhost(): CSSProperties {
   return { display: 'inline-flex', alignItems: 'center', gap: 5, background: '#fff', color: '#6b6860', border: '1px solid #e0ddd8', borderRadius: 8, padding: '7px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }
+}
+
+const fmtR = (n: number) => n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+function parseNum(s: string): number {
+  const n = Number(String(s || '').replace(/[^\d,.-]/g, '').replace(/\.(?=\d{3}(?:\D|$))/g, '').replace(',', '.'))
+  return isNaN(n) ? 0 : n
+}
+const toISO = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+const isoBR = (iso: string) => { const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? `${m[3]}/${m[2]}/${m[1]}` : iso }
+function addMonths(d: Date, n: number) { const x = new Date(d); x.setMonth(x.getMonth() + n); return x }
+function addDays(d: Date, n: number) { const x = new Date(d); x.setDate(x.getDate() + n); return x }
+
+// Card de pedido de empréstimo: aceitar/negar e, ao aceitar, parcelar por
+// mês/quinzena com datas de débito. Ao liberar, o servidor lança na calculadora.
+function EmprestimoCard({ d, onDone }: { d: Demanda; onDone: () => void }) {
+  const emp = d.emprestimo || ({ valor: 0, motivo: '', status: 'pendente' } as Emprestimo)
+  const total = Number(emp.valor) || 0
+  const [fase, setFase] = useState<'idle' | 'negar' | 'aceitar'>('idle')
+  const [motivoNegado, setMotivoNegado] = useState('')
+  const [dividir, setDividir] = useState<boolean | null>(null)
+  const [modo, setModo] = useState<'mes' | 'quinzena'>('mes')
+  const [qtd, setQtd] = useState('2')
+  const [parcelas, setParcelas] = useState<{ valor: string; data: string }[]>([])
+  const [enviando, setEnviando] = useState(false)
+
+  function gerar(n: number, m: 'mes' | 'quinzena') {
+    const hoje = new Date()
+    const cent = Math.round(total * 100)
+    const base = Math.floor(cent / Math.max(1, n))
+    const arr = Array(n).fill(base); arr[n - 1] = cent - base * (n - 1)
+    setParcelas(arr.map((c, i) => ({ valor: fmtR(c / 100), data: toISO(m === 'quinzena' ? addDays(hoje, i * 15) : addMonths(hoje, i)) })))
+  }
+  function escolherDividir(v: boolean) {
+    setDividir(v)
+    if (!v) setParcelas([{ valor: fmtR(total), data: toISO(new Date()) }])
+    else gerar(Math.max(2, Number(qtd) || 2), modo)
+  }
+  function setParcela(i: number, campo: 'valor' | 'data', v: string) {
+    setParcelas(p => p.map((x, idx) => idx === i ? { ...x, [campo]: v } : x))
+  }
+
+  async function decidir(acao: 'negar' | 'liberar') {
+    setEnviando(true)
+    try {
+      const payload: any = { id: d.id, acao }
+      if (acao === 'negar') payload.motivoNegado = motivoNegado.trim()
+      else { payload.modo = modo; payload.parcelas = parcelas.map(p => ({ valor: parseNum(p.valor), data: p.data })) }
+      const res = await fetch('/api/salon/emprestimo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+      if (res.ok) { toast.success(acao === 'negar' ? 'Empréstimo negado — profissional avisado' : 'Liberado! Lançado na calculadora e profissional avisado'); onDone() }
+      else { const e = await res.json().catch(() => ({})); toast.error(e.error || 'Erro') }
+    } catch { toast.error('Erro de conexão') }
+    setEnviando(false)
+  }
+
+  const somaParcelas = parcelas.reduce((s, p) => s + parseNum(p.valor), 0)
+  const difere = Math.abs(somaParcelas - total) > 0.01
+  const faltaData = parcelas.some(p => !p.data)
+
+  const borda = emp.status === 'liberado' ? '#bbf7d0' : emp.status === 'negado' ? '#fecaca' : '#c4b5fd'
+  return (
+    <div style={{ background: '#fff', border: `1px solid ${borda}`, borderLeft: `4px solid ${emp.status === 'liberado' ? '#22c55e' : emp.status === 'negado' ? '#ef4444' : '#7c3aed'}`, borderRadius: 12, padding: 14, marginBottom: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+        <span style={{ fontSize: 11, fontWeight: 800, color: '#7c3aed', background: '#f5f3ff', padding: '2px 8px', borderRadius: 999, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Wallet size={12} /> EMPRÉSTIMO</span>
+        {d.solicitante_nome && <span style={{ fontSize: 11, fontWeight: 700, color: '#0369a1', background: '#f0f9ff', padding: '2px 8px', borderRadius: 999 }}>👤 {d.solicitante_nome}</span>}
+        {emp.status === 'pendente' && <span style={{ fontSize: 10, fontWeight: 800, color: '#b91c1c', background: '#fef2f2', padding: '2px 8px', borderRadius: 999 }}>AGUARDANDO</span>}
+        {emp.status === 'liberado' && <span style={{ fontSize: 10, fontWeight: 800, color: '#047857', background: '#ecfdf5', padding: '2px 8px', borderRadius: 999 }}>APROVADO</span>}
+        {emp.status === 'negado' && <span style={{ fontSize: 10, fontWeight: 800, color: '#b91c1c', background: '#fef2f2', padding: '2px 8px', borderRadius: 999 }}>NEGADO</span>}
+        <span style={{ fontSize: 10, color: '#9ca3af', marginLeft: 'auto' }}>{new Date(d.criado_em).toLocaleDateString('pt-BR')}</span>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
+        <span style={{ fontSize: 22, fontWeight: 900, color: '#15803d' }}>R$ {fmtR(total)}</span>
+      </div>
+      {emp.motivo && <p style={{ fontSize: 13, color: '#4b5563', margin: '0 0 4px' }}><strong>Motivo:</strong> {emp.motivo}</p>}
+
+      {emp.status === 'negado' && emp.motivoNegado && <p style={{ fontSize: 12, color: '#b91c1c', margin: '6px 0 0', background: '#fef2f2', padding: '6px 10px', borderRadius: 8 }}>Negado: {emp.motivoNegado}</p>}
+      {emp.status === 'liberado' && Array.isArray(emp.parcelas) && (
+        <div style={{ marginTop: 8, background: '#f0fdf4', borderRadius: 8, padding: 10 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: '#15803d', marginBottom: 6 }}>Lançado na calculadora — {emp.parcelas.length} {emp.parcelas.length > 1 ? (emp.modo === 'quinzena' ? 'quinzenas' : 'parcelas') : 'parcela'}</div>
+          {emp.parcelas.map((p, i) => (
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, color: '#374151', padding: '2px 0' }}>
+              <span>{p.label} · {p.data}</span><strong style={{ color: '#15803d' }}>R$ {fmtR(p.valor)}</strong>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Ações — só enquanto pendente */}
+      {emp.status === 'pendente' && fase === 'idle' && (
+        <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+          <button onClick={() => { setFase('aceitar'); setDividir(null) }} style={{ ...btn('#16a34a'), padding: '9px 16px', fontSize: 13 }}><Check size={14} /> Aceitar</button>
+          <button onClick={() => setFase('negar')} style={{ ...btn('#dc2626'), padding: '9px 16px', fontSize: 13 }}><X size={14} /> Negar</button>
+        </div>
+      )}
+
+      {emp.status === 'pendente' && fase === 'negar' && (
+        <div style={{ marginTop: 12 }}>
+          <textarea value={motivoNegado} onChange={e => setMotivoNegado(e.target.value)} rows={2} autoFocus placeholder="Motivo da recusa (opcional) — vai na notificação do profissional"
+            style={{ width: '100%', border: '1px solid #fecaca', borderRadius: 8, padding: '8px 10px', fontSize: 13, outline: 'none', resize: 'none' }} />
+          <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+            <button disabled={enviando} onClick={() => decidir('negar')} style={{ ...btn('#dc2626'), opacity: enviando ? .6 : 1 }}>Confirmar recusa</button>
+            <button onClick={() => setFase('idle')} style={{ background: 'transparent', border: 'none', color: '#9ca3af', fontSize: 12, cursor: 'pointer' }}>Cancelar</button>
+          </div>
+        </div>
+      )}
+
+      {emp.status === 'pendente' && fase === 'aceitar' && (
+        <div style={{ marginTop: 12, background: '#faf9ff', border: '1px solid #e9d5ff', borderRadius: 10, padding: 12 }}>
+          {dividir === null ? (
+            <>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 8 }}>Quer dividir o valor?</div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={() => escolherDividir(true)} style={btn('#7c3aed')}>Sim, parcelar</button>
+                <button onClick={() => escolherDividir(false)} style={btnGhost()}>Não, à vista</button>
+                <button onClick={() => setFase('idle')} style={{ background: 'transparent', border: 'none', color: '#9ca3af', fontSize: 12, cursor: 'pointer', marginLeft: 'auto' }}>Voltar</button>
+              </div>
+            </>
+          ) : (
+            <>
+              {dividir && (
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 10 }}>
+                  <div style={{ display: 'inline-flex', border: '1px solid #d8d4f0', borderRadius: 8, overflow: 'hidden' }}>
+                    <button onClick={() => { setModo('mes'); gerar(Math.max(2, Number(qtd) || 2), 'mes') }} style={{ padding: '6px 12px', border: 'none', background: modo === 'mes' ? '#7c3aed' : '#fff', color: modo === 'mes' ? '#fff' : '#6b6860', fontSize: 12.5, fontWeight: 800, cursor: 'pointer' }}>Meses</button>
+                    <button onClick={() => { setModo('quinzena'); gerar(Math.max(2, Number(qtd) || 2), 'quinzena') }} style={{ padding: '6px 12px', border: 'none', background: modo === 'quinzena' ? '#7c3aed' : '#fff', color: modo === 'quinzena' ? '#fff' : '#6b6860', fontSize: 12.5, fontWeight: 800, cursor: 'pointer' }}>Quinzenas</button>
+                  </div>
+                  <label style={{ fontSize: 12.5, color: '#374151' }}>Quantas?</label>
+                  <input type="number" min={2} max={36} value={qtd} onChange={e => { setQtd(e.target.value); const n = Math.max(2, Number(e.target.value) || 2); gerar(n, modo) }} style={{ width: 64, border: '1px solid #d8d4f0', borderRadius: 8, padding: '6px 8px', fontSize: 13 }} />
+                </div>
+              )}
+              <div style={{ fontSize: 11.5, fontWeight: 700, color: '#6b21a8', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 5 }}><Calendar size={13} /> Datas de débito {modo === 'quinzena' && dividir ? '(quinzenas)' : ''}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {parcelas.map((p, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                    {dividir && <span style={{ fontSize: 12, fontWeight: 700, color: '#7c3aed', width: 34 }}>{i + 1}/{parcelas.length}</span>}
+                    <span style={{ fontSize: 12, color: '#15803d', fontWeight: 700 }}>R$</span>
+                    <input value={p.valor} onChange={e => setParcela(i, 'valor', e.target.value)} style={{ width: 90, border: '1px solid #dcfce7', background: '#f6fef9', borderRadius: 8, padding: '6px 8px', fontSize: 13, fontWeight: 700, color: '#15803d' }} />
+                    <input type="date" value={p.data} onChange={e => setParcela(i, 'data', e.target.value)} style={{ flex: 1, border: '1px solid #d8d4f0', borderRadius: 8, padding: '6px 8px', fontSize: 12.5 }} />
+                  </div>
+                ))}
+              </div>
+              {difere && <div style={{ fontSize: 11, color: '#b45309', marginTop: 6 }}>⚠ A soma das parcelas (R$ {fmtR(somaParcelas)}) está diferente do total (R$ {fmtR(total)}).</div>}
+              <div style={{ display: 'flex', gap: 8, marginTop: 10, alignItems: 'center' }}>
+                <button disabled={enviando || faltaData || !parcelas.length} onClick={() => decidir('liberar')} style={{ ...btn('#16a34a'), padding: '9px 16px', fontSize: 13, opacity: (enviando || faltaData) ? .6 : 1 }}>Liberar empréstimo</button>
+                <button onClick={() => setDividir(null)} style={{ background: 'transparent', border: 'none', color: '#9ca3af', fontSize: 12, cursor: 'pointer' }}>Voltar</button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  )
 }

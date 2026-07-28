@@ -2327,6 +2327,10 @@ function DemandasProfissional({ profId, souProf }: { profId: string; souProf: bo
   const [msg, setMsg] = useState('')
   const [prio, setPrio] = useState('normal')
   const [enviando, setEnviando] = useState(false)
+  // Pedido de empréstimo (só quando o setor escolhido é o Financeiro)
+  const [modoEmp, setModoEmp] = useState(false)
+  const [empValor, setEmpValor] = useState('')
+  const [empMotivo, setEmpMotivo] = useState('')
   const [aberto, setAberto] = useState<Set<string>>(new Set())     // itens expandidos
   const [respId, setRespId] = useState<string | null>(null)         // demanda recebida sendo respondida
   const [respTxt, setRespTxt] = useState('')
@@ -2384,6 +2388,22 @@ function DemandasProfissional({ profId, souProf }: { profId: string; souProf: bo
     try {
       const res = await fetch('/api/solicitacoes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ departamento_id: dep, mensagem: msg.trim(), prioridade: prio, solicitante_id: profId }) })
       if (res.ok) { toast.success('Solicitação enviada!'); setMsg(''); setPrio('normal'); setDep(''); carregar() }
+      else { const d = await res.json().catch(() => ({})); toast.error(d.error || 'Erro ao enviar') }
+    } catch { toast.error('Erro de conexão') }
+    setEnviando(false)
+  }
+
+  // O setor escolhido é o Financeiro? (habilita o botão de pedir empréstimo)
+  const depEhFinanceiro = (() => { const d = deps.find(x => x.id === dep); return !!d && /financ/i.test(d.nome_completo || '') })()
+
+  async function enviarEmprestimo() {
+    const valor = Number(String(empValor).replace(/[^\d,.-]/g, '').replace(/\.(?=\d{3}(?:\D|$))/g, '').replace(',', '.')) || 0
+    if (valor <= 0) { toast.error('Informe o valor do empréstimo'); return }
+    if (!empMotivo.trim()) { toast.error('A observação (motivo) é obrigatória'); return }
+    setEnviando(true)
+    try {
+      const res = await fetch('/api/solicitacoes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ departamento_id: dep, tipo: 'emprestimo', valor, motivo: empMotivo.trim(), solicitante_id: profId }) })
+      if (res.ok) { toast.success('Pedido de empréstimo enviado ao Financeiro!'); setEmpValor(''); setEmpMotivo(''); setModoEmp(false); setDep(''); carregar() }
       else { const d = await res.json().catch(() => ({})); toast.error(d.error || 'Erro ao enviar') }
     } catch { toast.error('Erro de conexão') }
     setEnviando(false)
@@ -2462,16 +2482,41 @@ function DemandasProfissional({ profId, souProf }: { profId: string; souProf: bo
         <div style={{ background: '#faf9ff', border: '1px solid #d9d3f5', borderRadius: 14, padding: 16 }}>
           <div style={{ fontSize: 13, fontWeight: 800, color: '#5b4fcf', marginBottom: 10 }}>Nova solicitação a um departamento</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <select value={dep} onChange={e => setDep(e.target.value)} style={{ border: '1px solid #e0ddd8', borderRadius: 8, padding: '9px 10px', fontSize: 13 }}>
+            <select value={dep} onChange={e => { setDep(e.target.value); setModoEmp(false) }} style={{ border: '1px solid #e0ddd8', borderRadius: 8, padding: '9px 10px', fontSize: 13 }}>
               <option value="">Selecione o setor...</option>
               {deps.map(d => <option key={d.id} value={d.id}>{d.nome_completo}</option>)}
             </select>
-            <textarea value={msg} onChange={e => setMsg(e.target.value)} rows={2} placeholder="Descreva sua solicitação..." style={{ border: '1px solid #e0ddd8', borderRadius: 8, padding: '9px 10px', fontSize: 13, outline: 'none', resize: 'none' }} />
-            <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
-              <label style={{ fontSize: 12, color: '#374151', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}><input type="radio" checked={prio === 'normal'} onChange={() => setPrio('normal')} /> Normal</label>
-              <label style={{ fontSize: 12, color: '#b91c1c', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}><input type="radio" checked={prio === 'urgente'} onChange={() => setPrio('urgente')} /> Urgente</label>
-              <button disabled={enviando} onClick={enviar} style={{ marginLeft: 'auto', background: 'linear-gradient(135deg,#7c3aed,#5b4fcf)', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: enviando ? 0.6 : 1 }}>{enviando ? 'Enviando...' : 'Enviar'}</button>
-            </div>
+
+            {/* Financeiro → opção de pedir empréstimo */}
+            {depEhFinanceiro && (
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={() => setModoEmp(false)} style={{ flex: 1, padding: '8px', borderRadius: 8, border: '1px solid ' + (!modoEmp ? '#5b4fcf' : '#e0ddd8'), background: !modoEmp ? '#f0eefb' : '#fff', color: !modoEmp ? '#5b4fcf' : '#6b6860', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>Solicitação normal</button>
+                <button onClick={() => setModoEmp(true)} style={{ flex: 1, padding: '8px', borderRadius: 8, border: '1px solid ' + (modoEmp ? '#16a34a' : '#e0ddd8'), background: modoEmp ? '#f0fdf4' : '#fff', color: modoEmp ? '#15803d' : '#6b6860', fontSize: 12.5, fontWeight: 800, cursor: 'pointer' }}>💰 Solicitar empréstimo</button>
+              </div>
+            )}
+
+            {depEhFinanceiro && modoEmp ? (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 14, fontWeight: 800, color: '#15803d' }}>R$</span>
+                  <input value={empValor} onChange={e => setEmpValor(e.target.value)} inputMode="decimal" placeholder="Valor que você quer" style={{ flex: 1, border: '1.5px solid #bbf7d0', background: '#f6fef9', borderRadius: 8, padding: '10px 12px', fontSize: 14, fontWeight: 700, color: '#15803d', outline: 'none' }} />
+                </div>
+                <textarea value={empMotivo} onChange={e => setEmpMotivo(e.target.value)} rows={2} placeholder="Observação obrigatória — por que você precisa do empréstimo?" style={{ border: '1px solid #e0ddd8', borderRadius: 8, padding: '9px 10px', fontSize: 13, outline: 'none', resize: 'none' }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 11.5, color: '#9ca3af' }}>Vai para o Financeiro como urgente.</span>
+                  <button disabled={enviando} onClick={enviarEmprestimo} style={{ marginLeft: 'auto', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 18px', fontSize: 13, fontWeight: 800, cursor: 'pointer', opacity: enviando ? 0.6 : 1 }}>{enviando ? 'Enviando...' : 'Enviar pedido'}</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <textarea value={msg} onChange={e => setMsg(e.target.value)} rows={2} placeholder="Descreva sua solicitação..." style={{ border: '1px solid #e0ddd8', borderRadius: 8, padding: '9px 10px', fontSize: 13, outline: 'none', resize: 'none' }} />
+                <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <label style={{ fontSize: 12, color: '#374151', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}><input type="radio" checked={prio === 'normal'} onChange={() => setPrio('normal')} /> Normal</label>
+                  <label style={{ fontSize: 12, color: '#b91c1c', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}><input type="radio" checked={prio === 'urgente'} onChange={() => setPrio('urgente')} /> Urgente</label>
+                  <button disabled={enviando} onClick={enviar} style={{ marginLeft: 'auto', background: 'linear-gradient(135deg,#7c3aed,#5b4fcf)', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: enviando ? 0.6 : 1 }}>{enviando ? 'Enviando...' : 'Enviar'}</button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
