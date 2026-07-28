@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Loader2, X, Printer, Coffee, Scissors, HandCoins, Wallet, Hand } from 'lucide-react'
+import { Loader2, X, Printer, Coffee, Scissors, HandCoins, Wallet, Hand, Copy } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { quinzenaDeHoje, labelQuinzena, nomeQuinzena, dataNaQuinzena, type Quinzena } from '@/lib/quinzena'
 
 interface Prof { id: string; nome: string }
@@ -24,6 +25,15 @@ function parseValor(s: string): number {
   return isNaN(n) ? 0 : n
 }
 function fmtBRL(n: number) { return n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }
+// Detalhe copiável/impresso de um profissional: "Café R$ 6,00 / Capuccino R$ 16,00 / ..."
+function partesDe(r: LinhaDesconto): string[] {
+  const p: string[] = []
+  r.bebidas.forEach(b => p.push(`${b.nome} R$ ${fmtBRL(b.valor)}`))
+  if (r.serv > 0) p.push(`serviço interno R$ ${fmtBRL(r.serv)}`)
+  if (r.kits > 0) p.push(`kit pé e mão R$ ${fmtBRL(r.kits)}`)
+  if (r.emp > 0) p.push(`empréstimo R$ ${fmtBRL(r.emp)}`)
+  return p
+}
 const norm = (s: string) => (s || '').toLowerCase().trim().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ')
 const escRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
@@ -159,6 +169,15 @@ export default function ConsolidadoDescontos({ open, onClose }: { open: boolean;
 
   const totalGeral = linhas.reduce((s, r) => s + r.total, 0)
 
+  async function copiar(r: LinhaDesconto) {
+    const texto = partesDe(r).join(' / ')
+    try {
+      if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(texto)
+      else { const ta = document.createElement('textarea'); ta.value = texto; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove() }
+      toast.success('Copiado! É só colar')
+    } catch { toast.error('Não consegui copiar') }
+  }
+
   function imprimir() {
     const esc = (v: any) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     const rows = linhas.map(r => {
@@ -219,8 +238,10 @@ export default function ConsolidadoDescontos({ open, onClose }: { open: boolean;
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {linhas.map(r => (
                 <div key={r.nome} style={{ background: '#fff', border: '1px solid #eceae4', borderRadius: 14, padding: '13px 15px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                     <strong style={{ fontSize: 15, color: '#1a1a1a', flex: 1 }}>{r.nome}</strong>
+                    <button onClick={() => copiar(r)} title="Copiar o detalhe (ex: Café R$ 6,00 / Capuccino R$ 16,00)"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 4, border: '1px solid #d8d4f0', background: '#f5f3ff', color: '#5b4fcf', borderRadius: 8, padding: '5px 10px', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}><Copy size={13} /> Copiar</button>
                     <span style={{ fontSize: 11, fontWeight: 800, color: '#15803d', background: '#f0fdf4', border: '1px solid #dcfce7', borderRadius: 20, padding: '4px 12px' }}>TOTAL R$ {fmtBRL(r.total)}</span>
                   </div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
