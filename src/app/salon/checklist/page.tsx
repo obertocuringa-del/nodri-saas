@@ -10,7 +10,7 @@ import { useIsMobile } from '@/lib/useIsMobile'
 import { useGuardaSalvar } from '@/lib/guardaSalvar'
 import ConsolidadoDescontos from '@/components/salon/ConsolidadoDescontos'
 
-interface Demanda { id: string; texto: string; freq: string; feito: boolean; dias?: string[]; feito_em?: string; historico?: string[]; fixa?: boolean }
+interface Demanda { id: string; texto: string; freq: string; feito: boolean; dias?: string[]; feito_em?: string; historico?: string[]; fixa?: boolean; diaMes?: number }
 interface Categoria { id: string; nome: string; demandas: Demanda[] }
 interface Doc { categorias: Categoria[] }
 
@@ -50,6 +50,16 @@ function inicioJanela(freq: string): Date {
   return d // Diário (e qualquer valor desconhecido)
 }
 const feitoNoPeriodo = (dem: Demanda): boolean => !!dem.feito_em && new Date(dem.feito_em) >= inicioJanela(dem.freq)
+
+// Dia do mês da demanda (1–31) para ordenar. Usa o campo diaMes; se vazio, tenta
+// achar um "DIA N" já escrito no texto. Sem dia → 99 (vai pro fim da lista).
+const DIA_SEM = 99
+function diaDoMes(dem: Demanda): number {
+  if (dem.diaMes && dem.diaMes >= 1 && dem.diaMes <= 31) return dem.diaMes
+  const m = (dem.texto || '').match(/\bdia\s+(\d{1,2})\b/i)
+  const d = m ? Number(m[1]) : 0
+  return (d >= 1 && d <= 31) ? d : DIA_SEM
+}
 
 // Registra a marcação de hoje no item (data + histórico p/ estatística)
 function marcarAgora(dem: Demanda) {
@@ -125,6 +135,7 @@ export default function ChecklistPage() {
     })
   }
   function toggleFixa(ci: number, di: number) { mut(d => { const dem = d.categorias[ci].demandas[di]; dem.fixa = !dem.fixa }) }
+  function setDiaMes(ci: number, di: number, v: string) { mut(d => { const n = Number(v); (d.categorias[ci].demandas[di] as any).diaMes = (n >= 1 && n <= 31) ? n : undefined }) }
   function setDemanda(ci: number, di: number, campo: 'texto' | 'freq', v: string) { mut(d => { (d.categorias[ci].demandas[di] as any)[campo] = v }) }
   function organizarAZ(ci: number) { mut(d => { d.categorias[ci].demandas.sort((a, b) => norm(a.texto).localeCompare(norm(b.texto))) }); toast.success('Organizado em ordem alfabética — repare se aparecerem itens parecidos/repetidos') }
   function toggleDia(ci: number, di: number, dia: string) {
@@ -238,6 +249,14 @@ export default function ChecklistPage() {
           </select>
 
           {!soLeitura && !soExecuta && (
+            <div title="Dia do mês (opcional) — ordena a lista por dia" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, border: '1px solid ' + (dem.diaMes ? '#7c3aed' : '#d0cdc7'), background: dem.diaMes ? '#f5f3ff' : '#fff', borderRadius: 6, padding: '2px 4px 2px 7px', flexShrink: 0 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: dem.diaMes ? '#7c3aed' : '#9ca3af' }}>Dia</span>
+              <input type="number" min={1} max={31} value={dem.diaMes || ''} onChange={e => setDiaMes(catSel, di, e.target.value)} placeholder="—"
+                style={{ width: 34, border: 'none', background: 'transparent', textAlign: 'center', fontSize: 12, fontWeight: 800, color: '#7c3aed', outline: 'none' }} />
+            </div>
+          )}
+
+          {!soLeitura && !soExecuta && (
             <div data-pop-root style={{ position: 'relative', flexShrink: 0 }}>
               <button onClick={e => { ancorarPop(e, 300); setDiasOpen(diasOpen === dem.id ? null : dem.id) }} title="Dias da semana (opcional)"
                 style={{ display: 'inline-flex', alignItems: 'center', gap: 4, border: '1px solid ' + (dem.dias?.length ? '#5b4fcf' : '#d0cdc7'), background: dem.dias?.length ? '#f0eefb' : '#fff', color: dem.dias?.length ? '#5b4fcf' : '#6b6860', borderRadius: 6, padding: '5px 8px', cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>
@@ -283,12 +302,14 @@ export default function ChecklistPage() {
   function LinhaRoteiro({ dem, di, numero }: { dem: Demanda; di: number; numero?: number }) {
     const feitoOk = feitoNoPeriodo(dem)
     const alertaHoje = !!dem.dias?.includes(hojeAbrev) && !feitoOk
+    const dd = diaDoMes(dem)
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: isMobile ? '11px 10px' : '10px 12px', borderRadius: 10, background: feitoOk ? '#f6faf6' : alertaHoje ? '#fee2e2' : '#fff', border: '1px solid ' + (feitoOk ? '#e3efe3' : alertaHoje ? '#fca5a5' : '#eceae4') }}>
         {numero != null && <span style={{ width: 22, height: 22, borderRadius: '50%', background: '#eef0fb', color: '#5b4fcf', fontSize: 12, fontWeight: 800, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{numero}</span>}
         <button onClick={() => !soLeitura && toggleFeito(catSel, di)} disabled={soLeitura} title="Feito?" style={{ border: 'none', background: 'transparent', cursor: soLeitura ? 'default' : 'pointer', padding: 0, flexShrink: 0, display: 'inline-flex', lineHeight: 0 }}>
           {feitoOk ? <CheckCircle2 size={24} color="#16a34a" /> : <Circle size={24} color={alertaHoje ? '#dc2626' : '#c4c0b8'} />}
         </button>
+        {dd !== DIA_SEM && <span style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 900, color: '#7c3aed', background: '#f5f3ff', border: '1px solid #e9d5ff', borderRadius: 7, padding: '3px 8px', whiteSpace: 'nowrap' }}>dia {dd}</span>}
         <span style={{ flex: 1, minWidth: 0, fontSize: 14, color: feitoOk ? '#9ca3af' : '#1a1a1a', textDecoration: feitoOk ? 'line-through' : 'none', lineHeight: 1.35 }}>
           {dem.texto}
           {alertaHoje && <span style={{ display: 'block', fontSize: 10.5, fontWeight: 900, color: '#dc2626' }}>⚠ marcada para hoje</span>}
@@ -551,7 +572,9 @@ export default function ChecklistPage() {
           {/* ── MODO ROTEIRO (Fazer): guia limpo, rotina fixa no topo, feitos descem ── */}
           {cat && (modo === 'fazer' || soLeitura) && (() => {
             const todos = cat.demandas.map((dem, di) => ({ dem, di })).filter(x => x.dem.texto.trim())
-            const feitosDescem = (arr: { dem: Demanda; di: number }[]) => [...arr].sort((a, b) => Number(feitoNoPeriodo(a.dem)) - Number(feitoNoPeriodo(b.dem)))
+            // pendentes primeiro; dentro disso, ordena por dia do mês (7, 15, 16…)
+            const feitosDescem = (arr: { dem: Demanda; di: number }[]) => [...arr].sort((a, b) =>
+              (Number(feitoNoPeriodo(a.dem)) - Number(feitoNoPeriodo(b.dem))) || (diaDoMes(a.dem) - diaDoMes(b.dem)))
             const fixas = feitosDescem(todos.filter(x => x.dem.fixa))
             const porFreq = FREQUENCIAS.map(freq => ({ freq, itens: feitosDescem(todos.filter(x => !x.dem.fixa && x.dem.freq === freq)) })).filter(g => g.itens.length)
             const proximo = [...fixas, ...porFreq.flatMap(g => g.itens)].find(x => !feitoNoPeriodo(x.dem))
