@@ -79,6 +79,15 @@ export default function BoletosFinanceiro({ cor = '#16a34a' }: { cor?: string })
     setSalvando(null)
   }
 
+  // Na primeira carga, abre já na aba que tem algo pra ver (vencido primeiro)
+  const [abaAuto, setAbaAuto] = useState(false)
+  useEffect(() => {
+    if (loading || abaAuto || boletos.length === 0) return
+    const primeira = (['vencidos', 'hoje', 'avencer', 'pagos'] as Aba[]).find(a => grupos[a].length > 0)
+    if (primeira) setAba(primeira)
+    setAbaAuto(true)
+  }, [loading, abaAuto, boletos.length, grupos])
+
   const soma = (arr: Boleto[]) => arr.reduce((s, b) => s + b.valor, 0)
   const lista = grupos[aba]
 
