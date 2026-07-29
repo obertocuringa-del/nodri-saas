@@ -542,6 +542,37 @@ interface DespesaItem { nome: string; valor: string; dica: string; editavel?: bo
 const isoParaBR = (iso: string) => { const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? `${m[3]}/${m[2]}/${m[1]}` : '' }
 const brParaISO = (br: string) => { const m = String(br || '').match(/^(\d{2})\/(\d{2})\/(\d{4})$/); return m ? `${m[3]}-${m[2]}-${m[1]}` : '' }
 const hojeBRCalc = () => { const d = new Date(); return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}` }
+
+// ─── Vencimento das despesas indiretas ──────────────────────────────────────
+// Guardado em ISO 'YYYY-MM-DD' (mesmo formato que o parcelamento já gravava).
+// Preenchido = a conta entra sozinha na fila de boletos do setor FINANCEIRO.
+// Em branco = comportamento antigo, não vira boleto.
+const GRID_IND = '1fr 100px 56px 62px 128px 24px'
+const diasParaVenc = (venc: string): number | null => {
+  const m = String(venc || '').match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (!m) return null
+  const alvo = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]))
+  const hj = new Date(); hj.setHours(0, 0, 0, 0)
+  return Math.round((alvo.getTime() - hj.getTime()) / 86400000)
+}
+function CampoVenc({ valor, onChange }: { valor: string; onChange: (v: string) => void }) {
+  const dias = diasParaVenc(valor)
+  const cor = dias === null ? '#e8e6e0' : dias < 0 ? '#ef4444' : dias === 0 ? '#f59e0b' : '#10b981'
+  return (
+    <div className="nodri-venc-cel" style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <input type="date" value={valor || ''} onChange={e => onChange(e.target.value)}
+        onClick={e => { try { (e.currentTarget as any).showPicker?.() } catch { /* */ } }}
+        title="Vencimento — com data preenchida, a conta entra na fila de boletos do FINANCEIRO"
+        className="w-full px-1 py-1.5 rounded-lg text-[11px] text-center focus:outline-none"
+        style={{ background: '#fff', border: `1.5px solid ${cor}`, color: '#78350f', fontWeight: valor ? 700 : 400, cursor: 'pointer' }} />
+      {dias !== null && (
+        <span style={{ fontSize: 9, textAlign: 'center', fontWeight: 700, color: cor }}>
+          {dias < 0 ? `vencido ${Math.abs(dias)}d` : dias === 0 ? 'vence hoje' : `em ${dias}d`}
+        </span>
+      )}
+    </div>
+  )
+}
 interface Ingrediente  { id: number; nome: string; qtdEmb: string; qtdUsa: string; preco: string; unidade: string }
 interface ServicoProd  { id: number; nomeServico: string; ingredientes: Ingrediente[] }
 interface Servico      { id: number; nome: string; preco: string; rateioP: string; produto: string; imposto: string; produtoNome?: string }
@@ -727,7 +758,7 @@ export default function CalculadoraCusto() {
   function coletarDados() {
     return {
       fat, custIndD, custDirD, lucroD, invInicial, totalDeprec,
-      despInd: despInd.map(d=>({nome:d.nome,valor:d.valor,obs:d.obs||''})),
+      despInd: despInd.map(d=>({nome:d.nome,valor:d.valor,obs:d.obs||'',venc:d.venc||''})),
       extrasDespInd: extrasDespInd.map(d=>({nome:d.nome,valor:d.valor,parcela:d.parcela||'',obs:d.obs||'',grupo:d.grupo||'',venc:d.venc||'',data:d.data||''})),
       extrasDiretas: extrasDiretas.map(d=>({nome:d.nome,valor:d.valor})),
       extrasOutras: extrasOutras.map(d=>({nome:d.nome,valor:d.valor})),
@@ -748,7 +779,7 @@ export default function CalculadoraCusto() {
     if (d.lucroD !== undefined) setLucroD(d.lucroD)
     if (d.invInicial !== undefined) setInvInicial(d.invInicial)
     if (d.totalDeprec !== undefined) setTotalDeprec(d.totalDeprec)
-    if (d.despInd) setDespInd(DESPESAS_INDIRETAS.map((di,i)=>({...di,valor:d.despInd[i]?.valor||'',obs:(d.despInd[i] as any)?.obs||''})))
+    if (d.despInd) setDespInd(DESPESAS_INDIRETAS.map((di,i)=>({...di,valor:d.despInd[i]?.valor||'',obs:(d.despInd[i] as any)?.obs||'',venc:(d.despInd[i] as any)?.venc||''})))
     if (d.extrasDespInd) setExtrasDespInd(d.extrasDespInd.map((x:any)=>({nome:x.nome,valor:x.valor,dica:'',parcela:x.parcela||'',obs:x.obs||'',grupo:x.grupo||'',venc:x.venc||'',data:x.data||''})))
     if ((d as any).extrasDiretas) setExtrasDiretas((d as any).extrasDiretas.map((x:any)=>({nome:x.nome,valor:x.valor,dica:''})))
     if ((d as any).extrasOutras) setExtrasOutras((d as any).extrasOutras.map((x:any)=>({nome:x.nome,valor:x.valor,dica:''})))
@@ -1764,11 +1795,12 @@ Use números reais. Seja direto.`
               )}
               {secIndiretas && <>
                 {/* Cabeçalho colunas */}
-                <div className="hidden sm:grid gap-2 px-5 py-2 text-[10px] font-bold uppercase tracking-wider border-b" style={{gridTemplateColumns:'1fr 110px 70px 72px 24px',color:'#92400e',borderColor:'#f59e0b40',background:'#fef9ec'}}>
+                <div className="hidden sm:grid gap-2 px-5 py-2 text-[10px] font-bold uppercase tracking-wider border-b" style={{gridTemplateColumns:GRID_IND,color:'#92400e',borderColor:'#f59e0b40',background:'#fef9ec'}}>
                   <div>Despesa</div>
                   <div className="text-center">Valor Mensal</div>
                   <div className="text-center">% Fat.</div>
                   <div className="text-center">Parcela</div>
+                  <div className="text-center" title="Preenchendo o vencimento, a conta entra automaticamente na fila de boletos do setor FINANCEIRO.">📅 Vencimento</div>
                   <div/>
                 </div>
 
@@ -1777,7 +1809,7 @@ Use números reais. Seja direto.`
                   const v=n(d.valor), pctV=fatN>0?(v/fatN*100):0
                   const cor=pctV>20?'#ef4444':pctV>10?'#f59e0b':'#10b981'
                   return(
-                    <div key={i} className="grid linha-form-mobile gap-2 px-5 py-2 items-center" style={{gridTemplateColumns:'1fr 110px 70px 72px 24px',borderBottom:'1px solid #f59e0b20',background: v>0 ? '#fffdf5' : 'transparent'}}>
+                    <div key={i} className="grid linha-form-mobile gap-2 px-5 py-2 items-center" style={{gridTemplateColumns:GRID_IND,borderBottom:'1px solid #f59e0b20',background: v>0 ? '#fffdf5' : 'transparent'}}>
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="text-xs font-semibold" style={{color:'#78350f'}}>{d.nome}</span>
                         <InfoBtn id={d.nome==='Aluguel'?'aluguel':d.nome==='Energia Elétrica'?'energia':d.nome==='Água'?'agua':d.nome==='Contabilidade'?'contabilidade':''}/>
@@ -1800,6 +1832,7 @@ Use números reais. Seja direto.`
                           className="w-full px-2 py-1.5 rounded-lg text-xs text-center focus:outline-none"
                           style={{background:'#fff',border:'1.5px solid #e8e6e0',color:d.parcela?'#b45309':'#aaa',fontWeight:d.parcela?700:400}}/>
                       </div>
+                      <CampoVenc valor={d.venc||''} onChange={val=>{const nd=[...despInd];nd[i]={...nd[i],venc:val};setDespInd(nd);setDirtyCalc(true)}}/>
                       <div/>
                       {(notasAbertas.has('d'+i) || d.obs) && (
                         <ObsComProf valor={d.obs||''} profs={profsLista}
@@ -1814,7 +1847,7 @@ Use números reais. Seja direto.`
                   const v=n(d.valor), pctV=fatN>0?(v/fatN*100):0
                   const cor=pctV>20?'#ef4444':pctV>10?'#f59e0b':'#10b981'
                   return(
-                    <div key={i} className="grid linha-form-mobile gap-2 px-5 py-2 items-center" style={{gridTemplateColumns:'1fr 110px 70px 72px 24px',borderBottom:'1px solid #f59e0b20',background:'#fffdf5'}}>
+                    <div key={i} className="grid linha-form-mobile gap-2 px-5 py-2 items-center" style={{gridTemplateColumns:GRID_IND,borderBottom:'1px solid #f59e0b20',background:'#fffdf5'}}>
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="text-xs font-semibold" style={{color:'#78350f'}}>{d.nome}</span>
                         {d.grupo
@@ -1838,6 +1871,7 @@ Use números reais. Seja direto.`
                           className="w-full px-2 py-1.5 rounded-lg text-xs text-center focus:outline-none"
                           style={{background:'#fff',border:'1.5px solid #e8e6e0',color:d.parcela?'#b45309':'#aaa',fontWeight:d.parcela?700:400}}/>
                       </div>
+                      <CampoVenc valor={d.venc||''} onChange={val=>{const nd=[...extrasDespInd];nd[i]={...nd[i],venc:val};setExtrasDespInd(nd);setDirtyCalc(true)}}/>
                       <div className="flex justify-end">
                         <button onClick={()=>setExtrasDespInd(prev=>prev.filter((_,idx)=>idx!==i))} style={{color:'#ef4444'}}><Trash2 size={12}/></button>
                       </div>
@@ -1872,6 +1906,9 @@ Use números reais. Seja direto.`
                   {despesasCatalogo.filter(c=>c.categoria==='indireta').length===0 && (
                     <span className="text-[10px]" style={{color:'#b45309'}}>⚠️ Cadastre despesas em <strong>Gerenciar Catálogo</strong> primeiro</span>
                   )}
+                  <span className="text-[10px] w-full" style={{color:'#9a7b3a'}}>
+                    📅 Preencheu o <strong>Vencimento</strong>? A conta entra sozinha na fila de <strong>Boletos</strong> do setor FINANCEIRO — lá você marca como paga. Em branco, nada muda.
+                  </span>
                 </div>
 
                 {/* Modal de parcelamento */}
@@ -1882,7 +1919,7 @@ Use números reais. Seja direto.`
                         <h3 style={{fontSize:16,fontWeight:800,color:'#1a1a1a',margin:0}}>💳 Lançar despesa parcelada</h3>
                         <button onClick={()=>!parcSalvando&&setParcAberto(false)} style={{background:'none',border:'none',cursor:'pointer',color:'#767069'}}><X size={18}/></button>
                       </div>
-                      <p style={{fontSize:12,color:'#767069',margin:0}}>Cada parcela cai no mês do seu vencimento e é <strong>somada</strong> ao mês (nada é apagado). Ao confirmar, tudo já fica salvo.</p>
+                      <p style={{fontSize:12,color:'#767069',margin:0}}>Cada parcela cai no mês do seu vencimento e é <strong>somada</strong> ao mês (nada é apagado). Ao confirmar, tudo já fica salvo — e cada parcela entra na fila de <strong>Boletos</strong> do FINANCEIRO na data do vencimento.</p>
 
                       <div>
                         <label style={{fontSize:11,fontWeight:700,color:'#78350f',display:'block',marginBottom:4}}>Despesa *</label>

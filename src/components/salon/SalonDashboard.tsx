@@ -164,6 +164,10 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
   const [kpiNiver, setKpiNiver] = useState<number | null>(() => lerKpi('niver'))
   const [kpiPend, setKpiPend] = useState<number | null>(() => lerKpi('pend'))
   const [kpiFb, setKpiFb] = useState<number | null>(() => lerKpi('fb'))
+  // Boletos vencidos (Calculadora → fila do FINANCEIRO)
+  const [kpiBoletos, setKpiBoletos] = useState<number | null>(() => lerKpi('boletos'))
+  const [kpiBoletosVlr, setKpiBoletosVlr] = useState<number>(() => lerKpi('boletosVlr') ?? 0)
+  const [finId, setFinId] = useState('')   // id do setor FINANCEIRO, p/ o card abrir direto lá
   const [fbNovos, setFbNovos] = useState(0) // respostas novas desde a última visita → card pisca
   const [fbFormId, setFbFormId] = useState<string>('') // formulário p/ abrir direto os resultados
   useEffect(() => {
@@ -173,6 +177,13 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
       const ativos = lista.filter(p => p.ativo !== false && !p.is_departamento)
       const niver = ativos.filter(p => { const d = String(p.data_aniversario || ''); const m = Number(d.slice(5, 7)); return m === mes }).length
       setKpiAtivos(ativos.length); setKpiNiver(niver); salvarKpi({ ativos: ativos.length, niver })
+      const fin = lista.find(p => p.is_departamento && String(p.nome_completo || '').toUpperCase().includes('FINANCEIRO'))
+      if (fin?.id) setFinId(String(fin.id))
+    }).catch(() => { })
+    fetch('/api/salon/boletos?resumo=1').then(r => r.ok ? r.json() : null).then(d => {
+      if (!d || typeof d.vencidos !== 'number') return
+      setKpiBoletos(d.vencidos); setKpiBoletosVlr(Number(d.vencidosValor) || 0)
+      salvarKpi({ boletos: d.vencidos, boletosVlr: Number(d.vencidosValor) || 0 })
     }).catch(() => { })
     fetch('/api/pendencias').then(r => r.ok ? r.json() : []).then((arr: any[]) => {
       const n = (Array.isArray(arr) ? arr : []).filter((p: any) => !p.resolvido).length
@@ -703,6 +714,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                 { perm: 'pendencias', href: '/salon/pendencias', emoji: '⚠️', label: 'Pendências abertas', valor: kpiPend, cor: '#ea580c', badge: 0 },
                 { perm: 'calendario', href: '/salon/calendario', emoji: '📅', label: 'Compromissos (2 dias)', valor: totalCompromissos, cor: '#0891b2', badge: 0, seletor: true as const },
                 { perm: 'feedback_cliente', href: fbFormId ? `/salon/feedback/resultados/${fbFormId}` : '/salon/feedback', emoji: '⭐', label: 'Feedbacks de clientes', valor: kpiFb, cor: '#16a34a', badge: fbNovos },
+                { perm: 'calculadora', href: finId ? `/salon/departamentos/${finId}` : '/salon/profissionais', emoji: '📄', label: 'Boletos vencidos', valor: kpiBoletos, cor: '#dc2626', badge: 0, alerta: (kpiBoletos || 0) > 0, sub: (kpiBoletos || 0) > 0 ? `R$ ${kpiBoletosVlr.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} a pagar` : 'tudo em dia' },
               ].filter(k => pode(k.perm)).map(k => {
                 // Card de Compromissos: abre um seletor (Central / Marketing) em vez de navegar
                 if ((k as any).seletor) {
@@ -762,12 +774,13 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                 return (
                 <a key={k.perm} href={k.href}
                   onClick={() => { if (k.perm === 'feedback_cliente') { try { localStorage.setItem('nodri_fb_visto', String(kpiFb ?? 0)) } catch { /* */ } } }}
-                  style={{ textDecoration: 'none', background: k.badge > 0 ? '#f0fdf4' : '#fff', border: k.badge > 0 ? '1px solid #86efac' : '1px solid #e8e6e0', borderLeft: `4px solid ${k.cor}`, borderRadius: 12, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12, position: 'relative', animation: k.badge > 0 ? 'nodriKpiPulse 1.6s ease-in-out infinite' : undefined }}
+                  style={{ textDecoration: 'none', background: (k as any).alerta ? '#fef2f2' : k.badge > 0 ? '#f0fdf4' : '#fff', border: (k as any).alerta ? '1px solid #fca5a5' : k.badge > 0 ? '1px solid #86efac' : '1px solid #e8e6e0', borderLeft: `4px solid ${k.cor}`, borderRadius: 12, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12, position: 'relative', animation: (k.badge > 0 || (k as any).alerta) ? 'nodriKpiPulse 1.6s ease-in-out infinite' : undefined }}
                   onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 4px 14px rgba(0,0,0,.08)')} onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}>
                   <span style={{ fontSize: 24 }}>{k.emoji}</span>
-                  <div>
+                  <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: 22, fontWeight: 900, color: k.cor, lineHeight: 1 }}>{k.valor == null ? '—' : k.valor}</div>
                     <div style={{ fontSize: 11.5, color: '#6b6860', fontWeight: 600, marginTop: 2 }}>{k.label}</div>
+                    {(k as any).sub && <div style={{ fontSize: 10.5, color: (k as any).alerta ? '#dc2626' : '#9ca3af', fontWeight: 600, marginTop: 1 }}>{(k as any).sub}</div>}
                   </div>
                   {k.badge > 0 && (
                     <span style={{ position: 'absolute', top: -9, right: -6, background: '#16a34a', color: '#fff', fontSize: 10, fontWeight: 800, padding: '3px 9px', borderRadius: 99, animation: 'pulseDot 1.2s infinite', whiteSpace: 'nowrap', boxShadow: '0 3px 10px rgba(22,163,74,.4)' }}>

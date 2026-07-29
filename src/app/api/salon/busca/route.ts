@@ -58,6 +58,7 @@ export async function GET(req: NextRequest) {
   try {
     const { data } = await supabaseAdmin.from('salao_config').select('chave, valor').eq('salao_id', salaoId)
     for (const row of (data || [])) {
+      if (row.chave === 'boletos_pagos') continue   // registro técnico (selo de pagamento), não é conteúdo
       const textos: string[] = []
       coletarTextos(row.valor, textos)
       if (textos.some(t => norm(t).includes(q)) && pode(permDaGrade(row.chave))) {

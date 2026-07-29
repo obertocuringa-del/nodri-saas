@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo, CSSProperties } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { ArrowLeft, Loader2, Check, Trash2, CornerUpRight, Wallet, X, Calendar } from 'lucide-react'
 import toast from 'react-hot-toast'
+import BoletosFinanceiro from '@/components/salon/BoletosFinanceiro'
 
 interface Prof { id: string; nome_completo: string; apelido?: string; cargo?: string; ativo?: boolean; is_departamento?: boolean; departamento_cor?: string }
 interface Emprestimo { valor: number; motivo: string; status: 'pendente' | 'negado' | 'liberado'; motivoNegado?: string; modo?: string; parcelas?: { valor: number; data: string; label: string }[]; liberadoEm?: string }
@@ -97,6 +98,8 @@ export default function DepartamentoPage() {
   }
 
   const cor = dep?.departamento_cor || '#5b4fcf'
+  // O bloco de boletos vive só no setor financeiro (é lá que se paga conta)
+  const ehFinanceiro = (dep?.nome_completo || '').trim().toUpperCase().includes('FINANCEIRO')
 
   if (loading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#faf9f7' }}><Loader2 className="animate-spin" style={{ color: '#5b4fcf' }} /></div>
 
@@ -164,6 +167,9 @@ export default function DepartamentoPage() {
       </nav>
 
       <div style={{ maxWidth: 760, margin: '0 auto', padding: 16 }}>
+        {/* Fila de boletos — só no setor FINANCEIRO */}
+        {ehFinanceiro && <BoletosFinanceiro cor={cor} />}
+
         {/* Resumo */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 18 }}>
           {[

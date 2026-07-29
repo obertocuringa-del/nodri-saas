@@ -1,0 +1,191 @@
+'use client'
+import { useEffect, useMemo, useState } from 'react'
+import { Loader2, Check, RotateCcw, FileText, ExternalLink } from 'lucide-react'
+import toast from 'react-hot-toast'
+
+// ── Fila de boletos / contas a pagar ────────────────────────────────────────
+// Só LÊ o que já foi lançado nas Despesas Indiretas da Calculadora (qualquer mês)
+// com o campo Vencimento preenchido. Marcar como pago grava apenas o selo de
+// status — nenhum valor da calculadora é alterado.
+
+interface Boleto {
+  key: string; ano: number; mes: number; lista: 'fix' | 'extra'; idx: number
+  nome: string; valor: number; venc: string; parcela: string; obs: string
+  pago: boolean; pagoEm: string
+}
+
+const MESES = ['', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+const fmtR = (n: number) => n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+const isoBR = (iso: string) => { const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? `${m[3]}/${m[2]}/${m[1]}` : iso }
+function dias(venc: string): number {
+  const m = String(venc || '').match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (!m) return 0
+  const alvo = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]))
+  const hj = new Date(); hj.setHours(0, 0, 0, 0)
+  return Math.round((alvo.getTime() - hj.getTime()) / 86400000)
+}
+
+type Aba = 'vencidos' | 'hoje' | 'avencer' | 'pagos'
+
+export default function BoletosFinanceiro({ cor = '#16a34a' }: { cor?: string }) {
+  const [boletos, setBoletos] = useState<Boleto[]>([])
+  const [podeBaixa, setPodeBaixa] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [semAcesso, setSemAcesso] = useState(false)
+  const [aba, setAba] = useState<Aba>('vencidos')
+  const [salvando, setSalvando] = useState<string | null>(null)
+
+  async function carregar() {
+    try {
+      const r = await fetch('/api/salon/boletos', { credentials: 'include' })
+      if (!r.ok) { setSemAcesso(true); setBoletos([]); setLoading(false); return }
+      const d = await r.json()
+      setBoletos(Array.isArray(d?.boletos) ? d.boletos : [])
+      setPodeBaixa(!!d?.podeDarBaixa)
+    } catch { /* silencioso — o bloco só não aparece */ }
+    setLoading(false)
+  }
+  useEffect(() => { carregar() }, [])
+
+  const grupos = useMemo(() => {
+    const abertos = boletos.filter(b => !b.pago)
+    return {
+      // vencidos: do vencimento mais próximo de hoje para o mais antigo
+      vencidos: abertos.filter(b => dias(b.venc) < 0).sort((a, b) => b.venc < a.venc ? -1 : 1),
+      hoje: abertos.filter(b => dias(b.venc) === 0),
+      // a vencer: o próximo primeiro
+      avencer: abertos.filter(b => dias(b.venc) > 0).sort((a, b) => a.venc < b.venc ? -1 : 1),
+      // pagos: o pagamento mais recente primeiro
+      pagos: boletos.filter(b => b.pago).sort((a, b) => (b.pagoEm || '') < (a.pagoEm || '') ? -1 : 1),
+    }
+  }, [boletos])
+
+  async function baixa(b: Boleto, pago: boolean) {
+    setSalvando(b.key)
+    try {
+      const r = await fetch('/api/salon/boletos', {
+        method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: b.key, pago }),
+      })
+      if (r.ok) {
+        const d = await r.json()
+        setBoletos(prev => prev.map(x => x.key === b.key ? { ...x, pago, pagoEm: d?.pagoEm || '' } : x))
+        toast.success(pago ? `${b.nome} — pago` : `${b.nome} volta pra fila`)
+      } else {
+        const e = await r.json().catch(() => ({}))
+        toast.error(e.error || 'Não foi possível registrar')
+      }
+    } catch { toast.error('Erro de conexão') }
+    setSalvando(null)
+  }
+
+  const soma = (arr: Boleto[]) => arr.reduce((s, b) => s + b.valor, 0)
+  const lista = grupos[aba]
+
+  const ABAS: { id: Aba; label: string; cor: string; bg: string; bd: string }[] = [
+    { id: 'vencidos', label: 'Vencidos', cor: '#b91c1c', bg: '#fef2f2', bd: '#fecaca' },
+    { id: 'hoje', label: 'Vencem hoje', cor: '#b45309', bg: '#fffbeb', bd: '#fde68a' },
+    { id: 'avencer', label: 'A vencer', cor: '#1d4ed8', bg: '#eff6ff', bd: '#bfdbfe' },
+    { id: 'pagos', label: 'Pagos', cor: '#047857', bg: '#ecfdf5', bd: '#a7f3d0' },
+  ]
+
+  // Sem permissão da Calculadora (ex.: sub-usuário) → o bloco simplesmente não existe
+  if (semAcesso) return null
+
+  if (loading) return (
+    <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: 20, marginBottom: 18, display: 'flex', alignItems: 'center', gap: 8, color: '#9ca3af', fontSize: 13 }}>
+      <Loader2 size={15} className="animate-spin" /> Carregando boletos…
+    </div>
+  )
+
+  return (
+    <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: 16, marginBottom: 18 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+        <FileText size={17} style={{ color: cor }} />
+        <span style={{ fontWeight: 800, fontSize: 14.5, color: '#1a1a1a' }}>Contas &amp; Boletos</span>
+        <span style={{ fontSize: 11, color: '#9ca3af' }}>de todos os meses da Calculadora</span>
+        <a href="/salon/calculadora-custo" style={{ marginLeft: 'auto', fontSize: 11.5, color: '#5b4fcf', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          Lançar despesa <ExternalLink size={12} />
+        </a>
+      </div>
+
+      {/* Abas com contagem e total */}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+        {ABAS.map(a => {
+          const arr = grupos[a.id]
+          const ativo = aba === a.id
+          return (
+            <button key={a.id} onClick={() => setAba(a.id)}
+              style={{
+                background: ativo ? a.bg : '#fff', border: `1px solid ${ativo ? a.bd : '#e8e6e0'}`,
+                borderRadius: 10, padding: '7px 12px', cursor: 'pointer', textAlign: 'left',
+                boxShadow: ativo ? `inset 0 0 0 1px ${a.bd}` : 'none',
+              }}>
+              <div style={{ fontSize: 11.5, fontWeight: 800, color: ativo ? a.cor : '#6b6860' }}>
+                {a.label} <span style={{ fontSize: 13 }}>{arr.length}</span>
+              </div>
+              <div style={{ fontSize: 10.5, color: ativo ? a.cor : '#9ca3af', marginTop: 1 }}>R$ {fmtR(soma(arr))}</div>
+            </button>
+          )
+        })}
+      </div>
+
+      {lista.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '22px 10px', color: '#9ca3af', fontSize: 12.5 }}>
+          {aba === 'vencidos' ? 'Nenhum boleto vencido. Tudo em dia.'
+            : aba === 'hoje' ? 'Nada vencendo hoje.'
+            : aba === 'avencer' ? 'Nenhuma conta futura com vencimento lançado.'
+            : 'Nenhum boleto marcado como pago ainda.'}
+          <div style={{ fontSize: 11, marginTop: 6 }}>
+            A conta entra aqui quando você preenche o <strong>Vencimento</strong> na Calculadora (Despesas Indiretas).
+          </div>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {lista.map(b => {
+            const d = dias(b.venc)
+            const c = b.pago ? { cor: '#047857', bg: '#ecfdf5', bd: '#a7f3d0', barra: '#22c55e' }
+              : d < 0 ? { cor: '#b91c1c', bg: '#fef2f2', bd: '#fecaca', barra: '#ef4444' }
+              : d === 0 ? { cor: '#b45309', bg: '#fffbeb', bd: '#fde68a', barra: '#f59e0b' }
+              : { cor: '#6b6860', bg: '#fff', bd: '#e8e6e0', barra: '#cbd5e1' }
+            return (
+              <div key={b.key} style={{ background: '#fff', border: `1px solid ${c.bd}`, borderLeft: `4px solid ${c.barra}`, borderRadius: 12, padding: '11px 13px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 5 }}>
+                  {b.pago
+                    ? <span style={{ fontSize: 10, fontWeight: 800, color: c.cor, background: c.bg, padding: '2px 8px', borderRadius: 999 }}>PAGO {b.pagoEm ? `em ${isoBR(b.pagoEm)}` : ''}</span>
+                    : d < 0 ? <span style={{ fontSize: 10, fontWeight: 800, color: c.cor, background: c.bg, padding: '2px 8px', borderRadius: 999 }}>VENCIDO {Math.abs(d)} dia{Math.abs(d) > 1 ? 's' : ''}</span>
+                    : d === 0 ? <span style={{ fontSize: 10, fontWeight: 800, color: c.cor, background: c.bg, padding: '2px 8px', borderRadius: 999 }}>VENCE HOJE</span>
+                    : <span style={{ fontSize: 10, fontWeight: 700, color: '#6b6860' }}>em {d} dia{d > 1 ? 's' : ''}</span>}
+                  <span style={{ fontSize: 10, color: '#6b6860', background: '#f5f4f0', padding: '2px 8px', borderRadius: 999 }}>lançado em {MESES[b.mes] || b.mes}/{b.ano}</span>
+                  {b.parcela && <span style={{ fontSize: 10, fontWeight: 700, color: '#1d4ed8', background: '#dbeafe', padding: '2px 8px', borderRadius: 999 }}>parcela {b.parcela}</span>}
+                  <span style={{ marginLeft: 'auto', fontSize: 11.5, color: '#6b6860' }}>venc. <strong style={{ color: c.cor }}>{isoBR(b.venc)}</strong></span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a', textDecoration: b.pago ? 'line-through' : 'none' }}>{b.nome}</span>
+                  <span style={{ marginLeft: 'auto', fontSize: 17, fontWeight: 900, color: b.pago ? '#9ca3af' : '#15803d' }}>R$ {fmtR(b.valor)}</span>
+                </div>
+                {b.obs && <p style={{ fontSize: 11.5, color: '#6b6860', margin: '4px 0 0', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{b.obs}</p>}
+
+                {podeBaixa && (
+                  <div style={{ display: 'flex', gap: 8, marginTop: 9 }}>
+                    {b.pago ? (
+                      <button disabled={salvando === b.key} onClick={() => baixa(b, false)}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#fff', color: '#6b6860', border: '1px solid #e0ddd8', borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer', opacity: salvando === b.key ? .6 : 1 }}>
+                        <RotateCcw size={12} /> Desfazer
+                      </button>
+                    ) : (
+                      <button disabled={salvando === b.key} onClick={() => baixa(b, true)}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#16a34a', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer', opacity: salvando === b.key ? .6 : 1 }}>
+                        <Check size={13} /> {salvando === b.key ? 'Salvando…' : 'Marcar como pago'}
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}

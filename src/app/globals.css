@@ -123,6 +123,8 @@ html, body {
          iguais. Marque a linha com .linha-form-mobile. */
   .linha-form-mobile { grid-template-columns: repeat(3, 1fr) !important; row-gap: 6px !important; }
   .linha-form-mobile > :first-child { grid-column: 1 / -1 !important; }
+  /* Campo de data (vencimento) precisa de mais espaço que 1/3 da linha */
+  .nodri-venc-cel { grid-column: span 2 !important; }
 
   /* 16) Calendário continua com 7 colunas no celular (a regra geral de 2
          colunas NÃO se aplica aqui — senão a semana ficaria quebrada).

@@ -252,6 +252,8 @@ export default function ProfissionaisPage() {
   const [cnpjSalvando, setCnpjSalvando] = useState<string | null>(null)
   const [aprovandoId, setAprovandoId] = useState<string | null>(null)
   const [souDono, setSouDono] = useState(false)   // só o salão principal cria/exclui departamento
+  // Boletos vencidos — vira aviso vermelho no card do setor FINANCEIRO
+  const [boletosVencidos, setBoletosVencidos] = useState(0)
 
   // Criar departamento
   const [novoDep, setNovoDep] = useState(false)
@@ -637,7 +639,7 @@ ${montarContratoHTML()}
     carregarProfissionais()
   }
 
-  useEffect(() => { carregarProfissionais(); buscarLinkCadastro(); carregarServicos(); carregarSalao(); fetch('/api/auth/me').then(r => r.ok ? r.json() : null).then(d => setSouDono(d?.role === 'salon')).catch(() => { }); fetch('/api/salon/grid?chave=prof_categorias').then(r => r.ok ? r.json() : null).then(d => { if (d && Array.isArray(d.lista)) setCatsCustom(d.lista) }).catch(() => { }) }, [])
+  useEffect(() => { carregarProfissionais(); buscarLinkCadastro(); carregarServicos(); carregarSalao(); fetch('/api/auth/me').then(r => r.ok ? r.json() : null).then(d => setSouDono(d?.role === 'salon')).catch(() => { }); fetch('/api/salon/grid?chave=prof_categorias').then(r => r.ok ? r.json() : null).then(d => { if (d && Array.isArray(d.lista)) setCatsCustom(d.lista) }).catch(() => { }); fetch('/api/salon/boletos?resumo=1').then(r => r.ok ? r.json() : null).then(d => { if (d && typeof d.vencidos === 'number') setBoletosVencidos(d.vencidos) }).catch(() => { }) }, [])
 
   async function carregarSalao() {
     try {
@@ -1067,10 +1069,12 @@ ${montarContratoHTML()}
                       {departamentos.map(d => {
                         const cor = d.departamento_cor || '#5b4fcf'
                         const icone = d.nome_completo === 'ADMINISTRATIVO' ? '🗂️' : d.nome_completo === 'FINANCEIRO' ? '💰' : d.nome_completo === 'RECEPÇÃO' ? '🛎️' : d.nome_completo === 'GERÊNCIA' ? '🏢' : '🏢'
-                        const temPend = (d.pendencias_abertas || 0) > 0
+                        const ehFin = d.nome_completo.trim().toUpperCase().includes('FINANCEIRO')
+                        const boletosAqui = ehFin ? boletosVencidos : 0
+                        const temPend = (d.pendencias_abertas || 0) > 0 || boletosAqui > 0
                         return (
                           <div key={d.id}
-                            style={{ background: temPend ? '#fff0f0' : '#ffffff', border: `1px solid ${temPend ? '#7f1d1d' : cor + '40'}`, borderRadius: '10px', padding: '12px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', transition: 'all 0.2s' }}
+                            style={{ background: temPend ? '#fff0f0' : '#ffffff', border: `1px solid ${temPend ? '#7f1d1d' : cor + '40'}`, borderRadius: '10px', padding: '12px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', transition: 'all 0.2s', position: 'relative' }}
                             onClick={() => router.push(`/salon/departamentos/${d.id}`)}
                             onMouseEnter={e => { e.currentTarget.style.borderColor = temPend ? '#ef4444' : cor; e.currentTarget.style.boxShadow = `0 0 0 2px ${temPend ? '#ef444420' : cor + '20'}` }}
                             onMouseLeave={e => { e.currentTarget.style.borderColor = temPend ? '#7f1d1d' : cor + '40'; e.currentTarget.style.boxShadow = 'none' }}>
@@ -1079,10 +1083,15 @@ ${montarContratoHTML()}
                             </div>
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{ color: '#1a1a1a', fontWeight: 700, fontSize: '12px' }}>{d.nome_completo}</div>
-                              {temPend
+                              {(d.pendencias_abertas || 0) > 0
                                 ? <div style={{ color: '#ef4444', fontSize: '10px', marginTop: '2px', fontWeight: 600 }}>⚠ {d.pendencias_abertas} pendência{d.pendencias_abertas! > 1 ? 's' : ''}</div>
+                                : boletosAqui > 0
+                                ? <div style={{ color: '#ef4444', fontSize: '10px', marginTop: '2px', fontWeight: 600 }}>📄 {boletosAqui} boleto{boletosAqui > 1 ? 's' : ''} vencido{boletosAqui > 1 ? 's' : ''}</div>
                                 : <div style={{ color: '#6b6860', fontSize: '10px', marginTop: '2px' }}>Sem pendências</div>
                               }
+                              {(d.pendencias_abertas || 0) > 0 && boletosAqui > 0 && (
+                                <div style={{ color: '#ef4444', fontSize: '10px', fontWeight: 600 }}>📄 {boletosAqui} boleto{boletosAqui > 1 ? 's' : ''} vencido{boletosAqui > 1 ? 's' : ''}</div>
+                              )}
                             </div>
                             {souDono && (
                               <button onClick={e => { e.stopPropagation(); excluirDepartamento(d) }} title="Excluir setor" style={{ background: 'transparent', border: 'none', color: '#cbd5e1', cursor: 'pointer', padding: 2 }}>
