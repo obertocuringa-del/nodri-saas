@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { X, Camera, Barcode, ClipboardPaste, Image as ImageIcon, Zap } from 'lucide-react'
 import { lerCodigoBoleto, formatarLinha, BoletoLido } from '@/lib/boleto'
-import { decodificarCanvas, paraCanvas, prepararLeitor } from '@/lib/leitorCodigo'
+import { decodificarCanvas, paraCanvas, prepararLeitor, nativoLeBoleto } from '@/lib/leitorCodigo'
 
 // ─── Leitor de boleto ───────────────────────────────────────────────────────
 // Quatro caminhos, e todos ficam disponíveis ao mesmo tempo:
@@ -182,6 +182,9 @@ export default function LeitorBoleto({ aberto, onFechar, onLido, titulo }: {
       videoRef.current.srcObject = stream
       try { await videoRef.current.play() } catch { /* autoplay */ }
 
+      // Se o navegador lê ITF sozinho, os primeiros segundos usam só ele — assim
+      // o decodificador extra nem chega a ser baixado quando não é necessário.
+      const nativoBom = await nativoLeBoleto()
       let voltas = 0
       const tick = async () => {
         if (pararRef.current || !videoRef.current) return
@@ -190,7 +193,7 @@ export default function LeitorBoleto({ aberto, onFechar, onLido, titulo }: {
         try {
           const canvas = paraCanvas(v, 1280)
           if (canvas) {
-            const achados = await decodificarCanvas(canvas)
+            const achados = await decodificarCanvas(canvas, !nativoBom || voltas >= 14)
             if (achados.length && tentarCodigos(achados)) { pararCamera(); return }
           }
           voltas++

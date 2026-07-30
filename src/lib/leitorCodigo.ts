@@ -38,8 +38,25 @@ async function pegarZxing() {
   }
 }
 
-// Deixa o ZXing pronto antes do usuário disparar (baixa o pacote em 2º plano)
-export function prepararLeitor() { pegarZxing() }
+// O navegador já sabe ler o código do boleto sozinho? (precisa do formato ITF)
+// Quando sabe, o ZXing nem é baixado — é o caso do Chrome no Android.
+let nativoComItf: boolean | null = null
+export async function nativoLeBoleto(): Promise<boolean> {
+  if (nativoComItf !== null) return nativoComItf
+  if (typeof window === 'undefined' || !('BarcodeDetector' in window)) { nativoComItf = false; return false }
+  try {
+    const sup: string[] = await (window as any).BarcodeDetector.getSupportedFormats()
+    nativoComItf = Array.isArray(sup) && sup.includes('itf')
+  } catch { nativoComItf = false }
+  return nativoComItf
+}
+
+// Baixa o decodificador em 2º plano SÓ quando o navegador não dá conta.
+// Assim o aparelho que já lê nativo não carrega nada a mais.
+export async function prepararLeitor() {
+  if (await nativoLeBoleto()) return
+  pegarZxing()
+}
 
 function cinzaDe(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number): Uint8ClampedArray {
   const d = ctx.getImageData(x, y, w, h).data
@@ -69,7 +86,7 @@ async function zxingNoRecorte(ctx: CanvasRenderingContext2D, x: number, y: numbe
 // Tenta o nativo (quando existe) e depois o ZXing, no quadro inteiro e na faixa
 // central — o código do boleto é largo e horizontal, a faixa do meio costuma
 // isolar melhor as barras.
-export async function decodificarCanvas(canvas: HTMLCanvasElement): Promise<string[]> {
+export async function decodificarCanvas(canvas: HTMLCanvasElement, usarZxing = true): Promise<string[]> {
   const achados: string[] = []
   const w = canvas.width, h = canvas.height
   if (!w || !h) return achados
@@ -83,7 +100,7 @@ export async function decodificarCanvas(canvas: HTMLCanvasElement): Promise<stri
       for (const c of res || []) if (c?.rawValue) achados.push(String(c.rawValue))
     } catch { /* segue pro ZXing */ }
   }
-  if (achados.length) return achados
+  if (achados.length || !usarZxing) return achados
 
   const ctx = canvas.getContext('2d', { willReadFrequently: true } as any)
   if (!ctx) return achados
