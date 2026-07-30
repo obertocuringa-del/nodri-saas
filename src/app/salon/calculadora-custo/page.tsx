@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from 'react'
 import { ArrowLeft, Plus, Trash2, Calculator, Loader2, Save, ChevronDown, ChevronUp, History, CheckCircle, ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { usePermissoes } from '@/lib/usePermissoes'
 import { useGuardaSalvar } from '@/lib/guardaSalvar'
+import LeitorBoleto from '@/components/salon/LeitorBoleto'
+import { BoletoLido, formatarLinha } from '@/lib/boleto'
 
 const MESES_NOMES = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 
@@ -536,7 +538,7 @@ const DESPESAS_INDIRETAS = [
 ]
 
 // ─── Tipos ──────────────────────────────────────────────────────────────────
-interface DespesaItem { nome: string; valor: string; dica: string; editavel?: boolean; parcela?: string; obs?: string; grupo?: string; venc?: string; data?: string }
+interface DespesaItem { nome: string; valor: string; dica: string; editavel?: boolean; parcela?: string; obs?: string; grupo?: string; venc?: string; data?: string; cod?: string }
 
 // Datas do lançamento (dd/mm/yyyy) <-> input type=date (yyyy-mm-dd)
 const isoParaBR = (iso: string) => { const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? `${m[3]}/${m[2]}/${m[1]}` : '' }
@@ -547,7 +549,30 @@ const hojeBRCalc = () => { const d = new Date(); return `${String(d.getDate()).p
 // Guardado em ISO 'YYYY-MM-DD' (mesmo formato que o parcelamento já gravava).
 // Preenchido = a conta entra sozinha na fila de boletos do setor FINANCEIRO.
 // Em branco = comportamento antigo, não vira boleto.
-const GRID_IND = '1fr 100px 56px 62px 128px 24px'
+const GRID_IND = '1fr 100px 56px 62px 128px 52px'
+
+// Mostra o código guardado embaixo da linha (o Financeiro copia por lá)
+function LinhaCodigo({ cod, onLimpar }: { cod: string; onLimpar: () => void }) {
+  return (
+    <div style={{gridColumn:'1 / -1',display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:8,padding:'5px 9px'}}>
+      <span style={{fontSize:9.5,fontWeight:800,color:'#15803d'}}>CÓDIGO DO BOLETO</span>
+      <span style={{fontFamily:'ui-monospace,monospace',fontSize:10.5,color:'#374151',wordBreak:'break-all',flex:'1 1 200px'}}>{formatarLinha(cod)}</span>
+      <button onClick={onLimpar} title="Remover o código desta linha" style={{background:'transparent',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:10.5}}>remover</button>
+    </div>
+  )
+}
+
+// Botãozinho de código de barras que aparece em cada linha de despesa
+function BtnCodigo({ tem, onClick }: { tem: boolean; onClick: () => void }) {
+  return (
+    <button onClick={onClick} title={tem ? 'Código do boleto guardado — clique para reler' : 'Escanear / colar o código do boleto'}
+      style={{ background: tem ? '#dcfce7' : 'transparent', border: tem ? '1px solid #86efac' : '1px solid #f59e0b40', borderRadius: 6, padding: '3px 4px', cursor: 'pointer', lineHeight: 1, color: tem ? '#15803d' : '#b45309' }}>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+        <path d="M4 5v14M8 5v14M12 5v14M16 5v10M20 5v14" />
+      </svg>
+    </button>
+  )
+}
 const diasParaVenc = (venc: string): number | null => {
   const m = String(venc || '').match(/^(\d{4})-(\d{2})-(\d{2})/)
   if (!m) return null
@@ -629,8 +654,10 @@ export default function CalculadoraCusto() {
   const [parcAberto, setParcAberto]     = useState(false)
   const [parcDespesa, setParcDespesa]   = useState('')
   const [parcObs, setParcObs]           = useState('')
-  const [parcLinhas, setParcLinhas]     = useState<{valor:string;venc:string}[]>([])
+  const [parcLinhas, setParcLinhas]     = useState<{valor:string;venc:string;cod?:string}[]>([])
   const [parcSalvando, setParcSalvando] = useState(false)
+  // ── Leitor de código de boleto: quem pediu a leitura ──
+  const [leitorAlvo, setLeitorAlvo] = useState<{lista:'fix'|'extra'|'parc'; idx:number} | null>(null)
   const [notasAbertas, setNotasAbertas] = useState<Set<string>>(new Set())
   const toggleNota = (k:string) => setNotasAbertas(prev=>{const s=new Set(prev); s.has(k)?s.delete(k):s.add(k); return s})
   const [reservaEmerg,  setReservaEmerg]  = useState('')
@@ -758,8 +785,8 @@ export default function CalculadoraCusto() {
   function coletarDados() {
     return {
       fat, custIndD, custDirD, lucroD, invInicial, totalDeprec,
-      despInd: despInd.map(d=>({nome:d.nome,valor:d.valor,obs:d.obs||'',venc:d.venc||''})),
-      extrasDespInd: extrasDespInd.map(d=>({nome:d.nome,valor:d.valor,parcela:d.parcela||'',obs:d.obs||'',grupo:d.grupo||'',venc:d.venc||'',data:d.data||''})),
+      despInd: despInd.map(d=>({nome:d.nome,valor:d.valor,obs:d.obs||'',venc:d.venc||'',cod:d.cod||''})),
+      extrasDespInd: extrasDespInd.map(d=>({nome:d.nome,valor:d.valor,parcela:d.parcela||'',obs:d.obs||'',grupo:d.grupo||'',venc:d.venc||'',data:d.data||'',cod:d.cod||''})),
       extrasDiretas: extrasDiretas.map(d=>({nome:d.nome,valor:d.valor})),
       extrasOutras: extrasOutras.map(d=>({nome:d.nome,valor:d.valor})),
       sal13, ferias, fgtsR, imposto, produto, rateio, taxaC,
@@ -779,8 +806,8 @@ export default function CalculadoraCusto() {
     if (d.lucroD !== undefined) setLucroD(d.lucroD)
     if (d.invInicial !== undefined) setInvInicial(d.invInicial)
     if (d.totalDeprec !== undefined) setTotalDeprec(d.totalDeprec)
-    if (d.despInd) setDespInd(DESPESAS_INDIRETAS.map((di,i)=>({...di,valor:d.despInd[i]?.valor||'',obs:(d.despInd[i] as any)?.obs||'',venc:(d.despInd[i] as any)?.venc||''})))
-    if (d.extrasDespInd) setExtrasDespInd(d.extrasDespInd.map((x:any)=>({nome:x.nome,valor:x.valor,dica:'',parcela:x.parcela||'',obs:x.obs||'',grupo:x.grupo||'',venc:x.venc||'',data:x.data||''})))
+    if (d.despInd) setDespInd(DESPESAS_INDIRETAS.map((di,i)=>({...di,valor:d.despInd[i]?.valor||'',obs:(d.despInd[i] as any)?.obs||'',venc:(d.despInd[i] as any)?.venc||'',cod:(d.despInd[i] as any)?.cod||''})))
+    if (d.extrasDespInd) setExtrasDespInd(d.extrasDespInd.map((x:any)=>({nome:x.nome,valor:x.valor,dica:'',parcela:x.parcela||'',obs:x.obs||'',grupo:x.grupo||'',venc:x.venc||'',data:x.data||'',cod:x.cod||''})))
     if ((d as any).extrasDiretas) setExtrasDiretas((d as any).extrasDiretas.map((x:any)=>({nome:x.nome,valor:x.valor,dica:''})))
     if ((d as any).extrasOutras) setExtrasOutras((d as any).extrasOutras.map((x:any)=>({nome:x.nome,valor:x.valor,dica:''})))
     if (d.sal13 !== undefined) setSal13(d.sal13)
@@ -1022,20 +1049,40 @@ export default function CalculadoraCusto() {
 
   // ── Abre o modal de parcelamento já com N linhas ──
   function abrirParcelamento() {
-    setParcDespesa(''); setParcObs(''); setParcLinhas([{ valor: '', venc: '' }]); setParcAberto(true)
+    setParcDespesa(''); setParcObs(''); setParcLinhas([{ valor: '', venc: '', cod: '' }]); setParcAberto(true)
   }
   function setParcN(qtd: number) {
     const q = Math.max(1, Math.min(48, qtd || 1))
     setParcLinhas(prev => {
       const arr = [...prev]
-      while (arr.length < q) arr.push({ valor: '', venc: '' })
+      while (arr.length < q) arr.push({ valor: '', venc: '', cod: '' })
       return arr.slice(0, q)
     })
   }
 
+  // ── Aplica o que foi lido do código de barras na linha que pediu a leitura ──
+  function aplicarLeitura(b: BoletoLido) {
+    const alvo = leitorAlvo
+    setLeitorAlvo(null)
+    if (!alvo) return
+    const valor = b.valor == null ? null : b.valor.toFixed(2)
+    if (alvo.lista === 'parc') {
+      setParcLinhas(prev => prev.map((l, i) => i !== alvo.idx ? l : {
+        valor: valor ?? l.valor, venc: b.venc || l.venc, cod: b.linha || l.cod,
+      }))
+      return
+    }
+    const aplica = (d: DespesaItem): DespesaItem => ({
+      ...d, valor: valor ?? d.valor, venc: b.venc || d.venc || '', cod: b.linha || d.cod || '',
+    })
+    if (alvo.lista === 'fix') setDespInd(prev => prev.map((d, i) => i === alvo.idx ? aplica(d) : d))
+    else setExtrasDespInd(prev => prev.map((d, i) => i === alvo.idx ? aplica(d) : d))
+    setDirtyCalc(true)
+  }
+
   // ── Lança a despesa parcelada: cada parcela vai pro mês do seu vencimento ──
   // (soma ao que já existe no mês — nunca apaga). Salva tudo de uma vez.
-  async function lancarParcelamento() {
+  async function lancarParcelamento(abrirProximo = false) {
     const nome = parcDespesa.trim()
     const linhas = parcLinhas.filter(l => l.valor.trim() && l.venc)
     if (!nome) { alert('Escolha ou digite a despesa.'); return }
@@ -1058,14 +1105,14 @@ export default function CalculadoraCusto() {
         const [y, m] = l.venc.split('-').map(Number)
         const key = `${y}-${m}`
         if (!porMes.has(key)) porMes.set(key, { ano: y, mes: m, itens: [] })
-        porMes.get(key)!.itens.push({ nome, valor: l.valor, dica: '', parcela: `${i + 1}/${N}`, obs, grupo, venc: l.venc })
+        porMes.get(key)!.itens.push({ nome, valor: l.valor, dica: '', parcela: `${i + 1}/${N}`, obs, grupo, venc: l.venc, cod: l.cod || '' })
       })
 
       for (const { ano, mes, itens } of porMes.values()) {
         if (ano === anoSel && mes === mesSel) {
           // Mês atual: soma no formulário aberto e salva o mês inteiro
           const base = coletarDados()
-          const novo = { ...base, extrasDespInd: [...base.extrasDespInd, ...itens.map(it => ({ nome: it.nome, valor: it.valor, parcela: it.parcela || '', obs: it.obs || '', grupo: it.grupo || '', venc: it.venc || '' })) ] }
+          const novo = { ...base, extrasDespInd: [...base.extrasDespInd, ...itens.map(it => ({ nome: it.nome, valor: it.valor, parcela: it.parcela || '', obs: it.obs || '', grupo: it.grupo || '', venc: it.venc || '', cod: it.cod || '' })) ] }
           await fetch('/api/salon/calculadora', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ano, mes, dados: novo }) })
           setExtrasDespInd(prev => [...prev, ...itens])
           setDirtyCalc(false)
@@ -1074,13 +1121,18 @@ export default function CalculadoraCusto() {
           const r = await fetch(`/api/salon/calculadora?ano=${ano}&mes=${mes}`, { credentials: 'include' }).then(x => x.ok ? x.json() : { dados: null }).catch(() => ({ dados: null }))
           const base = (r?.dados && typeof r.dados === 'object') ? r.dados : {}
           const extras = Array.isArray(base.extrasDespInd) ? base.extrasDespInd : []
-          const novo = { ...base, extrasDespInd: [...extras, ...itens.map(it => ({ nome: it.nome, valor: it.valor, parcela: it.parcela || '', obs: it.obs || '', grupo: it.grupo || '', venc: it.venc || '' })) ] }
+          const novo = { ...base, extrasDespInd: [...extras, ...itens.map(it => ({ nome: it.nome, valor: it.valor, parcela: it.parcela || '', obs: it.obs || '', grupo: it.grupo || '', venc: it.venc || '', cod: it.cod || '' })) ] }
           await fetch('/api/salon/calculadora', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ano, mes, dados: novo }) })
           setMesesComDados(prev => prev.some(mm => mm.ano === ano && mm.mes === mes) ? prev : [...prev, { ano, mes }])
         }
       }
-      setParcAberto(false)
-      setSavedMsg(`${N} parcela(s) lançada(s) e salva(s)!`)
+      if (abrirProximo) {
+        // Limpa o formulário e mantém aberto, pra escanear vários boletos seguidos
+        setParcDespesa(''); setParcObs(''); setParcLinhas([{ valor: '', venc: '', cod: '' }])
+      } else {
+        setParcAberto(false)
+      }
+      setSavedMsg(`${nome}: ${N} parcela(s) lançada(s) e salva(s)!`)
       setTimeout(() => setSavedMsg(''), 4000)
     } catch {
       alert('Erro ao lançar as parcelas. Tente novamente.')
@@ -1779,13 +1831,20 @@ Use números reais. Seja direto.`
                   <span className="font-bold text-sm" style={{color:'#92400e'}}>📋 Despesas Indiretas (Fixas)</span>
                   {totInd > 0 && <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{background:'#f59e0b',color:'#fff'}}>{fmtR(totInd)}</span>}
                 </div>
-                <div className="flex items-center gap-3" onClick={e=>e.stopPropagation()}>
+                <div className="flex items-center gap-2 flex-wrap justify-end" onClick={e=>e.stopPropagation()}>
+                  {/* Lançar boleto fica AQUI (e não dentro da lista) pra você não
+                      precisar abrir a lista inteira toda vez que for lançar. */}
+                  <button onClick={abrirParcelamento}
+                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-semibold"
+                    style={{background:'#fff',color:'#b45309',border:'1.5px solid #f59e0b'}}>
+                    💳 Lançar boleto
+                  </button>
                   <button onClick={()=>setShowCatDespesa(true)}
                     className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg"
                     style={{background:'#f59e0b20',color:'#b45309',border:'1px solid #f59e0b40'}}>
                     <Plus size={11}/> Gerenciar Catálogo
                   </button>
-                  <span className="font-bold text-sm" style={{color:'#b45309'}}>{fmtR(totInd)}</span>
+                  <span className="font-bold text-sm no-mobile" style={{color:'#b45309'}}>{fmtR(totInd)}</span>
                 </div>
               </button>
               {!secIndiretas && (
@@ -1833,11 +1892,14 @@ Use números reais. Seja direto.`
                           style={{background:'#fff',border:'1.5px solid #e8e6e0',color:d.parcela?'#b45309':'#aaa',fontWeight:d.parcela?700:400}}/>
                       </div>
                       <CampoVenc valor={d.venc||''} onChange={val=>{const nd=[...despInd];nd[i]={...nd[i],venc:val};setDespInd(nd);setDirtyCalc(true)}}/>
-                      <div/>
+                      <div className="flex justify-end">
+                        <BtnCodigo tem={!!d.cod} onClick={()=>setLeitorAlvo({lista:'fix',idx:i})}/>
+                      </div>
                       {(notasAbertas.has('d'+i) || d.obs) && (
                         <ObsComProf valor={d.obs||''} profs={profsLista}
                           onChange={val=>{const nd=[...despInd];nd[i]={...nd[i],obs:val};setDespInd(nd)}}/>
                       )}
+                      {d.cod && <LinhaCodigo cod={d.cod} onLimpar={()=>{const nd=[...despInd];nd[i]={...nd[i],cod:''};setDespInd(nd);setDirtyCalc(true)}}/>}
                     </div>
                   )
                 })}
@@ -1872,9 +1934,11 @@ Use números reais. Seja direto.`
                           style={{background:'#fff',border:'1.5px solid #e8e6e0',color:d.parcela?'#b45309':'#aaa',fontWeight:d.parcela?700:400}}/>
                       </div>
                       <CampoVenc valor={d.venc||''} onChange={val=>{const nd=[...extrasDespInd];nd[i]={...nd[i],venc:val};setExtrasDespInd(nd);setDirtyCalc(true)}}/>
-                      <div className="flex justify-end">
+                      <div className="flex justify-end items-center gap-1">
+                        <BtnCodigo tem={!!d.cod} onClick={()=>setLeitorAlvo({lista:'extra',idx:i})}/>
                         <button onClick={()=>setExtrasDespInd(prev=>prev.filter((_,idx)=>idx!==i))} style={{color:'#ef4444'}}><Trash2 size={12}/></button>
                       </div>
+                      {d.cod && <LinhaCodigo cod={d.cod} onLimpar={()=>{const nd=[...extrasDespInd];nd[i]={...nd[i],cod:''};setExtrasDespInd(nd);setDirtyCalc(true)}}/>}
                       {(notasAbertas.has('e'+i) || d.obs || d.data) && (
                         <>
                           <ObsComProf valor={d.obs||''} profs={profsLista}
@@ -1898,25 +1962,24 @@ Use números reais. Seja direto.`
                     style={{background:'#f59e0b',color:'#fff',border:'none',boxShadow:'0 2px 6px #f59e0b40'}}>
                     <Plus size={13}/> Adicionar despesa do catálogo
                   </button>
-                  <button onClick={abrirParcelamento}
-                    className="flex items-center gap-2 text-xs px-4 py-2 rounded-lg font-semibold transition-all"
-                    style={{background:'#fff',color:'#b45309',border:'1.5px solid #f59e0b'}}>
-                    💳 Lançar parcelado
-                  </button>
                   {despesasCatalogo.filter(c=>c.categoria==='indireta').length===0 && (
                     <span className="text-[10px]" style={{color:'#b45309'}}>⚠️ Cadastre despesas em <strong>Gerenciar Catálogo</strong> primeiro</span>
                   )}
                   <span className="text-[10px] w-full" style={{color:'#9a7b3a'}}>
                     📅 Preencheu o <strong>Vencimento</strong>? A conta entra sozinha na fila de <strong>Boletos</strong> do setor FINANCEIRO — lá você marca como paga. Em branco, nada muda.
+                    O botão <strong>💳 Lançar boleto</strong> fica no cabeçalho, sem precisar abrir esta lista.
                   </span>
                 </div>
+              </>}
 
-                {/* Modal de parcelamento */}
+              {/* Modal de lançamento — FORA do bloco que abre/fecha, senão o botão
+                  do cabeçalho não funcionaria com a lista recolhida. */}
+              <>
                 {parcAberto && (
                   <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center',padding:16}} onClick={()=>!parcSalvando&&setParcAberto(false)}>
                     <div style={{background:'#fff',borderRadius:16,padding:22,width:'100%',maxWidth:560,maxHeight:'88vh',display:'flex',flexDirection:'column',gap:12,overflowY:'auto'}} onClick={e=>e.stopPropagation()}>
                       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-                        <h3 style={{fontSize:16,fontWeight:800,color:'#1a1a1a',margin:0}}>💳 Lançar despesa parcelada</h3>
+                        <h3 style={{fontSize:16,fontWeight:800,color:'#1a1a1a',margin:0}}>💳 Lançar boleto / despesa parcelada</h3>
                         <button onClick={()=>!parcSalvando&&setParcAberto(false)} style={{background:'none',border:'none',cursor:'pointer',color:'#767069'}}><X size={18}/></button>
                       </div>
                       <p style={{fontSize:12,color:'#767069',margin:0}}>Cada parcela cai no mês do seu vencimento e é <strong>somada</strong> ao mês (nada é apagado). Ao confirmar, tudo já fica salvo — e cada parcela entra na fila de <strong>Boletos</strong> do FINANCEIRO na data do vencimento.</p>
@@ -1941,13 +2004,22 @@ Use números reais. Seja direto.`
                         <input type="number" min={1} max={48} value={parcLinhas.length} onChange={e=>setParcN(Number(e.target.value))}
                           style={{width:70,border:'1.5px solid #f59e0b',borderRadius:8,padding:'7px 10px',fontSize:13,textAlign:'center',outline:'none'}}/>
                         <span style={{fontSize:11,color:'#767069'}}>a referência (1/{parcLinhas.length}, 2/{parcLinhas.length}…) é gerada automática</span>
+                        <span style={{fontSize:11,color:'#9a7b3a',flexBasis:'100%'}}>No botão de barras de cada linha você escaneia (celular) ou cola o código do boleto — valor e vencimento entram sozinhos, e o código fica guardado pro Financeiro copiar.</span>
                       </div>
 
                       {/* Linhas das parcelas */}
                       <div style={{display:'flex',flexDirection:'column',gap:8}}>
                         {parcLinhas.map((l,i)=>(
-                          <div key={i} style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',background:'#fffbf0',border:'1px solid #f59e0b30',borderRadius:10,padding:'8px 10px'}}>
+                          <div key={i} style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',background:l.cod?'#f0fdf4':'#fffbf0',border:`1px solid ${l.cod?'#bbf7d0':'#f59e0b30'}`,borderRadius:10,padding:'8px 10px'}}>
                             <span style={{fontSize:12,fontWeight:800,color:'#b45309',minWidth:34}}>{i+1}/{parcLinhas.length}</span>
+                            {/* Escanear/colar o código deste boleto: preenche valor e vencimento */}
+                            <button onClick={()=>setLeitorAlvo({lista:'parc',idx:i})}
+                              title={l.cod?'Código lido — clique para reler':'Escanear o código de barras deste boleto'}
+                              style={{background:l.cod?'#dcfce7':'#fff',border:`1.5px solid ${l.cod?'#86efac':'#f59e0b'}`,borderRadius:8,padding:'7px 9px',cursor:'pointer',lineHeight:1,color:l.cod?'#15803d':'#b45309',flexShrink:0}}>
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                <path d="M4 5v14M8 5v14M12 5v14M16 5v10M20 5v14"/>
+                              </svg>
+                            </button>
                             <div style={{position:'relative',flex:'1 1 110px'}}>
                               <span style={{position:'absolute',left:8,top:'50%',transform:'translateY(-50%)',fontSize:11,color:'#b45309'}}>R$</span>
                               <input type="number" value={l.valor} onChange={e=>{const nd=[...parcLinhas];nd[i]={...nd[i],valor:e.target.value};setParcLinhas(nd)}} placeholder="valor"
@@ -1957,15 +2029,28 @@ Use números reais. Seja direto.`
                               onClick={e=>{try{(e.currentTarget as any).showPicker?.()}catch{}}}
                               style={{flex:'1 1 140px',border:'1.5px solid #e8e6e0',borderRadius:8,padding:'7px 10px',fontSize:13,outline:'none',cursor:'pointer'}}/>
                             {l.venc && <span style={{fontSize:10,color:'#b45309',fontWeight:700}}>{MESES_NOMES[Number(l.venc.split('-')[1])]}</span>}
+                            {l.cod && (
+                              <div style={{flexBasis:'100%',display:'flex',alignItems:'center',gap:7,flexWrap:'wrap'}}>
+                                <span style={{fontSize:9.5,fontWeight:800,color:'#15803d'}}>LIDO DO CÓDIGO</span>
+                                <span style={{fontFamily:'ui-monospace,monospace',fontSize:10.5,color:'#374151',wordBreak:'break-all',flex:'1 1 180px'}}>{formatarLinha(l.cod)}</span>
+                                <button onClick={()=>{const nd=[...parcLinhas];nd[i]={...nd[i],cod:''};setParcLinhas(nd)}}
+                                  style={{background:'transparent',border:'none',color:'#9ca3af',fontSize:10.5,cursor:'pointer'}}>remover</button>
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
 
-                      <div style={{display:'flex',gap:8,justifyContent:'flex-end',marginTop:4}}>
+                      <div style={{display:'flex',gap:8,justifyContent:'flex-end',marginTop:4,flexWrap:'wrap'}}>
                         <button onClick={()=>!parcSalvando&&setParcAberto(false)} style={{background:'transparent',border:'none',color:'#767069',fontSize:13,cursor:'pointer',padding:'9px 14px'}}>Cancelar</button>
-                        <button onClick={lancarParcelamento} disabled={parcSalvando}
+                        <button onClick={()=>lancarParcelamento(true)} disabled={parcSalvando}
+                          title="Salva este e já limpa o formulário pro próximo boleto"
+                          style={{background:'#fff',color:'#b45309',border:'1.5px solid #f59e0b',borderRadius:8,padding:'9px 16px',fontSize:13,fontWeight:800,cursor:'pointer',opacity:parcSalvando?0.6:1}}>
+                          Lançar e abrir próximo
+                        </button>
+                        <button onClick={()=>lancarParcelamento(false)} disabled={parcSalvando}
                           style={{background:'#16a34a',color:'#fff',border:'none',borderRadius:8,padding:'9px 20px',fontSize:14,fontWeight:800,cursor:'pointer',opacity:parcSalvando?0.6:1}}>
-                          {parcSalvando?'Lançando...':'Lançar parcelas'}
+                          {parcSalvando?'Lançando...':'Lançar'}
                         </button>
                       </div>
                     </div>
@@ -2008,7 +2093,15 @@ Use números reais. Seja direto.`
                     </div>
                   </div>
                 )}
-              </>}
+
+                {/* Leitor de código de boleto (câmera no celular / colar no PC) */}
+                <LeitorBoleto
+                  aberto={!!leitorAlvo}
+                  onFechar={()=>setLeitorAlvo(null)}
+                  onLido={aplicarLeitura}
+                  titulo={leitorAlvo?.lista==='parc' ? `Boleto da parcela ${(leitorAlvo.idx||0)+1}` : 'Código do boleto desta despesa'}
+                />
+              </>
             </div>
 
             {/* Provisão */}

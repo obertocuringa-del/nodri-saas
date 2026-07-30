@@ -90,7 +90,8 @@ export async function GET(req: NextRequest) {
         const pg = pagos[key]
         itens.push({
           key, ano: m.ano, mes: m.mes, lista, idx, nome, valor, venc, parcela,
-          obs: String(it?.obs || ''), pago: !!pg, pagoEm: pg?.pagoEm || '',
+          obs: String(it?.obs || ''), cod: String(it?.cod || ''),
+          pago: !!pg, pagoEm: pg?.pagoEm || '',
         })
       })
     }

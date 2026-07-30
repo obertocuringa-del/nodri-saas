@@ -1,7 +1,8 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
-import { Loader2, Check, RotateCcw, FileText, ExternalLink } from 'lucide-react'
+import { Loader2, Check, RotateCcw, FileText, ExternalLink, Copy, Eye, EyeOff } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { formatarLinha, ehPix } from '@/lib/boleto'
 
 // ── Fila de boletos / contas a pagar ────────────────────────────────────────
 // Só LÊ o que já foi lançado nas Despesas Indiretas da Calculadora (qualquer mês)
@@ -11,7 +12,7 @@ import toast from 'react-hot-toast'
 interface Boleto {
   key: string; ano: number; mes: number; lista: 'fix' | 'extra'; idx: number
   nome: string; valor: number; venc: string; parcela: string; obs: string
-  pago: boolean; pagoEm: string
+  cod: string; pago: boolean; pagoEm: string
 }
 
 const MESES = ['', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
@@ -87,6 +88,21 @@ export default function BoletosFinanceiro({ cor = '#16a34a' }: { cor?: string })
     if (primeira) setAba(primeira)
     setAbaAuto(true)
   }, [loading, abaAuto, boletos.length, grupos])
+
+  // Código de barras: copiar pro app do banco e mostrar/esconder na tela
+  const [codAberto, setCodAberto] = useState<Set<string>>(new Set())
+  const toggleCod = (k: string) => setCodAberto(p => { const s = new Set(p); s.has(k) ? s.delete(k) : s.add(k); return s })
+  async function copiarCod(b: Boleto) {
+    const limpo = ehPix(b.cod) ? b.cod.trim() : b.cod.replace(/\D/g, '')
+    try {
+      await navigator.clipboard.writeText(limpo)
+      toast.success(ehPix(b.cod) ? 'Pix copia-e-cola copiado' : 'Código copiado — cole no app do banco')
+    } catch {
+      // Navegador sem permissão de área de transferência: abre o código pra copiar na mão
+      setCodAberto(p => new Set(p).add(b.key))
+      toast.error('Não consegui copiar automático. O código está aí embaixo pra copiar na mão.')
+    }
+  }
 
   const soma = (arr: Boleto[]) => arr.reduce((s, b) => s + b.valor, 0)
   const lista = grupos[aba]
@@ -174,6 +190,31 @@ export default function BoletosFinanceiro({ cor = '#16a34a' }: { cor?: string })
                   <span style={{ marginLeft: 'auto', fontSize: 17, fontWeight: 900, color: b.pago ? '#9ca3af' : '#15803d' }}>R$ {fmtR(b.valor)}</span>
                 </div>
                 {b.obs && <p style={{ fontSize: 11.5, color: '#6b6860', margin: '4px 0 0', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{b.obs}</p>}
+
+                {/* Código de barras (quando foi escaneado/colado no lançamento) */}
+                {b.cod && codAberto.has(b.key) && (
+                  <div style={{ marginTop: 8, background: '#f5f4f0', borderRadius: 8, padding: '8px 10px' }}>
+                    <div style={{ fontSize: 9.5, fontWeight: 800, color: '#6b6860', marginBottom: 3 }}>
+                      {ehPix(b.cod) ? 'PIX COPIA E COLA' : 'LINHA DIGITÁVEL'}
+                    </div>
+                    <div style={{ fontFamily: 'ui-monospace,monospace', fontSize: 11.5, color: '#1a1a1a', wordBreak: 'break-all', lineHeight: 1.5, userSelect: 'all' }}>
+                      {formatarLinha(b.cod)}
+                    </div>
+                  </div>
+                )}
+
+                {b.cod && (
+                  <div style={{ display: 'flex', gap: 8, marginTop: 9, flexWrap: 'wrap' }}>
+                      <button onClick={() => copiarCod(b)}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#fff', color: '#5b4fcf', border: '1px solid #c9c4f0', borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                        <Copy size={12} /> Copiar código de barras
+                      </button>
+                      <button onClick={() => toggleCod(b.key)}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#fff', color: '#6b6860', border: '1px solid #e0ddd8', borderRadius: 8, padding: '6px 10px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                        {codAberto.has(b.key) ? <><EyeOff size={12} /> Esconder</> : <><Eye size={12} /> Ver código</>}
+                      </button>
+                  </div>
+                )}
 
                 {podeBaixa && (
                   <div style={{ display: 'flex', gap: 8, marginTop: 9 }}>
