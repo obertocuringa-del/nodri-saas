@@ -12,6 +12,16 @@ import { formatarLinha, ehPix } from '@/lib/boleto'
 interface Boleto {
   key: string; ano: number; mes: number; lista: 'fix' | 'extra'; idx: number
   nome: string; valor: number; venc: string; parcela: string; obs: string
+  cod: string; grupo: string; pago: boolean; pagoEm: string
+}
+
+// Um CARD é o que aparece na tela. Lançamento parcelado com o mesmo vencimento
+// (é o caso do empréstimo aprovado) vira UM card com o valor somado: o
+// Financeiro paga tudo de uma vez. Na Calculadora as parcelas continuam
+// separadas por mês — juntar lá bagunçaria o total de cada mês.
+interface Card {
+  id: string; keys: string[]; qtd: number; meses: string
+  nome: string; valor: number; venc: string; parcela: string; obs: string
   cod: string; pago: boolean; pagoEm: string
 }
 
@@ -48,8 +58,33 @@ export default function BoletosFinanceiro({ cor = '#16a34a' }: { cor?: string })
   }
   useEffect(() => { carregar() }, [])
 
+  // Junta as parcelas do mesmo lançamento que vencem no mesmo dia
+  const cards = useMemo<Card[]>(() => {
+    const porGrupo = new Map<string, Card>()
+    const soltos: Card[] = []
+    for (const b of boletos) {
+      const mes = `${MESES[b.mes] || b.mes}/${b.ano}`
+      const novo: Card = {
+        id: b.key, keys: [b.key], qtd: 1, meses: mes,
+        nome: b.nome, valor: b.valor, venc: b.venc, parcela: b.parcela,
+        obs: b.obs, cod: b.cod, pago: b.pago, pagoEm: b.pagoEm,
+      }
+      if (!b.grupo) { soltos.push(novo); continue }
+      const gk = `${b.grupo}|${b.venc}|${b.pago ? 1 : 0}`
+      const atual = porGrupo.get(gk)
+      if (!atual) { porGrupo.set(gk, { ...novo, id: gk }); continue }
+      atual.keys.push(b.key)
+      atual.valor += b.valor
+      atual.qtd += 1
+      atual.parcela = ''                                  // deixa de ser "1/2"
+      if (!atual.meses.split(' · ').includes(mes)) atual.meses += ` · ${mes}`
+      if (!atual.cod && b.cod) atual.cod = b.cod
+    }
+    return [...soltos, ...Array.from(porGrupo.values())]
+  }, [boletos])
+
   const grupos = useMemo(() => {
-    const abertos = boletos.filter(b => !b.pago)
+    const abertos = cards.filter(b => !b.pago)
     return {
       // vencidos: do vencimento mais próximo de hoje para o mais antigo
       vencidos: abertos.filter(b => dias(b.venc) < 0).sort((a, b) => b.venc < a.venc ? -1 : 1),
@@ -57,25 +92,32 @@ export default function BoletosFinanceiro({ cor = '#16a34a' }: { cor?: string })
       // a vencer: o próximo primeiro
       avencer: abertos.filter(b => dias(b.venc) > 0).sort((a, b) => a.venc < b.venc ? -1 : 1),
       // pagos: o pagamento mais recente primeiro
-      pagos: boletos.filter(b => b.pago).sort((a, b) => (b.pagoEm || '') < (a.pagoEm || '') ? -1 : 1),
+      pagos: cards.filter(b => b.pago).sort((a, b) => (b.pagoEm || '') < (a.pagoEm || '') ? -1 : 1),
     }
-  }, [boletos])
+  }, [cards])
 
-  async function baixa(b: Boleto, pago: boolean) {
-    setSalvando(b.key)
+  // Dá baixa em TODAS as parcelas do card (o pagamento é um só)
+  async function baixa(c: Card, pago: boolean) {
+    setSalvando(c.id)
     try {
-      const r = await fetch('/api/salon/boletos', {
-        method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key: b.key, pago }),
-      })
-      if (r.ok) {
+      let pagoEm = ''
+      for (const key of c.keys) {
+        const r = await fetch('/api/salon/boletos', {
+          method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key, pago }),
+        })
+        if (!r.ok) {
+          const e = await r.json().catch(() => ({}))
+          toast.error(e.error || 'Não foi possível registrar')
+          setSalvando(null)
+          return
+        }
         const d = await r.json()
-        setBoletos(prev => prev.map(x => x.key === b.key ? { ...x, pago, pagoEm: d?.pagoEm || '' } : x))
-        toast.success(pago ? `${b.nome} — pago` : `${b.nome} volta pra fila`)
-      } else {
-        const e = await r.json().catch(() => ({}))
-        toast.error(e.error || 'Não foi possível registrar')
+        pagoEm = d?.pagoEm || pagoEm
       }
+      const doCard = new Set(c.keys)
+      setBoletos(prev => prev.map(x => doCard.has(x.key) ? { ...x, pago, pagoEm } : x))
+      toast.success(pago ? `${c.nome} — pago` : `${c.nome} volta pra fila`)
     } catch { toast.error('Erro de conexão') }
     setSalvando(null)
   }
@@ -92,19 +134,19 @@ export default function BoletosFinanceiro({ cor = '#16a34a' }: { cor?: string })
   // Código de barras: copiar pro app do banco e mostrar/esconder na tela
   const [codAberto, setCodAberto] = useState<Set<string>>(new Set())
   const toggleCod = (k: string) => setCodAberto(p => { const s = new Set(p); s.has(k) ? s.delete(k) : s.add(k); return s })
-  async function copiarCod(b: Boleto) {
+  async function copiarCod(b: Card) {
     const limpo = ehPix(b.cod) ? b.cod.trim() : b.cod.replace(/\D/g, '')
     try {
       await navigator.clipboard.writeText(limpo)
       toast.success(ehPix(b.cod) ? 'Pix copia-e-cola copiado' : 'Código copiado — cole no app do banco')
     } catch {
       // Navegador sem permissão de área de transferência: abre o código pra copiar na mão
-      setCodAberto(p => new Set(p).add(b.key))
+      setCodAberto(p => new Set(p).add(b.id))
       toast.error('Não consegui copiar automático. O código está aí embaixo pra copiar na mão.')
     }
   }
 
-  const soma = (arr: Boleto[]) => arr.reduce((s, b) => s + b.valor, 0)
+  const soma = (arr: Card[]) => arr.reduce((s, b) => s + b.valor, 0)
   const lista = grupos[aba]
 
   const ABAS: { id: Aba; label: string; cor: string; bg: string; bd: string }[] = [
@@ -174,15 +216,17 @@ export default function BoletosFinanceiro({ cor = '#16a34a' }: { cor?: string })
               : d === 0 ? { cor: '#b45309', bg: '#fffbeb', bd: '#fde68a', barra: '#f59e0b' }
               : { cor: '#6b6860', bg: '#fff', bd: '#e8e6e0', barra: '#cbd5e1' }
             return (
-              <div key={b.key} style={{ background: '#fff', border: `1px solid ${c.bd}`, borderLeft: `4px solid ${c.barra}`, borderRadius: 12, padding: '11px 13px' }}>
+              <div key={b.id} style={{ background: '#fff', border: `1px solid ${c.bd}`, borderLeft: `4px solid ${c.barra}`, borderRadius: 12, padding: '11px 13px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 5 }}>
                   {b.pago
                     ? <span style={{ fontSize: 10, fontWeight: 800, color: c.cor, background: c.bg, padding: '2px 8px', borderRadius: 999 }}>PAGO {b.pagoEm ? `em ${isoBR(b.pagoEm)}` : ''}</span>
                     : d < 0 ? <span style={{ fontSize: 10, fontWeight: 800, color: c.cor, background: c.bg, padding: '2px 8px', borderRadius: 999 }}>VENCIDO {Math.abs(d)} dia{Math.abs(d) > 1 ? 's' : ''}</span>
                     : d === 0 ? <span style={{ fontSize: 10, fontWeight: 800, color: c.cor, background: c.bg, padding: '2px 8px', borderRadius: 999 }}>VENCE HOJE</span>
                     : <span style={{ fontSize: 10, fontWeight: 700, color: '#6b6860' }}>em {d} dia{d > 1 ? 's' : ''}</span>}
-                  <span style={{ fontSize: 10, color: '#6b6860', background: '#f5f4f0', padding: '2px 8px', borderRadius: 999 }}>lançado em {MESES[b.mes] || b.mes}/{b.ano}</span>
+                  <span style={{ fontSize: 10, color: '#6b6860', background: '#f5f4f0', padding: '2px 8px', borderRadius: 999 }}>lançado em {b.meses}</span>
                   {b.parcela && <span style={{ fontSize: 10, fontWeight: 700, color: '#1d4ed8', background: '#dbeafe', padding: '2px 8px', borderRadius: 999 }}>parcela {b.parcela}</span>}
+                  {/* Card juntou várias parcelas do mesmo lançamento: paga tudo de uma vez */}
+                  {b.qtd > 1 && <span style={{ fontSize: 10, fontWeight: 700, color: '#1d4ed8', background: '#dbeafe', padding: '2px 8px', borderRadius: 999 }}>{b.qtd} parcelas juntas</span>}
                   <span style={{ marginLeft: 'auto', fontSize: 11.5, color: '#6b6860' }}>venc. <strong style={{ color: c.cor }}>{isoBR(b.venc)}</strong></span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
@@ -196,7 +240,7 @@ export default function BoletosFinanceiro({ cor = '#16a34a' }: { cor?: string })
                 {b.obs && <p style={{ fontSize: 11.5, color: '#6b6860', margin: '4px 0 0', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{b.obs}</p>}
 
                 {/* Código de barras (quando foi escaneado/colado no lançamento) */}
-                {b.cod && codAberto.has(b.key) && (
+                {b.cod && codAberto.has(b.id) && (
                   <div style={{ marginTop: 8, background: '#f5f4f0', borderRadius: 8, padding: '8px 10px' }}>
                     <div style={{ fontSize: 9.5, fontWeight: 800, color: '#6b6860', marginBottom: 3 }}>
                       {ehPix(b.cod) ? 'PIX COPIA E COLA' : 'LINHA DIGITÁVEL'}
@@ -213,9 +257,9 @@ export default function BoletosFinanceiro({ cor = '#16a34a' }: { cor?: string })
                         style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#fff', color: '#5b4fcf', border: '1px solid #c9c4f0', borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
                         <Copy size={12} /> Copiar código de barras
                       </button>
-                      <button onClick={() => toggleCod(b.key)}
+                      <button onClick={() => toggleCod(b.id)}
                         style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#fff', color: '#6b6860', border: '1px solid #e0ddd8', borderRadius: 8, padding: '6px 10px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
-                        {codAberto.has(b.key) ? <><EyeOff size={12} /> Esconder</> : <><Eye size={12} /> Ver código</>}
+                        {codAberto.has(b.id) ? <><EyeOff size={12} /> Esconder</> : <><Eye size={12} /> Ver código</>}
                       </button>
                   </div>
                 )}
@@ -223,14 +267,14 @@ export default function BoletosFinanceiro({ cor = '#16a34a' }: { cor?: string })
                 {podeBaixa && (
                   <div style={{ display: 'flex', gap: 8, marginTop: 9 }}>
                     {b.pago ? (
-                      <button disabled={salvando === b.key} onClick={() => baixa(b, false)}
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#fff', color: '#6b6860', border: '1px solid #e0ddd8', borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer', opacity: salvando === b.key ? .6 : 1 }}>
+                      <button disabled={salvando === b.id} onClick={() => baixa(b, false)}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#fff', color: '#6b6860', border: '1px solid #e0ddd8', borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer', opacity: salvando === b.id ? .6 : 1 }}>
                         <RotateCcw size={12} /> Desfazer
                       </button>
                     ) : (
-                      <button disabled={salvando === b.key} onClick={() => baixa(b, true)}
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#16a34a', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer', opacity: salvando === b.key ? .6 : 1 }}>
-                        <Check size={13} /> {salvando === b.key ? 'Salvando…' : 'Marcar como pago'}
+                      <button disabled={salvando === b.id} onClick={() => baixa(b, true)}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#16a34a', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer', opacity: salvando === b.id ? .6 : 1 }}>
+                        <Check size={13} /> {salvando === b.id ? 'Salvando…' : 'Marcar como pago'}
                       </button>
                     )}
                   </div>

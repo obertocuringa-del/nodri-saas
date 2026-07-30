@@ -91,6 +91,8 @@ export async function GET(req: NextRequest) {
         itens.push({
           key, ano: m.ano, mes: m.mes, lista, idx, nome, valor, venc, parcela,
           obs: String(it?.obs || ''), cod: String(it?.cod || ''),
+          // grupo: liga as parcelas de um mesmo lançamento (empréstimo/parcelado)
+          grupo: String(it?.grupo || ''),
           pago: !!pg, pagoEm: pg?.pagoEm || '',
         })
       })
