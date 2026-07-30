@@ -677,6 +677,9 @@ export default function CalculadoraCusto() {
   // Data do lançamento (quinzena) — o mesmo campo que existe na linha da lista.
   // Vazio = cada parcela usa a data do próprio vencimento.
   const [parcData, setParcData] = useState('')
+  // Compra que você JÁ pagou (mercado, por exemplo): lança e a conta cai
+  // direto na aba "Pagos" do Financeiro, em vez de ficar na fila a pagar.
+  const [parcPago, setParcPago] = useState(false)
   // ── Leitor de código de boleto: quem pediu a leitura ──
   const [leitorAlvo, setLeitorAlvo] = useState<{lista:'fix'|'extra'|'parc'; idx:number} | null>(null)
   const [notasAbertas, setNotasAbertas] = useState<Set<string>>(new Set())
@@ -1076,7 +1079,8 @@ export default function CalculadoraCusto() {
 
   // ── Abre o modal de parcelamento já com N linhas ──
   function abrirParcelamento() {
-    setParcDespesa(''); setParcObs(''); setParcLinhas([{ valor: '', venc: '', cod: '' }]); setParcQtd('1'); setParcData(''); setParcAberto(true)
+    setParcDespesa(''); setParcObs(''); setParcLinhas([{ valor: '', venc: '', cod: '' }])
+    setParcQtd('1'); setParcData(''); setParcPago(false); setParcAberto(true)
   }
   function setParcN(qtd: number) {
     const q = Math.max(1, Math.min(48, qtd || 1))
@@ -1125,8 +1129,9 @@ export default function CalculadoraCusto() {
       const [y, m] = l.venc.split('-').map(Number)
       return `• ${MESES_NOMES[m]}/${String(y).slice(2)} — R$ ${l.valor}  (${i + 1}/${N})`
     }).join('\n')
-    // Todo boleto deve ter código de barras — avisa antes de deixar passar sem
-    const semCod = linhas.filter(l => !l.cod?.trim()).length
+    // Todo boleto deve ter código de barras — avisa antes de deixar passar sem.
+    // Se já está pago, não tem o que copiar depois: não enche o saco.
+    const semCod = parcPago ? 0 : linhas.filter(l => !l.cod?.trim()).length
     const aviso = semCod > 0
       ? `\n\n⚠️ ${semCod} de ${N} parcela(s) SEM código de barras. Sem o código, o Financeiro não vai ter o que copiar pra pagar no banco.`
       : ''
@@ -1163,13 +1168,38 @@ export default function CalculadoraCusto() {
           setMesesComDados(prev => prev.some(mm => mm.ano === ano && mm.mes === mes) ? prev : [...prev, { ano, mes }])
         }
       }
+      // "Já pago": acha o que acabou de ser lançado pelo GRUPO (id único deste
+      // lançamento) e dá baixa. Assim a conta nasce direto na aba Pagos do
+      // Financeiro, em vez de entrar na fila a pagar.
+      let baixados = 0
+      if (parcPago) {
+        try {
+          const lista = await fetch('/api/salon/boletos', { credentials: 'include' }).then(r => r.ok ? r.json() : null)
+          const meus = (lista?.boletos || []).filter((b: any) => b.grupo === grupo)
+          for (const b of meus) {
+            const r = await fetch('/api/salon/boletos', {
+              method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ key: b.key, pago: true }),
+            })
+            if (r.ok) baixados++
+          }
+          if (!meus.length) alert('Lancei e salvei, mas não consegui marcar como pago automaticamente. Marque na fila do FINANCEIRO.')
+        } catch {
+          alert('Lancei e salvei, mas falhou marcar como pago. Marque na fila do FINANCEIRO.')
+        }
+      }
+
       if (abrirProximo) {
-        // Limpa o formulário e mantém aberto, pra escanear vários boletos seguidos
+        // Limpa o formulário e mantém aberto, pra lançar vários seguidos.
+        // O "já pago" continua marcado de propósito: quem lança compra paga
+        // costuma lançar várias na sequência.
         setParcDespesa(''); setParcObs(''); setParcLinhas([{ valor: '', venc: '', cod: '' }])
       } else {
         setParcAberto(false)
       }
-      setSavedMsg(`${nome}: ${N} parcela(s) lançada(s) e salva(s)!`)
+      setSavedMsg(parcPago && baixados > 0
+        ? `${nome}: ${N} lançada(s) e já marcada(s) como PAGA(S)!`
+        : `${nome}: ${N} parcela(s) lançada(s) e salva(s)!`)
       setTimeout(() => setSavedMsg(''), 4000)
     } catch {
       alert('Erro ao lançar as parcelas. Tente novamente.')
@@ -2068,8 +2098,10 @@ Use números reais. Seja direto.`
                               style={{width:'100%',border:'1.5px solid #e8e6e0',borderRadius:8,padding:'9px 10px',fontSize:13,outline:'none'}}/>}
                       </div>
 
-                      {/* Mesmo campo que existe na linha da lista — faltava aqui, então
-                          empréstimo lançado por este modal ficava sem a data da quinzena. */}
+                      {/* Data da quinzena só faz sentido em EMPRÉSTIMO (é o que é
+                          descontado por quinzena). Nas outras despesas ela só
+                          poluía a tela, então aparece sozinha ao escolher empréstimo. */}
+                      {ehEmprestimoParc && (
                       <div>
                         <label style={{fontSize:11,fontWeight:700,color:'#78350f',display:'block',marginBottom:4}}>🗓️ Data do lançamento (para separar por quinzena)</label>
                         <input type="date" value={parcData} onChange={e=>setParcData(e.target.value)}
@@ -2077,6 +2109,7 @@ Use números reais. Seja direto.`
                           style={{width:'100%',border:'1.5px solid #e8e6e0',borderRadius:8,padding:'9px 10px',fontSize:13,outline:'none',cursor:'pointer'}}/>
                         <span style={{fontSize:10.5,color:'#9a7b3a'}}>Em branco, cada parcela usa a data do próprio vencimento.</span>
                       </div>
+                      )}
 
                       <div style={{display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
                         <label style={{fontSize:11,fontWeight:700,color:'#78350f'}}>Em quantas vezes?</label>
@@ -2132,6 +2165,27 @@ Use números reais. Seja direto.`
                         ))}
                       </div>
 
+                      {/* Compra já paga (mercado, feira, cartão na hora): marca aqui
+                          e o lançamento nasce na aba Pagos do Financeiro. Vale
+                          pros dois botões de lançar. */}
+                      <button onClick={()=>setParcPago(p=>!p)}
+                        style={{display:'flex',alignItems:'center',gap:9,width:'100%',textAlign:'left',cursor:'pointer',
+                          background:parcPago?'#f0fdf4':'#faf9f7',border:`1.5px solid ${parcPago?'#86efac':'#e8e6e0'}`,
+                          borderRadius:10,padding:'10px 12px'}}>
+                        <span style={{width:20,height:20,borderRadius:6,flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',
+                          background:parcPago?'#16a34a':'#fff',border:`1.5px solid ${parcPago?'#16a34a':'#cbd5e1'}`,color:'#fff',fontSize:12,fontWeight:900}}>
+                          {parcPago?'✓':''}
+                        </span>
+                        <span>
+                          <span style={{display:'block',fontSize:12.5,fontWeight:800,color:parcPago?'#15803d':'#3a3835'}}>Marcar como pago</span>
+                          <span style={{display:'block',fontSize:10.5,color:'#767069',marginTop:1}}>
+                            {parcPago
+                              ? 'Vai direto pra aba PAGOS do Financeiro — não entra na fila a pagar.'
+                              : 'Marque se você JÁ pagou esta compra (ex.: mercado, pago na hora).'}
+                          </span>
+                        </span>
+                      </button>
+
                       <div style={{display:'flex',gap:8,justifyContent:'flex-end',marginTop:4,flexWrap:'wrap'}}>
                         <button onClick={()=>!parcSalvando&&setParcAberto(false)} style={{background:'transparent',border:'none',color:'#767069',fontSize:13,cursor:'pointer',padding:'9px 14px'}}>Cancelar</button>
                         <button onClick={()=>lancarParcelamento(true)} disabled={parcSalvando}
@@ -2141,7 +2195,7 @@ Use números reais. Seja direto.`
                         </button>
                         <button onClick={()=>lancarParcelamento(false)} disabled={parcSalvando}
                           style={{background:'#16a34a',color:'#fff',border:'none',borderRadius:8,padding:'9px 20px',fontSize:14,fontWeight:800,cursor:'pointer',opacity:parcSalvando?0.6:1}}>
-                          {parcSalvando?'Lançando...':'Lançar'}
+                          {parcSalvando?'Lançando...':parcPago?'Lançar como pago':'Lançar'}
                         </button>
                       </div>
                     </div>
