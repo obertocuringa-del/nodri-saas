@@ -4,6 +4,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { ArrowLeft, Loader2, Check, Trash2, CornerUpRight, Wallet, X, Calendar } from 'lucide-react'
 import toast from 'react-hot-toast'
 import BoletosFinanceiro from '@/components/salon/BoletosFinanceiro'
+import ComportamentoProfissional from '@/components/salon/ComportamentoProfissional'
 
 interface Prof { id: string; nome_completo: string; apelido?: string; cargo?: string; ativo?: boolean; is_departamento?: boolean; departamento_cor?: string }
 interface Emprestimo { valor: number; motivo: string; status: 'pendente' | 'negado' | 'liberado'; motivoNegado?: string; modo?: string; parcelas?: { valor: number; data: string; label: string }[]; liberadoEm?: string }
@@ -235,6 +236,7 @@ function EmprestimoCard({ d, onDone }: { d: Demanda; onDone: () => void }) {
   const [qtd, setQtd] = useState('2')
   const [parcelas, setParcelas] = useState<{ valor: string; data: string }[]>([])
   const [enviando, setEnviando] = useState(false)
+  const [verComportamento, setVerComportamento] = useState(false)
 
   function gerar(n: number, m: 'mes' | 'quinzena') {
     const hoje = new Date()
@@ -300,10 +302,20 @@ function EmprestimoCard({ d, onDone }: { d: Demanda; onDone: () => void }) {
 
       {/* Ações — só enquanto pendente */}
       {emp.status === 'pendente' && fase === 'idle' && (
-        <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+        <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
           <button onClick={() => { setFase('aceitar'); setDividir(null) }} style={{ ...btn('#16a34a'), padding: '9px 16px', fontSize: 13 }}><Check size={14} /> Aceitar</button>
           <button onClick={() => setFase('negar')} style={{ ...btn('#dc2626'), padding: '9px 16px', fontSize: 13 }}><X size={14} /> Negar</button>
+          {/* Histórico dela antes de decidir emprestar */}
+          {d.solicitante_id && (
+            <button onClick={() => setVerComportamento(true)} style={{ ...btnGhost(), padding: '9px 14px', fontSize: 13, color: '#b45309', borderColor: '#fde68a', background: '#fffbeb' }}>
+              📋 Comportamento
+            </button>
+          )}
         </div>
+      )}
+
+      {verComportamento && d.solicitante_id && (
+        <ComportamentoProfissional profId={d.solicitante_id} nome={d.solicitante_nome || 'Profissional'} onFechar={() => setVerComportamento(false)} />
       )}
 
       {emp.status === 'pendente' && fase === 'negar' && (
