@@ -43,7 +43,8 @@ export default function BoletosFinanceiro({ cor = '#16a34a' }: { cor?: string })
   const [podeBaixa, setPodeBaixa] = useState(false)
   const [loading, setLoading] = useState(true)
   const [semAcesso, setSemAcesso] = useState(false)
-  const [aba, setAba] = useState<Aba>('vencidos')
+  // aba null = tudo recolhido (clicar de novo no card fecha e economiza espaço)
+  const [aba, setAba] = useState<Aba | null>('vencidos')
   const [salvando, setSalvando] = useState<string | null>(null)
 
   async function carregar() {
@@ -158,7 +159,7 @@ export default function BoletosFinanceiro({ cor = '#16a34a' }: { cor?: string })
   }
 
   const soma = (arr: Card[]) => arr.reduce((s, b) => s + b.valor, 0)
-  const lista = grupos[aba]
+  const lista = aba ? grupos[aba] : []
 
   const ABAS: { id: Aba; label: string; cor: string; bg: string; bd: string }[] = [
     { id: 'vencidos', label: 'Vencidos', cor: '#b91c1c', bg: '#fef2f2', bd: '#fecaca' },
@@ -193,7 +194,8 @@ export default function BoletosFinanceiro({ cor = '#16a34a' }: { cor?: string })
           const arr = grupos[a.id]
           const ativo = aba === a.id
           return (
-            <button key={a.id} onClick={() => setAba(a.id)}
+            <button key={a.id} onClick={() => setAba(atual => atual === a.id ? null : a.id)}
+              title={ativo ? 'Clique para recolher' : 'Clique para ver a lista'}
               style={{
                 background: ativo ? a.bg : '#fff', border: `1px solid ${ativo ? a.bd : '#e8e6e0'}`,
                 borderRadius: 10, padding: '7px 12px', cursor: 'pointer', textAlign: 'left',
@@ -208,7 +210,11 @@ export default function BoletosFinanceiro({ cor = '#16a34a' }: { cor?: string })
         })}
       </div>
 
-      {lista.length === 0 ? (
+      {!aba ? (
+        <div style={{ textAlign: 'center', padding: '4px 10px 2px', color: '#9ca3af', fontSize: 11.5 }}>
+          Toque num dos cards acima para ver a lista.
+        </div>
+      ) : lista.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '22px 10px', color: '#9ca3af', fontSize: 12.5 }}>
           {aba === 'vencidos' ? 'Nenhum boleto vencido. Tudo em dia.'
             : aba === 'hoje' ? 'Nada vencendo hoje.'
