@@ -65,7 +65,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     'nome_completo','apelido','email','cpf','rg','cnpj','cargo','habilidades',
     'endereco','data_aniversario','foto_url','cor_favorita','comida_favorita',
     'animal_favorito','hobbies','um_sonho','contato_responsavel','certificados',
-    'conta_bancaria','ativo','data_admissao','servicos_habilitados',
+    'conta_bancaria','chave_pix','ativo','data_admissao','servicos_habilitados',
     'ficha_entrevista','processo_contratacao','materiais_trabalho','perfil_ideal',
     'horarios_folgas','distrato','contrato_trabalho','tem_certificados','plano_carreira','data_demissao','cnpj_status','cnpj_observacao','vinculo','clt_observacao','avaliacoes','telefone','ferias',
     'tem_contrato','perfil_pessoal_completo','dados_pessoais_completo','dados_profissionais_completo',

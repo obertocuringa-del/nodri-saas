@@ -93,12 +93,25 @@ export async function GET(req: NextRequest) {
           obs: String(it?.obs || ''), cod: String(it?.cod || ''),
           // grupo: liga as parcelas de um mesmo lançamento (empréstimo/parcelado)
           grupo: String(it?.grupo || ''),
+          profId: String(it?.profId || ''), pix: '',
           pago: !!pg, pagoEm: pg?.pagoEm || '',
         })
       })
     }
     varrer(d.despInd, 'fix')
     varrer(d.extrasDespInd, 'extra')
+  }
+
+  // Chave PIX de quem vai receber (empréstimo). Busca a ATUAL do cadastro, não
+  // uma cópia gravada no lançamento — se a profissional corrigir a chave, o
+  // Financeiro copia a certa.
+  const profIds = Array.from(new Set(itens.map(i => i.profId).filter(Boolean)))
+  if (profIds.length) {
+    const { data: profs } = await supabaseAdmin
+      .from('profissionais').select('id, chave_pix')
+      .eq('salao_id', salaoId).in('id', profIds)
+    const pixDe = new Map((profs || []).map((p: any) => [String(p.id), String(p.chave_pix || '')]))
+    for (const it of itens) if (it.profId) it.pix = pixDe.get(it.profId) || ''
   }
 
   itens.sort((a, b) => a.venc < b.venc ? -1 : a.venc > b.venc ? 1 : 0)

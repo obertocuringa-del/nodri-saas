@@ -76,7 +76,9 @@ export async function POST(req: NextRequest) {
       porMes.get(key)!.itens.push({
         nome: 'EMPRÉSTIMO', valor: String(p.valor), dica: '',
         parcela: N > 1 ? `${i + 1}/${N}` : '', obs: `${nome}${motivo ? ` — ${motivo}` : ''}`,
-        grupo, venc: vencHoje, data: p.dataBR,
+        // profId liga o lançamento à profissional: a fila de boletos usa isso
+        // pra mostrar a chave PIX ATUAL dela (não uma cópia congelada aqui)
+        grupo, venc: vencHoje, data: p.dataBR, profId: alvo,
       })
     })
     for (const { ano, mes, itens } of porMes.values()) {

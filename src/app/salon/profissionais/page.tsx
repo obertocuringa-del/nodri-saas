@@ -46,6 +46,7 @@ interface Profissional {
   status_cadastro?: string
   servicos_habilitados?: string[]
   conta_bancaria?: string
+  chave_pix?: string
   criado_em: string
 }
 
@@ -167,7 +168,7 @@ const FORM_INITIAL = {
   nome_completo: '', apelido: '', email: '', cpf: '', rg: '', cnpj: '', cargo: '',
   habilidades: '{}', endereco: '', data_aniversario: '', cor_favorita: '', comida_favorita: '',
   animal_favorito: '', hobbies: '', um_sonho: '', contato_responsavel: '{}', certificados: '',
-  foto_url: '', conta_bancaria: '',
+  foto_url: '', conta_bancaria: '', chave_pix: '',
 }
 
 export default function ProfissionaisPage() {
@@ -884,6 +885,7 @@ ${montarContratoHTML()}
       contato_responsavel: (p as any).contato_responsavel || '{}',
       certificados: p.certificados || '', foto_url: p.foto_url || '',
       conta_bancaria: (p as any).conta_bancaria || '',
+      chave_pix: (p as any).chave_pix || '',
     })
     setServicosSelecionados(Array.isArray(p.servicos_habilitados) ? p.servicos_habilitados : [])
     setFotoPreview(p.foto_url || '')
@@ -1520,6 +1522,7 @@ ${montarContratoHTML()}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     {F('CNPJ (MEI)', 'cnpj', { placeholder: '00.000.000/0001-00' })}
                     {F('Dados Bancários (Banco / Ag / Conta)', 'conta_bancaria', { placeholder: 'Banco / Ag / Conta' })}
+                    {F('Chave PIX', 'chave_pix', { placeholder: 'CPF, telefone, e-mail ou chave aleatória' })}
                     {TA('Certificados de Curso', 'certificados', 3)}
                   </div>
                 </div>

@@ -12,7 +12,7 @@ import { formatarLinha, ehPix } from '@/lib/boleto'
 interface Boleto {
   key: string; ano: number; mes: number; lista: 'fix' | 'extra'; idx: number
   nome: string; valor: number; venc: string; parcela: string; obs: string
-  cod: string; grupo: string; pago: boolean; pagoEm: string
+  cod: string; grupo: string; pix: string; pago: boolean; pagoEm: string
 }
 
 // Um CARD é o que aparece na tela. Lançamento parcelado com o mesmo vencimento
@@ -22,7 +22,7 @@ interface Boleto {
 interface Card {
   id: string; keys: string[]; qtd: number; meses: string
   nome: string; valor: number; venc: string; parcela: string; obs: string
-  cod: string; pago: boolean; pagoEm: string
+  cod: string; pix: string; pago: boolean; pagoEm: string
 }
 
 const MESES = ['', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
@@ -67,7 +67,7 @@ export default function BoletosFinanceiro({ cor = '#16a34a' }: { cor?: string })
       const novo: Card = {
         id: b.key, keys: [b.key], qtd: 1, meses: mes,
         nome: b.nome, valor: b.valor, venc: b.venc, parcela: b.parcela,
-        obs: b.obs, cod: b.cod, pago: b.pago, pagoEm: b.pagoEm,
+        obs: b.obs, cod: b.cod, pix: b.pix || '', pago: b.pago, pagoEm: b.pagoEm,
       }
       if (!b.grupo) { soltos.push(novo); continue }
       const gk = `${b.grupo}|${b.venc}|${b.pago ? 1 : 0}`
@@ -143,6 +143,17 @@ export default function BoletosFinanceiro({ cor = '#16a34a' }: { cor?: string })
       // Navegador sem permissão de área de transferência: abre o código pra copiar na mão
       setCodAberto(p => new Set(p).add(b.id))
       toast.error('Não consegui copiar automático. O código está aí embaixo pra copiar na mão.')
+    }
+  }
+
+  // PIX da profissional (empréstimo): copia a chave pro app do banco.
+  // A chave já fica visível no card, então o erro só precisa avisar.
+  async function copiarPix(b: Card) {
+    try {
+      await navigator.clipboard.writeText(b.pix.trim())
+      toast.success('Chave PIX copiada')
+    } catch {
+      toast.error('Não consegui copiar automático — a chave está aí do lado, dá pra selecionar.')
     }
   }
 
@@ -249,6 +260,26 @@ export default function BoletosFinanceiro({ cor = '#16a34a' }: { cor?: string })
                       {formatarLinha(b.cod)}
                     </div>
                   </div>
+                )}
+
+                {/* PIX de quem vai receber — empréstimo aprovado */}
+                {b.pix && (
+                  <div style={{ marginTop: 8, background: '#f5f3ff', border: '1px solid #e9d5ff', borderRadius: 8, padding: '8px 10px' }}>
+                    <div style={{ fontSize: 9.5, fontWeight: 800, color: '#6b21a8', marginBottom: 3 }}>CHAVE PIX DA PROFISSIONAL</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <span style={{ fontFamily: 'ui-monospace,monospace', fontSize: 12, color: '#1a1a1a', wordBreak: 'break-all', flex: '1 1 160px', userSelect: 'all' }}>{b.pix}</span>
+                      <button onClick={() => copiarPix(b)}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#7c3aed', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                        <Copy size={12} /> Copiar PIX
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {/* Empréstimo sem chave cadastrada: avisa onde resolver */}
+                {!b.pix && !b.pago && /EMPR[ÉE]STIMO/i.test(b.nome) && (
+                  <p style={{ fontSize: 11, color: '#b45309', margin: '6px 0 0' }}>
+                    Sem chave PIX no cadastro dela — preencha em Profissionais › Dados Profissionais › Chave PIX.
+                  </p>
                 )}
 
                 {b.cod && (
