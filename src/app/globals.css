@@ -123,22 +123,23 @@ html, body {
          iguais. Marque a linha com .linha-form-mobile. */
   .linha-form-mobile { grid-template-columns: repeat(3, 1fr) !important; row-gap: 6px !important; }
   .linha-form-mobile > :first-child { grid-column: 1 / -1 !important; }
-  /* 15b) Linhas das Despesas Indiretas no celular: em vez de 3 colunas iguais
-          (que deixavam %, parcela, data e ícones embaralhados), posiciona cada
-          campo numa grade de 12 colunas:
-            linha 1: nome
-            linha 2: valor .......... % do faturamento
-            linha 3: parcela  vencimento  [código] [lixeira]
+  /* 15b) Linhas das Despesas Indiretas no celular, em grade de 12 colunas —
+          duas linhas só, com o valor na mesma linha do nome:
+            linha 1: nome ............ R$ valor ... %
+            linha 2: parcela  vencimento  [código] [lixeira]
           Os filhos 7+ (observação, código lido, data da quinzena) já vêm com
           grid-column 1/-1 no próprio elemento e não entram nestas regras. */
-  .linha-desp-mobile { grid-template-columns: repeat(12, 1fr) !important; row-gap: 7px !important; column-gap: 6px !important; }
-  .linha-desp-mobile > :nth-child(1) { grid-column: 1 / -1 !important; }
-  .linha-desp-mobile > :nth-child(2) { grid-column: 1 / span 7 !important; }
-  .linha-desp-mobile > :nth-child(3) { grid-column: 8 / span 5 !important; text-align: left !important; align-self: center; }
+  .linha-desp-mobile { grid-template-columns: repeat(12, 1fr) !important; row-gap: 7px !important; column-gap: 5px !important; }
+  .linha-desp-mobile > :nth-child(1) { grid-column: 1 / span 6 !important; }
+  .linha-desp-mobile > :nth-child(2) { grid-column: 7 / span 4 !important; }
+  .linha-desp-mobile > :nth-child(3) { grid-column: 11 / span 2 !important; text-align: right !important; align-self: center; }
   .linha-desp-mobile > :nth-child(4) { grid-column: 1 / span 3 !important; }
   .linha-desp-mobile .nodri-venc-cel { grid-column: 4 / span 6 !important; }
   .linha-desp-mobile > :nth-child(6) { grid-column: 10 / span 3 !important; }
   .linha-desp-mobile input[type="date"] { font-size: 11px !important; padding-left: 3px !important; padding-right: 2px !important; }
+  /* valor e parcela apertam pra caber ao lado do nome */
+  .linha-desp-mobile input[type="number"] { font-size: 12px !important; padding-left: 20px !important; padding-right: 3px !important; }
+  .linha-desp-mobile > :nth-child(4) input { font-size: 11px !important; padding-left: 2px !important; padding-right: 2px !important; }
 
 
   /* 18) Cabeçalho de seção com botões (ex: Despesas Indiretas): no celular o
