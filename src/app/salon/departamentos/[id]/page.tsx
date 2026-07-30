@@ -28,6 +28,8 @@ export default function DepartamentoPage() {
   const [demandas, setDemandas] = useState<Demanda[]>([])
   const [loading, setLoading] = useState(true)
   const [ehDono, setEhDono] = useState(false)   // só o salão principal exclui/transfere
+  // Qual lista está aberta embaixo dos contadores (null = tudo recolhido)
+  const [secao, setSecao] = useState<'abertas' | 'resolvidas' | 'total' | null>('abertas')
 
   // Resolver com resposta
   const [respondendo, setRespondendo] = useState<string | null>(null)
@@ -60,6 +62,14 @@ export default function DepartamentoPage() {
   const pesoTopo = (d: Demanda) => (d.tipo === 'emprestimo' && d.emprestimo?.status === 'pendente' ? 0 : d.prioridade === 'urgente' ? 1 : 2)
   const abertas = demandas.filter(d => !d.resolvido).sort((a, b) => pesoTopo(a) - pesoTopo(b))
   const resolvidas = demandas.filter(d => d.resolvido)
+
+  // Pendências do dia: o que vence hoje, o que já venceu e os pedidos de
+  // empréstimo esperando resposta — o que não pode passar batido hoje.
+  const hojeISO = (() => { const h = new Date(); return `${h.getFullYear()}-${String(h.getMonth() + 1).padStart(2, '0')}-${String(h.getDate()).padStart(2, '0')}` })()
+  const doDia = abertas.filter(d =>
+    (d.tipo === 'emprestimo' && d.emprestimo?.status === 'pendente') ||
+    (!!d.data_limite && String(d.data_limite).slice(0, 10) <= hojeISO)
+  )
 
   async function resolver(d: Demanda) {
     const res = await fetch(`/api/pendencias/${d.id}`, {
@@ -171,34 +181,63 @@ export default function DepartamentoPage() {
         {/* Fila de boletos — só no setor FINANCEIRO */}
         {ehFinanceiro && <BoletosFinanceiro cor={cor} />}
 
-        {/* Resumo */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 18 }}>
-          {[
-            { l: 'Abertas', v: abertas.length, c: '#f59e0b' },
-            { l: 'Resolvidas', v: resolvidas.length, c: '#22c55e' },
-            { l: 'Total', v: demandas.length, c: cor },
-          ].map(x => (
-            <div key={x.l} style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: 12, textAlign: 'center' }}>
-              <div style={{ fontSize: 10, color: '#9ca3af', marginBottom: 2 }}>{x.l}</div>
-              <div style={{ fontSize: 24, fontWeight: 800, color: x.c }}>{x.v}</div>
-            </div>
-          ))}
+        {/* PENDÊNCIAS DO DIA — o que precisa de ação hoje fica em cima e sempre
+            aberto; o resto vive nos contadores recolhíveis abaixo. */}
+        {doDia.length > 0 && (
+          <div style={{ marginBottom: 18 }}>
+            <p style={{ fontSize: 11, fontWeight: 800, color: '#b91c1c', textTransform: 'uppercase', letterSpacing: .5, marginBottom: 8 }}>
+              🔔 Pendências do dia ({doDia.length})
+            </p>
+            {doDia.map(d => <DemandaCard key={d.id} d={d} />)}
+          </div>
+        )}
+
+        {/* Resumo — clicar abre a lista embaixo, clicar de novo recolhe */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 14 }}>
+          {([
+            { id: 'abertas' as const, l: 'Abertas', v: abertas.length, c: '#f59e0b' },
+            { id: 'resolvidas' as const, l: 'Resolvidas', v: resolvidas.length, c: '#22c55e' },
+            { id: 'total' as const, l: 'Total', v: demandas.length, c: cor },
+          ]).map(x => {
+            const ativo = secao === x.id
+            return (
+              <button key={x.l} onClick={() => setSecao(s => s === x.id ? null : x.id)}
+                title={ativo ? 'Clique para recolher' : 'Clique para ver a lista'}
+                style={{ background: ativo ? '#faf9f7' : '#fff', border: `1px solid ${ativo ? x.c : '#e8e6e0'}`, boxShadow: ativo ? `inset 0 0 0 1px ${x.c}40` : 'none', borderRadius: 12, padding: 12, textAlign: 'center', cursor: 'pointer' }}>
+                <div style={{ fontSize: 10, color: '#9ca3af', marginBottom: 2 }}>{x.l}</div>
+                <div style={{ fontSize: 24, fontWeight: 800, color: x.c }}>{x.v}</div>
+              </button>
+            )
+          })}
         </div>
 
-        {abertas.length > 0 && <>
+        {!secao && demandas.length > 0 && (
+          <p style={{ textAlign: 'center', fontSize: 11.5, color: '#9ca3af', margin: '0 0 8px' }}>Toque num dos cards acima para ver a lista.</p>
+        )}
+
+        {secao === 'abertas' && (abertas.length > 0 ? (<>
           <p style={{ fontSize: 11, fontWeight: 800, color: '#92400e', textTransform: 'uppercase', letterSpacing: .5, marginBottom: 8 }}>Abertas ({abertas.length})</p>
           {abertas.map(d => <DemandaCard key={d.id} d={d} />)}
-        </>}
+        </>) : (
+          <p style={{ textAlign: 'center', fontSize: 12.5, color: '#9ca3af', padding: '14px 0' }}>Sem pendências abertas. Tudo resolvido. 👏</p>
+        ))}
 
-        {resolvidas.length > 0 && <>
-          <p style={{ fontSize: 11, fontWeight: 800, color: '#047857', textTransform: 'uppercase', letterSpacing: .5, margin: '18px 0 8px' }}>Resolvidas ({resolvidas.length})</p>
+        {secao === 'resolvidas' && (resolvidas.length > 0 ? (<>
+          <p style={{ fontSize: 11, fontWeight: 800, color: '#047857', textTransform: 'uppercase', letterSpacing: .5, margin: '0 0 8px' }}>Resolvidas ({resolvidas.length})</p>
           {resolvidas.map(d => <DemandaCard key={d.id} d={d} />)}
-        </>}
+        </>) : (
+          <p style={{ textAlign: 'center', fontSize: 12.5, color: '#9ca3af', padding: '14px 0' }}>Nada resolvido ainda.</p>
+        ))}
+
+        {secao === 'total' && (<>
+          <p style={{ fontSize: 11, fontWeight: 800, color: '#6b6860', textTransform: 'uppercase', letterSpacing: .5, margin: '0 0 8px' }}>Todas ({demandas.length})</p>
+          {[...abertas, ...resolvidas].map(d => <DemandaCard key={d.id} d={d} />)}
+        </>)}
 
         {demandas.length === 0 && (
           <div style={{ textAlign: 'center', padding: 60, color: '#9ca3af' }}>
             <div style={{ fontSize: 40, marginBottom: 10 }}>📭</div>
-            <p style={{ margin: 0 }}>Nenhuma demanda neste departamento.</p>
+            <p style={{ margin: 0 }}>Sem pendências neste departamento.</p>
             <p style={{ fontSize: 12, marginTop: 6 }}>As solicitações enviadas para cá aparecem aqui.</p>
           </div>
         )}
