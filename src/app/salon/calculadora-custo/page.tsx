@@ -545,6 +545,18 @@ const isoParaBR = (iso: string) => { const m = String(iso || '').match(/^(\d{4})
 const brParaISO = (br: string) => { const m = String(br || '').match(/^(\d{2})\/(\d{2})\/(\d{4})$/); return m ? `${m[3]}-${m[2]}-${m[1]}` : '' }
 const hojeBRCalc = () => { const d = new Date(); return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}` }
 
+// Mês sem nada salvo: zera o que é MOVIMENTO daquele mês (faturamento, listas
+// de despesas, provisão, reserva). O que é configuração que se repete todo mês
+// (metas, nº de cadeiras, área em m², % desejados) fica como está, senão o
+// usuário teria que reconfigurar a cada mês novo.
+const MES_VAZIO = {
+  fat: '', invInicial: '', totalDeprec: '',
+  despInd: [] as any[], extrasDespInd: [] as any[], extrasDiretas: [] as any[], extrasOutras: [] as any[],
+  sal13: '', ferias: '', fgtsR: '',
+  imposto: '', produto: '', rateio: '', taxaC: '',
+  aquisicaoEq: '', distSocios: '', reservaEmerg: '', vlrProdEstoque: '',
+}
+
 // ─── Vencimento das despesas indiretas ──────────────────────────────────────
 // Guardado em ISO 'YYYY-MM-DD' (mesmo formato que o parcelamento já gravava).
 // Preenchido = a conta entra sozinha na fila de boletos do setor FINANCEIRO.
@@ -1000,7 +1012,13 @@ export default function CalculadoraCusto() {
     setAnaliseIA(''); setErroIA('')
     fetch(`/api/salon/calculadora?ano=${anoSel}&mes=${mesSel}`, { credentials: 'include' })
       .then(r => r.json())
-      .then(d => { if (d.dados) aplicarDados(d.dados) })
+      .then(d => {
+        // Mês SEM nada salvo tem que limpar a tela. Antes ficava com os números
+        // do mês anterior — parecia que a troca de mês não tinha funcionado e,
+        // pior, um Salvar copiava o mês velho pro mês novo.
+        aplicarDados((d?.dados && typeof d.dados === 'object') ? d.dados : (MES_VAZIO as any))
+        setDirtyCalc(false)   // carregar não é edição do usuário
+      })
       .catch(() => {})
       .finally(() => setCarregando(false))
   // eslint-disable-next-line react-hooks/exhaustive-deps
