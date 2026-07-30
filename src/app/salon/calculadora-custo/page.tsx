@@ -656,6 +656,9 @@ export default function CalculadoraCusto() {
   const [parcObs, setParcObs]           = useState('')
   const [parcLinhas, setParcLinhas]     = useState<{valor:string;venc:string;cod?:string}[]>([])
   const [parcSalvando, setParcSalvando] = useState(false)
+  // Quantidade de parcelas como TEXTO: deixa apagar o campo pra digitar outro
+  // número (com estado numérico o valor voltava pra 1 e travava no celular).
+  const [parcQtd, setParcQtd] = useState('1')
   // ── Leitor de código de boleto: quem pediu a leitura ──
   const [leitorAlvo, setLeitorAlvo] = useState<{lista:'fix'|'extra'|'parc'; idx:number} | null>(null)
   const [notasAbertas, setNotasAbertas] = useState<Set<string>>(new Set())
@@ -1049,7 +1052,7 @@ export default function CalculadoraCusto() {
 
   // ── Abre o modal de parcelamento já com N linhas ──
   function abrirParcelamento() {
-    setParcDespesa(''); setParcObs(''); setParcLinhas([{ valor: '', venc: '', cod: '' }]); setParcAberto(true)
+    setParcDespesa(''); setParcObs(''); setParcLinhas([{ valor: '', venc: '', cod: '' }]); setParcQtd('1'); setParcAberto(true)
   }
   function setParcN(qtd: number) {
     const q = Math.max(1, Math.min(48, qtd || 1))
@@ -1059,6 +1062,9 @@ export default function CalculadoraCusto() {
       return arr.slice(0, q)
     })
   }
+
+  // Empréstimo pede "de quem é" — mesmo seletor de profissional da lista
+  const ehEmprestimoParc = /empr[eé]stimo/i.test(parcDespesa)
 
   // ── Aplica o que foi lido do código de barras na linha que pediu a leitura ──
   function aplicarLeitura(b: BoletoLido) {
@@ -1095,7 +1101,12 @@ export default function CalculadoraCusto() {
       const [y, m] = l.venc.split('-').map(Number)
       return `• ${MESES_NOMES[m]}/${String(y).slice(2)} — R$ ${l.valor}  (${i + 1}/${N})`
     }).join('\n')
-    if (!confirm(`Lançar "${nome}" em ${N}x?\n\n${resumo}\n\nCada parcela é SOMADA ao mês (nada é apagado) e já fica salva. Confirmar?`)) return
+    // Todo boleto deve ter código de barras — avisa antes de deixar passar sem
+    const semCod = linhas.filter(l => !l.cod?.trim()).length
+    const aviso = semCod > 0
+      ? `\n\n⚠️ ${semCod} de ${N} parcela(s) SEM código de barras. Sem o código, o Financeiro não vai ter o que copiar pra pagar no banco.`
+      : ''
+    if (!confirm(`Lançar "${nome}" em ${N}x?\n\n${resumo}${aviso}\n\nCada parcela é SOMADA ao mês (nada é apagado) e já fica salva. Confirmar?`)) return
 
     setParcSalvando(true)
     try {
@@ -1825,13 +1836,13 @@ Use números reais. Seja direto.`
 
             {/* Despesas Indiretas */}
             <div className="rounded-2xl border overflow-hidden" style={{background:'#fffbf0',borderColor:'#f59e0b',...oculto(podeCalc('calc_desp_fixas'))}}>
-              <button onClick={()=>setSecIndiretas(p=>!p)} className="w-full flex items-center justify-between px-5 py-3 border-b transition-colors" style={{background:'linear-gradient(135deg,#fffbf0,#fef3c7)',borderColor:'#f59e0b'}}>
+              <button onClick={()=>setSecIndiretas(p=>!p)} className="nodri-cab-sec w-full flex items-center justify-between px-5 py-3 border-b transition-colors" style={{background:'linear-gradient(135deg,#fffbf0,#fef3c7)',borderColor:'#f59e0b'}}>
                 <div className="flex items-center gap-2">
                   {secIndiretas ? <ChevronUp size={14} style={{color:'#b45309'}}/> : <ChevronDown size={14} style={{color:'#b45309'}}/>}
                   <span className="font-bold text-sm" style={{color:'#92400e'}}>📋 Despesas Indiretas (Fixas)</span>
                   {totInd > 0 && <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{background:'#f59e0b',color:'#fff'}}>{fmtR(totInd)}</span>}
                 </div>
-                <div className="flex items-center gap-2 flex-wrap justify-end" onClick={e=>e.stopPropagation()}>
+                <div className="nodri-cab-acoes flex items-center gap-2 flex-wrap justify-end" onClick={e=>e.stopPropagation()}>
                   {/* Lançar boleto fica AQUI (e não dentro da lista) pra você não
                       precisar abrir a lista inteira toda vez que for lançar. */}
                   <button onClick={abrirParcelamento}
@@ -1870,9 +1881,13 @@ Use números reais. Seja direto.`
                   return(
                     <div key={i} className="grid linha-form-mobile gap-2 px-5 py-2 items-center" style={{gridTemplateColumns:GRID_IND,borderBottom:'1px solid #f59e0b20',background: v>0 ? '#fffdf5' : 'transparent'}}>
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-xs font-semibold" style={{color:'#78350f'}}>{d.nome}</span>
+                        <span className="text-xs font-semibold" onClick={()=>toggleNota('d'+i)}
+                          style={{color:'#78350f',cursor:'pointer'}} title="Clique para abrir a observação">{d.nome}</span>
                         <InfoBtn id={d.nome==='Aluguel'?'aluguel':d.nome==='Energia Elétrica'?'energia':d.nome==='Água'?'agua':d.nome==='Contabilidade'?'contabilidade':''}/>
                         <button onClick={()=>toggleNota('d'+i)} title="Observação" style={{fontSize:11,lineHeight:1,padding:'1px 3px',border:'none',background:'transparent',cursor:'pointer',opacity:d.obs?1:0.45}}>📝</button>
+                        {!notasAbertas.has('d'+i) && d.obs && (
+                          <span className="text-[9.5px]" style={{color:'#9a7b3a',maxWidth:150,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{d.obs}</span>
+                        )}
                       </div>
                       <div className="relative">
                         <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#b45309'}}>R$</span>
@@ -1895,7 +1910,7 @@ Use números reais. Seja direto.`
                       <div className="flex justify-end">
                         <BtnCodigo tem={!!d.cod} onClick={()=>setLeitorAlvo({lista:'fix',idx:i})}/>
                       </div>
-                      {(notasAbertas.has('d'+i) || d.obs) && (
+                      {notasAbertas.has('d'+i) && (
                         <ObsComProf valor={d.obs||''} profs={profsLista}
                           onChange={val=>{const nd=[...despInd];nd[i]={...nd[i],obs:val};setDespInd(nd)}}/>
                       )}
@@ -1911,11 +1926,16 @@ Use números reais. Seja direto.`
                   return(
                     <div key={i} className="grid linha-form-mobile gap-2 px-5 py-2 items-center" style={{gridTemplateColumns:GRID_IND,borderBottom:'1px solid #f59e0b20',background:'#fffdf5'}}>
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-xs font-semibold" style={{color:'#78350f'}}>{d.nome}</span>
+                        {/* Clicar no nome abre observação / profissional / data da quinzena */}
+                        <span className="text-xs font-semibold" onClick={()=>toggleNota('e'+i)}
+                          style={{color:'#78350f',cursor:'pointer'}} title="Clique para abrir observação, profissional e data">{d.nome}</span>
                         {d.grupo
                           ? <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{background:'#dbeafe',color:'#1d4ed8'}}>💳 parcela {d.parcela}</span>
                           : <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{background:'#f59e0b20',color:'#b45309'}}>catálogo</span>}
                         <button onClick={()=>toggleNota('e'+i)} title="Observação" style={{fontSize:11,lineHeight:1,padding:'1px 3px',border:'none',background:'transparent',cursor:'pointer',opacity:d.obs?1:0.45}}>📝</button>
+                        {!notasAbertas.has('e'+i) && d.obs && (
+                          <span className="text-[9.5px]" style={{color:'#9a7b3a',maxWidth:150,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{d.obs}</span>
+                        )}
                       </div>
                       <div className="relative">
                         <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{color:'#b45309'}}>R$</span>
@@ -1939,7 +1959,10 @@ Use números reais. Seja direto.`
                         <button onClick={()=>setExtrasDespInd(prev=>prev.filter((_,idx)=>idx!==i))} style={{color:'#ef4444'}}><Trash2 size={12}/></button>
                       </div>
                       {d.cod && <LinhaCodigo cod={d.cod} onLimpar={()=>{const nd=[...extrasDespInd];nd[i]={...nd[i],cod:''};setExtrasDespInd(nd);setDirtyCalc(true)}}/>}
-                      {(notasAbertas.has('e'+i) || d.obs || d.data) && (
+                      {/* Observação / profissional / data da quinzena aparecem SÓ ao clicar
+                          no nome (ou no 📝). Antes abriam sozinhas em toda despesa do
+                          catálogo, porque o catálogo já grava a data do lançamento. */}
+                      {notasAbertas.has('e'+i) && (
                         <>
                           <ObsComProf valor={d.obs||''} profs={profsLista}
                             onChange={val=>{const nd=[...extrasDespInd];nd[i]={...nd[i],obs:val};setExtrasDespInd(nd)}}/>
@@ -1994,15 +2017,28 @@ Use números reais. Seja direto.`
                       </div>
 
                       <div>
-                        <label style={{fontSize:11,fontWeight:700,color:'#78350f',display:'block',marginBottom:4}}>Observação (opcional)</label>
-                        <input value={parcObs} onChange={e=>setParcObs(e.target.value)} placeholder="ex: Empréstimo — João / cartão Nubank"
-                          style={{width:'100%',border:'1.5px solid #e8e6e0',borderRadius:8,padding:'9px 10px',fontSize:13,outline:'none'}}/>
+                        <label style={{fontSize:11,fontWeight:700,color:'#78350f',display:'block',marginBottom:4}}>
+                          {ehEmprestimoParc ? 'De quem é o empréstimo? *' : 'Observação (opcional)'}
+                        </label>
+                        {/* Empréstimo: mesmo seletor de profissional cadastrado da lista */}
+                        {ehEmprestimoParc
+                          ? <ObsComProf valor={parcObs} onChange={setParcObs} profs={profsLista}/>
+                          : <input value={parcObs} onChange={e=>setParcObs(e.target.value)} placeholder="ex: nota fiscal, referência, motivo"
+                              style={{width:'100%',border:'1.5px solid #e8e6e0',borderRadius:8,padding:'9px 10px',fontSize:13,outline:'none'}}/>}
                       </div>
 
                       <div style={{display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
                         <label style={{fontSize:11,fontWeight:700,color:'#78350f'}}>Em quantas vezes?</label>
-                        <input type="number" min={1} max={48} value={parcLinhas.length} onChange={e=>setParcN(Number(e.target.value))}
-                          style={{width:70,border:'1.5px solid #f59e0b',borderRadius:8,padding:'7px 10px',fontSize:13,textAlign:'center',outline:'none'}}/>
+                        <input type="number" inputMode="numeric" min={1} max={48} value={parcQtd}
+                          onChange={e=>{
+                            const v = e.target.value
+                            setParcQtd(v)                                   // aceita vazio enquanto digita
+                            const nn = Number(v)
+                            if (v.trim() && nn >= 1 && nn <= 48) setParcN(nn)
+                          }}
+                          onFocus={e=>e.currentTarget.select()}             // toca e já substitui
+                          onBlur={()=>{ if (!parcQtd.trim() || Number(parcQtd) < 1) setParcQtd(String(parcLinhas.length)) }}
+                          style={{width:74,border:'1.5px solid #f59e0b',borderRadius:8,padding:'8px 10px',fontSize:15,textAlign:'center',outline:'none'}}/>
                         <span style={{fontSize:11,color:'#767069'}}>a referência (1/{parcLinhas.length}, 2/{parcLinhas.length}…) é gerada automática</span>
                         <span style={{fontSize:11,color:'#9a7b3a',flexBasis:'100%'}}>No botão de barras de cada linha você escaneia (celular) ou cola o código do boleto — valor e vencimento entram sozinhos, e o código fica guardado pro Financeiro copiar.</span>
                       </div>
@@ -2010,27 +2046,31 @@ Use números reais. Seja direto.`
                       {/* Linhas das parcelas */}
                       <div style={{display:'flex',flexDirection:'column',gap:8}}>
                         {parcLinhas.map((l,i)=>(
-                          <div key={i} style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',background:l.cod?'#f0fdf4':'#fffbf0',border:`1px solid ${l.cod?'#bbf7d0':'#f59e0b30'}`,borderRadius:10,padding:'8px 10px'}}>
-                            <span style={{fontSize:12,fontWeight:800,color:'#b45309',minWidth:34}}>{i+1}/{parcLinhas.length}</span>
+                          <div key={i} className="nodri-parc-linha" style={{display:'grid',gridTemplateColumns:'30px 34px minmax(0,1fr) minmax(0,1.25fr)',gap:5,alignItems:'center',background:l.cod?'#f0fdf4':'#fffbf0',border:`1px solid ${l.cod?'#bbf7d0':'#f59e0b30'}`,borderRadius:10,padding:'8px 9px'}}>
+                            <span style={{fontSize:11.5,fontWeight:800,color:'#b45309'}}>{i+1}/{parcLinhas.length}</span>
                             {/* Escanear/colar o código deste boleto: preenche valor e vencimento */}
                             <button onClick={()=>setLeitorAlvo({lista:'parc',idx:i})}
                               title={l.cod?'Código lido — clique para reler':'Escanear o código de barras deste boleto'}
-                              style={{background:l.cod?'#dcfce7':'#fff',border:`1.5px solid ${l.cod?'#86efac':'#f59e0b'}`,borderRadius:8,padding:'7px 9px',cursor:'pointer',lineHeight:1,color:l.cod?'#15803d':'#b45309',flexShrink:0}}>
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                              style={{background:l.cod?'#dcfce7':'#fff',border:`1.5px solid ${l.cod?'#86efac':'#f59e0b'}`,borderRadius:8,padding:'7px 6px',cursor:'pointer',lineHeight:1,color:l.cod?'#15803d':'#b45309',display:'flex',justifyContent:'center'}}>
+                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                                 <path d="M4 5v14M8 5v14M12 5v14M16 5v10M20 5v14"/>
                               </svg>
                             </button>
-                            <div style={{position:'relative',flex:'1 1 110px'}}>
-                              <span style={{position:'absolute',left:8,top:'50%',transform:'translateY(-50%)',fontSize:11,color:'#b45309'}}>R$</span>
-                              <input type="number" value={l.valor} onChange={e=>{const nd=[...parcLinhas];nd[i]={...nd[i],valor:e.target.value};setParcLinhas(nd)}} placeholder="valor"
-                                style={{width:'100%',paddingLeft:26,paddingRight:8,paddingTop:8,paddingBottom:8,border:'1.5px solid #e8e6e0',borderRadius:8,fontSize:13,outline:'none'}}/>
+                            <div style={{position:'relative',minWidth:0}}>
+                              <span style={{position:'absolute',left:6,top:'50%',transform:'translateY(-50%)',fontSize:10,color:'#b45309'}}>R$</span>
+                              <input type="number" inputMode="decimal" value={l.valor} onChange={e=>{const nd=[...parcLinhas];nd[i]={...nd[i],valor:e.target.value};setParcLinhas(nd)}} placeholder="valor"
+                                style={{width:'100%',minWidth:0,paddingLeft:22,paddingRight:4,paddingTop:8,paddingBottom:8,border:'1.5px solid #e8e6e0',borderRadius:8,fontSize:12.5,outline:'none'}}/>
                             </div>
                             <input type="date" value={l.venc} onChange={e=>{const nd=[...parcLinhas];nd[i]={...nd[i],venc:e.target.value};setParcLinhas(nd)}}
                               onClick={e=>{try{(e.currentTarget as any).showPicker?.()}catch{}}}
-                              style={{flex:'1 1 140px',border:'1.5px solid #e8e6e0',borderRadius:8,padding:'7px 10px',fontSize:13,outline:'none',cursor:'pointer'}}/>
-                            {l.venc && <span style={{fontSize:10,color:'#b45309',fontWeight:700}}>{MESES_NOMES[Number(l.venc.split('-')[1])]}</span>}
+                              style={{width:'100%',minWidth:0,border:'1.5px solid #e8e6e0',borderRadius:8,padding:'7px 4px',fontSize:12,outline:'none',cursor:'pointer'}}/>
+                            {!l.cod && (
+                              <div style={{gridColumn:'1 / -1',fontSize:10,color:'#b45309',display:'flex',alignItems:'center',gap:5}}>
+                                <span style={{fontSize:12}}>📷</span> Sem código de barras — toque no botão de barras pra ler o boleto
+                              </div>
+                            )}
                             {l.cod && (
-                              <div style={{flexBasis:'100%',display:'flex',alignItems:'center',gap:7,flexWrap:'wrap'}}>
+                              <div style={{gridColumn:'1 / -1',display:'flex',alignItems:'center',gap:7,flexWrap:'wrap'}}>
                                 <span style={{fontSize:9.5,fontWeight:800,color:'#15803d'}}>LIDO DO CÓDIGO</span>
                                 <span style={{fontFamily:'ui-monospace,monospace',fontSize:10.5,color:'#374151',wordBreak:'break-all',flex:'1 1 180px'}}>{formatarLinha(l.cod)}</span>
                                 <button onClick={()=>{const nd=[...parcLinhas];nd[i]={...nd[i],cod:''};setParcLinhas(nd)}}

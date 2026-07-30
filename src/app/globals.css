@@ -126,6 +126,19 @@ html, body {
   /* Campo de data (vencimento) precisa de mais espaço que 1/3 da linha */
   .nodri-venc-cel { grid-column: span 2 !important; }
 
+  /* 18) Cabeçalho de seção com botões (ex: Despesas Indiretas): no celular o
+         título fica em cima e os botões empilhados embaixo, largura cheia —
+         lado a lado eles ficavam apertados e cortando texto. */
+  .nodri-cab-sec { flex-direction: column !important; align-items: stretch !important; gap: 10px !important; }
+  .nodri-cab-acoes { flex-direction: column !important; align-items: stretch !important; justify-content: flex-start !important; }
+  .nodri-cab-acoes > button { width: 100% !important; justify-content: center !important; }
+
+  /* 19) Linha de parcela do modal de boleto: os 4 campos (nº, escanear, valor,
+         data) cabem lado a lado no celular reduzindo fonte e recuo do campo
+         de data, que é o que tem largura mínima maior. */
+  .nodri-parc-linha input[type="date"] { font-size: 11px !important; padding-left: 2px !important; padding-right: 2px !important; }
+  .nodri-parc-linha input[type="number"] { font-size: 12px !important; }
+
   /* 16) Calendário continua com 7 colunas no celular (a regra geral de 2
          colunas NÃO se aplica aqui — senão a semana ficaria quebrada).
          Usa [style*="repeat("] p/ ter a MESMA especificidade da regra geral
