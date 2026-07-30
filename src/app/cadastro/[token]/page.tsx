@@ -74,6 +74,7 @@ export default function CadastroPublicoPage() {
   // Dados profissionais
   const [cnpj, setCnpj] = useState('')
   const [banco, setBanco] = useState('')
+  const [chavePix, setChavePix] = useState('')
   const [certificados, setCertificados] = useState('')
 
   useEffect(() => {
@@ -152,6 +153,7 @@ export default function CadastroPublicoPage() {
       um_sonho: sonho,
       cnpj,
       conta_bancaria: banco,
+      chave_pix: chavePix,
       certificados,
       foto_url: fotoUrl || null,
       servicos_habilitados: servicosSelecionados,
@@ -398,6 +400,7 @@ export default function CadastroPublicoPage() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             {inp('CNPJ (MEI)', cnpj, setCnpj, { placeholder: '00.000.000/0001-00' })}
             {inp('Dados Bancários (Banco / Ag / Conta)', banco, setBanco, { placeholder: 'Banco / Ag / Conta' })}
+            {inp('Chave PIX', chavePix, setChavePix, { placeholder: 'CPF, telefone, e-mail ou chave aleatória' })}
             {ta('Certificados de Curso', certificados, setCertificados, 'Liste os cursos e certificações que possui')}
           </div>
         )}
