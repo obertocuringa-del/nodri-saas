@@ -31,8 +31,19 @@ export async function middleware(request: NextRequest) {
     // Feedback público (cliente e profissional)
     pathname.startsWith('/feedback') ||
     pathname.startsWith('/feedback-profissional') ||
+    // Link de avaliação que vai pro CLIENTE (/avaliacao/<slug>). A API já era
+    // pública, mas a PÁGINA não estava aqui — o cliente caía no login e não
+    // tinha como responder.
+    pathname.startsWith('/avaliacao') ||
     pathname.startsWith('/api/feedback/public') ||
     pathname.startsWith('/api/feedback-prof/public') ||
+    // Recuperação de senha: as APIs já eram públicas, mas as telas não —
+    // quem esquecia a senha (justamente quem NÃO está logado) caía no login.
+    pathname.startsWith('/recuperar-senha') ||
+    pathname.startsWith('/redefinir-senha') ||
+    // Cadastro e login de afiliados (não expõem dados de salão)
+    pathname.startsWith('/trabalhe-conosco') ||
+    pathname.startsWith('/afiliado') ||
     // Autocadastro público de lojistas parceiros
     pathname.startsWith('/lojista/') ||
     pathname.startsWith('/api/lojistas/public') ||
