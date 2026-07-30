@@ -2,21 +2,22 @@
 import { useEffect, useRef, useState } from 'react'
 import { X, Camera, Barcode, ClipboardPaste, Image as ImageIcon, Zap } from 'lucide-react'
 import { lerCodigoBoleto, formatarLinha, BoletoLido } from '@/lib/boleto'
+import { decodificarCanvas, paraCanvas, prepararLeitor } from '@/lib/leitorCodigo'
 
 // ─── Leitor de boleto ───────────────────────────────────────────────────────
-// Quatro caminhos, do melhor pro mais garantido:
-//  1) LEITOR DE MÃO (USB) — o do balcão, tipo Bematech. Ele se comporta como
-//     teclado, então escutamos a janela toda: aponta, atira, pronto. É o
-//     caminho principal no computador.
-//  2) FOTO do código — a imagem parada tem resolução muito maior que o vídeo,
-//     é o que mais acerta pela câmera do celular.
-//  3) CÂMERA ao vivo — usa o BarcodeDetector que já vem no Chrome do Android.
-//  4) COLAR o número impresso — sempre funciona, em qualquer aparelho.
+// Quatro caminhos, e todos ficam disponíveis ao mesmo tempo:
+//  1) LEITOR DE MÃO (USB) — o do balcão. Se comporta como teclado, então
+//     escutamos a janela toda: aponta, atira, pronto. Precisa ser leitor LASER
+//     ou de fenda; leitor CCD de produto (tipo BR-400) não alcança a largura
+//     do código do boleto.
+//  2) FOTO do código — imagem parada tem muito mais resolução que o vídeo, é o
+//     que mais acerta pela câmera.
+//  3) CÂMERA ao vivo.
+//  4) COLAR o número impresso — funciona em qualquer aparelho.
 //
-// Regra que aprendi na marra: nunca engolir erro aqui. Se a leitura falhar, a
-// tela TEM que dizer o que aconteceu, senão vira "abre a câmera e não acha nada".
-
-const FORMATOS_DESEJADOS = ['itf', 'code_128', 'qr_code', 'data_matrix', 'code_39']
+// A decodificação usa o leitor nativo do navegador quando existe e cai pro
+// ZXing (carregado sob demanda) quando não — por isso câmera e foto funcionam
+// também no iPhone e na webcam do PC.
 
 export default function LeitorBoleto({ aberto, onFechar, onLido, titulo }: {
   aberto: boolean
@@ -26,43 +27,27 @@ export default function LeitorBoleto({ aberto, onFechar, onLido, titulo }: {
 }) {
   const [texto, setTexto] = useState('')
   const [erro, setErro] = useState('')
-  const [status, setStatus] = useState('')          // feedback ao vivo da leitura
-  const [formatos, setFormatos] = useState<string[]>([])
-  const [suporte, setSuporte] = useState<'checando' | 'ok' | 'nao'>('checando')
+  const [status, setStatus] = useState('')
   const [camAtiva, setCamAtiva] = useState(false)
+  const [temCamera, setTemCamera] = useState(false)
   const [temTorch, setTemTorch] = useState(false)
   const [torchOn, setTorchOn] = useState(false)
+  const [analisando, setAnalisando] = useState(false)
   const [previa, setPrevia] = useState<BoletoLido | null>(null)
-  const [capturado, setCapturado] = useState('')    // dígitos que o leitor de mão disparou
-  const [dicaLeitor, setDicaLeitor] = useState(false) // leitor mandou código curto → mostra como configurar
+  const [capturado, setCapturado] = useState('')      // dígitos do leitor de mão
+  const [dicaLeitor, setDicaLeitor] = useState(false) // leitor mandou código curto
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const trackRef = useRef<MediaStreamTrack | null>(null)
   const pararRef = useRef(false)
   const fileRef = useRef<HTMLInputElement | null>(null)
 
-  // Suporte de verdade: não basta a API existir — ela precisa aceitar algum
-  // formato de código de barras. Em alguns navegadores ela existe e vem vazia.
   useEffect(() => {
-    let vivo = true
-    ;(async () => {
-      const temApi = typeof window !== 'undefined' && 'BarcodeDetector' in window
-      if (!temApi) { if (vivo) setSuporte('nao'); return }
-      try {
-        const sup: string[] = await (window as any).BarcodeDetector.getSupportedFormats()
-        const uteis = FORMATOS_DESEJADOS.filter(f => Array.isArray(sup) && sup.includes(f))
-        if (!vivo) return
-        setFormatos(uteis)
-        setSuporte(uteis.length ? 'ok' : 'nao')
-      } catch { if (vivo) setSuporte('nao') }
-    })()
-    return () => { vivo = false }
+    setTemCamera(typeof navigator !== 'undefined' && !!navigator.mediaDevices?.getUserMedia)
   }, [])
 
-  const temCameraAoVivo = suporte === 'ok' && typeof navigator !== 'undefined' && !!navigator.mediaDevices?.getUserMedia
-  // ITF é o formato do código de barras do boleto. Sem ele, o navegador só
-  // enxerga QR Code — e o boleto nunca seria achado, sem nenhum aviso.
-  const temItf = formatos.includes('itf')
+  // Baixa o decodificador enquanto o usuário ainda está se organizando
+  useEffect(() => { if (aberto) prepararLeitor() }, [aberto])
 
   function pararCamera() {
     pararRef.current = true
@@ -71,37 +56,31 @@ export default function LeitorBoleto({ aberto, onFechar, onLido, titulo }: {
     trackRef.current = null
     setCamAtiva(false); setTorchOn(false); setTemTorch(false)
   }
-  useEffect(() => { if (!aberto) { pararCamera(); setTexto(''); setErro(''); setStatus(''); setPrevia(null); setCapturado(''); setDicaLeitor(false) } }, [aberto])
+  useEffect(() => {
+    if (!aberto) {
+      pararCamera(); setTexto(''); setErro(''); setStatus('')
+      setPrevia(null); setCapturado(''); setDicaLeitor(false); setAnalisando(false)
+    }
+  }, [aberto])
   useEffect(() => () => pararCamera(), [])
 
-  function novoDetector() {
-    const Det = (window as any).BarcodeDetector
-    try { return new Det({ formats: formatos }) } catch { return new Det() }  // formato recusado → usa o padrão
-  }
-
-  // ── LEITOR DE MÃO (USB/HID) ───────────────────────────────────────────────
-  // Um leitor de bancada tipo Bematech se comporta como TECLADO: dispara e
-  // "digita" os dígitos, geralmente terminando com Enter. Escutamos a janela
-  // inteira, então não precisa clicar em campo nenhum — é só apontar e atirar.
-  // Também é o caminho principal no computador, onde não existe câmera.
+  // ── LEITOR DE MÃO (USB/HID): se comporta como teclado ─────────────────────
   useEffect(() => {
     if (!aberto || previa) return
     let buf = ''
     let timer: any
     let t0 = 0
-    // Leitor dispara ~10ms por dígito; gente digitando passa de 100ms. Serve pra
-    // não acusar "leitor lendo pela metade" quando é só alguém digitando devagar.
+    // Leitor dispara ~10ms por dígito; gente digitando passa de 100ms. Serve
+    // pra não acusar "leitor lendo pela metade" quando é só digitação lenta.
     const foiLeitor = () => buf.length > 1 && (Date.now() - t0) / buf.length < 60
 
     const processar = (digitos: string, doLeitor: boolean) => {
       const lido = lerCodigoBoleto(digitos)
       if (lido.ok) { setErro(''); setStatus(''); setCapturado(''); setTexto(''); setDicaLeitor(false); setPrevia(lido); return }
-      if (!doLeitor) return   // alguém digitando à mão: quem avisa é o botão "Ler código"
-      // Não fechou um tamanho de boleto: mostra quanto veio (o leitor pode
-      // estar limitado a códigos curtos)
+      if (!doLeitor) return   // digitação à mão: quem avisa é o botão "Ler código"
       if (digitos.length < 20) setDicaLeitor(true)
       setStatus(digitos.length < 20
-        ? `O leitor mandou só ${digitos.length} dígito(s). Boleto tem 44 — o seu leitor está lendo o código pela metade. Veja a dica logo abaixo.`
+        ? `O leitor mandou só ${digitos.length} dígito(s). Boleto tem 44 — está lendo o código pela metade. Veja a dica logo abaixo.`
         : `Recebi ${digitos.length} dígitos, mas boleto tem 44, 47 ou 48. Dispare de novo, com o leitor reto e bem em cima do código.`)
     }
 
@@ -115,14 +94,12 @@ export default function LeitorBoleto({ aberto, onFechar, onLido, titulo }: {
       buf += e.key
       clearTimeout(timer)
       const doLeitor = foiLeitor()
-      if (doLeitor) setCapturado(buf)      // só mostra o contador quando é disparo
-      // Fechou um tamanho válido de boleto? Processa na hora, sem esperar Enter.
+      if (doLeitor) setCapturado(buf)
       if (buf.length === 44 || buf.length === 47 || buf.length === 48) {
         const b = buf; buf = ''; setCapturado('')
         processar(b, doLeitor)
         return
       }
-      // Parou de chegar dígito: avisa o que veio (diagnóstico do leitor)
       timer = setTimeout(() => {
         if (buf.length >= 10) { const b = buf, lr = foiLeitor(); buf = ''; setCapturado(''); processar(b, lr) }
         else { buf = ''; setCapturado('') }
@@ -133,41 +110,46 @@ export default function LeitorBoleto({ aberto, onFechar, onLido, titulo }: {
     return () => { window.removeEventListener('keydown', onKey); clearTimeout(timer) }
   }, [aberto, previa])
 
-  // Avalia um código bruto; devolve true quando serviu
-  function tentarCodigo(raw: string, formato?: string): boolean {
-    const lido = lerCodigoBoleto(raw)
-    if (lido.ok) { setPrevia(lido); return true }
-    const qtd = String(raw || '').replace(/\D/g, '').length
-    setStatus(`Achei um código de ${qtd} dígito(s)${formato ? ` (${formato})` : ''}, mas boleto tem 44, 47 ou 48. Enquadre o código INTEIRO, de ponta a ponta.`)
+  // Avalia códigos brutos; devolve true quando um serviu
+  function tentarCodigos(brutos: string[]): boolean {
+    for (const raw of brutos) {
+      const lido = lerCodigoBoleto(raw)
+      if (lido.ok) { setStatus(''); setErro(''); setPrevia(lido); return true }
+    }
+    if (brutos.length) {
+      const qtd = String(brutos[0]).replace(/\D/g, '').length
+      setStatus(`Achei um código de ${qtd} dígito(s), mas boleto tem 44, 47 ou 48. Enquadre o código INTEIRO, de ponta a ponta.`)
+    }
     return false
   }
 
-  // ── 1) Foto do código (funciona no celular e no PC com arquivo salvo) ──
+  // ── FOTO do código ────────────────────────────────────────────────────────
   async function lerDaFoto(file: File | undefined) {
     if (!file) return
-    setErro(''); setStatus('Analisando a foto…')
-    if (suporte !== 'ok') { setErro('Este navegador não sabe ler código de barras. Use o campo de colar o número.'); setStatus(''); return }
+    setErro(''); setStatus('Analisando a foto…'); setAnalisando(true)
     try {
       const bmp = await createImageBitmap(file)
-      const det = novoDetector()
-      const achados = await det.detect(bmp)
-      if (!achados?.length) {
-        setStatus('Não encontrei código nessa foto. Tente de novo com o boleto esticado, bem iluminado, o código ocupando toda a largura da foto e a câmera reta (sem inclinar).')
+      // Resolução alta ajuda o ITF (barras finas), mas acima de ~2000px o ganho
+      // vira só tempo de processamento.
+      const canvas = paraCanvas(bmp, 2000)
+      if (!canvas) { setErro('Não consegui abrir essa imagem.'); return }
+      const achados = await decodificarCanvas(canvas)
+      if (!achados.length) {
+        setStatus('Não encontrei código nessa foto. Tente com o boleto esticado, boa luz, o código ocupando toda a largura da foto e a câmera reta (sem inclinar).')
         return
       }
-      for (const c of achados) if (tentarCodigo(String(c.rawValue || ''), c.format)) return
+      tentarCodigos(achados)
     } catch (e: any) {
       setErro(`Não consegui analisar a foto (${e?.name || 'erro'}). Dá pra colar o número do boleto no campo abaixo.`)
       setStatus('')
-    }
+    } finally { setAnalisando(false) }
   }
 
-  // ── 2) Câmera ao vivo ──
+  // ── CÂMERA ao vivo ────────────────────────────────────────────────────────
   async function abrirCamera() {
     setErro(''); setStatus('Abrindo a câmera…')
     let stream: MediaStream
     try {
-      // Resolução alta ajuda muito: o código do boleto é largo e as barras finas
       stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } },
       })
@@ -188,8 +170,8 @@ export default function LeitorBoleto({ aberto, onFechar, onLido, titulo }: {
     setCamAtiva(true)
     setStatus('Procurando o código…')
 
-    // Espera o <video> aparecer na tela — com tentativas. (Antes eu desistia
-    // depois de 80ms e a câmera ficava ligada sem ninguém lendo nada.)
+    // Espera o <video> montar — com tentativas, senão a câmera fica ligada
+    // sem ninguém lendo nada.
     let esperas = 0
     const iniciar = async () => {
       if (pararRef.current) return
@@ -200,34 +182,22 @@ export default function LeitorBoleto({ aberto, onFechar, onLido, titulo }: {
       videoRef.current.srcObject = stream
       try { await videoRef.current.play() } catch { /* autoplay */ }
 
-      let det: any
-      try { det = novoDetector() } catch (e: any) {
-        setErro(`O leitor de código deste navegador não inicializou (${e?.name || 'erro'}). Use "Foto do código" ou cole o número.`)
-        pararCamera(); return
-      }
-
-      let voltas = 0, falhas = 0
+      let voltas = 0
       const tick = async () => {
         if (pararRef.current || !videoRef.current) return
         const v = videoRef.current
-        if (!v.videoWidth) { setTimeout(tick, 200); return }   // quadro ainda não veio
+        if (!v.videoWidth) { setTimeout(tick, 200); return }
         try {
-          const achados = await det.detect(v)
+          const canvas = paraCanvas(v, 1280)
+          if (canvas) {
+            const achados = await decodificarCanvas(canvas)
+            if (achados.length && tentarCodigos(achados)) { pararCamera(); return }
+          }
           voltas++
-          if (achados?.length) {
-            for (const c of achados) if (tentarCodigo(String(c.rawValue || ''), c.format)) { pararCamera(); return }
-          } else if (voltas === 12) {
-            setStatus('Ainda procurando. Encoste mais perto até o código ocupar a largura da tela, boleto bem esticado e câmera reta. Se o boleto tiver QR Code do Pix, aponte nele — a leitura é bem mais fácil.')
-          } else if (voltas === 40) {
-            setStatus('Este tipo de código é difícil pela câmera ao vivo. Tente "Foto do código" (a foto tem muito mais resolução) ou cole o número impresso.')
-          }
-        } catch (e: any) {
-          if (++falhas === 3) {
-            setErro(`O leitor deste navegador falhou na leitura (${e?.name || 'erro'}). Use "Foto do código" ou cole o número.`)
-            pararCamera(); return
-          }
-        }
-        setTimeout(tick, 200)
+          if (voltas === 15) setStatus('Ainda procurando. Encoste até o código ocupar a largura da tela, boleto esticado e câmera reta. Se o boleto tiver QR Code do Pix, aponte nele — é bem mais fácil de ler.')
+          else if (voltas === 45) setStatus('Pela câmera ao vivo esse código é difícil. Tente "Foto do código" (bem mais resolução) ou cole o número impresso.')
+        } catch { /* quadro ruim — segue */ }
+        setTimeout(tick, 220)
       }
       tick()
     }
@@ -308,7 +278,7 @@ export default function LeitorBoleto({ aberto, onFechar, onLido, titulo }: {
           </>
         ) : (
           <>
-            {camAtiva && (
+            {camAtiva ? (
               <div>
                 <div style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', background: '#000' }}>
                   <video ref={videoRef} playsInline muted style={{ width: '100%', maxHeight: 280, objectFit: 'cover', display: 'block' }} />
@@ -325,60 +295,41 @@ export default function LeitorBoleto({ aberto, onFechar, onLido, titulo }: {
                   </button>
                 </div>
               </div>
-            )}
-
-            {/* Leitor de mão: sempre ativo enquanto o modal está aberto */}
-            {!camAtiva && (
-              <div style={{ background: capturado ? '#ecfdf5' : '#f5f3ff', border: `1.5px dashed ${capturado ? '#6ee7b7' : '#c4b5fd'}`, borderRadius: 12, padding: '13px 14px', textAlign: 'center' }}>
-                <div style={{ fontSize: 13, fontWeight: 800, color: capturado ? '#047857' : '#6b21a8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
-                  <Barcode size={16} /> {capturado ? `Recebendo… ${capturado.length} dígitos` : 'Leitor de mão pronto — aponte e dispare'}
+            ) : (
+              <>
+                {/* Leitor de mão: ativo enquanto o modal estiver aberto */}
+                <div style={{ background: capturado ? '#ecfdf5' : '#f5f3ff', border: `1.5px dashed ${capturado ? '#6ee7b7' : '#c4b5fd'}`, borderRadius: 12, padding: '13px 14px', textAlign: 'center' }}>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: capturado ? '#047857' : '#6b21a8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
+                    <Barcode size={16} /> {capturado ? `Recebendo… ${capturado.length} dígitos` : 'Leitor de mão pronto — aponte e dispare'}
+                  </div>
+                  {capturado
+                    ? <div style={{ fontFamily: 'ui-monospace,monospace', fontSize: 11, color: '#374151', marginTop: 5, wordBreak: 'break-all' }}>{capturado}</div>
+                    : <div style={{ fontSize: 11, color: '#7c6fa8', marginTop: 4 }}>Não precisa clicar em campo nenhum. Dispare no código do boleto que ele preenche sozinho.</div>}
                 </div>
-                {capturado
-                  ? <div style={{ fontFamily: 'ui-monospace,monospace', fontSize: 11, color: '#374151', marginTop: 5, wordBreak: 'break-all' }}>{capturado}</div>
-                  : <div style={{ fontSize: 11, color: '#7c6fa8', marginTop: 4 }}>Não precisa clicar em campo nenhum. Dispare no código de barras do boleto que ele preenche sozinho.</div>}
-              </div>
+
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <button onClick={() => fileRef.current?.click()} disabled={analisando} style={{ ...btnGrande('#f59e0b', '#fff'), opacity: analisando ? .6 : 1 }}>
+                    <ImageIcon size={17} /> {analisando ? 'Analisando…' : 'Foto do código'}
+                  </button>
+                  {temCamera && (
+                    <button onClick={abrirCamera} style={btnGrande('#fff', '#b45309', '1.5px solid #f59e0b')}>
+                      <Camera size={17} /> Câmera ao vivo
+                    </button>
+                  )}
+                </div>
+                <p style={{ fontSize: 11, color: '#6b6860', margin: 0 }}>
+                  A <strong>foto</strong> acerta mais que a câmera ao vivo (tem muito mais resolução). Enquadre o código de barras inteiro, de ponta a ponta, com o boleto esticado.
+                </p>
+              </>
             )}
 
-            {!camAtiva && (
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {suporte === 'ok' && (
-                  <button onClick={() => fileRef.current?.click()} style={btnGrande('#f59e0b', '#fff')}>
-                    <ImageIcon size={17} /> Foto do código
-                  </button>
-                )}
-                {temCameraAoVivo && (
-                  <button onClick={abrirCamera} style={btnGrande('#fff', '#b45309', '1.5px solid #f59e0b')}>
-                    <Camera size={17} /> Câmera ao vivo
-                  </button>
-                )}
-              </div>
-            )}
             <input ref={fileRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }}
               onChange={e => { lerDaFoto(e.target.files?.[0]); e.currentTarget.value = '' }} />
 
-            {suporte === 'ok' && !camAtiva && (
-              <p style={{ fontSize: 11, color: '#6b6860', margin: 0 }}>
-                A <strong>foto</strong> acerta mais que a câmera ao vivo (tem muito mais resolução). Enquadre o código de barras inteiro, de ponta a ponta, com o boleto esticado.
-              </p>
-            )}
-            {suporte === 'nao' && !camAtiva && (
-              <p style={{ fontSize: 11, color: '#9ca3af', margin: 0 }}>
-                Este navegador não lê pela câmera (normal no Chrome do Windows) — use o <strong>leitor de mão</strong> acima ou cole o número. No celular aparecem os botões de foto e câmera.
-              </p>
-            )}
             {dicaLeitor && (
               <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '10px 12px', fontSize: 11.5, color: '#92400e', lineHeight: 1.65 }}>
-                <strong>Seu leitor está lendo o código pela metade.</strong> Isso é configuração dele, não do sistema: quase todo leitor de mão vem com o formato <strong>ITF (Intercalado 2 de 5)</strong> limitado a códigos curtos, e o do boleto tem 44 dígitos.
-                No manual do seu leitor, procure <em>“ITF / Interleaved 2 of 5”</em> e habilite <em>tamanho variável</em> (ou comprimento 44) — a configuração é feita disparando o leitor nos códigos de barras do próprio manual. Enquanto isso, dá pra colar o número no campo abaixo.
+                <strong>Seu leitor está lendo o código pela metade.</strong> Duas causas possíveis: o formato <strong>ITF</strong> está limitado a códigos curtos (configura no manual do leitor, habilitando comprimento variável), ou o leitor é <strong>CCD de produto</strong> — esse tipo não alcança a largura do código do boleto, só resolve com leitor laser ou de fenda.
               </div>
-            )}
-            {suporte === 'ok' && !temItf && (
-              <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '9px 11px', fontSize: 11.5, color: '#92400e' }}>
-                Atenção: este navegador lê <strong>QR Code</strong>, mas não lê o código de barras do boleto (formato ITF) — ele nunca vai achar as barras. Aponte no <strong>QR Code do Pix</strong> do boleto, se tiver, ou cole o número impresso.
-              </div>
-            )}
-            {suporte === 'ok' && (
-              <p style={{ fontSize: 10, color: '#c4c0b8', margin: 0 }}>Leitor do navegador: {formatos.join(', ') || 'nenhum'}</p>
             )}
 
             {status && (
@@ -387,7 +338,7 @@ export default function LeitorBoleto({ aberto, onFechar, onLido, titulo }: {
 
             <div>
               <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 700, color: '#78350f', marginBottom: 5 }}>
-                <ClipboardPaste size={13} /> {suporte === 'ok' ? 'Ou cole a linha digitável' : 'Cole a linha digitável do boleto'}
+                <ClipboardPaste size={13} /> Ou cole a linha digitável
               </label>
               <textarea value={texto} onChange={e => { setTexto(e.target.value); setErro('') }} rows={3}
                 placeholder="Ex: 34191.79001 01043.510047 91020.150008 8 10460000047697"

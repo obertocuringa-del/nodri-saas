@@ -45,7 +45,8 @@
     "@anthropic-ai/sdk": "^0.27.0",
     "recharts": "^2.12.7",
     "jspdf": "^2.5.2",
-    "jspdf-autotable": "^3.8.4"
+    "jspdf-autotable": "^3.8.4",
+    "@zxing/library": "^0.23.0"
   },
   "devDependencies": {
     "typescript": "^5",
