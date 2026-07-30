@@ -43,12 +43,15 @@ async function pegarZxing() {
 let nativoComItf: boolean | null = null
 export async function nativoLeBoleto(): Promise<boolean> {
   if (nativoComItf !== null) return nativoComItf
-  if (typeof window === 'undefined' || !('BarcodeDetector' in window)) { nativoComItf = false; return false }
+  let ok = false
   try {
-    const sup: string[] = await (window as any).BarcodeDetector.getSupportedFormats()
-    nativoComItf = Array.isArray(sup) && sup.includes('itf')
-  } catch { nativoComItf = false }
-  return nativoComItf
+    if (typeof window !== 'undefined' && 'BarcodeDetector' in window) {
+      const sup: string[] = await (window as any).BarcodeDetector.getSupportedFormats()
+      ok = Array.isArray(sup) && sup.includes('itf')
+    }
+  } catch { ok = false }
+  nativoComItf = ok
+  return ok
 }
 
 // Baixa o decodificador em 2º plano SÓ quando o navegador não dá conta.
@@ -102,7 +105,7 @@ export async function decodificarCanvas(canvas: HTMLCanvasElement, usarZxing = t
   }
   if (achados.length || !usarZxing) return achados
 
-  const ctx = canvas.getContext('2d', { willReadFrequently: true } as any)
+  const ctx = ctx2d(canvas)
   if (!ctx) return achados
 
   const inteiro = await zxingNoRecorte(ctx, 0, 0, w, h)
@@ -124,8 +127,15 @@ export function paraCanvas(fonte: HTMLVideoElement | ImageBitmap, larguraMax: nu
   const c = document.createElement('canvas')
   c.width = Math.round(lw * escala)
   c.height = Math.round(lh * escala)
-  const ctx = c.getContext('2d', { willReadFrequently: true } as any)
+  const ctx = ctx2d(c)
   if (!ctx) return null
   ctx.drawImage(fonte as any, 0, 0, c.width, c.height)
   return c
+}
+
+// Contexto 2D com willReadFrequently (lemos os pixels a cada quadro).
+// O cast vai no RESULTADO, não no argumento: castear o argumento faz o
+// TypeScript perder a sobrecarga do '2d' e devolver RenderingContext.
+function ctx2d(c: HTMLCanvasElement): CanvasRenderingContext2D | null {
+  return c.getContext('2d', { willReadFrequently: true } as any) as CanvasRenderingContext2D | null
 }
