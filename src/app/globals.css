@@ -137,9 +137,16 @@ html, body {
   .linha-desp-mobile .nodri-venc-cel { grid-column: 4 / span 6 !important; }
   .linha-desp-mobile > :nth-child(6) { grid-column: 10 / span 3 !important; }
   .linha-desp-mobile input[type="date"] { font-size: 11px !important; padding-left: 3px !important; padding-right: 2px !important; }
-  /* valor e parcela apertam pra caber ao lado do nome */
-  .linha-desp-mobile input[type="number"] { font-size: 12px !important; padding-left: 20px !important; padding-right: 3px !important; }
+  /* valor é o herói da linha: alinhado à direita e sem apertar */
+  .linha-desp-mobile input[type="number"] { font-size: 12.5px !important; padding-left: 19px !important; padding-right: 4px !important; text-align: right !important; }
   .linha-desp-mobile > :nth-child(4) input { font-size: 11px !important; padding-left: 2px !important; padding-right: 2px !important; }
+  /* Campo opcional VAZIO (parcela, vencimento) não desenha caixa — só o texto
+     apagado. Assim a linha para de ser um tabuleiro de caixinhas e o olho vai
+     direto no nome e no valor. Ao preencher, a borda volta. */
+  .linha-desp-mobile .campo-vazio { border-color: transparent !important; background: transparent !important; }
+  .linha-desp-mobile .campo-vazio:focus { border-color: #f59e0b !important; background: #fff !important; }
+  /* linha mais justa: menos recuo lateral sobra largura pros campos */
+  .linha-desp-mobile { padding-left: 12px !important; padding-right: 12px !important; padding-top: 7px !important; padding-bottom: 7px !important; }
 
 
   /* 18) Cabeçalho de seção com botões (ex: Despesas Indiretas): no celular o

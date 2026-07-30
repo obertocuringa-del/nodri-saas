@@ -566,6 +566,7 @@ function LinhaCodigo({ cod, onLimpar }: { cod: string; onLimpar: () => void }) {
 function BtnCodigo({ tem, onClick }: { tem: boolean; onClick: () => void }) {
   return (
     <button onClick={onClick} title={tem ? 'Código do boleto guardado — clique para reler' : 'Escanear / colar o código do boleto'}
+      className={tem ? '' : 'campo-vazio'}
       style={{ background: tem ? '#dcfce7' : 'transparent', border: tem ? '1px solid #86efac' : '1px solid #f59e0b40', borderRadius: 6, padding: '3px 4px', cursor: 'pointer', lineHeight: 1, color: tem ? '#15803d' : '#b45309' }}>
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
         <path d="M4 5v14M8 5v14M12 5v14M16 5v10M20 5v14" />
@@ -585,10 +586,12 @@ function CampoVenc({ valor, onChange }: { valor: string; onChange: (v: string) =
   const cor = dias === null ? '#e8e6e0' : dias < 0 ? '#ef4444' : dias === 0 ? '#f59e0b' : '#10b981'
   return (
     <div className="nodri-venc-cel" style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      {/* campo-vazio: no celular o campo sem data perde borda e fundo, pra não
+          virar uma caixinha competindo com o que importa na linha */}
       <input type="date" value={valor || ''} onChange={e => onChange(e.target.value)}
         onClick={e => { try { (e.currentTarget as any).showPicker?.() } catch { /* */ } }}
         title="Vencimento — com data preenchida, a conta entra na fila de boletos do FINANCEIRO"
-        className="w-full px-1 py-1.5 rounded-lg text-[11px] text-center focus:outline-none"
+        className={`w-full px-1 py-1.5 rounded-lg text-[11px] text-center focus:outline-none${valor ? '' : ' campo-vazio'}`}
         style={{ background: '#fff', border: `1.5px solid ${cor}`, color: '#78350f', fontWeight: valor ? 700 : 400, cursor: 'pointer' }} />
       {dias !== null && (
         <span style={{ fontSize: 9, textAlign: 'center', fontWeight: 700, color: cor }}>
@@ -1892,7 +1895,7 @@ Use números reais. Seja direto.`
                           {d.nome}
                         </span>
                         <InfoBtn id={d.nome==='Aluguel'?'aluguel':d.nome==='Energia Elétrica'?'energia':d.nome==='Água'?'agua':d.nome==='Contabilidade'?'contabilidade':''}/>
-                        <button onClick={()=>toggleNota('d'+i)} title="Observação" style={{fontSize:11,lineHeight:1,padding:'1px 3px',border:'none',background:'transparent',cursor:'pointer',opacity:d.obs?1:0.45}}>📝</button>
+                        <button onClick={()=>toggleNota('d'+i)} title="Observação" className="no-mobile" style={{fontSize:11,lineHeight:1,padding:'1px 3px',border:'none',background:'transparent',cursor:'pointer',opacity:d.obs?1:0.45}}>📝</button>
                         {!notasAbertas.has('d'+i) && d.obs && (
                           <span onClick={()=>toggleNota('d'+i)} className="text-[9.5px]"
                             style={{color:'#9a7b3a',maxWidth:190,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',cursor:'pointer'}}>{d.obs}</span>
@@ -1912,7 +1915,7 @@ Use números reais. Seja direto.`
                       <div>
                         <input value={d.parcela||''} onChange={e=>{const nd=[...despInd];nd[i]={...nd[i],parcela:e.target.value};setDespInd(nd)}}
                           placeholder="ex: 1/3" maxLength={5}
-                          className="w-full px-2 py-1.5 rounded-lg text-xs text-center focus:outline-none"
+                          className={`w-full px-2 py-1.5 rounded-lg text-xs text-center focus:outline-none${d.parcela?'':' campo-vazio'}`}
                           style={{background:'#fff',border:'1.5px solid #e8e6e0',color:d.parcela?'#b45309':'#aaa',fontWeight:d.parcela?700:400}}/>
                       </div>
                       <CampoVenc valor={d.venc||''} onChange={val=>{const nd=[...despInd];nd[i]={...nd[i],venc:val};setDespInd(nd);setDirtyCalc(true)}}/>
@@ -1943,10 +1946,12 @@ Use números reais. Seja direto.`
                           <span style={{fontSize:8,color:'#b45309',transform:notasAbertas.has('e'+i)?'rotate(180deg)':'none',transition:'transform .15s'}}>▼</span>
                           {d.nome}
                         </span>
+                        {/* no-mobile: selo e lápis somem no celular — repetiam em toda
+                            linha e o nome já abre a observação ao ser clicado */}
                         {d.grupo
                           ? <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{background:'#dbeafe',color:'#1d4ed8'}}>💳 parcela {d.parcela}</span>
-                          : <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{background:'#f59e0b20',color:'#b45309'}}>catálogo</span>}
-                        <button onClick={()=>toggleNota('e'+i)} title="Observação" style={{fontSize:11,lineHeight:1,padding:'1px 3px',border:'none',background:'transparent',cursor:'pointer',opacity:d.obs?1:0.45}}>📝</button>
+                          : <span className="no-mobile text-[9px] px-1.5 py-0.5 rounded-full" style={{background:'#f59e0b20',color:'#b45309'}}>catálogo</span>}
+                        <button onClick={()=>toggleNota('e'+i)} title="Observação" className="no-mobile" style={{fontSize:11,lineHeight:1,padding:'1px 3px',border:'none',background:'transparent',cursor:'pointer',opacity:d.obs?1:0.45}}>📝</button>
                         {/* Fechado: mostra quem é e a data, sem ocupar linha */}
                         {!notasAbertas.has('e'+i) && (d.obs || d.data) && (
                           <span onClick={()=>toggleNota('e'+i)} className="text-[9.5px]"
@@ -1968,7 +1973,7 @@ Use números reais. Seja direto.`
                       <div>
                         <input value={d.parcela||''} onChange={e=>{const nd=[...extrasDespInd];nd[i]={...nd[i],parcela:e.target.value};setExtrasDespInd(nd)}}
                           placeholder="1/3" maxLength={5}
-                          className="w-full px-2 py-1.5 rounded-lg text-xs text-center focus:outline-none"
+                          className={`w-full px-2 py-1.5 rounded-lg text-xs text-center focus:outline-none${d.parcela?'':' campo-vazio'}`}
                           style={{background:'#fff',border:'1.5px solid #e8e6e0',color:d.parcela?'#b45309':'#aaa',fontWeight:d.parcela?700:400}}/>
                       </div>
                       <CampoVenc valor={d.venc||''} onChange={val=>{const nd=[...extrasDespInd];nd[i]={...nd[i],venc:val};setExtrasDespInd(nd);setDirtyCalc(true)}}/>
