@@ -4,11 +4,14 @@ import { X, Camera, Barcode, ClipboardPaste, Image as ImageIcon, Zap } from 'luc
 import { lerCodigoBoleto, formatarLinha, BoletoLido } from '@/lib/boleto'
 
 // ─── Leitor de boleto ───────────────────────────────────────────────────────
-// Três caminhos, do mais fácil pro mais garantido:
-//  1) FOTO do código — a imagem parada tem resolução muito maior que o vídeo,
-//     é o que mais acerta em código de boleto (que é largo e fininho).
-//  2) CÂMERA ao vivo — usa o BarcodeDetector que já vem no Chrome do Android.
-//  3) COLAR o número impresso — sempre funciona, em qualquer aparelho.
+// Quatro caminhos, do melhor pro mais garantido:
+//  1) LEITOR DE MÃO (USB) — o do balcão, tipo Bematech. Ele se comporta como
+//     teclado, então escutamos a janela toda: aponta, atira, pronto. É o
+//     caminho principal no computador.
+//  2) FOTO do código — a imagem parada tem resolução muito maior que o vídeo,
+//     é o que mais acerta pela câmera do celular.
+//  3) CÂMERA ao vivo — usa o BarcodeDetector que já vem no Chrome do Android.
+//  4) COLAR o número impresso — sempre funciona, em qualquer aparelho.
 //
 // Regra que aprendi na marra: nunca engolir erro aqui. Se a leitura falhar, a
 // tela TEM que dizer o que aconteceu, senão vira "abre a câmera e não acha nada".
@@ -30,6 +33,8 @@ export default function LeitorBoleto({ aberto, onFechar, onLido, titulo }: {
   const [temTorch, setTemTorch] = useState(false)
   const [torchOn, setTorchOn] = useState(false)
   const [previa, setPrevia] = useState<BoletoLido | null>(null)
+  const [capturado, setCapturado] = useState('')    // dígitos que o leitor de mão disparou
+  const [dicaLeitor, setDicaLeitor] = useState(false) // leitor mandou código curto → mostra como configurar
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const trackRef = useRef<MediaStreamTrack | null>(null)
@@ -66,13 +71,67 @@ export default function LeitorBoleto({ aberto, onFechar, onLido, titulo }: {
     trackRef.current = null
     setCamAtiva(false); setTorchOn(false); setTemTorch(false)
   }
-  useEffect(() => { if (!aberto) { pararCamera(); setTexto(''); setErro(''); setStatus(''); setPrevia(null) } }, [aberto])
+  useEffect(() => { if (!aberto) { pararCamera(); setTexto(''); setErro(''); setStatus(''); setPrevia(null); setCapturado(''); setDicaLeitor(false) } }, [aberto])
   useEffect(() => () => pararCamera(), [])
 
   function novoDetector() {
     const Det = (window as any).BarcodeDetector
     try { return new Det({ formats: formatos }) } catch { return new Det() }  // formato recusado → usa o padrão
   }
+
+  // ── LEITOR DE MÃO (USB/HID) ───────────────────────────────────────────────
+  // Um leitor de bancada tipo Bematech se comporta como TECLADO: dispara e
+  // "digita" os dígitos, geralmente terminando com Enter. Escutamos a janela
+  // inteira, então não precisa clicar em campo nenhum — é só apontar e atirar.
+  // Também é o caminho principal no computador, onde não existe câmera.
+  useEffect(() => {
+    if (!aberto || previa) return
+    let buf = ''
+    let timer: any
+    let t0 = 0
+    // Leitor dispara ~10ms por dígito; gente digitando passa de 100ms. Serve pra
+    // não acusar "leitor lendo pela metade" quando é só alguém digitando devagar.
+    const foiLeitor = () => buf.length > 1 && (Date.now() - t0) / buf.length < 60
+
+    const processar = (digitos: string, doLeitor: boolean) => {
+      const lido = lerCodigoBoleto(digitos)
+      if (lido.ok) { setErro(''); setStatus(''); setCapturado(''); setTexto(''); setDicaLeitor(false); setPrevia(lido); return }
+      if (!doLeitor) return   // alguém digitando à mão: quem avisa é o botão "Ler código"
+      // Não fechou um tamanho de boleto: mostra quanto veio (o leitor pode
+      // estar limitado a códigos curtos)
+      if (digitos.length < 20) setDicaLeitor(true)
+      setStatus(digitos.length < 20
+        ? `O leitor mandou só ${digitos.length} dígito(s). Boleto tem 44 — o seu leitor está lendo o código pela metade. Veja a dica logo abaixo.`
+        : `Recebi ${digitos.length} dígitos, mas boleto tem 44, 47 ou 48. Dispare de novo, com o leitor reto e bem em cima do código.`)
+    }
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === 'Tab') {
+        if (buf.length >= 10) { e.preventDefault(); const b = buf, lr = foiLeitor(); buf = ''; setCapturado(''); processar(b, lr) }
+        return
+      }
+      if (!/^[0-9]$/.test(e.key)) return
+      if (!buf) t0 = Date.now()
+      buf += e.key
+      clearTimeout(timer)
+      const doLeitor = foiLeitor()
+      if (doLeitor) setCapturado(buf)      // só mostra o contador quando é disparo
+      // Fechou um tamanho válido de boleto? Processa na hora, sem esperar Enter.
+      if (buf.length === 44 || buf.length === 47 || buf.length === 48) {
+        const b = buf; buf = ''; setCapturado('')
+        processar(b, doLeitor)
+        return
+      }
+      // Parou de chegar dígito: avisa o que veio (diagnóstico do leitor)
+      timer = setTimeout(() => {
+        if (buf.length >= 10) { const b = buf, lr = foiLeitor(); buf = ''; setCapturado(''); processar(b, lr) }
+        else { buf = ''; setCapturado('') }
+      }, 400)
+    }
+
+    window.addEventListener('keydown', onKey)
+    return () => { window.removeEventListener('keydown', onKey); clearTimeout(timer) }
+  }, [aberto, previa])
 
   // Avalia um código bruto; devolve true quando serviu
   function tentarCodigo(raw: string, formato?: string): boolean {
@@ -240,7 +299,7 @@ export default function LeitorBoleto({ aberto, onFechar, onLido, titulo }: {
               )}
             </div>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <button onClick={() => { setPrevia(null); setTexto(''); setStatus('') }} style={{ background: 'transparent', border: 'none', color: '#767069', fontSize: 12.5, cursor: 'pointer', padding: '9px 12px' }}>Ler outro</button>
+              <button onClick={() => { setPrevia(null); setTexto(''); setStatus(''); setDicaLeitor(false) }} style={{ background: 'transparent', border: 'none', color: '#767069', fontSize: 12.5, cursor: 'pointer', padding: '9px 12px' }}>Ler outro</button>
               <button onClick={() => { const p = previa; setPrevia(null); onLido(p!) }}
                 style={{ background: '#16a34a', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 18px', fontSize: 13.5, fontWeight: 800, cursor: 'pointer' }}>
                 Usar estes dados
@@ -268,6 +327,18 @@ export default function LeitorBoleto({ aberto, onFechar, onLido, titulo }: {
               </div>
             )}
 
+            {/* Leitor de mão: sempre ativo enquanto o modal está aberto */}
+            {!camAtiva && (
+              <div style={{ background: capturado ? '#ecfdf5' : '#f5f3ff', border: `1.5px dashed ${capturado ? '#6ee7b7' : '#c4b5fd'}`, borderRadius: 12, padding: '13px 14px', textAlign: 'center' }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: capturado ? '#047857' : '#6b21a8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
+                  <Barcode size={16} /> {capturado ? `Recebendo… ${capturado.length} dígitos` : 'Leitor de mão pronto — aponte e dispare'}
+                </div>
+                {capturado
+                  ? <div style={{ fontFamily: 'ui-monospace,monospace', fontSize: 11, color: '#374151', marginTop: 5, wordBreak: 'break-all' }}>{capturado}</div>
+                  : <div style={{ fontSize: 11, color: '#7c6fa8', marginTop: 4 }}>Não precisa clicar em campo nenhum. Dispare no código de barras do boleto que ele preenche sozinho.</div>}
+              </div>
+            )}
+
             {!camAtiva && (
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {suporte === 'ok' && (
@@ -290,9 +361,15 @@ export default function LeitorBoleto({ aberto, onFechar, onLido, titulo }: {
                 A <strong>foto</strong> acerta mais que a câmera ao vivo (tem muito mais resolução). Enquadre o código de barras inteiro, de ponta a ponta, com o boleto esticado.
               </p>
             )}
-            {suporte === 'nao' && (
-              <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '9px 11px', fontSize: 11.5, color: '#92400e' }}>
-                Este navegador não tem leitor de código de barras (é o caso do Chrome no Windows). No <strong>celular</strong> os botões de foto/câmera aparecem. Aqui, cole o número impresso — dá no mesmo.
+            {suporte === 'nao' && !camAtiva && (
+              <p style={{ fontSize: 11, color: '#9ca3af', margin: 0 }}>
+                Este navegador não lê pela câmera (normal no Chrome do Windows) — use o <strong>leitor de mão</strong> acima ou cole o número. No celular aparecem os botões de foto e câmera.
+              </p>
+            )}
+            {dicaLeitor && (
+              <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '10px 12px', fontSize: 11.5, color: '#92400e', lineHeight: 1.65 }}>
+                <strong>Seu leitor está lendo o código pela metade.</strong> Isso é configuração dele, não do sistema: quase todo leitor de mão vem com o formato <strong>ITF (Intercalado 2 de 5)</strong> limitado a códigos curtos, e o do boleto tem 44 dígitos.
+                No manual do seu leitor, procure <em>“ITF / Interleaved 2 of 5”</em> e habilite <em>tamanho variável</em> (ou comprimento 44) — a configuração é feita disparando o leitor nos códigos de barras do próprio manual. Enquanto isso, dá pra colar o número no campo abaixo.
               </div>
             )}
             {suporte === 'ok' && !temItf && (
@@ -312,7 +389,7 @@ export default function LeitorBoleto({ aberto, onFechar, onLido, titulo }: {
               <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 700, color: '#78350f', marginBottom: 5 }}>
                 <ClipboardPaste size={13} /> {suporte === 'ok' ? 'Ou cole a linha digitável' : 'Cole a linha digitável do boleto'}
               </label>
-              <textarea value={texto} onChange={e => { setTexto(e.target.value); setErro('') }} rows={3} autoFocus={suporte !== 'ok'}
+              <textarea value={texto} onChange={e => { setTexto(e.target.value); setErro('') }} rows={3}
                 placeholder="Ex: 34191.79001 01043.510047 91020.150008 8 10460000047697"
                 style={{ width: '100%', border: '1.5px solid #e8e6e0', borderRadius: 10, padding: '9px 11px', fontSize: 13, outline: 'none', resize: 'none', fontFamily: 'ui-monospace,monospace' }} />
               <p style={{ fontSize: 10.5, color: '#9ca3af', margin: '4px 0 0' }}>
