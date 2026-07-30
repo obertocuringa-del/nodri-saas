@@ -187,6 +187,10 @@ export default function BoletosFinanceiro({ cor = '#16a34a' }: { cor?: string })
                 </div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
                   <span style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a', textDecoration: b.pago ? 'line-through' : 'none' }}>{b.nome}</span>
+                  {/* Empréstimo aprovado não é boleto de banco: é dinheiro pra entregar */}
+                  {/EMPR[ÉE]STIMO/i.test(b.nome) && !b.pago && (
+                    <span style={{ fontSize: 10, fontWeight: 700, color: '#6b21a8', background: '#f5f3ff', padding: '2px 8px', borderRadius: 999 }}>entregar à profissional</span>
+                  )}
                   <span style={{ marginLeft: 'auto', fontSize: 17, fontWeight: 900, color: b.pago ? '#9ca3af' : '#15803d' }}>R$ {fmtR(b.valor)}</span>
                 </div>
                 {b.obs && <p style={{ fontSize: 11.5, color: '#6b6860', margin: '4px 0 0', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{b.obs}</p>}

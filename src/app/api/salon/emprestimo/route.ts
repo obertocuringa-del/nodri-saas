@@ -60,6 +60,13 @@ export async function POST(req: NextRequest) {
     const N = parcelas.length
     const grupo = `emp_${id}`
 
+    // Aprovar cria uma obrigação de PAGAR a profissional hoje. Por isso o
+    // vencimento é a data de hoje: o empréstimo entra na fila de boletos do
+    // FINANCEIRO em "Vencem hoje" e, se ninguém marcar como pago, vira vencido.
+    // (As datas das parcelas continuam sendo as do DESCONTO, no campo `data`.)
+    const hj = new Date()
+    const vencHoje = `${hj.getFullYear()}-${String(hj.getMonth() + 1).padStart(2, '0')}-${String(hj.getDate()).padStart(2, '0')}`
+
     // Agrupa as parcelas por mês e injeta em cada mês da calculadora (soma, não apaga)
     const porMes = new Map<string, { ano: number; mes: number; itens: any[] }>()
     parcelas.forEach((p: any, i: number) => {
@@ -69,7 +76,7 @@ export async function POST(req: NextRequest) {
       porMes.get(key)!.itens.push({
         nome: 'EMPRÉSTIMO', valor: String(p.valor), dica: '',
         parcela: N > 1 ? `${i + 1}/${N}` : '', obs: `${nome}${motivo ? ` — ${motivo}` : ''}`,
-        grupo, venc: '', data: p.dataBR,
+        grupo, venc: vencHoje, data: p.dataBR,
       })
     })
     for (const { ano, mes, itens } of porMes.values()) {
