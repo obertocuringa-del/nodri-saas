@@ -659,6 +659,9 @@ export default function CalculadoraCusto() {
   // Quantidade de parcelas como TEXTO: deixa apagar o campo pra digitar outro
   // número (com estado numérico o valor voltava pra 1 e travava no celular).
   const [parcQtd, setParcQtd] = useState('1')
+  // Data do lançamento (quinzena) — o mesmo campo que existe na linha da lista.
+  // Vazio = cada parcela usa a data do próprio vencimento.
+  const [parcData, setParcData] = useState('')
   // ── Leitor de código de boleto: quem pediu a leitura ──
   const [leitorAlvo, setLeitorAlvo] = useState<{lista:'fix'|'extra'|'parc'; idx:number} | null>(null)
   const [notasAbertas, setNotasAbertas] = useState<Set<string>>(new Set())
@@ -1052,7 +1055,7 @@ export default function CalculadoraCusto() {
 
   // ── Abre o modal de parcelamento já com N linhas ──
   function abrirParcelamento() {
-    setParcDespesa(''); setParcObs(''); setParcLinhas([{ valor: '', venc: '', cod: '' }]); setParcQtd('1'); setParcAberto(true)
+    setParcDespesa(''); setParcObs(''); setParcLinhas([{ valor: '', venc: '', cod: '' }]); setParcQtd('1'); setParcData(''); setParcAberto(true)
   }
   function setParcN(qtd: number) {
     const q = Math.max(1, Math.min(48, qtd || 1))
@@ -1116,14 +1119,16 @@ export default function CalculadoraCusto() {
         const [y, m] = l.venc.split('-').map(Number)
         const key = `${y}-${m}`
         if (!porMes.has(key)) porMes.set(key, { ano: y, mes: m, itens: [] })
-        porMes.get(key)!.itens.push({ nome, valor: l.valor, dica: '', parcela: `${i + 1}/${N}`, obs, grupo, venc: l.venc, cod: l.cod || '' })
+        // data (quinzena): o que você preencheu ou, se vazio, o vencimento da parcela
+        const dataQuinzena = parcData ? isoParaBR(parcData) : isoParaBR(l.venc)
+        porMes.get(key)!.itens.push({ nome, valor: l.valor, dica: '', parcela: `${i + 1}/${N}`, obs, grupo, venc: l.venc, cod: l.cod || '', data: dataQuinzena })
       })
 
       for (const { ano, mes, itens } of porMes.values()) {
         if (ano === anoSel && mes === mesSel) {
           // Mês atual: soma no formulário aberto e salva o mês inteiro
           const base = coletarDados()
-          const novo = { ...base, extrasDespInd: [...base.extrasDespInd, ...itens.map(it => ({ nome: it.nome, valor: it.valor, parcela: it.parcela || '', obs: it.obs || '', grupo: it.grupo || '', venc: it.venc || '', cod: it.cod || '' })) ] }
+          const novo = { ...base, extrasDespInd: [...base.extrasDespInd, ...itens.map(it => ({ nome: it.nome, valor: it.valor, parcela: it.parcela || '', obs: it.obs || '', grupo: it.grupo || '', venc: it.venc || '', cod: it.cod || '', data: it.data || '' })) ] }
           await fetch('/api/salon/calculadora', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ano, mes, dados: novo }) })
           setExtrasDespInd(prev => [...prev, ...itens])
           setDirtyCalc(false)
@@ -1132,7 +1137,7 @@ export default function CalculadoraCusto() {
           const r = await fetch(`/api/salon/calculadora?ano=${ano}&mes=${mes}`, { credentials: 'include' }).then(x => x.ok ? x.json() : { dados: null }).catch(() => ({ dados: null }))
           const base = (r?.dados && typeof r.dados === 'object') ? r.dados : {}
           const extras = Array.isArray(base.extrasDespInd) ? base.extrasDespInd : []
-          const novo = { ...base, extrasDespInd: [...extras, ...itens.map(it => ({ nome: it.nome, valor: it.valor, parcela: it.parcela || '', obs: it.obs || '', grupo: it.grupo || '', venc: it.venc || '', cod: it.cod || '' })) ] }
+          const novo = { ...base, extrasDespInd: [...extras, ...itens.map(it => ({ nome: it.nome, valor: it.valor, parcela: it.parcela || '', obs: it.obs || '', grupo: it.grupo || '', venc: it.venc || '', cod: it.cod || '', data: it.data || '' })) ] }
           await fetch('/api/salon/calculadora', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ano, mes, dados: novo }) })
           setMesesComDados(prev => prev.some(mm => mm.ano === ano && mm.mes === mes) ? prev : [...prev, { ano, mes }])
         }
@@ -1879,14 +1884,18 @@ Use números reais. Seja direto.`
                   const v=n(d.valor), pctV=fatN>0?(v/fatN*100):0
                   const cor=pctV>20?'#ef4444':pctV>10?'#f59e0b':'#10b981'
                   return(
-                    <div key={i} className="grid linha-form-mobile gap-2 px-5 py-2 items-center" style={{gridTemplateColumns:GRID_IND,borderBottom:'1px solid #f59e0b20',background: v>0 ? '#fffdf5' : 'transparent'}}>
+                    <div key={i} className="grid linha-desp-mobile gap-2 px-5 py-2 items-center" style={{gridTemplateColumns:GRID_IND,borderBottom:'1px solid #f59e0b20',background: v>0 ? '#fffdf5' : 'transparent'}}>
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="text-xs font-semibold" onClick={()=>toggleNota('d'+i)}
-                          style={{color:'#78350f',cursor:'pointer'}} title="Clique para abrir a observação">{d.nome}</span>
+                          style={{color:'#78350f',cursor:'pointer',display:'inline-flex',alignItems:'center',gap:3}} title="Clique para abrir/fechar a observação">
+                          <span style={{fontSize:8,color:'#b45309',transform:notasAbertas.has('d'+i)?'rotate(180deg)':'none',transition:'transform .15s'}}>▼</span>
+                          {d.nome}
+                        </span>
                         <InfoBtn id={d.nome==='Aluguel'?'aluguel':d.nome==='Energia Elétrica'?'energia':d.nome==='Água'?'agua':d.nome==='Contabilidade'?'contabilidade':''}/>
                         <button onClick={()=>toggleNota('d'+i)} title="Observação" style={{fontSize:11,lineHeight:1,padding:'1px 3px',border:'none',background:'transparent',cursor:'pointer',opacity:d.obs?1:0.45}}>📝</button>
                         {!notasAbertas.has('d'+i) && d.obs && (
-                          <span className="text-[9.5px]" style={{color:'#9a7b3a',maxWidth:150,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{d.obs}</span>
+                          <span onClick={()=>toggleNota('d'+i)} className="text-[9.5px]"
+                            style={{color:'#9a7b3a',maxWidth:190,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',cursor:'pointer'}}>{d.obs}</span>
                         )}
                       </div>
                       <div className="relative">
@@ -1924,17 +1933,26 @@ Use números reais. Seja direto.`
                   const v=n(d.valor), pctV=fatN>0?(v/fatN*100):0
                   const cor=pctV>20?'#ef4444':pctV>10?'#f59e0b':'#10b981'
                   return(
-                    <div key={i} className="grid linha-form-mobile gap-2 px-5 py-2 items-center" style={{gridTemplateColumns:GRID_IND,borderBottom:'1px solid #f59e0b20',background:'#fffdf5'}}>
+                    <div key={i} className="grid linha-desp-mobile gap-2 px-5 py-2 items-center" style={{gridTemplateColumns:GRID_IND,borderBottom:'1px solid #f59e0b20',background:'#fffdf5'}}>
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        {/* Clicar no nome abre observação / profissional / data da quinzena */}
+                        {/* Clicar no nome abre/fecha observação, profissional e data da
+                            quinzena. A setinha existe pra deixar claro que é clicável. */}
                         <span className="text-xs font-semibold" onClick={()=>toggleNota('e'+i)}
-                          style={{color:'#78350f',cursor:'pointer'}} title="Clique para abrir observação, profissional e data">{d.nome}</span>
+                          style={{color:'#78350f',cursor:'pointer',display:'inline-flex',alignItems:'center',gap:3}}
+                          title="Clique para abrir/fechar observação, profissional e data">
+                          <span style={{fontSize:8,color:'#b45309',transform:notasAbertas.has('e'+i)?'rotate(180deg)':'none',transition:'transform .15s'}}>▼</span>
+                          {d.nome}
+                        </span>
                         {d.grupo
                           ? <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{background:'#dbeafe',color:'#1d4ed8'}}>💳 parcela {d.parcela}</span>
                           : <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{background:'#f59e0b20',color:'#b45309'}}>catálogo</span>}
                         <button onClick={()=>toggleNota('e'+i)} title="Observação" style={{fontSize:11,lineHeight:1,padding:'1px 3px',border:'none',background:'transparent',cursor:'pointer',opacity:d.obs?1:0.45}}>📝</button>
-                        {!notasAbertas.has('e'+i) && d.obs && (
-                          <span className="text-[9.5px]" style={{color:'#9a7b3a',maxWidth:150,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{d.obs}</span>
+                        {/* Fechado: mostra quem é e a data, sem ocupar linha */}
+                        {!notasAbertas.has('e'+i) && (d.obs || d.data) && (
+                          <span onClick={()=>toggleNota('e'+i)} className="text-[9.5px]"
+                            style={{color:'#9a7b3a',maxWidth:190,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',cursor:'pointer'}}>
+                            {[d.obs, d.data].filter(Boolean).join(' · ')}
+                          </span>
                         )}
                       </div>
                       <div className="relative">
@@ -2025,6 +2043,16 @@ Use números reais. Seja direto.`
                           ? <ObsComProf valor={parcObs} onChange={setParcObs} profs={profsLista}/>
                           : <input value={parcObs} onChange={e=>setParcObs(e.target.value)} placeholder="ex: nota fiscal, referência, motivo"
                               style={{width:'100%',border:'1.5px solid #e8e6e0',borderRadius:8,padding:'9px 10px',fontSize:13,outline:'none'}}/>}
+                      </div>
+
+                      {/* Mesmo campo que existe na linha da lista — faltava aqui, então
+                          empréstimo lançado por este modal ficava sem a data da quinzena. */}
+                      <div>
+                        <label style={{fontSize:11,fontWeight:700,color:'#78350f',display:'block',marginBottom:4}}>🗓️ Data do lançamento (para separar por quinzena)</label>
+                        <input type="date" value={parcData} onChange={e=>setParcData(e.target.value)}
+                          onClick={e=>{try{(e.currentTarget as any).showPicker?.()}catch{}}}
+                          style={{width:'100%',border:'1.5px solid #e8e6e0',borderRadius:8,padding:'9px 10px',fontSize:13,outline:'none',cursor:'pointer'}}/>
+                        <span style={{fontSize:10.5,color:'#9a7b3a'}}>Em branco, cada parcela usa a data do próprio vencimento.</span>
                       </div>
 
                       <div style={{display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
