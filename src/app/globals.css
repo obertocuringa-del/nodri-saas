@@ -176,6 +176,20 @@ body:has(.nodri-modal-lanc) #whatsapp-float-btn { display: none !important; }
   .nodri-modal-head { flex-wrap: nowrap !important; align-items: flex-start !important; gap: 8px !important; }
   /* Cartão "Marcar como pago" centralizado */
   .nodri-pago-card { flex-direction: column !important; align-items: center !important; text-align: center !important; gap: 8px !important; }
+
+  /* 21) FINANCEIRO no celular: os quatro cards de boleto numa linha só
+         (dividindo a largura por igual) e a barra de período com o rótulo
+         centralizado em cima e os controles numa linha embaixo. */
+  .nodri-boletos-abas { flex-wrap: nowrap !important; gap: 5px !important; }
+  .nodri-boletos-abas > button { flex: 1 1 0 !important; min-width: 0 !important; padding: 7px 4px !important; text-align: center !important; }
+  .nodri-boletos-abas > button > div { font-size: 9.5px !important; line-height: 1.25 !important; }
+  .nodri-boletos-abas > button > div span { font-size: 11.5px !important; }
+
+  .nodri-filtro-per { flex-direction: column !important; align-items: stretch !important; gap: 8px !important; }
+  .nodri-filtro-rot { text-align: center !important; width: 100% !important; }
+  .nodri-filtro-linha { flex-wrap: nowrap !important; gap: 5px !important; }
+  .nodri-filtro-linha > select { flex: 1 1 0 !important; min-width: 0 !important; font-size: 11px !important; padding: 5px 3px !important; }
+  .nodri-filtro-linha > span { font-size: 10.5px !important; white-space: nowrap; }
   /* Os três botões (Cancelar · próximo · Lançar) numa linha só */
   .nodri-modal-acoes { flex-wrap: nowrap !important; gap: 6px !important; }
   .nodri-modal-acoes > button { flex: 1 1 0 !important; padding: 12px 4px !important; font-size: 12.5px !important; white-space: nowrap; }

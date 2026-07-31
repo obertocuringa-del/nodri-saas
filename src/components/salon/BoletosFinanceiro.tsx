@@ -207,7 +207,7 @@ export default function BoletosFinanceiro({ cor = '#16a34a' }: { cor?: string })
       </div>
 
       {/* Abas com contagem e total */}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+      <div className="nodri-boletos-abas" style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
         {ABAS.map(a => {
           const arr = grupos[a.id]
           const ativo = aba === a.id
@@ -230,8 +230,9 @@ export default function BoletosFinanceiro({ cor = '#16a34a' }: { cor?: string })
 
       {/* Filtro de período — só quando a aba está aberta e há mais de um item */}
       {aba && aba !== 'hoje' && daAba.length > 1 && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap', background: '#faf9f7', border: '1px solid #e8e6e0', borderRadius: 10, padding: '8px 10px', marginBottom: 12 }}>
-          <span style={{ fontSize: 11, fontWeight: 800, color: '#6b6860' }}>Período (vencimento):</span>
+        <div className="nodri-filtro-per" style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap', background: '#faf9f7', border: '1px solid #e8e6e0', borderRadius: 10, padding: '8px 10px', marginBottom: 12 }}>
+          <span className="nodri-filtro-rot" style={{ fontSize: 11, fontWeight: 800, color: '#6b6860' }}>Período (vencimento):</span>
+          <div className="nodri-filtro-linha" style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap', flex: 1 }}>
           <select value={fAno} onChange={e => { setFAno(e.target.value); setFMes('') }}
             style={{ border: '1px solid #dedad4', borderRadius: 8, padding: '5px 8px', fontSize: 12, background: '#fff', cursor: 'pointer', fontWeight: 700, color: '#3a3835' }}>
             <option value="">Todos os anos</option>
@@ -242,8 +243,11 @@ export default function BoletosFinanceiro({ cor = '#16a34a' }: { cor?: string })
             <option value="">Todos os meses</option>
             {mesesDisp.map(m => <option key={m} value={m}>{MESES[Number(m)]}</option>)}
           </select>
+          {/* No celular o "Ver todos" sai da linha: escolher "Todos os anos" no
+              primeiro seletor faz a mesma coisa, e a linha fica com os três
+              itens pedidos (ano, mês e o total). */}
           {filtrando && (
-            <button onClick={() => { setFAno(''); setFMes('') }}
+            <button onClick={() => { setFAno(''); setFMes('') }} className="no-mobile"
               style={{ background: '#fff', border: '1px solid #e0ddd8', borderRadius: 8, padding: '5px 10px', fontSize: 11.5, color: '#6b6860', cursor: 'pointer' }}>
               Ver todos
             </button>
@@ -251,6 +255,7 @@ export default function BoletosFinanceiro({ cor = '#16a34a' }: { cor?: string })
           <span style={{ marginLeft: 'auto', fontSize: 11.5, color: '#6b6860' }}>
             {lista.length} de {daAba.length} · <strong style={{ color: '#15803d' }}>R$ {fmtR(soma(lista))}</strong>
           </span>
+          </div>
         </div>
       )}
 
