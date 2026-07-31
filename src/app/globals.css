@@ -155,13 +155,33 @@ body:has(.nodri-modal-lanc) { overflow: hidden !important; }
             linha 2: parcela  vencimento  [código] [lixeira]
           Os filhos 7+ (observação, código lido, data da quinzena) já vêm com
           grid-column 1/-1 no próprio elemento e não entram nestas regras. */
-  .linha-desp-mobile { grid-template-columns: repeat(12, 1fr) !important; row-gap: 7px !important; column-gap: 5px !important; }
-  .linha-desp-mobile > :nth-child(1) { grid-column: 1 / span 6 !important; }
-  .linha-desp-mobile > :nth-child(2) { grid-column: 7 / span 4 !important; }
-  .linha-desp-mobile > :nth-child(3) { grid-column: 11 / span 2 !important; text-align: right !important; align-self: center; }
-  .linha-desp-mobile > :nth-child(4) { grid-column: 1 / span 3 !important; }
-  .linha-desp-mobile .nodri-venc-cel { grid-column: 4 / span 6 !important; }
-  .linha-desp-mobile > :nth-child(6) { grid-column: 10 / span 3 !important; }
+  /* Cada lançamento vira um CARD separado, com o nome em cima:
+        linha 1: NOME (largura toda)
+        linha 2: parcela · valor · %
+        linha 3: vencimento · [código] [lixeira]
+     A ordem no HTML é nome, valor, %, parcela, venc, ícones — por isso uso
+     `order` pra trazer a parcela pra frente do valor sem mexer no código. */
+  .linha-desp-mobile { grid-template-columns: repeat(12, 1fr) !important; row-gap: 8px !important; column-gap: 5px !important;
+    border: 1.5px solid #f0ddb8 !important; border-radius: 12px !important; margin-bottom: 10px !important; }
+  .linha-desp-mobile > :nth-child(1) { order: 1; grid-column: span 12 !important; border-bottom: 1px solid #f5ecdc; padding-bottom: 6px; }
+  .linha-desp-mobile > :nth-child(4) { order: 2; grid-column: span 3 !important; }
+  .linha-desp-mobile > :nth-child(2) { order: 3; grid-column: span 6 !important; }
+  .linha-desp-mobile > :nth-child(3) { order: 4; grid-column: span 3 !important; text-align: right !important; align-self: center; }
+  .linha-desp-mobile .nodri-venc-cel { order: 5; grid-column: span 8 !important; }
+  .linha-desp-mobile > :nth-child(6) { order: 6; grid-column: span 4 !important; }
+  /* Observação, PIX, data da quinzena e código lido entram depois de tudo */
+  .linha-desp-mobile > :nth-child(n+7) { order: 7; grid-column: 1 / -1 !important; }
+  /* Nome do lançamento em destaque, como título do card */
+  .linha-desp-mobile > :nth-child(1) span:first-child { font-size: 13px !important; }
+
+  /* Barra de período: tudo numa linha, pro botão Salvar não sair da caixa */
+  .nodri-periodo { flex-wrap: nowrap !important; gap: 6px !important; padding: 8px !important; }
+  .nodri-periodo select { font-size: 11px !important; padding: 4px 3px !important; }
+  .nodri-periodo > span { font-size: 10px !important; }
+  .nodri-periodo button { white-space: nowrap !important; }
+
+  /* Lançar boleto: largura cheia no celular */
+  .nodri-btn-lancar { width: 100% !important; font-size: 16px !important; padding: 15px 18px !important; }
   .linha-desp-mobile input[type="date"] { font-size: 11px !important; padding-left: 3px !important; padding-right: 2px !important; }
   /* valor é o herói da linha: alinhado à direita e sem apertar */
   .linha-desp-mobile input[type="number"] { font-size: 12.5px !important; padding-left: 19px !important; padding-right: 4px !important; text-align: right !important; }

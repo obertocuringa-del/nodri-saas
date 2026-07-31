@@ -737,6 +737,7 @@ export default function CalculadoraCusto() {
   const [showCatDespesa, setShowCatDespesa] = useState(false)
   // Seções colapsáveis
   // Todos os cards de RD começam FECHADOS (PC e celular) — o usuário abre o que precisar
+  const [secPassos,     setSecPassos]     = useState(false) // guia dos 4 passos: fechado por padrão
   const [secIndiretas,  setSecIndiretas]  = useState(false)
   const [secProvisao,   setSecProvisao]   = useState(false)
   const [secDiretas,    setSecDiretas]    = useState(false)
@@ -1720,7 +1721,7 @@ Use números reais. Seja direto.`
         </div>
 
         {/* Seletor de mês + Salvar */}
-        <div className="flex items-center gap-3 mb-6 p-3 rounded-xl border" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
+        <div className="nodri-periodo flex items-center gap-3 mb-6 p-3 rounded-xl border" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
           <History size={15} style={{color:'#5b4fcf',flexShrink:0}}/>
           <span className="text-xs font-bold" style={{color:'#767069'}}>Período:</span>
 
@@ -1770,7 +1771,8 @@ Use números reais. Seja direto.`
               className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all disabled:opacity-50"
               style={{background:'#5b4fcf',color:'white'}}>
               {salvando ? <Loader2 size={12} className="animate-spin"/> : <Save size={12}/>}
-              Salvar {MESES_NOMES[mesSel]}
+              <span className="no-mobile">Salvar {MESES_NOMES[mesSel]}</span>
+              <span className="nodri-mob-only">Salvar</span>
             </button>
           </div>
         </div>
@@ -1796,9 +1798,16 @@ Use números reais. Seja direto.`
           <div className="space-y-4">
 
             {/* Guia passo a passo */}
-            <div className="rounded-2xl p-4 border" style={{background:'#ffffff',borderColor:'#5b4fcf30',...oculto(podeCalc('calc_passos'))}}>
-              <p className="text-xs font-bold mb-3" style={{color:'#5b4fcf'}}>📋 Como preencher — siga os 4 passos em ordem:</p>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="rounded-2xl border overflow-hidden" style={{background:'#ffffff',borderColor:'#5b4fcf30',...oculto(podeCalc('calc_passos'))}}>
+              <button onClick={()=>setSecPassos(p=>!p)} className="w-full flex items-center justify-between px-4 py-3 transition-colors" style={{background:'#ffffff'}}>
+                <span className="text-xs font-bold flex items-center gap-2" style={{color:'#5b4fcf'}}>
+                  {secPassos ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
+                  📋 Como preencher — siga os 4 passos em ordem
+                </span>
+                <span className="text-[10px] flex-shrink-0" style={{color:'#767069'}}>{secPassos?'fechar ✕':'abrir ▾'}</span>
+              </button>
+              {secPassos && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 px-4 pb-4">
                 {[
                   {n:'1',titulo:'Faturamento',desc:'Quanto entrou no caixa este mês (dinheiro + cartão + Pix)',ok:fatN>0,cor:'#10b981'},
                   {n:'2',titulo:'Despesas Fixas',desc:'Aluguel, luz, água, salários e todos os gastos que sempre têm',ok:totInd>0,cor:'#f59e0b'},
@@ -1815,6 +1824,7 @@ Use números reais. Seja direto.`
                   </div>
                 ))}
               </div>
+              )}
             </div>
 
             {/* Card configurações — recolhível (fechado por padrão), campos em coluna única */}
@@ -1929,8 +1939,9 @@ Use números reais. Seja direto.`
                   {/* Lançar boleto fica AQUI (e não dentro da lista) pra você não
                       precisar abrir a lista inteira toda vez que for lançar. */}
                   <button onClick={abrirParcelamento}
-                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-semibold"
-                    style={{background:'#fff',color:'#b45309',border:'1.5px solid #f59e0b'}}>
+                    className="nodri-btn-lancar flex items-center justify-center gap-2 rounded-xl font-extrabold"
+                    style={{background:'linear-gradient(135deg,#5b4fcf,#7c3aed)',color:'#fff',border:'none',
+                      fontSize:15,padding:'14px 22px',boxShadow:'0 4px 14px rgba(91,79,207,.35)'}}>
                     💳 Lançar boleto
                   </button>
                   <button onClick={()=>setShowCatDespesa(true)}
