@@ -686,7 +686,7 @@ export default function CalculadoraCusto() {
   // essa chave pra pagar no app do banco.
   const [parcPix, setParcPix] = useState('')
   // ── Leitor de código de boleto: quem pediu a leitura ──
-  const [leitorAlvo, setLeitorAlvo] = useState<{lista:'fix'|'extra'|'parc'; idx:number} | null>(null)
+  const [leitorAlvo, setLeitorAlvo] = useState<{lista:'fix'|'extra'|'parc'|'pixmodal'|'pixlinha'; idx:number} | null>(null)
   const [notasAbertas, setNotasAbertas] = useState<Set<string>>(new Set())
   const toggleNota = (k:string) => setNotasAbertas(prev=>{const s=new Set(prev); s.has(k)?s.delete(k):s.add(k); return s})
   const [reservaEmerg,  setReservaEmerg]  = useState('')
@@ -1106,6 +1106,27 @@ export default function CalculadoraCusto() {
     setLeitorAlvo(null)
     if (!alvo) return
     const valor = b.valor == null ? null : b.valor.toFixed(2)
+
+    // ── Leitura pedida pelo campo de PIX ──────────────────────────────────
+    // QR de Pix vira a chave (copia-e-cola). Se a pessoa apontar num boleto
+    // por engano, não perde a leitura: manda pro código da 1ª parcela.
+    if (alvo.lista === 'pixmodal') {
+      if (b.tipo === 'pix') {
+        setParcPix(b.linha)
+        if (valor) setParcLinhas(prev => prev.map((l, i) => i === 0 && !l.valor ? { ...l, valor } : l))
+      } else {
+        setParcLinhas(prev => prev.map((l, i) => i !== 0 ? l : { valor: valor ?? l.valor, venc: b.venc || l.venc, cod: b.linha || l.cod }))
+      }
+      return
+    }
+    if (alvo.lista === 'pixlinha') {
+      setExtrasDespInd(prev => prev.map((d, i) => i !== alvo.idx ? d : (
+        b.tipo === 'pix' ? { ...d, pix: b.linha } : { ...d, valor: valor ?? d.valor, venc: b.venc || d.venc || '', cod: b.linha || d.cod || '' }
+      )))
+      setDirtyCalc(true)
+      return
+    }
+
     if (alvo.lista === 'parc') {
       setParcLinhas(prev => prev.map((l, i) => i !== alvo.idx ? l : {
         valor: valor ?? l.valor, venc: b.venc || l.venc, cod: b.linha || l.cod,
@@ -2051,6 +2072,13 @@ Use números reais. Seja direto.`
                             <input value={d.pix||''} placeholder="CNPJ, telefone, e-mail ou chave aleatória"
                               onChange={e=>{const nd=[...extrasDespInd];nd[i]={...nd[i],pix:e.target.value};setExtrasDespInd(nd);setDirtyCalc(true)}}
                               style={{flex:'1 1 220px',minWidth:0,border:`1px solid ${d.pix?'#c4b5fd':'#e9d5ff'}`,borderRadius:8,padding:'5px 9px',fontSize:11.5,color:'#3a3835',background:d.pix?'#faf9ff':'#fff'}}/>
+                            <button onClick={()=>setLeitorAlvo({lista:'pixlinha',idx:i})} title="Escanear QR Code do Pix (ou colar o copia-e-cola)"
+                              style={{flexShrink:0,background:'#fff',border:'1px solid #a78bfa',borderRadius:8,padding:'5px 7px',cursor:'pointer',lineHeight:0,color:'#6b21a8'}}>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                                <path d="M14 14h3v3h-3zM19 14h2M14 19h3M19 19h2"/>
+                              </svg>
+                            </button>
                             {d.pix && <span style={{fontSize:10,color:'#7c6fa8'}}>aparece no card do FINANCEIRO</span>}
                           </div>
                           <div style={{gridColumn:'1 / -1',display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
@@ -2140,8 +2168,18 @@ Use números reais. Seja direto.`
                           {/* PIX da conta: nota fiscal sem código de barras */}
                           <div>
                             <label style={{fontSize:12.5,fontWeight:800,color:'#6b21a8',display:'block',marginBottom:5}}>💠 Chave PIX para pagar (opcional)</label>
-                            <input value={parcPix} onChange={e=>setParcPix(e.target.value)} placeholder="CNPJ, telefone, e-mail ou chave aleatória"
-                              style={{width:'100%',border:'2px solid #e9d5ff',borderRadius:10,padding:'12px 11px',fontSize:14,outline:'none',background:'#faf9ff'}}/>
+                            <div style={{display:'flex',gap:8,alignItems:'center'}}>
+                              <input value={parcPix} onChange={e=>setParcPix(e.target.value)} placeholder="CNPJ, telefone, e-mail ou chave aleatória"
+                                style={{flex:1,minWidth:0,border:'2px solid #e9d5ff',borderRadius:10,padding:'12px 11px',fontSize:14,outline:'none',background:'#faf9ff'}}/>
+                              {/* Lê o QR Code do Pix (copia-e-cola) — mesmo leitor do código de barras */}
+                              <button onClick={()=>setLeitorAlvo({lista:'pixmodal',idx:0})} title="Escanear QR Code do Pix (ou colar o copia-e-cola)"
+                                style={{flexShrink:0,background:'#fff',border:'2px solid #a78bfa',borderRadius:10,padding:'10px 11px',cursor:'pointer',lineHeight:0,color:'#6b21a8'}}>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                                  <path d="M14 14h3v3h-3zM19 14h2M14 19h3M19 19h2"/>
+                                </svg>
+                              </button>
+                            </div>
                             <span style={{fontSize:11,color:'#7c6fa8',display:'block',marginTop:4}}>
                               Use quando for <strong>nota fiscal sem código de barras</strong>. O Financeiro vê a chave e copia pra pagar no app do banco.
                             </span>
@@ -2283,7 +2321,9 @@ Use números reais. Seja direto.`
                   aberto={!!leitorAlvo}
                   onFechar={()=>setLeitorAlvo(null)}
                   onLido={aplicarLeitura}
-                  titulo={leitorAlvo?.lista==='parc' ? `Boleto da parcela ${(leitorAlvo.idx||0)+1}` : 'Código do boleto desta despesa'}
+                  titulo={leitorAlvo?.lista==='parc' ? `Boleto da parcela ${(leitorAlvo.idx||0)+1}`
+                    : (leitorAlvo?.lista==='pixmodal' || leitorAlvo?.lista==='pixlinha') ? 'QR Code do Pix (ou código do boleto)'
+                    : 'Código do boleto desta despesa'}
                 />
               </>
             </div>

@@ -345,7 +345,7 @@ export default function BoletosFinanceiro({ cor = '#16a34a' }: { cor?: string })
                   <div style={{ display: 'flex', gap: 8, marginTop: 9, flexWrap: 'wrap' }}>
                       <button onClick={() => copiarCod(b)}
                         style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#fff', color: '#5b4fcf', border: '1px solid #c9c4f0', borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-                        <Copy size={12} /> Copiar código de barras
+                        <Copy size={12} /> {ehPix(b.cod) ? 'Copiar Pix (copia e cola)' : 'Copiar código de barras'}
                       </button>
                       <button onClick={() => toggleCod(b.id)}
                         style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#fff', color: '#6b6860', border: '1px solid #e0ddd8', borderRadius: 8, padding: '6px 10px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
