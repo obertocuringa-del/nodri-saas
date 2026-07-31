@@ -604,7 +604,7 @@ function CampoVenc({ valor, onChange }: { valor: string; onChange: (v: string) =
       <input type="date" value={valor || ''} onChange={e => onChange(e.target.value)}
         onClick={e => { try { (e.currentTarget as any).showPicker?.() } catch { /* */ } }}
         title="Vencimento — com data preenchida, a conta entra na fila de boletos do FINANCEIRO"
-        className={`w-full px-1 py-1.5 rounded-lg text-[11px] text-center focus:outline-none${valor ? '' : ' campo-vazio'}`}
+        className={`w-full px-1 py-1.5 rounded-lg text-[11px] text-center focus:outline-none${valor ? '' : ' campo-vazio'}${dias !== null && dias < 0 ? ' venc-vencido' : ''}`}
         style={{ background: '#fff', border: `1.5px solid ${cor}`, color: '#78350f', fontWeight: valor ? 700 : 400, cursor: 'pointer' }} />
       {dias !== null && (
         <span style={{ fontSize: 9, textAlign: 'center', fontWeight: 700, color: cor }}>
@@ -1983,7 +1983,7 @@ Use números reais. Seja direto.`
                         <InfoBtn id={d.nome==='Aluguel'?'aluguel':d.nome==='Energia Elétrica'?'energia':d.nome==='Água'?'agua':d.nome==='Contabilidade'?'contabilidade':''}/>
                         <button onClick={()=>toggleNota('d'+i)} title="Observação" className="no-mobile" style={{fontSize:11,lineHeight:1,padding:'1px 3px',border:'none',background:'transparent',cursor:'pointer',opacity:d.obs?1:0.45}}>📝</button>
                         {!notasAbertas.has('d'+i) && d.obs && (
-                          <span onClick={()=>toggleNota('d'+i)} className="text-[9.5px]"
+                          <span onClick={()=>toggleNota('d'+i)} className="nodri-resumo-linha text-[9.5px]"
                             style={{color:'#9a7b3a',maxWidth:190,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',cursor:'pointer'}}>{d.obs}</span>
                         )}
                       </div>
@@ -2040,7 +2040,7 @@ Use números reais. Seja direto.`
                         <button onClick={()=>toggleNota('e'+i)} title="Observação" className="no-mobile" style={{fontSize:11,lineHeight:1,padding:'1px 3px',border:'none',background:'transparent',cursor:'pointer',opacity:d.obs?1:0.45}}>📝</button>
                         {/* Fechado: mostra quem é e a data, sem ocupar linha */}
                         {!notasAbertas.has('e'+i) && (d.obs || d.data) && (
-                          <span onClick={()=>toggleNota('e'+i)} className="text-[9.5px]"
+                          <span onClick={()=>toggleNota('e'+i)} className="nodri-resumo-linha text-[9.5px]"
                             style={{color:'#9a7b3a',maxWidth:190,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',cursor:'pointer'}}>
                             {[d.obs, d.data].filter(Boolean).join(' · ')}
                           </span>
