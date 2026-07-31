@@ -271,7 +271,7 @@ export default function BoletosFinanceiro({ cor = '#16a34a' }: { cor?: string })
                 {/* PIX de quem vai receber — empréstimo aprovado */}
                 {b.pix && (
                   <div style={{ marginTop: 8, background: '#f5f3ff', border: '1px solid #e9d5ff', borderRadius: 8, padding: '8px 10px' }}>
-                    <div style={{ fontSize: 9.5, fontWeight: 800, color: '#6b21a8', marginBottom: 3 }}>CHAVE PIX DA PROFISSIONAL</div>
+                    <div style={{ fontSize: 9.5, fontWeight: 800, color: '#6b21a8', marginBottom: 3 }}>CHAVE PIX PARA PAGAR</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       <span style={{ fontFamily: 'ui-monospace,monospace', fontSize: 12, color: '#1a1a1a', wordBreak: 'break-all', flex: '1 1 160px', userSelect: 'all' }}>{b.pix}</span>
                       <button onClick={() => copiarPix(b)}

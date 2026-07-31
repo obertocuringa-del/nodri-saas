@@ -158,6 +158,11 @@ html, body {
   .nodri-cab-acoes { flex-direction: column !important; align-items: stretch !important; justify-content: flex-start !important; }
   .nodri-cab-acoes > button { width: 100% !important; justify-content: center !important; }
 
+  /* 20) Modal de lançamento: no celular vira uma coluna só (no computador são
+         duas, pra caber tudo sem rolagem). */
+  .nodri-modal-2col { grid-template-columns: 1fr !important; gap: 16px !important; }
+  .nodri-modal-lanc { padding: 16px !important; border-radius: 14px !important; }
+
   /* 19) Linha de parcela do modal de boleto: os 4 campos (nº, escanear, valor,
          data) cabem lado a lado no celular reduzindo fonte e recuo do campo
          de data, que é o que tem largura mínima maior. */

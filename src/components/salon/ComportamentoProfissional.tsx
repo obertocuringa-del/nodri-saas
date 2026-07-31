@@ -68,8 +68,20 @@ export default function ComportamentoProfissional({ profId, nome, onFechar }: {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profId])
 
-  const ocorrencias = met?.ocorrencias || []
-  const feedbacks = met?.feedbacks || []
+  // ⚠️ A API devolve `ocorrencias` e `feedbacks` somando P1 + P2 (é assim que a
+  // aba do perfil usa). Como aqui P2 já são 2 meses, usar o campo pronto
+  // trazia 4 MESES de ocorrências — foi o que fez o número não bater.
+  // Então filtramos pela data e recontamos só o que é dos últimos 2 meses.
+  const limite = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1).getTime()
+  const feedbacks = (met?.feedbacks || []).filter(f => {
+    const t = new Date(f.criado_em).getTime()
+    return Number.isFinite(t) && t >= limite
+  })
+  const ocorrencias = (() => {
+    const mapa: Record<string, number> = {}
+    for (const f of feedbacks) { const k = f.ocorrido_descricao || 'Outro'; mapa[k] = (mapa[k] || 0) + 1 }
+    return Object.entries(mapa).map(([tipo, total]) => ({ tipo, total })).sort((a, b) => b.total - a.total)
+  })()
 
   const faltas = ocorrencias
     .filter(o => { const t = (o.tipo || '').toLowerCase(); return t.includes('falta') && !EXCLUIR_FALTA.some(ex => t.includes(ex)) })

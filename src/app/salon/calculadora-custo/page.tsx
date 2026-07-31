@@ -538,7 +538,7 @@ const DESPESAS_INDIRETAS = [
 ]
 
 // ─── Tipos ──────────────────────────────────────────────────────────────────
-interface DespesaItem { nome: string; valor: string; dica: string; editavel?: boolean; parcela?: string; obs?: string; grupo?: string; venc?: string; data?: string; cod?: string }
+interface DespesaItem { nome: string; valor: string; dica: string; editavel?: boolean; parcela?: string; obs?: string; grupo?: string; venc?: string; data?: string; cod?: string; pix?: string }
 
 // Datas do lançamento (dd/mm/yyyy) <-> input type=date (yyyy-mm-dd)
 const isoParaBR = (iso: string) => { const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? `${m[3]}/${m[2]}/${m[1]}` : '' }
@@ -680,6 +680,9 @@ export default function CalculadoraCusto() {
   // Compra que você JÁ pagou (mercado, por exemplo): lança e a conta cai
   // direto na aba "Pagos" do Financeiro, em vez de ficar na fila a pagar.
   const [parcPago, setParcPago] = useState(false)
+  // Chave PIX da conta (nota fiscal sem código de barras): o Financeiro copia
+  // essa chave pra pagar no app do banco.
+  const [parcPix, setParcPix] = useState('')
   // ── Leitor de código de boleto: quem pediu a leitura ──
   const [leitorAlvo, setLeitorAlvo] = useState<{lista:'fix'|'extra'|'parc'; idx:number} | null>(null)
   const [notasAbertas, setNotasAbertas] = useState<Set<string>>(new Set())
@@ -1080,7 +1083,7 @@ export default function CalculadoraCusto() {
   // ── Abre o modal de parcelamento já com N linhas ──
   function abrirParcelamento() {
     setParcDespesa(''); setParcObs(''); setParcLinhas([{ valor: '', venc: '', cod: '' }])
-    setParcQtd('1'); setParcData(''); setParcPago(false); setParcAberto(true)
+    setParcQtd('1'); setParcData(''); setParcPago(false); setParcPix(''); setParcAberto(true)
   }
   function setParcN(qtd: number) {
     const q = Math.max(1, Math.min(48, qtd || 1))
@@ -1119,7 +1122,7 @@ export default function CalculadoraCusto() {
   async function lancarParcelamento(abrirProximo = false) {
     const nome = parcDespesa.trim()
     const linhas = parcLinhas.filter(l => l.valor.trim() && l.venc)
-    if (!nome) { alert('Escolha ou digite a despesa.'); return }
+    if (!nome) { alert('Escolha a despesa do catálogo.'); return }
     if (linhas.length === 0) { alert('Preencha valor e vencimento de pelo menos uma parcela.'); return }
     const N = linhas.length
     const grupo = `parc_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
@@ -1147,14 +1150,14 @@ export default function CalculadoraCusto() {
         if (!porMes.has(key)) porMes.set(key, { ano: y, mes: m, itens: [] })
         // data (quinzena): o que você preencheu ou, se vazio, o vencimento da parcela
         const dataQuinzena = parcData ? isoParaBR(parcData) : isoParaBR(l.venc)
-        porMes.get(key)!.itens.push({ nome, valor: l.valor, dica: '', parcela: `${i + 1}/${N}`, obs, grupo, venc: l.venc, cod: l.cod || '', data: dataQuinzena })
+        porMes.get(key)!.itens.push({ nome, valor: l.valor, dica: '', parcela: `${i + 1}/${N}`, obs, grupo, venc: l.venc, cod: l.cod || '', data: dataQuinzena, pix: parcPix.trim() })
       })
 
       for (const { ano, mes, itens } of porMes.values()) {
         if (ano === anoSel && mes === mesSel) {
           // Mês atual: soma no formulário aberto e salva o mês inteiro
           const base = coletarDados()
-          const novo = { ...base, extrasDespInd: [...base.extrasDespInd, ...itens.map(it => ({ nome: it.nome, valor: it.valor, parcela: it.parcela || '', obs: it.obs || '', grupo: it.grupo || '', venc: it.venc || '', cod: it.cod || '', data: it.data || '' })) ] }
+          const novo = { ...base, extrasDespInd: [...base.extrasDespInd, ...itens.map(it => ({ nome: it.nome, valor: it.valor, parcela: it.parcela || '', obs: it.obs || '', grupo: it.grupo || '', venc: it.venc || '', cod: it.cod || '', data: it.data || '', pix: it.pix || '' })) ] }
           await fetch('/api/salon/calculadora', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ano, mes, dados: novo }) })
           setExtrasDespInd(prev => [...prev, ...itens])
           setDirtyCalc(false)
@@ -1163,7 +1166,7 @@ export default function CalculadoraCusto() {
           const r = await fetch(`/api/salon/calculadora?ano=${ano}&mes=${mes}`, { credentials: 'include' }).then(x => x.ok ? x.json() : { dados: null }).catch(() => ({ dados: null }))
           const base = (r?.dados && typeof r.dados === 'object') ? r.dados : {}
           const extras = Array.isArray(base.extrasDespInd) ? base.extrasDespInd : []
-          const novo = { ...base, extrasDespInd: [...extras, ...itens.map(it => ({ nome: it.nome, valor: it.valor, parcela: it.parcela || '', obs: it.obs || '', grupo: it.grupo || '', venc: it.venc || '', cod: it.cod || '', data: it.data || '' })) ] }
+          const novo = { ...base, extrasDespInd: [...extras, ...itens.map(it => ({ nome: it.nome, valor: it.valor, parcela: it.parcela || '', obs: it.obs || '', grupo: it.grupo || '', venc: it.venc || '', cod: it.cod || '', data: it.data || '', pix: it.pix || '' })) ] }
           await fetch('/api/salon/calculadora', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ano, mes, dados: novo }) })
           setMesesComDados(prev => prev.some(mm => mm.ano === ano && mm.mes === mes) ? prev : [...prev, { ano, mes }])
         }
@@ -2071,114 +2074,136 @@ Use números reais. Seja direto.`
               <>
                 {parcAberto && (
                   <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center',padding:16}} onClick={()=>!parcSalvando&&setParcAberto(false)}>
-                    <div style={{background:'#fff',borderRadius:16,padding:22,width:'100%',maxWidth:560,maxHeight:'88vh',display:'flex',flexDirection:'column',gap:12,overflowY:'auto'}} onClick={e=>e.stopPropagation()}>
-                      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-                        <h3 style={{fontSize:16,fontWeight:800,color:'#1a1a1a',margin:0}}>💳 Lançar boleto / despesa parcelada</h3>
-                        <button onClick={()=>!parcSalvando&&setParcAberto(false)} style={{background:'none',border:'none',cursor:'pointer',color:'#767069'}}><X size={18}/></button>
-                      </div>
-                      <p style={{fontSize:12,color:'#767069',margin:0}}>Cada parcela cai no mês do seu vencimento e é <strong>somada</strong> ao mês (nada é apagado). Ao confirmar, tudo já fica salvo — e cada parcela entra na fila de <strong>Boletos</strong> do FINANCEIRO na data do vencimento.</p>
-
-                      <div>
-                        <label style={{fontSize:11,fontWeight:700,color:'#78350f',display:'block',marginBottom:4}}>Despesa *</label>
-                        <input list="parc-cat-list" value={parcDespesa} onChange={e=>setParcDespesa(e.target.value)} placeholder="Escolha do catálogo ou digite (ex: DAVINES)"
-                          style={{width:'100%',border:'1.5px solid #f59e0b',borderRadius:8,padding:'9px 10px',fontSize:13,outline:'none'}}/>
-                        <datalist id="parc-cat-list">
-                          {despesasCatalogo.filter(c=>c.categoria==='indireta').map(c=><option key={c.id} value={c.nome}/>)}
-                        </datalist>
+                    <div className="nodri-modal-lanc" style={{background:'#fff',borderRadius:18,padding:24,width:'100%',maxWidth:940,maxHeight:'92vh',display:'flex',flexDirection:'column',gap:16,overflowY:'auto',border:'2px solid #f59e0b'}} onClick={e=>e.stopPropagation()}>
+                      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',borderBottom:'2px solid #f3e8d0',paddingBottom:12}}>
+                        <div>
+                          <h3 style={{fontSize:19,fontWeight:900,color:'#1a1a1a',margin:0}}>💳 Lançar boleto / despesa</h3>
+                          <p style={{fontSize:12.5,color:'#767069',margin:'4px 0 0'}}>Cada parcela cai no mês do seu vencimento e entra na fila de <strong>Boletos</strong> do FINANCEIRO. Nada é apagado — tudo é somado ao mês.</p>
+                        </div>
+                        <button onClick={()=>!parcSalvando&&setParcAberto(false)} style={{background:'#faf9f7',border:'1.5px solid #e8e6e0',borderRadius:10,padding:7,cursor:'pointer',color:'#767069',lineHeight:0}}><X size={20}/></button>
                       </div>
 
-                      <div>
-                        <label style={{fontSize:11,fontWeight:700,color:'#78350f',display:'block',marginBottom:4}}>
-                          {ehEmprestimoParc ? 'De quem é o empréstimo? *' : 'Observação (opcional)'}
-                        </label>
-                        {/* Empréstimo: mesmo seletor de profissional cadastrado da lista */}
-                        {ehEmprestimoParc
-                          ? <ObsComProf valor={parcObs} onChange={setParcObs} profs={profsLista}/>
-                          : <input value={parcObs} onChange={e=>setParcObs(e.target.value)} placeholder="ex: nota fiscal, referência, motivo"
-                              style={{width:'100%',border:'1.5px solid #e8e6e0',borderRadius:8,padding:'9px 10px',fontSize:13,outline:'none'}}/>}
-                      </div>
+                      {/* Duas colunas no computador, uma no celular */}
+                      <div className="nodri-modal-2col" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20,alignItems:'start'}}>
 
-                      {/* Data da quinzena só faz sentido em EMPRÉSTIMO (é o que é
-                          descontado por quinzena). Nas outras despesas ela só
-                          poluía a tela, então aparece sozinha ao escolher empréstimo. */}
-                      {ehEmprestimoParc && (
-                      <div>
-                        <label style={{fontSize:11,fontWeight:700,color:'#78350f',display:'block',marginBottom:4}}>🗓️ Data do lançamento (para separar por quinzena)</label>
-                        <input type="date" value={parcData} onChange={e=>setParcData(e.target.value)}
-                          onClick={e=>{try{(e.currentTarget as any).showPicker?.()}catch{}}}
-                          style={{width:'100%',border:'1.5px solid #e8e6e0',borderRadius:8,padding:'9px 10px',fontSize:13,outline:'none',cursor:'pointer'}}/>
-                        <span style={{fontSize:10.5,color:'#9a7b3a'}}>Em branco, cada parcela usa a data do próprio vencimento.</span>
-                      </div>
-                      )}
+                        {/* ── COLUNA 1: o que é ── */}
+                        <div style={{display:'flex',flexDirection:'column',gap:14}}>
+                          <div style={{fontSize:11.5,fontWeight:900,color:'#b45309',textTransform:'uppercase',letterSpacing:.6,borderBottom:'2px solid #fde68a',paddingBottom:5}}>1 · A conta</div>
 
-                      <div style={{display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
-                        <label style={{fontSize:11,fontWeight:700,color:'#78350f'}}>Em quantas vezes?</label>
-                        <input type="number" inputMode="numeric" min={1} max={48} value={parcQtd}
-                          onChange={e=>{
-                            const v = e.target.value
-                            setParcQtd(v)                                   // aceita vazio enquanto digita
-                            const nn = Number(v)
-                            if (v.trim() && nn >= 1 && nn <= 48) setParcN(nn)
-                          }}
-                          onFocus={e=>e.currentTarget.select()}             // toca e já substitui
-                          onBlur={()=>{ if (!parcQtd.trim() || Number(parcQtd) < 1) setParcQtd(String(parcLinhas.length)) }}
-                          style={{width:74,border:'1.5px solid #f59e0b',borderRadius:8,padding:'8px 10px',fontSize:15,textAlign:'center',outline:'none'}}/>
-                        <span style={{fontSize:11,color:'#767069'}}>a referência (1/{parcLinhas.length}, 2/{parcLinhas.length}…) é gerada automática</span>
-                        <span style={{fontSize:11,color:'#9a7b3a',flexBasis:'100%'}}>No botão de barras de cada linha você escaneia (celular) ou cola o código do boleto — valor e vencimento entram sozinhos, e o código fica guardado pro Financeiro copiar.</span>
-                      </div>
-
-                      {/* Linhas das parcelas */}
-                      <div style={{display:'flex',flexDirection:'column',gap:8}}>
-                        {parcLinhas.map((l,i)=>(
-                          <div key={i} className="nodri-parc-linha" style={{display:'grid',gridTemplateColumns:'30px 34px minmax(0,1fr) minmax(0,1.25fr)',gap:5,alignItems:'center',background:l.cod?'#f0fdf4':'#fffbf0',border:`1px solid ${l.cod?'#bbf7d0':'#f59e0b30'}`,borderRadius:10,padding:'8px 9px'}}>
-                            <span style={{fontSize:11.5,fontWeight:800,color:'#b45309'}}>{i+1}/{parcLinhas.length}</span>
-                            {/* Escanear/colar o código deste boleto: preenche valor e vencimento */}
-                            <button onClick={()=>setLeitorAlvo({lista:'parc',idx:i})}
-                              title={l.cod?'Código lido — clique para reler':'Escanear o código de barras deste boleto'}
-                              style={{background:l.cod?'#dcfce7':'#fff',border:`1.5px solid ${l.cod?'#86efac':'#f59e0b'}`,borderRadius:8,padding:'7px 6px',cursor:'pointer',lineHeight:1,color:l.cod?'#15803d':'#b45309',display:'flex',justifyContent:'center'}}>
-                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                                <path d="M4 5v14M8 5v14M12 5v14M16 5v10M20 5v14"/>
-                              </svg>
-                            </button>
-                            <div style={{position:'relative',minWidth:0}}>
-                              <span style={{position:'absolute',left:6,top:'50%',transform:'translateY(-50%)',fontSize:10,color:'#b45309'}}>R$</span>
-                              <input type="number" inputMode="decimal" value={l.valor} onChange={e=>{const nd=[...parcLinhas];nd[i]={...nd[i],valor:e.target.value};setParcLinhas(nd)}} placeholder="valor"
-                                style={{width:'100%',minWidth:0,paddingLeft:22,paddingRight:4,paddingTop:8,paddingBottom:8,border:'1.5px solid #e8e6e0',borderRadius:8,fontSize:12.5,outline:'none'}}/>
-                            </div>
-                            <input type="date" value={l.venc} onChange={e=>{const nd=[...parcLinhas];nd[i]={...nd[i],venc:e.target.value};setParcLinhas(nd)}}
-                              onClick={e=>{try{(e.currentTarget as any).showPicker?.()}catch{}}}
-                              style={{width:'100%',minWidth:0,border:'1.5px solid #e8e6e0',borderRadius:8,padding:'7px 4px',fontSize:12,outline:'none',cursor:'pointer'}}/>
-                            {!l.cod && (
-                              <div style={{gridColumn:'1 / -1',fontSize:10,color:'#b45309',display:'flex',alignItems:'center',gap:5}}>
-                                <span style={{fontSize:12}}>📷</span> Sem código de barras — toque no botão de barras pra ler o boleto
-                              </div>
-                            )}
-                            {l.cod && (
-                              <div style={{gridColumn:'1 / -1',display:'flex',alignItems:'center',gap:7,flexWrap:'wrap'}}>
-                                <span style={{fontSize:9.5,fontWeight:800,color:'#15803d'}}>LIDO DO CÓDIGO</span>
-                                <span style={{fontFamily:'ui-monospace,monospace',fontSize:10.5,color:'#374151',wordBreak:'break-all',flex:'1 1 180px'}}>{formatarLinha(l.cod)}</span>
-                                <button onClick={()=>{const nd=[...parcLinhas];nd[i]={...nd[i],cod:''};setParcLinhas(nd)}}
-                                  style={{background:'transparent',border:'none',color:'#9ca3af',fontSize:10.5,cursor:'pointer'}}>remover</button>
-                              </div>
-                            )}
+                          <div>
+                            <label style={{fontSize:12.5,fontWeight:800,color:'#78350f',display:'block',marginBottom:5}}>Despesa *</label>
+                            {/* SÓ do catálogo: digitar livre criava "DAVINES" e "DAVINE"
+                                como se fossem empresas diferentes. */}
+                            <select value={parcDespesa} onChange={e=>setParcDespesa(e.target.value)}
+                              style={{width:'100%',border:'2px solid #f59e0b',borderRadius:10,padding:'12px 11px',fontSize:15,outline:'none',background:'#fff',color:parcDespesa?'#1a1a1a':'#9ca3af',cursor:'pointer',fontWeight:parcDespesa?700:400}}>
+                              <option value="">— escolha a empresa cadastrada —</option>
+                              {despesasCatalogo.filter(c=>c.categoria==='indireta').map(c=><option key={c.id} value={c.nome}>{c.nome}</option>)}
+                            </select>
+                            <span style={{fontSize:11,color:'#9a7b3a',display:'block',marginTop:4}}>
+                              Não achou? Feche e cadastre em <strong>Gerenciar Catálogo</strong> — assim a mesma empresa nunca entra escrita de dois jeitos.
+                            </span>
                           </div>
-                        ))}
+
+                          <div>
+                            <label style={{fontSize:12.5,fontWeight:800,color:'#78350f',display:'block',marginBottom:5}}>
+                              {ehEmprestimoParc ? 'De quem é o empréstimo? *' : 'Observação (opcional)'}
+                            </label>
+                            {ehEmprestimoParc
+                              ? <ObsComProf valor={parcObs} onChange={setParcObs} profs={profsLista}/>
+                              : <input value={parcObs} onChange={e=>setParcObs(e.target.value)} placeholder="ex: nota fiscal 1234, referência, motivo"
+                                  style={{width:'100%',border:'2px solid #e8e6e0',borderRadius:10,padding:'12px 11px',fontSize:14,outline:'none'}}/>}
+                          </div>
+
+                          {ehEmprestimoParc && (
+                            <div>
+                              <label style={{fontSize:12.5,fontWeight:800,color:'#78350f',display:'block',marginBottom:5}}>🗓️ Data do lançamento (separar por quinzena)</label>
+                              <input type="date" value={parcData} onChange={e=>setParcData(e.target.value)}
+                                onClick={e=>{try{(e.currentTarget as any).showPicker?.()}catch{}}}
+                                style={{width:'100%',border:'2px solid #e8e6e0',borderRadius:10,padding:'12px 11px',fontSize:14,outline:'none',cursor:'pointer'}}/>
+                              <span style={{fontSize:11,color:'#9a7b3a'}}>Em branco, cada parcela usa a data do próprio vencimento.</span>
+                            </div>
+                          )}
+
+                          {/* PIX da conta: nota fiscal sem código de barras */}
+                          <div>
+                            <label style={{fontSize:12.5,fontWeight:800,color:'#6b21a8',display:'block',marginBottom:5}}>💠 Chave PIX para pagar (opcional)</label>
+                            <input value={parcPix} onChange={e=>setParcPix(e.target.value)} placeholder="CNPJ, telefone, e-mail ou chave aleatória"
+                              style={{width:'100%',border:'2px solid #e9d5ff',borderRadius:10,padding:'12px 11px',fontSize:14,outline:'none',background:'#faf9ff'}}/>
+                            <span style={{fontSize:11,color:'#7c6fa8',display:'block',marginTop:4}}>
+                              Use quando for <strong>nota fiscal sem código de barras</strong>. O Financeiro vê a chave e copia pra pagar no app do banco.
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* ── COLUNA 2: como paga ── */}
+                        <div style={{display:'flex',flexDirection:'column',gap:14}}>
+                          <div style={{fontSize:11.5,fontWeight:900,color:'#b45309',textTransform:'uppercase',letterSpacing:.6,borderBottom:'2px solid #fde68a',paddingBottom:5}}>2 · Valores e vencimentos</div>
+
+                          <div style={{display:'flex',alignItems:'center',gap:12,flexWrap:'wrap'}}>
+                            <label style={{fontSize:12.5,fontWeight:800,color:'#78350f'}}>Em quantas vezes?</label>
+                            <input type="number" inputMode="numeric" min={1} max={48} value={parcQtd}
+                              onChange={e=>{
+                                const v = e.target.value
+                                setParcQtd(v)                                   // aceita vazio enquanto digita
+                                const nn = Number(v)
+                                if (v.trim() && nn >= 1 && nn <= 48) setParcN(nn)
+                              }}
+                              onFocus={e=>e.currentTarget.select()}             // toca e já substitui
+                              onBlur={()=>{ if (!parcQtd.trim() || Number(parcQtd) < 1) setParcQtd(String(parcLinhas.length)) }}
+                              style={{width:88,border:'2px solid #f59e0b',borderRadius:10,padding:'11px 10px',fontSize:18,fontWeight:800,textAlign:'center',outline:'none'}}/>
+                            <span style={{fontSize:11.5,color:'#767069',flex:1,minWidth:120}}>a numeração (1/{parcLinhas.length}, 2/{parcLinhas.length}…) é automática</span>
+                          </div>
+
+                          <div style={{display:'flex',flexDirection:'column',gap:10}}>
+                            {parcLinhas.map((l,i)=>(
+                              <div key={i} className="nodri-parc-linha" style={{display:'grid',gridTemplateColumns:'42px 46px minmax(0,1fr) minmax(0,1.15fr)',gap:8,alignItems:'center',background:l.cod?'#f0fdf4':'#fffbf0',border:`2px solid ${l.cod?'#86efac':'#fde68a'}`,borderRadius:12,padding:'11px 10px'}}>
+                                <span style={{fontSize:13,fontWeight:900,color:'#b45309'}}>{i+1}/{parcLinhas.length}</span>
+                                <button onClick={()=>setLeitorAlvo({lista:'parc',idx:i})}
+                                  title={l.cod?'Código lido — clique para reler':'Escanear o código de barras deste boleto'}
+                                  style={{background:l.cod?'#dcfce7':'#fff',border:`2px solid ${l.cod?'#16a34a':'#f59e0b'}`,borderRadius:10,padding:'9px 6px',cursor:'pointer',lineHeight:1,color:l.cod?'#15803d':'#b45309',display:'flex',justifyContent:'center'}}>
+                                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                    <path d="M4 5v14M8 5v14M12 5v14M16 5v10M20 5v14"/>
+                                  </svg>
+                                </button>
+                                <div style={{position:'relative',minWidth:0}}>
+                                  <span style={{position:'absolute',left:8,top:'50%',transform:'translateY(-50%)',fontSize:12,fontWeight:700,color:'#b45309'}}>R$</span>
+                                  <input type="number" inputMode="decimal" value={l.valor} onChange={e=>{const nd=[...parcLinhas];nd[i]={...nd[i],valor:e.target.value};setParcLinhas(nd)}} placeholder="valor"
+                                    style={{width:'100%',minWidth:0,paddingLeft:30,paddingRight:6,paddingTop:11,paddingBottom:11,border:'2px solid #e8e6e0',borderRadius:10,fontSize:15,fontWeight:700,outline:'none'}}/>
+                                </div>
+                                <input type="date" value={l.venc} onChange={e=>{const nd=[...parcLinhas];nd[i]={...nd[i],venc:e.target.value};setParcLinhas(nd)}}
+                                  onClick={e=>{try{(e.currentTarget as any).showPicker?.()}catch{}}}
+                                  style={{width:'100%',minWidth:0,border:'2px solid #e8e6e0',borderRadius:10,padding:'10px 6px',fontSize:13.5,outline:'none',cursor:'pointer'}}/>
+                                {!l.cod && (
+                                  <div style={{gridColumn:'1 / -1',fontSize:11,color:'#b45309',display:'flex',alignItems:'center',gap:6}}>
+                                    <span style={{fontSize:14}}>📷</span> Sem código de barras — toque no botão de barras pra ler o boleto
+                                  </div>
+                                )}
+                                {l.cod && (
+                                  <div style={{gridColumn:'1 / -1',display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+                                    <span style={{fontSize:10.5,fontWeight:900,color:'#15803d'}}>LIDO DO CÓDIGO</span>
+                                    <span style={{fontFamily:'ui-monospace,monospace',fontSize:11.5,color:'#374151',wordBreak:'break-all',flex:'1 1 180px'}}>{formatarLinha(l.cod)}</span>
+                                    <button onClick={()=>{const nd=[...parcLinhas];nd[i]={...nd[i],cod:''};setParcLinhas(nd)}}
+                                      style={{background:'transparent',border:'none',color:'#9ca3af',fontSize:11.5,cursor:'pointer'}}>remover</button>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       </div>
 
-                      {/* Compra já paga (mercado, feira, cartão na hora): marca aqui
-                          e o lançamento nasce na aba Pagos do Financeiro. Vale
-                          pros dois botões de lançar. */}
+                      {/* Compra já paga (mercado, feira, cartão na hora) */}
                       <button onClick={()=>setParcPago(p=>!p)}
-                        style={{display:'flex',alignItems:'center',gap:9,width:'100%',textAlign:'left',cursor:'pointer',
-                          background:parcPago?'#f0fdf4':'#faf9f7',border:`1.5px solid ${parcPago?'#86efac':'#e8e6e0'}`,
-                          borderRadius:10,padding:'10px 12px'}}>
-                        <span style={{width:20,height:20,borderRadius:6,flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',
-                          background:parcPago?'#16a34a':'#fff',border:`1.5px solid ${parcPago?'#16a34a':'#cbd5e1'}`,color:'#fff',fontSize:12,fontWeight:900}}>
+                        style={{display:'flex',alignItems:'center',gap:12,width:'100%',textAlign:'left',cursor:'pointer',
+                          background:parcPago?'#f0fdf4':'#faf9f7',border:`2px solid ${parcPago?'#16a34a':'#e0ddd8'}`,
+                          borderRadius:12,padding:'13px 14px'}}>
+                        <span style={{width:26,height:26,borderRadius:8,flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',
+                          background:parcPago?'#16a34a':'#fff',border:`2px solid ${parcPago?'#16a34a':'#cbd5e1'}`,color:'#fff',fontSize:15,fontWeight:900}}>
                           {parcPago?'✓':''}
                         </span>
                         <span>
-                          <span style={{display:'block',fontSize:12.5,fontWeight:800,color:parcPago?'#15803d':'#3a3835'}}>Marcar como pago</span>
-                          <span style={{display:'block',fontSize:10.5,color:'#767069',marginTop:1}}>
+                          <span style={{display:'block',fontSize:14.5,fontWeight:800,color:parcPago?'#15803d':'#3a3835'}}>Marcar como pago</span>
+                          <span style={{display:'block',fontSize:12,color:'#767069',marginTop:2}}>
                             {parcPago
                               ? 'Vai direto pra aba PAGOS do Financeiro — não entra na fila a pagar.'
                               : 'Marque se você JÁ pagou esta compra (ex.: mercado, pago na hora).'}
@@ -2186,15 +2211,15 @@ Use números reais. Seja direto.`
                         </span>
                       </button>
 
-                      <div style={{display:'flex',gap:8,justifyContent:'flex-end',marginTop:4,flexWrap:'wrap'}}>
-                        <button onClick={()=>!parcSalvando&&setParcAberto(false)} style={{background:'transparent',border:'none',color:'#767069',fontSize:13,cursor:'pointer',padding:'9px 14px'}}>Cancelar</button>
+                      <div style={{display:'flex',gap:10,justifyContent:'flex-end',flexWrap:'wrap',borderTop:'2px solid #f3e8d0',paddingTop:14}}>
+                        <button onClick={()=>!parcSalvando&&setParcAberto(false)} style={{background:'transparent',border:'none',color:'#767069',fontSize:14,cursor:'pointer',padding:'12px 16px'}}>Cancelar</button>
                         <button onClick={()=>lancarParcelamento(true)} disabled={parcSalvando}
                           title="Salva este e já limpa o formulário pro próximo boleto"
-                          style={{background:'#fff',color:'#b45309',border:'1.5px solid #f59e0b',borderRadius:8,padding:'9px 16px',fontSize:13,fontWeight:800,cursor:'pointer',opacity:parcSalvando?0.6:1}}>
+                          style={{background:'#fff',color:'#b45309',border:'2px solid #f59e0b',borderRadius:10,padding:'12px 18px',fontSize:14,fontWeight:800,cursor:'pointer',opacity:parcSalvando?0.6:1}}>
                           Lançar e abrir próximo
                         </button>
                         <button onClick={()=>lancarParcelamento(false)} disabled={parcSalvando}
-                          style={{background:'#16a34a',color:'#fff',border:'none',borderRadius:8,padding:'9px 20px',fontSize:14,fontWeight:800,cursor:'pointer',opacity:parcSalvando?0.6:1}}>
+                          style={{background:'#16a34a',color:'#fff',border:'none',borderRadius:10,padding:'12px 26px',fontSize:15.5,fontWeight:900,cursor:'pointer',opacity:parcSalvando?0.6:1,boxShadow:'0 3px 10px #16a34a40'}}>
                           {parcSalvando?'Lançando...':parcPago?'Lançar como pago':'Lançar'}
                         </button>
                       </div>

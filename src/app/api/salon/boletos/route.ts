@@ -93,7 +93,9 @@ export async function GET(req: NextRequest) {
           obs: String(it?.obs || ''), cod: String(it?.cod || ''),
           // grupo: liga as parcelas de um mesmo lançamento (empréstimo/parcelado)
           grupo: String(it?.grupo || ''),
-          profId: String(it?.profId || ''), pix: '',
+          // pix pode vir digitado no lançamento (nota fiscal sem código de
+          // barras) ou, em empréstimo, do cadastro da profissional (abaixo)
+          profId: String(it?.profId || ''), pix: String(it?.pix || ''),
           pago: !!pg, pagoEm: pg?.pagoEm || '',
         })
       })
@@ -111,7 +113,9 @@ export async function GET(req: NextRequest) {
       .from('profissionais').select('id, chave_pix')
       .eq('salao_id', salaoId).in('id', profIds)
     const pixDe = new Map((profs || []).map((p: any) => [String(p.id), String(p.chave_pix || '')]))
-    for (const it of itens) if (it.profId) it.pix = pixDe.get(it.profId) || ''
+    // Só sobrescreve quando o cadastro tem chave — senão apagaria um PIX que
+    // tivesse sido digitado no lançamento.
+    for (const it of itens) if (it.profId && pixDe.get(it.profId)) it.pix = pixDe.get(it.profId) as string
   }
 
   itens.sort((a, b) => a.venc < b.venc ? -1 : a.venc > b.venc ? 1 : 0)

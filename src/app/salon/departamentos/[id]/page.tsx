@@ -30,6 +30,7 @@ export default function DepartamentoPage() {
   const [ehDono, setEhDono] = useState(false)   // só o salão principal exclui/transfere
   // Qual lista está aberta embaixo dos contadores (null = tudo recolhido)
   const [secao, setSecao] = useState<'abertas' | 'resolvidas' | 'total' | null>('abertas')
+  const [verDia, setVerDia] = useState(true)   // lista do dia começa aberta
 
   // Resolver com resposta
   const [respondendo, setRespondendo] = useState<string | null>(null)
@@ -185,10 +186,16 @@ export default function DepartamentoPage() {
             aberto; o resto vive nos contadores recolhíveis abaixo. */}
         {doDia.length > 0 && (
           <div style={{ marginBottom: 18 }}>
-            <p style={{ fontSize: 11, fontWeight: 800, color: '#b91c1c', textTransform: 'uppercase', letterSpacing: .5, marginBottom: 8 }}>
-              🔔 Pendências do dia ({doDia.length})
-            </p>
-            {doDia.map(d => <DemandaCard key={d.id} d={d} />)}
+            {/* Recolhível também: com a lista fechada, os contadores ficam
+                logo abaixo, sem precisar rolar a página inteira. */}
+            <button onClick={() => setVerDia(v => !v)}
+              style={{ display: 'flex', alignItems: 'center', gap: 7, width: '100%', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, marginBottom: 8 }}>
+              <span style={{ fontSize: 10, color: '#b91c1c', transform: verDia ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }}>▼</span>
+              <span style={{ fontSize: 11, fontWeight: 800, color: '#b91c1c', textTransform: 'uppercase', letterSpacing: .5 }}>
+                🔔 Pendências do dia ({doDia.length})
+              </span>
+            </button>
+            {verDia && doDia.map(d => <DemandaCard key={d.id} d={d} />)}
           </div>
         )}
 
