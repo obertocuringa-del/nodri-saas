@@ -25,21 +25,17 @@ export async function PUT(req: NextRequest) {
   if (!chave) return NextResponse.json({ error: 'Falta chave' }, { status: 400 })
   const salaoId = await salaoIdSe(permDaGrade(chave))
   if (!salaoId) return NextResponse.json({ error: 'Sem acesso' }, { status: 403 })
-  // Sub-usuário é somente leitura, EXCETO as Listas (bebidas, alicates, produtos, serviços internos)
-  const ehListasGrid = /^bebidas/.test(chave) || /^esterilizacao/.test(chave) || /^enxovais/.test(chave) || ['produtos', 'servinterno'].includes(chave)
+  // Quem chegou até aqui já passou pelo salaoIdSe(permDaGrade(chave)) acima —
+  // ou seja, o sub SÓ entra nas áreas que o dono liberou pra ele. Então quem
+  // tem a permissão também grava ("liberou = pode ver e salvar").
+  // Profissional nunca grava; Modo Caixa só acrescenta.
   const sess = await getSessao()
   if (sess?.role === 'profissional') return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
-  if (sess?.role === 'sub') {
-    const caixa = sessaoModoCaixa(sess)
-    // Modo Caixa também pode salvar o Check List (marcar feito / adicionar)
-    const permitido = ehListasGrid || (caixa && chave === 'checklist')
-    if (!permitido) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
-    if (caixa) {
-      // Trava do Modo Caixa: compara com o que está salvo — só aceita acréscimos/execução
-      const { data: atual } = await supabaseAdmin.from('salao_config').select('valor').eq('salao_id', salaoId).eq('chave', `grid_${chave}`).maybeSingle()
-      if (atual?.valor && !apenasAcrescenta(atual.valor, doc)) {
-        return NextResponse.json({ error: 'Modo Caixa: você pode marcar como feito e ADICIONAR, mas não pode editar nem excluir o que já existe.' }, { status: 403 })
-      }
+  if (sess?.role === 'sub' && sessaoModoCaixa(sess)) {
+    // Trava do Modo Caixa: compara com o que está salvo — só aceita acréscimos/execução
+    const { data: atual } = await supabaseAdmin.from('salao_config').select('valor').eq('salao_id', salaoId).eq('chave', `grid_${chave}`).maybeSingle()
+    if (atual?.valor && !apenasAcrescenta(atual.valor, doc)) {
+      return NextResponse.json({ error: 'Modo Caixa: você pode marcar como feito e ADICIONAR, mas não pode editar nem excluir o que já existe.' }, { status: 403 })
     }
   }
   const { error } = await supabaseAdmin.from('salao_config').upsert({ salao_id: salaoId, chave: `grid_${chave}`, valor: doc, atualizado_em: new Date().toISOString() }, { onConflict: 'salao_id,chave' })

@@ -22,12 +22,17 @@ export async function getSessao(): Promise<Sessao | null> {
   return { salaoId: p.salaoId, role: p.role, permissoes: null }
 }
 
-// Sub-usuário (criado pelo salão) é SOMENTE LEITURA — não pode editar/excluir/alterar nada.
-// Retorna true quando a escrita deve ser bloqueada (usuário é 'sub'). Dono/master nunca bloqueiam.
+// Regra de escrita (jul/2026 — mudou): "liberou = pode ver E salvar".
+// O sub-usuário grava nas áreas que o dono liberou pra ele; quem controla o
+// alcance é a permissão de cada área, não um bloqueio geral.
+// Continuam travados: PROFISSIONAL (portal é sempre leitura) e MODO CAIXA
+// (que só pode acrescentar — ver bloquearEdicao/apenasAcrescenta).
 export async function escritaBloqueadaSub(): Promise<boolean> {
   const s = await getSessao()
-  // Sub e profissional são somente leitura — nunca podem escrever/alterar/excluir nada
-  return s?.role === 'sub' || s?.role === 'profissional'
+  if (!s) return true
+  if (s.role === 'profissional') return true
+  if (s.role === 'sub' && sessaoModoCaixa(s)) return true
+  return false
 }
 
 // Bloqueia edição/exclusão para sub e profissional, mas o MODO CAIXA pode
@@ -35,10 +40,11 @@ export async function escritaBloqueadaSub(): Promise<boolean> {
 // PUT/DELETE/PATCH → bloquearEdicao('PUT'). Dono (role 'salon') nunca é bloqueado.
 export async function bloquearEdicao(metodo: 'POST' | 'PUT' | 'DELETE' | 'PATCH'): Promise<boolean> {
   const s = await getSessao()
-  if (!s || (s.role !== 'sub' && s.role !== 'profissional')) return false // dono/master: livre
+  if (!s) return true
+  if (s.role !== 'sub' && s.role !== 'profissional') return false         // dono/master: livre
   if (s.role === 'profissional') return true                              // profissional: nunca escreve
-  if (sessaoModoCaixa(s) && metodo === 'POST') return false               // Caixa: pode ADICIONAR
-  return true                                                             // sub (ou Caixa em edição/exclusão): bloqueia
+  if (sessaoModoCaixa(s)) return metodo !== 'POST'                        // Caixa: só ADICIONA
+  return false                                                            // sub comum: grava no que tem permissão
 }
 
 // ── MODO CAIXA ──────────────────────────────────────────────────────────────
