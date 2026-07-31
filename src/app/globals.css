@@ -167,8 +167,15 @@ body:has(.nodri-modal-lanc) #whatsapp-float-btn { display: none !important; }
          duas, pra caber tudo sem rolagem) e encolhe os recuos, senão passava
          alguns pixels da largura da tela. */
   .nodri-modal-2col { grid-template-columns: 1fr !important; gap: 16px !important; }
-  .nodri-modal-lanc { padding: 12px !important; border-radius: 12px !important; max-width: 100% !important; }
-  .nodri-modal-overlay { padding: 8px !important; }
+  /* calc(100vw - 12px) trava a largura na tela real do aparelho: assim nenhum
+     campo interno consegue empurrar o modal pra fora e cortar a borda. */
+  .nodri-modal-lanc { padding: 10px !important; border-radius: 12px !important; max-width: calc(100vw - 12px) !important; }
+  .nodri-modal-overlay { padding: 6px !important; }
+  /* O cabeçalho NÃO pode quebrar (a regra 4 faz todo flex quebrar no celular),
+     senão o X de fechar cai pra linha de baixo, solto e torto. */
+  .nodri-modal-head { flex-wrap: nowrap !important; align-items: flex-start !important; gap: 8px !important; }
+  /* Cartão "Marcar como pago" centralizado */
+  .nodri-pago-card { flex-direction: column !important; align-items: center !important; text-align: center !important; gap: 8px !important; }
   /* Os três botões (Cancelar · próximo · Lançar) numa linha só */
   .nodri-modal-acoes { flex-wrap: nowrap !important; gap: 6px !important; }
   .nodri-modal-acoes > button { flex: 1 1 0 !important; padding: 12px 4px !important; font-size: 12.5px !important; white-space: nowrap; }
@@ -176,7 +183,7 @@ body:has(.nodri-modal-lanc) #whatsapp-float-btn { display: none !important; }
   /* 19) Linha de parcela do modal de boleto: os 4 campos (nº, escanear, valor,
          data) cabem lado a lado no celular reduzindo fonte e recuo do campo
          de data, que é o que tem largura mínima maior. */
-  .nodri-parc-linha { grid-template-columns: 32px 38px minmax(0, 1fr) minmax(0, 1.05fr) !important; gap: 5px !important; padding: 9px 7px !important; }
+  .nodri-parc-linha { grid-template-columns: 30px 34px minmax(0, 1fr) minmax(0, 1fr) !important; gap: 4px !important; padding: 8px 6px !important; }
   .nodri-parc-linha input[type="date"] { font-size: 11px !important; padding-left: 2px !important; padding-right: 2px !important; }
   .nodri-parc-linha input[type="number"] { font-size: 12px !important; }
 

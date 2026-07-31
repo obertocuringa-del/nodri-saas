@@ -2075,12 +2075,12 @@ Use números reais. Seja direto.`
                 {parcAberto && (
                   <div className="nodri-modal-overlay" style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center',padding:16}} onClick={()=>!parcSalvando&&setParcAberto(false)}>
                     <div className="nodri-modal-lanc" style={{background:'#fff',borderRadius:18,padding:24,width:'100%',maxWidth:940,maxHeight:'92vh',display:'flex',flexDirection:'column',gap:16,overflowY:'auto',border:'2px solid #f59e0b'}} onClick={e=>e.stopPropagation()}>
-                      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',borderBottom:'2px solid #f3e8d0',paddingBottom:12}}>
-                        <div>
+                      <div className="nodri-modal-head" style={{display:'flex',alignItems:'center',justifyContent:'space-between',borderBottom:'2px solid #f3e8d0',paddingBottom:12}}>
+                        <div style={{minWidth:0}}>
                           <h3 style={{fontSize:19,fontWeight:900,color:'#1a1a1a',margin:0}}>💳 Lançar boleto / despesa</h3>
-                          <p style={{fontSize:12.5,color:'#767069',margin:'4px 0 0'}}>Cada parcela cai no mês do seu vencimento e entra na fila de <strong>Boletos</strong> do FINANCEIRO. Nada é apagado — tudo é somado ao mês.</p>
+                          <p className="no-mobile" style={{fontSize:12.5,color:'#767069',margin:'4px 0 0'}}>Cada parcela cai no mês do seu vencimento e entra na fila de <strong>Boletos</strong> do FINANCEIRO. Nada é apagado — tudo é somado ao mês.</p>
                         </div>
-                        <button onClick={()=>!parcSalvando&&setParcAberto(false)} style={{background:'#faf9f7',border:'1.5px solid #e8e6e0',borderRadius:10,padding:7,cursor:'pointer',color:'#767069',lineHeight:0}}><X size={20}/></button>
+                        <button onClick={()=>!parcSalvando&&setParcAberto(false)} style={{background:'#faf9f7',border:'1.5px solid #e8e6e0',borderRadius:10,padding:7,cursor:'pointer',color:'#767069',lineHeight:0,flexShrink:0}}><X size={20}/></button>
                       </div>
 
                       {/* Duas colunas no computador, uma no celular */}
@@ -2193,7 +2193,7 @@ Use números reais. Seja direto.`
                       </div>
 
                       {/* Compra já paga (mercado, feira, cartão na hora) */}
-                      <button onClick={()=>setParcPago(p=>!p)}
+                      <button onClick={()=>setParcPago(p=>!p)} className="nodri-pago-card"
                         style={{display:'flex',alignItems:'center',gap:12,width:'100%',textAlign:'left',cursor:'pointer',
                           background:parcPago?'#f0fdf4':'#faf9f7',border:`2px solid ${parcPago?'#16a34a':'#e0ddd8'}`,
                           borderRadius:12,padding:'13px 14px'}}>
