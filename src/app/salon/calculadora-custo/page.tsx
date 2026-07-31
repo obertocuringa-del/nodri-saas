@@ -2289,7 +2289,7 @@ Use números reais. Seja direto.`
                     "Adicionar despesa do catálogo" foi retirado (jul/2026), porque
                     todo lançamento passa pelo "Lançar boleto" do cabeçalho, que exige
                     vencimento. Mantido aqui pra reativar em uma linha se precisar:
-                    basta um botão chamando setModalCatalogoAberto(true). */
+                    basta um botão chamando setModalCatalogoAberto(true). */}
                 {modalCatalogoAberto && (
                   <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center'}} onClick={()=>setModalCatalogoAberto(false)}>
                     <div style={{background:'#fff',borderRadius:'16px',padding:'24px',minWidth:'340px',maxWidth:'480px',width:'90%',maxHeight:'70vh',display:'flex',flexDirection:'column',gap:'12px'}} onClick={e=>e.stopPropagation()}>
