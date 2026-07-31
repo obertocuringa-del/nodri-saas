@@ -2095,17 +2095,12 @@ Use números reais. Seja direto.`
 
                 {/* Botão adicionar + parcelar + modal catálogo */}
                 <div className="px-5 py-3 border-t flex items-center gap-2 flex-wrap" style={{borderColor:'#f59e0b40',background:'#fef9ec'}}>
-                  <button onClick={()=>setModalCatalogoAberto(true)}
-                    className="flex items-center gap-2 text-xs px-4 py-2 rounded-lg font-semibold transition-all"
-                    style={{background:'#f59e0b',color:'#fff',border:'none',boxShadow:'0 2px 6px #f59e0b40'}}>
-                    <Plus size={13}/> Adicionar despesa do catálogo
-                  </button>
                   {despesasCatalogo.filter(c=>c.categoria==='indireta').length===0 && (
                     <span className="text-[10px]" style={{color:'#b45309'}}>⚠️ Cadastre despesas em <strong>Gerenciar Catálogo</strong> primeiro</span>
                   )}
                   <span className="text-[10px] w-full" style={{color:'#9a7b3a'}}>
-                    📅 Preencheu o <strong>Vencimento</strong>? A conta entra sozinha na fila de <strong>Boletos</strong> do setor FINANCEIRO — lá você marca como paga. Em branco, nada muda.
-                    O botão <strong>💳 Lançar boleto</strong> fica no cabeçalho, sem precisar abrir esta lista.
+                    Para lançar uma despesa nova, use o botão <strong>💳 Lançar boleto</strong> no cabeçalho desta seção — ele exige o <strong>Vencimento</strong>,
+                    e com isso a conta entra sozinha na fila de <strong>Boletos</strong> do FINANCEIRO, onde você marca como paga.
                   </span>
                 </div>
               </>}
@@ -2279,7 +2274,11 @@ Use números reais. Seja direto.`
                   </div>
                 )}
 
-                {/* Modal seletor de catálogo */}
+                {/* Modal seletor de catálogo — SEM PORTA DE ENTRADA hoje: o botão
+                    "Adicionar despesa do catálogo" foi retirado (jul/2026), porque
+                    todo lançamento passa pelo "Lançar boleto" do cabeçalho, que exige
+                    vencimento. Mantido aqui pra reativar em uma linha se precisar:
+                    basta um botão chamando setModalCatalogoAberto(true). */
                 {modalCatalogoAberto && (
                   <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center'}} onClick={()=>setModalCatalogoAberto(false)}>
                     <div style={{background:'#fff',borderRadius:'16px',padding:'24px',minWidth:'340px',maxWidth:'480px',width:'90%',maxHeight:'70vh',display:'flex',flexDirection:'column',gap:'12px'}} onClick={e=>e.stopPropagation()}>
