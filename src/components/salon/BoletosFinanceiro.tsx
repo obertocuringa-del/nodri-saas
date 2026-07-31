@@ -151,7 +151,33 @@ export default function BoletosFinanceiro({ cor = '#16a34a' }: { cor?: string })
   }
 
   const soma = (arr: Card[]) => arr.reduce((s, b) => s + b.valor, 0)
-  const lista = aba ? grupos[aba] : []
+
+  // ── Filtro por ano/mês do VENCIMENTO ────────────────────────────────────
+  // Pensado pra quando houver milhares de lançamentos. O padrão de cada aba
+  // respeita o que ela serve: PAGOS abre no mês atual (é o arquivo morto, que
+  // cresce pra sempre); VENCIDOS abre em TODOS, senão conta atrasada some no
+  // mês que ninguém foi olhar.
+  const [fAno, setFAno] = useState('')     // '' = todos
+  const [fMes, setFMes] = useState('')
+  useEffect(() => {
+    if (aba === 'pagos') {
+      const h = new Date()
+      setFAno(String(h.getFullYear())); setFMes(String(h.getMonth() + 1))
+    } else { setFAno(''); setFMes('') }
+  }, [aba])
+
+  const daAba = aba ? grupos[aba] : []
+  // Só oferece períodos que EXISTEM nesta aba — nada de escolher mês vazio
+  const anosDisp = Array.from(new Set(daAba.map(b => b.venc.slice(0, 4)))).sort().reverse()
+  const mesesDisp = Array.from(new Set(
+    daAba.filter(b => !fAno || b.venc.slice(0, 4) === fAno).map(b => String(Number(b.venc.slice(5, 7))))
+  )).sort((a, b) => Number(a) - Number(b))
+
+  const lista = daAba.filter(b =>
+    (!fAno || b.venc.slice(0, 4) === fAno) &&
+    (!fMes || Number(b.venc.slice(5, 7)) === Number(fMes))
+  )
+  const filtrando = !!(fAno || fMes)
 
   const ABAS: { id: Aba; label: string; cor: string; bg: string; bd: string }[] = [
     { id: 'vencidos', label: 'Vencidos', cor: '#b91c1c', bg: '#fef2f2', bd: '#fecaca' },
@@ -202,9 +228,39 @@ export default function BoletosFinanceiro({ cor = '#16a34a' }: { cor?: string })
         })}
       </div>
 
+      {/* Filtro de período — só quando a aba está aberta e há mais de um item */}
+      {aba && aba !== 'hoje' && daAba.length > 1 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap', background: '#faf9f7', border: '1px solid #e8e6e0', borderRadius: 10, padding: '8px 10px', marginBottom: 12 }}>
+          <span style={{ fontSize: 11, fontWeight: 800, color: '#6b6860' }}>Período (vencimento):</span>
+          <select value={fAno} onChange={e => { setFAno(e.target.value); setFMes('') }}
+            style={{ border: '1px solid #dedad4', borderRadius: 8, padding: '5px 8px', fontSize: 12, background: '#fff', cursor: 'pointer', fontWeight: 700, color: '#3a3835' }}>
+            <option value="">Todos os anos</option>
+            {anosDisp.map(a => <option key={a} value={a}>{a}</option>)}
+          </select>
+          <select value={fMes} onChange={e => setFMes(e.target.value)}
+            style={{ border: '1px solid #dedad4', borderRadius: 8, padding: '5px 8px', fontSize: 12, background: '#fff', cursor: 'pointer', fontWeight: 700, color: '#3a3835' }}>
+            <option value="">Todos os meses</option>
+            {mesesDisp.map(m => <option key={m} value={m}>{MESES[Number(m)]}</option>)}
+          </select>
+          {filtrando && (
+            <button onClick={() => { setFAno(''); setFMes('') }}
+              style={{ background: '#fff', border: '1px solid #e0ddd8', borderRadius: 8, padding: '5px 10px', fontSize: 11.5, color: '#6b6860', cursor: 'pointer' }}>
+              Ver todos
+            </button>
+          )}
+          <span style={{ marginLeft: 'auto', fontSize: 11.5, color: '#6b6860' }}>
+            {lista.length} de {daAba.length} · <strong style={{ color: '#15803d' }}>R$ {fmtR(soma(lista))}</strong>
+          </span>
+        </div>
+      )}
+
       {!aba ? (
         <div style={{ textAlign: 'center', padding: '4px 10px 2px', color: '#9ca3af', fontSize: 11.5 }}>
           Toque num dos cards acima para ver a lista.
+        </div>
+      ) : lista.length === 0 && filtrando ? (
+        <div style={{ textAlign: 'center', padding: '18px 10px', color: '#9ca3af', fontSize: 12.5 }}>
+          Nada nesse período. Escolha outro mês ou clique em <strong>Ver todos</strong>.
         </div>
       ) : lista.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '22px 10px', color: '#9ca3af', fontSize: 12.5 }}>
