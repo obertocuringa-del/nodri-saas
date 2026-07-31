@@ -2043,6 +2043,16 @@ Use números reais. Seja direto.`
                         <>
                           <ObsComProf valor={d.obs||''} profs={profsLista}
                             onChange={val=>{const nd=[...extrasDespInd];nd[i]={...nd[i],obs:val};setExtrasDespInd(nd)}}/>
+                          {/* PIX visível e editável DEPOIS do lançamento: antes, se a
+                              chave não fosse digitada (ou fosse no campo errado),
+                              não havia como ver nem corrigir por aqui. */}
+                          <div style={{gridColumn:'1 / -1',display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+                            <label style={{fontSize:11,fontWeight:700,color:'#6b21a8',whiteSpace:'nowrap'}}>💠 Chave PIX:</label>
+                            <input value={d.pix||''} placeholder="CNPJ, telefone, e-mail ou chave aleatória"
+                              onChange={e=>{const nd=[...extrasDespInd];nd[i]={...nd[i],pix:e.target.value};setExtrasDespInd(nd);setDirtyCalc(true)}}
+                              style={{flex:'1 1 220px',minWidth:0,border:`1px solid ${d.pix?'#c4b5fd':'#e9d5ff'}`,borderRadius:8,padding:'5px 9px',fontSize:11.5,color:'#3a3835',background:d.pix?'#faf9ff':'#fff'}}/>
+                            {d.pix && <span style={{fontSize:10,color:'#7c6fa8'}}>aparece no card do FINANCEIRO</span>}
+                          </div>
                           <div style={{gridColumn:'1 / -1',display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
                             <label style={{fontSize:11,fontWeight:700,color:'#78350f'}}>📅 Data do lançamento (para separar por quinzena):</label>
                             <input type="date" value={brParaISO(d.data||'')} onChange={e=>{const nd=[...extrasDespInd];nd[i]={...nd[i],data:isoParaBR(e.target.value)};setExtrasDespInd(nd);setDirtyCalc(true)}}
