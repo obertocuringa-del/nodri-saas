@@ -61,6 +61,13 @@ body:has(.nodri-modal-lanc) #whatsapp-float-btn { display: none !important; }
 body:has(.nodri-modal-lanc) { overflow: hidden !important; }
 
 @media (max-width: 640px) {
+  /* 0) Nenhuma página desliza de lado no celular. Uso `clip` e não `hidden`
+        de propósito: `hidden` cria um container de rolagem e QUEBRA os
+        cabeçalhos fixos (position: sticky) que o sistema usa. Quadros que
+        precisam rolar na horizontal (tabelas, barras de abas) têm o próprio
+        wrapper com overflow-x:auto e continuam funcionando. */
+  html, body { overflow-x: clip; }
+
   /* 1) Todo grid de CARDS (qualquer "repeat(...)", inclusive auto-fill/auto-fit)
         vira 2 colunas no celular — cards ficam 2 por linha. Grids usados como
         tabela (ex: "1fr 140px 80px", sem repeat) NÃO são afetados. */

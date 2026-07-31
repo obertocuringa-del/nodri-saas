@@ -8,6 +8,7 @@ import { CHECKLIST_DEFAULT, FREQUENCIAS } from '@/components/salon/checklistDefa
 import { usePermissoes } from '@/lib/usePermissoes'
 import { useIsMobile } from '@/lib/useIsMobile'
 import { useGuardaSalvar } from '@/lib/guardaSalvar'
+import { useAutoSalvar } from '@/lib/autoSalvar'
 import ConsolidadoDescontos from '@/components/salon/ConsolidadoDescontos'
 
 interface Demanda { id: string; texto: string; freq: string; feito: boolean; dias?: string[]; feito_em?: string; historico?: string[]; fixa?: boolean; diaMes?: number }
@@ -84,6 +85,7 @@ export default function ChecklistPage() {
   const [salvando, setSalvando] = useState(false)
   const [dirty, setDirty] = useState(false)
   useGuardaSalvar(dirty, 'Check List') // avisa "Deseja salvar?" antes de sair sem salvar
+  useAutoSalvar(dirty, () => salvar(true))  // e salva sozinho de qualquer jeito
   const [verRelatorio, setVerRelatorio] = useState(false)
   const [verComuns, setVerComuns] = useState(false)
   const [descontoOpen, setDescontoOpen] = useState(false)
@@ -184,13 +186,15 @@ export default function ChecklistPage() {
   function renCategoria(ci: number, v: string) { mut(d => { d.categorias[ci].nome = v }) }
   function delCategoria(ci: number) { if (!confirm('Excluir esta categoria e todas as suas demandas?')) return; mut(d => { d.categorias.splice(ci, 1) }); setCatSel(0) }
 
-  async function salvar() {
-    setSalvando(true)
+  // silencioso = chamada do auto-save: grava sem avisar na tela
+  async function salvar(silencioso = false) {
+    if (!silencioso) setSalvando(true)
     try {
       const res = await fetch('/api/salon/grid', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chave: 'checklist', doc }) })
-      if (res.ok) { toast.success('Check list salvo!'); setDirty(false) } else toast.error('Erro ao salvar')
-    } catch { toast.error('Erro de conexão') }
-    setSalvando(false)
+      if (res.ok) { if (!silencioso) toast.success('Check list salvo!'); setDirty(false) }
+      else if (!silencioso) toast.error('Erro ao salvar')
+    } catch { if (!silencioso) toast.error('Erro de conexão') }
+    if (!silencioso) setSalvando(false)
   }
   function limparMarcacoes() {
     if (!confirm('Reinício forçado: desmarcar TODAS as demandas agora?\n\n(Normalmente não precisa — cada período zera sozinho: o diário vira à meia-noite, o semanal na segunda, o mensal no dia 1º...)')) return
@@ -338,7 +342,7 @@ export default function ChecklistPage() {
         <button onClick={() => { setVerComuns(v => !v); setVerRelatorio(false) }} style={btnNav(verComuns)}><Copy size={14} /> Demandas em comum</button>
         <button onClick={() => { setVerRelatorio(v => !v); setVerComuns(false) }} style={btnNav(verRelatorio)}><BarChart3 size={14} /> Relatório{temAlerta ? ' ⚠️' : ''}</button>
         {!soLeitura && !soExecuta && <button onClick={limparMarcacoes} title="Reinício forçado (os períodos já zeram sozinhos)" style={btnNav(false)}><RotateCcw size={14} /> Limpar</button>}
-        {!soLeitura && <button onClick={salvar} disabled={salvando} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 16px', borderRadius: 8, border: 'none', background: dirty ? '#16a34a' : '#a3b3a3', color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>{salvando ? '...' : <><Save size={14} /> Salvar geral</>}</button>}
+        {!soLeitura && <button onClick={() => salvar()} disabled={salvando} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 16px', borderRadius: 8, border: 'none', background: dirty ? '#16a34a' : '#a3b3a3', color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>{salvando ? '...' : <><Save size={14} /> Salvar geral</>}</button>}
         {soLeitura && <span style={{ fontSize: 12, color: '#6b6860', background: '#f1eefb', border: '1px solid #ddd6f5', borderRadius: 8, padding: '6px 12px' }}>👁️ Somente visualização</span>}
         {soExecuta && <span style={{ fontSize: 12, color: '#b45309', background: '#fff7ed', border: '1px solid #fcd34d', borderRadius: 8, padding: '6px 12px' }}>🧾 Modo Caixa — só executa e adiciona</span>}
       </nav>
@@ -377,7 +381,7 @@ export default function ChecklistPage() {
               <button onClick={() => { setVerRelatorio(v => !v); setVerComuns(false) }} style={{ ...btnMob(verRelatorio), flex: 1 }}><BarChart3 size={14} /> Relatório{temAlerta ? ' ⚠️' : ''}</button>
               <button onClick={() => { setVerComuns(v => !v); setVerRelatorio(false) }} style={{ ...btnMob(verComuns), flex: 1 }}><Copy size={14} /> Em comum</button>
               {!soLeitura && !soExecuta && <button onClick={limparMarcacoes} title="Reinício forçado" style={{ ...btnMob(false), width: 44, justifyContent: 'center' }}><RotateCcw size={15} /></button>}
-              {!soLeitura && <button onClick={salvar} aria-hidden tabIndex={-1} style={{ display: 'none' }}><Save size={12} /> Salvar</button>}
+              {!soLeitura && <button onClick={() => salvar()} aria-hidden tabIndex={-1} style={{ display: 'none' }}><Save size={12} /> Salvar</button>}
             </div>
           )}
 

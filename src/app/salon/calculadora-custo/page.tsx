@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { ArrowLeft, Plus, Trash2, Calculator, Loader2, Save, ChevronDown, ChevronUp, History, CheckCircle, ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { usePermissoes } from '@/lib/usePermissoes'
 import { useGuardaSalvar } from '@/lib/guardaSalvar'
+import { useAutoSalvar } from '@/lib/autoSalvar'
 import LeitorBoleto from '@/components/salon/LeitorBoleto'
 import { BoletoLido, formatarLinha } from '@/lib/boleto'
 
@@ -630,6 +631,7 @@ export default function CalculadoraCusto() {
   // Alterações não salvas do mês (qualquer digitação nos campos marca como pendente)
   const [dirtyCalc, setDirtyCalc] = useState(false)
   useGuardaSalvar(dirtyCalc, 'Calculadora de Custo') // avisa "Deseja salvar?" antes de sair sem salvar
+  useAutoSalvar(dirtyCalc, () => salvarMes(true))          // e salva sozinho de qualquer jeito
 
   // Aba ativa
   const [aba, setAba] = useState<'rd'|'pe'|'servicos'|'produto'|'catproduto'|'cadeira'|'metro'|'graficos'>('rd')
@@ -1030,8 +1032,9 @@ export default function CalculadoraCusto() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [anoSel, mesSel])
 
-  async function salvarMes() {
-    setSalvando(true); setSavedMsg('')
+  // silencioso = chamada do auto-save: não mostra alerta nem o "Salvo!"
+  async function salvarMes(silencioso = false) {
+    if (!silencioso) { setSalvando(true); setSavedMsg('') }
     try {
       const res = await fetch('/api/salon/calculadora', {
         method: 'POST', credentials: 'include',
@@ -1039,7 +1042,7 @@ export default function CalculadoraCusto() {
         body: JSON.stringify({ ano: anoSel, mes: mesSel, dados: coletarDados() }),
       })
       if (res.ok) {
-        setSavedMsg('Salvo!')
+        if (!silencioso) setSavedMsg('Salvo!')
         setDirtyCalc(false)
         setMesesComDados(prev => {
           const existe = prev.some(m=>m.ano===anoSel&&m.mes===mesSel)
@@ -1073,11 +1076,11 @@ export default function CalculadoraCusto() {
         setTimeout(() => setSavedMsg(''), 3000)
       } else {
         const e = await res.json().catch(() => ({} as any))
-        alert(e?.error || 'Não foi possível salvar. Tente novamente.')
+        if (!silencioso) alert(e?.error || 'Não foi possível salvar. Tente novamente.')
       }
     } catch {
-      alert('Erro de conexão ao salvar. Verifique a internet e tente novamente.')
-    } finally { setSalvando(false) }
+      if (!silencioso) alert('Erro de conexão ao salvar. Verifique a internet e tente novamente.')
+    } finally { if (!silencioso) setSalvando(false) }
   }
 
   // ── Abre o modal de parcelamento já com N linhas ──
@@ -1742,7 +1745,7 @@ Use números reais. Seja direto.`
 
           <div className="ml-auto flex items-center gap-2">
             {savedMsg && <span className="text-xs flex items-center gap-1" style={{color:'#059669'}}><CheckCircle size={12}/>{savedMsg}</span>}
-            <button onClick={salvarMes} disabled={salvando}
+            <button onClick={() => salvarMes()} disabled={salvando}
               className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all disabled:opacity-50"
               style={{background:'#5b4fcf',color:'white'}}>
               {salvando ? <Loader2 size={12} className="animate-spin"/> : <Save size={12}/>}
