@@ -162,9 +162,11 @@ body:has(.nodri-modal-lanc) { overflow: hidden !important; }
      A ordem no HTML é nome, valor, %, parcela, venc, ícones — por isso uso
      `order` pra trazer a parcela pra frente do valor sem mexer no código. */
   /* ── Card do lançamento ── fundo creme, cantos macios e sombra leve */
+  /* Card BRANCO sobre o creme da seção: antes os dois eram creme e o card
+     sumia no fundo. Branco + sombra é o que separa um lançamento do outro. */
   .linha-desp-mobile { grid-template-columns: repeat(12, 1fr) !important; row-gap: 10px !important; column-gap: 7px !important;
-    background: #fdfaf3 !important; border: none !important; border-radius: 18px !important;
-    box-shadow: 0 2px 10px rgba(80,60,20,.07) !important; padding: 14px 14px 12px !important; margin-bottom: 12px !important; }
+    background: #ffffff !important; border: 1px solid #f0e2c4 !important; border-radius: 18px !important;
+    box-shadow: 0 3px 12px rgba(120,90,30,.13) !important; padding: 14px 14px 12px !important; margin-bottom: 14px !important; }
 
   /* linha 1: nome, selo e (à direita) o resumo — com divisória embaixo */
   .linha-desp-mobile > :nth-child(1) { order: 1; grid-column: span 12 !important;
