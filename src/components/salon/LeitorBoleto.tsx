@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { X, Camera, Barcode, ClipboardPaste, Image as ImageIcon, Zap } from 'lucide-react'
 import { lerCodigoBoleto, formatarLinha, BoletoLido } from '@/lib/boleto'
+import { useIsMobile } from '@/lib/useIsMobile'
 import { decodificarCanvas, paraCanvas, prepararLeitor, nativoLeBoleto } from '@/lib/leitorCodigo'
 
 // ─── Leitor de boleto ───────────────────────────────────────────────────────
@@ -41,6 +42,9 @@ export default function LeitorBoleto({ aberto, onFechar, onLido, titulo }: {
   const trackRef = useRef<MediaStreamTrack | null>(null)
   const pararRef = useRef(false)
   const fileRef = useRef<HTMLInputElement | null>(null)
+  // Foto só faz sentido no celular: no computador ela abre um seletor de
+  // arquivos, e ninguém tem foto do boleto guardada ali.
+  const ehCelular = useIsMobile()
 
   useEffect(() => {
     setTemCamera(typeof navigator !== 'undefined' && !!navigator.mediaDevices?.getUserMedia)
@@ -300,29 +304,37 @@ export default function LeitorBoleto({ aberto, onFechar, onLido, titulo }: {
               </div>
             ) : (
               <>
-                {/* Leitor de mão: ativo enquanto o modal estiver aberto */}
-                <div style={{ background: capturado ? '#ecfdf5' : '#f5f3ff', border: `1.5px dashed ${capturado ? '#6ee7b7' : '#c4b5fd'}`, borderRadius: 12, padding: '13px 14px', textAlign: 'center' }}>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: capturado ? '#047857' : '#6b21a8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
-                    <Barcode size={16} /> {capturado ? `Recebendo… ${capturado.length} dígitos` : 'Leitor de mão pronto — aponte e dispare'}
+                {/* Leitor de mão continua escutando SEMPRE — só não ocupa a tela
+                    à toa: a caixa aparece no instante em que os dígitos chegam,
+                    que é quando ela serve (mostra se veio 44 ou parou no meio). */}
+                {capturado && (
+                  <div style={{ background: '#ecfdf5', border: '1.5px dashed #6ee7b7', borderRadius: 12, padding: '13px 14px', textAlign: 'center' }}>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: '#047857', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
+                      <Barcode size={16} /> Recebendo… {capturado.length} dígitos
+                    </div>
+                    <div style={{ fontFamily: 'ui-monospace,monospace', fontSize: 11, color: '#374151', marginTop: 5, wordBreak: 'break-all' }}>{capturado}</div>
                   </div>
-                  {capturado
-                    ? <div style={{ fontFamily: 'ui-monospace,monospace', fontSize: 11, color: '#374151', marginTop: 5, wordBreak: 'break-all' }}>{capturado}</div>
-                    : <div style={{ fontSize: 11, color: '#7c6fa8', marginTop: 4 }}>Não precisa clicar em campo nenhum. Dispare no código do boleto que ele preenche sozinho.</div>}
-                </div>
+                )}
 
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  <button onClick={() => fileRef.current?.click()} disabled={analisando} style={{ ...btnGrande('#f59e0b', '#fff'), opacity: analisando ? .6 : 1 }}>
-                    <ImageIcon size={17} /> {analisando ? 'Analisando…' : 'Foto do código'}
-                  </button>
-                  {temCamera && (
-                    <button onClick={abrirCamera} style={btnGrande('#fff', '#b45309', '1.5px solid #f59e0b')}>
-                      <Camera size={17} /> Câmera ao vivo
-                    </button>
-                  )}
-                </div>
-                <p style={{ fontSize: 11, color: '#6b6860', margin: 0 }}>
-                  A <strong>foto</strong> acerta mais que a câmera ao vivo (tem muito mais resolução). Enquadre o código de barras inteiro, de ponta a ponta, com o boleto esticado.
-                </p>
+                {(ehCelular || temCamera) && (
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {ehCelular && (
+                      <button onClick={() => fileRef.current?.click()} disabled={analisando} style={{ ...btnGrande('#f59e0b', '#fff'), opacity: analisando ? .6 : 1 }}>
+                        <ImageIcon size={17} /> {analisando ? 'Analisando…' : 'Foto do código'}
+                      </button>
+                    )}
+                    {temCamera && (
+                      <button onClick={abrirCamera} style={btnGrande('#fff', '#b45309', '1.5px solid #f59e0b')}>
+                        <Camera size={17} /> Câmera ao vivo
+                      </button>
+                    )}
+                  </div>
+                )}
+                {ehCelular && (
+                  <p style={{ fontSize: 11, color: '#6b6860', margin: 0 }}>
+                    A <strong>foto</strong> acerta mais que a câmera ao vivo (tem muito mais resolução). Enquadre o código de barras inteiro, de ponta a ponta, com o boleto esticado.
+                  </p>
+                )}
               </>
             )}
 
@@ -341,7 +353,7 @@ export default function LeitorBoleto({ aberto, onFechar, onLido, titulo }: {
 
             <div>
               <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 700, color: '#78350f', marginBottom: 5 }}>
-                <ClipboardPaste size={13} /> Ou cole a linha digitável
+                <ClipboardPaste size={13} /> {(ehCelular || temCamera) ? 'Ou cole a linha digitável' : 'Cole a linha digitável (ou dispare o leitor de mão)'}
               </label>
               <textarea value={texto} onChange={e => { setTexto(e.target.value); setErro('') }} rows={3}
                 placeholder="Ex: 34191.79001 01043.510047 91020.150008 8 10460000047697"
