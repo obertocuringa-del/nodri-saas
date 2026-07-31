@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import toast from 'react-hot-toast'
 import { Loader2, CheckCircle2, Circle, AlertCircle, ChevronRight, ClipboardCheck, PartyPopper, History } from 'lucide-react'
-import { usePermissoes } from '@/lib/usePermissoes'
 
 interface Nivel {
   id: string; emoji: string; titulo: string; cor: string
@@ -52,8 +51,8 @@ function ultimosMeses(qtd: number, offsetMeses: number) {
 }
 
 export default function PlanoCarreiraProgresso({ profissionalId, somenteLeitura }: { profissionalId: string; somenteLeitura?: boolean }) {
-  const { ehSub } = usePermissoes()
-  const bloqueado = !!somenteLeitura || ehSub
+  // somenteLeitura vem do portal da profissional; sub com permissão edita
+  const bloqueado = !!somenteLeitura
   const [plano, setPlano] = useState<PlanoDoc | null>(null)
   const [progresso, setProgresso] = useState<ProgressoDoc>({ nivelId: 'n1', manuais: {}, historico: [] })
   const [reais, setReais] = useState<{ faturamentoMensal: number | null; ticket: number | null; retorno: number | null; avaliacao: number | null; tempoAnos: number | null }>({ faturamentoMensal: null, ticket: null, retorno: null, avaliacao: null, tempoAnos: null })

@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Loader2, Save, Plus, Trash2, X, CalendarDays, ChevronLeft, ChevronRight, Bell, Printer } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { usePermissoes } from '@/lib/usePermissoes'
 import { getLogoSalao } from '@/lib/logoSalao'
 import { useGuardaSalvar } from '@/lib/guardaSalvar'
 
@@ -17,8 +16,9 @@ const diasAte = (data: string) => { const [y, m, d] = data.split('-').map(Number
 
 export default function CalendarioEditavel({ chave, titulo, comResponsavel, camposGrandes, corTema = '#5b4fcf', mostrarLembrete, embutido }: { chave: string; titulo: string; comResponsavel?: boolean; camposGrandes?: boolean; corTema?: string; mostrarLembrete?: boolean; embutido?: boolean }) {
   const router = useRouter()
-  const { ehSub } = usePermissoes()
-  const somenteLeitura = ehSub // usuário criado pelo salão só visualiza
+  // Regra nova (jul/2026): liberou = pode ver E salvar. Quem chega nesta tela
+  // já tem a permissão do calendário, então edita normalmente.
+  const somenteLeitura = false
   const [eventos, setEventos] = useState<Evento[]>([])
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)

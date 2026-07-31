@@ -73,9 +73,10 @@ export default function ChecklistPage() {
   const router = useRouter()
   const { ehSub, modoCaixa } = usePermissoes()
   const isMobile = useIsMobile()
-  // sub comum: só visualiza. Modo Caixa: executa (marca feito) e ADICIONA,
-  // mas não edita nem exclui (soExecuta esconde os controles destrutivos).
-  const soLeitura = ehSub && !modoCaixa
+  // Sub comum EDITA (chegou aqui porque tem a permissão do Check List).
+  // Só o MODO CAIXA fica restrito: executa (marca feito) e ADICIONA, mas não
+  // edita nem exclui — soExecuta esconde os controles destrutivos.
+  const soLeitura = false
   const soExecuta = ehSub && modoCaixa
   const [doc, setDoc] = useState<Doc>({ categorias: [] })
   const [catSel, setCatSel] = useState(0)
