@@ -813,7 +813,7 @@ export default function CalculadoraCusto() {
     return {
       fat, custIndD, custDirD, lucroD, invInicial, totalDeprec,
       despInd: despInd.map(d=>({nome:d.nome,valor:d.valor,obs:d.obs||'',venc:d.venc||'',cod:d.cod||''})),
-      extrasDespInd: extrasDespInd.map(d=>({nome:d.nome,valor:d.valor,parcela:d.parcela||'',obs:d.obs||'',grupo:d.grupo||'',venc:d.venc||'',data:d.data||'',cod:d.cod||''})),
+      extrasDespInd: extrasDespInd.map(d=>({nome:d.nome,valor:d.valor,parcela:d.parcela||'',obs:d.obs||'',grupo:d.grupo||'',venc:d.venc||'',data:d.data||'',cod:d.cod||'',pix:d.pix||''})),
       extrasDiretas: extrasDiretas.map(d=>({nome:d.nome,valor:d.valor})),
       extrasOutras: extrasOutras.map(d=>({nome:d.nome,valor:d.valor})),
       sal13, ferias, fgtsR, imposto, produto, rateio, taxaC,
@@ -834,7 +834,7 @@ export default function CalculadoraCusto() {
     if (d.invInicial !== undefined) setInvInicial(d.invInicial)
     if (d.totalDeprec !== undefined) setTotalDeprec(d.totalDeprec)
     if (d.despInd) setDespInd(DESPESAS_INDIRETAS.map((di,i)=>({...di,valor:d.despInd[i]?.valor||'',obs:(d.despInd[i] as any)?.obs||'',venc:(d.despInd[i] as any)?.venc||'',cod:(d.despInd[i] as any)?.cod||''})))
-    if (d.extrasDespInd) setExtrasDespInd(d.extrasDespInd.map((x:any)=>({nome:x.nome,valor:x.valor,dica:'',parcela:x.parcela||'',obs:x.obs||'',grupo:x.grupo||'',venc:x.venc||'',data:x.data||'',cod:x.cod||''})))
+    if (d.extrasDespInd) setExtrasDespInd(d.extrasDespInd.map((x:any)=>({nome:x.nome,valor:x.valor,dica:'',parcela:x.parcela||'',obs:x.obs||'',grupo:x.grupo||'',venc:x.venc||'',data:x.data||'',cod:x.cod||'',pix:x.pix||''})))
     if ((d as any).extrasDiretas) setExtrasDiretas((d as any).extrasDiretas.map((x:any)=>({nome:x.nome,valor:x.valor,dica:''})))
     if ((d as any).extrasOutras) setExtrasOutras((d as any).extrasOutras.map((x:any)=>({nome:x.nome,valor:x.valor,dica:''})))
     if (d.sal13 !== undefined) setSal13(d.sal13)
@@ -1196,7 +1196,7 @@ export default function CalculadoraCusto() {
         // Limpa o formulário e mantém aberto, pra lançar vários seguidos.
         // O "já pago" continua marcado de propósito: quem lança compra paga
         // costuma lançar várias na sequência.
-        setParcDespesa(''); setParcObs(''); setParcLinhas([{ valor: '', venc: '', cod: '' }])
+        setParcDespesa(''); setParcObs(''); setParcLinhas([{ valor: '', venc: '', cod: '' }]); setParcPix('')
       } else {
         setParcAberto(false)
       }
