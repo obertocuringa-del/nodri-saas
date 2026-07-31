@@ -2073,7 +2073,7 @@ Use números reais. Seja direto.`
                   do cabeçalho não funcionaria com a lista recolhida. */}
               <>
                 {parcAberto && (
-                  <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center',padding:16}} onClick={()=>!parcSalvando&&setParcAberto(false)}>
+                  <div className="nodri-modal-overlay" style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center',padding:16}} onClick={()=>!parcSalvando&&setParcAberto(false)}>
                     <div className="nodri-modal-lanc" style={{background:'#fff',borderRadius:18,padding:24,width:'100%',maxWidth:940,maxHeight:'92vh',display:'flex',flexDirection:'column',gap:16,overflowY:'auto',border:'2px solid #f59e0b'}} onClick={e=>e.stopPropagation()}>
                       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',borderBottom:'2px solid #f3e8d0',paddingBottom:12}}>
                         <div>
@@ -2211,12 +2211,13 @@ Use números reais. Seja direto.`
                         </span>
                       </button>
 
-                      <div style={{display:'flex',gap:10,justifyContent:'flex-end',flexWrap:'wrap',borderTop:'2px solid #f3e8d0',paddingTop:14}}>
+                      <div className="nodri-modal-acoes" style={{display:'flex',gap:10,justifyContent:'flex-end',flexWrap:'wrap',borderTop:'2px solid #f3e8d0',paddingTop:14}}>
                         <button onClick={()=>!parcSalvando&&setParcAberto(false)} style={{background:'transparent',border:'none',color:'#767069',fontSize:14,cursor:'pointer',padding:'12px 16px'}}>Cancelar</button>
                         <button onClick={()=>lancarParcelamento(true)} disabled={parcSalvando}
                           title="Salva este e já limpa o formulário pro próximo boleto"
                           style={{background:'#fff',color:'#b45309',border:'2px solid #f59e0b',borderRadius:10,padding:'12px 18px',fontSize:14,fontWeight:800,cursor:'pointer',opacity:parcSalvando?0.6:1}}>
-                          Lançar e abrir próximo
+                          <span className="no-mobile">Lançar e abrir próximo</span>
+                          <span className="nodri-mob-only">+ próximo</span>
                         </button>
                         <button onClick={()=>lancarParcelamento(false)} disabled={parcSalvando}
                           style={{background:'#16a34a',color:'#fff',border:'none',borderRadius:10,padding:'12px 26px',fontSize:15.5,fontWeight:900,cursor:'pointer',opacity:parcSalvando?0.6:1,boxShadow:'0 3px 10px #16a34a40'}}>
