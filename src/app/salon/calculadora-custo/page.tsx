@@ -2389,9 +2389,9 @@ Use números reais. Seja direto.`
                 <div className="flex items-center gap-2">
                   {secDiretas ? <ChevronUp size={14} style={{color:'#ef4444'}}/> : <ChevronDown size={14} style={{color:'#ef4444'}}/>}
                   <span className="font-bold text-sm" style={{color:'#ef4444'}}>📌 Despesas Diretas (Variáveis)</span>
-                  {!secDiretas && totDiretas > 0 && <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{background:'#ef444420',color:'#ef4444'}}>{fmtR(totDiretas)}</span>}
+                  {totDiretas > 0 && <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{background:'#ef444420',color:'#ef4444'}}>{fmtR(totDiretas)}</span>}
                 </div>
-                <span className="font-bold text-sm" style={{color:'#ef4444'}}>{fmtR(totDiretas)}</span>
+                <span className="font-bold text-sm no-mobile" style={{color:'#ef4444'}}>{fmtR(totDiretas)}</span>
               </button>
               {secDiretas && <><div className="p-5">
                 <div className="max-w-xl mx-auto space-y-5">
@@ -2461,9 +2461,9 @@ Use números reais. Seja direto.`
                 <div className="flex items-center gap-2">
                   {secOutras ? <ChevronUp size={14} style={{color:'#0891b2'}}/> : <ChevronDown size={14} style={{color:'#0891b2'}}/>}
                   <span className="font-bold text-sm" style={{color:'#0891b2'}}>💸 Outras Despesas / Gasto de Capital</span>
-                  {!secOutras && totOutras > 0 && <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{background:'#06b6d420',color:'#0891b2'}}>{fmtR(totOutras)}</span>}
+                  {totOutras > 0 && <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{background:'#06b6d420',color:'#0891b2'}}>{fmtR(totOutras)}</span>}
                 </div>
-                <span className="font-bold text-sm" style={{color:'#0891b2'}}>{fmtR(totOutras)}</span>
+                <span className="font-bold text-sm no-mobile" style={{color:'#0891b2'}}>{fmtR(totOutras)}</span>
               </button>
               {secOutras && <>
               <div className="p-5">
