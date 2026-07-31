@@ -67,6 +67,14 @@ body:has(.nodri-modal-lanc) { overflow: hidden !important; }
   [style*="grid-template-columns"][style*="repeat("] {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
+  /* Exceção: trios de contadores curtos (Abertas/Resolvidas/Total) continuam
+     3 numa linha — com a regra geral virava 2 + 1 sobrando embaixo. */
+  .nodri-cards-3[style*="repeat("] {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+  }
+  .nodri-cards-3 > * { padding: 10px 4px !important; }
+  .nodri-cards-3 > * > div:first-child { font-size: 9.5px !important; }
 
   /* 2) Linhas em flex podem quebrar quando não couberem (não estoura a tela).
         Não mexe nas que já são em coluna. */

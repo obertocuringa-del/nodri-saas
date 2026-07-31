@@ -201,7 +201,7 @@ export default function DepartamentoPage() {
         )}
 
         {/* Resumo — clicar abre a lista embaixo, clicar de novo recolhe */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 14 }}>
+        <div className="nodri-cards-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 14 }}>
           {([
             { id: 'abertas' as const, l: 'Abertas', v: abertas.length, c: '#f59e0b' },
             { id: 'resolvidas' as const, l: 'Resolvidas', v: resolvidas.length, c: '#22c55e' },
