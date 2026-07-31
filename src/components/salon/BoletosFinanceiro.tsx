@@ -43,8 +43,9 @@ export default function BoletosFinanceiro({ cor = '#16a34a' }: { cor?: string })
   const [podeBaixa, setPodeBaixa] = useState(false)
   const [loading, setLoading] = useState(true)
   const [semAcesso, setSemAcesso] = useState(false)
-  // aba null = tudo recolhido (clicar de novo no card fecha e economiza espaço)
-  const [aba, setAba] = useState<Aba | null>('vencidos')
+  // Começa FECHADO: a tela abre enxuta e você escolhe o que quer ver.
+  // aba null = tudo recolhido (clicar de novo no card fecha)
+  const [aba, setAba] = useState<Aba | null>(null)
   const [salvando, setSalvando] = useState<string | null>(null)
 
   async function carregar() {
@@ -122,15 +123,6 @@ export default function BoletosFinanceiro({ cor = '#16a34a' }: { cor?: string })
     } catch { toast.error('Erro de conexão') }
     setSalvando(null)
   }
-
-  // Na primeira carga, abre já na aba que tem algo pra ver (vencido primeiro)
-  const [abaAuto, setAbaAuto] = useState(false)
-  useEffect(() => {
-    if (loading || abaAuto || boletos.length === 0) return
-    const primeira = (['vencidos', 'hoje', 'avencer', 'pagos'] as Aba[]).find(a => grupos[a].length > 0)
-    if (primeira) setAba(primeira)
-    setAbaAuto(true)
-  }, [loading, abaAuto, boletos.length, grupos])
 
   // Código de barras: copiar pro app do banco e mostrar/esconder na tela
   const [codAberto, setCodAberto] = useState<Set<string>>(new Set())

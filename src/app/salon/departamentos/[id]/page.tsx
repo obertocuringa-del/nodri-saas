@@ -29,8 +29,9 @@ export default function DepartamentoPage() {
   const [loading, setLoading] = useState(true)
   const [ehDono, setEhDono] = useState(false)   // só o salão principal exclui/transfere
   // Qual lista está aberta embaixo dos contadores (null = tudo recolhido)
-  const [secao, setSecao] = useState<'abertas' | 'resolvidas' | 'total' | null>('abertas')
-  const [verDia, setVerDia] = useState(true)   // lista do dia começa aberta
+  // Tudo fechado ao abrir a página — o usuário escolhe o que quer ver
+  const [secao, setSecao] = useState<'abertas' | 'resolvidas' | 'total' | null>(null)
+  const [verDia, setVerDia] = useState(false)  // lista do dia também começa fechada
 
   // Resolver com resposta
   const [respondendo, setRespondendo] = useState<string | null>(null)
