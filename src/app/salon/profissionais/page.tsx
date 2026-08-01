@@ -15,11 +15,10 @@ import AcessoGlobalProfissionais from '@/components/salon/AcessoGlobalProfission
 import { confirmarSaidaSemSalvar } from '@/lib/guardaSalvar'
 import { urlPublica } from '@/lib/urlPublica'
 
-// Selo das demandas nos cards de setor: fundo marrom escuro com letra clara.
-// Fica DENTRO do card e e a primeira coisa que o olho pega quando chega tarefa.
-const SELO_DEMANDA: React.CSSProperties = {
-  display: 'inline-block', marginTop: 3, padding: '3px 8px', borderRadius: 6,
-  background: '#4a3728', color: '#ffd9a0', fontSize: 10, fontWeight: 800,
+// Aviso de demanda nos cards de setor: vermelho sobre o rosa claro do card.
+// (Ja foi marrom escuro; pesou demais nesta tela e voltou ao discreto.)
+const AVISO_DEMANDA: React.CSSProperties = {
+  color: '#ef4444', fontSize: 10, marginTop: 2, fontWeight: 600,
 }
 
 interface Profissional {
@@ -1093,10 +1092,10 @@ ${montarContratoHTML()}
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{ color: '#1a1a1a', fontWeight: 700, fontSize: '12px' }}>{d.nome_completo}</div>
                               {(d.pendencias_abertas || 0) > 0 && (
-                                <div style={SELO_DEMANDA}>⚠ {d.pendencias_abertas} pendência{d.pendencias_abertas! > 1 ? 's' : ''}</div>
+                                <div style={AVISO_DEMANDA}>⚠ {d.pendencias_abertas} pendência{d.pendencias_abertas! > 1 ? 's' : ''}</div>
                               )}
                               {boletosAqui > 0 && (
-                                <div style={SELO_DEMANDA}>📄 {boletosAqui} boleto{boletosAqui > 1 ? 's' : ''} vencido{boletosAqui > 1 ? 's' : ''}</div>
+                                <div style={AVISO_DEMANDA}>📄 {boletosAqui} boleto{boletosAqui > 1 ? 's' : ''} vencido{boletosAqui > 1 ? 's' : ''}</div>
                               )}
                               {!temPend && <div style={{ color: '#6b6860', fontSize: '10px', marginTop: '2px' }}>Sem pendências</div>}
                             </div>
