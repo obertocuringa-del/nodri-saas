@@ -1775,7 +1775,7 @@ Use números reais. Seja direto.`
   )
 
   return (
-    <div className="min-h-screen" style={{background:'#f5f4f0',color:'#1a1a1a'}}
+    <div className="min-h-screen nodri-sem-whats" style={{background:'#f5f4f0',color:'#1a1a1a'}}
       onInput={marcarDigitacao}>
       <div className="max-w-5xl mx-auto px-4 py-8">
 
@@ -1786,7 +1786,7 @@ Use números reais. Seja direto.`
             <h1 className="text-xl font-bold text-[#1a1a1a] flex items-center gap-2">
               <Calculator size={22} style={{color:'#5b4fcf'}}/>Calculadoras do Salão
             </h1>
-            <p className="text-xs mt-0.5" style={{color:'#767069'}}>
+            <p className="text-xs mt-0.5 nodri-sub-tela" style={{color:'#767069'}}>
               Metodologia profissional de gestão financeira — dados interligados entre as calculadoras
             </p>
           </div>
@@ -1888,7 +1888,7 @@ Use números reais. Seja direto.`
               <button onClick={()=>setSecPassos(p=>!p)} className="w-full flex items-center justify-between px-4 py-3 transition-colors" style={{background:'#ffffff'}}>
                 <span className="text-xs font-bold flex items-center gap-2" style={{color:'#5b4fcf'}}>
                   {secPassos ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
-                  📋 Como preencher — siga os 4 passos em ordem
+                  Como preencher
                 </span>
                 <span className="text-[10px] flex-shrink-0" style={{color:'#767069'}}>{secPassos?'fechar ✕':'abrir ▾'}</span>
               </button>
@@ -1919,9 +1919,9 @@ Use números reais. Seja direto.`
                 style={{background:'linear-gradient(135deg,#faf9f7,#efedfb)'}}>
                 <div className="flex items-center gap-2 flex-wrap">
                   {secConfigRD ? <ChevronUp size={14} style={{color:'#5b4fcf'}}/> : <ChevronDown size={14} style={{color:'#5b4fcf'}}/>}
-                  <span className="font-bold text-sm" style={{color:'#5b4fcf'}}>⚙️ Configurações</span>
+                  <span className="font-bold text-sm" style={{color:'#5b4fcf'}}>Configurações</span>
                   {fatN>0
-                    ? <span className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{background:'#5b4fcf',color:'#fff'}}>Faturamento {fmtR(fatN)} · Lucro {n(lucroD)||0}%</span>
+                    ? <span className="text-[10px] px-2 py-0.5 rounded-full font-bold no-mobile" style={{background:'#5b4fcf',color:'#fff'}}>Faturamento {fmtR(fatN)} · Lucro {n(lucroD)||0}%</span>
                     : <AvisoDefault ativo={!fat||fat==='0'} padrao="não preenchido" onPreencher={()=>setSecConfigRD(true)} onManter={()=>{}}/>}
                 </div>
                 <span className="text-[10px] flex-shrink-0" style={{color:'#767069'}}>{secConfigRD?'fechar ✕':'abrir ▾'}</span>
@@ -2018,8 +2018,8 @@ Use números reais. Seja direto.`
               <button onClick={()=>setSecIndiretas(p=>!p)} className="nodri-cab-sec w-full flex items-center justify-between px-5 py-3 border-b transition-colors" style={{background:'linear-gradient(135deg,#fffbf0,#fef3c7)',borderColor:'#f59e0b'}}>
                 <div className="flex items-center gap-2">
                   {secIndiretas ? <ChevronUp size={14} style={{color:'#b45309'}}/> : <ChevronDown size={14} style={{color:'#b45309'}}/>}
-                  <span className="font-bold text-sm" style={{color:'#92400e'}}>📋 Despesas Indiretas (Fixas)</span>
-                  {totInd > 0 && <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{background:'#f59e0b',color:'#fff'}}>{fmtR(totInd)}</span>}
+                  <span className="font-bold text-sm" style={{color:'#92400e'}}>Despesas Indiretas (Fixas)</span>
+                  {totInd > 0 && <span className="text-xs px-2 py-0.5 rounded-full font-bold no-mobile" style={{background:'#f59e0b',color:'#fff'}}>{fmtR(totInd)}</span>}
                 </div>
                 <div className="nodri-cab-acoes flex items-center gap-2 flex-wrap justify-end" onClick={e=>e.stopPropagation()}>
                   {/* Lançar boleto fica AQUI (e não dentro da lista) pra você não
@@ -2430,7 +2430,7 @@ Use números reais. Seja direto.`
                 <div className="flex items-center gap-2">
                   {secProvisao ? <ChevronUp size={14} style={{color:'#7c6fe0'}}/> : <ChevronDown size={14} style={{color:'#7c6fe0'}}/>}
                   <div className="text-left">
-                    <span className="font-bold text-sm" style={{color:'#7c6fe0'}}>📅 Provisão Mensal</span>
+                    <span className="font-bold text-sm" style={{color:'#7c6fe0'}}>Provisão Mensal</span>
                     <p className="text-[10px] mt-0.5" style={{color:'#767069'}}>✨ Automático a partir de <strong style={{color:'#7c6fe0'}}>Salários</strong></p>
                   </div>
                 </div>
@@ -2474,7 +2474,7 @@ Use números reais. Seja direto.`
               <button onClick={()=>setSecDiretas(p=>!p)} className="w-full flex items-center justify-between px-5 py-3 border-b hover:bg-white/2 transition-colors" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
                 <div className="flex items-center gap-2">
                   {secDiretas ? <ChevronUp size={14} style={{color:'#ef4444'}}/> : <ChevronDown size={14} style={{color:'#ef4444'}}/>}
-                  <span className="font-bold text-sm" style={{color:'#ef4444'}}>📌 Despesas Diretas (Variáveis)</span>
+                  <span className="font-bold text-sm" style={{color:'#ef4444'}}>Despesas Diretas (Variáveis)</span>
                   {totDiretas > 0 && <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{background:'#ef444420',color:'#ef4444'}}>{fmtR(totDiretas)}</span>}
                 </div>
                 <span className="font-bold text-sm no-mobile" style={{color:'#ef4444'}}>{fmtR(totDiretas)}</span>
@@ -2620,9 +2620,9 @@ Use números reais. Seja direto.`
                   <button onClick={()=>setSecResultado(p=>!p)} className="w-full flex items-center justify-between px-5 py-4 hover:bg-white/2 transition-colors">
                     <div className="flex items-center gap-3">
                       {secResultado ? <ChevronUp size={14} style={{color:'#059669'}}/> : <ChevronDown size={14} style={{color:'#059669'}}/>}
-                      <span className="font-bold text-sm" style={{color:'#059669'}}>📊 Resultado do Mês</span>
+                      <span className="font-bold text-sm" style={{color:'#059669'}}>Resultado do Mês</span>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 no-mobile">
                       <div className="text-right">
                         <p className="text-[10px]" style={{color:'#767069'}}>Resultado Operacional</p>
                         <p className="text-lg font-bold" style={{color:corRes(resultOp)}}>{fmtR(resultOp)} <span className="text-xs font-normal">({pctStr(resultOp,fatN)})</span></p>

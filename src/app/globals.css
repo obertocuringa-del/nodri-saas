@@ -63,6 +63,10 @@ html, body {
    estiver aberto, ele some (volta sozinho ao fechar). */
 body:has(.nodri-modal-lanc) #whatsapp-float-btn { display: none !important; }
 
+/* Páginas de trabalho pesado (Calculadora) não têm bolha do WhatsApp: ali o
+   espaço da tela é disputado e ela só atrapalhava, tapando botão e valores. */
+body:has(.nodri-sem-whats) #whatsapp-float-btn { display: none !important; }
+
 /* Trava a página enquanto o modal está aberto. Sem isso, se a página atrás
    estivesse mais larga que a tela (rolagem lateral), o modal herdava essa
    largura e sobrava cortado à DIREITA no celular. De quebra, o fundo para de
@@ -340,6 +344,16 @@ body:has(.nodri-modal-lanc) { overflow: hidden !important; }
          faixas sticky internas (ex.: barra dos Enxovais) colam logo abaixo. */
   body.nodri-topo-fixo { padding-top: 52px !important; }
   body.nodri-topo-fixo .nodri-linha-rolavel[style] { top: 52px !important; }
+
+  /* 26) Calculadora compacta no celular: a tela inicial precisa caber sem
+         rolagem. Só aperta o que é moldura (respiro do topo, subtítulo, altura
+         dos cabeçalhos fechados) — nenhum campo de digitação encolhe. */
+  .nodri-sem-whats > div { padding-top: 12px !important; padding-bottom: 12px !important; }
+  .nodri-sem-whats .nodri-sub-tela { display: none !important; }
+  .nodri-sem-whats .space-y-4 > * + * { margin-top: 8px !important; }
+  /* Cabeçalho de cada seção é o <button> logo dentro do card: só ele encolhe,
+     o conteúdo aberto continua com o respiro normal. */
+  .nodri-sem-whats .space-y-4 > div > button { padding-top: 10px !important; padding-bottom: 10px !important; }
 
   /* 25) Topo próprio da página com sticky top:0 gruda em y=0 — que é onde
          mora a barra global. Desce 52px pra ficar LOGO ABAIXO dela, senão o
