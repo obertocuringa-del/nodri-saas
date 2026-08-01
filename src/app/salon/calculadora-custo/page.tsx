@@ -1,7 +1,7 @@
 ﻿'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { ArrowLeft, Plus, Trash2, Calculator, Loader2, Save, ChevronDown, ChevronUp, History, CheckCircle, ChevronLeft, ChevronRight, X } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Calculator, Loader2, Save, ChevronDown, ChevronUp, History, CheckCircle, ChevronLeft, ChevronRight, X, AlertTriangle } from 'lucide-react'
 import { usePermissoes } from '@/lib/usePermissoes'
 import { useGuardaSalvar } from '@/lib/guardaSalvar'
 import { useAutoSalvar } from '@/lib/autoSalvar'
@@ -630,6 +630,7 @@ export default function CalculadoraCusto() {
   const [carregando, setCarregando] = useState(false)
   // Alterações não salvas do mês (qualquer digitação nos campos marca como pendente)
   const [dirtyCalc, setDirtyCalc] = useState(false)
+  const [falhaSalvar, setFalhaSalvar] = useState('')   // ultimo erro de salvamento (inclusive do auto-save)
   useGuardaSalvar(dirtyCalc, 'Calculadora de Custo') // avisa "Deseja salvar?" antes de sair sem salvar
   useAutoSalvar(dirtyCalc, () => salvarMes(true))          // e salva sozinho de qualquer jeito
 
@@ -1034,7 +1035,10 @@ export default function CalculadoraCusto() {
   }, [anoSel, mesSel])
 
   // silencioso = chamada do auto-save: não mostra alerta nem o "Salvo!"
-  async function salvarMes(silencioso = false) {
+  // DEVOLVE true/false: quem chama precisa saber se realmente salvou. Antes nao
+  // devolvia nada e a falha do auto-save era invisivel -- o dirty ficava preso e
+  // travava a troca de mes pra sempre, sem nenhum aviso na tela.
+  async function salvarMes(silencioso = false): Promise<boolean> {
     if (!silencioso) { setSalvando(true); setSavedMsg('') }
     try {
       const res = await fetch('/api/salon/calculadora', {
@@ -1044,7 +1048,7 @@ export default function CalculadoraCusto() {
       })
       if (res.ok) {
         if (!silencioso) setSavedMsg('Salvo!')
-        setDirtyCalc(false)
+        setDirtyCalc(false); setFalhaSalvar('')
         setMesesComDados(prev => {
           const existe = prev.some(m=>m.ano===anoSel&&m.mes===mesSel)
           return existe ? prev : [...prev, {ano:anoSel,mes:mesSel}]
@@ -1075,12 +1079,18 @@ export default function CalculadoraCusto() {
             }
           }).catch(()=>{})
         setTimeout(() => setSavedMsg(''), 3000)
+        return true
       } else {
         const e = await res.json().catch(() => ({} as any))
-        if (!silencioso) alert(e?.error || 'Não foi possível salvar. Tente novamente.')
+        const msg = e?.error || 'Não foi possível salvar. Tente novamente.'
+        setFalhaSalvar(msg)
+        if (!silencioso) alert(msg)
+        return false
       }
     } catch {
+      setFalhaSalvar('Sem conexão com o servidor.')
       if (!silencioso) alert('Erro de conexão ao salvar. Verifique a internet e tente novamente.')
+      return false
     } finally { if (!silencioso) setSalvando(false) }
   }
 
@@ -1393,22 +1403,33 @@ export default function CalculadoraCusto() {
     setTimeout(()=>setAtualizando(false), 800)
   }
 
-  // Trocar de mês com alteração pendente pergunta antes (senão perde o que digitou)
-  function podeTrocarMes(): boolean {
-    if (!dirtyCalc) return true
-    const ok = confirm(`⚠️ Você tem alterações NÃO SALVAS em ${MESES_NOMES[mesSel]}.\n\nClique em CANCELAR para voltar e salvar, ou em OK para trocar de mês sem salvar (as alterações serão perdidas).`)
-    if (ok) setDirtyCalc(false)
-    return ok
+  // ── Trocar de período ──────────────────────────────────────────────────────
+  // Com auto-save ligado, perguntar "quer perder as alterações?" era pior que
+  // inútil: se o salvamento falhava, o dirty ficava preso e a pergunta voltava
+  // sempre, deixando o usuário travado no mês. Agora SALVA o mês atual antes de
+  // sair; só pergunta se o salvamento falhar de verdade -- aí a escolha é real.
+  async function trocarPeriodo(novoAno: number, novoMes: number) {
+    if (novoAno === anoSel && novoMes === mesSel) return
+    if (dirtyCalc) {
+      const salvou = await salvarMes(true)
+      if (!salvou) {
+        const ok = confirm(
+          'Não consegui salvar ' + MESES_NOMES[mesSel] + '/' + anoSel + '.\n\n' +
+          'OK = trocar de mês assim mesmo (o que você digitou se perde).\n' +
+          'CANCELAR = ficar aqui e tentar salvar de novo.')
+        if (!ok) return
+      }
+    }
+    setDirtyCalc(false); setFalhaSalvar('')
+    setAnoSel(novoAno); setMesSel(novoMes)
   }
   function mesAnterior() {
-    if (!podeTrocarMes()) return
-    if (mesSel === 1) { setMesSel(12); setAnoSel(a=>a-1) }
-    else setMesSel(m=>m-1)
+    if (mesSel === 1) trocarPeriodo(anoSel - 1, 12)
+    else trocarPeriodo(anoSel, mesSel - 1)
   }
   function mesProximo() {
-    if (!podeTrocarMes()) return
-    if (mesSel === 12) { setMesSel(1); setAnoSel(a=>a+1) }
-    else setMesSel(m=>m+1)
+    if (mesSel === 12) trocarPeriodo(anoSel + 1, 1)
+    else trocarPeriodo(anoSel, mesSel + 1)
   }
 
   // Cálculos Receitas e Despesas
@@ -1729,7 +1750,7 @@ Use números reais. Seja direto.`
           <div className="flex items-center gap-1">
             <button onClick={mesAnterior} className="p-1 rounded hover:bg-white/5" style={{color:'#767069'}}><ChevronLeft size={14}/></button>
             <div className="flex items-center gap-1">
-              <select value={mesSel} onChange={e=>{ if (!podeTrocarMes()) return; setMesSel(Number(e.target.value)) }}
+              <select value={mesSel} onChange={e=>trocarPeriodo(anoSel, Number(e.target.value))}
                 className="text-xs font-bold px-2 py-1 rounded-lg focus:outline-none"
                 style={{background:'#f5f4f0',color:'#1a1a1a',border:'1px solid #dedad4'}}>
                 {MESES_NOMES.slice(1).map((nome,i)=>{
@@ -1737,7 +1758,7 @@ Use números reais. Seja direto.`
                   return <option key={m} value={m}>{nome}{temDados?' ●':''}</option>
                 })}
               </select>
-              <select value={anoSel} onChange={e=>{ if (!podeTrocarMes()) return; setAnoSel(Number(e.target.value)) }}
+              <select value={anoSel} onChange={e=>trocarPeriodo(Number(e.target.value), mesSel)}
                 className="text-xs font-bold px-2 py-1 rounded-lg focus:outline-none"
                 style={{background:'#f5f4f0',color:'#1a1a1a',border:'1px solid #dedad4'}}>
                 {[anoSel-1,anoSel,anoSel+1].map(a=><option key={a} value={a}>{a}</option>)}
@@ -1753,7 +1774,7 @@ Use números reais. Seja direto.`
             <div className="flex-1 flex items-center gap-1 overflow-x-auto">
               {mesesComDados.slice(0,6).map(m=>(
                 <button key={`${m.ano}-${m.mes}`}
-                  onClick={()=>{ if (!podeTrocarMes()) return; setAnoSel(m.ano);setMesSel(m.mes)}}
+                  onClick={()=>trocarPeriodo(m.ano, m.mes)}
                   className="flex-shrink-0 text-[10px] px-2 py-0.5 rounded-full font-bold transition-all"
                   style={{
                     background: m.ano===anoSel&&m.mes===mesSel ? '#5b4fcf' : '#5b4fcf20',
@@ -1767,6 +1788,15 @@ Use números reais. Seja direto.`
 
           <div className="ml-auto flex items-center gap-2">
             {savedMsg && <span className="text-xs flex items-center gap-1" style={{color:'#059669'}}><CheckCircle size={12}/>{savedMsg}</span>}
+            {/* Salvamento falhando não pode mais passar despercebido: o auto-save
+                é silencioso e, sem este selo, o mês inteiro podia ficar sem
+                gravar sem ninguém notar. */}
+            {!!falhaSalvar && (
+              <span className="text-[10px] font-bold flex items-center gap-1 px-2 py-1 rounded-lg"
+                style={{background:'#fef2f2',color:'#b91c1c',border:'1px solid #fca5a5'}} title={falhaSalvar}>
+                <AlertTriangle size={11}/> não salvou
+              </span>
+            )}
             <button onClick={() => salvarMes()} disabled={salvando}
               className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all disabled:opacity-50"
               style={{background:'#5b4fcf',color:'white'}}>
