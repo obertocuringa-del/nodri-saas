@@ -1928,7 +1928,7 @@ Use números reais. Seja direto.`
             </div>
 
             {/* Despesas Indiretas */}
-            <div className="rounded-2xl border overflow-hidden" style={{background:'#fffbf0',borderColor:'#f59e0b',...oculto(podeCalc('calc_desp_fixas'))}}>
+            <div className="rounded-2xl border overflow-hidden" style={{background:'#4a3728',borderColor:'#f59e0b',...oculto(podeCalc('calc_desp_fixas'))}}>
               <button onClick={()=>setSecIndiretas(p=>!p)} className="nodri-cab-sec w-full flex items-center justify-between px-5 py-3 border-b transition-colors" style={{background:'linear-gradient(135deg,#fffbf0,#fef3c7)',borderColor:'#f59e0b'}}>
                 <div className="flex items-center gap-2">
                   {secIndiretas ? <ChevronUp size={14} style={{color:'#b45309'}}/> : <ChevronDown size={14} style={{color:'#b45309'}}/>}
@@ -1953,13 +1953,13 @@ Use números reais. Seja direto.`
                 </div>
               </button>
               {!secIndiretas && (
-                <div className="px-5 py-3 text-xs" style={{color:'#6b6860'}}>
+                <div className="px-5 py-3 text-xs" style={{color:'#e2d3bd'}}>
                   Clique no cabeçalho para expandir e preencher as despesas fixas mensais.
                 </div>
               )}
               {secIndiretas && <>
                 {/* Cabeçalho colunas */}
-                <div className="hidden sm:grid gap-2 px-5 py-2 text-[10px] font-bold uppercase tracking-wider border-b" style={{gridTemplateColumns:GRID_IND,color:'#92400e',borderColor:'#f59e0b40',background:'#fef9ec'}}>
+                <div className="hidden sm:grid gap-2 px-5 py-2 text-[10px] font-bold uppercase tracking-wider border-b" style={{gridTemplateColumns:GRID_IND,color:'#f2d49c',borderColor:'#6b4f38',background:'#3d2d20'}}>
                   <div>Despesa</div>
                   <div className="text-center">Valor Mensal</div>
                   <div className="text-center">% Fat.</div>
@@ -1973,7 +1973,7 @@ Use números reais. Seja direto.`
                   const v=n(d.valor), pctV=fatN>0?(v/fatN*100):0
                   const cor=pctV>20?'#ef4444':pctV>10?'#f59e0b':'#10b981'
                   return(
-                    <div key={i} className="grid linha-desp-mobile gap-2 px-5 py-2 items-center" style={{gridTemplateColumns:GRID_IND,borderBottom:'1px solid #f59e0b20',background: v>0 ? '#fffdf5' : 'transparent'}}>
+                    <div key={i} className="grid linha-desp-mobile nodri-desp-card gap-2 px-5 py-2 items-center" style={{gridTemplateColumns:GRID_IND,borderBottom:'1px solid #f59e0b20',background: v>0 ? '#fffdf5' : '#fffefa'}}>
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="text-xs font-semibold" onClick={()=>toggleNota('d'+i)}
                           style={{color:'#78350f',cursor:'pointer',display:'inline-flex',alignItems:'center',gap:3}} title="Clique para abrir/fechar a observação">
@@ -2022,7 +2022,7 @@ Use números reais. Seja direto.`
                   const v=n(d.valor), pctV=fatN>0?(v/fatN*100):0
                   const cor=pctV>20?'#ef4444':pctV>10?'#f59e0b':'#10b981'
                   return(
-                    <div key={i} className="grid linha-desp-mobile gap-2 px-5 py-2 items-center" style={{gridTemplateColumns:GRID_IND,borderBottom:'1px solid #f59e0b20',background:'#fffdf5'}}>
+                    <div key={i} className="grid linha-desp-mobile nodri-desp-card gap-2 px-5 py-2 items-center" style={{gridTemplateColumns:GRID_IND,borderBottom:'1px solid #f59e0b20',background:'#fffdf5'}}>
                       <div className="flex items-center gap-1.5 flex-wrap">
                         {/* Clicar no nome abre/fecha observação, profissional e data da
                             quinzena. A setinha existe pra deixar claro que é clicável. */}

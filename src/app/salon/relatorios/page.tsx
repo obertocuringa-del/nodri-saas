@@ -948,7 +948,7 @@ export default function RelatoriosPage() {
     <div style={{ minHeight: '100vh', background: '#f5f4f0', display: 'flex', flexDirection: 'column', fontFamily: "'Inter', 'Segoe UI', sans-serif", color: '#1a1a1a' }}>
 
       {/* ── TOP BAR ── */}
-      <div style={{ background: '#ffffff', borderBottom: '1.5px solid #e0ddd8', padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 20, overflowX: 'auto', flexWrap: 'wrap' }}>
+      <div className="nodri-topo-pagina" style={{ background: '#ffffff', borderBottom: '1.5px solid #e0ddd8', padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 20, overflowX: 'auto', flexWrap: 'wrap' }}>
         <a href="/salon" style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#6b6860', textDecoration: 'none', fontSize: 13 }}>
           <ArrowLeft size={15} /> Voltar
         </a>

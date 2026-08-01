@@ -3442,7 +3442,7 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
     <div className={`min-h-screen ${souProf ? '' : 'bg-nodri-dark'}`} style={souProf ? { background: 'linear-gradient(180deg,#f4f3fb 0%,#eef0f6 100%)' } : undefined}>
       {/* Header de gestão (dono / sub) */}
       {!souProf && (
-      <div className="sticky top-0 z-20 bg-nodri-surface border-b border-nodri-border px-5 py-3 flex items-center gap-3 shadow-sm">
+      <div className="nodri-topo-pagina sticky top-0 z-20 bg-nodri-surface border-b border-nodri-border px-5 py-3 flex items-center gap-3 shadow-sm">
         <button onClick={()=>router.push('/salon/profissionais')}
           className="flex items-center gap-1.5 text-nodri-t2 hover:text-nodri-cyan transition-colors text-sm">
           <ArrowLeft size={15}/> Profissionais
@@ -3474,7 +3474,7 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
 
       {/* Profissional: dentro das abas, só o botão Voltar (no Início não mostra nada) */}
       {souProf && tab !== 'inicio' && (
-        <div className="sticky top-0 z-20 px-4 py-2.5 flex items-center gap-3" style={{ background: '#ffffff', borderBottom: '1px solid #ece9e2' }}>
+        <div className="nodri-topo-pagina sticky top-0 z-20 px-4 py-2.5 flex items-center gap-3" style={{ background: '#ffffff', borderBottom: '1px solid #ece9e2' }}>
           <button onClick={() => setTab('inicio')} className="flex items-center gap-1.5 text-[13px] font-extrabold" style={{ color: '#5b4fcf' }}>
             <ArrowLeft size={16} /> Voltar ao Início
           </button>

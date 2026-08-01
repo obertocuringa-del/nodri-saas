@@ -241,7 +241,10 @@ body:has(.nodri-modal-lanc) { overflow: hidden !important; }
   /* Menos recuo lateral (sobra largura pros campos) e MAIS respiro entre uma
      despesa e a outra. O vão dentro da linha (row-gap 7px) fica bem menor que o
      vão entre linhas (~26px), então cada compra se lê como um bloco só. */
-  .linha-desp-mobile { padding-left: 12px !important; padding-right: 12px !important; padding-top: 13px !important; padding-bottom: 13px !important; border-bottom-color: #f59e0b45 !important; }
+  .linha-desp-mobile { padding-left: 12px !important; padding-right: 12px !important; padding-top: 13px !important; padding-bottom: 13px !important; border-bottom-color: #f59e0b45 !important;
+    /* respiro lateral: sem ele o card branco encosta na borda e o fundo
+       marrom da seção não aparece dos lados — some o efeito de card */
+    margin-left: 8px !important; margin-right: 8px !important; }
 
 
   /* 18) Cabeçalho de seção com botões (ex: Despesas Indiretas): no celular o
@@ -337,13 +340,29 @@ body:has(.nodri-modal-lanc) { overflow: hidden !important; }
          faixas sticky internas (ex.: barra dos Enxovais) colam logo abaixo. */
   body.nodri-topo-fixo { padding-top: 52px !important; }
   body.nodri-topo-fixo .nodri-linha-rolavel[style] { top: 52px !important; }
+
+  /* 25) Topo próprio da página com sticky top:0 gruda em y=0 — que é onde
+         mora a barra global. Desce 52px pra ficar LOGO ABAIXO dela, senão o
+         que estiver à direita (Salvar, filtros) some por baixo ao rolar. */
+  body.nodri-topo-fixo .nodri-topo-pagina { top: 52px !important; }
 }
 
-/* No computador, as barras de topo (<nav>) reservam espaço à direita para o
-   conjunto global flutuante (Voltar · Início · Buscar) ficar na MESMA linha,
-   sem cobrir os botões da própria página. */
+/* No computador, o lançamento também é um CARD claro sobre o fundo marrom da
+   seção — antes tudo era creme sobre creme e um lançamento sumia no outro.
+   (No celular quem manda é o .linha-desp-mobile, que já usa !important.) */
+@media (min-width: 641px) {
+  .nodri-desp-card { border-radius: 12px; margin: 7px 10px; border: 1px solid #f0e2c4;
+    box-shadow: 0 2px 8px rgba(0,0,0,.18); border-bottom: 1px solid #f0e2c4 !important; }
+}
+
+/* No computador, as barras de topo reservam espaço à direita para o conjunto
+   global flutuante (Voltar · Início · Buscar) ficar na MESMA linha, sem cobrir
+   os botões da própria página. `nav` pega as telas antigas; a classe
+   .nodri-topo-pagina é para os topos que são <div sticky> (Profissionais,
+   Relatórios, portal) — ali o Salvar usa ml-auto e caía bem embaixo da barra. */
 @media (min-width: 641px) {
   nav[style] { padding-right: 330px !important; }
+  .nodri-topo-pagina { padding-right: 340px !important; }
 }
 
 /* Scrollbar customizada — mais larga e escura, fácil de pegar com o mouse */
