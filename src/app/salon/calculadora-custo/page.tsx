@@ -624,6 +624,15 @@ export default function CalculadoraCusto() {
   const hoje = new Date()
   const [anoSel,    setAnoSel]    = useState(hoje.getFullYear())
   const [mesSel,    setMesSel]    = useState(hoje.getMonth() + 1)
+  // ── Por que esta tela não é renderizada no servidor ──────────────────────
+  // Ela depende de "hoje" em vários pontos (mês selecionado, cor de vencimento).
+  // O servidor roda em UTC e o navegador no fuso do salão: das 21h à meia-noite
+  // os dois discordam do DIA, e no dia 31 discordam até do MÊS. Quando o HTML do
+  // servidor não bate com o do navegador, o React joga fora a árvore inteira e
+  // reconstrói — e o clique dado nesse meio-tempo se perde (era o "preciso
+  // clicar duas vezes"). Renderizando só depois de montar, não há o que divergir.
+  const [montado, setMontado] = useState(false)
+  useEffect(() => { setMontado(true) }, [])
   const [salvando,  setSalvando]  = useState(false)
   const [savedMsg,  setSavedMsg]  = useState('')
   const [mesesComDados, setMesesComDados] = useState<{ano:number,mes:number}[]>([])
@@ -1744,6 +1753,14 @@ Use números reais. Seja direto.`
     if (pts >= 50) return {score: pts, label: 'Atenção', cor: '#f59e0b', icone: '🟡', sub: 'Há pontos de melhoria importantes. Veja os alertas abaixo.'}
     return {score: pts, label: 'Crítico', cor: '#ef4444', icone: '🔴', sub: 'Situação exige ação imediata. Priorize reduzir custos.'}
   })()
+
+  // Até montar no navegador, servidor e cliente desenham exatamente isto —
+  // sem data, sem divergência, sem árvore descartada. (ver nota em `montado`)
+  if (!montado) return (
+    <div className="min-h-screen flex items-center justify-center" style={{background:'#f5f4f0'}}>
+      <Loader2 size={26} className="animate-spin" style={{color:'#5b4fcf'}}/>
+    </div>
+  )
 
   return (
     <div className="min-h-screen" style={{background:'#f5f4f0',color:'#1a1a1a'}}
