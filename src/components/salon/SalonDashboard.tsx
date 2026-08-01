@@ -127,6 +127,19 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
   // Alerta do Check List na sidebar: tarefas marcadas para HOJE (dia da semana) e não feitas.
   // Mesma lógica da página (feito_em dentro da janela do período), resumida aqui.
   const [checklistAlertas, setChecklistAlertas] = useState(0)
+  // Alertas que fazem menu piscar: kits pedidos e nao separados, e pedidos
+  // abertos vindos do portal da profissional
+  const [kitsPendentes, setKitsPendentes] = useState(0)
+  const [solicAbertas, setSolicAbertas] = useState(0)
+  useEffect(() => {
+    const buscar = () => fetch('/api/salon/alertas', { credentials: 'include' })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d) { setKitsPendentes(Number(d.kitsPendentes) || 0); setSolicAbertas(Number(d.solicitacoes) || 0) } })
+      .catch(() => {})
+    buscar()
+    const t = setInterval(buscar, 60000)   // renova sozinho a cada minuto
+    return () => clearInterval(t)
+  }, [])
   // Badge de currículos novos (desde a última visita do dono à página)
   const [curriculosNovos, setCurriculosNovos] = useState(0)
   useEffect(() => {
@@ -584,10 +597,13 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               { href: '/salon/usuarios', label: 'Usuários & Acessos', chave: 'cfg_usuarios' },
             ].filter(item => pode(item.chave)).map(item => {
               const alerta = item.chave === 'checklist' && checklistAlertas > 0
+              const alertaKits = item.chave === 'administrativo' && kitsPendentes > 0
               const novoCur = item.chave === 'curriculos' && curriculosNovos > 0
-              const destaque = alerta || novoCur
-              const cor = alerta ? '#dc2626' : '#5b4fcf'
-              const badgeTxt = alerta ? `⚠ ${checklistAlertas}` : `${curriculosNovos} novo${curriculosNovos > 1 ? 's' : ''}`
+              const destaque = alerta || novoCur || alertaKits
+              const cor = (alerta || alertaKits) ? '#dc2626' : '#5b4fcf'
+              const badgeTxt = alerta ? `⚠ ${checklistAlertas}`
+                : alertaKits ? `🧰 ${kitsPendentes} kit${kitsPendentes > 1 ? 's' : ''}`
+                : `${curriculosNovos} novo${curriculosNovos > 1 ? 's' : ''}`
               return (
               <a key={item.href} href={item.href}
                 className="w-full flex items-center px-3 py-2 rounded-md text-[11px] font-medium tracking-wide uppercase transition-colors hover:bg-black/5"
@@ -711,7 +727,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               {[
                 { perm: 'profissionais', href: '/salon/profissionais', emoji: '👥', label: 'Profissionais ativos', valor: kpiAtivos, cor: '#5b4fcf', badge: 0 },
                 { perm: 'aniversariantes', href: '/salon/aniversariantes', emoji: '🎂', label: 'Aniversariantes do mês', valor: kpiNiver, cor: '#db2777', badge: 0 },
-                { perm: 'pendencias', href: '/salon/pendencias', emoji: '⚠️', label: 'Pendências abertas', valor: kpiPend, cor: '#ea580c', badge: 0 },
+                { perm: 'pendencias', href: '/salon/pendencias', emoji: '⚠️', label: 'Pendências abertas', valor: kpiPend, cor: '#ea580c', badge: 0, alerta: solicAbertas > 0, sub: solicAbertas > 0 ? `${solicAbertas} pedido(s) do portal esperando` : '' },
                 { perm: 'calendario', href: '/salon/calendario', emoji: '📅', label: 'Compromissos (2 dias)', valor: totalCompromissos, cor: '#0891b2', badge: 0, seletor: true as const },
                 { perm: 'feedback_cliente', href: fbFormId ? `/salon/feedback/resultados/${fbFormId}` : '/salon/feedback', emoji: '⭐', label: 'Feedbacks de clientes', valor: kpiFb, cor: '#16a34a', badge: fbNovos },
                 { perm: 'calculadora', href: finId ? `/salon/departamentos/${finId}` : '/salon/profissionais', emoji: '📄', label: 'Boletos vencidos', valor: kpiBoletos, cor: '#dc2626', badge: 0, alerta: (kpiBoletos || 0) > 0, sub: (kpiBoletos || 0) > 0 ? `R$ ${kpiBoletosVlr.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} a pagar` : 'tudo em dia' },

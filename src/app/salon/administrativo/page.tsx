@@ -173,6 +173,17 @@ export default function SalaoAdministrativoPage() {
   const [servico, setServico] = useState('realinhamento')
   const [abaTopo, setAbaTopo] = useState('listas')
   const [abasMenuOpen, setAbasMenuOpen] = useState(false)
+  // Kits pedidos e ainda nao separados: fazem o item KITS PE E MAO piscar
+  const [kitsPendentes, setKitsPendentes] = useState(0)
+  useEffect(() => {
+    const buscar = () => fetch('/api/salon/alertas', { credentials: 'include' })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d) setKitsPendentes(Number(d.kitsPendentes) || 0) })
+      .catch(() => {})
+    buscar()
+    const t = setInterval(buscar, 60000)
+    return () => clearInterval(t)
+  }, [])
   const [abaPop, setAbaPop] = useState('cafe')
   const [historico, setHistorico] = useState<any[]>([])
   const [verHistorico, setVerHistorico] = useState(false)
@@ -270,8 +281,12 @@ export default function SalaoAdministrativoPage() {
                       const irPara = () => { if (!confirmarSaidaSemSalvar()) return; if (it.rota) { router.push(it.rota) } else { setAbaTopo(it.aba!); if (it.servico) setServico(it.servico); setAbasMenuOpen(false) } }
                       return (
                         <button key={(it.aba || it.rota || '') + (it.servico || '')} onClick={irPara}
-                          style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 12px', border: 'none', borderRadius: 8, background: ativo ? '#f0eefb' : 'transparent', color: ativo ? '#5b4fcf' : '#374151', fontSize: 12.5, fontWeight: ativo ? 900 : 700, letterSpacing: '.3px', cursor: 'pointer', borderLeft: ativo ? '3px solid #5b4fcf' : '3px solid transparent' }}>
-                          {it.label}{it.rota ? ' →' : ''}
+                          className={it.aba === 'kits' && kitsPendentes > 0 ? 'nodri-alerta-pisca' : ''}
+                          style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%', textAlign: 'left', padding: '10px 12px', border: 'none', borderRadius: 8, background: ativo ? '#f0eefb' : 'transparent', color: ativo ? '#5b4fcf' : '#374151', fontSize: 12.5, fontWeight: ativo ? 900 : 700, letterSpacing: '.3px', cursor: 'pointer', borderLeft: ativo ? '3px solid #5b4fcf' : '3px solid transparent' }}>
+                          <span style={{ flex: 1, minWidth: 0 }}>{it.label}{it.rota ? ' →' : ''}</span>
+                          {it.aba === 'kits' && kitsPendentes > 0 && (
+                            <span style={{ background: '#dc2626', color: '#fff', fontSize: 9.5, fontWeight: 900, borderRadius: 99, padding: '2px 7px', whiteSpace: 'nowrap' }}>{kitsPendentes}</span>
+                          )}
                         </button>
                       )
                     })}
