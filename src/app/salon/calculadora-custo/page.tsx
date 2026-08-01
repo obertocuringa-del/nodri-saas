@@ -1881,7 +1881,7 @@ Use números reais. Seja direto.`
 
         {/* ════ ABA RECEITAS E DESPESAS ════ */}
         {aba==='rd' && (
-          <div className="space-y-4">
+          <div className="nodri-aba space-y-4">
 
             {/* Guia passo a passo */}
             <div className="rounded-2xl border overflow-hidden" style={{background:'#ffffff',borderColor:'#5b4fcf30',...oculto(podeCalc('calc_passos'))}}>
@@ -2546,7 +2546,7 @@ Use números reais. Seja direto.`
               <button onClick={()=>setSecOutras(p=>!p)} className="w-full flex items-center justify-between px-5 py-3 border-b hover:bg-white/2 transition-colors" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
                 <div className="flex items-center gap-2">
                   {secOutras ? <ChevronUp size={14} style={{color:'#0891b2'}}/> : <ChevronDown size={14} style={{color:'#0891b2'}}/>}
-                  <span className="font-bold text-sm" style={{color:'#0891b2'}}>💸 Outras Despesas / Gasto de Capital</span>
+                  <span className="font-bold text-sm" style={{color:'#0891b2'}}>Outras Despesas / Gasto de Capital</span>
                   {totOutras > 0 && <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{background:'#06b6d420',color:'#0891b2'}}>{fmtR(totOutras)}</span>}
                 </div>
                 <span className="font-bold text-sm no-mobile" style={{color:'#0891b2'}}>{fmtR(totOutras)}</span>
@@ -2666,7 +2666,7 @@ Use números reais. Seja direto.`
 
                 {/* Verificação vs desejado */}
                 <div className="rounded-xl p-4 border" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
-                  <p className="text-xs font-bold mb-3 text-center" style={{color:'#767069'}}>📊 Realizado vs Desejado (Metodologia Recomendada)</p>
+                  <p className="text-xs font-bold mb-3 text-center" style={{color:'#767069'}}>Realizado vs Desejado (Metodologia Recomendada)</p>
                   <div className="max-w-xl mx-auto grid grid-cols-1 gap-3">
                     {[
                       // Para CUSTOS: quanto MENOS, melhor. Ok = abaixo ou igual à meta
@@ -2759,7 +2759,7 @@ Use números reais. Seja direto.`
 
                   {/* O que entrou e o que saiu */}
                   <div className="p-5 border-b" style={{borderColor:'#e8e6e0'}}>
-                    <p className="text-xs font-bold mb-4" style={{color:'#767069'}}>💰 PARA ONDE FOI O SEU DINHEIRO</p>
+                    <p className="text-xs font-bold mb-4" style={{color:'#767069'}}>PARA ONDE FOI O SEU DINHEIRO</p>
                     <div className="space-y-3">
                       {/* Barra de faturamento */}
                       <div className="flex items-center gap-3">
@@ -2801,7 +2801,7 @@ Use números reais. Seja direto.`
 
                   {/* Números-chave em linguagem simples */}
                   <div className="p-5 border-b" style={{borderColor:'#e8e6e0'}}>
-                    <p className="text-xs font-bold mb-4" style={{color:'#767069'}}>🎯 OS NÚMEROS QUE VOCÊ PRECISA SABER</p>
+                    <p className="text-xs font-bold mb-4" style={{color:'#767069'}}>OS NÚMEROS QUE VOCÊ PRECISA SABER</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="rounded-xl p-4" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}>
                         <p className="text-xs mb-1" style={{color:'#767069'}}>⚖️ Ponto de Equilíbrio</p>
@@ -2853,7 +2853,7 @@ Use números reais. Seja direto.`
 
                   {/* Diagnóstico dos custos */}
                   <div className="p-5 border-b" style={{borderColor:'#e8e6e0'}}>
-                    <p className="text-xs font-bold mb-3" style={{color:'#767069'}}>🔍 DIAGNÓSTICO DOS SEUS CUSTOS</p>
+                    <p className="text-xs font-bold mb-3" style={{color:'#767069'}}>DIAGNÓSTICO DOS SEUS CUSTOS</p>
                     <div className="space-y-2">
                       {[
                         {nome:'Aluguel',valor:n(despInd.find(d=>d.nome==='Aluguel')?.valor||'0'),limite:10,dica:'O ideal é até 10% do faturamento.'},
@@ -2884,7 +2884,7 @@ Use números reais. Seja direto.`
                   {/* Próximos passos */}
                   {fatN > 0 && (
                     <div className="p-5">
-                      <p className="text-xs font-bold mb-3" style={{color:'#767069'}}>💡 O QUE FAZER AGORA</p>
+                      <p className="text-xs font-bold mb-3" style={{color:'#767069'}}>O QUE FAZER AGORA</p>
                       <div className="space-y-2">
                         {resultOp < 0 && <div className="flex gap-2 p-3 rounded-xl" style={{background:'#ef444415',border:'1.5px solid #ef444460'}}><span>🚨</span><p className="text-xs" style={{color:'#dc2626'}}>Seus gastos estão maiores que sua receita. Revise urgentemente as despesas diretas e veja se é possível aumentar o faturamento.</p></div>}
                         {fatN < pe && pe > 0 && resultOp >= 0 && <div className="flex gap-2 p-3 rounded-xl" style={{background:'#f59e0b15',border:'1px solid #f59e0b30'}}><span>⚠️</span><p className="text-xs" style={{color:'#92400e'}}>Você está abaixo do ponto de equilíbrio. Tente aumentar o faturamento em {fmtR(pe-fatN)} ou reduzir os custos fixos.</p></div>}
@@ -2938,7 +2938,7 @@ Use números reais. Seja direto.`
 
         {/* ════ ABA PONTO DE EQUILÍBRIO ════ */}
         {aba==='pe' && (
-          <div className="space-y-4">
+          <div className="nodri-aba space-y-4">
             <GuiaPassos passos={[
               {titulo:'Receitas e Despesas',desc:'Preencha a aba RD primeiro — os valores vêm de lá automaticamente',ok:custoOp>0&&fatN>0,cor:'#10b981'},
               {titulo:'Área e Profissionais',desc:'Informe a metragem do salão e quantos profissionais trabalham',ok:n(areaM2)>0&&n(numProfs)>0,cor:'#f59e0b'},
@@ -2955,7 +2955,7 @@ Use números reais. Seja direto.`
                 style={{background:'linear-gradient(135deg,#faf9f7,#e9f9f2)'}}>
                 <div className="flex items-center gap-2 flex-wrap">
                   {secParamsPE ? <ChevronUp size={14} style={{color:'#059669'}}/> : <ChevronDown size={14} style={{color:'#059669'}}/>}
-                  <span className="font-bold text-sm" style={{color:'#059669'}}>⚙️ Parâmetros</span>
+                  <span className="font-bold text-sm" style={{color:'#059669'}}>Parâmetros</span>
                   <span className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{background:'#10b981',color:'#fff'}}>Custo Op {fmtR(custoOpPE_)} · Meta {n(metaLucroPE)||n(lucroD)||15}%</span>
                 </div>
                 <span className="text-[10px] flex-shrink-0" style={{color:'#767069'}}>{secParamsPE?'fechar ✕':'abrir ▾'}</span>
@@ -2999,7 +2999,7 @@ Use números reais. Seja direto.`
                 <button onClick={()=>setSecResultPE(p=>!p)} className="w-full flex items-center justify-between px-5 py-4 transition-colors">
                   <div className="flex items-center gap-2 flex-wrap">
                     {secResultPE ? <ChevronUp size={14} style={{color:'#059669'}}/> : <ChevronDown size={14} style={{color:'#059669'}}/>}
-                    <span className="font-bold text-sm" style={{color:'#059669'}}>📊 Resultados do Ponto de Equilíbrio</span>
+                    <span className="font-bold text-sm" style={{color:'#059669'}}>Resultados do Ponto de Equilíbrio</span>
                   </div>
                   <div className="text-right flex-shrink-0">
                     <p className="text-[10px]" style={{color:'#767069'}}>Ponto de Equilíbrio</p>
@@ -3026,7 +3026,7 @@ Use números reais. Seja direto.`
                     <div className="rounded-xl p-4 border" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
                       <div className="flex items-center gap-2 mb-2">
                         <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{background:'#0891b2',color:'#fff'}}>3</span>
-                        <p className="text-xs font-bold" style={{color:'#0891b2'}}>👤 PE por Profissional ({profs_} profissionais)</p>
+                        <p className="text-xs font-bold" style={{color:'#0891b2'}}>PE por Profissional ({profs_} profissionais)</p>
                       </div>
                       <div className="pl-7 space-y-2">
                         {[
@@ -3043,7 +3043,7 @@ Use números reais. Seja direto.`
                     <div className="rounded-xl p-4 border" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
                       <div className="flex items-center gap-2 mb-2">
                         <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{background:'#b45309',color:'#fff'}}>4</span>
-                        <p className="text-xs font-bold" style={{color:'#b45309'}}>📐 PE por M² ({n(areaM2)||100} m²)</p>
+                        <p className="text-xs font-bold" style={{color:'#b45309'}}>PE por M² ({n(areaM2)||100} m²)</p>
                       </div>
                       <div className="pl-7 space-y-2">
                         {[
@@ -3078,7 +3078,7 @@ Use números reais. Seja direto.`
 
         {/* ════ ABA CALCULAR SERVIÇOS ════ */}
         {aba==='servicos' && (
-          <div className="space-y-4">
+          <div className="nodri-aba space-y-4">
             <GuiaPassos passos={[
               {titulo:'Parâmetros Globais',desc:'Configure taxa do cartão e custo operacional do seu salão',ok:n(taxaCartao)>0,cor:'#10b981'},
               {titulo:'Adicione Serviços',desc:'Nome, preço e percentual de rateio do profissional',ok:servicos.some(s=>s.nome&&n(s.preco)>0),cor:'#f59e0b'},
@@ -3089,7 +3089,7 @@ Use números reais. Seja direto.`
               <button onClick={()=>setSecConfigServ(p=>!p)} className="w-full flex items-center justify-between px-5 py-3 hover:bg-white/2 transition-colors" style={{background:'#ffffff'}}>
                 <div className="flex items-center gap-2">
                   {secConfigServ ? <ChevronUp size={14} style={{color:'#5b4fcf'}}/> : <ChevronDown size={14} style={{color:'#5b4fcf'}}/>}
-                  <span className="font-bold text-sm" style={{color:'#5b4fcf'}}>⚙️ Configurações do Cálculo</span>
+                  <span className="font-bold text-sm" style={{color:'#5b4fcf'}}>Configurações do Cálculo</span>
                   <span className="text-[10px] px-2 py-0.5 rounded-full" style={{background:'#5b4fcf20',color:'#7c6fe0'}}>Cartão {taxaCartao}% · CustoOp {(custOpServN*100).toFixed(0)}% · {salaoParceiro?'Salão Parceiro ✓':'Sem Parceiro'}</span>
                 </div>
                 <ChevronDown size={14} style={{color:'#6b6860'}}/>
@@ -3495,7 +3495,7 @@ Use números reais. Seja direto.`
 
         {/* ════ ABA CUSTO DE PRODUTO ════ */}
         {aba==='produto' && (
-          <div className="space-y-4">
+          <div className="nodri-aba space-y-4">
             <GuiaPassos passos={[
               {titulo:'Nome do Serviço',desc:'Ex: Coloração, Hidratação, Escova',ok:servicosProd.some(s=>s.nomeServico.trim().length>0),cor:'#10b981'},
               {titulo:'Adicione Produtos',desc:'Liste cada produto usado neste serviço',ok:servicosProd.some(s=>s.ingredientes.some(i=>i.nome.trim().length>0)),cor:'#f59e0b'},
@@ -3683,7 +3683,7 @@ Use números reais. Seja direto.`
 
         {/* ════ ABA ALUGUEL DE CADEIRA ════ */}
         {aba==='cadeira' && (
-          <div className="space-y-4">
+          <div className="nodri-aba space-y-4">
             <GuiaPassos passos={[
               {titulo:'Custo Operacional',desc:'Vem automático da aba RD. Se não preencheu, informe manualmente',ok:custoOp>0||n(custoOpCad)>0,cor:'#10b981'},
               {titulo:'Nº de Cadeiras',desc:'Quantas cadeiras ou postos de atendimento tem o salão',ok:rawPostosCad>0||n(numCad)>0,cor:'#f59e0b'},
@@ -3811,7 +3811,7 @@ Use números reais. Seja direto.`
 
         {/* ════ ABA FATURAMENTO POR M² ════ */}
         {aba==='metro' && (
-          <div className="space-y-4">
+          <div className="nodri-aba space-y-4">
             <GuiaPassos passos={[
               {titulo:'Faturamento Mínimo',desc:'Vem do Ponto de Equilíbrio automaticamente. Ou informe manualmente',ok:pe>0||n(fatMinM2)>0,cor:'#10b981'},
               {titulo:'Metragem do Salão',desc:'Área total do salão em metros quadrados',ok:n(mTotal)>0,cor:'#f59e0b'},
@@ -3856,7 +3856,7 @@ Use números reais. Seja direto.`
                     </div>
                   </div>
                   <div className="rounded-xl p-4 border" style={{background:'#f5f4f0',borderColor:'#e8e6e0'}}>
-                    <div className="flex items-center gap-1.5 mb-3"><p className="text-xs font-bold" style={{color:'#767069'}}>📏 Calcular para um espaço específico:</p><InfoBtn id="mSala"/></div>
+                    <div className="flex items-center gap-1.5 mb-3"><p className="text-xs font-bold" style={{color:'#767069'}}>Calcular para um espaço específico:</p><InfoBtn id="mSala"/></div>
                     <div className="flex gap-2 items-center">
                       <input type="number" value={mSala} onChange={e=>setMSala(e.target.value)} placeholder="Ex: 15 m²"
                         className="flex-1 px-4 py-2.5 rounded-lg text-[#1a1a1a] text-sm focus:outline-none" style={{background:'#faf9f7',border:'1px solid #dedad4'}}/>
@@ -3877,7 +3877,7 @@ Use números reais. Seja direto.`
 
         {/* ════ ABA GRÁFICOS ════ */}
         {aba==='graficos' && (
-          <div className="space-y-5">
+          <div className="nodri-aba space-y-5">
 
             {!fatN ? (
               <div className="rounded-2xl p-10 text-center border" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
@@ -3915,7 +3915,7 @@ Use números reais. Seja direto.`
                 {/* Visão geral — barras horizontais de distribuição */}
                 <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
                   <div className="px-5 py-3 border-b" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
-                    <p className="font-bold text-sm" style={{color:'#1a1a1a'}}>💰 Distribuição do Faturamento</p>
+                    <p className="font-bold text-sm" style={{color:'#1a1a1a'}}>Distribuição do Faturamento</p>
                     <p className="text-xs mt-0.5" style={{color:'#767069'}}>Para onde vai cada R$ que entra no salão</p>
                   </div>
                   <div className="p-5 space-y-3">
@@ -3958,7 +3958,7 @@ Use números reais. Seja direto.`
                 {/* Ranking de despesas — maiores custos */}
                 <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
                   <div className="px-5 py-3 border-b" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
-                    <p className="font-bold text-sm" style={{color:'#1a1a1a'}}>🩸 Ranking — O que mais consome seu caixa</p>
+                    <p className="font-bold text-sm" style={{color:'#1a1a1a'}}>Ranking — O que mais consome seu caixa</p>
                     <p className="text-xs mt-0.5" style={{color:'#767069'}}>Ordenado do maior para o menor</p>
                   </div>
                   <div className="p-5 space-y-2">
@@ -4003,7 +4003,7 @@ Use números reais. Seja direto.`
                 {/* Realizado vs Meta */}
                 <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
                   <div className="px-5 py-3 border-b" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
-                    <p className="font-bold text-sm" style={{color:'#1a1a1a'}}>🎯 Realizado vs Meta (Metodologia Recomendada)</p>
+                    <p className="font-bold text-sm" style={{color:'#1a1a1a'}}>Realizado vs Meta (Metodologia Recomendada)</p>
                   </div>
                   <div className="p-5 space-y-4">
                     {[
@@ -4071,7 +4071,7 @@ Use números reais. Seja direto.`
                   return (
                     <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
                       <div className="px-5 py-3 border-b" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
-                        <p className="font-bold text-sm" style={{color:'#ef4444'}}>🚨 Alertas — Ação Necessária</p>
+                        <p className="font-bold text-sm" style={{color:'#ef4444'}}>Alertas — Ação Necessária</p>
                       </div>
                       <div className="p-4 space-y-2">
                         {alertas.map((a,i)=>(
@@ -4089,7 +4089,7 @@ Use números reais. Seja direto.`
                 {historicoMeses.length > 1 && (
                   <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
                     <div className="px-5 py-3 border-b" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
-                      <p className="font-bold text-sm" style={{color:'#1a1a1a'}}>📅 Evolução Mensal — últimos {historicoMeses.length} meses</p>
+                      <p className="font-bold text-sm" style={{color:'#1a1a1a'}}>Evolução Mensal — últimos {historicoMeses.length} meses</p>
                       <p className="text-xs mt-0.5" style={{color:'#767069'}}>Comparativo de Faturamento, Custo e Resultado mês a mês</p>
                     </div>
                     <div className="p-5 space-y-4">
@@ -4200,7 +4200,7 @@ Use números reais. Seja direto.`
             {/* Lista */}
             <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
               <div className="flex items-center justify-between px-5 py-3 border-b" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
-                <span className="font-bold text-sm text-[#1a1a1a]">📋 Serviços Cadastrados ({servicosCatalogo.length})</span>
+                <span className="font-bold text-sm text-[#1a1a1a]">Serviços Cadastrados ({servicosCatalogo.length})</span>
                 <input value={buscarServico} onChange={e=>setBuscarServico(e.target.value)} placeholder="🔍 Buscar serviço..."
                   className="px-3 py-1.5 rounded-lg text-xs text-[#1a1a1a] focus:outline-none w-48" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/>
               </div>
@@ -4239,7 +4239,7 @@ Use números reais. Seja direto.`
 
         {/* ════ ABA CATÁLOGO DE PRODUTOS ════ */}
         {aba==='catproduto' && (
-          <div className="space-y-4">
+          <div className="nodri-aba space-y-4">
             {/* Formulário cadastro */}
             <div className="rounded-2xl p-5 border" style={{background:'#faf9f7',borderColor:'#f59e0b40'}}>
               <h3 className="font-bold text-sm mb-4" style={{color:'#b45309'}}>{editandoProd?'✏️ Editar Produto':'➕ Cadastrar Novo Produto'}</h3>
@@ -4275,7 +4275,7 @@ Use números reais. Seja direto.`
             {/* Lista */}
             <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
               <div className="flex items-center justify-between px-5 py-3 border-b" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
-                <span className="font-bold text-sm text-[#1a1a1a]">📦 Produtos Cadastrados ({produtosCatalogo.length})</span>
+                <span className="font-bold text-sm text-[#1a1a1a]">Produtos Cadastrados ({produtosCatalogo.length})</span>
                 <input value={buscarProduto} onChange={e=>setBuscarProduto(e.target.value)} placeholder="🔍 Buscar produto..."
                   className="px-3 py-1.5 rounded-lg text-xs text-[#1a1a1a] focus:outline-none w-48" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/>
               </div>
