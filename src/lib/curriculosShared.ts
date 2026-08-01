@@ -13,8 +13,37 @@ export const ESTADOS_BR: { uf: string; nome: string }[] = [
   { uf: 'SP', nome: 'São Paulo' }, { uf: 'SE', nome: 'Sergipe' }, { uf: 'TO', nome: 'Tocantins' },
 ]
 
-export const VAGAS = ['Serviços Gerais', 'Recepção', 'Manicure', 'Cabeleireira', 'Assistente de Cabeleireira'] as const
+// Vagas que um salão NOVO começa tendo. A partir daí cada salão edita as suas
+// pela tela de Currículos (salvas no próprio doc, em `vagas`) — ninguém precisa
+// mexer no código pra abrir uma vaga nova.
+export const VAGAS = ['Serviços Gerais', 'Recepção', 'Manicure', 'Cabeleireira', 'Assistente de Cabeleireira', 'Barista'] as const
 export const EXPERIENCIAS = ['0 a 6 meses', '6 meses a 1 ano', '1 a 2 anos', '2 a 3 anos', '3 a 4 anos', 'Mais de 5 anos'] as const
+
+export const MAX_VAGAS = 40
+export const MAX_NOME_VAGA = 40
+
+// Vagas configuradas do salão (cai no padrão enquanto ele nunca editou nada).
+export function vagasDoDoc(doc: { vagas?: string[] } | null | undefined): string[] {
+  const v = doc?.vagas
+  return Array.isArray(v) && v.length ? v : [...VAGAS]
+}
+
+// O que a TELA deve listar: as vagas configuradas, mais qualquer vaga que ainda
+// tenha candidato guardado. Sem isso, apagar uma vaga esconderia os currículos
+// que já chegaram por ela — some da lista, mas o candidato continua no banco.
+export function vagasParaExibir(vagas: string[], itens: { vaga: string }[]): string[] {
+  const orfas = [...new Set((itens || []).map(c => c.vaga))].filter(v => v && !vagas.includes(v))
+  return [...vagas, ...orfas.sort()]
+}
+
+// Nome de vaga válido e comparação sem depender de maiúscula/acento
+export function normalizarVaga(nome: string): string {
+  return String(nome || '').trim().replace(/\s+/g, ' ').slice(0, MAX_NOME_VAGA)
+}
+export function mesmaVaga(a: string, b: string): boolean {
+  const k = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
+  return k(a) === k(b)
+}
 
 export interface Curriculo {
   id: string
@@ -29,6 +58,11 @@ export interface Curriculo {
 export interface CurriculosDoc {
   token: string
   itens: Curriculo[]
+  /** Lista global de vagas. Ausente = salão nunca editou, vale o padrão VAGAS. */
+  vagas?: string[]
+  /** Links antigos (um por salão) que continuam válidos e caem neste mesmo banco. */
+  tokens_legado?: string[]
+  /** Só nos documentos antigos, de quando cada salão tinha o seu. */
   visto_em?: string
 }
 

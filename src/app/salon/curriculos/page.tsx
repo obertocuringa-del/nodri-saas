@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { ArrowLeft, Home, Loader2, ChevronDown, ChevronUp, Copy, Check, Filter, Trash2, MessageCircle } from 'lucide-react'
-import { VAGAS, EXPERIENCIAS, ESTADOS_BR, whatsappLink, type Curriculo } from '@/lib/curriculosShared'
+import { ArrowLeft, Home, Loader2, ChevronDown, ChevronUp, Copy, Check, Filter, Trash2, MessageCircle, Plus, Pencil, X, Settings } from 'lucide-react'
+import { EXPERIENCIAS, ESTADOS_BR, whatsappLink, type Curriculo } from '@/lib/curriculosShared'
 
 const COR = '#5b4fcf'
 const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
@@ -10,6 +10,16 @@ const nomeUF = (uf: string) => ESTADOS_BR.find(e => e.uf === uf)?.nome || uf
 
 export default function CurriculosPage() {
   const [itens, setItens] = useState<Curriculo[]>([])
+  // A lista de vagas e GLOBAL do NODRI e vem do servidor: o que um salao
+  // acrescenta vale para todos, no formulario publico e nesta tela.
+  const [vagas, setVagas] = useState<string[]>([])           // as configuradas
+  const [vagasExibir, setVagasExibir] = useState<string[]>([])  // + as que ainda tem candidato
+  const [gerindo, setGerindo] = useState(false)
+  const [novaVaga, setNovaVaga] = useState('')
+  const [editando, setEditando] = useState<string | null>(null)
+  const [editNome, setEditNome] = useState('')
+  const [salvandoVaga, setSalvandoVaga] = useState(false)
+  const [erroVaga, setErroVaga] = useState('')
   const [link, setLink] = useState('')
   const [loading, setLoading] = useState(true)
   const [copiado, setCopiado] = useState(false)
@@ -21,7 +31,7 @@ export default function CurriculosPage() {
   const carregar = () => {
     fetch('/api/salon/curriculos', { credentials: 'include' })
       .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d) { setItens(d.itens || []); setLink(d.link || '') } })
+      .then(d => { if (d) { setItens(d.itens || []); setLink(d.link || ''); setVagas(d.vagas || []); setVagasExibir(d.vagasExibir || d.vagas || []) } })
       .catch(() => {})
       .finally(() => setLoading(false))
   }
@@ -45,11 +55,11 @@ export default function CurriculosPage() {
 
   const porVaga = useMemo(() => {
     const map: Record<string, Curriculo[]> = {}
-    for (const v of VAGAS) map[v] = []
+    for (const v of vagasExibir) map[v] = []
     for (const c of itens) { (map[c.vaga] = map[c.vaga] || []).push(c) }
     for (const v in map) map[v].sort((a, b) => b.criado_em.localeCompare(a.criado_em))
     return map
-  }, [itens])
+  }, [itens, vagasExibir])
 
   const aplicarFiltro = (v: string, lista: Curriculo[]) => {
     const f = filtroDe(v)
@@ -59,6 +69,32 @@ export default function CurriculosPage() {
       if (f.meses.size) { const m = String(new Date(c.criado_em).getMonth()); if (!f.meses.has(m)) return false }
       return true
     })
+  }
+
+  // Toda mudanca de vaga passa pelo servidor, que e quem valida nome repetido e
+  // impede apagar vaga com candidato. A tela so reflete o que ele devolveu.
+  const acaoVaga = async (body: Record<string, string>) => {
+    setSalvandoVaga(true); setErroVaga('')
+    try {
+      const r = await fetch('/api/salon/curriculos', {
+        method: 'PUT', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok) { setErroVaga(d?.error || 'Nao foi possivel salvar.'); return false }
+      setVagas(d.vagas || []); setVagasExibir(d.vagasExibir || d.vagas || [])
+      if (Array.isArray(d.itens)) setItens(d.itens)
+      return true
+    } catch {
+      setErroVaga('Sem conexao com o servidor.'); return false
+    } finally { setSalvandoVaga(false) }
+  }
+  const criar = async () => { if (await acaoVaga({ acao: 'criar', nome: novaVaga })) setNovaVaga('') }
+  const renomear = async (de: string) => { if (await acaoVaga({ acao: 'renomear', nome: de, novo: editNome })) setEditando(null) }
+  const remover = async (nome: string) => {
+    if (!confirm(`Excluir a vaga "${nome}"? Ela sai do formulario para TODOS os saloes.`)) return
+    await acaoVaga({ acao: 'excluir', nome })
   }
 
   const copiarLink = () => { navigator.clipboard?.writeText(link); setCopiado(true); setTimeout(() => setCopiado(false), 1600) }
@@ -95,11 +131,72 @@ export default function CurriculosPage() {
           <p className="text-[11px] text-nodri-t3 mt-2">Qualquer pessoa com o link pode preencher (nome, estado, idade, telefone, vaga e experiência).</p>
         </div>
 
+        {/* Vagas do formulário — lista compartilhada por todos os salões */}
+        <div className="nodri-card p-4">
+          <button onClick={() => { setGerindo(g => !g); setErroVaga(''); setEditando(null) }}
+            className="w-full flex items-center justify-between gap-3">
+            <span className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-nodri-t3">
+              <Settings size={13} /> Vagas do formulário
+            </span>
+            <span className="flex items-center gap-2">
+              <span className="text-[12px] font-bold px-2.5 py-1 rounded-full" style={{ background: '#5b4fcf20', color: COR }}>{vagas.length}</span>
+              {gerindo ? <ChevronUp size={16} className="text-nodri-t3" /> : <ChevronDown size={16} className="text-nodri-t3" />}
+            </span>
+          </button>
+
+          {gerindo && (
+            <div className="mt-3 space-y-2">
+              <p className="text-[11px] text-nodri-t3">
+                Esta lista vale para <strong>todos os salões</strong> e aparece no formulário público na hora.
+                Nomes repetidos não são aceitos, e vaga com candidato inscrito não pode ser excluída.
+              </p>
+
+              {vagas.map(v => (
+                <div key={v} className="flex items-center gap-2">
+                  {editando === v ? (
+                    <>
+                      <input autoFocus value={editNome} onChange={e => setEditNome(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') renomear(v); if (e.key === 'Escape') setEditando(null) }}
+                        className="flex-1 px-3 py-2 rounded-lg text-[13px] text-nodri-t1 bg-nodri-surface border border-nodri-border" />
+                      <button onClick={() => renomear(v)} disabled={salvandoVaga}
+                        className="px-3 py-2 rounded-lg text-[12px] font-bold disabled:opacity-50" style={{ background: COR, color: '#fff' }}>Salvar</button>
+                      <button onClick={() => setEditando(null)} className="p-2 rounded-lg text-nodri-t3 border border-nodri-border"><X size={14} /></button>
+                    </>
+                  ) : (
+                    <>
+                      <span className="flex-1 px-3 py-2 rounded-lg text-[13px] text-nodri-t1 bg-nodri-surface border border-nodri-border">{v}</span>
+                      <button onClick={() => { setEditando(v); setEditNome(v); setErroVaga('') }} title="Renomear"
+                        className="p-2 rounded-lg text-nodri-t2 border border-nodri-border"><Pencil size={14} /></button>
+                      <button onClick={() => remover(v)} disabled={salvandoVaga} title="Excluir"
+                        className="p-2 rounded-lg border border-nodri-border disabled:opacity-50" style={{ color: '#dc2626' }}><Trash2 size={14} /></button>
+                    </>
+                  )}
+                </div>
+              ))}
+
+              <div className="flex items-center gap-2 pt-1">
+                <input value={novaVaga} onChange={e => setNovaVaga(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') criar() }}
+                  placeholder="Nome da nova vaga (ex.: Barista)"
+                  className="flex-1 px-3 py-2 rounded-lg text-[13px] text-nodri-t1 bg-nodri-surface border border-nodri-border" />
+                <button onClick={criar} disabled={salvandoVaga || novaVaga.trim().length < 2}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-bold disabled:opacity-50" style={{ background: COR, color: '#fff' }}>
+                  {salvandoVaga ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} Adicionar
+                </button>
+              </div>
+
+              {!!erroVaga && (
+                <p className="text-[12px] font-bold px-3 py-2 rounded-lg" style={{ background: '#fef2f2', color: '#b91c1c' }}>{erroVaga}</p>
+              )}
+            </div>
+          )}
+        </div>
+
         {loading ? (
           <div className="flex justify-center py-10"><Loader2 size={26} className="animate-spin text-nodri-cyan" /></div>
         ) : (
           <div className="space-y-3">
-            {VAGAS.map(vaga => {
+            {vagasExibir.map(vaga => {
               const todos = porVaga[vaga] || []
               const lista = aplicarFiltro(vaga, todos)
               const aberta = abertas.has(vaga)
