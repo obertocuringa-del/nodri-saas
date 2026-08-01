@@ -406,11 +406,22 @@ function AvisoDefault({ ativo, padrao, onPreencher, onManter }: {
 }
 
 // ─── Componente GuiaPassos ───────────────────────────────────────────────────
+// Guia das abas: nasce FECHADO, igual ao "Como preencher" da aba Receitas e
+// Despesas. Aberto por padrão, ele empurrava o conteúdo útil pra fora da tela
+// no celular — quem já sabe preencher nunca precisou dele.
 function GuiaPassos({ passos }: { passos: {titulo: string, desc: string, ok: boolean, cor: string}[] }) {
+  const [aberto, setAberto] = useState(false)
   return (
-    <div className="rounded-2xl p-4 border mb-4" style={{background:'#ffffff',borderColor:'#5b4fcf30'}}>
-      <p className="text-xs font-bold mb-3" style={{color:'#5b4fcf'}}>Como preencher — siga os passos em ordem:</p>
-      <div className="grid gap-2" style={{gridTemplateColumns:`repeat(${passos.length}, 1fr)`}}>
+    <div className="rounded-2xl border overflow-hidden" style={{background:'#ffffff',borderColor:'#5b4fcf30'}}>
+      <button onClick={()=>setAberto(a=>!a)} className="w-full flex items-center justify-between px-4 py-3">
+        <span className="text-xs font-bold flex items-center gap-2" style={{color:'#5b4fcf'}}>
+          {aberto ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
+          Como preencher
+        </span>
+        <span className="text-[10px] flex-shrink-0" style={{color:'#767069'}}>{aberto?'fechar ✕':'abrir ▾'}</span>
+      </button>
+      {aberto && (
+      <div className="grid gap-2 px-4 pb-4" style={{gridTemplateColumns:`repeat(${passos.length}, 1fr)`}}>
         {passos.map((p, i) => (
           <div key={i} className="rounded-xl p-3 border text-center" style={{
             background: p.ok ? `${p.cor}10` : '#faf9f7',
@@ -427,6 +438,7 @@ function GuiaPassos({ passos }: { passos: {titulo: string, desc: string, ok: boo
           </div>
         ))}
       </div>
+      )}
     </div>
   )
 }
@@ -2946,8 +2958,20 @@ Use números reais. Seja direto.`
               {titulo:'Ver o PE',desc:'O Ponto de Equilíbrio aparece automaticamente abaixo',ok:PE_>0,cor:'#5b4fcf'},
             ]}/>
             {(custoOp>0||fatN>0) && (
-              <div className="rounded-xl p-3 text-xs flex items-center gap-2" style={{background:'#5b4fcf15',border:'1px solid #5b4fcf30',color:'#7c6fe0'}}>
-                ✨ Dados da aba Receitas e Despesas: Custo Op. <strong>{fmtR(custoOp)}</strong> | Margem <strong>{(margOpPct*100).toFixed(1)}%</strong> | Faturamento <strong>{fmtR(fatN)}</strong>
+              <div className="rounded-xl p-3" style={{background:'#5b4fcf15',border:'1px solid #5b4fcf30'}}>
+                <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{color:'#7c6fe0'}}>Vem da aba Receitas e Despesas</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    {r:'Custo Op.',   v:fmtR(custoOp)},
+                    {r:'Margem',      v:`${(margOpPct*100).toFixed(1)}%`},
+                    {r:'Faturamento', v:fmtR(fatN)},
+                  ].map(x=>(
+                    <div key={x.r} className="text-center rounded-lg py-2 px-1" style={{background:'#ffffff90'}}>
+                      <p className="text-[9px] mb-0.5" style={{color:'#8b86a8'}}>{x.r}</p>
+                      <p className="text-[11px] font-bold leading-tight" style={{color:'#5b4fcf'}}>{x.v}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
             <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#10b98140'}}>
@@ -2956,7 +2980,7 @@ Use números reais. Seja direto.`
                 <div className="flex items-center gap-2 flex-wrap">
                   {secParamsPE ? <ChevronUp size={14} style={{color:'#059669'}}/> : <ChevronDown size={14} style={{color:'#059669'}}/>}
                   <span className="font-bold text-sm" style={{color:'#059669'}}>Parâmetros</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{background:'#10b981',color:'#fff'}}>Custo Op {fmtR(custoOpPE_)} · Meta {n(metaLucroPE)||n(lucroD)||15}%</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-bold no-mobile" style={{background:'#10b981',color:'#fff'}}>Custo Op {fmtR(custoOpPE_)} · Meta {n(metaLucroPE)||n(lucroD)||15}%</span>
                 </div>
                 <span className="text-[10px] flex-shrink-0" style={{color:'#767069'}}>{secParamsPE?'fechar ✕':'abrir ▾'}</span>
               </button>
@@ -3001,7 +3025,7 @@ Use números reais. Seja direto.`
                     {secResultPE ? <ChevronUp size={14} style={{color:'#059669'}}/> : <ChevronDown size={14} style={{color:'#059669'}}/>}
                     <span className="font-bold text-sm" style={{color:'#059669'}}>Resultados do Ponto de Equilíbrio</span>
                   </div>
-                  <div className="text-right flex-shrink-0">
+                  <div className="text-right flex-shrink-0 no-mobile">
                     <p className="text-[10px]" style={{color:'#767069'}}>Ponto de Equilíbrio</p>
                     <p className="text-lg font-bold" style={{color:'#10b981'}}>{fmtR(PE_)}</p>
                   </div>
