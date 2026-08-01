@@ -576,6 +576,10 @@ const MES_VAZIO = {
 // Em branco = comportamento antigo, não vira boleto.
 const GRID_IND = '1fr 100px 56px 62px 128px 52px'
 
+// Cores das colunas do ranking. Uma por posicao, repetindo depois da 8a:
+// serve pra separar uma barra da outra, nao pra classificar a despesa.
+const CORES_BARRA = ['#e0567c', '#3b82f6', '#c026d3', '#84cc16', '#8b5cf6', '#f59e0b', '#06b6d4', '#ef4444']
+
 // Mostra o código guardado embaixo da linha (o Financeiro copia por lá)
 function LinhaCodigo({ cod, onLimpar }: { cod: string; onLimpar: () => void }) {
   return (
@@ -739,6 +743,7 @@ export default function CalculadoraCusto() {
   const [fsImposto, setFsImposto] = useState('5'); const [fsProduto, setFsProduto] = useState('0')
   // Accordion aberto
   const [acordeaoProd, setAcordeaoProd] = useState<string|null>(null)
+  const [barraSel, setBarraSel] = useState(0)   // coluna escolhida no ranking de despesas
   const [acordeaoServ, setAcordeaoServ] = useState<string|null>(null)
   // Autocomplete: chave = "sId-iIdx", valor = texto digitado para sugestões
   const [autocompleteKey, setAutocompleteKey] = useState<string|null>(null)
@@ -4003,53 +4008,82 @@ Use números reais. Seja direto.`
                       {totalDespesasRank > 0 && <> · total <strong style={{color:'#1a1a1a'}}>{fmtR(totalDespesasRank)}</strong></>}
                     </p>
                   </div>
-                  <div className="p-5 space-y-2">
+                  <div className="p-4">
                     {todasDespesas.length === 0 ? (
                       <p className="text-xs text-center py-4" style={{color:'#6b6860'}}>Preencha as despesas na aba Receitas e Despesas</p>
-                    ) : todasDespesas.map((d,idx)=>{
-                      const pctMax = (d.valor/maxDespesa)*100
-                      const pctFat = fatN > 0 ? (d.valor/fatN)*100 : 0
-                      const sem = semaforoDespesa(d.nome, d.valor)
-                      const cores: Record<string,string> = {indireta:'#f59e0b', provisao:'#7c6fe0', direta:'#ef4444'}
-                      const cor = cores[d.tipo] || '#767069'
-                      // A barra e o grafico: alta o bastante pra caber o valor
-                      // DENTRO dela. Barra curta joga o valor pra fora, senao o
-                      // numero sairia cortado nas despesas pequenas.
-                      const largura = Math.max(pctMax, 2)
-                      const valorDentro = largura >= 42
-                      return (
-                        <div key={idx} className="rounded-xl p-3" style={{background:'#ffffff',border:'1px solid #e8e6e0'}}>
-                          <div className="flex items-center justify-between gap-2 mb-1.5">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <span className="text-xs font-bold flex-shrink-0" style={{color:'#9ca3af'}}>#{idx+1}</span>
-                              <span className="text-xs font-bold truncate" style={{color:'#1a1a1a'}}>{d.nome}</span>
-                              {d.qtd > 1 && (
-                                <span className="text-[9px] px-1.5 py-0.5 rounded flex-shrink-0" style={{background:'#eef2ff',color:'#4338ca'}}>
-                                  {d.qtd} lançamentos
+                    ) : (<>
+                      {/* Colunas: a altura e o quanto a despesa pesa em relacao a maior.
+                          Rola de lado quando ha muitas — espremer 15 colunas em 390px
+                          deixaria cada uma com 20px e ilegivel. */}
+                      <div className="overflow-x-auto pb-1" style={{WebkitOverflowScrolling:'touch'}}>
+                        <div className="flex items-end gap-2" style={{height:200,minWidth:'min-content'}}>
+                          {todasDespesas.map((d,idx)=>{
+                            const alt = Math.max((d.valor/maxDespesa)*150, 6)
+                            const cor = CORES_BARRA[idx % CORES_BARRA.length]
+                            const sel = barraSel === idx
+                            return (
+                              <button key={idx} onClick={()=>setBarraSel(idx)}
+                                title={`${d.nome} — ${fmtR(d.valor)}`}
+                                className="flex flex-col items-center justify-end flex-shrink-0"
+                                style={{width:62,height:'100%',background:'transparent',border:'none',cursor:'pointer',padding:0}}>
+                                <span className="text-[10px] font-bold mb-1 whitespace-nowrap" style={{color: sel ? '#1a1a1a' : '#6b6860'}}>
+                                  {fmtR(d.valor)}
                                 </span>
-                              )}
-                            </div>
-                            <span className="text-[9px] px-1.5 py-0.5 rounded flex-shrink-0" style={{background:`${cor}20`,color:cor}}>
-                              {d.tipo === 'indireta' ? 'Indireta' : d.tipo === 'provisao' ? 'Provisão' : 'Direta'}
-                            </span>
-                          </div>
-
-                          {/* Barra: comprimento = quanto pesa em relação à maior despesa */}
-                          <div className="w-full rounded-lg overflow-hidden flex items-center" style={{background:'#f1efea',height:26}}>
-                            <div className="h-full flex items-center justify-end px-2 transition-all duration-500"
-                              style={{width:`${largura}%`, background:`linear-gradient(90deg, ${cor}, ${cor}cc)`, minWidth: 4}}>
-                              {valorDentro && <span className="text-[11px] font-bold text-white whitespace-nowrap">{fmtR(d.valor)}</span>}
-                            </div>
-                            {!valorDentro && <span className="text-[11px] font-bold px-2 whitespace-nowrap" style={{color:cor}}>{fmtR(d.valor)}</span>}
-                          </div>
-
-                          <div className="flex items-center justify-between gap-2 mt-1">
-                            <span className="text-[10px] truncate" style={{color:sem.cor}}>{sem.icone} {sem.label}</span>
-                            <span className="text-[10px] flex-shrink-0" style={{color:'#6b6860'}}>{pctFat.toFixed(1)}% do faturamento</span>
-                          </div>
+                                <div style={{
+                                  width:'100%', height:alt, background:cor, borderRadius:'4px 4px 0 0',
+                                  opacity: sel ? 1 : .82,
+                                  boxShadow: sel ? `0 0 0 2px #1a1a1a30` : 'none',
+                                  transition:'height .4s ease, opacity .2s',
+                                }}/>
+                              </button>
+                            )
+                          })}
                         </div>
-                      )
-                    })}
+                        {/* Nomes numa faixa propria, alinhados com as colunas */}
+                        <div className="flex gap-2 mt-1.5" style={{minWidth:'min-content'}}>
+                          {todasDespesas.map((d,idx)=>(
+                            <div key={idx} className="flex-shrink-0 text-center" style={{width:62}}>
+                              <p className="text-[9px] font-bold leading-tight" style={{
+                                color: barraSel===idx ? '#1a1a1a' : '#767069',
+                                display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden',
+                              }}>{d.nome}</p>
+                              {d.qtd > 1 && <p className="text-[8px]" style={{color:'#9ca3af'}}>{d.qtd}x</p>}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Detalhe da coluna escolhida — evita poluir o grafico com texto */}
+                      {(()=>{
+                        const d = todasDespesas[Math.min(barraSel, todasDespesas.length-1)]
+                        if (!d) return null
+                        const pctFat = fatN > 0 ? (d.valor/fatN)*100 : 0
+                        const sem = semaforoDespesa(d.nome, d.valor)
+                        const cores: Record<string,string> = {indireta:'#f59e0b', provisao:'#7c6fe0', direta:'#ef4444'}
+                        const cor = cores[d.tipo] || '#767069'
+                        return (
+                          <div className="rounded-xl p-3 mt-3" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}>
+                            <div className="flex items-center justify-between gap-2 mb-1">
+                              <span className="text-xs font-bold truncate" style={{color:'#1a1a1a'}}>{d.nome}</span>
+                              <span className="text-[9px] px-1.5 py-0.5 rounded flex-shrink-0" style={{background:`${cor}20`,color:cor}}>
+                                {d.tipo === 'indireta' ? 'Indireta' : d.tipo === 'provisao' ? 'Provisao' : 'Direta'}
+                              </span>
+                            </div>
+                            <p className="text-lg font-bold" style={{color:'#1a1a1a'}}>{fmtR(d.valor)}</p>
+                            <div className="flex items-center justify-between gap-2 mt-1 flex-wrap">
+                              <span className="text-[10px]" style={{color:sem.cor}}>{sem.icone} {sem.label}</span>
+                              <span className="text-[10px]" style={{color:'#6b6860'}}>{pctFat.toFixed(1)}% do faturamento</span>
+                            </div>
+                            {d.qtd > 1 && (
+                              <p className="text-[10px] mt-1" style={{color:'#4338ca'}}>
+                                soma de {d.qtd} lancamentos deste mes
+                              </p>
+                            )}
+                          </div>
+                        )
+                      })()}
+                      <p className="text-[10px] text-center mt-2" style={{color:'#9ca3af'}}>Toque numa barra para ver os detalhes</p>
+                    </>)}
                   </div>
                 </div>
 
