@@ -630,6 +630,7 @@ export default function CalculadoraCusto() {
   const [carregando, setCarregando] = useState(false)
   // Alterações não salvas do mês (qualquer digitação nos campos marca como pendente)
   const [dirtyCalc, setDirtyCalc] = useState(false)
+  const [pendenteFalho, setPendenteFalho] = useState<{ano:number,mes:number,dados:any}|null>(null)
   const [falhaSalvar, setFalhaSalvar] = useState('')   // ultimo erro de salvamento (inclusive do auto-save)
   useGuardaSalvar(dirtyCalc, 'Calculadora de Custo') // avisa "Deseja salvar?" antes de sair sem salvar
   useAutoSalvar(dirtyCalc, () => salvarMes(true))          // e salva sozinho de qualquer jeito
@@ -1016,13 +1017,20 @@ export default function CalculadoraCusto() {
     }).catch(() => {})
   }, [])
 
-  // Carrega mês selecionado
+  // Carrega mês selecionado.
+  // Como trocar de mês agora é instantâneo, dá pra clicar várias vezes seguidas
+  // e as respostas voltarem fora de ordem. Cada pedido leva um número; só o
+  // ÚLTIMO pode escrever na tela — senão o mês de agosto acabaria mostrando os
+  // números de junho só porque junho demorou mais pra responder.
+  const pedidoMes = useRef(0)
   useEffect(() => {
+    const meu = ++pedidoMes.current
     setCarregando(true)
     setAnaliseIA(''); setErroIA('')
     fetch(`/api/salon/calculadora?ano=${anoSel}&mes=${mesSel}`, { credentials: 'include' })
       .then(r => r.json())
       .then(d => {
+        if (meu !== pedidoMes.current) return   // resposta atrasada: já pediram outro mês
         // Mês SEM nada salvo tem que limpar a tela. Antes ficava com os números
         // do mês anterior — parecia que a troca de mês não tinha funcionado e,
         // pior, um Salvar copiava o mês velho pro mês novo.
@@ -1030,28 +1038,25 @@ export default function CalculadoraCusto() {
         setDirtyCalc(false)   // carregar não é edição do usuário
       })
       .catch(() => {})
-      .finally(() => setCarregando(false))
+      .finally(() => { if (meu === pedidoMes.current) setCarregando(false) })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [anoSel, mesSel])
 
-  // silencioso = chamada do auto-save: não mostra alerta nem o "Salvo!"
-  // DEVOLVE true/false: quem chama precisa saber se realmente salvou. Antes nao
-  // devolvia nada e a falha do auto-save era invisivel -- o dirty ficava preso e
-  // travava a troca de mes pra sempre, sem nenhum aviso na tela.
-  async function salvarMes(silencioso = false): Promise<boolean> {
-    if (!silencioso) { setSalvando(true); setSavedMsg('') }
+  // Salva UM periodo especifico com os dados que recebeu. Nao usa anoSel/mesSel:
+  // quem chama passa o mes -- e por isso da pra salvar o mes que esta saindo
+  // DEPOIS que a tela ja trocou, sem risco de gravar no mes errado.
+  async function salvarPeriodo(ano: number, mes: number, dados: any, silencioso: boolean): Promise<boolean> {
     try {
       const res = await fetch('/api/salon/calculadora', {
         method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ano: anoSel, mes: mesSel, dados: coletarDados() }),
+        body: JSON.stringify({ ano, mes, dados }),
       })
       if (res.ok) {
-        if (!silencioso) setSavedMsg('Salvo!')
-        setDirtyCalc(false); setFalhaSalvar('')
+        setFalhaSalvar(''); setPendenteFalho(null)
         setMesesComDados(prev => {
-          const existe = prev.some(m=>m.ano===anoSel&&m.mes===mesSel)
-          return existe ? prev : [...prev, {ano:anoSel,mes:mesSel}]
+          const existe = prev.some(m=>m.ano===ano&&m.mes===mes)
+          return existe ? prev : [...prev, {ano,mes}]
         })
         // Recalcula totais após salvar
         fetch('/api/salon/calculadora', { credentials: 'include' })
@@ -1078,20 +1083,41 @@ export default function CalculadoraCusto() {
               }
             }
           }).catch(()=>{})
-        setTimeout(() => setSavedMsg(''), 3000)
         return true
       } else {
         const e = await res.json().catch(() => ({} as any))
         const msg = e?.error || 'Não foi possível salvar. Tente novamente.'
-        setFalhaSalvar(msg)
+        setFalhaSalvar(msg); setPendenteFalho({ ano, mes, dados })
         if (!silencioso) alert(msg)
         return false
       }
     } catch {
       setFalhaSalvar('Sem conexão com o servidor.')
+      setPendenteFalho({ ano, mes, dados })
       if (!silencioso) alert('Erro de conexão ao salvar. Verifique a internet e tente novamente.')
       return false
-    } finally { if (!silencioso) setSalvando(false) }
+    }
+  }
+
+  // Salva o mes que esta na tela (botao Salvar e auto-save)
+  async function salvarMes(silencioso = false): Promise<boolean> {
+    if (!silencioso) { setSalvando(true); setSavedMsg('') }
+    const ok = await salvarPeriodo(anoSel, mesSel, coletarDados(), silencioso)
+    if (ok) {
+      setDirtyCalc(false)
+      if (!silencioso) { setSavedMsg('Salvo!'); setTimeout(() => setSavedMsg(''), 3000) }
+    }
+    if (!silencioso) setSalvando(false)
+    return ok
+  }
+
+  // Reenvia o que ficou pra tras quando o salvamento falhou
+  async function reenviarPendente() {
+    const pend = pendenteFalho
+    if (!pend) return
+    setSalvando(true)
+    await salvarPeriodo(pend.ano, pend.mes, pend.dados, false)
+    setSalvando(false)
   }
 
   // ── Abre o modal de parcelamento já com N linhas ──
@@ -1408,19 +1434,15 @@ export default function CalculadoraCusto() {
   // inútil: se o salvamento falhava, o dirty ficava preso e a pergunta voltava
   // sempre, deixando o usuário travado no mês. Agora SALVA o mês atual antes de
   // sair; só pergunta se o salvamento falhar de verdade -- aí a escolha é real.
-  async function trocarPeriodo(novoAno: number, novoMes: number) {
+  // NAO e async de proposito: a troca tem que ser instantanea. O mes que esta
+  // saindo e salvo em segundo plano, com os dados capturados AGORA -- esperar a
+  // resposta da rede fazia a tela ficar parada e dava impressao de travamento.
+  // Se esse salvamento falhar, o payload fica guardado em pendenteFalho e o
+  // aviso na barra oferece "tentar de novo": nada se perde em silencio.
+  function trocarPeriodo(novoAno: number, novoMes: number) {
     if (novoAno === anoSel && novoMes === mesSel) return
-    if (dirtyCalc) {
-      const salvou = await salvarMes(true)
-      if (!salvou) {
-        const ok = confirm(
-          'Não consegui salvar ' + MESES_NOMES[mesSel] + '/' + anoSel + '.\n\n' +
-          'OK = trocar de mês assim mesmo (o que você digitou se perde).\n' +
-          'CANCELAR = ficar aqui e tentar salvar de novo.')
-        if (!ok) return
-      }
-    }
-    setDirtyCalc(false); setFalhaSalvar('')
+    if (dirtyCalc) { void salvarPeriodo(anoSel, mesSel, coletarDados(), true) }
+    setDirtyCalc(false)
     setAnoSel(novoAno); setMesSel(novoMes)
   }
   function mesAnterior() {
@@ -1792,10 +1814,15 @@ Use números reais. Seja direto.`
                 é silencioso e, sem este selo, o mês inteiro podia ficar sem
                 gravar sem ninguém notar. */}
             {!!falhaSalvar && (
-              <span className="text-[10px] font-bold flex items-center gap-1 px-2 py-1 rounded-lg"
-                style={{background:'#fef2f2',color:'#b91c1c',border:'1px solid #fca5a5'}} title={falhaSalvar}>
-                <AlertTriangle size={11}/> não salvou
-              </span>
+              <button onClick={reenviarPendente} disabled={salvando || !pendenteFalho}
+                className="text-[10px] font-bold flex items-center gap-1 px-2 py-1 rounded-lg"
+                style={{background:'#fef2f2',color:'#b91c1c',border:'1px solid #fca5a5',cursor:pendenteFalho?'pointer':'default'}}
+                title={falhaSalvar}>
+                <AlertTriangle size={11}/>
+                {pendenteFalho
+                  ? `não salvou ${MESES_NOMES[pendenteFalho.mes]} — tentar de novo`
+                  : 'não salvou'}
+              </button>
             )}
             <button onClick={() => salvarMes()} disabled={salvando}
               className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all disabled:opacity-50"
