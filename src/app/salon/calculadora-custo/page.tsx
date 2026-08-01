@@ -4066,7 +4066,7 @@ Use números reais. Seja direto.`
                             <div className="flex items-center justify-between gap-2 mb-1">
                               <span className="text-xs font-bold truncate" style={{color:'#1a1a1a'}}>{d.nome}</span>
                               <span className="text-[9px] px-1.5 py-0.5 rounded flex-shrink-0" style={{background:`${cor}20`,color:cor}}>
-                                {d.tipo === 'indireta' ? 'Indireta' : d.tipo === 'provisao' ? 'Provisao' : 'Direta'}
+                                {d.tipo === 'indireta' ? 'Indireta' : d.tipo === 'provisao' ? 'Provisão' : 'Direta'}
                               </span>
                             </div>
                             <p className="text-lg font-bold" style={{color:'#1a1a1a'}}>{fmtR(d.valor)}</p>
@@ -4076,7 +4076,7 @@ Use números reais. Seja direto.`
                             </div>
                             {d.qtd > 1 && (
                               <p className="text-[10px] mt-1" style={{color:'#4338ca'}}>
-                                soma de {d.qtd} lancamentos deste mes
+                                soma de {d.qtd} lançamentos deste mês
                               </p>
                             )}
                           </div>
