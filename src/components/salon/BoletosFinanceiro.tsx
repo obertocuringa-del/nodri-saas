@@ -278,7 +278,10 @@ export default function BoletosFinanceiro({ cor = '#16a34a' }: { cor?: string })
           </div>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        // Fundo marrom atrás da fila: cada boleto é um card claro por cima, e a
+        // conta vencida salta aos olhos. Antes era card claro sobre fundo claro
+        // e a lista virava um bloco só.
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 9, background: '#4a3728', borderRadius: 12, padding: 10 }}>
           {lista.map(b => {
             const d = dias(b.venc)
             const c = b.pago ? { cor: '#047857', bg: '#ecfdf5', bd: '#a7f3d0', barra: '#22c55e' }
