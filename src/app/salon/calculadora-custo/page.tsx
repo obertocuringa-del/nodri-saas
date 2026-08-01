@@ -1754,6 +1754,18 @@ Use números reais. Seja direto.`
     return {score: pts, label: 'Crítico', cor: '#ef4444', icone: '🔴', sub: 'Situação exige ação imediata. Priorize reduzir custos.'}
   })()
 
+  // Marca o mês como não salvo a cada digitação — MENOS quando vem de <select>.
+  // O select dispara 'input' ANTES do 'change'. Esse setState re-renderizava a
+  // página no meio do caminho e o React, por ser campo controlado, devolvia o
+  // select ao valor antigo; o 'change' então lia o valor velho e a escolha não
+  // valia. Era o "preciso clicar duas vezes" em mês, ano, aba e despesa — e na
+  // segunda vez funcionava só porque o dirty já era true e não re-renderizava.
+  // Nenhum select desta tela depende daqui: os que editam dados do mês marcam
+  // o dirty no próprio onChange.
+  function marcarDigitacao(e: React.FormEvent) {
+    if ((e.target as HTMLElement)?.tagName !== 'SELECT') setDirtyCalc(true)
+  }
+
   // Até montar no navegador, servidor e cliente desenham exatamente isto —
   // sem data, sem divergência, sem árvore descartada. (ver nota em `montado`)
   if (!montado) return (
@@ -1764,7 +1776,7 @@ Use números reais. Seja direto.`
 
   return (
     <div className="min-h-screen" style={{background:'#f5f4f0',color:'#1a1a1a'}}
-      onInput={() => setDirtyCalc(true)} /* qualquer digitação marca o mês como não salvo */>
+      onInput={marcarDigitacao}>
       <div className="max-w-5xl mx-auto px-4 py-8">
 
         {/* Header */}
