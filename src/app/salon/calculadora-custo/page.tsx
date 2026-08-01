@@ -4267,7 +4267,7 @@ Use números reais. Seja direto.`
             {/* Formulário cadastro */}
             <div className="rounded-2xl p-5 border" style={{background:'#faf9f7',borderColor:'#f59e0b40'}}>
               <h3 className="font-bold text-sm mb-4" style={{color:'#b45309'}}>{editandoProd?'✏️ Editar Produto':'➕ Cadastrar Novo Produto'}</h3>
-              <div className="grid grid-cols-3 gap-3 mb-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
                 <div className="col-span-2"><label className="text-xs font-bold block mb-1" style={{color:'#767069'}}>Nome do Produto *</label>
                   <input value={fNome} onChange={e=>setFNome(e.target.value)} placeholder="Ex: Tinta Color Sem Amônia"
                     className="w-full px-3 py-2 rounded-xl text-sm text-[#1a1a1a] focus:outline-none" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/></div>
@@ -4298,8 +4298,8 @@ Use números reais. Seja direto.`
             </div>
             {/* Lista */}
             <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
-              <div className="flex items-center justify-between px-5 py-3 border-b" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
-                <span className="font-bold text-sm text-[#1a1a1a]">Produtos Cadastrados ({produtosCatalogo.length})</span>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-5 py-3 border-b" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
+                <span className="font-bold text-sm text-[#1a1a1a] whitespace-nowrap">Produtos Cadastrados ({produtosCatalogo.length})</span>
                 <input value={buscarProduto} onChange={e=>setBuscarProduto(e.target.value)} placeholder="🔍 Buscar produto..."
                   className="px-3 py-1.5 rounded-lg text-xs text-[#1a1a1a] focus:outline-none w-full sm:w-48" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/>
               </div>
@@ -4307,21 +4307,21 @@ Use números reais. Seja direto.`
                 ? <p className="text-center py-8 text-sm" style={{color:'#6b6860'}}>Nenhum produto cadastrado ainda</p>
                 : produtosCatalogo.filter(p=>p.nome.toLowerCase().includes(buscarProduto.toLowerCase())).map(p=>(
                   <div key={p.id} className="border-b" style={{borderColor:'#e8e6e010'}}>
-                    <div className="flex items-center justify-between px-5 py-3 cursor-pointer hover:bg-white/2"
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-5 py-3 cursor-pointer hover:bg-white/2"
                       onClick={()=>setAcordeaoProd(acordeaoProd===p.id?null:p.id)}>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
                         <span className="text-xs" style={{color:'#767069'}}>{acordeaoProd===p.id?'▼':'▶'}</span>
                         <span className="text-sm font-bold text-[#1a1a1a]">{p.nome}</span>
                         {p.marca&&<span className="text-xs px-2 py-0.5 rounded-full" style={{background:'#f59e0b20',color:'#b45309'}}>{p.marca}</span>}
                       </div>
-                      <div className="flex items-center gap-4">
-                        <span className="text-xs" style={{color:'#059669'}}>R$ {p.preco} / {p.qtd_embalagem}{p.unidade}</span>
+                      <div className="flex items-center gap-3 flex-shrink-0">
+                        <span className="text-xs whitespace-nowrap" style={{color:'#059669'}}>R$ {p.preco} / {p.qtd_embalagem}{p.unidade}</span>
                         <button onClick={e=>{e.stopPropagation();editarProduto(p);setAba('catproduto')}} className="text-xs px-2 py-1 rounded" style={{background:'#5b4fcf20',color:'#7c6fe0'}}>✏️ Editar</button>
                         <button onClick={e=>{e.stopPropagation();excluirProduto(p.id)}} className="text-xs px-2 py-1 rounded" style={{background:'#ef444420',color:'#dc2626'}}>🗑️</button>
                       </div>
                     </div>
                     {acordeaoProd===p.id&&(
-                      <div className="px-5 pb-3 grid grid-cols-4 gap-3">
+                      <div className="px-5 pb-3 grid grid-cols-2 sm:grid-cols-4 gap-3">
                         {[{l:'Unidade',v:p.unidade},{l:'Qtd Embalagem',v:`${p.qtd_embalagem}${p.unidade}`},{l:'Preço',v:`R$ ${p.preco}`},{l:'Custo/unidade',v:`R$ ${p.qtd_embalagem>0?(p.preco/p.qtd_embalagem).toFixed(4):'-'}`}].map((i,idx)=>(
                           <div key={idx} className="rounded-lg p-3 text-center" style={{background:'#f5f4f0'}}>
                             <p className="text-[10px]" style={{color:'#767069'}}>{i.l}</p>
