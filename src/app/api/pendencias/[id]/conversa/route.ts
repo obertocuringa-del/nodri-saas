@@ -11,7 +11,9 @@ import { getSessao } from '@/lib/apiAuth'
 // Escrevem só os dois lados: quem PEDIU (profissional, pelo portal) e o lado
 // que RECEBEU (o salão/setor). Ninguém de fora entra na conversa.
 
-export const SITUACOES = ['aberta', 'andamento', 'aguardando', 'agendada', 'resolvida', 'recusada'] as const
+// NAO exportar: arquivo de rota do Next.js so aceita exports reservados
+// (GET, POST, dynamic...). Exportar qualquer outro nome quebra o build inteiro.
+const SITUACOES = ['aberta', 'andamento', 'aguardando', 'agendada', 'resolvida', 'recusada'] as const
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const sess = await getSessao()

@@ -2352,6 +2352,27 @@ function DemandasProfissional({ profId, souProf }: { profId: string; souProf: bo
     setAtribuindo(false)
   }
   const toggle = (id: string) => setAberto(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
+  // Conversa da solicitacao: ela le as respostas do setor e responde de volta
+  const [msgTxt, setMsgTxt] = useState('')
+  const [msgId, setMsgId] = useState<string | null>(null)
+  const [msgEnviando, setMsgEnviando] = useState(false)
+  async function responderConversa(d: any) {
+    if (!msgTxt.trim()) { toast.error('Escreva sua resposta'); return }
+    setMsgEnviando(true)
+    try {
+      const res = await fetch(`/api/pendencias/${d.id}/conversa`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ texto: msgTxt.trim() }),
+      })
+      if (res.ok) {
+        const at = await res.json()
+        setEnviadas(prev => prev.map((x: any) => x.id === d.id ? { ...x, ...at } : x))
+        setMsgTxt(''); setMsgId(null)
+        toast.success('Resposta enviada')
+      } else { const e = await res.json().catch(() => ({})); toast.error(e.error || 'Nao foi possivel enviar') }
+    } catch { toast.error('Erro de conexao') }
+    setMsgEnviando(false)
+  }
 
   async function carregar() {
     try {
@@ -2563,6 +2584,52 @@ function DemandasProfissional({ profId, souProf }: { profId: string; souProf: bo
                     <div style={{ padding: '0 12px 12px' }}>
                       <p style={{ fontSize: 13, color: '#1a1a1a', margin: 0, whiteSpace: 'pre-wrap' }}>{d.mensagem}</p>
                       {d.resposta && <p style={{ fontSize: 12, color: '#047857', margin: '8px 0 0', background: '#f0fdf4', padding: '6px 10px', borderRadius: 8 }}>💬 {d.resposta}</p>}
+
+                      {/* Conversa com o setor: ela le o que responderam e responde de volta */}
+                      {Array.isArray(d.conversa) && d.conversa.length > 0 && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginTop: 10 }}>
+                          {d.conversa.map((m: any) => {
+                            const meu = m.lado === 'solicitante'
+                            return (
+                              <div key={m.id} style={{ alignSelf: meu ? 'flex-end' : 'flex-start', maxWidth: '88%',
+                                background: meu ? '#f0eefb' : '#f5f4f0', border: `1px solid ${meu ? '#ddd6f5' : '#e8e6e0'}`, borderRadius: 12, padding: '7px 10px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2, flexWrap: 'wrap' }}>
+                                  <span style={{ fontSize: 10, fontWeight: 800, color: meu ? '#5b4fcf' : '#6b6860' }}>{meu ? 'Voce' : m.autor}</span>
+                                  {m.situacao && <span style={{ fontSize: 9, fontWeight: 800, color: '#374151', background: '#eef0f3', padding: '1px 6px', borderRadius: 999 }}>{
+                                    m.situacao === 'andamento' ? 'EM ANDAMENTO'
+                                    : m.situacao === 'aguardando' ? 'AGUARDANDO VOCE'
+                                    : m.situacao === 'agendada' ? `AGENDADA${m.prazo ? ' P/ ' + String(m.prazo).slice(0,10).split('-').reverse().join('/') : ''}`
+                                    : m.situacao === 'resolvida' ? 'RESOLVIDA'
+                                    : m.situacao === 'recusada' ? 'NAO SERA FEITA' : ''
+                                  }</span>}
+                                  <span style={{ fontSize: 9, color: '#9ca3af', marginLeft: 'auto' }}>{new Date(m.em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                                </div>
+                                {m.texto && <p style={{ fontSize: 12.5, color: '#374151', margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{m.texto}</p>}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+
+                      {msgId === d.id ? (
+                        <div style={{ marginTop: 9 }}>
+                          <textarea value={msgTxt} onChange={e => setMsgTxt(e.target.value)} rows={2} autoFocus
+                            placeholder="Responda ao setor…"
+                            style={{ width: '100%', border: '1px solid #c9c4f0', borderRadius: 10, padding: '8px 10px', fontSize: 13, outline: 'none', resize: 'none' }} />
+                          <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                            <button disabled={msgEnviando} onClick={() => responderConversa(d)}
+                              style={{ background: '#5b4fcf', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', opacity: msgEnviando ? .6 : 1 }}>
+                              {msgEnviando ? 'Enviando…' : 'Enviar'}
+                            </button>
+                            <button onClick={() => { setMsgId(null); setMsgTxt('') }} style={{ background: 'transparent', border: 'none', color: '#9ca3af', fontSize: 12, cursor: 'pointer' }}>Cancelar</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button onClick={() => { setMsgId(d.id); setMsgTxt('') }}
+                          style={{ marginTop: 9, background: '#fff', color: '#5b4fcf', border: '1px solid #c9c4f0', borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                          💬 Responder ao setor
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
