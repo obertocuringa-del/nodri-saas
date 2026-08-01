@@ -2026,7 +2026,7 @@ Use números reais. Seja direto.`
             </div>
 
             {/* Despesas Indiretas */}
-            <div className="rounded-2xl border overflow-hidden" style={{background:'#4a3728',borderColor:'#f59e0b',...oculto(podeCalc('calc_desp_fixas'))}}>
+            <div className="rounded-2xl border overflow-hidden" style={{background: secIndiretas ? '#4a3728' : '#fffbf0',borderColor:'#f59e0b',...oculto(podeCalc('calc_desp_fixas'))}}>
               <button onClick={()=>setSecIndiretas(p=>!p)} className="nodri-cab-sec w-full flex items-center justify-between px-5 py-3 border-b transition-colors" style={{background:'linear-gradient(135deg,#fffbf0,#fef3c7)',borderColor:'#f59e0b'}}>
                 <div className="flex items-center gap-2">
                   {secIndiretas ? <ChevronUp size={14} style={{color:'#b45309'}}/> : <ChevronDown size={14} style={{color:'#b45309'}}/>}
@@ -2051,7 +2051,7 @@ Use números reais. Seja direto.`
                 </div>
               </button>
               {!secIndiretas && (
-                <div className="px-5 py-3 text-xs" style={{color:'#e2d3bd'}}>
+                <div className="px-5 py-3 text-xs" style={{color:'#6b6860'}}>
                   Clique no cabeçalho para expandir e preencher as despesas fixas mensais.
                 </div>
               )}
@@ -3114,7 +3114,7 @@ Use números reais. Seja direto.`
                 <div className="flex items-center gap-2">
                   {secConfigServ ? <ChevronUp size={14} style={{color:'#5b4fcf'}}/> : <ChevronDown size={14} style={{color:'#5b4fcf'}}/>}
                   <span className="font-bold text-sm" style={{color:'#5b4fcf'}}>Configurações do Cálculo</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full" style={{background:'#5b4fcf20',color:'#7c6fe0'}}>Cartão {taxaCartao}% · CustoOp {(custOpServN*100).toFixed(0)}% · {salaoParceiro?'Salão Parceiro ✓':'Sem Parceiro'}</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full no-mobile" style={{background:'#5b4fcf20',color:'#7c6fe0'}}>Cartão {taxaCartao}% · CustoOp {(custOpServN*100).toFixed(0)}% · {salaoParceiro?'Salão Parceiro ✓':'Sem Parceiro'}</span>
                 </div>
                 <ChevronDown size={14} style={{color:'#6b6860'}}/>
               </button>
@@ -4301,7 +4301,7 @@ Use números reais. Seja direto.`
               <div className="flex items-center justify-between px-5 py-3 border-b" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
                 <span className="font-bold text-sm text-[#1a1a1a]">Produtos Cadastrados ({produtosCatalogo.length})</span>
                 <input value={buscarProduto} onChange={e=>setBuscarProduto(e.target.value)} placeholder="🔍 Buscar produto..."
-                  className="px-3 py-1.5 rounded-lg text-xs text-[#1a1a1a] focus:outline-none w-48" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/>
+                  className="px-3 py-1.5 rounded-lg text-xs text-[#1a1a1a] focus:outline-none w-full sm:w-48" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/>
               </div>
               {produtosCatalogo.filter(p=>p.nome.toLowerCase().includes(buscarProduto.toLowerCase())).length===0
                 ? <p className="text-center py-8 text-sm" style={{color:'#6b6860'}}>Nenhum produto cadastrado ainda</p>
