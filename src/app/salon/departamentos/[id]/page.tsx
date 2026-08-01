@@ -14,6 +14,32 @@ interface Demanda {
   solicitante_id?: string | null; solicitante_nome?: string | null
   resposta?: string | null; prioridade?: string | null; origem?: string | null
   tipo?: string | null; emprestimo?: Emprestimo | null
+  situacao?: string | null; prazo?: string | null
+  conversa?: { id: string; em: number; autor: string; lado: string; texto: string; situacao?: string | null; prazo?: string | null }[] | null
+}
+
+// Situação da pendência: diz de quem é a bola. 'aberta' é o estado de quem
+// chegou e ninguém tocou ainda — por isso nem tem selo.
+function SIT_COR(sit?: string | null) {
+  switch (sit) {
+    case 'andamento':  return { c: '#1d4ed8', bg: '#eff6ff' }
+    case 'aguardando': return { c: '#b45309', bg: '#fffbeb' }
+    case 'agendada':   return { c: '#6b21a8', bg: '#f5f3ff' }
+    case 'resolvida':  return { c: '#047857', bg: '#ecfdf5' }
+    case 'recusada':   return { c: '#b91c1c', bg: '#fef2f2' }
+    default:           return { c: '#6b6860', bg: '#f5f4f0' }
+  }
+}
+function SIT_LABEL(sit?: string | null, prazo?: string | null) {
+  const d = prazo ? String(prazo).slice(0, 10).split('-').reverse().join('/') : ''
+  switch (sit) {
+    case 'andamento':  return 'EM ANDAMENTO'
+    case 'aguardando': return 'AGUARDANDO QUEM PEDIU'
+    case 'agendada':   return d ? `AGENDADA P/ ${d}` : 'AGENDADA'
+    case 'resolvida':  return 'RESOLVIDA'
+    case 'recusada':   return 'NÃO SERÁ FEITA'
+    default:           return ''
+  }
 }
 
 function iconeDe(nome: string) {
@@ -39,6 +65,34 @@ export default function DepartamentoPage() {
   // Transferir
   const [transferindo, setTransferindo] = useState<string | null>(null)
   const [destino, setDestino] = useState('')
+  // Conversa da pendência (quem pediu x quem recebeu)
+  const [conversando, setConversando] = useState<string | null>(null)
+  const [msgTxt, setMsgTxt] = useState('')
+  const [msgSit, setMsgSit] = useState('andamento')
+  const [msgPrazo, setMsgPrazo] = useState('')
+  const [enviandoMsg, setEnviandoMsg] = useState(false)
+
+  async function enviarMensagem(d: Demanda) {
+    if (!msgTxt.trim() && !msgSit) { toast.error('Escreva algo ou escolha a situação'); return }
+    if (msgSit === 'agendada' && !msgPrazo) { toast.error('Escolha a data prometida'); return }
+    setEnviandoMsg(true)
+    try {
+      const res = await fetch(`/api/pendencias/${d.id}/conversa`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ texto: msgTxt.trim(), situacao: msgSit, prazo: msgPrazo }),
+      })
+      if (res.ok) {
+        const at = await res.json()
+        setDemandas(prev => prev.map(x => x.id === d.id ? { ...x, ...at } : x))
+        setMsgTxt(''); setMsgPrazo('')
+        toast.success(d.solicitante_id ? 'Enviado — quem pediu foi avisado' : 'Registrado')
+      } else {
+        const e = await res.json().catch(() => ({}))
+        toast.error(e.error || 'Não foi possível enviar')
+      }
+    } catch { toast.error('Erro de conexão') }
+    setEnviandoMsg(false)
+  }
 
   async function carregar() {
     try {
@@ -127,6 +181,9 @@ export default function DepartamentoPage() {
             <span style={{ fontSize: 11, fontWeight: 700, color: '#5b4fcf', background: '#f0eefb', padding: '2px 8px', borderRadius: 999 }}>👤 {d.solicitante_nome}</span>
           )}
           {urgente && !d.resolvido && <span style={{ fontSize: 10, fontWeight: 800, color: '#b91c1c', background: '#fef2f2', padding: '2px 8px', borderRadius: 999 }}>URGENTE</span>}
+          {d.situacao && d.situacao !== 'aberta' && (
+            <span style={{ fontSize: 10, fontWeight: 800, color: SIT_COR(d.situacao).c, background: SIT_COR(d.situacao).bg, padding: '2px 8px', borderRadius: 999 }}>{SIT_LABEL(d.situacao, d.prazo)}</span>
+          )}
           {d.resolvido && <span style={{ fontSize: 10, fontWeight: 800, color: '#047857', background: '#ecfdf5', padding: '2px 8px', borderRadius: 999 }}>RESOLVIDA</span>}
           {vencida && <span style={{ fontSize: 10, fontWeight: 800, color: '#b91c1c', background: '#fef2f2', padding: '2px 8px', borderRadius: 999 }}>VENCIDA</span>}
           <span style={{ fontSize: 10, color: '#9ca3af', marginLeft: 'auto' }}>{new Date(d.criado_em).toLocaleDateString('pt-BR')}</span>
@@ -161,9 +218,61 @@ export default function DepartamentoPage() {
         ) : (
           <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
             {!d.resolvido && <button onClick={() => { setRespondendo(d.id); setRespostaTxt(''); setTransferindo(null) }} style={btn('#16a34a')}><Check size={13} /> Feito / Responder</button>}
+            <button onClick={() => { setConversando(conversando === d.id ? null : d.id); setMsgTxt(''); setMsgSit(d.situacao && d.situacao !== 'aberta' ? d.situacao : 'andamento'); setMsgPrazo(d.prazo || ''); setRespondendo(null); setTransferindo(null) }}
+              style={{ ...btnGhost(), color: '#5b4fcf', borderColor: '#c9c4f0' }}>
+              💬 Conversar{(d.conversa?.length || 0) > 0 ? ` (${d.conversa!.length})` : ''}
+            </button>
             {!d.resolvido && ehDono && <button onClick={() => { setTransferindo(d.id); setDestino(''); setRespondendo(null) }} style={btn(cor)}><CornerUpRight size={13} /> Transferir</button>}
             {d.resolvido && ehDono && <button onClick={() => reabrir(d)} style={btnGhost()}>Reabrir</button>}
             {ehDono && <button onClick={() => excluir(d)} style={{ ...btnGhost(), color: '#dc2626', marginLeft: 'auto' }}><Trash2 size={13} /></button>}
+          </div>
+        )}
+
+        {/* Conversa: histórico + resposta com situação */}
+        {conversando === d.id && (
+          <div style={{ marginTop: 12, borderTop: '1px solid #ede9e2', paddingTop: 12 }}>
+            {(d.conversa?.length || 0) === 0 && (
+              <p style={{ fontSize: 12, color: '#9ca3af', margin: '0 0 10px' }}>Nenhuma mensagem ainda. Escreva abaixo o que está acontecendo com esta pendência.</p>
+            )}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12, maxHeight: 260, overflowY: 'auto' }}>
+              {(d.conversa || []).map(m => {
+                const doSetor = m.lado !== 'solicitante'
+                return (
+                  <div key={m.id} style={{ alignSelf: doSetor ? 'flex-end' : 'flex-start', maxWidth: '86%',
+                    background: doSetor ? '#f0eefb' : '#f5f4f0', border: `1px solid ${doSetor ? '#ddd6f5' : '#e8e6e0'}`,
+                    borderRadius: 12, padding: '8px 11px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 10.5, fontWeight: 800, color: doSetor ? '#5b4fcf' : '#6b6860' }}>{m.autor}</span>
+                      {m.situacao && <span style={{ fontSize: 9.5, fontWeight: 800, color: SIT_COR(m.situacao).c, background: SIT_COR(m.situacao).bg, padding: '1px 7px', borderRadius: 999 }}>{SIT_LABEL(m.situacao, m.prazo)}</span>}
+                      <span style={{ fontSize: 9.5, color: '#9ca3af', marginLeft: 'auto' }}>{new Date(m.em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                    {m.texto && <p style={{ fontSize: 12.5, color: '#374151', margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{m.texto}</p>}
+                  </div>
+                )
+              })}
+            </div>
+
+            <textarea value={msgTxt} onChange={e => setMsgTxt(e.target.value)} rows={2}
+              placeholder="Escreva o que falta, o que já foi feito ou até quando resolve…"
+              style={{ width: '100%', border: '1px solid #c9c4f0', borderRadius: 10, padding: '9px 11px', fontSize: 13, outline: 'none', resize: 'none' }} />
+            <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              <select value={msgSit} onChange={e => setMsgSit(e.target.value)}
+                style={{ border: '1px solid #dedad4', borderRadius: 8, padding: '7px 9px', fontSize: 12.5, fontWeight: 700, background: '#fff', cursor: 'pointer' }}>
+                <option value="andamento">Estou resolvendo</option>
+                <option value="aguardando">Aguardando quem pediu</option>
+                <option value="agendada">Fica pra data…</option>
+                <option value="resolvida">Resolvida</option>
+                <option value="recusada">Não será feita</option>
+              </select>
+              {msgSit === 'agendada' && (
+                <input type="date" value={msgPrazo} onChange={e => setMsgPrazo(e.target.value)}
+                  style={{ border: '1px solid #dedad4', borderRadius: 8, padding: '7px 9px', fontSize: 12.5 }} />
+              )}
+              <button disabled={enviandoMsg} onClick={() => enviarMensagem(d)}
+                style={{ ...btn('#5b4fcf'), marginLeft: 'auto', opacity: enviandoMsg ? .6 : 1 }}>
+                {enviandoMsg ? 'Enviando…' : 'Enviar'}
+              </button>
+            </div>
           </div>
         )}
       </div>
