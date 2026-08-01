@@ -1728,19 +1728,34 @@ Use números reais. Seja direto.`
     'Sistema/Software': 1, 'Contabilidade': 2, 'FGTS': 3,
   }
 
-  const todasDespesas = [
-    ...despInd.filter(d => n(d.valor) > 0).map(d => ({nome: d.nome, valor: n(d.valor), tipo: 'indireta'})),
-    ...extrasDespInd.filter(d => n(d.valor) > 0).map(d => ({nome: d.nome, valor: n(d.valor), tipo: 'indireta'})),
-    {nome: '13º Salário', valor: n(sal13), tipo: 'provisao'},
-    {nome: 'Férias', valor: n(ferias), tipo: 'provisao'},
-    {nome: 'FGTS Rescisório', valor: n(fgtsR), tipo: 'provisao'},
-    {nome: 'Imposto', valor: n(imposto), tipo: 'direta'},
-    {nome: 'Produto/Insumo', valor: n(produto), tipo: 'direta'},
-    {nome: 'Rateio/Comissão', valor: n(rateio), tipo: 'direta'},
-    {nome: 'Taxa de Cartão', valor: n(taxaC), tipo: 'direta'},
-  ].filter(d => d.valor > 0).sort((a, b) => b.valor - a.valor)
+  const todasDespesas = (() => {
+    const linhas = [
+      ...despInd.filter(d => n(d.valor) > 0).map(d => ({nome: d.nome, valor: n(d.valor), tipo: 'indireta'})),
+      ...extrasDespInd.filter(d => n(d.valor) > 0).map(d => ({nome: d.nome, valor: n(d.valor), tipo: 'indireta'})),
+      {nome: '13º Salário', valor: n(sal13), tipo: 'provisao'},
+      {nome: 'Férias', valor: n(ferias), tipo: 'provisao'},
+      {nome: 'FGTS Rescisório', valor: n(fgtsR), tipo: 'provisao'},
+      {nome: 'Imposto', valor: n(imposto), tipo: 'direta'},
+      {nome: 'Produto/Insumo', valor: n(produto), tipo: 'direta'},
+      {nome: 'Rateio/Comissão', valor: n(rateio), tipo: 'direta'},
+      {nome: 'Taxa de Cartão', valor: n(taxaC), tipo: 'direta'},
+    ].filter(d => d.valor > 0)
+
+    // Junta pelo nome ignorando maiuscula/acento: "Keune" e "KEUNE" sao a mesma
+    // despesa. Guarda `qtd` pra tela poder dizer de quantos lancamentos veio.
+    const chave = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
+    const mapa = new Map<string, {nome: string, valor: number, tipo: string, qtd: number}>()
+    for (const l of linhas) {
+      const k = chave(l.nome)
+      const at = mapa.get(k)
+      if (at) { at.valor += l.valor; at.qtd += 1 }
+      else mapa.set(k, { nome: l.nome, valor: l.valor, tipo: l.tipo, qtd: 1 })
+    }
+    return Array.from(mapa.values()).sort((a, b) => b.valor - a.valor)
+  })()
 
   const maxDespesa = todasDespesas[0]?.valor || 1
+  const totalDespesasRank = todasDespesas.reduce((s, d) => s + d.valor, 0)
 
   function semaforoDespesa(nome: string, valor: number): {cor: string, label: string, icone: string} {
     const bench = BENCHMARKS[nome]
@@ -3983,7 +3998,10 @@ Use números reais. Seja direto.`
                 <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
                   <div className="px-5 py-3 border-b" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
                     <p className="font-bold text-sm" style={{color:'#1a1a1a'}}>Ranking — O que mais consome seu caixa</p>
-                    <p className="text-xs mt-0.5" style={{color:'#767069'}}>Ordenado do maior para o menor</p>
+                    <p className="text-xs mt-0.5" style={{color:'#767069'}}>
+                      Do maior para o menor — lançamentos da mesma despesa entram somados
+                      {totalDespesasRank > 0 && <> · total <strong style={{color:'#1a1a1a'}}>{fmtR(totalDespesasRank)}</strong></>}
+                    </p>
                   </div>
                   <div className="p-5 space-y-2">
                     {todasDespesas.length === 0 ? (
@@ -3994,29 +4012,40 @@ Use números reais. Seja direto.`
                       const sem = semaforoDespesa(d.nome, d.valor)
                       const cores: Record<string,string> = {indireta:'#f59e0b', provisao:'#7c6fe0', direta:'#ef4444'}
                       const cor = cores[d.tipo] || '#767069'
+                      // A barra e o grafico: alta o bastante pra caber o valor
+                      // DENTRO dela. Barra curta joga o valor pra fora, senao o
+                      // numero sairia cortado nas despesas pequenas.
+                      const largura = Math.max(pctMax, 2)
+                      const valorDentro = largura >= 42
                       return (
-                        <div key={idx} className="rounded-xl p-3" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}>
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-bold w-5 text-center" style={{color:'#6b6860'}}>#{idx+1}</span>
-                              <span className="text-xs font-bold" style={{color:'#1a1a1a'}}>{d.nome}</span>
-                              <span className="text-[9px] px-1.5 py-0.5 rounded" style={{background:`${cor}20`,color:cor}}>
-                                {d.tipo === 'indireta' ? 'Indireta' : d.tipo === 'provisao' ? 'Provisão' : 'Direta'}
-                              </span>
+                        <div key={idx} className="rounded-xl p-3" style={{background:'#ffffff',border:'1px solid #e8e6e0'}}>
+                          <div className="flex items-center justify-between gap-2 mb-1.5">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="text-xs font-bold flex-shrink-0" style={{color:'#9ca3af'}}>#{idx+1}</span>
+                              <span className="text-xs font-bold truncate" style={{color:'#1a1a1a'}}>{d.nome}</span>
+                              {d.qtd > 1 && (
+                                <span className="text-[9px] px-1.5 py-0.5 rounded flex-shrink-0" style={{background:'#eef2ff',color:'#4338ca'}}>
+                                  {d.qtd} lançamentos
+                                </span>
+                              )}
                             </div>
-                            <div className="flex items-center gap-3">
-                              <span className="text-[10px]">{sem.icone}</span>
-                              <span className="text-xs font-bold" style={{color:cor}}>{fmtR(d.valor)}</span>
+                            <span className="text-[9px] px-1.5 py-0.5 rounded flex-shrink-0" style={{background:`${cor}20`,color:cor}}>
+                              {d.tipo === 'indireta' ? 'Indireta' : d.tipo === 'provisao' ? 'Provisão' : 'Direta'}
+                            </span>
+                          </div>
+
+                          {/* Barra: comprimento = quanto pesa em relação à maior despesa */}
+                          <div className="w-full rounded-lg overflow-hidden flex items-center" style={{background:'#f1efea',height:26}}>
+                            <div className="h-full flex items-center justify-end px-2 transition-all duration-500"
+                              style={{width:`${largura}%`, background:`linear-gradient(90deg, ${cor}, ${cor}cc)`, minWidth: 4}}>
+                              {valorDentro && <span className="text-[11px] font-bold text-white whitespace-nowrap">{fmtR(d.valor)}</span>}
                             </div>
+                            {!valorDentro && <span className="text-[11px] font-bold px-2 whitespace-nowrap" style={{color:cor}}>{fmtR(d.valor)}</span>}
                           </div>
-                          {/* Barra proporcional ao maior */}
-                          <div className="w-full rounded-full h-2.5 mb-1" style={{background:'#ffffff'}}>
-                            <div className="h-2.5 rounded-full transition-all duration-500"
-                              style={{width:`${pctMax}%`, background:`linear-gradient(90deg, ${cor}80, ${cor})`}}/>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-[10px]" style={{color:sem.cor}}>{sem.label}</span>
-                            <span className="text-[10px]" style={{color:'#6b6860'}}>{pctFat.toFixed(1)}% do faturamento</span>
+
+                          <div className="flex items-center justify-between gap-2 mt-1">
+                            <span className="text-[10px] truncate" style={{color:sem.cor}}>{sem.icone} {sem.label}</span>
+                            <span className="text-[10px] flex-shrink-0" style={{color:'#6b6860'}}>{pctFat.toFixed(1)}% do faturamento</span>
                           </div>
                         </div>
                       )
