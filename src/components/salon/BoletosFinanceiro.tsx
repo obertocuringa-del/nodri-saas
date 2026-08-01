@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Loader2, Check, RotateCcw, FileText, ExternalLink, Copy, Eye, EyeOff } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { formatarLinha, ehPix } from '@/lib/boleto'
@@ -152,18 +152,31 @@ export default function BoletosFinanceiro({ cor = '#16a34a' }: { cor?: string })
 
   const soma = (arr: Card[]) => arr.reduce((s, b) => s + b.valor, 0)
 
+  const gruposRef = useRef(grupos)
+  gruposRef.current = grupos
+
   // ── Filtro por ano/mês do VENCIMENTO ────────────────────────────────────
   // Pensado pra quando houver milhares de lançamentos. O padrão de cada aba
-  // respeita o que ela serve: PAGOS abre no mês atual (é o arquivo morto, que
-  // cresce pra sempre); VENCIDOS abre em TODOS, senão conta atrasada some no
+  // respeita o que ela serve: PAGOS tenta abrir no mês atual (é o arquivo morto,
+  // que cresce pra sempre); VENCIDOS abre em TODOS, senão conta atrasada some no
   // mês que ninguém foi olhar.
   const [fAno, setFAno] = useState('')     // '' = todos
   const [fMes, setFMes] = useState('')
   useEffect(() => {
-    if (aba === 'pagos') {
-      const h = new Date()
-      setFAno(String(h.getFullYear())); setFMes(String(h.getMonth() + 1))
-    } else { setFAno(''); setFMes('') }
+    if (aba !== 'pagos') { setFAno(''); setFMes(''); return }
+    // O filtro é pelo VENCIMENTO, não pela data em que foi pago. Abrir sempre no
+    // mês corrente escondia contas pagas que haviam vencido antes: a aba dizia
+    // "Pagos 3" e a lista vinha vazia, sem explicação. Só usa o mês atual se
+    // realmente existir algo pago com vencimento nele; senão, mostra tudo.
+    const h = new Date()
+    const ano = String(h.getFullYear())
+    const mes = String(h.getMonth() + 1)
+    const temNoMes = (gruposRef.current.pagos || []).some(b =>
+      b.venc.slice(0, 4) === ano && Number(b.venc.slice(5, 7)) === Number(mes))
+    if (temNoMes) { setFAno(ano); setFMes(mes) } else { setFAno(''); setFMes('') }
+  // Só reage a TROCAR DE ABA. Se dependesse de `grupos`, marcar uma conta como
+  // paga recalcularia os grupos e jogaria fora o período que o usuário escolheu.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [aba])
 
   const daAba = aba ? grupos[aba] : []
