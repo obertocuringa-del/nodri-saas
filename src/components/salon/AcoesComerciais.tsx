@@ -289,10 +289,18 @@ function CardCampanha({ c, soLeitura, vendidos, modoSel, selecionada, onToggleSe
   const copiarTxt = (t: string) => { navigator.clipboard?.writeText(t).then(() => toast.success('Copiado!')).catch(() => toast.error('Não foi possível copiar')) }
   return (
     <div style={{ background: '#fff', border: selecionada ? `2px solid ${ROXO}` : '1px solid #eceae4', borderRadius: 16, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-      <button onClick={onAbrir} style={{ position: 'relative', width: '100%', aspectRatio: '4 / 3', border: 'none', cursor: 'pointer', padding: 0, background: capa ? '#000' : '#f0eee8', overflow: 'hidden' }}>
+      {/* Quadro 4:5 (em pé) porque é o formato em que as artes de campanha são
+          feitas — feed e stories. Num quadro deitado, a arte inteira ficaria
+          pequena no meio, com muita sobra dos dois lados. */}
+      <button onClick={onAbrir} style={{ position: 'relative', width: '100%', aspectRatio: '4 / 5', border: 'none', cursor: 'pointer', padding: 0, background: capa ? '#000' : '#f0eee8', overflow: 'hidden' }}>
         {capa
-          // eslint-disable-next-line @next/next/no-img-element
-          ? <img src={capa.url} alt={c.titulo} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ? <>
+              {/* fundo: a propria arte desfocada, so pra preencher a sobra */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={capa.url} alt="" aria-hidden style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'blur(18px) brightness(.55)', transform: 'scale(1.15)' }} />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={capa.url} alt={c.titulo} style={{ position: 'relative', width: '100%', height: '100%', objectFit: 'contain' }} />
+            </>
           : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#b9b4a8' }}><Images size={34} /></div>}
         <span style={{ position: 'absolute', top: 10, left: 10, padding: '3px 10px', borderRadius: 999, fontSize: 10.5, fontWeight: 900, textTransform: 'uppercase', letterSpacing: .5, background: si.bg, color: si.cor, backdropFilter: 'blur(4px)' }}>{si.label}</span>
         {modoSel && (
@@ -431,7 +439,7 @@ function PainelCampanha({ c, soLeitura, vendidos, onClose, onEditar, onShare, on
             <div>
               <div style={{ position: 'relative', borderRadius: 14, overflow: 'hidden', background: '#000' }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={atual.url} alt={c.titulo} onClick={() => setTela(true)} style={{ width: '100%', maxHeight: 320, objectFit: 'cover', cursor: 'zoom-in', display: 'block' }} />
+                <img src={atual.url} alt={c.titulo} onClick={() => setTela(true)} style={{ width: '100%', maxHeight: 320, objectFit: 'contain', cursor: 'zoom-in', display: 'block' }} />
                 {c.arquivos.length > 1 && <>
                   <NavBtn dir="left" onClick={() => setIdx(i => (i - 1 + c.arquivos.length) % c.arquivos.length)} />
                   <NavBtn dir="right" onClick={() => setIdx(i => (i + 1) % c.arquivos.length)} />
