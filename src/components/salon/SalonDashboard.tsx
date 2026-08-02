@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { Bell, Settings, CheckCircle, X, Zap, Play, Search, ChevronDown, ArrowRight, LogOut, Menu, Wrench, Lock, Eye } from 'lucide-react'
-import ChatWidget from './ChatWidget'
 import toast from 'react-hot-toast'
 import type { ModuloComStatus, Notificacao } from '@/types'
 import { chaveModulo } from '@/lib/permissoes'
@@ -458,7 +457,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
   const TODAS_CATEGORIAS = [...CATEGORIAS_CONTEUDO, ...tabsExtras]
 
   return (
-    <div className="nodri-salon-bg h-screen flex flex-col overflow-hidden">
+    <div className="nodri-salon-bg nodri-sem-whats h-screen flex flex-col overflow-hidden">
 
       {/* ANÚNCIO — compromissos dos DOIS calendários chegando (faltam até 2 dias) */}
       {totalCompromissos > 0 && lembreteCalAberto && (
@@ -741,13 +740,12 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                       <button onClick={() => setSeletorCalAberto(o => !o)}
                         style={{ width: '100%', textAlign: 'left', cursor: 'pointer', background: temAviso ? '#ecfeff' : '#fff', border: temAviso ? '1px solid #67e8f9' : '1px solid #e8e6e0', borderLeft: `4px solid ${k.cor}`, borderRadius: 12, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12, position: 'relative', animation: temAviso ? 'nodriKpiPulse 1.6s ease-in-out infinite' : undefined }}
                         onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 4px 14px rgba(0,0,0,.08)')} onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}>
-                        <span style={{ fontSize: 24 }}>{k.emoji}</span>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: 22, fontWeight: 900, color: k.cor, lineHeight: 1 }}>{k.valor}</div>
                           <div style={{ fontSize: 11.5, color: '#6b6860', fontWeight: 600, marginTop: 2 }}>{k.label}</div>
                         </div>
                         <span style={{ color: '#5b4fcf', fontSize: 12, transition: 'transform .15s', transform: seletorCalAberto ? 'rotate(180deg)' : 'none' }}>▼</span>
-                        {temAviso && <span style={{ position: 'absolute', top: -9, right: -6, background: '#0891b2', color: '#fff', fontSize: 10, fontWeight: 800, padding: '3px 9px', borderRadius: 99, whiteSpace: 'nowrap', boxShadow: '0 3px 10px rgba(8,145,178,.4)' }}>🔔 {totalCompromissos}</span>}
+                        {temAviso && <span style={{ position: 'absolute', top: -9, right: -6, background: '#0891b2', color: '#fff', fontSize: 10, fontWeight: 800, padding: '3px 9px', borderRadius: 99, whiteSpace: 'nowrap', boxShadow: '0 3px 10px rgba(8,145,178,.4)' }}>{totalCompromissos}</span>}
                       </button>
 
                       {seletorCalAberto && (
@@ -762,7 +760,6 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                                 style={{ display: 'block', textDecoration: 'none', padding: '12px 14px', borderTop: i > 0 ? '1px solid #f0eee8' : 'none', background: tem ? c.bg : '#fff', cursor: 'pointer' }}
                                 onMouseEnter={e => (e.currentTarget.style.filter = 'brightness(.97)')} onMouseLeave={e => (e.currentTarget.style.filter = 'none')}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                  <span style={{ fontSize: 17 }}>{c.emoji}</span>
                                   <span style={{ flex: 1, fontSize: 13.5, fontWeight: 800, color: tem ? c.cor : '#9ca3af' }}>{c.nome}</span>
                                   {tem
                                     ? <span style={{ background: c.cor, color: '#fff', fontSize: 11, fontWeight: 900, borderRadius: 99, padding: '2px 9px' }}>{c.evts.length}</span>
@@ -792,7 +789,6 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                   onClick={() => { if (k.perm === 'feedback_cliente') { try { localStorage.setItem('nodri_fb_visto', String(kpiFb ?? 0)) } catch { /* */ } } }}
                   style={{ textDecoration: 'none', background: (k as any).alerta ? '#fef2f2' : k.badge > 0 ? '#f0fdf4' : '#fff', border: (k as any).alerta ? '1px solid #fca5a5' : k.badge > 0 ? '1px solid #86efac' : '1px solid #e8e6e0', borderLeft: `4px solid ${k.cor}`, borderRadius: 12, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12, position: 'relative', animation: (k.badge > 0 || (k as any).alerta) ? 'nodriKpiPulse 1.6s ease-in-out infinite' : undefined }}
                   onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 4px 14px rgba(0,0,0,.08)')} onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}>
-                  <span style={{ fontSize: 24 }}>{k.emoji}</span>
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: 22, fontWeight: 900, color: k.cor, lineHeight: 1 }}>{k.valor == null ? '—' : k.valor}</div>
                     <div style={{ fontSize: 11.5, color: '#6b6860', fontWeight: 600, marginTop: 2 }}>{k.label}</div>
@@ -800,7 +796,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                   </div>
                   {k.badge > 0 && (
                     <span style={{ position: 'absolute', top: -9, right: -6, background: '#16a34a', color: '#fff', fontSize: 10, fontWeight: 800, padding: '3px 9px', borderRadius: 99, animation: 'pulseDot 1.2s infinite', whiteSpace: 'nowrap', boxShadow: '0 3px 10px rgba(22,163,74,.4)' }}>
-                      +{k.badge} novo{k.badge > 1 ? 's' : ''} 🔔
+                      +{k.badge} novo{k.badge > 1 ? 's' : ''}
                     </span>
                   )}
                 </a>
@@ -880,7 +876,6 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
 
         </main>
       </div>
-      <ChatWidget />
     </div>
   )
 }

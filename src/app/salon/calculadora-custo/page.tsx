@@ -1807,7 +1807,7 @@ Use números reais. Seja direto.`
   )
 
   return (
-    <div className="min-h-screen nodri-sem-whats" style={{background:'#f5f4f0',color:'#1a1a1a'}}
+    <div className="min-h-screen nodri-sem-whats nodri-calc-compacta" style={{background:'#f5f4f0',color:'#1a1a1a'}}
       onInput={marcarDigitacao}>
       <div className="max-w-5xl mx-auto px-4 py-8">
 
