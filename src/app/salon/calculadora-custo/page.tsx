@@ -743,6 +743,9 @@ export default function CalculadoraCusto() {
   const [fsImposto, setFsImposto] = useState('5'); const [fsProduto, setFsProduto] = useState('0')
   // Accordion aberto
   const [acordeaoProd, setAcordeaoProd] = useState<string|null>(null)
+  // "Quanto cobrar pra ganhar X" — por servico: modo (R$ ou %) e o alvo digitado
+  const [alvoModo, setAlvoModo] = useState<Record<number, 'reais'|'pct'>>({})
+  const [alvoVal,  setAlvoVal]  = useState<Record<number, string>>({})
   const [barraSel, setBarraSel] = useState(0)   // coluna escolhida no ranking de despesas
   const [acordeaoServ, setAcordeaoServ] = useState<string|null>(null)
   // Autocomplete: chave = "sId-iIdx", valor = texto digitado para sugestões
@@ -1578,6 +1581,29 @@ export default function CalculadoraCusto() {
 
     if (K - targetLucro <= 0) return null
     return F / (K - targetLucro)
+  }
+
+  // ── Preco a partir do lucro desejado (os dois modos) ──────────────────────
+  // Mesma equacao do calcServ, resolvida para o outro lado. K e o quanto sobra
+  // de cada R$ 1 cobrado depois de comissao, cartao, imposto e custo
+  // operacional; F e o custo em reais que nao depende do preco (o produto).
+  //   lucro em R$ →  P = (F + lucro) / K
+  //   lucro em %  →  P =  F / (K - lucro%)
+  function calcPrecoAlvo(s: Servico, modo: 'reais' | 'pct', alvo: number): number | null {
+    if (!(alvo > 0)) return null
+    if (modo === 'pct') return calcPrecoMinimo(s, alvo / 100)
+
+    const rP   = n(s.rateioP) / 100
+    const prod = n(s.produto)
+    const imp  = n(s.imposto) / 100
+    const taxC = n(taxaCartao) / 100
+    const abat = prodAntesRateio ? n(abatProd) / 100 : 0
+    const co   = custOpServN
+    const rPEff = taxaAntesRateio ? rP * (1 - taxC) : rP
+    const K = 1 - rPEff - taxC - (salaoParceiro ? (1 - rPEff) * imp : imp) - co
+    const F = salaoParceiro ? prod * (1 - abat * (1 - imp)) : prod * (1 - abat)
+    if (K <= 0) return null
+    return (F + alvo) / K
   }
 
   // Recomendações de comissão (Diagnóstico por serviço, com meta de lucro por atendimento)
@@ -3377,6 +3403,73 @@ Use números reais. Seja direto.`
                             )}
                           </div>
                         ))}
+                        {/* Caminho inverso: em vez de dizer o preco e ver o
+                            lucro, voce diz o lucro e o sistema devolve o preco. */}
+                        {(()=>{
+                          const modo = alvoModo[s.id] || 'reais'
+                          const val  = alvoVal[s.id] ?? ''
+                          const alvo = n(val)
+                          const sug  = calcPrecoAlvo(s, modo, alvo)
+                          const det  = sug ? calcServ({ ...s, preco: String(sug) } as Servico) : null
+                          return (
+                            <div className="rounded-xl border p-3 mb-3" style={{background:'#f8f7ff',borderColor:'#c9c4f0'}}>
+                              <p className="text-xs font-bold mb-2" style={{color:'#5b4fcf'}}>Quanto cobrar para ganhar o que eu quero?</p>
+
+                              <div className="flex gap-1.5 mb-2">
+                                {([['reais','Lucro em R$'],['pct','Lucro em %']] as const).map(([m,rot])=>(
+                                  <button key={m} onClick={()=>setAlvoModo(p=>({...p,[s.id]:m}))}
+                                    className="flex-1 py-1.5 rounded-lg text-[11px] font-bold"
+                                    style={{background: modo===m ? '#5b4fcf' : '#fff', color: modo===m ? '#fff' : '#5b4fcf', border:'1px solid #c9c4f0'}}>
+                                    {rot}
+                                  </button>
+                                ))}
+                              </div>
+
+                              <div className="relative mb-2">
+                                {modo==='reais' && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>R$</span>}
+                                <input type="number" value={val}
+                                  onChange={e=>{setAlvoVal(p=>({...p,[s.id]:e.target.value}))}}
+                                  placeholder={modo==='reais' ? 'Ex: 15' : 'Ex: 20'}
+                                  className={`w-full ${modo==='reais'?'pl-9':'pl-3'} ${modo==='pct'?'pr-8':'pr-3'} py-2 rounded-xl text-sm font-bold text-[#1a1a1a] focus:outline-none`}
+                                  style={{background:'#fff',border:'1.5px solid #c9c4f0'}}/>
+                                {modo==='pct' && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>%</span>}
+                              </div>
+
+                              {alvo > 0 && (sug && det ? (
+                                <>
+                                  <div className="rounded-lg p-2.5 text-center mb-2" style={{background:'#fff',border:'1px solid #c9c4f0'}}>
+                                    <p className="text-[10px]" style={{color:'#767069'}}>Cobre este preço</p>
+                                    <p className="text-xl font-bold" style={{color:'#5b4fcf'}}>{fmtR(sug)}</p>
+                                    <p className="text-[10px]" style={{color:'#767069'}}>
+                                      hoje você cobra {fmtR(n(s.preco))}
+                                      {n(s.preco) > 0 && <> · {sug > n(s.preco) ? 'faltam' : 'sobram'} {fmtR(Math.abs(sug - n(s.preco)))}</>}
+                                    </p>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-1 text-[10px]">
+                                    {[
+                                      ['Produto', fmtR(det.prod)],
+                                      ['Custo operacional', fmtR(det.custoOpR)],
+                                      ['Comissão', fmtR(det.rateioR)],
+                                      ['Taxa de cartão', fmtR(det.cartaoR)],
+                                      ['Imposto', fmtR(det.impostR)],
+                                      ['Seu lucro', fmtR(det.resultado)],
+                                    ].map(([r,v])=>(
+                                      <div key={r} className="flex justify-between px-2 py-1 rounded" style={{background:'#fff'}}>
+                                        <span style={{color:'#767069'}}>{r}</span>
+                                        <span className="font-bold" style={{color: r==='Seu lucro' ? '#059669' : '#1a1a1a'}}>{v}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </>
+                              ) : (
+                                <p className="text-[11px] rounded-lg p-2" style={{background:'#fff7ed',color:'#b45309'}}>
+                                  Com esta comissão, imposto, cartão e custo operacional, esse lucro não é alcançável por nenhum preço — os custos consomem tudo. Reduza a comissão ou o custo operacional.
+                                </p>
+                              ))}
+                            </div>
+                          )
+                        })()}
+
                         <button onClick={()=>setServicos(p=>p.filter(x=>x.id!==s.id))}
                           className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg" style={{color:'#ef4444',border:'1px dashed #ef444440'}}>
                           <Trash2 size={12}/> Excluir este serviço
