@@ -3285,10 +3285,32 @@ Use números reais. Seja direto.`
                     <label className="text-xs font-bold" style={{color:'#5b4fcf'}}>Regras do rateio</label>
                   </div>
                   <div className="pl-7 space-y-2 text-xs p-0">
-                    <label className="flex items-center gap-2 cursor-pointer rounded-lg p-2.5" style={{background:'#f5f4f0'}}>
-                      <input type="checkbox" checked={taxaAntesRateio} onChange={e=>setTaxaAntesRateio(e.target.checked)} className="accent-purple-500"/>
-                      <span style={{color:'#3a3835'}}>Taxa do cartão deve ser abatida do valor antes de calcular o rateio</span>
-                    </label>
+                    {(()=>{
+                      // Exemplo vivo com R$ 100 e a taxa de cartão configurada,
+                      // pra a escolha ser óbvia sem precisar entender a fórmula.
+                      const tx = n(taxaCartao)/100
+                      return (
+                        <div className="rounded-lg p-2.5" style={{background:'#f5f4f0'}}>
+                          <p className="font-bold mb-0.5" style={{color:'#3a3835'}}>A comissão da profissional sai de qual valor?</p>
+                          <p className="text-[11px] mb-2" style={{color:'#767069'}}>
+                            Exemplo: serviço de {fmtR(100)} com comissão de 20% e cartão de {n(taxaCartao)}%.
+                          </p>
+                          <div className="grid grid-cols-2 gap-2">
+                            {([[false,'Do valor cheio', 100*0.20],[true,'Do que sobra após a maquininha', (100-100*tx)*0.20]] as const).map(([v,rot,val])=>(
+                              <button key={String(v)} onClick={()=>setTaxaAntesRateio(v)}
+                                className="text-left rounded-lg p-2"
+                                style={{background: taxaAntesRateio===v ? '#eef2ff' : '#fff', border:`1.5px solid ${taxaAntesRateio===v?'#818cf8':'#e0ddd8'}`}}>
+                                <span className="block text-[11px] font-bold" style={{color:'#3a3835'}}>{rot}</span>
+                                <span className="block text-[13px] font-bold" style={{color:'#4338ca'}}>ela recebe {fmtR(val)}</span>
+                              </button>
+                            ))}
+                          </div>
+                          <p className="text-[10px] mt-1.5" style={{color:'#767069'}}>
+                            Escolha o que está combinado no contrato. Isso muda a comissão de <strong>todos</strong> os serviços.
+                          </p>
+                        </div>
+                      )
+                    })()}
                     <label className="flex items-center gap-2 cursor-pointer rounded-lg p-2.5" style={{background:'#f5f4f0'}}>
                       <input type="checkbox" checked={prodAntesRateio} onChange={e=>setProdAntesRateio(e.target.checked)} className="accent-purple-500"/>
                       <span style={{color:'#3a3835'}}>Valor do produto deve ser abatido do rateio</span>
@@ -3530,7 +3552,10 @@ Use números reais. Seja direto.`
                           ))}
                         </div>
                         <div className="grid grid-cols-4 text-center py-1.5 border-t text-[10px]" style={{background:'#faf9f7',borderColor:'#e8e6e0',color:'#767069'}}>
-                          <div>Rateio: {fmtR(c.rateioR)}</div>
+                          {/* diz a BASE junto do valor: sem isso, dois sal\u00f5es com a
+                              mesma comiss\u00e3o de 20% veem n\u00fameros diferentes e n\u00e3o
+                              sabem por qu\u00ea */}
+                          <div>Rateio: {fmtR(c.rateioR)} <span style={{color:'#9ca3af'}}>({n(s.rateioP)}% {taxaAntesRateio ? 'do l\u00edquido' : 'do cheio'})</span></div>
                           <div>Produto: {fmtR(c.prod)} | Cartão: {fmtR(c.cartaoR)}</div>
                           <div>Imposto: {fmtR(c.impostR)}</div>
                           <div style={{color:c.resultado>0?'#10b981':'#ef4444',fontWeight:'bold'}}>{c.resultado>0?'✅ Lucrativo':'🚨 Prejuízo'}</div>
