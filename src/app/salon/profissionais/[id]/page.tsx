@@ -2708,21 +2708,6 @@ export default function PerfilProfissionalPage() {
       })
       .catch(() => setTemEsterilizacao(false))
   }, [prof?.nome_completo, prof?.apelido])
-  // Área "Kits Pé e Mão" (só na visão da própria profissional, via PainelResumoProf):
-  // só aparece pra quem atendeu manicure/pedicure no mês.
-  const [temKits, setTemKits] = useState(false)
-  useEffect(() => {
-    const nome = prof?.nome_completo, ap = prof?.apelido
-    if (!nome && !ap) return
-    const d = new Date()
-    fetch(`/api/relatorios/kits-atendimentos?ano=${d.getFullYear()}&mes=${d.getMonth() + 1}`)
-      .then(r => r.ok ? r.json() : null)
-      .then(res => {
-        const lista: any[] = Array.isArray(res?.profissionais) ? res.profissionais : []
-        setTemKits(lista.some(p => (nome && mesmoProf(p.profissional, nome)) || (ap && mesmoProf(p.profissional, ap))))
-      })
-      .catch(() => setTemKits(false))
-  }, [prof?.nome_completo, prof?.apelido])
   // ── Agendamentos ─────────────────────────────────────────────────────────────
   const [agendData, setAgendData] = useState<string>(() => { const h = new Date(); return `${String(h.getDate()).padStart(2,'0')}/${String(h.getMonth()+1).padStart(2,'0')}/${h.getFullYear()}` })
   const [agendamentos, setAgendamentos] = useState<any[]>([])
@@ -3581,7 +3566,7 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
       {/*  INÍCIO — resumo bonito (só profissional) */}
       {tab === 'inicio' && (
         <div className="max-w-6xl mx-auto px-3 sm:px-5 py-4 sm:py-6">
-          <PainelResumoProf pid={id} prof={prof} onIrAba={(a) => setTab(a as any)} temKits={temKits} />
+          <PainelResumoProf pid={id} prof={prof} onIrAba={(a) => setTab(a as any)} />
         </div>
       )}
 
