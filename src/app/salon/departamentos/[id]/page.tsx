@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useMemo, CSSProperties } from 'react'
+import { useState, useEffect, useMemo, Fragment, CSSProperties } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { ArrowLeft, Loader2, Check, Trash2, CornerUpRight, Wallet, X, Calendar } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -170,6 +170,12 @@ export default function DepartamentoPage() {
 
   if (loading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#faf9f7' }}><Loader2 className="animate-spin" style={{ color: '#5b4fcf' }} /></div>
 
+  // ATENCAO: esta funcao mora DENTRO do componente da pagina (precisa do estado
+  // daqui: conversa aberta, texto digitado, quem e dono...). Por isso ela e
+  // CHAMADA como funcao — DemandaCard({d}) — e nunca usada como <DemandaCard/>.
+  // Como <JSX/>, o React veria um tipo novo a cada render do pai, desmontaria a
+  // arvore e o campo de texto perderia o foco a cada tecla digitada.
+  // Ela nao tem hooks proprios, entao chamar direto e seguro.
   function DemandaCard({ d }: { d: Demanda }) {
     if (d.tipo === 'emprestimo') return <EmprestimoCard d={d} onDone={carregar} />
     const urgente = d.prioridade === 'urgente'
@@ -305,7 +311,7 @@ export default function DepartamentoPage() {
                 🔔 Pendências do dia ({doDia.length})
               </span>
             </button>
-            {verDia && doDia.map(d => <DemandaCard key={d.id} d={d} />)}
+            {verDia && doDia.map(d => <Fragment key={d.id}>{DemandaCard({ d })}</Fragment>)}
           </div>
         )}
 
@@ -334,21 +340,21 @@ export default function DepartamentoPage() {
 
         {secao === 'abertas' && (abertas.length > 0 ? (<>
           <p style={{ fontSize: 11, fontWeight: 800, color: '#92400e', textTransform: 'uppercase', letterSpacing: .5, marginBottom: 8 }}>Abertas ({abertas.length})</p>
-          {abertas.map(d => <DemandaCard key={d.id} d={d} />)}
+          {abertas.map(d => <Fragment key={d.id}>{DemandaCard({ d })}</Fragment>)}
         </>) : (
           <p style={{ textAlign: 'center', fontSize: 12.5, color: '#9ca3af', padding: '14px 0' }}>Sem pendências abertas. Tudo resolvido. 👏</p>
         ))}
 
         {secao === 'resolvidas' && (resolvidas.length > 0 ? (<>
           <p style={{ fontSize: 11, fontWeight: 800, color: '#047857', textTransform: 'uppercase', letterSpacing: .5, margin: '0 0 8px' }}>Resolvidas ({resolvidas.length})</p>
-          {resolvidas.map(d => <DemandaCard key={d.id} d={d} />)}
+          {resolvidas.map(d => <Fragment key={d.id}>{DemandaCard({ d })}</Fragment>)}
         </>) : (
           <p style={{ textAlign: 'center', fontSize: 12.5, color: '#9ca3af', padding: '14px 0' }}>Nada resolvido ainda.</p>
         ))}
 
         {secao === 'total' && (<>
           <p style={{ fontSize: 11, fontWeight: 800, color: '#6b6860', textTransform: 'uppercase', letterSpacing: .5, margin: '0 0 8px' }}>Todas ({demandas.length})</p>
-          {[...abertas, ...resolvidas].map(d => <DemandaCard key={d.id} d={d} />)}
+          {[...abertas, ...resolvidas].map(d => <Fragment key={d.id}>{DemandaCard({ d })}</Fragment>)}
         </>)}
 
         {demandas.length === 0 && (
