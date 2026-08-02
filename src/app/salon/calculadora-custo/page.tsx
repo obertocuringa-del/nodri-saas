@@ -746,8 +746,6 @@ export default function CalculadoraCusto() {
   // "Quanto cobrar pra ganhar X" — por servico: modo (R$ ou %) e o alvo digitado
   const [alvoModo, setAlvoModo] = useState<Record<number, 'reais'|'pct'>>({})
   const [alvoVal,  setAlvoVal]  = useState<Record<number, string>>({})
-  // base da comissao SO na simulacao: undefined = segue a config do salao
-  const [alvoBase, setAlvoBase] = useState<Record<number, boolean>>({})
   const [barraSel, setBarraSel] = useState(0)   // coluna escolhida no ranking de despesas
   const [acordeaoServ, setAcordeaoServ] = useState<string|null>(null)
   // Autocomplete: chave = "sId-iIdx", valor = texto digitado para sugestões
@@ -1530,10 +1528,7 @@ export default function CalculadoraCusto() {
       : (mediaCustoOp || (fatN > 0 && custoOp > 0 ? custoOp/fatN : n(custIndD)/100 || 0.30))
   )
 
-  // taxaAntes: normalmente segue a configuracao do salao. A simulacao de preco
-  // passa esse valor explicito pra poder mostrar as DUAS regras de comissao sem
-  // mexer na configuracao real (que vale pro salao inteiro e e contrato).
-  function calcServ(s: Servico, taxaAntes: boolean = taxaAntesRateio) {
+  function calcServ(s: Servico) {
     const preco = n(s.preco)
     if (!preco) return null
     const rP    = n(s.rateioP) / 100
@@ -1547,7 +1542,7 @@ export default function CalculadoraCusto() {
     // O cartão é abatido da BASE antes de aplicar o %, e o produto é abatido do
     // rateio já calculado. Ex. planilha: (100-5)×50% - 10 = 37,50.
     // Com as flags desligadas: Rateio = Preço × Rateio% (igual ao site de precificação).
-    const baseRateio = (preco - (taxaAntes ? preco * taxC : 0)) * rP
+    const baseRateio = (preco - (taxaAntesRateio ? preco * taxC : 0)) * rP
     const abatProdR  = prodAntesRateio  ? prod * abat : 0
     const rateioR    = baseRateio - abatProdR
 
@@ -1564,39 +1559,14 @@ export default function CalculadoraCusto() {
             custoOpR,custOpPct:custOpServN,resultado,resultPct:resultado/preco}
   }
 
-  // Calcula preço mínimo para atingir lucro desejado
-  // Fórmula: P = F / (K - targetLucro)
-  // rP' = rateio efetivo (com cartão abatido da base, se flag ativa)
-  // K = 1 - rP' - taxC - imp_eff - custOpPct   (coef. de preço no resultado)
-  // F = prod × [1 - abat×(1-imp)]               (custo fixo do produto)
-  function calcPrecoMinimo(s: Servico, targetLucro: number) {
-    const rP   = n(s.rateioP) / 100
-    const prod = n(s.produto)
-    const imp  = n(s.imposto) / 100
-    const taxC = n(taxaCartao) / 100
-    const abat = prodAntesRateio ? n(abatProd) / 100 : 0
-    const co   = custOpServN
-
-    // Rateio efetivo sobre o preço (cartão abatido da base antes do %, se flag ativa)
-    const rPEff = taxaAntesRateio ? rP * (1 - taxC) : rP
-    // Coeficiente de P no resultado
-    const K = 1 - rPEff - taxC - (salaoParceiro ? (1 - rPEff) * imp : imp) - co
-    // Custo fixo (produto - parte do abatimento que gera custo fixo)
-    const F = salaoParceiro ? prod * (1 - abat * (1 - imp)) : prod * (1 - abat)
-
-    if (K - targetLucro <= 0) return null
-    return F / (K - targetLucro)
-  }
-
   // ── Preco a partir do lucro desejado (os dois modos) ──────────────────────
   // Mesma equacao do calcServ, resolvida para o outro lado. K e o quanto sobra
   // de cada R$ 1 cobrado depois de comissao, cartao, imposto e custo
   // operacional; F e o custo em reais que nao depende do preco (o produto).
   //   lucro em R$ →  P = (F + lucro) / K
   //   lucro em %  →  P =  F / (K - lucro%)
-  function calcPrecoAlvo(s: Servico, modo: 'reais' | 'pct', alvo: number, taxaAntes: boolean = taxaAntesRateio): number | null {
+  function calcPrecoAlvo(s: Servico, modo: 'reais' | 'pct', alvo: number): number | null {
     if (!(alvo > 0)) return null
-    if (modo === 'pct') return calcPrecoMinimoBase(s, alvo / 100, taxaAntes)
 
     const rP   = n(s.rateioP) / 100
     const prod = n(s.produto)
@@ -1604,26 +1574,12 @@ export default function CalculadoraCusto() {
     const taxC = n(taxaCartao) / 100
     const abat = prodAntesRateio ? n(abatProd) / 100 : 0
     const co   = custOpServN
-    const rPEff = taxaAntes ? rP * (1 - taxC) : rP
+    const rPEff = taxaAntesRateio ? rP * (1 - taxC) : rP
     const K = 1 - rPEff - taxC - (salaoParceiro ? (1 - rPEff) * imp : imp) - co
     const F = salaoParceiro ? prod * (1 - abat * (1 - imp)) : prod * (1 - abat)
-    if (K <= 0) return null
-    return (F + alvo) / K
-  }
-
-  // Versao do calcPrecoMinimo que aceita a base da comissao explicita
-  function calcPrecoMinimoBase(s: Servico, targetLucro: number, taxaAntes: boolean): number | null {
-    const rP   = n(s.rateioP) / 100
-    const prod = n(s.produto)
-    const imp  = n(s.imposto) / 100
-    const taxC = n(taxaCartao) / 100
-    const abat = prodAntesRateio ? n(abatProd) / 100 : 0
-    const co   = custOpServN
-    const rPEff = taxaAntes ? rP * (1 - taxC) : rP
-    const K = 1 - rPEff - taxC - (salaoParceiro ? (1 - rPEff) * imp : imp) - co
-    const F = salaoParceiro ? prod * (1 - abat * (1 - imp)) : prod * (1 - abat)
-    if (K - targetLucro <= 0) return null
-    return F / (K - targetLucro)
+    // lucro em % desconta do coeficiente; em R$ entra junto do custo fixo
+    if (modo === 'pct') return (K - alvo / 100) > 0 ? F / (K - alvo / 100) : null
+    return K > 0 ? (F + alvo) / K : null
   }
 
   // Recomendações de comissão (Diagnóstico por serviço, com meta de lucro por atendimento)
@@ -3451,9 +3407,8 @@ Use números reais. Seja direto.`
                           const modo = alvoModo[s.id] || 'reais'
                           const val  = alvoVal[s.id] ?? ''
                           const alvo = n(val)
-                          const base = alvoBase[s.id] ?? taxaAntesRateio   // true = desconta o cartao antes
-                          const sug  = calcPrecoAlvo(s, modo, alvo, base)
-                          const det  = sug ? calcServ({ ...s, preco: String(sug) } as Servico, base) : null
+                          const sug  = calcPrecoAlvo(s, modo, alvo)
+                          const det  = sug ? calcServ({ ...s, preco: String(sug) } as Servico) : null
                           return (
                             <div className="rounded-xl border p-3 mb-3" style={{background:'#f8f7ff',borderColor:'#c9c4f0'}}>
                               <p className="text-xs font-bold mb-2" style={{color:'#5b4fcf'}}>Quanto cobrar para ganhar o que eu quero?</p>
@@ -3468,20 +3423,13 @@ Use números reais. Seja direto.`
                                 ))}
                               </div>
 
-                              {/* Base da comissao: muda MUITO o preco e e a origem de quase toda
-                                  divergencia com outras calculadoras. Aqui vale so pra simulacao. */}
-                              <div className="mb-2">
-                                <p className="text-[10px] mb-1" style={{color:'#767069'}}>A comissão incide sobre:</p>
-                                <div className="flex gap-1.5">
-                                  {([[false,'Preço cheio'],[true,'Descontando o cartão']] as const).map(([b,rot])=>(
-                                    <button key={String(b)} onClick={()=>setAlvoBase(p=>({...p,[s.id]:b}))}
-                                      className="flex-1 py-1 rounded-lg text-[10px] font-bold"
-                                      style={{background: base===b ? '#e0e7ff' : '#fff', color:'#4338ca', border:`1px solid ${base===b?'#818cf8':'#e0ddd8'}`}}>
-                                      {rot}{b===taxaAntesRateio ? ' · seu padrão' : ''}
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
+                              {/* Nao ha escolha aqui: a regra e a do item 5 das Configuracoes.
+                                  So mostramos qual esta valendo, pra ninguem se perguntar
+                                  de onde saiu o numero. */}
+                              <p className="text-[10px] mb-2" style={{color:'#767069'}}>
+                                Comissão calculada <strong>{taxaAntesRateio ? 'sobre o que sobra após a maquininha' : 'sobre o valor cheio'}</strong>,
+                                como está nas Configurações do Cálculo.
+                              </p>
 
                               <div className="relative mb-2">
                                 {modo==='reais' && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>R$</span>}
