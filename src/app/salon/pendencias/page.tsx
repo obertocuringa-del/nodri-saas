@@ -62,13 +62,18 @@ export default function PendenciasPage() {
   // Editar mensagem
   const [editandoMensagem, setEditandoMensagem] = useState<string | null>(null)
   const [novaMensagemEdit, setNovaMensagemEdit] = useState('')
+  // Quantos pedidos vindos do PORTAL estão abertos em cada setor. Serve pra o
+  // card do setor piscar: sem isso só dá pra descobrir abrindo um por um.
+  const [solicPorSetor, setSolicPorSetor] = useState<Record<string, number>>({})
 
   useEffect(() => {
     Promise.all([
       fetch('/api/pendencias').then(r => r.json()),
       fetch('/api/profissionais').then(r => r.json()),
       fetch('/api/auth/me').then(r => r.json()).catch(() => ({})),
-    ]).then(([pend, profs, me]) => {
+      fetch('/api/salon/alertas').then(r => r.json()).catch(() => ({})),
+    ]).then(([pend, profs, me, alertas]) => {
+      setSolicPorSetor(alertas?.solicPorSetor && typeof alertas.solicPorSetor === 'object' ? alertas.solicPorSetor : {})
       setPendencias(Array.isArray(pend) ? pend : [])
       setProfissionais(Array.isArray(profs) ? profs.filter((p: Profissional) => p.ativo && !p.is_departamento) : [])
       setDepartamentos(Array.isArray(profs) ? profs.filter((p: Profissional) => p.is_departamento) : [])
@@ -302,14 +307,20 @@ export default function PendenciasPage() {
                 const cor = d.departamento_cor || '#5b4fcf'
                 const icone = d.nome_completo === 'ADMINISTRATIVO' ? '🗂️' : d.nome_completo === 'FINANCEIRO' ? '💰' : d.nome_completo === 'RECEPÇÃO' ? '🛎️' : '🏢'
                 const temPend = (d.pendencias_abertas || 0) > 0
+                const doPortal = solicPorSetor[d.id] || 0   // pedido feito pela profissional
                 return (
                   <div key={d.id}
                     onClick={() => router.push(`/salon/departamentos/${d.id}`)}
-                    className="cursor-pointer rounded-2xl p-4 flex flex-col items-center gap-2 text-center transition-all hover:scale-[1.02]"
-                    style={{ background: temPend ? '#fff0f0' : cor + '10', border: `1px solid ${temPend ? '#7f1d1d' : cor + '40'}` }}>
+                    className={`cursor-pointer rounded-2xl p-4 flex flex-col items-center gap-2 text-center transition-all hover:scale-[1.02] ${doPortal > 0 ? 'nodri-alerta-pisca' : ''}`}
+                    style={{ background: temPend ? '#fff0f0' : cor + '10', border: `1px solid ${doPortal > 0 ? '#dc2626' : temPend ? '#7f1d1d' : cor + '40'}` }}>
                     <div className="text-3xl">{icone}</div>
                     <div>
                       <p className="font-syne font-bold text-[11px] text-nodri-t1">{d.nome_completo}</p>
+                      {doPortal > 0 && (
+                        <p className="text-[10px] font-bold mt-0.5" style={{ color: '#b91c1c' }}>
+                          📥 {doPortal} pedido{doPortal > 1 ? 's' : ''} do portal
+                        </p>
+                      )}
                       {temPend
                         ? <p className="text-[10px] text-red-400 font-semibold mt-0.5">⚠ {d.pendencias_abertas} pendência{d.pendencias_abertas! > 1 ? 's' : ''}</p>
                         : <p className="text-[10px] mt-0.5" style={{ color: cor }}>✓ Em dia</p>

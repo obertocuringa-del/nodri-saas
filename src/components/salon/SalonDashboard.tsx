@@ -129,11 +129,12 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
   // Alertas que fazem menu piscar: kits pedidos e nao separados, e pedidos
   // abertos vindos do portal da profissional
   const [kitsPendentes, setKitsPendentes] = useState(0)
+  const [esterPendentes, setEsterPendentes] = useState(0)
   const [solicAbertas, setSolicAbertas] = useState(0)
   useEffect(() => {
     const buscar = () => fetch('/api/salon/alertas', { credentials: 'include' })
       .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d) { setKitsPendentes(Number(d.kitsPendentes) || 0); setSolicAbertas(Number(d.solicitacoes) || 0) } })
+      .then(d => { if (d) { setKitsPendentes(Number(d.kitsPendentes) || 0); setEsterPendentes(Number(d.esterPendentes) || 0); setSolicAbertas(Number(d.solicitacoes) || 0) } })
       .catch(() => {})
     buscar()
     const t = setInterval(buscar, 60000)   // renova sozinho a cada minuto
@@ -596,12 +597,19 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               { href: '/salon/usuarios', label: 'Usuários & Acessos', chave: 'cfg_usuarios' },
             ].filter(item => pode(item.chave)).map(item => {
               const alerta = item.chave === 'checklist' && checklistAlertas > 0
-              const alertaKits = item.chave === 'administrativo' && kitsPendentes > 0
+              // O Administrativo é onde se separa kit E onde se recebe alicate
+              // pra esterilizar — os dois pedidos chegam da profissional e os dois
+              // precisam avisar, senão ela fica esperando sem ninguém saber.
+              const alertaKits = item.chave === 'administrativo' && (kitsPendentes > 0 || esterPendentes > 0)
               const novoCur = item.chave === 'curriculos' && curriculosNovos > 0
               const destaque = alerta || novoCur || alertaKits
               const cor = (alerta || alertaKits) ? '#dc2626' : '#5b4fcf'
+              const badgeAdm = [
+                kitsPendentes > 0 ? `🧰 ${kitsPendentes}` : '',
+                esterPendentes > 0 ? `✂️ ${esterPendentes}` : '',
+              ].filter(Boolean).join(' ')
               const badgeTxt = alerta ? `⚠ ${checklistAlertas}`
-                : alertaKits ? `🧰 ${kitsPendentes} kit${kitsPendentes > 1 ? 's' : ''}`
+                : alertaKits ? badgeAdm
                 : `${curriculosNovos} novo${curriculosNovos > 1 ? 's' : ''}`
               return (
               <a key={item.href} href={item.href}
