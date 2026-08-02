@@ -22,7 +22,10 @@ const ACOES_CSS = `
 .ac-status > div:last-child { flex-shrink:0; }
 .ac-cards { display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:14px; }
 .ac-acoes { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:0 10px 8px; }
-.ac-acoes > button { display:flex; align-items:center; justify-content:center; gap:6px; padding:11px 6px; border-radius:12px; border:none; cursor:pointer; font-size:12.5px; font-weight:800; }
+.ac-acoes > button { display:flex; align-items:center; justify-content:center; gap:6px; padding:11px 6px; border-radius:12px; border:none; cursor:pointer; font-size:12.5px; font-weight:800; min-width:0; }
+/* No celular o card fica estreito e "Compartilhar" nao cabe em meia largura —
+   o texto saia cortado. Empilhados, cada botao usa a linha inteira. */
+@media (max-width: 640px) { .ac-acoes { grid-template-columns:1fr; } }
 .ac-menu { padding:0 10px 10px; display:flex; flex-direction:column; gap:6px; }
 .ac-menu button { display:flex; align-items:center; gap:9px; width:100%; text-align:left; padding:11px 12px; border-radius:11px; border:1px solid #efedf5; background:#fbfaff; cursor:pointer; font-size:13px; font-weight:600; color:#3a3550; }
 .ac-menu button:active { background:#f2f0ff; }
