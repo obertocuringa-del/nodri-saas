@@ -735,7 +735,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                 { perm: 'profissionais', href: '/salon/profissionais', emoji: '👥', label: 'Profissionais ativos', valor: kpiAtivos, cor: '#5b4fcf', badge: 0 },
                 { perm: 'aniversariantes', href: '/salon/aniversariantes', emoji: '🎂', label: 'Aniversariantes do mês', valor: kpiNiver, cor: '#db2777', badge: 0 },
                 { perm: 'pendencias', href: '/salon/pendencias', emoji: '⚠️', label: 'Pendências abertas', valor: kpiPend, cor: '#ea580c', badge: 0, alerta: solicAbertas > 0, sub: solicAbertas > 0 ? `${solicAbertas} pedido(s) do portal esperando` : '' },
-                { perm: 'calendario', href: '/salon/calendario', emoji: '📅', label: 'Compromissos (2 dias)', valor: totalCompromissos, cor: '#0891b2', badge: 0, seletor: true as const },
+                { perm: 'calendario', href: '/salon/calendario', emoji: '📅', label: 'Calendário', valor: totalCompromissos, cor: '#0891b2', badge: 0, seletor: true as const },
                 { perm: 'feedback_cliente', href: fbFormId ? `/salon/feedback/resultados/${fbFormId}` : '/salon/feedback', emoji: '⭐', label: 'Feedbacks de clientes', valor: kpiFb, cor: '#16a34a', badge: fbNovos },
                 { perm: 'calculadora', href: finId ? `/salon/departamentos/${finId}` : '/salon/profissionais', emoji: '📄', label: 'Boletos vencidos', valor: kpiBoletos, cor: '#dc2626', badge: 0, alerta: (kpiBoletos || 0) > 0, sub: (kpiBoletos || 0) > 0 ? `R$ ${kpiBoletosVlr.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} a pagar` : 'tudo em dia' },
               ].filter(k => pode(k.perm)).map(k => {
