@@ -1616,19 +1616,30 @@ export default function CalculadoraCusto() {
       ? (C + prod * abat) / (novoPreco * (1 - (taxaAntesRateio ? taxC : 0)))
       : 0
     const aumento = preco > 0 ? novoPreco / preco - 1 : 0
-    // Sugestão de arredondamento (dezena abaixo) com lucro real recalculado
-    const arred = Math.floor(novoPreco / 10) * 10
+    // Sugestão de arredondamento: dezena ACIMA. Nunca abaixo — arredondar pra
+    // baixo derruba o lucro abaixo da meta e a "sugestão" acaba desfazendo a
+    // recomendação que está logo acima dela.
+    const arred = Math.ceil(novoPreco / 10) * 10
     let lucroArred = 0, pctArred = 0
-    if (arred > 0 && arred !== Math.round(novoPreco)) {
+    if (arred > 0 && Math.abs(arred - novoPreco) > 0.01) {
       const impArred = salaoParceiro ? (arred - C) * imp : arred * imp
       lucroArred = arred - C - prod - arred * taxC - impArred - arred * co
       pctArred = lucroArred / arred
     }
 
+    // ── Cenário em que o PROFISSIONAL fornece o insumo ──────────────────────
+    // Mantém preço e comissão como estão, mas o produto sai do bolso dele.
+    // O salão lucra mais; só que se o insumo custar mais que a comissão, o
+    // profissional termina o atendimento devendo — e aí a opção é indefensável.
+    const ganhoProfInsumo = C - prod
+    const lucroSalaoInsumo = preco - C - preco * taxC - (salaoParceiro ? (preco - C) * imp : preco * imp) - preco * co
+    const insumoInviavel = ganhoProfInsumo < 0
+
     return { c, meta, impossivel: false, lucroAlvoAtual: meta * preco,
       comMaxR, comMaxPctCampo, comMaxPctPreco,
       C, novoPreco, lucroB, comPctEqB, novoRateioPctCampo, aumento,
-      arred, lucroArred, pctArred }
+      arred, lucroArred, pctArred,
+      ganhoProfInsumo, lucroSalaoInsumo, insumoInviavel, prodR: prod }
   }
 
   function custoIngred(i: Ingrediente): number {
@@ -3574,9 +3585,9 @@ Use números reais. Seja direto.`
                                     <p>Comissão Percentual Equivalente: <strong>{(r.comPctEqB*100).toFixed(1)}%</strong></p>
                                     <p>Lucro Líquido do Salão: <strong style={{color:'#059669'}}>{fmtR(r.lucroB)}</strong> (Margem de {(r.meta*100).toFixed(1)}%)</p>
                                   </div>
-                                  {r.arred > 0 && r.arred !== Math.round(r.novoPreco) && (
+                                  {r.arred > 0 && Math.abs(r.arred - r.novoPreco) > 0.01 && (
                                     <p className="text-[10px] mt-2 rounded-lg p-2" style={{background:'#10b98110',color:'#059669',border:'1px solid #10b98140'}}>
-                                      💡 Sugestão de arredondamento: <strong>{fmtR(r.arred)}</strong> (lucro real estimado {(r.pctArred*100).toFixed(1)}%)
+                                      💡 Sugestão de arredondamento: <strong>{fmtR(r.arred)}</strong> — lucro sobe para {(r.pctArred*100).toFixed(1)}%
                                     </p>
                                   )}
                                   {r.aumento > 0.3 && (
@@ -3588,8 +3599,8 @@ Use números reais. Seja direto.`
                               </div>
                               {/* Técnica das Três Opções */}
                               <div>
-                                <p className="text-[10px] font-bold mb-2" style={{color:'#767069'}}>🤝 TÉCNICA DAS TRÊS OPÇÕES — apresente ao profissional e deixe que ele escolha:</p>
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                <p className="text-[10px] font-bold mb-2" style={{color:'#767069'}}>🤝 OPÇÕES DE NEGOCIAÇÃO — apresente ao profissional e deixe que ele escolha:</p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                   <div className="rounded-xl p-3 border text-[10px] space-y-1" style={{background:'#faf9f7',borderColor:'#e8e6e0',color:'#3a3835'}}>
                                     <p className="font-bold" style={{color:'#767069'}}>1️⃣ Manter Tudo Igual</p>
                                     <p>Preço: <strong>{fmtR(c.preco)}</strong></p>
@@ -3607,6 +3618,23 @@ Use números reais. Seja direto.`
                                     <p>Preço: <strong>{fmtR(r.novoPreco)}</strong></p>
                                     <p>Comissão: <strong>{(r.comPctEqB*100).toFixed(1)}% ({fmtR(r.C)})</strong></p>
                                     <p>Lucro do Salão: <strong style={{color:'#059669'}}>{fmtR(r.lucroB)} ({metaPct}%)</strong></p>
+                                    <p style={{color:'#767069'}}>Salão fornece o produto</p>
+                                  </div>
+
+                                  {/* 4ª via: o produto sai do bolso do profissional */}
+                                  <div className="rounded-xl p-3 border text-[10px] space-y-1"
+                                    style={{background: r.insumoInviavel ? '#fff7ed' : '#faf9f7', borderColor: r.insumoInviavel ? '#fdba74' : '#e8e6e0', color:'#3a3835'}}>
+                                    <p className="font-bold" style={{color:'#767069'}}>4️⃣ Profissional fornece o produto</p>
+                                    <p>Preço: <strong>{fmtR(c.preco)}</strong></p>
+                                    <p>Comissão: <strong>{n(s.rateioP)}% ({fmtR(r.C)})</strong></p>
+                                    <p>Ele leva pra casa: <strong style={{color: r.ganhoProfInsumo>=0 ? '#059669' : '#b91c1c'}}>{fmtR(r.ganhoProfInsumo)}</strong>
+                                      <span style={{color:'#9ca3af'}}> ({fmtR(r.C)} − {fmtR(r.prodR)} do produto)</span></p>
+                                    <p>Lucro do Salão: <strong style={{color:'#059669'}}>{fmtR(r.lucroSalaoInsumo)} ({c.preco>0?(r.lucroSalaoInsumo/c.preco*100).toFixed(1):'0'}%)</strong></p>
+                                    {r.insumoInviavel && (
+                                      <p className="rounded-lg p-1.5 mt-1" style={{background:'#ffedd5',color:'#9a3412'}}>
+                                        ⚠ O produto custa mais que a comissão — ele sai devendo. Não apresente esta opção.
+                                      </p>
+                                    )}
                                   </div>
                                 </div>
                               </div>
