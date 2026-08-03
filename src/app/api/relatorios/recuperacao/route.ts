@@ -5,9 +5,28 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { getAtendimentosRaw } from '@/lib/atendimentosCache'
 import { escritaBloqueadaSub } from '@/lib/apiAuth'
 
-// Configuração da recuperação de clientes
-const BONUS_PCT = 5      // % do valor da visita de retorno que vira bônus da recepção
-const JANELA_DIAS = 10   // dias para a trava do botão E para atribuir o retorno à mensagem
+// Configuração da recuperação de clientes — estes são os valores INICIAIS.
+// Cada salão ajusta os seus em salao_config['recuperacao_config'], porque o
+// bônus da recepção muda conforme a campanha do mês.
+const BONUS_PCT_PADRAO = 5      // % do valor da visita de retorno que vira bônus
+const JANELA_DIAS_PADRAO = 10   // dias para travar o botão E para atribuir o retorno
+
+const CHAVE_CFG = 'recuperacao_config'
+
+async function lerConfig(salaoId: string): Promise<{ bonus_pct: number; janela_dias: number }> {
+  try {
+    const { data } = await supabaseAdmin.from('salao_config').select('valor')
+      .eq('salao_id', salaoId).eq('chave', CHAVE_CFG).maybeSingle()
+    const v: any = (data as any)?.valor || {}
+    // limites de sanidade: bônus até 50% e janela de 1 a 90 dias
+    const b = Number(v.bonus_pct)
+    const j = Number(v.janela_dias)
+    return {
+      bonus_pct: Number.isFinite(b) && b >= 0 && b <= 50 ? b : BONUS_PCT_PADRAO,
+      janela_dias: Number.isFinite(j) && j >= 1 && j <= 90 ? Math.round(j) : JANELA_DIAS_PADRAO,
+    }
+  } catch { return { bonus_pct: BONUS_PCT_PADRAO, janela_dias: JANELA_DIAS_PADRAO } }
+}
 
 async function getSalaoId() {
   const token = cookies().get('nodri_token')?.value
@@ -58,6 +77,10 @@ export async function GET(req: NextRequest) {
   const salaoId = await getSalaoId()
   if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   const tipo = new URL(req.url).searchParams.get('tipo') || 'status'
+  const { bonus_pct: BONUS_PCT, janela_dias: JANELA_DIAS } = await lerConfig(salaoId)
+
+  // A tela de configuração pede só os valores atuais
+  if (tipo === 'config') return NextResponse.json({ bonus_pct: BONUS_PCT, janela_dias: JANELA_DIAS })
 
   try {
     // Recepcionistas = profissionais com cargo "Recepção"
@@ -178,6 +201,31 @@ export async function GET(req: NextRequest) {
 }
 
 // Registra um contato (clique no botão WhatsApp)
+// PUT — dono (ou quem tem acesso de escrita) muda o bônus e a janela
+export async function PUT(req: NextRequest) {
+  const salaoId = await getSalaoId()
+  if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  if (await escritaBloqueadaSub()) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
+
+  const b = await req.json().catch(() => ({} as any))
+  const bonus = Number(b?.bonus_pct)
+  const janela = Number(b?.janela_dias)
+  if (!Number.isFinite(bonus) || bonus < 0 || bonus > 50) {
+    return NextResponse.json({ error: 'O bônus deve ficar entre 0% e 50%.' }, { status: 400 })
+  }
+  if (!Number.isFinite(janela) || janela < 1 || janela > 90) {
+    return NextResponse.json({ error: 'A janela deve ficar entre 1 e 90 dias.' }, { status: 400 })
+  }
+
+  const valor = { bonus_pct: Math.round(bonus * 100) / 100, janela_dias: Math.round(janela) }
+  const { error } = await supabaseAdmin.from('salao_config').upsert(
+    { salao_id: salaoId, chave: CHAVE_CFG, valor, atualizado_em: new Date().toISOString() },
+    { onConflict: 'salao_id,chave' },
+  )
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ ok: true, ...valor })
+}
+
 export async function POST(req: NextRequest) {
     if (await escritaBloqueadaSub()) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
   const salaoId = await getSalaoId()
@@ -200,7 +248,9 @@ export async function POST(req: NextRequest) {
       contato_em: new Date().toISOString(),
     })
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    return NextResponse.json({ ok: true, travado_ate: new Date(Date.now() + JANELA_DIAS * 86400000).toISOString() })
+    // a janela é a configurada pelo salão (não mais a constante fixa)
+    const { janela_dias } = await lerConfig(salaoId)
+    return NextResponse.json({ ok: true, travado_ate: new Date(Date.now() + janela_dias * 86400000).toISOString() })
   } catch (err: any) {
     return NextResponse.json({ error: String(err?.message || err) }, { status: 500 })
   }

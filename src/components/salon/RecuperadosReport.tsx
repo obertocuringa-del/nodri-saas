@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Loader2, Trophy, TrendingUp, Users, DollarSign } from 'lucide-react'
+import { Loader2, Trophy, TrendingUp, Users, DollarSign, Settings, Check, X } from 'lucide-react'
+import toast from 'react-hot-toast'
 import RecepcionistasCarteira from './RecepcionistasCarteira'
 import SalaDeJogos from './SalaDeJogos'
 import DesafioMatch from './DesafioMatch'
@@ -14,6 +15,30 @@ export default function RecuperadosReport() {
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [vista, setVista] = useState<'recuperados' | 'carteira' | 'jogo' | 'desafios' | 'arena'>('recuperados')
+  // Bônus e janela são do salão, não do sistema: a campanha muda e o prêmio
+  // da recepção muda junto.
+  const [cfgAberta, setCfgAberta] = useState(false)
+  const [cfgBonus, setCfgBonus] = useState('')
+  const [cfgJanela, setCfgJanela] = useState('')
+  const [salvandoCfg, setSalvandoCfg] = useState(false)
+
+  async function salvarCfg() {
+    setSalvandoCfg(true)
+    try {
+      const r = await fetch('/api/relatorios/recuperacao', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bonus_pct: Number(cfgBonus), janela_dias: Number(cfgJanela) }),
+      })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok) { toast.error(d?.error || 'Não foi possível salvar'); return }
+      toast.success('Regra atualizada')
+      setCfgAberta(false)
+      // recarrega os números com a regra nova
+      const novo = await fetch('/api/relatorios/recuperacao?tipo=recuperados').then(x => x.json())
+      setData(novo)
+    } catch { toast.error('Erro de conexão') }
+    setSalvandoCfg(false)
+  }
 
   useEffect(() => {
     // cache aparece na hora; dado fresco atualiza em seguida
@@ -52,10 +77,44 @@ export default function RecuperadosReport() {
         : (
         <>
       <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 12, padding: '14px 18px', marginBottom: 16 }}>
-        <h3 style={{ color: '#15803d', fontSize: 14, fontWeight: 700, margin: 0 }}>💚 Clientes Recuperados</h3>
-        <p style={{ color: '#166534', fontSize: 12, margin: '4px 0 0' }}>
-          Clientes que voltaram em até {data.janela_dias} dias após o contato. Bônus = {data.bonus_pct}% do valor pago na visita de volta.
-        </p>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <h3 style={{ color: '#15803d', fontSize: 14, fontWeight: 700, margin: 0 }}>💚 Clientes Recuperados</h3>
+            <p style={{ color: '#166534', fontSize: 12, margin: '4px 0 0' }}>
+              Clientes que voltaram em até {data.janela_dias} dias após o contato. Bônus = {data.bonus_pct}% do valor pago na visita de volta.
+            </p>
+          </div>
+          <button onClick={() => { setCfgBonus(String(data.bonus_pct)); setCfgJanela(String(data.janela_dias)); setCfgAberta(a => !a) }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: '1px solid #86efac', color: '#15803d', borderRadius: 9, padding: '7px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>
+            <Settings size={13} /> Ajustar regra
+          </button>
+        </div>
+
+        {cfgAberta && (
+          <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #bbf7d0', display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#166534', marginBottom: 4 }}>Bônus da recepção (%)</label>
+              <input type="number" value={cfgBonus} onChange={e => setCfgBonus(e.target.value)} min={0} max={50} step="0.5"
+                style={{ width: 120, border: '1px solid #86efac', borderRadius: 8, padding: '8px 10px', fontSize: 13, fontWeight: 700, color: '#14532d' }} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#166534', marginBottom: 4 }}>Janela de retorno (dias)</label>
+              <input type="number" value={cfgJanela} onChange={e => setCfgJanela(e.target.value)} min={1} max={90}
+                style={{ width: 140, border: '1px solid #86efac', borderRadius: 8, padding: '8px 10px', fontSize: 13, fontWeight: 700, color: '#14532d' }} />
+            </div>
+            <button onClick={salvarCfg} disabled={salvandoCfg}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#16a34a', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 14px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', opacity: salvandoCfg ? .6 : 1 }}>
+              {salvandoCfg ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />} Salvar
+            </button>
+            <button onClick={() => setCfgAberta(false)}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'transparent', border: 'none', color: '#6b7280', fontSize: 12, cursor: 'pointer', padding: '9px 6px' }}>
+              <X size={13} /> Cancelar
+            </button>
+            <p style={{ width: '100%', margin: 0, fontSize: 11, color: '#166534' }}>
+              Vale para o cálculo daqui pra frente e recalcula o histórico com a regra nova. Bônus de 0 a 50%, janela de 1 a 90 dias.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Métricas + ROI */}
