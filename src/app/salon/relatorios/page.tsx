@@ -813,7 +813,7 @@ export default function RelatoriosPage() {
     setFreqLoading(true)
     setFreqClientes([])
     try {
-      const res = await fetch(`/api/relatorios/analise-clientes?tipo=frequencia-clientes&min=${faixa.min}&max=${faixa.max}`)
+      const res = await fetch(`/api/relatorios/analise-clientes?tipo=frequencia-clientes&min=${faixa.min}&max=${faixa.max}&de=${encodeURIComponent(analiseDe||'')}&ate=${encodeURIComponent(analiseAte||'')}`)
       const data = await res.json()
       setFreqClientes(Array.isArray(data) ? data : [])
     } catch {}
@@ -839,7 +839,11 @@ export default function RelatoriosPage() {
 
     // ── Cache instantâneo por tipo: mostra o último resultado na hora e revalida atrás.
     //    Seguro porque o relatório só muda quando você reimporta os atendimentos. ──
-    const cacheKey = 'nodri_analise_' + tipo
+    // periodo escolhido na tela — vai junto na URL (o servidor filtra por ano)
+    const per = `&de=${encodeURIComponent(analiseDe || '')}&ate=${encodeURIComponent(analiseAte || '')}`
+    // o cache tambem e por periodo: sem isso, trocar de "este ano" para "tudo"
+    // mostraria o resultado antigo
+    const cacheKey = `nodri_analise_${tipo}_${analiseDe}_${analiseAte}`
     try {
       const c = localStorage.getItem(cacheKey)
       if (c) {
@@ -859,7 +863,7 @@ export default function RelatoriosPage() {
         const cats = await res.json().then(d => Array.isArray(d) ? d : []).catch(() => [])
         setCsCategorias(cats)
         let resumo = analiseResumo
-        if (!resumo) { resumo = await fetch('/api/relatorios/analise-clientes?tipo=resumo').then(r => r.json()); setAnaliseResumo(resumo) }
+        if (!resumo) { resumo = await fetch(`/api/relatorios/analise-clientes?tipo=resumo${per}`).then(r => r.json()); setAnaliseResumo(resumo) }
         try { localStorage.setItem(cacheKey, JSON.stringify({ csCategorias: cats, resumo })) } catch { /* */ }
       } catch { /* */ }
       setCsLoadingCat(false)
@@ -869,8 +873,8 @@ export default function RelatoriosPage() {
     try {
       if (tipo === 'rfm') {
         const [resResumo, resRfm] = await Promise.all([
-          fetch('/api/relatorios/analise-clientes?tipo=resumo'),
-          fetch('/api/relatorios/analise-clientes?tipo=rfm'),
+          fetch(`/api/relatorios/analise-clientes?tipo=resumo${per}`),
+          fetch(`/api/relatorios/analise-clientes?tipo=rfm${per}`),
         ])
         const resumo = await resResumo.json()
         const rfm = await resRfm.json()
@@ -879,12 +883,12 @@ export default function RelatoriosPage() {
         setAnaliseDetalhe(detalhe)
         try { localStorage.setItem(cacheKey, JSON.stringify({ detalhe, resumo })) } catch { /* */ }
       } else {
-        const res = await fetch(`/api/relatorios/analise-clientes?tipo=${tipo}`)
+        const res = await fetch(`/api/relatorios/analise-clientes?tipo=${tipo}${per}`)
         const data = await res.json()
         const detalhe = Array.isArray(data) ? data : []
         setAnaliseDetalhe(detalhe)
         let resumo = analiseResumo
-        if (!resumo) { resumo = await fetch('/api/relatorios/analise-clientes?tipo=resumo').then(r => r.json()); setAnaliseResumo(resumo) }
+        if (!resumo) { resumo = await fetch(`/api/relatorios/analise-clientes?tipo=resumo${per}`).then(r => r.json()); setAnaliseResumo(resumo) }
         try { localStorage.setItem(cacheKey, JSON.stringify({ detalhe, resumo })) } catch { /* */ }
       }
     } catch { /* silencioso */ }
