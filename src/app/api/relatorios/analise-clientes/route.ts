@@ -10,6 +10,15 @@ async function getSalaoId() {
   return payload?.salaoId || null
 }
 
+// Extrai o ANO de uma data em "DD/MM/YYYY" ou "YYYY-MM-DD" (usado pra filtrar
+// no banco pela coluna `ano`, que e numerica e indexavel).
+function anoDoParam(v: string | null): number | undefined {
+  if (!v) return undefined
+  const m = v.match(/(\d{4})/)
+  const n = m ? Number(m[1]) : NaN
+  return Number.isFinite(n) && n > 1990 && n < 2200 ? n : undefined
+}
+
 // Converte "DD/MM/YYYY" (ou ISO) para timestamp
 function parseBR(s: string): number {
   if (!s) return 0
@@ -25,18 +34,23 @@ type Perfil = {
 
 // Calcula os perfis de clientes DIRETO do atendimentos_raw (sem tabela cacheada),
 // garantindo que os "Mais Relatórios" fiquem sempre em sincronia com os dados importados.
-async function buildPerfis(salaoId: string): Promise<Perfil[]> {
+async function buildPerfis(salaoId: string, anoDe?: number, anoAte?: number): Promise<Perfil[]> {
   let rows: any[] = []
   let from = 0
+  // Teto de seguranca: mesmo sem filtro, nao tenta trazer o banco inteiro de
+  // uma vez. 60 mil linhas ja cobrem varios anos e cabem no tempo da requisicao.
+  const TETO = 60000
   while (true) {
-    const { data } = await supabaseAdmin
+    let q = supabaseAdmin
       .from('atendimentos_raw')
       .select('cliente, celular, data_comanda, servico, total, valor')
       .eq('salao_id', salaoId)
-      .range(from, from + 999)
+    if (anoDe)  q = q.gte('ano', anoDe)
+    if (anoAte) q = q.lte('ano', anoAte)
+    const { data } = await q.range(from, from + 999)
     if (!data || data.length === 0) break
     rows = rows.concat(data)
-    if (data.length < 1000) break
+    if (data.length < 1000 || rows.length >= TETO) break
     from += 1000
   }
 
@@ -100,11 +114,14 @@ async function buildPerfis(salaoId: string): Promise<Perfil[]> {
 // recalcular tudo do atendimentos_raw a cada clique).
 const _cache = new Map<string, { perfis: Perfil[]; ts: number }>()
 const CACHE_TTL = 60_000
-async function buildPerfisCached(salaoId: string): Promise<Perfil[]> {
-  const c = _cache.get(salaoId)
+// A chave do cache inclui o PERIODO: sem isso, abrir "este ano" e depois
+// "tudo" devolveria o resultado do primeiro por 60 segundos.
+async function buildPerfisCached(salaoId: string, anoDe?: number, anoAte?: number): Promise<Perfil[]> {
+  const chave = `${salaoId}|${anoDe || ''}|${anoAte || ''}`
+  const c = _cache.get(chave)
   if (c && Date.now() - c.ts < CACHE_TTL) return c.perfis
-  const perfis = await buildPerfis(salaoId)
-  _cache.set(salaoId, { perfis, ts: Date.now() })
+  const perfis = await buildPerfis(salaoId, anoDe, anoAte)
+  _cache.set(chave, { perfis, ts: Date.now() })
   return perfis
 }
 
@@ -120,9 +137,13 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url)
   const tipo = searchParams.get('tipo') || 'resumo'
+  // O periodo escolhido na tela agora chega ate a consulta (antes era ignorado
+  // e a rota varria todo o historico, por isso demorava e voltava vazia).
+  const anoDe  = anoDoParam(searchParams.get('de'))
+  const anoAte = anoDoParam(searchParams.get('ate'))
 
   try {
-    const perfis = await buildPerfisCached(salaoId)
+    const perfis = await buildPerfisCached(salaoId, anoDe, anoAte)
 
     if (tipo === 'resumo') {
       if (perfis.length === 0) return NextResponse.json({ vazio: true })
