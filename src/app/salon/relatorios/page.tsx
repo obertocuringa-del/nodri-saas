@@ -285,6 +285,10 @@ export default function RelatoriosPage() {
   const [freqClientes, setFreqClientes] = useState<any[]>([])
   const [freqLoading, setFreqLoading] = useState(false)
   const [analiseResumo, setAnaliseResumo] = useState<any>(null)
+  // De qual periodo e o resumo que esta em memoria. Sem isso, trocar de "este
+  // ano" para "tudo" mantinha o resumo antigo e o "Dinheiro perdido" ficava
+  // congelado enquanto a lista de clientes mudava.
+  const [resumoPer, setResumoPer] = useState('')
   const [analiseDetalhe, setAnaliseDetalhe] = useState<any[]>([])
   const [verQtd, setVerQtd] = useState(10)  // paginação: quantas linhas mostrar
   // Ordenação das listas de clientes (clique no título da coluna). dir -1 = maior→menor.
@@ -862,8 +866,11 @@ export default function RelatoriosPage() {
         const res = await fetch('/api/relatorios/crosssell?tipo=categorias')
         const cats = await res.json().then(d => Array.isArray(d) ? d : []).catch(() => [])
         setCsCategorias(cats)
-        let resumo = analiseResumo
-        if (!resumo) { resumo = await fetch(`/api/relatorios/analise-clientes?tipo=resumo${per}`).then(r => r.json()); setAnaliseResumo(resumo) }
+        let resumo = resumoPer === per ? analiseResumo : null
+        if (!resumo) {
+          resumo = await fetch(`/api/relatorios/analise-clientes?tipo=resumo${per}`).then(r => r.json())
+          setAnaliseResumo(resumo); setResumoPer(per)
+        }
         try { localStorage.setItem(cacheKey, JSON.stringify({ csCategorias: cats, resumo })) } catch { /* */ }
       } catch { /* */ }
       setCsLoadingCat(false)
@@ -879,7 +886,7 @@ export default function RelatoriosPage() {
         const resumo = await resResumo.json()
         const rfm = await resRfm.json()
         const detalhe = Object.entries(rfm).map(([score, qtd]) => ({ score, qtd }))
-        setAnaliseResumo(resumo)
+        setAnaliseResumo(resumo); setResumoPer(per)
         setAnaliseDetalhe(detalhe)
         try { localStorage.setItem(cacheKey, JSON.stringify({ detalhe, resumo })) } catch { /* */ }
       } else {
@@ -887,8 +894,11 @@ export default function RelatoriosPage() {
         const data = await res.json()
         const detalhe = Array.isArray(data) ? data : []
         setAnaliseDetalhe(detalhe)
-        let resumo = analiseResumo
-        if (!resumo) { resumo = await fetch(`/api/relatorios/analise-clientes?tipo=resumo${per}`).then(r => r.json()); setAnaliseResumo(resumo) }
+        let resumo = resumoPer === per ? analiseResumo : null
+        if (!resumo) {
+          resumo = await fetch(`/api/relatorios/analise-clientes?tipo=resumo${per}`).then(r => r.json())
+          setAnaliseResumo(resumo); setResumoPer(per)
+        }
         try { localStorage.setItem(cacheKey, JSON.stringify({ detalhe, resumo })) } catch { /* */ }
       }
     } catch { /* silencioso */ }

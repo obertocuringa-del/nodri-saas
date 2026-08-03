@@ -42,13 +42,24 @@ let _ultimoMotivoRpc = 'ainda nao chamado'   // diagnostico: ver ?debug=1
 
 async function perfisViaBanco(salaoId: string, anoDe?: number, anoAte?: number): Promise<Perfil[] | null> {
   try {
-    const { data, error } = await supabaseAdmin.rpc('perfis_clientes', {
-      p_salao: salaoId,
-      p_ano_de: anoDe ?? null,
-      p_ano_ate: anoAte ?? null,
-    })
-    if (error) { _ultimoMotivoRpc = 'erro: ' + (error.message || JSON.stringify(error)); return null }
-    if (!Array.isArray(data)) { _ultimoMotivoRpc = 'resposta nao e lista: ' + typeof data; return null }
+    // Pagina de mil em mil: o PostgREST corta a resposta em 1000 linhas por
+    // padrao, entao pedir tudo de uma vez devolveria a lista truncada — e um
+    // total exatamente redondo (1000) e o sintoma classico disso.
+    const data: any[] = []
+    let de = 0
+    while (true) {
+      const r = await supabaseAdmin.rpc('perfis_clientes', {
+        p_salao: salaoId,
+        p_ano_de: anoDe ?? null,
+        p_ano_ate: anoAte ?? null,
+      }).range(de, de + 999)
+      if (r.error) { _ultimoMotivoRpc = 'erro: ' + (r.error.message || JSON.stringify(r.error)); return null }
+      const lote = Array.isArray(r.data) ? r.data : []
+      data.push(...lote)
+      if (lote.length < 1000) break
+      de += 1000
+      if (de > 50000) break            // trava de seguranca
+    }
     if (data.length === 0) { _ultimoMotivoRpc = 'funcao devolveu 0 linhas'; return null }
     _ultimoMotivoRpc = `ok — ${data.length} clientes pelo banco`
 
