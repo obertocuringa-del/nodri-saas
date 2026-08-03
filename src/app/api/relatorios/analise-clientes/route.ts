@@ -38,6 +38,8 @@ type Perfil = {
 // das ~100 mil de atendimentos. Depende da funcao `perfis_clientes` (arquivo
 // sql/perfis_clientes.sql). Se ela ainda nao existir, devolve null e o codigo
 // cai no metodo antigo — nada quebra enquanto o SQL nao for rodado.
+let _ultimoMotivoRpc = 'ainda nao chamado'   // diagnostico: ver ?debug=1
+
 async function perfisViaBanco(salaoId: string, anoDe?: number, anoAte?: number): Promise<Perfil[] | null> {
   try {
     const { data, error } = await supabaseAdmin.rpc('perfis_clientes', {
@@ -45,7 +47,10 @@ async function perfisViaBanco(salaoId: string, anoDe?: number, anoAte?: number):
       p_ano_de: anoDe ?? null,
       p_ano_ate: anoAte ?? null,
     })
-    if (error || !Array.isArray(data) || data.length === 0) return null
+    if (error) { _ultimoMotivoRpc = 'erro: ' + (error.message || JSON.stringify(error)); return null }
+    if (!Array.isArray(data)) { _ultimoMotivoRpc = 'resposta nao e lista: ' + typeof data; return null }
+    if (data.length === 0) { _ultimoMotivoRpc = 'funcao devolveu 0 linhas'; return null }
+    _ultimoMotivoRpc = `ok — ${data.length} clientes pelo banco`
 
     const now = Date.now()
     const perfis: Perfil[] = data.map((r: any) => {
@@ -185,6 +190,19 @@ export async function GET(req: NextRequest) {
   // e a rota varria todo o historico, por isso demorava e voltava vazia).
   const anoDe  = anoDoParam(searchParams.get('de'))
   const anoAte = anoDoParam(searchParams.get('ate'))
+
+  // ?debug=1 diz QUAL caminho foi usado e, se o rapido falhou, o porque
+  if (searchParams.get('debug') === '1') {
+    const t0 = Date.now()
+    const viaBanco = await perfisViaBanco(salaoId, anoDe, anoAte)
+    return NextResponse.json({
+      caminho: viaBanco ? 'funcao do banco (rapido)' : 'varredura antiga (lento)',
+      motivo: _ultimoMotivoRpc,
+      clientes: viaBanco?.length ?? null,
+      segundos: ((Date.now() - t0) / 1000).toFixed(1),
+      ano_de: anoDe ?? null, ano_ate: anoAte ?? null,
+    })
+  }
 
   try {
     const perfis = await buildPerfisCached(salaoId, anoDe, anoAte)
