@@ -5,6 +5,7 @@ import { Bell, Settings, CheckCircle, X, Zap, Play, Search, ChevronDown, ArrowRi
 import toast from 'react-hot-toast'
 import type { ModuloComStatus, Notificacao } from '@/types'
 import { chaveModulo } from '@/lib/permissoes'
+import ChatWidget from './ChatWidget'
 
 const MENU_LINKS: Record<string, { title: string; url: string }[]> = {
   'Manual do Usuário': [
@@ -884,6 +885,9 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
 
         </main>
       </div>
+      {/* Chat da IA: voltou a pedido. A bolha do WhatsApp segue escondida pela
+          classe nodri-sem-whats no container — sao dois botoes diferentes. */}
+      <ChatWidget />
     </div>
   )
 }
