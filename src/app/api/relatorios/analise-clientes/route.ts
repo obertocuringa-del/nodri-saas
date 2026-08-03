@@ -34,6 +34,43 @@ type Perfil = {
 
 // Calcula os perfis de clientes DIRETO do atendimentos_raw (sem tabela cacheada),
 // garantindo que os "Mais Relatórios" fiquem sempre em sincronia com os dados importados.
+// Caminho rapido: o Postgres agrupa por cliente e devolve ~2 mil linhas em vez
+// das ~100 mil de atendimentos. Depende da funcao `perfis_clientes` (arquivo
+// sql/perfis_clientes.sql). Se ela ainda nao existir, devolve null e o codigo
+// cai no metodo antigo — nada quebra enquanto o SQL nao for rodado.
+async function perfisViaBanco(salaoId: string, anoDe?: number, anoAte?: number): Promise<Perfil[] | null> {
+  try {
+    const { data, error } = await supabaseAdmin.rpc('perfis_clientes', {
+      p_salao: salaoId,
+      p_ano_de: anoDe ?? null,
+      p_ano_ate: anoAte ?? null,
+    })
+    if (error || !Array.isArray(data) || data.length === 0) return null
+
+    const now = Date.now()
+    const perfis: Perfil[] = data.map((r: any) => {
+      const primeira = String(r.primeira_visita || '')
+      const ultima = String(r.ultima_visita || '')
+      const total_visitas = Number(r.total_visitas) || 0
+      // intervalo medio = dias entre a 1a e a ultima visita / nº de intervalos
+      const span = primeira && ultima ? (parseBR(ultima) - parseBR(primeira)) / 86400000 : 0
+      return {
+        cliente_nome: String(r.cliente_nome || ''),
+        celular: String(r.celular || ''),
+        ltv_total: Math.round((Number(r.ltv_total) || 0) * 100) / 100,
+        total_visitas,
+        primeira_visita: primeira,
+        ultima_visita: ultima,
+        dias_desde_ultima_visita: ultima ? Math.floor((now - parseBR(ultima)) / 86400000) : 9999,
+        intervalo_medio_dias: total_visitas >= 2 ? Math.round(span / (total_visitas - 1)) : 0,
+        servicos_feitos: Array.isArray(r.servicos_feitos) ? r.servicos_feitos : [],
+        status: '', score_rfm: '',
+      }
+    })
+    return classificar(perfis)
+  } catch { return null }
+}
+
 async function buildPerfis(salaoId: string, anoDe?: number, anoAte?: number): Promise<Perfil[]> {
   let rows: any[] = []
   let from = 0
@@ -95,6 +132,13 @@ async function buildPerfis(salaoId: string, anoDe?: number, anoAte?: number): Pr
     }
   })
 
+  return classificar(perfis)
+}
+
+// Status e RFM dependem do CONJUNTO (VIP = top 15% por LTV), por isso recebem a
+// lista inteira. Usado tanto pelo caminho do banco quanto pelo antigo, pra os
+// dois classificarem exatamente igual.
+function classificar(perfis: Perfil[]): Perfil[] {
   // Status pela recência (relativo a 45/90 dias)
   for (const p of perfis) {
     p.status = p.dias_desde_ultima_visita > 90 ? 'perdido' : p.dias_desde_ultima_visita > 45 ? 'risco' : 'ativo'
@@ -120,7 +164,7 @@ async function buildPerfisCached(salaoId: string, anoDe?: number, anoAte?: numbe
   const chave = `${salaoId}|${anoDe || ''}|${anoAte || ''}`
   const c = _cache.get(chave)
   if (c && Date.now() - c.ts < CACHE_TTL) return c.perfis
-  const perfis = await buildPerfis(salaoId, anoDe, anoAte)
+  const perfis = (await perfisViaBanco(salaoId, anoDe, anoAte)) ?? (await buildPerfis(salaoId, anoDe, anoAte))
   _cache.set(chave, { perfis, ts: Date.now() })
   return perfis
 }
