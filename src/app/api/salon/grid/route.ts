@@ -31,7 +31,10 @@ export async function PUT(req: NextRequest) {
   // Profissional nunca grava; Modo Caixa só acrescenta.
   const sess = await getSessao()
   if (sess?.role === 'profissional') return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
-  if (sess?.role === 'sub' && sessaoModoCaixa(sess)) {
+  // Enxovais fica de fora da trava: conferir o que a lavanderia mandou de
+  // volta exige corrigir numero ja digitado, e isso e o trabalho em si.
+  const ehEnxovais = String(chave || '').startsWith('enxovais')
+  if (sess?.role === 'sub' && sessaoModoCaixa(sess) && !ehEnxovais) {
     // Trava do Modo Caixa: compara com o que está salvo — só aceita acréscimos/execução
     const { data: atual } = await supabaseAdmin.from('salao_config').select('valor').eq('salao_id', salaoId).eq('chave', `grid_${chave}`).maybeSingle()
     if (atual?.valor && !apenasAcrescenta(atual.valor, doc)) {

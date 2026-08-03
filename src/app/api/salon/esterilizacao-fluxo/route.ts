@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { getSessao } from '@/lib/apiAuth'
+import { getSessao, salaoIdSe } from '@/lib/apiAuth'
 import { servicosPorProfissional } from '@/lib/profServicosMatch'
 import { hojeBREster, ridEster, type PedidoEster } from '@/lib/esterilizacaoFluxo'
 
@@ -136,8 +136,11 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ ok: true })
   }
 
-  // 'receber' e 'entregar' são do salão (dono).
-  if (sess.role !== 'salon') return NextResponse.json({ error: 'Sem acesso' }, { status: 403 })
+  // 'receber' e 'entregar' são do lado do salão: dono OU sub-usuário com a
+  // área de Esterilização liberada. Profissional nunca passa daqui.
+  if (sess.role === 'profissional' || !(await salaoIdSe('adm_esterilizacao'))) {
+    return NextResponse.json({ error: 'Sem acesso' }, { status: 403 })
+  }
 
   if (acao === 'receber') {
     const qtd = Math.max(0, Math.round(Number(body?.qtdRecebida) || 0))
@@ -172,7 +175,9 @@ export async function PATCH(req: NextRequest) {
 // DELETE — o salão remove um pedido (limpeza).
 export async function DELETE(req: NextRequest) {
   const sess = await getSessao()
-  if (!sess || sess.role !== 'salon') return NextResponse.json({ error: 'Sem acesso' }, { status: 403 })
+  if (!sess || sess.role === 'profissional' || !(await salaoIdSe('adm_esterilizacao'))) {
+    return NextResponse.json({ error: 'Sem acesso' }, { status: 403 })
+  }
   const id = new URL(req.url).searchParams.get('id') || ''
   if (!id) return NextResponse.json({ error: 'Falta id' }, { status: 400 })
   const lista = await ler(sess.salaoId)
