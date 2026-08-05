@@ -72,7 +72,12 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const sess = await getSessao()
   if (!sess) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-  if (sess.role === 'sub') return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
+  // Sub-usuario com a area de Esterilizacao liberada tambem registra: quem
+  // recebe o alicate no balcao costuma ser a recepcao, nao o dono.
+  // (a profissional cai no ramo dela mais abaixo)
+  if (sess.role === 'sub' && !(await salaoIdSe('adm_esterilizacao'))) {
+    return NextResponse.json({ error: 'Sem acesso' }, { status: 403 })
+  }
   const body = await req.json().catch(() => null)
   const lista = await ler(sess.salaoId)
 
@@ -90,7 +95,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, pedido: novo })
   }
 
-  // Dono (role 'salon') → registro avulso de quem não solicitou.
+  // Dono ou sub-usuario liberado → registro avulso de quem nao solicitou.
   const profissionalId = String(body?.profissionalId || '').trim()
   const qtd = Math.max(1, Math.round(Number(body?.qtdRecebida) || 0))
   if (!profissionalId || !qtd) return NextResponse.json({ error: 'Informe a profissional e a quantidade' }, { status: 400 })
