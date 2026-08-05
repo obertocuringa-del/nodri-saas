@@ -239,9 +239,16 @@ export default function SalaoAdministrativoPage() {
                     const irPara = () => { if (!confirmarSaidaSemSalvar()) return; if (it.rota) { router.push(it.rota) } else { setAbaTopo(it.aba!); if (it.servico) setServico(it.servico) } }
                     return (
                       <button key={(it.aba || it.rota || '') + (it.servico || '')} onClick={irPara}
-                        style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 10px', border: 'none', borderRadius: 8, background: ativo ? '#f0eefb' : 'transparent', color: ativo ? '#5b4fcf' : '#4b5563', fontSize: 11.5, fontWeight: ativo ? 900 : 700, letterSpacing: '.3px', cursor: 'pointer', borderLeft: ativo ? '3px solid #5b4fcf' : '3px solid transparent' }}
+                        className={(it.aba === 'kits' && kitsPendentes > 0) || (it.aba === 'esterilizacao_fluxo' && esterPendentes > 0) ? 'nodri-alerta-pisca' : ''}
+                        style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%', textAlign: 'left', padding: '8px 10px', border: 'none', borderRadius: 8, background: ativo ? '#f0eefb' : 'transparent', color: ativo ? '#5b4fcf' : '#4b5563', fontSize: 11.5, fontWeight: ativo ? 900 : 700, letterSpacing: '.3px', cursor: 'pointer', borderLeft: ativo ? '3px solid #5b4fcf' : '3px solid transparent' }}
                         onMouseEnter={e => { if (!ativo) e.currentTarget.style.background = '#faf9f7' }} onMouseLeave={e => { if (!ativo) e.currentTarget.style.background = 'transparent' }}>
-                        {it.label}{it.rota ? ' →' : ''}
+                        <span style={{ flex: 1, minWidth: 0 }}>{it.label}{it.rota ? ' →' : ''}</span>
+                        {it.aba === 'esterilizacao_fluxo' && esterPendentes > 0 && (
+                          <span style={{ background: '#dc2626', color: '#fff', fontSize: 9.5, fontWeight: 900, borderRadius: 99, padding: '2px 7px', whiteSpace: 'nowrap' }}>{esterPendentes}</span>
+                        )}
+                        {it.aba === 'kits' && kitsPendentes > 0 && (
+                          <span style={{ background: '#dc2626', color: '#fff', fontSize: 9.5, fontWeight: 900, borderRadius: 99, padding: '2px 7px', whiteSpace: 'nowrap' }}>{kitsPendentes}</span>
+                        )}
                       </button>
                     )
                   })}
