@@ -1729,7 +1729,7 @@ ${([['Faturamento Total',r1.fat_total,r2.fat_total],['Ticket Médio',r1.ticket,r
               // Cargos administrativos não recebem meta de produção — sua parcela é redistribuída aos demais
               const CARGOS_SEM_META = ['ADMINISTRATIVO', 'FINANCEIRO', 'GERENCIA', 'RECEPCAO']
               // Meta Prof. e Redistribuição são só para PJ — profissionais CLT não entram
-              const profsAtivos = profsCadastrados.filter(p => p.nome_completo && !CARGOS_SEM_META.includes(norm(p.cargo || '')) && norm(p.vinculo || '') !== 'CLT')
+              const profsAtivos = profsCadastrados.filter(p => p.nome_completo && !(p as any).is_departamento && !CARGOS_SEM_META.includes(norm(p.cargo || '')) && norm(p.vinculo || '') !== 'CLT')
               const totalProfsAtivos = profsAtivos.length || 1
 
               // 3. Todos os períodos disponíveis (para média histórica)
