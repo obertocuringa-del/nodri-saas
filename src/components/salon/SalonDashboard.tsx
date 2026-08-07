@@ -109,7 +109,9 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
   type CalEvt = { id: string; data: string; texto: string; dias: number }
   const [lembretesCal, setLembretesCal] = useState<CalEvt[]>([])       // Central
   const [lembretesMkt, setLembretesMkt] = useState<CalEvt[]>([])       // Marketing
-  const [lembreteCalAberto, setLembreteCalAberto] = useState(true)
+  // Começa FECHADO: o aviso de compromissos não abre mais sozinho ao entrar
+  // (o selo com o número continua no card Calendário). Evita cobrir a tela.
+  const [lembreteCalAberto, setLembreteCalAberto] = useState(false)
   const [seletorCalAberto, setSeletorCalAberto] = useState(false)      // menu que abre ao clicar no card
   useEffect(() => {
     const h = new Date(); h.setHours(0, 0, 0, 0)
