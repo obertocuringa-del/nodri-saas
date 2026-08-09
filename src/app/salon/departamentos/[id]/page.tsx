@@ -5,8 +5,10 @@ import { ArrowLeft, Loader2, Check, Trash2, CornerUpRight, Wallet, X, Calendar }
 import toast from 'react-hot-toast'
 import BoletosFinanceiro from '@/components/salon/BoletosFinanceiro'
 import ComportamentoProfissional from '@/components/salon/ComportamentoProfissional'
+import { ferramentasDoSetor, ConteudoFerramenta } from '@/components/salon/ferramentasSetor'
+import { useIsMobile } from '@/lib/useIsMobile'
 
-interface Prof { id: string; nome_completo: string; apelido?: string; cargo?: string; ativo?: boolean; is_departamento?: boolean; departamento_cor?: string }
+interface Prof { id: string; nome_completo: string; apelido?: string; cargo?: string; ativo?: boolean; is_departamento?: boolean; departamento_cor?: string; telefone?: string; contato_responsavel?: string }
 interface Emprestimo { valor: number; motivo: string; status: 'pendente' | 'negado' | 'liberado'; motivoNegado?: string; modo?: string; parcelas?: { valor: number; data: string; label: string }[]; liberadoEm?: string }
 interface Demanda {
   id: string; profissional_id: string; mensagem: string; data_limite: string | null
@@ -110,6 +112,18 @@ export default function DepartamentoPage() {
     setLoading(false)
   }
   useEffect(() => { carregar() }, [id])
+
+  // Ferramentas deste setor (as que antes viviam só no Salão Administrativo).
+  // Setor sem ferramentas segue exatamente como era, só com as demandas.
+  const isMobileSetor = useIsMobile(900)
+  const ferramentas = useMemo(() => ferramentasDoSetor(dep?.nome_completo || ''), [dep?.nome_completo])
+  const [ferramentaAberta, setFerramentaAberta] = useState('')
+  const [abaPopSetor, setAbaPopSetor] = useState('cafe')
+  const profsParaListas = useMemo(() => profs.filter(p => !p.is_departamento).map(p => {
+    let tel = p.telefone || ''
+    if (!tel) { try { tel = JSON.parse(p.contato_responsavel || '{}').tel || '' } catch { /* */ } }
+    return { id: p.id, nome: p.apelido || p.nome_completo || '—', telefone: tel }
+  }), [profs])
 
   const departamentos = useMemo(() => profs.filter(p => p.is_departamento && p.id !== id), [profs, id])
   const profissionais = useMemo(() => profs.filter(p => !p.is_departamento && p.ativo !== false), [profs])
@@ -294,7 +308,51 @@ export default function DepartamentoPage() {
         <span style={{ fontWeight: 800, fontSize: 15, color: '#1a1a1a' }}>{dep?.nome_completo || 'Departamento'}</span>
       </nav>
 
-      <div style={{ maxWidth: 760, margin: '0 auto', padding: 16 }}>
+      <div style={{ maxWidth: ferramentas.length ? 1280 : 760, margin: '0 auto', padding: 16, display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+
+        {/* SIDEBAR DO SETOR — as ferramentas que pertencem a ele. Só aparece
+            no computador e só se o setor tiver ferramentas; nos demais casos a
+            página continua exatamente como era. */}
+        {!isMobileSetor && ferramentas.length > 0 && (
+          <aside style={{ width: 230, flexShrink: 0, position: 'sticky', top: 74, maxHeight: 'calc(100vh - 92px)', overflowY: 'auto', background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: '10px 8px' }}>
+            <div style={{ fontSize: 10.5, fontWeight: 900, color: '#9ca3af', letterSpacing: '.6px', padding: '6px 10px 4px' }}>DEMANDAS</div>
+            <button onClick={() => setFerramentaAberta('')}
+              style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 10px', border: 'none', borderRadius: 8, background: !ferramentaAberta ? '#f0eefb' : 'transparent', color: !ferramentaAberta ? '#5b4fcf' : '#4b5563', fontSize: 11.5, fontWeight: !ferramentaAberta ? 900 : 700, letterSpacing: '.3px', cursor: 'pointer', borderLeft: !ferramentaAberta ? '3px solid #5b4fcf' : '3px solid transparent' }}>
+              PENDÊNCIAS DO SETOR
+            </button>
+            <div style={{ fontSize: 10.5, fontWeight: 900, color: '#9ca3af', letterSpacing: '.6px', padding: '10px 10px 4px' }}>FERRAMENTAS</div>
+            {ferramentas.map(f => {
+              const ativo = ferramentaAberta === f.id
+              return (
+                <button key={f.id}
+                  onClick={() => { if (f.rota) { router.push(f.rota) } else { setFerramentaAberta(f.id) } }}
+                  style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 10px', border: 'none', borderRadius: 8, background: ativo ? '#f0eefb' : 'transparent', color: ativo ? '#5b4fcf' : '#4b5563', fontSize: 11.5, fontWeight: ativo ? 900 : 700, letterSpacing: '.3px', cursor: 'pointer', borderLeft: ativo ? '3px solid #5b4fcf' : '3px solid transparent' }}>
+                  {f.label}{f.rota ? ' →' : ''}
+                </button>
+              )
+            })}
+          </aside>
+        )}
+
+        <div style={{ flex: 1, minWidth: 0 }}>
+
+        {/* Ferramenta aberta: mostra o mesmo conteúdo do Salão Administrativo */}
+        {ferramentaAberta ? (
+          <>
+            {ferramentaAberta === 'pop' && (
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+                {[{ key: 'cafe', label: 'Preparo de Café' }, { key: 'salao', label: 'POP Salão' }].map(x => (
+                  <button key={x.key} onClick={() => setAbaPopSetor(x.key)}
+                    style={{ padding: '9px 16px', borderRadius: 10, border: abaPopSetor === x.key ? 'none' : '1.5px solid #e0ddd8', background: abaPopSetor === x.key ? '#1a1a1a' : '#fff', color: abaPopSetor === x.key ? '#fff' : '#6b6860', fontSize: 13.5, fontWeight: 700, cursor: 'pointer' }}>
+                    {x.label}
+                  </button>
+                ))}
+              </div>
+            )}
+            <ConteudoFerramenta id={ferramentaAberta} profsSalao={profsParaListas} abaPop={abaPopSetor} />
+          </>
+        ) : (<>
+
         {/* Fila de boletos — só no setor FINANCEIRO */}
         {ehFinanceiro && <BoletosFinanceiro cor={cor} />}
 
@@ -364,6 +422,8 @@ export default function DepartamentoPage() {
             <p style={{ fontSize: 12, marginTop: 6 }}>As solicitações enviadas para cá aparecem aqui.</p>
           </div>
         )}
+        </>)}
+        </div>
       </div>
     </div>
   )
