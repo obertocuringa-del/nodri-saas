@@ -87,8 +87,8 @@ export const CATALOGO: Record<string, Ferramenta> = {
 // normalizado (sem acento/maiúsculas) — casamos por "contém".
 export const FERRAMENTAS_POR_SETOR: { chave: string[]; itens: string[] }[] = [
   { chave: ['RECEPCAO'], itens: ['lista_realinhamento', 'lista_corte', 'lista_mechas', 'lista_pigmentacao', 'bebidas', 'valores_pacotes', 'arquivos_envio'] },
-  { chave: ['DOSAGEM'], itens: ['produtos', 'servinterno', 'servicos_valores', 'tratamentos'] },
-  { chave: ['COMPRAS', 'ESTOQUE'], itens: ['tabela_precos', 'esterilizacao_fluxo', 'kits', 'enxovais', 'cadastrar_produto'] },
+  { chave: ['DOSAGEM'], itens: ['produtos', 'servinterno', 'servicos_valores', 'tratamentos', 'esterilizacao_fluxo', 'kits', 'enxovais'] },
+  { chave: ['COMPRAS', 'ESTOQUE'], itens: ['tabela_precos', 'cadastrar_produto'] },
   { chave: ['ADMINISTRATIVO'], itens: ['etiquetas', 'escala', 'feriados', 'ata', 'senhas', 'telefones', 'calendario', 'auditoria'] },
   { chave: ['FINANCEIRO'], itens: ['desconto_profissional'] },
   { chave: ['GERENCIA', 'GERENTE'], itens: ['corrida_interna'] },
