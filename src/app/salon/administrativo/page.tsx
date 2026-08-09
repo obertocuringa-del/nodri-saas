@@ -93,63 +93,13 @@ const ABAS_TOPO = [
 // outra página (Calendário, Lojistas...) em vez de trocar a aba interna.
 interface SidebarItem { aba?: string; servico?: string; label: string; rota?: string; perm?: string }
 const SIDEBAR_CATS: { cat: string; itens: SidebarItem[] }[] = [
-  {
-    cat: 'LISTAS DO DIA A DIA', itens: [
-      { aba: 'listas', servico: 'realinhamento', label: 'LISTA DE REALINHAMENTO' },
-      { aba: 'listas', servico: 'corte', label: 'LISTA DE CORTE' },
-      { aba: 'listas', servico: 'mechas', label: 'LISTA DE MECHAS' },
-      { aba: 'listas', servico: 'pigmentacao', label: 'LISTA DE PIGMENTAÇÃO' },
-      { aba: 'listas', servico: 'bebidas', label: 'BEBIDAS' },
-      { aba: 'listas', servico: 'produtos', label: 'CONSUMO DE PRODUTOS' },
-      { aba: 'listas', servico: 'servinterno', label: 'SERVIÇOS INTERNOS' },
-    ]
-  },
-  {
-    cat: 'PREÇOS E VALORES', itens: [
-      { aba: 'servicos_valores', label: 'SERVIÇOS INTERNOS (VALORES)' },
-      { aba: 'tratamentos', label: 'TRATAMENTOS DOSAGEM' },
-      { aba: 'valores_pacotes', label: 'VALORES DE PACOTES' },
-      { aba: 'tabela_precos', label: 'TABELA DE PREÇO ATUALIZADA' },
-    ]
-  },
+  // As demais ferramentas foram DISTRIBUÍDAS para os setores (organograma em
+  // Pendências → cada setor tem a sua sidebar). Aqui ficou só o que ainda não
+  // pertence a nenhum setor. As abas continuam existindo e podem ser abertas
+  // por link direto (?aba=...), então nada ficou órfão.
   {
     cat: 'CONTROLE E ESTOQUE', itens: [
-      { aba: 'esterilizacao_fluxo', label: 'ESTERILIZAÇÃO' },
-      { aba: 'kits', label: 'KITS PÉ E MÃO' },
-      { aba: 'enxovais', label: 'CONTROLE DE ENXOVAIS' },
-      { aba: 'cadastrar_produto', label: 'CADASTRAR PRODUTO' },
-      { aba: 'etiquetas', label: 'ETIQUETAS' },
       { aba: 'correios', label: 'CORREIOS' },
-    ]
-  },
-  {
-    cat: 'EQUIPE', itens: [
-      { aba: 'escala', label: 'ESCALA DE TRABALHO' },
-      { aba: 'feriados', label: 'ESCALA DE FERIADOS' },
-      { aba: 'ata', label: 'ATA DE REUNIÃO' },
-      { aba: 'desconto_profissional', label: 'DESCONTO PROFISSIONAL' },
-      { aba: 'corrida_interna', label: 'CORRIDA INTERNA' },
-    ]
-  },
-  {
-    cat: 'DOCUMENTOS E ACESSOS', itens: [
-      { aba: 'pop', label: 'POP (PROCEDIMENTOS)' },
-      { aba: 'senhas', label: 'SENHAS' },
-      { aba: 'telefones', label: 'TELEFONES IMPORTANTES' },
-      { aba: 'arquivos_envio', label: 'ARQUIVOS PARA ENVIO' },
-    ]
-  },
-  {
-    cat: 'AGENDA', itens: [
-      { rota: '/salon/calendario', perm: 'calendario', label: 'CALENDÁRIO' },
-      { rota: '/salon/calendario-mkt', perm: 'calendario_mkt', label: 'CALENDÁRIO DE MARKETING' },
-    ]
-  },
-  {
-    cat: 'GESTÃO E PARCERIAS', itens: [
-      { rota: '/salon/lojistas', perm: 'lojistas', label: 'LOJISTAS (PARCERIAS)' },
-      { rota: '/salon/checkprocon', perm: 'checkprocon', label: 'CHECK PROCON' },
-      { rota: '/salon/auditoria', perm: 'cfg_auditoria', label: 'LOG DE AUDITORIA' },
     ]
   },
 ]
@@ -166,7 +116,9 @@ export default function SalaoAdministrativoPage() {
   const router = useRouter()
   const [profsSalao, setProfsSalao] = useState<ProfSalao[]>([])
   const [servico, setServico] = useState('realinhamento')
-  const [abaTopo, setAbaTopo] = useState('listas')
+  // Abre no que sobrou aqui (o resto foi para os setores). As outras abas
+  // seguem acessíveis por link direto: /salon/administrativo?aba=senhas etc.
+  const [abaTopo, setAbaTopo] = useState('correios')
   const [abasMenuOpen, setAbasMenuOpen] = useState(false)
   // Kits pedidos e ainda nao separados: fazem o item KITS PE E MAO piscar
   const [kitsPendentes, setKitsPendentes] = useState(0)
