@@ -119,6 +119,7 @@ export default function DepartamentoPage() {
   const ferramentas = useMemo(() => ferramentasDoSetor(dep?.nome_completo || ''), [dep?.nome_completo])
   const [ferramentaAberta, setFerramentaAberta] = useState('')
   const [abaPopSetor, setAbaPopSetor] = useState('cafe')
+  const [menuFerrOpen, setMenuFerrOpen] = useState(false)
   const profsParaListas = useMemo(() => profs.filter(p => !p.is_departamento).map(p => {
     let tel = p.telefone || ''
     if (!tel) { try { tel = JSON.parse(p.contato_responsavel || '{}').tel || '' } catch { /* */ } }
@@ -335,6 +336,35 @@ export default function DepartamentoPage() {
         )}
 
         <div style={{ flex: 1, minWidth: 0 }}>
+
+        {/* CELULAR: as mesmas ferramentas num menu suspenso (sidebar não cabe) */}
+        {isMobileSetor && ferramentas.length > 0 && (
+          <div style={{ position: 'relative', marginBottom: 12 }}>
+            {menuFerrOpen && <div onClick={() => setMenuFerrOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 49 }} />}
+            <button onClick={() => setMenuFerrOpen(o => !o)}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '11px 14px', borderRadius: 12, border: '1.5px solid #5b4fcf', background: '#f0eefb', color: '#1a1a1a', fontSize: 13.5, fontWeight: 800, cursor: 'pointer' }}>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {ferramentaAberta ? (ferramentas.find(f => f.id === ferramentaAberta)?.label || 'FERRAMENTAS') : 'PENDÊNCIAS DO SETOR'}
+              </span>
+              <span style={{ color: '#5b4fcf', fontSize: 13, transform: menuFerrOpen ? 'rotate(180deg)' : 'none' }}>▼</span>
+            </button>
+            {menuFerrOpen && (
+              <div style={{ position: 'absolute', top: '108%', left: 0, right: 0, zIndex: 50, background: '#fff', border: '1px solid #e0ddd8', borderRadius: 12, boxShadow: '0 14px 36px rgba(0,0,0,.16)', maxHeight: 360, overflowY: 'auto', padding: 6 }}>
+                <button onClick={() => { setFerramentaAberta(''); setMenuFerrOpen(false) }}
+                  style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 12px', border: 'none', borderRadius: 8, background: !ferramentaAberta ? '#f0eefb' : 'transparent', color: !ferramentaAberta ? '#5b4fcf' : '#374151', fontSize: 12.5, fontWeight: !ferramentaAberta ? 900 : 700, cursor: 'pointer' }}>
+                  PENDÊNCIAS DO SETOR
+                </button>
+                {ferramentas.map(f => (
+                  <button key={f.id}
+                    onClick={() => { if (f.rota) { router.push(f.rota) } else { setFerramentaAberta(f.id); setMenuFerrOpen(false) } }}
+                    style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 12px', border: 'none', borderRadius: 8, background: ferramentaAberta === f.id ? '#f0eefb' : 'transparent', color: ferramentaAberta === f.id ? '#5b4fcf' : '#374151', fontSize: 12.5, fontWeight: ferramentaAberta === f.id ? 900 : 700, cursor: 'pointer' }}>
+                    {f.label}{f.rota ? ' →' : ''}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Ferramenta aberta: mostra o mesmo conteúdo do Salão Administrativo */}
         {ferramentaAberta ? (
