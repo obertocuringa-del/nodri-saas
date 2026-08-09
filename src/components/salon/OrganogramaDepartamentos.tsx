@@ -139,6 +139,17 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
     finally { setSalvando(false) }
   }
 
+  // Cancelar volta ao que está salvo e limpa o "não salvo" — senão o aviso de
+  // sair sem salvar continuaria aparecendo mesmo depois de desistir da edição.
+  function cancelar() {
+    if (!editando) { setEditando(true); return }
+    fetch('/api/salon/grid?chave=organograma')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => setDoc(d && typeof d === 'object' ? d as DocOrg : {}))
+      .catch(() => { })
+      .finally(() => { setDirty(false); setEditando(false) })
+  }
+
   function editarResponsavel(id: string, valor: string) {
     setDoc(d => ({ ...d, [id]: { ...(d[id] || {}), responsavel: valor } }))
     setDirty(true)
@@ -153,7 +164,7 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
   // CHAMADA COMO FUNÇÃO (ver uso: {Caixa({...})}), nunca como <Caixa/>: um
   // componente declarado aqui dentro ganha identidade nova a cada tecla e o
   // React remontaria os campos, fazendo perder o foco ao digitar.
-  function Caixa({ chave, dep, largura = 176 }: { chave: string; dep?: DepOrg; largura?: number }) {
+  function Caixa({ chave, dep, largura = 152 }: { chave: string; dep?: DepOrg; largura?: number }) {
     if (!dep) return null
     const info = doc[dep.id] || {}
     const padrao = PADRAO[chave] || { icone: '🏢', linhas: [] }
@@ -167,14 +178,14 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
         onClick={() => { if (!editando) onAbrir(dep.id) }}
         className={`bg-white rounded-xl transition-all ${editando ? '' : 'cursor-pointer hover:shadow-md hover:-translate-y-0.5'} ${doPortal > 0 ? 'nodri-alerta-pisca' : ''}`}
         style={{
-          width: largura, padding: '9px 11px',
+          width: largura, padding: '6px 8px',
           border: `1px solid ${doPortal > 0 ? '#dc2626' : pend > 0 ? '#fecaca' : '#e8e6e0'}`,
           borderLeft: `4px solid ${cor}`,
           boxShadow: '0 1px 3px rgba(0,0,0,.05)',
         }}>
-        <div className="flex items-center gap-1.5 mb-1">
-          <span style={{ fontSize: 13 }}>{padrao.icone}</span>
-          <span className="font-bold leading-tight" style={{ fontSize: 10, color: cor, letterSpacing: '.2px' }}>
+        <div className="flex items-center gap-1 mb-0.5">
+          <span style={{ fontSize: 11 }}>{padrao.icone}</span>
+          <span className="font-bold leading-tight" style={{ fontSize: 8.8, color: cor, letterSpacing: '.1px' }}>
             {dep.nome_completo}
           </span>
         </div>
@@ -200,15 +211,15 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
         ) : (
           <>
             {info.responsavel && (
-              <p className="font-semibold mb-0.5" style={{ fontSize: 9.5, color: '#3f3a35' }}>
+              <p className="font-semibold mb-0.5" style={{ fontSize: 8.5, color: '#3f3a35' }}>
                 👤 {info.responsavel}
               </p>
             )}
             {linhas.map((l, i) => (
-              <p key={i} style={{ fontSize: 9, color: '#6b6860', lineHeight: 1.55 }}>{l}</p>
+              <p key={i} style={{ fontSize: 8, color: '#6b6860', lineHeight: 1.4 }}>{l}</p>
             ))}
             {(pend > 0 || doPortal > 0) && (
-              <p className="font-bold mt-1" style={{ fontSize: 9, color: '#b91c1c' }}>
+              <p className="font-bold mt-1" style={{ fontSize: 8, color: '#b91c1c' }}>
                 {doPortal > 0 ? `📥 ${doPortal} do portal` : `⚠ ${pend} pendência${pend > 1 ? 's' : ''}`}
               </p>
             )}
@@ -218,12 +229,12 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
     )
   }
 
-  const L = ({ h = 18 }: { h?: number }) => <div style={{ width: 2, height: h, background: '#cbd5e1' }} />
+  const L = ({ h = 12 }: { h?: number }) => <div style={{ width: 2, height: h, background: '#cbd5e1' }} />
   const { mapa, sobra } = porChave
 
   return (
-    <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5 mb-6">
-      <div className="flex items-center justify-between mb-4">
+    <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-4 mb-4">
+      <div className="flex items-center justify-between mb-2">
         <div>
           <p className="font-syne font-bold text-[13px]">Organograma</p>
           <p className="text-[10px] text-nodri-t3">Estrutura organizacional — clique em um setor para abrir</p>
@@ -237,7 +248,7 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
                 {salvando ? 'Salvando…' : '💾 Salvar'}
               </button>
             )}
-            <button onClick={() => setEditando(e => !e)}
+            <button onClick={cancelar}
               className="px-3 py-1.5 rounded-lg text-[11px] font-bold border border-nodri-border">
               {editando ? 'Cancelar' : '✏️ Editar textos'}
             </button>
@@ -246,14 +257,14 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
       </div>
 
       <div className="overflow-x-auto">
-        <div className="flex flex-col items-center gap-0 min-w-[900px] pb-2">
+        <div className="flex flex-col items-center gap-0 min-w-[860px] pb-1">
 
           {/* Direção + Contabilidade ao lado */}
-          <div className="flex items-start gap-6">
+          <div className="flex items-start gap-4">
             <div className="flex flex-col items-center">
-              <div className="rounded-xl text-white text-center" style={{ background: '#1e293b', padding: '10px 18px', minWidth: 168 }}>
-                <p className="font-bold" style={{ fontSize: 10.5 }}>DIREÇÃO / PROPRIETÁRIO</p>
-                <p style={{ fontSize: 9, opacity: .75 }}>Decisões Estratégicas</p>
+              <div className="rounded-xl text-white text-center" style={{ background: '#1e293b', padding: '7px 14px', minWidth: 150 }}>
+                <p className="font-bold" style={{ fontSize: 9.2 }}>DIREÇÃO / PROPRIETÁRIO</p>
+                <p style={{ fontSize: 8, opacity: .75 }}>Decisões Estratégicas</p>
               </div>
             </div>
             {mapa.contabilidade && (
@@ -262,20 +273,20 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
           </div>
 
           <L />
-          {mapa.gerencia && Caixa({ chave: 'gerencia', dep: mapa.gerencia, largura: 200 })}
+          {mapa.gerencia && Caixa({ chave: 'gerencia', dep: mapa.gerencia, largura: 176 })}
           <L />
 
           {/* Áreas de apoio */}
           <div className="w-full" style={{ borderTop: '2px solid #cbd5e1', maxWidth: 1180 }} />
-          <div className="flex justify-center gap-3 flex-wrap pt-3">
+          <div className="flex justify-center gap-2 flex-wrap pt-2">
             {(['administrativo', 'financeiro', 'comercial', 'marketing', 'rh', 'compras'] as const)
               .filter(k => mapa[k]).map(k => <Fragment key={k}>{Caixa({ chave: k, dep: mapa[k] })}</Fragment>)}
           </div>
 
           {/* Processo / Técnica */}
           {(mapa.qualidade || mapa.tecnica) && (<>
-            <L h={22} />
-            <div className="flex justify-center gap-3 items-start">
+            <L h={14} />
+            <div className="flex justify-center gap-2 items-start">
               {mapa.qualidade && Caixa({ chave: 'qualidade', dep: mapa.qualidade })}
               {mapa.tecnica && Caixa({ chave: 'tecnica', dep: mapa.tecnica })}
             </div>
@@ -283,14 +294,14 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
 
           {/* Coordenação e operação */}
           {mapa.coordenador && (<>
-            <L h={22} />
-            {Caixa({ chave: 'coordenador', dep: mapa.coordenador, largura: 210 })}
+            <L h={14} />
+            {Caixa({ chave: 'coordenador', dep: mapa.coordenador, largura: 186 })}
           </>)}
 
           {(['recepcao', 'profissionais', 'gerais', 'manutencao', 'dosagem'] as const).some(k => mapa[k]) && (<>
             <L />
             <div className="w-full" style={{ borderTop: '2px solid #cbd5e1', maxWidth: 1000 }} />
-            <div className="flex justify-center gap-3 flex-wrap pt-3">
+            <div className="flex justify-center gap-2 flex-wrap pt-2">
               {(['recepcao', 'profissionais', 'gerais', 'manutencao', 'dosagem'] as const)
                 .filter(k => mapa[k]).map(k => <Fragment key={k}>{Caixa({ chave: k, dep: mapa[k] })}</Fragment>)}
             </div>

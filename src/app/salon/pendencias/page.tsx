@@ -59,6 +59,7 @@ export default function PendenciasPage() {
   const [mensagem, setMensagem] = useState('')
   const [dataLimite, setDataLimite] = useState(() => new Date().toLocaleDateString('en-CA')) // padrão: hoje
   const [criando, setCriando] = useState(false)
+  const [modalAberto, setModalAberto] = useState(false)   // caixa de Nova Pendência
 
   // Editar data
   const [editandoData, setEditandoData] = useState<string | null>(null)
@@ -104,7 +105,9 @@ export default function PendenciasPage() {
       nova.profissionais = prof ? { nome_completo: prof.nome_completo, apelido: prof.apelido } : null
       setPendencias(prev => [nova, ...prev])
       setMensagem('')
+      setProfId('')
       setDataLimite(new Date().toLocaleDateString('en-CA'))
+      setModalAberto(false)   // enviou → a caixa fecha; pra outra, clica de novo
       toast.success('Pendência criada!')
     } else {
       toast.error('Erro ao criar pendência')
@@ -288,6 +291,12 @@ export default function PendenciasPage() {
           <h1 className="font-syne font-bold text-[15px] text-nodri-t1">Pendências Profissionais</h1>
           <p className="text-[10px] text-nodri-t3">Gerencie tarefas e compromissos da equipe</p>
         </div>
+        {/* Abre a caixa de Nova Pendência (fica aqui em cima para não ocupar a tela) */}
+        <button
+          onClick={() => setModalAberto(true)}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-nodri-cyan text-nodri-dark text-[11px] font-bold hover:brightness-110 transition-all">
+          <Plus size={13}/> Nova Pendência
+        </button>
         {salaoId && (
           <button
             onClick={() => {
@@ -351,10 +360,14 @@ export default function PendenciasPage() {
           </div>
         )}
 
-        {/* Formulário */}
-        <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
-          <h2 className="font-syne font-bold text-[13px] mb-4 flex items-center gap-2">
-            <Plus size={14} className="text-nodri-cyan"/> Nova Pendência
+        {/* Nova Pendência — caixa suspensa: abre pelo botão do topo e some ao enviar */}
+        {modalAberto && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+             onClick={() => setModalAberto(false)}>
+        <div onClick={e => e.stopPropagation()} className="bg-nodri-surface border border-nodri-border rounded-2xl p-5 w-full" style={{ maxWidth: 520, maxHeight: '88vh', overflowY: 'auto' }}>
+          <h2 className="font-syne font-bold text-[13px] mb-4 flex items-center justify-between gap-2">
+            <span className="flex items-center gap-2"><Plus size={14} className="text-nodri-cyan"/> Nova Pendência</span>
+            <button onClick={() => setModalAberto(false)} className="text-nodri-t3 text-[16px] leading-none px-1">×</button>
           </h2>
           <div className="space-y-3">
             <div>
@@ -405,51 +418,9 @@ export default function PendenciasPage() {
             </button>
           </div>
         </div>
-
-        {/* Resumo */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {[
-            { l: 'Vencidas', v: vencidas.length, cor: '#ef4444' },
-            { l: 'Pendentes', v: pendentes.length, cor: '#f59e0b' },
-            { l: 'Resolvidas', v: resolvidas.length, cor: '#22c55e' },
-          ].map(item => (
-            <div key={item.l} className="bg-nodri-card border border-nodri-border rounded-xl p-3 text-center">
-              <div className="text-[9px] text-nodri-t3 mb-1">{item.l}</div>
-              <div className="font-syne font-bold text-[24px]" style={{ color: item.cor }}>{item.v}</div>
-            </div>
-          ))}
         </div>
-
-        {/* Vencidas */}
-        {vencidas.length > 0 && (
-          <div className="space-y-2">
-            <h3 className="font-syne font-bold text-[12px] text-red-400">Vencidas ({vencidas.length})</h3>
-            {vencidas.map(p => <PendenciaCard key={p.id} p={p}/>)}
-          </div>
         )}
 
-        {/* Pendentes */}
-        {pendentes.length > 0 && (
-          <div className="space-y-2">
-            <h3 className="font-syne font-bold text-[12px] text-amber-400">Pendentes ({pendentes.length})</h3>
-            {pendentes.map(p => <PendenciaCard key={p.id} p={p}/>)}
-          </div>
-        )}
-
-        {/* Resolvidas */}
-        {resolvidas.length > 0 && (
-          <div className="space-y-2">
-            <h3 className="font-syne font-bold text-[12px] text-green-400">Resolvidas ({resolvidas.length})</h3>
-            {resolvidas.map(p => <PendenciaCard key={p.id} p={p}/>)}
-          </div>
-        )}
-
-        {pendencias.length === 0 && (
-          <div className="text-center py-16 text-nodri-t3">
-            <span className="text-4xl"></span>
-            <p className="text-[13px] mt-3">Nenhuma pendência cadastrada.</p>
-          </div>
-        )}
       </div>
     </div>
   )
