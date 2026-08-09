@@ -281,8 +281,10 @@ export default function PendenciasPage() {
 
   return (
     <div className="min-h-screen bg-nodri-dark">
-      {/* Header */}
-      <div className="sticky top-0 z-20 bg-nodri-surface border-b border-nodri-border px-5 py-3 flex items-center gap-3">
+      {/* Header — acima de 640px a barra global (Voltar/Início/Busca) flutua no
+          canto superior direito por cima da página; o respiro à direita evita
+          que os botões daqui fiquem escondidos embaixo dela. */}
+      <div className="sticky top-0 z-20 bg-nodri-surface border-b border-nodri-border px-5 py-3 flex items-center gap-3 flex-wrap sm:pr-[340px]">
         <button onClick={() => router.push('/salon')} className="flex items-center gap-1.5 text-nodri-t2 hover:text-nodri-t1 transition-colors text-sm">
           <ArrowLeft size={15} /> Início
         </button>
