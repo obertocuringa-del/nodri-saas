@@ -458,7 +458,11 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
 
   const CATEGORIAS_CONTEUDO = TABS_FIXAS.filter(t => t !== 'Todos os Módulos' && t !== 'Feedback de Cliente' && t !== 'Feedback Profissional')
 
-  const TODAS_CATEGORIAS = [...CATEGORIAS_CONTEUDO, ...tabsExtras]
+  // 'Processo de Atendimento' saiu do menu principal: esses POPs agora vivem
+  // no setor PROCESSO/QUALIDADE (organograma). As paginas continuam as mesmas.
+  const ehProcessoAtendimento = (c: string) => c.toUpperCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '').includes('PROCESSO DE ATENDIMENTO')
+  const TODAS_CATEGORIAS = [...CATEGORIAS_CONTEUDO, ...tabsExtras].filter(c => !ehProcessoAtendimento(c))
 
   return (
     <div className="nodri-salon-bg nodri-sem-whats h-screen flex flex-col overflow-hidden">

@@ -27,6 +27,7 @@ import DocEditavel from '@/components/salon/DocEditavel'
 import AnexosLista from '@/components/salon/AnexosLista'
 import Etiquetas from '@/components/salon/Etiquetas'
 import ListaServico from '@/components/salon/ListaServico'
+import CheckProconPainel from '@/components/salon/CheckProconPainel'
 import { CAFE_BLOCOS, POP_SALAO_BLOCOS } from '@/components/salon/popDefaults'
 
 export interface ProfSalao { id: string; nome: string; telefone: string }
@@ -80,7 +81,11 @@ export const CATALOGO: Record<string, Ferramenta> = {
   calendario_mkt:  { id: 'calendario_mkt',  label: 'CALENDÁRIO DE MARKETING', perm: 'calendario_mkt',  rota: '/salon/calendario-mkt' },
   auditoria:       { id: 'auditoria',       label: 'LOG DE AUDITORIA',        perm: 'cfg_auditoria',   rota: '/salon/auditoria' },
   lojistas:        { id: 'lojistas',        label: 'LOJISTAS (PARCERIAS)',    perm: 'lojistas',        rota: '/salon/lojistas' },
-  checkprocon:     { id: 'checkprocon',     label: 'CHECK PROCON',            perm: 'checkprocon',     rota: '/salon/checkprocon' },
+  checkprocon:     { id: 'checkprocon',     label: 'CHECK PROCON',            perm: 'checkprocon' },
+  // POPs de atendimento (paginas de conteudo) — saíram do menu principal
+  pop_recepcao:    { id: 'pop_recepcao',    label: 'PROCESSOS DA RECEPÇÃO',   perm: 'adm_pop', rota: '/conteudo/recepcao' },
+  pop_manicure:    { id: 'pop_manicure',    label: 'PROCESSOS — MANICURE',    perm: 'adm_pop', rota: '/conteudo/manicure' },
+  pop_cabelereiro: { id: 'pop_cabelereiro', label: 'PROCESSOS — CABELEIREIRO', perm: 'adm_pop', rota: '/conteudo/cabelereiro' },
 }
 
 // Quais ferramentas pertencem a cada setor. A chave é o nome do setor
@@ -92,7 +97,7 @@ export const FERRAMENTAS_POR_SETOR: { chave: string[]; itens: string[] }[] = [
   { chave: ['ADMINISTRATIVO'], itens: ['etiquetas', 'escala', 'feriados', 'ata', 'senhas', 'telefones', 'calendario', 'auditoria'] },
   { chave: ['FINANCEIRO'], itens: ['desconto_profissional', 'correios'] },
   { chave: ['GERENCIA', 'GERENTE'], itens: ['corrida_interna'] },
-  { chave: ['PROCESSO', 'QUALIDADE'], itens: ['pop', 'checkprocon'] },
+  { chave: ['PROCESSO', 'QUALIDADE'], itens: ['pop', 'checkprocon', 'pop_recepcao', 'pop_manicure', 'pop_cabelereiro'] },
   { chave: ['MARKETING'], itens: ['calendario_mkt'] },
   { chave: ['COMERCIAL', 'VENDAS'], itens: ['lojistas'] },
 ]
@@ -135,6 +140,7 @@ export function ConteudoFerramenta({ id, profsSalao, abaPop = 'cafe' }: { id: st
     case 'telefones':           return <ListaTelefones key="telefones" />
     case 'desconto_profissional': return <GridEditavel key="descprof" chave="desconto_profissional" defaultDoc={D_DESC_PROF} landscape />
     case 'corrida_interna':     return <GridEditavel key="corrida" chave="corrida_interna" defaultDoc={D_CORRIDA} landscape />
+    case 'checkprocon':         return <CheckProconPainel key="checkprocon" />
     case 'pop':
       return abaPop === 'salao'
         ? <DocEditavel key="pop_salao" chave="pop_salao" tituloPadrao="POP — PROCEDIMENTO DE OPERAÇÃO PADRÃO" blocosPadrao={POP_SALAO_BLOCOS} comData />
