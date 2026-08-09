@@ -589,12 +589,13 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               { href: '/salon/acoes-comerciais', label: 'Ações Comerciais', chave: 'acoes_comerciais' },
               { href: '/salon/corridas', label: 'Corridas Internas', chave: 'corridas' },
               { href: '/salon/lista-espera', label: 'Lista de Espera', chave: 'lista_espera' },
-              { href: '/salon/administrativo', label: 'Salão Administrativo', chave: 'administrativo' },
+              // Administração abre o ORGANOGRAMA: as ferramentas foram distribuídas
+              // para os setores, e é por lá que se chega em cada uma agora.
+              { href: '/salon/pendencias', label: 'Administração', chave: 'administrativo' },
               { href: '/salon/checklist', label: 'Check List', chave: 'checklist' },
               { href: '/salon/curriculos', label: 'Currículos', chave: 'curriculos' },
               // Calendário, Calendário MKT, Lojistas, Check Procon e Log de Auditoria
-              // agora vivem dentro do Salão Administrativo (categorias AGENDA e
-              // GESTÃO E PARCERIAS) — tirados daqui para desafogar o menu inicial.
+              // vivem dentro dos SETORES (organograma) — tirados daqui para desafogar.
               { href: '/salon/notificacoes', label: 'Notificações (Profissionais)', chave: 'profissionais' },
               { href: '/salon/consultoria', label: 'Consultoria IA', chave: 'ia' },
               { href: '/salon/usuarios', label: 'Usuários & Acessos', chave: 'cfg_usuarios' },
