@@ -18,7 +18,9 @@ interface Doc { colunas: Coluna[]; cells: Record<string, number>; obs?: Obs[] }
 function mesAtual() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` }
 function diasNoMes(mes: string) { const [y, m] = mes.split('-').map(Number); return new Date(y, m, 0).getDate() }
 
-export default function ListaServico({ servico, label, profsSalao, onMensagem }: { servico: string; label: string; profsSalao: ProfSalao[]; onMensagem: () => void }) {
+// onMensagem e opcional: no Salao Administrativo ele recarrega o historico de
+// mensagens; dentro do setor esse historico nao existe, entao nao e passado.
+export default function ListaServico({ servico, label, profsSalao, onMensagem }: { servico: string; label: string; profsSalao: ProfSalao[]; onMensagem?: () => void }) {
   const [mes, setMes] = useState(mesAtual())
   const [doc, setDoc] = useState<Doc>({ colunas: [], cells: {} })
   const [loading, setLoading] = useState(true)
@@ -168,7 +170,7 @@ export default function ListaServico({ servico, label, profsSalao, onMensagem }:
     else toast('Sem telefone no cadastro — mensagem só será registrada.', { icon: '⚠️' })
     try {
       await fetch('/api/salon/listas', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mensagem: { servico: label, mes, prof: msgProf.nome, total: totalDe(msgProf.id), media, texto: msgTexto } }) })
-      toast.success('Mensagem registrada no relatório'); onMensagem()
+      toast.success('Mensagem registrada no relatório'); onMensagem?.()
     } catch { /* */ }
     setMsgProf(null)
   }
