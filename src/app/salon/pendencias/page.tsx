@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import WhatsPendencia from '@/components/salon/WhatsPendencia'
 import { urlPublica } from '@/lib/urlPublica'
+import OrganogramaDepartamentos from '@/components/salon/OrganogramaDepartamentos'
+import { useIsMobile } from '@/lib/useIsMobile'
 
 interface Profissional {
   id: string
@@ -43,6 +45,9 @@ function statusPendencia(p: Pendencia): 'vencida' | 'pendente' | 'resolvida' {
 
 export default function PendenciasPage() {
   const router = useRouter()
+  // No computador os setores aparecem em organograma; no celular seguem os
+  // cards de sempre (organograma não cabe em tela estreita).
+  const isMobile = useIsMobile(900)
   const [pendencias, setPendencias] = useState<Pendencia[]>([])
   const [profissionais, setProfissionais] = useState<Profissional[]>([])
   const [loading, setLoading] = useState(true)
@@ -296,10 +301,23 @@ export default function PendenciasPage() {
         )}
       </div>
 
+      {/* ── ORGANOGRAMA (só no computador) ──
+          Fica fora do container estreito para ter largura de sobra. No celular
+          este bloco não é montado e valem os cards logo abaixo. */}
+      {!isMobile && departamentos.length > 0 && (
+        <div className="max-w-[1240px] mx-auto px-5 pt-6">
+          <OrganogramaDepartamentos
+            departamentos={departamentos}
+            solicPorSetor={solicPorSetor}
+            onAbrir={id => router.push(`/salon/departamentos/${id}`)}
+          />
+        </div>
+      )}
+
       <div className="max-w-3xl mx-auto px-5 py-6 space-y-6">
 
-        {/* ── DEPARTAMENTOS ── */}
-        {departamentos.length > 0 && (
+        {/* ── DEPARTAMENTOS (cards — celular) ── */}
+        {isMobile && departamentos.length > 0 && (
           <div>
             <p className="text-[10px] text-nodri-t3 uppercase tracking-widest font-bold mb-3">Departamentos</p>
             <div className="grid grid-cols-3 gap-3">

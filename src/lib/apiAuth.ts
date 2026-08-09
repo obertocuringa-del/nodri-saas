@@ -134,6 +134,7 @@ export function permDaGrade(chave: string): string {
   if (c.startsWith('plano_carreira_prof_')) return 'profissionais'
   if (c.startsWith('calendario_mkt')) return 'calendario_mkt'
   if (c.startsWith('calendario')) return 'calendario'
+  if (c === 'organograma') return 'pendencias'
   if (c === 'prof_categorias') return 'profissionais'
   if (c.startsWith('avaliacao_pop_')) return 'profissionais'
   if (c === 'calc_servicos_global') return 'calc_abas_extras'
