@@ -90,7 +90,7 @@ export const FERRAMENTAS_POR_SETOR: { chave: string[]; itens: string[] }[] = [
   { chave: ['DOSAGEM'], itens: ['produtos', 'servinterno', 'servicos_valores', 'tratamentos', 'esterilizacao_fluxo', 'kits', 'enxovais'] },
   { chave: ['COMPRAS', 'ESTOQUE'], itens: ['tabela_precos', 'cadastrar_produto'] },
   { chave: ['ADMINISTRATIVO'], itens: ['etiquetas', 'escala', 'feriados', 'ata', 'senhas', 'telefones', 'calendario', 'auditoria'] },
-  { chave: ['FINANCEIRO'], itens: ['desconto_profissional'] },
+  { chave: ['FINANCEIRO'], itens: ['desconto_profissional', 'correios'] },
   { chave: ['GERENCIA', 'GERENTE'], itens: ['corrida_interna'] },
   { chave: ['PROCESSO', 'QUALIDADE'], itens: ['pop', 'checkprocon'] },
   { chave: ['MARKETING'], itens: ['calendario_mkt'] },

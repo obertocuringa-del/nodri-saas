@@ -93,15 +93,10 @@ const ABAS_TOPO = [
 // outra página (Calendário, Lojistas...) em vez de trocar a aba interna.
 interface SidebarItem { aba?: string; servico?: string; label: string; rota?: string; perm?: string }
 const SIDEBAR_CATS: { cat: string; itens: SidebarItem[] }[] = [
-  // As demais ferramentas foram DISTRIBUÍDAS para os setores (organograma em
-  // Pendências → cada setor tem a sua sidebar). Aqui ficou só o que ainda não
-  // pertence a nenhum setor. As abas continuam existindo e podem ser abertas
-  // por link direto (?aba=...), então nada ficou órfão.
-  {
-    cat: 'CONTROLE E ESTOQUE', itens: [
-      { aba: 'correios', label: 'CORREIOS' },
-    ]
-  },
+  // TODAS as ferramentas foram distribuídas para os setores (organograma em
+  // Pendências → cada setor tem a sua sidebar), então esta lista ficou vazia.
+  // As abas continuam existindo e abrem por link direto (?aba=...), então
+  // nada ficou órfão enquanto esta página não for removida.
 ]
 
 const DEFAULT_CAD_PRODUTO: GridDoc = { tabelas: [{ titulo: 'CADASTRO DE PRODUTOS', cabecalho: [cel('Produto'), cel('Marca'), cel('Categoria'), cel('Quantidade'), cel('Validade'), cel('Fornecedor'), cel('Custo'), cel('Preço de venda')], linhas: linhasVazias(14, 8), larguras: [220, 150, 150, 110, 120, 180, 110, 130] }] }
