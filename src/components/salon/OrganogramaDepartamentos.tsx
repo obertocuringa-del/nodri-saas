@@ -76,6 +76,22 @@ const PADRAO: Record<string, { icone: string; linhas: string[] }> = {
   dosagem:       { icone: '🧪', linhas: ['Preparação de Produtos', 'Dosagens e Fórmulas', 'Controle Técnico', 'Padrão de Misturas'] },
 }
 
+// Alguns setores foram cadastrados com cor bem clara (ex.: um lilás quase
+// branco). Sobre o fundo branco da caixa, o título ficaria ilegível — então,
+// só para desenhar, escurecemos a cor mantendo o mesmo tom. A cor cadastrada
+// do departamento não é alterada em lugar nenhum.
+function corLegivel(cor: string): string {
+  let h = (cor || '').trim().replace('#', '')
+  if (h.length === 3) h = h.split('').map(c => c + c).join('')
+  if (!/^[0-9a-fA-F]{6}$/.test(h)) return cor
+  let r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16)
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  if (lum <= 0.55) return cor            // já tem contraste suficiente
+  const f = 0.45 / lum                   // escurece proporcionalmente
+  const q = (v: number) => Math.max(0, Math.min(255, Math.round(v * f)))
+  return `rgb(${q(r)}, ${q(g)}, ${q(b)})`
+}
+
 const CORES: Record<string, string> = {
   contabilidade: '#6d28d9', gerencia: '#b45309', administrativo: '#2563eb',
   financeiro: '#059669', comercial: '#ea580c', marketing: '#db2777',
@@ -141,7 +157,7 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
     if (!dep) return null
     const info = doc[dep.id] || {}
     const padrao = PADRAO[chave] || { icone: '🏢', linhas: [] }
-    const cor = dep.departamento_cor || CORES[chave] || '#5b4fcf'
+    const cor = corLegivel(dep.departamento_cor || CORES[chave] || '#5b4fcf')
     const linhas = info.linhas && info.linhas.length ? info.linhas : padrao.linhas
     const pend = dep.pendencias_abertas || 0
     const doPortal = solicPorSetor[dep.id] || 0
