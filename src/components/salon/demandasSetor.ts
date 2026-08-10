@@ -38,6 +38,7 @@ const MAPA: { chave: string[]; demandas: string[] }[] = [
   },
   {
     chave: ['FINANCEIRO'], demandas: [
+      'DRE', 'Ponto de equilíbrio', 'Fluxo de caixa',
       'Contas a pagar', 'Previsão de despesas',
       'Guias MEI',
       'Comissões', 'Conferência de caixas',

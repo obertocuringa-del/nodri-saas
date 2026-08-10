@@ -15,6 +15,9 @@ import ProfissionaisPainel from '@/components/salon/ProfissionaisPainel'
 import ConferenciaCaixas from '@/components/salon/ConferenciaCaixas'
 import FaturamentoProfissionaisPJ from '@/components/salon/FaturamentoProfissionaisPJ'
 import ChecklistContabilidade from '@/components/salon/ChecklistContabilidade'
+import DreMensal from '@/components/salon/DreMensal'
+import PontoEquilibrioMes from '@/components/salon/PontoEquilibrioMes'
+import FluxoCaixaMes from '@/components/salon/FluxoCaixaMes'
 import { useIsMobile } from '@/lib/useIsMobile'
 
 interface Prof { id: string; nome_completo: string; apelido?: string; cargo?: string; ativo?: boolean; is_departamento?: boolean; departamento_cor?: string; telefone?: string; contato_responsavel?: string }
@@ -527,6 +530,11 @@ export default function DepartamentoPage() {
               if (slug === 'contas_a_pagar') return <BoletosFinanceiro key="contas_a_pagar" cor={cor} />
               // Previsao de despesas: espelho anual do Custo Operacional da Calculadora
               if (slug === 'previsao_de_despesas') return <PrevisaoDespesasAno key="previsao" />
+              // Leituras da Calculadora, mes a mes: resultado, ponto de
+              // equilibrio e caixa. Nenhuma delas grava nada.
+              if (slug === 'dre') return <DreMensal key="dre" />
+              if (slug === 'ponto_de_equilibrio') return <PontoEquilibrioMes key="pe" />
+              if (slug === 'fluxo_de_caixa') return <FluxoCaixaMes key="fluxo" />
               if (slug === 'comissoes') return <ComissoesQuinzenas key="comissoes" />
               // Guias MEI espelha a MESMA tela de CNPJ dos Profissionais do RH:
               // e o mesmo componente e os mesmos dados, entao mudar num lado
