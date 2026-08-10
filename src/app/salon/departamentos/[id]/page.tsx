@@ -14,6 +14,7 @@ import ComissoesQuinzenas from '@/components/salon/ComissoesQuinzenas'
 import ProfissionaisPainel from '@/components/salon/ProfissionaisPainel'
 import ConferenciaCaixas from '@/components/salon/ConferenciaCaixas'
 import FaturamentoProfissionaisPJ from '@/components/salon/FaturamentoProfissionaisPJ'
+import ChecklistContabilidade from '@/components/salon/ChecklistContabilidade'
 import { useIsMobile } from '@/lib/useIsMobile'
 
 interface Prof { id: string; nome_completo: string; apelido?: string; cargo?: string; ativo?: boolean; is_departamento?: boolean; departamento_cor?: string; telefone?: string; contato_responsavel?: string }
@@ -518,6 +519,7 @@ export default function DepartamentoPage() {
         {ferramentaAberta ? (
           <>
             {ferramentaAberta === 'sub:faturamento_profissionais' && <FaturamentoProfissionaisPJ key="fat_pj" />}
+            {ferramentaAberta === 'sub:checklist_contabilidade' && <ChecklistContabilidade key="chk_contab" />}
             {ferramentaAberta.startsWith('demanda:') && (() => {
               const slug = ferramentaAberta.slice('demanda:'.length)
               // Contas a pagar tem tela propria: a fila de boletos da Calculadora,

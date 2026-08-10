@@ -179,5 +179,6 @@ export function slugDemanda(nome: string): string {
 export const SUBDEMANDAS: Record<string, { id: string; label: string }[]> = {
   encaminhamento_de_informacoes_para_a_contabilidade: [
     { id: 'faturamento_profissionais', label: 'FATURAMENTO DOS PROFISSIONAIS' },
+    { id: 'checklist_contabilidade', label: 'CHECK LIST' },
   ],
 }

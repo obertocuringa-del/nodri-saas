@@ -1,0 +1,43 @@
+2026-08-07 15:53:40,936 - INFO - ✅ Carregados 0 profissionais únicos
+2026-08-07 15:53:41,391 - INFO - Chrome encontrado: C:\Program Files\Google\Chrome\Application\chrome.exe
+2026-08-07 15:53:41,392 - INFO - 🔧 Tentativa 1/3 de iniciar Chrome...
+2026-08-07 15:53:41,430 - INFO - ====== WebDriver manager ======
+2026-08-07 15:53:42,655 - INFO - Driver [C:\Users\LUDSON\.wdm\drivers\chromedriver\win64\151.0.7922.77\chromedriver-win64/chromedriver.exe] found in cache by browser version
+2026-08-07 15:53:45,588 - INFO - ✅ Chrome iniciado (tentativa 1), PID: 896
+2026-08-07 15:54:22,405 - ERROR - upload_excel_para_nodri: Message: 
+Stacktrace:
+	chromedriver!GetHandleVerifier [0x7ff780a28935+14ce5]
+	chromedriver!GetHandleVerifier [0x7ff780a28990+14d40]
+	chromedriver!(No symbol) [0x7ff780555afd]
+	chromedriver!(No symbol) [0x7ff7805b0b59]
+	chromedriver!(No symbol) [0x7ff7805b0e5c]
+	chromedriver!(No symbol) [0x7ff7806018d7]
+	chromedriver!(No symbol) [0x7ff7805fe4ab]
+	chromedriver!(No symbol) [0x7ff7805a308c]
+	chromedriver!(No symbol) [0x7ff7805a3fb3]
+	chromedriver!GetHandleVerifier [0x7ff78105e5fb+64a9ab]
+	chromedriver!GetHandleVerifier [0x7ff781058b02+644eb2]
+	chromedriver!GetHandleVerifier [0x7ff78107e39e+66a74e]
+	chromedriver!GetHandleVerifier [0x7ff780a45d6e+3211e]
+	chromedriver!GetHandleVerifier [0x7ff780a4e51c+3a8cc]
+	chromedriver!GetHandleVerifier [0x7ff780a32844+1ebf4]
+	chromedriver!GetHandleVerifier [0x7ff780a329d4+1ed84]
+	chromedriver!GetHandleVerifier [0x7ff780a15d07+20b7]
+	KERNEL32!BaseThreadInitThunk [0x7fff135ce957+17]
+	ntdll!RtlUserThreadStart [0x7fff1476ad6c+2c]
+
+2026-08-07 15:54:44,900 - INFO - 🔧 Driver do Chrome fechado
+2026-08-07 15:55:49,614 - INFO - ✅ Carregados 0 profissionais únicos
+2026-08-07 15:55:50,035 - INFO - Chrome encontrado: C:\Program Files\Google\Chrome\Application\chrome.exe
+2026-08-07 15:55:50,035 - INFO - 🔧 Tentativa 1/3 de iniciar Chrome...
+2026-08-07 15:55:50,131 - INFO - ====== WebDriver manager ======
+2026-08-07 15:55:51,660 - INFO - Driver [C:\Users\LUDSON\.wdm\drivers\chromedriver\win64\151.0.7922.77\chromedriver-win64/chromedriver.exe] found in cache by browser version
+2026-08-07 15:55:54,794 - INFO - ✅ Chrome iniciado (tentativa 1), PID: 896
+2026-08-07 15:56:13,603 - INFO - 🔧 Driver do Chrome fechado
+2026-08-07 15:58:06,947 - INFO - ✅ Carregados 0 profissionais únicos
+2026-08-07 15:58:07,365 - INFO - Chrome encontrado: C:\Program Files\Google\Chrome\Application\chrome.exe
+2026-08-07 15:58:07,365 - INFO - 🔧 Tentativa 1/3 de iniciar Chrome...
+2026-08-07 15:58:07,424 - INFO - ====== WebDriver manager ======
+2026-08-07 15:58:08,676 - INFO - Driver [C:\Users\LUDSON\.wdm\drivers\chromedriver\win64\151.0.7922.77\chromedriver-win64/chromedriver.exe] found in cache by browser version
+2026-08-07 15:58:11,588 - INFO - ✅ Chrome iniciado (tentativa 1), PID: 896
+2026-08-07 15:58:42,111 - INFO - 🔧 Driver do Chrome fechado
