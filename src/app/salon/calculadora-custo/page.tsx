@@ -729,6 +729,10 @@ export default function CalculadoraCusto() {
   // do avec). Preenchem o campo Rateio/Comissão quando ele está vazio.
   const [comRealMes, setComRealMes] = useState<Record<string, number>>({})
   const comRealRef = useRef<Record<string, number>>({})
+  // Ligam quando o usuário digita no campo (ou clica em Usar na média): a
+  // partir daí o valor dele manda e o realizado do avec não sobrescreve mais.
+  const [fatManual, setFatManual] = useState(false)
+  const [rateioManual, setRateioManual] = useState(false)
   const [qtdMesesMedia, setQtdMesesMedia] = useState(0) // quantos meses foram usados na média
   const [modoCustoOp, setModoCustoOp] = useState<'dani'|'real'>('real') // modo de cálculo do custo operacional
 
@@ -865,12 +869,18 @@ export default function CalculadoraCusto() {
       taxaCartao, abatProd, custOpServ, taxaAntesRateio, prodAntesRateio, salaoParceiro, metaLucroServ,
       servicos, numCad, cadCabel, cadManic, cadEstet, cadMaqui, custoOpCad, horasSemCad, margemCad, aluguelAtualCad, mTotal, fatMinM2, mSala,
       servicosProd,
+      // Marca que o número foi digitado à mão. Sem isso, o faturamento e a
+      // comissão do mês voltam a acompanhar o relatório do avec toda vez que
+      // a tela abre — que é o comportamento desejado por padrão.
+      fatManual, rateioManual,
     }
   }
 
   function aplicarDados(d: ReturnType<typeof coletarDados>) {
     if (!d) return
     if (d.fat !== undefined) setFat(d.fat)
+    setFatManual(!!(d as any).fatManual)
+    setRateioManual(!!(d as any).rateioManual)
     if (d.custIndD !== undefined) setCustIndD(d.custIndD)
     if (d.custDirD !== undefined) setCustDirD(d.custDirD)
     if (d.lucroD !== undefined) setLucroD(d.lucroD)
@@ -1080,9 +1090,9 @@ export default function CalculadoraCusto() {
   // nunca por cima do que já está lá (salvo ou digitado).
   useEffect(() => {
     const real = fatRealMes[`${anoSel}-${mesSel}`] || 0
-    if (real > 0) setFat(prev => (prev && prev !== '0') ? prev : String(Math.round(real)))
+    if (real > 0 && !fatManual) setFat(String(Math.round(real)))
     const com = comRealMes[`${anoSel}-${mesSel}`] || 0
-    if (com > 0) setRateio(prev => (prev && prev !== '0') ? prev : com.toFixed(2))
+    if (com > 0 && !rateioManual) setRateio(com.toFixed(2))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fatRealMes, comRealMes, anoSel, mesSel])
 
@@ -1106,13 +1116,11 @@ export default function CalculadoraCusto() {
         aplicarDados((d?.dados && typeof d.dados === 'object') ? d.dados : (MES_VAZIO as any))
         // Mês sem faturamento salvo começa com o REAL do relatório do avec.
         // Tem que ser depois do aplicarDados, senão ele limparia de volta.
-        const fatSalvo = parseFloat(String(d?.dados?.fat ?? '').replace(',', '.')) || 0
-        if (!fatSalvo) {
+        if (!d?.dados?.fatManual) {
           const real = fatRealRef.current[`${anoSel}-${mesSel}`] || 0
           if (real > 0) setFat(String(Math.round(real)))
         }
-        const rateioSalvo = parseFloat(String(d?.dados?.rateio ?? '').replace(',', '.')) || 0
-        if (!rateioSalvo) {
+        if (!d?.dados?.rateioManual) {
           const com = comRealRef.current[`${anoSel}-${mesSel}`] || 0
           if (com > 0) setRateio(com.toFixed(2))
         }
@@ -2041,14 +2049,15 @@ Use números reais. Seja direto.`
                         {fatRealMes[`${anoSel}-${mesSel}`] > 0 && (
                           <span className="inline-flex items-center gap-1.5 text-[10px]" style={{color:'#0891b2'}}>
                             💰 Real de {MESES_NOMES[mesSel]}: <strong>R$ {Math.round(fatRealMes[`${anoSel}-${mesSel}`]).toLocaleString('pt-BR')}</strong>
-                            <button onClick={()=>setFat(String(Math.round(fatRealMes[`${anoSel}-${mesSel}`])))}
+                            <button onClick={()=>{setFat(String(Math.round(fatRealMes[`${anoSel}-${mesSel}`]))); setFatManual(false)}}
                               className="px-2 py-0.5 rounded-full font-bold" style={{background:'#0891b2',color:'#fff'}}>Usar</button>
+                            {!fatManual && <span style={{color:'#16a34a'}}>• em uso</span>}
                           </span>
                         )}
                         {mediaFat12 > 0 && (
                           <span className="inline-flex items-center gap-1.5 text-[10px]" style={{color:'#5b4fcf'}}>
                             📊 Média 12 meses: <strong>R$ {mediaFat12.toLocaleString('pt-BR')}</strong>
-                            <button onClick={()=>setFat(String(mediaFat12))}
+                            <button onClick={()=>{setFat(String(mediaFat12)); setFatManual(true)}}
                               className="px-2 py-0.5 rounded-full font-bold" style={{background:'#5b4fcf',color:'#fff'}}>Usar</button>
                           </span>
                         )}
@@ -2056,7 +2065,7 @@ Use números reais. Seja direto.`
                     )}
                     <div className="relative pl-7">
                       <span className="absolute left-10 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>R$</span>
-                      <input type="number" value={fat} onChange={e=>setFat(e.target.value)}
+                      <input type="number" value={fat} onChange={e=>{setFat(e.target.value); setFatManual(true)}}
                         placeholder={fatRealMes[`${anoSel}-${mesSel}`] > 0 ? String(Math.round(fatRealMes[`${anoSel}-${mesSel}`])) : mediaFat12 > 0 ? String(mediaFat12) : 'Ex: 50000'}
                         className="w-full pl-9 pr-3 py-2.5 rounded-xl text-[#1a1a1a] text-base font-bold focus:outline-none"
                         style={{background:'#fff',border:'1.5px solid #5b4fcf60'}}/>
@@ -2609,13 +2618,14 @@ Use números reais. Seja direto.`
                     {f.real > 0 && (
                       <div className="flex items-center gap-1.5 mb-1.5 pl-7 text-[10px]" style={{color:'#0891b2'}}>
                         💰 Pago aos profissionais em {MESES_NOMES[mesSel]}: <strong>R$ {f.real.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</strong>
-                        <button onClick={()=>f.set(f.real.toFixed(2))}
+                        <button onClick={()=>{f.set(f.real.toFixed(2)); setRateioManual(false)}}
                           className="px-2 py-0.5 rounded-full font-bold" style={{background:'#0891b2',color:'#fff'}}>Usar</button>
+                        {!rateioManual && <span style={{color:'#16a34a'}}>• em uso</span>}
                       </div>
                     )}
                     <div className="relative pl-7">
                       <span className="absolute left-10 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>R$</span>
-                      <input type="number" value={f.v} onChange={e=>f.set(e.target.value)} placeholder="0"
+                      <input type="number" value={f.v} onChange={e=>{f.set(e.target.value); if (f.info==='rateio') setRateioManual(true)}} placeholder="0"
                         className="w-full pl-9 pr-3 py-2.5 rounded-xl text-sm font-bold text-[#1a1a1a] focus:outline-none"
                         style={{background:'#fff',border:'1.5px solid #ef444430'}}/>
                     </div>
