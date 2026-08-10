@@ -39,7 +39,7 @@ const MAPA: { chave: string[]; demandas: string[] }[] = [
   {
     chave: ['FINANCEIRO'], demandas: [
       'Contas a pagar', 'Previsão de despesas',
-      'Impostos e guias', 'Guias MEI',
+      'Guias MEI',
       'Comissões', 'Conferência de caixas',
       'Encaminhamento de informações para a Contabilidade',
     ]
