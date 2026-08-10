@@ -137,7 +137,7 @@ export default function DepartamentoPage() {
   }, [ferramentas])
   // Demandas do setor (o que ele é responsável por fazer). Já vêm sem as que
   // existem como ferramenta aqui, para não repetir o mesmo nome duas vezes.
-  const demandas = useMemo(
+  const demandasSetor = useMemo(
     () => demandasDoSetor(dep?.nome_completo || '', ferramentas.map(f => f.label)),
     [dep?.nome_completo, ferramentas])
   const [demandasAbertas, setDemandasAbertas] = useState(false)
@@ -418,16 +418,16 @@ export default function DepartamentoPage() {
               )
             })}
             {/* DEMANDAS DO SETOR — o que este setor responde por */}
-            {demandas.length > 0 && (
+            {demandasSetor.length > 0 && (
               <div style={{ marginTop: 6 }}>
                 <button onClick={() => setDemandasAbertas(v => !v)}
                   style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, width: '100%', textAlign: 'left', padding: '8px 10px', border: 'none', borderRadius: 8, background: demandasAbertas ? '#f5f4f0' : 'transparent', color: '#374151', fontSize: 11, fontWeight: 900, letterSpacing: '.3px', cursor: 'pointer' }}>
-                  <span>📋 DEMANDAS DO SETOR ({demandas.length})</span>
+                  <span>📋 DEMANDAS DO SETOR ({demandasSetor.length})</span>
                   <span style={{ fontSize: 10, color: '#9ca3af', transform: demandasAbertas ? 'rotate(180deg)' : 'none' }}>▼</span>
                 </button>
                 {demandasAbertas && (
                   <div style={{ marginLeft: 8, paddingLeft: 8, borderLeft: '1px solid #e8e6e0' }}>
-                    {demandas.map((d, i) => (
+                    {demandasSetor.map((d, i) => (
                       <div key={i} style={{ padding: '5px 9px', fontSize: 10.5, color: '#6b7280', lineHeight: 1.45 }}>• {d}</div>
                     ))}
                   </div>
