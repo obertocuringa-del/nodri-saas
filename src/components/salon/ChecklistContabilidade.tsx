@@ -2,9 +2,9 @@
 
 // Check list do que é enviado à contabilidade, mês a mês.
 // Os 12 meses aparecem como cards com uma barrinha de progresso: vermelho
-// enquanto falta algo, verde quando tudo foi enviado. A lista de itens é a
-// mesma para todos os meses (dá para acrescentar e excluir); o que muda de um
-// mês para o outro é o que já foi marcado como enviado.
+// enquanto falta algo, verde quando tudo foi enviado. As categorias e os itens
+// são os mesmos para todos os meses (dá para acrescentar e excluir); o que muda
+// de um mês para o outro é o que já foi marcado como enviado.
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Loader2, Save, Plus, Trash2, ArrowLeft, Check } from 'lucide-react'
@@ -14,24 +14,91 @@ import { useGuardaSalvar } from '@/lib/guardaSalvar'
 const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
 
-const ITENS_PADRAO = [
-  'Notas fiscais de serviço',
-  'Notas fiscais de compra',
-  'Extratos bancários',
-  'Faturamento dos profissionais',
-  'Folha de pagamento',
-  'Guias pagas',
-  'Pró-labore',
+/** Categorias e itens que já vêm prontos na primeira vez que a tela abre. */
+const PADRAO: [string, string[]][] = [
+  ['RECEITAS / FATURAMENTO', [
+    'Relatório de faturamento do mês',
+    'Relatório de vendas de serviços',
+    'Relatório de vendas de produtos',
+    'Notas fiscais emitidas (Avec)',
+    'Notas fiscais canceladas (Avec)',
+    'Notas fiscais estornadas, se houver',
+    'Relatório de recebimentos por cartão',
+    'Relatório de Pix',
+    'Relatório de dinheiro',
+    'Relatório de outros meios de pagamento',
+    'Relatório de contas a receber',
+  ]],
+  ['PROFISSIONAIS-PARCEIROS', [
+    'Nome / CNPJ de cada profissional ativo',
+    'Valor líquido a pagar ao parceiro',
+    'Comprovante do pagamento',
+    'Nota fiscal emitida pelo profissional para o salão',
+    'Distrato de parceiro',
+  ]],
+  ['COMPROVANTES DE PAGAMENTO — IMPOSTOS E GUIAS', [
+    'DAS / Simples Nacional',
+    'ISS, quando aplicável',
+    'INSS',
+    'IRRF, quando aplicável',
+  ]],
+  ['BANCOS', [
+    'Extrato bancário completo do mês',
+    'Extrato de investimentos, se houver',
+    'Comprovantes de transferências',
+    'TED',
+    'Pix',
+    'Empréstimos',
+    'Financiamentos',
+    'Aplicações e resgates',
+    'Comprovantes de depósitos',
+  ]],
+  ['CARTÕES', [
+    'Relatório das vendas no cartão',
+    'Relatório de recebimentos',
+    'Taxas cobradas pelas operadoras',
+    'Antecipações',
+    'Cancelamentos',
+    'Estornos',
+    'Comprovantes / relatórios das operadoras',
+  ]],
+  ['DESPESAS / CONTAS PAGAS', [
+    'Relatório mensal de despesas diretas',
+  ]],
+  ['FOLHA / FUNCIONÁRIOS', [
+    'Comprovante de pagamento',
+    'Folha de pagamento',
+    'Pró-labore',
+    'Férias',
+    'Rescisões',
+    '13º salário',
+    'Encargos',
+    'FGTS',
+    'INSS',
+    'IRRF',
+  ]],
 ]
 
 interface Item { id: string; texto: string }
+interface Grupo { id: string; titulo: string; itens: Item[] }
 interface Doc {
-  itens: Item[]
+  grupos: Grupo[]
   marcados: Record<string, Record<string, boolean>>   // "2026-8" → { itemId: true }
 }
 
 const rid = () => Math.random().toString(36).slice(2, 9)
-const vazio = (): Doc => ({ itens: ITENS_PADRAO.map(t => ({ id: rid(), texto: t })), marcados: {} })
+const vazio = (): Doc => ({
+  grupos: PADRAO.map(([titulo, itens]) => ({ id: rid(), titulo, itens: itens.map(t => ({ id: rid(), texto: t })) })),
+  marcados: {},
+})
+
+/** Aceita o formato antigo (lista solta de itens) sem perder o que já foi marcado. */
+function normalizar(d: any): Doc | null {
+  if (!d || typeof d !== 'object') return null
+  if (Array.isArray(d.grupos)) return { grupos: d.grupos, marcados: d.marcados || {} }
+  if (Array.isArray(d.itens)) return { grupos: [{ id: rid(), titulo: 'GERAL', itens: d.itens }], marcados: d.marcados || {} }
+  return null
+}
 
 export default function ChecklistContabilidade() {
   const [ano, setAno] = useState(new Date().getFullYear())
@@ -45,7 +112,7 @@ export default function ChecklistContabilidade() {
   useEffect(() => {
     fetch('/api/salon/grid?chave=checklist_contabilidade', { credentials: 'include' })
       .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d && Array.isArray(d.itens)) setDoc({ itens: d.itens, marcados: d.marcados || {} }) })
+      .then(d => { const n = normalizar(d); if (n) setDoc(n) })
       .catch(() => { })
       .finally(() => setCarregando(false))
   }, [])
@@ -63,17 +130,34 @@ export default function ChecklistContabilidade() {
   }, [doc])
 
   const chave = (m: number) => `${ano}-${m}`
-  const feitosDe = (m: number) => doc.itens.filter(i => doc.marcados[chave(m)]?.[i.id]).length
+  const totalItens = useMemo(() => doc.grupos.reduce((s, g) => s + g.itens.length, 0), [doc.grupos])
+  const feitosDe = (m: number) => {
+    const mk = doc.marcados[chave(m)] || {}
+    return doc.grupos.reduce((s, g) => s + g.itens.filter(i => mk[i.id]).length, 0)
+  }
 
   function marcar(m: number, itemId: string, v: boolean) {
     setDoc(d => ({ ...d, marcados: { ...d.marcados, [chave(m)]: { ...(d.marcados[chave(m)] || {}), [itemId]: v } } }))
     setDirty(true)
   }
-  function addItem() { setDoc(d => ({ ...d, itens: [...d.itens, { id: rid(), texto: '' }] })); setDirty(true) }
-  function mudarItem(id: string, texto: string) { setDoc(d => ({ ...d, itens: d.itens.map(i => i.id === id ? { ...i, texto } : i) })); setDirty(true) }
-  function delItem(id: string) {
+  const mapGrupos = (fn: (g: Grupo) => Grupo) => { setDoc(d => ({ ...d, grupos: d.grupos.map(fn) })); setDirty(true) }
+
+  function addItem(gid: string) { mapGrupos(g => g.id === gid ? { ...g, itens: [...g.itens, { id: rid(), texto: '' }] } : g) }
+  function mudarItem(gid: string, id: string, texto: string) {
+    mapGrupos(g => g.id === gid ? { ...g, itens: g.itens.map(i => i.id === id ? { ...i, texto } : i) } : g)
+  }
+  function delItem(gid: string, id: string) {
     if (!confirm('Excluir este item do check list?')) return
-    setDoc(d => ({ ...d, itens: d.itens.filter(i => i.id !== id) })); setDirty(true)
+    mapGrupos(g => g.id === gid ? { ...g, itens: g.itens.filter(i => i.id !== id) } : g)
+  }
+  function mudarTitulo(gid: string, titulo: string) { mapGrupos(g => g.id === gid ? { ...g, titulo } : g) }
+  function addGrupo() {
+    setDoc(d => ({ ...d, grupos: [...d.grupos, { id: rid(), titulo: 'NOVA CATEGORIA', itens: [] }] }))
+    setDirty(true)
+  }
+  function delGrupo(gid: string) {
+    if (!confirm('Excluir esta categoria inteira, com os itens dela?')) return
+    setDoc(d => ({ ...d, grupos: d.grupos.filter(g => g.id !== gid) })); setDirty(true)
   }
 
   const anos = useMemo(() => [ano - 2, ano - 1, ano, ano + 1].filter((v, i, a) => a.indexOf(v) === i), [ano])
@@ -93,9 +177,9 @@ export default function ChecklistContabilidade() {
 
   // ── Tela de um mês ────────────────────────────────────────────────────
   if (mesAberto > 0) {
-    const total = doc.itens.length
+    const mk = doc.marcados[chave(mesAberto)] || {}
     const feitos = feitosDe(mesAberto)
-    const completo = total > 0 && feitos === total
+    const completo = totalItens > 0 && feitos === totalItens
     return (
       <div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
@@ -104,30 +188,50 @@ export default function ChecklistContabilidade() {
             <ArrowLeft size={15} /> Meses
           </button>
           <span style={{ fontWeight: 800, fontSize: 16 }}>{MESES[mesAberto - 1]}/{ano}</span>
-          <span style={{ fontSize: 12, fontWeight: 800, color: completo ? '#15803d' : '#b91c1c' }}>{feitos}/{total} enviados</span>
+          <span style={{ fontSize: 12, fontWeight: 800, color: completo ? '#15803d' : '#b91c1c' }}>{feitos}/{totalItens} enviados</span>
           <div style={{ flex: 1 }} />
           {btnSalvar}
         </div>
 
-        <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: 14 }}>
-          {doc.itens.map(item => {
-            const on = !!doc.marcados[chave(mesAberto)]?.[item.id]
-            return (
-              <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '7px 0', borderBottom: '1px solid #f2f0ec' }}>
-                <input type="checkbox" checked={on} onChange={e => marcar(mesAberto, item.id, e.target.checked)}
-                  style={{ width: 16, height: 16, accentColor: '#16a34a', cursor: 'pointer', flexShrink: 0 }} />
-                <input value={item.texto} onChange={e => mudarItem(item.id, e.target.value)} placeholder="Descreva o item…"
-                  style={{ flex: 1, border: 'none', outline: 'none', fontSize: 13, color: on ? '#15803d' : '#374151', fontWeight: on ? 700 : 500, textDecoration: on ? 'line-through' : 'none', background: 'transparent' }} />
-                <button onClick={() => delItem(item.id)} title="Excluir item"
-                  style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', padding: 3, flexShrink: 0 }}><Trash2 size={13} /></button>
+        {doc.grupos.map(g => {
+          const fg = g.itens.filter(i => mk[i.id]).length
+          const okG = g.itens.length > 0 && fg === g.itens.length
+          return (
+            <div key={g.id} style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: 14, marginBottom: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                <input value={g.titulo} onChange={e => mudarTitulo(g.id, e.target.value)}
+                  style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: 12.5, fontWeight: 900, letterSpacing: '.4px', color: okG ? '#15803d' : '#1a1a1a' }} />
+                <span style={{ fontSize: 11, fontWeight: 800, color: okG ? '#15803d' : '#b91c1c', whiteSpace: 'nowrap' }}>{fg}/{g.itens.length}</span>
+                <button onClick={() => delGrupo(g.id)} title="Excluir categoria"
+                  style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', padding: 3 }}><Trash2 size={13} /></button>
               </div>
-            )
-          })}
-          <button onClick={addItem}
-            style={{ marginTop: 10, display: 'inline-flex', alignItems: 'center', gap: 5, border: '1px dashed #5b4fcf', background: '#f0eefb', color: '#5b4fcf', fontSize: 12.5, fontWeight: 800, padding: '7px 14px', borderRadius: 9, cursor: 'pointer' }}>
-            <Plus size={13} /> Acrescentar item
-          </button>
-        </div>
+
+              {g.itens.map(item => {
+                const on = !!mk[item.id]
+                return (
+                  <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '6px 0', borderTop: '1px solid #f2f0ec' }}>
+                    <input type="checkbox" checked={on} onChange={e => marcar(mesAberto, item.id, e.target.checked)}
+                      style={{ width: 16, height: 16, accentColor: '#16a34a', cursor: 'pointer', flexShrink: 0 }} />
+                    <input value={item.texto} onChange={e => mudarItem(g.id, item.id, e.target.value)} placeholder="Descreva o item…"
+                      style={{ flex: 1, border: 'none', outline: 'none', fontSize: 13, color: on ? '#15803d' : '#374151', fontWeight: on ? 700 : 500, textDecoration: on ? 'line-through' : 'none', background: 'transparent' }} />
+                    <button onClick={() => delItem(g.id, item.id)} title="Excluir item"
+                      style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', padding: 3, flexShrink: 0 }}><Trash2 size={13} /></button>
+                  </div>
+                )
+              })}
+
+              <button onClick={() => addItem(g.id)}
+                style={{ marginTop: 9, display: 'inline-flex', alignItems: 'center', gap: 5, border: '1px dashed #5b4fcf', background: '#f0eefb', color: '#5b4fcf', fontSize: 12, fontWeight: 800, padding: '6px 12px', borderRadius: 9, cursor: 'pointer' }}>
+                <Plus size={12} /> Acrescentar item
+              </button>
+            </div>
+          )
+        })}
+
+        <button onClick={addGrupo}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: '1px dashed #9ca3af', background: '#fff', color: '#4b5563', fontSize: 12.5, fontWeight: 800, padding: '8px 14px', borderRadius: 9, cursor: 'pointer' }}>
+          <Plus size={13} /> Acrescentar categoria
+        </button>
       </div>
     )
   }
@@ -138,7 +242,9 @@ export default function ChecklistContabilidade() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
         <div>
           <h2 style={{ fontSize: 17, fontWeight: 800, color: '#1a1a1a', margin: 0 }}>Check list da contabilidade — {ano}</h2>
-          <p style={{ fontSize: 12, color: '#6b6860', margin: '2px 0 0' }}>Clique no mês para marcar o que já foi enviado.</p>
+          <p style={{ fontSize: 12, color: '#6b6860', margin: '2px 0 0' }}>
+            {doc.grupos.length} categorias, {totalItens} itens. Clique no mês para marcar o que já foi enviado.
+          </p>
         </div>
         <div style={{ flex: 1 }} />
         <select value={ano} onChange={e => setAno(Number(e.target.value))}
@@ -151,10 +257,9 @@ export default function ChecklistContabilidade() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: 10 }}>
         {MESES.map((nome, i) => {
           const m = i + 1
-          const total = doc.itens.length
           const feitos = feitosDe(m)
-          const pct = total ? Math.round((feitos / total) * 100) : 0
-          const completo = total > 0 && feitos === total
+          const pct = totalItens ? Math.round((feitos / totalItens) * 100) : 0
+          const completo = totalItens > 0 && feitos === totalItens
           return (
             <button key={m} onClick={() => setMesAberto(m)}
               style={{ textAlign: 'left', background: completo ? '#f0fdf4' : '#fff', border: `1.5px solid ${completo ? '#16a34a' : feitos > 0 ? '#fca5a5' : '#e8e6e0'}`, borderRadius: 12, padding: '12px 14px', cursor: 'pointer' }}>
@@ -163,7 +268,7 @@ export default function ChecklistContabilidade() {
                 <div style={{ flex: 1 }} />
                 {completo
                   ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, background: '#16a34a', color: '#fff', fontSize: 10, fontWeight: 900, padding: '3px 8px', borderRadius: 99 }}><Check size={11} /> OK</span>
-                  : <span style={{ fontSize: 11, color: '#b91c1c', fontWeight: 800 }}>{feitos}/{total}</span>}
+                  : <span style={{ fontSize: 11, color: '#b91c1c', fontWeight: 800 }}>{feitos}/{totalItens}</span>}
               </div>
               <div style={{ height: 8, borderRadius: 99, background: '#f0eee8', overflow: 'hidden' }}>
                 <div style={{ width: `${pct}%`, height: '100%', background: completo ? '#16a34a' : '#dc2626', transition: 'width .25s' }} />
