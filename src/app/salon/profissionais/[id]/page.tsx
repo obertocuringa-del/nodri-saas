@@ -304,7 +304,7 @@ function renderPlanoHtml(texto: string): string {
 interface Profissional {
   id: string; nome_completo: string; apelido: string; cargo: string; ativo: boolean
   cpf: string; rg: string; data_aniversario: string; email: string; endereco: string
-  cnpj: string; conta_bancaria: string; habilidades: string; foto_url: string
+  cnpj: string; conta_bancaria: string; chave_pix: string; habilidades: string; foto_url: string
   servicos_habilitados: string[]
   contato_responsavel: string; cor_favorita: string; comida_favorita: string
   animal_favorito: string; hobbies: string; um_sonho: string; certificados: string
@@ -3676,7 +3676,8 @@ ${section('Perfil Pessoal',
 )}
 ${section('Dados Profissionais',
   row('CNPJ', form.cnpj||'')+
-  row('Dados Bancários', form.conta_bancaria||'')
+  row('Dados Bancários', form.conta_bancaria||'')+
+  row('Chave PIX', form.chave_pix||'')
 )}
 ${section('Checklist de Onboarding',
   CHECKLIST_ITEMS.map(c=>{
@@ -3936,6 +3937,7 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                   <div className="grid grid-cols-2 gap-3">
                     <div><label className={labelCls}>CNPJ *</label><input value={form.cnpj||''} onChange={e=>set('cnpj',e.target.value)} placeholder="00.000.000/0000-00" className={inputCls}/></div>
                     <div><label className={labelCls}>Dados Bancários</label><input value={form.conta_bancaria||''} onChange={e=>set('conta_bancaria',e.target.value)} placeholder="Banco / Ag / Conta" className={inputCls}/></div>
+                    <div><label className={labelCls}>Chave PIX</label><input value={form.chave_pix||''} onChange={e=>set('chave_pix',e.target.value)} placeholder="CPF, telefone, e-mail ou chave aleatória" className={inputCls}/></div>
                   </div>
                 </div>
               </>}
