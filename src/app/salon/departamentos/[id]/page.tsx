@@ -10,6 +10,8 @@ import { listarPopsDoConteudo, type PopDeConteudo } from '@/components/salon/Con
 import { demandasDoSetor, slugDemanda } from '@/components/salon/demandasSetor'
 import DocEditavel from '@/components/salon/DocEditavel'
 import PrevisaoDespesasAno from '@/components/salon/PrevisaoDespesasAno'
+import ComissoesQuinzenas from '@/components/salon/ComissoesQuinzenas'
+import ConferenciaCaixas from '@/components/salon/ConferenciaCaixas'
 import { useIsMobile } from '@/lib/useIsMobile'
 
 interface Prof { id: string; nome_completo: string; apelido?: string; cargo?: string; ativo?: boolean; is_departamento?: boolean; departamento_cor?: string; telefone?: string; contato_responsavel?: string }
@@ -498,6 +500,8 @@ export default function DepartamentoPage() {
               if (slug === 'contas_a_pagar') return <BoletosFinanceiro key="contas_a_pagar" cor={cor} />
               // Previsao de despesas: espelho anual do Custo Operacional da Calculadora
               if (slug === 'previsao_de_despesas') return <PrevisaoDespesasAno key="previsao" />
+              if (slug === 'comissoes') return <ComissoesQuinzenas key="comissoes" />
+              if (slug === 'conferencia_de_caixas') return <ConferenciaCaixas key="conf_caixas" />
               const titulo = demandasSetor.find(d => slugDemanda(d) === slug) || 'Demanda'
               return <DocEditavel key={ferramentaAberta} chave={`demanda_${slug}`} tituloPadrao={titulo.toUpperCase()}
                 blocosPadrao={[{ titulo: 'Como fazer', corpo: '' }, { titulo: 'Registro / andamento', corpo: '' }]} comData />

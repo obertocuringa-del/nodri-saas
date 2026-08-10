@@ -136,6 +136,7 @@ export function permDaGrade(chave: string): string {
   if (c.startsWith('calendario')) return 'calendario'
   if (c === 'organograma') return 'pendencias'
   if (c.startsWith('demanda_')) return 'pendencias'
+  if (c === 'comissoes_quinzenas' || c === 'conferencia_caixas') return 'pendencias'
   if (c === 'prof_categorias') return 'profissionais'
   if (c.startsWith('avaliacao_pop_')) return 'profissionais'
   if (c === 'calc_servicos_global') return 'calc_abas_extras'
