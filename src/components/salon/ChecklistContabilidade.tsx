@@ -63,7 +63,7 @@ const PADRAO: [string, string[]][] = [
     'Comprovantes / relatórios das operadoras',
   ]],
   ['DESPESAS / CONTAS PAGAS', [
-    'Relatório mensal de despesas diretas',
+    'Relatório mensal de despesas INDIRETAS',
   ]],
   ['FOLHA / FUNCIONÁRIOS', [
     'Comprovante de pagamento',
@@ -151,8 +151,9 @@ export default function ChecklistContabilidade() {
 
   /** O item pede a lista de profissionais ativos com CNPJ? */
   const ehRelacaoProfissionais = (t: string) => /cnpj/i.test(t) && /ativ/i.test(t)
-  /** O item pede o relatório de despesas indiretas do mês? */
-  const ehDespesasIndiretas = (t: string) => /despesa/i.test(t) && /indireta/i.test(t)
+  /** O item pede o relatório de despesas do mês? (aceita quem já salvou o
+   *  texto antigo, que dizia "diretas") */
+  const ehDespesasIndiretas = (t: string) => /despesa/i.test(t) && /(indireta|relat)/i.test(t)
 
   function enviarDespesasIndiretas(mes: number) {
     const reg = historico.find(h => Number(h.ano) === ano && Number(h.mes) === mes)
