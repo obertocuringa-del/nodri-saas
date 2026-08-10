@@ -51,6 +51,7 @@ export interface Ferramenta {
   perm: string            // chave de permissão (mesma usada no Administrativo)
   rota?: string           // quando a ferramenta é uma página separada
   conteudoSlug?: string   // abre a lista de POPs daquele conteúdo como sub-itens
+  grupo?: string          // agrupa na sidebar (ex.: 'CLT', 'CNPJ') — abre/fecha
 }
 
 // Catálogo: id → rótulo + permissão. Os ids batem com as abas do Administrativo.
@@ -104,28 +105,26 @@ export const CATALOGO: Record<string, Ferramenta> = {
   // Profissionais — cada secao abre dentro do setor
   pr_cadastrar:     { id: 'pr_cadastrar', label: 'CADASTRAR PROFISSIONAL', perm: 'profissionais' },
   pr_lista:         { id: 'pr_lista', label: 'LISTA DE PROFISSIONAIS', perm: 'profissionais' },
-  pr_solicitacao:   { id: 'pr_solicitacao', label: 'SOLICITAÇÃO', perm: 'profissionais' },
   pr_acesso:        { id: 'pr_acesso', label: 'ACESSO DOS PROFISSIONAIS', perm: 'profissionais' },
   pr_ranking:       { id: 'pr_ranking', label: 'RANKING DE AVALIAÇÕES', perm: 'profissionais' },
   pr_categorias:    { id: 'pr_categorias', label: 'GERENCIAR CATEGORIAS', perm: 'profissionais' },
   pr_abertura:      { id: 'pr_abertura', label: 'ABERTURA DE CONTA BANCÁRIA', perm: 'profissionais' },
-  pr_entrevista:    { id: 'pr_entrevista', label: 'FICHA PARA ENTREVISTA', perm: 'profissionais' },
+  pr_entrevista:    { id: 'pr_entrevista', label: 'FICHA PARA ENTREVISTA', perm: 'profissionais', grupo: 'CNPJ' },
   pr_contratacao:   { id: 'pr_contratacao', label: 'PROCESSO DE CONTRATAÇÃO', perm: 'profissionais' },
   pr_materiais:     { id: 'pr_materiais', label: 'MATERIAIS PARA TRABALHO', perm: 'profissionais' },
-  pr_perfil:        { id: 'pr_perfil', label: 'PERFIL IDEAL DE PROFISSIONAL', perm: 'profissionais' },
+  pr_perfil:        { id: 'pr_perfil', label: 'PERFIL IDEAL DE PROFISSIONAL', perm: 'profissionais', grupo: 'CNPJ' },
   pr_horarios:      { id: 'pr_horarios', label: 'HORÁRIOS E FOLGAS', perm: 'profissionais' },
-  pr_distrato:      { id: 'pr_distrato', label: 'DISTRATO', perm: 'profissionais' },
-  pr_contrato:      { id: 'pr_contrato', label: 'CONTRATO DE TRABALHO', perm: 'profissionais' },
-  pr_conduta:       { id: 'pr_conduta', label: 'NORMA DE CONDUTA', perm: 'profissionais' },
-  pr_certificados:  { id: 'pr_certificados', label: 'CERTIFICADOS', perm: 'profissionais' },
-  pr_carreira:      { id: 'pr_carreira', label: 'PLANO DE CARREIRA', perm: 'profissionais' },
-  pr_descricao:     { id: 'pr_descricao', label: 'DESCRIÇÃO DE CARGO', perm: 'profissionais' },
+  pr_distrato:      { id: 'pr_distrato', label: 'DISTRATO', perm: 'profissionais', grupo: 'CNPJ' },
+  pr_contrato:      { id: 'pr_contrato', label: 'CONTRATO DE TRABALHO', perm: 'profissionais', grupo: 'CNPJ' },
+  pr_conduta:       { id: 'pr_conduta', label: 'NORMA DE CONDUTA', perm: 'profissionais', grupo: 'CNPJ' },
+  pr_certificados:  { id: 'pr_certificados', label: 'CERTIFICADOS', perm: 'profissionais', grupo: 'CNPJ' },
+  pr_carreira:      { id: 'pr_carreira', label: 'PLANO DE CARREIRA', perm: 'profissionais', grupo: 'CNPJ' },
   // PJ e CLT separados, para não misturar os dois regimes
-  pj_cnpj:         { id: 'pj_cnpj',         label: 'PJ · CNPJ DOS PROFISSIONAIS',   perm: 'profissionais' },
-  pj_contratacao:  { id: 'pj_contratacao',  label: 'PJ · PROCESSO DE CONTRATAÇÃO',  perm: 'profissionais' },
-  pj_desligamento: { id: 'pj_desligamento', label: 'PJ · PROCESSO DE DESLIGAMENTO', perm: 'profissionais' },
-  clt_profs:       { id: 'clt_profs',       label: 'CLT · PROFISSIONAIS (FÉRIAS)',  perm: 'profissionais' },
-  clt_contratacao: { id: 'clt_contratacao', label: 'CLT · PROCESSO DE CONTRATAÇÃO', perm: 'profissionais' },
+  pj_cnpj:         { id: 'pj_cnpj',         label: 'PJ · CNPJ DOS PROFISSIONAIS',   perm: 'profissionais', grupo: 'CNPJ' },
+  pj_contratacao:  { id: 'pj_contratacao',  label: 'PJ · PROCESSO DE CONTRATAÇÃO',  perm: 'profissionais', grupo: 'CNPJ' },
+  pj_desligamento: { id: 'pj_desligamento', label: 'PJ · PROCESSO DE DESLIGAMENTO', perm: 'profissionais', grupo: 'CNPJ' },
+  clt_profs:       { id: 'clt_profs',       label: 'CLT · PROFISSIONAIS (FÉRIAS)',  perm: 'profissionais', grupo: 'CLT' },
+  clt_contratacao: { id: 'clt_contratacao', label: 'CLT · PROCESSO DE CONTRATAÇÃO', perm: 'profissionais', grupo: 'CLT' },
 }
 
 // Quais ferramentas pertencem a cada setor. A chave é o nome do setor
@@ -140,7 +139,7 @@ export const FERRAMENTAS_POR_SETOR: { chave: string[]; itens: string[] }[] = [
   { chave: ['PROCESSO', 'QUALIDADE'], itens: ['pr_ranking', 'ck_padrao', 'pop_cafe', 'pop_salao', 'checkprocon', 'pop_recepcao', 'pop_manicure', 'pop_cabelereiro'] },
   { chave: ['MARKETING'], itens: ['calendario_mkt'] },
   { chave: ['COMERCIAL', 'VENDAS'], itens: ['lojistas'] },
-  { chave: ['RH', 'GESTAO DE PESSOAS', 'RECURSOS HUMANOS'], itens: ['pr_lista', 'pr_cadastrar', 'pj_cnpj', 'pj_contratacao', 'pj_desligamento', 'clt_profs', 'clt_contratacao', 'pr_solicitacao', 'pr_acesso', 'pr_categorias', 'pr_entrevista', 'pr_contratacao', 'pr_perfil', 'pr_distrato', 'pr_contrato', 'pr_conduta', 'pr_certificados', 'pr_carreira', 'pr_descricao'] },
+  { chave: ['RH', 'GESTAO DE PESSOAS', 'RECURSOS HUMANOS'], itens: ['pr_lista', 'pr_cadastrar', 'pj_cnpj', 'pj_contratacao', 'pj_desligamento', 'clt_profs', 'clt_contratacao', 'pr_acesso', 'pr_categorias', 'pr_entrevista', 'pr_contratacao', 'pr_perfil', 'pr_distrato', 'pr_contrato', 'pr_conduta', 'pr_certificados', 'pr_carreira'] },
   { chave: ['SERVICOS GERAIS', 'LIMPEZA'], itens: ['ck_manutencao'] },
   { chave: ['COORDENADOR', 'COORDENACAO'], itens: ['pr_horarios', 'ck_coordenado'] },
 ]
@@ -195,7 +194,6 @@ export function ConteudoFerramenta({ id, profsSalao, abaPop = 'cafe' }: { id: st
     case 'ck_padrao':           return <ChecklistPainel key="ck_padrao" categoriaFixa="Padrão de Atendimento" embutido />
     case 'pr_cadastrar':          return <ProfissionaisPainel key="pr_cadastrar" secaoFixa="cadastrar" embutido />
     case 'pr_lista':              return <ProfissionaisPainel key="pr_lista" secaoFixa="lista" embutido />
-    case 'pr_solicitacao':        return <ProfissionaisPainel key="pr_solicitacao" secaoFixa="solicitacao" embutido />
     case 'pr_acesso':             return <ProfissionaisPainel key="pr_acesso" secaoFixa="acesso_global" embutido />
     case 'pr_ranking':            return <ProfissionaisPainel key="pr_ranking" secaoFixa="ranking" embutido />
     case 'pr_categorias':         return <ProfissionaisPainel key="pr_categorias" secaoFixa="categorias" embutido />
@@ -215,7 +213,6 @@ export function ConteudoFerramenta({ id, profsSalao, abaPop = 'cafe' }: { id: st
     case 'pr_conduta':            return <ProfissionaisPainel key="pr_conduta" secaoFixa="conduta" embutido />
     case 'pr_certificados':       return <ProfissionaisPainel key="pr_certificados" secaoFixa="certificados" embutido />
     case 'pr_carreira':           return <ProfissionaisPainel key="pr_carreira" secaoFixa="carreira" embutido />
-    case 'pr_descricao':          return <ProfissionaisPainel key="pr_descricao" secaoFixa="descricao_cargo" embutido />
     case 'pop_cafe':            return <DocEditavel key="pop_cafe" chave="pop_cafe" tituloPadrao="PREPARO DE SERVIÇOS — CAFÉ" blocosPadrao={CAFE_BLOCOS} />
     case 'pop_salao':           return <DocEditavel key="pop_salao" chave="pop_salao" tituloPadrao="POP — PROCEDIMENTO DE OPERAÇÃO PADRÃO" blocosPadrao={POP_SALAO_BLOCOS} comData />
     default:

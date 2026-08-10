@@ -125,6 +125,19 @@ export default function DepartamentoPage() {
   // vem da API e fica guardada aqui para não buscar de novo a cada clique.
   const [popsPorSlug, setPopsPorSlug] = useState<Record<string, PopDeConteudo[]>>({})
   const [slugAberto, setSlugAberto] = useState('')
+  // Ferramentas podem vir agrupadas (ex.: CLT e CNPJ no RH): as soltas ficam
+  // na lista de cima e cada grupo abre/fecha os seus.
+  const [grupoAberto, setGrupoAberto] = useState('')
+  const ferramentasSoltas = useMemo(() => ferramentas.filter(f => !f.grupo), [ferramentas])
+  const gruposFerramentas = useMemo(() => {
+    const m = new Map<string, typeof ferramentas>()
+    for (const f of ferramentas) if (f.grupo) m.set(f.grupo, [...(m.get(f.grupo) || []), f])
+    return [...m.entries()]
+  }, [ferramentas])
+  const TITULO_GRUPO: Record<string, string> = {
+    CLT: '👤 CLT — PROFISSIONAIS',
+    CNPJ: '🏢 CNPJ — PROFISSIONAIS PJ / PARCEIROS',
+  }
 
   function alternarPops(slug: string) {
     setSlugAberto(a => (a === slug ? '' : slug))
@@ -334,7 +347,7 @@ export default function DepartamentoPage() {
               PENDÊNCIAS DO SETOR
             </button>
             <div style={{ fontSize: 10.5, fontWeight: 900, color: '#9ca3af', letterSpacing: '.6px', padding: '10px 10px 4px' }}>FERRAMENTAS</div>
-            {ferramentas.map(f => {
+            {ferramentasSoltas.map(f => {
               const ativo = ferramentaAberta === f.id
               const aberto = !!f.conteudoSlug && slugAberto === f.conteudoSlug
               const pops = f.conteudoSlug ? (popsPorSlug[f.conteudoSlug] || []) : []
@@ -360,6 +373,34 @@ export default function DepartamentoPage() {
                           <button key={pp.id} onClick={() => setFerramentaAberta(idFer)}
                             style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 8px', border: 'none', borderRadius: 6, background: at ? '#f0eefb' : 'transparent', color: at ? '#5b4fcf' : '#6b7280', fontSize: 10.5, fontWeight: at ? 800 : 600, cursor: 'pointer' }}>
                             {pp.titulo}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+
+            {/* GRUPOS (ex.: CLT e CNPJ): clicar abre/fecha os itens do grupo */}
+            {gruposFerramentas.map(([nomeGrupo, itensGrupo]) => {
+              const aberto = grupoAberto === nomeGrupo
+              return (
+                <div key={nomeGrupo} style={{ marginTop: 6 }}>
+                  <button onClick={() => setGrupoAberto(g => (g === nomeGrupo ? '' : nomeGrupo))}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, width: '100%', textAlign: 'left', padding: '8px 10px', border: 'none', borderRadius: 8, background: aberto ? '#f5f4f0' : 'transparent', color: '#374151', fontSize: 11, fontWeight: 900, letterSpacing: '.3px', cursor: 'pointer' }}>
+                    <span>{TITULO_GRUPO[nomeGrupo] || nomeGrupo}</span>
+                    <span style={{ fontSize: 10, color: '#9ca3af', transform: aberto ? 'rotate(180deg)' : 'none' }}>▼</span>
+                  </button>
+                  {aberto && (
+                    <div style={{ marginLeft: 8, paddingLeft: 8, borderLeft: '1px solid #e8e6e0' }}>
+                      {itensGrupo.map(f => {
+                        const at = ferramentaAberta === f.id
+                        return (
+                          <button key={f.id}
+                            onClick={() => { if (f.rota) { router.push(f.rota) } else { setFerramentaAberta(f.id) } }}
+                            style={{ display: 'block', width: '100%', textAlign: 'left', padding: '7px 9px', border: 'none', borderRadius: 7, background: at ? '#f0eefb' : 'transparent', color: at ? '#5b4fcf' : '#4b5563', fontSize: 11, fontWeight: at ? 900 : 700, cursor: 'pointer' }}>
+                            {f.label}{f.rota ? ' →' : ''}
                           </button>
                         )
                       })}
