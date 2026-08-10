@@ -222,12 +222,21 @@ export default function ChecklistPainel({ categoriaFixa = '', embutido = false }
   const hojeIdx = new Date().getDay()
   const hojeAbrev = DIAS_SEMANA[hojeIdx]
   const pendHoje: { dem: Demanda; cat: string; ci: number }[] = []
-  doc.categorias.forEach((c, ci) => c.demandas.forEach(dem => {
-    if (dem.texto.trim() && dem.dias?.includes(hojeAbrev) && !feitoNoPeriodo(dem)) pendHoje.push({ dem, cat: c.nome, ci })
-  }))
+  doc.categorias.forEach((c, ci) => {
+    // Dentro de um setor o alerta é só do check list daquele setor: antes ele
+    // listava as pendências de Abertura, Dosagem e Padrão junto, o que fazia o
+    // gerente ver tarefa que não é dele.
+    if (categoriaFixa && c.nome !== categoriaFixa) return
+    c.demandas.forEach(dem => {
+      if (dem.texto.trim() && dem.dias?.includes(hojeAbrev) && !feitoNoPeriodo(dem)) pendHoje.push({ dem, cat: c.nome, ci })
+    })
+  })
   const pendPorCat: Record<number, number> = {}
   pendHoje.forEach(p => { pendPorCat[p.ci] = (pendPorCat[p.ci] || 0) + 1 })
   const temAlerta = pendHoje.length > 0
+  // "Lançar desconto" e o alerta do dia são tarefa de gerência: dentro dos
+  // outros setores eles só atrapalhavam quem vai marcar o próprio check list.
+  const ehGerente = !categoriaFixa || /gerente/i.test(categoriaFixa)
   // Nomes dos check lists (categorias) com pendência de hoje — para saber DE QUEM é
   const catsAlerta: [string, number][] = Object.entries(pendHoje.reduce((m, p) => { m[p.cat] = (m[p.cat] || 0) + 1; return m }, {} as Record<string, number>))
 
@@ -365,7 +374,7 @@ export default function ChecklistPainel({ categoriaFixa = '', embutido = false }
 
           {/* 💸 LANÇAR DESCONTO — fixo no topo: consolida o desconto mensal de cada
               profissional (bebidas + serviços internos + empréstimos) numa lista só */}
-          {!soLeitura && (
+          {!soLeitura && ehGerente && (
             <button onClick={() => setDescontoOpen(true)}
               style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 12, background: 'linear-gradient(135deg,#16a34a,#15803d)', color: '#fff', border: 'none', borderRadius: 14, padding: isMobile ? '13px 15px' : '15px 18px', marginBottom: 14, cursor: 'pointer', boxShadow: '0 8px 22px rgba(22,163,74,.28)' }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, borderRadius: 10, background: 'rgba(255,255,255,.22)', flexShrink: 0 }}><HandCoins size={22} /></span>
@@ -397,7 +406,7 @@ export default function ChecklistPainel({ categoriaFixa = '', embutido = false }
           )}
 
           {/* 🔴 ALERTA DO DIA — some sozinho quando a última for marcada como feita */}
-          {temAlerta && (
+          {temAlerta && ehGerente && (
             <button onClick={() => { setVerRelatorio(true); setVerComuns(false); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
               style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 12, background: 'linear-gradient(135deg,#dc2626,#b91c1c)', color: '#fff', border: 'none', borderRadius: 14, padding: '14px 18px', marginBottom: 16, cursor: 'pointer', boxShadow: '0 10px 28px rgba(220,38,38,.35)' }}>
               <span style={{ fontSize: 24, flexShrink: 0 }}>⚠️</span>
