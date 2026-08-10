@@ -30,6 +30,7 @@ import ListaServico from '@/components/salon/ListaServico'
 import CheckProconPainel from '@/components/salon/CheckProconPainel'
 import ConteudoPopPainel from '@/components/salon/ConteudoPopPainel'
 import ChecklistPainel from '@/components/salon/ChecklistPainel'
+import ConsolidadoDescontos from '@/components/salon/ConsolidadoDescontos'
 import ProfissionaisPainel from '@/components/salon/ProfissionaisPainel'
 import { CAFE_BLOCOS, POP_SALAO_BLOCOS } from '@/components/salon/popDefaults'
 
@@ -179,7 +180,7 @@ export function ConteudoFerramenta({ id, profsSalao, abaPop = 'cafe' }: { id: st
     case 'ata':                 return <AtaReuniaoLista key="ata" chave="ata" profsSalao={profsSalao} />
     case 'senhas':              return <SenhasLista key="senhas" chave="senhas" />
     case 'telefones':           return <ListaTelefones key="telefones" />
-    case 'desconto_profissional': return <GridEditavel key="descprof" chave="desconto_profissional" defaultDoc={D_DESC_PROF} landscape />
+    case 'desconto_profissional': return <ConsolidadoDescontos key="descprof" open embutido onClose={() => { }} />
     case 'corrida_interna':     return <GridEditavel key="corrida" chave="corrida_interna" defaultDoc={D_CORRIDA} landscape />
     case 'correios':            return <GridEditavel key="correios" chave="correios" defaultDoc={D_CORREIOS} landscape />
     case 'checkprocon':         return <CheckProconPainel key="checkprocon" />

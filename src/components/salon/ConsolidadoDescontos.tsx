@@ -75,7 +75,9 @@ function mesclarBebidas(a: DocBebidas | null, b: DocBebidas | null): DocBebidas 
   return { colunas, cells }
 }
 
-export default function ConsolidadoDescontos({ open, onClose }: { open: boolean; onClose: () => void }) {
+// embutido: renderiza direto na pagina (sem a moldura de janela), para abrir
+// dentro do setor. Sem ele, segue como a janela que o Check List usa.
+export default function ConsolidadoDescontos({ open, onClose, embutido = false }: { open: boolean; onClose: () => void; embutido?: boolean }) {
   const [mes, setMes] = useState(mesAtual())
   const [quinzena, setQuinzena] = useState<Quinzena>(quinzenaDeHoje())
   const [loading, setLoading] = useState(false)
@@ -196,8 +198,10 @@ export default function ConsolidadoDescontos({ open, onClose }: { open: boolean;
   if (!open) return null
 
   return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 1000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: 14, overflowY: 'auto' }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 720, margin: '20px auto', overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,.3)' }}>
+    <div onClick={embutido ? undefined : onClose} style={embutido ? undefined : { position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 1000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: 14, overflowY: 'auto' }}>
+      <div onClick={e => e.stopPropagation()} style={embutido
+        ? { background: '#fff', borderRadius: 16, width: '100%', overflow: 'hidden', border: '1px solid #e8e6e0' }
+        : { background: '#fff', borderRadius: 16, width: '100%', maxWidth: 720, margin: '20px auto', overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,.3)' }}>
         {/* Cabeçalho */}
         <div style={{ background: 'linear-gradient(135deg,#7c3aed,#5b4fcf)', color: '#fff', padding: '16px 18px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

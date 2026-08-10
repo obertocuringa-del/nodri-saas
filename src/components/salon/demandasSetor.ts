@@ -38,8 +38,8 @@ const MAPA: { chave: string[]; demandas: string[] }[] = [
   },
   {
     chave: ['FINANCEIRO'], demandas: [
-      'Contas a pagar', 'Boletos', 'Previsão de despesas', 'Previsão de pagamentos',
-      'Fluxo de caixa', 'Contas bancárias', 'Abertura de contas bancárias',
+      'Contas a pagar', 'Previsão de despesas', 'Previsão de pagamentos',
+      'Fluxo de caixa', 'Contas bancárias',
       'Impostos e guias', 'Guias MEI', 'Faturamento dos profissionais parceiros',
       'Descontos autorizados', 'Bônus autorizados', 'Comissões',
       'Conferência dos valores', 'Encaminhamento de informações para a Contabilidade',
