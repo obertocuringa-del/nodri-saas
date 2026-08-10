@@ -5,8 +5,8 @@
 // O valor vem do relatório 0123 que já é importado do avec (Pagamentos por
 // profissional) — nada é digitado aqui e nada foi mexido na importação.
 //
-// Conta: A pagar + coluna "descontos" do relatório (que vem com sinal:
-// negativo abate, positivo acrescenta, vazio não mexe) − desconto fixo da casa.
+// Conta: "A pagar" da planilha do avec (já líquido da coluna descontos)
+// menos o desconto fixo da casa.
 
 import { useEffect, useMemo, useState } from 'react'
 import { Loader2, Printer } from 'lucide-react'
@@ -56,11 +56,13 @@ export default function FaturamentoProfissionaisPJ() {
     return base.map(p => {
       const nome = p.apelido || p.nome_completo || '—'
       const k1 = norm(nome), k2 = norm(p.nome_completo || '')
-      const aPagar = soma.get(k1) ?? soma.get(k2) ?? 0
-      // O relatorio traz a coluna "descontos" com sinal: negativo abate do
-      // A pagar, positivo acrescenta, vazio nao mexe em nada.
+      const bruto = soma.get(k1) ?? soma.get(k2) ?? 0
       const descRel = somaDesc.get(k1) ?? somaDesc.get(k2) ?? 0
-      return { id: p.id, nome, cnpj: p.cnpj || '', aPagar, descRel, liquido: aPagar > 0 ? aPagar + descRel - desconto : 0 }
+      // A /api/relatorios devolve o valor ja com o desconto somado (comissao
+      // cheia). Tirando o desconto de volta chega-se no "A pagar" que aparece
+      // na planilha do avec, que e a base do que o profissional recebe.
+      const aPagar = bruto - descRel
+      return { id: p.id, nome, cnpj: p.cnpj || '', aPagar, descRel, liquido: aPagar > 0 ? aPagar - desconto : 0 }
     }).sort((a, b) => b.aPagar - a.aPagar)
   }, [pagamentos, profs, ano, mes, desconto])
 
@@ -120,8 +122,8 @@ export default function FaturamentoProfissionaisPJ() {
                 <td style={{ padding: '9px 11px', fontSize: 12.5, fontWeight: 700, color: l.aPagar > 0 ? '#1a1a1a' : '#c4c0b8' }}>{l.nome}</td>
                 <td style={{ padding: '9px 11px', fontSize: 11.5, color: '#6b6860' }}>{l.cnpj || '—'}</td>
                 <td style={{ padding: '9px 11px', textAlign: 'right', fontSize: 12.5, color: '#6b6860' }}>{l.aPagar > 0 ? moeda(l.aPagar) : '—'}</td>
-                <td style={{ padding: '9px 11px', textAlign: 'right', fontSize: 12.5, fontWeight: l.descRel ? 700 : 500, color: l.descRel < 0 ? '#b91c1c' : l.descRel > 0 ? '#15803d' : '#c4c0b8' }}>
-                  {l.descRel ? `${l.descRel > 0 ? '+' : '−'} ${moeda(Math.abs(l.descRel))}` : '—'}
+                <td style={{ padding: '9px 11px', textAlign: 'right', fontSize: 12.5, fontWeight: l.descRel ? 700 : 500, color: l.descRel > 0 ? '#b91c1c' : l.descRel < 0 ? '#15803d' : '#c4c0b8' }}>
+                  {l.descRel ? `${l.descRel > 0 ? '−' : '+'} ${moeda(Math.abs(l.descRel))}` : '—'}
                 </td>
                 <td style={{ padding: '9px 11px', textAlign: 'right', fontSize: 13, fontWeight: 900, color: l.liquido > 0 ? '#15803d' : '#c4c0b8' }}>{l.liquido > 0 ? moeda(l.liquido) : '—'}</td>
               </tr>
@@ -131,7 +133,7 @@ export default function FaturamentoProfissionaisPJ() {
             <tr style={{ background: '#faf9f7' }}>
               <td colSpan={2} style={{ padding: '10px 11px', fontSize: 12, fontWeight: 900 }}>TOTAL</td>
               <td style={{ padding: '10px 11px', textAlign: 'right', fontSize: 12.5, fontWeight: 800, color: '#6b6860' }}>{moeda(totAPagar)}</td>
-              <td style={{ padding: '10px 11px', textAlign: 'right', fontSize: 12.5, fontWeight: 800, color: totDesc < 0 ? '#b91c1c' : '#15803d' }}>{totDesc ? `${totDesc > 0 ? '+' : '−'} ${moeda(Math.abs(totDesc))}` : '—'}</td>
+              <td style={{ padding: '10px 11px', textAlign: 'right', fontSize: 12.5, fontWeight: 800, color: totDesc > 0 ? '#b91c1c' : '#15803d' }}>{totDesc ? `${totDesc > 0 ? '−' : '+'} ${moeda(Math.abs(totDesc))}` : '—'}</td>
               <td style={{ padding: '10px 11px', textAlign: 'right', fontSize: 13.5, fontWeight: 900, color: '#15803d' }}>{moeda(totLiquido)}</td>
             </tr>
           </tfoot>
