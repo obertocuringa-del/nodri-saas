@@ -7,11 +7,13 @@ import BoletosFinanceiro from '@/components/salon/BoletosFinanceiro'
 import ComportamentoProfissional from '@/components/salon/ComportamentoProfissional'
 import { ferramentasDoSetor, ConteudoFerramenta } from '@/components/salon/ferramentasSetor'
 import { listarPopsDoConteudo, type PopDeConteudo } from '@/components/salon/ConteudoPopPainel'
-import { demandasDoSetor, slugDemanda } from '@/components/salon/demandasSetor'
+import { demandasDoSetor, slugDemanda, SUBDEMANDAS } from '@/components/salon/demandasSetor'
 import DocEditavel from '@/components/salon/DocEditavel'
 import PrevisaoDespesasAno from '@/components/salon/PrevisaoDespesasAno'
 import ComissoesQuinzenas from '@/components/salon/ComissoesQuinzenas'
+import ProfissionaisPainel from '@/components/salon/ProfissionaisPainel'
 import ConferenciaCaixas from '@/components/salon/ConferenciaCaixas'
+import FaturamentoProfissionaisPJ from '@/components/salon/FaturamentoProfissionaisPJ'
 import { useIsMobile } from '@/lib/useIsMobile'
 
 interface Prof { id: string; nome_completo: string; apelido?: string; cargo?: string; ativo?: boolean; is_departamento?: boolean; departamento_cor?: string; telefone?: string; contato_responsavel?: string }
@@ -133,6 +135,7 @@ export default function DepartamentoPage() {
   // Ferramentas podem vir agrupadas (ex.: CLT e CNPJ no RH): as soltas ficam
   // na lista de cima e cada grupo abre/fecha os seus.
   const [grupoAberto, setGrupoAberto] = useState('')
+  const [demandaExpandida, setDemandaExpandida] = useState('')
   const ferramentasSoltas = useMemo(() => ferramentas.filter(f => !f.grupo), [ferramentas])
   const gruposFerramentas = useMemo(() => {
     const m = new Map<string, typeof ferramentas>()
@@ -396,13 +399,34 @@ export default function DepartamentoPage() {
             {/* Demandas do setor: botões iguais aos demais; abrem uma folha de
                 trabalho própria (anotações/registro) aqui dentro. */}
             {demandasSetor.map(d => {
-              const idDem = `demanda:${slugDemanda(d)}`
+              const slug = slugDemanda(d)
+              const idDem = `demanda:${slug}`
               const at = ferramentaAberta === idDem
+              const subs = SUBDEMANDAS[slug] || []
+              const exp = demandaExpandida === slug
               return (
-                <button key={idDem} onClick={() => setFerramentaAberta(idDem)}
-                  style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 10px', border: 'none', borderRadius: 8, background: at ? '#f0eefb' : 'transparent', color: at ? '#5b4fcf' : '#4b5563', fontSize: 11.5, fontWeight: at ? 900 : 700, letterSpacing: '.3px', cursor: 'pointer', borderLeft: at ? '3px solid #5b4fcf' : '3px solid transparent' }}>
-                  {d.toUpperCase()}
-                </button>
+                <div key={idDem}>
+                  <button
+                    onClick={() => { if (subs.length) { setDemandaExpandida(x => (x === slug ? '' : slug)) } else { setFerramentaAberta(idDem) } }}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, width: '100%', textAlign: 'left', padding: '8px 10px', border: 'none', borderRadius: 8, background: at ? '#f0eefb' : 'transparent', color: at ? '#5b4fcf' : '#4b5563', fontSize: 11.5, fontWeight: at ? 900 : 700, letterSpacing: '.3px', cursor: 'pointer', borderLeft: at ? '3px solid #5b4fcf' : '3px solid transparent' }}>
+                    <span>{d.toUpperCase()}</span>
+                    {subs.length > 0 && <span style={{ fontSize: 10, color: '#9ca3af', transform: exp ? 'rotate(180deg)' : 'none' }}>▼</span>}
+                  </button>
+                  {exp && subs.length > 0 && (
+                    <div style={{ marginLeft: 8, paddingLeft: 8, borderLeft: '1px solid #e8e6e0' }}>
+                      {subs.map(sb => {
+                        const idSub = `sub:${sb.id}`
+                        const atSub = ferramentaAberta === idSub
+                        return (
+                          <button key={sb.id} onClick={() => setFerramentaAberta(idSub)}
+                            style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 9px', border: 'none', borderRadius: 7, background: atSub ? '#f0eefb' : 'transparent', color: atSub ? '#5b4fcf' : '#6b7280', fontSize: 10.5, fontWeight: atSub ? 900 : 700, cursor: 'pointer' }}>
+                            {sb.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
               )
             })}
 
@@ -493,6 +517,7 @@ export default function DepartamentoPage() {
         {/* Ferramenta aberta: mostra o mesmo conteúdo do Salão Administrativo */}
         {ferramentaAberta ? (
           <>
+            {ferramentaAberta === 'sub:faturamento_profissionais' && <FaturamentoProfissionaisPJ key="fat_pj" />}
             {ferramentaAberta.startsWith('demanda:') && (() => {
               const slug = ferramentaAberta.slice('demanda:'.length)
               // Contas a pagar tem tela propria: a fila de boletos da Calculadora,
@@ -501,6 +526,10 @@ export default function DepartamentoPage() {
               // Previsao de despesas: espelho anual do Custo Operacional da Calculadora
               if (slug === 'previsao_de_despesas') return <PrevisaoDespesasAno key="previsao" />
               if (slug === 'comissoes') return <ComissoesQuinzenas key="comissoes" />
+              // Guias MEI espelha a MESMA tela de CNPJ dos Profissionais do RH:
+              // e o mesmo componente e os mesmos dados, entao mudar num lado
+              // muda no outro automaticamente.
+              if (slug === 'guias_mei') return <ProfissionaisPainel key="guias_mei" secaoFixa="cnpj" subFixa="cnpj" embutido />
               if (slug === 'conferencia_de_caixas') return <ConferenciaCaixas key="conf_caixas" />
               const titulo = demandasSetor.find(d => slugDemanda(d) === slug) || 'Demanda'
               return <DocEditavel key={ferramentaAberta} chave={`demanda_${slug}`} tituloPadrao={titulo.toUpperCase()}

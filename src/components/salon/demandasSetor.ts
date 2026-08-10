@@ -39,7 +39,7 @@ const MAPA: { chave: string[]; demandas: string[] }[] = [
   {
     chave: ['FINANCEIRO'], demandas: [
       'Contas a pagar', 'Previsão de despesas',
-      'Impostos e guias', 'Guias MEI', 'Faturamento dos profissionais parceiros',
+      'Impostos e guias', 'Guias MEI',
       'Comissões', 'Conferência de caixas',
       'Encaminhamento de informações para a Contabilidade',
     ]
@@ -173,4 +173,11 @@ export function demandasDoSetor(nomeSetor: string, rotulosJaNaSidebar: string[] 
 /** Identificador estável da demanda (vira a chave onde a folha é salva). */
 export function slugDemanda(nome: string): string {
   return norm(nome).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 60)
+}
+
+/** Demandas que abrem sub-botões ao serem clicadas (slug da demanda → itens). */
+export const SUBDEMANDAS: Record<string, { id: string; label: string }[]> = {
+  encaminhamento_de_informacoes_para_a_contabilidade: [
+    { id: 'faturamento_profissionais', label: 'FATURAMENTO DOS PROFISSIONAIS' },
+  ],
 }
