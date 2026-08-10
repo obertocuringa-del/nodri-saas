@@ -11,6 +11,11 @@ import { useGuardaSalvar } from '@/lib/guardaSalvar'
 // contagem de pendências e o alerta do portal continuam iguais. O que é novo
 // aqui é só a APRESENTAÇÃO em hierarquia + o responsável e as linhas de
 // descrição, que ficam editáveis e são salvos em salao_config (grid_organograma).
+//
+// A hierarquia segue duas regras:
+//   1. cada caixa tem um único chefe (linha cheia);
+//   2. quem audita não manda em quem executa — Qualidade, Responsável Técnica e
+//      Contabilidade são assessoria (linha tracejada), fora da cadeia de comando.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface DepOrg {
@@ -59,22 +64,22 @@ const CHAVES: Record<string, string[]> = {
 
 // Descrições genéricas de cada função (só sugestão inicial — o salão edita).
 const PADRAO: Record<string, { icone: string; linhas: string[] }> = {
-  contabilidade: { icone: '📑', linhas: ['Gestão Contábil, Fiscal e Tributária'] },
-  gerencia:      { icone: '👔', linhas: ['Gestão Geral da Empresa', 'Planejamento e Resultados'] },
-  administrativo:{ icone: '🗂️', linhas: ['Rotinas Administrativas', 'Documentos', 'Contratos e Licenças'] },
-  financeiro:    { icone: '💰', linhas: ['Gestão Financeira', 'Contas a Pagar/Receber', 'Fluxo de Caixa', 'Comissões'] },
-  comercial:     { icone: '🤝', linhas: ['Vendas e Metas', 'Conversão e Follow-up', 'Reativação de Clientes', 'Orçamentos'] },
-  marketing:     { icone: '📣', linhas: ['Campanhas e Divulgação', 'Redes Sociais', 'Posicionamento da Marca', 'Conteúdo e Tráfego'] },
-  rh:            { icone: '👥', linhas: ['Pessoas e Cultura', 'Recrutamento e Seleção', 'Treinamento e Desenvolvimento', 'Avaliação e Desempenho'] },
-  compras:       { icone: '🛒', linhas: ['Compras e Fornecedores', 'Estoque e Inventário', 'Controle de Produtos', 'Entrada e Saída'] },
-  qualidade:     { icone: '📋', linhas: ['POPs e Padronização', 'Checklists e Auditorias', 'Não Conformidades', 'Melhoria Contínua'] },
-  tecnica:       { icone: '🛡️', linhas: ['Responsabilidade Técnica', 'Padrões e Procedimentos', 'Conformidade e Segurança'] },
-  coordenador:   { icone: '⚙️', linhas: ['Gestão da Operação Diária', 'Organização e Execução', 'Cumprimento de Processos'] },
-  recepcao:      { icone: '🛎️', linhas: ['Atendimento e Agendamentos', 'Confirmações', 'Experiência do Cliente', 'Organização da Agenda'] },
-  profissionais: { icone: '✂️', linhas: ['Execução dos Serviços', 'Atendimento aos Clientes', 'Produtividade', 'Cumprimento de Padrões'] },
-  gerais:        { icone: '🧹', linhas: ['Limpeza e Organização', 'Apoio Operacional', 'Ambientes e Estrutura', 'Suporte às Rotinas'] },
-  manutencao:    { icone: '🔧', linhas: ['Manutenção Predial', 'Equipamentos e Instalações', 'Correções e Reparos', 'Manutenção Preventiva'] },
-  dosagem:       { icone: '🧪', linhas: ['Preparação de Produtos', 'Dosagens e Fórmulas', 'Controle Técnico', 'Padrão de Misturas'] },
+  contabilidade: { icone: '📑', linhas: ['Assessoria externa', 'Fiscal e tributário'] },
+  gerencia:      { icone: '👔', linhas: ['Metas e resultado', 'Gestão do time'] },
+  administrativo:{ icone: '🗂️', linhas: ['Documentos e contratos', 'Rotinas administrativas'] },
+  financeiro:    { icone: '💰', linhas: ['Contas e caixa', 'Comissões'] },
+  comercial:     { icone: '🤝', linhas: ['Conversão e follow-up', 'Reativação de clientes'] },
+  marketing:     { icone: '📣', linhas: ['Marca e conteúdo', 'Tráfego e campanhas'] },
+  rh:            { icone: '👥', linhas: ['Recrutar e treinar', 'Avaliar desempenho'] },
+  compras:       { icone: '🛒', linhas: ['Fornecedores', 'Estoque e inventário'] },
+  qualidade:     { icone: '📋', linhas: ['POPs e auditoria', 'Conformidade — audita todos'] },
+  tecnica:       { icone: '🛡️', linhas: ['Exigência legal', 'Padrão técnico e segurança'] },
+  coordenador:   { icone: '⚙️', linhas: ['Operação diária', 'Cumprimento de processos'] },
+  recepcao:      { icone: '🛎️', linhas: ['Agenda e acolhida', 'Caixa do dia'] },
+  profissionais: { icone: '✂️', linhas: ['Execução do serviço', 'Padrão de atendimento'] },
+  gerais:        { icone: '🧹', linhas: ['Limpeza e apoio', 'Ambientes e estrutura'] },
+  manutencao:    { icone: '🔧', linhas: ['Predial e equipamentos', 'Preventiva e reparos'] },
+  dosagem:       { icone: '🧪', linhas: ['Fórmulas e mistura', 'Controle técnico'] },
 }
 
 // Alguns setores foram cadastrados com cor bem clara (ex.: um lilás quase
@@ -93,13 +98,19 @@ function corLegivel(cor: string): string {
   return `rgb(${q(r)}, ${q(g)}, ${q(b)})`
 }
 
+// Cor por posição na hierarquia: o ramo inteiro compartilha a mesma cor, então
+// bate o olho e se sabe de que área é a caixa.
 const CORES: Record<string, string> = {
-  contabilidade: '#6d28d9', gerencia: '#b45309', administrativo: '#2563eb',
-  financeiro: '#059669', comercial: '#ea580c', marketing: '#db2777',
-  rh: '#0891b2', compras: '#ca8a04', qualidade: '#dc2626', tecnica: '#be123c',
-  coordenador: '#1e40af', recepcao: '#0e7490', profissionais: '#4f46e5',
-  gerais: '#475569', manutencao: '#57534e', dosagem: '#c026d3',
+  contabilidade: '#6b7280', qualidade: '#6b7280', tecnica: '#6b7280',
+  gerencia: '#5b4fcf',
+  administrativo: '#0891b2', financeiro: '#0891b2', compras: '#0891b2',
+  rh: '#7c3aed',
+  marketing: '#db2777', comercial: '#db2777',
+  coordenador: '#ea580c', recepcao: '#ea580c', profissionais: '#ea580c',
+  dosagem: '#ea580c', gerais: '#ea580c', manutencao: '#ea580c',
 }
+
+const LINHA = '#cbd5e1'
 
 export default function OrganogramaDepartamentos({ departamentos, solicPorSetor, onAbrir, podeEditar = true, onExcluir }: Props) {
   const [doc, setDoc] = useState<DocOrg>({})
@@ -165,30 +176,51 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
   // CHAMADA COMO FUNÇÃO (ver uso: {Caixa({...})}), nunca como <Caixa/>: um
   // componente declarado aqui dentro ganha identidade nova a cada tecla e o
   // React remontaria os campos, fazendo perder o foco ao digitar.
-  function Caixa({ chave, dep, largura = 152 }: { chave: string; dep?: DepOrg; largura?: number }) {
+  //
+  // variante: 'solida' = área do nível 2 (fundo colorido, como no desenho),
+  //           'staff'  = assessoria (borda tracejada, fora da linha de comando),
+  //           'branca' = setor de execução.
+  function Caixa({ chave, dep, largura = 132, variante = 'branca' }: {
+    chave: string; dep?: DepOrg; largura?: number; variante?: 'solida' | 'staff' | 'branca'
+  }) {
     if (!dep) return null
     const info = doc[dep.id] || {}
     const padrao = PADRAO[chave] || { icone: '🏢', linhas: [] }
-    const cor = corLegivel(dep.departamento_cor || CORES[chave] || '#5b4fcf')
+    const cor = CORES[chave] || corLegivel(dep.departamento_cor || '#5b4fcf')
     const linhas = info.linhas && info.linhas.length ? info.linhas : padrao.linhas
     const pend = dep.pendencias_abertas || 0
     const doPortal = solicPorSetor[dep.id] || 0
+    const solida = variante === 'solida'
+    const staff = variante === 'staff'
 
     return (
       <div
         onClick={() => { if (!editando) onAbrir(dep.id) }}
-        className={`bg-white rounded-xl transition-all ${editando ? '' : 'cursor-pointer hover:shadow-md hover:-translate-y-0.5'} ${doPortal > 0 ? 'nodri-alerta-pisca' : ''}`}
+        className={`rounded-xl transition-all ${editando ? '' : 'cursor-pointer hover:shadow-md hover:-translate-y-0.5'} ${doPortal > 0 ? 'nodri-alerta-pisca' : ''}`}
         style={{
-          width: largura, padding: '6px 8px',
-          border: `1px solid ${doPortal > 0 ? '#dc2626' : pend > 0 ? '#fecaca' : '#e8e6e0'}`,
-          borderLeft: `4px solid ${cor}`,
-          boxShadow: '0 1px 3px rgba(0,0,0,.05)',
+          width: largura, padding: solida ? '8px 10px' : '7px 9px',
+          background: solida ? cor : '#fff',
+          border: solida ? 'none'
+            : `1.5px ${staff ? 'dashed' : 'solid'} ${doPortal > 0 ? '#dc2626' : staff ? '#c9c5be' : cor}`,
+          borderTop: solida || staff ? undefined : `3px solid ${cor}`,
+          boxShadow: solida ? `0 3px 10px ${cor}44` : '0 1px 3px rgba(0,0,0,.05)',
         }}>
-        <div className="flex items-center gap-1 mb-0.5">
-          <span style={{ fontSize: 11 }}>{padrao.icone}</span>
-          <span className="font-bold leading-tight" style={{ fontSize: 8.8, color: cor, letterSpacing: '.1px' }}>
+        <div className="flex items-start gap-1" style={{ marginBottom: 2 }}>
+          <span style={{ fontSize: 10, lineHeight: 1.3 }}>{padrao.icone}</span>
+          <span className="font-bold leading-tight" style={{
+            fontSize: solida ? 9.4 : 8.8,
+            color: solida ? '#fff' : staff ? '#4b5563' : cor,
+            letterSpacing: '.3px', flex: 1,
+          }}>
             {dep.nome_completo}
           </span>
+          {editando && onExcluir && (
+            <button onClick={e => { e.stopPropagation(); onExcluir(dep.id, dep.nome_completo) }}
+              title="Excluir setor"
+              style={{ border: 'none', background: 'transparent', color: solida ? '#fff' : '#dc2626', cursor: 'pointer', fontSize: 10, lineHeight: 1, padding: 0 }}>
+              🗑
+            </button>
+          )}
         </div>
 
         {editando ? (
@@ -204,7 +236,7 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
               value={linhas.join('\n')}
               onChange={e => editarLinhas(dep.id, e.target.value)}
               onClick={e => e.stopPropagation()}
-              rows={4}
+              rows={3}
               placeholder="Uma atribuição por linha"
               className="w-full px-1.5 py-0.5 rounded border border-nodri-border resize-y"
               style={{ fontSize: 9, lineHeight: 1.5 }} />
@@ -212,15 +244,15 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
         ) : (
           <>
             {info.responsavel && (
-              <p className="font-semibold mb-0.5" style={{ fontSize: 8.5, color: '#3f3a35' }}>
+              <p className="font-semibold" style={{ fontSize: 8.4, color: solida ? '#ffffffdd' : '#3f3a35', marginBottom: 1 }}>
                 👤 {info.responsavel}
               </p>
             )}
             {linhas.map((l, i) => (
-              <p key={i} style={{ fontSize: 8, color: '#6b6860', lineHeight: 1.4 }}>{l}</p>
+              <p key={i} style={{ fontSize: 7.8, color: solida ? '#ffffffc4' : '#6b6860', lineHeight: 1.42 }}>{l}</p>
             ))}
             {(pend > 0 || doPortal > 0) && (
-              <p className="font-bold mt-1" style={{ fontSize: 8, color: '#b91c1c' }}>
+              <p className="font-bold" style={{ fontSize: 7.8, color: solida ? '#fff' : '#b91c1c', marginTop: 3 }}>
                 {doPortal > 0 ? `📥 ${doPortal} do portal` : `⚠ ${pend} pendência${pend > 1 ? 's' : ''}`}
               </p>
             )}
@@ -230,12 +262,43 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
     )
   }
 
-  const L = ({ h = 12 }: { h?: number }) => <div style={{ width: 2, height: h, background: '#cbd5e1' }} />
   const { mapa, sobra } = porChave
+
+  // Conectores — as linhas de comando são só bordas
+  const V = ({ h = 14 }: { h?: number }) => <div style={{ width: 2, height: h, background: LINHA }} />
+  const Tracejo = ({ w = 30 }: { w?: number }) => <div style={{ width: w, borderTop: `2px dashed ${LINHA}` }} />
+
+  /** Um ramo: a área do nível 2 e, abaixo, os setores que respondem a ela.
+   *  Também chamado como função — ver o motivo em Caixa. */
+  function Ramo({ areaChave, filhos, larguraArea = 168 }: { areaChave: string; filhos: string[]; larguraArea?: number }) {
+    const area = mapa[areaChave]
+    const comFilhos = filhos.filter(f => mapa[f])
+    if (!area && !comFilhos.length) return null
+    return (
+      <div className="flex flex-col items-center">
+        {area && Caixa({ chave: areaChave, dep: area, largura: larguraArea, variante: 'solida' })}
+        {comFilhos.length > 0 && (<>
+          <V h={12} />
+          <div className="flex items-start gap-2" style={{ position: 'relative' }}>
+            {/* barra ligando os centros dos filhos das pontas */}
+            {comFilhos.length > 1 && (
+              <div style={{ position: 'absolute', top: 0, left: 66, right: 66, height: 2, background: LINHA }} />
+            )}
+            {comFilhos.map(f => (
+              <div key={f} className="flex flex-col items-center">
+                <V h={12} />
+                {Caixa({ chave: f, dep: mapa[f] })}
+              </div>
+            ))}
+          </div>
+        </>)}
+      </div>
+    )
+  }
 
   return (
     <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-4 mb-4">
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between mb-3">
         <div>
           <p className="font-syne font-bold text-[13px]">Organograma</p>
           <p className="text-[10px] text-nodri-t3">Estrutura organizacional — clique em um setor para abrir</p>
@@ -258,59 +321,59 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
       </div>
 
       <div className="overflow-x-auto">
-        <div className="flex flex-col items-center gap-0 min-w-[860px] pb-1">
+        <div className="flex flex-col items-center min-w-[1240px] pb-1">
 
-          {/* Direção + Contabilidade ao lado */}
-          <div className="flex items-start gap-4">
-            <div className="flex flex-col items-center">
-              <div className="rounded-xl text-white text-center" style={{ background: '#1e293b', padding: '7px 14px', minWidth: 150 }}>
-                <p className="font-bold" style={{ fontSize: 9.2 }}>DIREÇÃO / PROPRIETÁRIO</p>
-                <p style={{ fontSize: 8, opacity: .75 }}>Decisões Estratégicas</p>
-              </div>
+          {/* ── NÍVEL 0 — Direção, com a Contabilidade como assessoria externa ── */}
+          <div className="flex items-center">
+            <div className="rounded-xl text-white text-center" style={{
+              background: 'linear-gradient(135deg,#24243f,#101021)', padding: '9px 18px', minWidth: 190,
+            }}>
+              <p className="font-bold" style={{ fontSize: 9.6, letterSpacing: '1px' }}>DIREÇÃO / PROPRIETÁRIO</p>
+              <p style={{ fontSize: 8, opacity: .7 }}>Estratégia · investimento · decisão final</p>
             </div>
-            {mapa.contabilidade && (
-              <div className="mt-1.5">{Caixa({ chave: 'contabilidade', dep: mapa.contabilidade })}</div>
-            )}
+            {mapa.contabilidade && (<>
+              <Tracejo w={34} />
+              {Caixa({ chave: 'contabilidade', dep: mapa.contabilidade, largura: 150, variante: 'staff' })}
+            </>)}
           </div>
 
-          <L />
-          {mapa.gerencia && Caixa({ chave: 'gerencia', dep: mapa.gerencia, largura: 176 })}
-          <L />
+          <V />
 
-          {/* Áreas de apoio */}
-          <div className="w-full" style={{ borderTop: '2px solid #cbd5e1', maxWidth: 1180 }} />
-          <div className="flex justify-center gap-2 flex-wrap pt-2">
-            {(['administrativo', 'financeiro', 'comercial', 'marketing', 'rh', 'compras'] as const)
-              .filter(k => mapa[k]).map(k => <Fragment key={k}>{Caixa({ chave: k, dep: mapa[k] })}</Fragment>)}
+          {/* ── NÍVEL 1 — Gerência, com Qualidade e Técnica assessorando ── */}
+          <div className="flex items-center">
+            {mapa.qualidade && (<>
+              {Caixa({ chave: 'qualidade', dep: mapa.qualidade, largura: 160, variante: 'staff' })}
+              <Tracejo w={34} />
+            </>)}
+            {mapa.gerencia
+              ? Caixa({ chave: 'gerencia', dep: mapa.gerencia, largura: 210, variante: 'solida' })
+              : (
+                <div className="rounded-xl text-white text-center" style={{
+                  background: 'linear-gradient(135deg,#6d5fe0,#4b3fbb)', padding: '10px 20px', minWidth: 200,
+                }}>
+                  <p className="font-bold" style={{ fontSize: 10.4, letterSpacing: '.9px' }}>GERÊNCIA GERAL</p>
+                </div>
+              )}
+            {mapa.tecnica && (<>
+              <Tracejo w={34} />
+              {Caixa({ chave: 'tecnica', dep: mapa.tecnica, largura: 160, variante: 'staff' })}
+            </>)}
           </div>
 
-          {/* Processo / Técnica */}
-          {(mapa.qualidade || mapa.tecnica) && (<>
-            <L h={14} />
-            <div className="flex justify-center gap-2 items-start">
-              {mapa.qualidade && Caixa({ chave: 'qualidade', dep: mapa.qualidade })}
-              {mapa.tecnica && Caixa({ chave: 'tecnica', dep: mapa.tecnica })}
-            </div>
-          </>)}
+          <V />
+          <div style={{ height: 2, background: LINHA, width: '100%', maxWidth: 1160 }} />
 
-          {/* Coordenação e operação */}
-          {mapa.coordenador && (<>
-            <L h={14} />
-            {Caixa({ chave: 'coordenador', dep: mapa.coordenador, largura: 186 })}
-          </>)}
-
-          {(['recepcao', 'profissionais', 'gerais', 'manutencao', 'dosagem'] as const).some(k => mapa[k]) && (<>
-            <L />
-            <div className="w-full" style={{ borderTop: '2px solid #cbd5e1', maxWidth: 1000 }} />
-            <div className="flex justify-center gap-2 flex-wrap pt-2">
-              {(['recepcao', 'profissionais', 'gerais', 'manutencao', 'dosagem'] as const)
-                .filter(k => mapa[k]).map(k => <Fragment key={k}>{Caixa({ chave: k, dep: mapa[k] })}</Fragment>)}
-            </div>
-          </>)}
+          {/* ── NÍVEL 2 e 3 — áreas e os setores que respondem a cada uma ── */}
+          <div className="flex items-start justify-center gap-6" style={{ paddingTop: 12 }}>
+            <Fragment key="r-adm">{Ramo({ areaChave: 'administrativo', filhos: ['financeiro', 'compras'], larguraArea: 280 })}</Fragment>
+            <Fragment key="r-rh">{Ramo({ areaChave: 'rh', filhos: [], larguraArea: 168 })}</Fragment>
+            <Fragment key="r-mkt">{Ramo({ areaChave: 'marketing', filhos: ['comercial'], larguraArea: 180 })}</Fragment>
+            <Fragment key="r-op">{Ramo({ areaChave: 'coordenador', filhos: ['recepcao', 'profissionais', 'dosagem', 'gerais', 'manutencao'], larguraArea: 400 })}</Fragment>
+          </div>
 
           {/* Qualquer setor fora do modelo continua aparecendo aqui */}
           {sobra.length > 0 && (
-            <div className="w-full pt-5" style={{ maxWidth: 1180 }}>
+            <div className="w-full pt-6" style={{ maxWidth: 1180 }}>
               <p className="text-[9.5px] text-nodri-t3 uppercase tracking-widest font-bold mb-2 text-center">Outros setores</p>
               <div className="flex justify-center gap-3 flex-wrap">
                 {sobra.map(d => <Fragment key={d.id}>{Caixa({ chave: 'outro', dep: d })}</Fragment>)}
@@ -320,7 +383,19 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
         </div>
       </div>
 
-      <p className="text-[9.5px] text-nodri-t3 mt-3 text-center">
+      {/* Legenda: o que cada tipo de linha significa */}
+      <div className="flex items-center justify-center gap-6 flex-wrap mt-4 pt-3" style={{ borderTop: '1px solid #eae8e3' }}>
+        <span className="flex items-center gap-2 text-[9.5px] font-bold" style={{ color: '#4b5563' }}>
+          <span style={{ width: 28, height: 2, background: LINHA, display: 'inline-block' }} />
+          Subordinação — responde a, recebe meta e é cobrado por
+        </span>
+        <span className="flex items-center gap-2 text-[9.5px] font-bold" style={{ color: '#4b5563' }}>
+          <span style={{ width: 28, borderTop: `2px dashed ${LINHA}`, display: 'inline-block' }} />
+          Assessoria — orienta e audita, mas não dá ordem à operação
+        </span>
+      </div>
+
+      <p className="text-[9.5px] text-nodri-t3 mt-2 text-center">
         ⭐ Integrar todas as áreas para entregar excelência no atendimento, qualidade nos serviços e resultados sustentáveis.
       </p>
     </div>
