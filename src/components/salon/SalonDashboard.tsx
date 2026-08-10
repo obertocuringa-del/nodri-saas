@@ -596,7 +596,8 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               // Administração abre o ORGANOGRAMA: as ferramentas foram distribuídas
               // para os setores, e é por lá que se chega em cada uma agora.
               { href: '/salon/pendencias', label: 'Administração', chave: 'administrativo' },
-              { href: '/salon/checklist', label: 'Check List', chave: 'checklist' },
+              // Check List saiu daqui: cada categoria vive no seu setor (organograma).
+              // A visao geral continua em /salon/checklist por link direto.
               { href: '/salon/curriculos', label: 'Currículos', chave: 'curriculos' },
               // Calendário, Calendário MKT, Lojistas, Check Procon e Log de Auditoria
               // vivem dentro dos SETORES (organograma) — tirados daqui para desafogar.
