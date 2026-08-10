@@ -28,6 +28,7 @@ import AnexosLista from '@/components/salon/AnexosLista'
 import Etiquetas from '@/components/salon/Etiquetas'
 import ListaServico from '@/components/salon/ListaServico'
 import CheckProconPainel from '@/components/salon/CheckProconPainel'
+import ConteudoPopPainel from '@/components/salon/ConteudoPopPainel'
 import { CAFE_BLOCOS, POP_SALAO_BLOCOS } from '@/components/salon/popDefaults'
 
 export interface ProfSalao { id: string; nome: string; telefone: string }
@@ -44,8 +45,9 @@ const D_CORRIDA: GridDoc = { tabelas: [{ titulo: 'CORRIDA INTERNA', cabecalho: [
 export interface Ferramenta {
   id: string
   label: string
-  perm: string          // chave de permissão (mesma usada no Administrativo)
-  rota?: string         // quando a ferramenta é uma página separada
+  perm: string            // chave de permissão (mesma usada no Administrativo)
+  rota?: string           // quando a ferramenta é uma página separada
+  conteudoSlug?: string   // abre a lista de POPs daquele conteúdo como sub-itens
 }
 
 // Catálogo: id → rótulo + permissão. Os ids batem com as abas do Administrativo.
@@ -74,7 +76,8 @@ export const CATALOGO: Record<string, Ferramenta> = {
   telefones:           { id: 'telefones',           label: 'TELEFONES IMPORTANTES',  perm: 'adm_telefones' },
   desconto_profissional: { id: 'desconto_profissional', label: 'DESCONTO PROFISSIONAL', perm: 'adm_desconto_profissional' },
   corrida_interna:     { id: 'corrida_interna',     label: 'CORRIDA INTERNA',        perm: 'adm_corrida_interna' },
-  pop:                 { id: 'pop',                 label: 'POP (PROCEDIMENTOS)',    perm: 'adm_pop' },
+  pop_cafe:            { id: 'pop_cafe',            label: 'PREPARO DE CAFÉ',        perm: 'adm_pop' },
+  pop_salao:           { id: 'pop_salao',           label: 'POP SALÃO',              perm: 'adm_pop' },
   correios:            { id: 'correios',            label: 'CORREIOS',               perm: 'adm_correios' },
   // Páginas separadas — a sidebar navega em vez de abrir aqui dentro
   calendario:      { id: 'calendario',      label: 'CALENDÁRIO',              perm: 'calendario',      rota: '/salon/calendario' },
@@ -83,9 +86,9 @@ export const CATALOGO: Record<string, Ferramenta> = {
   lojistas:        { id: 'lojistas',        label: 'LOJISTAS (PARCERIAS)',    perm: 'lojistas',        rota: '/salon/lojistas' },
   checkprocon:     { id: 'checkprocon',     label: 'CHECK PROCON',            perm: 'checkprocon' },
   // POPs de atendimento (paginas de conteudo) — saíram do menu principal
-  pop_recepcao:    { id: 'pop_recepcao',    label: 'PROCESSOS DA RECEPÇÃO',   perm: 'adm_pop', rota: '/conteudo/recepcao' },
-  pop_manicure:    { id: 'pop_manicure',    label: 'PROCESSOS — MANICURE',    perm: 'adm_pop', rota: '/conteudo/manicure' },
-  pop_cabelereiro: { id: 'pop_cabelereiro', label: 'PROCESSOS — CABELEIREIRO', perm: 'adm_pop', rota: '/conteudo/cabelereiro' },
+  pop_recepcao:    { id: 'pop_recepcao',    label: 'PROCESSOS DA RECEPÇÃO',    perm: 'adm_pop', conteudoSlug: 'recepcao' },
+  pop_manicure:    { id: 'pop_manicure',    label: 'PROCESSOS — MANICURE',     perm: 'adm_pop', conteudoSlug: 'manicure' },
+  pop_cabelereiro: { id: 'pop_cabelereiro', label: 'PROCESSOS — CABELEIREIRO', perm: 'adm_pop', conteudoSlug: 'cabelereiro' },
 }
 
 // Quais ferramentas pertencem a cada setor. A chave é o nome do setor
@@ -97,7 +100,7 @@ export const FERRAMENTAS_POR_SETOR: { chave: string[]; itens: string[] }[] = [
   { chave: ['ADMINISTRATIVO'], itens: ['etiquetas', 'escala', 'feriados', 'ata', 'senhas', 'telefones', 'calendario', 'auditoria'] },
   { chave: ['FINANCEIRO'], itens: ['desconto_profissional', 'correios'] },
   { chave: ['GERENCIA', 'GERENTE'], itens: ['corrida_interna'] },
-  { chave: ['PROCESSO', 'QUALIDADE'], itens: ['pop', 'checkprocon', 'pop_recepcao', 'pop_manicure', 'pop_cabelereiro'] },
+  { chave: ['PROCESSO', 'QUALIDADE'], itens: ['pop_cafe', 'pop_salao', 'checkprocon', 'pop_recepcao', 'pop_manicure', 'pop_cabelereiro'] },
   { chave: ['MARKETING'], itens: ['calendario_mkt'] },
   { chave: ['COMERCIAL', 'VENDAS'], itens: ['lojistas'] },
 ]
@@ -141,10 +144,14 @@ export function ConteudoFerramenta({ id, profsSalao, abaPop = 'cafe' }: { id: st
     case 'desconto_profissional': return <GridEditavel key="descprof" chave="desconto_profissional" defaultDoc={D_DESC_PROF} landscape />
     case 'corrida_interna':     return <GridEditavel key="corrida" chave="corrida_interna" defaultDoc={D_CORRIDA} landscape />
     case 'checkprocon':         return <CheckProconPainel key="checkprocon" />
-    case 'pop':
-      return abaPop === 'salao'
-        ? <DocEditavel key="pop_salao" chave="pop_salao" tituloPadrao="POP — PROCEDIMENTO DE OPERAÇÃO PADRÃO" blocosPadrao={POP_SALAO_BLOCOS} comData />
-        : <DocEditavel key="pop_cafe" chave="pop_cafe" tituloPadrao="PREPARO DE SERVIÇOS — CAFÉ" blocosPadrao={CAFE_BLOCOS} />
-    default: return null
+    case 'pop_cafe':            return <DocEditavel key="pop_cafe" chave="pop_cafe" tituloPadrao="PREPARO DE SERVIÇOS — CAFÉ" blocosPadrao={CAFE_BLOCOS} />
+    case 'pop_salao':           return <DocEditavel key="pop_salao" chave="pop_salao" tituloPadrao="POP — PROCEDIMENTO DE OPERAÇÃO PADRÃO" blocosPadrao={POP_SALAO_BLOCOS} comData />
+    default:
+      // POP de conteúdo escolhido na sidebar: "conteudo:<slug>:<docId>"
+      if (id.startsWith('conteudo:')) {
+        const [, slug, docId] = id.split(':')
+        return <ConteudoPopPainel key={id} slug={slug} docId={docId || ''} />
+      }
+      return null
   }
 }

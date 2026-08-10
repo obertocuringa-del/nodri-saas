@@ -6,6 +6,7 @@ import toast from 'react-hot-toast'
 import BoletosFinanceiro from '@/components/salon/BoletosFinanceiro'
 import ComportamentoProfissional from '@/components/salon/ComportamentoProfissional'
 import { ferramentasDoSetor, ConteudoFerramenta } from '@/components/salon/ferramentasSetor'
+import { listarPopsDoConteudo, type PopDeConteudo } from '@/components/salon/ConteudoPopPainel'
 import { useIsMobile } from '@/lib/useIsMobile'
 
 interface Prof { id: string; nome_completo: string; apelido?: string; cargo?: string; ativo?: boolean; is_departamento?: boolean; departamento_cor?: string; telefone?: string; contato_responsavel?: string }
@@ -120,6 +121,17 @@ export default function DepartamentoPage() {
   const [ferramentaAberta, setFerramentaAberta] = useState('')
   const [abaPopSetor, setAbaPopSetor] = useState('cafe')
   const [menuFerrOpen, setMenuFerrOpen] = useState(false)
+  // Ferramentas com conteudoSlug abrem uma lista de POPs como sub-itens; a lista
+  // vem da API e fica guardada aqui para não buscar de novo a cada clique.
+  const [popsPorSlug, setPopsPorSlug] = useState<Record<string, PopDeConteudo[]>>({})
+  const [slugAberto, setSlugAberto] = useState('')
+
+  function alternarPops(slug: string) {
+    setSlugAberto(a => (a === slug ? '' : slug))
+    if (!popsPorSlug[slug]) {
+      listarPopsDoConteudo(slug).then(lista => setPopsPorSlug(m => ({ ...m, [slug]: lista })))
+    }
+  }
   const profsParaListas = useMemo(() => profs.filter(p => !p.is_departamento).map(p => {
     let tel = p.telefone || ''
     if (!tel) { try { tel = JSON.parse(p.contato_responsavel || '{}').tel || '' } catch { /* */ } }
@@ -324,12 +336,36 @@ export default function DepartamentoPage() {
             <div style={{ fontSize: 10.5, fontWeight: 900, color: '#9ca3af', letterSpacing: '.6px', padding: '10px 10px 4px' }}>FERRAMENTAS</div>
             {ferramentas.map(f => {
               const ativo = ferramentaAberta === f.id
+              const aberto = !!f.conteudoSlug && slugAberto === f.conteudoSlug
+              const pops = f.conteudoSlug ? (popsPorSlug[f.conteudoSlug] || []) : []
               return (
-                <button key={f.id}
-                  onClick={() => { if (f.rota) { router.push(f.rota) } else { setFerramentaAberta(f.id) } }}
-                  style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 10px', border: 'none', borderRadius: 8, background: ativo ? '#f0eefb' : 'transparent', color: ativo ? '#5b4fcf' : '#4b5563', fontSize: 11.5, fontWeight: ativo ? 900 : 700, letterSpacing: '.3px', cursor: 'pointer', borderLeft: ativo ? '3px solid #5b4fcf' : '3px solid transparent' }}>
-                  {f.label}{f.rota ? ' →' : ''}
-                </button>
+                <div key={f.id}>
+                  <button
+                    onClick={() => {
+                      if (f.conteudoSlug) { alternarPops(f.conteudoSlug) }
+                      else if (f.rota) { router.push(f.rota) }
+                      else { setFerramentaAberta(f.id) }
+                    }}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, width: '100%', textAlign: 'left', padding: '8px 10px', border: 'none', borderRadius: 8, background: ativo ? '#f0eefb' : 'transparent', color: ativo ? '#5b4fcf' : '#4b5563', fontSize: 11.5, fontWeight: ativo ? 900 : 700, letterSpacing: '.3px', cursor: 'pointer', borderLeft: ativo ? '3px solid #5b4fcf' : '3px solid transparent' }}>
+                    <span>{f.label}{f.rota ? ' →' : ''}</span>
+                    {f.conteudoSlug && <span style={{ fontSize: 10, color: '#9ca3af', transform: aberto ? 'rotate(180deg)' : 'none' }}>▼</span>}
+                  </button>
+                  {aberto && (
+                    <div style={{ marginLeft: 8, paddingLeft: 8, borderLeft: '1px solid #e8e6e0' }}>
+                      {pops.length === 0 && <div style={{ fontSize: 10.5, color: '#9ca3af', padding: '6px 8px' }}>Carregando…</div>}
+                      {pops.map(pp => {
+                        const idFer = `conteudo:${f.conteudoSlug}:${pp.id}`
+                        const at = ferramentaAberta === idFer
+                        return (
+                          <button key={pp.id} onClick={() => setFerramentaAberta(idFer)}
+                            style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 8px', border: 'none', borderRadius: 6, background: at ? '#f0eefb' : 'transparent', color: at ? '#5b4fcf' : '#6b7280', fontSize: 10.5, fontWeight: at ? 800 : 600, cursor: 'pointer' }}>
+                            {pp.titulo}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
               )
             })}
           </aside>
@@ -354,13 +390,36 @@ export default function DepartamentoPage() {
                   style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 12px', border: 'none', borderRadius: 8, background: !ferramentaAberta ? '#f0eefb' : 'transparent', color: !ferramentaAberta ? '#5b4fcf' : '#374151', fontSize: 12.5, fontWeight: !ferramentaAberta ? 900 : 700, cursor: 'pointer' }}>
                   PENDÊNCIAS DO SETOR
                 </button>
-                {ferramentas.map(f => (
-                  <button key={f.id}
-                    onClick={() => { if (f.rota) { router.push(f.rota) } else { setFerramentaAberta(f.id); setMenuFerrOpen(false) } }}
-                    style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 12px', border: 'none', borderRadius: 8, background: ferramentaAberta === f.id ? '#f0eefb' : 'transparent', color: ferramentaAberta === f.id ? '#5b4fcf' : '#374151', fontSize: 12.5, fontWeight: ferramentaAberta === f.id ? 900 : 700, cursor: 'pointer' }}>
-                    {f.label}{f.rota ? ' →' : ''}
-                  </button>
-                ))}
+                {ferramentas.map(f => {
+                  const aberto = !!f.conteudoSlug && slugAberto === f.conteudoSlug
+                  const pops = f.conteudoSlug ? (popsPorSlug[f.conteudoSlug] || []) : []
+                  return (
+                    <div key={f.id}>
+                      <button
+                        onClick={() => {
+                          if (f.conteudoSlug) { alternarPops(f.conteudoSlug) }
+                          else if (f.rota) { router.push(f.rota) }
+                          else { setFerramentaAberta(f.id); setMenuFerrOpen(false) }
+                        }}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', textAlign: 'left', padding: '10px 12px', border: 'none', borderRadius: 8, background: ferramentaAberta === f.id ? '#f0eefb' : 'transparent', color: ferramentaAberta === f.id ? '#5b4fcf' : '#374151', fontSize: 12.5, fontWeight: ferramentaAberta === f.id ? 900 : 700, cursor: 'pointer' }}>
+                        <span>{f.label}{f.rota ? ' →' : ''}</span>
+                        {f.conteudoSlug && <span style={{ fontSize: 10, color: '#9ca3af' }}>{aberto ? '▲' : '▼'}</span>}
+                      </button>
+                      {aberto && (
+                        <div style={{ marginLeft: 10, paddingLeft: 8, borderLeft: '1px solid #e8e6e0' }}>
+                          {pops.length === 0 && <div style={{ fontSize: 11, color: '#9ca3af', padding: '6px 8px' }}>Carregando…</div>}
+                          {pops.map(pp => (
+                            <button key={pp.id}
+                              onClick={() => { setFerramentaAberta(`conteudo:${f.conteudoSlug}:${pp.id}`); setMenuFerrOpen(false) }}
+                              style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 10px', border: 'none', borderRadius: 6, background: 'transparent', color: '#6b7280', fontSize: 11.5, fontWeight: 600, cursor: 'pointer' }}>
+                              {pp.titulo}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             )}
           </div>
@@ -369,16 +428,6 @@ export default function DepartamentoPage() {
         {/* Ferramenta aberta: mostra o mesmo conteúdo do Salão Administrativo */}
         {ferramentaAberta ? (
           <>
-            {ferramentaAberta === 'pop' && (
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
-                {[{ key: 'cafe', label: 'Preparo de Café' }, { key: 'salao', label: 'POP Salão' }].map(x => (
-                  <button key={x.key} onClick={() => setAbaPopSetor(x.key)}
-                    style={{ padding: '9px 16px', borderRadius: 10, border: abaPopSetor === x.key ? 'none' : '1.5px solid #e0ddd8', background: abaPopSetor === x.key ? '#1a1a1a' : '#fff', color: abaPopSetor === x.key ? '#fff' : '#6b6860', fontSize: 13.5, fontWeight: 700, cursor: 'pointer' }}>
-                    {x.label}
-                  </button>
-                ))}
-              </div>
-            )}
             <ConteudoFerramenta id={ferramentaAberta} profsSalao={profsParaListas} abaPop={abaPopSetor} />
           </>
         ) : (<>
