@@ -58,6 +58,15 @@ html, body {
 }
 .nodri-alerta-pisca { animation: nodriAlertaPisca 1.4s ease-in-out infinite; color: #b91c1c !important; font-weight: 900 !important; }
 
+/* Variante para CARD com fundo próprio (as caixas do organograma): pisca só o
+   contorno. A de cima força o texto em vermelho, o que ficaria ilegível sobre
+   uma caixa colorida — e apagaria a cor da área. */
+@keyframes nodriPiscaCard {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(220,38,38,.6); }
+  50%      { box-shadow: 0 0 0 6px rgba(220,38,38,0); }
+}
+.nodri-pisca-card { animation: nodriPiscaCard 1.5s ease-in-out infinite; }
+
 /* O balão do WhatsApp é fixo com z-index 9999 — o mesmo do modal de
    lançamento, então ele flutuava EM CIMA do botão Lançar. Enquanto o modal
    estiver aberto, ele some (volta sozinho ao fechar). */

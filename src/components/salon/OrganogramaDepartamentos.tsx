@@ -192,18 +192,22 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
     const doPortal = solicPorSetor[dep.id] || 0
     const solida = variante === 'solida'
     const staff = variante === 'staff'
+    // Pisca com QUALQUER pendência aberta, não só com solicitação do portal:
+    // era o caso de o setor ter tarefa esperando e o card ficar parado.
+    const alerta = doPortal > 0 || pend > 0
 
     return (
       <div
         onClick={() => { if (!editando) onAbrir(dep.id) }}
-        className={`rounded-xl transition-all ${editando ? '' : 'cursor-pointer hover:shadow-md hover:-translate-y-0.5'} ${doPortal > 0 ? 'nodri-alerta-pisca' : ''}`}
+        className={`rounded-xl transition-all ${editando ? '' : 'cursor-pointer hover:shadow-md hover:-translate-y-0.5'} ${alerta ? 'nodri-pisca-card' : ''}`}
         style={{
           width: largura, padding: solida ? '8px 10px' : '7px 9px',
           background: solida ? cor : '#fff',
-          border: solida ? 'none'
-            : `1.5px ${staff ? 'dashed' : 'solid'} ${doPortal > 0 ? '#dc2626' : staff ? '#c9c5be' : cor}`,
+          border: solida ? (alerta ? '1.5px solid #dc2626' : 'none')
+            : `1.5px ${staff ? 'dashed' : 'solid'} ${alerta ? '#dc2626' : staff ? '#c9c5be' : cor}`,
           borderTop: solida || staff ? undefined : `3px solid ${cor}`,
-          boxShadow: solida ? `0 3px 10px ${cor}44` : '0 1px 3px rgba(0,0,0,.05)',
+          // Com pendência o halo vermelho da animação assume o box-shadow
+          boxShadow: alerta ? undefined : solida ? `0 3px 10px ${cor}44` : '0 1px 3px rgba(0,0,0,.05)',
         }}>
         <div className="flex items-start gap-1" style={{ marginBottom: 2 }}>
           <span style={{ fontSize: 10, lineHeight: 1.3 }}>{padrao.icone}</span>
