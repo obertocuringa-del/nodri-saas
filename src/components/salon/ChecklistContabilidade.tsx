@@ -87,6 +87,16 @@ interface Doc {
 }
 
 const rid = () => Math.random().toString(36).slice(2, 9)
+
+// Mesma regra da tela Guias MEI (CNPJ dos Profissionais): fora dela ficam as
+// categorias administrativas, a recepção e quem é CLT.
+const CATS_ADMIN = ['ADMINISTRATIVO', 'FINANCEIRO', 'GERENCIA']
+const normCat = (s: string) => (s || '').toUpperCase().trim().normalize('NFD').replace(/[̀-ͯ]/g, '')
+function foraDoCnpj(p: any) {
+  const cg = normCat(p.cargo || ''), nm = normCat(p.nome_completo || '')
+  return CATS_ADMIN.includes(cg) || CATS_ADMIN.includes(nm)
+    || cg.startsWith('RECEP') || nm.startsWith('RECEP') || normCat(p.vinculo || '') === 'CLT'
+}
 const vazio = (): Doc => ({
   grupos: PADRAO.map(([titulo, itens]) => ({ id: rid(), titulo, itens: itens.map(t => ({ id: rid(), texto: t })) })),
   marcados: {},
@@ -119,12 +129,13 @@ export default function ChecklistContabilidade() {
   useGuardaSalvar(dirty, 'Check list da contabilidade')
 
   // Só para o item "Nome / CNPJ de cada profissional ativo", que tem o atalho
-  // de mandar a relação pronta no WhatsApp.
+  // de mandar a relação pronta no WhatsApp. É a mesma lista da tela Guias MEI
+  // (CNPJ dos Profissionais), com o mesmo status e a mesma observação.
   const [profs, setProfs] = useState<any[]>([])
   useEffect(() => {
     fetch('/api/profissionais', { credentials: 'include' })
       .then(r => r.ok ? r.json() : [])
-      .then(d => setProfs(Array.isArray(d) ? d.filter((p: any) => !p.is_departamento && p.ativo !== false) : []))
+      .then(d => setProfs(Array.isArray(d) ? d.filter((p: any) => !p.is_departamento && p.ativo !== false && !foraDoCnpj(p)) : []))
       .catch(() => { })
   }, [])
 
@@ -132,12 +143,21 @@ export default function ChecklistContabilidade() {
   const ehRelacaoProfissionais = (t: string) => /cnpj/i.test(t) && /ativ/i.test(t)
 
   function enviarRelacaoProfissionais() {
-    if (!profs.length) { alert('Nenhum profissional ativo encontrado.'); return }
+    if (!profs.length) { alert('Nenhum profissional PJ ativo encontrado.'); return }
     const linha = '━━━━━━━━━━━━━━━'
     const corpo = profs
-      .map(p => ({ nome: String(p.nome_completo || p.apelido || '—').toUpperCase(), cnpj: String(p.cnpj || '').trim() }))
+      .map(p => ({
+        nome: String(p.nome_completo || p.apelido || '—').toUpperCase(),
+        cnpj: String(p.cnpj || '').trim(),
+        status: (p.cnpj_status === 'pendente' || !p.cnpj) ? 'Pendente' : 'OK / Ativo',
+        obs: String(p.cnpj_observacao || '').trim(),
+      }))
       .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
-      .map((p, i) => `${i + 1}. *${p.nome}*\n    CNPJ: ${p.cnpj || '_não cadastrado_'}`)
+      .map((p, i) => {
+        const l = [`${i + 1}. *${p.nome}*`, `    CNPJ: ${p.cnpj || 'PENDENTE DE CRIAÇÃO'}`, `    Status: ${p.status}`]
+        if (p.obs) l.push(`    Obs.: ${p.obs}`)
+        return l.join('\n')
+      })
       .join('\n')
     const texto = [
       '*SEGUE A RELAÇÃO DE PROFISSIONAIS ATIVOS*',
