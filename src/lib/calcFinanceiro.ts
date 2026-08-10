@@ -72,12 +72,16 @@ export function resumoDoMes(dados: any, real?: RealDoMes): ResumoMes {
   const temReal = !!real && real.faturamento > 0
   if (!dados || typeof dados !== 'object') dados = {}
   const faturamento = temReal ? real!.faturamento : num(dados.fat)
-  const profissionais = real?.profissionais || 0
+  // Comissões: o campo Rateio/Comissão da Calculadora manda quando está
+  // preenchido; senão vale o realizado do avec. Nunca os dois — senão o custo
+  // dos profissionais entraria duas vezes.
+  const rateioManual = num(dados.rateio)
+  const profissionais = rateioManual > 0 ? rateioManual : (real?.profissionais || 0)
   const depreciacao = num(dados.totalDeprec) > 0 ? num(dados.totalDeprec) / 84 : 0
   const indiretas = soma(dados.despInd) + soma(dados.extrasDespInd)
   const provisao = num(dados.sal13) + num(dados.ferias) + num(dados.fgtsR)
   const custoOp = indiretas + provisao + depreciacao
-  const diretasOutras = num(dados.imposto) + num(dados.produto) + num(dados.rateio)
+  const diretasOutras = num(dados.imposto) + num(dados.produto)
     + num(dados.taxaC) + soma(dados.extrasDiretas)
   const diretas = diretasOutras + profissionais
   const margemR = faturamento - diretas

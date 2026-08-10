@@ -720,6 +720,11 @@ export default function CalculadoraCusto() {
   const [totalReservaAcum, setTotalReservaAcum] = useState(0) // total acumulado de todos os meses
   const [mediaCustoOp, setMediaCustoOp] = useState(0) // média do custo operacional % de todos os meses
   const [mediaFat12, setMediaFat12] = useState(0) // média faturamento últimos 12 meses
+  // Faturamento REAL de cada mês, vindo dos relatórios importados do avec.
+  // Chave: "2026-8". É ele que pré-preenche o campo — a média fica de reserva,
+  // a um clique, para quando o mês ainda não tem relatório.
+  const [fatRealMes, setFatRealMes] = useState<Record<string, number>>({})
+  const fatRealRef = useRef<Record<string, number>>({})
   const [qtdMesesMedia, setQtdMesesMedia] = useState(0) // quantos meses foram usados na média
   const [modoCustoOp, setModoCustoOp] = useState<'dani'|'real'>('real') // modo de cálculo do custo operacional
 
@@ -1039,12 +1044,29 @@ export default function CalculadoraCusto() {
       if (!meses.length) return
       const soma = meses.reduce((s, r) => s + (Number(r.faturamento_total) || 0), 0)
       const media = Math.round(soma / meses.length)
-      if (media > 0) {
-        setMediaFat12(media)
-        setFat(prev => (prev && prev !== '0') ? prev : String(media)) // pré-preenche só se vazio
+      if (media > 0) setMediaFat12(media)
+
+      // Faturamento realizado de cada mês. O campo passa a ser pré-preenchido
+      // com ELE, não com a média: a média servia para dimensionar preço, mas
+      // deixava o resultado do mês parecendo um faturamento que não aconteceu.
+      const mapa: Record<string, number> = {}
+      for (const r of rm) {
+        if (!r?.ano || !r?.mes) continue
+        const k = `${Number(r.ano)}-${Number(r.mes)}`
+        mapa[k] = (mapa[k] || 0) + (Number(r.faturamento_total) || 0)
       }
+      fatRealRef.current = mapa
+      setFatRealMes(mapa)
     }).catch(() => {})
   }, [])
+
+  // Se o relatório chegar depois da tela montar, preenche o mês aberto — mas
+  // nunca por cima do que já está lá (salvo ou digitado).
+  useEffect(() => {
+    const real = fatRealMes[`${anoSel}-${mesSel}`] || 0
+    if (real > 0) setFat(prev => (prev && prev !== '0') ? prev : String(Math.round(real)))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fatRealMes, anoSel, mesSel])
 
   // Carrega mês selecionado.
   // Como trocar de mês agora é instantâneo, dá pra clicar várias vezes seguidas
@@ -1064,6 +1086,13 @@ export default function CalculadoraCusto() {
         // do mês anterior — parecia que a troca de mês não tinha funcionado e,
         // pior, um Salvar copiava o mês velho pro mês novo.
         aplicarDados((d?.dados && typeof d.dados === 'object') ? d.dados : (MES_VAZIO as any))
+        // Mês sem faturamento salvo começa com o REAL do relatório do avec.
+        // Tem que ser depois do aplicarDados, senão ele limparia de volta.
+        const fatSalvo = parseFloat(String(d?.dados?.fat ?? '').replace(',', '.')) || 0
+        if (!fatSalvo) {
+          const real = fatRealRef.current[`${anoSel}-${mesSel}`] || 0
+          if (real > 0) setFat(String(Math.round(real)))
+        }
         setDirtyCalc(false)   // carregar não é edição do usuário
       })
       .catch(() => {})
@@ -1981,19 +2010,31 @@ Use números reais. Seja direto.`
                       <label className="text-xs font-bold" style={{color:'#5b4fcf'}}>💰 Faturamento Mensal (R$)</label>
                       <InfoBtn id="faturamento"/>
                     </div>
-                    <p className="text-xs mb-1.5 pl-7" style={{color:'#6b6860'}}>Quanto entra no caixa por mês. Pré-preenchido com a média real dos últimos 12 meses — pode editar.</p>
-                    {mediaFat12 > 0 && !fat && (
-                      <div className="flex items-center gap-2 mb-1.5 pl-7">
-                        <span className="text-[10px]" style={{color:'#5b4fcf'}}>📊 Média calculada: <strong>R$ {mediaFat12.toLocaleString('pt-BR')}</strong></span>
-                        <button onClick={()=>setFat(String(mediaFat12))}
-                          className="text-[10px] px-2 py-0.5 rounded-full font-bold"
-                          style={{background:'#5b4fcf',color:'#fff'}}>Usar</button>
+                    <p className="text-xs mb-1.5 pl-7" style={{color:'#6b6860'}}>Quanto entrou no caixa neste mês. Vem do relatório do avec — pode editar.</p>
+                    {/* Referências sempre à mão: o realizado do mês aberto e a
+                        média dos últimos 12 meses, cada um a um clique. */}
+                    {(fatRealMes[`${anoSel}-${mesSel}`] > 0 || mediaFat12 > 0) && (
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-1.5 pl-7">
+                        {fatRealMes[`${anoSel}-${mesSel}`] > 0 && (
+                          <span className="inline-flex items-center gap-1.5 text-[10px]" style={{color:'#0891b2'}}>
+                            💰 Real de {MESES_NOMES[mesSel]}: <strong>R$ {Math.round(fatRealMes[`${anoSel}-${mesSel}`]).toLocaleString('pt-BR')}</strong>
+                            <button onClick={()=>setFat(String(Math.round(fatRealMes[`${anoSel}-${mesSel}`])))}
+                              className="px-2 py-0.5 rounded-full font-bold" style={{background:'#0891b2',color:'#fff'}}>Usar</button>
+                          </span>
+                        )}
+                        {mediaFat12 > 0 && (
+                          <span className="inline-flex items-center gap-1.5 text-[10px]" style={{color:'#5b4fcf'}}>
+                            📊 Média 12 meses: <strong>R$ {mediaFat12.toLocaleString('pt-BR')}</strong>
+                            <button onClick={()=>setFat(String(mediaFat12))}
+                              className="px-2 py-0.5 rounded-full font-bold" style={{background:'#5b4fcf',color:'#fff'}}>Usar</button>
+                          </span>
+                        )}
                       </div>
                     )}
                     <div className="relative pl-7">
                       <span className="absolute left-10 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>R$</span>
                       <input type="number" value={fat} onChange={e=>setFat(e.target.value)}
-                        placeholder={mediaFat12 > 0 ? String(mediaFat12) : 'Ex: 50000'}
+                        placeholder={fatRealMes[`${anoSel}-${mesSel}`] > 0 ? String(Math.round(fatRealMes[`${anoSel}-${mesSel}`])) : mediaFat12 > 0 ? String(mediaFat12) : 'Ex: 50000'}
                         className="w-full pl-9 pr-3 py-2.5 rounded-xl text-[#1a1a1a] text-base font-bold focus:outline-none"
                         style={{background:'#fff',border:'1.5px solid #5b4fcf60'}}/>
                     </div>
