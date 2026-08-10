@@ -9,7 +9,7 @@
 // menos o desconto fixo da casa.
 
 import { useEffect, useMemo, useState } from 'react'
-import { Loader2, Printer } from 'lucide-react'
+import { Loader2, Printer, MessageCircle } from 'lucide-react'
 
 const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
@@ -72,6 +72,25 @@ export default function FaturamentoProfissionaisPJ() {
   const comValor = linhas.filter(l => l.aPagar > 0).length
   const anos = [ano - 2, ano - 1, ano, ano + 1].filter((v, i, a) => a.indexOf(v) === i)
 
+  // Mensagem pronta para o WhatsApp: mes de referencia no titulo, um
+  // profissional por linha com o valor em negrito e o total no fim.
+  function compartilharWhatsApp() {
+    const pagos = linhas.filter(l => l.liquido > 0)
+    if (!pagos.length) { alert(`Sem valores para ${MESES[mes - 1]}/${ano}.`); return }
+    const linha = '━━━━━━━━━━━━━━━'
+    const corpo = pagos.map(l => `• ${l.nome} — *${moeda(l.liquido)}*`).join('\n')
+    const texto = [
+      `*FATURAMENTO DOS PROFISSIONAIS*`,
+      `Referente a *${MESES[mes - 1].toUpperCase()} / ${ano}*`,
+      linha,
+      corpo,
+      linha,
+      `*TOTAL: ${moeda(pagos.reduce((s, l) => s + l.liquido, 0))}*`,
+      `_${pagos.length} ${pagos.length === 1 ? 'profissional' : 'profissionais'}_`,
+    ].join('\n')
+    window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank', 'noopener')
+  }
+
   if (carregando) return (
     <div style={{ padding: 40, textAlign: 'center', color: '#9ca3af' }}>
       <Loader2 size={20} className="animate-spin" style={{ display: 'inline' }} /> Carregando…
@@ -101,6 +120,10 @@ export default function FaturamentoProfissionaisPJ() {
           <input type="number" value={desconto} onChange={e => setDesconto(Number(e.target.value) || 0)}
             style={{ width: 62, padding: '7px 8px', borderRadius: 8, border: '1.5px solid #e0ddd8', fontSize: 12.5, fontWeight: 700 }} />
         </label>
+        <button onClick={compartilharWhatsApp}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 14px', borderRadius: 10, border: 'none', background: '#25d366', color: '#fff', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>
+          <MessageCircle size={13} /> WhatsApp
+        </button>
         <button onClick={() => window.print()}
           style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 14px', borderRadius: 10, border: 'none', background: '#5b4fcf', color: '#fff', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>
           <Printer size={13} /> Imprimir
