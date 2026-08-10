@@ -492,6 +492,9 @@ export default function DepartamentoPage() {
           <>
             {ferramentaAberta.startsWith('demanda:') && (() => {
               const slug = ferramentaAberta.slice('demanda:'.length)
+              // Contas a pagar tem tela propria: a fila de boletos da Calculadora,
+              // que antes ficava junto das pendencias do setor.
+              if (slug === 'contas_a_pagar') return <BoletosFinanceiro key="contas_a_pagar" cor={cor} />
               const titulo = demandasSetor.find(d => slugDemanda(d) === slug) || 'Demanda'
               return <DocEditavel key={ferramentaAberta} chave={`demanda_${slug}`} tituloPadrao={titulo.toUpperCase()}
                 blocosPadrao={[{ titulo: 'Como fazer', corpo: '' }, { titulo: 'Registro / andamento', corpo: '' }]} comData />
@@ -500,8 +503,8 @@ export default function DepartamentoPage() {
           </>
         ) : (<>
 
-        {/* Fila de boletos — só no setor FINANCEIRO */}
-        {ehFinanceiro && <BoletosFinanceiro cor={cor} />}
+        {/* A fila de boletos saiu daqui: agora abre pela demanda "Contas a pagar"
+            do Financeiro, para as pendencias do setor ficarem so com as demandas. */}
 
         {/* PENDÊNCIAS DO DIA — o que precisa de ação hoje fica em cima e sempre
             aberto; o resto vive nos contadores recolhíveis abaixo. */}
