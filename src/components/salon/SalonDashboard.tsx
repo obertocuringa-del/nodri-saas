@@ -361,7 +361,13 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
   const totalModulosExibidos = modulosBase.length
   const totalAtivosExibidos = modulosBase.filter(m => m.habilitado).length
 
+  // O card PROFISSIONAIS saiu da tela inicial: as secoes dele foram para os
+  // setores (organograma) e a lista/ficha continua em /salon/profissionais.
+  const ehCardProfissionais = (nome: string) => nome.toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '').trim() === 'profissionais'
+
   const modulosFiltrados = modulosBase.filter(m => {
+    if (ehCardProfissionais(m.nome)) return false
     // FIX: combinação correta de filtro status + busca por nome
     const passaFiltro = filtro === 'ativos' ? m.habilitado : filtro === 'bloqueados' ? !m.habilitado : true
     const passaBusca = !busca || m.nome.toLowerCase().includes(busca.toLowerCase())

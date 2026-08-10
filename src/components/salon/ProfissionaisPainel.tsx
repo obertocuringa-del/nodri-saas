@@ -981,41 +981,9 @@ ${montarContratoHTML()}
         {/* Overlay mobile */}
         {isMobile && sidebarOpen && <div className="fixed inset-0 bg-black/60 z-40" onClick={() => setSidebarOpen(false)} />}
 
-        {/* SIDEBAR — escondida quando embutido no setor */}
-        {!embutido && (
-        <aside style={{
-          position: isMobile ? 'fixed' : 'relative',
-          top: isMobile ? 49 : undefined,
-          bottom: isMobile ? 0 : undefined,
-          left: 0,
-          zIndex: isMobile ? 50 : undefined,
-          transform: isMobile && !sidebarOpen ? 'translateX(-100%)' : 'translateX(0)',
-          transition: 'transform 0.3s ease',
-          width: '230px', minWidth: '230px', background: '#ffffff', borderRight: '1px solid #e8e6e0', padding: '12px 8px', overflowY: 'auto', flexShrink: 0,
-        }}>
-          {SIDEBAR_ITEMS.map(item => {
-            const Icon = item.icon
-            const ativo = secao === item.id
-            return (
-              <button key={item.id} onClick={() => { if (!confirmarSaidaSemSalvar()) return; setSecao(item.id); setSidebarOpen(false); if (item.id === 'cadastrar') { setEditando(null); setForm({ ...FORM_INITIAL }); setFotoPreview('') } }}
-                style={{
-                  width: '100%', display: 'flex', alignItems: 'center', gap: '9px',
-                  padding: '9px 10px', borderRadius: '8px', border: 'none', cursor: 'pointer',
-                  marginBottom: '2px', textAlign: 'left', transition: 'all 0.15s',
-                  background: ativo ? `${item.cor}18` : item.destaque ? `${item.cor}10` : 'transparent',
-                  borderLeft: ativo ? `3px solid ${item.cor}` : item.destaque ? `3px solid ${item.cor}60` : '3px solid transparent',
-                  color: ativo ? item.cor : item.destaque ? item.cor + 'cc' : '#767069',
-                  fontWeight: item.destaque ? 700 : ativo ? 600 : 400,
-                  fontSize: '12px',
-                }}>
-                <Icon size={14} style={{ flexShrink: 0 }} />
-                <span style={{ flex: 1, lineHeight: 1.3 }}>{item.label}</span>
-                {ativo && <ChevronRight size={12} />}
-              </button>
-            )
-          })}
-        </aside>
-        )}
+        {/* A SIDEBAR foi retirada: cada uma das secoes agora vive no seu setor
+            (organograma em Pendencias). Esta pagina segue mostrando a lista e
+            servindo de base para a ficha individual (/salon/profissionais/[id]). */}
 
         {/* CONTEÚDO PRINCIPAL */}
         <main style={{ flex: 1, padding: isMobile ? '12px' : '24px', overflowY: 'auto', background: '#f0eeea' }}>

@@ -315,7 +315,7 @@ export default function DepartamentoPage() {
   return (
     <div style={{ minHeight: '100vh', background: '#faf9f7' }}>
       <nav style={{ background: '#fff', borderBottom: '1px solid #e8e6e0', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 40 }}>
-        <button onClick={() => router.push('/salon/profissionais')} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', color: '#6b6860', cursor: 'pointer', fontSize: 14 }}><ArrowLeft size={16} /> Profissionais</button>
+        <button onClick={() => router.push('/salon/pendencias')} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', color: '#6b6860', cursor: 'pointer', fontSize: 14 }}><ArrowLeft size={16} /> Setores</button>
         <span style={{ width: 1, height: 16, background: '#e0ddd8' }} />
         <span style={{ fontSize: 22 }}>{dep ? iconeDe(dep.nome_completo) : '🏢'}</span>
         <span style={{ fontWeight: 800, fontSize: 15, color: '#1a1a1a' }}>{dep?.nome_completo || 'Departamento'}</span>
