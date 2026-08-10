@@ -7,7 +7,7 @@
 // de um mês para o outro é o que já foi marcado como enviado.
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Loader2, Save, Plus, Trash2, ArrowLeft, Check } from 'lucide-react'
+import { Loader2, Save, Plus, Trash2, ArrowLeft, Check, MessageCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useGuardaSalvar } from '@/lib/guardaSalvar'
 
@@ -118,6 +118,37 @@ export default function ChecklistContabilidade() {
   const [dirty, setDirty] = useState(false)
   useGuardaSalvar(dirty, 'Check list da contabilidade')
 
+  // Só para o item "Nome / CNPJ de cada profissional ativo", que tem o atalho
+  // de mandar a relação pronta no WhatsApp.
+  const [profs, setProfs] = useState<any[]>([])
+  useEffect(() => {
+    fetch('/api/profissionais', { credentials: 'include' })
+      .then(r => r.ok ? r.json() : [])
+      .then(d => setProfs(Array.isArray(d) ? d.filter((p: any) => !p.is_departamento && p.ativo !== false) : []))
+      .catch(() => { })
+  }, [])
+
+  /** O item pede a lista de profissionais ativos com CNPJ? */
+  const ehRelacaoProfissionais = (t: string) => /cnpj/i.test(t) && /ativ/i.test(t)
+
+  function enviarRelacaoProfissionais() {
+    if (!profs.length) { alert('Nenhum profissional ativo encontrado.'); return }
+    const linha = '━━━━━━━━━━━━━━━'
+    const corpo = profs
+      .map(p => ({ nome: String(p.nome_completo || p.apelido || '—').toUpperCase(), cnpj: String(p.cnpj || '').trim() }))
+      .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+      .map((p, i) => `${i + 1}. *${p.nome}*\n    CNPJ: ${p.cnpj || '_não cadastrado_'}`)
+      .join('\n')
+    const texto = [
+      '*SEGUE A RELAÇÃO DE PROFISSIONAIS ATIVOS*',
+      linha,
+      corpo,
+      linha,
+      `*Total: ${profs.length} ${profs.length === 1 ? 'profissional ativo' : 'profissionais ativos'}*`,
+    ].join('\n')
+    window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank', 'noopener')
+  }
+
   useEffect(() => {
     fetch('/api/salon/grid?chave=checklist_contabilidade', { credentials: 'include' })
       .then(r => r.ok ? r.json() : null)
@@ -223,6 +254,12 @@ export default function ChecklistContabilidade() {
                       style={{ width: 16, height: 16, accentColor: '#16a34a', cursor: 'pointer', flexShrink: 0 }} />
                     <input value={item.texto} onChange={e => mudarItem(g.id, item.id, e.target.value)} placeholder="Descreva o item…"
                       style={{ flex: 1, border: 'none', outline: 'none', fontSize: 13, color: on ? '#15803d' : '#374151', fontWeight: on ? 700 : 500, textDecoration: on ? 'line-through' : 'none', background: 'transparent' }} />
+                    {ehRelacaoProfissionais(item.texto) && (
+                      <button onClick={enviarRelacaoProfissionais} title="Enviar a relação dos profissionais ativos no WhatsApp"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, border: 'none', borderRadius: 7, background: '#25d366', color: '#fff', fontSize: 10.5, fontWeight: 800, padding: '4px 9px', cursor: 'pointer', flexShrink: 0 }}>
+                        <MessageCircle size={12} /> Enviar
+                      </button>
+                    )}
                     <button onClick={() => delItem(g.id, item.id)} title="Excluir item"
                       style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', padding: 3, flexShrink: 0 }}><Trash2 size={13} /></button>
                   </div>
