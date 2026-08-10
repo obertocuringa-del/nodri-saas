@@ -119,22 +119,28 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
   const [salvando, setSalvando] = useState(false)
   useGuardaSalvar(dirty, 'Organograma')
 
-  // ── Caber inteiro na tela ────────────────────────────────────────────────
-  // O desenho tem uma largura natural (a soma dos ramos). Em vez de cortar e
-  // deixar barra de rolagem, ele é reduzido proporcionalmente até caber. Como
-  // é transform, o layout interno não muda — só o tamanho na tela.
+  // ── Ocupar a tela inteira ────────────────────────────────────────────────
+  // O desenho tem uma largura natural (a soma dos ramos). O card escapa da
+  // coluna da página e vai de ponta a ponta, e o desenho é redimensionado para
+  // preencher essa largura — aumentando quando sobra espaço e diminuindo
+  // quando falta. Como é transform, o layout interno não muda em nada.
   const wrapRef = useRef<HTMLDivElement>(null)
   const contRef = useRef<HTMLDivElement>(null)
   const [escala, setEscala] = useState(1)
   const [altura, setAltura] = useState<number | undefined>(undefined)
+  const [larguraTela, setLarguraTela] = useState<number | undefined>(undefined)
 
   useEffect(() => {
     const calc = () => {
+      // clientWidth do <html> já desconta a barra de rolagem — usar 100vw
+      // criaria uma rolagem horizontal na página inteira.
+      setLarguraTela(document.documentElement.clientWidth)
       const disp = wrapRef.current?.clientWidth || 0
       const c = contRef.current
       if (!disp || !c) return
       const larg = c.scrollWidth
-      const e = larg > 0 ? Math.min(1, disp / larg) : 1
+      // Teto de 1.8x para as caixas não virarem cartazes numa tela muito larga.
+      const e = larg > 0 ? Math.min(1.8, disp / larg) : 1
       setEscala(e)
       setAltura(c.scrollHeight * e)
     }
@@ -328,7 +334,12 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
   }
 
   return (
-    <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-4 mb-4">
+    <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-4 mb-4"
+      style={larguraTela ? {
+        // "Full bleed": sai da coluna da página e ocupa a janela toda, sem
+        // depender de onde o card está encaixado no layout.
+        width: larguraTela - 16, position: 'relative', left: '50%', marginLeft: -(larguraTela - 16) / 2,
+      } : undefined}>
       <div className="flex items-center justify-between mb-3">
         <div>
           <p className="font-syne font-bold text-[13px]">Organograma</p>
