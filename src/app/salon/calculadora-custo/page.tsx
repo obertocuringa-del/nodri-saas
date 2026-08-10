@@ -725,6 +725,10 @@ export default function CalculadoraCusto() {
   // a um clique, para quando o mês ainda não tem relatório.
   const [fatRealMes, setFatRealMes] = useState<Record<string, number>>({})
   const fatRealRef = useRef<Record<string, number>>({})
+  // Comissões realizadas de cada mês (o "A pagar" do relatório de pagamentos
+  // do avec). Preenchem o campo Rateio/Comissão quando ele está vazio.
+  const [comRealMes, setComRealMes] = useState<Record<string, number>>({})
+  const comRealRef = useRef<Record<string, number>>({})
   const [qtdMesesMedia, setQtdMesesMedia] = useState(0) // quantos meses foram usados na média
   const [modoCustoOp, setModoCustoOp] = useState<'dani'|'real'>('real') // modo de cálculo do custo operacional
 
@@ -1057,6 +1061,18 @@ export default function CalculadoraCusto() {
       }
       fatRealRef.current = mapa
       setFatRealMes(mapa)
+
+      // Comissões do mês: o valor_a_pagar da API já vem com o desconto somado,
+      // então o desconto é tirado de volta para chegar no que sai do caixa —
+      // a mesma conta da tela Faturamento dos Profissionais.
+      const com: Record<string, number> = {}
+      for (const p of (d?.prof_pagamentos || [])) {
+        if (!p?.ano || !p?.mes) continue
+        const k = `${Number(p.ano)}-${Number(p.mes)}`
+        com[k] = (com[k] || 0) + (Number(p.valor_a_pagar) || 0) - (Number(p.desconto) || 0)
+      }
+      comRealRef.current = com
+      setComRealMes(com)
     }).catch(() => {})
   }, [])
 
@@ -1065,8 +1081,10 @@ export default function CalculadoraCusto() {
   useEffect(() => {
     const real = fatRealMes[`${anoSel}-${mesSel}`] || 0
     if (real > 0) setFat(prev => (prev && prev !== '0') ? prev : String(Math.round(real)))
+    const com = comRealMes[`${anoSel}-${mesSel}`] || 0
+    if (com > 0) setRateio(prev => (prev && prev !== '0') ? prev : com.toFixed(2))
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fatRealMes, anoSel, mesSel])
+  }, [fatRealMes, comRealMes, anoSel, mesSel])
 
   // Carrega mês selecionado.
   // Como trocar de mês agora é instantâneo, dá pra clicar várias vezes seguidas
@@ -1092,6 +1110,11 @@ export default function CalculadoraCusto() {
         if (!fatSalvo) {
           const real = fatRealRef.current[`${anoSel}-${mesSel}`] || 0
           if (real > 0) setFat(String(Math.round(real)))
+        }
+        const rateioSalvo = parseFloat(String(d?.dados?.rateio ?? '').replace(',', '.')) || 0
+        if (!rateioSalvo) {
+          const com = comRealRef.current[`${anoSel}-${mesSel}`] || 0
+          if (com > 0) setRateio(com.toFixed(2))
         }
         setDirtyCalc(false)   // carregar não é edição do usuário
       })
@@ -2570,7 +2593,7 @@ Use números reais. Seja direto.`
                 {[
                   {num:'1',l:'Imposto (R$)',v:imposto,set:setImposto,dica:'Quanto pagou de imposto no mês (Simples Nacional ou seu regime).',info:'imposto'},
                   {num:'2',l:'Produto/Insumo (R$)',v:produto,set:setProduto,dica:'Total de produtos consumidos nos serviços do mês.',info:'produto'},
-                  {num:'3',l:'Rateio/Comissão (R$)',v:rateio,set:setRateio,dica:'Total de comissões pagas aos profissionais.',info:'rateio'},
+                  {num:'3',l:'Rateio/Comissão (R$)',v:rateio,set:setRateio,dica:'Total de comissões pagas aos profissionais.',info:'rateio',real:comRealMes[`${anoSel}-${mesSel}`]||0},
                   {num:'4',l:'Taxa de Cartão (R$)',v:taxaC,set:setTaxaC,dica:'Total cobrado pelas maquininhas no mês.',info:'taxaC'},
                 ].map((f:any)=>(
                   <div key={f.l}>
@@ -2580,6 +2603,16 @@ Use números reais. Seja direto.`
                       <InfoBtn id={f.info}/>
                     </div>
                     <p className="text-xs mb-1.5 pl-7" style={{color:'#6b6860'}}>{f.dica}</p>
+                    {/* Comissões do mês, direto do relatório do avec: o campo já
+                        vem preenchido com esse valor quando está vazio, e o
+                        botão devolve o número original se você editar. */}
+                    {f.real > 0 && (
+                      <div className="flex items-center gap-1.5 mb-1.5 pl-7 text-[10px]" style={{color:'#0891b2'}}>
+                        💰 Pago aos profissionais em {MESES_NOMES[mesSel]}: <strong>R$ {f.real.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</strong>
+                        <button onClick={()=>f.set(f.real.toFixed(2))}
+                          className="px-2 py-0.5 rounded-full font-bold" style={{background:'#0891b2',color:'#fff'}}>Usar</button>
+                      </div>
+                    )}
                     <div className="relative pl-7">
                       <span className="absolute left-10 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>R$</span>
                       <input type="number" value={f.v} onChange={e=>f.set(e.target.value)} placeholder="0"
