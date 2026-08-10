@@ -31,6 +31,7 @@ import CheckProconPainel from '@/components/salon/CheckProconPainel'
 import ConteudoPopPainel from '@/components/salon/ConteudoPopPainel'
 import ChecklistPainel from '@/components/salon/ChecklistPainel'
 import ConsolidadoDescontos from '@/components/salon/ConsolidadoDescontos'
+import ContasBancariasLista from '@/components/salon/ContasBancariasLista'
 import ProfissionaisPainel from '@/components/salon/ProfissionaisPainel'
 import { CAFE_BLOCOS, POP_SALAO_BLOCOS } from '@/components/salon/popDefaults'
 
@@ -109,7 +110,7 @@ export const CATALOGO: Record<string, Ferramenta> = {
   pr_acesso:        { id: 'pr_acesso', label: 'ACESSO DOS PROFISSIONAIS', perm: 'profissionais' },
   pr_ranking:       { id: 'pr_ranking', label: 'RANKING DE AVALIAÇÕES', perm: 'profissionais' },
   pr_categorias:    { id: 'pr_categorias', label: 'GERENCIAR CATEGORIAS', perm: 'profissionais' },
-  pr_abertura:      { id: 'pr_abertura', label: 'ABERTURA DE CONTA BANCÁRIA', perm: 'profissionais' },
+  pr_abertura:      { id: 'pr_abertura', label: 'CONTAS BANCÁRIAS E PIX', perm: 'profissionais' },
   pr_entrevista:    { id: 'pr_entrevista', label: 'FICHA PARA ENTREVISTA', perm: 'profissionais', grupo: 'CNPJ' },
   pr_materiais:     { id: 'pr_materiais', label: 'MATERIAIS PARA TRABALHO', perm: 'profissionais' },
   pr_perfil:        { id: 'pr_perfil', label: 'PERFIL IDEAL DE PROFISSIONAL', perm: 'profissionais', grupo: 'CNPJ' },
@@ -197,7 +198,7 @@ export function ConteudoFerramenta({ id, profsSalao, abaPop = 'cafe' }: { id: st
     case 'pr_acesso':             return <ProfissionaisPainel key="pr_acesso" secaoFixa="acesso_global" embutido />
     case 'pr_ranking':            return <ProfissionaisPainel key="pr_ranking" secaoFixa="ranking" embutido />
     case 'pr_categorias':         return <ProfissionaisPainel key="pr_categorias" secaoFixa="categorias" embutido />
-    case 'pr_abertura':           return <ProfissionaisPainel key="pr_abertura" secaoFixa="abertura" embutido />
+    case 'pr_abertura':           return <ContasBancariasLista key="pr_abertura" />
     case 'pj_cnpj':               return <ProfissionaisPainel key="pj_cnpj" secaoFixa="cnpj" subFixa="cnpj" embutido />
     case 'pj_contratacao':        return <ProfissionaisPainel key="pj_contratacao" secaoFixa="cnpj" subFixa="contratacao" embutido />
     case 'pj_desligamento':       return <ProfissionaisPainel key="pj_desligamento" secaoFixa="cnpj" subFixa="desligamento" embutido />
