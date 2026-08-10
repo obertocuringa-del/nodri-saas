@@ -89,20 +89,31 @@ export const CATALOGO: Record<string, Ferramenta> = {
   pop_recepcao:    { id: 'pop_recepcao',    label: 'PROCESSOS DA RECEPÇÃO',    perm: 'adm_pop', conteudoSlug: 'recepcao' },
   pop_manicure:    { id: 'pop_manicure',    label: 'PROCESSOS — MANICURE',     perm: 'adm_pop', conteudoSlug: 'manicure' },
   pop_cabelereiro: { id: 'pop_cabelereiro', label: 'PROCESSOS — CABELEIREIRO', perm: 'adm_pop', conteudoSlug: 'cabelereiro' },
+  // Check List — cada categoria abre a lista já na aba certa
+  ck_abertura:     { id: 'ck_abertura',     label: 'CHECK LIST — ABERTURA',       perm: 'checklist', rota: '/salon/checklist?cat=Abertura' },
+  ck_intermediario:{ id: 'ck_intermediario',label: 'CHECK LIST — INTERMEDIÁRIO',  perm: 'checklist', rota: '/salon/checklist?cat=Intermedi%C3%A1rio' },
+  ck_fechamento:   { id: 'ck_fechamento',   label: 'CHECK LIST — FECHAMENTO',     perm: 'checklist', rota: '/salon/checklist?cat=Fechamento' },
+  ck_manutencao:   { id: 'ck_manutencao',   label: 'CHECK LIST — MANUTENÇÃO / LIMPEZA', perm: 'checklist', rota: '/salon/checklist?cat=Manuten%C3%A7%C3%A3o%20%2F%20Limpeza' },
+  ck_dosagem:      { id: 'ck_dosagem',      label: 'CHECK LIST — DOSAGEM',        perm: 'checklist', rota: '/salon/checklist?cat=Dosagem' },
+  ck_gerente:      { id: 'ck_gerente',      label: 'CHECK LIST — GERENTE',        perm: 'checklist', rota: '/salon/checklist?cat=Gerente' },
+  ck_coordenado:   { id: 'ck_coordenado',   label: 'CHECK LIST — COORDENADO',     perm: 'checklist', rota: '/salon/checklist?cat=Coordenado' },
+  ck_padrao:       { id: 'ck_padrao',       label: 'CHECK LIST — PADRÃO DE ATENDIMENTO', perm: 'checklist', rota: '/salon/checklist?cat=Padr%C3%A3o%20de%20Atendimento' },
 }
 
 // Quais ferramentas pertencem a cada setor. A chave é o nome do setor
 // normalizado (sem acento/maiúsculas) — casamos por "contém".
 export const FERRAMENTAS_POR_SETOR: { chave: string[]; itens: string[] }[] = [
-  { chave: ['RECEPCAO'], itens: ['lista_realinhamento', 'lista_corte', 'lista_mechas', 'lista_pigmentacao', 'bebidas', 'valores_pacotes', 'arquivos_envio'] },
-  { chave: ['DOSAGEM'], itens: ['produtos', 'servinterno', 'servicos_valores', 'tratamentos', 'esterilizacao_fluxo', 'kits', 'enxovais'] },
+  { chave: ['RECEPCAO'], itens: ['ck_abertura', 'ck_intermediario', 'ck_fechamento', 'lista_realinhamento', 'lista_corte', 'lista_mechas', 'lista_pigmentacao', 'bebidas', 'valores_pacotes', 'arquivos_envio'] },
+  { chave: ['DOSAGEM'], itens: ['ck_dosagem', 'produtos', 'servinterno', 'servicos_valores', 'tratamentos', 'esterilizacao_fluxo', 'kits', 'enxovais'] },
   { chave: ['COMPRAS', 'ESTOQUE'], itens: ['tabela_precos', 'cadastrar_produto'] },
   { chave: ['ADMINISTRATIVO'], itens: ['etiquetas', 'escala', 'feriados', 'ata', 'senhas', 'telefones', 'calendario', 'auditoria'] },
   { chave: ['FINANCEIRO'], itens: ['desconto_profissional', 'correios'] },
-  { chave: ['GERENCIA', 'GERENTE'], itens: ['corrida_interna'] },
-  { chave: ['PROCESSO', 'QUALIDADE'], itens: ['pop_cafe', 'pop_salao', 'checkprocon', 'pop_recepcao', 'pop_manicure', 'pop_cabelereiro'] },
+  { chave: ['GERENCIA', 'GERENTE'], itens: ['ck_gerente', 'corrida_interna'] },
+  { chave: ['PROCESSO', 'QUALIDADE'], itens: ['ck_padrao', 'pop_cafe', 'pop_salao', 'checkprocon', 'pop_recepcao', 'pop_manicure', 'pop_cabelereiro'] },
   { chave: ['MARKETING'], itens: ['calendario_mkt'] },
   { chave: ['COMERCIAL', 'VENDAS'], itens: ['lojistas'] },
+  { chave: ['SERVICOS GERAIS', 'LIMPEZA'], itens: ['ck_manutencao'] },
+  { chave: ['COORDENADOR', 'COORDENACAO'], itens: ['ck_coordenado'] },
 ]
 
 const norm = (s: string) => (s || '').toUpperCase().trim()

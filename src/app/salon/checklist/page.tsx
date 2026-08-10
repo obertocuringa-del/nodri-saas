@@ -123,6 +123,15 @@ export default function ChecklistPage() {
       const agoraISO = new Date().toISOString()
       docNovo.categorias.forEach(c => c.demandas.forEach(x => { if (x.feito && !x.feito_em) x.feito_em = agoraISO }))
       setDoc(docNovo)
+      // Link direto por categoria (usado pelos setores): /salon/checklist?cat=Abertura
+      try {
+        const alvo = new URLSearchParams(window.location.search).get('cat')
+        if (alvo) {
+          const chave = (t: string) => t.toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim()
+          const i = docNovo.categorias.findIndex(c => chave(c.nome) === chave(alvo))
+          if (i >= 0) setCatSel(i)
+        }
+      } catch { /* sem query string, segue na primeira */ }
     } catch { setDoc(buildDefault()) }
     setLoading(false)
   }, [])
