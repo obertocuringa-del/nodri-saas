@@ -3,9 +3,10 @@
 // Faturamento de cada profissional no mês, para enviar à contabilidade.
 //
 // O valor vem do relatório 0123 que já é importado do avec (Pagamentos por
-// profissional) — nada é digitado aqui e nada foi mexido na importação. Da
-// coluna "A pagar" sai o desconto fixo da casa para chegar no valor do
-// profissional.
+// profissional) — nada é digitado aqui e nada foi mexido na importação.
+//
+// Conta: A pagar + coluna "descontos" do relatório (que vem com sinal:
+// negativo abate, positivo acrescenta, vazio não mexe) − desconto fixo da casa.
 
 import { useEffect, useMemo, useState } from 'react'
 import { Loader2, Printer } from 'lucide-react'
@@ -19,7 +20,7 @@ const moeda = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', curr
 const norm = (s: string) => (s || '').toUpperCase().trim()
   .normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ')
 
-interface Pagamento { ano: number; mes: number; profissional: string; valor_a_pagar: number }
+interface Pagamento { ano: number; mes: number; profissional: string; valor_a_pagar: number; desconto?: number }
 
 export default function FaturamentoProfissionaisPJ() {
   const hoje = new Date()
@@ -44,20 +45,27 @@ export default function FaturamentoProfissionaisPJ() {
   const linhas = useMemo(() => {
     const doMes = pagamentos.filter(p => Number(p.ano) === ano && Number(p.mes) === mes)
     const soma = new Map<string, number>()
+    const somaDesc = new Map<string, number>()
     for (const p of doMes) {
       const k = norm(p.profissional)
       soma.set(k, (soma.get(k) || 0) + (Number(p.valor_a_pagar) || 0))
+      somaDesc.set(k, (somaDesc.get(k) || 0) + (Number(p.desconto) || 0))
     }
     const pj = profs.filter(p => String(p.cnpj || '').trim() && p.ativo !== false)
     const base = pj.length ? pj : profs.filter(p => p.ativo !== false)
     return base.map(p => {
       const nome = p.apelido || p.nome_completo || '—'
-      const aPagar = soma.get(norm(nome)) ?? soma.get(norm(p.nome_completo || '')) ?? 0
-      return { id: p.id, nome, cnpj: p.cnpj || '', aPagar, liquido: aPagar > 0 ? aPagar - desconto : 0 }
+      const k1 = norm(nome), k2 = norm(p.nome_completo || '')
+      const aPagar = soma.get(k1) ?? soma.get(k2) ?? 0
+      // O relatorio traz a coluna "descontos" com sinal: negativo abate do
+      // A pagar, positivo acrescenta, vazio nao mexe em nada.
+      const descRel = somaDesc.get(k1) ?? somaDesc.get(k2) ?? 0
+      return { id: p.id, nome, cnpj: p.cnpj || '', aPagar, descRel, liquido: aPagar > 0 ? aPagar + descRel - desconto : 0 }
     }).sort((a, b) => b.aPagar - a.aPagar)
   }, [pagamentos, profs, ano, mes, desconto])
 
   const totAPagar = linhas.reduce((s, l) => s + l.aPagar, 0)
+  const totDesc = linhas.reduce((s, l) => s + (l.aPagar > 0 ? l.descRel : 0), 0)
   const totLiquido = linhas.reduce((s, l) => s + l.liquido, 0)
   const comValor = linhas.filter(l => l.aPagar > 0).length
   const anos = [ano - 2, ano - 1, ano, ano + 1].filter((v, i, a) => a.indexOf(v) === i)
@@ -98,10 +106,10 @@ export default function FaturamentoProfissionaisPJ() {
       </div>
 
       <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 560 }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 680 }}>
           <thead>
             <tr style={{ background: '#faf9f7' }}>
-              {['Profissional', 'CNPJ', 'A pagar (relatório)', `Faturamento (− ${moeda(desconto)})`].map((h, i) => (
+              {['Profissional', 'CNPJ', 'A pagar (relatório)', 'Descontos', `Faturamento (− ${moeda(desconto)})`].map((h, i) => (
                 <th key={h} style={{ padding: '9px 11px', textAlign: i > 1 ? 'right' : 'left', fontSize: 10.5, color: '#6b6860', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.4px', borderBottom: '1px solid #e8e6e0', whiteSpace: 'nowrap' }}>{h}</th>
               ))}
             </tr>
@@ -112,6 +120,9 @@ export default function FaturamentoProfissionaisPJ() {
                 <td style={{ padding: '9px 11px', fontSize: 12.5, fontWeight: 700, color: l.aPagar > 0 ? '#1a1a1a' : '#c4c0b8' }}>{l.nome}</td>
                 <td style={{ padding: '9px 11px', fontSize: 11.5, color: '#6b6860' }}>{l.cnpj || '—'}</td>
                 <td style={{ padding: '9px 11px', textAlign: 'right', fontSize: 12.5, color: '#6b6860' }}>{l.aPagar > 0 ? moeda(l.aPagar) : '—'}</td>
+                <td style={{ padding: '9px 11px', textAlign: 'right', fontSize: 12.5, fontWeight: l.descRel ? 700 : 500, color: l.descRel < 0 ? '#b91c1c' : l.descRel > 0 ? '#15803d' : '#c4c0b8' }}>
+                  {l.descRel ? `${l.descRel > 0 ? '+' : '−'} ${moeda(Math.abs(l.descRel))}` : '—'}
+                </td>
                 <td style={{ padding: '9px 11px', textAlign: 'right', fontSize: 13, fontWeight: 900, color: l.liquido > 0 ? '#15803d' : '#c4c0b8' }}>{l.liquido > 0 ? moeda(l.liquido) : '—'}</td>
               </tr>
             ))}
@@ -120,6 +131,7 @@ export default function FaturamentoProfissionaisPJ() {
             <tr style={{ background: '#faf9f7' }}>
               <td colSpan={2} style={{ padding: '10px 11px', fontSize: 12, fontWeight: 900 }}>TOTAL</td>
               <td style={{ padding: '10px 11px', textAlign: 'right', fontSize: 12.5, fontWeight: 800, color: '#6b6860' }}>{moeda(totAPagar)}</td>
+              <td style={{ padding: '10px 11px', textAlign: 'right', fontSize: 12.5, fontWeight: 800, color: totDesc < 0 ? '#b91c1c' : '#15803d' }}>{totDesc ? `${totDesc > 0 ? '+' : '−'} ${moeda(Math.abs(totDesc))}` : '—'}</td>
               <td style={{ padding: '10px 11px', textAlign: 'right', fontSize: 13.5, fontWeight: 900, color: '#15803d' }}>{moeda(totLiquido)}</td>
             </tr>
           </tfoot>
