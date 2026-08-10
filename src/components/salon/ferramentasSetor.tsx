@@ -30,6 +30,7 @@ import ListaServico from '@/components/salon/ListaServico'
 import CheckProconPainel from '@/components/salon/CheckProconPainel'
 import ConteudoPopPainel from '@/components/salon/ConteudoPopPainel'
 import ChecklistPainel from '@/components/salon/ChecklistPainel'
+import ProfissionaisPainel from '@/components/salon/ProfissionaisPainel'
 import { CAFE_BLOCOS, POP_SALAO_BLOCOS } from '@/components/salon/popDefaults'
 
 export interface ProfSalao { id: string; nome: string; telefone: string }
@@ -99,6 +100,27 @@ export const CATALOGO: Record<string, Ferramenta> = {
   ck_gerente:      { id: 'ck_gerente',      label: 'CHECK LIST — GERENTE',        perm: 'checklist' },
   ck_coordenado:   { id: 'ck_coordenado',   label: 'CHECK LIST — COORDENADO',     perm: 'checklist' },
   ck_padrao:       { id: 'ck_padrao',       label: 'CHECK LIST — PADRÃO DE ATENDIMENTO', perm: 'checklist' },
+  // Profissionais — cada secao abre dentro do setor
+  pr_cadastrar:     { id: 'pr_cadastrar', label: 'CADASTRAR PROFISSIONAL', perm: 'profissionais' },
+  pr_lista:         { id: 'pr_lista', label: 'LISTA DE PROFISSIONAIS', perm: 'profissionais' },
+  pr_solicitacao:   { id: 'pr_solicitacao', label: 'SOLICITAÇÃO', perm: 'profissionais' },
+  pr_acesso:        { id: 'pr_acesso', label: 'ACESSO DOS PROFISSIONAIS', perm: 'profissionais' },
+  pr_ranking:       { id: 'pr_ranking', label: 'RANKING DE AVALIAÇÕES', perm: 'profissionais' },
+  pr_categorias:    { id: 'pr_categorias', label: 'GERENCIAR CATEGORIAS', perm: 'profissionais' },
+  pr_abertura:      { id: 'pr_abertura', label: 'ABERTURA DE CONTA BANCÁRIA', perm: 'profissionais' },
+  pr_cnpj:          { id: 'pr_cnpj', label: 'CNPJ', perm: 'profissionais' },
+  pr_clt:           { id: 'pr_clt', label: 'CLT', perm: 'profissionais' },
+  pr_entrevista:    { id: 'pr_entrevista', label: 'FICHA PARA ENTREVISTA', perm: 'profissionais' },
+  pr_contratacao:   { id: 'pr_contratacao', label: 'PROCESSO DE CONTRATAÇÃO', perm: 'profissionais' },
+  pr_materiais:     { id: 'pr_materiais', label: 'MATERIAIS PARA TRABALHO', perm: 'profissionais' },
+  pr_perfil:        { id: 'pr_perfil', label: 'PERFIL IDEAL DE PROFISSIONAL', perm: 'profissionais' },
+  pr_horarios:      { id: 'pr_horarios', label: 'HORÁRIOS E FOLGAS', perm: 'profissionais' },
+  pr_distrato:      { id: 'pr_distrato', label: 'DISTRATO', perm: 'profissionais' },
+  pr_contrato:      { id: 'pr_contrato', label: 'CONTRATO DE TRABALHO', perm: 'profissionais' },
+  pr_conduta:       { id: 'pr_conduta', label: 'NORMA DE CONDUTA', perm: 'profissionais' },
+  pr_certificados:  { id: 'pr_certificados', label: 'CERTIFICADOS', perm: 'profissionais' },
+  pr_carreira:      { id: 'pr_carreira', label: 'PLANO DE CARREIRA', perm: 'profissionais' },
+  pr_descricao:     { id: 'pr_descricao', label: 'DESCRIÇÃO DE CARGO', perm: 'profissionais' },
 }
 
 // Quais ferramentas pertencem a cada setor. A chave é o nome do setor
@@ -106,15 +128,16 @@ export const CATALOGO: Record<string, Ferramenta> = {
 export const FERRAMENTAS_POR_SETOR: { chave: string[]; itens: string[] }[] = [
   { chave: ['RECEPCAO'], itens: ['ck_abertura', 'ck_intermediario', 'ck_fechamento', 'lista_realinhamento', 'lista_corte', 'lista_mechas', 'lista_pigmentacao', 'bebidas', 'valores_pacotes', 'arquivos_envio'] },
   { chave: ['DOSAGEM'], itens: ['ck_dosagem', 'produtos', 'servinterno', 'servicos_valores', 'tratamentos', 'esterilizacao_fluxo', 'kits', 'enxovais'] },
-  { chave: ['COMPRAS', 'ESTOQUE'], itens: ['tabela_precos', 'cadastrar_produto'] },
-  { chave: ['ADMINISTRATIVO'], itens: ['etiquetas', 'escala', 'feriados', 'ata', 'senhas', 'telefones', 'calendario', 'auditoria'] },
-  { chave: ['FINANCEIRO'], itens: ['desconto_profissional', 'correios'] },
+  { chave: ['COMPRAS', 'ESTOQUE'], itens: ['pr_materiais', 'tabela_precos', 'cadastrar_produto'] },
+  { chave: ['ADMINISTRATIVO'], itens: ['pr_cnpj', 'etiquetas', 'escala', 'feriados', 'ata', 'senhas', 'telefones', 'calendario', 'auditoria'] },
+  { chave: ['FINANCEIRO'], itens: ['pr_abertura', 'desconto_profissional', 'correios'] },
   { chave: ['GERENCIA', 'GERENTE'], itens: ['ck_gerente', 'corrida_interna'] },
-  { chave: ['PROCESSO', 'QUALIDADE'], itens: ['ck_padrao', 'pop_cafe', 'pop_salao', 'checkprocon', 'pop_recepcao', 'pop_manicure', 'pop_cabelereiro'] },
+  { chave: ['PROCESSO', 'QUALIDADE'], itens: ['pr_ranking', 'ck_padrao', 'pop_cafe', 'pop_salao', 'checkprocon', 'pop_recepcao', 'pop_manicure', 'pop_cabelereiro'] },
   { chave: ['MARKETING'], itens: ['calendario_mkt'] },
   { chave: ['COMERCIAL', 'VENDAS'], itens: ['lojistas'] },
+  { chave: ['RH', 'GESTAO DE PESSOAS', 'RECURSOS HUMANOS'], itens: ['pr_lista', 'pr_cadastrar', 'pr_solicitacao', 'pr_acesso', 'pr_categorias', 'pr_clt', 'pr_entrevista', 'pr_contratacao', 'pr_perfil', 'pr_distrato', 'pr_contrato', 'pr_conduta', 'pr_certificados', 'pr_carreira', 'pr_descricao'] },
   { chave: ['SERVICOS GERAIS', 'LIMPEZA'], itens: ['ck_manutencao'] },
-  { chave: ['COORDENADOR', 'COORDENACAO'], itens: ['ck_coordenado'] },
+  { chave: ['COORDENADOR', 'COORDENACAO'], itens: ['pr_horarios', 'ck_coordenado'] },
 ]
 
 const norm = (s: string) => (s || '').toUpperCase().trim()
@@ -164,6 +187,26 @@ export function ConteudoFerramenta({ id, profsSalao, abaPop = 'cafe' }: { id: st
     case 'ck_gerente':          return <ChecklistPainel key="ck_gerente" categoriaFixa="Gerente" embutido />
     case 'ck_coordenado':       return <ChecklistPainel key="ck_coordenado" categoriaFixa="Coordenado" embutido />
     case 'ck_padrao':           return <ChecklistPainel key="ck_padrao" categoriaFixa="Padrão de Atendimento" embutido />
+    case 'pr_cadastrar':          return <ProfissionaisPainel key="pr_cadastrar" secaoFixa="cadastrar" embutido />
+    case 'pr_lista':              return <ProfissionaisPainel key="pr_lista" secaoFixa="lista" embutido />
+    case 'pr_solicitacao':        return <ProfissionaisPainel key="pr_solicitacao" secaoFixa="solicitacao" embutido />
+    case 'pr_acesso':             return <ProfissionaisPainel key="pr_acesso" secaoFixa="acesso_global" embutido />
+    case 'pr_ranking':            return <ProfissionaisPainel key="pr_ranking" secaoFixa="ranking" embutido />
+    case 'pr_categorias':         return <ProfissionaisPainel key="pr_categorias" secaoFixa="categorias" embutido />
+    case 'pr_abertura':           return <ProfissionaisPainel key="pr_abertura" secaoFixa="abertura" embutido />
+    case 'pr_cnpj':               return <ProfissionaisPainel key="pr_cnpj" secaoFixa="cnpj" embutido />
+    case 'pr_clt':                return <ProfissionaisPainel key="pr_clt" secaoFixa="clt" embutido />
+    case 'pr_entrevista':         return <ProfissionaisPainel key="pr_entrevista" secaoFixa="entrevista" embutido />
+    case 'pr_contratacao':        return <ProfissionaisPainel key="pr_contratacao" secaoFixa="contratacao" embutido />
+    case 'pr_materiais':          return <ProfissionaisPainel key="pr_materiais" secaoFixa="materiais" embutido />
+    case 'pr_perfil':             return <ProfissionaisPainel key="pr_perfil" secaoFixa="perfil" embutido />
+    case 'pr_horarios':           return <ProfissionaisPainel key="pr_horarios" secaoFixa="horarios" embutido />
+    case 'pr_distrato':           return <ProfissionaisPainel key="pr_distrato" secaoFixa="distrato" embutido />
+    case 'pr_contrato':           return <ProfissionaisPainel key="pr_contrato" secaoFixa="contrato" embutido />
+    case 'pr_conduta':            return <ProfissionaisPainel key="pr_conduta" secaoFixa="conduta" embutido />
+    case 'pr_certificados':       return <ProfissionaisPainel key="pr_certificados" secaoFixa="certificados" embutido />
+    case 'pr_carreira':           return <ProfissionaisPainel key="pr_carreira" secaoFixa="carreira" embutido />
+    case 'pr_descricao':          return <ProfissionaisPainel key="pr_descricao" secaoFixa="descricao_cargo" embutido />
     case 'pop_cafe':            return <DocEditavel key="pop_cafe" chave="pop_cafe" tituloPadrao="PREPARO DE SERVIÇOS — CAFÉ" blocosPadrao={CAFE_BLOCOS} />
     case 'pop_salao':           return <DocEditavel key="pop_salao" chave="pop_salao" tituloPadrao="POP — PROCEDIMENTO DE OPERAÇÃO PADRÃO" blocosPadrao={POP_SALAO_BLOCOS} comData />
     default:
