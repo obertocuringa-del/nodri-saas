@@ -18,6 +18,7 @@ import ChecklistContabilidade from '@/components/salon/ChecklistContabilidade'
 import DreMensal from '@/components/salon/DreMensal'
 import PontoEquilibrioMes from '@/components/salon/PontoEquilibrioMes'
 import FluxoCaixaMes from '@/components/salon/FluxoCaixaMes'
+import CoffeeBreaks from '@/components/salon/CoffeeBreaks'
 import { useIsMobile } from '@/lib/useIsMobile'
 
 interface Prof { id: string; nome_completo: string; apelido?: string; cargo?: string; ativo?: boolean; is_departamento?: boolean; departamento_cor?: string; telefone?: string; contato_responsavel?: string }
@@ -535,6 +536,8 @@ export default function DepartamentoPage() {
               if (slug === 'dre') return <DreMensal key="dre" />
               if (slug === 'ponto_de_equilibrio') return <PontoEquilibrioMes key="pe" />
               if (slug === 'fluxo_de_caixa') return <FluxoCaixaMes key="fluxo" />
+              // Coffee breaks: planejamento por evento no lugar da folha em branco
+              if (slug === 'coffee_breaks_e_encontros_internos') return <CoffeeBreaks key="coffee" />
               if (slug === 'comissoes') return <ComissoesQuinzenas key="comissoes" />
               // Guias MEI espelha a MESMA tela de CNPJ dos Profissionais do RH:
               // e o mesmo componente e os mesmos dados, entao mudar num lado
