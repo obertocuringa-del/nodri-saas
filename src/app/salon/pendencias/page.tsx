@@ -60,6 +60,39 @@ export default function PendenciasPage() {
   const [dataLimite, setDataLimite] = useState(() => new Date().toLocaleDateString('en-CA')) // padrão: hoje
   const [criando, setCriando] = useState(false)
   const [modalAberto, setModalAberto] = useState(false)   // caixa de Nova Pendência
+  // Criar setor a partir do organograma (era feito na Lista de Profissionais)
+  const [novoDepAberto, setNovoDepAberto] = useState(false)
+  const [novoDepNome, setNovoDepNome] = useState('')
+  const [novoDepCor, setNovoDepCor] = useState('#5b4fcf')
+  const [criandoDep, setCriandoDep] = useState(false)
+
+  async function criarDepartamento() {
+    const nome = novoDepNome.trim().toUpperCase()
+    if (!nome) { toast.error('Dê um nome ao setor'); return }
+    setCriandoDep(true)
+    try {
+      const res = await fetch('/api/profissionais', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome_completo: nome, is_departamento: true, departamento_cor: novoDepCor, ativo: true }),
+      })
+      if (res.ok) {
+        const novo = await res.json()
+        setDepartamentos(prev => [...prev, novo])
+        setNovoDepNome(''); setNovoDepAberto(false)
+        toast.success('Setor criado!')
+      } else toast.error('Erro ao criar o setor')
+    } catch { toast.error('Erro de conexão') }
+    setCriandoDep(false)
+  }
+
+  async function excluirDepartamento(id: string, nome: string) {
+    if (!confirm(`Excluir o setor "${nome}"? As demandas dele serão perdidas.`)) return
+    try {
+      const res = await fetch(`/api/profissionais/${id}`, { method: 'DELETE' })
+      if (res.ok) { setDepartamentos(prev => prev.filter(d => d.id !== id)); toast.success('Setor excluído') }
+      else toast.error('Erro ao excluir')
+    } catch { toast.error('Erro de conexão') }
+  }
 
   // Editar data
   const [editandoData, setEditandoData] = useState<string | null>(null)
@@ -299,6 +332,11 @@ export default function PendenciasPage() {
           className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-nodri-cyan text-nodri-dark text-[11px] font-bold hover:brightness-110 transition-all">
           <Plus size={13}/> Nova Pendência
         </button>
+        <button
+          onClick={() => setNovoDepAberto(v => !v)}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-nodri-border text-nodri-t2 text-[11px] font-bold hover:bg-black/5 transition-all">
+          <Plus size={13}/> Novo departamento
+        </button>
         {salaoId && (
           <button
             onClick={() => {
@@ -315,12 +353,32 @@ export default function PendenciasPage() {
       {/* ── ORGANOGRAMA (só no computador) ──
           Fica fora do container estreito para ter largura de sobra. No celular
           este bloco não é montado e valem os cards logo abaixo. */}
+      {novoDepAberto && (
+        <div className="max-w-[1240px] mx-auto px-5 pt-4">
+          <div className="bg-nodri-surface border border-nodri-border rounded-xl p-3 flex items-center gap-2 flex-wrap">
+            <input value={novoDepNome} onChange={e => setNovoDepNome(e.target.value)} autoFocus
+              onKeyDown={e => { if (e.key === 'Enter') criarDepartamento() }}
+              placeholder="Nome do setor (ex: MARKETING)"
+              className="flex-1 min-w-[200px] bg-nodri-card border border-nodri-border rounded-lg px-3 py-2 text-[12px] outline-none text-nodri-t1" />
+            <input type="color" value={novoDepCor} onChange={e => setNovoDepCor(e.target.value)} title="Cor do setor"
+              className="w-10 h-9 rounded-lg border border-nodri-border cursor-pointer" />
+            <button onClick={criarDepartamento} disabled={criandoDep}
+              className="px-3 py-2 rounded-lg bg-nodri-cyan text-nodri-dark text-[11px] font-bold disabled:opacity-60">
+              {criandoDep ? 'Criando…' : 'Criar setor'}
+            </button>
+            <button onClick={() => setNovoDepAberto(false)}
+              className="px-3 py-2 rounded-lg border border-nodri-border text-[11px] font-bold text-nodri-t3">Cancelar</button>
+          </div>
+        </div>
+      )}
+
       {!isMobile && departamentos.length > 0 && (
         <div className="max-w-[1240px] mx-auto px-5 pt-6">
           <OrganogramaDepartamentos
             departamentos={departamentos}
             solicPorSetor={solicPorSetor}
             onAbrir={id => router.push(`/salon/departamentos/${id}`)}
+            onExcluir={excluirDepartamento}
           />
         </div>
       )}

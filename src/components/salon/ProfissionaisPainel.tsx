@@ -1055,67 +1055,10 @@ ${montarContratoHTML()}
                 </button>
               )}
 
-              {/* ── DEPARTAMENTOS (setores internos, não são profissionais) ── */}
+              {/* Os DEPARTAMENTOS saíram daqui: agora vivem no organograma
+                  (Pendências), onde também se cria e se exclui setor. */}
               {!loading && (
                 <div style={{ marginBottom: '16px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <p style={{ fontSize: '10px', color: '#6b6860', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, margin: 0 }}>Departamentos</p>
-                    {souDono && (
-                      <button onClick={() => setNovoDep(v => !v)} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#f0eefb', color: '#5b4fcf', border: '1px solid #d9d3f5', borderRadius: 8, padding: '4px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
-                        <Plus size={12} /> Novo departamento
-                      </button>
-                    )}
-                  </div>
-
-                  {novoDep && (
-                    <div style={{ background: '#faf9ff', border: '1px solid #d9d3f5', borderRadius: 10, padding: 12, marginBottom: 10, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                      <input value={novoDepNome} onChange={e => setNovoDepNome(e.target.value)} placeholder="Nome do setor (ex: MARKETING)" autoFocus
-                        style={{ flex: 1, minWidth: 180, border: '1px solid #e0ddd8', borderRadius: 8, padding: '8px 10px', fontSize: 13, outline: 'none' }} />
-                      <input type="color" value={novoDepCor} onChange={e => setNovoDepCor(e.target.value)} title="Cor do setor"
-                        style={{ width: 38, height: 34, border: '1px solid #e0ddd8', borderRadius: 8, padding: 2, cursor: 'pointer' }} />
-                      <button disabled={criandoDep} onClick={criarDepartamento} style={{ background: '#5b4fcf', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer', opacity: criandoDep ? 0.6 : 1 }}>{criandoDep ? 'Criando...' : 'Criar'}</button>
-                      <button onClick={() => setNovoDep(false)} style={{ background: 'transparent', border: 'none', color: '#9ca3af', fontSize: 12, cursor: 'pointer' }}>Cancelar</button>
-                    </div>
-                  )}
-
-                  {departamentos.length > 0 && (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '8px' }}>
-                      {departamentos.map(d => {
-                        const cor = d.departamento_cor || '#5b4fcf'
-                        const icone = d.nome_completo === 'ADMINISTRATIVO' ? '🗂️' : d.nome_completo === 'FINANCEIRO' ? '💰' : d.nome_completo === 'RECEPÇÃO' ? '🛎️' : d.nome_completo === 'GERÊNCIA' ? '🏢' : '🏢'
-                        const ehFin = d.nome_completo.trim().toUpperCase().includes('FINANCEIRO')
-                        const boletosAqui = ehFin ? boletosVencidos : 0
-                        const temPend = (d.pendencias_abertas || 0) > 0 || boletosAqui > 0
-                        return (
-                          <div key={d.id}
-                            style={{ background: temPend ? '#fff0f0' : '#ffffff', border: `1px solid ${temPend ? '#7f1d1d' : cor + '40'}`, borderRadius: '10px', padding: '12px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', transition: 'all 0.2s', position: 'relative' }}
-                            onClick={() => router.push(`/salon/departamentos/${d.id}`)}
-                            onMouseEnter={e => { e.currentTarget.style.borderColor = temPend ? '#ef4444' : cor; e.currentTarget.style.boxShadow = `0 0 0 2px ${temPend ? '#ef444420' : cor + '20'}` }}
-                            onMouseLeave={e => { e.currentTarget.style.borderColor = temPend ? '#7f1d1d' : cor + '40'; e.currentTarget.style.boxShadow = 'none' }}>
-                            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: cor + '20', border: `1px solid ${cor}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>
-                              {icone}
-                            </div>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ color: '#1a1a1a', fontWeight: 700, fontSize: '12px' }}>{d.nome_completo}</div>
-                              {(d.pendencias_abertas || 0) > 0 && (
-                                <div style={AVISO_DEMANDA}>⚠ {d.pendencias_abertas} pendência{d.pendencias_abertas! > 1 ? 's' : ''}</div>
-                              )}
-                              {boletosAqui > 0 && (
-                                <div style={AVISO_DEMANDA}>📄 {boletosAqui} boleto{boletosAqui > 1 ? 's' : ''} vencido{boletosAqui > 1 ? 's' : ''}</div>
-                              )}
-                              {!temPend && <div style={{ color: '#6b6860', fontSize: '10px', marginTop: '2px' }}>Sem pendências</div>}
-                            </div>
-                            {souDono && (
-                              <button onClick={e => { e.stopPropagation(); excluirDepartamento(d) }} title="Excluir setor" style={{ background: 'transparent', border: 'none', color: '#cbd5e1', cursor: 'pointer', padding: 2 }}>
-                                <Trash2 size={13} />
-                              </button>
-                            )}
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )}
-                  <div style={{ borderBottom: '1px solid #e8e6e0', margin: '16px 0 8px' }}/>
                   <p style={{ fontSize: '10px', color: '#6b6860', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, marginBottom: '8px' }}>Profissionais</p>
                 </div>
               )}

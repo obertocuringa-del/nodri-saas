@@ -28,6 +28,7 @@ interface Props {
   solicPorSetor: Record<string, number>
   onAbrir: (id: string) => void
   podeEditar?: boolean
+  onExcluir?: (id: string, nome: string) => void   // aparece no modo edição
 }
 
 // Normaliza pra comparar nome de setor sem depender de acento/caixa
@@ -100,7 +101,7 @@ const CORES: Record<string, string> = {
   gerais: '#475569', manutencao: '#57534e', dosagem: '#c026d3',
 }
 
-export default function OrganogramaDepartamentos({ departamentos, solicPorSetor, onAbrir, podeEditar = true }: Props) {
+export default function OrganogramaDepartamentos({ departamentos, solicPorSetor, onAbrir, podeEditar = true, onExcluir }: Props) {
   const [doc, setDoc] = useState<DocOrg>({})
   const [editando, setEditando] = useState(false)
   const [dirty, setDirty] = useState(false)
