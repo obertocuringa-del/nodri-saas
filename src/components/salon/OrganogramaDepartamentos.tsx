@@ -1,6 +1,6 @@
 'use client'
 
-import { Fragment, useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { useGuardaSalvar } from '@/lib/guardaSalvar'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -118,6 +118,33 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
   const [dirty, setDirty] = useState(false)
   const [salvando, setSalvando] = useState(false)
   useGuardaSalvar(dirty, 'Organograma')
+
+  // ── Caber inteiro na tela ────────────────────────────────────────────────
+  // O desenho tem uma largura natural (a soma dos ramos). Em vez de cortar e
+  // deixar barra de rolagem, ele é reduzido proporcionalmente até caber. Como
+  // é transform, o layout interno não muda — só o tamanho na tela.
+  const wrapRef = useRef<HTMLDivElement>(null)
+  const contRef = useRef<HTMLDivElement>(null)
+  const [escala, setEscala] = useState(1)
+  const [altura, setAltura] = useState<number | undefined>(undefined)
+
+  useEffect(() => {
+    const calc = () => {
+      const disp = wrapRef.current?.clientWidth || 0
+      const c = contRef.current
+      if (!disp || !c) return
+      const larg = c.scrollWidth
+      const e = larg > 0 ? Math.min(1, disp / larg) : 1
+      setEscala(e)
+      setAltura(c.scrollHeight * e)
+    }
+    calc()
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(calc) : null
+    if (ro && wrapRef.current) ro.observe(wrapRef.current)
+    if (ro && contRef.current) ro.observe(contRef.current)
+    window.addEventListener('resize', calc)
+    return () => { ro?.disconnect(); window.removeEventListener('resize', calc) }
+  }, [departamentos, editando, doc])
 
   useEffect(() => {
     fetch('/api/salon/grid?chave=organograma')
@@ -324,8 +351,9 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
         )}
       </div>
 
-      <div className="overflow-x-auto">
-        <div className="flex flex-col items-center min-w-[1240px] pb-1">
+      <div ref={wrapRef} style={{ height: altura, overflow: 'hidden', display: 'flex', justifyContent: 'center' }}>
+        <div ref={contRef} className="flex flex-col items-center pb-1"
+          style={{ width: 'max-content', flex: '0 0 auto', transform: `scale(${escala})`, transformOrigin: 'top center' }}>
 
           {/* ── NÍVEL 0 — Direção, com a Contabilidade como assessoria externa ── */}
           <div className="flex items-center">
@@ -365,7 +393,7 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
           </div>
 
           <V />
-          <div style={{ height: 2, background: LINHA, width: '100%', maxWidth: 1160 }} />
+          <div style={{ height: 2, background: LINHA, width: '100%' }} />
 
           {/* ── NÍVEL 2 e 3 — áreas e os setores que respondem a cada uma ── */}
           <div className="flex items-start justify-center gap-6" style={{ paddingTop: 12 }}>
@@ -377,7 +405,7 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
 
           {/* Qualquer setor fora do modelo continua aparecendo aqui */}
           {sobra.length > 0 && (
-            <div className="w-full pt-6" style={{ maxWidth: 1180 }}>
+            <div className="w-full pt-6">
               <p className="text-[9.5px] text-nodri-t3 uppercase tracking-widest font-bold mb-2 text-center">Outros setores</p>
               <div className="flex justify-center gap-3 flex-wrap">
                 {sobra.map(d => <Fragment key={d.id}>{Caixa({ chave: 'outro', dep: d })}</Fragment>)}
