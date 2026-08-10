@@ -179,7 +179,7 @@ const FORM_INITIAL = {
 
 // secaoFixa: abre direto numa secao (usado dentro do setor).
 // embutido: sem a moldura de pagina (topo + sidebar), para caber no setor.
-export default function ProfissionaisPainel({ secaoFixa = '', embutido = false }: { secaoFixa?: string; embutido?: boolean } = {}) {
+export default function ProfissionaisPainel({ secaoFixa = '', embutido = false, subFixa = '' }: { secaoFixa?: string; embutido?: boolean; subFixa?: string } = {}) {
   const router = useRouter()
   const [secao, setSecao] = useState(secaoFixa || 'lista')
   // Link direto (busca global): /salon/profissionais?secao=carreira
@@ -187,8 +187,8 @@ export default function ProfissionaisPainel({ secaoFixa = '', embutido = false }
     const s = new URLSearchParams(window.location.search).get('secao')
     if (s && SIDEBAR_ITEMS.some(i => i.id === s)) setSecao(s)
   }, [])
-  const [cltSub, setCltSub] = useState<'clt' | 'exame' | 'processo'>('clt')
-  const [cnpjSub, setCnpjSub] = useState<'cnpj' | 'contratacao' | 'desligamento'>('cnpj')
+  const [cltSub, setCltSub] = useState<'clt' | 'exame' | 'processo'>((subFixa as any) || 'clt')
+  const [cnpjSub, setCnpjSub] = useState<'cnpj' | 'contratacao' | 'desligamento'>((subFixa as any) || 'cnpj')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   useEffect(() => {
@@ -1901,7 +1901,7 @@ ${montarContratoHTML()}
           {secao === 'cnpj' && (
             <div style={{ maxWidth: '1000px' }}>
               <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', borderBottom: '1px solid #ece9e2', paddingBottom: 12 }}>
-                {([['cnpj', 'CNPJ'], ['contratacao', '📝 Processo de Contratação'], ['desligamento', '🚪 Processo de Desligamento']] as const).map(([k, l]) => (
+                {subFixa ? null : ([['cnpj', 'CNPJ'], ['contratacao', '📝 Processo de Contratação'], ['desligamento', '🚪 Processo de Desligamento']] as const).map(([k, l]) => (
                   <button key={k} onClick={() => setCnpjSub(k)} style={{ padding: '8px 16px', borderRadius: 8, border: cnpjSub === k ? '1px solid #5b4fcf' : '1px solid #e0ddd8', background: cnpjSub === k ? '#5b4fcf' : '#fff', color: cnpjSub === k ? '#fff' : '#6b6860', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>{l}</button>
                 ))}
               </div>
@@ -1998,8 +1998,8 @@ ${montarContratoHTML()}
           {secao === 'clt' && (
             <div style={{ maxWidth: '1000px' }}>
               <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', borderBottom: '1px solid #ece9e2', paddingBottom: 12 }}>
-                <button onClick={() => setCltSub('clt')} style={{ padding: '8px 16px', borderRadius: 8, border: cltSub === 'clt' ? '1px solid #0ea5e9' : '1px solid #e0ddd8', background: cltSub === 'clt' ? '#0ea5e9' : '#fff', color: cltSub === 'clt' ? '#fff' : '#6b6860', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Profissionais CLT</button>
-                <button onClick={() => setCltSub('processo')} style={{ padding: '8px 16px', borderRadius: 8, border: cltSub === 'processo' ? '1px solid #0ea5e9' : '1px solid #e0ddd8', background: cltSub === 'processo' ? '#0ea5e9' : '#fff', color: cltSub === 'processo' ? '#fff' : '#6b6860', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>📝 Processo de Contratação</button>
+                {subFixa ? null : <button onClick={() => setCltSub('clt')} style={{ padding: '8px 16px', borderRadius: 8, border: cltSub === 'clt' ? '1px solid #0ea5e9' : '1px solid #e0ddd8', background: cltSub === 'clt' ? '#0ea5e9' : '#fff', color: cltSub === 'clt' ? '#fff' : '#6b6860', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Profissionais CLT</button>}
+                {subFixa ? null : <button onClick={() => setCltSub('processo')} style={{ padding: '8px 16px', borderRadius: 8, border: cltSub === 'processo' ? '1px solid #0ea5e9' : '1px solid #e0ddd8', background: cltSub === 'processo' ? '#0ea5e9' : '#fff', color: cltSub === 'processo' ? '#fff' : '#6b6860', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>📝 Processo de Contratação</button>}
               </div>
               {cltSub === 'processo' ? (
                 <ProcessoContratacao pessoas={profissionais.map(p => ({ nome: p.apelido || p.nome_completo || '—', telefone: (p as any).telefone || (() => { try { return JSON.parse((p as any).contato_responsavel || '{}').tel || '' } catch { return '' } })() }))} />

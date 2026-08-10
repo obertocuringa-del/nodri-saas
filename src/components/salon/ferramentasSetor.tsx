@@ -42,6 +42,7 @@ const D_PRODUTOS: GridDoc = { tabelas: [{ titulo: 'CONSUMO DE PRODUTOS', cabecal
 const D_SERV_INT: GridDoc = { tabelas: [{ titulo: 'SERVIÇO INTERNO / PRODUTOS UTILIZADOS', cabecalho: [cel('Data'), cel('Produto'), cel('Quantidade'), cel('Profissional'), cel('Valor')], linhas: linhasVazias(14, 5) }] }
 const D_CAD_PRODUTO: GridDoc = { tabelas: [{ titulo: 'CADASTRO DE PRODUTOS', cabecalho: [cel('Produto'), cel('Marca'), cel('Categoria'), cel('Quantidade'), cel('Validade'), cel('Fornecedor'), cel('Custo'), cel('Preço de venda')], linhas: linhasVazias(14, 8), larguras: [220, 150, 150, 110, 120, 180, 110, 130] }] }
 const D_DESC_PROF: GridDoc = { tabelas: [{ titulo: 'DESCONTO PROFISSIONAL', cabecalho: [cel('Profissional'), cel('Data'), cel('Motivo'), cel('Valor do desconto'), cel('Parcelas'), cel('Observação')], linhas: linhasVazias(14, 6), larguras: [200, 120, 280, 150, 110, 260] }] }
+const D_CORREIOS: GridDoc = { tabelas: [{ titulo: 'CORREIOS', cabecalho: [cel('Data'), cel('Tipo (carta/encomenda)'), cel('Remetente'), cel('Destinatário'), cel('Código de rastreio'), cel('Status'), cel('Observação')], linhas: linhasVazias(14, 7), larguras: [110, 170, 180, 180, 180, 130, 220] }] }
 const D_CORRIDA: GridDoc = { tabelas: [{ titulo: 'CORRIDA INTERNA', cabecalho: [cel('Profissional'), cel('Meta'), cel('Realizado'), cel('Pontos'), cel('Posição'), cel('Observação')], linhas: linhasVazias(14, 6), larguras: [200, 140, 140, 100, 90, 240] }] }
 
 export interface Ferramenta {
@@ -108,8 +109,6 @@ export const CATALOGO: Record<string, Ferramenta> = {
   pr_ranking:       { id: 'pr_ranking', label: 'RANKING DE AVALIAÇÕES', perm: 'profissionais' },
   pr_categorias:    { id: 'pr_categorias', label: 'GERENCIAR CATEGORIAS', perm: 'profissionais' },
   pr_abertura:      { id: 'pr_abertura', label: 'ABERTURA DE CONTA BANCÁRIA', perm: 'profissionais' },
-  pr_cnpj:          { id: 'pr_cnpj', label: 'CNPJ', perm: 'profissionais' },
-  pr_clt:           { id: 'pr_clt', label: 'CLT', perm: 'profissionais' },
   pr_entrevista:    { id: 'pr_entrevista', label: 'FICHA PARA ENTREVISTA', perm: 'profissionais' },
   pr_contratacao:   { id: 'pr_contratacao', label: 'PROCESSO DE CONTRATAÇÃO', perm: 'profissionais' },
   pr_materiais:     { id: 'pr_materiais', label: 'MATERIAIS PARA TRABALHO', perm: 'profissionais' },
@@ -121,6 +120,12 @@ export const CATALOGO: Record<string, Ferramenta> = {
   pr_certificados:  { id: 'pr_certificados', label: 'CERTIFICADOS', perm: 'profissionais' },
   pr_carreira:      { id: 'pr_carreira', label: 'PLANO DE CARREIRA', perm: 'profissionais' },
   pr_descricao:     { id: 'pr_descricao', label: 'DESCRIÇÃO DE CARGO', perm: 'profissionais' },
+  // PJ e CLT separados, para não misturar os dois regimes
+  pj_cnpj:         { id: 'pj_cnpj',         label: 'PJ · CNPJ DOS PROFISSIONAIS',   perm: 'profissionais' },
+  pj_contratacao:  { id: 'pj_contratacao',  label: 'PJ · PROCESSO DE CONTRATAÇÃO',  perm: 'profissionais' },
+  pj_desligamento: { id: 'pj_desligamento', label: 'PJ · PROCESSO DE DESLIGAMENTO', perm: 'profissionais' },
+  clt_profs:       { id: 'clt_profs',       label: 'CLT · PROFISSIONAIS (FÉRIAS)',  perm: 'profissionais' },
+  clt_contratacao: { id: 'clt_contratacao', label: 'CLT · PROCESSO DE CONTRATAÇÃO', perm: 'profissionais' },
 }
 
 // Quais ferramentas pertencem a cada setor. A chave é o nome do setor
@@ -129,13 +134,13 @@ export const FERRAMENTAS_POR_SETOR: { chave: string[]; itens: string[] }[] = [
   { chave: ['RECEPCAO'], itens: ['ck_abertura', 'ck_intermediario', 'ck_fechamento', 'lista_realinhamento', 'lista_corte', 'lista_mechas', 'lista_pigmentacao', 'bebidas', 'valores_pacotes', 'arquivos_envio'] },
   { chave: ['DOSAGEM'], itens: ['ck_dosagem', 'produtos', 'servinterno', 'servicos_valores', 'tratamentos', 'esterilizacao_fluxo', 'kits', 'enxovais'] },
   { chave: ['COMPRAS', 'ESTOQUE'], itens: ['pr_materiais', 'tabela_precos', 'cadastrar_produto'] },
-  { chave: ['ADMINISTRATIVO'], itens: ['pr_cnpj', 'etiquetas', 'escala', 'feriados', 'ata', 'senhas', 'telefones', 'calendario', 'auditoria'] },
+  { chave: ['ADMINISTRATIVO'], itens: ['etiquetas', 'escala', 'feriados', 'ata', 'senhas', 'telefones', 'calendario', 'auditoria'] },
   { chave: ['FINANCEIRO'], itens: ['pr_abertura', 'desconto_profissional', 'correios'] },
   { chave: ['GERENCIA', 'GERENTE'], itens: ['ck_gerente', 'corrida_interna'] },
   { chave: ['PROCESSO', 'QUALIDADE'], itens: ['pr_ranking', 'ck_padrao', 'pop_cafe', 'pop_salao', 'checkprocon', 'pop_recepcao', 'pop_manicure', 'pop_cabelereiro'] },
   { chave: ['MARKETING'], itens: ['calendario_mkt'] },
   { chave: ['COMERCIAL', 'VENDAS'], itens: ['lojistas'] },
-  { chave: ['RH', 'GESTAO DE PESSOAS', 'RECURSOS HUMANOS'], itens: ['pr_lista', 'pr_cadastrar', 'pr_solicitacao', 'pr_acesso', 'pr_categorias', 'pr_clt', 'pr_entrevista', 'pr_contratacao', 'pr_perfil', 'pr_distrato', 'pr_contrato', 'pr_conduta', 'pr_certificados', 'pr_carreira', 'pr_descricao'] },
+  { chave: ['RH', 'GESTAO DE PESSOAS', 'RECURSOS HUMANOS'], itens: ['pr_lista', 'pr_cadastrar', 'pj_cnpj', 'pj_contratacao', 'pj_desligamento', 'clt_profs', 'clt_contratacao', 'pr_solicitacao', 'pr_acesso', 'pr_categorias', 'pr_entrevista', 'pr_contratacao', 'pr_perfil', 'pr_distrato', 'pr_contrato', 'pr_conduta', 'pr_certificados', 'pr_carreira', 'pr_descricao'] },
   { chave: ['SERVICOS GERAIS', 'LIMPEZA'], itens: ['ck_manutencao'] },
   { chave: ['COORDENADOR', 'COORDENACAO'], itens: ['pr_horarios', 'ck_coordenado'] },
 ]
@@ -178,6 +183,7 @@ export function ConteudoFerramenta({ id, profsSalao, abaPop = 'cafe' }: { id: st
     case 'telefones':           return <ListaTelefones key="telefones" />
     case 'desconto_profissional': return <GridEditavel key="descprof" chave="desconto_profissional" defaultDoc={D_DESC_PROF} landscape />
     case 'corrida_interna':     return <GridEditavel key="corrida" chave="corrida_interna" defaultDoc={D_CORRIDA} landscape />
+    case 'correios':            return <GridEditavel key="correios" chave="correios" defaultDoc={D_CORREIOS} landscape />
     case 'checkprocon':         return <CheckProconPainel key="checkprocon" />
     case 'ck_abertura':         return <ChecklistPainel key="ck_abertura" categoriaFixa="Abertura" embutido />
     case 'ck_intermediario':    return <ChecklistPainel key="ck_intermediario" categoriaFixa="Intermediário" embutido />
@@ -194,8 +200,11 @@ export function ConteudoFerramenta({ id, profsSalao, abaPop = 'cafe' }: { id: st
     case 'pr_ranking':            return <ProfissionaisPainel key="pr_ranking" secaoFixa="ranking" embutido />
     case 'pr_categorias':         return <ProfissionaisPainel key="pr_categorias" secaoFixa="categorias" embutido />
     case 'pr_abertura':           return <ProfissionaisPainel key="pr_abertura" secaoFixa="abertura" embutido />
-    case 'pr_cnpj':               return <ProfissionaisPainel key="pr_cnpj" secaoFixa="cnpj" embutido />
-    case 'pr_clt':                return <ProfissionaisPainel key="pr_clt" secaoFixa="clt" embutido />
+    case 'pj_cnpj':               return <ProfissionaisPainel key="pj_cnpj" secaoFixa="cnpj" subFixa="cnpj" embutido />
+    case 'pj_contratacao':        return <ProfissionaisPainel key="pj_contratacao" secaoFixa="cnpj" subFixa="contratacao" embutido />
+    case 'pj_desligamento':       return <ProfissionaisPainel key="pj_desligamento" secaoFixa="cnpj" subFixa="desligamento" embutido />
+    case 'clt_profs':             return <ProfissionaisPainel key="clt_profs" secaoFixa="clt" subFixa="clt" embutido />
+    case 'clt_contratacao':       return <ProfissionaisPainel key="clt_contratacao" secaoFixa="clt" subFixa="processo" embutido />
     case 'pr_entrevista':         return <ProfissionaisPainel key="pr_entrevista" secaoFixa="entrevista" embutido />
     case 'pr_contratacao':        return <ProfissionaisPainel key="pr_contratacao" secaoFixa="contratacao" embutido />
     case 'pr_materiais':          return <ProfissionaisPainel key="pr_materiais" secaoFixa="materiais" embutido />
