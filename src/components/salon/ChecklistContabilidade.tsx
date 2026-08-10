@@ -96,7 +96,16 @@ const vazio = (): Doc => ({
 function normalizar(d: any): Doc | null {
   if (!d || typeof d !== 'object') return null
   if (Array.isArray(d.grupos)) return { grupos: d.grupos, marcados: d.marcados || {} }
-  if (Array.isArray(d.itens)) return { grupos: [{ id: rid(), titulo: 'GERAL', itens: d.itens }], marcados: d.marcados || {} }
+  if (Array.isArray(d.itens)) {
+    const marcados = d.marcados || {}
+    const temMarca = Object.values(marcados).some((m: any) => m && Object.values(m).some(Boolean))
+    // Lista antiga sem nada marcado: era só o rascunho inicial, entra o padrão
+    // novo. Se já tinha marcação, a lista antiga vira uma categoria à parte para
+    // não perder o histórico, e as categorias novas entram junto.
+    const base = vazio()
+    if (!temMarca) return { ...base, marcados }
+    return { grupos: [{ id: rid(), titulo: 'LISTA ANTERIOR', itens: d.itens }, ...base.grupos], marcados }
+  }
   return null
 }
 
