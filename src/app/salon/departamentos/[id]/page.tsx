@@ -7,7 +7,8 @@ import BoletosFinanceiro from '@/components/salon/BoletosFinanceiro'
 import ComportamentoProfissional from '@/components/salon/ComportamentoProfissional'
 import { ferramentasDoSetor, ConteudoFerramenta } from '@/components/salon/ferramentasSetor'
 import { listarPopsDoConteudo, type PopDeConteudo } from '@/components/salon/ConteudoPopPainel'
-import { demandasDoSetor } from '@/components/salon/demandasSetor'
+import { demandasDoSetor, slugDemanda } from '@/components/salon/demandasSetor'
+import DocEditavel from '@/components/salon/DocEditavel'
 import { useIsMobile } from '@/lib/useIsMobile'
 
 interface Prof { id: string; nome_completo: string; apelido?: string; cargo?: string; ativo?: boolean; is_departamento?: boolean; departamento_cor?: string; telefone?: string; contato_responsavel?: string }
@@ -140,7 +141,6 @@ export default function DepartamentoPage() {
   const demandasSetor = useMemo(
     () => demandasDoSetor(dep?.nome_completo || '', ferramentas.map(f => f.label)),
     [dep?.nome_completo, ferramentas])
-  const [demandasAbertas, setDemandasAbertas] = useState(false)
 
   const TITULO_GRUPO: Record<string, string> = {
     CLT: '👤 CLT — PROFISSIONAIS',
@@ -390,6 +390,19 @@ export default function DepartamentoPage() {
               )
             })}
 
+            {/* Demandas do setor: botões iguais aos demais; abrem uma folha de
+                trabalho própria (anotações/registro) aqui dentro. */}
+            {demandasSetor.map(d => {
+              const idDem = `demanda:${slugDemanda(d)}`
+              const at = ferramentaAberta === idDem
+              return (
+                <button key={idDem} onClick={() => setFerramentaAberta(idDem)}
+                  style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 10px', border: 'none', borderRadius: 8, background: at ? '#f0eefb' : 'transparent', color: at ? '#5b4fcf' : '#4b5563', fontSize: 11.5, fontWeight: at ? 900 : 700, letterSpacing: '.3px', cursor: 'pointer', borderLeft: at ? '3px solid #5b4fcf' : '3px solid transparent' }}>
+                  {d.toUpperCase()}
+                </button>
+              )
+            })}
+
             {/* GRUPOS (ex.: CLT e CNPJ): clicar abre/fecha os itens do grupo */}
             {gruposFerramentas.map(([nomeGrupo, itensGrupo]) => {
               const aberto = grupoAberto === nomeGrupo
@@ -417,23 +430,6 @@ export default function DepartamentoPage() {
                 </div>
               )
             })}
-            {/* DEMANDAS DO SETOR — o que este setor responde por */}
-            {demandasSetor.length > 0 && (
-              <div style={{ marginTop: 6 }}>
-                <button onClick={() => setDemandasAbertas(v => !v)}
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, width: '100%', textAlign: 'left', padding: '8px 10px', border: 'none', borderRadius: 8, background: demandasAbertas ? '#f5f4f0' : 'transparent', color: '#374151', fontSize: 11, fontWeight: 900, letterSpacing: '.3px', cursor: 'pointer' }}>
-                  <span>📋 DEMANDAS DO SETOR ({demandasSetor.length})</span>
-                  <span style={{ fontSize: 10, color: '#9ca3af', transform: demandasAbertas ? 'rotate(180deg)' : 'none' }}>▼</span>
-                </button>
-                {demandasAbertas && (
-                  <div style={{ marginLeft: 8, paddingLeft: 8, borderLeft: '1px solid #e8e6e0' }}>
-                    {demandasSetor.map((d, i) => (
-                      <div key={i} style={{ padding: '5px 9px', fontSize: 10.5, color: '#6b7280', lineHeight: 1.45 }}>• {d}</div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
           </aside>
         )}
 
@@ -494,6 +490,12 @@ export default function DepartamentoPage() {
         {/* Ferramenta aberta: mostra o mesmo conteúdo do Salão Administrativo */}
         {ferramentaAberta ? (
           <>
+            {ferramentaAberta.startsWith('demanda:') && (() => {
+              const slug = ferramentaAberta.slice('demanda:'.length)
+              const titulo = demandasSetor.find(d => slugDemanda(d) === slug) || 'Demanda'
+              return <DocEditavel key={ferramentaAberta} chave={`demanda_${slug}`} tituloPadrao={titulo.toUpperCase()}
+                blocosPadrao={[{ titulo: 'Como fazer', corpo: '' }, { titulo: 'Registro / andamento', corpo: '' }]} comData />
+            })()}
             <ConteudoFerramenta id={ferramentaAberta} profsSalao={profsParaListas} abaPop={abaPopSetor} />
           </>
         ) : (<>

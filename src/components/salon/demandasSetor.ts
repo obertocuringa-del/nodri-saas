@@ -171,3 +171,8 @@ export function demandasDoSetor(nomeSetor: string, rotulosJaNaSidebar: string[] 
   const jaTem = new Set(rotulosJaNaSidebar.map(r => norm(r.replace(/^(PJ|CLT)\s*/, ''))))
   return grupo.demandas.filter(d => !jaTem.has(norm(d)))
 }
+
+/** Identificador estável da demanda (vira a chave onde a folha é salva). */
+export function slugDemanda(nome: string): string {
+  return norm(nome).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 60)
+}
