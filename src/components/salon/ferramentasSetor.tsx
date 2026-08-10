@@ -29,6 +29,7 @@ import Etiquetas from '@/components/salon/Etiquetas'
 import ListaServico from '@/components/salon/ListaServico'
 import CheckProconPainel from '@/components/salon/CheckProconPainel'
 import ConteudoPopPainel from '@/components/salon/ConteudoPopPainel'
+import ChecklistPainel from '@/components/salon/ChecklistPainel'
 import { CAFE_BLOCOS, POP_SALAO_BLOCOS } from '@/components/salon/popDefaults'
 
 export interface ProfSalao { id: string; nome: string; telefone: string }
@@ -90,14 +91,14 @@ export const CATALOGO: Record<string, Ferramenta> = {
   pop_manicure:    { id: 'pop_manicure',    label: 'PROCESSOS — MANICURE',     perm: 'adm_pop', conteudoSlug: 'manicure' },
   pop_cabelereiro: { id: 'pop_cabelereiro', label: 'PROCESSOS — CABELEIREIRO', perm: 'adm_pop', conteudoSlug: 'cabelereiro' },
   // Check List — cada categoria abre a lista já na aba certa
-  ck_abertura:     { id: 'ck_abertura',     label: 'CHECK LIST — ABERTURA',       perm: 'checklist', rota: '/salon/checklist?cat=Abertura' },
-  ck_intermediario:{ id: 'ck_intermediario',label: 'CHECK LIST — INTERMEDIÁRIO',  perm: 'checklist', rota: '/salon/checklist?cat=Intermedi%C3%A1rio' },
-  ck_fechamento:   { id: 'ck_fechamento',   label: 'CHECK LIST — FECHAMENTO',     perm: 'checklist', rota: '/salon/checklist?cat=Fechamento' },
-  ck_manutencao:   { id: 'ck_manutencao',   label: 'CHECK LIST — MANUTENÇÃO / LIMPEZA', perm: 'checklist', rota: '/salon/checklist?cat=Manuten%C3%A7%C3%A3o%20%2F%20Limpeza' },
-  ck_dosagem:      { id: 'ck_dosagem',      label: 'CHECK LIST — DOSAGEM',        perm: 'checklist', rota: '/salon/checklist?cat=Dosagem' },
-  ck_gerente:      { id: 'ck_gerente',      label: 'CHECK LIST — GERENTE',        perm: 'checklist', rota: '/salon/checklist?cat=Gerente' },
-  ck_coordenado:   { id: 'ck_coordenado',   label: 'CHECK LIST — COORDENADO',     perm: 'checklist', rota: '/salon/checklist?cat=Coordenado' },
-  ck_padrao:       { id: 'ck_padrao',       label: 'CHECK LIST — PADRÃO DE ATENDIMENTO', perm: 'checklist', rota: '/salon/checklist?cat=Padr%C3%A3o%20de%20Atendimento' },
+  ck_abertura:     { id: 'ck_abertura',     label: 'CHECK LIST — ABERTURA',       perm: 'checklist' },
+  ck_intermediario:{ id: 'ck_intermediario',label: 'CHECK LIST — INTERMEDIÁRIO',  perm: 'checklist' },
+  ck_fechamento:   { id: 'ck_fechamento',   label: 'CHECK LIST — FECHAMENTO',     perm: 'checklist' },
+  ck_manutencao:   { id: 'ck_manutencao',   label: 'CHECK LIST — MANUTENÇÃO / LIMPEZA', perm: 'checklist' },
+  ck_dosagem:      { id: 'ck_dosagem',      label: 'CHECK LIST — DOSAGEM',        perm: 'checklist' },
+  ck_gerente:      { id: 'ck_gerente',      label: 'CHECK LIST — GERENTE',        perm: 'checklist' },
+  ck_coordenado:   { id: 'ck_coordenado',   label: 'CHECK LIST — COORDENADO',     perm: 'checklist' },
+  ck_padrao:       { id: 'ck_padrao',       label: 'CHECK LIST — PADRÃO DE ATENDIMENTO', perm: 'checklist' },
 }
 
 // Quais ferramentas pertencem a cada setor. A chave é o nome do setor
@@ -155,6 +156,14 @@ export function ConteudoFerramenta({ id, profsSalao, abaPop = 'cafe' }: { id: st
     case 'desconto_profissional': return <GridEditavel key="descprof" chave="desconto_profissional" defaultDoc={D_DESC_PROF} landscape />
     case 'corrida_interna':     return <GridEditavel key="corrida" chave="corrida_interna" defaultDoc={D_CORRIDA} landscape />
     case 'checkprocon':         return <CheckProconPainel key="checkprocon" />
+    case 'ck_abertura':         return <ChecklistPainel key="ck_abertura" categoriaFixa="Abertura" embutido />
+    case 'ck_intermediario':    return <ChecklistPainel key="ck_intermediario" categoriaFixa="Intermediário" embutido />
+    case 'ck_fechamento':       return <ChecklistPainel key="ck_fechamento" categoriaFixa="Fechamento" embutido />
+    case 'ck_manutencao':       return <ChecklistPainel key="ck_manutencao" categoriaFixa="Manutenção / Limpeza" embutido />
+    case 'ck_dosagem':          return <ChecklistPainel key="ck_dosagem" categoriaFixa="Dosagem" embutido />
+    case 'ck_gerente':          return <ChecklistPainel key="ck_gerente" categoriaFixa="Gerente" embutido />
+    case 'ck_coordenado':       return <ChecklistPainel key="ck_coordenado" categoriaFixa="Coordenado" embutido />
+    case 'ck_padrao':           return <ChecklistPainel key="ck_padrao" categoriaFixa="Padrão de Atendimento" embutido />
     case 'pop_cafe':            return <DocEditavel key="pop_cafe" chave="pop_cafe" tituloPadrao="PREPARO DE SERVIÇOS — CAFÉ" blocosPadrao={CAFE_BLOCOS} />
     case 'pop_salao':           return <DocEditavel key="pop_salao" chave="pop_salao" tituloPadrao="POP — PROCEDIMENTO DE OPERAÇÃO PADRÃO" blocosPadrao={POP_SALAO_BLOCOS} comData />
     default:
