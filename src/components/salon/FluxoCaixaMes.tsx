@@ -9,33 +9,39 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Loader2, ExternalLink, Printer } from 'lucide-react'
 import GradeMeses from './GradeMeses'
-import { MESES, MESES_CURTO, anosDisponiveis, moeda, num, resumoDoMes } from '@/lib/calcFinanceiro'
+import { MESES, MESES_CURTO, anosDisponiveis, moeda, num, realPorMes, resumoDoMes } from '@/lib/calcFinanceiro'
 
 interface Registro { ano: number; mes: number; dados: any }
 
 export default function FluxoCaixaMes() {
   const hoje = new Date()
   const [historico, setHistorico] = useState<Registro[]>([])
+  const [rel, setRel] = useState<any>(null)
   const [carregando, setCarregando] = useState(true)
   const [ano, setAno] = useState(hoje.getFullYear())
   const [mes, setMes] = useState(hoje.getMonth() + 1)
 
   useEffect(() => {
-    fetch('/api/salon/calculadora', { credentials: 'include' })
-      .then(r => r.ok ? r.json() : null)
-      .then(d => setHistorico(Array.isArray(d?.historico) ? d.historico : []))
-      .catch(() => setHistorico([]))
-      .finally(() => setCarregando(false))
+    Promise.all([
+      fetch('/api/salon/calculadora', { credentials: 'include' }).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('/api/relatorios', { credentials: 'include' }).then(r => r.ok ? r.json() : null).catch(() => null),
+    ]).then(([calc, relatorios]) => {
+      setHistorico(Array.isArray(calc?.historico) ? calc.historico : [])
+      setRel(relatorios)
+    }).finally(() => setCarregando(false))
   }, [])
 
+  const real = useMemo(() => realPorMes(rel), [rel])
   const registro = (a: number, m: number) => historico.find(h => Number(h.ano) === a && Number(h.mes) === m)
 
   // Caixa de cada mês do ano: o que entrou, o que saiu e o que sobrou.
+  // Só conta como realizado o mês que tem faturamento vindo do avec — o campo
+  // da Calculadora é média mensal e inflaria a projeção.
   const linhas = useMemo(() => MESES.map((nome, i) => {
-    const r = resumoDoMes(registro(ano, i + 1)?.dados)
+    const r = resumoDoMes(registro(ano, i + 1)?.dados, real.get(`${ano}-${i + 1}`))
     const saidas = r.diretas + r.indiretas + r.provisao + r.outras
-    return { mes: i + 1, nome, entradas: r.faturamento, saidas, saldo: r.faturamento - saidas, realizado: r.temDados, r }
-  }), [historico, ano])
+    return { mes: i + 1, nome, entradas: r.faturamento, saidas, saldo: r.faturamento - saidas, realizado: r.faturamentoReal, r }
+  }), [historico, real, ano])
 
   // Média do que já aconteceu no ano — é a base da projeção.
   const realizados = linhas.filter(l => l.realizado && l.entradas > 0)
@@ -84,9 +90,9 @@ export default function FluxoCaixaMes() {
       <GradeMeses
         titulo="Fluxo de caixa"
         subtitulo={realizados.length
-          ? `Meses sem lançamento são projetados pela média de ${realizados.length} ${realizados.length === 1 ? 'mês realizado' : 'meses realizados'}.`
-          : 'Preencha um mês na Calculadora para o fluxo começar a projetar.'}
-        ano={ano} anos={anosDisponiveis(historico)} onAno={setAno}
+          ? `Entradas e comissões do avec. Meses sem relatório são projetados pela média de ${realizados.length} ${realizados.length === 1 ? 'mês realizado' : 'meses realizados'}.`
+          : 'Importe o relatório de um mês em Relatórios para o fluxo começar a projetar.'}
+        ano={ano} anos={anosDisponiveis(historico, real)} onAno={setAno}
         mesSel={mes} onMes={setMes}
         info={m => {
           const l = projecao[m - 1]

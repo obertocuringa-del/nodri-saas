@@ -9,27 +9,32 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Loader2, ExternalLink, AlertTriangle, CheckCircle2 } from 'lucide-react'
 import GradeMeses from './GradeMeses'
-import { MESES, anosDisponiveis, moeda, pct, resumoDoMes } from '@/lib/calcFinanceiro'
+import { MESES, anosDisponiveis, moeda, pct, realPorMes, resumoDoMes } from '@/lib/calcFinanceiro'
 
 interface Registro { ano: number; mes: number; dados: any }
 
 export default function PontoEquilibrioMes() {
   const hoje = new Date()
   const [historico, setHistorico] = useState<Registro[]>([])
+  const [rel, setRel] = useState<any>(null)
   const [carregando, setCarregando] = useState(true)
   const [ano, setAno] = useState(hoje.getFullYear())
   const [mes, setMes] = useState(hoje.getMonth() + 1)
 
   useEffect(() => {
-    fetch('/api/salon/calculadora', { credentials: 'include' })
-      .then(r => r.ok ? r.json() : null)
-      .then(d => setHistorico(Array.isArray(d?.historico) ? d.historico : []))
-      .catch(() => setHistorico([]))
-      .finally(() => setCarregando(false))
+    Promise.all([
+      fetch('/api/salon/calculadora', { credentials: 'include' }).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('/api/relatorios', { credentials: 'include' }).then(r => r.ok ? r.json() : null).catch(() => null),
+    ]).then(([calc, relatorios]) => {
+      setHistorico(Array.isArray(calc?.historico) ? calc.historico : [])
+      setRel(relatorios)
+    }).finally(() => setCarregando(false))
   }, [])
 
+  const real = useMemo(() => realPorMes(rel), [rel])
   const doMes = useMemo(() => (a: number, m: number) =>
-    resumoDoMes(historico.find(h => Number(h.ano) === a && Number(h.mes) === m)?.dados), [historico])
+    resumoDoMes(historico.find(h => Number(h.ano) === a && Number(h.mes) === m)?.dados, real.get(`${a}-${m}`)),
+    [historico, real])
 
   const r = doMes(ano, mes)
   const atingido = r.pe > 0 ? r.faturamento / r.pe : 0
@@ -57,7 +62,7 @@ export default function PontoEquilibrioMes() {
       <GradeMeses
         titulo="Ponto de Equilíbrio"
         subtitulo="Quanto o salão precisa faturar para não ter prejuízo, mês a mês."
-        ano={ano} anos={anosDisponiveis(historico)} onAno={setAno}
+        ano={ano} anos={anosDisponiveis(historico, real)} onAno={setAno}
         mesSel={mes} onMes={setMes}
         info={m => {
           const x = doMes(ano, m)

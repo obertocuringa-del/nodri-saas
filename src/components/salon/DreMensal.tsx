@@ -9,29 +9,33 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Loader2, Printer, ExternalLink, TrendingUp, TrendingDown } from 'lucide-react'
 import GradeMeses from './GradeMeses'
-import { MESES, anosDisponiveis, moeda, pct, resumoDoMes, type ResumoMes } from '@/lib/calcFinanceiro'
+import { MESES, anosDisponiveis, moeda, pct, realPorMes, resumoDoMes, type ResumoMes } from '@/lib/calcFinanceiro'
 
 interface Registro { ano: number; mes: number; dados: any }
 
 export default function DreMensal() {
   const hoje = new Date()
   const [historico, setHistorico] = useState<Registro[]>([])
+  const [rel, setRel] = useState<any>(null)
   const [carregando, setCarregando] = useState(true)
   const [ano, setAno] = useState(hoje.getFullYear())
   const [mes, setMes] = useState(hoje.getMonth() + 1)
 
   useEffect(() => {
-    fetch('/api/salon/calculadora', { credentials: 'include' })
-      .then(r => r.ok ? r.json() : null)
-      .then(d => setHistorico(Array.isArray(d?.historico) ? d.historico : []))
-      .catch(() => setHistorico([]))
-      .finally(() => setCarregando(false))
+    Promise.all([
+      fetch('/api/salon/calculadora', { credentials: 'include' }).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('/api/relatorios', { credentials: 'include' }).then(r => r.ok ? r.json() : null).catch(() => null),
+    ]).then(([calc, relatorios]) => {
+      setHistorico(Array.isArray(calc?.historico) ? calc.historico : [])
+      setRel(relatorios)
+    }).finally(() => setCarregando(false))
   }, [])
 
+  const real = useMemo(() => realPorMes(rel), [rel])
   const doMes = useMemo(() => {
     const busca = (a: number, m: number) => historico.find(h => Number(h.ano) === a && Number(h.mes) === m)
-    return (a: number, m: number) => resumoDoMes(busca(a, m)?.dados)
-  }, [historico])
+    return (a: number, m: number) => resumoDoMes(busca(a, m)?.dados, real.get(`${a}-${m}`))
+  }, [historico, real])
 
   const r = doMes(ano, mes)
   const ant = mes === 1 ? doMes(ano - 1, 12) : doMes(ano, mes - 1)
@@ -83,8 +87,8 @@ export default function DreMensal() {
     <div>
       <GradeMeses
         titulo="DRE — Resultado do mês"
-        subtitulo="Vem da Calculadora, com as mesmas fórmulas dela. Clique no mês para ver."
-        ano={ano} anos={anosDisponiveis(historico)} onAno={setAno}
+        subtitulo="Faturamento e comissões vêm do relatório do avec; as despesas, da Calculadora."
+        ano={ano} anos={anosDisponiveis(historico, real)} onAno={setAno}
         mesSel={mes} onMes={setMes}
         info={m => {
           const x = doMes(ano, m)
@@ -114,6 +118,19 @@ export default function DreMensal() {
         </p>
       ) : (
         <>
+          {/* De onde veio o faturamento: o da Calculadora é média/projeção, e
+              o do avec pode estar no meio do mês. Deixar isso na cara evita ler
+              um número parcial como se fosse o resultado fechado. */}
+          <div style={{
+            background: r.faturamentoReal ? '#f7f6fd' : '#fff7ed',
+            border: `1px solid ${r.faturamentoReal ? '#e0ddd8' : '#fed7aa'}`,
+            borderRadius: 10, padding: '8px 12px', marginBottom: 10, fontSize: 12, color: '#4b5563', fontWeight: 600,
+          }}>
+            {r.faturamentoReal
+              ? <>Faturamento do relatório do avec{r.diasImportados > 0 && <> · <b>{r.diasImportados} {r.diasImportados === 1 ? 'dia importado' : 'dias importados'}</b>{r.diasImportados < new Date(ano, mes, 0).getDate() && <span style={{ color: '#b45309' }}> — mês ainda não fechado</span>}</>}</>
+              : <>Sem relatório do avec importado para {MESES[mes - 1]}/{ano}: o valor abaixo é a <b>média digitada na Calculadora</b>, não o faturamento realizado.</>}
+          </div>
+
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
             {[
               { l: 'Faturamento', v: moeda(r.faturamento), c: '#0891b2' },
@@ -141,7 +158,8 @@ export default function DreMensal() {
               </thead>
               <tbody>
                 <Linha rotulo="FATURAMENTO" campo="faturamento" tipo="titulo" />
-                <Linha rotulo="Custos diretos (imposto, produto, rateio, cartão)" campo="diretas" sinal="−" />
+                <Linha rotulo="Profissionais (comissões do mês)" campo="profissionais" sinal="−" />
+                <Linha rotulo="Outros custos diretos (imposto, produto, rateio, cartão)" campo="diretasOutras" sinal="−" />
                 <Linha rotulo="= MARGEM OPERACIONAL" campo="margemR" tipo="titulo" />
                 <Linha rotulo="Despesas indiretas (fixas)" campo="indiretas" sinal="−" />
                 <Linha rotulo="Provisão (13º, férias, FGTS)" campo="provisao" sinal="−" />
