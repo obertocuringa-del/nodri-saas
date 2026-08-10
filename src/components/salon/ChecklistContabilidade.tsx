@@ -87,6 +87,7 @@ interface Doc {
 }
 
 const rid = () => Math.random().toString(36).slice(2, 9)
+const moeda = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
 // Mesma regra da tela Guias MEI (CNPJ dos Profissionais): fora dela ficam as
 // categorias administrativas, a recepção e quem é CLT.
@@ -139,8 +140,46 @@ export default function ChecklistContabilidade() {
       .catch(() => { })
   }, [])
 
+  // Histórico da Calculadora, para o item do relatório de despesas indiretas.
+  const [historico, setHistorico] = useState<any[]>([])
+  useEffect(() => {
+    fetch('/api/salon/calculadora', { credentials: 'include' })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => setHistorico(Array.isArray(d?.historico) ? d.historico : []))
+      .catch(() => { })
+  }, [])
+
   /** O item pede a lista de profissionais ativos com CNPJ? */
   const ehRelacaoProfissionais = (t: string) => /cnpj/i.test(t) && /ativ/i.test(t)
+  /** O item pede o relatório de despesas indiretas do mês? */
+  const ehDespesasIndiretas = (t: string) => /despesa/i.test(t) && /indireta/i.test(t)
+
+  function enviarDespesasIndiretas(mes: number) {
+    const reg = historico.find(h => Number(h.ano) === ano && Number(h.mes) === mes)
+    if (!reg) { alert(`A Calculadora não tem ${MESES[mes - 1]}/${ano} preenchido.`); return }
+    const val = (v: any) => parseFloat(String(v ?? '0').replace(',', '.')) || 0
+    const fixas = (reg.dados?.despInd || []).map((d: any) => ({ nome: String(d.nome || '').trim(), valor: val(d.valor), parcela: String(d.parcela || '').trim() }))
+    const outras = (reg.dados?.extrasDespInd || []).map((d: any) => ({ nome: String(d.nome || '').trim(), valor: val(d.valor), parcela: String(d.parcela || '').trim() }))
+    const comValor = (l: any[]) => l.filter(d => d.valor > 0)
+    const semValor = fixas.length + outras.length - comValor(fixas).length - comValor(outras).length
+    const total = [...comValor(fixas), ...comValor(outras)].reduce((s, d) => s + d.valor, 0)
+    if (!total) { alert(`Nenhuma despesa indireta lançada em ${MESES[mes - 1]}/${ano}.`); return }
+
+    const linha = '━━━━━━━━━━━━━━━'
+    const bloco = (titulo: string, l: any[]) => comValor(l).length
+      ? [`*${titulo}*`, ...comValor(l).map(d => `• ${d.nome}${d.parcela ? ` (${d.parcela})` : ''} — *${moeda(d.valor)}*`)].join('\n')
+      : ''
+    const texto = [
+      `*DESPESAS INDIRETAS — ${MESES[mes - 1].toUpperCase()} / ${ano}*`,
+      linha,
+      bloco('FIXAS', fixas),
+      bloco('OUTRAS', outras),
+      linha,
+      `*TOTAL: ${moeda(total)}*`,
+      `_${comValor(fixas).length + comValor(outras).length} lançamentos${semValor ? ` • ${semValor} ${semValor === 1 ? 'item sem valor' : 'itens sem valor'} neste mês` : ''}_`,
+    ].filter(Boolean).join('\n')
+    window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank', 'noopener')
+  }
 
   function enviarRelacaoProfissionais() {
     if (!profs.length) { alert('Nenhum profissional PJ ativo encontrado.'); return }
@@ -274,6 +313,12 @@ export default function ChecklistContabilidade() {
                       style={{ width: 16, height: 16, accentColor: '#16a34a', cursor: 'pointer', flexShrink: 0 }} />
                     <input value={item.texto} onChange={e => mudarItem(g.id, item.id, e.target.value)} placeholder="Descreva o item…"
                       style={{ flex: 1, border: 'none', outline: 'none', fontSize: 13, color: on ? '#15803d' : '#374151', fontWeight: on ? 700 : 500, textDecoration: on ? 'line-through' : 'none', background: 'transparent' }} />
+                    {ehDespesasIndiretas(item.texto) && (
+                      <button onClick={() => enviarDespesasIndiretas(mesAberto)} title="Enviar as despesas indiretas lançadas neste mês no WhatsApp"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, border: 'none', borderRadius: 7, background: '#25d366', color: '#fff', fontSize: 10.5, fontWeight: 800, padding: '4px 9px', cursor: 'pointer', flexShrink: 0 }}>
+                        <MessageCircle size={12} /> Enviar
+                      </button>
+                    )}
                     {ehRelacaoProfissionais(item.texto) && (
                       <button onClick={enviarRelacaoProfissionais} title="Enviar a relação dos profissionais ativos no WhatsApp"
                         style={{ display: 'inline-flex', alignItems: 'center', gap: 4, border: 'none', borderRadius: 7, background: '#25d366', color: '#fff', fontSize: 10.5, fontWeight: 800, padding: '4px 9px', cursor: 'pointer', flexShrink: 0 }}>
