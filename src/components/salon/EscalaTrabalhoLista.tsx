@@ -24,6 +24,17 @@ const rid = () => Math.random().toString(36).slice(2, 9)
 function mesAtual() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` }
 function fmtBRL(n: number) { return n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }
 const nomeDe = (p: Profissional) => p.apelido || p.nome_completo || '—'
+
+/** PIX do cadastro do profissional: titular + chave, ou os dados bancários. */
+function pixDoCadastro(p: any): string {
+  const chave = String(p?.chave_pix || '').trim()
+  const conta = String(p?.conta_bancaria || '').trim()
+  if (chave) {
+    const titular = String(p?.nome_completo || '').trim()
+    return titular ? `${titular} / ${chave}` : chave
+  }
+  return conta
+}
 function parseFolgas(habilidades?: string): string[] {
   try { return JSON.parse(habilidades || '{}').dias_folga || [] } catch { return [] }
 }
@@ -228,7 +239,9 @@ export default function EscalaTrabalhoLista({ chave = 'escala', blocos = 'tudo' 
       const cltAuto = cltProfs.map(p => {
         const nome = nomeDe(p)
         const ex = salvoClt.find(r => mesmoNome(r.nome, nome))
-        return ex ? { ...ex, nome, manual: false } : { id: rid(), nome, qtdDias: '', passagem: padrao.passagemClt, pix: p.conta_bancaria || '' }
+        // PIX vem do cadastro; o que já foi digitado na linha continua mandando.
+        const pix = pixDoCadastro(p)
+        return ex ? { ...ex, nome, manual: false, pix: String(ex.pix || '').trim() || pix } : { id: rid(), nome, qtdDias: '', passagem: padrao.passagemClt, pix }
       })
       const cltManual = salvoClt.filter(r => r.manual && !cltProfs.some(p => mesmoNome(nomeDe(p), r.nome)))
       setCltRows([...cltAuto, ...cltManual])
@@ -242,7 +255,8 @@ export default function EscalaTrabalhoLista({ chave = 'escala', blocos = 'tudo' 
       const pjAuto = pjProfs.map(p => {
         const nome = nomeDe(p)
         const ex = salvoPj.find(r => mesmoNome(r.nome, nome))
-        return ex ? { ...ex, nome, dataAdmissao: p.data_admissao || '', manual: false } : { id: rid(), nome, qtdDias: '', passagem: padrao.passagemPj, pix: p.conta_bancaria || '', dataAdmissao: p.data_admissao || '' }
+        const pix = pixDoCadastro(p)
+        return ex ? { ...ex, nome, dataAdmissao: p.data_admissao || '', manual: false, pix: String(ex.pix || '').trim() || pix } : { id: rid(), nome, qtdDias: '', passagem: padrao.passagemPj, pix, dataAdmissao: p.data_admissao || '' }
       })
       const pjManual = salvoPj.filter(r => r.manual && !pjProfs.some(p => mesmoNome(nomeDe(p), r.nome)))
       setPjRows([...pjAuto, ...pjManual])
@@ -356,7 +370,14 @@ export default function EscalaTrabalhoLista({ chave = 'escala', blocos = 'tudo' 
     const linhasPj = pjCalc.map(r => `<tr><td>${esc(r.nome)}</td><td class="c">${r.qtdDias || 0}</td><td class="c">R$ ${fmtBRL(parseBRLNumber(r.passagem))}</td><td class="c">R$ ${fmtBRL(r.total)}</td><td class="c">${r.limite ? (r.diasRestantes !== null && r.diasRestantes < 0 ? `venceu ${esc(fmtDataBR(r.limite))}` : `${esc(fmtDataBR(r.limite))} (${r.diasRestantes}d)`) : '—'}</td><td>${esc(r.pix)}</td></tr>`).join('')
     const cab = logoSalao ? `<img src="${logoSalao}" class="logo"/>` : `<div class="brand">NODRI</div>`
     const css = `@page{size:A4 landscape;margin:12mm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;font-size:11px}.hd{display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid ${COR};padding-bottom:10px;margin-bottom:10px}.logo{max-height:56px;max-width:200px;object-fit:contain}.brand{font-size:22px;font-weight:900;color:${COR}}h1{font-size:16px;margin-bottom:12px;text-transform:uppercase}.secao{break-inside:avoid;page-break-inside:avoid}h2{font-size:12.5px;color:${COR};margin:16px 0 6px;text-transform:uppercase;border-bottom:1.5px solid ${COR};padding-bottom:4px}table{width:100%;border-collapse:collapse;margin-bottom:6px}thead{display:table-header-group}tfoot{display:table-footer-group}tr{break-inside:avoid;page-break-inside:avoid}th,td{border:1px solid #f0ede6;padding:6px 8px;text-align:left}th{background:#f6f4ff;color:${COR};border-bottom:2px solid ${COR};font-size:9.5px;text-transform:uppercase}td.c,th.c{text-align:center}td.fechado{text-align:center;font-weight:800;color:#0891b2;background:#ecfeff}tfoot td{background:#f6f4ff;color:${COR};font-weight:800;border-top:2px solid ${COR}}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}`
-    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Escala — ${esc(periodo)}</title><style>${css}</style></head><body><div class="hd">${cab}<span style="font-size:10px;color:#777">${new Date().toLocaleDateString('pt-BR')}</span></div><h1>Escala de Trabalho — ${esc(periodo)}</h1><div class="secao"><h2>Domingos</h2><table><thead><tr><th>Data</th><th>Cabeleireiro</th><th>Assistente</th><th>Manicure</th><th>Recepção</th></tr></thead><tbody>${linhasDom}</tbody></table></div><div class="secao"><h2>Vale Transporte e Alimentação — CLT</h2><table><thead><tr><th>Nome</th><th class="c">Dias</th><th class="c">Alimentação</th><th class="c">Passagem</th><th class="c">Alim.+Pass.</th><th class="c">Total</th><th>PIX</th></tr></thead><tbody>${linhasClt}</tbody><tfoot><tr><td colspan="5">TOTAL</td><td class="c">R$ ${fmtBRL(totalClt)}</td><td></td></tr></tfoot></table></div><div class="secao"><h2>Ajuda de Custo — PJ (3 primeiros meses)</h2><table><thead><tr><th>Nome</th><th class="c">Dias</th><th class="c">Passagem</th><th class="c">Total</th><th class="c">Vence em</th><th>PIX</th></tr></thead><tbody>${linhasPj}</tbody><tfoot><tr><td colspan="3">TOTAL</td><td class="c">R$ ${fmtBRL(totalPj)}</td><td></td><td></td></tr></tfoot></table></div><script>window.onload=function(){window.print()}</script></body></html>`
+
+    // Cada seção só entra se estiver visível na tela — assim a impressão do
+    // Financeiro sai só com o pagamento, e a da Escala só com os domingos.
+    const secDom = verEscala ? `<div class="secao"><h2>Domingos</h2><table><thead><tr><th>Data</th><th>Cabeleireiro</th><th>Assistente</th><th>Manicure</th><th>Recepção</th></tr></thead><tbody>${linhasDom}</tbody></table></div>` : ''
+    const secClt = verVaVt ? `<div class="secao"><h2>Vale Transporte e Alimentação — CLT</h2><table><thead><tr><th>Nome</th><th class="c">Dias</th><th class="c">Alimentação</th><th class="c">Passagem</th><th class="c">Alim.+Pass.</th><th class="c">Total</th><th>PIX</th></tr></thead><tbody>${linhasClt}</tbody><tfoot><tr><td colspan="5">TOTAL</td><td class="c">R$ ${fmtBRL(totalClt)}</td><td></td></tr></tfoot></table></div>` : ''
+    const secPj = verVaVt ? `<div class="secao"><h2>Ajuda de Custo — PJ (3 primeiros meses)</h2><table><thead><tr><th>Nome</th><th class="c">Dias</th><th class="c">Passagem</th><th class="c">Total</th><th class="c">Vence em</th><th>PIX</th></tr></thead><tbody>${linhasPj}</tbody><tfoot><tr><td colspan="3">TOTAL</td><td class="c">R$ ${fmtBRL(totalPj)}</td><td></td><td></td></tr></tfoot></table></div>` : ''
+    const titulo = verVaVt && !verEscala ? `Pagamento VA e VT — ${esc(periodo)}` : `Escala de Trabalho — ${esc(periodo)}`
+    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${esc(titulo)}</title><style>${css}</style></head><body><div class="hd">${cab}<span style="font-size:10px;color:#777">${new Date().toLocaleDateString('pt-BR')}</span></div><h1>${esc(titulo)}</h1>${secDom}${secClt}${secPj}<script>window.onload=function(){window.print()}</script></body></html>`
     const w = window.open('', '_blank', 'width=1100,height=750'); if (!w) return; w.document.write(html); w.document.close(); w.focus()
   }
 
