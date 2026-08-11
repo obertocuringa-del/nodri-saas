@@ -189,29 +189,44 @@ export default function CoffeeBreaks() {
   async function imprimir(ev: Evento) {
     const t = totais(ev)
     const logo = await getLogoSalao()
-    const marcados = (gs: Grupo[]) => gs.map(gr => {
-      const on = gr.itens.filter(i => i.on)
-      if (!on.length) return ''
-      return `<div class="bloco"><h2>${esc(gr.titulo)}</h2><ul>${on.map(i => `<li>${esc(i.texto)}</li>`).join('')}</ul></div>`
+    // Imprime TODAS as categorias e TODOS os itens, marcando o que foi
+    // selecionado (☑) e o que não foi (☐) — vira um checklist completo para
+    // usar na hora, não só o resumo do que já foi escolhido.
+    const grupos = (gs: Grupo[]) => gs.filter(gr => gr.itens.length).map(gr => {
+      const feitos = gr.itens.filter(i => i.on).length
+      return `<div class="bloco"><h2>${esc(gr.titulo)} <span class="cnt">${feitos}/${gr.itens.length}</span></h2><ul>${gr.itens.map(i => `<li class="${i.on ? 'on' : 'off'}"><span class="bx">${i.on ? '☑' : '☐'}</span>${esc(i.texto)}</li>`).join('')}</ul></div>`
     }).join('')
 
-    const custos = ev.custos.filter(c => c.item.trim() || num(c.valor) > 0)
+    const custos = ev.custos.filter(c => c.item.trim() || num(c.valor) > 0 || num(c.qtd) > 0)
     const tabCustos = custos.length ? `
-      <div class="bloco"><h2>Controle de custo</h2>
+      <div class="bloco"><h2>🧮 Controle de custo</h2>
       <table><thead><tr><th>Item</th><th class="r">Qtd</th><th class="r">Valor un.</th><th class="r">Total</th></tr></thead>
-      <tbody>${custos.map(c => `<tr><td>${esc(c.item)}</td><td class="r">${esc(c.qtd)}</td><td class="r">${moeda(num(c.valor))}</td><td class="r"><b>${moeda(num(c.qtd) * num(c.valor))}</b></td></tr>`).join('')}</tbody>
+      <tbody>${custos.map(c => `<tr><td>${esc(c.item) || '—'}</td><td class="r">${esc(c.qtd) || '—'}</td><td class="r">${num(c.valor) ? moeda(num(c.valor)) : '—'}</td><td class="r"><b>${moeda(num(c.qtd) * num(c.valor))}</b></td></tr>`).join('')}</tbody>
       <tfoot><tr><td colspan="3"><b>TOTAL</b></td><td class="r"><b>${moeda(t.total)}</b></td></tr>
-      ${t.pessoas > 0 ? `<tr><td colspan="3">Custo por pessoa (${t.pessoas} pessoas)</td><td class="r"><b>${moeda(t.porPessoa)}</b></td></tr>` : ''}</tfoot>
+      ${t.pessoas > 0 ? `<tr><td colspan="3">Custo por pessoa (${t.pessoas} ${t.pessoas === 1 ? 'pessoa' : 'pessoas'})</td><td class="r"><b>${moeda(t.porPessoa)}</b></td></tr>` : ''}
+      ${t.orcado > 0 ? `<tr><td colspan="3">Orçado (${moeda(num(ev.orcPessoa))} × ${t.pessoas})</td><td class="r"><b>${moeda(t.orcado)}</b></td></tr><tr><td colspan="3">${t.sobra >= 0 ? 'Sobra do orçamento' : 'Passou do orçamento'}</td><td class="r"><b style="color:${t.sobra >= 0 ? '#15803d' : '#b91c1c'}">${moeda(Math.abs(t.sobra))}</b></td></tr>` : ''}</tfoot>
       </table></div>` : ''
+
+    // Quanto comprar — só quando há pessoas para calcular
+    const horas = num(ev.duracao) || 3
+    const tabCompra = t.pessoas > 0 ? `
+      <div class="bloco"><h2>📏 Quanto comprar — ${t.pessoas} pessoas em ${horas}h</h2>
+      <table><tbody>
+        <tr><td>Salgados</td><td class="r"><b>${Math.round(t.pessoas * 5)} a ${Math.round(t.pessoas * 7)} un.</b></td></tr>
+        <tr><td>Doces</td><td class="r"><b>${t.pessoas * 2} a ${t.pessoas * 3} un.</b></td></tr>
+        <tr><td>Frutas</td><td class="r"><b>${t.pessoas} porções</b></td></tr>
+        <tr><td>Bebidas</td><td class="r"><b>${(t.pessoas * 0.5).toFixed(1)} a ${(t.pessoas * 0.7).toFixed(1)} L</b></td></tr>
+        <tr><td>Café</td><td class="r"><b>${t.pessoas * 2} a ${t.pessoas * 3} xícaras</b></td></tr>
+      </tbody></table></div>` : ''
 
     const resp = ev.responsaveis.filter(r => r.papel.trim())
     const tabResp = resp.length ? `
-      <div class="bloco"><h2>Quem cuida da operação</h2>
-      <table><tbody>${resp.map(r => `<tr><td style="width:42%">${esc(r.papel)}</td><td><b>${esc(r.nome) || '&nbsp;'}</b></td></tr>`).join('')}</tbody></table></div>` : ''
+      <div class="bloco"><h2>👩‍💼 Quem cuida da operação</h2>
+      <table><tbody>${resp.map(r => `<tr><td style="width:42%">${esc(r.papel)}</td><td><b>${esc(r.nome) || '_______________'}</b></td></tr>`).join('')}</tbody></table></div>` : ''
 
     const crono = ev.cronograma.filter(c => c.hora.trim() || c.oque.trim())
     const tabCrono = crono.length ? `
-      <div class="bloco"><h2>Cronograma</h2>
+      <div class="bloco"><h2>⏰ Cronograma</h2>
       <table><tbody>${crono.map(c => `<tr><td style="width:70px"><b>${esc(c.hora) || '—'}</b></td><td>${esc(c.oque)}</td></tr>`).join('')}</tbody></table></div>` : ''
 
     const css = `@page{size:A4 portrait;margin:13mm}
@@ -232,10 +247,15 @@ body{font-family:'Segoe UI',Arial,sans-serif;font-size:11px;color:#1a1a2e}
 .cols{display:flex;gap:16px;align-items:flex-start}
 .col{flex:1}
 .bloco{margin-bottom:13px;break-inside:avoid}
-h2{font-size:11.5px;color:#5b4fcf;border-bottom:1px solid #e5e3de;padding-bottom:4px;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+h2{font-size:11.5px;color:#5b4fcf;border-bottom:1px solid #e5e3de;padding-bottom:4px;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;display:flex;justify-content:space-between;align-items:baseline}
+.cnt{font-size:9px;color:#a8a49d;font-weight:400;letter-spacing:0}
 ul{list-style:none}
-li{padding:2.5px 0 2.5px 15px;position:relative;font-size:10.5px}
-li:before{content:'';position:absolute;left:3px;top:8px;width:5px;height:5px;border-radius:50%;background:#5b4fcf}
+li{padding:2.5px 0;font-size:10.5px;display:flex;align-items:flex-start;gap:6px}
+.bx{font-size:12px;line-height:1.15;flex-shrink:0}
+li.on{color:#15803d;font-weight:600}
+li.on .bx{color:#16a34a}
+li.off{color:#8a8680}
+li.off .bx{color:#c9c5be}
 table{width:100%;border-collapse:collapse;font-size:10px}
 th{background:#5b4fcf;color:#fff;text-align:left;padding:6px 8px;font-size:9.5px}
 td{padding:5px 8px;border-bottom:1px solid #eee}
@@ -253,6 +273,7 @@ tfoot td{border-top:2px solid #5b4fcf;background:#f0eefb;padding:7px 8px}
 
 <div class="chips">
   ${ev.local ? `<span class="chip">📍 <b>${esc(ev.local)}</b></span>` : ''}
+  <span class="chip">🎯 <b>${esc(ev.objetivo)}</b></span>
   <span class="chip">👥 Público: <b>${esc(ev.publico)}</b></span>
   ${ev.duracao ? `<span class="chip">⏱ Duração: <b>${esc(ev.duracao)}h</b></span>` : ''}
 </div>
@@ -265,12 +286,11 @@ tfoot td{border-top:2px solid #5b4fcf;background:#f0eefb;padding:7px 8px}
 </div>
 
 <div class="cols">
-  <div class="col">${marcados(ev.cardapio)}${marcados(ev.restricoes)}</div>
-  <div class="col">${marcados(ev.apresentacao)}${tabResp}</div>
+  <div class="col">${grupos(ev.cardapio)}${grupos(ev.restricoes)}${tabCompra}</div>
+  <div class="col">${grupos(ev.apresentacao)}${tabResp}${tabCrono}</div>
 </div>
-${tabCrono}
 ${tabCustos}
-${ev.observacoes ? `<div class="bloco"><h2>Observações</h2><div class="obs">${esc(ev.observacoes).replace(/\n/g, '<br>')}</div></div>` : ''}
+${ev.observacoes ? `<div class="bloco"><h2>📝 Observações</h2><div class="obs">${esc(ev.observacoes).replace(/\n/g, '<br>')}</div></div>` : ''}
 <div class="rodape">Gerado em ${new Date().toLocaleDateString('pt-BR')} · Coffee breaks e encontros internos</div>
 <script>window.onload=function(){window.print()}<\/script></body></html>`
     const w = window.open('', '_blank', 'width=900,height=700'); if (!w) return
