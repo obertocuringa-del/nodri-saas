@@ -76,6 +76,9 @@ export const CATALOGO: Record<string, Ferramenta> = {
   cadastrar_produto:   { id: 'cadastrar_produto',   label: 'CADASTRAR PRODUTO',      perm: 'adm_cadastrar_produto' },
   etiquetas:           { id: 'etiquetas',           label: 'ETIQUETAS',              perm: 'adm_etiquetas' },
   escala:              { id: 'escala',              label: 'ESCALA DE TRABALHO',     perm: 'adm_escala' },
+  // Mesma tela e MESMOS dados da Escala, mostrando só os blocos de VA/VT — que
+  // saíram da Escala e passaram a ser tratados no Financeiro.
+  pagamento_va_vt:     { id: 'pagamento_va_vt',     label: 'PAGAMENTO VA E VT',      perm: 'adm_escala' },
   feriados:            { id: 'feriados',            label: 'ESCALA DE FERIADOS',     perm: 'adm_feriados' },
   ata:                 { id: 'ata',                 label: 'ATA DE REUNIÃO',         perm: 'adm_ata' },
   senhas:              { id: 'senhas',              label: 'SENHAS',                 perm: 'adm_senhas' },
@@ -135,7 +138,7 @@ export const FERRAMENTAS_POR_SETOR: { chave: string[]; itens: string[] }[] = [
   { chave: ['DOSAGEM'], itens: ['ck_dosagem', 'produtos', 'servinterno', 'servicos_valores', 'tratamentos', 'esterilizacao_fluxo', 'kits', 'enxovais'] },
   { chave: ['COMPRAS', 'ESTOQUE'], itens: ['pr_materiais', 'tabela_precos', 'cadastrar_produto'] },
   { chave: ['ADMINISTRATIVO'], itens: ['etiquetas', 'escala', 'feriados', 'ata', 'senhas', 'telefones', 'calendario', 'auditoria'] },
-  { chave: ['FINANCEIRO'], itens: ['pr_abertura', 'desconto_profissional'] },
+  { chave: ['FINANCEIRO'], itens: ['pr_abertura', 'desconto_profissional', 'pagamento_va_vt'] },
   { chave: ['GERENCIA', 'GERENTE'], itens: ['ck_gerente', 'corrida_interna'] },
   { chave: ['PROCESSO', 'QUALIDADE'], itens: ['pr_ranking', 'ck_padrao', 'pop_cafe', 'pop_salao', 'checkprocon', 'pop_recepcao', 'pop_manicure', 'pop_cabelereiro'] },
   { chave: ['MARKETING'], itens: ['calendario_mkt'] },
@@ -176,7 +179,8 @@ export function ConteudoFerramenta({ id, profsSalao, abaPop = 'cafe' }: { id: st
     case 'enxovais':            return <EnxovaisLista key="enxovais" />
     case 'cadastrar_produto':   return <GridEditavel key="cadprod" chave="cadastrar_produto" defaultDoc={D_CAD_PRODUTO} landscape />
     case 'etiquetas':           return <Etiquetas key="etiquetas" />
-    case 'escala':              return <EscalaTrabalhoLista key="escala" chave="escala" />
+    case 'escala':              return <EscalaTrabalhoLista key="escala" chave="escala" blocos="escala" />
+    case 'pagamento_va_vt':     return <EscalaTrabalhoLista key="va_vt" chave="escala" blocos="vavt" />
     case 'feriados':            return <EscalaFeriadosLista key="feriados" chave="feriados" />
     case 'ata':                 return <AtaReuniaoLista key="ata" chave="ata" profsSalao={profsSalao} />
     case 'senhas':              return <SenhasLista key="senhas" chave="senhas" />

@@ -161,7 +161,18 @@ function migrarFormatoAntigo(doc: any): { domingos: DomingoRow[]; clt: CltRow[];
   return { domingos, clt, pj, alimentacaoPorDia }
 }
 
-export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: string }) {
+/**
+ * blocos: quais seções aparecem. Os dados são SEMPRE os mesmos (mesma chave,
+ * mesmo documento por mês) — o que muda é só o que a tela mostra. Por isso o
+ * VA/VT pôde sair da Escala de Trabalho e virar uma página do Financeiro sem
+ * duplicar nada nem arriscar sobrescrever o outro lado ao salvar.
+ *   'tudo'   → domingos, feriados e VA/VT
+ *   'escala' → só domingos e feriados
+ *   'vavt'   → só Vale Transporte/Alimentação e Ajuda de Custo
+ */
+export default function EscalaTrabalhoLista({ chave = 'escala', blocos = 'tudo' }: { chave?: string; blocos?: 'tudo' | 'escala' | 'vavt' }) {
+  const verEscala = blocos !== 'vavt'
+  const verVaVt = blocos !== 'escala'
   const [mes, setMes] = useState(mesAtual())
   const [profissionais, setProfissionais] = useState<Profissional[]>([])
   const [domingos, setDomingos] = useState<DomingoRow[]>([])
@@ -425,6 +436,7 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
       {loading ? <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Loader2 size={24} className="animate-spin" style={{ color: COR }} /></div> : (
         <>
           {/* ── Domingos ── */}
+          {verEscala && (
           <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 16, marginBottom: 20 }}>
             <h3 style={{ fontSize: 14, fontWeight: 800, color: '#1a1a1a', margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 6 }}><CalendarDays size={16} color={COR} /> Domingos de trabalho — {mes.split('-').reverse().join('/')}</h3>
             <p style={{ fontSize: 11.5, color: '#9ca3af', margin: '0 0 12px' }}>Os domingos do mês são gerados automaticamente. Marque "Fechado" pra feriado/evento sem expediente.</p>
@@ -464,8 +476,10 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
               </div>
             )}
           </div>
+          )}
 
           {/* ── Feriados (puxado direto da Escala de Feriados) ── */}
+          {verEscala && (
           <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 16, marginBottom: 20 }}>
             <h3 style={{ fontSize: 14, fontWeight: 800, color: '#1a1a1a', margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 6 }}><PartyPopper size={16} color={COR} /> Feriados — {mes.split('-').reverse().join('/')}</h3>
             <p style={{ fontSize: 11.5, color: '#9ca3af', margin: '0 0 12px' }}>Puxado automaticamente da aba "Escala de Feriados". Pra editar, ajuste por lá.</p>
@@ -489,8 +503,10 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
               </div>
             )}
           </div>
+          )}
 
           {/* ── CLT ── */}
+          {verVaVt && (
           <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 16, marginBottom: 20 }}>
             <h3 style={{ fontSize: 14, fontWeight: 800, color: '#1a1a1a', margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 6 }}><Wallet size={16} color={COR} /> Vale Transporte e Alimentação — CLT</h3>
             <p style={{ fontSize: 11.5, color: '#9ca3af', margin: '0 0 10px' }}>Nomes puxados automaticamente de quem tem vínculo CLT ativo. Preencha os dias trabalhados e o valor da passagem — o resto calcula sozinho.</p>
@@ -533,8 +549,10 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
             )}
             <button onClick={adicionarCltManual} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 10, padding: '7px 12px', borderRadius: 8, border: `1.5px dashed ${COR}`, background: '#f8f7ff', color: COR, fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}><Plus size={14} /> Adicionar manualmente</button>
           </div>
+          )}
 
           {/* ── PJ ── */}
+          {verVaVt && (
           <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 16 }}>
             <h3 style={{ fontSize: 14, fontWeight: 800, color: '#1a1a1a', margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 6 }}><Briefcase size={16} color={COR} /> Ajuda de Custo — Profissionais PJ</h3>
             <p style={{ fontSize: 11.5, color: '#9ca3af', margin: '0 0 12px' }}>Só entram aqui automaticamente os PJ (MEI/CNPJ) dentro dos 3 primeiros meses de contrato, com base na data de admissão do cadastro.</p>
@@ -579,6 +597,7 @@ export default function EscalaTrabalhoLista({ chave = 'escala' }: { chave?: stri
             )}
             <button onClick={adicionarPjManual} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 10, padding: '7px 12px', borderRadius: 8, border: `1.5px dashed ${COR}`, background: '#f8f7ff', color: COR, fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}><Plus size={14} /> Adicionar manualmente</button>
           </div>
+          )}
         </>
       )}
     </div>
