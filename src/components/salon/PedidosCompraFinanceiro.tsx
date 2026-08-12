@@ -8,12 +8,13 @@
 // de quem pediu, e o setor é avisado por uma pendência.
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Loader2, Check, X, ShoppingCart, Clock, Inbox } from 'lucide-react'
+import { Loader2, Check, X, ShoppingCart, Clock, Inbox, AlertTriangle, CheckCircle2, TrendingDown } from 'lucide-react'
 import toast from 'react-hot-toast'
 import {
   AREAS_COMPRAS, STATUS_PEDIDO, chavePedidos, moeda, num,
   type Pedido, type StatusPedido,
 } from '@/lib/comprasEstoque'
+import { MESES, realPorMes, resumoDoMes, pct } from '@/lib/calcFinanceiro'
 
 interface PedidoComArea extends Pedido { areaId: string; areaNome: string }
 
@@ -23,17 +24,21 @@ export default function PedidosCompraFinanceiro() {
   const [agindo, setAgindo] = useState('')
   const [verTodos, setVerTodos] = useState(false)
   const [setorCompras, setSetorCompras] = useState<{ id: string } | null>(null)
+  const [financeiro, setFinanceiro] = useState<{ historico: any[]; rel: any } | null>(null)
 
   const carregar = useCallback(async () => {
     setCarregando(true)
     try {
-      const [docs, ps] = await Promise.all([
+      const [docs, ps, calc, rel] = await Promise.all([
         Promise.all(AREAS_COMPRAS.map(a =>
           fetch(`/api/salon/grid?chave=${chavePedidos(a.id)}`, { credentials: 'include' })
             .then(r => r.ok ? r.json() : null).catch(() => null)
             .then(d => ({ area: a, doc: d })))),
         fetch('/api/profissionais', { credentials: 'include' }).then(r => r.ok ? r.json() : []).catch(() => []),
+        fetch('/api/salon/calculadora', { credentials: 'include' }).then(r => r.ok ? r.json() : null).catch(() => null),
+        fetch('/api/relatorios', { credentials: 'include' }).then(r => r.ok ? r.json() : null).catch(() => null),
       ])
+      setFinanceiro({ historico: Array.isArray(calc?.historico) ? calc.historico : [], rel })
       const todos: PedidoComArea[] = []
       for (const { area, doc } of docs) {
         for (const p of (doc?.pedidos || [])) {
@@ -53,6 +58,61 @@ export default function PedidosCompraFinanceiro() {
   const aguardando = useMemo(() => pedidos.filter(p => p.status === 'enviado'), [pedidos])
   const assumidos = useMemo(() => pedidos.filter(p => p.status === 'financeiro_compra'), [pedidos])
   const visiveis = verTodos ? pedidos : pedidos.filter(p => p.status === 'enviado' || p.status === 'financeiro_compra')
+
+  /**
+   * Orientação do mês: junta o que o DRE e o Ponto de Equilíbrio já sabem e
+   * responde a pergunta que o Financeiro tem na mão — dá para aprovar agora?
+   * Nada é decidido pelo sistema; ele só coloca o número do lado do pedido.
+   */
+  const orientacao = useMemo(() => {
+    if (!financeiro) return null
+    const hoje = new Date()
+    const ano = hoje.getFullYear(), mes = hoje.getMonth() + 1
+    const real = realPorMes(financeiro.rel)
+    const reg = financeiro.historico.find(h => Number(h.ano) === ano && Number(h.mes) === mes)
+    const r = resumoDoMes(reg?.dados, real.get(`${ano}-${mes}`))
+    if (!r.temDados) return null
+
+    const diasNoMes = new Date(ano, mes, 0).getDate()
+    const doMesPassado = hoje.getDate() / diasNoMes
+    const atingidoPE = r.pe > 0 ? r.faturamento / r.pe : 0
+    const faltaPE = Math.max(0, r.pe - r.faturamento)
+    const pedidosTotal = aguardando.reduce((s, p) => s + num(p.valor), 0)
+    // Quanto os pedidos pesam sobre o que sobrou no mês
+    const pesoNoResultado = r.resultadoOp > 0 ? pedidosTotal / r.resultadoOp : null
+
+    let tom: 'bom' | 'atencao' | 'ruim'
+    let titulo: string
+    let texto: string
+
+    if (r.resultadoOp < 0) {
+      tom = 'ruim'
+      titulo = 'O mês está no vermelho'
+      texto = `O resultado de ${MESES[mes - 1]} está negativo em ${moeda(Math.abs(r.resultadoOp))}. Aprovar compras agora aumenta o prejuízo — libere só o que não dá para esperar.`
+    } else if (atingidoPE < 1 && atingidoPE < doMesPassado) {
+      tom = 'ruim'
+      titulo = 'Ainda não cobriu os custos, e o ritmo está atrasado'
+      texto = `Faltam ${moeda(faltaPE)} para o ponto de equilíbrio e já se passaram ${pct(doMesPassado)} do mês. No ritmo atual o mês não fecha no azul — aprove só o essencial.`
+    } else if (atingidoPE < 1) {
+      tom = 'atencao'
+      titulo = 'Ainda falta cobrir os custos do mês'
+      texto = `Faltam ${moeda(faltaPE)} para o ponto de equilíbrio, mas o faturamento está à frente do calendário. Dá para aprovar o necessário, segurando o que puder esperar o fechamento.`
+    } else if (pesoNoResultado !== null && pesoNoResultado > 0.3) {
+      tom = 'atencao'
+      titulo = 'Os custos já estão cobertos, mas os pedidos pesam'
+      texto = `Os pedidos somam ${moeda(pedidosTotal)} — ${pct(pesoNoResultado)} de tudo que sobrou no mês (${moeda(r.resultadoOp)}). Vale aprovar por prioridade, não tudo de uma vez.`
+    } else {
+      tom = 'bom'
+      titulo = 'Mês no azul — há folga para aprovar'
+      texto = `O ponto de equilíbrio já foi coberto e sobraram ${moeda(r.resultadoOp)}.${pedidosTotal > 0 ? ` Os pedidos somam ${moeda(pedidosTotal)}${pesoNoResultado !== null ? `, ${pct(pesoNoResultado)} dessa sobra` : ''}.` : ''}`
+    }
+
+    return {
+      tom, titulo, texto, mes: MESES[mes - 1], dia: hoje.getDate(), diasNoMes, doMesPassado,
+      faturamento: r.faturamento, pe: r.pe, atingidoPE, resultado: r.resultadoOp,
+      margemPct: r.margemPct, pedidosTotal, pesoNoResultado, diasImportados: r.diasImportados,
+    }
+  }, [financeiro, aguardando])
 
   /** Grava a decisão no documento da área e avisa o setor por pendência. */
   async function decidir(p: PedidoComArea, status: StatusPedido, motivo?: string) {
@@ -127,11 +187,62 @@ export default function PedidosCompraFinanceiro() {
         </button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(175px, 1fr))', gap: 10, marginBottom: 13 }}>
-        <Kpi icone={<Clock size={17} />} n={aguardando.length} rotulo="Aguardando decisão" cor={aguardando.length ? '#b45309' : '#15803d'} fundo={aguardando.length ? '#fffbeb' : '#f0fdf4'} />
-        <Kpi icone={<ShoppingCart size={17} />} n={assumidos.length} rotulo="Você vai comprar" cor="#5b4fcf" fundo="#f5f3ff" />
-        <Kpi texto={moeda(totalAguardando)} rotulo="Valor aguardando" cor="#1a1a2e" fundo="#fff" icone={<Inbox size={17} />} />
-      </div>
+      {/* Orientação do mês — o contexto financeiro na hora de decidir */}
+      {orientacao && (() => {
+        const t = orientacao.tom
+        const cor = t === 'bom' ? '#16a34a' : t === 'atencao' ? '#b45309' : '#dc2626'
+        const fundo = t === 'bom' ? '#f0fdf4' : t === 'atencao' ? '#fffbeb' : '#fef2f2'
+        const borda = t === 'bom' ? '#bbf7d0' : t === 'atencao' ? '#fde68a' : '#fecaca'
+        const Icone = t === 'bom' ? CheckCircle2 : t === 'ruim' ? TrendingDown : AlertTriangle
+        return (
+          <div style={{ background: fundo, border: `1.5px solid ${borda}`, borderRadius: 14, padding: '15px 17px', marginBottom: 13 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+              <Icone size={18} color={cor} />
+              <span style={{ fontSize: 14.5, fontWeight: 900, color: cor }}>{orientacao.titulo}</span>
+              <div style={{ flex: 1 }} />
+              <span style={{ fontSize: 10.5, fontWeight: 800, color: '#8a8680', whiteSpace: 'nowrap' }}>
+                {orientacao.mes.toUpperCase()} · DIA {orientacao.dia} DE {orientacao.diasNoMes}
+              </span>
+            </div>
+            <p style={{ fontSize: 13, color: '#4b5563', lineHeight: 1.55, margin: '0 0 12px', fontWeight: 500 }}>{orientacao.texto}</p>
+
+            {/* Faturamento contra o ponto de equilíbrio */}
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, fontWeight: 800, color: '#6b6860', marginBottom: 4 }}>
+                <span>{moeda(orientacao.faturamento)} faturado</span>
+                <span>ponto de equilíbrio {moeda(orientacao.pe)}</span>
+              </div>
+              <div style={{ position: 'relative', height: 10, borderRadius: 99, background: '#fff', border: '1px solid ' + borda, overflow: 'hidden' }}>
+                <div style={{ width: `${Math.min(100, orientacao.atingidoPE * 100)}%`, height: '100%', background: cor, opacity: .85 }} />
+                <div title="quanto do mês já passou" style={{ position: 'absolute', top: -2, bottom: -2, left: `${orientacao.doMesPassado * 100}%`, width: 2, background: '#1a1a2e', opacity: .45 }} />
+              </div>
+              <div style={{ fontSize: 10, color: '#8a8680', marginTop: 3 }}>
+                {pct(orientacao.atingidoPE)} do ponto de equilíbrio · o traço marca {pct(orientacao.doMesPassado)} do mês
+                {orientacao.diasImportados > 0 && ` · ${orientacao.diasImportados} dias importados do avec`}
+              </div>
+            </div>
+
+            {/* Números que sustentam a orientação */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 9 }}>
+              <Dado rotulo="Resultado do mês" valor={moeda(orientacao.resultado)} cor={orientacao.resultado >= 0 ? '#15803d' : '#dc2626'} nota={`margem de ${pct(orientacao.margemPct)}`} />
+              <Dado rotulo="Aguardando decisão" valor={String(aguardando.length)} cor="#b45309" nota={moeda(orientacao.pedidosTotal)} />
+              <Dado rotulo="Você vai comprar" valor={String(assumidos.length)} cor="#5b4fcf" nota="assumidos por você" />
+              {orientacao.pesoNoResultado !== null && (
+                <Dado rotulo="Peso dos pedidos" valor={pct(orientacao.pesoNoResultado)} cor={orientacao.pesoNoResultado > 0.3 ? '#dc2626' : '#15803d'} nota="do que sobrou no mês" />
+              )}
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* Sem dados do mês na Calculadora/avec: mostra ao menos os contadores */}
+      {!orientacao && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(175px, 1fr))', gap: 10, marginBottom: 13 }}>
+          <Kpi icone={<Clock size={17} />} n={aguardando.length} rotulo="Aguardando decisão" cor={aguardando.length ? '#b45309' : '#15803d'} fundo={aguardando.length ? '#fffbeb' : '#f0fdf4'} />
+          <Kpi icone={<ShoppingCart size={17} />} n={assumidos.length} rotulo="Você vai comprar" cor="#5b4fcf" fundo="#f5f3ff" />
+          <Kpi texto={moeda(totalAguardando)} rotulo="Valor aguardando" cor="#1a1a2e" fundo="#fff" icone={<Inbox size={17} />} />
+        </div>
+      )}
 
       {visiveis.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '44px 20px', background: '#fff', border: '1px dashed #e0ddd8', borderRadius: 14 }}>
@@ -226,6 +337,17 @@ function btn(fundo: string, cor: string, borda?: string) {
     border: borda ? `1.5px solid ${borda}` : 'none', background: fundo, color: cor,
     fontSize: 12.5, fontWeight: 800, cursor: 'pointer',
   } as const
+}
+
+/** Número seco dentro do painel de orientação. */
+function Dado({ rotulo, valor, cor, nota }: { rotulo: string; valor: string; cor: string; nota?: string }) {
+  return (
+    <div style={{ background: '#fff', border: '1px solid #eceae4', borderRadius: 10, padding: '9px 12px' }}>
+      <div style={{ fontSize: 9.5, color: '#8a8680', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.5px' }}>{rotulo}</div>
+      <div style={{ fontSize: 16, fontWeight: 900, color: cor, letterSpacing: '-.3px', lineHeight: 1.2 }}>{valor}</div>
+      {nota && <div style={{ fontSize: 10, color: '#a8a49d', fontWeight: 700 }}>{nota}</div>}
+    </div>
+  )
 }
 
 function Kpi({ icone, n, texto, rotulo, cor, fundo }: { icone: any; n?: number; texto?: string; rotulo: string; cor: string; fundo: string }) {
