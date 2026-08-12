@@ -26,6 +26,8 @@ import ValoresPacotesLista from '@/components/salon/ValoresPacotesLista'
 import DocEditavel from '@/components/salon/DocEditavel'
 import AnexosLista from '@/components/salon/AnexosLista'
 import Etiquetas from '@/components/salon/Etiquetas'
+import ChecklistAdministrativo from '@/components/salon/ChecklistAdministrativo'
+import DocumentosCards from '@/components/salon/DocumentosCards'
 import ListaServico from '@/components/salon/ListaServico'
 import CheckProconPainel from '@/components/salon/CheckProconPainel'
 import ConteudoPopPainel from '@/components/salon/ConteudoPopPainel'
@@ -75,6 +77,9 @@ export const CATALOGO: Record<string, Ferramenta> = {
   enxovais:            { id: 'enxovais',            label: 'CONTROLE DE ENXOVAIS',   perm: 'adm_enxovais' },
   cadastrar_produto:   { id: 'cadastrar_produto',   label: 'CADASTRAR PRODUTO',      perm: 'adm_cadastrar_produto' },
   etiquetas:           { id: 'etiquetas',           label: 'ETIQUETAS',              perm: 'adm_etiquetas' },
+  // Licenças e Contratos Administrativos viraram uma página só, em cards
+  ck_administrativo:   { id: 'ck_administrativo',   label: 'CHECK LIST — ADMINISTRATIVO', perm: 'checklist' },
+  licencas_contratos:  { id: 'licencas_contratos',  label: 'LICENÇAS E CONTRATOS ADMINISTRATIVOS', perm: 'adm_listas' },
   escala:              { id: 'escala',              label: 'ESCALA DE TRABALHO',     perm: 'adm_escala' },
   // Mesma tela e MESMOS dados da Escala, mostrando só os blocos de VA/VT — que
   // saíram da Escala e passaram a ser tratados no Financeiro.
@@ -137,7 +142,8 @@ export const FERRAMENTAS_POR_SETOR: { chave: string[]; itens: string[] }[] = [
   { chave: ['RECEPCAO'], itens: ['ck_abertura', 'ck_intermediario', 'ck_fechamento', 'lista_realinhamento', 'lista_corte', 'lista_mechas', 'lista_pigmentacao', 'bebidas', 'valores_pacotes', 'arquivos_envio'] },
   { chave: ['DOSAGEM'], itens: ['ck_dosagem', 'produtos', 'servinterno', 'servicos_valores', 'tratamentos', 'esterilizacao_fluxo', 'kits', 'enxovais'] },
   { chave: ['COMPRAS', 'ESTOQUE'], itens: ['pr_materiais', 'tabela_precos', 'cadastrar_produto'] },
-  { chave: ['ADMINISTRATIVO'], itens: ['etiquetas', 'escala', 'feriados', 'ata', 'senhas', 'telefones', 'calendario', 'auditoria'] },
+  // Etiquetas saiu daqui: virou sub-botão de "Organização das pastas" (SUBDEMANDAS).
+  { chave: ['ADMINISTRATIVO'], itens: ['ck_administrativo', 'licencas_contratos', 'escala', 'feriados', 'ata', 'senhas', 'telefones', 'calendario', 'auditoria'] },
   { chave: ['FINANCEIRO'], itens: ['pr_abertura', 'desconto_profissional', 'pagamento_va_vt'] },
   { chave: ['GERENCIA', 'GERENTE'], itens: ['ck_gerente', 'corrida_interna'] },
   { chave: ['PROCESSO', 'QUALIDADE'], itens: ['pr_ranking', 'ck_padrao', 'pop_cafe', 'pop_salao', 'checkprocon', 'pop_recepcao', 'pop_manicure', 'pop_cabelereiro'] },
@@ -179,6 +185,10 @@ export function ConteudoFerramenta({ id, profsSalao, abaPop = 'cafe' }: { id: st
     case 'enxovais':            return <EnxovaisLista key="enxovais" />
     case 'cadastrar_produto':   return <GridEditavel key="cadprod" chave="cadastrar_produto" defaultDoc={D_CAD_PRODUTO} landscape />
     case 'etiquetas':           return <Etiquetas key="etiquetas" />
+    case 'ck_administrativo':   return <ChecklistAdministrativo key="ck_adm" />
+    case 'licencas_contratos':  return <DocumentosCards key="lic_contr" chave="licencas_contratos"
+      titulo="Licenças e Contratos Administrativos"
+      subtitulo="Alvarás, licenças, contratos e aditivos. Anexe o arquivo e compartilhe por WhatsApp ou e-mail." />
     case 'escala':              return <EscalaTrabalhoLista key="escala" chave="escala" blocos="escala" />
     case 'pagamento_va_vt':     return <EscalaTrabalhoLista key="va_vt" chave="escala" blocos="vavt" />
     case 'feriados':            return <EscalaFeriadosLista key="feriados" chave="feriados" />

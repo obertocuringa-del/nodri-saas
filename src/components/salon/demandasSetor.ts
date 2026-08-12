@@ -26,14 +26,9 @@ const MAPA: { chave: string[]; demandas: string[] }[] = [
   },
   {
     chave: ['ADMINISTRATIVO'], demandas: [
-      'Organização de documentos da empresa', 'CNPJ da empresa', 'Licenças',
-      'Contratos administrativos', 'Arquivamento', 'Organização das pastas',
-      'Controle de documentos', 'Calendário de obrigações',
-      'Apoio documental à Gerência', 'Apoio documental à Direção',
-      'Interface administrativa com terceiros',
-      'Organização de compromissos e documentos da sócia', 'Apoio à sócia',
-      'Chancela dos contratos', 'Planilhas de gestão', 'Cadastros no sistema',
-      'Coffee breaks e encontros internos',
+      'Organização de documentos da empresa', 'Arquivamento',
+      'Organização das pastas', 'Controle de documentos', 'Apoio à sócia',
+      'Chancela dos contratos', 'Coffee breaks e encontros internos',
     ]
   },
   {
@@ -181,5 +176,10 @@ export const SUBDEMANDAS: Record<string, { id: string; label: string }[]> = {
   encaminhamento_de_informacoes_para_a_contabilidade: [
     { id: 'faturamento_profissionais', label: 'FATURAMENTO DOS PROFISSIONAIS' },
     { id: 'checklist_contabilidade', label: 'CHECK LIST' },
+  ],
+  // Etiquetas é o passo seguinte de organizar as pastas — vive como sub-botão
+  // dela em vez de ocupar uma linha própria na sidebar.
+  organizacao_das_pastas: [
+    { id: 'etiquetas', label: 'ETIQUETAS' },
   ],
 }

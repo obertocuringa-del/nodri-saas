@@ -524,6 +524,8 @@ export default function DepartamentoPage() {
           <>
             {ferramentaAberta === 'sub:faturamento_profissionais' && <FaturamentoProfissionaisPJ key="fat_pj" />}
             {ferramentaAberta === 'sub:checklist_contabilidade' && <ChecklistContabilidade key="chk_contab" />}
+            {/* Etiquetas abre como sub-botão de "Organização das pastas" */}
+            {ferramentaAberta === 'sub:etiquetas' && <ConteudoFerramenta id="etiquetas" profsSalao={profsParaListas} abaPop={abaPopSetor} />}
             {ferramentaAberta.startsWith('demanda:') && (() => {
               const slug = ferramentaAberta.slice('demanda:'.length)
               // Contas a pagar tem tela propria: a fila de boletos da Calculadora,
