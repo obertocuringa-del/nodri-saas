@@ -211,10 +211,48 @@ export default function DocumentosCards({ chave, titulo, subtitulo, corTema = '#
 }
 
 function ModalCompartilhar({ doc, onClose }: { doc: Doc; onClose: () => void }) {
+  const [enviando, setEnviando] = useState(false)
   const titulo = doc.titulo || doc.filename || 'Documento'
   const url = doc.url || ''
-  const texto = `*${titulo}*${doc.obs ? `\n${doc.obs}` : ''}\n\n${url}`
-  const whats = () => { window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank', 'noopener'); onClose() }
+  const texto = `*${titulo}*${doc.obs ? `\n${doc.obs}` : ''}`
+
+  /** Baixa o arquivo do storage e devolve como File, para poder anexar. */
+  async function pegarArquivo(): Promise<File | null> {
+    try {
+      const r = await fetch(url)
+      if (!r.ok) return null
+      const blob = await r.blob()
+      return new File([blob], doc.filename || 'documento', { type: blob.type || 'application/octet-stream' })
+    } catch { return null }
+  }
+
+  // Manda o ARQUIVO, não o link. No celular abre o menu de compartilhar do
+  // sistema (WhatsApp, e-mail, Drive…) com o arquivo anexado. No computador,
+  // onde o navegador não deixa anexar, baixa o arquivo e abre o WhatsApp com
+  // o texto — aí é só arrastar o arquivo para a conversa.
+  async function enviarArquivo() {
+    setEnviando(true)
+    const file = await pegarArquivo()
+    const nav = navigator as any
+    if (file && nav.canShare?.({ files: [file] })) {
+      try {
+        await nav.share({ files: [file], text: texto })
+        setEnviando(false); onClose(); return
+      } catch { /* cancelou ou falhou → cai no download */ }
+    }
+    if (file) {
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(file); a.download = doc.filename || 'documento'
+      a.click(); URL.revokeObjectURL(a.href)
+      try { await navigator.clipboard?.writeText(texto) } catch { /* segue */ }
+      toast('Arquivo baixado e texto copiado — anexe na conversa.', { icon: '📎', duration: 6000 })
+    } else {
+      toast.error('Não foi possível baixar o arquivo. Use “Copiar link”.')
+    }
+    setEnviando(false); onClose()
+  }
+
+  const whatsLink = () => { window.open(`https://wa.me/?text=${encodeURIComponent(`${texto}\n\n${url}`)}`, '_blank', 'noopener'); onClose() }
   const email = () => {
     window.location.href = `mailto:?subject=${encodeURIComponent(titulo)}&body=${encodeURIComponent(`${doc.obs ? doc.obs + '\n\n' : ''}${url}`)}`
     onClose()
@@ -230,12 +268,20 @@ function ModalCompartilhar({ doc, onClose }: { doc: Doc; onClose: () => void }) 
         </div>
         <p style={{ fontSize: 12.5, color: '#8a857c', margin: '0 0 16px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{titulo}</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-          <button onClick={whats} style={botao('#16a34a', '#dcfce7')}><MessageCircle size={18} /> WhatsApp</button>
-          <button onClick={email} style={botao('#4f46e5', '#eef2ff')}><Mail size={18} /> E-mail</button>
-          <button onClick={copiar} style={botao('#6b7280', '#f3f4f6')}><FileText size={18} /> Copiar link do arquivo</button>
+          <button onClick={enviarArquivo} disabled={enviando} style={botao('#16a34a', '#dcfce7')}>
+            {enviando ? <Loader2 size={18} className="animate-spin" /> : <Share2 size={18} />}
+            <span style={{ textAlign: 'left' }}>
+              Enviar o arquivo
+              <span style={{ display: 'block', fontSize: 10.5, fontWeight: 600, opacity: .8 }}>Vai o documento, não o link</span>
+            </span>
+          </button>
+          <button onClick={whatsLink} style={botao('#16a34a', '#f0fdf4')}><MessageCircle size={18} /> WhatsApp com o link</button>
+          <button onClick={email} style={botao('#4f46e5', '#eef2ff')}><Mail size={18} /> E-mail com o link</button>
+          <button onClick={copiar} style={botao('#6b7280', '#f3f4f6')}><FileText size={18} /> Copiar link</button>
         </div>
         <p style={{ fontSize: 11, color: '#a8a49d', margin: '14px 0 0', lineHeight: 1.5 }}>
-          O documento é enviado como um link — quem receber abre e baixa direto, sem precisar de login.
+          No celular, “Enviar o arquivo” abre o compartilhamento do sistema com o documento já anexado. No computador o
+          navegador não deixa anexar direto: o arquivo é baixado e o texto copiado, aí é só arrastar para a conversa.
         </p>
       </div>
     </div>
