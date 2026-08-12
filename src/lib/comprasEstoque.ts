@@ -20,9 +20,13 @@ export interface Pedido {
   compradoEm?: number
   motivo?: string
   pendenciaId?: string
-  /** de qual área do estoque veio — preenchido no envio */
+  /** de qual setor veio — preenchido no envio */
   area?: string
   areaTitulo?: string
+  /** 'pedido' = valor avulso; 'lista' = a lista de reposição enviada inteira */
+  tipo?: 'pedido' | 'lista'
+  /** cópia dos itens no momento do envio (só quando tipo = 'lista') */
+  itens?: ItemLista[]
 }
 
 export const STATUS_PEDIDO: Record<StatusPedido, { rotulo: string; cor: string; fundo: string; borda: string }> = {
@@ -34,23 +38,27 @@ export const STATUS_PEDIDO: Record<StatusPedido, { rotulo: string; cor: string; 
   comprado:          { rotulo: 'COMPRA FEITA',        cor: '#15803d', fundo: '#f0fdf4', borda: '#bbf7d0' },
 }
 
-/** As áreas do setor Compras/Estoque. Cada uma é uma página com sua lista. */
+/**
+ * Uma página de compra por SETOR — assim cada setor pede o que é dele e as
+ * listas não se misturam. São os mesmos setores do organograma; para incluir um
+ * setor novo, basta acrescentar uma linha aqui.
+ */
 export const AREAS_COMPRAS: { id: string; titulo: string }[] = [
+  { id: 'recepcao',       titulo: 'Recepção' },
+  { id: 'profissionais',  titulo: 'Profissionais' },
   { id: 'dosagem',        titulo: 'Dosagem' },
-  { id: 'coloracao',      titulo: 'Coloração e química' },
-  { id: 'cabelo',         titulo: 'Produtos de cabelo' },
-  { id: 'manicure',       titulo: 'Manicure e pedicure' },
-  { id: 'estetica',       titulo: 'Estética' },
-  { id: 'descartaveis',   titulo: 'Descartáveis' },
-  { id: 'limpeza',        titulo: 'Limpeza e higiene' },
-  { id: 'copa',           titulo: 'Copa e cortesias' },
-  { id: 'escritorio',     titulo: 'Escritório e papelaria' },
-  { id: 'enxoval',        titulo: 'Enxoval e uniformes' },
-  { id: 'equipamentos',   titulo: 'Equipamentos e ferramentas' },
-  { id: 'manutencao',     titulo: 'Manutenção e reposição' },
-  { id: 'revenda',        titulo: 'Produtos de revenda' },
-  { id: 'embalagens',     titulo: 'Embalagens e brindes' },
+  { id: 'servicos_gerais', titulo: 'Serviços Gerais' },
+  { id: 'manutencao',     titulo: 'Manutenção' },
+  { id: 'marketing',      titulo: 'Marketing' },
+  { id: 'comercial',      titulo: 'Comercial / Vendas' },
+  { id: 'administrativo', titulo: 'Administrativo' },
+  { id: 'financeiro',     titulo: 'Financeiro' },
+  { id: 'rh',             titulo: 'RH / Gestão de Pessoas' },
+  { id: 'qualidade',      titulo: 'Processo / Qualidade' },
+  { id: 'tecnica',        titulo: 'Responsável Técnica' },
+  { id: 'gerencia',       titulo: 'Gerência' },
+  { id: 'estoque',        titulo: 'Compras / Estoque' },
 ]
 
-/** Chave no salao_config onde a lista e os pedidos daquela área ficam. */
+/** Chave no salao_config onde a lista e os pedidos daquele setor ficam. */
 export const chavePedidos = (area: string) => `compras_${area}`

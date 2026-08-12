@@ -143,9 +143,31 @@ export default function PedidosCompraFinanceiro() {
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
-                  <span style={{ fontSize: 14.5, fontWeight: 800, color: '#1a1a2e', flex: 1, minWidth: 150 }}>{p.descricao || 'Sem descrição'}</span>
-                  {num(p.valor) > 0 && <span style={{ fontSize: 17, fontWeight: 900, color: '#15803d' }}>{moeda(num(p.valor))}</span>}
+                  <span style={{ fontSize: 14.5, fontWeight: 800, color: '#1a1a2e', flex: 1, minWidth: 150 }}>
+                    {p.tipo === 'lista' && <span style={{ fontSize: 10, fontWeight: 900, color: '#5b4fcf', background: '#fff', border: '1px solid #ddd6f5', borderRadius: 99, padding: '2px 8px', marginRight: 7 }}>LISTA</span>}
+                    {p.descricao || 'Sem descrição'}
+                  </span>
+                  {num(p.valor) > 0 && (
+                    <span style={{ fontSize: 17, fontWeight: 900, color: '#15803d' }}>
+                      {moeda(num(p.valor))}
+                      {p.tipo === 'lista' && <span style={{ fontSize: 10, fontWeight: 700, color: '#8a8680', marginLeft: 5 }}>orçado</span>}
+                    </span>
+                  )}
                 </div>
+
+                {/* Quando é a lista inteira, mostra item por item */}
+                {p.tipo === 'lista' && !!p.itens?.length && (
+                  <div style={{ background: '#fff', border: '1px solid #eceae4', borderRadius: 10, padding: '8px 11px', margin: '7px 0 2px' }}>
+                    {p.itens.map(i => (
+                      <div key={i.id} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '3px 0', fontSize: 12, borderBottom: '1px solid #f7f6f3' }}>
+                        <span style={{ flex: 1, fontWeight: 700, color: '#374151', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{i.nome}</span>
+                        <span style={{ fontSize: 10.5, color: '#a8a49d', whiteSpace: 'nowrap' }}>mín. {i.minimo || 0} · atual {i.atual || 0}</span>
+                        <span style={{ fontWeight: 900, color: '#5b4fcf', whiteSpace: 'nowrap' }}>comprar {i.comprar}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {p.motivo && <p style={{ fontSize: 11.5, color: '#b91c1c', margin: '2px 0 0' }}>Motivo: {p.motivo}</p>}
 
                 {p.status === 'enviado' && (

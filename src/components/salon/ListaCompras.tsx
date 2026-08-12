@@ -82,27 +82,59 @@ export default function ListaCompras({ area, titulo }: { area: string; titulo: s
     setDoc(d => ({ ...d, pedidos: d.pedidos.filter(p => p.id !== id) })); setDirty(true)
   }
 
-  /** Manda o pedido para o Financeiro decidir: vira pendência lá. */
+  /** Cria a pendência no Financeiro. Devolve o id, ou '' se falhar. */
+  async function abrirPendencia(mensagem: string): Promise<string | null> {
+    if (!setorFinanceiro) { toast.error('Setor Financeiro não encontrado'); return null }
+    const r = await fetch('/api/pendencias', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ profissional_id: setorFinanceiro.id, mensagem, origem: `compras:${area}`, prioridade: 'alta' }),
+    })
+    if (!r.ok) { toast.error('Não foi possível enviar ao Financeiro'); return null }
+    const pend = await r.json().catch(() => null)
+    return pend?.id || ''
+  }
+
+  /** Manda o pedido avulso para o Financeiro decidir. */
   async function enviarAoFinanceiro(p: Pedido) {
     if (!p.descricao.trim()) { toast.error('Descreva o pedido antes de enviar'); return }
-    if (!setorFinanceiro) { toast.error('Setor Financeiro não encontrado'); return }
     setEnviando(p.id)
     try {
       const msg = `PEDIDO DE COMPRA — ${titulo}\n${p.descricao}${num(p.valor) > 0 ? `\nValor: ${moeda(num(p.valor))}` : ''}\n\nDecida em Financeiro › Pedidos de Compra.`
-      const r = await fetch('/api/pendencias', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profissional_id: setorFinanceiro.id, mensagem: msg, origem: `compras:${area}`, prioridade: 'alta' }),
-      })
-      if (!r.ok) { toast.error('Não foi possível enviar ao Financeiro'); setEnviando(''); return }
-      const pend = await r.json().catch(() => null)
+      const id = await abrirPendencia(msg)
+      if (id === null) { setEnviando(''); return }
       const novo: Doc = {
         ...doc,
         pedidos: doc.pedidos.map(x => x.id === p.id
-          ? { ...x, status: 'enviado' as const, enviadoEm: Date.now(), pendenciaId: pend?.id || '', area, areaTitulo: titulo }
+          ? { ...x, status: 'enviado' as const, tipo: 'pedido' as const, enviadoEm: Date.now(), pendenciaId: id, area, areaTitulo: titulo }
           : x),
       }
       setDoc(novo); await salvar(novo)
       toast.success('Enviado ao Financeiro!')
+    } catch { toast.error('Erro de conexão') }
+    setEnviando('')
+  }
+
+  /** Manda a LISTA DE COMPRA inteira — vira um pedido do tipo lista, com uma
+   *  cópia dos itens no estado em que estavam no envio. */
+  async function enviarListaAoFinanceiro() {
+    const aComprar = doc.itens.filter(i => i.nome.trim() && (num(i.comprar) > 0 || sugestao(i) > 0))
+    if (!aComprar.length) { toast.error('Nenhum item para comprar nesta lista'); return }
+    setEnviando('lista')
+    try {
+      const linhas = aComprar.map(i => `• ${i.nome} — comprar ${num(i.comprar) || sugestao(i)} (mín. ${i.minimo || 0}, atual ${i.atual || 0})`).join('\n')
+      const orc = num(doc.orcamento || '')
+      const msg = `LISTA DE COMPRA — ${titulo}\n${linhas}${orc > 0 ? `\n\nOrçamento: ${moeda(orc)}` : ''}\n\nDecida em Financeiro › Pedidos de Compra.`
+      const id = await abrirPendencia(msg)
+      if (id === null) { setEnviando(''); return }
+      const pedidoLista: Pedido = {
+        id: rid(), descricao: `Lista de compra — ${aComprar.length} ${aComprar.length === 1 ? 'item' : 'itens'}`,
+        valor: doc.orcamento || '', status: 'enviado', tipo: 'lista',
+        itens: aComprar.map(i => ({ ...i, comprar: String(num(i.comprar) || sugestao(i)) })),
+        criadoEm: Date.now(), enviadoEm: Date.now(), pendenciaId: id, area, areaTitulo: titulo,
+      }
+      const novo: Doc = { ...doc, pedidos: [pedidoLista, ...doc.pedidos] }
+      setDoc(novo); await salvar(novo)
+      toast.success('Lista enviada ao Financeiro!')
     } catch { toast.error('Erro de conexão') }
     setEnviando('')
   }
@@ -208,6 +240,12 @@ export default function ListaCompras({ area, titulo }: { area: string; titulo: s
             <input type="number" value={doc.orcamento || ''} onChange={e => { setDoc(d => ({ ...d, orcamento: e.target.value })); setDirty(true) }}
               placeholder="R$ 0,00" style={{ width: 120, padding: '7px 9px', borderRadius: 8, border: '1.5px solid #e8e6e0', fontSize: 12.5, fontWeight: 800, textAlign: 'right' }} />
           </label>
+          {/* A lista também pode ir para o Financeiro, do mesmo jeito que um
+              pedido avulso — lá ela chega com todos os itens. */}
+          <button onClick={enviarListaAoFinanceiro} disabled={enviando === 'lista'}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, border: 'none', background: '#5b4fcf', color: '#fff', fontSize: 12, fontWeight: 800, padding: '8px 14px', borderRadius: 9, cursor: 'pointer' }}>
+            {enviando === 'lista' ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />} Enviar lista ao Financeiro
+          </button>
         </div>
       </div>
 
