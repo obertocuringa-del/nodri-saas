@@ -72,8 +72,18 @@ export default function PedidosCompraFinanceiro() {
       })
       if (!r.ok) { toast.error('Não foi possível salvar a decisão'); setAgindo(''); return }
 
-      // Avisa quem pediu
-      if (setorCompras && status !== 'financeiro_compra') {
+      // A pendência no Financeiro só continua aberta quando ELE assumiu a
+      // compra — é o único caso em que ainda há algo para ele fazer. Aprovar e
+      // negar já são a decisão pronta, então a pendência se resolve sozinha.
+      if (p.pendenciaId && status !== 'financeiro_compra') {
+        await fetch(`/api/pendencias/${p.pendenciaId}`, {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ resolvido: true }),
+        }).catch(() => { })
+      }
+
+      // Avisa quem pediu — só nas decisões que mudam o que ele precisa fazer
+      if (setorCompras && (status === 'aprovado' || status === 'negado')) {
         const texto = status === 'aprovado'
           ? `PEDIDO APROVADO — ${p.areaNome}\n${p.descricao}${num(p.valor) > 0 ? `\nValor: ${moeda(num(p.valor))}` : ''}\n\nVocê está autorizado a comprar.`
           : `PEDIDO NÃO APROVADO — ${p.areaNome}\n${p.descricao}${motivo ? `\nMotivo: ${motivo}` : ''}\n\nO pedido foi arquivado.`
