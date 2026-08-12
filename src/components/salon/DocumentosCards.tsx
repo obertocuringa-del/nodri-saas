@@ -92,8 +92,21 @@ export default function DocumentosCards({ chave, titulo, subtitulo, corTema = '#
   return (
     <div>
       <style>{`
-        .doc-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:13px; }
-        @media (max-width:640px){ .doc-grid { grid-template-columns:1fr; } }
+        .doc-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(215px, 1fr)); gap:14px; }
+        @media (max-width:640px){ .doc-grid { grid-template-columns:1fr 1fr; gap:10px; } }
+        .doc-card { background:#fff; border:1px solid #eceae4; border-radius:16px; overflow:hidden;
+          display:flex; flex-direction:column; transition:box-shadow .18s, transform .18s; }
+        .doc-card:hover { box-shadow:0 10px 26px rgba(20,15,45,.10); transform:translateY(-2px); }
+        .doc-card:hover .doc-lixo { opacity:1; }
+        .doc-lixo { opacity:0; transition:opacity .15s; }
+        .doc-tit { width:100%; border:1px solid transparent; background:transparent; outline:none;
+          font-size:14px; font-weight:800; color:#1a1a2e; padding:3px 6px; border-radius:7px; }
+        .doc-tit:hover, .doc-tit:focus { border-color:#e0ddd8; background:#fbfbfa; }
+        .doc-obs { width:100%; border:1px solid transparent; background:transparent; outline:none;
+          font-size:11.5px; color:#8a8680; padding:2px 6px; border-radius:6px; }
+        .doc-obs:hover, .doc-obs:focus { border-color:#e0ddd8; background:#fbfbfa; }
+        .doc-acao { flex:1; display:inline-flex; align-items:center; justify-content:center; gap:5px;
+          padding:9px 0; border:none; font-size:12px; font-weight:800; cursor:pointer; text-decoration:none; }
       `}</style>
 
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
@@ -122,53 +135,70 @@ export default function DocumentosCards({ chave, titulo, subtitulo, corTema = '#
           {docs.map(d => {
             const info = infoArquivo(d)
             const Icone = info.icone
+            const ehImagem = info.rotulo === 'Imagem' && d.url
             return (
-              <div key={d.id} style={{ background: '#fff', border: '1px solid #eceae4', borderRadius: 16, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                {/* topo colorido pelo tipo */}
-                <div style={{ background: d.url ? info.cor + '14' : '#f7f6f3', padding: '16px 14px', display: 'flex', alignItems: 'center', gap: 11 }}>
-                  <div style={{ width: 42, height: 42, borderRadius: 11, background: d.url ? info.cor : '#d7d5cf', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <Icone size={21} />
-                  </div>
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ fontSize: 10, fontWeight: 900, color: d.url ? info.cor : '#a8a49d', textTransform: 'uppercase', letterSpacing: '.6px' }}>{d.url ? info.rotulo : 'Sem arquivo'}</div>
-                    {d.filename && <div style={{ fontSize: 11, color: '#8a8680', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.filename}</div>}
-                  </div>
-                  <button onClick={() => remover(d.id)} title="Excluir" style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', padding: 3, flexShrink: 0 }}><Trash2 size={15} /></button>
-                </div>
+              <div key={d.id} className="doc-card">
+                {/* Prévia: a própria imagem quando é imagem; senão, o ícone do
+                    tipo sobre um fundo na cor dele. Clicar abre o arquivo. */}
+                <div style={{ position: 'relative', aspectRatio: '16 / 10', background: d.url ? info.cor + '10' : '#f7f6f3', overflow: 'hidden' }}>
+                  {d.url ? (
+                    <a href={d.url} target="_blank" rel="noopener noreferrer" title="Abrir arquivo"
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
+                      {ehImagem
+                        // eslint-disable-next-line @next/next/no-img-element
+                        ? <img src={d.url} alt={d.titulo} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        : <Icone size={40} style={{ color: info.cor, opacity: .85 }} />}
+                    </a>
+                  ) : (
+                    <button onClick={() => fileRefs.current[d.id]?.click()}
+                      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', height: '100%', border: 'none', background: 'transparent', cursor: 'pointer', color: '#b9b4a8' }}>
+                      <Upload size={24} />
+                      <span style={{ fontSize: 11.5, fontWeight: 700 }}>Anexar arquivo</span>
+                    </button>
+                  )}
 
-                <div style={{ padding: '12px 14px', flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <div>
-                    <label style={lab}>Título / tipo do documento</label>
-                    <input value={d.titulo} onChange={e => setCampo(d.id, 'titulo', e.target.value)} placeholder="Ex.: Alvará de Funcionamento 2026"
-                      style={{ ...inp, fontWeight: 800 }} />
-                  </div>
-                  <div>
-                    <label style={lab}>Observação</label>
-                    <input value={d.obs || ''} onChange={e => setCampo(d.id, 'obs', e.target.value)} placeholder="Validade, nº, órgão… (opcional)" style={inp} />
-                  </div>
-
-                  {/* anexar / trocar */}
-                  <input ref={el => { fileRefs.current[d.id] = el }} type="file" style={{ display: 'none' }}
-                    onChange={e => { anexar(d.id, e.target.files?.[0] || null); e.currentTarget.value = '' }} />
-                  <button onClick={() => fileRefs.current[d.id]?.click()} disabled={subindo === d.id}
-                    style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '9px', borderRadius: 10, border: `1px dashed ${corTema}`, background: '#f6f4ff', color: corTema, fontSize: 12.5, fontWeight: 800, cursor: 'pointer' }}>
-                    {subindo === d.id ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />} {d.url ? 'Trocar arquivo' : 'Anexar arquivo'}
+                  {d.url && (
+                    <span style={{ position: 'absolute', top: 8, left: 8, background: info.cor, color: '#fff', fontSize: 9, fontWeight: 900, letterSpacing: '.5px', padding: '3px 8px', borderRadius: 99 }}>
+                      {info.rotulo.toUpperCase()}
+                    </span>
+                  )}
+                  <button className="doc-lixo" onClick={() => remover(d.id)} title="Excluir"
+                    style={{ position: 'absolute', top: 6, right: 6, width: 26, height: 26, borderRadius: 99, border: 'none', background: 'rgba(255,255,255,.92)', color: '#dc2626', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 6px rgba(0,0,0,.12)' }}>
+                    <Trash2 size={13} />
                   </button>
                 </div>
 
-                {/* ações: baixar + compartilhar */}
-                {d.url && (
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, padding: '0 14px 14px' }}>
-                    <a href={`${d.url}?download=${encodeURIComponent(d.filename || 'arquivo')}`} target="_blank" rel="noopener noreferrer"
-                      style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '10px 0', borderRadius: 11, border: 'none', background: '#f4f3f8', color: '#4b5563', fontSize: 12.5, fontWeight: 800, textDecoration: 'none' }}>
-                      <Download size={15} /> Baixar
-                    </a>
-                    <button onClick={() => setCompartilhar(d)}
-                      style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '10px 0', borderRadius: 11, border: 'none', background: '#dcfce7', color: '#16a34a', fontSize: 12.5, fontWeight: 800, cursor: 'pointer' }}>
-                      <Share2 size={15} /> Compartilhar
+                <div style={{ padding: '10px 9px 8px', flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <input className="doc-tit" value={d.titulo} onChange={e => setCampo(d.id, 'titulo', e.target.value)}
+                    placeholder="Nome do documento" />
+                  <input className="doc-obs" value={d.obs || ''} onChange={e => setCampo(d.id, 'obs', e.target.value)}
+                    placeholder="Validade, nº, órgão…" />
+                  {d.filename && (
+                    <div style={{ fontSize: 10, color: '#b9b4a8', padding: '3px 6px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.filename}</div>
+                  )}
+                </div>
+
+                <input ref={el => { fileRefs.current[d.id] = el }} type="file" style={{ display: 'none' }}
+                  onChange={e => { anexar(d.id, e.target.files?.[0] || null); e.currentTarget.value = '' }} />
+
+                <div style={{ display: 'flex', borderTop: '1px solid #f2f0ec' }}>
+                  {d.url ? (
+                    <>
+                      <a className="doc-acao" href={`${d.url}?download=${encodeURIComponent(d.filename || 'arquivo')}`} target="_blank" rel="noopener noreferrer"
+                        style={{ background: '#fff', color: '#6b6860', borderRight: '1px solid #f2f0ec' }}>
+                        <Download size={14} /> Baixar
+                      </a>
+                      <button className="doc-acao" onClick={() => setCompartilhar(d)} style={{ background: '#fff', color: '#16a34a' }}>
+                        <Share2 size={14} /> Enviar
+                      </button>
+                    </>
+                  ) : (
+                    <button className="doc-acao" onClick={() => fileRefs.current[d.id]?.click()} disabled={subindo === d.id}
+                      style={{ background: '#fff', color: corTema }}>
+                      {subindo === d.id ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />} Anexar
                     </button>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             )
           })}
@@ -179,9 +209,6 @@ export default function DocumentosCards({ chave, titulo, subtitulo, corTema = '#
     </div>
   )
 }
-
-const lab: CSSProperties = { fontSize: 10.5, fontWeight: 800, color: '#8a8680', textTransform: 'uppercase', letterSpacing: '.5px', display: 'block', marginBottom: 3 }
-const inp: CSSProperties = { width: '100%', padding: '8px 10px', borderRadius: 9, border: '1.5px solid #e0ddd8', fontSize: 12.5, background: '#fff' }
 
 function ModalCompartilhar({ doc, onClose }: { doc: Doc; onClose: () => void }) {
   const titulo = doc.titulo || doc.filename || 'Documento'
