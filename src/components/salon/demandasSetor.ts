@@ -77,12 +77,9 @@ const MAPA: { chave: string[]; demandas: string[] }[] = [
     ]
   },
   {
-    chave: ['COMPRAS', 'ESTOQUE'], demandas: [
-      'Compras', 'Fornecedores', 'Cotação', 'Materiais', 'Controle de estoque',
-      'Entrada de produtos', 'Saída de produtos', 'Inventário',
-      'Materiais de uso dos profissionais', 'Controle de consumo', 'Reposição',
-      'Organização do estoque', 'Controle de produtos utilizados nos procedimentos',
-    ]
+    // As áreas de compra viraram ferramentas (uma página com lista + pedidos
+    // para cada), então o setor não tem mais demandas soltas.
+    chave: ['COMPRAS', 'ESTOQUE'], demandas: []
   },
   {
     chave: ['PROCESSO', 'QUALIDADE'], demandas: [

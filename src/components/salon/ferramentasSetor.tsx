@@ -28,6 +28,9 @@ import AnexosLista from '@/components/salon/AnexosLista'
 import Etiquetas from '@/components/salon/Etiquetas'
 import ChecklistAdministrativo from '@/components/salon/ChecklistAdministrativo'
 import DocumentosCards from '@/components/salon/DocumentosCards'
+import ListaCompras from '@/components/salon/ListaCompras'
+import PedidosCompraFinanceiro from '@/components/salon/PedidosCompraFinanceiro'
+import { AREAS_COMPRAS } from '@/lib/comprasEstoque'
 import ListaServico from '@/components/salon/ListaServico'
 import CheckProconPainel from '@/components/salon/CheckProconPainel'
 import ConteudoPopPainel from '@/components/salon/ConteudoPopPainel'
@@ -79,6 +82,11 @@ export const CATALOGO: Record<string, Ferramenta> = {
   etiquetas:           { id: 'etiquetas',           label: 'ETIQUETAS',              perm: 'adm_etiquetas' },
   // Licenças e Contratos Administrativos viraram uma página só, em cards
   ck_administrativo:   { id: 'ck_administrativo',   label: 'CHECK LIST — ADMINISTRATIVO', perm: 'checklist' },
+  pedidos_compra:      { id: 'pedidos_compra',      label: 'PEDIDOS DE COMPRA',      perm: 'pendencias' },
+  // Uma entrada por área de compra — a página é a mesma, muda a área
+  ...Object.fromEntries(AREAS_COMPRAS.map(a => [`compras_${a.id}`, {
+    id: `compras_${a.id}`, label: a.titulo.toUpperCase(), perm: 'adm_listas',
+  }])),
   licencas_contratos:  { id: 'licencas_contratos',  label: 'LICENÇAS E CONTRATOS ADMINISTRATIVOS', perm: 'adm_listas' },
   escala:              { id: 'escala',              label: 'ESCALA DE TRABALHO',     perm: 'adm_escala' },
   // Mesma tela e MESMOS dados da Escala, mostrando só os blocos de VA/VT — que
@@ -141,10 +149,11 @@ export const CATALOGO: Record<string, Ferramenta> = {
 export const FERRAMENTAS_POR_SETOR: { chave: string[]; itens: string[] }[] = [
   { chave: ['RECEPCAO'], itens: ['ck_abertura', 'ck_intermediario', 'ck_fechamento', 'lista_realinhamento', 'lista_corte', 'lista_mechas', 'lista_pigmentacao', 'bebidas', 'valores_pacotes', 'arquivos_envio'] },
   { chave: ['DOSAGEM'], itens: ['ck_dosagem', 'produtos', 'servinterno', 'servicos_valores', 'tratamentos', 'esterilizacao_fluxo', 'kits', 'enxovais'] },
-  { chave: ['COMPRAS', 'ESTOQUE'], itens: ['pr_materiais', 'tabela_precos', 'cadastrar_produto'] },
+  // Uma página por área de compra (lista de reposição + pedidos ao Financeiro)
+  { chave: ['COMPRAS', 'ESTOQUE'], itens: AREAS_COMPRAS.map(a => `compras_${a.id}`) },
   // Etiquetas saiu daqui: virou sub-botão de "Organização das pastas" (SUBDEMANDAS).
   { chave: ['ADMINISTRATIVO'], itens: ['ck_administrativo', 'licencas_contratos', 'escala', 'feriados', 'ata', 'senhas', 'telefones', 'calendario', 'auditoria'] },
-  { chave: ['FINANCEIRO'], itens: ['pr_abertura', 'desconto_profissional', 'pagamento_va_vt'] },
+  { chave: ['FINANCEIRO'], itens: ['pr_abertura', 'desconto_profissional', 'pagamento_va_vt', 'pedidos_compra'] },
   { chave: ['GERENCIA', 'GERENTE'], itens: ['ck_gerente', 'corrida_interna'] },
   { chave: ['PROCESSO', 'QUALIDADE'], itens: ['pr_ranking', 'ck_padrao', 'pop_cafe', 'pop_salao', 'checkprocon', 'pop_recepcao', 'pop_manicure', 'pop_cabelereiro'] },
   { chave: ['MARKETING'], itens: ['calendario_mkt'] },
@@ -167,6 +176,12 @@ export function ferramentasDoSetor(nomeSetor: string): Ferramenta[] {
 
 /** Renderiza o conteúdo de uma ferramenta — o mesmo componente do Administrativo. */
 export function ConteudoFerramenta({ id, profsSalao, abaPop = 'cafe' }: { id: string; profsSalao: ProfSalao[]; abaPop?: string }) {
+  // Áreas de compra: mesma página para todas, muda só a área (por isso fica
+  // fora do switch, que precisaria de uma linha para cada).
+  if (id.startsWith('compras_')) {
+    const area = AREAS_COMPRAS.find(a => `compras_${a.id}` === id)
+    if (area) return <ListaCompras key={id} area={area.id} titulo={area.titulo} />
+  }
   switch (id) {
     case 'lista_realinhamento': return <ListaServico key="realinhamento" servico="realinhamento" label="Realinhamento" profsSalao={profsSalao} />
     case 'lista_corte':         return <ListaServico key="corte" servico="corte" label="Corte" profsSalao={profsSalao} />
@@ -186,6 +201,7 @@ export function ConteudoFerramenta({ id, profsSalao, abaPop = 'cafe' }: { id: st
     case 'cadastrar_produto':   return <GridEditavel key="cadprod" chave="cadastrar_produto" defaultDoc={D_CAD_PRODUTO} landscape />
     case 'etiquetas':           return <Etiquetas key="etiquetas" />
     case 'ck_administrativo':   return <ChecklistAdministrativo key="ck_adm" />
+    case 'pedidos_compra':      return <PedidosCompraFinanceiro key="pedidos_compra" />
     case 'licencas_contratos':  return <DocumentosCards key="lic_contr" chave="licencas_contratos"
       titulo="Licenças e Contratos Administrativos"
       subtitulo="Alvarás, licenças, contratos e aditivos. Anexe o arquivo e compartilhe por WhatsApp ou e-mail." />
