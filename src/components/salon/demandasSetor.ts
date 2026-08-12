@@ -26,8 +26,7 @@ const MAPA: { chave: string[]; demandas: string[] }[] = [
   },
   {
     chave: ['ADMINISTRATIVO'], demandas: [
-      'Organização de documentos da empresa', 'Arquivamento',
-      'Organização das pastas', 'Controle de documentos', 'Apoio à sócia',
+      'Organização das pastas', 'Apoio à sócia',
       'Chancela dos contratos', 'Coffee breaks e encontros internos',
     ]
   },
