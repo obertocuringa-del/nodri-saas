@@ -26,6 +26,7 @@ export default function ListaCompras({ area, titulo }: { area: string; titulo: s
   const [carregando, setCarregando] = useState(true)
   const [salvando, setSalvando] = useState(false)
   const [enviando, setEnviando] = useState('')
+  const [expandido, setExpandido] = useState('')
   const [dirty, setDirty] = useState(false)
   const [setorFinanceiro, setSetorFinanceiro] = useState<{ id: string; nome: string } | null>(null)
   useGuardaSalvar(dirty, titulo)
@@ -271,31 +272,79 @@ export default function ListaCompras({ area, titulo }: { area: string; titulo: s
           {doc.pedidos.map(p => {
             const st = STATUS_PEDIDO[p.status]
             const travado = p.status !== 'rascunho'
+            const aberto = expandido === p.id
+            const ref = p.id.slice(0, 4).toUpperCase()
+            const quando = p.enviadoEm || p.criadoEm
             return (
               <div key={p.id} style={{ border: `1.5px solid ${st.borda}`, background: st.fundo, borderRadius: 12, padding: '11px 13px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap', marginBottom: 8 }}>
                   <span style={{ background: st.cor, color: '#fff', fontSize: 9.5, fontWeight: 900, letterSpacing: '.4px', padding: '3px 9px', borderRadius: 99, whiteSpace: 'nowrap' }}>
                     {st.rotulo}
                   </span>
-                  {p.decididoEm && <span style={{ fontSize: 10.5, color: '#8a8680' }}>em {new Date(p.decididoEm).toLocaleDateString('pt-BR')}</span>}
+                  <span title="Referência do pedido" style={{ fontSize: 10, fontWeight: 900, color: '#8a8680', background: '#fff', border: '1px solid #eceae4', borderRadius: 6, padding: '2px 7px', letterSpacing: '.5px' }}>#{ref}</span>
+                  {quando && <span style={{ fontSize: 10.5, color: '#8a8680' }}>{new Date(quando).toLocaleDateString('pt-BR')}</span>}
                   <div style={{ flex: 1 }} />
                   <button onClick={() => delPedido(p.id)} style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', padding: 2 }}><Trash2 size={13} /></button>
                 </div>
 
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-                  <div style={{ flex: '3 1 220px', minWidth: 170 }}>
-                    <label style={rot}>O que está pedindo</label>
-                    <input className="lc-in" value={p.descricao} disabled={travado}
-                      onChange={e => mudarPedido(p.id, 'descricao', e.target.value)}
-                      placeholder="Ex.: Pedido de dosagem" style={{ fontWeight: 700 }} />
+                {travado ? (
+                  // Já enviado: vira leitura, com o detalhe do que foi pedido
+                  // a um clique. Como campo editável, parecia que ainda dava
+                  // para mudar — e não dá.
+                  <>
+                    <button onClick={() => setExpandido(x => x === p.id ? '' : p.id)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 9, width: '100%', textAlign: 'left', border: 'none', background: 'transparent', cursor: 'pointer', padding: 0 }}>
+                      <span style={{ flex: 1, fontSize: 14, fontWeight: 800, color: '#1a1a2e', minWidth: 0 }}>
+                        {p.tipo === 'lista' && <span style={{ fontSize: 9.5, fontWeight: 900, color: '#5b4fcf', background: '#fff', border: '1px solid #ddd6f5', borderRadius: 99, padding: '2px 7px', marginRight: 6 }}>LISTA</span>}
+                        {p.descricao || 'Sem descrição'}
+                      </span>
+                      {num(p.valor) > 0 && <span style={{ fontSize: 15, fontWeight: 900, color: '#15803d', whiteSpace: 'nowrap' }}>{moeda(num(p.valor))}</span>}
+                      <span style={{ fontSize: 11, color: '#8a8680', transform: aberto ? 'rotate(180deg)' : 'none' }}>▼</span>
+                    </button>
+
+                    {aberto && (
+                      <div style={{ background: '#fff', border: '1px solid #eceae4', borderRadius: 10, padding: '9px 12px', marginTop: 8 }}>
+                        {p.tipo === 'lista' && !!p.itens?.length ? (
+                          <>
+                            <div style={{ fontSize: 9.5, fontWeight: 900, color: '#8a8680', letterSpacing: '.5px', marginBottom: 5 }}>ITENS PEDIDOS</div>
+                            {p.itens.map(i => (
+                              <div key={i.id} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '3px 0', fontSize: 12, borderBottom: '1px solid #f7f6f3' }}>
+                                <span style={{ flex: 1, fontWeight: 700, color: '#374151', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{i.nome}</span>
+                                <span style={{ fontSize: 10.5, color: '#a8a49d', whiteSpace: 'nowrap' }}>mín. {i.minimo || 0} · atual {i.atual || 0}</span>
+                                <span style={{ fontWeight: 900, color: '#5b4fcf', whiteSpace: 'nowrap' }}>comprar {i.comprar}</span>
+                              </div>
+                            ))}
+                          </>
+                        ) : (
+                          <div style={{ fontSize: 12.5, color: '#374151' }}>
+                            <span style={{ fontSize: 9.5, fontWeight: 900, color: '#8a8680', letterSpacing: '.5px', display: 'block', marginBottom: 3 }}>O QUE FOI PEDIDO</span>
+                            {p.descricao || '—'}
+                          </div>
+                        )}
+                        <div style={{ fontSize: 10.5, color: '#a8a49d', marginTop: 7, lineHeight: 1.6 }}>
+                          {p.enviadoEm && <>Enviado ao Financeiro em {new Date(p.enviadoEm).toLocaleString('pt-BR')}<br /></>}
+                          {p.decididoEm && <>Decidido em {new Date(p.decididoEm).toLocaleString('pt-BR')}<br /></>}
+                          {p.compradoEm && <>Comprado em {new Date(p.compradoEm).toLocaleString('pt-BR')}</>}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                    <div style={{ flex: '3 1 220px', minWidth: 170 }}>
+                      <label style={rot}>O que está pedindo</label>
+                      <input className="lc-in" value={p.descricao}
+                        onChange={e => mudarPedido(p.id, 'descricao', e.target.value)}
+                        placeholder="Ex.: Pedido de dosagem" style={{ fontWeight: 700 }} />
+                    </div>
+                    <div style={{ flex: '0 1 140px' }}>
+                      <label style={rot}>Valor</label>
+                      <input className="lc-in" type="number" value={p.valor}
+                        onChange={e => mudarPedido(p.id, 'valor', e.target.value)}
+                        placeholder="R$ 0,00" style={{ textAlign: 'right', fontWeight: 800 }} />
+                    </div>
                   </div>
-                  <div style={{ flex: '0 1 140px' }}>
-                    <label style={rot}>Valor</label>
-                    <input className="lc-in" type="number" value={p.valor} disabled={travado}
-                      onChange={e => mudarPedido(p.id, 'valor', e.target.value)}
-                      placeholder="R$ 0,00" style={{ textAlign: 'right', fontWeight: 800 }} />
-                  </div>
-                </div>
+                )}
 
                 {p.status === 'rascunho' && (
                   <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
