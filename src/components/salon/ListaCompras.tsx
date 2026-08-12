@@ -14,7 +14,7 @@
 // como aprovado, negado ou assumido por eles.
 
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react'
-import { Loader2, Save, Plus, Trash2, Send, ShoppingCart, Check, Clock, X, CircleDollarSign } from 'lucide-react'
+import { Loader2, Save, Plus, Trash2, Send, ShoppingCart, Check, Clock, X, CircleDollarSign, MessageSquare } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useGuardaSalvar } from '@/lib/guardaSalvar'
 import { type Pedido, type ItemLista, rid, num, moeda, STATUS_PEDIDO, chavePedidos } from '@/lib/comprasEstoque'
@@ -375,13 +375,25 @@ export default function ListaCompras({ area, titulo }: { area: string; titulo: s
                 )}
                 {p.status === 'negado' && (
                   <p style={{ fontSize: 11.5, color: '#b91c1c', fontWeight: 700, margin: '9px 0 0', display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <X size={13} /> Não aprovado pelo Financeiro. Pedido arquivado.{p.motivo ? ` Motivo: ${p.motivo}` : ''}
+                    <X size={13} /> Não aprovado pelo Financeiro. Pedido arquivado.
                   </p>
                 )}
                 {p.status === 'financeiro_compra' && (
                   <p style={{ fontSize: 11.5, color: '#5b4fcf', fontWeight: 700, margin: '9px 0 0' }}>
                     🛒 O Financeiro assumiu a compra — não precisa comprar.
                   </p>
+                )}
+
+                {/* O recado do Financeiro vale em qualquer resposta, não só no
+                    "não": é o que diz se é para insistir, esperar ou mudar. */}
+                {p.motivo && (
+                  <div style={{ display: 'flex', gap: 7, background: '#fff', border: '1px solid #eceae4', borderRadius: 9, padding: '8px 11px', marginTop: 8 }}>
+                    <MessageSquare size={13} style={{ color: '#8a8680', flexShrink: 0, marginTop: 1 }} />
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 9.5, fontWeight: 900, color: '#8a8680', letterSpacing: '.4px' }}>OBSERVAÇÃO DO FINANCEIRO</div>
+                      <div style={{ fontSize: 12.5, color: '#374151', lineHeight: 1.45 }}>{p.motivo}</div>
+                    </div>
+                  </div>
                 )}
                 {p.status === 'comprado' && (
                   <p style={{ fontSize: 11.5, color: '#15803d', fontWeight: 700, margin: '9px 0 0' }}>✅ Compra feita.</p>

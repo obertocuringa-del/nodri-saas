@@ -25,6 +25,7 @@ export default function PedidosCompraFinanceiro() {
   const [verTodos, setVerTodos] = useState(false)
   const [setorCompras, setSetorCompras] = useState<{ id: string } | null>(null)
   const [financeiro, setFinanceiro] = useState<{ historico: any[]; rel: any } | null>(null)
+  const [decisao, setDecisao] = useState<{ pedido: PedidoComArea; status: StatusPedido } | null>(null)
 
   const carregar = useCallback(async () => {
     setCarregando(true)
@@ -142,11 +143,19 @@ export default function PedidosCompraFinanceiro() {
         }).catch(() => { })
       }
 
-      // Avisa quem pediu — só nas decisões que mudam o que ele precisa fazer
-      if (setorCompras && (status === 'aprovado' || status === 'negado')) {
-        const texto = status === 'aprovado'
-          ? `PEDIDO APROVADO — ${p.areaNome}\n${p.descricao}${num(p.valor) > 0 ? `\nValor: ${moeda(num(p.valor))}` : ''}\n\nVocê está autorizado a comprar.`
-          : `PEDIDO NÃO APROVADO — ${p.areaNome}\n${p.descricao}${motivo ? `\nMotivo: ${motivo}` : ''}\n\nO pedido foi arquivado.`
+      // Avisa quem pediu, sempre com a observação junto — um "não" seco deixa
+      // o setor sem saber se insiste, se espera ou se muda o pedido.
+      if (setorCompras && status !== 'comprado') {
+        const cab = status === 'aprovado' ? 'PEDIDO APROVADO'
+          : status === 'negado' ? 'PEDIDO NÃO APROVADO'
+            : 'O FINANCEIRO VAI COMPRAR'
+        const fim = status === 'aprovado' ? 'Você está autorizado a comprar.'
+          : status === 'negado' ? 'O pedido foi arquivado.'
+            : 'Não precisa comprar — o Financeiro assumiu.'
+        const texto = `${cab} — ${p.areaNome}\n${p.descricao}`
+          + (num(p.valor) > 0 ? `\nValor: ${moeda(num(p.valor))}` : '')
+          + (motivo ? `\n\nObservação do Financeiro: ${motivo}` : '')
+          + `\n\n${fim}`
         await fetch('/api/pendencias', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ profissional_id: setorCompras.id, mensagem: texto, origem: `compras:${p.areaId}` }),
@@ -159,9 +168,12 @@ export default function PedidosCompraFinanceiro() {
     setAgindo('')
   }
 
-  function negar(p: PedidoComArea) {
-    const motivo = prompt('Motivo de não aprovar (opcional):') ?? ''
-    decidir(p, 'negado', motivo.trim())
+  /** Confirma a decisão com a observação escrita no modal. */
+  function confirmarDecisao(obs: string) {
+    if (!decisao) return
+    const { pedido, status } = decisao
+    setDecisao(null)
+    decidir(pedido, status, obs.trim())
   }
 
   if (carregando) return (
@@ -293,15 +305,15 @@ export default function PedidosCompraFinanceiro() {
 
                 {p.status === 'enviado' && (
                   <div style={{ display: 'flex', gap: 8, marginTop: 11, flexWrap: 'wrap' }}>
-                    <button onClick={() => decidir(p, 'aprovado')} disabled={agindo === p.id}
+                    <button onClick={() => setDecisao({ pedido: p, status: 'aprovado' })} disabled={agindo === p.id}
                       style={btn('#16a34a', '#fff')}>
                       {agindo === p.id ? <Loader2 size={13} className="animate-spin" /> : <Check size={14} />} Aprovar
                     </button>
-                    <button onClick={() => negar(p)} disabled={agindo === p.id}
+                    <button onClick={() => setDecisao({ pedido: p, status: 'negado' })} disabled={agindo === p.id}
                       style={btn('#fff', '#dc2626', '#fecaca')}>
                       <X size={14} /> Não aprovar
                     </button>
-                    <button onClick={() => decidir(p, 'financeiro_compra')} disabled={agindo === p.id}
+                    <button onClick={() => setDecisao({ pedido: p, status: 'financeiro_compra' })} disabled={agindo === p.id}
                       style={btn('#fff', '#5b4fcf', '#ddd6f5')}>
                       <ShoppingCart size={14} /> Eu mesmo comprarei
                     </button>
@@ -324,9 +336,58 @@ export default function PedidosCompraFinanceiro() {
 
       <p style={{ fontSize: 11.5, color: '#a8a49d', margin: '11px 4px 0', lineHeight: 1.5 }}>
         <b>Aprovar</b> autoriza o setor a comprar. <b>Não aprovar</b> arquiva o pedido. <b>Eu mesmo comprarei</b> passa a
-        responsabilidade para o Financeiro — o pedido continua aqui até você marcar como comprado. Nos dois primeiros casos, o
-        Compras/Estoque recebe o aviso como pendência.
+        responsabilidade para o Financeiro — o pedido continua aqui até você marcar como comprado. Em qualquer das três, o
+        Compras/Estoque recebe o aviso com a sua observação.
       </p>
+
+      {decisao && <ModalDecisao decisao={decisao} onCancelar={() => setDecisao(null)} onConfirmar={confirmarDecisao} />}
+    </div>
+  )
+}
+
+/* ─────────────── Modal: decidir com observação ─────────────── */
+function ModalDecisao({ decisao, onCancelar, onConfirmar }: {
+  decisao: { pedido: PedidoComArea; status: StatusPedido }
+  onCancelar: () => void
+  onConfirmar: (obs: string) => void
+}) {
+  const [obs, setObs] = useState('')
+  const { pedido, status } = decisao
+  const info = status === 'aprovado'
+    ? { titulo: 'Aprovar pedido', cor: '#16a34a', fundo: '#f0fdf4', dica: 'Ex.: pode comprar, mas peça desconto à vista.', botao: 'Aprovar' }
+    : status === 'negado'
+      ? { titulo: 'Não aprovar pedido', cor: '#dc2626', fundo: '#fef2f2', dica: 'Ex.: deixa para comprar no mês que vem.', botao: 'Não aprovar' }
+      : { titulo: 'Assumir a compra', cor: '#5b4fcf', fundo: '#f5f3ff', dica: 'Ex.: eu compro no fornecedor novo na sexta.', botao: 'Vou comprar' }
+
+  return (
+    <div onClick={onCancelar} style={{ position: 'fixed', inset: 0, zIndex: 95, background: 'rgba(20,15,45,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 18, padding: 22, width: 'min(440px,100%)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
+          <b style={{ fontSize: 16.5, color: info.cor }}>{info.titulo}</b>
+          <button onClick={onCancelar} style={{ marginLeft: 'auto', border: 'none', background: 'transparent', cursor: 'pointer', color: '#6b6860' }}><X size={18} /></button>
+        </div>
+
+        <div style={{ background: info.fundo, borderRadius: 10, padding: '9px 12px', margin: '8px 0 14px' }}>
+          <div style={{ fontSize: 10, fontWeight: 900, color: '#8a8680', letterSpacing: '.4px' }}>{pedido.areaNome.toUpperCase()} · #{pedido.id.slice(0, 4).toUpperCase()}</div>
+          <div style={{ fontSize: 13.5, fontWeight: 800, color: '#1a1a2e' }}>{pedido.descricao}</div>
+          {num(pedido.valor) > 0 && <div style={{ fontSize: 15, fontWeight: 900, color: info.cor }}>{moeda(num(pedido.valor))}</div>}
+        </div>
+
+        <label style={{ fontSize: 11, fontWeight: 800, color: '#6b6860', display: 'block', marginBottom: 5 }}>
+          OBSERVAÇÃO PARA O SETOR <span style={{ fontWeight: 600, color: '#a8a49d' }}>(opcional)</span>
+        </label>
+        <textarea value={obs} onChange={e => setObs(e.target.value)} rows={3} autoFocus
+          placeholder={info.dica}
+          style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e0ddd8', fontSize: 13, resize: 'vertical', lineHeight: 1.5, fontFamily: 'inherit' }} />
+        <p style={{ fontSize: 11, color: '#a8a49d', margin: '6px 0 0', lineHeight: 1.45 }}>
+          O que você escrever aqui chega junto com o aviso para o Compras/Estoque.
+        </p>
+
+        <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+          <button onClick={onCancelar} style={{ flex: 1, padding: 12, borderRadius: 10, border: '1px solid #e0ddd8', background: '#fff', color: '#6b6860', fontWeight: 700, cursor: 'pointer' }}>Cancelar</button>
+          <button onClick={() => onConfirmar(obs)} style={{ flex: 2, padding: 12, borderRadius: 10, border: 'none', background: info.cor, color: '#fff', fontWeight: 800, cursor: 'pointer' }}>{info.botao}</button>
+        </div>
+      </div>
     </div>
   )
 }
