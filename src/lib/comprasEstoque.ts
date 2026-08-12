@@ -57,7 +57,6 @@ export const AREAS_COMPRAS: { id: string; titulo: string }[] = [
   { id: 'qualidade',      titulo: 'Processo / Qualidade' },
   { id: 'tecnica',        titulo: 'Responsável Técnica' },
   { id: 'gerencia',       titulo: 'Gerência' },
-  { id: 'estoque',        titulo: 'Compras / Estoque' },
 ]
 
 /** Chave no salao_config onde a lista e os pedidos daquele setor ficam. */
