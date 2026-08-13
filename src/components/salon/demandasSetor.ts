@@ -16,9 +16,8 @@ const norm = (s: string) => (s || '').toUpperCase().trim()
 const MAPA: { chave: string[]; demandas: string[] }[] = [
   {
     chave: ['GERENCIA', 'GERENTE'], demandas: [
-      'Planejamento estratégico geral da empresa', 'Reuniões de alinhamento',
-      'Acompanhamento do desempenho dos setores',
-      'Apresentação dos resultados à Direção', 'Metas de crescimento do salão',
+      'Planejamento estratégico geral da empresa',
+      'Apresentação dos resultados à Direção',
     ]
   },
   {
