@@ -5,7 +5,9 @@
 // fica em salao_config, uma chave por mês (planejamento_estrategico_AAAA-M).
 // Assim a estrutura não é digitada de novo a cada mês e cada mês é independente.
 
-export interface ItemPlano { id: string; nome: string; desc: string }
+// conteudo: texto fixo do salão (missão, visão, valores) que aparece já pronto
+// como referência — o que não muda de um mês para o outro.
+export interface ItemPlano { id: string; nome: string; desc: string; conteudo?: string }
 export interface CardPlano {
   id: string
   icone: string
@@ -15,16 +17,33 @@ export interface CardPlano {
   itens: ItemPlano[]
 }
 
-const it = (id: string, nome: string, desc: string): ItemPlano => ({ id, nome, desc })
+const it = (id: string, nome: string, desc: string, conteudo?: string): ItemPlano => ({ id, nome, desc, conteudo })
+
+// Identidade do salão — texto oficial, mostrado já pronto nos itens.
+const VENDEMOS = 'Beleza e autoestima — através de serviços e produtos de alta qualidade para o cabelo, a pele e o corpo.'
+const MISSAO = 'Receber cada cliente de forma personalizada para elevar a autoestima.'
+const VISAO = 'Ser uma casa de beleza conceito em sustentabilidade e excelência.'
+const VALORES = `1º Segurança — Priorizamos a segurança em todas as nossas ações, garantindo domínio técnico, transparência e integridade, para oferecer um atendimento que preserva a saúde e a satisfação de nossos clientes.
+
+2º Empatia — Somos dedicados a reconhecer e valorizar a singularidade de cada indivíduo, promovendo um ambiente de trabalho leve, amigável e respeitoso, comprometidos em ouvir as necessidades dos clientes com transparência e empenho, cultivando relações de lealdade e confiança.
+
+3º Qualidade — Somos comprometidos em superar as expectativas do cliente através de um processo de melhoria contínua, baseado em ouvir atentamente os feedbacks e assumir responsabilidades em todos os níveis.
+
+4º Educação — Investimos na educação da nossa equipe para oferecer um serviço de excelência; essa é a chave para a realização dos nossos sonhos.
+
+5º Sustentabilidade — Adotamos medidas que minimizam o impacto ambiental, promovemos o bem-estar social e econômico, e respeitamos os recursos naturais e humanos.
+
+6º Humildade — Reconhecemos nosso valor e o dos outros, admitimos e aprendemos com os erros, servimos com empatia, perdoamos, somos gratos e deixamos nossas realizações falarem por si.`
 
 export const CARDS_PLANEJAMENTO: CardPlano[] = [
   {
     id: 'estrategico', icone: '🏢', titulo: 'Planejamento Estratégico Geral', responsavel: 'Direção / Proprietário',
     oque: 'O planejamento "macro" do salão: para onde a empresa vai, que resultados quer e como os setores chegam lá.',
     itens: [
-      it('missao', 'Missão', 'O propósito do salão — por que ele existe'),
-      it('visao', 'Visão', 'Onde o salão quer estar em 3-5 anos'),
-      it('valores', 'Valores', 'Os princípios que guiam decisões e comportamentos'),
+      it('vendemos', 'O que vendemos?', 'A essência do que o salão entrega', VENDEMOS),
+      it('missao', 'Missão', 'O propósito do salão — por que ele existe', MISSAO),
+      it('visao', 'Visão', 'Onde o salão quer estar', VISAO),
+      it('valores', 'Valores', 'Os princípios que guiam decisões e comportamentos', VALORES),
       it('posicionamento', 'Posicionamento', 'Como o salão quer ser percebido no mercado'),
       it('publico', 'Público-alvo', 'Quem é o cliente ideal do salão'),
       it('diferenciais', 'Diferenciais', 'O que faz o salão ser único e melhor que a concorrência'),

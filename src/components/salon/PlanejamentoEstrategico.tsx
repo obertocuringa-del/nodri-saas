@@ -150,9 +150,17 @@ export default function PlanejamentoEstrategico() {
                   </div>
                 </div>
 
-                <label style={rot}>Como será feita a estratégia</label>
+                {/* Conteúdo fixo do salão (missão, visão, valores): já vem
+                    pronto, como referência — não é digitado de novo por mês. */}
+                {item.conteudo && (
+                  <div style={{ background: '#f8f8fc', border: '1px solid #ddd6f5', borderRadius: 9, padding: '10px 12px', marginBottom: 9, fontSize: 12.5, color: '#3a3550', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                    {item.conteudo}
+                  </div>
+                )}
+
+                <label style={rot}>{item.conteudo ? 'Como aplicar isto no mês' : 'Como será feita a estratégia'}</label>
                 <textarea value={p.estrategia || ''} onChange={e => mudar(card.id, item.id, 'estrategia', e.target.value)}
-                  rows={2} placeholder="Descreva o que será feito neste item…"
+                  rows={2} placeholder={item.conteudo ? 'Ações do mês para viver isto no dia a dia…' : 'Descreva o que será feito neste item…'}
                   style={{ width: '100%', padding: '9px 11px', borderRadius: 9, border: '1.5px solid #e0ddd8', fontSize: 12.5, resize: 'vertical', lineHeight: 1.5, fontFamily: 'inherit', marginBottom: 9 }} />
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 8 }}>
