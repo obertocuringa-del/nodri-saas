@@ -386,6 +386,23 @@ export default function ChecklistPainel({ categoriaFixa = '', embutido = false }
             </button>
           )}
 
+          {/* Computador DENTRO do setor: a barra de página fica oculta (embutido),
+              mas os controles funcionais precisam aparecer — sem eles não dava
+              para editar, configurar dias/período, transferir nem salvar. */}
+          {!isMobile && embutido && !soLeitura && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
+              <div style={{ display: 'inline-flex', border: '1.5px solid #d8d4f0', borderRadius: 9, overflow: 'hidden' }}>
+                <button onClick={() => setModo('fazer')} title="Roteiro guiado — para executar/cobrir" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 12px', border: 'none', background: modo === 'fazer' ? '#5b4fcf' : '#fff', color: modo === 'fazer' ? '#fff' : '#6b6860', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}><Route size={14} /> Fazer</button>
+                <button onClick={() => setModo('editar')} title="Configurar as demandas (dias, período, responsável, excluir)" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 12px', border: 'none', background: modo === 'editar' ? '#5b4fcf' : '#fff', color: modo === 'editar' ? '#fff' : '#6b6860', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}><Settings2 size={14} /> Editar</button>
+              </div>
+              <div style={{ flex: 1 }} />
+              <button onClick={() => { setVerComuns(v => !v); setVerRelatorio(false) }} style={btnNav(verComuns)}><Copy size={14} /> Demandas em comum</button>
+              <button onClick={() => { setVerRelatorio(v => !v); setVerComuns(false) }} style={btnNav(verRelatorio)}><BarChart3 size={14} /> Relatório{temAlerta ? ' ⚠️' : ''}</button>
+              {!soExecuta && <button onClick={limparMarcacoes} title="Reinício forçado (os períodos já zeram sozinhos)" style={btnNav(false)}><RotateCcw size={14} /> Limpar</button>}
+              <button onClick={() => salvar()} disabled={salvando} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 16px', borderRadius: 8, border: 'none', background: dirty ? '#16a34a' : '#a3b3a3', color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>{salvando ? '...' : <><Save size={14} /> Salvar geral</>}</button>
+            </div>
+          )}
+
           {/* Celular: alterna Roteiro (Fazer) x Editar */}
           {isMobile && !soLeitura && (
             <div style={{ display: 'flex', border: '1.5px solid #d8d4f0', borderRadius: 12, overflow: 'hidden', marginBottom: 12 }}>
