@@ -21,6 +21,7 @@ import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'r
 import {
   Loader2, Save, Printer, TrendingUp, TrendingDown, AlertTriangle, Rocket,
   CircleDollarSign, Gavel, ListChecks, Plus, Trash2, Users, Target,
+  Smile, Gauge, Building2,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useGuardaSalvar } from '@/lib/guardaSalvar'
@@ -73,8 +74,26 @@ export default function ApresentacaoDirecao() {
       fetch('/api/profissionais', { credentials: 'include' }).then(r => r.ok ? r.json() : []).catch(() => []),
       fetch('/api/salon/alertas', { credentials: 'include' }).then(r => r.ok ? r.json() : null).catch(() => null),
       fetch('/api/salon/boletos', { credentials: 'include' }).then(r => r.ok ? r.json() : null).catch(() => null),
-    ]).then(([rel, calc, pend, profs, alertas, boletos]) => {
-      setDados({ rel, calc, pend: Array.isArray(pend) ? pend : [], profs: Array.isArray(profs) ? profs : [], alertas, boletos })
+      fetch('/api/feedback/formularios', { credentials: 'include' }).then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch('/api/salon/acoes-comerciais', { credentials: 'include' }).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('/api/salon/corridas', { credentials: 'include' }).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('/api/salon/lojistas/relatorio', { credentials: 'include' }).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('/api/salon/grid?chave=checklist', { credentials: 'include' }).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('/api/salon/emprestimo', { credentials: 'include' }).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('/api/curriculos', { credentials: 'include' }).then(r => r.ok ? r.json() : null).catch(() => null),
+    ]).then(async ([rel, calc, pend, profs, alertas, boletos, forms, acoes, corridas, lojistas, checklist, emprestimos, curriculos]) => {
+      // Satisfação do cliente: puxa os resultados do formulário mais recente
+      let feedback: any = null
+      const lista = Array.isArray(forms) ? forms : []
+      if (lista.length) {
+        const f = lista[0]
+        feedback = await fetch(`/api/feedback/resultados/${f.id}`, { credentials: 'include' })
+          .then(r => r.ok ? r.json() : null).catch(() => null)
+      }
+      setDados({
+        rel, calc, pend: Array.isArray(pend) ? pend : [], profs: Array.isArray(profs) ? profs : [],
+        alertas, boletos, feedback, acoes, corridas, lojistas, checklist, emprestimos, curriculos,
+      })
     }).finally(() => setCarregando(false))
   }, [])
 
@@ -257,12 +276,86 @@ export default function ApresentacaoDirecao() {
     const comMeta = ranking.filter(p => p.meta_pct > 0)
     const bateramMeta = comMeta.filter(p => p.meta_pct >= 100).length
 
+    // ── Satisfação do cliente (NPS e notas do formulário) ──
+    const fb = dados.feedback
+    const statsFb: any[] = fb?.stats ? Object.values(fb.stats) : []
+    const comNps = statsFb.filter((s: any) => typeof s?.nps === 'number')
+    const npsMedio = comNps.length ? Math.round(comNps.reduce((s: number, x: any) => s + x.nps, 0) / comNps.length) : null
+    const comMedia = statsFb.filter((s: any) => typeof s?.media === 'number' && s.media > 0)
+    const notaMedia = comMedia.length ? comMedia.reduce((s: number, x: any) => s + x.media, 0) / comMedia.length : null
+    const promotores = comNps.reduce((s: number, x: any) => s + num(x.promotores), 0)
+    const detratores = comNps.reduce((s: number, x: any) => s + num(x.detratores), 0)
+    const satisfacao = fb ? {
+      respostas: num(fb.total_respostas), npsMedio, notaMedia, promotores, detratores,
+      piorServico: fb.piorServico, taxaRetorno: fb.taxaRetorno,
+      comentarios: Array.isArray(fb.comentarios) ? fb.comentarios.slice(-3).reverse() : [],
+      titulo: fb.formulario?.titulo || 'Feedback',
+    } : null
+
+    // ── Campanhas do mês (ações comerciais) ──
+    const camps = Array.isArray(dados.acoes?.campanhas) ? dados.acoes.campanhas : []
+    const ini = new Date(ano, mes - 1, 1).getTime(), fim = new Date(ano, mes, 0, 23, 59).getTime()
+    const campsMes = camps.filter((c: any) => (c.criadoEm || 0) >= ini && (c.criadoEm || 0) <= fim)
+    const campanhas = camps.length ? {
+      ativas: camps.filter((c: any) => c.ativa !== false).length,
+      novas: campsMes.length,
+      shares: camps.reduce((s: number, c: any) => s + num(c.shares), 0),
+      views: camps.reduce((s: number, c: any) => s + num(c.views), 0),
+      top: [...camps].sort((a: any, b: any) => num(b.shares) - num(a.shares)).slice(0, 3),
+    } : null
+
+    // ── Check lists: conformidade das rotinas ──
+    const cats = Array.isArray(dados.checklist?.categorias) ? dados.checklist.categorias : []
+    let ckTotal = 0, ckFeito = 0
+    const ckPorCat: { nome: string; feito: number; total: number }[] = []
+    for (const c of cats) {
+      const dem = (c.demandas || []).filter((d: any) => String(d.texto || '').trim())
+      const f = dem.filter((d: any) => d.feito_em || d.feito).length
+      ckTotal += dem.length; ckFeito += f
+      if (dem.length) ckPorCat.push({ nome: c.nome || '—', feito: f, total: dem.length })
+    }
+    const conformidade = ckTotal ? { pct: Math.round((ckFeito / ckTotal) * 100), feito: ckFeito, total: ckTotal, cats: ckPorCat.sort((a, b) => (a.feito / a.total) - (b.feito / b.total)) } : null
+
+    // ── Equipe: composição, admissões e desligamentos ──
+    const ativos = dados.profs.filter((p: any) => !p.is_departamento && p.ativo !== false)
+    const pj = ativos.filter((p: any) => String(p.vinculo || '').toUpperCase() === 'MEI' || String(p.cnpj || '').trim()).length
+    const clt = ativos.filter((p: any) => String(p.vinculo || '').toUpperCase() === 'CLT').length
+    const admitidosMes = ativos.filter((p: any) => String(p.data_admissao || '').slice(0, 7) === `${ano}-${String(mes).padStart(2, '0')}`).length
+    const inativos = dados.profs.filter((p: any) => !p.is_departamento && p.ativo === false).length
+    const semContrato = ativos.filter((p: any) => !p.tem_contrato).length
+    const equipe = { ativos: ativos.length, pj, clt, admitidosMes, inativos, semContrato }
+
+    // ── Lojistas (CRM) e currículos ──
+    const loj = dados.lojistas?.totais ? {
+      total: num(dados.lojistas.totais.total), ativos: num(dados.lojistas.totais.ativos),
+      novos: num(dados.lojistas.totais.novos_este_mes),
+      aniversariantes: Array.isArray(dados.lojistas.aniversariantes) ? dados.lojistas.aniversariantes.length : 0,
+    } : null
+    const curriculosNovos = Array.isArray(dados.curriculos?.curriculos) ? dados.curriculos.curriculos.length
+      : Array.isArray(dados.curriculos) ? dados.curriculos.length : null
+
+    // ── Corridas internas ──
+    const corridasAtivas = Array.isArray(dados.corridas?.corridas) ? dados.corridas.corridas.length : 0
+
+    // ── Empréstimos em aberto ──
+    const empr = Array.isArray(dados.emprestimos?.pedidos) ? dados.emprestimos.pedidos
+      : Array.isArray(dados.emprestimos) ? dados.emprestimos : []
+    const emprAbertos = empr.filter((e: any) => e.status && e.status !== 'quitado' && e.status !== 'negado').length
+
+    // ── Custo por atendimento e por profissional ──
+    const clientesMes = num(rm.clientes_atendidos)
+    const custoPorAtend = clientesMes > 0 ? (r.diretas + r.custoOp) / clientesMes : null
+    const fatPorProf = ativos.length ? r.faturamento / ativos.length : null
+    const margemPorAtend = clientesMes > 0 ? r.resultadoOp / clientesMes : null
+
     return {
       r, ant, rm, indicadores, atingidoPE, doMesPassado, ehMesCorrente, setores, diasNoMes,
       abertasTotal: abertas.length, vencidas, destaques, abaixoMeta, perdidosTotal, ocupMedia,
       oportunidades, bolAbertos, bolVencidos, frase, alertas: dados.alertas, mesAnt: MESES[ma - 1],
       evolucao, mediaFat12, maxEvo, anoPassado, varYoY, projecao, topServicos, topProdutos,
       melhorDia, piorDia, mediaDia, diasSemana, dre, comMeta, bateramMeta, ranking,
+      satisfacao, campanhas, conformidade, equipe, loj, curriculosNovos, corridasAtivas,
+      emprAbertos, custoPorAtend, fatPorProf, margemPorAtend, clientesMes,
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dados, ranking, ano, mes])
@@ -576,6 +669,96 @@ ${doc.observacoes ? `<div class="bloco"><h2>Observações</h2><p style="font-siz
             </div>
           )}
 
+          {/* ── Cliente: satisfação e NPS ── */}
+          {painel.satisfacao && painel.satisfacao.respostas > 0 && (
+            <>
+              <Secao icone={<Smile size={15} />} titulo="O que o cliente está dizendo" nota={`${painel.satisfacao.titulo} · ${painel.satisfacao.respostas} respostas`} />
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 10, marginBottom: 10 }}>
+                {painel.satisfacao.npsMedio !== null && (
+                  <div style={{ background: painel.satisfacao.npsMedio >= 50 ? '#f0fdf4' : painel.satisfacao.npsMedio >= 0 ? '#fffbeb' : '#fef2f2', border: `1px solid ${painel.satisfacao.npsMedio >= 50 ? '#bbf7d0' : painel.satisfacao.npsMedio >= 0 ? '#fde68a' : '#fecaca'}`, borderRadius: 12, padding: '11px 13px' }}>
+                    <div style={{ fontSize: 9.5, color: '#8a8680', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.5px' }}>NPS</div>
+                    <div style={{ fontSize: 22, fontWeight: 900, color: painel.satisfacao.npsMedio >= 50 ? '#15803d' : painel.satisfacao.npsMedio >= 0 ? '#b45309' : '#dc2626', letterSpacing: '-.5px' }}>{painel.satisfacao.npsMedio}</div>
+                    <div style={{ fontSize: 10, color: '#8a8680', fontWeight: 700 }}>{painel.satisfacao.promotores} promotores · {painel.satisfacao.detratores} detratores</div>
+                  </div>
+                )}
+                {painel.satisfacao.notaMedia !== null && (
+                  <Mini rotulo="Nota média" valor={painel.satisfacao.notaMedia.toFixed(1)} nota="média das perguntas" cor={painel.satisfacao.notaMedia >= 8 ? '#15803d' : painel.satisfacao.notaMedia >= 6 ? '#b45309' : '#dc2626'} />
+                )}
+                {painel.satisfacao.taxaRetorno != null && (
+                  <Mini rotulo="Taxa de retorno" valor={typeof painel.satisfacao.taxaRetorno === 'number' ? `${painel.satisfacao.taxaRetorno}%` : String(painel.satisfacao.taxaRetorno)} nota="clientes que voltam" cor="#0891b2" />
+                )}
+                {painel.satisfacao.piorServico && (
+                  <Mini rotulo="Serviço mais criticado" valor={String(painel.satisfacao.piorServico?.nome || painel.satisfacao.piorServico)} nota="ponto de atenção" cor="#dc2626" />
+                )}
+              </div>
+              {painel.satisfacao.comentarios.length > 0 && (
+                <div style={{ background: '#fff', border: '1px solid #eceae4', borderRadius: 12, padding: '11px 14px', marginBottom: 14 }}>
+                  <div style={{ fontSize: 9.5, fontWeight: 900, color: '#8a8680', letterSpacing: '.5px', marginBottom: 6 }}>ÚLTIMOS COMENTÁRIOS</div>
+                  {painel.satisfacao.comentarios.map((c: string, i: number) => (
+                    <p key={i} style={{ fontSize: 12, color: '#4b5563', margin: '0 0 5px', paddingLeft: 10, borderLeft: '2px solid #ddd6f5', lineHeight: 1.45 }}>“{c}”</p>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* ── Eficiência por atendimento ── */}
+          {painel.clientesMes > 0 && (
+            <>
+              <Secao icone={<Gauge size={15} />} titulo="Eficiência" nota="quanto cada atendimento custa e rende" />
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(175px, 1fr))', gap: 10, marginBottom: 14 }}>
+                <Mini rotulo="Custo por atendimento" valor={painel.custoPorAtend ? moeda(painel.custoPorAtend) : '—'} nota="tudo que sai ÷ clientes" cor="#b45309" />
+                <Mini rotulo="Margem por atendimento" valor={painel.margemPorAtend ? moeda(painel.margemPorAtend) : '—'} nota="o que sobra por cliente" cor={num(painel.margemPorAtend) >= 0 ? '#15803d' : '#dc2626'} />
+                <Mini rotulo="Faturamento por profissional" valor={painel.fatPorProf ? moeda(painel.fatPorProf) : '—'} nota={`${painel.equipe.ativos} profissionais ativos`} cor="#0891b2" />
+                <Mini rotulo="Faturamento por dia" valor={moeda(painel.mediaDia)} nota={`média dos dias com movimento`} cor="#5b4fcf" />
+              </div>
+            </>
+          )}
+
+          {/* ── Equipe, rotinas e marketing ── */}
+          <Secao icone={<Building2 size={15} />} titulo="A casa por dentro" nota="equipe, cumprimento das rotinas, campanhas e parcerias" />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 10, marginBottom: 14 }}>
+            <Painelzinho titulo="Equipe" cor="#7c3aed">
+              <Linhazinha esq="Profissionais ativos" dir={String(painel.equipe.ativos)} />
+              <Linhazinha esq="PJ / CLT" dir={`${painel.equipe.pj} / ${painel.equipe.clt}`} />
+              {painel.equipe.admitidosMes > 0 && <Linhazinha esq="Admitidos no mês" dir={String(painel.equipe.admitidosMes)} corDir="#16a34a" />}
+              {painel.equipe.semContrato > 0 && <Linhazinha esq="Sem contrato" dir={String(painel.equipe.semContrato)} corDir="#dc2626" />}
+              {painel.equipe.inativos > 0 && <Linhazinha esq="Inativos no cadastro" dir={String(painel.equipe.inativos)} corDir="#8a8680" />}
+            </Painelzinho>
+
+            {painel.conformidade && (
+              <Painelzinho titulo={`Rotinas · ${painel.conformidade.pct}% cumpridas`} cor={painel.conformidade.pct >= 90 ? '#16a34a' : painel.conformidade.pct >= 70 ? '#b45309' : '#dc2626'}>
+                <Linhazinha esq="Total de tarefas" dir={`${painel.conformidade.feito}/${painel.conformidade.total}`} />
+                {painel.conformidade.cats.slice(0, 4).map((c: any, i: number) => {
+                  const p = Math.round((c.feito / c.total) * 100)
+                  return <Linhazinha key={i} esq={c.nome} dir={`${p}%`} corDir={p >= 90 ? '#16a34a' : p >= 70 ? '#b45309' : '#dc2626'} />
+                })}
+              </Painelzinho>
+            )}
+
+            {painel.campanhas && (
+              <Painelzinho titulo="Marketing e campanhas" cor="#db2777">
+                <Linhazinha esq="Campanhas ativas" dir={String(painel.campanhas.ativas)} />
+                {painel.campanhas.novas > 0 && <Linhazinha esq="Criadas no mês" dir={String(painel.campanhas.novas)} corDir="#16a34a" />}
+                <Linhazinha esq="Compartilhamentos" dir={String(painel.campanhas.shares)} corDir="#16a34a" />
+                <Linhazinha esq="Visualizações" dir={String(painel.campanhas.views)} />
+                {painel.campanhas.top[0] && <Linhazinha esq={`Top: ${painel.campanhas.top[0].titulo}`} dir={`${painel.campanhas.top[0].shares || 0}×`} corDir="#db2777" />}
+              </Painelzinho>
+            )}
+
+            {(painel.loj || painel.curriculosNovos !== null || painel.corridasAtivas > 0 || painel.emprAbertos > 0) && (
+              <Painelzinho titulo="Outros movimentos" cor="#0891b2">
+                {painel.loj && <Linhazinha esq="Lojistas parceiros" dir={`${painel.loj.ativos} ativos${painel.loj.novos ? ` · +${painel.loj.novos}` : ''}`} />}
+                {painel.loj && painel.loj.aniversariantes > 0 && <Linhazinha esq="Aniversariantes do mês" dir={String(painel.loj.aniversariantes)} corDir="#db2777" />}
+                {painel.curriculosNovos !== null && <Linhazinha esq="Currículos recebidos" dir={String(painel.curriculosNovos)} />}
+                {painel.corridasAtivas > 0 && <Linhazinha esq="Corridas internas" dir={String(painel.corridasAtivas)} corDir="#7c3aed" />}
+                {painel.emprAbertos > 0 && <Linhazinha esq="Empréstimos em aberto" dir={String(painel.emprAbertos)} corDir="#b45309" />}
+                {painel.alertas?.kitsPendentes > 0 && <Linhazinha esq="Kits pendentes" dir={String(painel.alertas.kitsPendentes)} corDir="#dc2626" />}
+                {painel.alertas?.esterPendentes > 0 && <Linhazinha esq="Esterilização pendente" dir={String(painel.alertas.esterPendentes)} corDir="#dc2626" />}
+              </Painelzinho>
+            )}
+          </div>
+
           {/* ═══ BLOCO 4 — Problemas ═══ */}
           <Secao icone={<AlertTriangle size={15} />} titulo="4. Principais problemas" nota="no máximo 5 — problema → impacto → causa e ação → responsável e prazo" />
           <Tabela campo="problemas" doc={doc} cols={['Problema', 'Impacto (R$ ou %)', 'Causa e ação', 'Responsável / prazo']}
@@ -662,6 +845,17 @@ function Painelzinho({ titulo, cor, children }: { titulo: string; cor: string; c
   )
 }
 const Nada = ({ texto = 'Sem dados no mês' }: { texto?: string }) => <div style={{ fontSize: 11.5, color: '#c9c5be' }}>{texto}</div>
+
+/** Número solto com rótulo e nota — usado nos blocos de eficiência e cliente. */
+function Mini({ rotulo, valor, nota, cor }: { rotulo: string; valor: string; nota?: string; cor: string }) {
+  return (
+    <div style={{ background: '#fff', border: '1px solid #eceae4', borderRadius: 12, padding: '11px 13px' }}>
+      <div style={{ fontSize: 9.5, color: '#8a8680', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.5px' }}>{rotulo}</div>
+      <div style={{ fontSize: 17, fontWeight: 900, color: cor, letterSpacing: '-.3px', lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis' }}>{valor}</div>
+      {nota && <div style={{ fontSize: 10, color: '#a8a49d', fontWeight: 700 }}>{nota}</div>}
+    </div>
+  )
+}
 
 const Leg = ({ cor, txt }: { cor: string; txt: string }) => (
   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 10.5, color: '#8a8680', fontWeight: 700 }}>
