@@ -30,6 +30,8 @@ import { MESES, anosDisponiveis, moeda, num, pct, realPorMes, resumoDoMes } from
 const rid = () => Math.random().toString(36).slice(2, 9)
 const esc = (v: any) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 const chaveDoc = (ano: number, mes: number) => `apresentacao_direcao_${ano}-${mes}`
+/** Dias já corridos do mês, para projetar o fechamento. */
+const painelDias = (r: any) => r.diasImportados > 0 ? r.diasImportados : new Date().getDate()
 
 type Farol = 'verde' | 'amarelo' | 'vermelho'
 const CORES: Record<Farol, { cor: string; fundo: string; borda: string; emoji: string }> = {
@@ -193,10 +195,74 @@ export default function ApresentacaoDirecao() {
       atingidoPE > 0 ? `${pct(atingidoPE)} do ponto de equilíbrio` : '',
     ].filter(Boolean).join(' · ') + '.'
 
+    // ── Evolução dos últimos 12 meses ──
+    const evolucao: { rot: string; ano: number; mes: number; fat: number; res: number }[] = []
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(ano, mes - 1 - i, 1)
+      const a = d.getFullYear(), m = d.getMonth() + 1
+      const x = resumoDoMes(reg(a, m)?.dados, real.get(`${a}-${m}`))
+      evolucao.push({ rot: MESES[m - 1].slice(0, 3), ano: a, mes: m, fat: x.faturamento, res: x.resultadoOp })
+    }
+    const comFatEvo = evolucao.filter(e => e.fat > 0)
+    const mediaFat12 = comFatEvo.length ? comFatEvo.reduce((s, e) => s + e.fat, 0) / comFatEvo.length : 0
+    const maxEvo = Math.max(1, ...evolucao.map(e => e.fat))
+
+    // ── Mesmo mês do ano anterior ──
+    const anoPassado = resumoDoMes(reg(ano - 1, mes)?.dados, real.get(`${ano - 1}-${mes}`))
+    const varYoY = anoPassado.faturamento > 0 ? (r.faturamento - anoPassado.faturamento) / anoPassado.faturamento : null
+
+    // ── Projeção de fechamento (mês corrente) ──
+    const projecao = ehMesCorrente && painelDias(r) > 0
+      ? (r.faturamento / painelDias(r)) * diasNoMes : null
+
+    // ── Top serviços e produtos do mês ──
+    const topServicos = (dados.rel?.servicos || [])
+      .filter((s: any) => Number(s.ano) === ano && Number(s.mes) === mes)
+      .map((s: any) => ({ nome: s.servico || '—', qtd: num(s.quantidade) }))
+      .sort((a: any, b: any) => b.qtd - a.qtd).slice(0, 5)
+    const topProdutos = (dados.rel?.produtos || [])
+      .filter((p: any) => Number(p.ano) === ano && Number(p.mes) === mes)
+      .map((p: any) => ({ nome: p.produto || '—', qtd: num(p.quantidade) }))
+      .sort((a: any, b: any) => b.qtd - a.qtd).slice(0, 5)
+
+    // ── Dias do mês: melhor, pior e média ──
+    const diarios = (dados.rel?.faturamento_diario || [])
+      .filter((d: any) => Number(d.ano) === ano && Number(d.mes) === mes && num(d.valor) > 0)
+      .map((d: any) => ({ data: String(d.data || ''), dia: String(d.dia_semana || ''), valor: num(d.valor) }))
+    const melhorDia = diarios.length ? [...diarios].sort((a, b) => b.valor - a.valor)[0] : null
+    const piorDia = diarios.length ? [...diarios].sort((a, b) => a.valor - b.valor)[0] : null
+    const mediaDia = diarios.length ? diarios.reduce((s: number, d: any) => s + d.valor, 0) / diarios.length : 0
+    // Faturamento por dia da semana — mostra onde a agenda sobra
+    const porDiaSemana: Record<string, { soma: number; n: number }> = {}
+    for (const d of diarios) {
+      const k = d.dia.split('-')[0].trim() || '—'
+      porDiaSemana[k] = { soma: (porDiaSemana[k]?.soma || 0) + d.valor, n: (porDiaSemana[k]?.n || 0) + 1 }
+    }
+    const diasSemana = Object.entries(porDiaSemana)
+      .map(([nome, v]) => ({ nome, media: v.soma / v.n, n: v.n }))
+      .sort((a, b) => b.media - a.media)
+
+    // ── DRE resumido ──
+    const dre = [
+      { rot: 'Faturamento', v: r.faturamento, tipo: 'entrada' },
+      { rot: 'Profissionais (comissões)', v: -r.profissionais, tipo: 'saida' },
+      { rot: 'Outros custos diretos', v: -r.diretasOutras, tipo: 'saida' },
+      { rot: 'Margem operacional', v: r.margemR, tipo: 'sub' },
+      { rot: 'Despesas indiretas', v: -r.indiretas, tipo: 'saida' },
+      { rot: 'Provisão e depreciação', v: -(r.provisao + r.depreciacao), tipo: 'saida' },
+      { rot: 'Resultado operacional', v: r.resultadoOp, tipo: 'total' },
+    ]
+
+    // ── Metas do mês ──
+    const comMeta = ranking.filter(p => p.meta_pct > 0)
+    const bateramMeta = comMeta.filter(p => p.meta_pct >= 100).length
+
     return {
-      r, ant, rm, indicadores, atingidoPE, doMesPassado, ehMesCorrente, setores,
+      r, ant, rm, indicadores, atingidoPE, doMesPassado, ehMesCorrente, setores, diasNoMes,
       abertasTotal: abertas.length, vencidas, destaques, abaixoMeta, perdidosTotal, ocupMedia,
       oportunidades, bolAbertos, bolVencidos, frase, alertas: dados.alertas, mesAnt: MESES[ma - 1],
+      evolucao, mediaFat12, maxEvo, anoPassado, varYoY, projecao, topServicos, topProdutos,
+      melhorDia, piorDia, mediaDia, diasSemana, dre, comMeta, bateramMeta, ranking,
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dados, ranking, ano, mes])
@@ -334,6 +400,75 @@ ${doc.observacoes ? `<div class="bloco"><h2>Observações</h2><p style="font-siz
             </div>
           )}
 
+          {/* ── Comparações e projeção ── */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(175px, 1fr))', gap: 10, marginBottom: 13 }}>
+            <Comp rotulo={`vs. ${painel.mesAnt}`} valor={painel.ant.faturamento} atual={painel.r.faturamento} />
+            <Comp rotulo={`vs. ${MESES[mes - 1]}/${ano - 1}`} valor={painel.anoPassado.faturamento} atual={painel.r.faturamento} />
+            <Comp rotulo="vs. média de 12 meses" valor={painel.mediaFat12} atual={painel.r.faturamento} />
+            {painel.projecao !== null && (
+              <div style={{ background: '#f5f3ff', border: '1px solid #ddd6f5', borderRadius: 12, padding: '11px 13px' }}>
+                <div style={{ fontSize: 9.5, color: '#8a8680', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.5px' }}>Projeção de fechamento</div>
+                <div style={{ fontSize: 17, fontWeight: 900, color: '#5b4fcf', letterSpacing: '-.3px' }}>{moeda(painel.projecao)}</div>
+                <div style={{ fontSize: 10, color: '#8a8680', fontWeight: 700 }}>no ritmo atual do mês</div>
+              </div>
+            )}
+          </div>
+
+          {/* ── Evolução de 12 meses ── */}
+          {painel.mediaFat12 > 0 && (
+            <div style={{ background: '#fff', border: '1px solid #eceae4', borderRadius: 13, padding: '13px 15px', marginBottom: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 11, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 11.5, fontWeight: 900, color: '#1a1a2e', letterSpacing: '.3px' }}>EVOLUÇÃO — 12 MESES</span>
+                <div style={{ flex: 1 }} />
+                <Leg cor="#0891b2" txt="faturamento" /><Leg cor="#16a34a" txt="resultado" />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: 108 }}>
+                {painel.evolucao.map((e: any, i: number) => {
+                  const hF = Math.max(2, (e.fat / painel.maxEvo) * 100)
+                  const hR = e.fat > 0 ? Math.max(1, (Math.max(0, e.res) / painel.maxEvo) * 100) : 0
+                  const atual = e.ano === ano && e.mes === mes
+                  return (
+                    <div key={i} title={`${e.rot}: ${moeda(e.fat)} · resultado ${moeda(e.res)}`}
+                      style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center', gap: 4, height: '100%' }}>
+                      <div style={{ position: 'relative', width: '100%', height: `${hF}%`, minHeight: 2, background: '#0891b2', opacity: atual ? 1 : .35, borderRadius: '4px 4px 2px 2px' }}>
+                        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: `${e.fat > 0 ? (hR / hF) * 100 : 0}%`, background: '#16a34a', opacity: atual ? 1 : .55, borderRadius: '0 0 2px 2px' }} />
+                      </div>
+                      <span style={{ fontSize: 9, fontWeight: atual ? 900 : 700, color: atual ? '#5b4fcf' : '#a8a49d' }}>{e.rot}</span>
+                    </div>
+                  )
+                })}
+              </div>
+              <div style={{ fontSize: 10.5, color: '#8a8680', marginTop: 7, fontWeight: 700 }}>
+                Média de 12 meses: {moeda(painel.mediaFat12)}
+                {painel.varYoY !== null && ` · ${painel.varYoY >= 0 ? '+' : ''}${pct(painel.varYoY)} sobre o mesmo mês do ano passado`}
+              </div>
+            </div>
+          )}
+
+          {/* ── DRE resumido ── */}
+          {painel.r.temDados && (
+            <div style={{ background: '#fff', border: '1px solid #eceae4', borderRadius: 13, padding: '13px 15px', marginBottom: 14 }}>
+              <div style={{ fontSize: 11.5, fontWeight: 900, color: '#1a1a2e', letterSpacing: '.3px', marginBottom: 9 }}>DE ONDE VEM O RESULTADO</div>
+              {painel.dre.map((l: any, i: number) => {
+                const forte = l.tipo === 'total' || l.tipo === 'sub'
+                const larg = painel.r.faturamento > 0 ? Math.min(100, (Math.abs(l.v) / painel.r.faturamento) * 100) : 0
+                const cor = l.tipo === 'entrada' ? '#0891b2' : l.tipo === 'saida' ? '#dc2626' : l.tipo === 'sub' ? '#f59e0b' : (l.v >= 0 ? '#16a34a' : '#dc2626')
+                return (
+                  <div key={i} style={{ padding: forte ? '8px 0' : '5px 0', borderTop: i ? '1px solid #f7f6f3' : 'none' }}>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 9 }}>
+                      <span style={{ flex: 1, fontSize: forte ? 12.5 : 12, fontWeight: forte ? 900 : 600, color: forte ? '#1a1a2e' : '#4b5563' }}>{l.rot}</span>
+                      <span style={{ fontSize: forte ? 14 : 12.5, fontWeight: forte ? 900 : 700, color: cor, whiteSpace: 'nowrap' }}>{moeda(l.v)}</span>
+                      <span style={{ fontSize: 10, color: '#a8a49d', width: 42, textAlign: 'right' }}>{painel.r.faturamento > 0 ? pct(Math.abs(l.v) / painel.r.faturamento) : ''}</span>
+                    </div>
+                    <div style={{ height: forte ? 5 : 3, borderRadius: 99, background: '#f5f4f0', overflow: 'hidden', marginTop: 4 }}>
+                      <div style={{ width: `${larg}%`, height: '100%', background: cor, borderRadius: 99 }} />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
           {/* ═══ BLOCO 2 — Semáforo ═══ */}
           <Secao icone={<Target size={15} />} titulo="2. Semáforo executivo" nota="onde olhar primeiro — baseado nas pendências abertas e vencidas de cada setor" />
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: 8, marginBottom: 14 }}>
@@ -374,6 +509,72 @@ ${doc.observacoes ? `<div class="bloco"><h2>Observações</h2><p style="font-siz
               {painel.alertas?.solicitacoes > 0 && <Linhazinha esq="Solicitações do portal" dir={String(painel.alertas.solicitacoes)} corDir="#b45309" />}
             </Painelzinho>
           </div>
+
+          {/* ── O que mais vendeu e como foram os dias ── */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 10, marginBottom: 14 }}>
+            <Painelzinho titulo="Serviços mais feitos" cor="#5b4fcf">
+              {painel.topServicos.length === 0 ? <Nada /> : painel.topServicos.map((s: any, i: number) => (
+                <Linhazinha key={i} esq={`${i + 1}. ${s.nome}`} dir={`${s.qtd}×`} />
+              ))}
+            </Painelzinho>
+            <Painelzinho titulo="Produtos mais vendidos" cor="#db2777">
+              {painel.topProdutos.length === 0 ? <Nada /> : painel.topProdutos.map((p: any, i: number) => (
+                <Linhazinha key={i} esq={`${i + 1}. ${p.nome}`} dir={`${p.qtd}×`} />
+              ))}
+            </Painelzinho>
+            <Painelzinho titulo="Dias do mês" cor="#0891b2">
+              {!painel.melhorDia ? <Nada /> : <>
+                <Linhazinha esq={`Melhor · ${painel.melhorDia.data}`} dir={moeda(painel.melhorDia.valor)} corDir="#16a34a" />
+                <Linhazinha esq={`Pior · ${painel.piorDia.data}`} dir={moeda(painel.piorDia.valor)} corDir="#dc2626" />
+                <Linhazinha esq="Média por dia" dir={moeda(painel.mediaDia)} />
+              </>}
+            </Painelzinho>
+            <Painelzinho titulo="Média por dia da semana" cor="#b45309">
+              {painel.diasSemana.length === 0 ? <Nada /> : painel.diasSemana.slice(0, 7).map((d: any, i: number) => (
+                <Linhazinha key={i} esq={d.nome} dir={moeda(d.media)} corDir={i === painel.diasSemana.length - 1 ? '#dc2626' : '#1a1a2e'} />
+              ))}
+            </Painelzinho>
+          </div>
+
+          {/* ── Ranking completo ── */}
+          {painel.ranking.filter((p: any) => p.faturamento > 0).length > 0 && (
+            <div style={{ background: '#fff', border: '1px solid #eceae4', borderRadius: 13, overflow: 'hidden', marginBottom: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '11px 15px', borderBottom: '1px solid #f2f0ec', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 11.5, fontWeight: 900, color: '#1a1a2e', letterSpacing: '.3px' }}>DESEMPENHO POR PROFISSIONAL</span>
+                <div style={{ flex: 1 }} />
+                {painel.comMeta.length > 0 && (
+                  <span style={{ fontSize: 11, fontWeight: 800, color: painel.bateramMeta === painel.comMeta.length ? '#16a34a' : '#b45309' }}>
+                    {painel.bateramMeta} de {painel.comMeta.length} bateram a meta
+                  </span>
+                )}
+              </div>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 620, fontSize: 12 }}>
+                  <thead>
+                    <tr style={{ background: '#fbfbfa' }}>
+                      {['Profissional', 'Faturamento', 'Ticket', 'Ocupação', 'Meta', 'Perdidos'].map((h, i) => (
+                        <th key={h} style={{ padding: '8px 11px', textAlign: i ? 'right' : 'left', fontSize: 9.5, color: '#8a8680', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.5px', borderBottom: '1px solid #eceae4', whiteSpace: 'nowrap' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...painel.ranking].filter((p: any) => p.faturamento > 0).sort((a: any, b: any) => b.faturamento - a.faturamento).map((p: any) => (
+                      <tr key={p.id} style={{ borderBottom: '1px solid #f7f6f3' }}>
+                        <td style={{ padding: '7px 11px', fontWeight: 700, color: '#1a1a2e' }}>{p.nome}</td>
+                        <td style={{ padding: '7px 11px', textAlign: 'right', fontWeight: 800 }}>{moeda(p.faturamento)}</td>
+                        <td style={{ padding: '7px 11px', textAlign: 'right', color: '#6b6860' }}>{moeda(p.ticket_medio)}</td>
+                        <td style={{ padding: '7px 11px', textAlign: 'right', color: p.ocupacao >= 85 ? '#15803d' : p.ocupacao >= 70 ? '#b45309' : '#dc2626', fontWeight: 700 }}>{p.ocupacao}%</td>
+                        <td style={{ padding: '7px 11px', textAlign: 'right', fontWeight: 800, color: p.meta_pct >= 100 ? '#15803d' : p.meta_pct >= 80 ? '#b45309' : p.meta_pct > 0 ? '#dc2626' : '#c9c5be' }}>
+                          {p.meta_pct > 0 ? `${p.meta_pct.toFixed(0)}%` : '—'}
+                        </td>
+                        <td style={{ padding: '7px 11px', textAlign: 'right', color: p.clientes_perdidos > 0 ? '#dc2626' : '#c9c5be', fontWeight: 700 }}>{p.clientes_perdidos || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           {/* ═══ BLOCO 4 — Problemas ═══ */}
           <Secao icone={<AlertTriangle size={15} />} titulo="4. Principais problemas" nota="no máximo 5 — problema → impacto → causa e ação → responsável e prazo" />
@@ -461,6 +662,27 @@ function Painelzinho({ titulo, cor, children }: { titulo: string; cor: string; c
   )
 }
 const Nada = ({ texto = 'Sem dados no mês' }: { texto?: string }) => <div style={{ fontSize: 11.5, color: '#c9c5be' }}>{texto}</div>
+
+const Leg = ({ cor, txt }: { cor: string; txt: string }) => (
+  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 10.5, color: '#8a8680', fontWeight: 700 }}>
+    <span style={{ width: 9, height: 9, borderRadius: 3, background: cor }} />{txt}
+  </span>
+)
+
+/** Comparação do faturamento contra uma referência (mês anterior, ano passado, média). */
+function Comp({ rotulo, valor, atual }: { rotulo: string; valor: number; atual: number }) {
+  const v = valor > 0 ? (atual - valor) / valor : null
+  const cor = v === null ? '#a8a49d' : v >= 0 ? '#16a34a' : '#dc2626'
+  return (
+    <div style={{ background: '#fff', border: '1px solid #eceae4', borderRadius: 12, padding: '11px 13px' }}>
+      <div style={{ fontSize: 9.5, color: '#8a8680', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.5px' }}>{rotulo}</div>
+      <div style={{ fontSize: 17, fontWeight: 900, color: cor, letterSpacing: '-.3px' }}>
+        {v === null ? '—' : `${v >= 0 ? '+' : ''}${pct(v)}`}
+      </div>
+      <div style={{ fontSize: 10, color: '#a8a49d', fontWeight: 700 }}>{valor > 0 ? `era ${moeda(valor)}` : 'sem base de comparação'}</div>
+    </div>
+  )
+}
 function Linhazinha({ esq, dir, corDir = '#1a1a2e' }: { esq: string; dir: string; corDir?: string }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', borderTop: '1px solid #f7f6f3', fontSize: 12 }}>
