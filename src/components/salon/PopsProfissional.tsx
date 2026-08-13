@@ -138,6 +138,8 @@ export function PopsDoProfissional({ cargo }: { cargo?: string | null }) {
     </div>
   )
 
+  const docAberto = docs[Math.min(aberto, docs.length - 1)]
+
   return (
     <div className="space-y-4">
       <style>{POP_DOC_CSS}</style>
@@ -158,7 +160,7 @@ export function PopsDoProfissional({ cargo }: { cargo?: string | null }) {
         <div className="flex-1 min-w-0 w-full">
           <div style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', boxShadow: '0 10px 40px rgba(0,0,0,.18)' }}>
             <div style={{ height: 6, background: 'linear-gradient(90deg,#5b4fcf,#7c6fe0)' }} />
-            <div className="pop-doc" style={{ padding: '32px 36px' }} dangerouslySetInnerHTML={{ __html: docs[Math.min(aberto, docs.length - 1)]?.texto || '' }} />
+            <div className="pop-doc" style={{ padding: '32px 36px' }} dangerouslySetInnerHTML={{ __html: docAberto?.texto || '' }} />
           </div>
         </div>
       </div>

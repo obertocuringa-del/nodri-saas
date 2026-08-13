@@ -5,7 +5,10 @@
 // como sub-itens — por isso aqui só renderizamos o documento escolhido.
 
 import { useEffect, useState } from 'react'
-import { Loader2, Printer } from 'lucide-react'
+import { Loader2, Printer, ClipboardCheck } from 'lucide-react'
+import { AVALIACOES_POP } from '@/lib/popAvaliacoes'
+import { categoriaDoCargo } from '@/components/salon/PopsProfissional'
+import ModalAvaliarPop from '@/components/salon/ModalAvaliarPop'
 
 interface DocPop { id?: string; titulo?: string; texto?: string; html?: string }
 
@@ -27,7 +30,10 @@ export async function listarPopsDoConteudo(slug: string): Promise<PopDeConteudo[
 export default function ConteudoPopPainel({ slug, docId }: { slug: string; docId: string }) {
   const [html, setHtml] = useState('')
   const [titulo, setTitulo] = useState('')
+  const [popId, setPopId] = useState('')          // id real do POP (p/ casar com o modelo de avaliação)
   const [carregando, setCarregando] = useState(true)
+  const [avaliar, setAvaliar] = useState(false)
+  const [profs, setProfs] = useState<{ id: string; nome: string; cargo: string }[]>([])
 
   useEffect(() => {
     let vivo = true
@@ -40,11 +46,27 @@ export default function ConteudoPopPainel({ slug, docId }: { slug: string; docId
         const achado = docs.find((doc, i) => String(doc.id ?? i) === String(docId)) || docs[0]
         setHtml(String(achado?.texto || achado?.html || d?.conteudo?.texto || ''))
         setTitulo(String(achado?.titulo || ''))
+        setPopId(String(achado?.id ?? docId))
       })
       .catch(() => { if (vivo) setHtml('') })
       .finally(() => { if (vivo) setCarregando(false) })
     return () => { vivo = false }
   }, [slug, docId])
+
+  // Profissionais da categoria deste POP — para o seletor da avaliação.
+  useEffect(() => {
+    fetch('/api/profissionais?ativo=true&leve=1', { credentials: 'include' })
+      .then(r => r.ok ? r.json() : [])
+      .then((lista: any[]) => {
+        const arr = Array.isArray(lista) ? lista : []
+        setProfs(arr
+          .filter(p => !p.is_departamento && categoriaDoCargo(p.cargo) === categoriaDoCargo(slug))
+          .map(p => ({ id: String(p.id), nome: (p.apelido || p.nome_completo || '').trim(), cargo: p.cargo || '' })))
+      }).catch(() => setProfs([]))
+  }, [slug])
+
+  // Este POP tem modelo de avaliação cadastrado?
+  const temAvaliacao = !!AVALIACOES_POP[popId]
 
   function imprimir() {
     const w = window.open('', '_blank', 'width=900,height=700')
@@ -63,7 +85,15 @@ export default function ConteudoPopPainel({ slug, docId }: { slug: string; docId
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 10 }}>
+        {/* Avaliar profissional — o Processo/Qualidade avalia a partir do POP:
+            escolhe o profissional e pontua. Só nos POPs com modelo de avaliação. */}
+        {temAvaliacao && (
+          <button onClick={() => setAvaliar(true)}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, border: 'none', background: '#16a34a', color: '#fff', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>
+            <ClipboardCheck size={13} /> Avaliar profissional
+          </button>
+        )}
         <button onClick={imprimir}
           style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, border: 'none', background: '#5b4fcf', color: '#fff', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>
           <Printer size={13} /> Imprimir
@@ -73,6 +103,10 @@ export default function ConteudoPopPainel({ slug, docId }: { slug: string; docId
         <div style={{ height: 6, background: 'linear-gradient(90deg,#5b4fcf,#7c6fe0)' }} />
         <div className="pop-doc" style={{ padding: '32px 34px' }} dangerouslySetInnerHTML={{ __html: html }} />
       </div>
+
+      {avaliar && (
+        <ModalAvaliarPop doc={{ id: popId, titulo }} profs={profs} onClose={() => setAvaliar(false)} />
+      )}
     </div>
   )
 }
