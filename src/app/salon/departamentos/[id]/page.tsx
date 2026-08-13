@@ -21,6 +21,7 @@ import FluxoCaixaMes from '@/components/salon/FluxoCaixaMes'
 import CoffeeBreaks from '@/components/salon/CoffeeBreaks'
 import ChancelaContratos from '@/components/salon/ChancelaContratos'
 import PlanejamentoEstrategico from '@/components/salon/PlanejamentoEstrategico'
+import ApresentacaoDirecao from '@/components/salon/ApresentacaoDirecao'
 import { useIsMobile } from '@/lib/useIsMobile'
 
 interface Prof { id: string; nome_completo: string; apelido?: string; cargo?: string; ativo?: boolean; is_departamento?: boolean; departamento_cor?: string; telefone?: string; contato_responsavel?: string }
@@ -546,6 +547,8 @@ export default function DepartamentoPage() {
               if (slug === 'chancela_dos_contratos') return <ChancelaContratos key="chancela" />
               // Planejamento estratégico: 16 cards, um por área, com prazos e progresso
               if (slug === 'planejamento_estrategico_geral_da_empresa') return <PlanejamentoEstrategico key="plano_estrat" />
+              // Sintese executiva do mes para os socios
+              if (slug === 'apresentacao_dos_resultados_a_direcao') return <ApresentacaoDirecao key="apres_direcao" />
               if (slug === 'comissoes') return <ComissoesQuinzenas key="comissoes" />
               // Guias MEI espelha a MESMA tela de CNPJ dos Profissionais do RH:
               // e o mesmo componente e os mesmos dados, entao mudar num lado

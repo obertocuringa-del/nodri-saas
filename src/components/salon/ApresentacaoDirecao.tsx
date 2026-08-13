@@ -1,0 +1,501 @@
+'use client'
+
+// APRESENTAÇÃO DOS RESULTADOS À DIREÇÃO
+//
+// Síntese executiva do mês. A regra que orienta a tela: o sócio não quer 20
+// gráficos — quer RESULTADO → DESVIO → CAUSA → IMPACTO → AÇÃO → DECISÃO.
+//
+// Quase tudo é puxado do que o sistema já tem:
+//   • /api/relatorios      → faturamento, clientes, ticket, produtos (avec)
+//   • /api/salon/calculadora + calcFinanceiro → DRE, margem, ponto de equilíbrio
+//   • /api/relatorios/ranking → profissionais, ocupação, clientes perdidos, metas
+//   • /api/pendencias      → o que está aberto em cada setor (semáforo)
+//   • /api/salon/alertas   → kits, esterilização e solicitações do portal
+//   • /api/salon/boletos   → contas a pagar vencidas/do mês
+//
+// O que depende de julgamento humano (causa, decisão dos sócios, investimento,
+// plano de ação) tem campo próprio, com o formulário já direcionando o que
+// escrever. Salvo por mês em salao_config.
+
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react'
+import {
+  Loader2, Save, Printer, TrendingUp, TrendingDown, AlertTriangle, Rocket,
+  CircleDollarSign, Gavel, ListChecks, Plus, Trash2, Users, Target,
+} from 'lucide-react'
+import toast from 'react-hot-toast'
+import { useGuardaSalvar } from '@/lib/guardaSalvar'
+import { getLogoSalao } from '@/lib/logoSalao'
+import { MESES, anosDisponiveis, moeda, num, pct, realPorMes, resumoDoMes } from '@/lib/calcFinanceiro'
+
+const rid = () => Math.random().toString(36).slice(2, 9)
+const esc = (v: any) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+const chaveDoc = (ano: number, mes: number) => `apresentacao_direcao_${ano}-${mes}`
+
+type Farol = 'verde' | 'amarelo' | 'vermelho'
+const CORES: Record<Farol, { cor: string; fundo: string; borda: string; emoji: string }> = {
+  verde:    { cor: '#16a34a', fundo: '#f0fdf4', borda: '#bbf7d0', emoji: '🟢' },
+  amarelo:  { cor: '#b45309', fundo: '#fffbeb', borda: '#fde68a', emoji: '🟡' },
+  vermelho: { cor: '#dc2626', fundo: '#fef2f2', borda: '#fecaca', emoji: '🔴' },
+}
+
+interface Linha { id: string; a: string; b: string; c: string; d: string }
+interface Doc {
+  causas?: Record<string, string>       // por indicador: por que ficou assim
+  problemas?: Linha[]                   // problema | impacto | causa+ação | responsável/prazo
+  oportunidades?: Linha[]               // oportunidade | potencial | plano | responsável
+  investimentos?: Linha[]               // item | valor | retorno esperado | recomendação
+  decisoes?: Linha[]                    // decisão | motivo/impacto | prazo | recomendação
+  acoes?: Linha[]                       // ação | responsável | prazo | status
+  observacoes?: string
+}
+
+export default function ApresentacaoDirecao() {
+  const hoje = new Date()
+  const [ano, setAno] = useState(hoje.getFullYear())
+  const [mes, setMes] = useState(hoje.getMonth() + 1)
+  const [dados, setDados] = useState<any>(null)
+  const [doc, setDoc] = useState<Doc>({})
+  const [carregando, setCarregando] = useState(true)
+  const [salvando, setSalvando] = useState(false)
+  const [dirty, setDirty] = useState(false)
+  useGuardaSalvar(dirty, 'Apresentação à Direção')
+
+  const chave = chaveDoc(ano, mes)
+
+  // Tudo que o sistema já sabe, de uma vez
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/relatorios', { credentials: 'include' }).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('/api/salon/calculadora', { credentials: 'include' }).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('/api/pendencias', { credentials: 'include' }).then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch('/api/profissionais', { credentials: 'include' }).then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch('/api/salon/alertas', { credentials: 'include' }).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('/api/salon/boletos', { credentials: 'include' }).then(r => r.ok ? r.json() : null).catch(() => null),
+    ]).then(([rel, calc, pend, profs, alertas, boletos]) => {
+      setDados({ rel, calc, pend: Array.isArray(pend) ? pend : [], profs: Array.isArray(profs) ? profs : [], alertas, boletos })
+    }).finally(() => setCarregando(false))
+  }, [])
+
+  // Ranking depende do mês escolhido
+  const [ranking, setRanking] = useState<any[]>([])
+  useEffect(() => {
+    fetch(`/api/relatorios/ranking?ano=${ano}&mes=${mes}`, { credentials: 'include' })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => setRanking(Array.isArray(d?.profissionais) ? d.profissionais : []))
+      .catch(() => setRanking([]))
+  }, [ano, mes])
+
+  const carregarDoc = useCallback(async () => {
+    try {
+      const d = await fetch(`/api/salon/grid?chave=${chave}`, { credentials: 'include' }).then(r => r.ok ? r.json() : null)
+      setDoc(d && typeof d === 'object' ? d as Doc : {})
+    } catch { setDoc({}) }
+    setDirty(false)
+  }, [chave])
+  useEffect(() => { carregarDoc() }, [carregarDoc])
+
+  const salvar = useCallback(async () => {
+    setSalvando(true)
+    try {
+      const r = await fetch('/api/salon/grid', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chave, doc }),
+      })
+      if (r.ok) { setDirty(false); toast.success('Salvo!') } else toast.error('Não foi possível salvar')
+    } catch { toast.error('Erro de conexão') }
+    setSalvando(false)
+  }, [chave, doc])
+
+  // ══ O QUE O SISTEMA CALCULA ═══════════════════════════════════════════
+  const painel = useMemo(() => {
+    if (!dados) return null
+    const real = realPorMes(dados.rel)
+    const hist = Array.isArray(dados.calc?.historico) ? dados.calc.historico : []
+    const reg = (a: number, m: number) => hist.find((h: any) => Number(h.ano) === a && Number(h.mes) === m)
+    const r = resumoDoMes(reg(ano, mes)?.dados, real.get(`${ano}-${mes}`))
+    const ma = mes === 1 ? 12 : mes - 1, aa = mes === 1 ? ano - 1 : ano
+    const ant = resumoDoMes(reg(aa, ma)?.dados, real.get(`${aa}-${ma}`))
+
+    // Resumo do avec (clientes, ticket, produtos)
+    const rm = (dados.rel?.resumo_mensal || []).find((x: any) => Number(x.ano) === ano && Number(x.mes) === mes) || {}
+    const rmAnt = (dados.rel?.resumo_mensal || []).find((x: any) => Number(x.ano) === aa && Number(x.mes) === ma) || {}
+
+    const varia = (atual: number, anterior: number) => anterior > 0 ? (atual - anterior) / anterior : null
+    const farolPor = (v: number | null, bom = 0) => (v === null ? 'amarelo' : v >= bom ? 'verde' : v > -0.05 ? 'amarelo' : 'vermelho') as Farol
+
+    // Indicadores principais
+    const indicadores = [
+      { id: 'faturamento', rotulo: 'Faturamento', valor: moeda(r.faturamento), varia: varia(r.faturamento, ant.faturamento), farol: farolPor(varia(r.faturamento, ant.faturamento)) },
+      { id: 'resultado', rotulo: 'Resultado do mês', valor: moeda(r.resultadoOp), varia: varia(r.resultadoOp, ant.resultadoOp), farol: (r.resultadoOp < 0 ? 'vermelho' : r.resultadoOp > 0 ? 'verde' : 'amarelo') as Farol, sub: `margem ${pct(r.resultadoOpPct)}` },
+      { id: 'clientes', rotulo: 'Clientes atendidos', valor: String(num(rm.clientes_atendidos) || '—'), varia: varia(num(rm.clientes_atendidos), num(rmAnt.clientes_atendidos)), farol: farolPor(varia(num(rm.clientes_atendidos), num(rmAnt.clientes_atendidos))) },
+      { id: 'ticket', rotulo: 'Ticket médio', valor: num(rm.ticket_medio) ? moeda(num(rm.ticket_medio)) : '—', varia: varia(num(rm.ticket_medio), num(rmAnt.ticket_medio)), farol: farolPor(varia(num(rm.ticket_medio), num(rmAnt.ticket_medio))) },
+      { id: 'novos', rotulo: 'Clientes novos', valor: String(num(rm.clientes_novos) || '—'), varia: varia(num(rm.clientes_novos), num(rmAnt.clientes_novos)), farol: farolPor(varia(num(rm.clientes_novos), num(rmAnt.clientes_novos))) },
+      { id: 'produtos', rotulo: 'Venda de produtos', valor: num(rm.faturamento_produtos) ? moeda(num(rm.faturamento_produtos)) : '—', varia: varia(num(rm.faturamento_produtos), num(rmAnt.faturamento_produtos)), farol: farolPor(varia(num(rm.faturamento_produtos), num(rmAnt.faturamento_produtos))) },
+    ]
+
+    // Ponto de equilíbrio e ritmo do mês
+    const atingidoPE = r.pe > 0 ? r.faturamento / r.pe : 0
+    const diasNoMes = new Date(ano, mes, 0).getDate()
+    const ehMesCorrente = ano === hoje.getFullYear() && mes === hoje.getMonth() + 1
+    const doMesPassado = ehMesCorrente ? hoje.getDate() / diasNoMes : 1
+
+    // Semáforo por setor: pendências abertas + sinais próprios de cada área
+    const abertas = dados.pend.filter((p: any) => !p.resolvido)
+    const porSetor: Record<string, number> = {}
+    for (const p of abertas) porSetor[p.profissional_id] = (porSetor[p.profissional_id] || 0) + 1
+    const vencidas = abertas.filter((p: any) => p.data_limite && new Date(p.data_limite) < hoje).length
+    const deps = dados.profs.filter((p: any) => p.is_departamento)
+    const setores = deps.map((d: any) => {
+      const n = porSetor[d.id] || 0
+      const venc = abertas.filter((p: any) => p.profissional_id === d.id && p.data_limite && new Date(p.data_limite) < hoje).length
+      const farol: Farol = venc > 0 ? 'vermelho' : n > 4 ? 'amarelo' : 'verde'
+      return { id: d.id, nome: d.nome_completo, pendencias: n, vencidas: venc, farol }
+    }).sort((a: any, b: any) => b.vencidas - a.vencidas || b.pendencias - a.pendencias)
+
+    // Profissionais: quem puxa para cima e para baixo
+    const comFat = ranking.filter(p => p.faturamento > 0)
+    const abaixoMeta = comFat.filter(p => p.meta_pct > 0 && p.meta_pct < 80).sort((a, b) => a.meta_pct - b.meta_pct)
+    const destaques = [...comFat].sort((a, b) => b.faturamento - a.faturamento).slice(0, 3)
+    const perdidosTotal = ranking.reduce((s, p) => s + num(p.clientes_perdidos), 0)
+    const ocupMedia = comFat.length ? comFat.reduce((s, p) => s + num(p.ocupacao), 0) / comFat.length : 0
+
+    // Oportunidades calculadas
+    const ticketMedio = num(rm.ticket_medio)
+    const oportunidades: { titulo: string; potencial: number; detalhe: string }[] = []
+    if (perdidosTotal > 0 && ticketMedio > 0) {
+      oportunidades.push({ titulo: `${perdidosTotal} clientes perdidos`, potencial: perdidosTotal * ticketMedio, detalhe: 'Reativação: cada retorno vale um ticket médio' })
+    }
+    if (ocupMedia > 0 && ocupMedia < 85 && r.faturamento > 0) {
+      const ganho = r.faturamento * ((85 - ocupMedia) / Math.max(1, ocupMedia))
+      oportunidades.push({ titulo: `Ocupação média em ${ocupMedia.toFixed(0)}%`, potencial: ganho, detalhe: 'Levar a agenda a 85% de ocupação' })
+    }
+    if (abaixoMeta.length) {
+      const falta = abaixoMeta.reduce((s, p) => s + num(p.falta), 0)
+      oportunidades.push({ titulo: `${abaixoMeta.length} profissionais abaixo da meta`, potencial: falta, detalhe: 'Quanto falta para todos baterem a meta' })
+    }
+    if (num(rm.faturamento_produtos) >= 0 && r.faturamento > 0) {
+      const pctProd = r.faturamento > 0 ? num(rm.faturamento_produtos) / r.faturamento : 0
+      if (pctProd < 0.08) oportunidades.push({ titulo: `Produtos são ${pct(pctProd)} do faturamento`, potencial: r.faturamento * 0.08 - num(rm.faturamento_produtos), detalhe: 'Referência do setor: 8% a 12% em produtos' })
+    }
+
+    // Contas a pagar
+    const bol = Array.isArray(dados.boletos?.boletos) ? dados.boletos.boletos : []
+    const bolAbertos = bol.filter((b: any) => !b.pago)
+    const bolVencidos = bolAbertos.filter((b: any) => b.venc && new Date(b.venc) < hoje)
+
+    // Frase executiva
+    const vf = varia(r.faturamento, ant.faturamento)
+    const vt = varia(num(rm.ticket_medio), num(rmAnt.ticket_medio))
+    const frase = [
+      r.faturamento > 0 ? `Faturamento de ${moeda(r.faturamento)}${vf !== null ? ` (${vf >= 0 ? '+' : ''}${pct(vf)} vs. ${MESES[ma - 1]})` : ''}` : 'Sem faturamento importado no mês',
+      r.temDados ? `resultado de ${moeda(r.resultadoOp)} (${pct(r.resultadoOpPct)} de margem)` : '',
+      vt !== null ? `ticket médio ${vt >= 0 ? 'subiu' : 'caiu'} ${pct(Math.abs(vt))}` : '',
+      atingidoPE > 0 ? `${pct(atingidoPE)} do ponto de equilíbrio` : '',
+    ].filter(Boolean).join(' · ') + '.'
+
+    return {
+      r, ant, rm, indicadores, atingidoPE, doMesPassado, ehMesCorrente, setores,
+      abertasTotal: abertas.length, vencidas, destaques, abaixoMeta, perdidosTotal, ocupMedia,
+      oportunidades, bolAbertos, bolVencidos, frase, alertas: dados.alertas, mesAnt: MESES[ma - 1],
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dados, ranking, ano, mes])
+
+  // ══ Campos preenchidos por você ═══════════════════════════════════════
+  const setLinhas = (campo: keyof Doc, l: Linha[]) => { setDoc(d => ({ ...d, [campo]: l })); setDirty(true) }
+  const addLinha = (campo: keyof Doc) => setLinhas(campo, [...((doc[campo] as Linha[]) || []), { id: rid(), a: '', b: '', c: '', d: '' }])
+  const mudLinha = (campo: keyof Doc, id: string, k: keyof Linha, v: string) =>
+    setLinhas(campo, ((doc[campo] as Linha[]) || []).map(x => x.id === id ? { ...x, [k]: v } : x))
+  const delLinha = (campo: keyof Doc, id: string) => setLinhas(campo, ((doc[campo] as Linha[]) || []).filter(x => x.id !== id))
+
+  async function imprimir() {
+    if (!painel) return
+    const logo = await getLogoSalao()
+    const tab = (titulo: string, cols: string[], linhas: string[][]) => linhas.length ? `
+      <div class="bloco"><h2>${esc(titulo)}</h2><table><thead><tr>${cols.map(c => `<th>${esc(c)}</th>`).join('')}</tr></thead>
+      <tbody>${linhas.map(l => `<tr>${l.map(c => `<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>` : ''
+    const linhasDe = (campo: keyof Doc) => ((doc[campo] as Linha[]) || []).filter(l => l.a.trim()).map(l => [l.a, l.b, l.c, l.d])
+
+    const css = `@page{size:A4 portrait;margin:12mm}*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;font-size:10.5px;color:#1a1a2e}
+.hd{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #5b4fcf;padding-bottom:8px;margin-bottom:12px}
+.brand{font-size:21px;font-weight:900;color:#5b4fcf}.logo{max-height:52px;max-width:190px;object-fit:contain}
+.tt{text-align:right;font-size:10px;color:#666}.tt strong{font-size:15px;color:#1a1a2e;display:block}
+.frase{background:#f5f3ff;border-left:4px solid #5b4fcf;padding:9px 12px;font-size:11px;margin-bottom:12px;line-height:1.5}
+.kpis{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:13px}
+.kpi{flex:1 1 30%;border:1px solid #e8e6e0;border-radius:8px;padding:8px 10px}
+.kpi span{display:block;font-size:8px;color:#888;text-transform:uppercase;font-weight:700;letter-spacing:.5px}
+.kpi b{font-size:14px}
+.bloco{margin-bottom:12px;break-inside:avoid}
+h2{font-size:11px;color:#5b4fcf;border-bottom:1px solid #e5e3de;padding-bottom:4px;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+table{width:100%;border-collapse:collapse;font-size:9.5px}
+th{background:#5b4fcf;color:#fff;text-align:left;padding:5px 7px;font-size:9px}
+td{padding:5px 7px;border-bottom:1px solid #eee;vertical-align:top}
+tbody tr:nth-child(even) td{background:#faf9ff}
+.sem{display:flex;flex-wrap:wrap;gap:6px}
+.sem span{border:1px solid #e8e6e0;border-radius:20px;padding:3px 10px;font-size:9.5px}
+.rodape{margin-top:14px;border-top:1px solid #eee;padding-top:6px;font-size:8px;color:#999;text-align:center}
+@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}`
+
+    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Resultados à Direção — ${MESES[mes - 1]}/${ano}</title><style>${css}</style></head><body>
+<div class="hd">${logo ? `<img src="${logo}" class="logo"/>` : `<div class="brand">NODRI</div>`}
+<div class="tt"><strong>Apresentação dos Resultados à Direção</strong>${MESES[mes - 1]} de ${ano}</div></div>
+<div class="frase"><b>Resultado do mês:</b> ${esc(painel.frase)}</div>
+<div class="kpis">${painel.indicadores.map(i => `<div class="kpi"><span>${esc(i.rotulo)}</span><b>${esc(i.valor)}</b>${i.varia !== null ? ` <small>${i.varia >= 0 ? '▲' : '▼'} ${esc(pct(Math.abs(i.varia)))}</small>` : ''}</div>`).join('')}</div>
+<div class="bloco"><h2>Semáforo por setor</h2><div class="sem">${painel.setores.map((s: any) => `<span>${CORES[s.farol as Farol].emoji} ${esc(s.nome)}${s.pendencias ? ` · ${s.pendencias}` : ''}</span>`).join('')}</div></div>
+${tab('Principais problemas', ['Problema', 'Impacto', 'Causa e ação', 'Responsável / prazo'], linhasDe('problemas'))}
+${tab('Oportunidades', ['Oportunidade', 'Potencial', 'Plano', 'Responsável'], [
+      ...painel.oportunidades.map((o: any) => [o.titulo, moeda(o.potencial), o.detalhe, '—']),
+      ...linhasDe('oportunidades'),
+    ])}
+${tab('Investimentos', ['Item', 'Valor', 'Retorno esperado', 'Recomendação'], linhasDe('investimentos'))}
+${tab('Decisões que dependem dos sócios', ['Decisão', 'Motivo / impacto', 'Prazo', 'Recomendação'], linhasDe('decisoes'))}
+${tab('Plano de ação', ['Ação', 'Responsável', 'Prazo', 'Status'], linhasDe('acoes'))}
+${doc.observacoes ? `<div class="bloco"><h2>Observações</h2><p style="font-size:10.5px;line-height:1.5">${esc(doc.observacoes).replace(/\n/g, '<br>')}</p></div>` : ''}
+<div class="rodape">Gerado em ${new Date().toLocaleString('pt-BR')} · Apresentação dos Resultados à Direção</div>
+<script>window.onload=function(){window.print()}<\/script></body></html>`
+    const w = window.open('', '_blank', 'width=1000,height=760'); if (!w) return
+    w.document.write(html); w.document.close(); w.focus()
+  }
+
+  if (carregando) return (
+    <div style={{ padding: 50, textAlign: 'center', color: '#9ca3af' }}>
+      <Loader2 size={22} className="animate-spin" style={{ display: 'inline' }} /> Reunindo os dados do mês…
+    </div>
+  )
+
+  const anos = anosDisponiveis(Array.isArray(dados?.calc?.historico) ? dados.calc.historico : [])
+
+  return (
+    <div>
+      {/* ═══ Cabeçalho ═══ */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 11, flexWrap: 'wrap', marginBottom: 13 }}>
+        <div style={{ flex: 1, minWidth: 210 }}>
+          <h2 style={{ fontSize: 20, fontWeight: 900, color: '#1a1a2e', margin: 0, letterSpacing: '-.4px' }}>Apresentação dos Resultados à Direção</h2>
+          <p style={{ fontSize: 12.5, color: '#8a8680', margin: '3px 0 0' }}>Síntese executiva de {MESES[mes - 1]} de {ano} — o que o sistema já sabe, mais o que só você pode dizer.</p>
+        </div>
+        <select value={mes} onChange={e => setMes(Number(e.target.value))} style={sel}>
+          {MESES.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
+        </select>
+        <select value={ano} onChange={e => setAno(Number(e.target.value))} style={sel}>
+          {anos.map(a => <option key={a} value={a}>{a}</option>)}
+        </select>
+        <button onClick={imprimir} style={{ ...btnSec, display: 'inline-flex', alignItems: 'center', gap: 6 }}><Printer size={14} /> Imprimir</button>
+        <button onClick={salvar} disabled={salvando || !dirty}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 16px', borderRadius: 11, border: 'none', background: dirty ? '#16a34a' : '#d7d5cf', color: '#fff', fontSize: 13, fontWeight: 800, cursor: dirty ? 'pointer' : 'default' }}>
+          <Save size={14} /> {salvando ? 'Salvando…' : 'Salvar'}
+        </button>
+      </div>
+
+      {!painel ? (
+        <div style={vazio}>Não foi possível reunir os dados do mês.</div>
+      ) : (
+        <>
+          {/* ═══ Frase executiva ═══ */}
+          <div style={{ background: 'linear-gradient(135deg,#f5f3ff,#fff)', borderLeft: '4px solid #5b4fcf', borderRadius: '4px 12px 12px 4px', padding: '14px 17px', marginBottom: 13 }}>
+            <div style={{ fontSize: 10, fontWeight: 900, color: '#5b4fcf', letterSpacing: '.6px', marginBottom: 3 }}>RESULTADO DO MÊS</div>
+            <p style={{ fontSize: 14, color: '#1a1a2e', margin: 0, lineHeight: 1.55, fontWeight: 600 }}>{painel.frase}</p>
+          </div>
+
+          {/* ═══ BLOCO 1 — Indicadores ═══ */}
+          <Secao icone={<TrendingUp size={15} />} titulo="1. Visão geral da empresa" nota={`comparado com ${painel.mesAnt}`} />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10, marginBottom: 8 }}>
+            {painel.indicadores.map((i: any) => {
+              const c = CORES[i.farol as Farol]
+              return (
+                <div key={i.id} style={{ background: c.fundo, border: `1px solid ${c.borda}`, borderRadius: 12, padding: '11px 13px' }}>
+                  <div style={{ fontSize: 9.5, color: '#8a8680', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.5px' }}>{i.rotulo}</div>
+                  <div style={{ fontSize: 18, fontWeight: 900, color: '#1a1a2e', letterSpacing: '-.4px', lineHeight: 1.2 }}>{i.valor}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10.5, fontWeight: 800, color: c.cor, marginTop: 1 }}>
+                    {i.varia !== null ? <>{i.varia >= 0 ? <TrendingUp size={11} /> : <TrendingDown size={11} />}{pct(Math.abs(i.varia))}</> : <span style={{ color: '#a8a49d' }}>sem comparação</span>}
+                    {i.sub && <span style={{ color: '#8a8680', fontWeight: 600 }}>· {i.sub}</span>}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Ponto de equilíbrio */}
+          {painel.r.pe > 0 && (
+            <div style={{ background: '#fff', border: '1px solid #eceae4', borderRadius: 12, padding: '12px 15px', marginBottom: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, fontWeight: 800, color: '#6b6860', marginBottom: 5 }}>
+                <span>{moeda(painel.r.faturamento)} faturado</span>
+                <span>ponto de equilíbrio {moeda(painel.r.pe)}</span>
+              </div>
+              <div style={{ position: 'relative', height: 11, borderRadius: 99, background: '#f0eee8', overflow: 'hidden' }}>
+                <div style={{ width: `${Math.min(100, painel.atingidoPE * 100)}%`, height: '100%', background: painel.atingidoPE >= 1 ? '#16a34a' : painel.atingidoPE >= .8 ? '#f59e0b' : '#dc2626' }} />
+                {painel.ehMesCorrente && <div style={{ position: 'absolute', top: -2, bottom: -2, left: `${painel.doMesPassado * 100}%`, width: 2, background: '#1a1a2e', opacity: .45 }} />}
+              </div>
+              <div style={{ fontSize: 10.5, color: '#8a8680', marginTop: 4, fontWeight: 700 }}>
+                {pct(painel.atingidoPE)} do ponto de equilíbrio
+                {painel.ehMesCorrente && ` · o traço marca ${pct(painel.doMesPassado)} do mês`}
+                {painel.r.diasImportados > 0 && ` · ${painel.r.diasImportados} dias importados`}
+              </div>
+            </div>
+          )}
+
+          {/* ═══ BLOCO 2 — Semáforo ═══ */}
+          <Secao icone={<Target size={15} />} titulo="2. Semáforo executivo" nota="onde olhar primeiro — baseado nas pendências abertas e vencidas de cada setor" />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: 8, marginBottom: 14 }}>
+            {painel.setores.map((s: any) => {
+              const c = CORES[s.farol as Farol]
+              return (
+                <div key={s.id} style={{ background: c.fundo, border: `1px solid ${c.borda}`, borderRadius: 10, padding: '9px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 13 }}>{c.emoji}</span>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontSize: 11.5, fontWeight: 800, color: '#1a1a2e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.nome}</div>
+                    <div style={{ fontSize: 10, color: c.cor, fontWeight: 700 }}>
+                      {s.vencidas > 0 ? `${s.vencidas} vencida${s.vencidas > 1 ? 's' : ''}` : s.pendencias > 0 ? `${s.pendencias} aberta${s.pendencias > 1 ? 's' : ''}` : 'em dia'}
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* ═══ BLOCO 3 — Equipe ═══ */}
+          <Secao icone={<Users size={15} />} titulo="3. Resultados da equipe" nota="do relatório do avec e das metas do mês" />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 10, marginBottom: 14 }}>
+            <Painelzinho titulo="Destaques do mês" cor="#16a34a">
+              {painel.destaques.length === 0 ? <Nada /> : painel.destaques.map((p: any, i: number) => (
+                <Linhazinha key={p.id} esq={`${i + 1}. ${p.nome}`} dir={moeda(p.faturamento)} />
+              ))}
+            </Painelzinho>
+            <Painelzinho titulo="Abaixo da meta" cor="#dc2626">
+              {painel.abaixoMeta.length === 0 ? <Nada texto="Todos dentro da meta" /> : painel.abaixoMeta.slice(0, 4).map((p: any) => (
+                <Linhazinha key={p.id} esq={p.nome} dir={`${p.meta_pct.toFixed(0)}% · falta ${moeda(p.falta)}`} corDir="#dc2626" />
+              ))}
+            </Painelzinho>
+            <Painelzinho titulo="Sinais de atenção" cor="#b45309">
+              <Linhazinha esq="Ocupação média" dir={`${painel.ocupMedia.toFixed(0)}%`} corDir={painel.ocupMedia >= 85 ? '#16a34a' : '#b45309'} />
+              <Linhazinha esq="Clientes perdidos" dir={String(painel.perdidosTotal)} corDir={painel.perdidosTotal > 0 ? '#dc2626' : '#16a34a'} />
+              <Linhazinha esq="Pendências abertas" dir={`${painel.abertasTotal}${painel.vencidas ? ` · ${painel.vencidas} vencidas` : ''}`} corDir={painel.vencidas ? '#dc2626' : '#6b6860'} />
+              {painel.bolAbertos.length > 0 && <Linhazinha esq="Contas a pagar" dir={`${painel.bolAbertos.length}${painel.bolVencidos.length ? ` · ${painel.bolVencidos.length} vencidas` : ''}`} corDir={painel.bolVencidos.length ? '#dc2626' : '#6b6860'} />}
+              {painel.alertas?.solicitacoes > 0 && <Linhazinha esq="Solicitações do portal" dir={String(painel.alertas.solicitacoes)} corDir="#b45309" />}
+            </Painelzinho>
+          </div>
+
+          {/* ═══ BLOCO 4 — Problemas ═══ */}
+          <Secao icone={<AlertTriangle size={15} />} titulo="4. Principais problemas" nota="no máximo 5 — problema → impacto → causa e ação → responsável e prazo" />
+          <Tabela campo="problemas" doc={doc} cols={['Problema', 'Impacto (R$ ou %)', 'Causa e ação', 'Responsável / prazo']}
+            dicas={['Ex.: queda de produtividade', 'Ex.: -R$ 12.500 no mês', 'Ex.: horários ociosos → campanha', 'Ex.: Comercial · 20/08']}
+            onAdd={() => addLinha('problemas')} onMud={(id, k, v) => mudLinha('problemas', id, k, v)} onDel={id => delLinha('problemas', id)} />
+
+          {/* ═══ BLOCO 5 — Oportunidades ═══ */}
+          <Secao icone={<Rocket size={15} />} titulo="5. Oportunidades" nota="o sistema calcula as de cima; acrescente as que só você enxerga" />
+          {painel.oportunidades.length > 0 && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10, marginBottom: 9 }}>
+              {painel.oportunidades.map((o: any, i: number) => (
+                <div key={i} style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12, padding: '11px 13px' }}>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: '#1a1a2e' }}>{o.titulo}</div>
+                  <div style={{ fontSize: 17, fontWeight: 900, color: '#15803d', letterSpacing: '-.3px' }}>{moeda(o.potencial)}</div>
+                  <div style={{ fontSize: 10.5, color: '#6b6860', marginTop: 1 }}>{o.detalhe}</div>
+                </div>
+              ))}
+            </div>
+          )}
+          <Tabela campo="oportunidades" doc={doc} cols={['Oportunidade', 'Potencial (R$)', 'Plano', 'Responsável']}
+            dicas={['Ex.: parceria com lojista', 'Ex.: R$ 8.000', 'Ex.: pacote conjunto', 'Ex.: Marketing']}
+            onAdd={() => addLinha('oportunidades')} onMud={(id, k, v) => mudLinha('oportunidades', id, k, v)} onDel={id => delLinha('oportunidades', id)} />
+
+          {/* ═══ BLOCO 6 — Investimentos ═══ */}
+          <Secao icone={<CircleDollarSign size={15} />} titulo="6. Dinheiro e investimentos" nota="o que foi investido e o que se pede para investir" />
+          <Tabela campo="investimentos" doc={doc} cols={['Item', 'Valor', 'Retorno esperado', 'Recomendação']}
+            dicas={['Ex.: novo equipamento', 'Ex.: R$ 15.000', 'Ex.: +20% de capacidade, retorno em 7 meses', 'Aprovar / Avaliar / Adiar']}
+            onAdd={() => addLinha('investimentos')} onMud={(id, k, v) => mudLinha('investimentos', id, k, v)} onDel={id => delLinha('investimentos', id)} />
+
+          {/* ═══ BLOCO 7 — Decisões ═══ */}
+          <Secao icone={<Gavel size={15} />} titulo="7. Decisões que dependem dos sócios" nota="a pergunta que a Direção quer respondida: o que vocês precisam de mim?" destaque />
+          <Tabela campo="decisoes" doc={doc} cols={['Decisão', 'Motivo / impacto', 'Prazo', 'Recomendação']}
+            dicas={['Ex.: aprovar contratação', 'Ex.: demanda acima da capacidade', 'Ex.: 30/08', 'Aprovar / Avaliar']}
+            onAdd={() => addLinha('decisoes')} onMud={(id, k, v) => mudLinha('decisoes', id, k, v)} onDel={id => delLinha('decisoes', id)} />
+
+          {/* ═══ BLOCO 8 — Plano de ação ═══ */}
+          <Secao icone={<ListChecks size={15} />} titulo="8. Plano de ação" nota="o que já está em curso para corrigir e aproveitar" />
+          <Tabela campo="acoes" doc={doc} cols={['Ação', 'Responsável', 'Prazo', 'Status / resultado esperado']}
+            dicas={['Ex.: recuperar clientes inativos', 'Ex.: Comercial', 'Ex.: 20/08', 'Ex.: em andamento · +R$ 15 mil']}
+            onAdd={() => addLinha('acoes')} onMud={(id, k, v) => mudLinha('acoes', id, k, v)} onDel={id => delLinha('acoes', id)} />
+
+          <div style={{ background: '#fff', border: '1px solid #eceae4', borderRadius: 13, padding: 15, marginTop: 4 }}>
+            <label style={rot}>Observações para a Direção</label>
+            <textarea value={doc.observacoes || ''} onChange={e => { setDoc(d => ({ ...d, observacoes: e.target.value })); setDirty(true) }}
+              rows={3} placeholder="Contexto, recados, o que não coube nos quadros acima…"
+              style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e0ddd8', fontSize: 13, resize: 'vertical', lineHeight: 1.5, fontFamily: 'inherit' }} />
+          </div>
+
+          <p style={{ fontSize: 11.5, color: '#a8a49d', margin: '12px 4px 0', lineHeight: 1.55 }}>
+            Os indicadores, o semáforo, os resultados da equipe e as oportunidades de cima são calculados pelo sistema a partir do
+            relatório do avec, da Calculadora, das metas e das pendências de cada setor. Os quadros que você preenche são os que
+            dependem de julgamento — causa, decisão e plano. <b>Imprimir</b> gera a apresentação em A4 com a logo do salão.
+          </p>
+        </>
+      )}
+    </div>
+  )
+}
+
+/* ─────────────── Peças ─────────────── */
+const sel: CSSProperties = { padding: '9px 12px', borderRadius: 10, border: '1.5px solid #e0ddd8', background: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer' }
+const btnSec: CSSProperties = { padding: '9px 14px', borderRadius: 10, border: '1.5px solid #e0ddd8', background: '#fff', color: '#4b5563', fontSize: 12.5, fontWeight: 800, cursor: 'pointer' }
+const rot: CSSProperties = { fontSize: 10, fontWeight: 800, color: '#8a8680', textTransform: 'uppercase', letterSpacing: '.5px', display: 'block', marginBottom: 5 }
+const vazio: CSSProperties = { textAlign: 'center', padding: '44px 20px', background: '#fff', border: '1px dashed #e0ddd8', borderRadius: 14, color: '#8a8680', fontSize: 13.5 }
+
+function Secao({ icone, titulo, nota, destaque }: { icone: any; titulo: string; nota?: string; destaque?: boolean }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 9, margin: '4px 2px 9px' }}>
+      <div style={{ width: 28, height: 28, borderRadius: 9, background: destaque ? '#dc2626' : '#5b4fcf', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{icone}</div>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: 13.5, fontWeight: 900, color: '#1a1a2e', letterSpacing: '-.2px' }}>{titulo}</div>
+        {nota && <div style={{ fontSize: 11, color: '#a8a49d' }}>{nota}</div>}
+      </div>
+    </div>
+  )
+}
+
+function Painelzinho({ titulo, cor, children }: { titulo: string; cor: string; children: any }) {
+  return (
+    <div style={{ background: '#fff', border: '1px solid #eceae4', borderRadius: 12, padding: '12px 14px' }}>
+      <div style={{ fontSize: 10, fontWeight: 900, color: cor, textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 7 }}>{titulo}</div>
+      {children}
+    </div>
+  )
+}
+const Nada = ({ texto = 'Sem dados no mês' }: { texto?: string }) => <div style={{ fontSize: 11.5, color: '#c9c5be' }}>{texto}</div>
+function Linhazinha({ esq, dir, corDir = '#1a1a2e' }: { esq: string; dir: string; corDir?: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', borderTop: '1px solid #f7f6f3', fontSize: 12 }}>
+      <span style={{ flex: 1, color: '#4b5563', fontWeight: 600, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{esq}</span>
+      <span style={{ fontWeight: 800, color: corDir, whiteSpace: 'nowrap' }}>{dir}</span>
+    </div>
+  )
+}
+
+/** Quadro de 4 colunas que você preenche, com dica em cada campo. */
+function Tabela({ campo, doc, cols, dicas, onAdd, onMud, onDel }: {
+  campo: keyof Doc; doc: Doc; cols: string[]; dicas: string[]
+  onAdd: () => void; onMud: (id: string, k: keyof Linha, v: string) => void; onDel: (id: string) => void
+}) {
+  const linhas = (doc[campo] as Linha[]) || []
+  const chaves: (keyof Linha)[] = ['a', 'b', 'c', 'd']
+  const inp: CSSProperties = { width: '100%', padding: '7px 9px', borderRadius: 8, border: '1.5px solid #e8e6e0', fontSize: 12, background: '#fff' }
+  return (
+    <div style={{ background: '#fff', border: '1px solid #eceae4', borderRadius: 13, padding: 13, marginBottom: 14 }}>
+      {linhas.length === 0 && <p style={{ fontSize: 12, color: '#a8a49d', margin: '2px 0 9px' }}>Nada lançado. Clique em “Acrescentar” para incluir.</p>}
+      {linhas.map(l => (
+        <div key={l.id} style={{ display: 'flex', gap: 7, alignItems: 'flex-start', marginBottom: 8, flexWrap: 'wrap' }}>
+          {chaves.map((k, i) => (
+            <div key={k} style={{ flex: i === 0 ? '2 1 180px' : '1 1 120px', minWidth: 110 }}>
+              <label style={{ fontSize: 9, fontWeight: 800, color: '#a8a49d', textTransform: 'uppercase', letterSpacing: '.4px', display: 'block', marginBottom: 2 }}>{cols[i]}</label>
+              <input value={l[k]} onChange={e => onMud(l.id, k, e.target.value)} placeholder={dicas[i]} style={{ ...inp, fontWeight: i === 0 ? 700 : 500 }} />
+            </div>
+          ))}
+          <button onClick={() => onDel(l.id)} style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', padding: 3, marginTop: 16 }}><Trash2 size={13} /></button>
+        </div>
+      ))}
+      <button onClick={onAdd}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: '1px dashed #5b4fcf', background: '#f0eefb', color: '#5b4fcf', fontSize: 12, fontWeight: 800, padding: '7px 13px', borderRadius: 9, cursor: 'pointer' }}>
+        <Plus size={12} /> Acrescentar
+      </button>
+    </div>
+  )
+}
