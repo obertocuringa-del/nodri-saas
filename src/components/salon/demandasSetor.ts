@@ -16,12 +16,9 @@ const norm = (s: string) => (s || '').toUpperCase().trim()
 const MAPA: { chave: string[]; demandas: string[] }[] = [
   {
     chave: ['GERENCIA', 'GERENTE'], demandas: [
-      'Planejamento geral da empresa', 'Acompanhamento de resultados',
-      'Cobrança dos responsáveis de cada setor', 'Acompanhamento das metas',
-      'Análise dos relatórios', 'Aprovação operacional de demandas',
-      'Reuniões de alinhamento', 'Acompanhamento do desempenho dos setores',
-      'Apresentação dos resultados à Direção', 'Definição dos responsáveis e prazos',
-      'Metas de crescimento do salão',
+      'Planejamento geral da empresa', 'Reuniões de alinhamento',
+      'Acompanhamento do desempenho dos setores',
+      'Apresentação dos resultados à Direção', 'Metas de crescimento do salão',
     ]
   },
   {
@@ -82,13 +79,9 @@ const MAPA: { chave: string[]; demandas: string[] }[] = [
     chave: ['COMPRAS', 'ESTOQUE'], demandas: []
   },
   {
-    chave: ['PROCESSO', 'QUALIDADE'], demandas: [
-      'POPs', 'Padronização', 'Checklists', 'Auditorias', 'Não conformidades',
-      'Melhoria contínua', 'Avaliação dos processos', 'Controle de qualidade',
-      'Experiência do cliente', 'Indicadores de qualidade',
-      'Conferência das listas de controle', 'Auditoria das rotinas',
-      'Acompanhamento de cumprimento dos processos',
-    ]
+    // Demandas soltas removidas — o setor trabalha pelas ferramentas
+    // (Ranking, Check List, POPs por área, Check Procon…).
+    chave: ['PROCESSO', 'QUALIDADE'], demandas: []
   },
   {
     chave: ['RESPONSAVEL TECNICA', 'TECNICA'], demandas: [
