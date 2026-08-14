@@ -10,8 +10,8 @@ import { compararComModelo, ehChaveDoModelo, regraDaChave, sanitizar, versaoDoMo
 // atualiza o que ele nunca personalizou — nunca apaga o que ele criou.
 
 async function linhas(salaoId: string) {
-  const { data } = await supabaseAdmin.from('salao_config').select('chave, valor').eq('salao_id', salaoId)
-  return (data || []) as { chave: string; valor: any }[]
+  const { data } = await supabaseAdmin.from('salao_config').select('chave, valor, atualizado_em').eq('salao_id', salaoId)
+  return (data || []) as { chave: string; valor: any; atualizado_em?: string | null }[]
 }
 
 // GET — tem novidade? o que muda?

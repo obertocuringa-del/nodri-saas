@@ -139,17 +139,25 @@ export function sanitizar(chave: string, valor: any): any {
 // ── Versão do modelo ────────────────────────────────────────────────────────
 // O salão guarda qual versão já aplicou; quando o modelo muda, ele vê o aviso.
 
-/** Assinatura estável do conteúdo — muda quando a estrutura muda. */
-export function versaoDoModelo(linhas: { chave: string; valor: any }[]): string {
-  const base = linhas
+/**
+ * Assinatura do modelo — muda quando a estrutura muda.
+ *
+ * Sai das DATAS de alteração, não do conteúdo. Serializar os documentos
+ * inteiros (os check lists passam de centenas de itens) deixava a criação
+ * de salão lenta a ponto de o botão travar em "Salvando…". Toda gravação em
+ * salao_config atualiza `atualizado_em`, então a data detecta mudança do
+ * mesmo jeito — e a conta fica barata.
+ */
+export function versaoDoModelo(linhas: { chave: string; atualizado_em?: string | null }[]): string {
+  const partes = linhas
     .filter(l => ehChaveDoModelo(l.chave))
-    .map(l => `${l.chave}:${JSON.stringify(sanitizar(l.chave, l.valor))}`)
+    .map(l => `${l.chave}@${l.atualizado_em || ''}`)
     .sort()
-    .join('|')
+  const base = partes.join('|')
   // hash curto e determinístico (djb2) — só precisa detectar mudança
   let h = 5381
   for (let i = 0; i < base.length; i++) h = ((h << 5) + h + base.charCodeAt(i)) >>> 0
-  return `${h.toString(36)}.${base.length.toString(36)}`
+  return `${h.toString(36)}.${partes.length.toString(36)}`
 }
 
 /** O que mudaria no salão se ele aplicasse o modelo agora. */

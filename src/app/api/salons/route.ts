@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { verifyJWT, hashPassword } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 import { ehChaveDoModelo, sanitizar, versaoDoModelo } from '@/lib/modeloSalao'
+import { copiarMoldesDeTabelas } from '@/lib/modeloTabelas'
 
 export async function GET() {
   const token = cookies().get('nodri_token')?.value
@@ -91,8 +92,24 @@ export async function POST(req: NextRequest) {
   // fica onde está (ver lib/modeloSalao). Se não houver modelo, nasce vazio
   // e cai nos padrões do código, como era antes.
   const semeadas = await semearDoModelo(salao.id)
+  // Moldes que vivem em tabelas próprias (feedback de cliente e de
+  // profissional): vêm o formulário e as perguntas, com LINK NOVO e sem
+  // nenhuma resposta — cada salão fica com os dados dele.
+  const moldes = await semearMoldes(salao.id, salao.nome)
 
-  return NextResponse.json({ ...salao, estrutura_do_modelo: semeadas }, { status: 201 })
+  return NextResponse.json({ ...salao, estrutura_do_modelo: semeadas, moldes }, { status: 201 })
+}
+
+/** Moldes do modelo que não moram em salao_config. */
+async function semearMoldes(salaoId: string, nome: string) {
+  try {
+    const { data: mod } = await supabaseAdmin
+      .from('saloes').select('id').eq('is_modelo', true).maybeSingle()
+    if (!mod) return []
+    return await copiarMoldesDeTabelas((mod as any).id, salaoId, nome)
+  } catch {
+    return []
+  }
 }
 
 /** Copia a estrutura do salão modelo para um salão recém-criado. */
@@ -103,8 +120,8 @@ async function semearDoModelo(salaoId: string): Promise<number> {
     if (!mod) return 0
 
     const { data: cfg } = await supabaseAdmin
-      .from('salao_config').select('chave, valor').eq('salao_id', (mod as any).id)
-    const linhasModelo = (cfg || []) as { chave: string; valor: any }[]
+      .from('salao_config').select('chave, valor, atualizado_em').eq('salao_id', (mod as any).id)
+    const linhasModelo = (cfg || []) as { chave: string; valor: any; atualizado_em?: string | null }[]
 
     const agora = new Date().toISOString()
     const linhas = linhasModelo

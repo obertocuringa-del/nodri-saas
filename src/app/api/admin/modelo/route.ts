@@ -14,8 +14,8 @@ async function master() {
 }
 
 async function configDoSalao(salaoId: string) {
-  const { data } = await supabaseAdmin.from('salao_config').select('chave, valor').eq('salao_id', salaoId)
-  return (data || []) as { chave: string; valor: any }[]
+  const { data } = await supabaseAdmin.from('salao_config').select('chave, valor, atualizado_em').eq('salao_id', salaoId)
+  return (data || []) as { chave: string; valor: any; atualizado_em?: string | null }[]
 }
 
 // GET — quem é o modelo, o que ele já tem e o que dá para importar
