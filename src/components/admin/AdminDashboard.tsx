@@ -1,10 +1,9 @@
 ﻿'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { LogOut, Bell, Plus, Shield, Building, CreditCard, Puzzle, Users, BarChart3, Settings, RefreshCw, X, Send, Edit, Lock, Unlock, Loader2, ChevronDown, Check, Link, Save, Trash2, ExternalLink, Eye, EyeOff, AlertTriangle, Search, Play, Zap, Tag, FolderOpen, Wrench, LogIn, Bot, GraduationCap, ClipboardList, DollarSign, Home, CheckCircle, AlertCircle, Clock, ShoppingBag, Key } from 'lucide-react'
+import { LogOut, Bell, Plus, Building, CreditCard, Puzzle, Users, BarChart3, Settings, RefreshCw, X, Send, Edit, Lock, Unlock, Loader2, ChevronDown, Check, Link, Save, Trash2, ExternalLink, Eye, EyeOff, AlertTriangle, Search, Zap, Tag, FolderOpen, Wrench, LogIn, Bot, GraduationCap, ClipboardList, DollarSign, Home, CheckCircle, AlertCircle, Clock, ShoppingBag, Key } from 'lucide-react'
 import toast from 'react-hot-toast'
 import type { Salao, Modulo, Notificacao, Plano, Cupom } from '@/types'
-import EditorSubmenus from './EditorSubmenus'
 
 interface Props {
   saloes: Salao[]
@@ -71,7 +70,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
   const [moduloForm, setModuloForm] = useState({ nome: '', slug: '', descricao: '', versao: '1.0.0', icone: '', cor_classe: '', categoria: '', ordem: '0' })
   const [savingModulo, setSavingModulo] = useState(false)
   const [togglingManutencao, setTogglingManutencao] = useState<string | null>(null)
-  const [activeSection, setActiveSection] = useState('dashboard')
+  const [activeSection, setActiveSection] = useState('saloes')
   const [modCtrlSalao, setModCtrlSalao] = useState<Salao | null>(null)
   const [modulosAtivos, setModulosAtivos] = useState<Set<string>>(new Set())
   const [notifMsg, setNotifMsg] = useState('')
@@ -928,20 +927,15 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
   }
 
   const navItems = [
-    { id: 'dashboard', icon: <Shield size={14} />, label: 'Dashboard' },
     { id: 'saloes', icon: <Building size={14} />, label: 'Salões', badge: saloes.length },
     // Página própria (não é aba): define o salão modelo e alimenta ele
     { id: 'modelo', icon: <Building size={14} />, label: 'Salão modelo', rota: '/admin/modelo' },
-    { id: 'licencas', icon: <CreditCard size={14} />, label: 'Licenças' },
     { id: 'planos', icon: <CreditCard size={14} />, label: 'Planos', badge: planos.length },
     { id: 'modulos', icon: <Puzzle size={14} />, label: 'Módulos' },
-    { id: 'usuarios', icon: <Users size={14} />, label: 'Usuários' },
     { id: 'notifs', icon: <Bell size={14} />, label: 'Notificações', badge: localNotifs.filter(n => !n.lida).length, badgeRed: true },
-    { id: 'conteudo', icon: <Play size={14} />, label: 'Editor de Páginas' },
     { id: 'pagamentos', icon: <CreditCard size={14} />, label: 'Pagamentos' },
     { id: 'afiliados', icon: <Users size={14} />, label: 'Afiliados' },
     { id: 'logs', icon: <BarChart3 size={14} />, label: 'Logs do Sistema' },
-    { id: 'updates', icon: <RefreshCw size={14} />, label: 'Atualizações' },
     { id: 'relatorios', icon: <BarChart3 size={14} />, label: 'Relatórios' },
     { id: 'config', icon: <Settings size={14} />, label: 'Configurações' },
     { id: 'ia', icon: <Bot size={14} />, label: 'IA' },
@@ -958,7 +952,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
         </div>
         <nav className="flex-1 p-2 overflow-y-auto space-y-0.5">
           <p className="text-[9px] text-nodri-t3 uppercase tracking-widest px-2.5 py-1.5 font-medium mt-1">Painel</p>
-          {navItems.slice(0, 8).map(item => (
+          {navItems.slice(0, 5).map(item => (
             <button key={item.id} onClick={() => { if ((item as any).rota) window.location.href = (item as any).rota; else setActiveSection(item.id) }}
               className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11.5px] border transition-all ${activeSection === item.id ? 'bg-nodri-cyan/9 text-nodri-cyan border-nodri-cyan/17' : 'text-nodri-t2 border-transparent hover:bg-white/4 hover:text-nodri-t1'}`}>
               {item.icon}<span className="flex-1 text-left">{item.label}</span>
@@ -968,7 +962,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
             </button>
           ))}
           <p className="text-[9px] text-nodri-t3 uppercase tracking-widest px-2.5 py-1.5 font-medium mt-2">Sistema</p>
-          {navItems.slice(8).map(item => (
+          {navItems.slice(5).map(item => (
             <button key={item.id} onClick={() => { if ((item as any).rota) window.location.href = (item as any).rota; else setActiveSection(item.id) }}
               className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11.5px] border transition-all ${activeSection === item.id ? 'bg-nodri-cyan/9 text-nodri-cyan border-nodri-cyan/17' : 'text-nodri-t2 border-transparent hover:bg-white/4 hover:text-nodri-t1'}`}>
               {item.icon}<span className="flex-1 text-left">{item.label}</span>
@@ -1108,10 +1102,6 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
           )}
 
           {/* EDITOR DE PÁGINAS */}
-          {activeSection === 'conteudo' && (
-            <EditorSubmenus />
-          )}
-
           {/* PAGAMENTOS */}
           {activeSection === 'pagamentos' && <PagamentosSection />}
 
@@ -1493,36 +1483,6 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
           )}
 
           {/* ATUALIZAÇÕES */}
-          {activeSection === 'updates' && (
-            <div className="space-y-4">
-              <div className="nodri-card p-4 sm:p-6">
-                <div className="font-syne font-bold text-[14px] text-nodri-cyan mb-4 flex items-center gap-2">
-                  <RefreshCw size={14} /> Central de Atualizações
-                </div>
-                <p className="text-nodri-t2 text-[12px] mb-4">Envie comunicados de novas versões e atualizações para todos os clientes.</p>
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Título da atualização</label>
-                    <input id="upd-titulo" placeholder="Ex: Nova versão 2.5 disponível!" className="nodri-input w-full" />
-                  </div>
-                  <div>
-                    <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Descrição</label>
-                    <textarea id="upd-desc" rows={3} placeholder="Descreva o que foi atualizado..." className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] outline-none focus:border-nodri-cyan resize-none" />
-                  </div>
-                  <button onClick={async () => {
-                    const titulo = (document.getElementById('upd-titulo') as HTMLInputElement)?.value
-                    const desc = (document.getElementById('upd-desc') as HTMLTextAreaElement)?.value
-                    if (!titulo) { toast.error('Digite o título'); return }
-                    const res = await fetch('/api/notifications', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ titulo, mensagem: desc || titulo, para_todos: true, tipo: 'info' }) })
-                    if (res.ok) { toast.success('Atualização enviada para todos os clientes!'); (document.getElementById('upd-titulo') as HTMLInputElement).value = ''; (document.getElementById('upd-desc') as HTMLTextAreaElement).value = '' }
-                    else toast.error('Erro ao enviar')
-                  }} className="flex items-center gap-2 bg-nodri-cyan text-black px-5 py-2.5 rounded-lg font-bold text-[12px] hover:brightness-110">
-                    <Send size={13} /> Enviar para Todos os Clientes
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* RELATÓRIOS */}
           {activeSection === 'relatorios' && (
@@ -1798,9 +1758,19 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
           )}
 
           {/* DASHBOARD */}
-          {activeSection !== 'planos' && activeSection !== 'conteudo' && activeSection !== 'afiliados' && activeSection !== 'logs' && activeSection !== 'updates' && activeSection !== 'relatorios' && activeSection !== 'config' && activeSection !== 'modulos' && activeSection !== 'pagamentos' && (
+          {/* Cards de estatistica + Central de Notificacoes: SO no Dashboard.
+              Antes a condicao era uma lista de exclusoes, e toda secao nova
+              nascia herdando esses blocos por esquecimento - foi o que fez
+              Programas, Academia e IA aparecerem com os cards de saloes e
+              licencas embaixo do proprio conteudo. Invertido: agora precisa
+              dizer explicitamente que quer. */}
+          {/* Cada bloco decide sozinho onde aparece — antes um unico `if`
+              mandava nos tres, e por isso Saloes vinha com os cards e a
+              Central junto, e Notificacoes vinha com os cards. */}
+          {(activeSection === 'saloes' || activeSection === 'notifs') && (
             <>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+              {/* Cards de estatistica: fora de Saloes e de Notificacoes */}
+              {false && <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
                 {[
                   { label: 'Salões cadastrados', value: saloes.length, change: 'total' },
                   { label: 'Licenças ativas', value: saloes.filter(s => s.status === 'ativo').length, change: 'ativas agora' },
@@ -1813,10 +1783,10 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                     <div className="text-[10px] mt-1 text-nodri-green">{s.change}</div>
                   </div>
                 ))}
-              </div>
+              </div>}
 
-              {/* NOTIFICAÇÕES */}
-              <div className="nodri-card p-4 mb-5">
+              {/* NOTIFICAÇÕES — só na própria seção */}
+              {activeSection === 'notifs' && <div className="nodri-card p-4 mb-5">
                 <div className="flex items-center gap-2 font-syne font-bold text-[12px] mb-3">
                   <Bell size={14} className="text-nodri-cyan" />
                   <span>Central de Notificações</span>
@@ -1908,10 +1878,10 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                     </button>
                   </div>
                 </div>
-              </div>
+              </div>}
 
-              {/* TABELA SALÕES */}
-              <div>
+              {/* TABELA SALÕES — só na própria seção */}
+              {activeSection === 'saloes' && <div>
                 <h2 className="font-syne font-bold text-[12.5px] mb-3">Salões Cadastrados</h2>
                 <div className="nodri-card overflow-hidden">
                   <table className="w-full text-[11.5px]">
@@ -1953,7 +1923,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                   </table>
                   {saloes.length === 0 && <div className="text-center py-12 text-nodri-t3 text-sm">Nenhum salão cadastrado ainda</div>}
                 </div>
-              </div>
+              </div>}
             </>
           )}
         </div>
