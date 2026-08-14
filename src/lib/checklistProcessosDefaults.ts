@@ -11,6 +11,7 @@ export interface PaginaManual { titulo: string; blocos: { subtitulo?: string; it
 export const CATEGORIAS_PROCESSOS: CatProcessos[] = [
   {
     nome: 'GOVERNANÇA DOS PROCESSOS',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Controle geral — Manter relação oficial de todos os processos da empresa.', freq: 'Mensal' },
       { texto: 'Controle geral — Manter relação oficial de todos os POPs.', freq: 'Mensal' },
@@ -31,6 +32,7 @@ export const CATEGORIAS_PROCESSOS: CatProcessos[] = [
   },
   {
     nome: 'MAPA DE PROCESSOS DA EMPRESA',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Mapear processos estratégicos.', freq: 'Mensal' },
       { texto: 'Mapear processos comerciais.', freq: 'Mensal' },
@@ -104,6 +106,7 @@ export const CATEGORIAS_PROCESSOS: CatProcessos[] = [
   },
   {
     nome: 'REVISÃO DE PROCESSOS',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Verificar processos que atingiram prazo de revisão.', freq: 'Mensal' },
       { texto: 'Revisar processos após ocorrência grave.', freq: 'Mensal' },
@@ -305,6 +308,7 @@ export const CATEGORIAS_PROCESSOS: CatProcessos[] = [
   },
   {
     nome: 'INDICADORES DE PROCESSOS',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Acompanhar mensalmente — % de processos cumpridos.', freq: 'Mensal' },
       { texto: 'Acompanhar mensalmente — Índice de conformidade.', freq: 'Mensal' },
@@ -328,6 +332,7 @@ export const CATEGORIAS_PROCESSOS: CatProcessos[] = [
   },
   {
     nome: 'ANÁLISE DE TENDÊNCIAS',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Mensalmente — Comparar mês atual x mês anterior.', freq: 'Mensal' },
       { texto: 'Mensalmente — Comparar trimestre.', freq: 'Mensal' },
@@ -344,6 +349,7 @@ export const CATEGORIAS_PROCESSOS: CatProcessos[] = [
   },
   {
     nome: 'CONTROLE DE RETRABALHO',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Quantificar retrabalhos.', freq: 'Mensal' },
       { texto: 'Identificar origem.', freq: 'Mensal' },
@@ -359,6 +365,7 @@ export const CATEGORIAS_PROCESSOS: CatProcessos[] = [
   },
   {
     nome: 'ANÁLISE DE RECLAMAÇÕES SOB A ÓTICA DE QUALIDADE',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Catalogar reclamações.', freq: 'Mensal' },
       { texto: 'Classificar reclamações.', freq: 'Mensal' },
@@ -409,6 +416,7 @@ export const CATEGORIAS_PROCESSOS: CatProcessos[] = [
   },
   {
     nome: 'QUALIDADE DE EQUIPAMENTOS',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Identificar equipamentos críticos.', freq: 'Mensal' },
       { texto: 'Definir padrão mínimo de funcionamento.', freq: 'Mensal' },
@@ -570,6 +578,7 @@ export const CATEGORIAS_PROCESSOS: CatProcessos[] = [
   },
   {
     nome: 'CONTROLE DE RISCOS DE PROCESSO',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Para cada processo crítico — Identificar risco.', freq: 'Mensal' },
       { texto: 'Para cada processo crítico — Identificar probabilidade.', freq: 'Mensal' },
@@ -618,6 +627,7 @@ export const CATEGORIAS_PROCESSOS: CatProcessos[] = [
   },
   {
     nome: 'RELATÓRIO DE QUALIDADE',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Mensalmente preparar — Total de auditorias.', freq: 'Mensal' },
       { texto: 'Mensalmente preparar — Total de processos auditados.', freq: 'Mensal' },
@@ -645,6 +655,7 @@ export const CATEGORIAS_PROCESSOS: CatProcessos[] = [
   },
   {
     nome: 'APRESENTAÇÃO À DIREÇÃO',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Apresentar — Evolução do índice de conformidade.', freq: 'Mensal' },
       { texto: 'Apresentar — Evolução das não conformidades.', freq: 'Mensal' },
@@ -791,6 +802,7 @@ export const CATEGORIAS_PROCESSOS: CatProcessos[] = [
   },
   {
     nome: 'CONTROLE DE PADRONIZAÇÃO',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Mensalmente — Medir aderência aos POPs.', freq: 'Mensal' },
       { texto: 'Mensalmente — Identificar áreas com maior aderência.', freq: 'Mensal' },
@@ -945,6 +957,59 @@ export const CHECKLIST_PROCESSOS = CATEGORIAS_PROCESSOS.filter(c => c.tipo !== '
  *  Mantem os subgrupos originais, para a pagina abrir organizada. */
 export const MANUAIS_PROCESSOS: PaginaManual[] = [
   {
+    titulo: 'GOVERNANÇA DOS PROCESSOS',
+    blocos: [
+      {
+        subtitulo: 'Controle geral',
+        itens: [
+          'Manter relação oficial de todos os processos da empresa.',
+          'Manter relação oficial de todos os POPs.',
+          'Identificar quais processos possuem POP.',
+          'Identificar processos ainda não documentados.',
+          'Identificar processos duplicados.',
+          'Identificar processos conflitantes.',
+          'Identificar processos desatualizados.',
+          'Identificar processos sem responsável definido.',
+          'Identificar processos sem indicador.',
+          'Identificar processos sem evidência de execução.',
+          'Manter matriz geral de processos.',
+          'Classificar processos por área.',
+          'Classificar processos por criticidade.',
+          'Definir periodicidade de auditoria de cada processo.',
+          'Manter histórico das alterações.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'MAPA DE PROCESSOS DA EMPRESA',
+    blocos: [
+      {
+        itens: [
+          'Mapear processos estratégicos.',
+          'Mapear processos comerciais.',
+          'Mapear processos de atendimento.',
+          'Mapear processos técnicos.',
+          'Mapear processos administrativos.',
+          'Mapear processos financeiros.',
+          'Mapear processos de estoque.',
+          'Mapear processos de compras.',
+          'Mapear processos de limpeza.',
+          'Mapear processos de manutenção.',
+          'Mapear processos de recepção.',
+          'Mapear processos de caixa.',
+          'Mapear processos de pós-venda.',
+          'Mapear processos de experiência do cliente.',
+          'Mapear processos de pessoas quando houver impacto operacional.',
+          'Identificar dependências entre processos.',
+          'Identificar pontos de entrada e saída de cada processo.',
+          'Identificar responsáveis pela execução.',
+          'Identificar pontos críticos de controle.',
+        ],
+      },
+    ],
+  },
+  {
     titulo: 'CADASTRO E CONTROLE DOS POPs',
     blocos: [
       {
@@ -997,6 +1062,31 @@ export const MANUAIS_PROCESSOS: PaginaManual[] = [
           'Registrar versão oficial.',
           'Definir data de vigência.',
           'Publicar versão oficial.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'REVISÃO DE PROCESSOS',
+    blocos: [
+      {
+        itens: [
+          'Verificar processos que atingiram prazo de revisão.',
+          'Revisar processos após ocorrência grave.',
+          'Revisar processos após mudança estrutural.',
+          'Revisar processos após mudança de sistema.',
+          'Revisar processos após alteração de produto.',
+          'Revisar processos após alteração de equipamento.',
+          'Revisar processos após mudança de legislação, quando aplicável.',
+          'Revisar processos com alto índice de erro.',
+          'Revisar processos com alto índice de retrabalho.',
+          'Revisar processos com reclamações recorrentes.',
+          'Revisar processos que geram dúvidas frequentes.',
+          'Registrar necessidade de alteração.',
+          'Atualizar versão.',
+          'Registrar histórico.',
+          'Retirar versão anterior de circulação.',
+          'Garantir que somente a versão vigente permaneça disponível.',
         ],
       },
     ],
@@ -1238,6 +1328,115 @@ export const MANUAIS_PROCESSOS: PaginaManual[] = [
     ],
   },
   {
+    titulo: 'INDICADORES DE PROCESSOS',
+    blocos: [
+      {
+        subtitulo: 'Acompanhar mensalmente',
+        itens: [
+          '% de processos cumpridos.',
+          'Índice de conformidade.',
+          'Número de não conformidades.',
+          'Não conformidades por setor.',
+          'Não conformidades por processo.',
+          'Não conformidades recorrentes.',
+          'Tempo médio de correção.',
+          'Taxa de reincidência.',
+          'Retrabalho.',
+          'Erros operacionais.',
+          'Reclamações relacionadas a processo.',
+          'Nota média das auditorias.',
+          'Índice de padronização.',
+          'Treinamentos decorrentes de falhas.',
+          'Ações corretivas concluídas.',
+          'Ações corretivas atrasadas.',
+          'Ações corretivas eficazes.',
+          'Ações corretivas ineficazes.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'ANÁLISE DE TENDÊNCIAS',
+    blocos: [
+      {
+        subtitulo: 'Mensalmente',
+        itens: [
+          'Comparar mês atual x mês anterior.',
+          'Comparar trimestre.',
+          'Identificar aumento de falhas.',
+          'Identificar redução de falhas.',
+          'Identificar processos críticos.',
+          'Identificar setores críticos.',
+          'Identificar reincidências.',
+          'Identificar horários/períodos críticos.',
+          'Identificar causas recorrentes.',
+          'Identificar necessidade de mudança estrutural.',
+          'Identificar oportunidades de prevenção.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'CONTROLE DE RETRABALHO',
+    blocos: [
+      {
+        itens: [
+          'Quantificar retrabalhos.',
+          'Identificar origem.',
+          'Identificar processo relacionado.',
+          'Identificar causa.',
+          'Identificar custo estimado.',
+          'Identificar impacto no tempo.',
+          'Identificar impacto no cliente.',
+          'Identificar reincidência.',
+          'Criar ação preventiva.',
+          'Acompanhar redução.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'ANÁLISE DE RECLAMAÇÕES SOB A ÓTICA DE QUALIDADE',
+    blocos: [
+      {
+        itens: [
+          'Catalogar reclamações.',
+          'Classificar reclamações.',
+          'Relacionar reclamação ao processo.',
+          'Identificar recorrência.',
+          'Identificar tendência.',
+          'Identificar causa.',
+          'Verificar se existe POP relacionado.',
+          'Verificar se o POP está adequado.',
+          'Verificar se existe ponto de controle.',
+          'Verificar se existe evidência.',
+          'Avaliar necessidade de alteração do processo.',
+          'Criar ação preventiva.',
+          'Monitorar reincidência.',
+          'Nota: o setor não administra a reclamação no momento em que ela acontece — analisa o problema como dado de qualidade.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'QUALIDADE DE EQUIPAMENTOS',
+    blocos: [
+      {
+        itens: [
+          'Identificar equipamentos críticos.',
+          'Definir padrão mínimo de funcionamento.',
+          'Definir rotina de verificação.',
+          'Definir critérios de indisponibilidade.',
+          'Definir procedimento para equipamento com defeito.',
+          'Auditar cumprimento do processo.',
+          'Registrar falhas recorrentes.',
+          'Avaliar impacto na operação.',
+          'Propor revisão do processo quando necessário.',
+        ],
+      },
+    ],
+  },
+  {
     titulo: 'CHECKLISTS OFICIAIS',
     blocos: [
       {
@@ -1383,6 +1582,26 @@ export const MANUAIS_PROCESSOS: PaginaManual[] = [
     ],
   },
   {
+    titulo: 'CONTROLE DE RISCOS DE PROCESSO',
+    blocos: [
+      {
+        subtitulo: 'Para cada processo crítico',
+        itens: [
+          'Identificar risco.',
+          'Identificar probabilidade.',
+          'Identificar impacto.',
+          'Classificar criticidade.',
+          'Identificar controle existente.',
+          'Verificar se o controle funciona.',
+          'Identificar ausência de controle.',
+          'Criar ação preventiva.',
+          'Monitorar risco.',
+          'Reavaliar periodicamente.',
+        ],
+      },
+    ],
+  },
+  {
     titulo: 'PROCESSOS CRÍTICOS',
     blocos: [
       {
@@ -1434,6 +1653,63 @@ export const MANUAIS_PROCESSOS: PaginaManual[] = [
     ],
   },
   {
+    titulo: 'RELATÓRIO DE QUALIDADE',
+    blocos: [
+      {
+        subtitulo: 'Mensalmente preparar',
+        itens: [
+          'Total de auditorias.',
+          'Total de processos auditados.',
+          'Índice de conformidade.',
+          'Total de não conformidades.',
+          'Não conformidades por gravidade.',
+          'Não conformidades por setor.',
+          'Não conformidades por processo.',
+          'Reincidências.',
+          'Retrabalhos.',
+          'Reclamações relacionadas a processos.',
+          'Tempo médio de correção.',
+          'Ações pendentes.',
+          'Ações concluídas.',
+          'Ações eficazes.',
+          'Ações ineficazes.',
+          'Treinamentos realizados.',
+          'Processos revisados.',
+          'POPs criados.',
+          'POPs alterados.',
+          'Principais riscos.',
+          'Principais oportunidades.',
+          'Plano de ação do próximo período.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'APRESENTAÇÃO À DIREÇÃO',
+    blocos: [
+      {
+        subtitulo: 'Apresentar',
+        itens: [
+          'Evolução do índice de conformidade.',
+          'Evolução das não conformidades.',
+          'Processos mais problemáticos.',
+          'Processos que melhoraram.',
+          'Principais causas.',
+          'Principais riscos.',
+          'Retrabalho gerado.',
+          'Reclamações relacionadas a processos.',
+          'Ações corretivas.',
+          'Resultados das ações.',
+          'Necessidades de mudança.',
+          'Necessidades de investimento.',
+          'Necessidades de treinamento.',
+          'Recomendações de melhoria.',
+          'Nota: apresentar informação de sistema, não apenas acontecimentos.',
+        ],
+      },
+    ],
+  },
+  {
     titulo: 'CONTROLE DE RECORRÊNCIA',
     blocos: [
       {
@@ -1449,6 +1725,24 @@ export const MANUAIS_PROCESSOS: PaginaManual[] = [
           'Criar nova ação.',
           'Escalar criticidade.',
           'Comunicar Gerência quando necessário.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'CONTROLE DE PADRONIZAÇÃO',
+    blocos: [
+      {
+        subtitulo: 'Mensalmente',
+        itens: [
+          'Medir aderência aos POPs.',
+          'Identificar áreas com maior aderência.',
+          'Identificar áreas com menor aderência.',
+          'Identificar processos com maior variação.',
+          'Identificar causas de variação.',
+          'Criar ações.',
+          'Reavaliar.',
+          'Objetivo: execução padronizada dos serviços, redução de erros e retrabalho e melhoria contínua.',
         ],
       },
     ],

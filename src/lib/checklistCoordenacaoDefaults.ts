@@ -142,6 +142,7 @@ export const CATEGORIAS_COORDENACAO: CatCoordenacao[] = [
   },
   {
     nome: 'EXPERIÊNCIA DO CLIENTE',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Acompanhar chegada dos clientes.', freq: 'Diário' },
       { texto: 'Garantir acolhimento.', freq: 'Diário' },
@@ -479,6 +480,7 @@ export const CATEGORIAS_COORDENACAO: CatCoordenacao[] = [
   },
   {
     nome: 'AÇÕES COMERCIAIS',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Verificar ações comerciais vigentes.', freq: 'Semanal' },
       { texto: 'Relembrar profissionais sobre as ações.', freq: 'Semanal' },
@@ -493,6 +495,7 @@ export const CATEGORIAS_COORDENACAO: CatCoordenacao[] = [
   },
   {
     nome: 'FOTOS E MARKETING',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Solicitar que todos os profissionais tirem fotos dos serviços realizados diariamente.', freq: 'Semanal' },
       { texto: 'Solicitar envio das fotos para o Drive.', freq: 'Semanal' },
@@ -507,6 +510,7 @@ export const CATEGORIAS_COORDENACAO: CatCoordenacao[] = [
   },
   {
     nome: 'RECOLHIMENTO DE DEMANDAS DOS PROFISSIONAIS',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Recolher demandas financeiras.', freq: 'Semanal' },
       { texto: 'Recolher solicitações de ajustes.', freq: 'Semanal' },
@@ -688,6 +692,7 @@ export const CATEGORIAS_COORDENACAO: CatCoordenacao[] = [
   },
   {
     nome: 'GESTÃO DA EQUIPE',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Recolher demandas.', freq: 'Semanal' },
       { texto: 'Resolver demandas operacionais.', freq: 'Semanal' },
@@ -713,6 +718,7 @@ export const CATEGORIAS_COORDENACAO: CatCoordenacao[] = [
   },
   {
     nome: 'DESENVOLVIMENTO DOS PROFISSIONAIS',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Mensalmente — Identificar profissionais destaque.', freq: 'Mensal' },
       { texto: 'Mensalmente — Identificar profissionais em risco.', freq: 'Mensal' },
@@ -737,6 +743,7 @@ export const CATEGORIAS_COORDENACAO: CatCoordenacao[] = [
   },
   {
     nome: 'CLIMA ORGANIZACIONAL — MENSAL',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Avaliar integração da equipe.', freq: 'Mensal' },
       { texto: 'Avaliar motivação.', freq: 'Mensal' },
@@ -751,6 +758,7 @@ export const CATEGORIAS_COORDENACAO: CatCoordenacao[] = [
   },
   {
     nome: 'CULTURA ORGANIZACIONAL',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Verificar se a equipe vive os valores da empresa.', freq: 'Mensal' },
       { texto: 'Reforçar princípios.', freq: 'Mensal' },
@@ -763,6 +771,7 @@ export const CATEGORIAS_COORDENACAO: CatCoordenacao[] = [
   },
   {
     nome: 'CONTROLE FINANCEIRO OPERACIONAL',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Evitar desperdícios.', freq: 'Mensal' },
       { texto: 'Controlar consumo.', freq: 'Mensal' },
@@ -778,6 +787,7 @@ export const CATEGORIAS_COORDENACAO: CatCoordenacao[] = [
   },
   {
     nome: 'INDICADORES',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Organização operacional.', freq: 'Mensal' },
       { texto: 'Cumprimento das escalas.', freq: 'Mensal' },
@@ -800,6 +810,7 @@ export const CATEGORIAS_COORDENACAO: CatCoordenacao[] = [
   },
   {
     nome: 'GESTÃO DE INFORMAÇÕES',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Registrar informações importantes.', freq: 'Mensal' },
       { texto: 'Documentar ocorrências.', freq: 'Mensal' },
@@ -817,6 +828,7 @@ export const CATEGORIAS_COORDENACAO: CatCoordenacao[] = [
   },
   {
     nome: 'PLANILHA DE FEEDBACK',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Registrar tudo o que aconteceu no salão.', freq: 'Mensal' },
       { texto: 'Registrar feedback positivo.', freq: 'Mensal' },
@@ -996,6 +1008,7 @@ export const CATEGORIAS_COORDENACAO: CatCoordenacao[] = [
   },
   {
     nome: 'ROTINA MENSAL',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Realizar feedback individual.', freq: 'Mensal' },
       { texto: 'Realizar auditoria completa.', freq: 'Mensal' },
@@ -1127,6 +1140,32 @@ export const CHECKLIST_COORDENACAO = CATEGORIAS_COORDENACAO.filter(c => c.tipo !
  *  Mantem os subgrupos originais, para a pagina abrir organizada. */
 export const MANUAIS_COORDENACAO: PaginaManual[] = [
   {
+    titulo: 'EXPERIÊNCIA DO CLIENTE',
+    blocos: [
+      {
+        itens: [
+          'Acompanhar chegada dos clientes.',
+          'Garantir acolhimento.',
+          'Acompanhar tempo de espera.',
+          'Acompanhar atrasos.',
+          'Resolver problemas de atendimento.',
+          'Acompanhar satisfação.',
+          'Garantir qualidade do atendimento.',
+          'Garantir padrão de comunicação.',
+          'Acompanhar clientes especiais.',
+          'Acompanhar noivas.',
+          'Acompanhar grandes grupos.',
+          'Elaborar orçamentos quando necessário.',
+          'Manter relacionamento com clientes especiais.',
+          'Resolver reclamações.',
+          'Realizar pós-venda quando aplicável.',
+          'Garantir encantamento.',
+          'Preservar a experiência do cliente.',
+        ],
+      },
+    ],
+  },
+  {
     titulo: 'CLIENTE NÃO GOSTOU DO PROCEDIMENTO',
     blocos: [
       {
@@ -1199,6 +1238,62 @@ export const MANUAIS_COORDENACAO: PaginaManual[] = [
           'Resolver a divergência.',
           'Registrar ocorrência quando aplicável.',
           'Corrigir o lançamento caso tenha ocorrido erro.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'AÇÕES COMERCIAIS',
+    blocos: [
+      {
+        itens: [
+          'Verificar ações comerciais vigentes.',
+          'Relembrar profissionais sobre as ações.',
+          'Orientar equipe sobre ações comerciais internas.',
+          'Orientar equipe sobre ações comerciais externas.',
+          'Conferir se os profissionais conhecem as campanhas.',
+          'Estimular divulgação das ações.',
+          'Acompanhar execução.',
+          'Identificar oportunidades comerciais.',
+          'Recolher ideias de ações dos profissionais.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'FOTOS E MARKETING',
+    blocos: [
+      {
+        itens: [
+          'Solicitar que todos os profissionais tirem fotos dos serviços realizados diariamente.',
+          'Solicitar envio das fotos para o Drive.',
+          'Conferir se as fotos estão sendo enviadas.',
+          'Garantir que o material esteja disponível para o Marketing.',
+          'Reforçar diariamente quando necessário.',
+          'Verificar calendário da planilha central.',
+          'Identificar datas de eventos.',
+          'Repassar eventos à equipe.',
+          'Enviar lembretes sobre eventos.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'RECOLHIMENTO DE DEMANDAS DOS PROFISSIONAIS',
+    blocos: [
+      {
+        itens: [
+          'Recolher demandas financeiras.',
+          'Recolher solicitações de ajustes.',
+          'Recolher lançamentos incorretos.',
+          'Recolher necessidades de compra de produtos.',
+          'Recolher ideias de ações.',
+          'Recolher problemas operacionais.',
+          'Recolher necessidades de treinamento.',
+          'Resolver demandas de competência da Coordenação.',
+          'Encaminhar demandas à Gerência quando necessário.',
+          'Acompanhar resolução das demandas.',
+          'Dar retorno ao profissional.',
         ],
       },
     ],
@@ -1373,6 +1468,189 @@ export const MANUAIS_COORDENACAO: PaginaManual[] = [
     ],
   },
   {
+    titulo: 'GESTÃO DA EQUIPE',
+    blocos: [
+      {
+        itens: [
+          'Recolher demandas.',
+          'Resolver demandas operacionais.',
+          'Repassar necessidades à Gerência.',
+          'Garantir satisfação da equipe.',
+          'Organizar férias.',
+          'Organizar folgas.',
+          'Organizar escalas.',
+          'Cobrir ausências.',
+          'Garantir equipe suficiente.',
+          'Comunicar ações internas.',
+          'Comunicar ajustes.',
+          'Enviar lembretes.',
+          'Alinhar informações.',
+          'Treinar caixas.',
+          'Treinar recepção.',
+          'Desenvolver colaboradores.',
+          'Realizar feedbacks positivos.',
+          'Corrigir comportamentos.',
+          'Gerir conflitos.',
+          'Acompanhar satisfação da equipe.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'DESENVOLVIMENTO DOS PROFISSIONAIS',
+    blocos: [
+      {
+        subtitulo: 'Mensalmente',
+        itens: [
+          'Identificar profissionais destaque.',
+          'Identificar profissionais em risco.',
+          'Identificar necessidades de treinamento.',
+          'Identificar potencial de crescimento.',
+          'Elaborar plano de desenvolvimento.',
+          'Acompanhar plano.',
+          'Avaliar evolução.',
+          'Reconhecer bons resultados.',
+          'Realizar feedback individual.',
+        ],
+      },
+      {
+        subtitulo: 'Feedbacks devem contemplar',
+        itens: [
+          'Comportamento.',
+          'Atendimento.',
+          'Organização.',
+          'Comunicação.',
+          'Postura.',
+          'Pontualidade.',
+          'Produtividade.',
+          'Qualidade técnica.',
+          'Trabalho em equipe.',
+          'Comprometimento.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'CLIMA ORGANIZACIONAL — MENSAL',
+    blocos: [
+      {
+        itens: [
+          'Avaliar integração da equipe.',
+          'Avaliar motivação.',
+          'Avaliar comunicação.',
+          'Identificar conflitos.',
+          'Avaliar cooperação.',
+          'Avaliar respeito.',
+          'Avaliar aderência à cultura.',
+          'Identificar problemas recorrentes.',
+          'Definir ações de melhoria.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'CULTURA ORGANIZACIONAL',
+    blocos: [
+      {
+        itens: [
+          'Verificar se a equipe vive os valores da empresa.',
+          'Reforçar princípios.',
+          'Reforçar processos.',
+          'Reforçar padrões.',
+          'Reforçar comportamento esperado.',
+          'Garantir que resultados sejam entregues respeitando a cultura.',
+          'Corrigir comportamentos incompatíveis com a cultura.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'CONTROLE FINANCEIRO OPERACIONAL',
+    blocos: [
+      {
+        itens: [
+          'Evitar desperdícios.',
+          'Controlar consumo.',
+          'Reduzir retrabalho.',
+          'Reduzir cancelamentos.',
+          'Reduzir faltas.',
+          'Aumentar ocupação das agendas.',
+          'Aumentar produtividade.',
+          'Conferir lançamentos.',
+          'Identificar divergências.',
+          'Encaminhar alterações financeiras à Gerência quando necessário.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'INDICADORES',
+    blocos: [
+      {
+        itens: [
+          'Organização operacional.',
+          'Cumprimento das escalas.',
+          'Satisfação da equipe.',
+          'Satisfação dos clientes.',
+          'Reclamações.',
+          'Retrabalho.',
+          'Pontualidade.',
+          'Organização do salão.',
+          'Tempo de resposta.',
+          'Cumprimento dos processos.',
+          'Qualidade dos feedbacks.',
+          'Desenvolvimento da equipe.',
+          'Analisar causas dos resultados.',
+          'Criar plano de ação.',
+          'Acompanhar evolução.',
+          'Validar resultados.',
+          'Preparar relatórios.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'GESTÃO DE INFORMAÇÕES',
+    blocos: [
+      {
+        itens: [
+          'Registrar informações importantes.',
+          'Documentar ocorrências.',
+          'Comunicar informações relevantes.',
+          'Arquivar registros.',
+          'Atualizar controles.',
+          'Atualizar listas.',
+          'Registrar feedbacks.',
+          'Registrar ações corretivas.',
+          'Registrar demandas.',
+          'Registrar problemas de manutenção.',
+          'Registrar problemas recorrentes.',
+          'Regra: nada importante deve depender apenas da memória.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'PLANILHA DE FEEDBACK',
+    blocos: [
+      {
+        itens: [
+          'Registrar tudo o que aconteceu no salão.',
+          'Registrar feedback positivo.',
+          'Registrar feedback negativo.',
+          'Identificar profissional envolvido.',
+          'Registrar data.',
+          'Registrar situação.',
+          'Registrar ação tomada.',
+          'Registrar responsável.',
+          'Registrar prazo.',
+          'Registrar acompanhamento.',
+          'Registrar encerramento.',
+        ],
+      },
+    ],
+  },
+  {
     titulo: 'GESTÃO DE CRISES',
     blocos: [
       {
@@ -1485,6 +1763,37 @@ export const MANUAIS_COORDENACAO: PaginaManual[] = [
           'Não alterar documentos oficiais.',
           'Não definir indicadores de processos.',
           'Não conduzir auditorias técnicas de conformidade.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'ROTINA MENSAL',
+    blocos: [
+      {
+        itens: [
+          'Realizar feedback individual.',
+          'Realizar auditoria completa.',
+          'Revisar metas.',
+          'Revisar POPs junto aos responsáveis.',
+          'Elaborar plano de melhoria.',
+          'Realizar reunião com a Gerência.',
+          'Elaborar plano do próximo mês.',
+          'Avaliar clima organizacional.',
+          'Avaliar profissionais destaque.',
+          'Avaliar profissionais em risco.',
+          'Identificar necessidades de treinamento.',
+          'Avaliar indicadores.',
+          'Avaliar reclamações.',
+          'Avaliar retrabalho.',
+          'Avaliar pontualidade.',
+          'Avaliar satisfação dos clientes.',
+          'Avaliar satisfação da equipe.',
+          'Avaliar manutenção.',
+          'Avaliar estoque.',
+          'Avaliar materiais.',
+          'Avaliar ações comerciais.',
+          'Avaliar resultados.',
         ],
       },
     ],
