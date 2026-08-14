@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT, hashPassword } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
+import { ehChaveDoModelo, sanitizar, versaoDoModelo } from '@/lib/modeloSalao'
 
 export async function GET() {
   const token = cookies().get('nodri_token')?.value
@@ -85,5 +86,41 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Erro ao criar usuário: ${userErr.message}` }, { status: 500 })
   }
 
-  return NextResponse.json(salao, { status: 201 })
+  // Salão novo nasce com a ESTRUTURA do salão modelo (menus, check lists,
+  // POPs, catálogos). Só estrutura viaja — o preenchimento de cada salão
+  // fica onde está (ver lib/modeloSalao). Se não houver modelo, nasce vazio
+  // e cai nos padrões do código, como era antes.
+  const semeadas = await semearDoModelo(salao.id)
+
+  return NextResponse.json({ ...salao, estrutura_do_modelo: semeadas }, { status: 201 })
+}
+
+/** Copia a estrutura do salão modelo para um salão recém-criado. */
+async function semearDoModelo(salaoId: string): Promise<number> {
+  try {
+    const { data: mod } = await supabaseAdmin
+      .from('saloes').select('id').eq('is_modelo', true).maybeSingle()
+    if (!mod) return 0
+
+    const { data: cfg } = await supabaseAdmin
+      .from('salao_config').select('chave, valor').eq('salao_id', (mod as any).id)
+    const linhasModelo = (cfg || []) as { chave: string; valor: any }[]
+
+    const agora = new Date().toISOString()
+    const linhas = linhasModelo
+      .filter(c => ehChaveDoModelo(c.chave))
+      .map(c => ({ salao_id: salaoId, chave: c.chave, valor: sanitizar(c.chave, c.valor), atualizado_em: agora }))
+    if (!linhas.length) return 0
+
+    const { error } = await supabaseAdmin.from('salao_config').upsert(linhas, { onConflict: 'salao_id,chave' })
+    if (error) return 0
+
+    // Já nasce na versão atual do modelo — não recebe aviso de atualização.
+    await supabaseAdmin.from('saloes')
+      .update({ modelo_versao: versaoDoModelo(linhasModelo), modelo_aplicado_em: agora })
+      .eq('id', salaoId)
+    return linhas.length
+  } catch {
+    return 0   // semear é um plus: nunca derruba a criação do salão
+  }
 }
