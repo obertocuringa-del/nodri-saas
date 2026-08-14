@@ -10,11 +10,36 @@ import {
   type EsterilizacaoItem as Item, mesAtualEster as mesAtual, hojeBR, brToIso, isoToBr, mesmoProf, ridEster as rid,
   linhasParaEsterilizacaoItems, esterilizacaoItemsParaTabela,
 } from '@/lib/esterilizacaoShared'
+import { STATUS_ESTER, type PedidoEster } from '@/lib/esterilizacaoFluxo'
 
 interface ProfSalao { id: string; nome: string; telefone?: string }
 interface LinhaCruzamento { nome: string; atendimentos: number; esterilizacoes: number; registros: number; servicos: string[] }
 
 const COR = '#5b4fcf'
+
+// ── Alicates que passaram pelo FLUXO de solicitações ────────────────────────
+// A esterilização acontece em dois lugares: o lançamento manual desta página e
+// o fluxo da aba "Solicitações" (a profissional envia → o salão recebe →
+// entrega). O painel precisa somar OS DOIS, senão quem só usa o fluxo aparece
+// como "Nunca registrou" mesmo tendo alicates esterilizados.
+
+/** Mês (YYYY-MM) do pedido — pela data mais representativa que ele tiver. */
+function mesDoPedido(p: PedidoEster): string {
+  const br = p.dataEnvio || p.dataRecebimento || p.dataEntrega || ''
+  const m = br.match(/^(\d{2})\/(\d{2})\/(\d{4})$/)
+  if (m) return `${m[3]}-${m[2]}`
+  if (!p.em) return ''
+  const d = new Date(p.em)
+  return isNaN(d.getTime()) ? '' : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+/** Quantidade que conta: o que o salão conferiu vale mais que o informado. */
+function qtdDoPedido(p: PedidoEster): number {
+  const v = [p.qtdRecebida, p.qtdEntregue, p.qtdEnviada].find(x => typeof x === 'number')
+  return Number(v || 0)
+}
+/** Material ainda no salão (não voltou para a profissional). */
+const pendenteNoSalao = (p: PedidoEster) => p.status === 'enviado' || p.status === 'recebido'
+const dataDoPedido = (p: PedidoEster) => p.dataEnvio || p.dataRecebimento || p.dataEntrega || ''
 
 export default function EsterilizacaoLista({ chave = 'esterilizacao', profsSalao = [] }: { chave?: string; profsSalao?: ProfSalao[] }) {
   const mobile = useIsMobile()
@@ -26,6 +51,7 @@ export default function EsterilizacaoLista({ chave = 'esterilizacao', profsSalao
   useGuardaSalvar(dirty, 'Esterilização') // avisa "Deseja salvar?" antes de sair sem salvar
   const [modal, setModal] = useState<Item | null>(null)
   const [cruzamento, setCruzamento] = useState<LinhaCruzamento[]>([])
+  const [fluxo, setFluxo] = useState<PedidoEster[]>([])
   const [loadingCruzamento, setLoadingCruzamento] = useState(true)
   const [aberto, setAberto] = useState<string | null>(null)
 
@@ -53,6 +79,14 @@ export default function EsterilizacaoLista({ chave = 'esterilizacao', profsSalao
     setLoadingCruzamento(false)
   }, [mes])
   useEffect(() => { carregarCruzamento() }, [carregarCruzamento])
+
+  // Pedidos do fluxo (aba "Solicitações"). Vêm todos; filtramos pelo mês aqui.
+  useEffect(() => {
+    fetch('/api/salon/esterilizacao-fluxo')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => setFluxo(Array.isArray(d?.pedidos) ? d.pedidos : []))
+      .catch(() => setFluxo([]))
+  }, [])
 
   async function salvar() {
     setSalvando(true)
@@ -98,6 +132,14 @@ export default function EsterilizacaoLista({ chave = 'esterilizacao', profsSalao
       return `<tr><td>${esc(it.profissional)}</td><td class="c">${esc(it.quantidade)}</td><td class="c">${esc(it.data)}</td><td class="c">${pendente ? '🔴 Pendente' : `✓ ${esc(it.dataDevolucao)}`}</td><td>${esc(it.observacao)}</td></tr>`
     }).join('')
 
+    // Os alicates do fluxo de solicitações entram na mesma tabela — são
+    // esterilização registrada igual aos lançamentos manuais.
+    const linhasFluxo = fluxoDoMes.map(p => {
+      const st = STATUS_ESTER[p.status]?.label || p.status
+      const obs = [p.obsRecebimento, '(via Solicitações)'].filter(Boolean).join(' ')
+      return `<tr><td>${esc(p.profNome)}</td><td class="c">${qtdDoPedido(p)}</td><td class="c">${esc(dataDoPedido(p))}</td><td class="c">${esc(st)}</td><td>${esc(obs)}</td></tr>`
+    }).join('')
+
     const cab = logoSalao ? `<img src="${logoSalao}" class="logo"/>` : `<div class="brand">NODRI</div>`
     const css = `
 @page{size:A4 portrait;margin:12mm}
@@ -139,25 +181,33 @@ tr.ok .situacao{color:#16a34a;font-weight:800}
 <h2>Atendimentos x Esterilização</h2>
 ${linhas.length ? `<table><thead><tr><th>Profissional</th><th class="c">Atendimentos</th><th class="c">Esterilizações</th><th>Serviços considerados</th><th class="c">Situação</th></tr></thead><tbody>${linhasPainel}</tbody></table>` : '<div class="vazio">Nenhum atendimento de manicure/pedicure/sobrancelha neste mês.</div>'}
 <h2>Registros de Esterilização</h2>
-${items.length ? `<table><thead><tr><th>Profissional</th><th class="c">Quantidade</th><th class="c">Enviado em</th><th class="c">Devolução</th><th>Observação</th></tr></thead><tbody>${linhasRegistros}</tbody></table>` : '<div class="vazio">Nenhum registro de esterilização neste mês.</div>'}
+${items.length || fluxoDoMes.length ? `<table><thead><tr><th>Profissional</th><th class="c">Quantidade</th><th class="c">Enviado em</th><th class="c">Devolução</th><th>Observação</th></tr></thead><tbody>${linhasRegistros}${linhasFluxo}</tbody></table>` : '<div class="vazio">Nenhum registro de esterilização neste mês.</div>'}
 <script>window.onload=function(){window.print()}</script>
 </body></html>`
     const w = window.open('', '_blank', 'width=1000,height=700'); if (!w) return; w.document.write(html); w.document.close(); w.focus()
   }
 
+  // Pedidos do fluxo que caem no mês selecionado.
+  const fluxoDoMes = fluxo.filter(p => mesDoPedido(p) === mes)
+
   // Combina o cruzamento (atendimentos vindos dos Relatórios) com as
-  // esterilizações registradas nesta lista, casando o nome do profissional
+  // esterilizações registradas — TANTO as lançadas manualmente aqui QUANTO as
+  // que passaram pelo fluxo de solicitações —, casando o nome do profissional
   // de forma flexível (o nome importado do Excel nem sempre é igual ao apelido).
   const linhas: LinhaCruzamento[] = cruzamento.map(c => {
     const doProf = items.filter(it => mesmoProf(it.profissional, c.nome))
-    const esterilizacoes = doProf.reduce((s, it) => s + (Number(String(it.quantidade).replace(',', '.')) || 0), 0)
-    return { ...c, esterilizacoes, registros: doProf.length }
+    const manual = doProf.reduce((s, it) => s + (Number(String(it.quantidade).replace(',', '.')) || 0), 0)
+    const doFluxo = fluxoDoMes.filter(p => mesmoProf(p.profNome, c.nome))
+    const viaFluxo = doFluxo.reduce((s, p) => s + qtdDoPedido(p), 0)
+    return { ...c, esterilizacoes: manual + viaFluxo, registros: doProf.length + doFluxo.length }
   }).sort((a, b) => b.atendimentos - a.atendimentos)
 
   const totalAtendimentos = linhas.reduce((s, l) => s + l.atendimentos, 0)
   const totalEsterilizacoes = items.reduce((s, it) => s + (Number(String(it.quantidade).replace(',', '.')) || 0), 0)
+    + fluxoDoMes.reduce((s, p) => s + qtdDoPedido(p), 0)
   const emAlerta = linhas.filter(l => l.atendimentos > 0 && l.registros === 0).length
   const pendentesDevolucao = items.filter(it => !it.dataDevolucao.trim()).length
+    + fluxoDoMes.filter(pendenteNoSalao).length
   const profissionaisEnvolvidos = new Set(items.map(it => it.profissional.trim()).filter(Boolean)).size
 
   return (
@@ -231,6 +281,28 @@ ${items.length ? `<table><thead><tr><th>Profissional</th><th class="c">Quantidad
             </div>
           )}
       </div>
+
+      {/* ── Alicates vindos do fluxo de solicitações (só leitura) ── */}
+      {fluxoDoMes.length > 0 && (
+        <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 16, marginBottom: 24 }}>
+          <h3 style={{ fontSize: 14, fontWeight: 800, color: '#1a1a1a', margin: '0 0 4px' }}>🔁 Alicates pelo fluxo de solicitações — {mes.split('-').reverse().join('/')}</h3>
+          <p style={{ fontSize: 12, color: '#6b6860', margin: '0 0 10px' }}>Já contam no painel acima. Para receber, entregar ou excluir, use a aba <strong>Solicitações</strong>.</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {fluxoDoMes.map(p => {
+              const si = STATUS_ESTER[p.status]
+              return (
+                <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', padding: '8px 10px', borderRadius: 9, background: '#faf9f7' }}>
+                  <strong style={{ fontSize: 13, color: '#1a1a1a', minWidth: 120 }}>{p.profNome}</strong>
+                  <span style={{ fontSize: 12, color: '#374151' }}>{qtdDoPedido(p)} alicate(s)</span>
+                  {dataDoPedido(p) && <span style={{ fontSize: 12, color: '#9ca3af' }}>{dataDoPedido(p)}</span>}
+                  <div style={{ flex: 1 }} />
+                  <span style={{ fontSize: 11, fontWeight: 800, padding: '3px 10px', borderRadius: 999, background: si.bg, color: si.cor }}>{si.label}</span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* ── Lista de registros ── */}
       <h3 style={{ fontSize: 14, fontWeight: 800, color: '#1a1a1a', margin: '0 0 10px' }}>🧽 Registros de esterilização do mês</h3>
