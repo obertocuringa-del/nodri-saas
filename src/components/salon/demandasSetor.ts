@@ -107,13 +107,9 @@ const MAPA: { chave: string[]; demandas: string[] }[] = [
     ]
   },
   {
-    chave: ['RECEPCAO'], demandas: [
-      'Atendimento ao cliente', 'Agendamento', 'Confirmações', 'Organização da agenda',
-      'Cadastro de clientes', 'Recepção', 'Check-in', 'Check-out',
-      'Comunicação com profissionais', 'Organização do fluxo de atendimento',
-      'Follow-up', 'Reagendamento', 'Controle da agenda', 'Comunicação de atrasos',
-      'Organização das listas de clientes',
-    ]
+    // Demandas soltas removidas da sidebar — o setor trabalha pelas ferramentas
+    // (Check List, listas, bebidas, pacotes). O conteúdo já salvo segue no banco.
+    chave: ['RECEPCAO'], demandas: []
   },
   {
     // Demandas soltas removidas da sidebar — o setor trabalha pelo Check List.

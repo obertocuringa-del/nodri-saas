@@ -158,7 +158,8 @@ export const CATALOGO: Record<string, Ferramenta> = {
 // Quais ferramentas pertencem a cada setor. A chave é o nome do setor
 // normalizado (sem acento/maiúsculas) — casamos por "contém".
 export const FERRAMENTAS_POR_SETOR: { chave: string[]; itens: string[] }[] = [
-  { chave: ['RECEPCAO'], itens: ['ck_abertura', 'ck_intermediario', 'ck_fechamento', 'lista_realinhamento', 'lista_corte', 'lista_mechas', 'lista_pigmentacao', 'bebidas', 'valores_pacotes', 'arquivos_envio'] },
+  // "Arquivos para Envio" saiu da sidebar da Recepção. Segue no catálogo/banco.
+  { chave: ['RECEPCAO'], itens: ['ck_abertura', 'ck_intermediario', 'ck_fechamento', 'lista_realinhamento', 'lista_corte', 'lista_mechas', 'lista_pigmentacao', 'bebidas', 'valores_pacotes'] },
   { chave: ['DOSAGEM'], itens: ['ck_dosagem', 'produtos', 'servinterno', 'servicos_valores', 'tratamentos', 'esterilizacao_fluxo', 'kits', 'enxovais'] },
   // Uma página por área de compra (lista de reposição + pedidos ao Financeiro)
   { chave: ['COMPRAS', 'ESTOQUE'], itens: AREAS_COMPRAS.map(a => `compras_${a.id}`) },
