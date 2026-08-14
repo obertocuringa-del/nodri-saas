@@ -62,18 +62,42 @@ export const CHAVES_MODELO: ChaveModelo[] = [
   { chave: 'planejamento_estrutura', como: 'inteiro', rotulo: 'Planejamento estratégico (estrutura)' },
 ]
 
-// ── PREENCHIMENTO: nunca sai do salão ───────────────────────────────────────
-// Não é usado para decidir a cópia (a allowlist já basta) — está aqui para
-// documentar e para o painel master conseguir explicar o que ficou de fora.
+// ── O QUE NUNCA VIAJA ───────────────────────────────────────────────────────
+// Regra virou: TUDO vai para o salão novo — o dono decide o que usar. As
+// planilhas e listas chegam EM BRANCO (só títulos e cabeçalhos), então ele
+// recebe a página pronta para preencher, sem o conteúdo de ninguém.
+//
+// A exceção abaixo é o que não é molde de jeito nenhum: é dado de pessoa,
+// dinheiro ou identidade. Isso não tem versão "em branco" que faça sentido,
+// e ver o conteúdo de outro salão aqui seria grave.
+const NUNCA: { chave: string; prefixo?: boolean; motivo: string }[] = [
+  { chave: 'senhas', prefixo: true, motivo: 'senhas do salão' },
+  { chave: 'grid_senhas', prefixo: true, motivo: 'senhas do salão' },
+  { chave: 'logo_salao', prefixo: true, motivo: 'identidade visual' },
+  { chave: 'grid_logo_salao', prefixo: true, motivo: 'identidade visual' },
+  { chave: 'landing_config', motivo: 'página pública do salão' },
+  { chave: 'curriculos', prefixo: true, motivo: 'currículos de pessoas reais' },
+  { chave: 'notificacoes_prof', motivo: 'avisos para a equipe dele' },
+  { chave: 'mural_avisos', motivo: 'recados internos' },
+  { chave: 'esterilizacao_fluxo', motivo: 'movimento do dia a dia' },
+  { chave: 'boletos_pagos', motivo: 'financeiro' },
+  { chave: 'acesso_oculto_global', motivo: 'permissões da equipe dele' },
+]
+// Trechos que denunciam dado de gente/dinheiro em qualquer chave.
+const NUNCA_CONTEM = [
+  'avaliacao_pop_', 'feedback_msg_', 'plano_carreira_prof_',
+  'comissoes_quinzenas', 'conferencia_caixas', 'licencas_contratos',
+]
+
+/** Texto para o painel master explicar o que fica de fora. */
 export const NUNCA_COPIA = [
-  'Qualquer chave mensal (termina em _AAAA-MM): folhas do mês do salão',
-  'avaliacao_pop_<profissional>: avaliações de gente real',
-  'plano_carreira_prof_<profissional>: progresso individual',
-  'feedback_msg_<id>: mensagens de clientes',
-  'esterilizacao_fluxo, notificacoes_prof: movimento do dia a dia',
-  'conferencia_caixas, comissoes_quinzenas, acoes_comerciais: financeiro',
-  'telefones, logo_salao, landing_config: identidade e contatos do salão',
-  'escala_valores_padrao, calc_servicos_global: valores em R$ do salão',
+  'Folhas do mês (terminam em _AAAA-MM): o movimento de cada salão',
+  'Senhas do salão',
+  'Logo e página pública (identidade visual)',
+  'Currículos, avaliações de profissionais e mensagens de clientes',
+  'Comissões, conferência de caixas, boletos e licenças/contratos',
+  'Avisos da equipe, mural e permissões',
+  'Todo o resto VIAJA — planilhas e listas chegam em branco, prontas para preencher',
 ]
 
 /** Chave mensal (folha do mês) — sempre preenchimento. */
@@ -85,15 +109,38 @@ const ehMensal = (chave: string) => /_\d{4}-\d{2}(_q\d)?$/.test(chave)
 // o prefixo é retirado só na COMPARAÇÃO — a cópia mantém o nome original.
 const semNamespace = (chave: string) => chave.startsWith('grid_') ? chave.slice(5) : chave
 
-/** A chave faz parte da estrutura que o modelo distribui? */
+/** Nome legível para uma chave que não está no catálogo (vai em branco). */
+function rotuloGenerico(c: string): string {
+  const limpo = c.replace(/_/g, ' ').trim()
+  return limpo ? limpo.charAt(0).toUpperCase() + limpo.slice(1) : c
+}
+
+/**
+ * O que fazer com a chave: viajar inteira, viajar em branco, ou não viajar.
+ *
+ * A regra é "TUDO viaja" — o dono do salão novo decide o que usar. Só não
+ * viaja o que é dado de pessoa, dinheiro ou identidade (NUNCA/NUNCA_CONTEM),
+ * e as folhas do mês. O que não está no catálogo de estrutura viaja EM BRANCO:
+ * a página chega montada, sem o conteúdo do salão de origem.
+ */
 export function regraDaChave(chave: string): ChaveModelo | null {
   if (!chave || ehMensal(chave)) return null
   const c = semNamespace(chave)
   if (ehMensal(c)) return null
+
+  // 1) Dado de gente / dinheiro / identidade — não viaja de forma alguma
+  if (NUNCA_CONTEM.some(t => chave.includes(t))) return null
+  for (const n of NUNCA) {
+    if (n.prefixo ? (chave.startsWith(n.chave) || c.startsWith(n.chave)) : (chave === n.chave || c === n.chave)) return null
+  }
+
+  // 2) Estrutura conhecida — viaja inteira (check list sem as marcações)
   for (const r of CHAVES_MODELO) {
     if (r.prefixo ? c.startsWith(r.chave) : c === r.chave) return r
   }
-  return null
+
+  // 3) Todo o resto — viaja EM BRANCO
+  return { chave: c, como: 'gradeVazia', rotulo: rotuloGenerico(c) }
 }
 export const ehChaveDoModelo = (chave: string) => !!regraDaChave(chave)
 
@@ -114,16 +161,32 @@ function limparChecklist(valor: any): any {
   }
 }
 
-/** Mantém títulos/cabeçalhos/larguras e devolve as linhas em branco. */
+/**
+ * Esvazia o CONTEÚDO preservando o MOLDE.
+ *
+ * - Planilha (`tabelas`): mantém título, cabeçalho e larguras; as linhas vão
+ *   em branco — o salão novo recebe a grade montada, pronta para preencher.
+ * - Lista (`itens`, `registros`, `cards`, `linhas`): chega vazia.
+ * - Documento (`texto`, `blocos`, `paginas`): vai INTEIRO. Aqui o texto é o
+ *   molde — esvaziar uma carta modelo ou um processo entregaria papel em
+ *   branco, que é o oposto do que se quer.
+ */
+const LISTAS_QUE_ESVAZIAM = ['itens', 'registros', 'cards', 'linhas', 'lista']
+
 function limparGrade(valor: any): any {
-  if (!valor || !Array.isArray(valor.tabelas)) return valor
-  return {
-    ...valor,
-    tabelas: valor.tabelas.map((t: any) => ({
+  if (!valor || typeof valor !== 'object' || Array.isArray(valor)) return valor
+  const out: any = { ...valor }
+
+  if (Array.isArray(out.tabelas)) {
+    out.tabelas = out.tabelas.map((t: any) => ({
       ...t,
       linhas: (t.linhas || []).map((l: any[]) => (l || []).map(() => ({ t: '' }))),
-    })),
+    }))
   }
+  for (const campo of LISTAS_QUE_ESVAZIAM) {
+    if (Array.isArray(out[campo])) out[campo] = []
+  }
+  return out
 }
 
 /** Valor pronto para viajar: estrutura sim, preenchimento não. */
