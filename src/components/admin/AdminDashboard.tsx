@@ -106,7 +106,6 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
   const [deletingNotif, setDeletingNotif] = useState<string | null>(null)
 
   //  LANDING PAGE EDITOR 
-  const [planosTab, setPlanosTab] = useState<'planos' | 'landing' | 'cupons'>('planos')
   const [landingConfig, setLandingConfig] = useState<typeof DEFAULT_LANDING | null>(null)
   const [savingLanding, setSavingLanding] = useState(false)
 
@@ -138,6 +137,13 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  // Landing e Cupons eram abas: os dados carregavam no clique do botao.
+  // Virando secao propria, o clique sumiu — sem isto as telas abririam vazias.
+  useEffect(() => {
+    if (activeSection === 'landing' && !landingConfig) loadLandingConfig()
+    if (activeSection === 'cupons' && cupons.length === 0) loadCupons()
+  }, [activeSection])  // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (activeSection === 'ia') {
@@ -931,6 +937,8 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
     // Página própria (não é aba): define o salão modelo e alimenta ele
     { id: 'modelo', icon: <Building size={14} />, label: 'Salão modelo', rota: '/admin/modelo' },
     { id: 'planos', icon: <CreditCard size={14} />, label: 'Planos', badge: planos.length },
+    { id: 'landing', icon: <Edit size={14} />, label: 'Editor Landing Page' },
+    { id: 'cupons', icon: <Tag size={14} />, label: 'Cupons de Desconto' },
     { id: 'modulos', icon: <Puzzle size={14} />, label: 'Módulos' },
     { id: 'notifs', icon: <Bell size={14} />, label: 'Notificações', badge: localNotifs.filter(n => !n.lida).length, badgeRed: true },
     { id: 'pagamentos', icon: <CreditCard size={14} />, label: 'Pagamentos' },
@@ -952,7 +960,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
         </div>
         <nav className="flex-1 p-2 overflow-y-auto space-y-0.5">
           <p className="text-[9px] text-nodri-t3 uppercase tracking-widest px-2.5 py-1.5 font-medium mt-1">Painel</p>
-          {navItems.slice(0, 5).map(item => (
+          {navItems.slice(0, 7).map(item => (
             <button key={item.id} onClick={() => { if ((item as any).rota) window.location.href = (item as any).rota; else setActiveSection(item.id) }}
               className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11.5px] border transition-all ${activeSection === item.id ? 'bg-nodri-cyan/9 text-nodri-cyan border-nodri-cyan/17' : 'text-nodri-t2 border-transparent hover:bg-white/4 hover:text-nodri-t1'}`}>
               {item.icon}<span className="flex-1 text-left">{item.label}</span>
@@ -962,7 +970,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
             </button>
           ))}
           <p className="text-[9px] text-nodri-t3 uppercase tracking-widest px-2.5 py-1.5 font-medium mt-2">Sistema</p>
-          {navItems.slice(5).map(item => (
+          {navItems.slice(7).map(item => (
             <button key={item.id} onClick={() => { if ((item as any).rota) window.location.href = (item as any).rota; else setActiveSection(item.id) }}
               className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11.5px] border transition-all ${activeSection === item.id ? 'bg-nodri-cyan/9 text-nodri-cyan border-nodri-cyan/17' : 'text-nodri-t2 border-transparent hover:bg-white/4 hover:text-nodri-t1'}`}>
               {item.icon}<span className="flex-1 text-left">{item.label}</span>
@@ -993,7 +1001,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
               <Bell size={14} />
               {localNotifs.filter(n => !n.lida).length > 0 && <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-nodri-red rounded-full" />}
             </button>
-            {activeSection === 'planos' && planosTab === 'planos' && (
+            {activeSection === 'planos' && (
               <button onClick={() => { setEditPlano(null); setPlanoForm({ nome: '', slug: '', descricao: '', preco: '', max_usuarios: '' }); setShowNovoPlano(true) }}
                 className="flex items-center gap-1.5 bg-nodri-cyan text-black text-[11.5px] font-bold px-3 py-1.5 rounded-lg hover:brightness-110 transition-all">
                 <Plus size={13} /> Novo Plano
@@ -1135,27 +1143,12 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
             </div>
           )}
 
-          {/* GESTÃO DE PLANOS */}
-          {activeSection === 'planos' && (
+          {/* PLANOS · LANDING · CUPONS — cada um virou item proprio da sidebar,
+              em vez de aba dentro de Planos. O conteudo e o mesmo. */}
+          {(activeSection === 'planos' || activeSection === 'landing' || activeSection === 'cupons') && (
             <div>
-              {/* ABAS */}
-              <div className="flex gap-2 mb-5">
-                <button onClick={() => setPlanosTab('planos')}
-                  className={`px-4 py-2 rounded-lg text-[12px] font-bold transition-all ${planosTab === 'planos' ? 'bg-nodri-cyan text-black' : 'bg-nodri-card border border-nodri-border text-nodri-t2 hover:text-nodri-t1'}`}>
-                  <ClipboardList size={13} className="inline mr-1" /> Planos
-                </button>
-                <button onClick={() => { setPlanosTab('landing'); if (!landingConfig) loadLandingConfig() }}
-                  className={`px-4 py-2 rounded-lg text-[12px] font-bold transition-all ${planosTab === 'landing' ? 'bg-nodri-cyan text-black' : 'bg-nodri-card border border-nodri-border text-nodri-t2 hover:text-nodri-t1'}`}>
-                  <Edit size={13} className="inline mr-1" /> Editor Landing Page
-                </button>
-                <button onClick={() => { setPlanosTab('cupons'); if (cupons.length === 0) loadCupons() }}
-                  className={`px-4 py-2 rounded-lg text-[12px] font-bold transition-all ${planosTab === 'cupons' ? 'bg-nodri-cyan text-black' : 'bg-nodri-card border border-nodri-border text-nodri-t2 hover:text-nodri-t1'}`}>
-                  <Tag size={13} className="inline mr-1" /> Cupons de Desconto
-                </button>
-              </div>
-
               {/* ABA PLANOS */}
-              {planosTab === 'planos' && (
+              {activeSection === 'planos' && (
                 <div className="grid gap-3">
                   {planos.map(plano => (
                     <div key={plano.id} className="nodri-card p-4 flex items-center justify-between">
@@ -1182,7 +1175,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
               )}
 
               {/* ABA EDITOR LANDING PAGE */}
-              {planosTab === 'landing' && (
+              {activeSection === 'landing' && (
                 <div className="space-y-5">
                   {!landingConfig ? (
                     <div className="nodri-card p-10 text-center text-nodri-t3">
@@ -1402,7 +1395,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
               )}
 
               {/* ABA CUPONS DE DESCONTO */}
-              {planosTab === 'cupons' && (
+              {activeSection === 'cupons' && (
                 <div className="space-y-5">
                   {/* Gerar novo cupom */}
                   <div className="nodri-card p-5">
