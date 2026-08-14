@@ -174,6 +174,57 @@ async function copiarServicos(modeloId: string, destinoId: string): Promise<Resu
   return [{ tabela: 'servicos (sem valores)', copiados: linhas.length }]
 }
 
+// ── CATÁLOGOS E CONFIGURAÇÃO ────────────────────────────────────────────────
+// Varredura das 52 tabelas com salao_id: estas são catálogo/configuração —
+// o molde do salão. Copiadas inteiras, com o id e as datas descartados.
+//
+// Ficam de fora, por natureza e não por escolha:
+//  · logins (usuarios, salao_usuarios) — e-mail é único, copiar quebraria o acesso;
+//  · pessoas reais (clientes_contatos, lojistas, profissionais que não são setor);
+//  · movimento e histórico (agendamentos/atendimentos importados, relatórios,
+//    caixas, pagamentos, comissões, auditoria, notificações, pendências);
+//  · respostas e avaliações já dadas;
+//  · memória e análises da IA — são sobre a operação de um salão específico.
+const TABELAS_CATALOGO = [
+  'servicos_catalogo',      // catálogo de serviços
+  'produtos_catalogo',      // catálogo de produtos
+  'despesas_catalogo',      // catálogo de despesas
+  'salao_servicos',         // serviços do cadastro público
+  'salao_modulos',          // quais módulos o salão tem
+  'ia_configuracao',        // ajustes da IA
+  'ia_metas_salao',         // metas do salão
+  'recepcionista_desafios', // desafios da recepção
+  'feedback_prof_regras',   // regras de feedback do profissional
+]
+
+// Colunas de controle: nunca copiadas (o destino gera as suas).
+const COLUNAS_IGNORADAS = ['id', 'salao_id', 'criado_em', 'atualizado_em', 'created_at', 'updated_at']
+
+/**
+ * Cópia genérica de uma tabela de catálogo. Não precisa conhecer as colunas:
+ * lê o que existe, descarta as de controle e regrava no salão de destino.
+ * Idempotente — se o destino já tem linhas, não faz nada.
+ */
+async function copiarCatalogo(tabela: string, modeloId: string, destinoId: string): Promise<ResultadoCopia[]> {
+  const { count } = await supabaseAdmin
+    .from(tabela).select('id', { count: 'exact', head: true }).eq('salao_id', destinoId)
+  if ((count || 0) > 0) return []
+
+  const { data, error: erroLeitura } = await supabaseAdmin.from(tabela).select('*').eq('salao_id', modeloId)
+  if (erroLeitura) return []
+  const linhas = (data || []) as any[]
+  if (!linhas.length) return []
+
+  const novas = linhas.map(l => {
+    const copia: any = { ...l }
+    for (const c of COLUNAS_IGNORADAS) delete copia[c]
+    return { ...copia, salao_id: destinoId }
+  })
+  const { error } = await supabaseAdmin.from(tabela).insert(novas)
+  if (error) return []
+  return [{ tabela, copiados: novas.length }]
+}
+
 /**
  * Leva para o salão novo todos os moldes que vivem fora de `salao_config`.
  * Nunca derruba a criação do salão: falhar aqui só significa começar sem
@@ -187,5 +238,8 @@ export async function copiarMoldesDeTabelas(
   try { out.push(...await copiarServicos(modeloId, destinoId)) } catch { /* segue */ }
   try { out.push(...await copiarFeedbackCliente(modeloId, destinoId, nomeDestino)) } catch { /* segue */ }
   try { out.push(...await copiarFeedbackProf(modeloId, destinoId)) } catch { /* segue */ }
+  for (const t of TABELAS_CATALOGO) {
+    try { out.push(...await copiarCatalogo(t, modeloId, destinoId)) } catch { /* segue */ }
+  }
   return out.filter(r => r.copiados > 0)
 }
