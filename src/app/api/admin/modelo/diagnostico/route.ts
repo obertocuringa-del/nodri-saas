@@ -93,13 +93,14 @@ export async function GET(req: NextRequest) {
 
   const { data: org } = await supabaseAdmin.from('saloes').select('nome').eq('id', origemId).maybeSingle()
 
-  const linhas = []
-  for (const t of TABELAS) {
+  // São 50 tabelas × 2 contagens. Em sequência isso estoura o tempo da
+  // função — todas as consultas vão juntas.
+  const linhas = await Promise.all(TABELAS.map(async t => {
     const [naOrigem, noModelo] = await Promise.all([
       contar(t.nome, origemId, t.filtro),
       contar(t.nome, (mod as any).id, t.filtro),
     ])
-    linhas.push({
+    return {
       tabela: t.nome,
       situacao: t.situacao,
       motivo: t.motivo || null,
@@ -107,8 +108,8 @@ export async function GET(req: NextRequest) {
       // buraco = deveria copiar, a origem tem, e o modelo está sem
       buraco: t.situacao === 'copia' && (naOrigem || 0) > 0 && (noModelo || 0) === 0,
       inexistente: naOrigem === null && noModelo === null,
-    })
-  }
+    }
+  }))
 
   const buracos = linhas.filter(l => l.buraco)
   return NextResponse.json({
