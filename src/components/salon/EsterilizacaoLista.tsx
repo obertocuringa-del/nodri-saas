@@ -187,8 +187,9 @@ ${items.length || fluxoDoMes.length ? `<table><thead><tr><th>Profissional</th><t
     const w = window.open('', '_blank', 'width=1000,height=700'); if (!w) return; w.document.write(html); w.document.close(); w.focus()
   }
 
-  // Pedidos do fluxo que caem no mês selecionado.
+  // Pedidos do fluxo que caem no mês selecionado (o resto fica de fora da conta).
   const fluxoDoMes = fluxo.filter(p => mesDoPedido(p) === mes)
+  const fluxoForaDoMes = fluxo.length - fluxoDoMes.length
 
   // Combina o cruzamento (atendimentos vindos dos Relatórios) com as
   // esterilizações registradas — TANTO as lançadas manualmente aqui QUANTO as
@@ -230,8 +231,17 @@ ${items.length || fluxoDoMes.length ? `<table><thead><tr><th>Profissional</th><t
       </div>
 
       <p style={{ fontSize: 12, color: '#6b6860', margin: '0 0 16px' }}>
-        Cruza os atendimentos de manicure, pedicure e sobrancelha (mesmo dado dos Relatórios) com as esterilizações que você registrar aqui. Clique em cada profissional no painel abaixo para ver quais serviços entraram na conta.
+        Cruza os atendimentos de manicure, pedicure e sobrancelha (mesmo dado dos Relatórios) com as esterilizações registradas — tanto os lançamentos desta página quanto os alicates da aba <strong>Solicitações</strong>. Clique em cada profissional no painel abaixo para ver quais serviços entraram na conta.
       </p>
+
+      {/* A comparação só faz sentido dentro do MESMO mês: atendimentos de agosto
+          x esterilizações de agosto. Quando existem pedidos de outros meses, o
+          aviso evita que o número pareça errado. */}
+      {fluxoForaDoMes > 0 && (
+        <p style={{ fontSize: 12, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '9px 12px', margin: '0 0 16px' }}>
+          ⚠️ Existe(m) <strong>{fluxoForaDoMes}</strong> pedido(s) de alicate na aba Solicitações com data de <strong>outro mês</strong> — eles não entram nesta conta, que é só de {mes.split('-').reverse().join('/')}. A data de cada pedido aparece na aba Solicitações.
+        </p>
+      )}
 
       {/* ── Dashboard resumido ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 18 }}>

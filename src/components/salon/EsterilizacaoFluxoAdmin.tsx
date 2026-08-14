@@ -101,6 +101,13 @@ export default function EsterilizacaoFluxoAdmin({ profsSalao = [] }: { profsSala
                     {typeof p.qtdRecebida === 'number' && p.origem === 'profissional' ? ` · recebido: ${p.qtdRecebida}` : ''}
                     {typeof p.qtdEntregue === 'number' ? ` · entregue: ${p.qtdEntregue}` : ''}
                   </span>
+                  {/* Data do pedido — é por ela que o painel "Atendimentos x
+                      Esterilização" sabe a que mês este alicate pertence. */}
+                  {(p.dataEnvio || p.dataRecebimento || p.dataEntrega) && (
+                    <span style={{ fontSize: 11.5, color: '#9ca3af', fontWeight: 700 }}>
+                      {p.dataEnvio || p.dataRecebimento || p.dataEntrega}
+                    </span>
+                  )}
                   <span style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 800, padding: '3px 10px', borderRadius: 999, background: si.bg, color: si.cor }}>{si.label}</span>
                   <button onClick={() => excluir(p.id)} title="Excluir" style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', padding: 2 }}><Trash2 size={14} /></button>
                 </div>
