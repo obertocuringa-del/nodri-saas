@@ -1,13 +1,32 @@
 import { SignJWT, jwtVerify } from 'jose'
 import bcrypt from 'bcryptjs'
 
-// SEGURANÇA: JWT_SECRET deve ser configurado nas variáveis de ambiente do Vercel
-// Se não estiver configurado, usa fallback (menos seguro — configure JWT_SECRET no Vercel!)
+// SEC-001 — sem fallback, e falhando fechado.
+//
+// Havia aqui uma senha embutida no código, usada quando JWT_SECRET não
+// estivesse definido. Quem lesse o repositório assinaria um token com
+// role 'master' para qualquer salão — bypass total de autenticação e de
+// isolamento entre clientes. E falhava em silêncio: só um console.warn,
+// com o sistema seguindo normalmente.
+//
+// Verificado em produção antes de remover (JWT_SECRET presente, 48
+// caracteres), então nenhuma sessão existente foi assinada com o fallback
+// e ninguém é deslogado por esta mudança.
+//
+// Agora, sem a variável, o sistema não sobe. É proposital: aplicação sem
+// segredo de assinatura não deve autenticar ninguém.
 const jwtSecret = process.env.JWT_SECRET
 if (!jwtSecret) {
-  console.warn('[AUTH] ATENÇÃO: JWT_SECRET não configurado nas variáveis de ambiente! Configure em Vercel > Settings > Environment Variables')
+  throw new Error(
+    '[AUTH] JWT_SECRET não configurado. Defina a variável de ambiente ' +
+    '(Vercel > Settings > Environment Variables) em Production, Preview e Development. ' +
+    'O sistema não autentica sem ela — e não deve mesmo.',
+  )
 }
-const JWT_SECRET = new TextEncoder().encode(jwtSecret || 'nodri_fallback_configure_jwt_secret_no_vercel')
+if (jwtSecret.length < 32) {
+  throw new Error('[AUTH] JWT_SECRET curto demais. Use 32 caracteres ou mais.')
+}
+const JWT_SECRET = new TextEncoder().encode(jwtSecret)
 
 export interface JWTPayload {
   userId: string
