@@ -56,9 +56,36 @@ export async function POST(req: NextRequest, { params }: { params: { salaoId: st
     })
   } catch { /* ignora */ }
 
-  // Retorna o token do salão — o admin_token fica salvo no front para voltar
-  return NextResponse.json({
-    token: salaoToken,
+  // SEC-007 — o token NÃO volta no corpo da resposta.
+  //
+  // Antes ele era devolvido em JSON e o navegador o gravava com
+  // `document.cookie = ...`, criando um cookie SEM httpOnly/Secure/SameSite:
+  // ficava legível na inspeção e qualquer XSS o roubaria. Agora quem grava é
+  // o servidor, com as mesmas proteções do cookie de login.
+  //
+  // O token do admin vai para um cookie httpOnly à parte, para o "voltar"
+  // funcionar sem que o front precise guardar credencial nenhuma.
+  const resposta = NextResponse.json({
+    ok: true,
     salao: { id: salao.id, nome: salao.nome, email: salao.email },
   })
+  const seguro = { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' as const, path: '/' }
+  const tokenAdmin = cookies().get('nodri_token')?.value
+  if (tokenAdmin) resposta.cookies.set('nodri_admin_token', tokenAdmin, { ...seguro, maxAge: 60 * 60 * 24 * 7 })
+  resposta.cookies.set('nodri_token', salaoToken, { ...seguro, maxAge: 60 * 60 * 2 })
+  return resposta
+}
+
+// Volta para a conta do admin: troca o cookie de volta, também no servidor.
+export async function DELETE() {
+  const tokenAdmin = cookies().get('nodri_admin_token')?.value
+  const admin = tokenAdmin ? await verifyJWT(tokenAdmin) : null
+  if (!admin || admin.role !== 'master') {
+    return NextResponse.json({ error: 'Não há sessão de admin para retomar' }, { status: 401 })
+  }
+  const resposta = NextResponse.json({ ok: true })
+  const seguro = { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' as const, path: '/' }
+  resposta.cookies.set('nodri_token', tokenAdmin, { ...seguro, maxAge: 60 * 60 * 24 * 7 })
+  resposta.cookies.set('nodri_admin_token', '', { ...seguro, maxAge: 0 })
+  return resposta
 }

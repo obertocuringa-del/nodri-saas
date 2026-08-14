@@ -388,12 +388,13 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
     if (nome) setImpersonandoNome(nome)
   }, [])
 
-  function voltarAoAdmin() {
-    const adminToken = localStorage.getItem('nodri_admin_token')
-    if (adminToken) {
-      document.cookie = `nodri_token=${adminToken}; path=/; max-age=604800`
-    }
-    localStorage.removeItem('nodri_admin_token')
+  async function voltarAoAdmin() {
+    // SEC-007: quem devolve a sessão de admin é o servidor — o token do admin
+    // fica num cookie httpOnly e nunca passa pelo JavaScript.
+    try {
+      const r = await fetch('/api/admin/impersonate/voltar', { method: 'DELETE' })
+      if (!r.ok) { toast.error('Não foi possível voltar. Faça login novamente.'); return }
+    } catch { toast.error('Erro de conexão'); return }
     localStorage.removeItem('nodri_impersonando')
     window.location.href = '/admin'
   }

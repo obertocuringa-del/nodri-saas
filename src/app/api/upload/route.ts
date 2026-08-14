@@ -24,14 +24,38 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Arquivo muito grande (máx 50MB)' }, { status: 400 })
   }
 
-  const ext = file.name.split('.').pop()?.toLowerCase() || 'bin'
+  // SEC-006 — só o tamanho era validado. Sem checar tipo, um .svg ou .html
+  // com script, servido do mesmo domínio, vira XSS; e o contentType vinha do
+  // cliente, que podia mentir. Agora: extensão em allowlist, e o tipo servido
+  // é o que NÓS decidimos, não o que o navegador informou.
+  const TIPOS: Record<string, string> = {
+    jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp',
+    gif: 'image/gif', avif: 'image/avif',
+    pdf: 'application/pdf',
+    mp4: 'video/mp4', webm: 'video/webm',
+    doc: 'application/msword',
+    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    xls: 'application/vnd.ms-excel',
+    xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    csv: 'text/csv',
+  }
+  const ext = file.name.split('.').pop()?.toLowerCase().replace(/[^a-z0-9]/g, '') || ''
+  const contentType = TIPOS[ext]
+  if (!contentType) {
+    return NextResponse.json({
+      error: `Tipo de arquivo não permitido (.${ext || '?'}). Aceitos: ${Object.keys(TIPOS).join(', ')}`,
+    }, { status: 400 })
+  }
+
+  // Nome gerado por nós: o nome enviado pelo usuário nunca entra no caminho
+  // (evita path traversal e sobrescrita).
   const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}.${ext}`
   const bytes = await file.arrayBuffer()
   const buffer = Buffer.from(bytes)
 
   const { error } = await supabaseAdmin.storage
     .from(bucket)
-    .upload(filename, buffer, { contentType: file.type, upsert: false })
+    .upload(filename, buffer, { contentType, upsert: false })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

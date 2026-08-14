@@ -8,7 +8,11 @@ export async function POST(req: NextRequest) {
   try {
     // Suporte a chamada via cron (header secret) ou via usuário autenticado
     const cronSecret = req.headers.get('x-cron-secret')
-    const isCron = cronSecret === (process.env.CRON_SECRET || 'nodri-cron-2024')
+    // SEC-002 — sem fallback: a senha do cron estava no código, e quem a
+    // conhecesse disparava a rotina de IA de fora (custo e abuso). Se
+    // CRON_SECRET não estiver configurado, nenhuma chamada passa como cron.
+    const segredoCron = process.env.CRON_SECRET
+    const isCron = !!segredoCron && cronSecret === segredoCron
 
     let salaoId: string | null = null
     let emailDestino: string | null = null

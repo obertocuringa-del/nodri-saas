@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { verifyPassword, signJWT } from '@/lib/auth'
+import { limitar, registrarFalha, limparTentativas, ipDaRequisicao } from '@/lib/rateLimit'
 
 export async function POST(req: NextRequest) {
   try {
@@ -8,6 +9,31 @@ export async function POST(req: NextRequest) {
 
     if (!email || !password) {
       return NextResponse.json({ error: 'Email e senha são obrigatórios' }, { status: 400 })
+    }
+
+    // SEC-004 — o login não tinha limite nenhum de tentativas.
+    // Conta por LOGIN e por IP: só por login, um atacante testaria uma senha
+    // comum contra milhares de contas; só por IP, ele giraria de rede.
+    const ip = ipDaRequisicao(req)
+    const [porLogin, porIp] = await Promise.all([
+      limitar('login', email, 8, 15),
+      ip ? limitar('login_ip', ip, 30, 15) : Promise.resolve({ permitido: true, restantes: 30, esperarSegundos: 0 }),
+    ])
+    if (!porLogin.permitido || !porIp.permitido) {
+      return NextResponse.json(
+        { error: 'Muitas tentativas. Aguarde alguns minutos e tente novamente.' },
+        { status: 429, headers: { 'Retry-After': String(porLogin.esperarSegundos || porIp.esperarSegundos) } },
+      )
+    }
+
+    // Registra a falha ANTES de responder erro, em cada saída de "não confere".
+    const falhou = async () => {
+      await Promise.all([registrarFalha('login', email, ip), ip ? registrarFalha('login_ip', ip, ip) : null])
+      // Mensagem única: dizer "e-mail não existe" entregaria quais contas existem.
+      return NextResponse.json({ error: 'Email ou senha inválidos' }, { status: 401 })
+    }
+    const acertou = async () => {
+      await Promise.all([limparTentativas('login', email), ip ? limparTentativas('login_ip', ip) : null])
     }
 
     // Busca usuário (dono) com dados do salão
@@ -44,6 +70,7 @@ export async function POST(req: NextRequest) {
           salaoNome: salaoSub?.nome, plano: (salaoSub?.plano as any)?.slug,
           permissoes: Array.isArray(sub.permissoes) ? sub.permissoes : [], nome: sub.nome || sub.usuario,
         })
+        await acertou()
         const respSub = NextResponse.json({ user: { id: sub.id, nome: sub.nome || sub.usuario, role: 'sub' } })
         respSub.cookies.set('nodri_token', tokenSub, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 60 * 60 * 24 * 7, path: '/' })
         return respSub
@@ -75,18 +102,19 @@ export async function POST(req: NextRequest) {
           userId: prof.id, email: login, role: 'profissional', salaoId: prof.salao_id,
           salaoNome: salaoP?.nome, plano: (salaoP?.plano as any)?.slug, profissionalId: prof.id, nome: nomeP,
         })
+        await acertou()
         const respP = NextResponse.json({ user: { id: prof.id, nome: nomeP, role: 'profissional', profissionalId: prof.id } })
         respP.cookies.set('nodri_token', tokenP, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 60 * 60 * 24 * 7, path: '/' })
         return respP
       }
 
-      return NextResponse.json({ error: 'Usuário ou senha incorretos' }, { status: 401 })
+      return falhou()
     }
 
     // Verifica senha
     const valid = await verifyPassword(password, usuario.senha_hash)
     if (!valid) {
-      return NextResponse.json({ error: 'Email ou senha incorretos' }, { status: 401 })
+      return falhou()
     }
 
     // Verifica se salão está ativo (para usuários de salão)
@@ -98,6 +126,8 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Sua licença venceu. Renove para continuar.' }, { status: 403 })
       }
     }
+
+    await acertou()
 
     // Atualiza último acesso
     await supabaseAdmin.from('usuarios').update({ ultimo_acesso: new Date().toISOString() }).eq('id', usuario.id)

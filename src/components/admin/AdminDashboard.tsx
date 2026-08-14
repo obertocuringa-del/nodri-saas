@@ -349,12 +349,10 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
     const res = await fetch(`/api/admin/impersonate/${salao.id}`, { method: 'POST' })
     const data = await res.json()
     if (!res.ok) { toast.error(data.error || 'Erro ao acessar salão'); return }
-    // Salva token do admin para voltar depois
-    const adminToken = document.cookie.match(/nodri_token=([^;]+)/)?.[1] || ''
-    localStorage.setItem('nodri_admin_token', adminToken)
+    // SEC-007: o servidor já trocou os cookies (httpOnly). O front não toca em
+    // token nenhum — só guarda o NOME do salão, para mostrar a faixa de
+    // "você está acessando como…". Nome não é credencial.
     localStorage.setItem('nodri_impersonando', salao.nome)
-    // Define token do salão no cookie e redireciona
-    document.cookie = `nodri_token=${data.token}; path=/; max-age=7200`
     toast.success(`Acessando como "${salao.nome}"...`)
     setTimeout(() => { window.location.href = '/salon' }, 800)
   }
