@@ -74,13 +74,27 @@ const TABELAS: { nome: string; situacao: 'copia' | 'nao'; motivo?: string; filtr
   { nome: 'recepcionista_movimentos', situacao: 'nao', motivo: 'movimento da recepção' },
 ]
 
+/** Conta com prazo: tabela que não existe ou trava não pode segurar o resto. */
 async function contar(tabela: string, salaoId: string, filtro?: Record<string, any>): Promise<number | null> {
-  try {
-    let q = supabaseAdmin.from(tabela).select('id', { count: 'exact', head: true }).eq('salao_id', salaoId)
-    for (const [k, v] of Object.entries(filtro || {})) q = q.eq(k, v)
-    const { count, error } = await q
-    return error ? null : (count || 0)
-  } catch { return null }
+  const consulta = (async () => {
+    try {
+      let q = supabaseAdmin.from(tabela).select('*', { count: 'exact', head: true }).eq('salao_id', salaoId)
+      for (const [k, v] of Object.entries(filtro || {})) q = q.eq(k, v)
+      const { count, error } = await q
+      return error ? null : (count || 0)
+    } catch { return null }
+  })()
+  const prazo = new Promise<null>(r => setTimeout(() => r(null), 6000))
+  return Promise.race([consulta, prazo])
+}
+
+/** Roda em lotes: 100 consultas de uma vez afogam a conexão. */
+async function emLotes<T, R>(itens: T[], tamanho: number, fn: (t: T) => Promise<R>): Promise<R[]> {
+  const out: R[] = []
+  for (let i = 0; i < itens.length; i += tamanho) {
+    out.push(...await Promise.all(itens.slice(i, i + tamanho).map(fn)))
+  }
+  return out
 }
 
 export async function GET(req: NextRequest) {
@@ -93,9 +107,11 @@ export async function GET(req: NextRequest) {
 
   const { data: org } = await supabaseAdmin.from('saloes').select('nome').eq('id', origemId).maybeSingle()
 
-  // São 50 tabelas × 2 contagens. Em sequência isso estoura o tempo da
-  // função — todas as consultas vão juntas.
-  const linhas = await Promise.all(TABELAS.map(async t => {
+  // Só as tabelas que DEVEM ser copiadas precisam de contagem — nas outras
+  // o motivo de não virem já é conhecido, consultar seria desperdício.
+  // Em lotes, porque cem consultas de uma vez afogam a conexão.
+  const paraContar = TABELAS.filter(t => t.situacao === 'copia')
+  const contadas = await emLotes(paraContar, 5, async t => {
     const [naOrigem, noModelo] = await Promise.all([
       contar(t.nome, origemId, t.filtro),
       contar(t.nome, (mod as any).id, t.filtro),
@@ -106,10 +122,13 @@ export async function GET(req: NextRequest) {
       motivo: t.motivo || null,
       naOrigem, noModelo,
       // buraco = deveria copiar, a origem tem, e o modelo está sem
-      buraco: t.situacao === 'copia' && (naOrigem || 0) > 0 && (noModelo || 0) === 0,
+      buraco: (naOrigem || 0) > 0 && (noModelo || 0) === 0,
       inexistente: naOrigem === null && noModelo === null,
     }
-  }))
+  })
+  const naoCopiadas = TABELAS.filter(t => t.situacao === 'nao')
+    .map(t => ({ tabela: t.nome, situacao: t.situacao, motivo: t.motivo || null, naOrigem: null, noModelo: null, buraco: false, inexistente: false }))
+  const linhas = [...contadas, ...naoCopiadas]
 
   const buracos = linhas.filter(l => l.buraco)
   return NextResponse.json({
