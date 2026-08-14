@@ -40,6 +40,7 @@ import ConsumoProdutosDosagem from '@/components/salon/ConsumoProdutosDosagem'
 import { CHECKLIST_MANUTENCAO } from '@/lib/checklistManutencaoDefaults'
 import { CHECKLIST_COORDENACAO } from '@/lib/checklistCoordenacaoDefaults'
 import { CHECKLIST_PROCESSOS } from '@/lib/checklistProcessosDefaults'
+import ManualSetorPainel from '@/components/salon/ManualSetorPainel'
 import ContasBancariasLista from '@/components/salon/ContasBancariasLista'
 import ProfissionaisPainel from '@/components/salon/ProfissionaisPainel'
 import { CAFE_BLOCOS, POP_SALAO_BLOCOS } from '@/components/salon/popDefaults'
@@ -124,6 +125,9 @@ export const CATALOGO: Record<string, Ferramenta> = {
   ck_manut_predial:{ id: 'ck_manut_predial',label: 'CHECK LIST — MANUTENÇÃO PREDIAL', perm: 'checklist' },
   ck_coordenacao:  { id: 'ck_coordenacao',  label: 'CHECK LIST — COORDENAÇÃO',     perm: 'checklist' },
   ck_processos:    { id: 'ck_processos',    label: 'CHECK LIST — PROCESSOS & QUALIDADE', perm: 'checklist' },
+  // Procedimentos (como lidar com a demanda): abrem como sub-itens na sidebar
+  man_coordenacao: { id: 'man_coordenacao', label: 'PROCEDIMENTOS — COORDENAÇÃO', perm: 'checklist', conteudoSlug: 'manual:coordenacao' },
+  man_processos:   { id: 'man_processos',   label: 'PROCEDIMENTOS — PROCESSOS & QUALIDADE', perm: 'checklist', conteudoSlug: 'manual:processos' },
   ck_gerente:      { id: 'ck_gerente',      label: 'CHECK LIST — GERENTE',        perm: 'checklist' },
   ck_coordenado:   { id: 'ck_coordenado',   label: 'CHECK LIST — COORDENADO',     perm: 'checklist' },
   ck_padrao:       { id: 'ck_padrao',       label: 'CHECK LIST — PADRÃO DE ATENDIMENTO', perm: 'checklist' },
@@ -162,7 +166,7 @@ export const FERRAMENTAS_POR_SETOR: { chave: string[]; itens: string[] }[] = [
   { chave: ['ADMINISTRATIVO'], itens: ['ck_administrativo', 'licencas_contratos', 'escala', 'feriados', 'ata', 'senhas', 'telefones', 'calendario', 'auditoria'] },
   { chave: ['FINANCEIRO'], itens: ['pr_abertura', 'desconto_profissional', 'pagamento_va_vt', 'pedidos_compra'] },
   { chave: ['GERENCIA', 'GERENTE'], itens: ['ck_gerente', 'corrida_interna'] },
-  { chave: ['PROCESSO', 'QUALIDADE'], itens: ['ck_processos', 'pr_ranking', 'ck_padrao', 'pop_cafe', 'pop_salao', 'checkprocon', 'pop_recepcao', 'pop_manicure', 'pop_cabelereiro'] },
+  { chave: ['PROCESSO', 'QUALIDADE'], itens: ['ck_processos', 'man_processos', 'pr_ranking', 'ck_padrao', 'pop_cafe', 'pop_salao', 'checkprocon', 'pop_recepcao', 'pop_manicure', 'pop_cabelereiro'] },
   { chave: ['MARKETING'], itens: ['calendario_mkt'] },
   { chave: ['COMERCIAL', 'VENDAS'], itens: ['lojistas'] },
   { chave: ['RH', 'GESTAO DE PESSOAS', 'RECURSOS HUMANOS'], itens: ['pr_lista', 'pr_cadastrar', 'pj_cnpj', 'pj_contratacao', 'pj_desligamento', 'clt_profs', 'clt_contratacao', 'pr_acesso', 'pr_categorias', 'pr_entrevista', 'pr_perfil', 'pr_distrato', 'pr_contrato', 'pr_conduta', 'pr_certificados', 'pr_carreira'] },
@@ -170,7 +174,7 @@ export const FERRAMENTAS_POR_SETOR: { chave: string[]; itens: string[] }[] = [
   { chave: ['MANUTENCAO'], itens: ['ck_manut_predial'] },
   // O CHECK LIST — COORDENADO saiu da sidebar: quem cobre a rotina agora é o
   // CHECK LIST — COORDENAÇÃO (52 categorias). A categoria antiga segue no banco.
-  { chave: ['COORDENADOR', 'COORDENACAO'], itens: ['pr_horarios', 'ck_coordenacao'] },
+  { chave: ['COORDENADOR', 'COORDENACAO'], itens: ['pr_horarios', 'ck_coordenacao', 'man_coordenacao'] },
 ]
 
 const norm = (s: string) => (s || '').toUpperCase().trim()
@@ -259,6 +263,11 @@ export function ConteudoFerramenta({ id, profsSalao, abaPop = 'cafe' }: { id: st
     case 'pop_cafe':            return <DocEditavel key="pop_cafe" chave="pop_cafe" tituloPadrao="PREPARO DE SERVIÇOS — CAFÉ" blocosPadrao={CAFE_BLOCOS} />
     case 'pop_salao':           return <DocEditavel key="pop_salao" chave="pop_salao" tituloPadrao="POP — PROCEDIMENTO DE OPERAÇÃO PADRÃO" blocosPadrao={POP_SALAO_BLOCOS} comData />
     default:
+      // Página de PROCEDIMENTO escolhida na sidebar: "conteudo:manual:<setor>:<i>"
+      if (id.startsWith('conteudo:manual:')) {
+        const [, , chaveManual, indice] = id.split(':')
+        return <ManualSetorPainel key={id} chave={chaveManual} indice={indice || '0'} />
+      }
       // POP de conteúdo escolhido na sidebar: "conteudo:<slug>:<docId>"
       if (id.startsWith('conteudo:')) {
         const [, slug, docId] = id.split(':')

@@ -9,6 +9,7 @@ import { Loader2, Printer, ClipboardCheck } from 'lucide-react'
 import { AVALIACOES_POP } from '@/lib/popAvaliacoes'
 import { categoriaDoCargo } from '@/components/salon/PopsProfissional'
 import ModalAvaliarPop from '@/components/salon/ModalAvaliarPop'
+import { listarManuais } from '@/components/salon/ManualSetorPainel'
 
 interface DocPop { id?: string; titulo?: string; texto?: string; html?: string }
 
@@ -16,6 +17,9 @@ export interface PopDeConteudo { id: string; titulo: string }
 
 /** Busca a lista de POPs de um slug. Usada pela sidebar para montar os sub-itens. */
 export async function listarPopsDoConteudo(slug: string): Promise<PopDeConteudo[]> {
+  // `manual:<setor>` não vem da API: são as páginas de PROCEDIMENTO do setor,
+  // que moram no código. Mesmo mecanismo de sub-itens da sidebar, sem fetch.
+  if (slug.startsWith('manual:')) return listarManuais(slug.slice(7))
   try {
     const d = await fetch(`/api/conteudo/${slug}`).then(r => r.ok ? r.json() : null)
     const docs = d?.conteudo?.docs

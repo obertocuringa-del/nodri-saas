@@ -1,13 +1,13 @@
-// Categorias-padrao do CHECK LIST - COORDENACAO (setor Coordenador).
-// Gerado a partir do manual de coordenacao enviado pelo salao. Mesmo padrao
-// do check list de Manutencao Predial: uma categoria por bloco, subgrupos
-// viram prefixo do item. Periodo sugerido por categoria (Diario para a
-// operacao do dia, Semanal para rotina, Mensal para gestao) - da para mudar
-// item a item no modo Editar. Vive na chave 'checklist_coordenacao'.
+// Categorias do setor COORDENADOR, separadas em dois tipos:
+//   - conferencia  -> vai para o CHECK LIST (marca feito, tem periodo)
+//   - procedimento -> vira PAGINA na sidebar (como lidar com a demanda)
+// Nada foi excluido: as duas listas saem da mesma fonte abaixo.
+// O check list vive na chave 'checklist_coordenacao'.
 
-export interface CatCoordenacao { nome: string; itens: { texto: string; freq?: string }[] }
+export interface CatCoordenacao { nome: string; tipo?: 'procedimento'; itens: { texto: string; freq?: string }[] }
+export interface PaginaManual { titulo: string; blocos: { subtitulo?: string; itens: string[] }[] }
 
-export const CHECKLIST_COORDENACAO: CatCoordenacao[] = [
+export const CATEGORIAS_COORDENACAO: CatCoordenacao[] = [
   {
     nome: 'ABERTURA DA OPERAÇÃO — INÍCIO DO DIA',
     itens: [
@@ -164,6 +164,7 @@ export const CHECKLIST_COORDENACAO: CatCoordenacao[] = [
   },
   {
     nome: 'CLIENTE NÃO GOSTOU DO PROCEDIMENTO',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Ouvir o cliente.', freq: 'Mensal' },
       { texto: 'Entender exatamente o motivo da insatisfação.', freq: 'Mensal' },
@@ -184,6 +185,7 @@ export const CHECKLIST_COORDENACAO: CatCoordenacao[] = [
   },
   {
     nome: 'INSATISFAÇÃO NO ATENDIMENTO',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Profissional — Identificar a origem da insatisfação.', freq: 'Mensal' },
       { texto: 'Profissional — Ouvir o profissional.', freq: 'Mensal' },
@@ -206,6 +208,7 @@ export const CHECKLIST_COORDENACAO: CatCoordenacao[] = [
   },
   {
     nome: 'CLIENTE NÃO QUER PAGAR O VALOR LANÇADO NO SISTEMA',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Ouvir o cliente.', freq: 'Mensal' },
       { texto: 'Verificar valor lançado.', freq: 'Mensal' },
@@ -520,6 +523,7 @@ export const CHECKLIST_COORDENACAO: CatCoordenacao[] = [
   },
   {
     nome: 'CONFLITOS E RELACIONAMENTOS',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Profissional x profissional — Ouvir as partes.', freq: 'Mensal' },
       { texto: 'Profissional x profissional — Confirmar fatos.', freq: 'Mensal' },
@@ -546,6 +550,7 @@ export const CHECKLIST_COORDENACAO: CatCoordenacao[] = [
   },
   {
     nome: 'SITUAÇÕES OBRIGATÓRIAS DE ALINHAMENTO',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Limpeza inadequada.', freq: 'Mensal' },
       { texto: 'Falta de organização.', freq: 'Mensal' },
@@ -596,6 +601,7 @@ export const CHECKLIST_COORDENACAO: CatCoordenacao[] = [
   },
   {
     nome: 'PADRÃO DE FEEDBACK',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Sempre que realizar um feedback — Descrever objetivamente o fato.', freq: 'Mensal' },
       { texto: 'Sempre que realizar um feedback — Apresentar evidências.', freq: 'Mensal' },
@@ -617,6 +623,7 @@ export const CHECKLIST_COORDENACAO: CatCoordenacao[] = [
   },
   {
     nome: 'ESCALA DE CORREÇÃO',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Primeira ocorrência — Realizar orientação verbal.', freq: 'Mensal' },
       { texto: 'Primeira ocorrência — Registrar internamente quando aplicável.', freq: 'Mensal' },
@@ -631,6 +638,7 @@ export const CHECKLIST_COORDENACAO: CatCoordenacao[] = [
   },
   {
     nome: 'CONDUTA DO COORDENADOR DURANTE FEEDBACK',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Manter postura profissional.', freq: 'Mensal' },
       { texto: 'Agir com imparcialidade.', freq: 'Mensal' },
@@ -839,6 +847,7 @@ export const CHECKLIST_COORDENACAO: CatCoordenacao[] = [
   },
   {
     nome: 'GESTÃO DE CRISES',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Em situações de — Falta de energia.', freq: 'Mensal' },
       { texto: 'Em situações de — Falta de profissional.', freq: 'Mensal' },
@@ -860,6 +869,7 @@ export const CHECKLIST_COORDENACAO: CatCoordenacao[] = [
   },
   {
     nome: 'ORDEM DE PRIORIDADES',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Em qualquer decisão, seguir — 1. Cliente.', freq: 'Mensal' },
       { texto: 'Em qualquer decisão, seguir — 2. Segurança.', freq: 'Mensal' },
@@ -879,6 +889,7 @@ export const CHECKLIST_COORDENACAO: CatCoordenacao[] = [
   },
   {
     nome: 'AUTONOMIA DO COORDENADOR',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Pode decidir — Troca de horários.', freq: 'Mensal' },
       { texto: 'Pode decidir — Ajustes de agenda.', freq: 'Mensal' },
@@ -902,6 +913,7 @@ export const CHECKLIST_COORDENACAO: CatCoordenacao[] = [
   },
   {
     nome: 'RELAÇÃO COM PROCESSOS E POPs',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Consultar POP correspondente diante de desvios.', freq: 'Mensal' },
       { texto: 'Garantir cumprimento dos processos.', freq: 'Mensal' },
@@ -1040,6 +1052,7 @@ export const CHECKLIST_COORDENACAO: CatCoordenacao[] = [
   },
   {
     nome: 'FECHAMENTO DA OCORRÊNCIA',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Encerrar somente quando — O fato foi identificado.', freq: 'Mensal' },
       { texto: 'Encerrar somente quando — As partes foram ouvidas.', freq: 'Mensal' },
@@ -1058,6 +1071,7 @@ export const CHECKLIST_COORDENACAO: CatCoordenacao[] = [
   },
   {
     nome: 'REGRA DE OURO DA COORDENAÇÃO',
+    tipo: 'procedimento',
     itens: [
       { texto: 'O Coordenador deve — Ouvir antes de decidir.', freq: 'Mensal' },
       { texto: 'O Coordenador deve — Orientar antes de cobrar.', freq: 'Mensal' },
@@ -1102,6 +1116,424 @@ export const CHECKLIST_COORDENACAO: CatCoordenacao[] = [
       { texto: 'Antes de encerrar o expediente, responder — A agenda de amanhã está conferida?', freq: 'Diário' },
       { texto: 'Antes de encerrar o expediente, responder — A equipe de amanhã está suficiente?', freq: 'Diário' },
       { texto: 'Antes de encerrar o expediente, responder — A operação de amanhã está preparada?', freq: 'Diário' },
+    ],
+  },
+]
+
+/** Conferencia de fato — vai para o Check List, com periodo. */
+export const CHECKLIST_COORDENACAO = CATEGORIAS_COORDENACAO.filter(c => c.tipo !== 'procedimento')
+
+/** Como lidar com a demanda — vira pagina explicativa na sidebar.
+ *  Mantem os subgrupos originais, para a pagina abrir organizada. */
+export const MANUAIS_COORDENACAO: PaginaManual[] = [
+  {
+    titulo: 'CLIENTE NÃO GOSTOU DO PROCEDIMENTO',
+    blocos: [
+      {
+        itens: [
+          'Ouvir o cliente.',
+          'Entender exatamente o motivo da insatisfação.',
+          'Ouvir o profissional.',
+          'Confirmar os fatos.',
+          'Avaliar o procedimento realizado.',
+          'Consultar o POP correspondente.',
+          'Identificar se houve falha técnica.',
+          'Identificar se houve falha de comunicação.',
+          'Identificar se houve falha de expectativa.',
+          'Definir ação corretiva.',
+          'Alinhar com o profissional.',
+          'Preservar o relacionamento com o cliente.',
+          'Registrar a ocorrência quando aplicável.',
+          'Acompanhar a solução.',
+          'Encerrar a ocorrência somente após a solução.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'INSATISFAÇÃO NO ATENDIMENTO',
+    blocos: [
+      {
+        subtitulo: 'Profissional',
+        itens: [
+          'Identificar a origem da insatisfação.',
+          'Ouvir o profissional.',
+          'Verificar fatos.',
+          'Avaliar postura.',
+          'Avaliar comunicação.',
+          'Avaliar qualidade técnica.',
+          'Realizar feedback.',
+          'Definir ação corretiva.',
+          'Acompanhar evolução.',
+        ],
+      },
+      {
+        subtitulo: 'Cliente',
+        itens: [
+          'Ouvir o cliente.',
+          'Identificar reclamação.',
+          'Resolver problema.',
+          'Preservar experiência.',
+          'Dar retorno ao cliente.',
+          'Alinhar com profissional.',
+          'Registrar feedback negativo.',
+          'Acompanhar reincidências.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'CLIENTE NÃO QUER PAGAR O VALOR LANÇADO NO SISTEMA',
+    blocos: [
+      {
+        itens: [
+          'Ouvir o cliente.',
+          'Verificar valor lançado.',
+          'Conferir serviço realizado.',
+          'Conferir tabela/preço aplicável.',
+          'Conferir se houve erro de lançamento.',
+          'Conferir se houve erro de comunicação do valor.',
+          'Conferir se houve serviço adicional.',
+          'Não alterar valor sem autorização quando a situação exigir decisão da Gerência.',
+          'Acionar Gerência quando necessário.',
+          'Resolver a divergência.',
+          'Registrar ocorrência quando aplicável.',
+          'Corrigir o lançamento caso tenha ocorrido erro.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'CONFLITOS E RELACIONAMENTOS',
+    blocos: [
+      {
+        subtitulo: 'Profissional x profissional',
+        itens: [
+          'Ouvir as partes.',
+          'Confirmar fatos.',
+          'Evitar julgamento precipitado.',
+          'Consultar normas/POPs.',
+          'Realizar alinhamento.',
+          'Definir ação corretiva.',
+          'Registrar quando necessário.',
+          'Acompanhar relacionamento.',
+        ],
+      },
+      {
+        subtitulo: 'Profissional x cliente',
+        itens: [
+          'Ouvir cliente.',
+          'Ouvir profissional.',
+          'Preservar respeito.',
+          'Resolver situação.',
+          'Proteger experiência do cliente.',
+          'Registrar ocorrência quando necessário.',
+          'Acompanhar solução.',
+        ],
+      },
+      {
+        subtitulo: 'Profissional x recepção',
+        itens: [
+          'Ouvir ambas as partes.',
+          'Confirmar fatos.',
+          'Identificar falha de comunicação.',
+          'Realizar alinhamento.',
+          'Definir padrão esperado.',
+          'Acompanhar reincidência.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'SITUAÇÕES OBRIGATÓRIAS DE ALINHAMENTO',
+    blocos: [
+      {
+        itens: [
+          'Limpeza inadequada.',
+          'Falta de organização.',
+          'Material fora do lugar.',
+          'Equipamento sem conservação.',
+          'Falta de conferência de materiais.',
+          'Uso inadequado de EPI.',
+          'Uniforme fora do padrão.',
+          'Cliente insatisfeito.',
+          'Cliente não gostou do procedimento.',
+          'Atendimento inadequado.',
+          'Falta de acolhimento.',
+          'Falta de comunicação.',
+          'Reclamação.',
+          'Feedback negativo.',
+          'Procedimento fora do padrão.',
+          'Procedimento lançado incorretamente.',
+          'Procedimento não lançado.',
+          'Atendimento pelo profissional errado.',
+          'Cliente agendada com profissional incorreto.',
+          'Cliente sem agendamento.',
+          'Profissional negar cliente.',
+          'Profissional ir embora deixando cliente na agenda.',
+          'Atraso de profissional.',
+          'Falta de profissional.',
+          'Erro de agenda.',
+          'Erro de sistema.',
+          'Serviço interno não realizado.',
+          'Lançamento incorreto.',
+          'Não lançamento de procedimento.',
+          'Cliente questionando valor.',
+          'Cliente recusando pagamento.',
+          'Divergência de cobrança.',
+          'Erro financeiro.',
+          'Conflito entre profissionais.',
+          'Conflito recepção x profissional.',
+          'Conflito cliente x profissional.',
+          'Comunicação inadequada.',
+          'Desrespeito.',
+          'Falta de colaboração.',
+          'Erro de agendamento da recepção.',
+          'Postura inadequada da recepção.',
+          'Falta de cordialidade.',
+          'Falta de atenção.',
+          'Lentidão.',
+          'Falta de desenvoltura.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'PADRÃO DE FEEDBACK',
+    blocos: [
+      {
+        subtitulo: 'Sempre que realizar um feedback',
+        itens: [
+          'Descrever objetivamente o fato.',
+          'Apresentar evidências.',
+          'Explicar o impacto para o cliente.',
+          'Explicar o impacto para a equipe.',
+          'Explicar o impacto para a operação.',
+          'Explicar o impacto para a empresa.',
+          'Reforçar o padrão esperado.',
+          'Consultar o POP correspondente.',
+          'Ouvir o colaborador.',
+          'Permitir esclarecimentos.',
+          'Definir ação corretiva.',
+          'Definir prazo, quando necessário.',
+          'Registrar quando aplicável.',
+          'Acompanhar evolução.',
+          'Validar melhoria.',
+          'Encerrar ocorrência.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'ESCALA DE CORREÇÃO',
+    blocos: [
+      {
+        subtitulo: 'Primeira ocorrência',
+        itens: [
+          'Realizar orientação verbal.',
+          'Registrar internamente quando aplicável.',
+        ],
+      },
+      {
+        subtitulo: 'Reincidência',
+        itens: [
+          'Realizar feedback formal.',
+          'Criar plano de melhoria.',
+          'Definir treinamento obrigatório.',
+          'Acompanhar evolução.',
+        ],
+      },
+      {
+        subtitulo: 'Persistência',
+        itens: [
+          'Comunicar Gerência.',
+          'Apresentar histórico das ocorrências.',
+          'Encaminhar para aplicação das medidas administrativas previstas pela empresa.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'CONDUTA DO COORDENADOR DURANTE FEEDBACK',
+    blocos: [
+      {
+        itens: [
+          'Manter postura profissional.',
+          'Agir com imparcialidade.',
+          'Não elevar o tom de voz.',
+          'Corrigir comportamento, nunca atacar a pessoa.',
+          'Basear decisões em fatos.',
+          'Utilizar POPs como referência.',
+          'Manter sigilo quando necessário.',
+          'Registrar ocorrências relevantes.',
+          'Acompanhar eficácia das ações corretivas.',
+          'Garantir que o aprendizado seja incorporado à rotina.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'GESTÃO DE CRISES',
+    blocos: [
+      {
+        subtitulo: 'Em situações de',
+        itens: [
+          'Falta de energia.',
+          'Falta de profissional.',
+          'Atraso generalizado.',
+          'Reclamação grave.',
+          'Acidente.',
+          'Problema técnico.',
+          'Sistema fora do ar.',
+        ],
+      },
+      {
+        subtitulo: 'O Coordenador deverá',
+        itens: [
+          'Identificar o problema.',
+          'Priorizar segurança.',
+          'Priorizar cliente.',
+          'Organizar a equipe.',
+          'Aplicar protocolo específico.',
+          'Comunicar a Gerência quando necessário.',
+          'Registrar ocorrência.',
+          'Acompanhar solução.',
+          'Avaliar necessidade de ação preventiva.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'ORDEM DE PRIORIDADES',
+    blocos: [
+      {
+        subtitulo: 'Em qualquer decisão, seguir',
+        itens: [
+          '1. Cliente.',
+          '2. Segurança.',
+          '3. Qualidade.',
+          '4. Processos.',
+          '5. Equipe.',
+          '6. Financeiro.',
+          '7. Organização.',
+        ],
+      },
+      {
+        subtitulo: 'Antes de decidir, avaliar',
+        itens: [
+          'Segurança do cliente.',
+          'Segurança da equipe.',
+          'Impacto financeiro.',
+          'Impacto operacional.',
+          'Impacto na experiência do cliente.',
+          'Impacto na imagem da empresa.',
+          'Conformidade com os POPs.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'AUTONOMIA DO COORDENADOR',
+    blocos: [
+      {
+        subtitulo: 'Pode decidir',
+        itens: [
+          'Troca de horários.',
+          'Ajustes de agenda.',
+          'Redistribuição de profissionais.',
+          'Organização do salão.',
+          'Correções operacionais.',
+          'Mudanças de escala.',
+          'Redistribuição de atendimentos.',
+          'Solicitação de correções imediatas.',
+          'Interrupção de procedimento operacional incorreto.',
+          'Solicitação de treinamentos.',
+          'Comunicação de ocorrências à Gerência.',
+        ],
+      },
+      {
+        subtitulo: 'Deve consultar a Gerência',
+        itens: [
+          'Descontos.',
+          'Demissões.',
+          'Advertências.',
+          'Suspensões.',
+          'Mudanças de processos.',
+          'Compras extraordinárias.',
+          'Alterações financeiras.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'RELAÇÃO COM PROCESSOS E POPs',
+    blocos: [
+      {
+        itens: [
+          'Consultar POP correspondente diante de desvios.',
+          'Garantir cumprimento dos processos.',
+          'Fiscalizar padrões.',
+          'Corrigir desvios.',
+          'Implementar ações corretivas definidas.',
+          'Apoiar auditorias.',
+          'Garantir melhoria contínua.',
+          'Encaminhar sugestões de melhoria ao Responsável por Processos.',
+          'Não criar POPs por conta própria.',
+          'Não alterar procedimentos por conta própria.',
+          'Não modificar fluxos operacionais por conta própria.',
+          'Não aprovar mudanças de processos por conta própria.',
+          'Não alterar documentos oficiais.',
+          'Não definir indicadores de processos.',
+          'Não conduzir auditorias técnicas de conformidade.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'FECHAMENTO DA OCORRÊNCIA',
+    blocos: [
+      {
+        subtitulo: 'Encerrar somente quando',
+        itens: [
+          'O fato foi identificado.',
+          'As partes foram ouvidas.',
+          'Os fatos foram confirmados.',
+          'O POP foi consultado.',
+          'O alinhamento foi realizado.',
+          'A ação corretiva foi definida.',
+          'O responsável foi definido.',
+          'O prazo foi definido, quando necessário.',
+          'A ação foi executada.',
+          'A melhoria foi acompanhada.',
+          'O resultado foi validado.',
+          'O registro foi atualizado.',
+          'A ocorrência foi encerrada.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'REGRA DE OURO DA COORDENAÇÃO',
+    blocos: [
+      {
+        subtitulo: 'O Coordenador deve',
+        itens: [
+          'Ouvir antes de decidir.',
+          'Orientar antes de cobrar.',
+          'Ensinar antes de punir.',
+          'Reconhecer antes de criticar.',
+          'Agir com equilíbrio.',
+          'Manter postura profissional.',
+          'Ser imparcial.',
+          'Trabalhar com fatos.',
+          'Utilizar os POPs como referência.',
+          'Preservar o cliente.',
+          'Preservar a equipe.',
+          'Preservar a cultura.',
+          'Preservar a marca.',
+          'Buscar melhoria contínua.',
+        ],
+      },
     ],
   },
 ]

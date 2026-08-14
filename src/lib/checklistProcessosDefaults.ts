@@ -1,13 +1,14 @@
-// Categorias-padrao do CHECK LIST - PROCESSOS & QUALIDADE.
-// Gerado a partir do manual do setor. Mesmo padrao dos check lists de
-// Manutencao e Coordenacao: uma categoria por bloco, subgrupos viram prefixo
-// do item. A ultima categoria (VERIFICACOES DO SALAO) traz os itens que ja
-// existiam no check list do setor, com os periodos que eles ja tinham.
-// Vive na chave 'checklist_processos'.
+// Categorias do setor PROCESSOS & QUALIDADE, separadas em dois tipos:
+//   - conferencia  -> vai para o CHECK LIST (marca feito, tem periodo)
+//   - procedimento -> vira PAGINA na sidebar (metodo / como fazer)
+// Nada foi excluido: as duas listas saem da mesma fonte abaixo.
+// A categoria VERIFICACOES DO SALAO traz os itens que ja existiam no setor.
+// O check list vive na chave 'checklist_processos'.
 
-export interface CatProcessos { nome: string; itens: { texto: string; freq?: string }[] }
+export interface CatProcessos { nome: string; tipo?: 'procedimento'; itens: { texto: string; freq?: string }[] }
+export interface PaginaManual { titulo: string; blocos: { subtitulo?: string; itens: string[] }[] }
 
-export const CHECKLIST_PROCESSOS: CatProcessos[] = [
+export const CATEGORIAS_PROCESSOS: CatProcessos[] = [
   {
     nome: 'GOVERNANÇA DOS PROCESSOS',
     itens: [
@@ -54,6 +55,7 @@ export const CHECKLIST_PROCESSOS: CatProcessos[] = [
   },
   {
     nome: 'CADASTRO E CONTROLE DOS POPs',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Para cada POP — Código.', freq: 'Mensal' },
       { texto: 'Para cada POP — Nome.', freq: 'Mensal' },
@@ -76,6 +78,7 @@ export const CHECKLIST_PROCESSOS: CatProcessos[] = [
   },
   {
     nome: 'CRIAÇÃO DE NOVOS PROCESSOS',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Quando houver necessidade de criação — Identificar necessidade.', freq: 'Mensal' },
       { texto: 'Quando houver necessidade de criação — Identificar problema que originou a necessidade.', freq: 'Mensal' },
@@ -122,6 +125,7 @@ export const CHECKLIST_PROCESSOS: CatProcessos[] = [
   },
   {
     nome: 'CONTROLE DE ALTERAÇÃO DOS PROCESSOS',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Verificar se houve — Alteração informal de procedimento.', freq: 'Mensal' },
       { texto: 'Verificar se houve — Criação de procedimento paralelo.', freq: 'Mensal' },
@@ -145,6 +149,7 @@ export const CHECKLIST_PROCESSOS: CatProcessos[] = [
   },
   {
     nome: 'AUDITORIA DE PROCESSOS',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Preparação — Definir processo a ser auditado.', freq: 'Mensal' },
       { texto: 'Preparação — Definir objetivo da auditoria.', freq: 'Mensal' },
@@ -181,6 +186,7 @@ export const CHECKLIST_PROCESSOS: CatProcessos[] = [
   },
   {
     nome: 'AUDITORIA POR AMOSTRAGEM',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Definir quantidade da amostra.', freq: 'Mensal' },
       { texto: 'Selecionar períodos.', freq: 'Mensal' },
@@ -197,6 +203,7 @@ export const CHECKLIST_PROCESSOS: CatProcessos[] = [
   },
   {
     nome: 'NÃO CONFORMIDADES',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Sempre que identificar uma não conformidade — Registrar o fato.', freq: 'Mensal' },
       { texto: 'Sempre que identificar uma não conformidade — Registrar data.', freq: 'Mensal' },
@@ -221,6 +228,7 @@ export const CHECKLIST_PROCESSOS: CatProcessos[] = [
   },
   {
     nome: 'CLASSIFICAÇÃO DE NÃO CONFORMIDADE',
+    tipo: 'procedimento',
     itens: [
       { texto: 'LEVE — Falha documental.', freq: 'Mensal' },
       { texto: 'LEVE — Falha de registro.', freq: 'Mensal' },
@@ -242,6 +250,7 @@ export const CHECKLIST_PROCESSOS: CatProcessos[] = [
   },
   {
     nome: 'ANÁLISE DE CAUSA RAIZ',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Para cada problema relevante — Definir exatamente qual é o problema.', freq: 'Mensal' },
       { texto: 'Para cada problema relevante — Separar sintoma de causa.', freq: 'Mensal' },
@@ -262,6 +271,7 @@ export const CHECKLIST_PROCESSOS: CatProcessos[] = [
   },
   {
     nome: 'PLANO DE AÇÃO — 5W2H',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Para cada ação — What — O que será feito?', freq: 'Mensal' },
       { texto: 'Para cada ação — Why — Por que será feito?', freq: 'Mensal' },
@@ -279,6 +289,7 @@ export const CHECKLIST_PROCESSOS: CatProcessos[] = [
   },
   {
     nome: 'CONTROLE DE EFICÁCIA',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Após uma correção — Verificar se a ação foi realmente executada.', freq: 'Mensal' },
       { texto: 'Após uma correção — Verificar se o problema desapareceu.', freq: 'Mensal' },
@@ -427,6 +438,7 @@ export const CHECKLIST_PROCESSOS: CatProcessos[] = [
   },
   {
     nome: 'CHECKLISTS OFICIAIS',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Criar checklist quando necessário.', freq: 'Mensal' },
       { texto: 'Padronizar perguntas.', freq: 'Mensal' },
@@ -445,6 +457,7 @@ export const CHECKLIST_PROCESSOS: CatProcessos[] = [
   },
   {
     nome: 'VALIDAÇÃO DOS CHECKLISTS',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Antes de oficializar — Todas as etapas críticas estão contempladas?', freq: 'Mensal' },
       { texto: 'Antes de oficializar — Existe pergunta desnecessária?', freq: 'Mensal' },
@@ -475,6 +488,7 @@ export const CHECKLIST_PROCESSOS: CatProcessos[] = [
   },
   {
     nome: 'MATRIZ POP x PROCESSO x EVIDÊNCIA',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Para cada processo — Processo identificado.', freq: 'Mensal' },
       { texto: 'Para cada processo — POP relacionado.', freq: 'Mensal' },
@@ -490,6 +504,7 @@ export const CHECKLIST_PROCESSOS: CatProcessos[] = [
   },
   {
     nome: 'TREINAMENTO DECORRENTE DE PROCESSOS',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Quando uma falha indicar necessidade de capacitação — Identificar conteúdo.', freq: 'Mensal' },
       { texto: 'Quando uma falha indicar necessidade de capacitação — Identificar público.', freq: 'Mensal' },
@@ -506,6 +521,7 @@ export const CHECKLIST_PROCESSOS: CatProcessos[] = [
   },
   {
     nome: 'ANÁLISE DE NOVOS PROCESSOS ANTES DA IMPLANTAÇÃO',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Antes de liberar — Processo está documentado?', freq: 'Mensal' },
       { texto: 'Antes de liberar — Responsáveis definidos?', freq: 'Mensal' },
@@ -525,6 +541,7 @@ export const CHECKLIST_PROCESSOS: CatProcessos[] = [
   },
   {
     nome: 'MELHORIA CONTÍNUA',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Receber sugestões de — Colaboradores.', freq: 'Mensal' },
       { texto: 'Receber sugestões de — Gestores.', freq: 'Mensal' },
@@ -568,6 +585,7 @@ export const CHECKLIST_PROCESSOS: CatProcessos[] = [
   },
   {
     nome: 'PROCESSOS CRÍTICOS',
+    tipo: 'procedimento',
     itens: [
       { texto: 'CRÍTICO — Segurança.', freq: 'Mensal' },
       { texto: 'CRÍTICO — Saúde/higiene.', freq: 'Mensal' },
@@ -584,6 +602,7 @@ export const CHECKLIST_PROCESSOS: CatProcessos[] = [
   },
   {
     nome: 'AUDITORIA ESPECIAL',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Realizar auditoria extraordinária quando ocorrer — Reclamação grave.', freq: 'Mensal' },
       { texto: 'Realizar auditoria extraordinária quando ocorrer — Falha técnica grave.', freq: 'Mensal' },
@@ -660,6 +679,7 @@ export const CHECKLIST_PROCESSOS: CatProcessos[] = [
   },
   {
     nome: 'CONTROLE DE RECORRÊNCIA',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Sempre que um problema aparecer novamente — Localizar ocorrência anterior.', freq: 'Mensal' },
       { texto: 'Sempre que um problema aparecer novamente — Comparar causas.', freq: 'Mensal' },
@@ -784,6 +804,7 @@ export const CHECKLIST_PROCESSOS: CatProcessos[] = [
   },
   {
     nome: 'ENCERRAMENTO DE AUDITORIA',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Nenhuma auditoria encerrada sem — Resultado registrado.', freq: 'Mensal' },
       { texto: 'Nenhuma auditoria encerrada sem — Evidências arquivadas.', freq: 'Mensal' },
@@ -848,6 +869,7 @@ export const CHECKLIST_PROCESSOS: CatProcessos[] = [
   },
   {
     nome: 'PRINCÍPIO DE ATUAÇÃO — PROCESSOS & QUALIDADE',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Sequência de trabalho — 1. PADRÃO', freq: 'Mensal' },
       { texto: 'Sequência de trabalho — 2. MEDIÇÃO', freq: 'Mensal' },
@@ -862,6 +884,7 @@ export const CHECKLIST_PROCESSOS: CatProcessos[] = [
   },
   {
     nome: 'O QUE NÃO PERTENCE AO SETOR',
+    tipo: 'procedimento',
     itens: [
       { texto: 'Não assumir como rotina — Montar escala diária.', freq: 'Mensal' },
       { texto: 'Não assumir como rotina — Cobrir falta de profissional.', freq: 'Mensal' },
@@ -911,6 +934,589 @@ export const CHECKLIST_PROCESSOS: CatProcessos[] = [
       { texto: 'verificar todos o ponto da lista do código do consumidor', freq: 'Mensal' },
       { texto: 'ARQUIVAR DOCUMENTOS - PEGAR OS DOCUMENTOS DA SALA DA BRUNA E ARQUIVAR NO ESTOQUE.', freq: 'Mensal' },
       { texto: 'COMPRAS - VERIFICAR SE TEM QUE COMPRAR MATERIAR DE ESCRITORIO ( RESMA, CANETAS , BOBINAS , ETIQUETAS DE PREÇO , TINTA DAS ETIQUETAS DE PREÇO, LAPIS, BORRACHAS, MARCA TEXTOS , GRAMPOS , CLIPS , TESOURA , DUREX', freq: 'Mensal' },
+    ],
+  },
+]
+
+/** Conferencia de fato — vai para o Check List, com periodo. */
+export const CHECKLIST_PROCESSOS = CATEGORIAS_PROCESSOS.filter(c => c.tipo !== 'procedimento')
+
+/** Metodo / como fazer — vira pagina explicativa na sidebar.
+ *  Mantem os subgrupos originais, para a pagina abrir organizada. */
+export const MANUAIS_PROCESSOS: PaginaManual[] = [
+  {
+    titulo: 'CADASTRO E CONTROLE DOS POPs',
+    blocos: [
+      {
+        subtitulo: 'Para cada POP',
+        itens: [
+          'Código.',
+          'Nome.',
+          'Área.',
+          'Objetivo.',
+          'Aplicação.',
+          'Responsável.',
+          'Aprovador.',
+          'Versão.',
+          'Data de criação.',
+          'Data de vigência.',
+          'Data da última revisão.',
+          'Próxima revisão.',
+          'Histórico de alterações.',
+          'Documentos relacionados.',
+          'Checklists relacionados.',
+          'Indicadores relacionados.',
+          'O controle de versão deve registrar versão, data, alteração e responsável.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'CRIAÇÃO DE NOVOS PROCESSOS',
+    blocos: [
+      {
+        subtitulo: 'Quando houver necessidade de criação',
+        itens: [
+          'Identificar necessidade.',
+          'Identificar problema que originou a necessidade.',
+          'Levantar informações.',
+          'Entender o processo atual.',
+          'Mapear etapas.',
+          'Identificar responsáveis.',
+          'Identificar riscos.',
+          'Identificar pontos de controle.',
+          'Definir padrão esperado.',
+          'Elaborar procedimento.',
+          'Criar checklist, quando necessário.',
+          'Definir indicadores.',
+          'Definir evidências.',
+          'Testar o processo.',
+          'Identificar falhas do novo processo.',
+          'Ajustar documento.',
+          'Submeter à aprovação.',
+          'Registrar versão oficial.',
+          'Definir data de vigência.',
+          'Publicar versão oficial.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'CONTROLE DE ALTERAÇÃO DOS PROCESSOS',
+    blocos: [
+      {
+        subtitulo: 'Verificar se houve',
+        itens: [
+          'Alteração informal de procedimento.',
+          'Criação de procedimento paralelo.',
+          'Retirada de etapa.',
+          'Inclusão de etapa.',
+          'Mudança de sequência.',
+          'Mudança de roteiro.',
+          'Mudança de formulário.',
+          'Mudança de checklist.',
+          'Mudança de critério.',
+          'Mudança de padrão técnico.',
+        ],
+      },
+      {
+        subtitulo: 'Quando houver alteração não autorizada',
+        itens: [
+          'Registrar desvio.',
+          'Identificar origem.',
+          'Identificar impacto.',
+          'Restabelecer versão oficial.',
+          'Registrar não conformidade.',
+          'Avaliar necessidade de ação corretiva.',
+          'Avaliar necessidade de revisão do processo.',
+          'Regra: alterações em POPs, checklists, roteiros ou procedimentos não devem ser implementadas sem aprovação formal.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'AUDITORIA DE PROCESSOS',
+    blocos: [
+      {
+        subtitulo: 'Preparação',
+        itens: [
+          'Definir processo a ser auditado.',
+          'Definir objetivo da auditoria.',
+          'Definir escopo.',
+          'Definir período.',
+          'Definir critérios.',
+          'Separar POP vigente.',
+          'Separar checklist de auditoria.',
+          'Separar evidências necessárias.',
+          'Definir amostra.',
+          'Definir responsável pela auditoria.',
+        ],
+      },
+      {
+        subtitulo: 'Execução',
+        itens: [
+          'Verificar documentação.',
+          'Verificar evidências.',
+          'Verificar registros.',
+          'Verificar execução conforme padrão.',
+          'Comparar prática x procedimento oficial.',
+          'Identificar desvios.',
+          'Classificar desvios.',
+          'Registrar evidências.',
+          'Fotografar/documentar quando aplicável.',
+          'Registrar data e horário.',
+          'Identificar área envolvida.',
+          'Identificar processo relacionado.',
+        ],
+      },
+      {
+        subtitulo: 'Encerramento',
+        itens: [
+          'Consolidar resultados.',
+          'Classificar conformidades.',
+          'Classificar não conformidades.',
+          'Identificar pontos de atenção.',
+          'Elaborar relatório.',
+          'Definir ações.',
+          'Definir responsáveis.',
+          'Definir prazos.',
+          'Programar auditoria de verificação.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'AUDITORIA POR AMOSTRAGEM',
+    blocos: [
+      {
+        itens: [
+          'Definir quantidade da amostra.',
+          'Selecionar períodos.',
+          'Selecionar atendimentos.',
+          'Selecionar registros.',
+          'Selecionar profissionais.',
+          'Selecionar documentos.',
+          'Selecionar transações, quando aplicável.',
+          'Evitar seleção tendenciosa.',
+          'Registrar critério utilizado.',
+          'Documentar resultado.',
+          'Comparar percentual de conformidade.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'NÃO CONFORMIDADES',
+    blocos: [
+      {
+        subtitulo: 'Sempre que identificar uma não conformidade',
+        itens: [
+          'Registrar o fato.',
+          'Registrar data.',
+          'Registrar local/setor.',
+          'Identificar processo.',
+          'Identificar POP relacionado.',
+          'Descrever o requisito.',
+          'Descrever o que foi encontrado.',
+          'Registrar evidência.',
+          'Classificar gravidade.',
+          'Identificar impacto.',
+          'Identificar recorrência.',
+          'Identificar causa.',
+          'Definir ação.',
+          'Definir responsável.',
+          'Definir prazo.',
+          'Acompanhar correção.',
+          'Validar eficácia.',
+          'Encerrar formalmente.',
+          'Fluxo oficial: orientação, registro, treinamento, plano de melhoria e escalonamento conforme reincidência.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'CLASSIFICAÇÃO DE NÃO CONFORMIDADE',
+    blocos: [
+      {
+        subtitulo: 'LEVE',
+        itens: [
+          'Falha documental.',
+          'Falha de registro.',
+          'Pequeno desvio de padrão.',
+          'Falha pontual sem impacto relevante.',
+        ],
+      },
+      {
+        subtitulo: 'MÉDIA',
+        itens: [
+          'Descumprimento de etapa.',
+          'Falha recorrente.',
+          'Erro que gera retrabalho.',
+          'Erro que impacta experiência.',
+          'Falha que compromete indicador.',
+        ],
+      },
+      {
+        subtitulo: 'GRAVE',
+        itens: [
+          'Risco ao cliente.',
+          'Risco à equipe.',
+          'Descumprimento de procedimento técnico crítico.',
+          'Alteração não autorizada de processo.',
+          'Ocultação de erro.',
+          'Reincidência após ações corretivas.',
+          'Falha com impacto relevante na empresa.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'ANÁLISE DE CAUSA RAIZ',
+    blocos: [
+      {
+        subtitulo: 'Para cada problema relevante',
+        itens: [
+          'Definir exatamente qual é o problema.',
+          'Separar sintoma de causa.',
+          'Perguntar "por quê?" sucessivamente.',
+          'Identificar causa humana.',
+          'Identificar causa de processo.',
+          'Identificar causa de treinamento.',
+          'Identificar causa de sistema.',
+          'Identificar causa documental.',
+          'Identificar causa de comunicação.',
+          'Identificar causa de recurso/material.',
+          'Identificar causa estrutural.',
+          'Confirmar a causa com evidências.',
+          'Evitar atribuir automaticamente culpa ao colaborador.',
+          'Definir ação sobre a causa.',
+          'Validar se a causa foi eliminada.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'PLANO DE AÇÃO — 5W2H',
+    blocos: [
+      {
+        subtitulo: 'Para cada ação',
+        itens: [
+          'What — O que será feito?',
+          'Why — Por que será feito?',
+          'Where — Onde?',
+          'When — Quando?',
+          'Who — Quem será responsável?',
+          'How — Como será feito?',
+          'How much — Qual custo, quando aplicável?',
+          'Registrar prazo.',
+          'Registrar status.',
+          'Registrar evidência.',
+          'Validar conclusão.',
+          'Avaliar eficácia.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'CONTROLE DE EFICÁCIA',
+    blocos: [
+      {
+        subtitulo: 'Após uma correção',
+        itens: [
+          'Verificar se a ação foi realmente executada.',
+          'Verificar se o problema desapareceu.',
+          'Verificar se houve reincidência.',
+          'Comparar indicador antes/depois.',
+          'Realizar nova amostragem.',
+          'Avaliar resultado.',
+          'Confirmar eficácia.',
+          'Reabrir caso a solução não tenha funcionado.',
+          'Escalar problema recorrente.',
+          'Regra: correção concluída não significa problema resolvido.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'CHECKLISTS OFICIAIS',
+    blocos: [
+      {
+        itens: [
+          'Criar checklist quando necessário.',
+          'Padronizar perguntas.',
+          'Definir resposta esperada.',
+          'Definir critérios de aprovação.',
+          'Definir campo de evidência.',
+          'Definir responsável pelo preenchimento.',
+          'Definir periodicidade.',
+          'Definir armazenamento.',
+          'Revisar checklist periodicamente.',
+          'Retirar versões antigas.',
+          'Avaliar se o checklist continua útil.',
+          'Eliminar perguntas redundantes.',
+          'Adicionar controles necessários.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'VALIDAÇÃO DOS CHECKLISTS',
+    blocos: [
+      {
+        subtitulo: 'Antes de oficializar',
+        itens: [
+          'Todas as etapas críticas estão contempladas?',
+          'Existe pergunta desnecessária?',
+          'Existe ambiguidade?',
+          'O item pode ser auditado objetivamente?',
+          'Existe critério claro de conformidade?',
+          'Existe evidência?',
+          'O checklist é executável?',
+          'O checklist gera informação útil?',
+          'O checklist está alinhado ao POP?',
+          'O checklist foi aprovado?',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'MATRIZ POP x PROCESSO x EVIDÊNCIA',
+    blocos: [
+      {
+        subtitulo: 'Para cada processo',
+        itens: [
+          'Processo identificado.',
+          'POP relacionado.',
+          'Responsável pela execução.',
+          'Critério de qualidade.',
+          'Evidência.',
+          'Indicador.',
+          'Frequência de auditoria.',
+          'Última auditoria.',
+          'Resultado.',
+          'Próxima auditoria.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'TREINAMENTO DECORRENTE DE PROCESSOS',
+    blocos: [
+      {
+        subtitulo: 'Quando uma falha indicar necessidade de capacitação',
+        itens: [
+          'Identificar conteúdo.',
+          'Identificar público.',
+          'Identificar causa.',
+          'Preparar material.',
+          'Realizar treinamento.',
+          'Registrar participantes.',
+          'Aplicar avaliação, quando necessário.',
+          'Validar entendimento.',
+          'Fazer nova auditoria.',
+          'Verificar se o erro diminuiu.',
+          'Nota: aqui o treinamento corrige falha de padronização, não é gestão cotidiana da equipe.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'ANÁLISE DE NOVOS PROCESSOS ANTES DA IMPLANTAÇÃO',
+    blocos: [
+      {
+        subtitulo: 'Antes de liberar',
+        itens: [
+          'Processo está documentado?',
+          'Responsáveis definidos?',
+          'Etapas claras?',
+          'Riscos identificados?',
+          'Pontos críticos definidos?',
+          'Evidências definidas?',
+          'Indicadores definidos?',
+          'Checklist criado?',
+          'Treinamento necessário identificado?',
+          'Teste realizado?',
+          'Resultado do teste aprovado?',
+          'Documento aprovado?',
+          'Versão registrada?',
+          'Data de vigência definida?',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'MELHORIA CONTÍNUA',
+    blocos: [
+      {
+        subtitulo: 'Receber sugestões de',
+        itens: [
+          'Colaboradores.',
+          'Gestores.',
+          'Clientes.',
+          'Auditorias.',
+          'Indicadores.',
+          'Reclamações.',
+          'Retrabalhos.',
+          'Não conformidades.',
+          'Análises de causa.',
+          'Resultados financeiros relacionados a processos.',
+        ],
+      },
+      {
+        subtitulo: 'Para cada sugestão',
+        itens: [
+          'Registrar.',
+          'Avaliar.',
+          'Identificar benefício.',
+          'Identificar risco.',
+          'Testar quando aplicável.',
+          'Medir resultado.',
+          'Aprovar.',
+          'Documentar.',
+          'Atualizar POP.',
+          'Atualizar checklist.',
+          'Comunicar alteração.',
+          'Arquivar versão anterior.',
+          'Regra: todos podem sugerir, mas nenhuma mudança entra no processo antes de testada, documentada, aprovada e incorporada ao POP.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'PROCESSOS CRÍTICOS',
+    blocos: [
+      {
+        subtitulo: 'CRÍTICO',
+        itens: [
+          'Segurança.',
+          'Saúde/higiene.',
+          'Processos técnicos de alto risco.',
+          'Processos com impacto financeiro elevado.',
+          'Processos com impacto jurídico.',
+          'Processos com alto impacto na imagem.',
+        ],
+      },
+      {
+        subtitulo: 'IMPORTANTE',
+        itens: [
+          'Processos que geram retrabalho.',
+          'Processos que afetam produtividade.',
+          'Processos que afetam experiência.',
+        ],
+      },
+      {
+        subtitulo: 'PADRÃO',
+        itens: [
+          'Processos administrativos de menor impacto.',
+          'Rotinas de suporte.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'AUDITORIA ESPECIAL',
+    blocos: [
+      {
+        subtitulo: 'Realizar auditoria extraordinária quando ocorrer',
+        itens: [
+          'Reclamação grave.',
+          'Falha técnica grave.',
+          'Acidente.',
+          'Grande volume de retrabalho.',
+          'Aumento inesperado de erros.',
+          'Reincidência.',
+          'Alteração de processo.',
+          'Alteração de sistema.',
+          'Alteração de equipamento.',
+          'Mudança relevante de operação.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'CONTROLE DE RECORRÊNCIA',
+    blocos: [
+      {
+        subtitulo: 'Sempre que um problema aparecer novamente',
+        itens: [
+          'Localizar ocorrência anterior.',
+          'Comparar causas.',
+          'Verificar ação anterior.',
+          'Verificar se ação foi concluída.',
+          'Verificar se ação foi eficaz.',
+          'Identificar falha da ação anterior.',
+          'Reavaliar causa raiz.',
+          'Criar nova ação.',
+          'Escalar criticidade.',
+          'Comunicar Gerência quando necessário.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'ENCERRAMENTO DE AUDITORIA',
+    blocos: [
+      {
+        subtitulo: 'Nenhuma auditoria encerrada sem',
+        itens: [
+          'Resultado registrado.',
+          'Evidências arquivadas.',
+          'Não conformidades classificadas.',
+          'Causas identificadas.',
+          'Ações definidas.',
+          'Responsáveis definidos.',
+          'Prazos definidos.',
+          'Acompanhamento programado.',
+          'Eficácia validada.',
+          'Relatório concluído.',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'PRINCÍPIO DE ATUAÇÃO — PROCESSOS & QUALIDADE',
+    blocos: [
+      {
+        subtitulo: 'Sequência de trabalho',
+        itens: [
+          '1. PADRÃO',
+          '2. MEDIÇÃO',
+          '3. AUDITORIA',
+          '4. DESVIO',
+          '5. CAUSA',
+          '6. AÇÃO CORRETIVA',
+          '7. VALIDAÇÃO',
+          '8. MELHORIA',
+          '9. NOVO PADRÃO',
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'O QUE NÃO PERTENCE AO SETOR',
+    blocos: [
+      {
+        subtitulo: 'Não assumir como rotina',
+        itens: [
+          'Montar escala diária.',
+          'Cobrir falta de profissional.',
+          'Redistribuir atendimento.',
+          'Administrar a agenda do dia.',
+          'Resolver conflito pessoal no momento em que ocorre.',
+          'Fazer gestão cotidiana da equipe.',
+          'Cobrar produtividade individual diariamente.',
+          'Organizar a rotina do salão.',
+          'Gerenciar o fluxo de clientes.',
+          'Fazer acolhimento operacional.',
+          'Substituir recepção.',
+          'Fazer atendimento de cliente.',
+          'Autorizar desconto comercial.',
+          'Decidir férias.',
+          'Definir folgas.',
+          'Gerenciar o funcionamento diário do salão.',
+          'Função do setor: verificar se existe processo adequado, se está documentado, se é cumprido, se produz o resultado esperado e, quando não produz, por quê e como melhorar.',
+        ],
+      },
     ],
   },
 ]
