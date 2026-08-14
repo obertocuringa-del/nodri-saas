@@ -77,13 +77,21 @@ export const NUNCA_COPIA = [
 ]
 
 /** Chave mensal (folha do mês) — sempre preenchimento. */
-const ehMensal = (chave: string) => /_\d{4}-\d{2}$/.test(chave)
+// Cobre `_2026-08` e variações com sufixo de quinzena (`_2026-08_q1`).
+const ehMensal = (chave: string) => /_\d{4}-\d{2}(_q\d)?$/.test(chave)
+
+// As grades editáveis (/api/salon/grid) gravam com o namespace `grid_`:
+// `checklist` vira `grid_checklist` no banco. Para casar com a lista acima
+// o prefixo é retirado só na COMPARAÇÃO — a cópia mantém o nome original.
+const semNamespace = (chave: string) => chave.startsWith('grid_') ? chave.slice(5) : chave
 
 /** A chave faz parte da estrutura que o modelo distribui? */
 export function regraDaChave(chave: string): ChaveModelo | null {
   if (!chave || ehMensal(chave)) return null
+  const c = semNamespace(chave)
+  if (ehMensal(c)) return null
   for (const r of CHAVES_MODELO) {
-    if (r.prefixo ? chave.startsWith(r.chave) : chave === r.chave) return r
+    if (r.prefixo ? c.startsWith(r.chave) : c === r.chave) return r
   }
   return null
 }
