@@ -105,6 +105,8 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
   const ehSub = Array.isArray(permissoes)
   const pode = (chave: string) => !ehSub || (permissoes as string[]).includes(chave)
   const [filtro, setFiltro] = useState<'todos' | 'ativos' | 'bloqueados'>('ativos')
+  // Aviso obrigatorio de uso do WhatsApp — barra a abertura da Suite ate o aceite.
+  const [avisoWhats, setAvisoWhats] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   // Lembrete de compromissos dos DOIS calendários (faltam até 2 dias) — abre ao abrir o app
   type CalEvt = { id: string; data: string; texto: string; dias: number }
@@ -444,7 +446,9 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
         toast('Entre em contato para ativar este módulo.')
         return
       }
-      window.location.href = 'nodri://abrir'
+      // Nao abre direto: mostra o aviso de uso do WhatsApp. Quem abre e o
+      // botao "Sim, concordo" do modal — a linha do protocolo e a mesma.
+      setAvisoWhats(true)
       return
     }
     const webUrl = getModuloWebUrl(modulo.nome)
@@ -709,6 +713,50 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               </div>
             </div>
           </div>
+
+          {/* ⚠️ AVISO DE USO DO WHATSAPP — obrigatório antes de abrir a Suite.
+              Aparece TODA vez, por decisão do dono do sistema: o texto trata de
+              responsabilidade e risco de bloqueio de conta, então o incômodo de
+              reler é proposital. A pulsação é lenta (2s) de propósito — piscar
+              rápido incomoda e passa mal quem tem sensibilidade a luz. */}
+          {avisoWhats && (
+            <div onClick={() => setAvisoWhats(false)}
+              style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.6)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+              <style>{`@keyframes nodriPulsaVermelho {
+                0%,100% { border-color:#dc2626; box-shadow:0 0 0 0 rgba(220,38,38,.55) }
+                50%     { border-color:#f87171; box-shadow:0 0 0 12px rgba(220,38,38,0) }
+              }`}</style>
+              <div onClick={e => e.stopPropagation()}
+                style={{ background: '#fff', borderRadius: 16, maxWidth: 560, width: '100%', maxHeight: '88vh', overflowY: 'auto', border: '3px solid #dc2626', animation: 'nodriPulsaVermelho 2s ease-in-out infinite' }}>
+                <div style={{ background: '#dc2626', color: '#fff', padding: '14px 20px', fontWeight: 900, fontSize: 15.5 }}>
+                  ⚠️ ATENÇÃO — USO DO WHATSAPP
+                </div>
+                <div style={{ padding: '18px 20px', fontSize: 13.5, color: '#1f2937', lineHeight: 1.55 }}>
+                  <p style={{ margin: '0 0 12px' }}>Para evitar riscos de bloqueio e garantir o uso adequado da ferramenta, siga estas orientações:</p>
+                  <ul style={{ margin: '0 0 14px', paddingLeft: 20 }}>
+                    <li style={{ marginBottom: 7 }}>A NODRI <strong>não se responsabiliza</strong> pelo bloqueio ou suspensão da conta do WhatsApp.</li>
+                    <li style={{ marginBottom: 7 }}><strong>Não apague as conversas</strong> com seus clientes. Manter o histórico ajuda a demonstrar que já existe uma relação de contato entre você e o cliente.</li>
+                    <li style={{ marginBottom: 7 }}>Antes de enviar uma lista, confira a quantidade de contatos. A lista deve conter <strong>menos de 100 contatos</strong>.</li>
+                    <li style={{ marginBottom: 7 }}>O encaminhamento de listas deve ser realizado <strong>no máximo 1 vez por dia</strong>.</li>
+                    <li>Evite comportamentos que possam ser interpretados pelo WhatsApp como envio excessivo ou inadequado de mensagens.</li>
+                  </ul>
+                  <p style={{ margin: 0, padding: '10px 12px', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, fontWeight: 700, color: '#991b1b' }}>
+                    ⚠️ O uso correto da ferramenta é de responsabilidade do usuário. Siga estas orientações para reduzir riscos de restrições ou bloqueios da sua conta.
+                  </p>
+                </div>
+                <div style={{ display: 'flex', gap: 10, padding: '0 20px 20px', flexWrap: 'wrap' }}>
+                  <button onClick={() => setAvisoWhats(false)}
+                    style={{ flex: 1, minWidth: 150, padding: '12px', borderRadius: 10, border: '1.5px solid #d0cdc7', background: '#fff', color: '#6b6860', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>
+                    Não concordo
+                  </button>
+                  <button onClick={() => { setAvisoWhats(false); window.location.href = 'nodri://abrir' }}
+                    style={{ flex: 1, minWidth: 150, padding: '12px', borderRadius: 10, border: 'none', background: '#16a34a', color: '#fff', fontSize: 14, fontWeight: 900, cursor: 'pointer' }}>
+                    Sim, concordo
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Atualização do salão modelo — o modelo propõe, o salão decide */}
           <div className="mx-5 mt-3"><AvisoModelo /></div>
