@@ -135,13 +135,10 @@ const MAPA: { chave: string[]; demandas: string[] }[] = [
     ]
   },
   {
-    chave: ['DOSAGEM'], demandas: [
-      'Preparação de produtos', 'Dosagens', 'Fórmulas', 'Padrões de mistura',
-      'Controle técnico das misturas', 'Registro de utilização',
-      'Padronização das formulações', 'Controle de desperdício',
-      'Controle de consumo de produtos',
-      'Cumprimento dos protocolos definidos pela Responsável Técnica',
-    ]
+    // Demandas soltas removidas da sidebar — o setor trabalha pelas ferramentas
+    // (Check List, Consumo de Produtos, Serviços Internos, Tratamentos,
+    // Esterilização, Kits, Enxovais). O conteúdo já salvo segue no banco.
+    chave: ['DOSAGEM'], demandas: []
   },
 ]
 
