@@ -77,7 +77,10 @@ export async function POST(req: NextRequest, { params }: { params: { salaoId: st
 }
 
 // Volta para a conta do admin: troca o cookie de volta, também no servidor.
-export async function DELETE() {
+// A assinatura completa (req + params) é obrigatória: numa rota dinâmica o
+// Next valida o tipo do handler contra o contexto da rota, e um handler sem
+// argumentos quebra o build. Nenhum outro handler do projeto usa essa forma.
+export async function DELETE(_req: NextRequest, _ctx: { params: { salaoId: string } }) {
   const tokenAdmin = cookies().get('nodri_admin_token')?.value
   const admin = tokenAdmin ? await verifyJWT(tokenAdmin) : null
   if (!admin || admin.role !== 'master') {
