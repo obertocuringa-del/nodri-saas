@@ -38,6 +38,7 @@ import ChecklistPainel from '@/components/salon/ChecklistPainel'
 import ConsolidadoDescontos from '@/components/salon/ConsolidadoDescontos'
 import ConsumoProdutosDosagem from '@/components/salon/ConsumoProdutosDosagem'
 import { CHECKLIST_MANUTENCAO } from '@/lib/checklistManutencaoDefaults'
+import { CHECKLIST_COORDENACAO } from '@/lib/checklistCoordenacaoDefaults'
 import ContasBancariasLista from '@/components/salon/ContasBancariasLista'
 import ProfissionaisPainel from '@/components/salon/ProfissionaisPainel'
 import { CAFE_BLOCOS, POP_SALAO_BLOCOS } from '@/components/salon/popDefaults'
@@ -120,6 +121,7 @@ export const CATALOGO: Record<string, Ferramenta> = {
   ck_manutencao:   { id: 'ck_manutencao',   label: 'CHECK LIST — MANUTENÇÃO / LIMPEZA', perm: 'checklist' },
   ck_dosagem:      { id: 'ck_dosagem',      label: 'CHECK LIST — DOSAGEM',        perm: 'checklist' },
   ck_manut_predial:{ id: 'ck_manut_predial',label: 'CHECK LIST — MANUTENÇÃO PREDIAL', perm: 'checklist' },
+  ck_coordenacao:  { id: 'ck_coordenacao',  label: 'CHECK LIST — COORDENAÇÃO',     perm: 'checklist' },
   ck_gerente:      { id: 'ck_gerente',      label: 'CHECK LIST — GERENTE',        perm: 'checklist' },
   ck_coordenado:   { id: 'ck_coordenado',   label: 'CHECK LIST — COORDENADO',     perm: 'checklist' },
   ck_padrao:       { id: 'ck_padrao',       label: 'CHECK LIST — PADRÃO DE ATENDIMENTO', perm: 'checklist' },
@@ -164,7 +166,7 @@ export const FERRAMENTAS_POR_SETOR: { chave: string[]; itens: string[] }[] = [
   { chave: ['RH', 'GESTAO DE PESSOAS', 'RECURSOS HUMANOS'], itens: ['pr_lista', 'pr_cadastrar', 'pj_cnpj', 'pj_contratacao', 'pj_desligamento', 'clt_profs', 'clt_contratacao', 'pr_acesso', 'pr_categorias', 'pr_entrevista', 'pr_perfil', 'pr_distrato', 'pr_contrato', 'pr_conduta', 'pr_certificados', 'pr_carreira'] },
   { chave: ['SERVICOS GERAIS', 'LIMPEZA'], itens: ['ck_manutencao'] },
   { chave: ['MANUTENCAO'], itens: ['ck_manut_predial'] },
-  { chave: ['COORDENADOR', 'COORDENACAO'], itens: ['pr_horarios', 'ck_coordenado'] },
+  { chave: ['COORDENADOR', 'COORDENACAO'], itens: ['pr_horarios', 'ck_coordenacao', 'ck_coordenado'] },
 ]
 
 const norm = (s: string) => (s || '').toUpperCase().trim()
@@ -225,6 +227,7 @@ export function ConteudoFerramenta({ id, profsSalao, abaPop = 'cafe' }: { id: st
     case 'ck_manutencao':       return <ChecklistPainel key="ck_manutencao" categoriaFixa="Manutenção / Limpeza" embutido />
     case 'ck_dosagem':          return <ChecklistPainel key="ck_dosagem" categoriaFixa="Dosagem" embutido />
     case 'ck_manut_predial':    return <ChecklistPainel key="ck_manut_predial" chave="checklist_manutencao" defaultCategorias={CHECKLIST_MANUTENCAO} semGerencia embutido />
+    case 'ck_coordenacao':      return <ChecklistPainel key="ck_coordenacao" chave="checklist_coordenacao" defaultCategorias={CHECKLIST_COORDENACAO} semGerencia embutido />
     case 'ck_gerente':          return <ChecklistPainel key="ck_gerente" categoriaFixa="Gerente" embutido />
     case 'ck_coordenado':       return <ChecklistPainel key="ck_coordenado" categoriaFixa="Coordenado" embutido />
     case 'ck_padrao':           return <ChecklistPainel key="ck_padrao" categoriaFixa="Padrão de Atendimento" embutido />
