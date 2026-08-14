@@ -30,6 +30,11 @@ function montarSlug(nomeSalao: string, token: string): string {
  * remontado com o nome do salão de destino.
  */
 async function copiarFeedbackCliente(modeloId: string, destinoId: string, nomeDestino: string): Promise<ResultadoCopia[]> {
+  // Idempotente: se o destino já tem formulário, não duplica.
+  const { count } = await supabaseAdmin
+    .from('feedback_formularios').select('id', { count: 'exact', head: true }).eq('salao_id', destinoId)
+  if ((count || 0) > 0) return []
+
   const { data: forms } = await supabaseAdmin
     .from('feedback_formularios').select('id, titulo, descricao').eq('salao_id', modeloId)
   const lista = (forms || []) as any[]
@@ -75,6 +80,11 @@ async function copiarFeedbackCliente(modeloId: string, destinoId: string, nomeDe
 async function copiarFeedbackProf(modeloId: string, destinoId: string): Promise<ResultadoCopia[]> {
   const out: ResultadoCopia[] = []
 
+  // Idempotente: se o destino já tem formulário, não duplica.
+  const { count } = await supabaseAdmin
+    .from('feedback_prof_formularios').select('id', { count: 'exact', head: true }).eq('salao_id', destinoId)
+  if ((count || 0) > 0) return []
+
   const { data: forms } = await supabaseAdmin
     .from('feedback_prof_formularios').select('titulo').eq('salao_id', modeloId)
   const fs = (forms || []) as any[]
@@ -101,6 +111,70 @@ async function copiarFeedbackProf(modeloId: string, destinoId: string): Promise<
 }
 
 /**
+ * Copia os SETORES (departamentos).
+ *
+ * Eles não são uma tabela à parte: são linhas de `profissionais` com
+ * `is_departamento = true`. Sem isso o salão novo abre a página de setores
+ * vazia — o organograma vem, mas não há setor nenhum para clicar.
+ *
+ * Gente de verdade (is_departamento = false) NUNCA é copiada.
+ */
+async function copiarSetores(modeloId: string, destinoId: string): Promise<ResultadoCopia[]> {
+  // Idempotente: se o destino já tem setores, não duplica.
+  const { count } = await supabaseAdmin
+    .from('profissionais').select('id', { count: 'exact', head: true })
+    .eq('salao_id', destinoId).eq('is_departamento', true)
+  if ((count || 0) > 0) return []
+
+  const { data } = await supabaseAdmin
+    .from('profissionais')
+    .select('nome_completo, departamento_cor, cargo')
+    .eq('salao_id', modeloId).eq('is_departamento', true)
+  const deps = (data || []) as any[]
+  if (!deps.length) return []
+
+  const linhas = deps.map(d => ({
+    salao_id: destinoId,
+    nome_completo: d.nome_completo,
+    departamento_cor: d.departamento_cor ?? null,
+    cargo: d.cargo ?? null,
+    is_departamento: true,
+    ativo: true,
+  }))
+  const { error } = await supabaseAdmin.from('profissionais').insert(linhas)
+  if (error) return []
+  return [{ tabela: 'setores', copiados: linhas.length }]
+}
+
+/**
+ * Copia o CATÁLOGO DE SERVIÇOS — o nome e a categoria de cada serviço.
+ * Os VALORES não vêm: preço, comissão e observação ficam em branco, para
+ * cada salão pôr o seu. É o molde da lista, não a tabela de preços do Rouge.
+ */
+async function copiarServicos(modeloId: string, destinoId: string): Promise<ResultadoCopia[]> {
+  // Idempotente: se o destino já tem serviços, não duplica.
+  const { count } = await supabaseAdmin
+    .from('servicos').select('id', { count: 'exact', head: true }).eq('salao_id', destinoId)
+  if ((count || 0) > 0) return []
+
+  const { data } = await supabaseAdmin
+    .from('servicos').select('categoria, nome, ciclo_retorno_dias').eq('salao_id', modeloId)
+  const servs = (data || []) as any[]
+  if (!servs.length) return []
+
+  const linhas = servs.map(s => ({
+    salao_id: destinoId,
+    categoria: s.categoria ?? null,
+    nome: s.nome,
+    ciclo_retorno_dias: s.ciclo_retorno_dias ?? null,
+    preco_fixo: null, preco_min: null, comissao_valor: null, observacao: null,
+  }))
+  const { error } = await supabaseAdmin.from('servicos').insert(linhas)
+  if (error) return []
+  return [{ tabela: 'servicos (sem valores)', copiados: linhas.length }]
+}
+
+/**
  * Leva para o salão novo todos os moldes que vivem fora de `salao_config`.
  * Nunca derruba a criação do salão: falhar aqui só significa começar sem
  * os moldes, e o salão pode importar depois pelo painel.
@@ -109,6 +183,8 @@ export async function copiarMoldesDeTabelas(
   modeloId: string, destinoId: string, nomeDestino: string,
 ): Promise<ResultadoCopia[]> {
   const out: ResultadoCopia[] = []
+  try { out.push(...await copiarSetores(modeloId, destinoId)) } catch { /* segue */ }
+  try { out.push(...await copiarServicos(modeloId, destinoId)) } catch { /* segue */ }
   try { out.push(...await copiarFeedbackCliente(modeloId, destinoId, nomeDestino)) } catch { /* segue */ }
   try { out.push(...await copiarFeedbackProf(modeloId, destinoId)) } catch { /* segue */ }
   return out.filter(r => r.copiados > 0)

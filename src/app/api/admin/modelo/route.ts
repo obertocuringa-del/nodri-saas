@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 import { CHAVES_MODELO, NUNCA_COPIA, ehChaveDoModelo, regraDaChave, sanitizar, versaoDoModelo } from '@/lib/modeloSalao'
+import { copiarMoldesDeTabelas } from '@/lib/modeloTabelas'
 
 // Painel master: define qual salão é o MODELO e alimenta ele a partir de um
 // salão já maduro (o Rouge, hoje). Só estrutura viaja — ver lib/modeloSalao.
@@ -150,13 +151,21 @@ export async function POST(req: NextRequest) {
  * Nunca sobrescreve o que foi montado no modelo.
  */
 async function copiarParaModelo(modeloId: string, origemId: string, pedidas: string[] | null) {
+  // Moldes que vivem em tabelas próprias (setores, serviços, feedback).
+  // São idempotentes: rodar de novo não duplica.
+  let moldes: { tabela: string; copiados: number }[] = []
+  try {
+    const { data: m } = await supabaseAdmin.from('saloes').select('nome').eq('id', modeloId).maybeSingle()
+    moldes = await copiarMoldesDeTabelas(origemId, modeloId, (m as any)?.nome || 'modelo')
+  } catch { /* segue com o salao_config */ }
+
   const cfgOrigem = await configDoSalao(origemId)
   const cfgModelo = await configDoSalao(modeloId)
   const jaTem = new Set(cfgModelo.map(c => c.chave))
 
   const novas = cfgOrigem.filter(c =>
     ehChaveDoModelo(c.chave) && !jaTem.has(c.chave) && (!pedidas || pedidas.includes(c.chave)))
-  if (!novas.length) return { copiadas: 0, chaves: [] as string[] }
+  if (!novas.length) return { copiadas: 0, chaves: [] as string[], moldes }
 
   const agora = new Date().toISOString()
   const linhas = novas.map(c => ({
@@ -167,5 +176,5 @@ async function copiarParaModelo(modeloId: string, origemId: string, pedidas: str
   }))
   const { error } = await supabaseAdmin.from('salao_config').upsert(linhas, { onConflict: 'salao_id,chave' })
   if (error) return { erro: error.message }
-  return { copiadas: linhas.length, chaves: linhas.map(l => l.chave) }
+  return { copiadas: linhas.length, chaves: linhas.map(l => l.chave), moldes }
 }
