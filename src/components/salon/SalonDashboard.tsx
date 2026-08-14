@@ -6,6 +6,7 @@ import toast from 'react-hot-toast'
 import type { ModuloComStatus, Notificacao } from '@/types'
 import { chaveModulo } from '@/lib/permissoes'
 import ChatWidget from './ChatWidget'
+import AvisoModelo from './AvisoModelo'
 
 const MENU_LINKS: Record<string, { title: string; url: string }[]> = {
   'Manual do Usuário': [
@@ -707,6 +708,9 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               </div>
             </div>
           </div>
+
+          {/* Atualização do salão modelo — o modelo propõe, o salão decide */}
+          <div className="mx-5 mt-3"><AvisoModelo /></div>
 
           {/* NOTIFICATION BANNER */}
           {notificacoes.length > 0 && !notifDismissed && (() => {

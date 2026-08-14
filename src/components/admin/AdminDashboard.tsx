@@ -932,6 +932,8 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
   const navItems = [
     { id: 'dashboard', icon: <Shield size={14} />, label: 'Dashboard' },
     { id: 'saloes', icon: <Building size={14} />, label: 'Salões', badge: saloes.length },
+    // Página própria (não é aba): define o salão modelo e alimenta ele
+    { id: 'modelo', icon: <Building size={14} />, label: 'Salão modelo', rota: '/admin/modelo' },
     { id: 'licencas', icon: <CreditCard size={14} />, label: 'Licenças' },
     { id: 'planos', icon: <CreditCard size={14} />, label: 'Planos', badge: planos.length },
     { id: 'modulos', icon: <Puzzle size={14} />, label: 'Módulos' },
@@ -958,8 +960,8 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
         </div>
         <nav className="flex-1 p-2 overflow-y-auto space-y-0.5">
           <p className="text-[9px] text-nodri-t3 uppercase tracking-widest px-2.5 py-1.5 font-medium mt-1">Painel</p>
-          {navItems.slice(0, 7).map(item => (
-            <button key={item.id} onClick={() => setActiveSection(item.id)}
+          {navItems.slice(0, 8).map(item => (
+            <button key={item.id} onClick={() => { if ((item as any).rota) window.location.href = (item as any).rota; else setActiveSection(item.id) }}
               className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11.5px] border transition-all ${activeSection === item.id ? 'bg-nodri-cyan/9 text-nodri-cyan border-nodri-cyan/17' : 'text-nodri-t2 border-transparent hover:bg-white/4 hover:text-nodri-t1'}`}>
               {item.icon}<span className="flex-1 text-left">{item.label}</span>
               {item.badge !== undefined && item.badge > 0 && (
@@ -968,8 +970,8 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
             </button>
           ))}
           <p className="text-[9px] text-nodri-t3 uppercase tracking-widest px-2.5 py-1.5 font-medium mt-2">Sistema</p>
-          {navItems.slice(7).map(item => (
-            <button key={item.id} onClick={() => setActiveSection(item.id)}
+          {navItems.slice(8).map(item => (
+            <button key={item.id} onClick={() => { if ((item as any).rota) window.location.href = (item as any).rota; else setActiveSection(item.id) }}
               className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11.5px] border transition-all ${activeSection === item.id ? 'bg-nodri-cyan/9 text-nodri-cyan border-nodri-cyan/17' : 'text-nodri-t2 border-transparent hover:bg-white/4 hover:text-nodri-t1'}`}>
               {item.icon}<span className="flex-1 text-left">{item.label}</span>
             </button>
