@@ -1,0 +1,54 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# SEGREDOS — nunca versionar
+# O repositório estava SEM .gitignore. Nada de sensível chegou a ser commitado
+# (histórico verificado), mas não havia barreira: um `.env.local` na máquina do
+# desenvolvedor entrava no primeiro `git add -A`.
+# ─────────────────────────────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*credentials*
+*secret*
+service-account*.json
+
+# Dumps e backups (podem conter dados de cliente e senhas)
+*.sql.gz
+*.dump
+*.bak
+backup/
+dumps/
+
+# Dependências e build
+node_modules/
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+
+# Vercel
+.vercel
+
+# Logs (podem conter dados sensíveis)
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs/
+
+# Sistema operacional / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Temporários
+tmp/
+temp/
+.cache/
