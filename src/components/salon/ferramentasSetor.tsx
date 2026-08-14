@@ -166,7 +166,9 @@ export const FERRAMENTAS_POR_SETOR: { chave: string[]; itens: string[] }[] = [
   { chave: ['RH', 'GESTAO DE PESSOAS', 'RECURSOS HUMANOS'], itens: ['pr_lista', 'pr_cadastrar', 'pj_cnpj', 'pj_contratacao', 'pj_desligamento', 'clt_profs', 'clt_contratacao', 'pr_acesso', 'pr_categorias', 'pr_entrevista', 'pr_perfil', 'pr_distrato', 'pr_contrato', 'pr_conduta', 'pr_certificados', 'pr_carreira'] },
   { chave: ['SERVICOS GERAIS', 'LIMPEZA'], itens: ['ck_manutencao'] },
   { chave: ['MANUTENCAO'], itens: ['ck_manut_predial'] },
-  { chave: ['COORDENADOR', 'COORDENACAO'], itens: ['pr_horarios', 'ck_coordenacao', 'ck_coordenado'] },
+  // O CHECK LIST — COORDENADO saiu da sidebar: quem cobre a rotina agora é o
+  // CHECK LIST — COORDENAÇÃO (52 categorias). A categoria antiga segue no banco.
+  { chave: ['COORDENADOR', 'COORDENACAO'], itens: ['pr_horarios', 'ck_coordenacao'] },
 ]
 
 const norm = (s: string) => (s || '').toUpperCase().trim()

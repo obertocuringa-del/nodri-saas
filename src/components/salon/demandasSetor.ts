@@ -92,14 +92,9 @@ const MAPA: { chave: string[]; demandas: string[] }[] = [
     ]
   },
   {
-    chave: ['COORDENADOR', 'COORDENACAO'], demandas: [
-      'Escalas', 'Folgas', 'Domingos', 'Feriados', 'Ausências', 'Substituições',
-      'Organização das agendas', 'Fluxo operacional', 'Cumprimento dos processos',
-      'Organização da equipe', 'Acompanhamento da recepção',
-      'Acompanhamento dos profissionais', 'Acompanhamento dos Serviços Gerais',
-      'Acompanhamento da manutenção', 'Cronograma de produção',
-      'Conferência da execução das rotinas', 'Comunicação de problemas à Gerência',
-    ]
+    // Demandas soltas removidas da sidebar — todas elas viraram categorias do
+    // Check List — Coordenação. O conteúdo já salvo segue no banco.
+    chave: ['COORDENADOR', 'COORDENACAO'], demandas: []
   },
   {
     chave: ['PROFISSIONAIS'], demandas: [
