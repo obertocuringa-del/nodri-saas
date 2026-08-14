@@ -126,11 +126,9 @@ const MAPA: { chave: string[]; demandas: string[] }[] = [
     chave: ['SERVICOS GERAIS', 'LIMPEZA'], demandas: []
   },
   {
-    chave: ['MANUTENCAO'], demandas: [
-      'Manutenção preventiva', 'Manutenção corretiva', 'Equipamentos', 'Instalações',
-      'Reparos', 'Chamados técnicos', 'Acompanhamento de prestadores',
-      'Controle de manutenção', 'Prevenção de falhas', 'Conservação da estrutura física',
-    ]
+    // Demandas soltas removidas da sidebar — o setor trabalha pelo
+    // Check List — Manutenção Predial. O conteúdo já salvo segue no banco.
+    chave: ['MANUTENCAO'], demandas: []
   },
   {
     // Demandas soltas removidas da sidebar — o setor trabalha pelas ferramentas

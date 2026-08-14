@@ -87,6 +87,7 @@ export default function ChecklistPainel({ categoriaFixa = '', embutido = false, 
   const soExecuta = ehSub && modoCaixa
   const [doc, setDoc] = useState<Doc>({ categorias: [] })
   const [catSel, setCatSel] = useState(0)
+  const [buscaCat, setBuscaCat] = useState('')   // filtro das abas quando há muitas categorias
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
   const [dirty, setDirty] = useState(false)
@@ -553,6 +554,48 @@ export default function ChecklistPainel({ categoriaFixa = '', embutido = false, 
                 })}
               </select>
               {!soLeitura && <button onClick={addCategoria} title="Nova categoria" style={{ padding: '12px 14px', borderRadius: 12, border: '1px dashed #5b4fcf', background: '#f0eefb', color: '#5b4fcf', fontSize: 14, fontWeight: 800, cursor: 'pointer', flexShrink: 0, display: 'inline-flex', alignItems: 'center' }}><Plus size={16} /></button>}
+            </div>
+          ) : doc.categorias.length > 12 ? (
+            /* MUITAS categorias (ex.: Manutenção Predial, 27): em vez de dezenas
+               de pílulas quebrando em 6 linhas, um painel organizado — busca +
+               grade uniforme com barra de progresso por categoria. */
+            <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 14, marginBottom: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 12, fontWeight: 900, color: '#6b6860', letterSpacing: '.5px' }}>CATEGORIAS</span>
+                <span style={{ fontSize: 11.5, fontWeight: 800, color: '#5b4fcf', background: '#f0eefb', borderRadius: 20, padding: '3px 11px' }}>{doc.categorias.length}</span>
+                <input value={buscaCat} onChange={e => setBuscaCat(e.target.value)} placeholder="🔎 Buscar categoria..."
+                  style={{ flex: 1, minWidth: 170, maxWidth: 300, padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e0ddd8', fontSize: 13, outline: 'none' }}
+                  onFocus={e => (e.currentTarget.style.borderColor = '#5b4fcf')} onBlur={e => (e.currentTarget.style.borderColor = '#e0ddd8')} />
+                {!soLeitura && <button onClick={addCategoria} style={{ padding: '8px 14px', borderRadius: 10, border: '1px dashed #5b4fcf', background: '#f0eefb', color: '#5b4fcf', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}><Plus size={14} /> Categoria</button>}
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(215px, 1fr))', gap: 8 }}>
+                {doc.categorias.map((c, i) => ({ c, i })).filter(({ c }) => !buscaCat || norm(c.nome).includes(norm(buscaCat))).map(({ c, i }) => {
+                  const ok = c.demandas.filter(feitoNoPeriodo).length
+                  const tot = c.demandas.length
+                  const pct = tot ? Math.round(ok / tot * 100) : 0
+                  const alertas = pendPorCat[i] || 0
+                  const sel = catSel === i
+                  return (
+                    <button key={c.id} onClick={() => setCatSel(i)} title={c.nome}
+                      style={{ textAlign: 'left', padding: '10px 12px', borderRadius: 11, cursor: 'pointer', transition: 'border-color .15s, box-shadow .15s',
+                        border: sel ? '1.5px solid #1a1a1a' : alertas > 0 ? '1.5px solid #fca5a5' : '1.5px solid #eceae4',
+                        background: sel ? '#1a1a1a' : '#fff', color: sel ? '#fff' : '#3f3d38' }}
+                      onMouseEnter={e => { if (!sel) e.currentTarget.style.borderColor = '#c9c4f0' }}
+                      onMouseLeave={e => { if (!sel) e.currentTarget.style.borderColor = alertas > 0 ? '#fca5a5' : '#eceae4' }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, marginBottom: 8, minHeight: 30 }}>
+                        <span style={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 800, lineHeight: 1.25, wordBreak: 'break-word' }}>{c.nome}</span>
+                        {alertas > 0 && <span style={{ flexShrink: 0, background: '#dc2626', color: '#fff', borderRadius: 10, padding: '1px 7px', fontSize: 10, fontWeight: 900 }}>⚠ {alertas}</span>}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                        <div style={{ flex: 1, height: 5, borderRadius: 3, background: sel ? 'rgba(255,255,255,.25)' : '#f0eee8', overflow: 'hidden' }}>
+                          <div style={{ width: `${pct}%`, height: '100%', background: pct === 100 ? '#16a34a' : sel ? '#fff' : '#5b4fcf', transition: 'width .3s' }} />
+                        </div>
+                        <span style={{ fontSize: 10.5, fontWeight: 800, opacity: sel ? .9 : .55, flexShrink: 0 }}>{ok}/{tot}</span>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           ) : (
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
