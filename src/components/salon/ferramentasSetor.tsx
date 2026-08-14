@@ -36,6 +36,7 @@ import CheckProconPainel from '@/components/salon/CheckProconPainel'
 import ConteudoPopPainel from '@/components/salon/ConteudoPopPainel'
 import ChecklistPainel from '@/components/salon/ChecklistPainel'
 import ConsolidadoDescontos from '@/components/salon/ConsolidadoDescontos'
+import ConsumoProdutosDosagem from '@/components/salon/ConsumoProdutosDosagem'
 import ContasBancariasLista from '@/components/salon/ContasBancariasLista'
 import ProfissionaisPainel from '@/components/salon/ProfissionaisPainel'
 import { CAFE_BLOCOS, POP_SALAO_BLOCOS } from '@/components/salon/popDefaults'
@@ -189,7 +190,7 @@ export function ConteudoFerramenta({ id, profsSalao, abaPop = 'cafe' }: { id: st
     case 'lista_pigmentacao':   return <ListaServico key="pigmentacao" servico="pigmentacao" label="Pigmentação" profsSalao={profsSalao} />
     case 'bebidas':             return <ListaBebidas key="bebidas" profsSalao={profsSalao} />
     case 'servinterno':         return <ServicoInternoLista key="servinterno" chave="servinterno" profsSalao={profsSalao} />
-    case 'produtos':            return <GridEditavel key="produtos" chave="produtos" defaultDoc={D_PRODUTOS} mensal landscape />
+    case 'produtos':            return <ConsumoProdutosDosagem key="produtos" />
     case 'servicos_valores':    return <ListaPrecoServicos key="precos" />
     case 'tratamentos':         return <ListaPrecoServicos key="trat" chave="tratamentos_dosagem" titulo="Tratamentos — Dosagem" comLogo />
     case 'valores_pacotes':     return <ValoresPacotesLista key="valores_pacotes" />
