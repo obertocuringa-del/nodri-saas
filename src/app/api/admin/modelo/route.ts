@@ -51,6 +51,11 @@ export async function GET(req: NextRequest) {
     ignorado.sort()
   }
 
+  // Sugestão de configuração automática — evita errar na escolha manual.
+  // Modelo: o salão que se chama "modelo". Origem: o salão com mais
+  // estrutura montada (na prática, o mais maduro).
+  const sugestao = await sugerir(lista, modelo)
+
   return NextResponse.json({
     modelo: modelo ? { id: modelo.id, nome: modelo.nome } : null,
     versao,
@@ -58,9 +63,32 @@ export async function GET(req: NextRequest) {
     saloes: lista.map(s => ({ id: s.id, nome: s.nome, is_modelo: s.is_modelo, modelo_versao: s.modelo_versao, modelo_aplicado_em: s.modelo_aplicado_em })),
     faltando,
     ignorado,               // ficou de fora por ser preenchimento do salão
+    sugestao,
     regras: CHAVES_MODELO.map(c => ({ chave: c.chave + (c.prefixo ? '*' : ''), rotulo: c.rotulo })),
     nuncaCopia: NUNCA_COPIA,
   })
+}
+
+/** Quem deveria ser o modelo e de onde puxar — só palpite, quem confirma é o master. */
+async function sugerir(lista: any[], modeloAtual: any) {
+  const { data } = await supabaseAdmin.from('salao_config').select('salao_id, chave')
+  const porSalao = new Map<string, number>()
+  for (const l of (data || []) as any[]) {
+    if (ehChaveDoModelo(l.chave)) porSalao.set(l.salao_id, (porSalao.get(l.salao_id) || 0) + 1)
+  }
+  const alvo = modeloAtual || lista.find(s => /modelo/i.test(s.nome || ''))
+  // origem = o salão com mais estrutura, tirando o próprio modelo
+  const candidatos = lista
+    .filter(s => s.id !== alvo?.id)
+    .map(s => ({ id: s.id, nome: s.nome, itens: porSalao.get(s.id) || 0 }))
+    .sort((a, b) => b.itens - a.itens)
+  const origem = candidatos[0] && candidatos[0].itens > 0 ? candidatos[0] : null
+  if (!alvo || !origem) return null
+  return {
+    modelo: { id: alvo.id, nome: alvo.nome, itens: porSalao.get(alvo.id) || 0 },
+    origem,
+    jaEhModelo: !!modeloAtual,
+  }
 }
 
 // POST — ações do painel
@@ -82,6 +110,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true })
   }
 
+  // Configuração em um passo só: marca o modelo E importa a estrutura da
+  // origem, na ordem certa. É o mesmo que fazer 'definir' + 'importar', mas
+  // sem chance de inverter a ordem ou escolher errado.
+  if (acao === 'configurar') {
+    const modeloId = String(body?.modeloId || '')
+    const origemId = String(body?.origemId || '')
+    if (!modeloId || !origemId) return NextResponse.json({ error: 'Informe o modelo e a origem' }, { status: 400 })
+    if (modeloId === origemId) return NextResponse.json({ error: 'A origem não pode ser o próprio modelo' }, { status: 400 })
+
+    await supabaseAdmin.from('saloes').update({ is_modelo: false }).eq('is_modelo', true)
+    const { error: e1 } = await supabaseAdmin.from('saloes').update({ is_modelo: true }).eq('id', modeloId)
+    if (e1) return NextResponse.json({ error: e1.message }, { status: 500 })
+
+    const r = await copiarParaModelo(modeloId, origemId, null)
+    if ('erro' in r) return NextResponse.json({ error: r.erro }, { status: 500 })
+    return NextResponse.json({ ok: true, ...r })
+  }
+
   if (acao === 'importar') {
     const origemId = String(body?.origemId || '')
     if (!origemId) return NextResponse.json({ error: 'Informe o salão de origem' }, { status: 400 })
@@ -90,27 +136,36 @@ export async function POST(req: NextRequest) {
     if (!mod) return NextResponse.json({ error: 'Nenhum salão está marcado como modelo' }, { status: 400 })
     if ((mod as any).id === origemId) return NextResponse.json({ error: 'A origem não pode ser o próprio modelo' }, { status: 400 })
 
-    const cfgOrigem = await configDoSalao(origemId)
-    const cfgModelo = await configDoSalao((mod as any).id)
-    const jaTem = new Set(cfgModelo.map(c => c.chave))
     const pedidas: string[] | null = Array.isArray(body?.chaves) && body.chaves.length ? body.chaves.map(String) : null
-
-    // Só o que FALTA no modelo — nunca sobrescreve o que já foi montado lá.
-    const novas = cfgOrigem.filter(c => ehChaveDoModelo(c.chave) && !jaTem.has(c.chave) && (!pedidas || pedidas.includes(c.chave)))
-    if (!novas.length) return NextResponse.json({ ok: true, copiadas: 0, chaves: [] })
-
-    const agora = new Date().toISOString()
-    const linhas = novas.map(c => ({
-      salao_id: (mod as any).id,
-      chave: c.chave,
-      valor: sanitizar(c.chave, c.valor),   // estrutura sim, preenchimento não
-      atualizado_em: agora,
-    }))
-    const { error } = await supabaseAdmin.from('salao_config').upsert(linhas, { onConflict: 'salao_id,chave' })
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-
-    return NextResponse.json({ ok: true, copiadas: linhas.length, chaves: linhas.map(l => l.chave) })
+    const r = await copiarParaModelo((mod as any).id, origemId, pedidas)
+    if ('erro' in r) return NextResponse.json({ error: r.erro }, { status: 500 })
+    return NextResponse.json({ ok: true, ...r })
   }
 
   return NextResponse.json({ error: 'Ação inválida' }, { status: 400 })
+}
+
+/**
+ * Traz da origem para o modelo SÓ o que o modelo ainda não tem, já sanitizado.
+ * Nunca sobrescreve o que foi montado no modelo.
+ */
+async function copiarParaModelo(modeloId: string, origemId: string, pedidas: string[] | null) {
+  const cfgOrigem = await configDoSalao(origemId)
+  const cfgModelo = await configDoSalao(modeloId)
+  const jaTem = new Set(cfgModelo.map(c => c.chave))
+
+  const novas = cfgOrigem.filter(c =>
+    ehChaveDoModelo(c.chave) && !jaTem.has(c.chave) && (!pedidas || pedidas.includes(c.chave)))
+  if (!novas.length) return { copiadas: 0, chaves: [] as string[] }
+
+  const agora = new Date().toISOString()
+  const linhas = novas.map(c => ({
+    salao_id: modeloId,
+    chave: c.chave,
+    valor: sanitizar(c.chave, c.valor),   // estrutura sim, preenchimento não
+    atualizado_em: agora,
+  }))
+  const { error } = await supabaseAdmin.from('salao_config').upsert(linhas, { onConflict: 'salao_id,chave' })
+  if (error) return { erro: error.message }
+  return { copiadas: linhas.length, chaves: linhas.map(l => l.chave) }
 }

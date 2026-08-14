@@ -11,7 +11,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import toast from 'react-hot-toast'
-import { Loader2, Star, Download, ShieldCheck, ShieldAlert, RefreshCw, Check } from 'lucide-react'
+import { Loader2, Star, Download, ShieldCheck, ShieldAlert, RefreshCw, Check, Wand2 } from 'lucide-react'
 
 interface SalaoLinha { id: string; nome: string; is_modelo: boolean; modelo_versao?: string | null; modelo_aplicado_em?: string | null }
 interface Dados {
@@ -21,6 +21,7 @@ interface Dados {
   saloes: SalaoLinha[]
   faltando: { chave: string; rotulo: string }[]
   ignorado: string[]
+  sugestao: { modelo: { id: string; nome: string; itens: number }; origem: { id: string; nome: string; itens: number }; jaEhModelo: boolean } | null
   regras: { chave: string; rotulo: string }[]
   nuncaCopia: string[]
 }
@@ -70,9 +71,36 @@ export default function ModeloSalaoPainel() {
   if (!d) return null
 
   const outros = d.saloes.filter(s => !s.is_modelo)
+  const sug = d.sugestao
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+      {/* CONFIGURAÇÃO EM UM PASSO — some quando o modelo já tem estrutura */}
+      {sug && d.chavesDoModelo.length === 0 && (
+        <div style={{ background: 'linear-gradient(135deg,#5b4fcf,#7c3aed)', color: '#fff', borderRadius: 14, padding: 18, boxShadow: '0 10px 26px rgba(91,79,207,.25)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+            <Wand2 size={19} />
+            <h3 style={{ fontSize: 16.5, fontWeight: 900, margin: 0 }}>Configurar de uma vez</h3>
+          </div>
+          <p style={{ fontSize: 13.5, margin: '0 0 4px', opacity: .97 }}>
+            Vou marcar <strong>{sug.modelo.nome}</strong> como modelo e trazer a estrutura de <strong>{sug.origem.nome}</strong>
+            {' '}({sug.origem.itens} item(ns) de estrutura lá).
+          </p>
+          <p style={{ fontSize: 12.5, margin: '0 0 14px', opacity: .9 }}>
+            Só estrutura viaja: os check lists chegam <strong>sem as marcações</strong>, e valores, clientes e profissionais
+            do {sug.origem.nome} <strong>não saem de lá</strong>. Nada é apagado em nenhum dos dois.
+          </p>
+          <button
+            onClick={() => {
+              if (!confirm(`Confirmar?\n\n• ${sug.modelo.nome} vira o salão modelo\n• A estrutura de ${sug.origem.nome} é copiada para ele\n\nNenhum dado é apagado.`)) return
+              acao({ acao: 'configurar', modeloId: sug.modelo.id, origemId: sug.origem.id }, 'Pronto! Modelo configurado.')
+            }}
+            disabled={ocupado} style={{ ...btn('#fff', '#5b4fcf', 'none'), fontSize: 14, padding: '11px 22px' }}>
+            {ocupado ? <Loader2 size={15} className="animate-spin" /> : <><Wand2 size={15} /> Fazer isso agora</>}
+          </button>
+        </div>
+      )}
+
       {/* Quem é o modelo */}
       <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 18 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
