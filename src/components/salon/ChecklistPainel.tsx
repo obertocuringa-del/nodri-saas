@@ -18,6 +18,10 @@ interface Doc { categorias: Categoria[] }
 const rid = () => Math.random().toString(36).slice(2, 8)
 const norm = (s: string) => (s || '').toLowerCase().trim().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ')
 const buildDefault = (): Doc => ({ categorias: CHECKLIST_DEFAULT.map(c => ({ id: rid(), nome: c.nome, demandas: c.demandas.map(t => ({ id: rid(), texto: t, freq: 'Diário', feito: false })) })) })
+// Constrói o doc a partir de categorias-padrão passadas por prop (ex.: o check
+// list de Manutenção, que tem as próprias categorias e vive em outra chave).
+type CatPadrao = { nome: string; itens: { texto: string; freq?: string }[] }
+const buildFromCats = (cats: CatPadrao[]): Doc => ({ categorias: cats.map(c => ({ id: rid(), nome: c.nome, demandas: c.itens.map(it => ({ id: rid(), texto: it.texto, freq: it.freq || 'Diário', feito: false })) })) })
 const DIAS_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 const NOME_DIA = ['DOMINGO', 'SEGUNDA-FEIRA', 'TERÇA-FEIRA', 'QUARTA-FEIRA', 'QUINTA-FEIRA', 'SEXTA-FEIRA', 'SÁBADO']
 
@@ -72,7 +76,7 @@ function marcarAgora(dem: Demanda) {
 
 // categoriaFixa: mostra SÓ aquela categoria (usado dentro do setor).
 // embutido: sem a moldura de página (nav e fundo), para caber no setor.
-export default function ChecklistPainel({ categoriaFixa = '', embutido = false }: { categoriaFixa?: string; embutido?: boolean } = {}) {
+export default function ChecklistPainel({ categoriaFixa = '', embutido = false, chave = 'checklist', defaultCategorias, semGerencia = false }: { categoriaFixa?: string; embutido?: boolean; chave?: string; defaultCategorias?: CatPadrao[]; semGerencia?: boolean } = {}) {
   const router = useRouter()
   const { ehSub, modoCaixa } = usePermissoes()
   const isMobile = useIsMobile()
@@ -117,10 +121,11 @@ export default function ChecklistPainel({ categoriaFixa = '', embutido = false }
   // Cards por período: Diário nasce aberto (é o uso de toda hora), os demais fechados
   const [secoesAbertas, setSecoesAbertas] = useState<Record<string, boolean>>({ 'Diário': true })
 
+  const montarPadrao = () => (defaultCategorias ? buildFromCats(defaultCategorias) : buildDefault())
   const carregar = useCallback(async () => {
     try {
-      const d = await fetch('/api/salon/grid?chave=checklist').then(r => r.ok ? r.json() : null)
-      const docNovo: Doc = d && Array.isArray(d.categorias) ? d : buildDefault()
+      const d = await fetch(`/api/salon/grid?chave=${chave}`).then(r => r.ok ? r.json() : null)
+      const docNovo: Doc = d && Array.isArray(d.categorias) ? d : montarPadrao()
       // Migração suave: marcações antigas (sem data) valem como feitas no período atual
       const agoraISO = new Date().toISOString()
       docNovo.categorias.forEach(c => c.demandas.forEach(x => { if (x.feito && !x.feito_em) x.feito_em = agoraISO }))
@@ -129,14 +134,14 @@ export default function ChecklistPainel({ categoriaFixa = '', embutido = false }
       try {
         const alvo = categoriaFixa || new URLSearchParams(window.location.search).get('cat')
         if (alvo) {
-          const chave = (t: string) => t.toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim()
-          const i = docNovo.categorias.findIndex(c => chave(c.nome) === chave(alvo))
+          const chaveNome = (t: string) => t.toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim()
+          const i = docNovo.categorias.findIndex(c => chaveNome(c.nome) === chaveNome(alvo))
           if (i >= 0) setCatSel(i)
         }
       } catch { /* sem categoria alvo, segue na primeira */ }
-    } catch { setDoc(buildDefault()) }
+    } catch { setDoc(montarPadrao()) }
     setLoading(false)
-  }, [categoriaFixa])
+  }, [categoriaFixa, chave])
   useEffect(() => { carregar() }, [carregar])
 
   function mut(fn: (d: Doc) => void) { setDoc(prev => { const n: Doc = JSON.parse(JSON.stringify(prev)); fn(n); return n }); setDirty(true) }
@@ -173,7 +178,7 @@ export default function ChecklistPainel({ categoriaFixa = '', embutido = false }
     setDoc(novoDoc); setTransferOpen(null)
     setSalvando(true)
     try {
-      const res = await fetch('/api/salon/grid', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chave: 'checklist', doc: novoDoc }) })
+      const res = await fetch('/api/salon/grid', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chave, doc: novoDoc }) })
       if (res.ok) { toast.success(`Transferido para "${destino.nome}"!`); setDirty(false) } else toast.error('Erro ao transferir')
     } catch { toast.error('Erro de conexão') }
     setSalvando(false)
@@ -187,7 +192,7 @@ export default function ChecklistPainel({ categoriaFixa = '', embutido = false }
     }
     setDoc(novoDoc)
     try {
-      const res = await fetch('/api/salon/grid', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chave: 'checklist', doc: novoDoc }) })
+      const res = await fetch('/api/salon/grid', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chave, doc: novoDoc }) })
       if (res.ok) { toast.success('Feito! Pendência resolvida ✅'); setDirty(false) } else toast.error('Erro ao salvar')
     } catch { toast.error('Erro de conexão') }
   }
@@ -201,7 +206,7 @@ export default function ChecklistPainel({ categoriaFixa = '', embutido = false }
   async function salvar(silencioso = false) {
     if (!silencioso) setSalvando(true)
     try {
-      const res = await fetch('/api/salon/grid', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chave: 'checklist', doc }) })
+      const res = await fetch('/api/salon/grid', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chave, doc }) })
       if (res.ok) { if (!silencioso) toast.success('Check list salvo!'); setDirty(false) }
       else if (!silencioso) toast.error('Erro ao salvar')
     } catch { if (!silencioso) toast.error('Erro de conexão') }
@@ -236,7 +241,7 @@ export default function ChecklistPainel({ categoriaFixa = '', embutido = false }
   const temAlerta = pendHoje.length > 0
   // "Lançar desconto" e o alerta do dia são tarefa de gerência: dentro dos
   // outros setores eles só atrapalhavam quem vai marcar o próprio check list.
-  const ehGerente = !categoriaFixa || /gerente/i.test(categoriaFixa)
+  const ehGerente = !semGerencia && (!categoriaFixa || /gerente/i.test(categoriaFixa))
   // Nomes dos check lists (categorias) com pendência de hoje — para saber DE QUEM é
   const catsAlerta: [string, number][] = Object.entries(pendHoje.reduce((m, p) => { m[p.cat] = (m[p.cat] || 0) + 1; return m }, {} as Record<string, number>))
 
