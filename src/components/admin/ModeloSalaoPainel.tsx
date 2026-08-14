@@ -143,10 +143,15 @@ export default function ModeloSalaoPainel() {
               <option value="">Escolher o salão de origem…</option>
               {outros.map(s => <option key={s.id} value={s.id}>{s.nome}</option>)}
             </select>
+            {/* O botão NÃO pode depender só de `faltando`: essa lista conta as
+                chaves de salao_config, mas a importação também traz os
+                catálogos que moram em tabelas próprias (setores, serviços,
+                módulos, feedback). Com `faltando` em 0 e catálogos pendentes,
+                o botão travava e não havia como copiá-los pela tela. */}
             {origem && (
               <button onClick={() => acao({ acao: 'importar', origemId: origem }, 'Importado para o modelo!')}
-                disabled={ocupado || d.faltando.length === 0} style={btn(d.faltando.length ? '#16a34a' : '#a3b3a3', '#fff', 'none')}>
-                {ocupado ? '...' : <><Download size={14} /> Importar {d.faltando.length} item(ns)</>}
+                disabled={ocupado} style={btn('#16a34a', '#fff', 'none')}>
+                {ocupado ? '...' : <><Download size={14} /> {d.faltando.length > 0 ? `Importar ${d.faltando.length} item(ns)` : 'Importar catálogos e setores'}</>}
               </button>
             )}
           </div>
