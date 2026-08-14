@@ -77,12 +77,16 @@ export async function POST(req: NextRequest, { params }: { params: { salaoId: st
 }
 
 // Volta para a conta do admin: troca o cookie de volta, também no servidor.
-// A assinatura completa (req + params) é obrigatória: numa rota dinâmica o
-// Next valida o tipo do handler contra o contexto da rota, e um handler sem
-// argumentos quebra o build. Nenhum outro handler do projeto usa essa forma.
+// Assinatura completa (req + params) só para acompanhar o resto do projeto.
 export async function DELETE(_req: NextRequest, _ctx: { params: { salaoId: string } }) {
+  // O cookie pode não existir. Barrar aqui, antes de usar, é o que garante
+  // que `tokenAdmin` é string daqui para baixo — checar só o `admin` depois
+  // não bastava, e era esse o erro que derrubava o build.
   const tokenAdmin = cookies().get('nodri_admin_token')?.value
-  const admin = tokenAdmin ? await verifyJWT(tokenAdmin) : null
+  if (!tokenAdmin) {
+    return NextResponse.json({ error: 'Não há sessão de admin para retomar' }, { status: 401 })
+  }
+  const admin = await verifyJWT(tokenAdmin)
   if (!admin || admin.role !== 'master') {
     return NextResponse.json({ error: 'Não há sessão de admin para retomar' }, { status: 401 })
   }
