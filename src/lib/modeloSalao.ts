@@ -70,34 +70,27 @@ export const CHAVES_MODELO: ChaveModelo[] = [
 // A exceção abaixo é o que não é molde de jeito nenhum: é dado de pessoa,
 // dinheiro ou identidade. Isso não tem versão "em branco" que faça sentido,
 // e ver o conteúdo de outro salão aqui seria grave.
+// Decisão do dono do sistema: vai TUDO, menos SENHAS. Toda página chega no
+// salão novo e o dono dele decide o que usar.
+//
+// O que protege o dado de cada salão não é mais uma lista de exceções, e sim
+// o modo como o valor viaja: fora do catálogo de estrutura, o conteúdo é
+// ESVAZIADO (ver limparGrade). A página chega montada; o que estava escrito
+// nela, não. Vale para telefones, currículos, caixas, logo, mensagens.
 const NUNCA: { chave: string; prefixo?: boolean; motivo: string }[] = [
   { chave: 'senhas', prefixo: true, motivo: 'senhas do salão' },
   { chave: 'grid_senhas', prefixo: true, motivo: 'senhas do salão' },
-  { chave: 'logo_salao', prefixo: true, motivo: 'identidade visual' },
-  { chave: 'grid_logo_salao', prefixo: true, motivo: 'identidade visual' },
-  { chave: 'landing_config', motivo: 'página pública do salão' },
-  { chave: 'curriculos', prefixo: true, motivo: 'currículos de pessoas reais' },
-  { chave: 'notificacoes_prof', motivo: 'avisos para a equipe dele' },
-  { chave: 'mural_avisos', motivo: 'recados internos' },
-  { chave: 'esterilizacao_fluxo', motivo: 'movimento do dia a dia' },
-  { chave: 'boletos_pagos', motivo: 'financeiro' },
-  { chave: 'acesso_oculto_global', motivo: 'permissões da equipe dele' },
 ]
-// Trechos que denunciam dado de gente/dinheiro em qualquer chave.
-const NUNCA_CONTEM = [
-  'avaliacao_pop_', 'feedback_msg_', 'plano_carreira_prof_',
-  'comissoes_quinzenas', 'conferencia_caixas', 'licencas_contratos',
-]
+const NUNCA_CONTEM: string[] = ['senhas']
 
 /** Texto para o painel master explicar o que fica de fora. */
 export const NUNCA_COPIA = [
-  'Folhas do mês (terminam em _AAAA-MM): o movimento de cada salão',
-  'Senhas do salão',
-  'Logo e página pública (identidade visual)',
-  'Currículos, avaliações de profissionais e mensagens de clientes',
-  'Comissões, conferência de caixas, boletos e licenças/contratos',
-  'Avisos da equipe, mural e permissões',
-  'Todo o resto VIAJA — planilhas e listas chegam em branco, prontas para preencher',
+  'SENHAS — o único conteúdo que não sai do salão, em nenhuma hipótese',
+  'Folhas do mês (terminam em _AAAA-MM): cada mês nasce sozinho quando é aberto',
+  '— — —',
+  'Todo o resto VIAJA. Estrutura (check lists, POPs, organograma) e documentos',
+  'vão inteiros; planilhas e listas chegam EM BRANCO — com título, cabeçalho e',
+  'colunas, prontas para o salão preencher com os dados dele.',
 ]
 
 /** Chave mensal (folha do mês) — sempre preenchimento. */
@@ -171,12 +164,18 @@ function limparChecklist(valor: any): any {
  *   molde — esvaziar uma carta modelo ou um processo entregaria papel em
  *   branco, que é o oposto do que se quer.
  */
-const LISTAS_QUE_ESVAZIAM = ['itens', 'registros', 'cards', 'linhas', 'lista']
+const LISTAS_QUE_ESVAZIAM = ['itens', 'registros', 'cards', 'linhas', 'lista', 'anexos', 'arquivos']
+// Campos de identidade/arquivo: a página vai, o conteúdo não. Sem isso o
+// salão novo sairia imprimindo com a logo de outro salão.
+const CAMPOS_QUE_LIMPAM = ['logo', 'imagem', 'foto', 'arquivo', 'url']
 
 function limparGrade(valor: any): any {
-  if (!valor || typeof valor !== 'object' || Array.isArray(valor)) return valor
-  const out: any = { ...valor }
+  // Valor solto (string/número): não há molde a preservar — não viaja.
+  if (valor === null || valor === undefined) return valor
+  if (typeof valor !== 'object') return null
+  if (Array.isArray(valor)) return []
 
+  const out: any = { ...valor }
   if (Array.isArray(out.tabelas)) {
     out.tabelas = out.tabelas.map((t: any) => ({
       ...t,
@@ -185,6 +184,9 @@ function limparGrade(valor: any): any {
   }
   for (const campo of LISTAS_QUE_ESVAZIAM) {
     if (Array.isArray(out[campo])) out[campo] = []
+  }
+  for (const campo of CAMPOS_QUE_LIMPAM) {
+    if (typeof out[campo] === 'string' && out[campo]) out[campo] = ''
   }
   return out
 }
