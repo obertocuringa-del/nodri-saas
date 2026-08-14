@@ -7,6 +7,7 @@ import BoletosFinanceiro from '@/components/salon/BoletosFinanceiro'
 import ComportamentoProfissional from '@/components/salon/ComportamentoProfissional'
 import { ferramentasDoSetor, ConteudoFerramenta } from '@/components/salon/ferramentasSetor'
 import { listarPopsDoConteudo, type PopDeConteudo } from '@/components/salon/ConteudoPopPainel'
+import { EVENTO_MANUAIS } from '@/components/salon/ManualSetorPainel'
 import { demandasDoSetor, slugDemanda, SUBDEMANDAS } from '@/components/salon/demandasSetor'
 import DocEditavel from '@/components/salon/DocEditavel'
 import PrevisaoDespesasAno from '@/components/salon/PrevisaoDespesasAno'
@@ -167,6 +168,19 @@ export default function DepartamentoPage() {
       listarPopsDoConteudo(slug).then(lista => setPopsPorSlug(m => ({ ...m, [slug]: lista })))
     }
   }
+
+  // A lista de sub-itens fica em cache. Quando uma página de PROCEDIMENTO é
+  // criada/excluída/renomeada, o painel avisa por evento e recarregamos —
+  // senão a sidebar continuaria mostrando a lista antiga até dar F5.
+  useEffect(() => {
+    function aoMudar(e: Event) {
+      const chave = (e as CustomEvent).detail
+      const slug = `manual:${chave}`
+      listarPopsDoConteudo(slug).then(lista => setPopsPorSlug(m => ({ ...m, [slug]: lista })))
+    }
+    window.addEventListener(EVENTO_MANUAIS, aoMudar)
+    return () => window.removeEventListener(EVENTO_MANUAIS, aoMudar)
+  }, [])
   const profsParaListas = useMemo(() => profs.filter(p => !p.is_departamento).map(p => {
     let tel = p.telefone || ''
     if (!tel) { try { tel = JSON.parse(p.contato_responsavel || '{}').tel || '' } catch { /* */ } }

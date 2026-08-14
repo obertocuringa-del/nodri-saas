@@ -17,8 +17,9 @@ export interface PopDeConteudo { id: string; titulo: string }
 
 /** Busca a lista de POPs de um slug. Usada pela sidebar para montar os sub-itens. */
 export async function listarPopsDoConteudo(slug: string): Promise<PopDeConteudo[]> {
-  // `manual:<setor>` não vem da API: são as páginas de PROCEDIMENTO do setor,
-  // que moram no código. Mesmo mecanismo de sub-itens da sidebar, sem fetch.
+  // `manual:<setor>` são as páginas de PROCEDIMENTO do setor: nascem do código
+  // e passam a vir de salao_config assim que o salão edita. Mesmo mecanismo de
+  // sub-itens da sidebar, só muda a origem da lista.
   if (slug.startsWith('manual:')) return listarManuais(slug.slice(7))
   try {
     const d = await fetch(`/api/conteudo/${slug}`).then(r => r.ok ? r.json() : null)
