@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { LogOut, Bell, Plus, Building, CreditCard, Puzzle, Users, BarChart3, Settings, RefreshCw, X, Send, Edit, Lock, Unlock, Loader2, ChevronDown, Check, Link, Save, Trash2, ExternalLink, Eye, EyeOff, AlertTriangle, Search, Zap, Tag, FolderOpen, Wrench, LogIn, Bot, GraduationCap, ClipboardList, DollarSign, Home, CheckCircle, AlertCircle, Clock, ShoppingBag, Key } from 'lucide-react'
 import toast from 'react-hot-toast'
 import type { Salao, Modulo, Notificacao, Plano, Cupom } from '@/types'
+import { MODULOS_NODRI, chaveDoModulo, planoMinimoPara } from '@/lib/planosModulos'
 
 interface Props {
   saloes: Salao[]
@@ -168,11 +169,36 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
     setModulosAtivos(new Set(data.habilitados || []))
   }
 
-  function toggleModulo(moduloId: string) {
+  // ── Os 5 módulos como o cliente enxerga ──────────────────────────────────
+  // No banco a Suite NODRI são 4 linhas. O modal mostrava as 8 cruas, com o
+  // nome cortado em duas palavras: dois cartões ficavam escritos "ENVIAR
+  // LISTA" e não dava para saber qual era qual, e 'CALCULADORA / FINANCEIRA'
+  // aparecia como 'CALCULADORA /'. Agora é uma chave por módulo vendido, com
+  // o nome inteiro e o plano a que ele pertence.
+  const modulosLogicos = MODULOS_NODRI
+    .map(mn => ({ ...mn, ids: localModulos.filter(m => chaveDoModulo(m.nome) === mn.chave).map(m => m.id) }))
+    .filter(x => x.ids.length > 0)
+
+  function toggleModuloLogico(ids: string[]) {
     const newSet = new Set(modulosAtivos)
-    if (newSet.has(moduloId)) newSet.delete(moduloId)
-    else newSet.add(moduloId)
+    // Ligado só quando TODAS as linhas estão ligadas — a Suite não pode ficar
+    // pela metade, senão o salão abre o app com parte das funções faltando.
+    if (ids.every(id => newSet.has(id))) ids.forEach(id => newSet.delete(id))
+    else ids.forEach(id => newSet.add(id))
     setModulosAtivos(newSet)
+  }
+
+  // Quantos dos 5 o salão tem. A lista mostrava "—/8" fixo para todo mundo.
+  function contarModulos(salao: Salao): number {
+    const linhas: any[] = Array.isArray((salao as any).salao_modulos) ? (salao as any).salao_modulos : []
+    const chaves = new Set<string>()
+    for (const l of linhas) {
+      if (!l?.ativo) continue
+      const nome = localModulos.find(m => m.id === l.modulo_id)?.nome
+      const c = nome ? chaveDoModulo(nome) : null
+      if (c) chaves.add(c)
+    }
+    return chaves.size
   }
 
   async function saveModulos() {
@@ -184,7 +210,14 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
       body: JSON.stringify({ habilitados: Array.from(modulosAtivos) }),
     })
     setSavingMods(false)
-    if (res.ok) { toast.success('Módulos atualizados!'); setModCtrlSalao(null) }
+    if (res.ok) {
+      // Espelha na lista o que acabou de ser gravado, senão a coluna "Módulos"
+      // continua mostrando o número velho até alguém recarregar a página.
+      const linhas = Array.from(modulosAtivos).map(id => ({ modulo_id: id, ativo: true }))
+      setSaloes(prev => prev.map(s => s.id === modCtrlSalao.id ? { ...s, salao_modulos: linhas } as any : s))
+      toast.success('Módulos atualizados!')
+      setModCtrlSalao(null)
+    }
     else toast.error('Erro ao salvar módulos')
   }
 
@@ -1897,7 +1930,14 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                           <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${PLANO_CLASS[(salao as any).plano?.slug || 'basico']}`}>{(salao as any).plano?.nome || 'Básico'}</span></td>
                           <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold capitalize ${STATUS_CLASS[salao.status]}`}>{salao.status}</span></td>
                           <td className="px-4 py-3 text-[11px]">{salao.status === 'trial' ? getTrialStatus(salao.criado_em) : <span className="text-nodri-t2">{salao.licenca_vencimento ? new Date(salao.licenca_vencimento).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '—'}</span>}</td>
-                          <td className="px-4 py-3 text-nodri-t2">—/{localModulos.length}</td>
+                          <td className="px-4 py-3">
+                            {(() => {
+                              const n = contarModulos(salao)
+                              const total = MODULOS_NODRI.length
+                              const cor = n === 0 ? 'text-nodri-red' : n === total ? 'text-nodri-green' : 'text-nodri-amber'
+                              return <span className={`font-semibold ${cor}`}>{n}<span className="text-nodri-t3 font-normal">/{total}</span></span>
+                            })()}
+                          </td>
                           <td className="px-4 py-3">
                             <div className="flex gap-1.5">
                               <button onClick={() => openEditSalao(salao)} className="p-1.5 rounded-md border border-nodri-purple/40 text-nodri-purple bg-nodri-purple/7 hover:bg-nodri-purple/15 transition-all" title="Editar"><Edit size={11} /></button>
@@ -2237,24 +2277,34 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
               </div>
               <button onClick={() => setModCtrlSalao(null)} className="text-nodri-t3 hover:text-nodri-t1 transition-colors"><X size={16} /></button>
             </div>
-            <div className="grid grid-cols-7 gap-2 mb-4">
-              {localModulos.map(m => {
-                const on = modulosAtivos.has(m.id)
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
+              {modulosLogicos.map(m => {
+                const on = m.ids.every(id => modulosAtivos.has(id))
+                const plano = planoMinimoPara(m.chave)
                 return (
-                  <div key={m.id} onClick={() => toggleModulo(m.id)}
-                    className={`p-2 rounded-lg border text-center cursor-pointer transition-all ${on ? 'border-nodri-cyan bg-nodri-cyan/10' : 'border-nodri-border bg-nodri-surface hover:border-nodri-cyan/30'}`}>
-                    <div className="flex justify-center mb-1"><Settings size={14} className="text-nodri-t3" /></div>
-                    <div className="text-[8.5px] font-bold uppercase leading-tight text-nodri-t1 mb-1.5">{m.nome.split(' ').slice(0,2).join(' ')}</div>
-                    <div className={`w-6 h-3 rounded-full mx-auto relative transition-colors ${on ? 'bg-nodri-cyan' : 'bg-nodri-border'}`}>
-                      <div className={`absolute top-0.5 w-2 h-2 bg-white rounded-full transition-all ${on ? 'left-3.5' : 'left-0.5'}`} />
+                  <div key={m.chave} onClick={() => toggleModuloLogico(m.ids)}
+                    className={`p-3 rounded-lg border cursor-pointer transition-all ${on ? 'border-nodri-cyan bg-nodri-cyan/10' : 'border-nodri-border bg-nodri-surface hover:border-nodri-cyan/30'}`}>
+                    <div className="flex items-start gap-2">
+                      <Settings size={13} className="text-nodri-t3 shrink-0 mt-0.5" />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[10.5px] font-bold uppercase leading-tight text-nodri-t1">{m.rotulo}</div>
+                        {plano && <div className="text-[9px] text-nodri-t3 mt-0.5">Plano {plano.nome} · R$ {plano.preco}</div>}
+                      </div>
+                      <div className={`w-7 h-3.5 rounded-full relative shrink-0 transition-colors ${on ? 'bg-nodri-cyan' : 'bg-nodri-border'}`}>
+                        <div className={`absolute top-0.5 w-2.5 h-2.5 bg-white rounded-full transition-all ${on ? 'left-4' : 'left-0.5'}`} />
+                      </div>
                     </div>
-                    {on && <div className="flex justify-center mt-1"><Check size={8} className="text-nodri-cyan" /></div>}
+                    {/* A Suite são 4 programas numa chave só — dizer quais evita
+                        a dúvida de estar ligando "meia Suite". */}
+                    {m.ids.length > 1 && (
+                      <div className="text-[9px] text-nodri-t3 mt-1.5 leading-snug">{m.nomesNoBanco.join(' · ')}</div>
+                    )}
                   </div>
                 )
               })}
             </div>
             <div className="flex justify-between items-center border-t border-nodri-border pt-3">
-              <span className="text-[11px] text-nodri-t1 font-medium">{modulosAtivos.size} de {localModulos.length} módulos ativos</span>
+              <span className="text-[11px] text-nodri-t1 font-medium">{modulosLogicos.filter(m => m.ids.every(id => modulosAtivos.has(id))).length} de {modulosLogicos.length} módulos ativos</span>
               <div className="flex gap-2">
                 <button onClick={() => setModCtrlSalao(null)} className="px-3 py-1.5 rounded-lg border border-nodri-border text-nodri-t2 text-[11px] hover:bg-nodri-surface transition-all">Cancelar</button>
                 <button onClick={saveModulos} disabled={savingMods} className="px-3 py-1.5 rounded-lg bg-nodri-cyan text-black text-[11px] font-bold hover:brightness-110 disabled:opacity-50 transition-all flex items-center gap-1.5">

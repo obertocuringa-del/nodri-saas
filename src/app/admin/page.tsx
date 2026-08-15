@@ -15,7 +15,11 @@ export default async function AdminPage() {
   if (!payload || payload.role !== 'master') redirect('/login')
 
   const [{ data: saloes }, { data: modulos }, { data: notificacoes }, { data: planos }] = await Promise.all([
-    supabaseAdmin.from('saloes').select('*, plano:planos(*)').order('criado_em', { ascending: false }),
+    // salao_modulos entra no select para a coluna "Módulos" da lista mostrar a
+    // contagem real. Ela exibia "—/8" fixo para todo salão: com o módulo
+    // valendo acesso de verdade, essa é a coluna onde você confere quem tem o
+    // quê, e um traço não confere nada.
+    supabaseAdmin.from('saloes').select('*, plano:planos(*), salao_modulos(modulo_id, ativo)').order('criado_em', { ascending: false }),
     supabaseAdmin.from('modulos').select('*').order('ordem'),
     supabaseAdmin.from('notificacoes').select('*').order('criado_em', { ascending: false }).limit(20),
     supabaseAdmin.from('planos').select('*').eq('ativo', true),
