@@ -25,6 +25,8 @@ export async function middleware(request: NextRequest) {
     pathname === '/api/auth/recuperar-senha' ||
     pathname === '/api/auth/redefinir-senha' ||
     // APIs públicas de compra
+    // Planos da vitrine: quem lê é visitante que ainda não tem conta
+    pathname.startsWith('/api/planos-publicos') ||
     pathname.startsWith('/api/checkout') ||
     pathname.startsWith('/api/webhook') ||
     pathname.startsWith('/api/cupons/validar') ||

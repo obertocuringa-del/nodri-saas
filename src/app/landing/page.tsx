@@ -1,26 +1,31 @@
 'use client'
 import { useEffect, useState } from 'react'
 
+// ── O que a vitrine promete ─────────────────────────────────────────────────
+// O texto anterior vendia automação de WhatsApp: "automatize confirmações,
+// envio de mensagens". Isso é UM módulo do plano mais caro, não o produto. E
+// era o que o Google lia para montar a visão geral, por isso o NODRI aparecia
+// na busca como agenda online.
+//
+// Dono de salão não procura "plataforma SaaS" nem "automação". Ele procura
+// saber quanto faturou, acompanhar a equipe, organizar cliente e decidir o
+// que fazer. São essas palavras que precisam estar aqui.
 const DEFAULT_CONFIG = {
   hero_logo: 'NODRI',
-  hero_titulo: 'Sistema de Gestão para Salões de Beleza',
-  hero_subtitulo: 'Automatize confirmações, envio de mensagens, relatórios e muito mais. Tudo integrado diretamente ao seu WhatsApp.',
+  hero_titulo: 'Seu salão no controle. Suas decisões baseadas em dados.',
+  hero_subtitulo: 'O NODRI reúne gestão, operação, clientes, profissionais e resultados em uma única plataforma — e transforma os dados do seu salão em decisões melhores.',
   hero_botao: 'Ver Planos',
   hero_cor_botao: '#5b4fcf',
-  beneficios_titulo: 'Por que escolher o NODRI?',
+  beneficios_titulo: 'Gestão completa, num lugar só',
   beneficios: [
-    { emoji: '', titulo: 'Abre com 1 clique', desc: 'Clique em Abrir no site e o programa abre instantaneamente no seu computador.' },
-    { emoji: '', titulo: 'Integrado ao WhatsApp', desc: 'Envie confirmações, feedbacks e listas direto pelo WhatsApp sem copiar e colar.' },
-    { emoji: '', titulo: 'Relatórios completos', desc: 'Acompanhe faturamento, desempenho de profissionais e reservas financeiras.' },
-    { emoji: '', titulo: 'Atualizações automáticas', desc: 'Receba novas versões dos programas sem precisar reinstalar tudo.' },
+    { emoji: '', titulo: 'Financeiro sem planilha', desc: 'Custo operacional, ponto de equilíbrio, contas a pagar e precificação de serviços — com os números do seu salão, não com estimativa.' },
+    { emoji: '', titulo: 'Equipe acompanhada de perto', desc: 'Ficha completa, metas, avaliações, comissões e histórico de cada profissional. Você vê quem cresce e quem precisa de ajuda.' },
+    { emoji: '', titulo: 'Indicadores que apontam o problema', desc: 'Faturamento, ticket médio, clientes em risco e serviços que ninguém oferece. O relatório mostra onde está o dinheiro que você não viu.' },
+    { emoji: '', titulo: 'Rotina organizada sozinha', desc: 'Check lists por período, escalas, calendários, feedback de cliente e controle de pendências. O salão roda mesmo quando você não está.' },
   ],
   planos_titulo: 'Escolha seu Plano',
-  planos_subtitulo: 'Pagamento único mensal via PIX ou cartão',
-  landing_planos: [
-    { nome: 'Básico', preco: 100, cor: '#3498db', destaque: false, modulos: ['Confirmar Agendamento', 'Enviar Feedback', 'Enviar Lista c/ Foto', 'Enviar Lista s/ Foto', 'Baixar Música YouTube'] },
-    { nome: 'Profissional', preco: 200, cor: '#9b59b6', destaque: true, modulos: ['Todos do Básico', 'Bloqueio Sem Preferência', 'Ver Feedback Cliente', 'Relatório Profissional', 'Faturamento Diário', 'Calcular Reserva Financeira'] },
-    { nome: 'Premium', preco: 300, cor: '#f39c12', destaque: false, modulos: ['Todos do Profissional', 'Calculadora Depreciação', 'Avaliar Profissional', 'Aluguel de Cadeira', 'Precificar Serviços'] },
-  ],
+  planos_subtitulo: 'Mensal, sem fidelidade. Cada plano acrescenta ao anterior.',
+  landing_planos: [] as any[],
   afiliados_titulo: 'Trabalhe Conosco',
   afiliados_subtitulo: 'Indique o NODRI para outros salões e ganhe 40% de comissão em cada venda realizada com seu cupom exclusivo.',
   afiliados_comissao: 40,
@@ -32,16 +37,33 @@ const DEFAULT_CONFIG = {
     { emoji: '', texto: 'Pix direto' },
   ],
   footer_logo: 'NODRI',
-  footer_texto: 'Sistema de Gestão para Salões de Beleza',
+  footer_texto: 'Gestão Inteligente para Salões de Beleza',
   footer_email: 'contato@nodri.com.br',
   footer_whatsapp: '5561982195214',
 }
 
+interface PlanoVitrine {
+  nome: string; slug: string; preco: number; resumo: string
+  novidades: string[]; herda: string | null; destaque: boolean
+}
+
+// Cores fixas por posição — não vêm do banco. O que muda no admin é preço e
+// nome; a identidade visual da vitrine fica sob controle de quem desenha.
+const CORES = ['#3498db', '#5b4fcf', '#9b59b6', '#f39c12']
+
 export default function LandingPage() {
   const [cfg, setCfg] = useState<typeof DEFAULT_CONFIG>(DEFAULT_CONFIG)
+  const [planos, setPlanos] = useState<PlanoVitrine[]>([])
 
   useEffect(() => {
     fetch('/api/landing-config').then(r => r.json()).then(d => { if (d) setCfg({ ...DEFAULT_CONFIG, ...d }) })
+    // Preço e nome saem da tabela `planos`; os módulos, da mesma fonte que o
+    // gate usa para liberar tela. A vitrine não tem como prometer o que o
+    // plano não entrega.
+    fetch('/api/planos-publicos')
+      .then(r => r.ok ? r.json() : [])
+      .then(d => { if (Array.isArray(d)) setPlanos(d) })
+      .catch(() => { /* a seção some em vez de mostrar preço errado */ })
   }, [])
 
   return (
@@ -77,35 +99,53 @@ export default function LandingPage() {
       <section id="planos" style={{ padding: '60px 20px', maxWidth: 1100, margin: '0 auto' }}>
         <h2 style={{ textAlign: 'center', fontSize: 32, fontWeight: 700, marginBottom: 12 }}>{cfg.planos_titulo}</h2>
         <p style={{ textAlign: 'center', color: '#6b6860', marginBottom: 48 }}>{cfg.planos_subtitulo}</p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: 24 }}>
-          {(cfg.landing_planos || []).map((plano: any, i: number) => (
-            <div key={i} style={{
-              background: '#ffffff', borderRadius: 20, padding: 32,
-              border: plano.destaque ? `2px solid ${plano.cor}` : '1px solid #e8e6e0',
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))', gap: 20 }}>
+          {planos.map((plano, i) => {
+            const cor = CORES[i % CORES.length]
+            return (
+            <div key={plano.slug} style={{
+              background: '#ffffff', borderRadius: 20, padding: 28,
+              border: plano.destaque ? `2px solid ${cor}` : '1px solid #e8e6e0',
               position: 'relative', transform: plano.destaque ? 'scale(1.03)' : 'none',
             }}>
               {plano.destaque && (
-                <div style={{ position: 'absolute', top: -14, left: '50%', transform: 'translateX(-50%)', background: plano.cor, color: 'white', padding: '4px 20px', borderRadius: 20, fontSize: 13, fontWeight: 700 }}>
-                  MAIS POPULAR
+                <div style={{ position: 'absolute', top: -14, left: '50%', transform: 'translateX(-50%)', background: cor, color: 'white', padding: '4px 20px', borderRadius: 20, fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap' }}>
+                  MAIS ESCOLHIDO
                 </div>
               )}
-              <div style={{ color: plano.cor, fontSize: 22, fontWeight: 700, marginBottom: 8 }}>{plano.nome}</div>
-              <div style={{ fontSize: 48, fontWeight: 900, marginBottom: 4, color: '#1a1a1a' }}>
-                R${plano.preco}<span style={{ fontSize: 16, color: '#6b6860', fontWeight: 400 }}>/mês</span>
+              <div style={{ color: cor, fontSize: 20, fontWeight: 700, marginBottom: 6 }}>{plano.nome}</div>
+              <div style={{ fontSize: 42, fontWeight: 900, marginBottom: 6, color: '#1a1a1a' }}>
+                R${plano.preco}<span style={{ fontSize: 15, color: '#6b6860', fontWeight: 400 }}>/mês</span>
               </div>
-              <div style={{ borderTop: '1px solid #e8e6e0', marginTop: 24, paddingTop: 24 }}>
-                {(plano.modulos || []).map((m: string, j: number) => (
-                  <div key={j} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, color: '#3a3835', fontSize: 14 }}>
-                    <span style={{ color: plano.cor }}>✓</span> {m}
+              <p style={{ color: '#6b6860', fontSize: 13, lineHeight: 1.55, minHeight: 38 }}>{plano.resumo}</p>
+
+              <div style={{ borderTop: '1px solid #e8e6e0', marginTop: 20, paddingTop: 20 }}>
+                {/* "Tudo do plano anterior" em vez de repetir a lista inteira:
+                    com os quatro cards lado a lado, repetir faz todos
+                    parecerem iguais e some com a diferença de preço. */}
+                {plano.herda && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, color: '#6b6860', fontSize: 13.5, fontWeight: 600 }}>
+                    <span style={{ color: cor }}>✓</span> Tudo do {plano.herda}
+                  </div>
+                )}
+                {plano.novidades.map((m, j) => (
+                  <div key={j} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, color: '#3a3835', fontSize: 13.5 }}>
+                    <span style={{ color: cor }}>✓</span> {m}
                   </div>
                 ))}
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginTop: 14, color: '#8b8798', fontSize: 12, lineHeight: 1.5 }}>
+                  <span style={{ color: cor }}>+</span>
+                  <span>Check list, calendários, setores, feedback de cliente, lojistas, currículos e ações comerciais — em todos os planos.</span>
+                </div>
               </div>
+
               <button onClick={() => window.location.href = `/cadastro?plano=${encodeURIComponent(plano.nome)}`}
-                style={{ width: '100%', marginTop: 28, padding: '14px 0', background: plano.destaque ? plano.cor : 'transparent', border: `2px solid ${plano.cor}`, color: plano.destaque ? 'white' : plano.cor, borderRadius: 12, fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
+                style={{ width: '100%', marginTop: 24, padding: '13px 0', background: plano.destaque ? cor : 'transparent', border: `2px solid ${cor}`, color: plano.destaque ? 'white' : cor, borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
                 Assinar {plano.nome}
               </button>
             </div>
-          ))}
+            )
+          })}
         </div>
       </section>
 
