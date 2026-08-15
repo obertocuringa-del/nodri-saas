@@ -150,11 +150,6 @@ export default function AvaliacaoPage() {
     return false
   }
 
-  // Envia descartando o que estiver escrito no comentario ("nao, obrigado").
-  async function enviarSemComentario() {
-    await enviar({ [COMENTARIO_KEY]: '' })
-  }
-
   const cor = form?.cor_primaria || '#be185d'
 
   if (loading) {
@@ -200,38 +195,43 @@ export default function AvaliacaoPage() {
           }}>
             <CheckCircle size={44} color="white" />
           </div>
-          <h1 style={{ color: '#1a1a1a', fontWeight: 800, fontSize: 28, marginBottom: 12, letterSpacing: '-0.5px' }}>
-            Muito obrigado!
-          </h1>
-          <p style={{ color: '#6b7280', fontSize: 15, lineHeight: 1.7 }}>
-            Sua avaliação foi enviada com sucesso.<br />
-            Sua opinião nos ajuda a oferecer uma<br />experiência ainda melhor para você.
-          </p>
-
-          {/* Convite do Google. O link NAO abre sozinho: depois do await do
-              envio o navegador ja nao trata isso como clique do usuario e
-              bloqueia a aba nova. Botao grande funciona sempre. */}
-          {convite && !!(form?.google_link || '').trim() && (
-            <div style={{
-              marginTop: 26, padding: '22px 20px', borderRadius: 18,
-              background: `${cor}0a`, border: `2px solid ${cor}25`,
-            }}>
-              <p style={{ color: '#1a1a1a', fontSize: 14.5, lineHeight: 1.65, fontWeight: 500 }}>
+          {/* Quem passou na regra nao ve "Muito obrigado": o convite ocupa a
+              tela inteira. O agradecimento generico competia com o pedido e
+              empurrava o botao do Google para baixo, onde metade das pessoas
+              nem rolava. Quem NAO recebe convite continua vendo o
+              agradecimento normal. */}
+          {convite && !!(form?.google_link || '').trim() ? (
+            <>
+              <p style={{ color: '#1a1a1a', fontWeight: 700, fontSize: 17, lineHeight: 1.6, marginBottom: 10 }}>
                 {form?.google_mensagem
                   || 'Poderia avaliar seu atendimento no Google? Assim conseguimos crescer ainda mais e levar seu feedback, trazendo mais confiança para outros clientes.'}
               </p>
+              <p style={{ color: '#6b7280', fontSize: 14, fontWeight: 600, lineHeight: 1.6, marginBottom: 20 }}>
+                Deixe uma mensagem positiva clicando aqui em <b style={{ color: cor }}>Avaliar no Google</b>
+              </p>
               <a href={form?.google_link} target="_blank" rel="noopener noreferrer"
                 style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 9, marginTop: 16,
-                  padding: '15px 30px', borderRadius: 15, textDecoration: 'none',
+                  display: 'inline-flex', alignItems: 'center', gap: 9,
+                  padding: '16px 34px', borderRadius: 15, textDecoration: 'none',
                   background: `linear-gradient(135deg, ${cor}, ${cor}cc)`,
-                  color: 'white', fontWeight: 700, fontSize: 15,
+                  color: 'white', fontWeight: 700, fontSize: 15.5,
                   boxShadow: `0 8px 26px ${cor}40`,
                 }}>
-                <Star size={17} fill="white" /> Avaliar no Google
+                <Star size={18} fill="white" /> Avaliar no Google
               </a>
-            </div>
+            </>
+          ) : (
+            <>
+              <h1 style={{ color: '#1a1a1a', fontWeight: 800, fontSize: 28, marginBottom: 12, letterSpacing: '-0.5px' }}>
+                Muito obrigado!
+              </h1>
+              <p style={{ color: '#6b7280', fontSize: 15, lineHeight: 1.7 }}>
+                Sua avaliação foi enviada com sucesso.<br />
+                Sua opinião nos ajuda a oferecer uma<br />experiência ainda melhor para você.
+              </p>
+            </>
           )}
+
           <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 28 }}>
             {[1,2,3,4,5].map(i => (
               <span key={i} style={{ fontSize: 28 }}>⭐</span>
@@ -570,21 +570,15 @@ export default function AvaliacaoPage() {
               </button>
             </div>
           ) : (
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, flexWrap: 'wrap', paddingBottom: 40 }}>
-              {/* Duas saidas, e nenhuma delas prende o cliente: com o texto
-                  que ele escreveu, ou so com as respostas. */}
-              <button onClick={enviarSemComentario} disabled={enviando}
-                style={{
-                  padding: '16px 26px', borderRadius: 16, cursor: 'pointer',
-                  background: 'white', color: '#6b7280', fontWeight: 600, fontSize: 14.5,
-                  border: '2px solid #e5e7eb', opacity: enviando ? 0.7 : 1,
-                }}>
-                Enviar sem comentário
-              </button>
+            <div style={{ display: 'flex', justifyContent: 'center', paddingBottom: 40 }}>
+              {/* Um botao so. Eram dois - "com comentario" e "sem comentario" -
+                  e a escolha nao mudava nada para quem responde: o campo ja e
+                  opcional, entao vai o que estiver escrito. Duas saidas para o
+                  mesmo lugar so faziam a pessoa parar para decidir. */}
               <button onClick={() => enviar()} disabled={enviando} className="enviar-btn"
                 style={{
                   display: 'flex', alignItems: 'center', gap: 10,
-                  padding: '16px 32px', borderRadius: 16, border: 'none', cursor: 'pointer',
+                  padding: '16px 40px', borderRadius: 16, border: 'none', cursor: 'pointer',
                   background: `linear-gradient(135deg, ${cor}, ${cor}cc)`,
                   color: 'white', fontWeight: 700, fontSize: 15,
                   boxShadow: `0 8px 30px ${cor}40`,
@@ -598,7 +592,7 @@ export default function AvaliacaoPage() {
                   </>
                 ) : (
                   <>
-                    Enviar com comentário
+                    Enviar feedback
                     <ChevronRight size={18} />
                   </>
                 )}
