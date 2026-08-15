@@ -27,7 +27,6 @@ const TABELAS: { nome: string; situacao: 'copia' | 'nao'; motivo?: string; filtr
   { nome: 'produtos_catalogo', situacao: 'copia' },
   { nome: 'despesas_catalogo', situacao: 'copia' },
   { nome: 'salao_servicos', situacao: 'copia' },
-  { nome: 'salao_modulos', situacao: 'copia' },
   { nome: 'ia_configuracao', situacao: 'copia' },
   { nome: 'ia_metas_salao', situacao: 'copia' },
   { nome: 'recepcionista_desafios', situacao: 'copia' },
@@ -37,6 +36,7 @@ const TABELAS: { nome: string; situacao: 'copia' | 'nao'; motivo?: string; filtr
   { nome: 'feedback_prof_regras_custom', situacao: 'copia' },
 
   // ── não copiadas: motivo em cada uma ──
+  { nome: 'salao_modulos', situacao: 'nao', motivo: 'modulo ativo vem do plano contratado, nao do modelo' },
   { nome: 'usuarios', situacao: 'nao', motivo: 'login — e-mail é único, copiar quebraria o acesso' },
   { nome: 'salao_usuarios', situacao: 'nao', motivo: 'login dos sub-usuários' },
   { nome: 'saloes', situacao: 'nao', motivo: 'o registro do próprio salão' },

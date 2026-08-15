@@ -2,9 +2,13 @@
 // MOLDES QUE NÃO MORAM EM salao_config
 //
 // Parte do sistema guarda os modelos em TABELAS PRÓPRIAS: os setores, os
-// catálogos (serviços, produtos, despesas), os módulos ativos e os
-// formulários de feedback. A cópia do salão modelo lia só `salao_config`,
-// então isso ficava de fora e o salão novo começava vazio.
+// catálogos (serviços, produtos, despesas) e os formulários de feedback. A
+// cópia do salão modelo lia só `salao_config`, então isso ficava de fora e o
+// salão novo começava vazio.
+//
+// MÓDULOS ATIVOS NÃO ENTRAM. Salão novo abre só com a base e contrata o resto
+// — é o modelo comercial. Copiar `salao_modulos` do modelo entregaria o
+// pacote inteiro de graça, já que o modelo nasceu do Rouge, que é Premium.
 //
 // ── Como a cópia se comporta ────────────────────────────────────────────────
 // ACRESCENTA O QUE FALTA, item a item. Não é "semear uma vez": quando o
@@ -76,12 +80,15 @@ function faltantes(doModelo: any[], doDestino: any[]): any[] {
 // Ficam de fora, por natureza e não por escolha: logins (e-mail é único,
 // copiar quebraria o acesso), pessoas reais, movimento e histórico, respostas
 // já dadas, e a memória da IA — que é sobre a operação de um salão específico.
+// NAO entra aqui: `salao_modulos`. Modulo ativo e consequencia do PLANO
+// contratado, nao estrutura a distribuir. O modelo foi alimentado a partir do
+// Rouge, que e Premium com 8 modulos ligados - copiar isso faria todo salao
+// novo nascer com o pacote inteiro, Suite NODRI inclusive, sem cobranca.
 const TABELAS_CATALOGO = [
   'servicos_catalogo',      // catálogo de serviços
   'produtos_catalogo',      // catálogo de produtos
   'despesas_catalogo',      // catálogo de despesas
   'salao_servicos',         // serviços do cadastro público
-  'salao_modulos',          // quais módulos o salão tem
   'ia_configuracao',        // ajustes da IA
   'ia_metas_salao',         // metas do salão
   'recepcionista_desafios', // desafios da recepção
