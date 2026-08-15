@@ -24,7 +24,14 @@ export async function GET(_: NextRequest, { params }: { params: { slug: string }
     .eq('formulario_id', form.id)
     .order('ordem')
 
+  // Guarda o motivo da queda. O recuo protege o cliente, mas esconder por que
+  // ele aconteceu transforma "o convite não aparece" num mistério: a tela do
+  // salão mostra tudo configurado e o formulário age como se não houvesse
+  // nada. Sem este campo não dá para saber se falta a coluna, se falta
+  // permissão, ou se o critério realmente não foi salvo.
+  let criterioIndisponivel: string | null = null
   if (comCriterio.error) {
+    criterioIndisponivel = comCriterio.error.message || 'erro desconhecido'
     const semCriterio = await supabaseAdmin
       .from('feedback_perguntas')
       .select('id, titulo, tipo, opcoes, obrigatoria, ordem')
@@ -57,5 +64,9 @@ export async function GET(_: NextRequest, { params }: { params: { slug: string }
     perguntas: perguntas || [],
     google_link: typeof g?.link === 'string' ? g.link : '',
     google_mensagem: typeof g?.mensagem === 'string' ? g.mensagem : '',
+    // Diagnostico: por que o criterio nao veio, e se o salao chegou a gravar
+    // o convite. Nao expoe nada do cliente nem do salao alem disso.
+    criterio_indisponivel: criterioIndisponivel,
+    google_configurado: !!g,
   })
 }
