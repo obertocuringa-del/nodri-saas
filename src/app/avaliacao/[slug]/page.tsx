@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
-import { CheckCircle, ChevronRight, MessageSquare } from 'lucide-react'
+import { CheckCircle, ChevronRight, MessageSquare, Star } from 'lucide-react'
+import { avaliarLiberacao, type Criterio } from '@/lib/feedbackCriterio'
 
 type TipoPergunta = 'escala' | 'multipla_escolha' | 'texto' | 'sim_nao' | 'grid'
 
@@ -13,6 +14,7 @@ interface Pergunta {
   opcoes: string[]
   obrigatoria: boolean
   ordem: number
+  criterio?: Criterio | null
 }
 
 interface FormData {
@@ -23,6 +25,8 @@ interface FormData {
   cor_primaria: string
   salao_nome: string
   perguntas: Pergunta[]
+  google_link?: string
+  google_mensagem?: string
 }
 
 const COMENTARIO_KEY = '__comentario__'
@@ -38,6 +42,11 @@ export default function AvaliacaoPage() {
   const [enviando, setEnviando] = useState(false)
   const [enviado, setEnviado] = useState(false)
   const [erroEnvio, setErroEnvio] = useState('')
+  // 'perguntas' -> so o formulario e o botao da ultima pergunta
+  // 'comentario' -> cliente nao passou na regra e ganhou o campo de comentario
+  const [fase, setFase] = useState<'perguntas' | 'comentario'>('perguntas')
+  // Convite do Google: so aparece depois do envio, e so para quem passou.
+  const [convite, setConvite] = useState(false)
 
   useEffect(() => {
     if (!slug) return
@@ -76,33 +85,74 @@ export default function AvaliacaoPage() {
     })
   }
 
-  async function enviar() {
-    if (!form) return
+  // Confere as obrigatorias. Devolve true quando pode seguir.
+  function obrigatoriasOk(): boolean {
+    if (!form) return false
     for (const p of form.perguntas) {
       if (!p.obrigatoria) continue
       const r = respostas[p.id]
       if (r === undefined || r === null || r === '') {
         setErroEnvio(`Por favor responda: "${p.titulo}"`)
-        return
+        return false
       }
     }
     setErroEnvio('')
+    return true
+  }
+
+  // Botao "ultima pergunta importante": decide o caminho.
+  //
+  // Passou na regra -> envia na hora e convida para avaliar no Google. O
+  // cliente satisfeito nao precisa escrever nada, e cada campo a mais nesse
+  // ponto e uma chance a menos de ele chegar ao Google.
+  //
+  // Nao passou -> nada e enviado ainda; abre o comentario. Quem esta
+  // insatisfeito tem o que dizer, e esse texto vale mais para o salao do que
+  // uma estrela publica.
+  async function ultimaPergunta() {
+    if (!form) return
+    if (!obrigatoriasOk()) return
+
+    const { liberado } = avaliarLiberacao(form.perguntas, respostas)
+    const temLink = !!(form.google_link || '').trim()
+
+    // Sem link configurado nao ha para onde mandar: cai no comentario.
+    if (liberado && temLink) {
+      const ok = await enviar()
+      if (ok) setConvite(true)
+      return
+    }
+    setFase('comentario')
+  }
+
+  async function enviar(sobrescreve?: Record<string, unknown>): Promise<boolean> {
+    if (!form) return false
+    if (!obrigatoriasOk()) return false
+    // O que vai no corpo e calculado aqui, e nao lido do estado depois de um
+    // setResposta: o React so aplica o novo estado no proximo render, entao
+    // "enviar sem comentario" acabaria mandando o texto que o cliente pediu
+    // para descartar.
+    const payload = sobrescreve ? { ...respostas, ...sobrescreve } : respostas
     setEnviando(true)
     try {
       const res = await fetch(`/api/feedback/public/${form.token}/responder`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ dados: respostas }),
+        body: JSON.stringify({ dados: payload }),
       })
-      if (res.ok) setEnviado(true)
-      else {
-        const data = await res.json()
-        setErroEnvio(data.error || 'Erro ao enviar respostas.')
-      }
+      if (res.ok) { setEnviado(true); setEnviando(false); return true }
+      const data = await res.json()
+      setErroEnvio(data.error || 'Erro ao enviar respostas.')
     } catch {
       setErroEnvio('Erro de conexão. Tente novamente.')
     }
     setEnviando(false)
+    return false
+  }
+
+  // Envia descartando o que estiver escrito no comentario ("nao, obrigado").
+  async function enviarSemComentario() {
+    await enviar({ [COMENTARIO_KEY]: '' })
   }
 
   const cor = form?.cor_primaria || '#be185d'
@@ -157,6 +207,31 @@ export default function AvaliacaoPage() {
             Sua avaliação foi enviada com sucesso.<br />
             Sua opinião nos ajuda a oferecer uma<br />experiência ainda melhor para você.
           </p>
+
+          {/* Convite do Google. O link NAO abre sozinho: depois do await do
+              envio o navegador ja nao trata isso como clique do usuario e
+              bloqueia a aba nova. Botao grande funciona sempre. */}
+          {convite && !!(form?.google_link || '').trim() && (
+            <div style={{
+              marginTop: 26, padding: '22px 20px', borderRadius: 18,
+              background: `${cor}0a`, border: `2px solid ${cor}25`,
+            }}>
+              <p style={{ color: '#1a1a1a', fontSize: 14.5, lineHeight: 1.65, fontWeight: 500 }}>
+                {form?.google_mensagem
+                  || 'Poderia avaliar seu atendimento no Google? Assim conseguimos crescer ainda mais e levar seu feedback, trazendo mais confiança para outros clientes.'}
+              </p>
+              <a href={form?.google_link} target="_blank" rel="noopener noreferrer"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 9, marginTop: 16,
+                  padding: '15px 30px', borderRadius: 15, textDecoration: 'none',
+                  background: `linear-gradient(135deg, ${cor}, ${cor}cc)`,
+                  color: 'white', fontWeight: 700, fontSize: 15,
+                  boxShadow: `0 8px 26px ${cor}40`,
+                }}>
+                <Star size={17} fill="white" /> Avaliar no Google
+              </a>
+            </div>
+          )}
           <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 28 }}>
             {[1,2,3,4,5].map(i => (
               <span key={i} style={{ fontSize: 28 }}>⭐</span>
@@ -417,6 +492,10 @@ export default function AvaliacaoPage() {
             </div>
           ))}
 
+          {/* O comentario deixou de ser um campo sempre aberto. Ele e a saida
+              de quem NAO passou na regra: em vez de convidar para o Google,
+              o salao pergunta o que houve. Quem passou nem chega aqui. */}
+          {fase === 'comentario' && (
           <div className="card-pergunta" style={{
             background: 'white',
             borderRadius: 20,
@@ -424,7 +503,6 @@ export default function AvaliacaoPage() {
             marginBottom: 16,
             boxShadow: '0 2px 20px rgba(0,0,0,0.06)',
             border: `2px solid ${cor}20`,
-            animationDelay: `${form.perguntas.length * 0.07}s`,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
               <div style={{
@@ -436,7 +514,7 @@ export default function AvaliacaoPage() {
                 <MessageSquare size={18} color={cor} />
               </div>
               <p style={{ fontSize: 15, fontWeight: 600, color: '#1a1a1a' }}>
-                Deixe um comentário <span style={{ fontWeight: 400, color: '#6b7280', fontSize: 13 }}>(opcional)</span>
+                Quer deixar um comentário sobre seu atendimento? <span style={{ fontWeight: 400, color: '#6b7280', fontSize: 13 }}>(opcional)</span>
               </p>
             </div>
             <textarea
@@ -454,6 +532,7 @@ export default function AvaliacaoPage() {
               onBlur={e => e.target.style.borderColor = `${cor}20`}
             />
           </div>
+          )}
 
           {erroEnvio && (
             <div style={{
@@ -465,30 +544,67 @@ export default function AvaliacaoPage() {
             </div>
           )}
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', paddingBottom: 40 }}>
-            <button onClick={enviar} disabled={enviando} className="enviar-btn"
-              style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                padding: '16px 36px', borderRadius: 16, border: 'none', cursor: 'pointer',
-                background: `linear-gradient(135deg, ${cor}, ${cor}cc)`,
-                color: 'white', fontWeight: 700, fontSize: 15,
-                boxShadow: `0 8px 30px ${cor}40`,
-                opacity: enviando ? 0.7 : 1,
-                '--cor-shadow': `${cor}60`,
-              } as React.CSSProperties}>
-              {enviando ? (
-                <>
-                  <div style={{ width: 18, height: 18, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.4)', borderTop: '2px solid white', animation: 'spin 0.7s linear infinite' }} />
-                  Enviando...
-                </>
-              ) : (
-                <>
-                  Enviar avaliação
-                  <ChevronRight size={18} />
-                </>
-              )}
-            </button>
-          </div>
+          {fase === 'perguntas' ? (
+            <div style={{ display: 'flex', justifyContent: 'center', paddingBottom: 40 }}>
+              <button onClick={ultimaPergunta} disabled={enviando} className="enviar-btn"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10, textAlign: 'center',
+                  padding: '18px 34px', borderRadius: 16, border: 'none', cursor: 'pointer',
+                  background: `linear-gradient(135deg, ${cor}, ${cor}cc)`,
+                  color: 'white', fontWeight: 800, fontSize: 15, letterSpacing: '0.3px',
+                  boxShadow: `0 8px 30px ${cor}40`,
+                  opacity: enviando ? 0.7 : 1,
+                  '--cor-shadow': `${cor}60`,
+                } as React.CSSProperties}>
+                {enviando ? (
+                  <>
+                    <div style={{ width: 18, height: 18, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.4)', borderTop: '2px solid white', animation: 'spin 0.7s linear infinite' }} />
+                    Enviando...
+                  </>
+                ) : (
+                  <>
+                    CLIQUE AQUI PARA UMA ÚLTIMA PERGUNTA IMPORTANTE
+                    <ChevronRight size={18} />
+                  </>
+                )}
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, flexWrap: 'wrap', paddingBottom: 40 }}>
+              {/* Duas saidas, e nenhuma delas prende o cliente: com o texto
+                  que ele escreveu, ou so com as respostas. */}
+              <button onClick={enviarSemComentario} disabled={enviando}
+                style={{
+                  padding: '16px 26px', borderRadius: 16, cursor: 'pointer',
+                  background: 'white', color: '#6b7280', fontWeight: 600, fontSize: 14.5,
+                  border: '2px solid #e5e7eb', opacity: enviando ? 0.7 : 1,
+                }}>
+                Enviar sem comentário
+              </button>
+              <button onClick={() => enviar()} disabled={enviando} className="enviar-btn"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '16px 32px', borderRadius: 16, border: 'none', cursor: 'pointer',
+                  background: `linear-gradient(135deg, ${cor}, ${cor}cc)`,
+                  color: 'white', fontWeight: 700, fontSize: 15,
+                  boxShadow: `0 8px 30px ${cor}40`,
+                  opacity: enviando ? 0.7 : 1,
+                  '--cor-shadow': `${cor}60`,
+                } as React.CSSProperties}>
+                {enviando ? (
+                  <>
+                    <div style={{ width: 18, height: 18, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.4)', borderTop: '2px solid white', animation: 'spin 0.7s linear infinite' }} />
+                    Enviando...
+                  </>
+                ) : (
+                  <>
+                    Enviar com comentário
+                    <ChevronRight size={18} />
+                  </>
+                )}
+              </button>
+            </div>
+          )}
 
           <div style={{ textAlign: 'center', paddingBottom: 32 }}>
             <p style={{ fontSize: 12, color: '#6b6860' }}>

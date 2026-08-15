@@ -34,6 +34,9 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   if (body.opcoes !== undefined) updates.opcoes = body.opcoes
   if (body.obrigatoria !== undefined) updates.obrigatoria = body.obrigatoria
   if (body.ordem !== undefined) updates.ordem = body.ordem
+  // Critério de liberação do convite do Google. null é valor legítimo: é
+  // assim que o salão tira a pergunta da regra sem apagar a pergunta.
+  if (body.criterio !== undefined) updates.criterio = body.criterio
 
   const { data, error } = await supabaseAdmin
     .from('feedback_perguntas')

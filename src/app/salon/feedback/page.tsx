@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, Trash2, Edit2, Link2, BarChart2, Check, X, ChevronDown, ChevronUp, ArrowLeft, Eye, EyeOff, GripVertical, Copy, Menu, Star, ClipboardList, FileText, Settings, Link, Pencil } from 'lucide-react'
 import toast from 'react-hot-toast'
+import ConviteGoogle from '@/components/salon/ConviteGoogle'
+import type { Criterio } from '@/lib/feedbackCriterio'
 
 type TipoPergunta = 'escala' | 'multipla_escolha' | 'texto' | 'sim_nao' | 'grid'
 
@@ -14,6 +16,7 @@ interface Pergunta {
   opcoes: string[]
   obrigatoria: boolean
   ordem: number
+  criterio?: Criterio | null
 }
 
 interface Formulario {
@@ -570,6 +573,10 @@ export default function FeedbackPage() {
                       </div>
                     )}
                   </div>
+
+                  {perguntas.length > 0 && (
+                    <ConviteGoogle perguntas={perguntas} onMudou={() => selected && selectForm(selected)} />
+                  )}
                 </div>
               )}
 
