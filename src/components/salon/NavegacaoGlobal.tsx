@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import { Home, ArrowLeft, Search, Loader2, FileText, User, Layers, AlertTriangle, Save } from 'lucide-react'
 import { useIsMobile } from '@/lib/useIsMobile'
 import { haNaoSalvo, nomesNaoSalvos } from '@/lib/guardaSalvar'
+import TituloDaAba from './TituloDaAba'
 
 // ── Navegação global (todas as páginas do painel do salão) ──
 // Canto inferior esquerdo: Voltar (histórico) · Início · Busca ultra inteligente.
@@ -260,6 +261,11 @@ export default function NavegacaoGlobal() {
 
   return (
     <>
+      {/* Nome do salão na aba do navegador. Mora aqui porque este componente
+          envolve TODAS as páginas de /salon — em qualquer outro lugar valeria
+          só para a tela onde fosse montado. */}
+      <TituloDaAba />
+
       {/* PC: conjunto flutuante na mesma linha da barra do topo de cada página
           (canto direito) — o CSS global reserva o espaço nos <nav>. */}
       {!naHome && !isMobile && (

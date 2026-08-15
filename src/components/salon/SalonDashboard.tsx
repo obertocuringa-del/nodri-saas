@@ -8,6 +8,7 @@ import { chaveModulo } from '@/lib/permissoes'
 import { chaveDoModulo, planoMinimoPara } from '@/lib/planosModulos'
 import ChatWidget from './ChatWidget'
 import AvisoModelo from './AvisoModelo'
+import TituloDaAba from './TituloDaAba'
 import VitrineModulos from './VitrineModulos'
 
 const MENU_LINKS: Record<string, { title: string; url: string }[]> = {
@@ -495,6 +496,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
 
   return (
     <div className="nodri-salon-bg nodri-sem-whats h-screen flex flex-col overflow-hidden">
+      <TituloDaAba nome={salaoNome} />
 
       {/* ANÚNCIO — compromissos dos DOIS calendários chegando (faltam até 2 dias) */}
       {totalCompromissos > 0 && lembreteCalAberto && (
