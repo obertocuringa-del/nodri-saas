@@ -169,6 +169,23 @@ async function copiarServicos(modeloId: string, destinoId: string): Promise<Resu
  * O token/slug NÃO é copiado: o banco gera um novo e o slug é remontado com
  * o nome do salão de destino — o link público é sempre dele.
  */
+/**
+ * O título do formulário é a primeira coisa que o CLIENTE lê no link público.
+ * O modelo nasceu do Rouge e guardou "Avaliação - Rouge Hair": sem esta troca,
+ * todo salão novo abria um formulário público apresentando o salão de outra
+ * pessoa aos clientes dele.
+ *
+ * O slug já era remontado com o nome do destino; só o título ficava para trás.
+ * Troca o que vem depois do traço; título sem traço passa intacto, porque aí
+ * não há nome de salão embutido para corrigir.
+ */
+function tituloDoDestino(titulo: string, nomeDestino: string): string {
+  const t = (titulo || '').trim()
+  const m = t.match(/^(.*?)\s+-\s+.+$/)
+  if (!m || !nomeDestino) return t
+  return `${m[1]} - ${nomeDestino}`
+}
+
 async function copiarFeedbackCliente(modeloId: string, destinoId: string, nomeDestino: string): Promise<ResultadoCopia[]> {
   const [{ data: mod }, { data: dest }] = await Promise.all([
     supabaseAdmin.from('feedback_formularios').select('id, titulo, descricao').eq('salao_id', modeloId),
@@ -181,7 +198,7 @@ async function copiarFeedbackCliente(modeloId: string, destinoId: string, nomeDe
   for (const f of novos) {
     const { data: novo } = await supabaseAdmin
       .from('feedback_formularios')
-      .insert({ salao_id: destinoId, titulo: f.titulo, descricao: f.descricao })
+      .insert({ salao_id: destinoId, titulo: tituloDoDestino(f.titulo, nomeDestino), descricao: f.descricao })
       .select().single()
     if (!novo) continue
 
