@@ -12,10 +12,20 @@ export default async function SalonPage() {
   if (!token) redirect('/login')
 
   const payload = await verifyJWT(token)
-  if (!payload || (payload.role !== 'salon' && payload.role !== 'sub')) redirect('/login')
+  // ATENCAO: quando existe token, o destino e /logout e NUNCA /login.
+  //
+  // O middleware manda quem tem token de /login de volta para /salon. Se esta
+  // pagina responde com /login, os dois ficam se empurrando: /salon -> /login
+  // -> /salon, ate o navegador desistir com ERR_TOO_MANY_REDIRECTS. E o que
+  // acontecia com token valido apontando para um salao que nao existe mais:
+  // a pessoa ficava trancada do lado de fora, sem conseguir nem abrir a tela
+  // de login para entrar com outra conta.
+  //
+  // /logout apaga o cookie e so entao vai para /login, quebrando o laco.
+  if (!payload || (payload.role !== 'salon' && payload.role !== 'sub')) redirect('/logout')
 
   // FIX: salaoId explicitamente validado antes de usar
-  if (!payload.salaoId) redirect('/login')
+  if (!payload.salaoId) redirect('/logout')
 
   // Sub-usuário: lê permissões AO VIVO do banco (assim mudanças aplicam só recarregando)
   let permsSub: string[] | null = null
@@ -26,7 +36,7 @@ export default async function SalonPage() {
       .select('permissoes, nome, ativo')
       .eq('id', payload.userId)
       .maybeSingle()
-    if (!su || su.ativo === false) redirect('/login')
+    if (!su || su.ativo === false) redirect('/logout')
     permsSub = Array.isArray(su.permissoes) ? su.permissoes : []
     nomeSub = su.nome || 'Usuário'
   }
@@ -38,8 +48,8 @@ export default async function SalonPage() {
     .eq('id', payload.salaoId)
     .maybeSingle()
 
-  // FIX: se salão não existe no DB, redireciona
-  if (!salaoStatus) redirect('/login')
+  // FIX: se salão não existe no DB, encerra a sessão (ver nota acima)
+  if (!salaoStatus) redirect('/logout')
 
   if (salaoStatus.status === 'vencido' || salaoStatus.status === 'bloqueado') {
     redirect('/renovar-licenca')

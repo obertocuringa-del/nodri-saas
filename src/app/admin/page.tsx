@@ -12,7 +12,9 @@ export default async function AdminPage() {
   if (!token) redirect('/login')
 
   const payload = await verifyJWT(token)
-  if (!payload || payload.role !== 'master') redirect('/login')
+  // Com token na mão o destino é /logout, não /login: o middleware devolve
+  // quem tem token para o painel, e /login aqui viraria laço (ver salon/page).
+  if (!payload || payload.role !== 'master') redirect('/logout')
 
   const [{ data: saloes }, { data: modulos }, { data: notificacoes }, { data: planos }] = await Promise.all([
     // salao_modulos entra no select para a coluna "Módulos" da lista mostrar a
