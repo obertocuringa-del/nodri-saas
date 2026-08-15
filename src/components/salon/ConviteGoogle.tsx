@@ -32,6 +32,10 @@ export default function ConviteGoogle({ perguntas, onMudou }: { perguntas: Pergu
   // Copia do que esta gravado, para saber o que ainda nao foi salvo.
   const [linkSalvo, setLinkSalvo] = useState('')
   const [msgSalva, setMsgSalva] = useState('')
+  // Resultado da ultima gravacao, escrito na tela. Toast some em 4 segundos e
+  // quem esta configurando costuma estar olhando outra parte da pagina; sem
+  // isto, "salvou" e "falhou" tem exatamente a mesma aparencia.
+  const [ultimo, setUltimo] = useState<{ ok: boolean; texto: string } | null>(null)
 
   useEffect(() => {
     fetch('/api/feedback/google')
@@ -90,12 +94,15 @@ export default function ConviteGoogle({ perguntas, onMudou }: { perguntas: Pergu
     }
 
     setSalvando(false)
+    const hora = new Date().toLocaleTimeString('pt-BR')
     if (falhas.length === 0) {
       setLinkSalvo(link); setMsgSalva(mensagem)
+      setUltimo({ ok: true, texto: `Gravado no banco às ${hora}.` })
       toast.success('Regra do convite salva')
       onMudou?.()
       return
     }
+    setUltimo({ ok: false, texto: `Falhou às ${hora} — ${falhas[0]}` })
     // Erro visivel e especifico. Silencio aqui e o que fez a configuracao
     // parecer salva sem estar.
     toast.error(`Nao salvou: ${falhas[0]}`, { duration: 6000 })
@@ -103,6 +110,41 @@ export default function ConviteGoogle({ perguntas, onMudou }: { perguntas: Pergu
 
   function mudar(id: string, c: Criterio | null) {
     setLocal(prev => ({ ...prev, [id]: c }))
+  }
+
+  // Preenche a regra inteira de uma vez, deduzindo pelo tipo e pelo texto das
+  // opcoes. Marcar cinco perguntas na mao, uma a uma, e onde a configuracao
+  // vinha se perdendo. O salao confere na tela e pode mexer no que quiser.
+  function sugerir() {
+    const m: Record<string, Criterio | null> = { ...local }
+    const norm = (t: string) => t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    for (const p of perguntas) {
+      if (p.tipo === 'escala') { m[p.id] = { modo: 'escala_min', min: 9 }; continue }
+      if (p.tipo === 'grid') { m[p.id] = { modo: 'grid_min', min: 4 }; continue }
+      if (p.tipo === 'sim_nao') {
+        const itens = p.opcoes.filter(o => {
+          const n = norm(o)
+          return n.includes('atenderam') || n.includes('agendamento')
+        })
+        m[p.id] = itens.length ? { modo: 'sim_obrigatorio', itens } : null
+        continue
+      }
+      if (p.tipo === 'multipla_escolha') {
+        // So entram as perguntas cujas opcoes falam de satisfacao. "Foi sua
+        // primeira visita?" e "Como conheceu o salao?" nao dizem nada sobre
+        // o cliente ter saido satisfeito - ficam de fora.
+        const aceitas = p.opcoes.filter(o => {
+          const n = norm(o)
+          return n.includes('com certeza voltarei')
+            || n.includes('rapidamente')
+            || n.includes('aceitavel')
+        })
+        m[p.id] = aceitas.length ? { modo: 'opcoes_ok', aceitas } : null
+        continue
+      }
+    }
+    setLocal(m)
+    setUltimo(null)
   }
 
   // Texto não tem como indicar satisfação por conta própria — fica de fora.
@@ -155,9 +197,15 @@ export default function ConviteGoogle({ perguntas, onMudou }: { perguntas: Pergu
       </div>
 
       {/* ── Quem merece o convite ────────────────────────────────────────── */}
-      <div className="flex items-baseline justify-between mb-2">
+      <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
         <span className="text-[11px] font-bold text-nodri-t1">Quem recebe o convite</span>
-        <span className="text-[10px] text-nodri-t3">{comCriterio} de {elegiveis.length} perguntas na regra</span>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] text-nodri-t3">{comCriterio} de {elegiveis.length} perguntas na regra</span>
+          <button onClick={sugerir}
+            className="px-2.5 py-1 rounded-md border border-nodri-cyan/40 text-nodri-cyan text-[10px] font-bold hover:bg-nodri-cyan/10">
+            Preencher a regra recomendada
+          </button>
+        </div>
       </div>
 
       {comCriterio === 0 && (
@@ -249,11 +297,18 @@ export default function ConviteGoogle({ perguntas, onMudou }: { perguntas: Pergu
           gravada ela avisa - a tela nunca mais deve parecer configurada
           estando vazia no banco. */}
       <div className="flex items-center justify-between gap-3 mt-4 pt-3 border-t border-nodri-border flex-wrap">
-        <span className="text-[10.5px] text-nodri-t3">
-          {pendente
-            ? 'Você tem alterações que ainda não foram salvas.'
-            : 'Tudo salvo.'}
-        </span>
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[10.5px] text-nodri-t3">
+            {pendente
+              ? 'Você tem alterações que ainda não foram salvas.'
+              : 'Tudo salvo.'}
+          </span>
+          {ultimo && (
+            <span className={`text-[10.5px] font-semibold ${ultimo.ok ? 'text-nodri-green' : 'text-nodri-red'}`}>
+              {ultimo.ok ? '✓ ' : '✕ '}{ultimo.texto}
+            </span>
+          )}
+        </div>
         <button onClick={salvarTudo} disabled={salvando || !pendente}
           className="px-5 py-2.5 rounded-lg bg-nodri-cyan text-white text-[11.5px] font-bold flex items-center gap-2 disabled:opacity-40">
           {salvando
