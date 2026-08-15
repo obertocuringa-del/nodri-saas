@@ -7,6 +7,7 @@ import {
   modoPadraoDoTipo, resumoCriterio,
   type Criterio, type TipoPergunta,
 } from '@/lib/feedbackCriterio'
+import { useAutoSalvar } from '@/lib/autoSalvar'
 
 interface Pergunta {
   id: string
@@ -113,6 +114,12 @@ export default function ConviteGoogle({ perguntas, onMudou }: { perguntas: Pergu
     p => JSON.stringify(local[p.id] ?? null) !== JSON.stringify(p.criterio ?? null),
   )
   const pendente = criterioMudou || link !== linkSalvo || mensagem !== msgSalva
+
+  // Auto-save, como no resto do sistema (Calculadora, Check List). O painel
+  // nasceu dependendo de o usuario lembrar de clicar em salvar, e na primeira
+  // configuracao real a tela ficou inteira preenchida com o banco vazio. O
+  // botao continua ali para quem quiser confirmar na hora; isto e a rede.
+  useAutoSalvar(pendente, salvarTudo)
 
   return (
     <div className="nodri-card p-4 mt-4">
