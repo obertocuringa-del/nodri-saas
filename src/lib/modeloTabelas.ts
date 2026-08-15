@@ -192,7 +192,11 @@ async function copiarFeedbackCliente(modeloId: string, destinoId: string, nomeDe
 
     const { data: perguntas } = await supabaseAdmin
       .from('feedback_perguntas')
-      .select('titulo, tipo, opcoes, obrigatoria, ordem')
+      // `criterio` entra junto: é a regra de quem recebe o convite do Google,
+      // e regra é molde, não dado do salão de origem. Sem ele o salão novo
+      // recebia as perguntas e teria de remontar a regra na mão. O link do
+      // Google, esse sim, fica de fora (ver NUNCA em modeloSalao).
+      .select('titulo, tipo, opcoes, obrigatoria, ordem, criterio')
       .eq('formulario_id', f.id).order('ordem')
     const ps = (perguntas || []) as any[]
     if (!ps.length) continue

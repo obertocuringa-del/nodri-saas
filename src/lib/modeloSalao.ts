@@ -80,6 +80,11 @@ export const CHAVES_MODELO: ChaveModelo[] = [
 const NUNCA: { chave: string; prefixo?: boolean; motivo: string }[] = [
   { chave: 'senhas', prefixo: true, motivo: 'senhas do salão' },
   { chave: 'grid_senhas', prefixo: true, motivo: 'senhas do salão' },
+  // O link do Google é a identidade do salão, como a logo. Sem esta linha ele
+  // viajaria INTEIRO: `limparGrade` só zera campos chamados logo/imagem/foto/
+  // arquivo/url, e a chave se chama `link`. Um salão novo sairia mandando os
+  // clientes dele avaliarem o negócio de outra pessoa no Google.
+  { chave: 'feedback_google', motivo: 'link do Google é de cada salão' },
 ]
 const NUNCA_CONTEM: string[] = ['senhas']
 
