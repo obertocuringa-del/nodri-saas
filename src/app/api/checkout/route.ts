@@ -10,10 +10,24 @@ const supabase = createClient(
 const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN!
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.nodri.com.br'
 
-const PLANOS: Record<string, { nome: string; preco: number }> = {
-  'Básico':       { nome: 'NODRI Básico',      preco: 100 },
-  'Profissional': { nome: 'NODRI Profissional', preco: 200 },
-  'Premium':      { nome: 'NODRI Premium',      preco: 300 },
+// ── O preço da cobrança sai do BANCO ────────────────────────────────────────
+//
+// Aqui havia uma tabela fixa com os três planos antigos. Depois da troca para
+// Inicial/Essencial/Gestão/Completo nenhum nome batia, e toda tentativa de
+// compra morria em "Plano inválido" — ninguém conseguia assinar.
+//
+// O que NÃO mudou, e é o que importa: o valor cobrado continua sendo decidido
+// aqui, no servidor. O navegador manda o nome do plano, nunca o preço.
+async function buscarPlano(nome: string): Promise<{ nome: string; preco: number } | null> {
+  const alvo = (nome || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim()
+  if (!alvo) return null
+
+  const { data } = await supabase.from('planos').select('nome, slug, preco').eq('ativo', true)
+  const norm = (t: string) => (t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim()
+  const row = (data || []).find((p: any) => norm(p.nome) === alvo || norm(p.slug) === alvo)
+  if (!row || typeof row.preco !== 'number') return null
+
+  return { nome: `NODRI ${row.nome}`, preco: row.preco }
 }
 
 export async function POST(req: NextRequest) {
@@ -24,7 +38,7 @@ export async function POST(req: NextRequest) {
     cupom,
   } = body
 
-  const planoInfo = PLANOS[plano]
+  const planoInfo = await buscarPlano(plano)
   if (!planoInfo) return NextResponse.json({ erro: 'Plano inválido' }, { status: 400 })
 
   // FIX: calcula precoFinal SERVER-SIDE validando o cupom no banco (não confia no cliente)

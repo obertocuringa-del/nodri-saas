@@ -1,14 +1,23 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { CheckCircle, X, CreditCard, ClipboardList } from 'lucide-react'
 
-const PLANOS_INFO: Record<string, { preco: number; cor: string }> = {
-  'Básico':       { preco: 100, cor: '#3498db' },
-  'Profissional': { preco: 200, cor: '#9b59b6' },
-  'Premium':      { preco: 300, cor: '#f39c12' },
-}
+// ── ATENÇÃO: o preço NÃO mora mais aqui ─────────────────────────────────────
+//
+// Existia uma tabela fixa com os três planos antigos (Básico 100,
+// Profissional 200, Premium 300) e um fallback para o Básico. Quando os
+// planos viraram Inicial/Essencial/Gestão/Completo, nenhum nome batia mais —
+// e TODOS caíam no fallback. A tela de pagamento mostrava R$ 100 para o plano
+// Gestão, e cobraria R$ 100 de quem escolhesse o Completo, de R$ 300.
+//
+// Agora vem de /api/planos-publicos, a mesma fonte da vitrine. Enquanto
+// carrega, e se o plano não for encontrado, o pagamento fica BLOQUEADO: um
+// preço errado aqui é dinheiro cobrado a menos, sem ninguém perceber.
+const CORES_PLANO = ['#3498db', '#5b4fcf', '#9b59b6', '#f39c12']
+
+interface PlanoInfo { nome: string; preco: number; cor: string }
 
 const inp: React.CSSProperties = {
   width: '100%', background: '#ffffff', border: '1px solid #e8e6e0',
@@ -20,8 +29,21 @@ const lbl: React.CSSProperties = { fontSize: 12, color: '#6b6860', marginBottom:
 function CadastroInner() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const planoNome = searchParams.get('plano') || 'Básico'
-  const planoInfo = PLANOS_INFO[planoNome] || PLANOS_INFO['Básico']
+  const planoNome = searchParams.get('plano') || ''
+  const [planoInfo, setPlanoInfo] = useState<PlanoInfo | null>(null)
+  const [planoErro, setPlanoErro] = useState('')
+
+  useEffect(() => {
+    fetch('/api/planos-publicos')
+      .then(r => r.ok ? r.json() : [])
+      .then((lista: any[]) => {
+        const norm = (t: string) => (t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim()
+        const i = (Array.isArray(lista) ? lista : []).findIndex((p: any) => norm(p.nome) === norm(planoNome))
+        if (i < 0) { setPlanoErro('Plano não encontrado. Volte e escolha um plano na página inicial.'); return }
+        setPlanoInfo({ nome: lista[i].nome, preco: lista[i].preco, cor: CORES_PLANO[i % CORES_PLANO.length] })
+      })
+      .catch(() => setPlanoErro('Não foi possível carregar o plano. Tente novamente em instantes.'))
+  }, [planoNome])
 
   const [form, setForm] = useState({
     nome_salao: '', responsavel: '', cidade: '',
@@ -36,7 +58,7 @@ function CadastroInner() {
   const [etapa, setEtapa] = useState<'form' | 'pagamento' | 'pix'>('form')
 
   const desconto = cupomStatus?.valido ? cupomStatus.percentual : 0
-  const precoFinal = Math.round(planoInfo.preco * (1 - desconto / 100))
+  const precoFinal = planoInfo ? Math.round(planoInfo.preco * (1 - desconto / 100)) : 0
 
   async function validarCupom() {
     if (!form.cupom.trim()) return
@@ -54,6 +76,9 @@ function CadastroInner() {
   const formValido = () => form.nome_salao && form.responsavel && form.cidade && form.email && form.telefone && form.dia_vencimento
 
   async function pagar(metodoPag: 'cartao' | 'pix') {
+    // Trava dupla: o botão já fica desabilitado sem plano, mas cobrar valor
+    // errado é o tipo de erro que ninguém percebe até fechar o mês.
+    if (!planoInfo) { setPlanoErro('Plano não carregado. Recarregue a página antes de pagar.'); return }
     setLoading(true)
     setMetodo(metodoPag)
     try {
@@ -61,7 +86,7 @@ function CadastroInner() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          plano: planoNome,
+          plano: planoInfo.nome,
           metodo: metodoPag,
           nome_salao: form.nome_salao,
           responsavel: form.responsavel,
@@ -119,18 +144,34 @@ function CadastroInner() {
           </div>
         </div>
 
+        {/* Sem plano carregado não há preço confiável — e cobrar um valor
+            errado é pior do que fazer a pessoa esperar dois segundos. */}
+        {planoErro && (
+          <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 14, padding: '16px 20px', marginBottom: 22, color: '#dc2626', fontSize: 14 }}>
+            ⚠️ {planoErro}{' '}
+            <a href="/landing#planos" style={{ color: '#dc2626', fontWeight: 700 }}>Ver planos</a>
+          </div>
+        )}
+        {!planoInfo && !planoErro && (
+          <div style={{ background: '#ffffff', border: '1px solid #e8e6e0', borderRadius: 14, padding: '18px 20px', marginBottom: 22, color: '#6b6860', fontSize: 14 }}>
+            Carregando o plano…
+          </div>
+        )}
+
         {/* Resumo do plano */}
+        {planoInfo && (
         <div style={{ background: '#ffffff', border: `1px solid ${planoInfo.cor}50`, borderRadius: 14, padding: '14px 20px', marginBottom: 22, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <div style={{ fontSize: 11, color: '#666', marginBottom: 2 }}>Plano selecionado</div>
-            <div style={{ fontSize: 17, fontWeight: 700, color: planoInfo.cor }}>{planoNome}</div>
+            <div style={{ fontSize: 17, fontWeight: 700, color: planoInfo.cor }}>{planoInfo.nome}</div>
           </div>
           <div style={{ textAlign: 'right' }}>
-            {desconto > 0 && <div style={{ fontSize: 11, color: '#666', textDecoration: 'line-through' }}>R${planoInfo.preco}/mês</div>}
+            {desconto > 0 && planoInfo && <div style={{ fontSize: 11, color: '#666', textDecoration: 'line-through' }}>R${planoInfo.preco}/mês</div>}
             <div style={{ fontSize: 22, fontWeight: 900 }}>R${precoFinal}<span style={{ fontSize: 12, color: '#888', fontWeight: 400 }}>/mês</span></div>
             {desconto > 0 && <div style={{ fontSize: 11, color: '#15803d', fontWeight: 700 }}>-{desconto}% de desconto</div>}
           </div>
         </div>
+        )}
 
         {/*  ETAPA 1: FORMULÁRIO  */}
         {etapa === 'form' && (
@@ -212,7 +253,7 @@ function CadastroInner() {
             <div style={{ display: 'grid', gap: 12 }}>
 
               {/* Cartão */}
-              {cardBtn(() => pagar('cartao'), loading && metodo === 'cartao', (
+              {cardBtn(() => pagar('cartao'), !planoInfo || (loading && metodo === 'cartao'), (
                 <>
                   <CreditCard size={30} color="#aaa" />
                   <div style={{ flex: 1 }}>
@@ -224,7 +265,7 @@ function CadastroInner() {
               ))}
 
               {/* PIX */}
-              {cardBtn(() => pagar('pix'), loading && metodo === 'pix', (
+              {cardBtn(() => pagar('pix'), !planoInfo || (loading && metodo === 'pix'), (
                 <>
                   <div style={{ width: 38, height: 38, background: '#00b894', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: 'white', fontWeight: 700, fontSize: 14 }}>PIX</div>
                   <div style={{ flex: 1 }}>
@@ -248,7 +289,7 @@ function CadastroInner() {
         {etapa === 'pix' && pixData && (
           <div style={{ background: '#ffffff', border: '1px solid #e0ddd8', borderRadius: 16, padding: 28, textAlign: 'center' }}>
             <div style={{ fontSize: 13, color: '#6b6860', marginBottom: 20 }}>
-              Pague <strong style={{ color: '#1a1a1a' }}>R${precoFinal}</strong> para ativar o Plano <strong style={{ color: planoInfo.cor }}>{planoNome}</strong>
+              Pague <strong style={{ color: '#1a1a1a' }}>R${precoFinal}</strong> para ativar o Plano <strong style={{ color: planoInfo?.cor || '#5b4fcf' }}>{planoInfo?.nome || planoNome}</strong>
             </div>
 
             {/* QR Code */}
