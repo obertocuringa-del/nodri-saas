@@ -26,14 +26,20 @@ interface Pergunta {
 export default function ConviteGoogle({ perguntas, onMudou }: { perguntas: Pergunta[]; onMudou?: () => void }) {
   const [link, setLink] = useState('')
   const [mensagem, setMensagem] = useState('')
-  const [salvandoCfg, setSalvandoCfg] = useState(false)
-  const [salvandoId, setSalvandoId] = useState<string | null>(null)
+  const [salvando, setSalvando] = useState(false)
   const [local, setLocal] = useState<Record<string, Criterio | null>>({})
+  // Copia do que esta gravado, para saber o que ainda nao foi salvo.
+  const [linkSalvo, setLinkSalvo] = useState('')
+  const [msgSalva, setMsgSalva] = useState('')
 
   useEffect(() => {
     fetch('/api/feedback/google')
       .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d) { setLink(d.link || ''); setMensagem(d.mensagem || '') } })
+      .then(d => {
+        if (!d) return
+        setLink(d.link || ''); setLinkSalvo(d.link || '')
+        setMensagem(d.mensagem || ''); setMsgSalva(d.mensagem || '')
+      })
       .catch(() => { /* a tela abre com os campos vazios */ })
   }, [])
 
@@ -43,34 +49,55 @@ export default function ConviteGoogle({ perguntas, onMudou }: { perguntas: Pergu
     setLocal(m)
   }, [perguntas])
 
-  async function salvarConfig() {
-    setSalvandoCfg(true)
-    const r = await fetch('/api/feedback/google', {
+  // UM botao salva tudo: o link, a mensagem e os criterios de todas as
+  // perguntas. Antes era um botao por card - seis cliques para o que o salao
+  // enxerga como uma configuracao unica. Deu no que tinha que dar: a tela
+  // ficava toda preenchida e o banco continuava vazio, sem nenhum erro na
+  // frente para avisar.
+  async function salvarTudo() {
+    setSalvando(true)
+    const falhas: string[] = []
+
+    const rCfg = await fetch('/api/feedback/google', {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ link, mensagem }),
     })
-    setSalvandoCfg(false)
-    if (r.ok) toast.success(link ? 'Convite do Google salvo' : 'Convite desligado (link vazio)')
-    else { const e = await r.json().catch(() => ({})); toast.error(e.error || 'Não foi possível salvar') }
-  }
+    if (!rCfg.ok) {
+      const e = await rCfg.json().catch(() => ({} as any))
+      falhas.push(e?.error || 'link do Google')
+    }
 
-  async function salvarCriterio(p: Pergunta, criterio: Criterio | null) {
-    setSalvandoId(p.id)
-    const r = await fetch(`/api/feedback/perguntas/${p.id}`, {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ criterio }),
-    })
-    setSalvandoId(null)
-    if (r.ok) { toast.success('Critério salvo'); onMudou?.(); return }
-    // Falha típica: o ALTER TABLE que cria a coluna `criterio` ainda não
-    // rodou. Dizer isso é melhor do que um "erro ao salvar" que faz o salão
-    // achar que perdeu a configuração.
-    const e = await r.json().catch(() => ({} as any))
-    toast.error(
-      String(e?.error || '').toLowerCase().includes('criterio')
-        ? 'O banco ainda não tem a coluna do critério. Rode sql/feedback_google.sql.'
-        : (e?.error || 'Não foi possível salvar o critério'),
-    )
+    for (const p of perguntas) {
+      // So manda o que mudou em relacao ao que veio do banco.
+      const atual = local[p.id] ?? null
+      const original = p.criterio ?? null
+      if (JSON.stringify(atual) === JSON.stringify(original)) continue
+
+      const r = await fetch(`/api/feedback/perguntas/${p.id}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ criterio: atual }),
+      })
+      if (!r.ok) {
+        const e = await r.json().catch(() => ({} as any))
+        const msg = String(e?.error || '')
+        falhas.push(
+          msg.toLowerCase().includes('criterio')
+            ? 'a coluna `criterio` ainda nao existe no banco (rode sql/feedback_google.sql)'
+            : `${p.titulo}${msg ? ': ' + msg : ''}`,
+        )
+      }
+    }
+
+    setSalvando(false)
+    if (falhas.length === 0) {
+      setLinkSalvo(link); setMsgSalva(mensagem)
+      toast.success('Regra do convite salva')
+      onMudou?.()
+      return
+    }
+    // Erro visivel e especifico. Silencio aqui e o que fez a configuracao
+    // parecer salva sem estar.
+    toast.error(`Nao salvou: ${falhas[0]}`, { duration: 6000 })
   }
 
   function mudar(id: string, c: Criterio | null) {
@@ -80,6 +107,12 @@ export default function ConviteGoogle({ perguntas, onMudou }: { perguntas: Pergu
   // Texto não tem como indicar satisfação por conta própria — fica de fora.
   const elegiveis = perguntas.filter(p => p.tipo !== 'texto')
   const comCriterio = elegiveis.filter(p => !!local[p.id]).length
+
+  // Ha algo diferente do que veio do banco?
+  const criterioMudou = perguntas.some(
+    p => JSON.stringify(local[p.id] ?? null) !== JSON.stringify(p.criterio ?? null),
+  )
+  const pendente = criterioMudou || link !== linkSalvo || mensagem !== msgSalva
 
   return (
     <div className="nodri-card p-4 mt-4">
@@ -112,10 +145,6 @@ export default function ConviteGoogle({ perguntas, onMudou }: { perguntas: Pergu
         <textarea value={mensagem} onChange={e => setMensagem(e.target.value)} rows={3}
           className="w-full px-3 py-2 rounded-lg bg-nodri-surface border border-nodri-border text-[12px] text-nodri-t1 resize-none" />
 
-        <button onClick={salvarConfig} disabled={salvandoCfg}
-          className="mt-3 px-4 py-2 rounded-lg bg-nodri-cyan text-white text-[11px] font-bold flex items-center gap-1.5 disabled:opacity-50">
-          {salvandoCfg ? <><Loader2 size={12} className="animate-spin" /> Salvando…</> : <><Save size={12} /> Salvar link e mensagem</>}
-        </button>
       </div>
 
       {/* ── Quem merece o convite ────────────────────────────────────────── */}
@@ -202,15 +231,28 @@ export default function ConviteGoogle({ perguntas, onMudou }: { perguntas: Pergu
                     </div>
                   )}
 
-                  <button onClick={() => salvarCriterio(p, c)} disabled={salvandoId === p.id}
-                    className="mt-2 px-3 py-1.5 rounded-md border border-nodri-border text-[10.5px] text-nodri-t2 hover:bg-nodri-surface disabled:opacity-50 flex items-center gap-1.5">
-                    {salvandoId === p.id ? <><Loader2 size={10} className="animate-spin" /> Salvando…</> : <><Save size={10} /> Salvar esta pergunta</>}
-                  </button>
                 </div>
               </div>
             </div>
           )
         })}
+      </div>
+
+      {/* Barra de salvar, colada no fim do painel. Enquanto houver mudanca nao
+          gravada ela avisa - a tela nunca mais deve parecer configurada
+          estando vazia no banco. */}
+      <div className="flex items-center justify-between gap-3 mt-4 pt-3 border-t border-nodri-border flex-wrap">
+        <span className="text-[10.5px] text-nodri-t3">
+          {pendente
+            ? 'Você tem alterações que ainda não foram salvas.'
+            : 'Tudo salvo.'}
+        </span>
+        <button onClick={salvarTudo} disabled={salvando || !pendente}
+          className="px-5 py-2.5 rounded-lg bg-nodri-cyan text-white text-[11.5px] font-bold flex items-center gap-2 disabled:opacity-40">
+          {salvando
+            ? <><Loader2 size={13} className="animate-spin" /> Salvando…</>
+            : <><Save size={13} /> Salvar regra do convite</>}
+        </button>
       </div>
     </div>
   )
