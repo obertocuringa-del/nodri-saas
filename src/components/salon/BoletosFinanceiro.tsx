@@ -3,6 +3,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Loader2, Check, RotateCcw, FileText, ExternalLink, Copy, Eye, EyeOff } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { formatarLinha, ehPix } from '@/lib/boleto'
+import { useModulos } from '@/lib/useModulos'
+import AvisoPlano from './AvisoPlano'
 
 // ── Fila de boletos / contas a pagar ────────────────────────────────────────
 // Só LÊ o que já foi lançado nas Despesas Indiretas da Calculadora (qualquer mês)
@@ -43,6 +45,8 @@ export default function BoletosFinanceiro({ cor = '#16a34a' }: { cor?: string })
   const [podeBaixa, setPodeBaixa] = useState(false)
   const [loading, setLoading] = useState(true)
   const [semAcesso, setSemAcesso] = useState(false)
+  const { tem, carregado: carregouModulos } = useModulos()
+  const temCalculadora = tem('calculadora')
   // Começa FECHADO: a tela abre enxuta e você escolhe o que quer ver.
   // aba null = tudo recolhido (clicar de novo no card fecha)
   const [aba, setAba] = useState<Aba | null>(null)
@@ -201,6 +205,16 @@ export default function BoletosFinanceiro({ cor = '#16a34a' }: { cor?: string })
 
   // Sem permissão da Calculadora (ex.: sub-usuário) → o bloco simplesmente não existe
   if (semAcesso) return null
+
+  // Módulo não contratado é outra história: a fila de boletos NASCE das
+  // despesas indiretas da Calculadora. Sem o módulo não há de onde puxar, e
+  // o setor Financeiro abriria com "nenhum boleto" — que parece contas em
+  // dia, quando na verdade é uma tela sem fonte. O aviso troca essa leitura.
+  if (carregouModulos && !temCalculadora) return (
+    <div style={{ marginBottom: 18 }}>
+      <AvisoPlano compacto modulo="calculadora" oQue="A fila de contas e boletos" />
+    </div>
+  )
 
   if (loading) return (
     <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: 20, marginBottom: 18, display: 'flex', alignItems: 'center', gap: 8, color: '#9ca3af', fontSize: 13 }}>

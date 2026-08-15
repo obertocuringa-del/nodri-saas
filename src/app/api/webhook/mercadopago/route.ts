@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { enviarEmailBoasVindas, enviarEmailPagamento, sendEmailComissao } from '@/lib/email'
+import { nomesDeBancoDoPlano } from '@/lib/planosModulos'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -9,25 +10,16 @@ const supabase = createClient(
 
 const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN!
 
-const MODULOS_PLANO: Record<string, string[]> = {
-  'Básico': [
-    'Confirmar Agendamento', 'Enviar Feedback', 'Enviar Lista c/ Arquivo',
-    'Enviar Lista', 'Baixar Música YouTube',
-  ],
-  'Profissional': [
-    'Confirmar Agendamento', 'Enviar Feedback', 'Enviar Lista c/ Arquivo',
-    'Enviar Lista', 'Baixar Música YouTube', 'Bloqueio Sem Preferência',
-    'Ver Feedback Cliente', 'Relatório Profissional', 'Faturamento Diário',
-    'Calcular Reserva Financeira',
-  ],
-  'Premium': [
-    'Confirmar Agendamento', 'Enviar Feedback', 'Enviar Lista c/ Arquivo',
-    'Enviar Lista', 'Baixar Música YouTube', 'Bloqueio Sem Preferência',
-    'Ver Feedback Cliente', 'Relatório Profissional', 'Faturamento Diário',
-    'Calcular Reserva Financeira', 'Calculadora Depreciação',
-    'Avaliar Profissional', 'Aluguel de Cadeira', 'Precificar Serviços',
-  ],
-}
+// A lista de módulos por plano saiu daqui e virou `nomesDeBancoDoPlano`, em
+// src/lib/planosModulos.ts.
+//
+// A tabela que estava aqui apontava para módulos que não existem mais no
+// banco ('Baixar Música YouTube', 'Precificar Serviços'…). O `.in('nome', …)`
+// simplesmente não achava esses nomes — e das listas dos três planos, os
+// únicos nomes que ainda batiam eram os quatro da Suite NODRI. Resultado:
+// quem pagasse o plano mais barato recebia a Suite, que é o item do plano
+// mais caro, e mais nada. Ninguém percebeu porque o módulo nunca chegou a
+// bloquear tela nenhuma; com o gate ligado, isso viraria prejuízo na hora.
 
 export async function POST(req: NextRequest) {
   let body: any
@@ -104,7 +96,7 @@ export async function POST(req: NextRequest) {
     }).eq('id', salao.id)
 
     // Habilita módulos do plano no salão
-    const modulosPlano = MODULOS_PLANO[plano] || MODULOS_PLANO['Básico']
+    const modulosPlano = nomesDeBancoDoPlano(plano)
     const { data: modulos } = await supabase
       .from('modulos')
       .select('id, nome')

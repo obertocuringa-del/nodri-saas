@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyJWT } from '@/lib/auth'
+import { chaveDoModulo, moduloExigidoPelaRota } from '@/lib/planosModulos'
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -200,6 +201,52 @@ export async function middleware(request: NextRequest) {
         if (r.ok) { const rows = await r.json(); if (rows?.[0]) perms = Array.isArray(rows[0].permissoes) ? rows[0].permissoes : [] }
       } catch { /* mantém as do token */ }
       if (!perms.includes(hit[1])) return NextResponse.redirect(new URL('/salon', request.url))
+    }
+  }
+
+  // ── Módulo contratado ──────────────────────────────────────────────────
+  // Até aqui o módulo era só um cadeado desenhado no card: nada no servidor
+  // olhava `salao_modulos`, então digitar o link direto abria a tela igual.
+  // Quem paga o plano Inicial não tem Relatórios — e agora não entra mesmo.
+  //
+  // Só as rotas dos 4 módulos web passam por esta checagem, e a consulta ao
+  // banco só acontece nelas — as telas da base (check list, calendários,
+  // setores…) não pagam nenhuma ida ao banco por causa disso.
+  const moduloExigido = moduloExigidoPelaRota(pathname)
+  if (moduloExigido && (payload.role === 'salon' || payload.role === 'sub')) {
+    let liberado = false
+    try {
+      const base = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const key = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+      const url = `${base}/rest/v1/salao_modulos?salao_id=eq.${payload.salaoId}&ativo=is.true&select=modulos(nome)`
+      const r = await fetch(url, { headers: { apikey: key, Authorization: `Bearer ${key}` }, cache: 'no-store' })
+      if (r.ok) {
+        const rows = await r.json()
+        for (const linha of Array.isArray(rows) ? rows : []) {
+          const nome = Array.isArray(linha.modulos) ? linha.modulos[0]?.nome : linha.modulos?.nome
+          if (chaveDoModulo(nome || '') === moduloExigido) { liberado = true; break }
+        }
+      } else {
+        // Banco fora do ar não pode virar bloqueio: um salão que paga ficaria
+        // sem o que contratou por causa de uma falha nossa. Na dúvida, passa.
+        liberado = true
+      }
+    } catch {
+      liberado = true
+    }
+
+    if (!liberado) {
+      if (pathname.startsWith('/api/')) {
+        return NextResponse.json(
+          { error: 'Módulo não contratado', modulo: moduloExigido },
+          { status: 403 },
+        )
+      }
+      // Página: volta para o painel com o módulo em destaque, para o dono ver
+      // o que falta e como contratar — em vez de um erro seco.
+      const destino = new URL('/salon', request.url)
+      destino.searchParams.set('contratar', moduloExigido)
+      return NextResponse.redirect(destino)
     }
   }
 

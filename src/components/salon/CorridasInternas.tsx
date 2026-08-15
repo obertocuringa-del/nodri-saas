@@ -8,6 +8,8 @@ import {
   METRICAS_CORRIDA, metricaInfo, statusCorrida, STATUS_CORRIDA,
   periodoLabel, formataValor, MEDALHAS, ridC,
 } from '@/lib/corridasInternas'
+import { useModulos } from '@/lib/useModulos'
+import AvisoPlano from './AvisoPlano'
 
 const CSS = `
 .ci-wrap { display:flex; flex-direction:column; gap:16px }
@@ -32,6 +34,8 @@ export default function CorridasInternas() {
   const [loading, setLoading] = useState(true)
   const [edit, setEdit] = useState<CorridaInterna | null>(null)
   const [saving, setSaving] = useState(false)
+  const { tem, carregado: carregouModulos } = useModulos()
+  const temRelatorios = tem('relatorios')
 
   async function carregar() {
     setLoading(true)
@@ -98,6 +102,14 @@ export default function CorridasInternas() {
   return (
     <div className="ci-wrap">
       <style>{CSS}</style>
+
+      {/* A corrida é da versão base, mas o ranking sai de `relatorio_periodos`
+          — a tabela que a importação dos Relatórios preenche. Sem o módulo,
+          o salão criaria a competição e veria todo mundo zerado, sem saber se
+          o problema é o sistema ou se ninguém pontuou. */}
+      {carregouModulos && !temRelatorios && (
+        <AvisoPlano compacto modulo="relatorios" oQue="O ranking automático da corrida" />
+      )}
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
         <div style={{ flex: 1, minWidth: 200 }}>

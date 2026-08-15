@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Sparkles, Loader2, Printer, RefreshCw } from 'lucide-react'
+import { useModulos } from '@/lib/useModulos'
+import AvisoPlano from '@/components/salon/AvisoPlano'
 
 const PROMPT_RESUMO = `Aja como a Diretora Executiva do salão. Faça uma CONSULTORIA DO MÊS ATUAL usando os dados reais do sistema, em 3 blocos curtos e objetivos (sem inventar números):
 
@@ -20,6 +22,7 @@ export default function ConsultoriaIAPage() {
   const [loading, setLoading] = useState(false)
   const [erro, setErro] = useState('')
   const [modo, setModo] = useState<'resumo' | 'mkt'>('resumo')
+  const { tem, carregado: carregouModulos } = useModulos()
 
   async function gerar(qual: 'resumo' | 'mkt') {
     setModo(qual); setTexto(''); setErro(''); setLoading(true)
@@ -68,6 +71,16 @@ export default function ConsultoriaIAPage() {
           <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 4 }}>🤖 Sua consultora do salão</div>
           <div style={{ fontSize: 13, opacity: .92 }}>A NODRI IA lê os dados do seu salão e te entrega um diagnóstico com plano de ação. É gerado na hora, sob demanda.</div>
         </div>
+
+        {/* O bloco 'Resumo do mês' pede faturamento e ticket médio, que saem
+            da importação dos Relatórios. Avisar ANTES evita o pior caso: o
+            salão gasta uma geração de IA para receber de volta 'não tenho
+            esses dados'. As ideias de marketing seguem funcionando. */}
+        {carregouModulos && !tem('relatorios') && (
+          <div style={{ marginBottom: 14 }}>
+            <AvisoPlano compacto modulo="relatorios" oQue="O resumo do mês (faturamento, ticket médio e comparações)" />
+          </div>
+        )}
 
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 16 }}>
           <button onClick={() => gerar('resumo')} disabled={loading} style={btn('#5b4fcf', loading)}>{loading && modo === 'resumo' ? <><Loader2 size={16} className="animate-spin" /> Analisando…</> : <><Sparkles size={16} /> Resumo do mês + plano de ação</>}</button>

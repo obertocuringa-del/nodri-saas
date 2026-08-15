@@ -10,6 +10,8 @@ import {
   CATEGORIAS_ACOES, STATUS_INFO, statusCampanha, capaDaCampanha, textoCampanha, textoCampanhas, rid,
   type Campanha, type ArquivoCampanha,
 } from '@/lib/acoesComerciais'
+import { useModulos } from '@/lib/useModulos'
+import AvisoPlano from './AvisoPlano'
 
 const ROXO = '#5b4fcf'
 const ROSA = '#db2777'
@@ -62,6 +64,7 @@ export default function AcoesComerciais({ soLeitura = false }: { soLeitura?: boo
   const [aberta, setAberta] = useState<Campanha | null>(null)
   const [editando, setEditando] = useState<Campanha | null>(null)
   const [vendidos, setVendidos] = useState<Record<string, number>>({})
+  const { tem, carregado: carregouModulos } = useModulos()
   const [verShares, setVerShares] = useState<Campanha | null>(null)   // placar de quem compartilhou
   const [arqModal, setArqModal] = useState<Campanha | null>(null)     // selecionar arquivos direto do card
   const [modoSel, setModoSel] = useState(false)                       // multi-seleção p/ enviar juntas
@@ -150,6 +153,14 @@ export default function AcoesComerciais({ soLeitura = false }: { soLeitura?: boo
   return (
     <div className="ac-root">
       <style>{ACOES_CSS}</style>
+
+      {/* O contador de serviços vendidos por campanha sai do relatório
+          importado. Sem o módulo, todo card mostra 0 — e 0 se lê como
+          'a campanha não vendeu nada', que é o oposto do que está
+          acontecendo: ninguém mediu. */}
+      {carregouModulos && !tem('relatorios') && (
+        <AvisoPlano compacto modulo="relatorios" oQue="A contagem de serviços vendidos por campanha" />
+      )}
 
       {/* Cabeçalho */}
       <div className="ac-head">

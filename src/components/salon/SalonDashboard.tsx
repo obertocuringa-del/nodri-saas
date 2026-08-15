@@ -5,8 +5,10 @@ import { Bell, Settings, CheckCircle, X, Zap, Play, Search, ChevronDown, ArrowRi
 import toast from 'react-hot-toast'
 import type { ModuloComStatus, Notificacao } from '@/types'
 import { chaveModulo } from '@/lib/permissoes'
+import { chaveDoModulo, planoMinimoPara } from '@/lib/planosModulos'
 import ChatWidget from './ChatWidget'
 import AvisoModelo from './AvisoModelo'
+import VitrineModulos from './VitrineModulos'
 
 const MENU_LINKS: Record<string, { title: string; url: string }[]> = {
   'Manual do Usuário': [
@@ -360,6 +362,14 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
     return lista
   })()
 
+  // Módulos contratados, em chave — alimenta a vitrine. Sai da lista que a
+  // página já carregou do banco; não custa uma segunda ida ao servidor.
+  const chavesAtivas = Array.from(new Set(
+    modulos.filter(m => m.habilitado)
+      .map(m => chaveDoModulo(m.nome))
+      .filter((c): c is NonNullable<typeof c> => !!c),
+  ))
+
   // Contadores exibidos consideram a Suite NODRI como 1 módulo só
   const totalModulosExibidos = modulosBase.length
   const totalAtivosExibidos = modulosBase.filter(m => m.habilitado).length
@@ -451,13 +461,20 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
       setAvisoWhats(true)
       return
     }
+    // A checagem vem ANTES de resolver a URL. Estava depois, e por isso os 4
+    // módulos web (Academia, Calculadora, Profissionais e Relatórios) abriam
+    // com o card bloqueado: o `return` do webUrl passava por cima do cadeado.
+    if (!modulo.habilitado) {
+      const chave = chaveDoModulo(modulo.nome)
+      const plano = chave ? planoMinimoPara(chave) : null
+      toast(plano
+        ? `Disponível a partir do plano ${plano.nome} (R$ ${plano.preco}/mês). Fale com a NODRI para ativar.`
+        : 'Entre em contato para ativar este módulo.')
+      return
+    }
     const webUrl = getModuloWebUrl(modulo.nome)
     if (webUrl) {
       window.location.href = webUrl
-      return
-    }
-    if (!modulo.habilitado) {
-      toast('Entre em contato para ativar este módulo.')
       return
     }
     const slug = MODULO_SLUG[modulo.nome] || modulo.nome.toLowerCase().replace(/ /g, '-')
@@ -942,10 +959,18 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
           })}
         </div>
           {modulosFiltrados.length === 0 && (
-            <div className="text-center py-16" style={{ color: '#6b6860' }}>
-              <div className="flex justify-center mb-3"><Search size={32} className="text-nodri-t3" /></div>
-              <p className="text-sm">Nenhum módulo encontrado</p>
-            </div>
+            // Busca sem resultado é uma coisa; salão sem módulo contratado é
+            // outra. O texto único ("Nenhum módulo encontrado") atendia mal os
+            // dois: para quem não contratou nada, dizia que o sistema estava
+            // vazio quando o que faltava era o plano.
+            busca.trim() ? (
+              <div className="text-center py-16" style={{ color: '#6b6860' }}>
+                <div className="flex justify-center mb-3"><Search size={32} className="text-nodri-t3" /></div>
+                <p className="text-sm">Nenhum módulo encontrado para “{busca.trim()}”</p>
+              </div>
+            ) : (
+              <VitrineModulos ativos={chavesAtivas} />
+            )
           )}
           </div>
 
