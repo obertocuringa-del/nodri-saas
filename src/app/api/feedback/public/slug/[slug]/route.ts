@@ -1,6 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 
+// SEM ISTO O FORMULARIO SERVE UMA FOTO CONGELADA.
+//
+// Esta rota nao le cookie nem nada da requisicao, entao o Next.js a trata
+// como estatica e guarda a primeira resposta para sempre. O efeito foi
+// exatamente o que parecia um bug de gravacao: o salao configurava a regra do
+// convite, o banco gravava certo, a tela do salao mostrava tudo salvo - e o
+// formulario publico continuava respondendo com a versao de antes, sem
+// criterio nenhum e sem link do Google.
+//
+// A rota do salao (/api/feedback/formularios/[id]) nunca teve o problema
+// porque le a sessao pelo cookie, e isso ja a torna dinamica. Era so essa a
+// diferenca entre as duas.
+//
+// Vale para qualquer edicao do formulario, nao so para o convite: pergunta
+// nova, texto corrigido ou opcao removida tambem so apareceriam no proximo
+// deploy.
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export async function GET(_: NextRequest, { params }: { params: { slug: string } }) {
   const { data: form, error } = await supabaseAdmin
     .from('feedback_formularios')
