@@ -88,8 +88,8 @@ export default function EditorVitrine() {
             </div>
           ))}
           <p className="text-[10px] text-nodri-t3 mt-1">
-            Foto: 1200 × 1500 px (4:5, em pé), até 500 KB — a foto preenche a coluna inteira do topo, da barra até o fim da tela. Foto deitada também serve: o que sobra é cortado nas bordas, nunca distorcido.<br />
-            Vídeo do YouTube: continua 16:9 e entra alinhado com o começo do texto do lado.<br />
+            Foto: 1200 × 1100 px (quase quadrada), até 500 KB — medido na página, o espaço da foto é de 600×590 a 660×540 px conforme a altura da tela. Deixe o que importa no centro: a sobra é cortada nas bordas, nunca distorcida.<br />
+            Vídeo do YouTube: 16:9, e entra alinhado com a primeira linha do texto do lado.<br />
             Sem nenhuma, o topo mostra a ilustração do painel. Com mais de uma, vira carrossel.
           </p>
         </div>
