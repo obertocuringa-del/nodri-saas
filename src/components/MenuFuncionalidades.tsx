@@ -51,7 +51,7 @@ export default function MenuFuncionalidades() {
   }
 
   return (
-    <div ref={caixa} style={{ position: 'relative' }}>
+    <div ref={caixa} className="nodri-menu-func" style={{ position: 'relative' }}>
       <button onClick={() => setAberto(v => !v)}
         style={{
           display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer',

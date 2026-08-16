@@ -35,7 +35,7 @@ function ehVideo(m: Midia): boolean {
 //   rápida de perder a visita.
 //
 // • Passar o mouse em cima também pausa. Quem parou para olhar está olhando.
-export default function Carrossel({ midias, intervalo = 5, alturaMax, preencher, recuo = 0 }: {
+export default function Carrossel({ midias, intervalo = 5, alturaMax, preencher, recuo = 0, className }: {
   midias: Midia[]; intervalo?: number
   /** Teto de altura (ex.: '58vh'). Sem isso a midia cresce com a largura da
       coluna e empurra o botao para fora da tela — quem chega precisa rolar
@@ -49,6 +49,8 @@ export default function Carrossel({ midias, intervalo = 5, alturaMax, preencher,
   /** Distancia entre o topo da coluna e a primeira linha do texto ao lado.
       Medida na pagina: depende da altura da tela e do tamanho do texto. */
   recuo?: number
+  /** Para a pagina ordenar e ajustar a midia no celular. */
+  className?: string
 }) {
   const lista = (midias || []).filter(m => m?.url?.trim())
   const [i, setI] = useState(0)
@@ -80,6 +82,7 @@ export default function Carrossel({ midias, intervalo = 5, alturaMax, preencher,
 
   return (
     <div
+      className={[className, preencher ? 'nodri-midia-cheia' : ''].filter(Boolean).join(' ')}
       onMouseEnter={() => setParado(true)}
       onMouseLeave={() => setParado(false)}
       style={{

@@ -95,12 +95,69 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
         .nodri-hero { display: grid; gap: clamp(30px,4vw,56px); align-items: stretch;
                       grid-template-columns: 1.05fr 1.1fr; }
         @media (max-width: 900px) { .nodri-hero { grid-template-columns: 1fr; } }
+
+        /* ── CELULAR ────────────────────────────────────────────────────
+           No computador o topo e duas colunas: texto de um lado, foto do
+           outro. No celular isso vira uma pilha, e a ordem de leitura passa
+           a valer mais que o alinhamento: promessa, foto, provas, botao.
+
+           `display: contents` na coluna do texto solta os filhos dela dentro
+           da pilha — sem isso a foto so poderia ficar antes ou depois do
+           bloco inteiro de texto, nunca no meio dele. */
+        @media (max-width: 900px) {
+          .nodri-hero { display: flex; flex-direction: column; gap: 20px; }
+          .nodri-hero-texto { display: contents; }
+          .hero-etiqueta  { order: 1; }
+          .hero-titulo    { order: 2; }
+          .hero-sub       { order: 3; }
+          .hero-destaques { order: 4; }
+          .hero-midia     { order: 5; }
+          .hero-botoes    { order: 6; }
+          .hero-rodape    { order: 7; }
+
+          /* A abertura para de valer a tela inteira: no celular o conteudo e
+             mais alto que a tela de qualquer jeito, e forcar altura so criava
+             faixa branca. */
+          .nodri-abertura { min-height: 0 !important; padding-top: 16px !important; padding-bottom: 28px !important; }
+
+          /* A foto aparece INTEIRA. Recortar no celular cortava justamente o
+             rosto e o texto da arte. */
+          .nodri-midia-cheia { height: auto !important; margin: 0 !important; }
+          .nodri-midia-cheia img { position: static !important; height: auto !important; object-fit: contain !important; }
+          .nodri-midia-cheia > div[style*="aspect-ratio"] { margin-top: 0 !important; }
+
+          .hero-titulo { font-size: clamp(28px, 8.2vw, 40px) !important; letter-spacing: -.5px; }
+          .hero-sub { font-size: 15.5px !important; line-height: 1.6 !important; }
+          .hero-destaques { grid-template-columns: 1fr 1fr !important; gap: 16px !important; }
+          .hero-botoes { display: grid !important; grid-template-columns: 1fr; gap: 10px !important; }
+          .hero-botoes a { text-align: center; padding: 15px 18px !important; }
+          .hero-rodape { text-align: center; }
+          .nodri-painel-cards { grid-template-columns: 1fr !important; }
+        }
+
+        /* Celular estreito: dois destaques lado a lado ficam com uma palavra
+           por linha. Uma coluna so le melhor. */
+        @media (max-width: 430px) {
+          .hero-destaques { grid-template-columns: 1fr !important; gap: 14px !important; }
+        }
+
+        /* A barra do topo cabia em uma linha so ate os dois botoes se
+           empilharem no celular — logo menor e botoes mais curtos resolvem
+           sem esconder nada. */
+        @media (max-width: 640px) {
+          .nodri-topo { flex-wrap: nowrap !important; gap: 8px !important; padding: 4px 12px !important; }
+          .nodri-topo img { height: 46px !important; margin: -4px 0 !important; }
+          .nodri-btn-topo { padding: 9px 12px !important; font-size: 11px !important; border-radius: 9px !important; white-space: nowrap; }
+          /* Tres botoes nao cabem em 390px: o menu de funcionalidades sai
+             da barra, e no lugar dele fica o "Ver como funciona" do topo. */
+          .nodri-menu-func { display: none !important; }
+        }
         @media (max-width: 1000px) { .nodri-4col { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         @media (max-width: 560px)  { .nodri-4col { grid-template-columns: 1fr; } }
       `}</style>
 
       {/* ── BARRA DO TOPO ─────────────────────────────────────────────── */}
-      <header style={{
+      <header className="nodri-topo" style={{
         position: 'sticky', top: 0, zIndex: 50,
         background: 'rgba(242,247,251,.96)', backdropFilter: 'blur(10px)',
         borderBottom: '1px solid #e3e8f0',
@@ -115,11 +172,11 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
             style={{ height: 'clamp(60px, 6.4vw, 84px)', width: 'auto', margin: '-12px 0' }} />
         </a>
         <MenuFuncionalidades />
-        <a href="#contato" style={{
+        <a href="#contato" className="nodri-btn-topo" style={{
           padding: '10px 22px', borderRadius: 10, textDecoration: 'none',
           border: `2px solid ${MARINHO}`, color: MARINHO, fontWeight: 800, fontSize: 13,
         }}>FALE CONOSCO</a>
-        <a href="/login" style={{
+        <a href="/login" className="nodri-btn-topo" style={{
           padding: '10px 22px', borderRadius: 10, textDecoration: 'none',
           background: MARINHO, color: '#fff', fontWeight: 800, fontSize: 13,
         }}>JÁ SOU CLIENTE</a>
@@ -138,7 +195,7 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
           cabecalho e a etiqueta nao dizia nada e empurrava o titulo para
           longe de quem acabou de chegar. Embaixo o espaco continua, porque
           ali ele separa esta secao da proxima. */}
-      <section style={{
+      <section className="nodri-abertura" style={{
         background: '#fff', borderBottom: '1px solid #e3e8f0',
         padding: 'clamp(12px,1.6vw,22px) 20px clamp(8px,1vw,16px)',
         // A abertura ocupa a tela inteira menos a barra do topo: quem chega
@@ -157,15 +214,15 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
               conteudo (space-between) resolvia a sobra de baixo, mas subia a
               etiqueta e o titulo para o topo - o oposto do que se queria.
               Com flex-end o espaco que sobra fica em CIMA, onde nao incomoda. */}
-          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 'clamp(16px,1.8vw,24px)' }}>
-            <div ref={etiquetaRef} style={{
+          <div className="nodri-hero-texto" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 'clamp(16px,1.8vw,24px)' }}>
+            <div ref={etiquetaRef} className="hero-etiqueta" style={{
               display: 'inline-block', padding: '7px 16px', borderRadius: 999,
               background: '#e6f7fb', color: '#046b85',
               fontSize: 11.5, fontWeight: 800, letterSpacing: '.5px',
               textTransform: 'uppercase', alignSelf: 'flex-start',
             }}>{(cfg as any).hero_etiqueta}</div>
 
-            <h1 style={{
+            <h1 className="hero-titulo" style={{
               fontSize: 'clamp(30px,3.9vw,50px)', fontWeight: 900, lineHeight: 1.12,
               letterSpacing: '-1px', color: MARINHO,
               // O navegador distribui as palavras em linhas de tamanho parecido
@@ -174,11 +231,11 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
               textWrap: 'balance', overflowWrap: 'break-word',
             }}>{cfg.hero_titulo}</h1>
 
-            <p style={{ fontSize: 'clamp(15.5px,1.75vw,19px)', lineHeight: 1.7, color: '#4b5563' }}>
+            <p className="hero-sub" style={{ fontSize: 'clamp(15.5px,1.75vw,19px)', lineHeight: 1.7, color: '#4b5563' }}>
               {cfg.hero_subtitulo}
             </p>
 
-            <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))' }}>
+            <div className="hero-destaques" style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))' }}>
               {((cfg as any).destaques || []).map((d: any, i: number) => (
                 <div key={i}>
                   <div style={{ width: 26, height: 3, borderRadius: 3, background: CIANO, marginBottom: 9 }} />
@@ -188,7 +245,7 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
               ))}
             </div>
 
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            <div className="hero-botoes" style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
               <a href="#contato" style={{
                 padding: '16px 34px', borderRadius: 12, textDecoration: 'none',
                 background: MARINHO, color: '#fff', fontWeight: 800, fontSize: 15.5,
@@ -200,7 +257,7 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
               }}>{(cfg as any).hero_botao2}</a>
             </div>
 
-            <p style={{ fontSize: 12.5, color: '#8b95a5' }}>
+            <p className="hero-rodape" style={{ fontSize: 12.5, color: '#8b95a5' }}>
               {(cfg as any).hero_rodape}
             </p>
           </div>
@@ -213,9 +270,9 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
             <Carrossel
               midias={(cfg as any).hero_midias.filter((m: any) => m?.url?.trim())}
               intervalo={(cfg as any).hero_intervalo || 5}
-              preencher recuo={recuoVideo} />
+              preencher recuo={recuoVideo} className="hero-midia" />
           ) : (
-          <div style={{
+          <div className="hero-midia" style={{
             background: '#f7fafc', border: '1px solid #e3e8f0', borderRadius: 18,
             padding: 18, boxShadow: '0 18px 50px rgba(13,42,86,.09)',
           }}>
@@ -226,7 +283,7 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
               <span style={{ marginLeft: 6, fontSize: 11.5, color: '#8b95a5' }}>Painel do salão</span>
             </div>
 
-            <div style={{ display: 'grid', gap: 10, gridTemplateColumns: '1fr 1fr' }}>
+            <div className="nodri-painel-cards" style={{ display: 'grid', gap: 10, gridTemplateColumns: '1fr 1fr' }}>
               {[
                 ['Faturamento do mês', 'R$ 128.750', '+18% vs. mês anterior', '#16a34a'],
                 ['Ticket médio', 'R$ 246,56', '+8% no período', '#16a34a'],
