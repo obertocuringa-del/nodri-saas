@@ -132,7 +132,7 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
           /* Medido na tela: a 7.1vw a chamada ocupa 338 dos 350 px uteis de um
              celular de 390, e continua cabendo num de 360. */
           .hero-titulo .titulo-l1 { display: block; white-space: nowrap; font-size: 7.1vw; }
-          .hero-titulo .titulo-l2 { display: block; white-space: nowrap; font-size: 4.05vw; font-weight: 800; letter-spacing: 0; margin-top: 7px; }
+          .hero-titulo .titulo-l2 { display: block; white-space: nowrap; font-size: 3.85vw; font-weight: 800; letter-spacing: 0; margin-top: 7px; }
           .hero-titulo br { display: none; }
           .hero-sub { font-size: 15.5px !important; line-height: 1.6 !important; }
           .hero-destaques { grid-template-columns: 1fr 1fr !important; gap: 16px !important; }
