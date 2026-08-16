@@ -46,6 +46,10 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
   const heroRef = useRef<HTMLDivElement>(null)
   const etiquetaRef = useRef<HTMLDivElement>(null)
   const [recuoVideo, setRecuoVideo] = useState(0)
+  // No celular a foto nao pode passar da primeira tela: quem chega precisa
+  // ver a promessa E a foto inteira sem rolar. O quanto sobra depende do
+  // tamanho do texto acima dela, entao e medido, nao chutado.
+  const [alturaFoto, setAlturaFoto] = useState(0)
 
   useEffect(() => {
     const medir = () => {
@@ -53,6 +57,16 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
       if (!h || !e) return
       setRecuoVideo(Math.max(0, Math.round(
         e.getBoundingClientRect().top - h.getBoundingClientRect().top)))
+
+      const midia = h.querySelector('.hero-midia') as HTMLElement | null
+      if (midia && window.innerWidth <= 900) {
+        // Distancia do topo da foto ate o fim da tela. Nao entra em laco:
+        // o que esta ACIMA da foto nao muda quando a altura dela muda.
+        const topo = midia.getBoundingClientRect().top + window.scrollY
+        setAlturaFoto(Math.max(190, Math.round(window.innerHeight - topo - 14)))
+      } else {
+        setAlturaFoto(0)
+      }
     }
     medir()
     const ro = new ResizeObserver(medir)
@@ -139,6 +153,17 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
           .hero-botoes { display: grid !important; grid-template-columns: 1fr 1fr; gap: 10px !important; }
           .hero-botoes a { text-align: center; padding: 15px 8px !important; font-size: 14px !important; }
           .hero-rodape { text-align: center; }
+
+          /* Abertura centralizada: etiqueta, chamada e promessa no eixo da
+             tela. Os destaques continuam alinhados a esquerda porque sao
+             lista, e lista centralizada e mais dificil de ler. */
+          .hero-etiqueta { align-self: center !important; }
+          .hero-titulo, .hero-sub { text-align: center; }
+
+          /* A foto aparece inteira e dentro da primeira tela: a altura vem
+             medida da propria pagina (--altura-foto). */
+          .nodri-midia-cheia img { max-height: var(--altura-foto, 46vh) !important; width: auto !important; max-width: 100%; margin: 0 auto !important; }
+          .nodri-midia-cheia { align-items: center; }
           .nodri-painel-cards { grid-template-columns: 1fr !important; }
 
           /* Cards em duas colunas tambem no celular: um embaixo do outro
@@ -220,6 +245,7 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
           longe de quem acabou de chegar. Embaixo o espaco continua, porque
           ali ele separa esta secao da proxima. */}
       <section className="nodri-abertura" style={{
+        ...(alturaFoto ? ({ ['--altura-foto' as any]: alturaFoto + 'px' } as any) : null),
         background: '#fff', borderBottom: '1px solid #e3e8f0',
         padding: 'clamp(12px,1.6vw,22px) 20px clamp(8px,1vw,16px)',
         // A abertura ocupa a tela inteira menos a barra do topo: quem chega
