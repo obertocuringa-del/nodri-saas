@@ -106,7 +106,7 @@ export default function LandingPage() {
               background: '#e6f7fb', color: '#046b85',
               fontSize: 11.5, fontWeight: 800, letterSpacing: '.5px',
               marginBottom: 20, textTransform: 'uppercase',
-            }}>Gestão para salões de beleza</div>
+            }}>{(cfg as any).hero_etiqueta}</div>
 
             <h1 style={{
               fontSize: 'clamp(27px,3.6vw,44px)', fontWeight: 900, lineHeight: 1.14,
@@ -118,15 +118,11 @@ export default function LandingPage() {
             </p>
 
             <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', marginBottom: 28 }}>
-              {[
-                ['Financeiro real', 'Custo, lucro e preço certo por serviço'],
-                ['Equipe medida', 'Metas, comissões e desempenho de cada um'],
-                ['Alertas que importam', 'Cliente sumindo e queda de faturamento'],
-              ].map(([t, d]) => (
-                <div key={t}>
+              {((cfg as any).destaques || []).map((d: any, i: number) => (
+                <div key={i}>
                   <div style={{ width: 26, height: 3, borderRadius: 3, background: CIANO, marginBottom: 9 }} />
-                  <div style={{ fontSize: 13.5, fontWeight: 800, color: MARINHO, marginBottom: 3 }}>{t}</div>
-                  <div style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.5 }}>{d}</div>
+                  <div style={{ fontSize: 13.5, fontWeight: 800, color: MARINHO, marginBottom: 3 }}>{d.titulo}</div>
+                  <div style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.5 }}>{d.desc}</div>
                 </div>
               ))}
             </div>
@@ -140,11 +136,11 @@ export default function LandingPage() {
               <a href="#dores" style={{
                 padding: '16px 30px', borderRadius: 12, textDecoration: 'none',
                 border: `2px solid ${MARINHO}`, color: MARINHO, fontWeight: 800, fontSize: 15.5,
-              }}>Ver como funciona</a>
+              }}>{(cfg as any).hero_botao2}</a>
             </div>
 
             <p style={{ fontSize: 12.5, color: '#8b95a5', marginTop: 14 }}>
-              Feito dentro de um salão em operação, não numa mesa de escritório.
+              {(cfg as any).hero_rodape}
             </p>
           </div>
 
@@ -209,7 +205,7 @@ export default function LandingPage() {
           color: MARINHO, marginBottom: 12, letterSpacing: '-0.5px',
         }}>{(cfg as any).dores_titulo}</h2>
         <p style={{ textAlign: 'center', color: '#6b7280', fontSize: 15, marginBottom: 40 }}>
-          Nenhuma dessas coisas aparece de repente. Elas custam dinheiro em silêncio, todo mês.
+          {(cfg as any).dores_subtitulo}
         </p>
 
         <div className="nodri-4col">
@@ -235,18 +231,19 @@ export default function LandingPage() {
           <h2 style={{
             textAlign: 'center', fontSize: 'clamp(21px,3vw,31px)', fontWeight: 900,
             color: MARINHO, marginBottom: 12, letterSpacing: '-0.5px', lineHeight: 1.25,
-          }}>Os outros sistemas organizam a sua agenda.<br />A NODRI organiza a sua equipe.</h2>
+          }}>{String((cfg as any).comparacao_titulo || '').split('|').map((l: string, i: number) => (
+            <span key={i}>{i > 0 && <br />}{l}</span>
+          ))}</h2>
           <p style={{ textAlign: 'center', color: '#6b7280', fontSize: 15, marginBottom: 36, maxWidth: 620, marginLeft: 'auto', marginRight: 'auto' }}>
-            Agenda e comanda quase todo sistema tem. O que quase nenhum tem é o que faz o salão
-            andar quando o dono não está.
+            {(cfg as any).comparacao_subtitulo}
           </p>
 
           <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,280px),1fr))' }}>
             <div style={{ background: '#f7fafc', border: '1px solid #e3e8f0', borderRadius: 16, padding: 24 }}>
               <div style={{ fontSize: 12, fontWeight: 800, color: '#8b95a5', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 16 }}>
-                O que todo sistema faz
+                {(cfg as any).comparacao_col1_titulo}
               </div>
-              {['Agenda e horários', 'Cadastro de clientes', 'Comanda e caixa', 'Relatório de faturamento'].map(t => (
+              {((cfg as any).comparacao_col1 || []).map((t: string) => (
                 <div key={t} style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 11, color: '#6b7280', fontSize: 14 }}>
                   <span style={{ color: '#c3ccd8', fontWeight: 900 }}>•</span> {t}
                 </div>
@@ -255,18 +252,9 @@ export default function LandingPage() {
 
             <div style={{ background: MARINHO, borderRadius: 16, padding: 24, color: '#fff' }}>
               <div style={{ fontSize: 12, fontWeight: 800, color: CIANO, textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 16 }}>
-                O que só a NODRI faz
+                {(cfg as any).comparacao_col2_titulo}
               </div>
-              {[
-                'Ficha completa: contratação, CLT, PJ, contrato e distrato',
-                'Plano de carreira e avaliação de cada profissional',
-                'Meta individual, comissão e acompanhamento mensal',
-                'Portal onde a profissional vê o próprio desempenho',
-                'Check lists e processos por período, com cobrança',
-                'Setores internos com solicitações e demandas',
-                'Corrida interna com ranking automático',
-                'Consultoria por IA sobre os números do seu salão',
-              ].map(t => (
+              {((cfg as any).comparacao_col2 || []).map((t: string) => (
                 <div key={t} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 11, fontSize: 13.5, lineHeight: 1.5 }}>
                   <span style={{ color: CIANO, fontWeight: 900 }}>✓</span> {t}
                 </div>
@@ -290,6 +278,56 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* BLOCOS EXTRAS -------------------------------------------------------
+          Seções criadas por você no admin, sem precisar de código. Entram
+          nesta posição, na ordem em que estiverem cadastradas. */}
+      {((cfg as any).blocos_extras || []).map((b: any, i: number) => {
+        const marinho = b.fundo === 'marinho'
+        return (
+          <section key={i} style={{
+            padding: 'clamp(40px,6vw,68px) 20px',
+            background: marinho ? MARINHO : b.fundo === 'branco' ? '#fff' : '#f7fafc',
+            borderTop: '1px solid #e3e8f0',
+          }}>
+            <div style={{ maxWidth: 1080, margin: '0 auto', textAlign: 'center' }}>
+              {b.titulo && (
+                <h2 style={{
+                  fontSize: 'clamp(21px,3vw,31px)', fontWeight: 900,
+                  color: marinho ? '#fff' : MARINHO, marginBottom: 12, letterSpacing: '-0.5px',
+                }}>{b.titulo}</h2>
+              )}
+              {b.subtitulo && (
+                <p style={{ color: marinho ? 'rgba(255,255,255,.85)' : '#6b7280', fontSize: 15, lineHeight: 1.65, maxWidth: 660, margin: '0 auto 30px' }}>{b.subtitulo}</p>
+              )}
+
+              {!!(b.cards || []).length && (
+                <div className="nodri-4col" style={{ textAlign: 'left', marginTop: 8 }}>
+                  {b.cards.map((card: any, j: number) => (
+                    <div key={j} style={{
+                      background: marinho ? 'rgba(255,255,255,.07)' : '#fff',
+                      border: `1px solid ${marinho ? 'rgba(255,255,255,.16)' : '#e3e8f0'}`,
+                      borderRadius: 16, padding: 24,
+                    }}>
+                      <div style={{ width: 30, height: 4, borderRadius: 4, background: CIANO, marginBottom: 14 }} />
+                      <h3 style={{ fontSize: 15.5, fontWeight: 800, color: marinho ? '#fff' : MARINHO, marginBottom: 8, lineHeight: 1.35 }}>{card.titulo}</h3>
+                      <p style={{ color: marinho ? 'rgba(255,255,255,.8)' : '#6b7280', fontSize: 13.5, lineHeight: 1.6 }}>{card.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {b.botao_texto && (
+                <a href={b.botao_link || '#contato'} style={{
+                  display: 'inline-block', marginTop: 28, padding: '15px 34px', borderRadius: 12,
+                  textDecoration: 'none', fontWeight: 800, fontSize: 15,
+                  background: marinho ? CIANO : MARINHO, color: marinho ? MARINHO : '#fff',
+                }}>{b.botao_texto}</a>
+              )}
+            </div>
+          </section>
+        )
+      })}
+
       {/* ── CONTATO ──────────────────────────────────────────────────────
           Aqui ficavam os preços. Eles saíram da vitrine pública: o NODRI
           passa a ser apresentado numa conversa, e o link dos planos é
@@ -299,11 +337,10 @@ export default function LandingPage() {
         <div style={{ maxWidth: 720, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 28 }}>
             <h2 style={{ fontSize: 'clamp(24px,3.5vw,34px)', fontWeight: 900, color: '#fff', marginBottom: 12, letterSpacing: '-0.5px' }}>
-              Vamos conhecer o seu salão
+              {(cfg as any).contato_titulo}
             </h2>
             <p style={{ color: 'rgba(255,255,255,.9)', fontSize: 15, lineHeight: 1.65 }}>
-              Conte como o seu salão funciona hoje e a gente mostra o que o NODRI muda na sua rotina.
-              Preencha o formulário e retornamos com o plano certo para o seu tamanho.
+              {(cfg as any).contato_subtitulo}
             </p>
           </div>
           <FormularioContato />

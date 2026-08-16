@@ -5,6 +5,7 @@ import { LogOut, Bell, Plus, Building, CreditCard, Puzzle, Users, BarChart3, Set
 import toast from 'react-hot-toast'
 import type { Salao, Modulo, Notificacao, Plano, Cupom } from '@/types'
 import Contatos from './Contatos'
+import EditorVitrine from './EditorVitrine'
 import { LANDING_PADRAO } from '@/lib/landingDefaults'
 import { MODULOS_NODRI, chaveDoModulo, planoMinimoPara } from '@/lib/planosModulos'
 
@@ -1191,191 +1192,12 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
               )}
 
               {/* ABA EDITOR LANDING PAGE */}
-              {activeSection === 'landing' && (
-                <div className="space-y-5">
-                  {!landingConfig ? (
-                    <div className="nodri-card p-10 text-center text-nodri-t3">
-                      <Loader2 size={22} className="animate-spin mx-auto mb-3" />
-                      <div className="text-[12px]">Carregando configurações...</div>
-                    </div>
-                  ) : (
-                    <>
-                      {/* HERO */}
-                      <div className="nodri-card p-4">
-                        <div className="font-syne font-bold text-[12px] mb-3 text-nodri-cyan flex items-center gap-1.5"><Home size={13} /> Seção Hero (topo)</div>
-                        <div className="grid gap-3">
-                          <div className="grid grid-cols-2 gap-3">
-                            <div>
-                              <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Logo / Nome do sistema</label>
-                              <input value={(landingConfig as any).hero_logo || 'NODRI'} onChange={e => setLandingConfig({ ...landingConfig, hero_logo: e.target.value } as any)}
-                                className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] outline-none focus:border-nodri-cyan" />
-                            </div>
-                            <div>
-                              <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Cor do botão</label>
-                              <div className="flex gap-2 items-center">
-                                <input type="color" value={(landingConfig as any).hero_cor_botao || '#5b4fcf'} onChange={e => setLandingConfig({ ...landingConfig, hero_cor_botao: e.target.value } as any)}
-                                  className="w-12 h-9 rounded-lg border border-nodri-border cursor-pointer bg-nodri-card" />
-                                <input value={(landingConfig as any).hero_cor_botao || '#5b4fcf'} onChange={e => setLandingConfig({ ...landingConfig, hero_cor_botao: e.target.value } as any)}
-                                  className="flex-1 bg-nodri-surface border border-nodri-border rounded-lg px-2 py-2 text-[12px] font-mono outline-none focus:border-nodri-cyan" />
-                              </div>
-                            </div>
-                          </div>
-                          <div>
-                            <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Título principal</label>
-                            <input value={landingConfig.hero_titulo} onChange={e => setLandingConfig({ ...landingConfig, hero_titulo: e.target.value })}
-                              className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] outline-none focus:border-nodri-cyan" />
-                          </div>
-                          <div>
-                            <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Subtítulo</label>
-                            <textarea value={landingConfig.hero_subtitulo} onChange={e => setLandingConfig({ ...landingConfig, hero_subtitulo: e.target.value })}
-                              rows={2} className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] outline-none focus:border-nodri-cyan resize-none" />
-                          </div>
-                          <div>
-                            <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Texto do botão principal</label>
-                            <input value={landingConfig.hero_botao} onChange={e => setLandingConfig({ ...landingConfig, hero_botao: e.target.value })}
-                              className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] outline-none focus:border-nodri-cyan" />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* BENEFÍCIOS */}
-                      <div className="nodri-card p-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="font-syne font-bold text-[12px] text-nodri-cyan">Seção Benefícios</div>
-                          <button onClick={() => setLandingConfig({ ...landingConfig, beneficios: [...landingConfig.beneficios, { emoji: '', titulo: 'Novo benefício', desc: 'Descrição' }] })}
-                            className="flex items-center gap-1 text-[11px] bg-nodri-cyan text-black px-2.5 py-1 rounded-lg font-bold hover:brightness-110">
-                            <Plus size={11} /> Adicionar
-                          </button>
-                        </div>
-                        <div className="mb-3">
-                          <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Título da seção</label>
-                          <input value={(landingConfig as any).beneficios_titulo || 'Por que escolher o NODRI?'} onChange={e => setLandingConfig({ ...landingConfig, beneficios_titulo: e.target.value } as any)}
-                            className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] outline-none focus:border-nodri-cyan" />
-                        </div>
-                        <div className="space-y-3">
-                          {landingConfig.beneficios.map((b, i) => (
-                            <div key={i} className="bg-nodri-surface rounded-lg p-3 border border-nodri-border">
-                              <div className="flex gap-2 mb-2">
-                                <input value={b.emoji} onChange={e => { const arr = [...landingConfig.beneficios]; arr[i] = { ...arr[i], emoji: e.target.value }; setLandingConfig({ ...landingConfig, beneficios: arr }) }}
-                                  className="w-14 bg-nodri-card border border-nodri-border rounded-lg px-2 py-1.5 text-[14px] text-center outline-none focus:border-nodri-cyan" placeholder="emoji" />
-                                <input value={b.titulo} onChange={e => { const arr = [...landingConfig.beneficios]; arr[i] = { ...arr[i], titulo: e.target.value }; setLandingConfig({ ...landingConfig, beneficios: arr }) }}
-                                  className="flex-1 bg-nodri-card border border-nodri-border rounded-lg px-2 py-1.5 text-[12px] outline-none focus:border-nodri-cyan" placeholder="Título" />
-                                <button onClick={() => setLandingConfig({ ...landingConfig, beneficios: landingConfig.beneficios.filter((_, j) => j !== i) })}
-                                  className="text-nodri-red hover:bg-nodri-red/10 p-1.5 rounded-lg"><Trash2 size={12} /></button>
-                              </div>
-                              <textarea value={b.desc} onChange={e => { const arr = [...landingConfig.beneficios]; arr[i] = { ...arr[i], desc: e.target.value }; setLandingConfig({ ...landingConfig, beneficios: arr }) }}
-                                rows={2} className="w-full bg-nodri-card border border-nodri-border rounded-lg px-2 py-1.5 text-[11px] outline-none focus:border-nodri-cyan resize-none" placeholder="Descrição" />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* PLANOS — editados em outro lugar */}
-                      {/* Os cards de plano saíram daqui. A vitrine passou a ler
-                          preço e nome da tabela `planos`, e a lista de módulos
-                          da mesma fonte que o sistema usa para liberar tela.
-                          Manter os campos antigos deixava uma armadilha: você
-                          editava, salvava, e a landing continuava igual. */}
-                      <div className="nodri-card p-4">
-                        <div className="font-syne font-bold text-[12px] mb-2 text-nodri-cyan flex items-center gap-1.5"><DollarSign size={13} /> Seção Planos</div>
-                        <p className="text-[11.5px] text-nodri-t2 leading-relaxed">
-                          Os planos da landing vêm agora de <b>Planos</b>, no menu ao lado — o que você
-                          editar lá (nome, preço e descrição) aparece na vitrine na hora.
-                        </p>
-                        <p className="text-[11px] text-nodri-t3 leading-relaxed mt-2">
-                          A lista de módulos de cada plano não é editável por texto de propósito: ela sai
-                          da mesma fonte que o sistema usa para liberar as telas. Assim a vitrine não tem
-                          como prometer um módulo que o plano não entrega.
-                        </p>
-                        <button onClick={() => setActiveSection('planos')}
-                          className="mt-3 px-3 py-1.5 rounded-lg bg-nodri-cyan text-white text-[11px] font-bold">
-                          Ir para Planos
-                        </button>
-                      </div>
-
-
-                      {/* TRABALHE CONOSCO */}
-                      <div className="nodri-card p-4">
-                        <div className="font-syne font-bold text-[12px] mb-3 text-nodri-cyan flex items-center gap-1.5"><Users size={13} /> Seção Trabalhe Conosco (Afiliados)</div>
-                        <div className="grid gap-3">
-                          <div>
-                            <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Título</label>
-                            <input value={(landingConfig as any).afiliados_titulo || 'Trabalhe Conosco'} onChange={e => setLandingConfig({ ...landingConfig, afiliados_titulo: e.target.value } as any)}
-                              className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] outline-none focus:border-nodri-cyan" />
-                          </div>
-                          <div>
-                            <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Subtítulo</label>
-                            <textarea value={(landingConfig as any).afiliados_subtitulo || ''} onChange={e => setLandingConfig({ ...landingConfig, afiliados_subtitulo: e.target.value } as any)}
-                              rows={2} className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] outline-none focus:border-nodri-cyan resize-none" />
-                          </div>
-                          <div>
-                            <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Texto do botão</label>
-                            <input value={(landingConfig as any).afiliados_botao || 'Quero ser Afiliado →'} onChange={e => setLandingConfig({ ...landingConfig, afiliados_botao: e.target.value } as any)}
-                              className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] outline-none focus:border-nodri-cyan" />
-                          </div>
-                          <div>
-                            <div className="flex items-center justify-between mb-2">
-                              <label className="text-[10px] text-nodri-t3 uppercase tracking-wider">Chips de destaque</label>
-                              <button onClick={() => setLandingConfig({ ...landingConfig, afiliados_chips: [...((landingConfig as any).afiliados_chips || []), { emoji: '', texto: 'Novo item' }] } as any)}
-                                className="text-[10px] bg-nodri-cyan text-black px-2 py-0.5 rounded font-bold">+ Adicionar</button>
-                            </div>
-                            <div className="space-y-2">
-                              {((landingConfig as any).afiliados_chips || []).map((chip: any, i: number) => (
-                                <div key={i} className="flex gap-2">
-                                  <input value={chip.emoji} onChange={e => { const arr = [...((landingConfig as any).afiliados_chips || [])]; arr[i] = { ...arr[i], emoji: e.target.value }; setLandingConfig({ ...landingConfig, afiliados_chips: arr } as any) }}
-                                    className="w-14 text-center bg-nodri-surface border border-nodri-border rounded px-2 py-1.5 text-[14px] outline-none focus:border-nodri-cyan" />
-                                  <input value={chip.texto} onChange={e => { const arr = [...((landingConfig as any).afiliados_chips || [])]; arr[i] = { ...arr[i], texto: e.target.value }; setLandingConfig({ ...landingConfig, afiliados_chips: arr } as any) }}
-                                    className="flex-1 bg-nodri-surface border border-nodri-border rounded px-2 py-1.5 text-[12px] outline-none focus:border-nodri-cyan" />
-                                  <button onClick={() => setLandingConfig({ ...landingConfig, afiliados_chips: ((landingConfig as any).afiliados_chips || []).filter((_: any, j: number) => j !== i) } as any)}
-                                    className="text-nodri-red p-1.5 rounded"><Trash2 size={11} /></button>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* RODAPÉ */}
-                      <div className="nodri-card p-4">
-                        <div className="font-syne font-bold text-[12px] mb-3 text-nodri-cyan">Rodapé</div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Nome/Logo</label>
-                            <input value={(landingConfig as any).footer_logo || 'NODRI'} onChange={e => setLandingConfig({ ...landingConfig, footer_logo: e.target.value } as any)}
-                              className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] outline-none focus:border-nodri-cyan" />
-                          </div>
-                          <div>
-                            <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">WhatsApp</label>
-                            <input value={(landingConfig as any).footer_whatsapp || '5561982195214'} onChange={e => setLandingConfig({ ...landingConfig, footer_whatsapp: e.target.value } as any)}
-                              className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] outline-none focus:border-nodri-cyan" placeholder="55DDD99999999" />
-                          </div>
-                          <div>
-                            <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Texto do rodapé</label>
-                            <input value={landingConfig.footer_texto} onChange={e => setLandingConfig({ ...landingConfig, footer_texto: e.target.value })}
-                              className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] outline-none focus:border-nodri-cyan" />
-                          </div>
-                          <div>
-                            <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Email de contato</label>
-                            <input value={landingConfig.footer_email} onChange={e => setLandingConfig({ ...landingConfig, footer_email: e.target.value })}
-                              className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] outline-none focus:border-nodri-cyan" />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex gap-3">
-                        <a href="/landing" target="_blank"
-                          className="flex items-center gap-2 px-4 py-2.5 border border-nodri-border text-nodri-t2 hover:text-nodri-cyan rounded-xl text-[12px] transition-all">
-                          <ExternalLink size={13} /> Visualizar Landing
-                        </a>
-                        <button onClick={saveLandingConfig} disabled={savingLanding}
-                          className="flex-1 py-3 bg-nodri-cyan text-black font-bold rounded-xl flex items-center justify-center gap-2 hover:brightness-110 disabled:opacity-50 text-[13px]">
-                          {savingLanding ? <><Loader2 size={16} className="animate-spin" /> Salvando...</> : <><Save size={16} /> Salvar Landing Page</>}
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
+              {/* Editor antigo trocado pelo EditorVitrine: ele cobria só
+                  metade da página (topo, benefícios, afiliados) e deixava
+                  de fora os cards de dores, a comparação e os destaques,
+                  que só se mudavam no código. O novo edita tudo e ainda
+                  deixa criar seções novas sem programador. */}
+              {activeSection === 'landing' && <EditorVitrine />}
 
               {/* ABA CUPONS DE DESCONTO */}
               {activeSection === 'cupons' && (

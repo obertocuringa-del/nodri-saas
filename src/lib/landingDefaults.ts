@@ -20,12 +20,42 @@ export const LANDING_PADRAO = {
   hero_botao: 'Quero conhecer a NODRI',
   hero_cor_botao: '#00b5d8',
 
+  // Três destaques logo abaixo do título, no topo.
+  destaques: [
+    { titulo: 'Financeiro real', desc: 'Custo, lucro e preço certo por serviço' },
+    { titulo: 'Equipe medida', desc: 'Metas, comissões e desempenho de cada um' },
+    { titulo: 'Alertas que importam', desc: 'Cliente sumindo e queda de faturamento' },
+  ],
+  hero_botao2: 'Ver como funciona',
+  hero_rodape: 'Feito dentro de um salão em operação, não numa mesa de escritório.',
+  hero_etiqueta: 'Gestão para salões de beleza',
+
   dores_titulo: 'Se você se reconhece aqui, a NODRI foi feita para o seu salão',
+  dores_subtitulo: 'Nenhuma dessas coisas aparece de repente. Elas custam dinheiro em silêncio, todo mês.',
   dores: [
     { titulo: 'O mês fecha e você não sabe se sobrou', desc: 'O dinheiro entra e sai, mas ninguém consegue dizer quanto o salão deu de lucro de verdade — nem quanto custa manter a porta aberta.' },
     { titulo: 'Você não sabe qual profissional dá lucro', desc: 'Todo mundo parece ocupado. Mas quem realmente traz resultado, quem só ocupa cadeira e quem está caindo mês a mês? Sem número, é achismo.' },
     { titulo: 'Cliente some e ninguém percebe', desc: 'Aquela cliente que vinha todo mês parou de aparecer. Você só percebe quando ela já está em outro salão há meio ano.' },
     { titulo: 'Tudo depende de você estar presente', desc: 'Se você viaja ou adoece, a rotina desmonta. Nada está escrito, tudo está na sua cabeça e no caderno da recepção.' },
+  ],
+
+  // Comparação com o concorrente.
+  comparacao_titulo: 'Os outros sistemas organizam a sua agenda.|A NODRI organiza a sua equipe.',
+  comparacao_subtitulo: 'Agenda e comanda quase todo sistema tem. O que quase nenhum tem é o que faz o salão andar quando o dono não está.',
+  comparacao_col1_titulo: 'O que todo sistema faz',
+  comparacao_col1: [
+    'Agenda e horários', 'Cadastro de clientes', 'Comanda e caixa', 'Relatório de faturamento',
+  ],
+  comparacao_col2_titulo: 'O que só a NODRI faz',
+  comparacao_col2: [
+    'Ficha completa: contratação, CLT, PJ, contrato e distrato',
+    'Plano de carreira e avaliação de cada profissional',
+    'Meta individual, comissão e acompanhamento mensal',
+    'Portal onde a profissional vê o próprio desempenho',
+    'Check lists e processos por período, com cobrança',
+    'Setores internos com solicitações e demandas',
+    'Corrida interna com ranking automático',
+    'Consultoria por IA sobre os números do seu salão',
   ],
 
   beneficios_titulo: 'O primeiro sistema que cuida da sua equipe como uma empresa de verdade',
@@ -35,6 +65,20 @@ export const LANDING_PADRAO = {
     { emoji: '', titulo: 'O sistema aponta o problema', desc: 'Clientes em risco de sumir, serviços que ninguém oferece, queda de faturamento. O relatório mostra onde está o dinheiro que você não viu.' },
     { emoji: '', titulo: 'A rotina anda sem você', desc: 'Check lists por período, escalas, processos escritos, feedback de cliente e pendências. O salão funciona mesmo quando você não está lá.' },
   ],
+
+  contato_titulo: 'Vamos conhecer o seu salão',
+  contato_subtitulo: 'Conte como o seu salão funciona hoje e a gente mostra o que a NODRI muda na sua rotina. Preencha o formulário e retornamos com o plano certo para o seu tamanho.',
+
+  // Blocos que VOCÊ cria no admin, sem precisar de código. Cada um vira uma
+  // seção nova na página, na ordem em que estiverem aqui.
+  blocos_extras: [] as {
+    titulo: string
+    subtitulo?: string
+    cards?: { titulo: string; desc: string }[]
+    botao_texto?: string
+    botao_link?: string
+    fundo?: 'claro' | 'branco' | 'marinho'
+  }[],
 
   afiliados_titulo: 'Indique a NODRI e ganhe',
   afiliados_subtitulo: 'Indique a NODRI para outros salões e ganhe 40% de comissão em cada venda realizada com seu cupom exclusivo.',
