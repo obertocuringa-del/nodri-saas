@@ -2,32 +2,48 @@
 import { useEffect, useState } from 'react'
 import { AlertTriangle, RefreshCw, MessageCircle, LogOut, CheckCircle, Loader2 } from 'lucide-react'
 
-const PLANOS = [
-  { nome: 'Básico', slug: 'basico', preco: 97, cor: '#3498db', modulos: ['Confirmar Agendamento', 'Enviar Feedback', 'Enviar Lista', 'Enviar Lista c/ Arquivo', 'Baixar Música YouTube'] },
-  { nome: 'Profissional', slug: 'profissional', preco: 197, cor: '#9b59b6', destaque: true, modulos: ['Todos do Básico', 'Bloqueio Sem Preferência', 'Ver Feedback Cliente', 'Relatório Profissional', 'Faturamento Diário', 'Calcular Reserva Financeira'] },
-  { nome: 'Premium', slug: 'premium', preco: 297, cor: '#f39c12', modulos: ['Todos do Profissional', 'Calculadora Depreciação', 'Avaliar Profissional', 'Aluguel de Cadeira', 'Precificar Serviços'] },
-]
+// Esta lista era fixa, com planos de R$ 97/197/297 — valores que não existiam
+// nem no sistema antigo (a landing cobrava 100/200/300) nem no novo. O salão
+// vencido via preço de uma coisa e pagaria outra, e o botão chamava a rota de
+// checkout do Mercado Pago, que não existe mais: dava erro e ele ficava sem
+// como voltar.
+//
+// Agora vem da mesma fonte da vitrine.
+interface PlanoVitrine {
+  nome: string; slug: string; preco: number; resumo: string
+  novidades: string[]; herda: string | null; destaque: boolean
+}
+const CORES = ['#3498db', '#5b4fcf', '#9b59b6', '#f39c12']
 
 export default function RenovarLicencaPage() {
   const [loading, setLoading] = useState<string | null>(null)
   const [salaoNome, setSalaoNome] = useState('')
+  const [PLANOS, setPlanos] = useState<PlanoVitrine[]>([])
+  const [erro, setErro] = useState('')
 
   useEffect(() => {
     // Tenta pegar nome do salão
     fetch('/api/auth/me').then(r => r.ok ? r.json() : null).then(d => { if (d?.salaoNome) setSalaoNome(d.salaoNome) })
+    fetch('/api/planos-publicos').then(r => r.ok ? r.json() : []).then(d => { if (Array.isArray(d)) setPlanos(d) }).catch(() => {})
   }, [])
 
   async function renovar(planoSlug: string) {
-    setLoading(planoSlug)
-    const res = await fetch('/api/checkout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ plano: planoSlug, renovacao: true }),
-    })
-    const data = await res.json()
-    setLoading(null)
-    if (data.init_point) window.location.href = data.init_point
-    else alert('Erro ao gerar link de pagamento. Entre em contato via WhatsApp.')
+    setLoading(planoSlug); setErro('')
+    try {
+      const res = await fetch('/api/assinatura/renovar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ planoSlug }),
+      })
+      const data = await res.json()
+      setLoading(null)
+      // O checkout é do Asaas: o cartão é digitado lá, nunca aqui.
+      if (data.url) window.location.href = data.url
+      else setErro(data.erro || 'Não foi possível gerar o pagamento. Fale com o suporte pelo WhatsApp.')
+    } catch {
+      setLoading(null)
+      setErro('Erro de conexão. Tente novamente.')
+    }
   }
 
   return (
@@ -47,36 +63,54 @@ export default function RenovarLicencaPage() {
         </div>
 
         {/* Planos */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          {PLANOS.map(plano => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          {PLANOS.map((plano, i) => {
+            const cor = CORES[i % CORES.length]
+            return (
             <div key={plano.slug}
-              className={`nodri-card p-6 flex flex-col transition-all ${plano.destaque ? 'border-2' : ''}`}
-              style={{ borderColor: plano.destaque ? plano.cor : undefined }}>
+              className={`nodri-card p-5 flex flex-col transition-all ${plano.destaque ? 'border-2' : ''}`}
+              style={{ borderColor: plano.destaque ? cor : undefined }}>
               {plano.destaque && (
                 <div className="text-center mb-3">
-                  <span className="text-[10px] font-bold px-3 py-1 rounded-full" style={{ background: plano.cor, color: '#fff' }}>MAIS POPULAR</span>
+                  <span className="text-[10px] font-bold px-3 py-1 rounded-full" style={{ background: cor, color: '#fff' }}>MAIS ESCOLHIDO</span>
                 </div>
               )}
-              <h3 className="font-syne font-black text-lg mb-1" style={{ color: plano.cor }}>{plano.nome}</h3>
-              <div className="mb-4">
+              <h3 className="font-syne font-black text-base mb-1" style={{ color: cor }}>{plano.nome}</h3>
+              <div className="mb-3">
                 <span className="font-black text-3xl">R${plano.preco}</span>
                 <span className="text-nodri-t3 text-sm">/mês</span>
               </div>
-              <ul className="space-y-2 mb-6 flex-1">
-                {plano.modulos.map(m => (
+              <ul className="space-y-2 mb-5 flex-1">
+                {plano.herda && (
+                  <li className="flex items-center gap-2 text-[12px] text-nodri-t3 font-semibold">
+                    <CheckCircle size={12} style={{ color: cor, flexShrink: 0 }} /> Tudo do {plano.herda}
+                  </li>
+                )}
+                {plano.novidades.map(m => (
                   <li key={m} className="flex items-center gap-2 text-[12px] text-nodri-t2">
-                    <CheckCircle size={12} style={{ color: plano.cor, flexShrink: 0 }} /> {m}
+                    <CheckCircle size={12} style={{ color: cor, flexShrink: 0 }} /> {m}
                   </li>
                 ))}
               </ul>
-              <button onClick={() => renovar(plano.slug)} disabled={loading === plano.slug}
+              <button onClick={() => renovar(plano.slug)} disabled={!!loading}
                 className="w-full py-3 font-bold rounded-xl text-white flex items-center justify-center gap-2 hover:brightness-110 disabled:opacity-50 transition-all text-[13px]"
-                style={{ background: plano.cor }}>
-                {loading === plano.slug ? <><Loader2 size={15} className="animate-spin" /> Aguarde...</> : <><RefreshCw size={14} /> Reativar — R${plano.preco}/mês</>}
+                style={{ background: cor }}>
+                {loading === plano.slug ? <><Loader2 size={15} className="animate-spin" /> Aguarde...</> : <><RefreshCw size={14} /> Assinar — R${plano.preco}/mês</>}
               </button>
             </div>
-          ))}
+            )
+          })}
         </div>
+
+        {PLANOS.length === 0 && (
+          <div className="nodri-card p-6 text-center text-nodri-t2 text-sm mb-6">Carregando planos…</div>
+        )}
+
+        {erro && (
+          <div className="nodri-card p-4 text-center text-[13px] mb-6" style={{ background: '#fef2f2', borderColor: '#fecaca', color: '#dc2626' }}>
+            ⚠️ {erro}
+          </div>
+        )}
 
         {/* Ações */}
         <div className="flex flex-col sm:flex-row gap-3 justify-center">

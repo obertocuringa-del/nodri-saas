@@ -53,8 +53,6 @@ function CadastroInner() {
   const [validandoCupom, setValidandoCupom] = useState(false)
   const [metodo, setMetodo] = useState<null | 'cartao' | 'pix'>(null)
   const [loading, setLoading] = useState(false)
-  const [pixData, setPixData] = useState<{ qr_code: string; qr_code_base64: string } | null>(null)
-  const [copiado, setCopiado] = useState(false)
   const [etapa, setEtapa] = useState<'form' | 'pagamento' | 'pix'>('form')
 
   const desconto = cupomStatus?.valido ? cupomStatus.percentual : 0
@@ -113,12 +111,7 @@ function CadastroInner() {
     setLoading(false)
   }
 
-  async function copiarChave() {
-    if (!pixData?.qr_code) return
-    await navigator.clipboard.writeText(pixData.qr_code)
-    setCopiado(true)
-    setTimeout(() => setCopiado(false), 2500)
-  }
+
 
   const cardBtn = (onClick: () => void, disabled: boolean, children: React.ReactNode) => (
     <button onClick={onClick} disabled={disabled} style={{
