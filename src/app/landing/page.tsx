@@ -128,7 +128,12 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
           .nodri-midia-cheia img { position: static !important; height: auto !important; object-fit: contain !important; }
           .nodri-midia-cheia > div[style*="aspect-ratio"] { margin-top: 0 !important; }
 
-          .hero-titulo { font-size: clamp(28px, 8.2vw, 40px) !important; letter-spacing: -.5px; }
+          .hero-titulo { letter-spacing: -.5px; line-height: 1.15 !important; }
+          /* Medido na tela: a 7.1vw a chamada ocupa 338 dos 350 px uteis de um
+             celular de 390, e continua cabendo num de 360. */
+          .hero-titulo .titulo-l1 { display: block; white-space: nowrap; font-size: 7.1vw; }
+          .hero-titulo .titulo-l2 { display: block; white-space: nowrap; font-size: 4.05vw; font-weight: 800; letter-spacing: 0; margin-top: 7px; }
+          .hero-titulo br { display: none; }
           .hero-sub { font-size: 15.5px !important; line-height: 1.6 !important; }
           .hero-destaques { grid-template-columns: 1fr 1fr !important; gap: 16px !important; }
           .hero-botoes { display: grid !important; grid-template-columns: 1fr 1fr; gap: 10px !important; }
@@ -248,7 +253,15 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
               // em vez de encher uma e deixar a seguinte com duas palavras. Sem
               // isto, titulo longo em coluna estreita quebra torto.
               textWrap: 'balance', overflowWrap: 'break-word',
-            }}>{cfg.hero_titulo}</h1>
+            }}>{String(cfg.hero_titulo || '').split('
+').map((linha: string, i: number, todas: string[]) => (
+              // Cada linha do titulo vira um pedaco proprio: e o que permite,
+              // no celular, a chamada ficar grande numa linha so e a promessa
+              // logo abaixo, menor, tambem numa linha so.
+              <span key={i} className={i === 0 ? 'titulo-l1' : 'titulo-l2'}>
+                {linha}{i < todas.length - 1 ? <br /> : null}
+              </span>
+            ))}</h1>
 
             <p className="hero-sub" style={{ fontSize: 'clamp(15.5px,1.75vw,19px)', lineHeight: 1.7, color: '#4b5563' }}>
               {cfg.hero_subtitulo}
