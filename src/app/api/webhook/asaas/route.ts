@@ -255,9 +255,10 @@ async function criarSalaoDaCompra(assinaturaId: string): Promise<{ id: string; n
     // Mas sem a senha o cliente não entra, então o aviso vai para o painel
     // master com a senha — é o que permite você socorrer sem ter de resetar.
     await supabase.from('notificacoes').insert({
-      titulo: 'E-mail de boas-vindas falhou',
-      mensagem: `Não consegui enviar o acesso para ${email}. Senha provisória: ${senha}. Repasse ao cliente.`,
-      tipo: 'warning',
+      titulo: '⚠️ Cliente pagou e NÃO recebeu a senha',
+      mensagem: `${compra.nome_salao} assinou o plano ${compra.plano}, mas o e-mail não saiu. `
+        + `Login: ${email} · Senha provisória: ${senha}. Repasse pelo WhatsApp (${compra.telefone || 'sem telefone'}).`,
+      tipo: 'danger',
       para_todos: false,
       lida: false,
     })

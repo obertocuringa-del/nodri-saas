@@ -1,8 +1,27 @@
 // Serviço de email usando Resend (gratuito até 3000 emails/mês)
 // Ou fallback para SMTP Gmail quando configurado
 
-const FROM_EMAIL = 'nodriestiloebeleza@gmail.com'
 const FROM_NAME = 'NODRI Estilo & Beleza'
+
+// ── Remetente ───────────────────────────────────────────────────────────────
+//
+// `onboarding@resend.dev` é o remetente de TESTE do Resend, e ele só entrega
+// para o e-mail dono da conta. Com ele o envio "funciona" no seu teste e
+// falha calado para todo cliente de verdade.
+//
+// Para valer, verifique o domínio nodri.com.br no Resend (uns registros DNS) e
+// cadastre EMAIL_REMETENTE=contato@nodri.com.br no Vercel.
+const FROM_EMAIL = process.env.EMAIL_REMETENTE || 'onboarding@resend.dev'
+
+/** Está usando o remetente de teste? Então só o dono da conta recebe. */
+export function remetenteEhDeTeste(): boolean {
+  return !process.env.EMAIL_REMETENTE
+}
+
+/** O envio de e-mail chega a acontecer? Sem chave, nada sai. */
+export function emailConfigurado(): boolean {
+  return !!process.env.RESEND_API_KEY
+}
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.nodri.com.br'
 const WHATSAPP = '5561982195214'
 
@@ -16,7 +35,7 @@ async function sendEmail({ to, subject, html }: { to: string; subject: string; h
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: `${FROM_NAME} <onboarding@resend.dev>`,
+        from: `${FROM_NAME} <${FROM_EMAIL}>`,
         to,
         subject,
         html,
@@ -28,9 +47,12 @@ async function sendEmail({ to, subject, html }: { to: string; subject: string; h
     }
     return true
   }
-  // Se não tiver Resend, loga no console (desenvolvimento)
-  console.log(`[EMAIL] Para: ${to} | Assunto: ${subject}`)
-  return true
+  // Sem chave, NADA sai. Antes esta função devolvia `true` aqui — quem
+  // chamava achava que tinha enviado, e um cliente novo ficava sem receber a
+  // senha sem ninguém perceber. Agora o erro é declarado, e quem chama decide
+  // o que fazer (o webhook avisa no painel master com a senha).
+  console.log(`[EMAIL] NÃO ENVIADO (RESEND_API_KEY ausente) — Para: ${to} | Assunto: ${subject}`)
+  throw new Error('RESEND_API_KEY não configurada — nenhum e-mail foi enviado')
 }
 
 // ── RECUPERAÇÃO DE SENHA ──

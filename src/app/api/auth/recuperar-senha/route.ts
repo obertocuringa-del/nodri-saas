@@ -34,8 +34,15 @@ export async function POST(req: NextRequest) {
     expira_em: expira_em.toISOString(),
   })
 
-  // Envia email
-  await enviarEmailRecuperacaoSenha(usuario.email, usuario.nome, token)
+  // O envio pode falhar (sem RESEND_API_KEY, provedor fora do ar). A resposta
+  // NÃO muda por causa disso: dizer "não consegui enviar" só para e-mails que
+  // existem entregaria quais endereços estão cadastrados, que é justamente o
+  // que a mensagem genérica evita. O erro fica no log.
+  try {
+    await enviarEmailRecuperacaoSenha(usuario.email, usuario.nome, token)
+  } catch (e) {
+    console.error('[recuperar-senha] e-mail não enviado:', e)
+  }
 
   return NextResponse.json({ ok: true, message: 'Se o email existir, você receberá as instruções.' })
 }
