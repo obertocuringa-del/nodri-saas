@@ -1,10 +1,16 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 
 const SUPORTE_NODRI = '5561982195214' // fallback quando o salão não tem telefone
 
+// A vitrine já tem "Fale conosco" no topo e o formulário no fim: a bolinha
+// verde flutuando por cima disso só tampava conteúdo em tela de celular.
+const SEM_BOTAO = ['/', '/landing']
+
 export default function WhatsAppButton() {
+  const rota = usePathname()
   // Usa o telefone cadastrado do salão logado; se não houver, cai no suporte NODRI.
   const [telefone, setTelefone] = useState(SUPORTE_NODRI)
   useEffect(() => {
@@ -13,6 +19,8 @@ export default function WhatsAppButton() {
       .then(d => { if (d?.telefone) setTelefone(d.telefone) })
       .catch(() => {})
   }, [])
+
+  if (SEM_BOTAO.includes(rota || '')) return null
 
   return (
     <a
