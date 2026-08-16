@@ -105,8 +105,10 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
            da pilha — sem isso a foto so poderia ficar antes ou depois do
            bloco inteiro de texto, nunca no meio dele. */
         @media (max-width: 900px) {
-          .nodri-hero { display: flex; flex-direction: column; gap: 20px; }
-          .nodri-hero-texto { display: contents; }
+          .nodri-hero { display: flex !important; flex-direction: column; gap: 20px; }
+          /* O !important e necessario: o estilo escrito no proprio elemento
+             (display:flex) ganha da folha de estilo sem ele. */
+          .nodri-hero-texto { display: contents !important; }
           .hero-etiqueta  { order: 1; }
           .hero-titulo    { order: 2; }
           .hero-sub       { order: 3; }
