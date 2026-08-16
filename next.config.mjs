@@ -22,7 +22,15 @@ const csp = [
   // Supabase (banco/storage) e as APIs de IA usadas pelo servidor
   "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.anthropic.com https://generativelanguage.googleapis.com https://api.tavily.com",
   "frame-ancestors 'none'",      // ninguém embute o sistema num iframe (clickjacking)
-  "frame-src 'self'",
+  // YouTube liberado para os vídeos das páginas de funcionalidade. Sem isto o
+  // player aparece como "Este conteúdo está bloqueado" — a política recusava
+  // qualquer frame de fora e o dono do site não tinha como saber o porquê.
+  //
+  // `frame-ancestors 'none'` acima continua valendo e é o que importa contra
+  // clickjacking: ele impede que ALGUÉM embuta o NODRI. Este `frame-src` faz o
+  // caminho inverso, dizendo o que o NODRI pode embutir — e a lista é só o
+  // YouTube, não um "permitir tudo".
+  "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com",
   "object-src 'none'",           // sem Flash/applets
   "base-uri 'self'",
   "form-action 'self'",          // formulário não posta para fora
