@@ -235,7 +235,7 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
           Quatro situações concretas em vez de adjetivos. Quem se reconhece em
           uma delas já entendeu para que serve o sistema, sem precisar que
           ninguém explique o que é "gestão integrada". */}
-      <section id="dores" style={{ padding: 'clamp(44px,7vw,74px) 20px', maxWidth: 1240, margin: '0 auto' }}>
+      <section id="dores" style={{ padding: 'clamp(18px,2.4vw,30px) 20px clamp(40px,5.5vw,62px)', maxWidth: 1240, margin: '0 auto' }}>
         <h2 style={{
           textAlign: 'center', fontSize: 'clamp(23px,3.2vw,35px)', fontWeight: 900,
           color: MARINHO, marginBottom: 12, letterSpacing: '-0.5px',
@@ -262,7 +262,7 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
           Responder de frente é mais honesto e mais forte do que fingir que
           concorrente não existe — e só a NODRI consegue preencher a coluna da
           direita. */}
-      <section style={{ padding: 'clamp(44px,7vw,74px) 20px', background: '#fff', borderTop: '1px solid #e3e8f0' }}>
+      <section style={{ padding: 'clamp(34px,4.5vw,54px) 20px clamp(40px,5.5vw,62px)', background: '#fff', borderTop: '1px solid #e3e8f0' }}>
         <div style={{ maxWidth: 1140, margin: '0 auto' }}>
           <h2 style={{
             textAlign: 'center', fontSize: 'clamp(23px,3.2vw,35px)', fontWeight: 900,
@@ -301,7 +301,7 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
       </section>
 
       {/* BENEFÍCIOS */}
-      <section style={{ padding: 'clamp(44px,7vw,74px) 20px', maxWidth: 1080, margin: '0 auto', background: '#fff', borderTop: '1px solid #e3e8f0' }}>
+      <section style={{ padding: 'clamp(34px,4.5vw,54px) 20px clamp(40px,5.5vw,62px)', maxWidth: 1080, margin: '0 auto', background: '#fff', borderTop: '1px solid #e3e8f0' }}>
         <h2 style={{ textAlign: 'center', fontSize: 'clamp(23px,3.2vw,35px)', fontWeight: 900, color: MARINHO, marginBottom: 40, letterSpacing: '-0.5px' }}>{cfg.beneficios_titulo}</h2>
         <div className="nodri-4col">
           {(cfg.beneficios || []).map((b: any, i: number) => (
