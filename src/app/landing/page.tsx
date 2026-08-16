@@ -232,11 +232,14 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
         @media (max-width: 640px) {
           /* Os TRES botoes na mesma linha da logo. Cabe porque tudo encolhe
              junto: logo, fonte, respiro interno e o espaco entre eles. */
-          .nodri-topo { flex-wrap: nowrap !important; gap: 5px !important; padding: 4px 9px !important; }
-          .nodri-topo img { height: 40px !important; margin: -3px 0 !important; }
-          .nodri-btn-topo { padding: 8px 8px !important; font-size: 9.5px !important; border-radius: 8px !important; white-space: nowrap; border-width: 1.5px !important; }
-          .nodri-menu-func > button { padding: 8px 7px !important; font-size: 9.5px !important; border-radius: 8px !important; white-space: nowrap; gap: 3px !important; border-width: 1.5px !important; }
-          .nodri-menu-func > button svg { width: 11px; height: 11px; }
+          /* O seletor precisa ser mais forte que a regra geral do app, que
+             manda todo flex do celular quebrar linha ([style*="display: flex"]).
+             Com ela vencendo, o "JA SOU CLIENTE" caia para a segunda linha. */
+          header.nodri-topo[style] { flex-wrap: nowrap !important; gap: 4px !important; padding: 4px 8px !important; }
+          .nodri-topo img { height: 34px !important; margin: -2px 0 !important; }
+          .nodri-btn-topo { padding: 7px 6px !important; font-size: 9px !important; border-radius: 8px !important; white-space: nowrap; border-width: 1.5px !important; letter-spacing: -.2px; }
+          .nodri-menu-func > button { padding: 7px 6px !important; font-size: 9px !important; border-radius: 8px !important; white-space: nowrap; gap: 2px !important; border-width: 1.5px !important; letter-spacing: -.2px; }
+          .nodri-menu-func > button svg { width: 10px; height: 10px; }
           /* O CSS geral reserva 92px no rodape para os botoes flutuantes do
              painel. A vitrine nao tem botao flutuante nenhum, entao aquilo
              virava uma faixa branca depois do "Quero ser Afiliado". */
