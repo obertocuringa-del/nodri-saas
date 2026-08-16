@@ -61,6 +61,11 @@ export default function LandingPage() {
            caía sozinho numa segunda linha e a seção ficava torta.
            No celular vira uma coluna, senão o texto fica ilegível. */
         .nodri-4col { display: grid; gap: 18px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        /* A imagem pesa mais que o texto: e ela que prende o olho de quem
+           chega. 1.25fr contra 1fr da o destaque sem espremer a leitura. */
+        .nodri-hero { display: grid; gap: clamp(30px,4vw,56px); align-items: center;
+                      grid-template-columns: 1fr 1.25fr; }
+        @media (max-width: 900px) { .nodri-hero { grid-template-columns: 1fr; } }
         @media (max-width: 1000px) { .nodri-4col { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         @media (max-width: 560px)  { .nodri-4col { grid-template-columns: 1fr; } }
       `}</style>
@@ -101,12 +106,7 @@ export default function LandingPage() {
           equipe e alertas. Nada de agenda nem estoque: prometer tela que nao
           existe traz cliente que cancela na primeira semana. */}
       <section style={{ background: '#fff', borderBottom: '1px solid #e3e8f0', padding: 'clamp(34px,5vw,64px) 20px' }}>
-        <div style={{
-          maxWidth: 1180, margin: '0 auto',
-          display: 'grid', gap: 'clamp(30px,4vw,54px)',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%,420px), 1fr))',
-          alignItems: 'center',
-        }}>
+        <div className="nodri-hero" style={{ maxWidth: 1340, margin: '0 auto' }}>
           <div>
             <div style={{
               display: 'inline-block', padding: '7px 16px', borderRadius: 999,
@@ -116,11 +116,11 @@ export default function LandingPage() {
             }}>{(cfg as any).hero_etiqueta}</div>
 
             <h1 style={{
-              fontSize: 'clamp(27px,3.6vw,44px)', fontWeight: 900, lineHeight: 1.14,
+              fontSize: 'clamp(30px,3.9vw,50px)', fontWeight: 900, lineHeight: 1.12,
               letterSpacing: '-1px', marginBottom: 18, color: MARINHO,
             }}>{cfg.hero_titulo}</h1>
 
-            <p style={{ fontSize: 'clamp(14.5px,1.6vw,17px)', lineHeight: 1.7, color: '#4b5563', marginBottom: 26 }}>
+            <p style={{ fontSize: 'clamp(15.5px,1.75vw,19px)', lineHeight: 1.7, color: '#4b5563', marginBottom: 30 }}>
               {cfg.hero_subtitulo}
             </p>
 
@@ -128,8 +128,8 @@ export default function LandingPage() {
               {((cfg as any).destaques || []).map((d: any, i: number) => (
                 <div key={i}>
                   <div style={{ width: 26, height: 3, borderRadius: 3, background: CIANO, marginBottom: 9 }} />
-                  <div style={{ fontSize: 13.5, fontWeight: 800, color: MARINHO, marginBottom: 3 }}>{d.titulo}</div>
-                  <div style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.5 }}>{d.desc}</div>
+                  <div style={{ fontSize: 14.5, fontWeight: 800, color: MARINHO, marginBottom: 4 }}>{d.titulo}</div>
+                  <div style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.55 }}>{d.desc}</div>
                 </div>
               ))}
             </div>
@@ -216,12 +216,12 @@ export default function LandingPage() {
           Quatro situações concretas em vez de adjetivos. Quem se reconhece em
           uma delas já entendeu para que serve o sistema, sem precisar que
           ninguém explique o que é "gestão integrada". */}
-      <section id="dores" style={{ padding: 'clamp(44px,7vw,74px) 20px', maxWidth: 1080, margin: '0 auto' }}>
+      <section id="dores" style={{ padding: 'clamp(44px,7vw,74px) 20px', maxWidth: 1240, margin: '0 auto' }}>
         <h2 style={{
-          textAlign: 'center', fontSize: 'clamp(21px,3vw,31px)', fontWeight: 900,
+          textAlign: 'center', fontSize: 'clamp(23px,3.2vw,35px)', fontWeight: 900,
           color: MARINHO, marginBottom: 12, letterSpacing: '-0.5px',
         }}>{(cfg as any).dores_titulo}</h2>
-        <p style={{ textAlign: 'center', color: '#6b7280', fontSize: 15, marginBottom: 40 }}>
+        <p style={{ textAlign: 'center', color: '#6b7280', fontSize: 16.5, marginBottom: 44 }}>
           {(cfg as any).dores_subtitulo}
         </p>
 
@@ -231,8 +231,8 @@ export default function LandingPage() {
               background: '#fff', borderRadius: 16, padding: 26,
               border: '1px solid #e3e8f0', borderTop: `4px solid ${CIANO}`,
             }}>
-              <h3 style={{ fontSize: 16, fontWeight: 800, color: MARINHO, marginBottom: 10, lineHeight: 1.35 }}>{d.titulo}</h3>
-              <p style={{ color: '#6b7280', fontSize: 13.5, lineHeight: 1.65 }}>{d.desc}</p>
+              <h3 style={{ fontSize: 17, fontWeight: 800, color: MARINHO, marginBottom: 10, lineHeight: 1.35 }}>{d.titulo}</h3>
+              <p style={{ color: '#6b7280', fontSize: 14.5, lineHeight: 1.7 }}>{d.desc}</p>
             </div>
           ))}
         </div>
@@ -244,9 +244,9 @@ export default function LandingPage() {
           concorrente não existe — e só a NODRI consegue preencher a coluna da
           direita. */}
       <section style={{ padding: 'clamp(44px,7vw,74px) 20px', background: '#fff', borderTop: '1px solid #e3e8f0' }}>
-        <div style={{ maxWidth: 1000, margin: '0 auto' }}>
+        <div style={{ maxWidth: 1140, margin: '0 auto' }}>
           <h2 style={{
-            textAlign: 'center', fontSize: 'clamp(21px,3vw,31px)', fontWeight: 900,
+            textAlign: 'center', fontSize: 'clamp(23px,3.2vw,35px)', fontWeight: 900,
             color: MARINHO, marginBottom: 12, letterSpacing: '-0.5px', lineHeight: 1.25,
           }}>{String((cfg as any).comparacao_titulo || '').split('|').map((l: string, i: number) => (
             <span key={i}>{i > 0 && <br />}{l}</span>
@@ -283,13 +283,13 @@ export default function LandingPage() {
 
       {/* BENEFÍCIOS */}
       <section style={{ padding: 'clamp(44px,7vw,74px) 20px', maxWidth: 1080, margin: '0 auto', background: '#fff', borderTop: '1px solid #e3e8f0' }}>
-        <h2 style={{ textAlign: 'center', fontSize: 'clamp(21px,3vw,31px)', fontWeight: 900, color: MARINHO, marginBottom: 40, letterSpacing: '-0.5px' }}>{cfg.beneficios_titulo}</h2>
+        <h2 style={{ textAlign: 'center', fontSize: 'clamp(23px,3.2vw,35px)', fontWeight: 900, color: MARINHO, marginBottom: 40, letterSpacing: '-0.5px' }}>{cfg.beneficios_titulo}</h2>
         <div className="nodri-4col">
           {(cfg.beneficios || []).map((b: any, i: number) => (
             <div key={i} style={{ background: '#f7fafc', borderRadius: 16, padding: 26, border: '1px solid #e3e8f0' }}>
               <div style={{ width: 34, height: 4, borderRadius: 4, background: CIANO, marginBottom: 16 }} />
-              <h3 style={{ fontSize: 16, fontWeight: 800, color: MARINHO, marginBottom: 9, lineHeight: 1.35 }}>{b.titulo}</h3>
-              <p style={{ color: '#6b7280', lineHeight: 1.65, fontSize: 13.5 }}>{b.desc}</p>
+              <h3 style={{ fontSize: 17, fontWeight: 800, color: MARINHO, marginBottom: 9, lineHeight: 1.35 }}>{b.titulo}</h3>
+              <p style={{ color: '#6b7280', lineHeight: 1.7, fontSize: 14.5 }}>{b.desc}</p>
             </div>
           ))}
         </div>
@@ -309,7 +309,7 @@ export default function LandingPage() {
             <div style={{ maxWidth: 1080, margin: '0 auto', textAlign: 'center' }}>
               {b.titulo && (
                 <h2 style={{
-                  fontSize: 'clamp(21px,3vw,31px)', fontWeight: 900,
+                  fontSize: 'clamp(23px,3.2vw,35px)', fontWeight: 900,
                   color: marinho ? '#fff' : MARINHO, marginBottom: 12, letterSpacing: '-0.5px',
                 }}>{b.titulo}</h2>
               )}

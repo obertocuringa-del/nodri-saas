@@ -71,7 +71,7 @@ export default function FuncionalidadePage() {
         }}>JÁ SOU CLIENTE</a>
       </header>
 
-      <section style={{ background: '#fff', borderBottom: '1px solid #e3e8f0', padding: 'clamp(34px,5vw,64px) 20px' }}>
+      <section style={{ background: '#fff', borderBottom: '1px solid #e3e8f0', padding: 'clamp(24px,3vw,40px) 20px' }}>
         <div style={{
           maxWidth: 1180, margin: '0 auto', display: 'grid',
           // Alinhado pelo TOPO, não pelo centro. Centralizado, o vídeo flutua
@@ -130,7 +130,7 @@ export default function FuncionalidadePage() {
             // etiqueta, a midia subia demais e o bloco ficava alto; descer ate
             // o titulo faz os dois lados comecarem no mesmo ponto de leitura.
             <div style={{ marginTop: f.etiqueta ? 'clamp(42px, 4.4vw, 56px)' : 0 }}>
-              <Carrossel midias={midias} intervalo={f.intervalo || 5} />
+              <Carrossel midias={midias} intervalo={f.intervalo || 5} alturaMax="56vh" />
             </div>
           )}
         </div>

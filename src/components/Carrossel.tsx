@@ -35,7 +35,13 @@ function ehVideo(m: Midia): boolean {
 //   rápida de perder a visita.
 //
 // • Passar o mouse em cima também pausa. Quem parou para olhar está olhando.
-export default function Carrossel({ midias, intervalo = 5 }: { midias: Midia[]; intervalo?: number }) {
+export default function Carrossel({ midias, intervalo = 5, alturaMax }: {
+  midias: Midia[]; intervalo?: number
+  /** Teto de altura (ex.: '58vh'). Sem isso a midia cresce com a largura da
+      coluna e empurra o botao para fora da tela — quem chega precisa rolar
+      para descobrir que existe um botao. */
+  alturaMax?: string
+}) {
   const lista = (midias || []).filter(m => m?.url?.trim())
   const [i, setI] = useState(0)
   const [parado, setParado] = useState(false)
@@ -72,9 +78,11 @@ export default function Carrossel({ midias, intervalo = 5 }: { midias: Midia[]; 
 
       {yt ? (
         <div style={{
-          position: 'relative', paddingTop: '56.25%', borderRadius: 18, overflow: 'hidden',
+          position: 'relative', borderRadius: 18, overflow: 'hidden',
           border: '1px solid #e3e8f0', background: '#000',
           boxShadow: '0 18px 50px rgba(13,42,86,.14)',
+          aspectRatio: '16 / 9',
+          maxHeight: alturaMax, margin: '0 auto',
         }}>
           <iframe
             src={`https://www.youtube.com/embed/${yt}`}
@@ -90,6 +98,7 @@ export default function Carrossel({ midias, intervalo = 5 }: { midias: Midia[]; 
             width: '100%', display: 'block', borderRadius: 18,
             border: '1px solid #e3e8f0', boxShadow: '0 18px 50px rgba(13,42,86,.12)',
             aspectRatio: '16 / 10', objectFit: 'cover',
+            maxHeight: alturaMax, margin: '0 auto',
           }} />
       )}
 

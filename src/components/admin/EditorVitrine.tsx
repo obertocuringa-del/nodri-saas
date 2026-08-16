@@ -85,6 +85,7 @@ export default function EditorVitrine() {
             </div>
           ))}
           <p className="text-[10px] text-nodri-t3 mt-1">
+            Tamanho ideal: 1280 × 720 px (16:9), até 500 KB — é o formato que cabe na tela sem o visitante precisar rolar. Fora dessa proporção a imagem é cortada nas bordas em vez de distorcer.<br />
             Sem nenhuma, o topo mostra a ilustração do painel. Com mais de uma, vira carrossel.
           </p>
         </div>
