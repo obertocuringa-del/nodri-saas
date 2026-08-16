@@ -22,12 +22,12 @@ const DEFAULT_CONFIG = {
   hero_logo: 'NODRI',
   // Fala da DOR antes de falar do produto. "Plataforma de gestão" não desperta
   // nada em quem não sabe que precisa; "você sabe quanto sobrou?" desperta.
-  hero_titulo: 'Você sabe quanto o seu salão realmente lucrou no mês passado?',
-  hero_subtitulo: 'A maioria dos donos não sabe — e descobre tarde demais. O NODRI mostra o que entra, o que sai, quanto cada profissional rende e onde está o dinheiro que você não vê.',
+  hero_titulo: 'Seu salão funciona quando você não está lá?',
+  hero_subtitulo: 'A NODRI transforma sua base de clientes em dinheiro. Mais organização, mais relacionamento e mais faturamento — de forma orgânica, aproveitando quem já conhece e confia na sua empresa.',
   hero_botao: 'Quero conhecer o NODRI',
   hero_cor_botao: CIANO,
 
-  dores_titulo: 'Se você se reconhece aqui, o NODRI foi feito para o seu salão',
+  dores_titulo: 'Se você se reconhece aqui, a NODRI foi feita para o seu salão',
   dores: [
     { titulo: 'O mês fecha e você não sabe se sobrou', desc: 'O dinheiro entra e sai, mas ninguém consegue dizer quanto o salão deu de lucro de verdade — nem quanto custa manter a porta aberta.' },
     { titulo: 'Você não sabe qual profissional dá lucro', desc: 'Todo mundo parece ocupado. Mas quem realmente traz resultado, quem só ocupa cadeira e quem está caindo mês a mês? Sem número, é achismo.' },
@@ -35,7 +35,7 @@ const DEFAULT_CONFIG = {
     { titulo: 'Tudo depende de você estar presente', desc: 'Se você viaja ou adoece, a rotina desmonta. Nada está escrito, tudo está na sua cabeça e no caderno da recepção.' },
   ],
 
-  beneficios_titulo: 'O que muda quando o salão roda no NODRI',
+  beneficios_titulo: 'O primeiro sistema que cuida da sua equipe como uma empresa de verdade',
   beneficios: [
     { emoji: '', titulo: 'Você passa a saber seus números', desc: 'Custo operacional, ponto de equilíbrio, contas a pagar e preço certo por serviço — calculados com os dados do seu salão, não com estimativa.' },
     { emoji: '', titulo: 'Cada profissional tem uma ficha viva', desc: 'Metas, comissões, avaliações, faturamento e histórico. Você vê quem cresce, quem precisa de ajuda e quem está saindo antes de perder.' },
@@ -245,6 +245,57 @@ export default function LandingPage() {
               <p style={{ color: '#6b7280', fontSize: 13.5, lineHeight: 1.65 }}>{d.desc}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* COMPARAÇÃO ----------------------------------------------------------
+          A pergunta que todo dono faz é "mas isso o outro sistema não faz?".
+          Responder de frente é mais honesto e mais forte do que fingir que
+          concorrente não existe — e só a NODRI consegue preencher a coluna da
+          direita. */}
+      <section style={{ padding: 'clamp(44px,7vw,74px) 20px', background: '#fff', borderTop: '1px solid #e3e8f0' }}>
+        <div style={{ maxWidth: 1000, margin: '0 auto' }}>
+          <h2 style={{
+            textAlign: 'center', fontSize: 'clamp(21px,3vw,31px)', fontWeight: 900,
+            color: MARINHO, marginBottom: 12, letterSpacing: '-0.5px', lineHeight: 1.25,
+          }}>Os outros sistemas organizam a sua agenda.<br />A NODRI organiza a sua equipe.</h2>
+          <p style={{ textAlign: 'center', color: '#6b7280', fontSize: 15, marginBottom: 36, maxWidth: 620, marginLeft: 'auto', marginRight: 'auto' }}>
+            Agenda e comanda quase todo sistema tem. O que quase nenhum tem é o que faz o salão
+            andar quando o dono não está.
+          </p>
+
+          <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,280px),1fr))' }}>
+            <div style={{ background: '#f7fafc', border: '1px solid #e3e8f0', borderRadius: 16, padding: 24 }}>
+              <div style={{ fontSize: 12, fontWeight: 800, color: '#8b95a5', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 16 }}>
+                O que todo sistema faz
+              </div>
+              {['Agenda e horários', 'Cadastro de clientes', 'Comanda e caixa', 'Relatório de faturamento'].map(t => (
+                <div key={t} style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 11, color: '#6b7280', fontSize: 14 }}>
+                  <span style={{ color: '#c3ccd8', fontWeight: 900 }}>•</span> {t}
+                </div>
+              ))}
+            </div>
+
+            <div style={{ background: MARINHO, borderRadius: 16, padding: 24, color: '#fff' }}>
+              <div style={{ fontSize: 12, fontWeight: 800, color: CIANO, textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 16 }}>
+                O que só a NODRI faz
+              </div>
+              {[
+                'Ficha completa: contratação, CLT, PJ, contrato e distrato',
+                'Plano de carreira e avaliação de cada profissional',
+                'Meta individual, comissão e acompanhamento mensal',
+                'Portal onde a profissional vê o próprio desempenho',
+                'Check lists e processos por período, com cobrança',
+                'Setores internos com solicitações e demandas',
+                'Corrida interna com ranking automático',
+                'Consultoria por IA sobre os números do seu salão',
+              ].map(t => (
+                <div key={t} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 11, fontSize: 13.5, lineHeight: 1.5 }}>
+                  <span style={{ color: CIANO, fontWeight: 900 }}>✓</span> {t}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
