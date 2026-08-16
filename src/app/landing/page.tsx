@@ -213,7 +213,7 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
             <Carrossel
               midias={(cfg as any).hero_midias.filter((m: any) => m?.url?.trim())}
               intervalo={(cfg as any).hero_intervalo || 5}
-              preencher recuoVideo={recuoVideo} />
+              preencher recuo={recuoVideo} />
           ) : (
           <div style={{
             background: '#f7fafc', border: '1px solid #e3e8f0', borderRadius: 18,

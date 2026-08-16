@@ -35,20 +35,20 @@ function ehVideo(m: Midia): boolean {
 //   rápida de perder a visita.
 //
 // • Passar o mouse em cima também pausa. Quem parou para olhar está olhando.
-export default function Carrossel({ midias, intervalo = 5, alturaMax, preencher, recuoVideo = 0 }: {
+export default function Carrossel({ midias, intervalo = 5, alturaMax, preencher, recuo = 0 }: {
   midias: Midia[]; intervalo?: number
   /** Teto de altura (ex.: '58vh'). Sem isso a midia cresce com a largura da
       coluna e empurra o botao para fora da tela — quem chega precisa rolar
       para descobrir que existe um botao. */
   alturaMax?: string
-  /** FOTO ocupa toda a altura de quem a contem, em vez de seguir a proporcao
-      16/10. No topo da vitrine a coluna tem a altura da tela: com proporcao
-      fixa sobrava uma faixa branca embaixo da foto. */
+  /** A midia ocupa o retangulo do texto ao lado em vez de seguir a proporcao
+      16/10: nasce na linha da etiqueta e termina onde o texto termina. Foto
+      preenche esse retangulo; video mantem o 16/9 dele, so alinhado no topo
+      (esticar o quadro do YouTube corta a imagem). */
   preencher?: boolean
-  /** VIDEO nao estica: distorcer o quadro do YouTube corta a imagem. Este
-      recuo desce o video ate a linha onde o texto do lado comeca, para os
-      dois blocos nascerem na mesma altura. */
-  recuoVideo?: number
+  /** Distancia entre o topo da coluna e a primeira linha do texto ao lado.
+      Medida na pagina: depende da altura da tela e do tamanho do texto. */
+  recuo?: number
 }) {
   const lista = (midias || []).filter(m => m?.url?.trim())
   const [i, setI] = useState(0)
@@ -84,7 +84,11 @@ export default function Carrossel({ midias, intervalo = 5, alturaMax, preencher,
       onMouseLeave={() => setParado(false)}
       style={{
         position: 'relative',
-        ...(preencher ? { height: '100%', display: 'flex', flexDirection: 'column' } : null),
+        ...(preencher ? {
+          display: 'flex', flexDirection: 'column',
+          marginTop: recuo, marginBottom: recuo,
+          height: `calc(100% - ${2 * recuo}px)`,
+        } : null),
       }}>
 
       {yt ? (
@@ -93,8 +97,10 @@ export default function Carrossel({ midias, intervalo = 5, alturaMax, preencher,
           border: '1px solid #e3e8f0', background: '#000',
           boxShadow: '0 18px 50px rgba(13,42,86,.14)',
           aspectRatio: '16 / 9',
-          maxHeight: alturaMax, margin: '0 auto',
-          marginTop: recuoVideo || undefined, width: '100%',
+          maxHeight: alturaMax, margin: '0 auto', width: '100%',
+          // Sem isto o flex espremia o quadro quando a coluna era mais baixa
+          // que os 16/9 do video.
+          flexShrink: 0,
         }}>
           <iframe
             src={`https://www.youtube.com/embed/${yt}`}
