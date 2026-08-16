@@ -247,14 +247,23 @@ async function criarSalaoDaCompra(assinaturaId: string): Promise<{ id: string; n
       email,
       nome: compra.responsavel || compra.nome_salao,
       plano: compra.plano || '',
-      linkAcesso: `https://www.nodri.com.br/login`,
+      linkAcesso: 'https://www.nodri.com.br/login',
+      senha,
     })
-    // A senha vai em mensagem separada por segurança de leitura, mas se o
-    // e-mail falhar o salão JÁ existe — dá para reenviar pelo admin. Falha de
-    // e-mail não pode desfazer uma assinatura paga.
-  } catch { /* segue */ }
+  } catch {
+    // Falha de e-mail NÃO desfaz nada: a assinatura foi paga e o salão existe.
+    // Mas sem a senha o cliente não entra, então o aviso vai para o painel
+    // master com a senha — é o que permite você socorrer sem ter de resetar.
+    await supabase.from('notificacoes').insert({
+      titulo: 'E-mail de boas-vindas falhou',
+      mensagem: `Não consegui enviar o acesso para ${email}. Senha provisória: ${senha}. Repasse ao cliente.`,
+      tipo: 'warning',
+      para_todos: false,
+      lida: false,
+    })
+  }
 
-  return { ...salao, senhaGerada: senha } as any
+  return salao
 }
 
 /**

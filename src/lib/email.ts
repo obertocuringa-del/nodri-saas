@@ -64,9 +64,13 @@ export async function enviarEmailRecuperacaoSenha(email: string, nome: string, t
 }
 
 // ── BEM-VINDO PÓS-COMPRA ──
+// `senha` é opcional de propósito: no cadastro feito pelo admin, quem escolhe
+// a senha é você e o cliente já a conhece. Na assinatura automática ela é
+// sorteada pelo sistema, e sem mandá-la aqui o cliente recebe um e-mail de
+// boas-vindas para uma conta na qual não consegue entrar.
 export async function enviarEmailBoasVindas({
-  email, nome, plano, linkAcesso, linkDownload,
-}: { email: string; nome: string; plano: string; linkAcesso: string; linkDownload?: string }) {
+  email, nome, plano, linkAcesso, linkDownload, senha,
+}: { email: string; nome: string; plano: string; linkAcesso: string; linkDownload?: string; senha?: string }) {
   await sendEmail({
     to: email,
     subject: '🎉 Bem-vindo ao NODRI! Seu acesso está pronto',
@@ -79,6 +83,19 @@ export async function enviarEmailBoasVindas({
         <div style="padding:32px">
           <h2 style="color:#5b4fcf;margin-top:0">Bem-vindo, ${nome}! 🎉</h2>
           <p style="color:#767069;line-height:1.6">Seu plano <strong style="color:#1a1a1a">${plano}</strong> foi ativado com sucesso! Agora você tem acesso completo ao sistema NODRI.</p>
+
+          ${senha ? `
+          <div style="background:#f7f5ff;border:2px solid #5b4fcf;border-radius:10px;padding:20px;margin:24px 0">
+            <h3 style="color:#5b4fcf;margin-top:0;font-size:14px">🔑 SEUS DADOS DE ACESSO</h3>
+            <p style="color:#1a1a1a;font-size:13px;margin:10px 0 4px">E-mail:</p>
+            <p style="font-family:monospace;font-size:15px;font-weight:700;color:#1a1a1a;margin:0 0 12px;word-break:break-all">${email}</p>
+            <p style="color:#1a1a1a;font-size:13px;margin:0 0 4px">Senha provisória:</p>
+            <p style="font-family:monospace;font-size:20px;font-weight:900;color:#5b4fcf;letter-spacing:1px;margin:0">${senha}</p>
+            <p style="color:#767069;font-size:12px;line-height:1.5;margin:14px 0 0">
+              Troque esta senha no primeiro acesso, em <strong>Configurações do salão</strong>.
+              Guarde este e-mail até fazer isso.
+            </p>
+          </div>` : ''}
 
           <div style="background:#161820;border:1px solid #e8e6e0;border-radius:10px;padding:20px;margin:24px 0">
             <h3 style="color:#5b4fcf;margin-top:0;font-size:14px">📋 SEUS ACESSOS:</h3>
@@ -96,7 +113,8 @@ export async function enviarEmailBoasVindas({
           <div style="background:#161820;border:1px solid #e8e6e0;border-radius:10px;padding:20px;margin:24px 0">
             <h3 style="color:#1a1a1a;margin-top:0;font-size:13px">🚀 PRÓXIMOS PASSOS:</h3>
             <ol style="color:#767069;line-height:1.8;padding-left:20px;font-size:13px">
-              <li>Acesse o sistema com seu email e senha</li>
+              <li>Acesse o sistema com o e-mail e a senha acima</li>
+              <li>Troque a senha provisória em Configurações</li>
               <li>Baixe e instale o programa no seu computador</li>
               <li>Explore os módulos disponíveis no seu plano</li>
               <li>Em caso de dúvida, acesse o Manual do Usuário</li>
