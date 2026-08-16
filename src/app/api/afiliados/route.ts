@@ -75,10 +75,19 @@ export async function POST(req: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+  // O e-mail pode não sair (chave do Resend ausente, domínio não verificado).
+  // O cadastro NÃO falha por isso — o cupom já está na tela —, mas o resultado
+  // fica gravado: sem rastro, ninguém descobre quem ficou sem receber.
   try {
     await sendEmailAfiliado({ nome, email, cupom, link })
-  } catch (e) {
+    await supabaseAdmin.from('afiliados')
+      .update({ email_enviado_em: new Date().toISOString(), email_erro: null })
+      .eq('id', afiliado.id)
+  } catch (e: any) {
     console.error('Erro ao enviar email afiliado:', e)
+    await supabaseAdmin.from('afiliados')
+      .update({ email_erro: String(e?.message || e).slice(0, 300) })
+      .eq('id', afiliado.id)
   }
 
   await supabaseAdmin.from('notificacoes').insert({
@@ -103,9 +112,27 @@ export async function PATCH(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { id, comissao_percentual, ativo, observacoes } = body
+  const { id, comissao_percentual, ativo, observacoes, reenviar_email } = body
 
   if (!id) return NextResponse.json({ error: 'ID obrigatório' }, { status: 400 })
+
+  // Reenvio do e-mail de boas-vindas: serve para quem se cadastrou enquanto o
+  // envio ainda não estava configurado.
+  if (reenviar_email) {
+    const { data: af } = await supabaseAdmin
+      .from('afiliados').select('nome, email, cupom, link').eq('id', id).maybeSingle()
+    if (!af) return NextResponse.json({ error: 'Afiliado não encontrado' }, { status: 404 })
+    try {
+      await sendEmailAfiliado({ nome: af.nome, email: af.email, cupom: af.cupom, link: af.link })
+      await supabaseAdmin.from('afiliados')
+        .update({ email_enviado_em: new Date().toISOString(), email_erro: null }).eq('id', id)
+      return NextResponse.json({ ok: true, enviado: true })
+    } catch (e: any) {
+      const erro = String(e?.message || e).slice(0, 300)
+      await supabaseAdmin.from('afiliados').update({ email_erro: erro }).eq('id', id)
+      return NextResponse.json({ error: erro }, { status: 502 })
+    }
+  }
 
   // FIX: allowlist explícita — evita mass assignment (campos financeiros não podem ser alterados diretamente)
   const updates: Record<string, any> = {}

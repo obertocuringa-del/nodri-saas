@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { randomUUID } from 'crypto'
 import { asaasAtivo, criarOuAcharCliente, criarAssinatura, linkDePagamento } from '@/lib/asaas'
+import { afiliadoPeloCupom, configAfiliado } from '@/lib/afiliados'
 
 export const dynamic = 'force-dynamic'
 
@@ -45,16 +46,35 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ erro: 'Plano inválido' }, { status: 400 })
   }
 
-  // ── Cupom: validado no banco, como no fluxo antigo ──────────────────────
+  // ── Cupom ───────────────────────────────────────────────────────────────
+  //
+  // São dois tipos, e antes só um era reconhecido AQUI: o cupom de afiliado
+  // (AFIL-…) passava na validação da tela, mostrava "você ganhou 10%" e a
+  // assinatura era criada pelo valor CHEIO — o cliente pagava o que não
+  // combinou e o afiliado não recebia nada, porque ninguém guardava a
+  // indicação.
   let desconto = 0
+  let apenasPrimeira = false
+  let afiliadoId: string | null = null
   const codigo = String(cupom || '').trim().toUpperCase()
-  if (codigo) {
+
+  if (codigo.startsWith('AFIL-')) {
+    const afiliado = await afiliadoPeloCupom(codigo)
+    if (afiliado) {
+      const cfg = await configAfiliado()
+      desconto = cfg.percentual
+      apenasPrimeira = cfg.apenas_primeira
+      afiliadoId = afiliado.id
+    }
+  } else if (codigo) {
     const { data: c } = await supabase
       .from('cupons').select('percentual, ativo, usos_atual, usos_max').eq('codigo', codigo).maybeSingle()
     const dentroDoLimite = !c?.usos_max || (c?.usos_atual || 0) < c.usos_max
     if (c?.ativo && dentroDoLimite && typeof c.percentual === 'number') desconto = c.percentual
   }
-  const valor = Math.round(planoRow.preco * (1 - desconto / 100) * 100) / 100
+
+  const valorComDesconto = Math.round(planoRow.preco * (1 - desconto / 100) * 100) / 100
+  const valor = valorComDesconto
 
   try {
     const cliente = await criarOuAcharCliente({
@@ -63,6 +83,10 @@ export async function POST(req: NextRequest) {
       telefone,
     })
 
+    // A assinatura nasce com o valor COM desconto. Quando o desconto vale só
+    // na primeira cobrança, o webhook devolve o valor cheio assim que a
+    // primeira for paga — é o jeito de fazer "só a primeira" no Asaas sem
+    // pedir o cartão de novo, já que o desconto da assinatura vale para todas.
     const assinatura = await criarAssinatura({
       clienteId: cliente.id,
       valor,
@@ -85,6 +109,9 @@ export async function POST(req: NextRequest) {
       telefone,
       dia_vencimento,
       cupom: codigo || null,
+      afiliado_id: afiliadoId,
+      desconto_percentual: desconto,
+      desconto_apenas_primeira: apenasPrimeira,
       status: 'aguardando',
       payment_id: assinatura.id,
     })

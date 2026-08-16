@@ -721,17 +721,32 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
     const [loadingAf, setLoadingAf] = useState(false)
     const [savingComissao, setSavingComissao] = useState<string | null>(null)
     const [descontoCliente, setDescontoCliente] = useState(10)
+    const [apenasPrimeira, setApenasPrimeira] = useState(false)
     const [savingConfig, setSavingConfig] = useState(false)
+    // Comissões geradas por cobrança paga. É delas que sai a fila de Pix.
+    const [comissoes, setComissoes] = useState<any[]>([])
+    const [pagando, setPagando] = useState<string | null>(null)
+
+    function carregarComissoes() {
+      fetch('/api/afiliados/comissoes')
+        .then(r => (r.ok ? r.json() : []))
+        .then(d => setComissoes(Array.isArray(d) ? d : []))
+        .catch(() => {})
+    }
 
     useEffect(() => {
       setLoadingAf(true)
       fetch('/api/afiliados').then(r => r.json()).then(d => { setAfiliados(Array.isArray(d) ? d : []); setLoadingAf(false) })
-      fetch('/api/afiliados/config').then(r => r.json()).then(d => { if (d?.percentual) setDescontoCliente(d.percentual) })
+      fetch('/api/afiliados/config').then(r => r.json()).then(d => {
+        if (typeof d?.percentual === 'number') setDescontoCliente(d.percentual)
+        setApenasPrimeira(!!d?.apenas_primeira)
+      })
+      carregarComissoes()
     }, [])
 
     async function salvarConfig() {
       setSavingConfig(true)
-      await fetch('/api/afiliados/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ percentual: descontoCliente }) })
+      await fetch('/api/afiliados/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ percentual: descontoCliente, apenas_primeira: apenasPrimeira }) })
       setSavingConfig(false)
       toast.success('Desconto do cliente atualizado!')
     }
@@ -757,18 +772,46 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
       } else toast.error('Erro ao excluir')
     }
 
+    // Marca como pago o que estiver pendente do afiliado. O PATCH de
+    // /api/afiliados recusa campos financeiros de propósito (senão daria para
+    // zerar dívida pelo navegador), então o registro é feito nas comissões.
     async function marcarPago(af: any) {
       setSavingComissao(af.id)
-      const res = await fetch('/api/afiliados', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: af.id, valor_pago: (af.valor_pago || 0) + (af.valor_acumulado || 0), valor_acumulado: 0 }),
+      const res = await fetch('/api/afiliados/comissoes', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ afiliado_id: af.id, status: 'pago', obs: 'Pix enviado pelo painel' }),
       })
-      if (res.ok) {
-        setAfiliados(prev => prev.map(a => a.id === af.id ? { ...a, valor_pago: (a.valor_pago || 0) + (a.valor_acumulado || 0), valor_acumulado: 0 } : a))
-        toast.success('Pagamento registrado!')
-      }
+      const d = await res.json().catch(() => ({}))
       setSavingComissao(null)
+      if (!res.ok) { toast.error(d?.error || 'Não deu para registrar'); return }
+      if (d?.aviso) { toast(d.aviso); return }
+      setAfiliados(prev => prev.map(a => a.id === af.id
+        ? { ...a, valor_pago: (a.valor_pago || 0) + (a.valor_acumulado || 0), valor_acumulado: 0 } : a))
+      carregarComissoes()
+      toast.success('Pagamento registrado!')
+    }
+
+    async function pagarUma(c: any) {
+      setPagando(c.id)
+      const res = await fetch('/api/afiliados/comissoes', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: [c.id], status: 'pago', obs: 'Pix enviado pelo painel' }),
+      })
+      setPagando(null)
+      if (!res.ok) { toast.error('Não deu para registrar'); return }
+      carregarComissoes()
+      fetch('/api/afiliados').then(r => r.json()).then(d => setAfiliados(Array.isArray(d) ? d : []))
+      toast.success('Comissão marcada como paga')
+    }
+
+    async function reenviarEmail(af: any) {
+      const res = await fetch('/api/afiliados', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: af.id, reenviar_email: true }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (res.ok) toast.success('E-mail reenviado')
+      else toast.error(d?.error || 'E-mail não saiu — falta configurar o envio', { duration: 7000 })
     }
 
     async function alterarComissao(af: any, novaComissao: number) {
@@ -809,6 +852,12 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
               </div>
             </div>
             <div>
+              <label className="flex items-center gap-2 mb-2 cursor-pointer">
+                <input type="checkbox" checked={apenasPrimeira} onChange={e => setApenasPrimeira(e.target.checked)} />
+                <span className="text-[11px] text-nodri-t2">
+                  Desconto vale <strong className="text-nodri-t1">só na primeira cobrança</strong> (depois volta ao preço de tabela)
+                </span>
+              </label>
               <div className="text-[10px] text-nodri-t3 mb-2">Comissão padrão do afiliado: <strong className="text-nodri-cyan">40%</strong> sobre o valor pago pelo cliente (já com desconto)</div>
               <button onClick={salvarConfig} disabled={savingConfig}
                 className="flex items-center gap-2 bg-nodri-cyan text-black px-4 py-2 rounded-lg text-[11px] font-bold hover:brightness-110 disabled:opacity-50">
@@ -819,6 +868,8 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
           </div>
           <div className="mt-3 p-3 bg-nodri-surface rounded-lg border border-nodri-border text-[11px] text-nodri-t2">
             <strong className="text-nodri-t1">Exemplo:</strong> Plano R$200 → Cliente paga <strong className="text-nodri-cyan">R${(200 * (1 - descontoCliente / 100)).toFixed(2)}</strong> ({descontoCliente}% off) → Afiliado ganha <strong className="text-nodri-green">R${(200 * (1 - descontoCliente / 100) * 0.4).toFixed(2)}</strong> (40% do valor pago)
+            {apenasPrimeira && <><br />A partir da 2ª mensalidade o cliente volta a pagar <strong className="text-nodri-t1">R$200,00</strong>, e a comissão passa a ser <strong className="text-nodri-green">R${(200 * 0.4).toFixed(2)}</strong>.</>}
+            <br /><span className="text-nodri-t3">Quem paga o afiliado é a NODRI, por Pix. O Asaas só recebe do cliente.</span>
           </div>
         </div>
 
@@ -835,6 +886,56 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
               <div className={`font-syne font-bold text-lg ${s.red ? 'text-nodri-amber' : ''}`}>{s.value}</div>
             </div>
           ))}
+        </div>
+
+        {/* Fila de Pix: cada cobrança paga de cliente indicado vira uma linha */}
+        <div className="nodri-card p-4">
+          <div className="font-syne font-bold text-[13px] text-nodri-cyan mb-3 flex items-center gap-2">
+            <DollarSign size={14} /> Comissões a pagar (Pix da NODRI)
+          </div>
+          {comissoes.filter(c => c.status === 'pendente').length === 0 ? (
+            <div className="text-[11.5px] text-nodri-t3">
+              Nenhuma comissão pendente. Cada mensalidade paga por um cliente indicado cria uma linha aqui — inclusive as dos meses seguintes.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {comissoes.filter(c => c.status === 'pendente').map(c => (
+                <div key={c.id} className="bg-nodri-surface border border-nodri-border rounded-xl p-3 flex items-center justify-between gap-3 flex-wrap">
+                  <div className="min-w-0">
+                    <div className="text-[12px] font-bold">{c.afiliados?.nome || 'Afiliado'} <span className="text-nodri-t3 font-normal">· {c.afiliados?.cupom}</span></div>
+                    <div className="text-[10.5px] text-nodri-t3">
+                      {c.salao_nome || 'Cliente'} · {c.plano || 'plano'} · venda R${Number(c.valor_venda || 0).toFixed(2)} · {c.percentual}%
+                    </div>
+                    <div className="text-[10.5px] text-nodri-t3">
+                      Pix: <span className="font-mono text-nodri-cyan">{c.afiliados?.chave_pix || '—'}</span>
+                      {c.criado_em && <> · {new Date(c.criado_em).toLocaleDateString('pt-BR')}</>}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="font-syne font-bold text-[15px] text-nodri-amber">R${Number(c.valor_comissao || 0).toFixed(2)}</div>
+                    <button onClick={() => pagarUma(c)} disabled={pagando === c.id}
+                      className="px-3 py-1.5 rounded-lg bg-nodri-green/10 border border-nodri-green/30 text-nodri-green text-[11px] font-bold flex items-center gap-1.5 disabled:opacity-50">
+                      {pagando === c.id ? <Loader2 size={11} className="animate-spin" /> : <CheckCircle size={11} />} Paguei
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {comissoes.filter(c => c.status === 'pago').length > 0 && (
+            <details className="mt-3">
+              <summary className="text-[11px] text-nodri-t3 cursor-pointer">Comissões já pagas ({comissoes.filter(c => c.status === 'pago').length})</summary>
+              <div className="mt-2 space-y-1">
+                {comissoes.filter(c => c.status === 'pago').map(c => (
+                  <div key={c.id} className="text-[11px] text-nodri-t3 flex justify-between gap-3">
+                    <span>{c.afiliados?.nome} · {c.salao_nome || '—'} · {c.pago_em ? new Date(c.pago_em).toLocaleDateString('pt-BR') : ''}</span>
+                    <span className="text-nodri-green font-bold">R${Number(c.valor_comissao || 0).toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+            </details>
+          )}
         </div>
 
         {/* Lista de afiliados */}
@@ -859,6 +960,20 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                     <div className="flex items-center gap-2">
                       <div className="font-mono text-[12px] bg-nodri-cyan/10 border border-nodri-cyan/30 text-nodri-cyan px-3 py-1 rounded-lg font-bold">{af.cupom}</div>
                     </div>
+                  </div>
+
+                  {/* Estado do e-mail de boas-vindas: enquanto o envio não
+                      estiver configurado, aparece aqui em vez de sumir. */}
+                  <div className="mt-2 flex items-center gap-2 flex-wrap text-[10.5px]">
+                    {af.email_enviado_em ? (
+                      <span className="text-nodri-green">E-mail enviado em {new Date(af.email_enviado_em).toLocaleDateString('pt-BR')}</span>
+                    ) : (
+                      <span className="text-nodri-amber">E-mail ainda não enviado{af.email_erro ? ` — ${af.email_erro}` : ''}</span>
+                    )}
+                    <button onClick={() => reenviarEmail(af)}
+                      className="px-2 py-1 rounded-md border border-nodri-border text-nodri-t2 font-bold">
+                      Reenviar e-mail
+                    </button>
                   </div>
 
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-3">

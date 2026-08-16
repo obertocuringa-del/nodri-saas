@@ -3,7 +3,9 @@ import { createClient } from '@supabase/supabase-js'
 import { nomesDeBancoDoPlano } from '@/lib/planosModulos'
 import { hashPassword } from '@/lib/auth'
 import { enviarEmailBoasVindas } from '@/lib/email'
-import { buscarAssinatura } from '@/lib/asaas'
+import { buscarAssinatura, atualizarAssinatura } from '@/lib/asaas'
+import { registrarComissao } from '@/lib/afiliados'
+import { sendEmailComissao } from '@/lib/email'
 import { randomBytes } from 'crypto'
 import { ehChaveDoModelo, sanitizar, versaoDoModelo } from '@/lib/modeloSalao'
 import { copiarMoldesDeTabelas } from '@/lib/modeloTabelas'
@@ -129,6 +131,17 @@ export async function POST(req: NextRequest) {
       }).eq('id', salao.id)
 
       await ligarModulosDoPlano(salao.id)
+
+      // Dinheiro que entrou pode ser de cliente indicado: gera a comissão e,
+      // se o desconto valia só na primeira cobrança, devolve o valor cheio.
+      await tratarAfiliado({
+        salaoId: salao.id,
+        salaoNome: salao.nome,
+        assinaturaId,
+        cobrancaId,
+        valorPago: typeof pagamento?.value === 'number' ? pagamento.value : 0,
+      })
+
       return NextResponse.json({ ok: true })
     }
 
@@ -160,6 +173,107 @@ export async function POST(req: NextRequest) {
     }).select()
     return NextResponse.json({ ok: true, erroRegistrado: true })
   }
+}
+
+/**
+ * Comissão do afiliado e fim do desconto de estreia.
+ *
+ * Roda a cada cobrança paga, não só na primeira: enquanto o cliente indicado
+ * continuar pagando, o afiliado continua ganhando. Quem garante que uma
+ * cobrança não vire duas comissões é o id da cobrança, único na tabela.
+ *
+ * Quem paga o afiliado é a NODRI, por Pix — o Asaas só recebe do cliente.
+ * Por isso a comissão nasce como "pendente" e vira "pago" quando você marcar
+ * no painel, depois de fazer o Pix.
+ */
+async function tratarAfiliado(dados: {
+  salaoId: string; salaoNome: string
+  assinaturaId: string | null; cobrancaId: string | null; valorPago: number
+}) {
+  if (!dados.valorPago) return
+
+  // De quem foi a indicação: o salão guarda, e na primeira cobrança ainda não
+  // guardava — aí vem da compra que originou a assinatura.
+  const { data: salao } = await supabase
+    .from('saloes').select('afiliado_id, plano_id, planos(nome)').eq('id', dados.salaoId).maybeSingle()
+
+  let afiliadoId: string | null = (salao as any)?.afiliado_id || null
+  let compra: any = null
+
+  if (dados.assinaturaId) {
+    const { data } = await supabase
+      .from('compras')
+      .select('afiliado_id, cupom, plano, preco_original, desconto_apenas_primeira, desconto_percentual')
+      .eq('payment_id', dados.assinaturaId).maybeSingle()
+    compra = data
+    if (!afiliadoId && compra?.afiliado_id) {
+      afiliadoId = compra.afiliado_id
+      // Grava no salão para as próximas cobranças não dependerem da compra.
+      await supabase.from('saloes')
+        .update({ afiliado_id: afiliadoId, afiliado_cupom: compra.cupom || null })
+        .eq('id', dados.salaoId)
+    }
+  }
+
+  // ── Desconto só na estreia ────────────────────────────────────────────────
+  // O Asaas aplica o valor da assinatura em todas as cobranças, então "só a
+  // primeira" se faz assim: a assinatura nasce com o valor com desconto e,
+  // paga a primeira, volta ao preço de tabela. `updatePendingPayments` dentro
+  // de atualizarAssinatura faz a próxima cobrança já sair pelo valor novo.
+  if (compra?.desconto_apenas_primeira && dados.assinaturaId && Number(compra.preco_original) > 0) {
+    const jaVoltou = Math.abs(Number(compra.preco_original) - dados.valorPago) < 0.01
+    if (!jaVoltou) {
+      try {
+        await atualizarAssinatura(dados.assinaturaId, {
+          valor: Number(compra.preco_original),
+          descricao: `NODRI ${compra.plano || ''}`.trim(),
+        })
+      } catch (e) {
+        console.error('Não deu para voltar o valor cheio da assinatura:', e)
+      }
+    }
+  }
+
+  if (!afiliadoId) return
+
+  const { data: afiliado } = await supabase
+    .from('afiliados').select('id, nome, email, cupom, comissao_percentual, ativo').eq('id', afiliadoId).maybeSingle()
+  if (!afiliado || !afiliado.ativo) return
+
+  const percentual = Number(afiliado.comissao_percentual) || 40
+  const planoNome = compra?.plano
+    || (Array.isArray((salao as any)?.planos) ? (salao as any).planos[0]?.nome : (salao as any)?.planos?.nome)
+    || ''
+
+  const comissao = await registrarComissao({
+    afiliadoId: afiliado.id,
+    cobrancaId: dados.cobrancaId,
+    assinaturaId: dados.assinaturaId,
+    salaoId: dados.salaoId,
+    salaoNome: dados.salaoNome,
+    plano: planoNome,
+    valorPago: dados.valorPago,
+    percentual,
+  })
+
+  // null = webhook repetido, já contabilizado. Nada a avisar.
+  if (!comissao) return
+
+  try {
+    await sendEmailComissao({
+      nome: afiliado.nome, email: afiliado.email, cupom: afiliado.cupom,
+      valorCompra: dados.valorPago, valorComissao: Number(comissao.valor_comissao), plano: planoNome,
+    })
+  } catch (e) {
+    console.error('Email de comissão não saiu:', e)
+  }
+
+  await supabase.from('notificacoes').insert({
+    titulo: '💰 Comissão de afiliado a pagar',
+    mensagem: `${afiliado.nome} (${afiliado.cupom}) tem R$ ${Number(comissao.valor_comissao).toFixed(2)} a receber pela venda de ${dados.salaoNome}.`,
+    tipo: 'info', para_todos: false, lida: false, salao_id: null,
+    metadata: { tipo: 'comissao_afiliado', afiliado_id: afiliado.id, comissao_id: comissao.id },
+  })
 }
 
 /** Liga os módulos do plano contratado, do mesmo jeito que o Mercado Pago já fazia. */
