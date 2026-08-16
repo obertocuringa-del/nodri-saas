@@ -118,10 +118,11 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
           ali ele separa esta secao da proxima. */}
       <section style={{ background: '#fff', borderBottom: '1px solid #e3e8f0', padding: 'clamp(12px,1.6vw,22px) 20px clamp(14px,1.8vw,26px)' }}>
         <div className="nodri-hero" style={{ maxWidth: 1340, margin: '0 auto' }}>
-          {/* Coluna de texto na altura da imagem, distribuindo o conteudo em
-              vez de terminar no meio. Era dai que vinha a sobra: o texto
-              acabava antes e o vazio ficava embaixo dele. */}
-          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 18 }}>
+          {/* Bloco ancorado embaixo, alinhado com o fim da imagem. Espalhar o
+              conteudo (space-between) resolvia a sobra de baixo, mas subia a
+              etiqueta e o titulo para o topo - o oposto do que se queria.
+              Com flex-end o espaco que sobra fica em CIMA, onde nao incomoda. */}
+          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', gap: 'clamp(16px,1.8vw,24px)' }}>
             <div style={{
               display: 'inline-block', padding: '7px 16px', borderRadius: 999,
               background: '#e6f7fb', color: '#046b85',
