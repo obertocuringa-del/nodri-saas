@@ -70,7 +70,7 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
         .nodri-4col { display: grid; gap: 18px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
         /* A imagem pesa mais que o texto: e ela que prende o olho de quem
            chega. 1.25fr contra 1fr da o destaque sem espremer a leitura. */
-        .nodri-hero { display: grid; gap: clamp(30px,4vw,56px); align-items: center;
+        .nodri-hero { display: grid; gap: clamp(30px,4vw,56px); align-items: stretch;
                       grid-template-columns: 1.05fr 1.1fr; }
         @media (max-width: 900px) { .nodri-hero { grid-template-columns: 1fr; } }
         @media (max-width: 1000px) { .nodri-4col { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
@@ -80,7 +80,7 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
       {/* ── BARRA DO TOPO ─────────────────────────────────────────────── */}
       <header style={{
         position: 'sticky', top: 0, zIndex: 50,
-        background: 'rgba(255,255,255,.94)', backdropFilter: 'blur(10px)',
+        background: 'rgba(242,247,251,.96)', backdropFilter: 'blur(10px)',
         borderBottom: '1px solid #e3e8f0',
         padding: '2px clamp(16px,4vw,44px)',
         display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
@@ -118,28 +118,31 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
           ali ele separa esta secao da proxima. */}
       <section style={{ background: '#fff', borderBottom: '1px solid #e3e8f0', padding: 'clamp(12px,1.6vw,22px) 20px clamp(14px,1.8vw,26px)' }}>
         <div className="nodri-hero" style={{ maxWidth: 1340, margin: '0 auto' }}>
-          <div>
+          {/* Coluna de texto na altura da imagem, distribuindo o conteudo em
+              vez de terminar no meio. Era dai que vinha a sobra: o texto
+              acabava antes e o vazio ficava embaixo dele. */}
+          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 18 }}>
             <div style={{
               display: 'inline-block', padding: '7px 16px', borderRadius: 999,
               background: '#e6f7fb', color: '#046b85',
               fontSize: 11.5, fontWeight: 800, letterSpacing: '.5px',
-              marginBottom: 16, textTransform: 'uppercase',
+              textTransform: 'uppercase', alignSelf: 'flex-start',
             }}>{(cfg as any).hero_etiqueta}</div>
 
             <h1 style={{
               fontSize: 'clamp(30px,3.9vw,50px)', fontWeight: 900, lineHeight: 1.12,
-              letterSpacing: '-1px', marginBottom: 18, color: MARINHO,
+              letterSpacing: '-1px', color: MARINHO,
               // O navegador distribui as palavras em linhas de tamanho parecido
               // em vez de encher uma e deixar a seguinte com duas palavras. Sem
               // isto, titulo longo em coluna estreita quebra torto.
               textWrap: 'balance', overflowWrap: 'break-word',
             }}>{cfg.hero_titulo}</h1>
 
-            <p style={{ fontSize: 'clamp(15.5px,1.75vw,19px)', lineHeight: 1.7, color: '#4b5563', marginBottom: 'clamp(30px,3.4vw,48px)' }}>
+            <p style={{ fontSize: 'clamp(15.5px,1.75vw,19px)', lineHeight: 1.7, color: '#4b5563' }}>
               {cfg.hero_subtitulo}
             </p>
 
-            <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', marginBottom: 'clamp(28px,3.4vw,46px)' }}>
+            <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))' }}>
               {((cfg as any).destaques || []).map((d: any, i: number) => (
                 <div key={i}>
                   <div style={{ width: 26, height: 3, borderRadius: 3, background: CIANO, marginBottom: 9 }} />
@@ -161,7 +164,7 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
               }}>{(cfg as any).hero_botao2}</a>
             </div>
 
-            <p style={{ fontSize: 12.5, color: '#8b95a5', marginTop: 'clamp(14px,1.8vw,24px)' }}>
+            <p style={{ fontSize: 12.5, color: '#8b95a5' }}>
               {(cfg as any).hero_rodape}
             </p>
           </div>

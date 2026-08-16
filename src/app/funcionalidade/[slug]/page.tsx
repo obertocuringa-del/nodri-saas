@@ -54,7 +54,7 @@ export default function FuncionalidadePage() {
   return (
     <div style={{ fontFamily: 'Segoe UI, sans-serif', background: '#f7fafc', minHeight: '100vh', color: '#1a1a1a' }}>
       <header style={{
-        background: '#fff', borderBottom: '1px solid #e3e8f0',
+        background: '#f2f7fb', borderBottom: '1px solid #e3e8f0',
         padding: '2px clamp(16px,4vw,44px)', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
         position: 'sticky', top: 0, zIndex: 50,
       }}>
