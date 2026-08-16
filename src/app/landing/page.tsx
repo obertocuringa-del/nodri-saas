@@ -118,7 +118,7 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
           ali ele separa esta secao da proxima. */}
       <section style={{
         background: '#fff', borderBottom: '1px solid #e3e8f0',
-        padding: 'clamp(12px,1.6vw,22px) 20px clamp(24px,3vw,48px)',
+        padding: 'clamp(12px,1.6vw,22px) 20px clamp(8px,1vw,16px)',
         // A abertura ocupa a tela inteira menos a barra do topo: quem chega
         // ve so ela, e a secao seguinte so aparece quando a pessoa rola.
         // Antes o titulo de baixo espiava no rodape e roubava a atencao.
@@ -377,13 +377,13 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
           passa a ser apresentado numa conversa, e o link dos planos é
           liberado por você depois do primeiro contato. Concorrente não lê
           sua tabela, e ninguém assina sem você saber quem é. */}
-      <section id="contato" style={{ padding: 'clamp(40px,7vw,70px) 20px', background: `linear-gradient(160deg, ${MARINHO}, #17457f)` }}>
+      <section id="contato" style={{ padding: 'clamp(24px,3.2vw,40px) 20px', background: `linear-gradient(160deg, ${MARINHO}, #17457f)` }}>
         <div style={{ maxWidth: 720, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 28 }}>
-            <h2 style={{ fontSize: 'clamp(24px,3.5vw,34px)', fontWeight: 900, color: '#fff', marginBottom: 12, letterSpacing: '-0.5px' }}>
+          <div style={{ textAlign: 'center', marginBottom: 18 }}>
+            <h2 style={{ fontSize: 'clamp(22px,3vw,29px)', fontWeight: 900, color: '#fff', marginBottom: 9, letterSpacing: '-0.5px' }}>
               {(cfg as any).contato_titulo}
             </h2>
-            <p style={{ color: 'rgba(255,255,255,.9)', fontSize: 15, lineHeight: 1.65 }}>
+            <p style={{ color: 'rgba(255,255,255,.9)', fontSize: 14, lineHeight: 1.55 }}>
               {(cfg as any).contato_subtitulo}
             </p>
           </div>

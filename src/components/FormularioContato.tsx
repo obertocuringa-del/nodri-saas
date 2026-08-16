@@ -34,12 +34,12 @@ const OBJETIVOS = [
 const ESTADOS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO']
 
 const campo: React.CSSProperties = {
-  width: '100%', padding: '13px 14px', borderRadius: 11,
-  border: '1px solid #e0ddd8', fontSize: 14, color: '#1a1a1a',
+  width: '100%', padding: '10px 12px', borderRadius: 10,
+  border: '1px solid #e0ddd8', fontSize: 13.5, color: '#1a1a1a',
   background: '#fff', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit',
 }
 const rotulo: React.CSSProperties = {
-  display: 'block', fontSize: 12.5, fontWeight: 700, color: '#3a3835', marginBottom: 6,
+  display: 'block', fontSize: 12, fontWeight: 700, color: '#3a3835', marginBottom: 4,
 }
 
 export default function FormularioContato() {
@@ -96,8 +96,8 @@ export default function FormularioContato() {
   }
 
   return (
-    <div style={{ background: '#fff', borderRadius: 20, padding: 'clamp(22px,4vw,34px)' }}>
-      <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%,220px), 1fr))' }}>
+    <div style={{ background: '#fff', borderRadius: 20, padding: 'clamp(16px,2.4vw,24px)' }}>
+      <div style={{ display: 'grid', gap: 11, gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%,220px), 1fr))' }}>
         <div>
           <label style={rotulo}>Nome *</label>
           <input style={campo} value={f.nome} onChange={e => set('nome', e.target.value)} placeholder="Seu nome" />
@@ -139,7 +139,7 @@ export default function FormularioContato() {
         </div>
       </div>
 
-      <div style={{ marginTop: 16 }}>
+      <div style={{ marginTop: 11 }}>
         <label style={rotulo}>Como o NODRI pode te ajudar?</label>
         <select style={campo} value={f.objetivo} onChange={e => set('objetivo', e.target.value)}>
           <option value="">Selecione</option>
@@ -155,14 +155,14 @@ export default function FormularioContato() {
 
       <button onClick={enviar} disabled={enviando}
         style={{
-          width: '100%', marginTop: 22, padding: '16px 0', borderRadius: 12, border: 'none',
+          width: '100%', marginTop: 15, padding: '13px 0', borderRadius: 12, border: 'none',
           background: '#0d2a56', color: '#fff',
-          fontSize: 16, fontWeight: 800, cursor: enviando ? 'wait' : 'pointer', opacity: enviando ? .7 : 1,
+          fontSize: 15, fontWeight: 800, cursor: enviando ? 'wait' : 'pointer', opacity: enviando ? .7 : 1,
         }}>
         {enviando ? 'Enviando…' : 'Enviar mensagem'}
       </button>
 
-      <p style={{ textAlign: 'center', color: '#8b8798', fontSize: 12, marginTop: 12 }}>
+      <p style={{ textAlign: 'center', color: '#8b8798', fontSize: 11.5, marginTop: 8 }}>
         Campos com * são obrigatórios.
       </p>
     </div>
