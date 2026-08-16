@@ -233,9 +233,12 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
           .nodri-topo { flex-wrap: nowrap !important; gap: 8px !important; padding: 4px 12px !important; }
           .nodri-topo img { height: 46px !important; margin: -4px 0 !important; }
           .nodri-btn-topo { padding: 9px 12px !important; font-size: 11px !important; border-radius: 9px !important; white-space: nowrap; }
-          /* Tres botoes nao cabem em 390px: o menu de funcionalidades sai
-             da barra, e no lugar dele fica o "Ver como funciona" do topo. */
-          .nodri-menu-func { display: none !important; }
+          /* Os tres botoes nao cabem lado a lado em 390px. Em vez de esconder
+             o menu de funcionalidades, ele desce para uma linha propria, com a
+             largura toda — alvo de toque maior do que teria espremido. */
+          .nodri-topo { flex-wrap: wrap !important; }
+          .nodri-menu-func { order: 3; flex: 1 1 100%; margin-bottom: 4px; }
+          .nodri-menu-func > button { width: 100%; justify-content: center; padding: 9px 12px !important; font-size: 11px !important; }
           /* O CSS geral reserva 92px no rodape para os botoes flutuantes do
              painel. A vitrine nao tem botao flutuante nenhum, entao aquilo
              virava uma faixa branca depois do "Quero ser Afiliado". */

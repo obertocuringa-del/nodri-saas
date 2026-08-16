@@ -69,9 +69,13 @@ export default function MenuFuncionalidades() {
           position: 'absolute', top: 'calc(100% + 10px)', right: 0, zIndex: 100,
           background: '#fff', border: '1px solid #e3e8f0', borderRadius: 16,
           boxShadow: '0 22px 60px rgba(13,42,86,.16)',
-          padding: 22, minWidth: 'min(92vw, 700px)',
+          padding: 22, minWidth: 'min(92vw, 700px)', maxWidth: '92vw',
           display: 'grid', gap: 22,
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          // No celular as categorias viram uma coluna so e a lista passa da
+          // altura da tela: sem rolagem propria, as ultimas ficavam fora do
+          // alcance e o painel parecia cortado.
+          maxHeight: 'min(70vh, 560px)', overflowY: 'auto',
         }}>
           {categorias.map(cat => (
             <div key={cat.nome}>

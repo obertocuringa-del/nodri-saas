@@ -52,8 +52,28 @@ export default function FuncionalidadePage() {
   const temMidia = midias.length > 0
 
   return (
-    <div style={{ fontFamily: 'Segoe UI, sans-serif', background: '#f7fafc', minHeight: '100vh', color: '#1a1a1a' }}>
-      <header style={{
+    <div className="func-pagina" style={{ fontFamily: 'Segoe UI, sans-serif', background: '#f7fafc', minHeight: '100vh', color: '#1a1a1a' }}>
+      <style>{`
+        /* CELULAR ────────────────────────────────────────────────────────
+           Duas coisas quebravam aqui: a regra geral do app transforma todo
+           grid com repeat() em duas colunas no celular — o que espremia o
+           texto e a midia em 165px cada — e a foto vinha recortada em 16/10.
+           Aqui a pagina volta a ser uma coluna so, com a midia inteira. */
+        @media (max-width: 900px) {
+          div.func-grid[style] { grid-template-columns: 1fr !important; gap: 22px !important; }
+          .func-midia { margin-top: 0 !important; }
+          .func-midia img { aspect-ratio: auto !important; object-fit: contain !important; max-height: 58vh !important; width: 100% !important; }
+          div.func-destaques[style] { grid-template-columns: 1fr 1fr !important; }
+        }
+        @media (max-width: 640px) {
+          .func-topo { flex-wrap: nowrap !important; gap: 8px !important; padding: 4px 12px !important; }
+          .func-topo img { height: 46px !important; margin: -4px 0 !important; }
+          .func-btn { padding: 9px 12px !important; font-size: 11px !important; border-radius: 9px !important; white-space: nowrap; }
+          .func-pagina h1 { font-size: 26px !important; }
+          div.func-destaques[style] { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
+      <header className="func-topo" style={{
         background: '#f2f7fb', borderBottom: '1px solid #e3e8f0',
         padding: '2px clamp(16px,4vw,44px)', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
         position: 'sticky', top: 0, zIndex: 50,
@@ -61,18 +81,18 @@ export default function FuncionalidadePage() {
         <a href="/" style={{ display: 'flex', alignItems: 'center', marginRight: 'auto' }}>
           <img src="/logo-nodri.png" alt="NODRI" style={{ height: 'clamp(60px, 6.4vw, 84px)', width: 'auto', margin: '-12px 0' }} />
         </a>
-        <a href="/#contato" style={{
+        <a href="/#contato" className="func-btn" style={{
           padding: '10px 22px', borderRadius: 10, textDecoration: 'none',
           border: `2px solid ${MARINHO}`, color: MARINHO, fontWeight: 800, fontSize: 13,
         }}>FALE CONOSCO</a>
-        <a href="/login" style={{
+        <a href="/login" className="func-btn" style={{
           padding: '10px 22px', borderRadius: 10, textDecoration: 'none',
           background: MARINHO, color: '#fff', fontWeight: 800, fontSize: 13,
         }}>JÁ SOU CLIENTE</a>
       </header>
 
       <section style={{ background: '#fff', borderBottom: '1px solid #e3e8f0', padding: 'clamp(24px,3vw,40px) 20px' }}>
-        <div style={{
+        <div className="func-grid" style={{
           maxWidth: 1180, margin: '0 auto', display: 'grid',
           // Alinhado pelo TOPO, não pelo centro. Centralizado, o vídeo flutua
           // no meio de um texto mais alto e nada encosta em nada — o olho lê
@@ -102,7 +122,7 @@ export default function FuncionalidadePage() {
             )}
 
             {!!(f.destaques || []).length && (
-              <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', marginBottom: 28 }}>
+              <div className="func-destaques" style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', marginBottom: 28 }}>
                 {(f.destaques || []).map((d, i) => (
                   <div key={i} style={{ background: '#f7fafc', border: '1px solid #e3e8f0', borderRadius: 12, padding: '15px 17px' }}>
                     <div style={{ width: 24, height: 3, borderRadius: 3, background: CIANO, marginBottom: 9 }} />
@@ -129,7 +149,7 @@ export default function FuncionalidadePage() {
             // Comeca na linha do TITULO, nao no topo absoluto. Alinhado com a
             // etiqueta, a midia subia demais e o bloco ficava alto; descer ate
             // o titulo faz os dois lados comecarem no mesmo ponto de leitura.
-            <div style={{ marginTop: f.etiqueta ? 'clamp(42px, 4.4vw, 56px)' : 0 }}>
+            <div className="func-midia" style={{ marginTop: f.etiqueta ? 'clamp(42px, 4.4vw, 56px)' : 0 }}>
               <Carrossel midias={midias} intervalo={f.intervalo || 5} alturaMax="56vh" />
             </div>
           )}
