@@ -107,41 +107,118 @@ export default function LandingPage() {
         }}>JÁ SOU CLIENTE</a>
       </header>
 
-      {/* ── ABERTURA: a dor primeiro ──────────────────────────────────────
-          O visitante decide em segundos se aquilo é sobre ele. Começar por
-          "plataforma de gestão" não desperta nada em quem não sabe que
-          precisa — começar pela pergunta que ele não sabe responder, sim. */}
-      <section style={{
-        background: `linear-gradient(160deg, ${MARINHO} 0%, #143a73 60%, #17457f 100%)`,
-        color: '#fff', padding: 'clamp(46px,8vw,86px) 20px clamp(52px,8vw,90px)',
-      }}>
-        <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center' }}>
+      {/* ABERTURA ----------------------------------------------------------
+          Fundo CLARO e texto escuro. O escuro fica bonito em site de software
+          para desenvolvedor; para dona de salao passa longe do que ela
+          reconhece como confiavel, e ainda esconde texto no celular sob sol.
+
+          Duas colunas: a esquerda a dor e a promessa, a direita uma previa do
+          painel. A previa mostra o que o NODRI REALMENTE entrega - numeros,
+          equipe e alertas. Nada de agenda nem estoque: prometer tela que nao
+          existe traz cliente que cancela na primeira semana. */}
+      <section style={{ background: '#fff', borderBottom: '1px solid #e3e8f0', padding: 'clamp(34px,5vw,64px) 20px' }}>
+        <div style={{
+          maxWidth: 1180, margin: '0 auto',
+          display: 'grid', gap: 'clamp(30px,4vw,54px)',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%,420px), 1fr))',
+          alignItems: 'center',
+        }}>
+          <div>
+            <div style={{
+              display: 'inline-block', padding: '7px 16px', borderRadius: 999,
+              background: '#e6f7fb', color: '#046b85',
+              fontSize: 11.5, fontWeight: 800, letterSpacing: '.5px',
+              marginBottom: 20, textTransform: 'uppercase',
+            }}>Gestao para saloes de beleza</div>
+
+            <h1 style={{
+              fontSize: 'clamp(27px,3.6vw,44px)', fontWeight: 900, lineHeight: 1.14,
+              letterSpacing: '-1px', marginBottom: 18, color: MARINHO,
+            }}>{cfg.hero_titulo}</h1>
+
+            <p style={{ fontSize: 'clamp(14.5px,1.6vw,17px)', lineHeight: 1.7, color: '#4b5563', marginBottom: 26 }}>
+              {cfg.hero_subtitulo}
+            </p>
+
+            <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', marginBottom: 28 }}>
+              {[
+                ['Financeiro real', 'Custo, lucro e preco certo por servico'],
+                ['Equipe medida', 'Metas, comissoes e desempenho de cada um'],
+                ['Alertas que importam', 'Cliente sumindo e queda de faturamento'],
+              ].map(([t, d]) => (
+                <div key={t}>
+                  <div style={{ width: 26, height: 3, borderRadius: 3, background: CIANO, marginBottom: 9 }} />
+                  <div style={{ fontSize: 13.5, fontWeight: 800, color: MARINHO, marginBottom: 3 }}>{t}</div>
+                  <div style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.5 }}>{d}</div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+              <a href="#contato" style={{
+                padding: '16px 34px', borderRadius: 12, textDecoration: 'none',
+                background: MARINHO, color: '#fff', fontWeight: 800, fontSize: 15.5,
+                boxShadow: '0 8px 26px rgba(13,42,86,.22)',
+              }}>{cfg.hero_botao}</a>
+              <a href="#dores" style={{
+                padding: '16px 30px', borderRadius: 12, textDecoration: 'none',
+                border: `2px solid ${MARINHO}`, color: MARINHO, fontWeight: 800, fontSize: 15.5,
+              }}>Ver como funciona</a>
+            </div>
+
+            <p style={{ fontSize: 12.5, color: '#8b95a5', marginTop: 14 }}>
+              Feito dentro de um salao em operacao, nao numa mesa de escritorio.
+            </p>
+          </div>
+
           <div style={{
-            display: 'inline-block', padding: '7px 18px', borderRadius: 999,
-            background: 'rgba(0,181,216,.16)', color: CIANO,
-            fontSize: 12, fontWeight: 800, letterSpacing: '.6px',
-            marginBottom: 24, textTransform: 'uppercase',
-          }}>Gestão para salões de beleza</div>
+            background: '#f7fafc', border: '1px solid #e3e8f0', borderRadius: 18,
+            padding: 18, boxShadow: '0 18px 50px rgba(13,42,86,.09)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+              <div style={{ width: 9, height: 9, borderRadius: 99, background: '#e2574c' }} />
+              <div style={{ width: 9, height: 9, borderRadius: 99, background: '#f5c451' }} />
+              <div style={{ width: 9, height: 9, borderRadius: 99, background: '#5cb85c' }} />
+              <span style={{ marginLeft: 6, fontSize: 11.5, color: '#8b95a5' }}>Painel do salao</span>
+            </div>
 
-          <h1 style={{
-            fontSize: 'clamp(28px,4.6vw,50px)', fontWeight: 900, lineHeight: 1.13,
-            letterSpacing: '-1px', marginBottom: 20,
-          }}>{cfg.hero_titulo}</h1>
+            <div style={{ display: 'grid', gap: 10, gridTemplateColumns: '1fr 1fr' }}>
+              {[
+                ['Faturamento do mes', 'R$ 128.750', '+18% vs. mes anterior', '#16a34a'],
+                ['Ticket medio', 'R$ 246,56', '+8% no periodo', '#16a34a'],
+                ['Clientes em risco', '14', 'sem voltar ha 60 dias', '#dc2626'],
+                ['Meta da equipe', '85%', 'faltam 6 dias', MARINHO],
+              ].map(([t, v, d, c]) => (
+                <div key={t} style={{ background: '#fff', border: '1px solid #e3e8f0', borderRadius: 12, padding: 13 }}>
+                  <div style={{ fontSize: 10.5, color: '#8b95a5', marginBottom: 5 }}>{t}</div>
+                  <div style={{ fontSize: 19, fontWeight: 900, color: MARINHO, lineHeight: 1.1 }}>{v}</div>
+                  <div style={{ fontSize: 10, color: c as string, marginTop: 4, fontWeight: 700 }}>{d}</div>
+                </div>
+              ))}
+            </div>
 
-          <p style={{
-            fontSize: 'clamp(15px,1.9vw,18.5px)', lineHeight: 1.7,
-            color: 'rgba(255,255,255,.86)', maxWidth: 680, margin: '0 auto 34px',
-          }}>{cfg.hero_subtitulo}</p>
+            <div style={{ background: '#fff', border: '1px solid #e3e8f0', borderRadius: 12, padding: 14, marginTop: 10 }}>
+              <div style={{ fontSize: 11.5, fontWeight: 800, color: MARINHO, marginBottom: 10 }}>Desempenho da equipe</div>
+              {[
+                ['Juliana', 92, '#16a34a'],
+                ['Fernanda', 74, CIANO],
+                ['Camila', 48, '#f59e0b'],
+              ].map(([n, pct, cor]) => (
+                <div key={n as string} style={{ marginBottom: 9 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#4b5563', marginBottom: 4 }}>
+                    <span>{n as string}</span><span style={{ fontWeight: 800 }}>{pct as number}% da meta</span>
+                  </div>
+                  <div style={{ height: 6, borderRadius: 99, background: '#eef2f7' }}>
+                    <div style={{ width: `${pct}%`, height: '100%', borderRadius: 99, background: cor as string }} />
+                  </div>
+                </div>
+              ))}
+            </div>
 
-          <a href="#contato" style={{
-            display: 'inline-block', padding: '17px 42px', borderRadius: 12,
-            background: CIANO, color: MARINHO, fontWeight: 900, fontSize: 16.5,
-            textDecoration: 'none', boxShadow: '0 10px 34px rgba(0,181,216,.34)',
-          }}>{cfg.hero_botao}</a>
-
-          <p style={{ fontSize: 12.5, color: 'rgba(255,255,255,.6)', marginTop: 16 }}>
-            Sem compromisso — a gente conversa antes de falar de preço.
-          </p>
+            <p style={{ fontSize: 10.5, color: '#a0aab8', textAlign: 'center', marginTop: 10 }}>
+              Ilustracao do painel. Os numeros do seu salao aparecem aqui.
+            </p>
+          </div>
         </div>
       </section>
 
@@ -149,7 +226,7 @@ export default function LandingPage() {
           Quatro situações concretas em vez de adjetivos. Quem se reconhece em
           uma delas já entendeu para que serve o sistema, sem precisar que
           ninguém explique o que é "gestão integrada". */}
-      <section style={{ padding: 'clamp(44px,7vw,74px) 20px', maxWidth: 1080, margin: '0 auto' }}>
+      <section id="dores" style={{ padding: 'clamp(44px,7vw,74px) 20px', maxWidth: 1080, margin: '0 auto' }}>
         <h2 style={{
           textAlign: 'center', fontSize: 'clamp(21px,3vw,31px)', fontWeight: 900,
           color: MARINHO, marginBottom: 12, letterSpacing: '-0.5px',

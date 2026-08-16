@@ -16,18 +16,13 @@ const TIPOS = [
   'Studio de sobrancelha/cílios', 'Spa', 'Salão infantil', 'Outro',
 ]
 
-// A pergunta mais útil da lista: dizer se a pessoa vem de papel, de planilha
-// ou de um concorrente muda completamente o que você precisa mostrar a ela.
-const SISTEMAS = [
-  'Não uso nenhum sistema',
-  'Caderno ou papel',
-  'Planilha (Excel / Google)',
-  'Agenda do celular / WhatsApp',
-  'Uso outro sistema pago',
-  'Outro',
-]
+// Campo aberto de propósito. Numa lista, todo mundo marca a opção mais
+// próxima e a resposta vira genérica; escrevendo, a pessoa diz o NOME do
+// concorrente — e saber com quem você está competindo vale mais que saber
+// que ela "usa um sistema pago".
 
 const OBJETIVOS = [
+  'Ganhar mais dinheiro',
   'Controlar o financeiro',
   'Acompanhar os profissionais',
   'Organizar a rotina do salão',
@@ -139,10 +134,8 @@ export default function FormularioContato() {
         </div>
         <div>
           <label style={rotulo}>Qual sistema você usa hoje? *</label>
-          <select style={campo} value={f.sistema_atual} onChange={e => set('sistema_atual', e.target.value)}>
-            <option value="">Selecione</option>
-            {SISTEMAS.map(t => <option key={t} value={t}>{t}</option>)}
-          </select>
+          <input style={campo} value={f.sistema_atual} onChange={e => set('sistema_atual', e.target.value)}
+            placeholder="Ex.: caderno, planilha, ou o nome do sistema" />
         </div>
       </div>
 
@@ -163,7 +156,7 @@ export default function FormularioContato() {
       <button onClick={enviar} disabled={enviando}
         style={{
           width: '100%', marginTop: 22, padding: '16px 0', borderRadius: 12, border: 'none',
-          background: 'linear-gradient(135deg,#5b4fcf,#f43f8e)', color: '#fff',
+          background: '#0d2a56', color: '#fff',
           fontSize: 16, fontWeight: 800, cursor: enviando ? 'wait' : 'pointer', opacity: enviando ? .7 : 1,
         }}>
         {enviando ? 'Enviando…' : 'Enviar mensagem'}
