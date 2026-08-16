@@ -125,6 +125,11 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
            ocupa 589 dos 627 px da coluna. */
         @media (min-width: 901px) {
           .titulo-l2 { display: block; white-space: nowrap; font-size: min(1.82vw, 28px); letter-spacing: -.5px; margin-top: 6px; }
+          /* A frase menor sobrou 149px de branco em cima e outros 149 embaixo.
+             Espalhando o texto pela coluna inteira o branco vira respiro
+             entre os blocos — e, como a etiqueta sobe para o topo, a foto ao
+             lado (que nasce na linha dela) cresce junto e cobre o resto. */
+          .nodri-hero-texto { justify-content: space-between !important; }
         }
 
         /* Faixa que rola para o lado, uma pagina de cada vez. O scroll-snap
