@@ -129,7 +129,7 @@ export default function LandingPage() {
               background: '#e6f7fb', color: '#046b85',
               fontSize: 11.5, fontWeight: 800, letterSpacing: '.5px',
               marginBottom: 20, textTransform: 'uppercase',
-            }}>Gestao para saloes de beleza</div>
+            }}>Gestão para salões de beleza</div>
 
             <h1 style={{
               fontSize: 'clamp(27px,3.6vw,44px)', fontWeight: 900, lineHeight: 1.14,
@@ -142,8 +142,8 @@ export default function LandingPage() {
 
             <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', marginBottom: 28 }}>
               {[
-                ['Financeiro real', 'Custo, lucro e preco certo por servico'],
-                ['Equipe medida', 'Metas, comissoes e desempenho de cada um'],
+                ['Financeiro real', 'Custo, lucro e preço certo por serviço'],
+                ['Equipe medida', 'Metas, comissões e desempenho de cada um'],
                 ['Alertas que importam', 'Cliente sumindo e queda de faturamento'],
               ].map(([t, d]) => (
                 <div key={t}>
@@ -167,7 +167,7 @@ export default function LandingPage() {
             </div>
 
             <p style={{ fontSize: 12.5, color: '#8b95a5', marginTop: 14 }}>
-              Feito dentro de um salao em operacao, nao numa mesa de escritorio.
+              Feito dentro de um salão em operação, não numa mesa de escritório.
             </p>
           </div>
 
@@ -179,14 +179,14 @@ export default function LandingPage() {
               <div style={{ width: 9, height: 9, borderRadius: 99, background: '#e2574c' }} />
               <div style={{ width: 9, height: 9, borderRadius: 99, background: '#f5c451' }} />
               <div style={{ width: 9, height: 9, borderRadius: 99, background: '#5cb85c' }} />
-              <span style={{ marginLeft: 6, fontSize: 11.5, color: '#8b95a5' }}>Painel do salao</span>
+              <span style={{ marginLeft: 6, fontSize: 11.5, color: '#8b95a5' }}>Painel do salão</span>
             </div>
 
             <div style={{ display: 'grid', gap: 10, gridTemplateColumns: '1fr 1fr' }}>
               {[
-                ['Faturamento do mes', 'R$ 128.750', '+18% vs. mes anterior', '#16a34a'],
-                ['Ticket medio', 'R$ 246,56', '+8% no periodo', '#16a34a'],
-                ['Clientes em risco', '14', 'sem voltar ha 60 dias', '#dc2626'],
+                ['Faturamento do mês', 'R$ 128.750', '+18% vs. mês anterior', '#16a34a'],
+                ['Ticket médio', 'R$ 246,56', '+8% no período', '#16a34a'],
+                ['Clientes em risco', '14', 'sem voltar há 60 dias', '#dc2626'],
                 ['Meta da equipe', '85%', 'faltam 6 dias', MARINHO],
               ].map(([t, v, d, c]) => (
                 <div key={t} style={{ background: '#fff', border: '1px solid #e3e8f0', borderRadius: 12, padding: 13 }}>
@@ -216,7 +216,7 @@ export default function LandingPage() {
             </div>
 
             <p style={{ fontSize: 10.5, color: '#a0aab8', textAlign: 'center', marginTop: 10 }}>
-              Ilustracao do painel. Os numeros do seu salao aparecem aqui.
+              Ilustração do painel. Os números do seu salão aparecem aqui.
             </p>
           </div>
         </div>
