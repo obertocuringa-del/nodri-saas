@@ -112,14 +112,18 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
           painel. A previa mostra o que o NODRI REALMENTE entrega - numeros,
           equipe e alertas. Nada de agenda nem estoque: prometer tela que nao
           existe traz cliente que cancela na primeira semana. */}
-      <section style={{ background: '#fff', borderBottom: '1px solid #e3e8f0', padding: 'clamp(34px,5vw,64px) 20px' }}>
+      {/* Respiro de cima bem menor que o de baixo: a faixa branca entre o
+          cabecalho e a etiqueta nao dizia nada e empurrava o titulo para
+          longe de quem acabou de chegar. Embaixo o espaco continua, porque
+          ali ele separa esta secao da proxima. */}
+      <section style={{ background: '#fff', borderBottom: '1px solid #e3e8f0', padding: 'clamp(12px,1.6vw,22px) 20px clamp(30px,4vw,52px)' }}>
         <div className="nodri-hero" style={{ maxWidth: 1340, margin: '0 auto' }}>
           <div>
             <div style={{
               display: 'inline-block', padding: '7px 16px', borderRadius: 999,
               background: '#e6f7fb', color: '#046b85',
               fontSize: 11.5, fontWeight: 800, letterSpacing: '.5px',
-              marginBottom: 20, textTransform: 'uppercase',
+              marginBottom: 16, textTransform: 'uppercase',
             }}>{(cfg as any).hero_etiqueta}</div>
 
             <h1 style={{
