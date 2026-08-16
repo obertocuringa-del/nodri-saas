@@ -234,6 +234,13 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
           div.nodri-comparacao[style] { grid-template-columns: 1fr !important; gap: 12px !important; }
           div.nodri-comparacao > div { padding: 14px !important; }
           div.nodri-comparacao > div > div { margin-bottom: 8px !important; }
+
+          /* Rolagem por secoes: ao soltar o dedo perto do comeco de uma
+             secao, ela encaixa no alto da tela em vez de ficar metade
+             aparecendo no rodape da anterior. E "proximity", nao
+             "mandatory": quem quiser rolar livre continua rolando. */
+          html { scroll-snap-type: y proximity; }
+          div.nodri-vitrine > section { scroll-snap-align: start; scroll-margin-top: 52px; }
         }
         @media (max-width: 1000px) { .nodri-4col { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         @media (max-width: 560px)  { .nodri-4col { gap: 12px; } }
