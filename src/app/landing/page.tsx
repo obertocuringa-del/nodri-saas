@@ -64,7 +64,7 @@ export default function LandingPage() {
         /* A imagem pesa mais que o texto: e ela que prende o olho de quem
            chega. 1.25fr contra 1fr da o destaque sem espremer a leitura. */
         .nodri-hero { display: grid; gap: clamp(30px,4vw,56px); align-items: center;
-                      grid-template-columns: 1fr 1.25fr; }
+                      grid-template-columns: 1.05fr 1.1fr; }
         @media (max-width: 900px) { .nodri-hero { grid-template-columns: 1fr; } }
         @media (max-width: 1000px) { .nodri-4col { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         @media (max-width: 560px)  { .nodri-4col { grid-template-columns: 1fr; } }
@@ -118,6 +118,10 @@ export default function LandingPage() {
             <h1 style={{
               fontSize: 'clamp(30px,3.9vw,50px)', fontWeight: 900, lineHeight: 1.12,
               letterSpacing: '-1px', marginBottom: 18, color: MARINHO,
+              // O navegador distribui as palavras em linhas de tamanho parecido
+              // em vez de encher uma e deixar a seguinte com duas palavras. Sem
+              // isto, titulo longo em coluna estreita quebra torto.
+              textWrap: 'balance', overflowWrap: 'break-word',
             }}>{cfg.hero_titulo}</h1>
 
             <p style={{ fontSize: 'clamp(15.5px,1.75vw,19px)', lineHeight: 1.7, color: '#4b5563', marginBottom: 30 }}>
