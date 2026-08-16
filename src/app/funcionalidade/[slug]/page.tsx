@@ -16,8 +16,26 @@ const CIANO = '#00b5d8'
 
 interface Func {
   slug: string; categoria: string; nome: string; etiqueta?: string
-  titulo: string; descricao?: string; destaques?: { titulo: string }[]
+  titulo: string; descricao?: string; destaques?: { titulo: string; desc?: string }[]
   video_url?: string; imagem_url?: string; botao_texto?: string
+}
+
+/**
+ * Link do Google Drive vira endereço direto da imagem.
+ *
+ * O que o Drive dá ao compartilhar é o endereço de uma PÁGINA
+ * (drive.google.com/file/d/ID/view), não do arquivo. Colar isso num <img>
+ * mostra ícone de imagem quebrada, e não há erro em lugar nenhum explicando.
+ *
+ * ATENÇÃO: mesmo convertido, o arquivo precisa estar compartilhado como
+ * "qualquer pessoa com o link". Arquivo restrito devolve uma página de login
+ * do Google, que o navegador também não consegue desenhar.
+ */
+function urlDeImagem(url: string): string {
+  const u = String(url || '').trim()
+  const m = u.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?[^]*id=)([A-Za-z0-9_-]{10,})/)
+  if (m) return `https://lh3.googleusercontent.com/d/${m[1]}`
+  return u
 }
 
 /** Aceita youtu.be, /watch?v= e /embed/ — o dono cola o link que tiver na mão. */
@@ -98,9 +116,14 @@ export default function FuncionalidadePage() {
             {!!(f.destaques || []).length && (
               <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', marginBottom: 28 }}>
                 {(f.destaques || []).map((d, i) => (
-                  <div key={i} style={{ background: '#f7fafc', border: '1px solid #e3e8f0', borderRadius: 12, padding: '14px 16px' }}>
-                    <div style={{ width: 24, height: 3, borderRadius: 3, background: CIANO, marginBottom: 8 }} />
+                  <div key={i} style={{ background: '#f7fafc', border: '1px solid #e3e8f0', borderRadius: 12, padding: '15px 17px' }}>
+                    <div style={{ width: 24, height: 3, borderRadius: 3, background: CIANO, marginBottom: 9 }} />
                     <div style={{ fontSize: 13, fontWeight: 700, color: MARINHO, lineHeight: 1.4 }}>{d.titulo}</div>
+                    {/* Só ocupa espaço quando existe: card com título solto e um
+                        vazio embaixo fica pior do que card só com título. */}
+                    {d.desc && (
+                      <div style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.55, marginTop: 6 }}>{d.desc}</div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -131,7 +154,7 @@ export default function FuncionalidadePage() {
                   />
                 </div>
               ) : (
-                <img src={f.imagem_url} alt={f.titulo}
+                <img src={urlDeImagem(f.imagem_url || '')} alt={f.titulo}
                   style={{
                     width: '100%', height: 'auto', borderRadius: 18,
                     border: '1px solid #e3e8f0', boxShadow: '0 18px 50px rgba(13,42,86,.12)',

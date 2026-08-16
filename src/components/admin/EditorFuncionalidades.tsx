@@ -19,7 +19,7 @@ const lbl = 'text-[10px] font-bold text-nodri-t3 uppercase tracking-wider mb-1 b
 interface Func {
   id: string; categoria: string; nome: string; slug: string
   etiqueta?: string; titulo: string; descricao?: string
-  destaques?: { titulo: string }[]
+  destaques?: { titulo: string; desc?: string }[]
   video_url?: string; imagem_url?: string; botao_texto?: string
   ordem_categoria?: number; ordem?: number; ativo?: boolean
 }
@@ -138,16 +138,23 @@ export default function EditorFuncionalidades() {
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className={lbl + ' mb-0'}>Destaques (cards pequenos)</label>
-                    <button onClick={() => set(f.id, 'destaques', [...(f.destaques || []), { titulo: '' }])}
+                    <button onClick={() => set(f.id, 'destaques', [...(f.destaques || []), { titulo: '', desc: '' }])}
                       className="text-[10px] text-nodri-cyan font-bold">+ Adicionar</button>
                   </div>
                   {(f.destaques || []).map((d, i) => (
-                    <div key={i} className="flex gap-1.5 mb-1.5">
-                      <input className={inp} value={d.titulo} placeholder="Ex.: Ponto de equilíbrio"
-                        onChange={e => {
-                          const arr = [...(f.destaques || [])]; arr[i] = { titulo: e.target.value }
-                          set(f.id, 'destaques', arr)
-                        }} />
+                    <div key={i} className="flex gap-1.5 mb-1.5 items-start">
+                      <div className="grid gap-1.5 flex-1">
+                        <input className={inp} value={d.titulo} placeholder="Título — ex.: Ponto de equilíbrio"
+                          onChange={e => {
+                            const arr = [...(f.destaques || [])]; arr[i] = { ...arr[i], titulo: e.target.value }
+                            set(f.id, 'destaques', arr)
+                          }} />
+                        <input className={inp} value={d.desc || ''} placeholder="Descrição (opcional) — o que esse item resolve"
+                          onChange={e => {
+                            const arr = [...(f.destaques || [])]; arr[i] = { ...arr[i], desc: e.target.value }
+                            set(f.id, 'destaques', arr)
+                          }} />
+                      </div>
                       <button onClick={() => set(f.id, 'destaques', (f.destaques || []).filter((_, j) => j !== i))}
                         className="text-nodri-red p-1 shrink-0"><Trash2 size={11} /></button>
                     </div>
