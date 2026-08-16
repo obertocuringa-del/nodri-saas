@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
-import { asaasAtivo, criarOuAcharCliente, criarAssinatura, linkDePagamento, cancelarAssinatura } from '@/lib/asaas'
+import { asaasAtivo, criarOuAcharCliente, criarAssinatura, atualizarAssinatura, linkDePagamento, cancelarAssinatura } from '@/lib/asaas'
 
 export const dynamic = 'force-dynamic'
 
@@ -73,10 +73,26 @@ export async function POST(req: NextRequest) {
 
     if (!salao.email) return NextResponse.json({ erro: 'Salão sem e-mail cadastrado' }, { status: 400 })
 
-    // Trocar plano é cancelar e recriar: o Asaas não muda o valor de uma
-    // assinatura viva sem bagunçar o ciclo já cobrado.
+    // ── Trocar de plano em assinatura viva: ATUALIZA, não recria ─────────
+    // Cancelar e criar outra faria a assinatura nova nascer sem cartão, e o
+    // cliente teria de digitar tudo de novo só para mudar de plano. O Asaas
+    // guarda o cartão na assinatura; atualizar o valor preserva a cobrança
+    // automática e não interrompe nada.
     if (acao === 'trocar' && salao.asaas_subscription_id) {
-      await cancelarAssinatura(salao.asaas_subscription_id)
+      const atualizada = await atualizarAssinatura(salao.asaas_subscription_id, {
+        valor: plano.preco,
+        descricao: `NODRI ${plano.nome}`,
+      })
+      await supabaseAdmin.from('saloes').update({
+        plano_id: plano.id,
+        asaas_status: atualizada.status || 'ACTIVE',
+      }).eq('id', salaoId)
+      return NextResponse.json({
+        ok: true,
+        plano: plano.nome,
+        valor: plano.preco,
+        mensagem: `Plano alterado para ${plano.nome} (R$ ${plano.preco}/mês). O cartão do cliente continua o mesmo — nada precisa ser refeito.`,
+      })
     }
 
     const cliente = await criarOuAcharCliente({

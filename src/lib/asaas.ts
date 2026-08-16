@@ -129,6 +129,32 @@ export async function linkDePagamento(assinaturaId: string): Promise<string | nu
   return cobrancas?.data?.[0]?.invoiceUrl || null
 }
 
+/**
+ * Troca de plano SEM pedir o cartão de novo.
+ *
+ * O caminho óbvio — cancelar e criar outra — quebra justamente o que faz a
+ * recorrência valer a pena: a assinatura nova nasce sem cartão, e o cliente
+ * teria de digitar tudo outra vez só para mudar de plano. O Asaas guarda o
+ * cartão na assinatura, então atualizar o valor preserva a cobrança
+ * automática.
+ *
+ * `updatePendingPayments` faz a cobrança já gerada e ainda não paga assumir o
+ * valor novo. Sem isso, quem sobe de plano hoje ainda pagaria o valor antigo
+ * neste mês — e quem desce pagaria o caro.
+ */
+export async function atualizarAssinatura(assinaturaId: string, dados: {
+  valor: number; descricao: string
+}): Promise<AssinaturaAsaas> {
+  return chamar<AssinaturaAsaas>(`/subscriptions/${assinaturaId}`, {
+    method: 'POST',
+    body: JSON.stringify({
+      value: dados.valor,
+      description: dados.descricao,
+      updatePendingPayments: true,
+    }),
+  })
+}
+
 export async function cancelarAssinatura(assinaturaId: string): Promise<void> {
   await chamar(`/subscriptions/${assinaturaId}`, { method: 'DELETE' })
 }
