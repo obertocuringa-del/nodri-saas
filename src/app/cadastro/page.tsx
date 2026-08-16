@@ -82,7 +82,7 @@ function CadastroInner() {
     setLoading(true)
     setMetodo(metodoPag)
     try {
-      const res = await fetch('/api/checkout', {
+      const res = await fetch('/api/assinatura/criar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -100,13 +100,12 @@ function CadastroInner() {
         }),
       })
       const data = await res.json()
-      if (metodoPag === 'cartao' && data.init_point) {
-        window.location.href = data.init_point
-      } else if (metodoPag === 'pix' && data.qr_code) {
-        setPixData({ qr_code: data.qr_code, qr_code_base64: data.qr_code_base64 })
-        setEtapa('pix')
+      // O Asaas devolve a URL do checkout dele. O cartão é digitado lá, nunca
+      // aqui: guardar dado de cartão exigiria certificação PCI.
+      if (data.url) {
+        window.location.href = data.url
       } else {
-        alert(data.erro || 'Erro ao processar pagamento. Tente novamente.')
+        alert(data.erro || 'Não foi possível iniciar a assinatura. Tente novamente.')
       }
     } catch {
       alert('Erro ao conectar com o servidor.')
@@ -246,81 +245,40 @@ function CadastroInner() {
           </div>
         )}
 
-        {/*  ETAPA 2: ESCOLHA DE PAGAMENTO  */}
+        {/*  ETAPA 2: ASSINATURA  */}
+        {/* Um caminho só. A escolha entre cartão e PIX existia porque cada
+            compra era avulsa; assinatura recorrente é no cartão, senão o
+            cliente teria de pagar na mão todo mês — que é justamente o que
+            se está resolvendo. */}
         {etapa === 'pagamento' && (
           <div style={{ background: '#ffffff', border: '1px solid #e0ddd8', borderRadius: 16, padding: 28 }}>
-            <h3 style={{ margin: '0 0 20px', fontSize: 15, fontWeight: 700 }}>Como deseja pagar?</h3>
-            <div style={{ display: 'grid', gap: 12 }}>
+            <h3 style={{ margin: '0 0 8px', fontSize: 15, fontWeight: 700 }}>Assinatura mensal</h3>
+            <p style={{ margin: '0 0 20px', fontSize: 13, color: '#6b6860', lineHeight: 1.6 }}>
+              A cobrança é feita automaticamente todo mês no cartão. Você pode cancelar quando quiser,
+              e o acesso segue até o fim do período já pago.
+            </p>
 
-              {/* Cartão */}
-              {cardBtn(() => pagar('cartao'), !planoInfo || (loading && metodo === 'cartao'), (
-                <>
-                  <CreditCard size={30} color="#aaa" />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ color: '#1a1a1a', fontWeight: 700, fontSize: 14, marginBottom: 3 }}>Cartão de Crédito / Débito</div>
-                    <div style={{ color: '#888', fontSize: 12 }}>Visa, Mastercard, Elo — via Mercado Pago</div>
+            {cardBtn(() => pagar('cartao'), !planoInfo || loading, (
+              <>
+                <CreditCard size={30} color="#aaa" />
+                <div style={{ flex: 1 }}>
+                  <div style={{ color: '#1a1a1a', fontWeight: 700, fontSize: 14, marginBottom: 3 }}>
+                    Assinar por R${precoFinal}/mês
                   </div>
-                  {loading && metodo === 'cartao' && <span style={{ color: '#888', fontSize: 12 }}>Aguarde...</span>}
-                </>
-              ))}
+                  <div style={{ color: '#888', fontSize: 12 }}>Cartão de crédito — ambiente seguro do Asaas</div>
+                </div>
+                {loading && <span style={{ color: '#888', fontSize: 12 }}>Aguarde...</span>}
+              </>
+            ))}
 
-              {/* PIX */}
-              {cardBtn(() => pagar('pix'), !planoInfo || (loading && metodo === 'pix'), (
-                <>
-                  <div style={{ width: 38, height: 38, background: '#00b894', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: 'white', fontWeight: 700, fontSize: 14 }}>PIX</div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ color: '#1a1a1a', fontWeight: 700, fontSize: 14, marginBottom: 3 }}>PIX</div>
-                    <div style={{ color: '#888', fontSize: 12 }}>Aprovação imediata — escaneie o QR Code ou copie a chave</div>
-                  </div>
-                  {loading && metodo === 'pix' && <span style={{ color: '#888', fontSize: 12 }}>Gerando...</span>}
-                </>
-              ))}
-            </div>
-
-            <div style={{ textAlign: 'center', marginTop: 16 }}>
-              <button onClick={() => setEtapa('form')} style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: 12 }}>
+            <div style={{ textAlign: 'center', marginTop: 18 }}>
+              <button onClick={() => setEtapa('form')} style={{ background: 'none', border: 'none', color: '#6b6860', fontSize: 13, cursor: 'pointer' }}>
                 ← Voltar e editar dados
               </button>
             </div>
           </div>
         )}
 
-        {/*  ETAPA 3: PIX QR CODE  */}
-        {etapa === 'pix' && pixData && (
-          <div style={{ background: '#ffffff', border: '1px solid #e0ddd8', borderRadius: 16, padding: 28, textAlign: 'center' }}>
-            <div style={{ fontSize: 13, color: '#6b6860', marginBottom: 20 }}>
-              Pague <strong style={{ color: '#1a1a1a' }}>R${precoFinal}</strong> para ativar o Plano <strong style={{ color: planoInfo?.cor || '#5b4fcf' }}>{planoInfo?.nome || planoNome}</strong>
-            </div>
-
-            {/* QR Code */}
-            <div style={{ display: 'inline-block', background: 'white', padding: 14, borderRadius: 16, marginBottom: 20 }}>
-              <img
-                src={`data:image/png;base64,${pixData.qr_code_base64}`}
-                alt="QR Code PIX"
-                style={{ width: 200, height: 200, display: 'block' }}
-              />
-            </div>
-
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>Ou copie a chave PIX Copia e Cola:</div>
-              <div style={{ background: '#ffffff', border: '1px solid #e8e6e0', borderRadius: 10, padding: '10px 14px', fontSize: 11, color: '#aaa', wordBreak: 'break-all', marginBottom: 10, textAlign: 'left' as const, maxHeight: 64, overflow: 'hidden' }}>
-                {pixData.qr_code.slice(0, 120)}...
-              </div>
-              <button onClick={copiarChave}
-                style={{ background: copiado ? '#15803d' : '#5b4fcf', border: 'none', borderRadius: 10, padding: '10px 28px', color: '#ffffff', cursor: 'pointer', fontSize: 14, fontWeight: 600, transition: 'all 0.2s' }}>
-                {copiado ? <><CheckCircle size={14} style={{display:'inline',marginRight:4}} />Chave copiada!</> : <><ClipboardList size={14} style={{display:'inline',marginRight:4}} />Copiar Chave PIX</>}
-              </button>
-            </div>
-
-            <div style={{ background: '#f0fff4', border: '1px solid #1a4a2a', borderRadius: 10, padding: '12px 16px', fontSize: 12, color: '#15803d' }}>
-              <CheckCircle size={13} style={{display:'inline',marginRight:4}} />Após o pagamento você receberá um email de confirmação em <strong>{form.email}</strong>
-            </div>
-
-            <div style={{ marginTop: 16, fontSize: 11, color: '#555' }}>
-              O acesso é liberado automaticamente após confirmação do pagamento
-            </div>
-          </div>
-        )}
       </div>
     </div>
   )

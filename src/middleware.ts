@@ -27,7 +27,8 @@ export async function middleware(request: NextRequest) {
     // APIs públicas de compra
     // Planos da vitrine: quem lê é visitante que ainda não tem conta
     pathname.startsWith('/api/planos-publicos') ||
-    pathname.startsWith('/api/checkout') ||
+    // Assinatura: quem chama ainda não tem conta
+    pathname.startsWith('/api/assinatura') ||
     pathname.startsWith('/api/webhook') ||
     pathname.startsWith('/api/cupons/validar') ||
     pathname.startsWith('/api/afiliados') ||
