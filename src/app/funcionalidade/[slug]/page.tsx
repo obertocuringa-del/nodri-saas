@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
+import Carrossel, { type Midia } from '@/components/Carrossel'
 
 const MARINHO = '#0d2a56'
 const CIANO = '#00b5d8'
@@ -18,31 +19,7 @@ interface Func {
   slug: string; categoria: string; nome: string; etiqueta?: string
   titulo: string; descricao?: string; destaques?: { titulo: string; desc?: string }[]
   video_url?: string; imagem_url?: string; botao_texto?: string
-}
-
-/**
- * Link do Google Drive vira endereço direto da imagem.
- *
- * O que o Drive dá ao compartilhar é o endereço de uma PÁGINA
- * (drive.google.com/file/d/ID/view), não do arquivo. Colar isso num <img>
- * mostra ícone de imagem quebrada, e não há erro em lugar nenhum explicando.
- *
- * ATENÇÃO: mesmo convertido, o arquivo precisa estar compartilhado como
- * "qualquer pessoa com o link". Arquivo restrito devolve uma página de login
- * do Google, que o navegador também não consegue desenhar.
- */
-function urlDeImagem(url: string): string {
-  const u = String(url || '').trim()
-  const m = u.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?[^]*id=)([A-Za-z0-9_-]{10,})/)
-  if (m) return `https://lh3.googleusercontent.com/d/${m[1]}`
-  return u
-}
-
-/** Aceita youtu.be, /watch?v= e /embed/ — o dono cola o link que tiver na mão. */
-function idDoYoutube(url: string): string | null {
-  const u = String(url || '')
-  const m = u.match(/(?:youtu\.be\/|v=|\/embed\/|\/shorts\/)([A-Za-z0-9_-]{6,})/)
-  return m ? m[1] : null
+  midias?: { tipo?: 'imagem' | 'video'; url: string }[]; intervalo?: number
 }
 
 export default function FuncionalidadePage() {
@@ -64,8 +41,15 @@ export default function FuncionalidadePage() {
   if (carregando) return <Centro texto="Carregando…" />
   if (!f) return <Centro texto="Funcionalidade não encontrada." link />
 
-  const yt = f.video_url ? idDoYoutube(f.video_url) : null
-  const temMidia = !!yt || !!f.imagem_url
+  // `midias` é a lista nova. Sem ela, os campos antigos viram um item só —
+  // quem já cadastrou funcionalidade não perde a imagem que tinha posto.
+  const midias: Midia[] = (f.midias || []).filter(m => m?.url?.trim()).length
+    ? (f.midias as Midia[]).filter(m => m?.url?.trim())
+    : [
+        ...(f.video_url ? [{ tipo: 'video' as const, url: f.video_url }] : []),
+        ...(f.imagem_url ? [{ tipo: 'imagem' as const, url: f.imagem_url }] : []),
+      ]
+  const temMidia = midias.length > 0
 
   return (
     <div style={{ fontFamily: 'Segoe UI, sans-serif', background: '#f7fafc', minHeight: '100vh', color: '#1a1a1a' }}>
@@ -142,28 +126,11 @@ export default function FuncionalidadePage() {
           </div>
 
           {temMidia && (
-            <div>
-              {yt ? (
-                <div style={{
-                  position: 'relative', paddingTop: '56.25%', borderRadius: 18,
-                  overflow: 'hidden', boxShadow: '0 18px 50px rgba(13,42,86,.14)',
-                  border: '1px solid #e3e8f0', background: '#000',
-                }}>
-                  <iframe
-                    src={`https://www.youtube.com/embed/${yt}`}
-                    title={f.titulo}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0 }}
-                  />
-                </div>
-              ) : (
-                <img src={urlDeImagem(f.imagem_url || '')} alt={f.titulo}
-                  style={{
-                    width: '100%', height: 'auto', borderRadius: 18,
-                    border: '1px solid #e3e8f0', boxShadow: '0 18px 50px rgba(13,42,86,.12)',
-                  }} />
-              )}
+            // Comeca na linha do TITULO, nao no topo absoluto. Alinhado com a
+            // etiqueta, a midia subia demais e o bloco ficava alto; descer ate
+            // o titulo faz os dois lados comecarem no mesmo ponto de leitura.
+            <div style={{ marginTop: f.etiqueta ? 'clamp(42px, 4.4vw, 56px)' : 0 }}>
+              <Carrossel midias={midias} intervalo={f.intervalo || 5} />
             </div>
           )}
         </div>

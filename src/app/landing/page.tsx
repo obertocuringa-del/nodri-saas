@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import FormularioContato from '@/components/FormularioContato'
 import MenuFuncionalidades from '@/components/MenuFuncionalidades'
+import Carrossel from '@/components/Carrossel'
 import { LANDING_PADRAO } from '@/lib/landingDefaults'
 
 // ── O que a vitrine promete ─────────────────────────────────────────────────
@@ -150,6 +151,15 @@ export default function LandingPage() {
             </p>
           </div>
 
+          {/* DIREITA — fotos do salão, ou a ilustração do painel.
+              O carrossel só entra quando existe foto cadastrada; sem nada,
+              a ilustração continua ali. A página não pode ficar esperando
+              foto que o dono ainda não tirou. */}
+          {((cfg as any).hero_midias || []).filter((m: any) => m?.url?.trim()).length ? (
+            <Carrossel
+              midias={(cfg as any).hero_midias.filter((m: any) => m?.url?.trim())}
+              intervalo={(cfg as any).hero_intervalo || 5} />
+          ) : (
           <div style={{
             background: '#f7fafc', border: '1px solid #e3e8f0', borderRadius: 18,
             padding: 18, boxShadow: '0 18px 50px rgba(13,42,86,.09)',
@@ -198,6 +208,7 @@ export default function LandingPage() {
               Ilustração do painel. Os números do seu salão aparecem aqui.
             </p>
           </div>
+          )}
         </div>
       </section>
 

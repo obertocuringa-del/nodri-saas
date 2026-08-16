@@ -30,6 +30,11 @@ export const LANDING_PADRAO = {
   hero_rodape: 'Feito dentro de um salão em operação, não numa mesa de escritório.',
   hero_etiqueta: 'Gestão para salões de beleza',
 
+  // Fotos/vídeos do topo. Vazio = mostra a ilustração do painel; com itens,
+  // vira carrossel. Assim a página nunca fica com um buraco esperando foto.
+  hero_midias: [] as { tipo?: 'imagem' | 'video'; url: string }[],
+  hero_intervalo: 5,
+
   dores_titulo: 'Se você se reconhece aqui, a NODRI foi feita para o seu salão',
   dores_subtitulo: 'Nenhuma dessas coisas aparece de repente. Elas custam dinheiro em silêncio, todo mês.',
   dores: [

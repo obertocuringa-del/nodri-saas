@@ -69,6 +69,31 @@ export default function EditorVitrine() {
         </div>
         <Campo rotulo="Frase de rodapé do topo" v={cfg.hero_rodape} on={(v: string) => set('hero_rodape', v)} />
 
+        {/* Fotos do topo. Vazio = fica a ilustração do painel. */}
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <span className={lbl + ' mb-0'}>Fotos e vídeos do topo</span>
+            <button onClick={() => addItem('hero_midias', { url: '' })}
+              className="text-[10px] text-nodri-cyan font-bold">+ Adicionar</button>
+          </div>
+          {(cfg.hero_midias || []).map((m: any, i: number) => (
+            <div key={i} className="flex gap-1.5 mb-1.5">
+              <input className={inp} value={m.url} placeholder="Link da foto ou do vídeo do YouTube"
+                onChange={e => setItem('hero_midias', i, 'url', e.target.value)} />
+              <button onClick={() => delItem('hero_midias', i)}
+                className="text-nodri-red p-1 shrink-0"><Trash2 size={11} /></button>
+            </div>
+          ))}
+          <p className="text-[10px] text-nodri-t3 mt-1">
+            Sem nenhuma, o topo mostra a ilustração do painel. Com mais de uma, vira carrossel.
+          </p>
+        </div>
+
+        <div className="w-40">
+          <Campo rotulo="Trocar a cada (segundos)" v={String(cfg.hero_intervalo ?? 5)}
+            on={(v: string) => set('hero_intervalo', Number(v) || 5)} />
+        </div>
+
         <Lista titulo="Três destaques" itens={cfg.destaques || []}
           add={() => addItem('destaques', { titulo: 'Novo', desc: '' })}
           del={(i: number) => delItem('destaques', i)}

@@ -28,3 +28,11 @@ create table if not exists funcionalidades (
 
 create index if not exists idx_func_slug on funcionalidades (slug);
 create index if not exists idx_func_ordem on funcionalidades (ordem_categoria, ordem);
+
+-- ── Carrossel (adicionado depois) ───────────────────────────────────────────
+-- `midias` substitui video_url/imagem_url por uma LISTA: [{url}] na ordem em
+-- que aparecem. Os campos antigos continuam funcionando como um item só, para
+-- quem já cadastrou não perder o que tinha posto.
+alter table funcionalidades
+  add column if not exists midias jsonb default '[]'::jsonb,
+  add column if not exists intervalo int default 5;

@@ -21,6 +21,7 @@ interface Func {
   etiqueta?: string; titulo: string; descricao?: string
   destaques?: { titulo: string; desc?: string }[]
   video_url?: string; imagem_url?: string; botao_texto?: string
+  midias?: { tipo?: 'imagem' | 'video'; url: string }[]; intervalo?: number
   ordem_categoria?: number; ordem?: number; ativo?: boolean
 }
 
@@ -121,19 +122,37 @@ export default function EditorFuncionalidades() {
                   <textarea className={inp + ' resize-none'} rows={4} value={f.descricao || ''}
                     onChange={e => set(f.id, 'descricao', e.target.value)} /></div>
 
-                {/* Vídeo OU imagem. Ter os dois campos evita página com buraco
-                    quando ainda não existe vídeo gravado. */}
-                <div className="grid grid-cols-2 gap-2">
-                  <div><label className={lbl}>Vídeo do YouTube (link)</label>
-                    <input className={inp} value={f.video_url || ''} placeholder="https://youtu.be/..."
-                      onChange={e => set(f.id, 'video_url', e.target.value)} /></div>
-                  <div><label className={lbl}>Ou imagem (link)</label>
-                    <input className={inp} value={f.imagem_url || ''} placeholder="https://..."
-                      onChange={e => set(f.id, 'imagem_url', e.target.value)} /></div>
+                {/* Fotos e vídeos, na ordem em que aparecem. Um link por
+                    linha; vídeo do YouTube é reconhecido sozinho pelo endereço. */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className={lbl + ' mb-0'}>Fotos e vídeos</label>
+                    <button onClick={() => set(f.id, 'midias', [...(f.midias || []), { url: '' }])}
+                      className="text-[10px] text-nodri-cyan font-bold">+ Adicionar</button>
+                  </div>
+                  {(f.midias || []).map((m, i) => (
+                    <div key={i} className="flex gap-1.5 mb-1.5">
+                      <input className={inp} value={m.url}
+                        placeholder="Link da foto ou do vídeo do YouTube"
+                        onChange={e => {
+                          const arr = [...(f.midias || [])]; arr[i] = { ...arr[i], url: e.target.value }
+                          set(f.id, 'midias', arr)
+                        }} />
+                      <button onClick={() => set(f.id, 'midias', (f.midias || []).filter((_, j) => j !== i))}
+                        className="text-nodri-red p-1 shrink-0"><Trash2 size={11} /></button>
+                    </div>
+                  ))}
+                  <p className="text-[10px] text-nodri-t3 mt-1">
+                    Com mais de uma, viram carrossel com setas. Vídeo não troca sozinho — ninguém
+                    gosta de perder o vídeo no meio. Sem nenhuma, o texto ocupa a página inteira.
+                  </p>
                 </div>
-                <p className="text-[10px] text-nodri-t3 -mt-1">
-                  Com os dois preenchidos, o vídeo aparece. Sem nenhum, o texto ocupa a página inteira.
-                </p>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div><label className={lbl}>Trocar a cada (segundos)</label>
+                    <input className={inp} type="number" min={2} value={f.intervalo ?? 5}
+                      onChange={e => set(f.id, 'intervalo', Number(e.target.value))} /></div>
+                </div>
 
                 <div>
                   <div className="flex items-center justify-between mb-1">
