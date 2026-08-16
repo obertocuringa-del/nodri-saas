@@ -1,9 +1,30 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { User, Mail, Phone, CreditCard, Key, Loader2, CheckCircle, Copy, ExternalLink } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { LANDING_PADRAO } from '@/lib/landingDefaults'
+
+// Texto entre **asteriscos** sai na cor da marca. É o jeito de quem edita no
+// admin destacar a comissão sem precisar de HTML.
+function comDestaque(texto: string) {
+  return String(texto || '').split(/\*\*(.+?)\*\*/g).map((parte, i) =>
+    i % 2 === 1
+      ? <strong key={i} className="text-nodri-cyan">{parte}</strong>
+      : <span key={i}>{parte}</span>
+  )
+}
 
 export default function TrabalheConoscoPage() {
+  // Os textos desta página vêm do mesmo lugar que os da vitrine, então o
+  // admin edita as duas no mesmo painel.
+  const [cfg, setCfg] = useState<any>(LANDING_PADRAO)
+  useEffect(() => {
+    fetch('/api/landing-config')
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (d && typeof d === 'object') setCfg({ ...LANDING_PADRAO, ...d }) })
+      .catch(() => { /* fica com os textos do código */ })
+  }, [])
+
   const [form, setForm] = useState({ nome: '', cpf: '', email: '', telefone: '', chave_pix: '' })
   const [loading, setLoading] = useState(false)
   const [resultado, setResultado] = useState<{ cupom: string; link: string } | null>(null)
@@ -62,21 +83,16 @@ export default function TrabalheConoscoPage() {
             {/* Hero */}
             <div className="text-center mb-10">
               <div className="text-5xl mb-4"></div>
-              <h1 className="font-syne font-black text-3xl mb-3">Trabalhe Conosco</h1>
+              <h1 className="font-syne font-black text-3xl mb-3">{cfg.afiliado_pg_titulo}</h1>
               <p className="text-nodri-t2 text-base leading-relaxed max-w-lg mx-auto">
-                Indique o NODRI e ganhe <strong className="text-nodri-cyan">40% de comissão</strong> em cada venda realizada com o seu cupom exclusivo.
+                {comDestaque(cfg.afiliado_pg_subtitulo)}
               </p>
             </div>
 
             {/* Cards de benefícios */}
             <div className="grid grid-cols-3 gap-3 mb-10">
-              {[
-                { emoji: '', titulo: '40% de Comissão', desc: 'Em cada venda que você indicar' },
-                { emoji: '', titulo: 'Link Exclusivo', desc: 'Seu link personalizado para divulgar' },
-                { emoji: '', titulo: 'Pagamento via Pix', desc: 'Receba diretamente na sua conta' },
-              ].map(b => (
-                <div key={b.titulo} className="nodri-card p-4 text-center">
-                  <div className="text-2xl mb-2">{b.emoji}</div>
+              {(cfg.afiliado_pg_cards || []).map((b: any, i: number) => (
+                <div key={i} className="nodri-card p-4 text-center">
                   <div className="font-syne font-bold text-[12px] text-nodri-t1 mb-1">{b.titulo}</div>
                   <div className="text-[10px] text-nodri-t3">{b.desc}</div>
                 </div>
@@ -85,10 +101,10 @@ export default function TrabalheConoscoPage() {
 
             {/* Formulário */}
             <div className="nodri-card p-8">
-              <h2 className="font-syne font-bold text-lg mb-6">Cadastre-se gratuitamente</h2>
+              <h2 className="font-syne font-bold text-lg mb-6">{cfg.afiliado_pg_form_titulo}</h2>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="text-[11px] text-nodri-t3 uppercase tracking-wider mb-1.5 block">Nome completo *</label>
+                  <label className="text-[11px] text-nodri-t3 uppercase tracking-wider mb-1.5 block">{cfg.afiliado_pg_rot_nome}</label>
                   <div className="relative">
                     <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-nodri-t3" />
                     <input value={form.nome} onChange={e => setForm(p => ({ ...p, nome: e.target.value }))}
@@ -99,7 +115,7 @@ export default function TrabalheConoscoPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-[11px] text-nodri-t3 uppercase tracking-wider mb-1.5 block">CPF *</label>
+                    <label className="text-[11px] text-nodri-t3 uppercase tracking-wider mb-1.5 block">{cfg.afiliado_pg_rot_cpf}</label>
                     <div className="relative">
                       <CreditCard size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-nodri-t3" />
                       <input value={form.cpf} onChange={e => setForm(p => ({ ...p, cpf: formatCPF(e.target.value) }))}
@@ -108,7 +124,7 @@ export default function TrabalheConoscoPage() {
                     </div>
                   </div>
                   <div>
-                    <label className="text-[11px] text-nodri-t3 uppercase tracking-wider mb-1.5 block">Telefone</label>
+                    <label className="text-[11px] text-nodri-t3 uppercase tracking-wider mb-1.5 block">{cfg.afiliado_pg_rot_telefone}</label>
                     <div className="relative">
                       <Phone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-nodri-t3" />
                       <input value={form.telefone} onChange={e => setForm(p => ({ ...p, telefone: e.target.value }))}
@@ -119,7 +135,7 @@ export default function TrabalheConoscoPage() {
                 </div>
 
                 <div>
-                  <label className="text-[11px] text-nodri-t3 uppercase tracking-wider mb-1.5 block">Email *</label>
+                  <label className="text-[11px] text-nodri-t3 uppercase tracking-wider mb-1.5 block">{cfg.afiliado_pg_rot_email}</label>
                   <div className="relative">
                     <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-nodri-t3" />
                     <input type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
@@ -129,19 +145,19 @@ export default function TrabalheConoscoPage() {
                 </div>
 
                 <div>
-                  <label className="text-[11px] text-nodri-t3 uppercase tracking-wider mb-1.5 block">Chave Pix *</label>
+                  <label className="text-[11px] text-nodri-t3 uppercase tracking-wider mb-1.5 block">{cfg.afiliado_pg_rot_pix}</label>
                   <div className="relative">
                     <Key size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-nodri-t3" />
                     <input value={form.chave_pix} onChange={e => setForm(p => ({ ...p, chave_pix: e.target.value }))}
                       placeholder="CPF, email, telefone ou chave aleatória" required
                       className="w-full bg-nodri-surface border border-nodri-border rounded-lg pl-9 pr-3 py-2.5 text-[13px] outline-none focus:border-nodri-cyan transition-colors" />
                   </div>
-                  <p className="text-[10px] text-nodri-t3 mt-1">Suas comissões serão enviadas para esta chave Pix</p>
+                  <p className="text-[10px] text-nodri-t3 mt-1">{cfg.afiliado_pg_dica_pix}</p>
                 </div>
 
                 <button type="submit" disabled={loading}
                   className="w-full py-3.5 bg-nodri-cyan text-black font-bold rounded-xl flex items-center justify-center gap-2 hover:brightness-110 disabled:opacity-50 transition-all text-[14px] mt-2">
-                  {loading ? <><Loader2 size={18} className="animate-spin" /> Cadastrando...</> : 'Quero ser Afiliado!'}
+                  {loading ? <><Loader2 size={18} className="animate-spin" /> Cadastrando...</> : cfg.afiliado_pg_botao}
                 </button>
               </form>
             </div>
@@ -150,14 +166,14 @@ export default function TrabalheConoscoPage() {
           /* Tela de sucesso */
           <div className="nodri-card p-10 text-center">
             <CheckCircle size={56} className="text-nodri-green mx-auto mb-4" />
-            <h2 className="font-syne font-black text-2xl mb-2">Cadastro realizado!</h2>
+            <h2 className="font-syne font-black text-2xl mb-2">{cfg.afiliado_pg_sucesso_titulo}</h2>
             <p className="text-nodri-t2 text-sm mb-8 leading-relaxed">
-              Seu cupom e link exclusivos foram gerados. <br />Enviamos também por email com todas as instruções.
+              {comDestaque(cfg.afiliado_pg_sucesso_texto)}
             </p>
 
             {/* Cupom */}
             <div className="bg-nodri-surface border-2 border-dashed border-nodri-cyan rounded-xl p-6 mb-4">
-              <p className="text-[11px] text-nodri-t3 uppercase tracking-wider mb-2">Seu cupom exclusivo</p>
+              <p className="text-[11px] text-nodri-t3 uppercase tracking-wider mb-2">{cfg.afiliado_pg_sucesso_cupom}</p>
               <div className="flex items-center justify-center gap-3">
                 <span className="font-mono font-black text-2xl text-nodri-cyan tracking-widest">{resultado.cupom}</span>
                 <button onClick={() => copiar(resultado.cupom, 'Cupom')}
@@ -169,7 +185,7 @@ export default function TrabalheConoscoPage() {
 
             {/* Link */}
             <div className="bg-nodri-surface border border-nodri-border rounded-xl p-4 mb-6">
-              <p className="text-[11px] text-nodri-t3 uppercase tracking-wider mb-2">Seu link de divulgação</p>
+              <p className="text-[11px] text-nodri-t3 uppercase tracking-wider mb-2">{cfg.afiliado_pg_sucesso_link}</p>
               <div className="flex items-center gap-2">
                 <span className="flex-1 font-mono text-[11px] text-nodri-purple text-left break-all">{resultado.link}</span>
                 <button onClick={() => copiar(resultado.link, 'Link')}
@@ -184,11 +200,11 @@ export default function TrabalheConoscoPage() {
             </div>
 
             <div className="bg-nodri-cyan/5 border border-nodri-cyan/20 rounded-xl p-4 text-left">
-              <p className="text-[12px] font-bold text-nodri-cyan mb-2">Como usar:</p>
+              <p className="text-[12px] font-bold text-nodri-cyan mb-2">{cfg.afiliado_pg_como_usar_titulo}</p>
               <ul className="text-[11px] text-nodri-t2 space-y-1 leading-relaxed">
-                <li>• Compartilhe o link ou cupom com seus contatos</li>
-                <li>• Quando comprarem usando seu cupom, você ganha <strong className="text-nodri-cyan">40%</strong></li>
-                <li>• O pagamento é feito via Pix automaticamente</li>
+                {(cfg.afiliado_pg_como_usar || []).map((t: string, i: number) => (
+                  <li key={i}>• {comDestaque(t)}</li>
+                ))}
               </ul>
             </div>
 

@@ -240,6 +240,53 @@ export default function EditorVitrine() {
         <ListaChips itens={cfg.afiliados_chips || []} setItem={setItem} add={addItem} del={delItem} />
       </Bloco>
 
+      {/* PÁGINA DO AFILIADO — /trabalhe-conosco, inteira editável aqui */}
+      <Bloco titulo="Página do afiliado (/trabalhe-conosco)">
+        <p className="text-[10px] text-nodri-t3 -mt-1">
+          É a página que abre no botão “Quero ser Afiliado”. O que estiver entre **dois asteriscos** aparece na cor da marca.
+        </p>
+        <Campo rotulo="Título" v={cfg.afiliado_pg_titulo} on={(v: string) => set('afiliado_pg_titulo', v)} />
+        <Campo rotulo="Texto de abertura" v={cfg.afiliado_pg_subtitulo} on={(v: string) => set('afiliado_pg_subtitulo', v)} area />
+
+        <Lista titulo="Cartões de vantagem"
+          itens={cfg.afiliado_pg_cards || []}
+          add={() => addItem('afiliado_pg_cards', { titulo: 'Novo', desc: '' })}
+          del={(i: number) => delItem('afiliado_pg_cards', i)}
+          render={(c: any, i: number) => (
+            <>
+              <input className={inp} value={c.titulo} placeholder="Título"
+                onChange={e => setItem('afiliado_pg_cards', i, 'titulo', e.target.value)} />
+              <input className={inp} value={c.desc} placeholder="Descrição"
+                onChange={e => setItem('afiliado_pg_cards', i, 'desc', e.target.value)} />
+            </>
+          )} />
+
+        <Campo rotulo="Título do formulário" v={cfg.afiliado_pg_form_titulo} on={(v: string) => set('afiliado_pg_form_titulo', v)} />
+        <div className="grid grid-cols-2 gap-2">
+          <Campo rotulo="Rótulo: nome" v={cfg.afiliado_pg_rot_nome} on={(v: string) => set('afiliado_pg_rot_nome', v)} />
+          <Campo rotulo="Rótulo: CPF" v={cfg.afiliado_pg_rot_cpf} on={(v: string) => set('afiliado_pg_rot_cpf', v)} />
+          <Campo rotulo="Rótulo: telefone" v={cfg.afiliado_pg_rot_telefone} on={(v: string) => set('afiliado_pg_rot_telefone', v)} />
+          <Campo rotulo="Rótulo: email" v={cfg.afiliado_pg_rot_email} on={(v: string) => set('afiliado_pg_rot_email', v)} />
+          <Campo rotulo="Rótulo: chave Pix" v={cfg.afiliado_pg_rot_pix} on={(v: string) => set('afiliado_pg_rot_pix', v)} />
+          <Campo rotulo="Texto do botão" v={cfg.afiliado_pg_botao} on={(v: string) => set('afiliado_pg_botao', v)} />
+        </div>
+        <Campo rotulo="Aviso embaixo da chave Pix" v={cfg.afiliado_pg_dica_pix} on={(v: string) => set('afiliado_pg_dica_pix', v)} />
+
+        <div className="border-t border-nodri-border pt-2.5 mt-1">
+          <span className={lbl}>Tela depois do cadastro</span>
+          <Campo rotulo="Título" v={cfg.afiliado_pg_sucesso_titulo} on={(v: string) => set('afiliado_pg_sucesso_titulo', v)} />
+          <Campo rotulo="Texto" v={cfg.afiliado_pg_sucesso_texto} on={(v: string) => set('afiliado_pg_sucesso_texto', v)} area />
+          <div className="grid grid-cols-2 gap-2">
+            <Campo rotulo="Rótulo do cupom" v={cfg.afiliado_pg_sucesso_cupom} on={(v: string) => set('afiliado_pg_sucesso_cupom', v)} />
+            <Campo rotulo="Rótulo do link" v={cfg.afiliado_pg_sucesso_link} on={(v: string) => set('afiliado_pg_sucesso_link', v)} />
+          </div>
+          <Campo rotulo="Título do 'Como usar'" v={cfg.afiliado_pg_como_usar_titulo} on={(v: string) => set('afiliado_pg_como_usar_titulo', v)} />
+          <span className={lbl + ' mt-2'}>Itens do &quot;Como usar&quot;</span>
+          <ListaTexto chave="afiliado_pg_como_usar" itens={cfg.afiliado_pg_como_usar || []}
+            setItem={setItem} add={addItem} del={delItem} />
+        </div>
+      </Bloco>
+
       {/* BARRA DE SALVAR — fixa, para não precisar rolar até o fim */}
       <div className="sticky bottom-0 bg-nodri-card border-t border-nodri-border p-3 flex items-center gap-2 -mx-1">
         <a href="/" target="_blank" rel="noopener noreferrer"

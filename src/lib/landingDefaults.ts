@@ -96,6 +96,35 @@ export const LANDING_PADRAO = {
     { emoji: '', texto: 'Pix direto' },
   ],
 
+  // ── Página /trabalhe-conosco (cadastro de afiliado) ──────────────────────
+  // Tudo o que aparece lá se edita no admin. O que estiver entre **asteriscos**
+  // sai destacado na cor da marca.
+  afiliado_pg_titulo: 'Trabalhe Conosco',
+  afiliado_pg_subtitulo: 'Indique o NODRI e ganhe **40% de comissão** em cada venda realizada com o seu cupom exclusivo.',
+  afiliado_pg_cards: [
+    { titulo: '40% de Comissão', desc: 'Em cada venda que você indicar' },
+    { titulo: 'Link Exclusivo', desc: 'Seu link personalizado para divulgar' },
+    { titulo: 'Pagamento via Pix', desc: 'Receba diretamente na sua conta' },
+  ],
+  afiliado_pg_form_titulo: 'Cadastre-se gratuitamente',
+  afiliado_pg_rot_nome: 'Nome completo *',
+  afiliado_pg_rot_cpf: 'CPF *',
+  afiliado_pg_rot_telefone: 'Telefone',
+  afiliado_pg_rot_email: 'Email *',
+  afiliado_pg_rot_pix: 'Chave Pix *',
+  afiliado_pg_dica_pix: 'Suas comissões serão enviadas para esta chave Pix',
+  afiliado_pg_botao: 'Quero ser Afiliado!',
+  afiliado_pg_sucesso_titulo: 'Cadastro realizado!',
+  afiliado_pg_sucesso_texto: 'Seu cupom e link exclusivos foram gerados. Enviamos também por email com todas as instruções.',
+  afiliado_pg_sucesso_cupom: 'Seu cupom exclusivo',
+  afiliado_pg_sucesso_link: 'Seu link de divulgação',
+  afiliado_pg_como_usar_titulo: 'Como usar:',
+  afiliado_pg_como_usar: [
+    'Compartilhe o link ou cupom com seus contatos',
+    'Quando comprarem usando seu cupom, você ganha **40%**',
+    'O pagamento é feito via Pix automaticamente',
+  ],
+
   footer_logo: 'NODRI',
   footer_texto: 'Gestão Inteligente para Salões de Beleza',
   footer_email: 'contato@nodri.com.br',
