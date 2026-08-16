@@ -35,12 +35,20 @@ function ehVideo(m: Midia): boolean {
 //   rápida de perder a visita.
 //
 // • Passar o mouse em cima também pausa. Quem parou para olhar está olhando.
-export default function Carrossel({ midias, intervalo = 5, alturaMax }: {
+export default function Carrossel({ midias, intervalo = 5, alturaMax, preencher, recuoVideo = 0 }: {
   midias: Midia[]; intervalo?: number
   /** Teto de altura (ex.: '58vh'). Sem isso a midia cresce com a largura da
       coluna e empurra o botao para fora da tela — quem chega precisa rolar
       para descobrir que existe um botao. */
   alturaMax?: string
+  /** FOTO ocupa toda a altura de quem a contem, em vez de seguir a proporcao
+      16/10. No topo da vitrine a coluna tem a altura da tela: com proporcao
+      fixa sobrava uma faixa branca embaixo da foto. */
+  preencher?: boolean
+  /** VIDEO nao estica: distorcer o quadro do YouTube corta a imagem. Este
+      recuo desce o video ate a linha onde o texto do lado comeca, para os
+      dois blocos nascerem na mesma altura. */
+  recuoVideo?: number
 }) {
   const lista = (midias || []).filter(m => m?.url?.trim())
   const [i, setI] = useState(0)
@@ -74,7 +82,10 @@ export default function Carrossel({ midias, intervalo = 5, alturaMax }: {
     <div
       onMouseEnter={() => setParado(true)}
       onMouseLeave={() => setParado(false)}
-      style={{ position: 'relative' }}>
+      style={{
+        position: 'relative',
+        ...(preencher ? { height: '100%', display: 'flex', flexDirection: 'column' } : null),
+      }}>
 
       {yt ? (
         <div style={{
@@ -83,6 +94,7 @@ export default function Carrossel({ midias, intervalo = 5, alturaMax }: {
           boxShadow: '0 18px 50px rgba(13,42,86,.14)',
           aspectRatio: '16 / 9',
           maxHeight: alturaMax, margin: '0 auto',
+          marginTop: recuoVideo || undefined, width: '100%',
         }}>
           <iframe
             src={`https://www.youtube.com/embed/${yt}`}
@@ -97,8 +109,13 @@ export default function Carrossel({ midias, intervalo = 5, alturaMax }: {
           style={{
             width: '100%', display: 'block', borderRadius: 18,
             border: '1px solid #e3e8f0', boxShadow: '0 18px 50px rgba(13,42,86,.12)',
-            aspectRatio: '16 / 10', objectFit: 'cover',
+            objectFit: 'cover',
             maxHeight: alturaMax, margin: '0 auto',
+            // Preenchendo, quem manda na altura e a coluna; senao volta a
+            // proporcao de sempre.
+            ...(preencher
+              ? { height: '100%', flex: 1, minHeight: 0 }
+              : { aspectRatio: '16 / 10' }),
           }} />
       )}
 
@@ -115,13 +132,18 @@ export default function Carrossel({ midias, intervalo = 5, alturaMax }: {
 
           {/* Bolinhas: dizem quantas existem e onde você está. Sem elas o
               visitante não sabe se já viu tudo. */}
-          <div style={{ display: 'flex', gap: 7, justifyContent: 'center', marginTop: 14 }}>
+          {/* Preenchendo a coluna nao ha espaco embaixo da foto: as bolinhas
+              passam a flutuar sobre ela. */}
+          <div style={{
+            display: 'flex', gap: 7, justifyContent: 'center', marginTop: 14,
+            ...(preencher ? { position: 'absolute', left: 0, right: 0, bottom: 12, marginTop: 0 } : null),
+          }}>
             {lista.map((_, j) => (
               <button key={j} aria-label={`Ir para ${j + 1}`} onClick={() => setI(j)}
                 style={{
                   width: j === i ? 22 : 8, height: 8, borderRadius: 99, border: 'none',
                   cursor: 'pointer', transition: 'width .2s',
-                  background: j === i ? MARINHO : '#c9d3e0',
+                  background: j === i ? MARINHO : (preencher ? 'rgba(255,255,255,.75)' : '#c9d3e0'),
                 }} />
             ))}
           </div>

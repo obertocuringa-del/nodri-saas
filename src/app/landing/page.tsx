@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import FormularioContato from '@/components/FormularioContato'
 import MenuFuncionalidades from '@/components/MenuFuncionalidades'
 import Carrossel from '@/components/Carrossel'
@@ -38,6 +38,28 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
   // caminho antigo: padrão do código e busca depois.
   const [cfg, setCfg] = useState<any>(cfgInicial ? { ...DEFAULT_CONFIG, ...cfgInicial } : DEFAULT_CONFIG)
   const [planos, setPlanos] = useState<PlanoVitrine[]>([])
+
+  // O texto do topo fica ancorado embaixo, entao a etiqueta "Gestao para
+  // saloes" nasce a uma distancia que muda com a altura da tela. O video do
+  // lado precisa comecar nessa mesma linha — e isso nenhuma regra de CSS
+  // resolve sozinha, porque depende do tamanho do texto renderizado.
+  const heroRef = useRef<HTMLDivElement>(null)
+  const etiquetaRef = useRef<HTMLDivElement>(null)
+  const [recuoVideo, setRecuoVideo] = useState(0)
+
+  useEffect(() => {
+    const medir = () => {
+      const h = heroRef.current, e = etiquetaRef.current
+      if (!h || !e) return
+      setRecuoVideo(Math.max(0, Math.round(
+        e.getBoundingClientRect().top - h.getBoundingClientRect().top)))
+    }
+    medir()
+    const ro = new ResizeObserver(medir)
+    if (heroRef.current) ro.observe(heroRef.current)
+    window.addEventListener('resize', medir)
+    return () => { ro.disconnect(); window.removeEventListener('resize', medir) }
+  }, [cfg])
 
   useEffect(() => {
     // `r.ok` conferido de propósito: quando esta rota caía no login, o
@@ -130,13 +152,13 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
         minHeight: 'calc(100svh - max(clamp(60px, 6.4vw, 84px) - 24px, 40px) - 5px)',
         display: 'flex',
       }}>
-        <div className="nodri-hero" style={{ maxWidth: 1340, margin: '0 auto', width: '100%', flex: 1 }}>
+        <div ref={heroRef} className="nodri-hero" style={{ maxWidth: 1340, margin: '0 auto', width: '100%', flex: 1 }}>
           {/* Bloco ancorado embaixo, alinhado com o fim da imagem. Espalhar o
               conteudo (space-between) resolvia a sobra de baixo, mas subia a
               etiqueta e o titulo para o topo - o oposto do que se queria.
               Com flex-end o espaco que sobra fica em CIMA, onde nao incomoda. */}
-          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', gap: 'clamp(16px,1.8vw,24px)' }}>
-            <div style={{
+          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 'clamp(16px,1.8vw,24px)' }}>
+            <div ref={etiquetaRef} style={{
               display: 'inline-block', padding: '7px 16px', borderRadius: 999,
               background: '#e6f7fb', color: '#046b85',
               fontSize: 11.5, fontWeight: 800, letterSpacing: '.5px',
@@ -190,7 +212,8 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
           {((cfg as any).hero_midias || []).filter((m: any) => m?.url?.trim()).length ? (
             <Carrossel
               midias={(cfg as any).hero_midias.filter((m: any) => m?.url?.trim())}
-              intervalo={(cfg as any).hero_intervalo || 5} />
+              intervalo={(cfg as any).hero_intervalo || 5}
+              preencher recuoVideo={recuoVideo} />
           ) : (
           <div style={{
             background: '#f7fafc', border: '1px solid #e3e8f0', borderRadius: 18,
