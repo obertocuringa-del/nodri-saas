@@ -73,7 +73,13 @@ export default function LandingPage() {
   const [planos, setPlanos] = useState<PlanoVitrine[]>([])
 
   useEffect(() => {
-    fetch('/api/landing-config').then(r => r.json()).then(d => { if (d) setCfg({ ...DEFAULT_CONFIG, ...d }) })
+    // `r.ok` conferido de propósito: quando esta rota caía no login, o
+    // .json() estourava e o erro sumia sem catch. A página seguia com os
+    // textos do código e ninguém entendia por que o Editor não fazia efeito.
+    fetch('/api/landing-config')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d && typeof d === 'object') setCfg({ ...DEFAULT_CONFIG, ...d }) })
+      .catch(() => { /* fica com os textos do código */ })
     // Preço e nome saem da tabela `planos`; os módulos, da mesma fonte que o
     // gate usa para liberar tela. A vitrine não tem como prometer o que o
     // plano não entrega.

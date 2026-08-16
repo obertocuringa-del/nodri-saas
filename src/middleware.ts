@@ -33,6 +33,11 @@ export async function middleware(request: NextRequest) {
     // APIs públicas de compra
     // Planos da vitrine: quem lê é visitante que ainda não tem conta
     pathname.startsWith('/api/planos-publicos') ||
+    // Textos da vitrine. Estava FORA da lista: a pagina publica pedia a
+    // config, o middleware devolvia o HTML do login, e o fetch morria em
+    // silencio (nao havia catch). Resultado: tudo que voce editava no Editor
+    // Landing Page ficava salvo e nunca aparecia no site.
+    pathname === '/api/landing-config' ||
     // Assinatura: SÓ a criação é pública — quem assina ainda não tem conta.
     // /api/assinatura/gerenciar (cancelar, trocar plano, gerar link) fica de
     // fora de propósito: ela mexe na cobrança de salão que já existe, e a
