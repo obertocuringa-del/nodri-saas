@@ -112,7 +112,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { id, comissao_percentual, ativo, observacoes, reenviar_email } = body
+  const { id, comissao_percentual, ativo, observacoes, reenviar_email, desconto_cliente } = body
 
   if (!id) return NextResponse.json({ error: 'ID obrigatório' }, { status: 400 })
 
@@ -137,6 +137,11 @@ export async function PATCH(req: NextRequest) {
   // FIX: allowlist explícita — evita mass assignment (campos financeiros não podem ser alterados diretamente)
   const updates: Record<string, any> = {}
   if (comissao_percentual !== undefined) updates.comissao_percentual = Number(comissao_percentual)
+  // Desconto deste cupom (0 = usa o padrão do programa). É o que permite a
+  // campanha de 60% em um cupom só.
+  if (desconto_cliente !== undefined) {
+    updates.desconto_cliente = Math.max(0, Math.min(100, Number(desconto_cliente) || 0))
+  }
   if (ativo !== undefined) updates.ativo = Boolean(ativo)
   if (observacoes !== undefined) updates.observacoes = observacoes
 

@@ -11,23 +11,27 @@ export async function GET(req: NextRequest) {
 
   // 1. Verifica se é cupom de afiliado (começa com AFIL-)
   if (codigo.startsWith('AFIL-')) {
-    const { data: afiliado, error } = await supabaseAdmin
+    const { data: afiliado } = await supabaseAdmin
       .from('afiliados')
-      .select('id, nome, cupom, comissao_percentual, ativo')
+      .select('id, nome, cupom, comissao_percentual, desconto_cliente, ativo')
       .eq('cupom', codigo)
-      .single()
+      .maybeSingle()
 
     if (afiliado && afiliado.ativo) {
-      // Busca configuração de desconto do cliente (padrão 10%)
-      let descontoCliente = 10
-      try {
-        const { data: config } = await supabaseAdmin
-          .from('configuracoes')
-          .select('valor')
-          .eq('chave', 'afiliado_desconto_cliente')
-          .single()
-        if (config?.valor?.percentual) descontoCliente = config.valor.percentual
-      } catch {}
+      // O desconto do próprio cupom manda; zero significa "usa o padrão do
+      // programa". Tem que ser a MESMA regra de /api/assinatura/criar, senão a
+      // tela promete um valor e a cobrança sai com outro.
+      let descontoCliente = Number(afiliado.desconto_cliente) || 0
+      if (!descontoCliente) {
+        try {
+          const { data: config } = await supabaseAdmin
+            .from('configuracoes')
+            .select('valor')
+            .eq('chave', 'afiliado_desconto_cliente')
+            .maybeSingle()
+          descontoCliente = Number((config?.valor as any)?.percentual) || 10
+        } catch { descontoCliente = 10 }
+      }
 
       return NextResponse.json({
         valido: true,

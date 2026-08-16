@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { randomUUID } from 'crypto'
 import { asaasAtivo, criarOuAcharCliente, criarAssinatura, linkDePagamento } from '@/lib/asaas'
-import { afiliadoPeloCupom, configAfiliado } from '@/lib/afiliados'
+import { afiliadoPeloCupom, configAfiliado, descontoDoCupom } from '@/lib/afiliados'
 
 export const dynamic = 'force-dynamic'
 
@@ -62,7 +62,9 @@ export async function POST(req: NextRequest) {
     const afiliado = await afiliadoPeloCupom(codigo)
     if (afiliado) {
       const cfg = await configAfiliado()
-      desconto = cfg.percentual
+      // O desconto do próprio cupom manda: é o que permite uma campanha de
+      // 60% num cupom sem mexer no que todos os outros oferecem.
+      desconto = await descontoDoCupom(afiliado)
       apenasPrimeira = cfg.apenas_primeira
       afiliadoId = afiliado.id
     }

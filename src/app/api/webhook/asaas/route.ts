@@ -4,7 +4,7 @@ import { nomesDeBancoDoPlano } from '@/lib/planosModulos'
 import { hashPassword } from '@/lib/auth'
 import { enviarEmailBoasVindas } from '@/lib/email'
 import { buscarAssinatura, atualizarAssinatura } from '@/lib/asaas'
-import { registrarComissao } from '@/lib/afiliados'
+import { registrarComissao, assinaturaJaPagouComissao } from '@/lib/afiliados'
 import { sendEmailComissao } from '@/lib/email'
 import { randomBytes } from 'crypto'
 import { ehChaveDoModelo, sanitizar, versaoDoModelo } from '@/lib/modeloSalao'
@@ -178,9 +178,14 @@ export async function POST(req: NextRequest) {
 /**
  * Comissão do afiliado e fim do desconto de estreia.
  *
- * Roda a cada cobrança paga, não só na primeira: enquanto o cliente indicado
- * continuar pagando, o afiliado continua ganhando. Quem garante que uma
- * cobrança não vire duas comissões é o id da cobrança, único na tabela.
+ * A comissão sai UMA VEZ, na mensalidade de estreia. Não é recorrente de
+ * propósito: com desconto e comissão altos (60% e 60%, por exemplo) o primeiro
+ * mês praticamente não deixa nada para a NODRI — o que paga a conta são os
+ * meses seguintes, inteiros. Repetir a comissão todo mês inverteria isso.
+ *
+ * Duas travas, e cada uma pega um caso: o id da cobrança (único na tabela)
+ * barra o reenvio do mesmo webhook; a checagem por assinatura barra a
+ * mensalidade do mês seguinte, que é outra cobrança.
  *
  * Quem paga o afiliado é a NODRI, por Pix — o Asaas só recebe do cliente.
  * Por isso a comissão nasce como "pendente" e vira "pago" quando você marcar
@@ -235,6 +240,9 @@ async function tratarAfiliado(dados: {
   }
 
   if (!afiliadoId) return
+
+  // Mensalidade seguinte do mesmo cliente: já rendeu comissão na estreia.
+  if (await assinaturaJaPagouComissao(dados.assinaturaId)) return
 
   const { data: afiliado } = await supabase
     .from('afiliados').select('id, nome, email, cupom, comissao_percentual, ativo').eq('id', afiliadoId).maybeSingle()

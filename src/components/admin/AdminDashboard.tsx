@@ -814,6 +814,17 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
       else toast.error(d?.error || 'E-mail não saiu — falta configurar o envio', { duration: 7000 })
     }
 
+    async function alterarDesconto(af: any, novoDesconto: number) {
+      const res = await fetch('/api/afiliados', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: af.id, desconto_cliente: novoDesconto }),
+      })
+      if (res.ok) {
+        setAfiliados(prev => prev.map(a => a.id === af.id ? { ...a, desconto_cliente: novoDesconto } : a))
+        toast.success('Desconto do cupom atualizado')
+      } else toast.error('Não deu para atualizar')
+    }
+
     async function alterarComissao(af: any, novaComissao: number) {
       const res = await fetch('/api/afiliados', {
         method: 'PATCH',
@@ -868,8 +879,11 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
           </div>
           <div className="mt-3 p-3 bg-nodri-surface rounded-lg border border-nodri-border text-[11px] text-nodri-t2">
             <strong className="text-nodri-t1">Exemplo:</strong> Plano R$200 → Cliente paga <strong className="text-nodri-cyan">R${(200 * (1 - descontoCliente / 100)).toFixed(2)}</strong> ({descontoCliente}% off) → Afiliado ganha <strong className="text-nodri-green">R${(200 * (1 - descontoCliente / 100) * 0.4).toFixed(2)}</strong> (40% do valor pago)
-            {apenasPrimeira && <><br />A partir da 2ª mensalidade o cliente volta a pagar <strong className="text-nodri-t1">R$200,00</strong>, e a comissão passa a ser <strong className="text-nodri-green">R${(200 * 0.4).toFixed(2)}</strong>.</>}
-            <br /><span className="text-nodri-t3">Quem paga o afiliado é a NODRI, por Pix. O Asaas só recebe do cliente.</span>
+            {apenasPrimeira && <><br />Da 2ª mensalidade em diante o cliente volta a pagar <strong className="text-nodri-t1">R$200,00</strong> — e essa mensalidade fica <strong className="text-nodri-t1">inteira</strong> para a NODRI.</>}
+            <br /><span className="text-nodri-t3">
+              A comissão sai <strong className="text-nodri-t2">uma vez só</strong>, na mensalidade de estreia — nunca todo mês.
+              Quem paga o afiliado é a NODRI, por Pix; o Asaas só recebe do cliente.
+            </span>
           </div>
         </div>
 
@@ -895,7 +909,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
           </div>
           {comissoes.filter(c => c.status === 'pendente').length === 0 ? (
             <div className="text-[11.5px] text-nodri-t3">
-              Nenhuma comissão pendente. Cada mensalidade paga por um cliente indicado cria uma linha aqui — inclusive as dos meses seguintes.
+              Nenhuma comissão pendente. Quando um cliente indicado paga a primeira mensalidade, a comissão aparece aqui para você fazer o Pix. As mensalidades seguintes ficam inteiras para a NODRI.
             </div>
           ) : (
             <div className="space-y-2">
@@ -976,7 +990,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-3">
+                  <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mt-3">
                     <div className="bg-nodri-card rounded-lg p-2.5 text-center">
                       <div className="text-[9px] text-nodri-t3 uppercase">Vendas</div>
                       <div className="font-bold text-[15px]">{af.total_vendas || 0}</div>
@@ -990,13 +1004,25 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                       <div className="font-bold text-[15px] text-nodri-green">R${(af.valor_pago || 0).toFixed(2)}</div>
                     </div>
                     <div className="bg-nodri-card rounded-lg p-2.5 text-center">
-                      <div className="text-[9px] text-nodri-t3 uppercase">Comissão</div>
+                      <div className="text-[9px] text-nodri-t3 uppercase">Comissão (1ª mensal.)</div>
                       <div className="flex items-center justify-center gap-1">
                         <input type="number" defaultValue={af.comissao_percentual || 40} min={1} max={100}
                           onBlur={e => alterarComissao(af, parseInt(e.target.value))}
                           className="w-12 bg-transparent text-center font-bold text-[14px] outline-none border-b border-nodri-border focus:border-nodri-cyan" />
                         <span className="text-[11px] text-nodri-t3">%</span>
                       </div>
+                    </div>
+                    {/* Desconto deste cupom. Vazio/0 = usa o padrão do programa.
+                        É o que permite a campanha de 60% em um cupom só. */}
+                    <div className="bg-nodri-card rounded-lg p-2.5 text-center">
+                      <div className="text-[9px] text-nodri-t3 uppercase">Desconto do cupom</div>
+                      <div className="flex items-center justify-center gap-1">
+                        <input type="number" defaultValue={af.desconto_cliente || 0} min={0} max={100}
+                          onBlur={e => alterarDesconto(af, parseInt(e.target.value) || 0)}
+                          className="w-12 bg-transparent text-center font-bold text-[14px] outline-none border-b border-nodri-border focus:border-nodri-cyan" />
+                        <span className="text-[11px] text-nodri-t3">%</span>
+                      </div>
+                      <div className="text-[9px] text-nodri-t3 mt-0.5">0 = padrão ({descontoCliente}%)</div>
                     </div>
                   </div>
 

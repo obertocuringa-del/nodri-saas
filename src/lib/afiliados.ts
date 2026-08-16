@@ -5,11 +5,17 @@ import { supabaseAdmin } from '@/lib/supabase'
 // Duas porcentagens diferentes convivem aqui, e confundir uma com a outra é o
 // erro clássico:
 //
-// • DESCONTO DO CLIENTE — quanto o indicado paga a menos. É igual para todos e
-//   fica em `configuracoes.afiliado_desconto_cliente`.
+// • DESCONTO DO CLIENTE — quanto o indicado paga a menos. Vale o do próprio
+//   cupom (`afiliados.desconto_cliente`); só quando ele é zero entra o padrão
+//   de `configuracoes.afiliado_desconto_cliente`.
 // • COMISSÃO DO AFILIADO — quanto o indicador recebe, sobre o valor REALMENTE
-//   pago. É por afiliado (`afiliados.comissao_percentual`), porque dá para
-//   negociar caso a caso.
+//   pago. É por afiliado (`afiliados.comissao_percentual`).
+//
+// A COMISSÃO É SÓ DA PRIMEIRA MENSALIDADE, nunca recorrente. É o que permite a
+// campanha agressiva: 60% de desconto para o cliente e 60% de comissão para
+// quem indicou — no mês de estreia a NODRI quase não fica com nada, e a partir
+// do segundo mês a mensalidade inteira é dela. Comissão recorrente destruiria
+// essa conta.
 
 export interface ConfigAfiliado {
   percentual: number
@@ -35,6 +41,8 @@ export interface AfiliadoDoCupom {
   email: string
   cupom: string
   comissao_percentual: number
+  /** Desconto deste cupom. 0 = usa o padrão do programa. */
+  desconto_cliente: number
 }
 
 /** Cupom AFIL-… ativo. Devolve null para cupom comum, inexistente ou bloqueado. */
@@ -44,7 +52,7 @@ export async function afiliadoPeloCupom(codigo: string): Promise<AfiliadoDoCupom
 
   const { data } = await supabaseAdmin
     .from('afiliados')
-    .select('id, nome, email, cupom, comissao_percentual, ativo')
+    .select('id, nome, email, cupom, comissao_percentual, desconto_cliente, ativo')
     .eq('cupom', cupom)
     .maybeSingle()
 
@@ -55,7 +63,23 @@ export async function afiliadoPeloCupom(codigo: string): Promise<AfiliadoDoCupom
     email: data.email,
     cupom: data.cupom,
     comissao_percentual: Number(data.comissao_percentual) || 40,
+    desconto_cliente: Number(data.desconto_cliente) || 0,
   }
+}
+
+/** Quanto o cliente paga a menos com este cupom: o do cupom manda; 0 = padrão. */
+export async function descontoDoCupom(af: AfiliadoDoCupom): Promise<number> {
+  if (af.desconto_cliente > 0) return af.desconto_cliente
+  const cfg = await configAfiliado()
+  return cfg.percentual
+}
+
+/** Esta assinatura já pagou comissão alguma vez? Só a estreia gera. */
+export async function assinaturaJaPagouComissao(assinaturaId: string | null): Promise<boolean> {
+  if (!assinaturaId) return false
+  const { data } = await supabaseAdmin
+    .from('afiliado_comissoes').select('id').eq('assinatura_id', assinaturaId).limit(1)
+  return !!(data && data.length)
 }
 
 /**
