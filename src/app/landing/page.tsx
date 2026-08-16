@@ -68,13 +68,55 @@ export default function LandingPage() {
   return (
     <div style={{ fontFamily: 'Segoe UI, sans-serif', background: '#f5f4f0', minHeight: '100vh', color: '#1a1a1a' }}>
 
+      {/* ── BARRA DO TOPO ────────────────────────────────────────────────
+          A logo e a porta de entrada de quem JÁ é cliente. Sem isso, quem
+          chegava pela vitrine não tinha como fazer login sem descer a página
+          inteira até o rodapé. */}
+      <header style={{
+        position: 'sticky', top: 0, zIndex: 50,
+        background: 'rgba(255,255,255,.92)', backdropFilter: 'blur(10px)',
+        borderBottom: '1px solid #e8e6e0',
+        padding: '12px clamp(16px,4vw,40px)',
+        display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
+      }}>
+        <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginRight: 'auto' }}>
+          <img src="/logo.png" alt="NODRI" style={{ width: 38, height: 38, borderRadius: 10, objectFit: 'cover' }} />
+          <span style={{
+            fontSize: 22, fontWeight: 900, letterSpacing: '-0.5px',
+            background: 'linear-gradient(135deg,#5b4fcf,#f43f8e)',
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+          }}>NODRI</span>
+        </a>
+
+        <a href="#planos" style={{
+          padding: '10px 22px', borderRadius: 999, textDecoration: 'none',
+          border: '2px solid #5b4fcf', color: '#5b4fcf',
+          fontWeight: 800, fontSize: 13.5, whiteSpace: 'nowrap',
+        }}>VER PLANOS</a>
+
+        <a href="/login" style={{
+          padding: '10px 22px', borderRadius: 999, textDecoration: 'none',
+          background: 'linear-gradient(135deg,#5b4fcf,#f43f8e)', color: '#fff',
+          fontWeight: 800, fontSize: 13.5, whiteSpace: 'nowrap',
+        }}>JÁ SOU CLIENTE</a>
+      </header>
+
       {/* HERO */}
-      <section style={{ textAlign: 'center', padding: 'clamp(40px,8vw,80px) 20px clamp(30px,6vw,60px)' }}>
-        <div style={{ background: 'linear-gradient(135deg, #5b4fcf, #f43f8e)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontSize: 48, fontWeight: 900, marginBottom: 16 }}>
-          {cfg.hero_logo}
-        </div>
-        <h1 style={{ fontSize: 32, fontWeight: 700, marginBottom: 16, color: '#1a1a1a' }}>{cfg.hero_titulo}</h1>
-        <p style={{ fontSize: 18, color: '#6b6860', maxWidth: 600, margin: '0 auto 40px', lineHeight: 1.6 }}>{cfg.hero_subtitulo}</p>
+      <section style={{ textAlign: 'center', padding: 'clamp(36px,7vw,72px) 20px clamp(30px,6vw,60px)' }}>
+        <div style={{
+          display: 'inline-block', padding: '7px 18px', borderRadius: 999,
+          background: '#efecff', color: '#5b4fcf',
+          fontSize: 12.5, fontWeight: 800, letterSpacing: '.5px',
+          marginBottom: 22, textTransform: 'uppercase',
+        }}>Gestão inteligente em um só lugar</div>
+
+        <h1 style={{
+          fontSize: 'clamp(30px,5vw,50px)', fontWeight: 900, lineHeight: 1.12,
+          letterSpacing: '-1px', marginBottom: 18, color: '#1a1a1a',
+          maxWidth: 780, marginLeft: 'auto', marginRight: 'auto',
+        }}>{cfg.hero_titulo}</h1>
+
+        <p style={{ fontSize: 'clamp(15px,2vw,18px)', color: '#6b6860', maxWidth: 620, margin: '0 auto 36px', lineHeight: 1.65 }}>{cfg.hero_subtitulo}</p>
         <a href="#planos" style={{ background: `linear-gradient(135deg, ${cfg.hero_cor_botao}, #f43f8e)`, color: 'white', padding: '16px 40px', borderRadius: 12, fontSize: 18, fontWeight: 700, textDecoration: 'none', display: 'inline-block' }}>
           {cfg.hero_botao}
         </a>
@@ -169,7 +211,8 @@ export default function LandingPage() {
 
       {/* FOOTER */}
       <footer style={{ textAlign: 'center', padding: '40px 20px', color: '#6b6860', borderTop: '1px solid #e0ddd8', background: '#ffffff' }}>
-        <div style={{ fontSize: 20, fontWeight: 700, color: '#b45309', marginBottom: 8 }}>{cfg.footer_logo}</div>
+        <img src="/logo.png" alt="NODRI" style={{ width: 42, height: 42, borderRadius: 11, objectFit: 'cover', marginBottom: 10 }} />
+        <div style={{ fontSize: 20, fontWeight: 900, color: '#5b4fcf', marginBottom: 8 }}>{cfg.footer_logo}</div>
         <p>{cfg.footer_texto}</p>
         <p style={{ marginTop: 8 }}>{cfg.footer_email}</p>
         <div style={{ marginTop: 16, display: 'flex', gap: 20, justifyContent: 'center', flexWrap: 'wrap' }}>
