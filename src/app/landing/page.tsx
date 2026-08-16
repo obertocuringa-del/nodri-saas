@@ -106,7 +106,7 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
   }
 
   return (
-    <div style={{ fontFamily: 'Segoe UI, sans-serif', background: '#f7fafc', minHeight: '100vh', color: '#1a1a1a' }}>
+    <div className="nodri-vitrine" style={{ fontFamily: 'Segoe UI, sans-serif', background: '#f7fafc', minHeight: '100vh', color: '#1a1a1a' }}>
 
       <style>{`
         /* Quatro cards numa linha só no computador. Com auto-fit o quarto card
@@ -223,6 +223,10 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
           /* Tres botoes nao cabem em 390px: o menu de funcionalidades sai
              da barra, e no lugar dele fica o "Ver como funciona" do topo. */
           .nodri-menu-func { display: none !important; }
+          /* O CSS geral reserva 92px no rodape para os botoes flutuantes do
+             painel. A vitrine nao tem botao flutuante nenhum, entao aquilo
+             virava uma faixa branca depois do "Quero ser Afiliado". */
+          div.nodri-vitrine { padding-bottom: 0 !important; }
         }
         @media (max-width: 1000px) { .nodri-4col { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         @media (max-width: 560px)  { .nodri-4col { gap: 12px; } }
