@@ -814,17 +814,6 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
       else toast.error(d?.error || 'E-mail não saiu — falta configurar o envio', { duration: 7000 })
     }
 
-    async function alterarDesconto(af: any, novoDesconto: number) {
-      const res = await fetch('/api/afiliados', {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: af.id, desconto_cliente: novoDesconto }),
-      })
-      if (res.ok) {
-        setAfiliados(prev => prev.map(a => a.id === af.id ? { ...a, desconto_cliente: novoDesconto } : a))
-        toast.success('Desconto do cupom atualizado')
-      } else toast.error('Não deu para atualizar')
-    }
-
     async function alterarComissao(af: any, novaComissao: number) {
       const res = await fetch('/api/afiliados', {
         method: 'PATCH',
@@ -990,7 +979,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mt-3">
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-3">
                     <div className="bg-nodri-card rounded-lg p-2.5 text-center">
                       <div className="text-[9px] text-nodri-t3 uppercase">Vendas</div>
                       <div className="font-bold text-[15px]">{af.total_vendas || 0}</div>
@@ -1012,18 +1001,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                         <span className="text-[11px] text-nodri-t3">%</span>
                       </div>
                     </div>
-                    {/* Desconto deste cupom. Vazio/0 = usa o padrão do programa.
-                        É o que permite a campanha de 60% em um cupom só. */}
-                    <div className="bg-nodri-card rounded-lg p-2.5 text-center">
-                      <div className="text-[9px] text-nodri-t3 uppercase">Desconto do cupom</div>
-                      <div className="flex items-center justify-center gap-1">
-                        <input type="number" defaultValue={af.desconto_cliente || 0} min={0} max={100}
-                          onBlur={e => alterarDesconto(af, parseInt(e.target.value) || 0)}
-                          className="w-12 bg-transparent text-center font-bold text-[14px] outline-none border-b border-nodri-border focus:border-nodri-cyan" />
-                        <span className="text-[11px] text-nodri-t3">%</span>
-                      </div>
-                      <div className="text-[9px] text-nodri-t3 mt-0.5">0 = padrão ({descontoCliente}%)</div>
-                    </div>
+
                   </div>
 
                   {(af.valor_acumulado || 0) > 0 && (
