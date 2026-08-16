@@ -119,6 +119,14 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
                       grid-template-columns: 1.05fr 1.1fr; }
         @media (max-width: 900px) { .nodri-hero { grid-template-columns: 1fr; } }
 
+        /* No computador a promessa fica em UMA linha: a fonte acompanha a
+           largura da coluna (1.82vw) e para de crescer aos 28px, que e onde a
+           coluna tambem para de crescer. Medido na pagina: a 28px a frase
+           ocupa 589 dos 627 px da coluna. */
+        @media (min-width: 901px) {
+          .titulo-l2 { display: block; white-space: nowrap; font-size: min(1.82vw, 28px); letter-spacing: -.5px; margin-top: 6px; }
+        }
+
         /* Faixa que rola para o lado, uma pagina de cada vez. O scroll-snap
            faz o dedo (ou o trackpad) parar sempre no comeco de uma pagina,
            nunca no meio de um item. */
