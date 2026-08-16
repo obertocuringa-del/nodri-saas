@@ -101,7 +101,7 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
            outro. No celular isso vira uma pilha, e a ordem de leitura passa
            a valer mais que o alinhamento: promessa, foto, provas, botao.
 
-           `display: contents` na coluna do texto solta os filhos dela dentro
+           O display:contents na coluna do texto solta os filhos dela dentro
            da pilha — sem isso a foto so poderia ficar antes ou depois do
            bloco inteiro de texto, nunca no meio dele. */
         @media (max-width: 900px) {
