@@ -39,12 +39,10 @@ const DEFAULT_LANDING = {
     { emoji: '', titulo: 'Atualizações automáticas', desc: 'Receba novas versões dos programas sem precisar reinstalar tudo.' },
   ],
   planos_titulo: 'Escolha seu Plano',
-  planos_subtitulo: 'Pagamento único mensal via PIX ou cartão',
-  landing_planos: [
-    { nome: 'Básico', preco: 100, cor: '#3498db', destaque: false, modulos: ['Confirmar Agendamento', 'Enviar Feedback', 'Enviar Lista c/ Foto', 'Enviar Lista s/ Foto', 'Baixar Música YouTube'] },
-    { nome: 'Profissional', preco: 200, cor: '#9b59b6', destaque: true, modulos: ['Todos do Básico', 'Bloqueio Sem Preferência', 'Ver Feedback Cliente', 'Relatório Profissional', 'Faturamento Diário', 'Calcular Reserva Financeira'] },
-    { nome: 'Premium', preco: 300, cor: '#f39c12', destaque: false, modulos: ['Todos do Profissional', 'Calculadora Depreciação', 'Avaliar Profissional', 'Aluguel de Cadeira', 'Precificar Serviços'] },
-  ],
+  planos_subtitulo: 'Mensal, sem fidelidade. Cada plano acrescenta ao anterior.',
+  // `landing_planos` não existe mais: a vitrine lê os planos da tabela.
+  // Os três antigos (Básico/Profissional/Premium) ficavam aqui e na landing,
+  // e desencontraram do sistema no dia em que os planos mudaram.
   afiliados_titulo: 'Trabalhe Conosco',
   afiliados_subtitulo: 'Indique o NODRI e ganhe 40% de comissão em cada venda com seu cupom exclusivo.',
   afiliados_botao: 'Quero ser Afiliado →',
@@ -526,23 +524,11 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
     setSavingLanding(false)
   }
 
-  function updateLandingPlanoModulo(pi: number, mi: number, value: string) {
-    if (!landingConfig) return
-    const arr = landingConfig.landing_planos.map((p, i) => i === pi ? { ...p, modulos: p.modulos.map((m, j) => j === mi ? value : m) } : p)
-    setLandingConfig({ ...landingConfig, landing_planos: arr })
-  }
 
-  function removeLandingPlanoModulo(pi: number, mi: number) {
-    if (!landingConfig) return
-    const arr = landingConfig.landing_planos.map((p, i) => i === pi ? { ...p, modulos: p.modulos.filter((_, j) => j !== mi) } : p)
-    setLandingConfig({ ...landingConfig, landing_planos: arr })
-  }
 
-  function addLandingPlanoModulo(pi: number) {
-    if (!landingConfig) return
-    const arr = landingConfig.landing_planos.map((p, i) => i === pi ? { ...p, modulos: [...p.modulos, 'Novo item'] } : p)
-    setLandingConfig({ ...landingConfig, landing_planos: arr })
-  }
+
+
+
 
   //  CUPONS 
   async function loadCupons() {
@@ -1310,62 +1296,29 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                         </div>
                       </div>
 
-                      {/* PLANOS */}
+                      {/* PLANOS — editados em outro lugar */}
+                      {/* Os cards de plano saíram daqui. A vitrine passou a ler
+                          preço e nome da tabela `planos`, e a lista de módulos
+                          da mesma fonte que o sistema usa para liberar tela.
+                          Manter os campos antigos deixava uma armadilha: você
+                          editava, salvava, e a landing continuava igual. */}
                       <div className="nodri-card p-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="font-syne font-bold text-[12px] text-nodri-cyan flex items-center gap-1.5"><DollarSign size={13} /> Seção Planos</div>
-                          <button onClick={() => setLandingConfig({ ...landingConfig, landing_planos: [...landingConfig.landing_planos, { nome: 'Novo Plano', preco: 0, cor: '#3498db', destaque: false, modulos: ['Módulo 1'] }] })}
-                            className="flex items-center gap-1 text-[11px] bg-nodri-cyan text-black px-2.5 py-1 rounded-lg font-bold hover:brightness-110">
-                            <Plus size={11} /> Adicionar
-                          </button>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3 mb-4">
-                          <div>
-                            <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Título da seção</label>
-                            <input value={(landingConfig as any).planos_titulo || 'Escolha seu Plano'} onChange={e => setLandingConfig({ ...landingConfig, planos_titulo: e.target.value } as any)}
-                              className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] outline-none focus:border-nodri-cyan" />
-                          </div>
-                          <div>
-                            <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Subtítulo da seção</label>
-                            <input value={(landingConfig as any).planos_subtitulo || 'Pagamento mensal via PIX ou cartão'} onChange={e => setLandingConfig({ ...landingConfig, planos_subtitulo: e.target.value } as any)}
-                              className="w-full bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 text-[12px] outline-none focus:border-nodri-cyan" />
-                          </div>
-                        </div>
-                        <div className="space-y-4">
-                          {landingConfig.landing_planos.map((p, pi) => (
-                            <div key={pi} className="bg-nodri-surface rounded-lg p-4 border border-nodri-border">
-                              <div className="flex gap-2 mb-3">
-                                <input value={p.nome} onChange={e => { const arr = [...landingConfig.landing_planos]; arr[pi] = { ...arr[pi], nome: e.target.value }; setLandingConfig({ ...landingConfig, landing_planos: arr }) }}
-                                  className="flex-1 bg-nodri-card border border-nodri-border rounded-lg px-2 py-1.5 text-[12px] font-bold outline-none focus:border-nodri-cyan" placeholder="Nome" />
-                                <div className="flex items-center gap-1">
-                                  <span className="text-[11px] text-nodri-t3">R$</span>
-                                  <input type="number" value={p.preco} onChange={e => { const arr = [...landingConfig.landing_planos]; arr[pi] = { ...arr[pi], preco: Number(e.target.value) }; setLandingConfig({ ...landingConfig, landing_planos: arr }) }}
-                                    className="w-20 bg-nodri-card border border-nodri-border rounded-lg px-2 py-1.5 text-[12px] outline-none focus:border-nodri-cyan" />
-                                </div>
-                                <input type="color" value={p.cor} onChange={e => { const arr = [...landingConfig.landing_planos]; arr[pi] = { ...arr[pi], cor: e.target.value }; setLandingConfig({ ...landingConfig, landing_planos: arr }) }}
-                                  className="w-10 h-9 rounded-lg border border-nodri-border cursor-pointer" title="Cor" />
-                                <button onClick={() => setLandingConfig({ ...landingConfig, landing_planos: landingConfig.landing_planos.filter((_, j) => j !== pi) })}
-                                  className="text-nodri-red hover:bg-nodri-red/10 p-1.5 rounded-lg"><Trash2 size={12} /></button>
-                              </div>
-                              <label className="flex items-center gap-2 text-[11px] text-nodri-t2 mb-3 cursor-pointer">
-                                <input type="checkbox" checked={p.destaque} onChange={e => { const arr = [...landingConfig.landing_planos]; arr[pi] = { ...arr[pi], destaque: e.target.checked }; setLandingConfig({ ...landingConfig, landing_planos: arr }) }} />
-                                 Destacar como "Mais Popular"
-                              </label>
-                              <div className="space-y-1.5">
-                                <div className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1">Módulos inclusos:</div>
-                                {p.modulos.map((m, mi) => (
-                                  <div key={mi} className="flex gap-2">
-                                    <input value={m} onChange={e => updateLandingPlanoModulo(pi, mi, e.target.value)}
-                                      className="flex-1 bg-nodri-card border border-nodri-border rounded-lg px-2 py-1 text-[11px] outline-none focus:border-nodri-cyan" />
-                                    <button onClick={() => removeLandingPlanoModulo(pi, mi)} className="text-nodri-red p-1 rounded"><Trash2 size={10} /></button>
-                                  </div>
-                                ))}
-                                <button onClick={() => addLandingPlanoModulo(pi)} className="text-[10px] text-nodri-cyan hover:underline mt-1">+ Adicionar módulo</button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
+                        <div className="font-syne font-bold text-[12px] mb-2 text-nodri-cyan flex items-center gap-1.5"><DollarSign size={13} /> Seção Planos</div>
+                        <p className="text-[11.5px] text-nodri-t2 leading-relaxed">
+                          Os planos da landing vêm agora de <b>Planos</b>, no menu ao lado — o que você
+                          editar lá (nome, preço e descrição) aparece na vitrine na hora.
+                        </p>
+                        <p className="text-[11px] text-nodri-t3 leading-relaxed mt-2">
+                          A lista de módulos de cada plano não é editável por texto de propósito: ela sai
+                          da mesma fonte que o sistema usa para liberar as telas. Assim a vitrine não tem
+                          como prometer um módulo que o plano não entrega.
+                        </p>
+                        <button onClick={() => setActiveSection('planos')}
+                          className="mt-3 px-3 py-1.5 rounded-lg bg-nodri-cyan text-white text-[11px] font-bold">
+                          Ir para Planos
+                        </button>
                       </div>
+
 
                       {/* TRABALHE CONOSCO */}
                       <div className="nodri-card p-4">

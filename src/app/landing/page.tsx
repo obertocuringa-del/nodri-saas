@@ -25,7 +25,6 @@ const DEFAULT_CONFIG = {
   ],
   planos_titulo: 'Escolha seu Plano',
   planos_subtitulo: 'Mensal, sem fidelidade. Cada plano acrescenta ao anterior.',
-  landing_planos: [] as any[],
   afiliados_titulo: 'Trabalhe Conosco',
   afiliados_subtitulo: 'Indique o NODRI para outros salões e ganhe 40% de comissão em cada venda realizada com seu cupom exclusivo.',
   afiliados_comissao: 40,

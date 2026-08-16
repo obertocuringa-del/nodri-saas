@@ -18,11 +18,7 @@ const DEFAULT_CONFIG = {
   ],
   planos_titulo: 'Escolha seu Plano',
   planos_subtitulo: 'Pagamento único mensal via PIX ou cartão',
-  landing_planos: [
-    { nome: 'Básico', preco: 100, cor: '#3498db', destaque: false, modulos: ['Confirmar Agendamento', 'Enviar Feedback', 'Enviar Lista c/ Foto', 'Enviar Lista s/ Foto', 'Baixar Música YouTube'] },
-    { nome: 'Profissional', preco: 200, cor: '#9b59b6', destaque: true, modulos: ['Todos do Básico', 'Bloqueio Sem Preferência', 'Ver Feedback Cliente', 'Relatório Profissional', 'Faturamento Diário', 'Calcular Reserva Financeira'] },
-    { nome: 'Premium', preco: 300, cor: '#f39c12', destaque: false, modulos: ['Todos do Profissional', 'Calculadora Depreciação', 'Avaliar Profissional', 'Aluguel de Cadeira', 'Precificar Serviços'] },
-  ],
+  // `landing_planos` saiu: a vitrine lê os planos da tabela `planos`.
   afiliados_titulo: 'Trabalhe Conosco',
   afiliados_subtitulo: 'Indique o NODRI para outros salões e ganhe 40% de comissão em cada venda realizada com seu cupom exclusivo.',
   afiliados_botao: 'Quero ser Afiliado →',
