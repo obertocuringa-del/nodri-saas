@@ -32,18 +32,25 @@ interface PlanoVitrine {
 // nome; a identidade visual da vitrine fica sob controle de quem desenha.
 const CORES = ['#3498db', '#5b4fcf', '#9b59b6', '#f39c12']
 
-export default function LandingPage() {
-  const [cfg, setCfg] = useState<typeof DEFAULT_CONFIG>(DEFAULT_CONFIG)
+export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string, any> }) {
+  // Quando a raiz já entrega os textos (renderizados no servidor), começamos
+  // com eles e não há troca na tela. Sem prop — na rota /landing — vale o
+  // caminho antigo: padrão do código e busca depois.
+  const [cfg, setCfg] = useState<any>(cfgInicial ? { ...DEFAULT_CONFIG, ...cfgInicial } : DEFAULT_CONFIG)
   const [planos, setPlanos] = useState<PlanoVitrine[]>([])
 
   useEffect(() => {
     // `r.ok` conferido de propósito: quando esta rota caía no login, o
     // .json() estourava e o erro sumia sem catch. A página seguia com os
     // textos do código e ninguém entendia por que o Editor não fazia efeito.
-    fetch('/api/landing-config')
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d && typeof d === 'object') setCfg({ ...DEFAULT_CONFIG, ...d }) })
-      .catch(() => { /* fica com os textos do código */ })
+    // Já veio pronto do servidor: buscar de novo só causaria a troca que
+    // este ajuste veio eliminar.
+    if (!cfgInicial) {
+      fetch('/api/landing-config')
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d && typeof d === 'object') setCfg({ ...DEFAULT_CONFIG, ...d }) })
+        .catch(() => { /* fica com os textos do código */ })
+    }
     // Preço e nome saem da tabela `planos`; os módulos, da mesma fonte que o
     // gate usa para liberar tela. A vitrine não tem como prometer o que o
     // plano não entrega.

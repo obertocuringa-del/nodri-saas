@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import LandingPage from './landing/page'
+import { lerLandingConfig } from '@/lib/landingConfig'
 
 export const dynamic = 'force-dynamic'
 
@@ -33,5 +34,8 @@ export default async function HomePage() {
   // Visitante: mostra a vitrine NA PRÓPRIA RAIZ, sem redirecionar para
   // /landing. O conteúdo precisa estar aqui para o Google indexar o endereço
   // que as pessoas realmente digitam e compartilham.
-  return <LandingPage />
+  // Textos lidos no servidor: sem isto a página nascia com o texto do código e
+  // trocava depois, piscando na frente do visitante.
+  const cfgInicial = await lerLandingConfig()
+  return <LandingPage cfgInicial={cfgInicial} />
 }
