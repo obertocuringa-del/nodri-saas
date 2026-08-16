@@ -116,7 +116,7 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
           cabecalho e a etiqueta nao dizia nada e empurrava o titulo para
           longe de quem acabou de chegar. Embaixo o espaco continua, porque
           ali ele separa esta secao da proxima. */}
-      <section style={{ background: '#fff', borderBottom: '1px solid #e3e8f0', padding: 'clamp(12px,1.6vw,22px) 20px clamp(30px,4vw,52px)' }}>
+      <section style={{ background: '#fff', borderBottom: '1px solid #e3e8f0', padding: 'clamp(12px,1.6vw,22px) 20px clamp(14px,1.8vw,26px)' }}>
         <div className="nodri-hero" style={{ maxWidth: 1340, margin: '0 auto' }}>
           <div>
             <div style={{

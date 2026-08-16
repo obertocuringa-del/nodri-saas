@@ -50,8 +50,11 @@ export default function EditorVitrine() {
       body: JSON.stringify(cfg),
     })
     setSalvando(false)
-    if (r.ok) toast.success('Página inicial salva')
-    else toast.error('Não foi possível salvar')
+    if (r.ok) { toast.success('Página inicial salva'); return }
+    // Mensagem do servidor, nao um "nao foi possivel" que nao ajuda ninguem
+    // a descobrir o que houve.
+    const e = await r.json().catch(() => ({} as any))
+    toast.error(`Não salvou (${r.status}): ${e?.error || 'motivo desconhecido'}`, { duration: 8000 })
   }
 
   if (carregando) return <div className="nodri-card p-6 text-center text-nodri-t3 text-sm">Carregando…</div>

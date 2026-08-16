@@ -29,9 +29,14 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json()
 
-  await supabaseAdmin
+  // O erro do banco era descartado e a rota respondia ok mesmo falhando.
+  // Quem salvava nao tinha como saber que nao salvou.
+  const { error } = await supabaseAdmin
     .from('configuracoes')
     .upsert({ chave: 'landing_config', valor: body }, { onConflict: 'chave' })
 
+  if (error) {
+    return NextResponse.json({ error: error.message, detalhe: error.details || null }, { status: 500 })
+  }
   return NextResponse.json({ ok: true })
 }
