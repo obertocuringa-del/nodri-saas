@@ -113,8 +113,11 @@ export default function Carrossel({ midias, intervalo = 5, alturaMax, preencher,
             maxHeight: alturaMax, margin: '0 auto',
             // Preenchendo, quem manda na altura e a coluna; senao volta a
             // proporcao de sempre.
+            // Fora do fluxo de proposito: solta, a altura natural da foto
+            // esticava a linha do grid e a abertura passava do fim da tela.
+            // Assim quem manda na altura e a coluna do texto ao lado.
             ...(preencher
-              ? { height: '100%', flex: 1, minHeight: 0 }
+              ? { position: 'absolute' as const, inset: 0, height: '100%' }
               : { aspectRatio: '16 / 10' }),
           }} />
       )}
