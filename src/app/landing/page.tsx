@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import FormularioContato from '@/components/FormularioContato'
 
 // ── O que a vitrine promete ─────────────────────────────────────────────────
 // O texto anterior vendia automação de WhatsApp: "automatize confirmações,
@@ -10,25 +11,42 @@ import { useEffect, useState } from 'react'
 // Dono de salão não procura "plataforma SaaS" nem "automação". Ele procura
 // saber quanto faturou, acompanhar a equipe, organizar cliente e decidir o
 // que fazer. São essas palavras que precisam estar aqui.
+// ── Cores da marca ──────────────────────────────────────────────────────────
+// Tiradas da logo: marinho e ciano. O site estava em roxo e rosa, que não são
+// a identidade do NODRI — a primeira coisa que um cliente compara é se o site
+// parece a mesma empresa da logo.
+const MARINHO = '#0d2a56'
+const CIANO = '#00b5d8'
+
 const DEFAULT_CONFIG = {
   hero_logo: 'NODRI',
-  hero_titulo: 'Seu salão no controle. Suas decisões baseadas em dados.',
-  hero_subtitulo: 'O NODRI reúne gestão, operação, clientes, profissionais e resultados em uma única plataforma — e transforma os dados do seu salão em decisões melhores.',
-  hero_botao: 'Ver Planos',
-  hero_cor_botao: '#5b4fcf',
-  beneficios_titulo: 'Gestão completa, num lugar só',
-  beneficios: [
-    { emoji: '', titulo: 'Financeiro sem planilha', desc: 'Custo operacional, ponto de equilíbrio, contas a pagar e precificação de serviços — com os números do seu salão, não com estimativa.' },
-    { emoji: '', titulo: 'Equipe acompanhada de perto', desc: 'Ficha completa, metas, avaliações, comissões e histórico de cada profissional. Você vê quem cresce e quem precisa de ajuda.' },
-    { emoji: '', titulo: 'Indicadores que apontam o problema', desc: 'Faturamento, ticket médio, clientes em risco e serviços que ninguém oferece. O relatório mostra onde está o dinheiro que você não viu.' },
-    { emoji: '', titulo: 'Rotina organizada sozinha', desc: 'Check lists por período, escalas, calendários, feedback de cliente e controle de pendências. O salão roda mesmo quando você não está.' },
+  // Fala da DOR antes de falar do produto. "Plataforma de gestão" não desperta
+  // nada em quem não sabe que precisa; "você sabe quanto sobrou?" desperta.
+  hero_titulo: 'Você sabe quanto o seu salão realmente lucrou no mês passado?',
+  hero_subtitulo: 'A maioria dos donos não sabe — e descobre tarde demais. O NODRI mostra o que entra, o que sai, quanto cada profissional rende e onde está o dinheiro que você não vê.',
+  hero_botao: 'Quero conhecer o NODRI',
+  hero_cor_botao: CIANO,
+
+  dores_titulo: 'Se você se reconhece aqui, o NODRI foi feito para o seu salão',
+  dores: [
+    { titulo: 'O mês fecha e você não sabe se sobrou', desc: 'O dinheiro entra e sai, mas ninguém consegue dizer quanto o salão deu de lucro de verdade — nem quanto custa manter a porta aberta.' },
+    { titulo: 'Você não sabe qual profissional dá lucro', desc: 'Todo mundo parece ocupado. Mas quem realmente traz resultado, quem só ocupa cadeira e quem está caindo mês a mês? Sem número, é achismo.' },
+    { titulo: 'Cliente some e ninguém percebe', desc: 'Aquela cliente que vinha todo mês parou de aparecer. Você só percebe quando ela já está em outro salão há meio ano.' },
+    { titulo: 'Tudo depende de você estar presente', desc: 'Se você viaja ou adoece, a rotina desmonta. Nada está escrito, tudo está na sua cabeça e no caderno da recepção.' },
   ],
-  planos_titulo: 'Escolha seu Plano',
-  planos_subtitulo: 'Mensal, sem fidelidade. Cada plano acrescenta ao anterior.',
-  afiliados_titulo: 'Trabalhe Conosco',
+
+  beneficios_titulo: 'O que muda quando o salão roda no NODRI',
+  beneficios: [
+    { emoji: '', titulo: 'Você passa a saber seus números', desc: 'Custo operacional, ponto de equilíbrio, contas a pagar e preço certo por serviço — calculados com os dados do seu salão, não com estimativa.' },
+    { emoji: '', titulo: 'Cada profissional tem uma ficha viva', desc: 'Metas, comissões, avaliações, faturamento e histórico. Você vê quem cresce, quem precisa de ajuda e quem está saindo antes de perder.' },
+    { emoji: '', titulo: 'O sistema aponta o problema', desc: 'Clientes em risco de sumir, serviços que ninguém oferece, queda de faturamento. O relatório mostra onde está o dinheiro que você não viu.' },
+    { emoji: '', titulo: 'A rotina anda sem você', desc: 'Check lists por período, escalas, processos escritos, feedback de cliente e pendências. O salão funciona mesmo quando você não está lá.' },
+  ],
+
+  afiliados_titulo: 'Indique o NODRI e ganhe',
   afiliados_subtitulo: 'Indique o NODRI para outros salões e ganhe 40% de comissão em cada venda realizada com seu cupom exclusivo.',
   afiliados_comissao: 40,
-  afiliados_botao: 'Quero ser Afiliado →',
+  afiliados_botao: 'Quero indicar →',
   afiliados_chips: [
     { emoji: '', texto: 'Cupom exclusivo' },
     { emoji: '', texto: 'Link personalizado' },
@@ -66,135 +84,132 @@ export default function LandingPage() {
   }, [])
 
   return (
-    <div style={{ fontFamily: 'Segoe UI, sans-serif', background: '#f5f4f0', minHeight: '100vh', color: '#1a1a1a' }}>
+    <div style={{ fontFamily: 'Segoe UI, sans-serif', background: '#f7fafc', minHeight: '100vh', color: '#1a1a1a' }}>
 
-      {/* ── BARRA DO TOPO ────────────────────────────────────────────────
-          A logo e a porta de entrada de quem JÁ é cliente. Sem isso, quem
-          chegava pela vitrine não tinha como fazer login sem descer a página
-          inteira até o rodapé. */}
+      {/* ── BARRA DO TOPO ─────────────────────────────────────────────── */}
       <header style={{
         position: 'sticky', top: 0, zIndex: 50,
-        background: 'rgba(255,255,255,.92)', backdropFilter: 'blur(10px)',
-        borderBottom: '1px solid #e8e6e0',
-        padding: '12px clamp(16px,4vw,40px)',
-        display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
+        background: 'rgba(255,255,255,.94)', backdropFilter: 'blur(10px)',
+        borderBottom: '1px solid #e3e8f0',
+        padding: '10px clamp(16px,4vw,44px)',
+        display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
       }}>
-        <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginRight: 'auto' }}>
-          <img src="/logo.png" alt="NODRI" style={{ width: 38, height: 38, borderRadius: 10, objectFit: 'cover' }} />
-          <span style={{
-            fontSize: 22, fontWeight: 900, letterSpacing: '-0.5px',
-            background: 'linear-gradient(135deg,#5b4fcf,#f43f8e)',
-            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-          }}>NODRI</span>
+        <a href="/" style={{ display: 'flex', alignItems: 'center', marginRight: 'auto' }}>
+          <img src="/logo-nodri.png" alt="NODRI — Estilo & Beleza" style={{ height: 42, width: 'auto' }} />
         </a>
-
-        <a href="#planos" style={{
-          padding: '10px 22px', borderRadius: 999, textDecoration: 'none',
-          border: '2px solid #5b4fcf', color: '#5b4fcf',
-          fontWeight: 800, fontSize: 13.5, whiteSpace: 'nowrap',
-        }}>VER PLANOS</a>
-
+        <a href="#contato" style={{
+          padding: '10px 22px', borderRadius: 10, textDecoration: 'none',
+          border: `2px solid ${MARINHO}`, color: MARINHO, fontWeight: 800, fontSize: 13,
+        }}>FALE CONOSCO</a>
         <a href="/login" style={{
-          padding: '10px 22px', borderRadius: 999, textDecoration: 'none',
-          background: 'linear-gradient(135deg,#5b4fcf,#f43f8e)', color: '#fff',
-          fontWeight: 800, fontSize: 13.5, whiteSpace: 'nowrap',
+          padding: '10px 22px', borderRadius: 10, textDecoration: 'none',
+          background: MARINHO, color: '#fff', fontWeight: 800, fontSize: 13,
         }}>JÁ SOU CLIENTE</a>
       </header>
 
-      {/* HERO */}
-      <section style={{ textAlign: 'center', padding: 'clamp(36px,7vw,72px) 20px clamp(30px,6vw,60px)' }}>
-        <div style={{
-          display: 'inline-block', padding: '7px 18px', borderRadius: 999,
-          background: '#efecff', color: '#5b4fcf',
-          fontSize: 12.5, fontWeight: 800, letterSpacing: '.5px',
-          marginBottom: 22, textTransform: 'uppercase',
-        }}>Gestão inteligente em um só lugar</div>
+      {/* ── ABERTURA: a dor primeiro ──────────────────────────────────────
+          O visitante decide em segundos se aquilo é sobre ele. Começar por
+          "plataforma de gestão" não desperta nada em quem não sabe que
+          precisa — começar pela pergunta que ele não sabe responder, sim. */}
+      <section style={{
+        background: `linear-gradient(160deg, ${MARINHO} 0%, #143a73 60%, #17457f 100%)`,
+        color: '#fff', padding: 'clamp(46px,8vw,86px) 20px clamp(52px,8vw,90px)',
+      }}>
+        <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center' }}>
+          <div style={{
+            display: 'inline-block', padding: '7px 18px', borderRadius: 999,
+            background: 'rgba(0,181,216,.16)', color: CIANO,
+            fontSize: 12, fontWeight: 800, letterSpacing: '.6px',
+            marginBottom: 24, textTransform: 'uppercase',
+          }}>Gestão para salões de beleza</div>
 
-        <h1 style={{
-          fontSize: 'clamp(30px,5vw,50px)', fontWeight: 900, lineHeight: 1.12,
-          letterSpacing: '-1px', marginBottom: 18, color: '#1a1a1a',
-          maxWidth: 780, marginLeft: 'auto', marginRight: 'auto',
-        }}>{cfg.hero_titulo}</h1>
+          <h1 style={{
+            fontSize: 'clamp(28px,4.6vw,50px)', fontWeight: 900, lineHeight: 1.13,
+            letterSpacing: '-1px', marginBottom: 20,
+          }}>{cfg.hero_titulo}</h1>
 
-        <p style={{ fontSize: 'clamp(15px,2vw,18px)', color: '#6b6860', maxWidth: 620, margin: '0 auto 36px', lineHeight: 1.65 }}>{cfg.hero_subtitulo}</p>
-        <a href="#planos" style={{ background: `linear-gradient(135deg, ${cfg.hero_cor_botao}, #f43f8e)`, color: 'white', padding: '16px 40px', borderRadius: 12, fontSize: 18, fontWeight: 700, textDecoration: 'none', display: 'inline-block' }}>
-          {cfg.hero_botao}
-        </a>
+          <p style={{
+            fontSize: 'clamp(15px,1.9vw,18.5px)', lineHeight: 1.7,
+            color: 'rgba(255,255,255,.86)', maxWidth: 680, margin: '0 auto 34px',
+          }}>{cfg.hero_subtitulo}</p>
+
+          <a href="#contato" style={{
+            display: 'inline-block', padding: '17px 42px', borderRadius: 12,
+            background: CIANO, color: MARINHO, fontWeight: 900, fontSize: 16.5,
+            textDecoration: 'none', boxShadow: '0 10px 34px rgba(0,181,216,.34)',
+          }}>{cfg.hero_botao}</a>
+
+          <p style={{ fontSize: 12.5, color: 'rgba(255,255,255,.6)', marginTop: 16 }}>
+            Sem compromisso — a gente conversa antes de falar de preço.
+          </p>
+        </div>
       </section>
 
-      {/* BENEFÍCIOS */}
-      <section style={{ padding: '60px 20px', maxWidth: 1000, margin: '0 auto' }}>
-        <h2 style={{ textAlign: 'center', fontSize: 28, fontWeight: 700, marginBottom: 40 }}>{cfg.beneficios_titulo}</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: 24 }}>
-          {(cfg.beneficios || []).map((b: any, i: number) => (
-            <div key={i} style={{ background: '#ffffff', borderRadius: 16, padding: 28, border: '1px solid #e8e6e0' }}>
-              <div style={{ fontSize: 36, marginBottom: 12 }}>{b.emoji}</div>
-              <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>{b.titulo}</h3>
-              <p style={{ color: '#6b6860', lineHeight: 1.6, fontSize: 14 }}>{b.desc}</p>
+      {/* ── AS DORES ──────────────────────────────────────────────────────
+          Quatro situações concretas em vez de adjetivos. Quem se reconhece em
+          uma delas já entendeu para que serve o sistema, sem precisar que
+          ninguém explique o que é "gestão integrada". */}
+      <section style={{ padding: 'clamp(44px,7vw,74px) 20px', maxWidth: 1080, margin: '0 auto' }}>
+        <h2 style={{
+          textAlign: 'center', fontSize: 'clamp(21px,3vw,31px)', fontWeight: 900,
+          color: MARINHO, marginBottom: 12, letterSpacing: '-0.5px',
+        }}>{(cfg as any).dores_titulo}</h2>
+        <p style={{ textAlign: 'center', color: '#6b7280', fontSize: 15, marginBottom: 40 }}>
+          Nenhuma dessas coisas aparece de repente. Elas custam dinheiro em silêncio, todo mês.
+        </p>
+
+        <div style={{ display: 'grid', gap: 18, gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%,255px), 1fr))' }}>
+          {((cfg as any).dores || []).map((d: any, i: number) => (
+            <div key={i} style={{
+              background: '#fff', borderRadius: 16, padding: 26,
+              border: '1px solid #e3e8f0', borderTop: `4px solid ${CIANO}`,
+            }}>
+              <h3 style={{ fontSize: 16, fontWeight: 800, color: MARINHO, marginBottom: 10, lineHeight: 1.35 }}>{d.titulo}</h3>
+              <p style={{ color: '#6b7280', fontSize: 13.5, lineHeight: 1.65 }}>{d.desc}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* PLANOS */}
-      <section id="planos" style={{ padding: '60px 20px', maxWidth: 1100, margin: '0 auto' }}>
-        <h2 style={{ textAlign: 'center', fontSize: 32, fontWeight: 700, marginBottom: 12 }}>{cfg.planos_titulo}</h2>
-        <p style={{ textAlign: 'center', color: '#6b6860', marginBottom: 48 }}>{cfg.planos_subtitulo}</p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))', gap: 20 }}>
-          {planos.map((plano, i) => {
-            const cor = CORES[i % CORES.length]
-            return (
-            <div key={plano.slug} style={{
-              background: '#ffffff', borderRadius: 20, padding: 28,
-              border: plano.destaque ? `2px solid ${cor}` : '1px solid #e8e6e0',
-              position: 'relative', transform: plano.destaque ? 'scale(1.03)' : 'none',
-            }}>
-              {plano.destaque && (
-                <div style={{ position: 'absolute', top: -14, left: '50%', transform: 'translateX(-50%)', background: cor, color: 'white', padding: '4px 20px', borderRadius: 20, fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap' }}>
-                  MAIS ESCOLHIDO
-                </div>
-              )}
-              <div style={{ color: cor, fontSize: 20, fontWeight: 700, marginBottom: 6 }}>{plano.nome}</div>
-              <div style={{ fontSize: 42, fontWeight: 900, marginBottom: 6, color: '#1a1a1a' }}>
-                R${plano.preco}<span style={{ fontSize: 15, color: '#6b6860', fontWeight: 400 }}>/mês</span>
-              </div>
-              <p style={{ color: '#6b6860', fontSize: 13, lineHeight: 1.55, minHeight: 38 }}>{plano.resumo}</p>
-
-              <div style={{ borderTop: '1px solid #e8e6e0', marginTop: 20, paddingTop: 20 }}>
-                {/* "Tudo do plano anterior" em vez de repetir a lista inteira:
-                    com os quatro cards lado a lado, repetir faz todos
-                    parecerem iguais e some com a diferença de preço. */}
-                {plano.herda && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, color: '#6b6860', fontSize: 13.5, fontWeight: 600 }}>
-                    <span style={{ color: cor }}>✓</span> Tudo do {plano.herda}
-                  </div>
-                )}
-                {plano.novidades.map((m, j) => (
-                  <div key={j} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, color: '#3a3835', fontSize: 13.5 }}>
-                    <span style={{ color: cor }}>✓</span> {m}
-                  </div>
-                ))}
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginTop: 14, color: '#8b8798', fontSize: 12, lineHeight: 1.5 }}>
-                  <span style={{ color: cor }}>+</span>
-                  <span>Check list, calendários, setores, feedback de cliente, lojistas, currículos e ações comerciais — em todos os planos.</span>
-                </div>
-              </div>
-
-              <button onClick={() => window.location.href = `/cadastro?plano=${encodeURIComponent(plano.nome)}`}
-                style={{ width: '100%', marginTop: 24, padding: '13px 0', background: plano.destaque ? cor : 'transparent', border: `2px solid ${cor}`, color: plano.destaque ? 'white' : cor, borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
-                Assinar {plano.nome}
-              </button>
+      {/* BENEFÍCIOS */}
+      <section style={{ padding: 'clamp(44px,7vw,74px) 20px', maxWidth: 1080, margin: '0 auto', background: '#fff', borderTop: '1px solid #e3e8f0' }}>
+        <h2 style={{ textAlign: 'center', fontSize: 'clamp(21px,3vw,31px)', fontWeight: 900, color: MARINHO, marginBottom: 40, letterSpacing: '-0.5px' }}>{cfg.beneficios_titulo}</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: 24 }}>
+          {(cfg.beneficios || []).map((b: any, i: number) => (
+            <div key={i} style={{ background: '#f7fafc', borderRadius: 16, padding: 26, border: '1px solid #e3e8f0' }}>
+              <div style={{ width: 34, height: 4, borderRadius: 4, background: CIANO, marginBottom: 16 }} />
+              <h3 style={{ fontSize: 16, fontWeight: 800, color: MARINHO, marginBottom: 9, lineHeight: 1.35 }}>{b.titulo}</h3>
+              <p style={{ color: '#6b7280', lineHeight: 1.65, fontSize: 13.5 }}>{b.desc}</p>
             </div>
-            )
-          })}
+          ))}
+        </div>
+      </section>
+
+      {/* ── CONTATO ──────────────────────────────────────────────────────
+          Aqui ficavam os preços. Eles saíram da vitrine pública: o NODRI
+          passa a ser apresentado numa conversa, e o link dos planos é
+          liberado por você depois do primeiro contato. Concorrente não lê
+          sua tabela, e ninguém assina sem você saber quem é. */}
+      <section id="contato" style={{ padding: 'clamp(40px,7vw,70px) 20px', background: `linear-gradient(160deg, ${MARINHO}, #17457f)` }}>
+        <div style={{ maxWidth: 720, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 28 }}>
+            <h2 style={{ fontSize: 'clamp(24px,3.5vw,34px)', fontWeight: 900, color: '#fff', marginBottom: 12, letterSpacing: '-0.5px' }}>
+              Vamos conhecer o seu salão
+            </h2>
+            <p style={{ color: 'rgba(255,255,255,.9)', fontSize: 15, lineHeight: 1.65 }}>
+              Conte como o seu salão funciona hoje e a gente mostra o que o NODRI muda na sua rotina.
+              Preencha o formulário e retornamos com o plano certo para o seu tamanho.
+            </p>
+          </div>
+          <FormularioContato />
         </div>
       </section>
 
       {/* TRABALHE CONOSCO */}
-      <section style={{ background: 'linear-gradient(135deg,#f0eefb,#fce7f3)', padding: '60px 20px', textAlign: 'center', borderTop: '1px solid #e0ddd8' }}>
+      <section style={{ background: '#f7fafc', padding: '54px 20px', textAlign: 'center', borderTop: '1px solid #e3e8f0' }}>
         <div style={{ maxWidth: 600, margin: '0 auto' }}>
           <div style={{ fontSize: 40, marginBottom: 16 }}></div>
-          <h2 style={{ fontSize: 28, fontWeight: 900, color: '#5b4fcf', marginBottom: 12 }}>{cfg.afiliados_titulo}</h2>
+          <h2 style={{ fontSize: 26, fontWeight: 900, color: MARINHO, marginBottom: 12 }}>{cfg.afiliados_titulo}</h2>
           <p style={{ color: '#767069', fontSize: 15, lineHeight: 1.7, marginBottom: 8 }}>{cfg.afiliados_subtitulo}</p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', margin: '24px 0' }}>
             {(cfg.afiliados_chips || []).map((b: any, i: number) => (
@@ -203,7 +218,7 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
-          <a href="/trabalhe-conosco" style={{ display: 'inline-block', marginTop: 8, background: 'linear-gradient(135deg,#5b4fcf,#f43f8e)', color: '#ffffff', fontWeight: 900, fontSize: 15, padding: '14px 40px', borderRadius: 12, textDecoration: 'none' }}>
+          <a href="/trabalhe-conosco" style={{ display: 'inline-block', marginTop: 8, background: MARINHO, color: '#ffffff', fontWeight: 900, fontSize: 15, padding: '14px 40px', borderRadius: 12, textDecoration: 'none' }}>
             {cfg.afiliados_botao}
           </a>
         </div>
@@ -211,15 +226,14 @@ export default function LandingPage() {
 
       {/* FOOTER */}
       <footer style={{ textAlign: 'center', padding: '40px 20px', color: '#6b6860', borderTop: '1px solid #e0ddd8', background: '#ffffff' }}>
-        <img src="/logo.png" alt="NODRI" style={{ width: 42, height: 42, borderRadius: 11, objectFit: 'cover', marginBottom: 10 }} />
-        <div style={{ fontSize: 20, fontWeight: 900, color: '#5b4fcf', marginBottom: 8 }}>{cfg.footer_logo}</div>
+        <img src="/logo-nodri.png" alt="NODRI" style={{ height: 40, width: 'auto', marginBottom: 12 }} />
         <p>{cfg.footer_texto}</p>
         <p style={{ marginTop: 8 }}>{cfg.footer_email}</p>
         <div style={{ marginTop: 16, display: 'flex', gap: 20, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <a href="/trabalhe-conosco" style={{ color: '#5b4fcf', fontSize: 12, textDecoration: 'none' }}>Trabalhe Conosco</a>
-          <a href="/afiliado" style={{ color: '#5b4fcf', fontSize: 12, textDecoration: 'none' }}>Painel do Afiliado</a>
+          <a href="/trabalhe-conosco" style={{ color: MARINHO, fontSize: 12, textDecoration: 'none' }}>Trabalhe Conosco</a>
+          <a href="/afiliado" style={{ color: MARINHO, fontSize: 12, textDecoration: 'none' }}>Painel do Afiliado</a>
           <a href={`https://wa.me/${cfg.footer_whatsapp}`} target="_blank" rel="noopener noreferrer" style={{ color: '#15803d', fontSize: 12, textDecoration: 'none' }}>WhatsApp</a>
-          <a href="/login" style={{ color: '#5b4fcf', fontSize: 12, textDecoration: 'none' }}>Área do Cliente</a>
+          <a href="/login" style={{ color: MARINHO, fontSize: 12, textDecoration: 'none' }}>Área do Cliente</a>
         </div>
       </footer>
     </div>

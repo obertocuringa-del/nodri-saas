@@ -1,9 +1,10 @@
 ﻿'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { LogOut, Bell, Plus, Building, CreditCard, Puzzle, Users, BarChart3, Settings, RefreshCw, X, Send, Edit, Lock, Unlock, Loader2, ChevronDown, Check, Link, Save, Trash2, ExternalLink, Eye, EyeOff, AlertTriangle, Search, Zap, Tag, FolderOpen, Wrench, LogIn, Bot, GraduationCap, ClipboardList, DollarSign, Home, CheckCircle, AlertCircle, Clock, ShoppingBag, Key } from 'lucide-react'
+import { LogOut, Bell, Plus, Building, CreditCard, Puzzle, Users, BarChart3, Settings, RefreshCw, X, Send, Edit, Lock, Unlock, Loader2, ChevronDown, Check, Link, Save, Trash2, ExternalLink, Eye, EyeOff, AlertTriangle, Search, Zap, Tag, FolderOpen, Wrench, LogIn, Bot, GraduationCap, ClipboardList, DollarSign, Home, CheckCircle, AlertCircle, Clock, ShoppingBag, Key, Mail } from 'lucide-react'
 import toast from 'react-hot-toast'
 import type { Salao, Modulo, Notificacao, Plano, Cupom } from '@/types'
+import Contatos from './Contatos'
 import { MODULOS_NODRI, chaveDoModulo, planoMinimoPara } from '@/lib/planosModulos'
 
 interface Props {
@@ -69,7 +70,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
   const [moduloForm, setModuloForm] = useState({ nome: '', slug: '', descricao: '', versao: '1.0.0', icone: '', cor_classe: '', categoria: '', ordem: '0' })
   const [savingModulo, setSavingModulo] = useState(false)
   const [togglingManutencao, setTogglingManutencao] = useState<string | null>(null)
-  const [activeSection, setActiveSection] = useState('saloes')
+  const [activeSection, setActiveSection] = useState<string>('saloes')
   const [modCtrlSalao, setModCtrlSalao] = useState<Salao | null>(null)
   const [modulosAtivos, setModulosAtivos] = useState<Set<string>>(new Set())
   // Assinatura (Asaas) do salão selecionado
@@ -978,6 +979,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
     { id: 'saloes', icon: <Building size={14} />, label: 'Salões', badge: saloes.length },
     // Página própria (não é aba): define o salão modelo e alimenta ele
     { id: 'modelo', icon: <Building size={14} />, label: 'Salão modelo', rota: '/admin/modelo' },
+    { id: 'contatos', icon: <Mail size={14} />, label: 'Contatos do site' },
     { id: 'planos', icon: <CreditCard size={14} />, label: 'Planos', badge: planos.length },
     { id: 'landing', icon: <Edit size={14} />, label: 'Editor Landing Page' },
     { id: 'cupons', icon: <Tag size={14} />, label: 'Cupons de Desconto' },
@@ -1032,10 +1034,10 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
         <div className="px-5 py-3 border-b border-nodri-border bg-nodri-surface flex items-center gap-3 sticky top-0 z-20">
           <div>
             <div className="font-syne font-bold text-[15px]">
-              {activeSection === 'planos' ? 'Gestão de Planos' : activeSection === 'modulos' ? 'Gestão de Módulos' : activeSection === 'ia' ? 'IA NODRI' : 'Painel Admin Master'}
+              {activeSection === 'planos' ? 'Gestão de Planos' : activeSection === 'modulos' ? 'Gestão de Módulos' : activeSection === 'ia' ? 'IA NODRI' : activeSection === 'contatos' ? 'Contatos do Site' : 'Painel Admin Master'}
             </div>
             <div className="text-[11px] text-nodri-t2">
-              {activeSection === 'planos' ? 'Planos, Landing Page e Cupons de Desconto' : activeSection === 'modulos' ? 'Criar, editar e gerenciar módulos do sistema' : activeSection === 'ia' ? 'Configuração global da IA e controle por salão' : 'Controle total de salões, licenças e módulos'}
+              {activeSection === 'planos' ? 'Planos, Landing Page e Cupons de Desconto' : activeSection === 'modulos' ? 'Criar, editar e gerenciar módulos do sistema' : activeSection === 'ia' ? 'Configuração global da IA e controle por salão' : activeSection === 'contatos' ? 'Quem procurou o NODRI pelo site — libere o acesso aos planos' : 'Controle total de salões, licenças e módulos'}
             </div>
           </div>
           <div className="ml-auto flex gap-2">
@@ -1055,7 +1057,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                 <Plus size={13} /> Novo Módulo
               </button>
             )}
-            {activeSection !== 'planos' && activeSection !== 'modulos' && activeSection !== 'ia' && (
+            {activeSection !== 'planos' && activeSection !== 'modulos' && activeSection !== 'ia' && activeSection !== 'contatos' && (
               <button onClick={() => setShowNovoSalao(true)} className="flex items-center gap-1.5 bg-nodri-cyan text-black text-[11.5px] font-bold px-3 py-1.5 rounded-lg hover:brightness-110 transition-all">
                 <Plus size={13} /> Novo Salão
               </button>
@@ -1187,6 +1189,8 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
 
           {/* PLANOS · LANDING · CUPONS — cada um virou item proprio da sidebar,
               em vez de aba dentro de Planos. O conteudo e o mesmo. */}
+          {activeSection === 'contatos' && <Contatos />}
+
           {(activeSection === 'planos' || activeSection === 'landing' || activeSection === 'cupons') && (
             <div>
               {/* ABA PLANOS */}

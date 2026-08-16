@@ -29,6 +29,7 @@ export default function robots(): MetadataRoute.Robots {
           '/curriculo/',    // ficha de candidato
           '/cadastro/',     // cadastro por convite (token na URL)
           '/conteudo/',
+          '/planos',        // pagina de precos, so por convite
           '/renovar-licenca',
           '/redefinir-senha',
           '/recuperar-senha',

@@ -18,6 +18,12 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/login') ||
     pathname.startsWith('/cadastro') ||
     pathname.startsWith('/landing') ||
+    // Planos: pagina por convite. Quem valida o convite e a propria pagina
+    // (via /api/leads/validar); o middleware so precisa deixar chegar.
+    pathname.startsWith('/planos') ||
+    // Formulario de contato da vitrine — quem preenche ainda nao tem conta.
+    pathname === '/api/leads' ||
+    pathname.startsWith('/api/leads/validar') ||
     pathname.startsWith('/pagamento') ||
     // FIX: rotas auth permitidas explicitamente (não o prefixo inteiro /api/auth)
     pathname === '/api/auth/login' ||
