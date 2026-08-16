@@ -116,8 +116,16 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
           cabecalho e a etiqueta nao dizia nada e empurrava o titulo para
           longe de quem acabou de chegar. Embaixo o espaco continua, porque
           ali ele separa esta secao da proxima. */}
-      <section style={{ background: '#fff', borderBottom: '1px solid #e3e8f0', padding: 'clamp(12px,1.6vw,22px) 20px clamp(56px,7vw,110px)' }}>
-        <div className="nodri-hero" style={{ maxWidth: 1340, margin: '0 auto' }}>
+      <section style={{
+        background: '#fff', borderBottom: '1px solid #e3e8f0',
+        padding: 'clamp(12px,1.6vw,22px) 20px clamp(24px,3vw,48px)',
+        // A abertura ocupa a tela inteira menos a barra do topo: quem chega
+        // ve so ela, e a secao seguinte so aparece quando a pessoa rola.
+        // Antes o titulo de baixo espiava no rodape e roubava a atencao.
+        boxSizing: 'border-box', minHeight: 'calc(100svh - 88px)',
+        display: 'flex',
+      }}>
+        <div className="nodri-hero" style={{ maxWidth: 1340, margin: '0 auto', width: '100%', flex: 1 }}>
           {/* Bloco ancorado embaixo, alinhado com o fim da imagem. Espalhar o
               conteudo (space-between) resolvia a sobra de baixo, mas subia a
               etiqueta e o titulo para o topo - o oposto do que se queria.
