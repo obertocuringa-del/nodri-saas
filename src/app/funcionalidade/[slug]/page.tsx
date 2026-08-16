@@ -90,7 +90,11 @@ export default function FuncionalidadePage() {
       <section style={{ background: '#fff', borderBottom: '1px solid #e3e8f0', padding: 'clamp(34px,5vw,64px) 20px' }}>
         <div style={{
           maxWidth: 1180, margin: '0 auto', display: 'grid',
-          gap: 'clamp(28px,4vw,52px)', alignItems: 'center',
+          // Alinhado pelo TOPO, não pelo centro. Centralizado, o vídeo flutua
+          // no meio de um texto mais alto e nada encosta em nada — o olho lê
+          // isso como desalinhamento. Pelo topo, título e vídeo começam na
+          // mesma linha.
+          gap: 'clamp(28px,4vw,52px)', alignItems: 'start',
           gridTemplateColumns: temMidia ? 'repeat(auto-fit, minmax(min(100%,400px), 1fr))' : '1fr',
         }}>
           <div style={{ maxWidth: temMidia ? undefined : 780, margin: temMidia ? undefined : '0 auto', textAlign: temMidia ? 'left' : 'center' }}>
