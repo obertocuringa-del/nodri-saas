@@ -382,7 +382,13 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
           passa a ser apresentado numa conversa, e o link dos planos é
           liberado por você depois do primeiro contato. Concorrente não lê
           sua tabela, e ninguém assina sem você saber quem é. */}
-      <section id="contato" style={{ padding: 'clamp(24px,3.2vw,40px) 20px', background: `linear-gradient(160deg, ${MARINHO}, #17457f)` }}>
+      <section id="contato" style={{
+        padding: 'clamp(20px,2.6vw,32px) 20px',
+        // A barra do topo e fixa: sem esta margem de rolagem a ancora
+        // parava com o titulo escondido atras dela.
+        scrollMarginTop: 'calc(max(clamp(60px, 6.4vw, 84px) - 24px, 40px) + 9px)',
+        background: `linear-gradient(160deg, ${MARINHO}, #17457f)`,
+      }}>
         <div style={{ maxWidth: 720, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 18 }}>
             <h2 style={{ fontSize: 'clamp(22px,3vw,29px)', fontWeight: 900, color: '#fff', marginBottom: 9, letterSpacing: '-0.5px' }}>
