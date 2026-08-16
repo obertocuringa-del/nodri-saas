@@ -240,6 +240,20 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
           .nodri-btn-topo { padding: 7px 6px !important; font-size: 9px !important; border-radius: 8px !important; white-space: nowrap; border-width: 1.5px !important; letter-spacing: -.2px; }
           .nodri-menu-func > button { padding: 7px 6px !important; font-size: 9px !important; border-radius: 8px !important; white-space: nowrap; gap: 2px !important; border-width: 1.5px !important; letter-spacing: -.2px; }
           .nodri-menu-func > button svg { width: 10px; height: 10px; }
+
+          /* O painel do menu era ancorado no BOTAO (position:absolute,
+             right:0). Com o botao no meio de uma barra estreita, uma caixa de
+             92vw nascia meio fora da tela — dava aquele retangulo branco
+             torto. Preso na TELA (fixed) ele cabe sempre, de margem a
+             margem, com uma coluna por categoria. */
+          div.nodri-menu-painel[style] {
+            position: fixed !important;
+            top: 46px !important; left: 8px !important; right: 8px !important;
+            width: auto !important; min-width: 0 !important; max-width: none !important;
+            grid-template-columns: 1fr !important;
+            gap: 14px !important; padding: 16px !important;
+            max-height: 72vh !important; overflow-y: auto !important;
+          }
           /* O CSS geral reserva 92px no rodape para os botoes flutuantes do
              painel. A vitrine nao tem botao flutuante nenhum, entao aquilo
              virava uma faixa branca depois do "Quero ser Afiliado". */

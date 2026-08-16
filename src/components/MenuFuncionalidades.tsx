@@ -65,7 +65,7 @@ export default function MenuFuncionalidades() {
       </button>
 
       {aberto && (
-        <div style={{
+        <div className="nodri-menu-painel" style={{
           position: 'absolute', top: 'calc(100% + 10px)', right: 0, zIndex: 100,
           background: '#fff', border: '1px solid #e3e8f0', borderRadius: 16,
           boxShadow: '0 22px 60px rgba(13,42,86,.16)',
