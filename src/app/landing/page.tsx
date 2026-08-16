@@ -135,11 +135,11 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
               textWrap: 'balance', overflowWrap: 'break-word',
             }}>{cfg.hero_titulo}</h1>
 
-            <p style={{ fontSize: 'clamp(15.5px,1.75vw,19px)', lineHeight: 1.7, color: '#4b5563', marginBottom: 30 }}>
+            <p style={{ fontSize: 'clamp(15.5px,1.75vw,19px)', lineHeight: 1.7, color: '#4b5563', marginBottom: 'clamp(30px,3.4vw,48px)' }}>
               {cfg.hero_subtitulo}
             </p>
 
-            <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', marginBottom: 28 }}>
+            <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', marginBottom: 'clamp(28px,3.4vw,46px)' }}>
               {((cfg as any).destaques || []).map((d: any, i: number) => (
                 <div key={i}>
                   <div style={{ width: 26, height: 3, borderRadius: 3, background: CIANO, marginBottom: 9 }} />
@@ -161,7 +161,7 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
               }}>{(cfg as any).hero_botao2}</a>
             </div>
 
-            <p style={{ fontSize: 12.5, color: '#8b95a5', marginTop: 14 }}>
+            <p style={{ fontSize: 12.5, color: '#8b95a5', marginTop: 'clamp(14px,1.8vw,24px)' }}>
               {(cfg as any).hero_rodape}
             </p>
           </div>
