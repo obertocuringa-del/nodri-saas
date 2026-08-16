@@ -253,8 +253,7 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
               // em vez de encher uma e deixar a seguinte com duas palavras. Sem
               // isto, titulo longo em coluna estreita quebra torto.
               textWrap: 'balance', overflowWrap: 'break-word',
-            }}>{String(cfg.hero_titulo || '').split('
-').map((linha: string, i: number, todas: string[]) => (
+            }}>{String(cfg.hero_titulo || '').split('\n').map((linha: string, i: number, todas: string[]) => (
               // Cada linha do titulo vira um pedaco proprio: e o que permite,
               // no celular, a chamada ficar grande numa linha so e a promessa
               // logo abaixo, menor, tambem numa linha so.
