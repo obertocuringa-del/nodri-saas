@@ -122,7 +122,12 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
         // A abertura ocupa a tela inteira menos a barra do topo: quem chega
         // ve so ela, e a secao seguinte so aparece quando a pessoa rola.
         // Antes o titulo de baixo espiava no rodape e roubava a atencao.
-        boxSizing: 'border-box', minHeight: 'calc(100svh - 88px)',
+        // A altura descontada e a MESMA formula da barra do topo (logo
+        // clamp(60,6.4vw,84) com margem -12 em cima e embaixo, mais o
+        // padding e a borda). Chutar 88px deixava a secao de baixo
+        // espiando no rodape da tela em algumas resolucoes.
+        boxSizing: 'border-box',
+        minHeight: 'calc(100svh - max(clamp(60px, 6.4vw, 84px) - 24px, 40px) - 5px)',
         display: 'flex',
       }}>
         <div className="nodri-hero" style={{ maxWidth: 1340, margin: '0 auto', width: '100%', flex: 1 }}>
