@@ -50,6 +50,7 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
   // ver a promessa E a foto inteira sem rolar. O quanto sobra depende do
   // tamanho do texto acima dela, entao e medido, nao chutado.
   const [alturaFoto, setAlturaFoto] = useState(0)
+  const [paginaNodri, setPaginaNodri] = useState(0)
 
   useEffect(() => {
     const medir = () => {
@@ -96,6 +97,14 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
       .catch(() => { /* a seção some em vez de mostrar preço errado */ })
   }, [])
 
+  // Cinco por tela: mais que isso o cartao volta a crescer para baixo.
+  const paginasNodri: string[][] = []
+  for (const item of ((cfg as any).comparacao_col2 || [])) {
+    const ultima = paginasNodri[paginasNodri.length - 1]
+    if (ultima && ultima.length < 5) ultima.push(item)
+    else paginasNodri.push([item])
+  }
+
   return (
     <div style={{ fontFamily: 'Segoe UI, sans-serif', background: '#f7fafc', minHeight: '100vh', color: '#1a1a1a' }}>
 
@@ -109,6 +118,17 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
         .nodri-hero { display: grid; gap: clamp(30px,4vw,56px); align-items: stretch;
                       grid-template-columns: 1.05fr 1.1fr; }
         @media (max-width: 900px) { .nodri-hero { grid-template-columns: 1fr; } }
+
+        /* Faixa que rola para o lado, uma pagina de cada vez. O scroll-snap
+           faz o dedo (ou o trackpad) parar sempre no comeco de uma pagina,
+           nunca no meio de um item. */
+        .nodri-faixa { display: grid; grid-auto-flow: column; grid-auto-columns: 100%;
+                       overflow-x: auto; scroll-snap-type: x mandatory;
+                       scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.35) transparent; }
+        .nodri-faixa-pagina { scroll-snap-align: start; padding-right: 4px; }
+        .nodri-faixa::-webkit-scrollbar { height: 6px; }
+        .nodri-faixa::-webkit-scrollbar-thumb { background: rgba(255,255,255,.3); border-radius: 99px; }
+        .nodri-faixa::-webkit-scrollbar-track { background: transparent; }
 
         /* ── CELULAR ────────────────────────────────────────────────────
            No computador o topo e duas colunas: texto de um lado, foto do
@@ -126,8 +146,8 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
           .hero-etiqueta  { order: 1; }
           .hero-titulo    { order: 2; }
           .hero-sub       { order: 3; }
-          .hero-destaques { order: 4; }
-          .hero-midia     { order: 5; }
+          .hero-midia     { order: 4; }
+          .hero-destaques { order: 5; }
           .hero-botoes    { order: 6; }
           .hero-rodape    { order: 7; }
 
@@ -162,7 +182,10 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
 
           /* A foto aparece inteira e dentro da primeira tela: a altura vem
              medida da propria pagina (--altura-foto). */
-          .nodri-midia-cheia img { max-height: var(--altura-foto, 46vh) !important; width: auto !important; max-width: 100%; margin: 0 auto !important; }
+          /* width:auto com os dois tetos deixa o navegador escolher o maior
+             tamanho que cabe: usa a largura inteira quando da, e so encolhe
+             quando a foto e muito em pe. Nunca deforma, nunca corta. */
+          .nodri-midia-cheia img { width: auto !important; height: auto !important; max-width: 100% !important; max-height: var(--altura-foto, 60vh) !important; margin: 0 auto !important; }
           .nodri-midia-cheia { align-items: center; }
           .nodri-painel-cards { grid-template-columns: 1fr !important; }
 
@@ -436,15 +459,45 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
               ))}
             </div>
 
+            {/* A lista da NODRI e a que cresce: cada modulo novo virava mais
+                uma linha, o card esticava e a pagina inteira era empurrada
+                para baixo. Agora sao 5 por vez e o resto rola para o lado —
+                a altura do bloco para de depender de quantos itens existem. */}
             <div style={{ background: MARINHO, borderRadius: 16, padding: 24, color: '#fff' }}>
-              <div style={{ fontSize: 12, fontWeight: 800, color: CIANO, textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 16 }}>
-                {(cfg as any).comparacao_col2_titulo}
-              </div>
-              {((cfg as any).comparacao_col2 || []).map((t: string) => (
-                <div key={t} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 11, fontSize: 13.5, lineHeight: 1.5 }}>
-                  <span style={{ color: CIANO, fontWeight: 900 }}>✓</span> {t}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 16 }}>
+                <div style={{ fontSize: 12, fontWeight: 800, color: CIANO, textTransform: 'uppercase', letterSpacing: '.5px' }}>
+                  {(cfg as any).comparacao_col2_titulo}
                 </div>
-              ))}
+                {paginasNodri.length > 1 && (
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,.6)', whiteSpace: 'nowrap' }}>arraste →</div>
+                )}
+              </div>
+
+              <div className="nodri-faixa" onScroll={e => {
+                const el = e.currentTarget
+                setPaginaNodri(Math.round(el.scrollLeft / Math.max(1, el.clientWidth)))
+              }}>
+                {paginasNodri.map((pagina: string[], p: number) => (
+                  <div key={p} className="nodri-faixa-pagina">
+                    {pagina.map((t: string) => (
+                      <div key={t} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 11, fontSize: 13.5, lineHeight: 1.5 }}>
+                        <span style={{ color: CIANO, fontWeight: 900 }}>✓</span> {t}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+
+              {paginasNodri.length > 1 && (
+                <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginTop: 14 }}>
+                  {paginasNodri.map((_: string[], p: number) => (
+                    <div key={p} style={{
+                      width: p === paginaNodri ? 20 : 7, height: 7, borderRadius: 99,
+                      background: p === paginaNodri ? CIANO : 'rgba(255,255,255,.28)', transition: 'width .2s',
+                    }} />
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
