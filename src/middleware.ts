@@ -33,6 +33,9 @@ export async function middleware(request: NextRequest) {
     // APIs públicas de compra
     // Planos da vitrine: quem lê é visitante que ainda não tem conta
     pathname.startsWith('/api/planos-publicos') ||
+    // Funcionalidades: alimentam o menu e as paginas da vitrine
+    pathname === '/api/funcionalidades' ||
+    pathname.startsWith('/funcionalidade/') ||
     // Textos da vitrine. Estava FORA da lista: a pagina publica pedia a
     // config, o middleware devolvia o HTML do login, e o fetch morria em
     // silencio (nao havia catch). Resultado: tudo que voce editava no Editor

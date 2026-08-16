@@ -6,6 +6,7 @@ import toast from 'react-hot-toast'
 import type { Salao, Modulo, Notificacao, Plano, Cupom } from '@/types'
 import Contatos from './Contatos'
 import EditorVitrine from './EditorVitrine'
+import EditorFuncionalidades from './EditorFuncionalidades'
 import { LANDING_PADRAO } from '@/lib/landingDefaults'
 import { MODULOS_NODRI, chaveDoModulo, planoMinimoPara } from '@/lib/planosModulos'
 
@@ -951,6 +952,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
     // Página própria (não é aba): define o salão modelo e alimenta ele
     { id: 'modelo', icon: <Building size={14} />, label: 'Salão modelo', rota: '/admin/modelo' },
     { id: 'contatos', icon: <Mail size={14} />, label: 'Contatos do site' },
+    { id: 'funcionalidades', icon: <Zap size={14} />, label: 'Funcionalidades' },
     { id: 'planos', icon: <CreditCard size={14} />, label: 'Planos', badge: planos.length },
     { id: 'landing', icon: <Edit size={14} />, label: 'Editor Landing Page' },
     { id: 'cupons', icon: <Tag size={14} />, label: 'Cupons de Desconto' },
@@ -1005,10 +1007,10 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
         <div className="px-5 py-3 border-b border-nodri-border bg-nodri-surface flex items-center gap-3 sticky top-0 z-20">
           <div>
             <div className="font-syne font-bold text-[15px]">
-              {activeSection === 'planos' ? 'Gestão de Planos' : activeSection === 'modulos' ? 'Gestão de Módulos' : activeSection === 'ia' ? 'IA NODRI' : activeSection === 'contatos' ? 'Contatos do Site' : 'Painel Admin Master'}
+              {activeSection === 'planos' ? 'Gestão de Planos' : activeSection === 'modulos' ? 'Gestão de Módulos' : activeSection === 'ia' ? 'IA NODRI' : activeSection === 'contatos' ? 'Contatos do Site' : activeSection === 'funcionalidades' ? 'Funcionalidades da Vitrine' : 'Painel Admin Master'}
             </div>
             <div className="text-[11px] text-nodri-t2">
-              {activeSection === 'planos' ? 'Planos, Landing Page e Cupons de Desconto' : activeSection === 'modulos' ? 'Criar, editar e gerenciar módulos do sistema' : activeSection === 'ia' ? 'Configuração global da IA e controle por salão' : activeSection === 'contatos' ? 'Quem procurou o NODRI pelo site — libere o acesso aos planos' : 'Controle total de salões, licenças e módulos'}
+              {activeSection === 'planos' ? 'Planos, Landing Page e Cupons de Desconto' : activeSection === 'modulos' ? 'Criar, editar e gerenciar módulos do sistema' : activeSection === 'ia' ? 'Configuração global da IA e controle por salão' : activeSection === 'contatos' ? 'Quem procurou o NODRI pelo site — libere o acesso aos planos' : activeSection === 'funcionalidades' ? 'Páginas de funcionalidade e o menu do topo do site' : 'Controle total de salões, licenças e módulos'}
             </div>
           </div>
           <div className="ml-auto flex gap-2">
@@ -1028,7 +1030,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                 <Plus size={13} /> Novo Módulo
               </button>
             )}
-            {activeSection !== 'planos' && activeSection !== 'modulos' && activeSection !== 'ia' && activeSection !== 'contatos' && (
+            {activeSection !== 'planos' && activeSection !== 'modulos' && activeSection !== 'ia' && activeSection !== 'contatos' && activeSection !== 'funcionalidades' && (
               <button onClick={() => setShowNovoSalao(true)} className="flex items-center gap-1.5 bg-nodri-cyan text-black text-[11.5px] font-bold px-3 py-1.5 rounded-lg hover:brightness-110 transition-all">
                 <Plus size={13} /> Novo Salão
               </button>
@@ -1161,6 +1163,8 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
           {/* PLANOS · LANDING · CUPONS — cada um virou item proprio da sidebar,
               em vez de aba dentro de Planos. O conteudo e o mesmo. */}
           {activeSection === 'contatos' && <Contatos />}
+
+          {activeSection === 'funcionalidades' && <EditorFuncionalidades />}
 
           {(activeSection === 'planos' || activeSection === 'landing' || activeSection === 'cupons') && (
             <div>

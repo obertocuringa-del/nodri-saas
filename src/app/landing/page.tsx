@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import FormularioContato from '@/components/FormularioContato'
+import MenuFuncionalidades from '@/components/MenuFuncionalidades'
 import { LANDING_PADRAO } from '@/lib/landingDefaults'
 
 // ── O que a vitrine promete ─────────────────────────────────────────────────
@@ -74,6 +75,7 @@ export default function LandingPage() {
         <a href="/" style={{ display: 'flex', alignItems: 'center', marginRight: 'auto' }}>
           <img src="/logo-nodri.png" alt="NODRI — Estilo & Beleza" style={{ height: 42, width: 'auto' }} />
         </a>
+        <MenuFuncionalidades />
         <a href="#contato" style={{
           padding: '10px 22px', borderRadius: 10, textDecoration: 'none',
           border: `2px solid ${MARINHO}`, color: MARINHO, fontWeight: 800, fontSize: 13,
