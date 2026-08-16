@@ -74,6 +74,12 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
   const [activeSection, setActiveSection] = useState('saloes')
   const [modCtrlSalao, setModCtrlSalao] = useState<Salao | null>(null)
   const [modulosAtivos, setModulosAtivos] = useState<Set<string>>(new Set())
+  // Assinatura (Asaas) do salão selecionado
+  const [assinSalao, setAssinSalao] = useState<Salao | null>(null)
+  const [assinPlano, setAssinPlano] = useState('')
+  const [assinBusy, setAssinBusy] = useState(false)
+  const [assinLink, setAssinLink] = useState('')
+  const [assinMsg, setAssinMsg] = useState('')
   const [notifMsg, setNotifMsg] = useState('')
   const [notifTipo, setNotifTipo] = useState<'info'|'success'|'warning'|'danger'>('info')
   const [notifDestinatarios, setNotifDestinatarios] = useState<string[]>([])
@@ -219,6 +225,23 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
       setModCtrlSalao(null)
     }
     else toast.error('Erro ao salvar módulos')
+  }
+
+  async function acaoAssinatura(acao: 'link' | 'trocar' | 'cancelar') {
+    if (!assinSalao) return
+    setAssinBusy(true); setAssinMsg(''); setAssinLink('')
+    try {
+      const r = await fetch('/api/assinatura/gerenciar', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ salaoId: assinSalao.id, acao, planoSlug: assinPlano || undefined }),
+      })
+      const d = await r.json()
+      if (!r.ok) { setAssinMsg(d.erro || 'Não foi possível concluir'); setAssinBusy(false); return }
+      setAssinMsg(d.mensagem || 'Feito')
+      if (d.url) setAssinLink(d.url)
+      toast.success(d.mensagem || 'Feito')
+    } catch { setAssinMsg('Erro de conexão') }
+    setAssinBusy(false)
   }
 
   function openEditSalao(salao: Salao) {
@@ -1942,6 +1965,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                             <div className="flex gap-1.5">
                               <button onClick={() => openEditSalao(salao)} className="p-1.5 rounded-md border border-nodri-purple/40 text-nodri-purple bg-nodri-purple/7 hover:bg-nodri-purple/15 transition-all" title="Editar"><Edit size={11} /></button>
                               <button onClick={() => openModCtrl(salao)} className="flex items-center gap-1 px-2 py-1 rounded-md border border-nodri-cyan/35 text-nodri-cyan bg-nodri-cyan/7 text-[10px] font-semibold hover:bg-nodri-cyan/15 transition-all"><Puzzle size={10} /> Módulos</button>
+                              <button onClick={() => { setAssinSalao(salao); setAssinPlano(''); setAssinLink(''); setAssinMsg('') }} className="flex items-center gap-1 px-2 py-1 rounded-md border border-nodri-green/35 text-nodri-green bg-nodri-green/7 text-[10px] font-semibold hover:bg-nodri-green/15 transition-all" title="Assinatura recorrente"><CreditCard size={10} /> Assinatura</button>
                               <button onClick={() => acessarComoCliente(salao)} className="flex items-center gap-1 px-2 py-1 rounded-md border border-nodri-amber/35 text-nodri-amber bg-nodri-amber/7 text-[10px] font-semibold hover:bg-nodri-amber/15 transition-all" title="Acessar como este cliente"><LogIn size={10} /> Acessar</button>
                               <button onClick={() => toggleBloqueio(salao)}
                                 className={`p-1.5 rounded-md border transition-all ${salao.status === 'bloqueado' ? 'border-nodri-green/35 text-nodri-green bg-nodri-green/7 hover:bg-nodri-green/15' : 'border-nodri-red/35 text-nodri-red bg-nodri-red/7 hover:bg-nodri-red/15'}`}
@@ -2262,6 +2286,68 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL ASSINATURA */}
+      {assinSalao && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="w-full max-w-lg p-5 bg-nodri-card rounded-xl shadow-2xl border border-nodri-border">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <div className="font-syne font-bold text-[13px] flex items-center gap-2"><CreditCard size={14} className="text-nodri-green" /><span className="text-nodri-t1">Assinatura recorrente</span></div>
+                <div className="text-[10px] text-nodri-green mt-0.5">{assinSalao.nome}</div>
+              </div>
+              <button onClick={() => setAssinSalao(null)} className="text-nodri-t3 hover:text-nodri-t1"><X size={16} /></button>
+            </div>
+
+            <div className="text-[11px] text-nodri-t2 leading-relaxed mb-3">
+              {(assinSalao as any).asaas_subscription_id
+                ? <>Assinatura ativa no Asaas — situação <b>{(assinSalao as any).asaas_status || '—'}</b>.</>
+                : <>Este salão ainda paga pelo modelo antigo, por data de vencimento. Gere o link e envie para ele cadastrar o cartão.</>}
+            </div>
+
+            {/* O cartão é digitado pelo dono do salão no ambiente do Asaas.
+                Não existe migração automática: o que dá para automatizar é
+                gerar o link; o resto depende de um clique dele. */}
+            <label className="text-[10px] font-bold text-nodri-t3 uppercase tracking-wider block mb-1.5">Plano</label>
+            <select value={assinPlano} onChange={e => setAssinPlano(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg bg-nodri-surface border border-nodri-border text-[12px] text-nodri-t1 mb-3">
+              <option value="">Manter o plano atual do salão</option>
+              {planos.map((p: any) => (
+                <option key={p.id} value={p.slug}>{p.nome} — R$ {p.preco}/mês</option>
+              ))}
+            </select>
+
+            <div className="flex gap-2 flex-wrap">
+              <button onClick={() => acaoAssinatura('link')} disabled={assinBusy}
+                className="px-3 py-2 rounded-lg bg-nodri-green text-white text-[11px] font-bold disabled:opacity-50">
+                {assinBusy ? 'Aguarde…' : 'Gerar link de assinatura'}
+              </button>
+              {(assinSalao as any).asaas_subscription_id && (
+                <>
+                  <button onClick={() => acaoAssinatura('trocar')} disabled={assinBusy || !assinPlano}
+                    className="px-3 py-2 rounded-lg border border-nodri-border text-nodri-t2 text-[11px] font-bold disabled:opacity-40">
+                    Trocar de plano
+                  </button>
+                  <button onClick={() => acaoAssinatura('cancelar')} disabled={assinBusy}
+                    className="px-3 py-2 rounded-lg border border-nodri-red/40 text-nodri-red text-[11px] font-bold disabled:opacity-50">
+                    Cancelar assinatura
+                  </button>
+                </>
+              )}
+            </div>
+
+            {assinMsg && <div className="mt-3 text-[11px] text-nodri-t1">{assinMsg}</div>}
+            {assinLink && (
+              <div className="mt-2 p-2.5 rounded-lg bg-nodri-surface border border-nodri-border">
+                <div className="text-[10px] text-nodri-t3 mb-1">Envie este link para o salão:</div>
+                <div className="text-[11px] text-nodri-cyan break-all">{assinLink}</div>
+                <button onClick={() => { navigator.clipboard.writeText(assinLink); toast.success('Link copiado') }}
+                  className="mt-2 px-2.5 py-1 rounded-md border border-nodri-border text-[10px] text-nodri-t2">Copiar</button>
+              </div>
+            )}
           </div>
         </div>
       )}

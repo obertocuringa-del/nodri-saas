@@ -27,8 +27,11 @@ export async function middleware(request: NextRequest) {
     // APIs públicas de compra
     // Planos da vitrine: quem lê é visitante que ainda não tem conta
     pathname.startsWith('/api/planos-publicos') ||
-    // Assinatura: quem chama ainda não tem conta
-    pathname.startsWith('/api/assinatura') ||
+    // Assinatura: SÓ a criação é pública — quem assina ainda não tem conta.
+    // /api/assinatura/gerenciar (cancelar, trocar plano, gerar link) fica de
+    // fora de propósito: ela mexe na cobrança de salão que já existe, e a
+    // rota conferir master por dentro não é motivo para deixar a porta aberta.
+    pathname === '/api/assinatura/criar' ||
     pathname.startsWith('/api/webhook') ||
     pathname.startsWith('/api/cupons/validar') ||
     pathname.startsWith('/api/afiliados') ||
