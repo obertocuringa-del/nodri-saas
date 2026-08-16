@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import FormularioContato from '@/components/FormularioContato'
+import { LANDING_PADRAO } from '@/lib/landingDefaults'
 
 // ── O que a vitrine promete ─────────────────────────────────────────────────
 // O texto anterior vendia automação de WhatsApp: "automatize confirmações,
@@ -18,46 +19,7 @@ import FormularioContato from '@/components/FormularioContato'
 const MARINHO = '#0d2a56'
 const CIANO = '#00b5d8'
 
-const DEFAULT_CONFIG = {
-  hero_logo: 'NODRI',
-  // Fala da DOR antes de falar do produto. "Plataforma de gestão" não desperta
-  // nada em quem não sabe que precisa; "você sabe quanto sobrou?" desperta.
-  hero_titulo: 'Seu salão funciona quando você não está lá?',
-  hero_subtitulo: 'A NODRI transforma sua base de clientes em dinheiro. Mais organização, mais relacionamento e mais faturamento — de forma orgânica, aproveitando quem já conhece e confia na sua empresa.',
-  hero_botao: 'Quero conhecer o NODRI',
-  hero_cor_botao: CIANO,
-
-  dores_titulo: 'Se você se reconhece aqui, a NODRI foi feita para o seu salão',
-  dores: [
-    { titulo: 'O mês fecha e você não sabe se sobrou', desc: 'O dinheiro entra e sai, mas ninguém consegue dizer quanto o salão deu de lucro de verdade — nem quanto custa manter a porta aberta.' },
-    { titulo: 'Você não sabe qual profissional dá lucro', desc: 'Todo mundo parece ocupado. Mas quem realmente traz resultado, quem só ocupa cadeira e quem está caindo mês a mês? Sem número, é achismo.' },
-    { titulo: 'Cliente some e ninguém percebe', desc: 'Aquela cliente que vinha todo mês parou de aparecer. Você só percebe quando ela já está em outro salão há meio ano.' },
-    { titulo: 'Tudo depende de você estar presente', desc: 'Se você viaja ou adoece, a rotina desmonta. Nada está escrito, tudo está na sua cabeça e no caderno da recepção.' },
-  ],
-
-  beneficios_titulo: 'O primeiro sistema que cuida da sua equipe como uma empresa de verdade',
-  beneficios: [
-    { emoji: '', titulo: 'Você passa a saber seus números', desc: 'Custo operacional, ponto de equilíbrio, contas a pagar e preço certo por serviço — calculados com os dados do seu salão, não com estimativa.' },
-    { emoji: '', titulo: 'Cada profissional tem uma ficha viva', desc: 'Metas, comissões, avaliações, faturamento e histórico. Você vê quem cresce, quem precisa de ajuda e quem está saindo antes de perder.' },
-    { emoji: '', titulo: 'O sistema aponta o problema', desc: 'Clientes em risco de sumir, serviços que ninguém oferece, queda de faturamento. O relatório mostra onde está o dinheiro que você não viu.' },
-    { emoji: '', titulo: 'A rotina anda sem você', desc: 'Check lists por período, escalas, processos escritos, feedback de cliente e pendências. O salão funciona mesmo quando você não está lá.' },
-  ],
-
-  afiliados_titulo: 'Indique o NODRI e ganhe',
-  afiliados_subtitulo: 'Indique o NODRI para outros salões e ganhe 40% de comissão em cada venda realizada com seu cupom exclusivo.',
-  afiliados_comissao: 40,
-  afiliados_botao: 'Quero indicar →',
-  afiliados_chips: [
-    { emoji: '', texto: 'Cupom exclusivo' },
-    { emoji: '', texto: 'Link personalizado' },
-    { emoji: '', texto: '40% por venda' },
-    { emoji: '', texto: 'Pix direto' },
-  ],
-  footer_logo: 'NODRI',
-  footer_texto: 'Gestão Inteligente para Salões de Beleza',
-  footer_email: 'contato@nodri.com.br',
-  footer_whatsapp: '5561982195214',
-}
+const DEFAULT_CONFIG = LANDING_PADRAO
 
 interface PlanoVitrine {
   nome: string; slug: string; preco: number; resumo: string
@@ -91,6 +53,15 @@ export default function LandingPage() {
 
   return (
     <div style={{ fontFamily: 'Segoe UI, sans-serif', background: '#f7fafc', minHeight: '100vh', color: '#1a1a1a' }}>
+
+      <style>{`
+        /* Quatro cards numa linha só no computador. Com auto-fit o quarto card
+           caía sozinho numa segunda linha e a seção ficava torta.
+           No celular vira uma coluna, senão o texto fica ilegível. */
+        .nodri-4col { display: grid; gap: 18px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        @media (max-width: 1000px) { .nodri-4col { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (max-width: 560px)  { .nodri-4col { grid-template-columns: 1fr; } }
+      `}</style>
 
       {/* ── BARRA DO TOPO ─────────────────────────────────────────────── */}
       <header style={{
@@ -241,7 +212,7 @@ export default function LandingPage() {
           Nenhuma dessas coisas aparece de repente. Elas custam dinheiro em silêncio, todo mês.
         </p>
 
-        <div style={{ display: 'grid', gap: 18, gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%,255px), 1fr))' }}>
+        <div className="nodri-4col">
           {((cfg as any).dores || []).map((d: any, i: number) => (
             <div key={i} style={{
               background: '#fff', borderRadius: 16, padding: 26,
@@ -308,7 +279,7 @@ export default function LandingPage() {
       {/* BENEFÍCIOS */}
       <section style={{ padding: 'clamp(44px,7vw,74px) 20px', maxWidth: 1080, margin: '0 auto', background: '#fff', borderTop: '1px solid #e3e8f0' }}>
         <h2 style={{ textAlign: 'center', fontSize: 'clamp(21px,3vw,31px)', fontWeight: 900, color: MARINHO, marginBottom: 40, letterSpacing: '-0.5px' }}>{cfg.beneficios_titulo}</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: 24 }}>
+        <div className="nodri-4col">
           {(cfg.beneficios || []).map((b: any, i: number) => (
             <div key={i} style={{ background: '#f7fafc', borderRadius: 16, padding: 26, border: '1px solid #e3e8f0' }}>
               <div style={{ width: 34, height: 4, borderRadius: 4, background: CIANO, marginBottom: 16 }} />

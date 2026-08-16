@@ -2,37 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
+import { LANDING_PADRAO } from '@/lib/landingDefaults'
 
-const DEFAULT_CONFIG = {
-  hero_logo: 'NODRI',
-  hero_titulo: 'Sistema de Gestão para Salões de Beleza',
-  hero_subtitulo: 'Automatize confirmações, envio de mensagens, relatórios e muito mais. Tudo integrado diretamente ao seu WhatsApp.',
-  hero_botao: 'Ver Planos',
-  hero_cor_botao: '#5b4fcf',
-  beneficios_titulo: 'Por que escolher o NODRI?',
-  beneficios: [
-    { emoji: '⚡', titulo: 'Abre com 1 clique', desc: 'Clique em Abrir no site e o programa abre instantaneamente no seu computador.' },
-    { emoji: '💬', titulo: 'Integrado ao WhatsApp', desc: 'Envie confirmações, feedbacks e listas direto pelo WhatsApp sem copiar e colar.' },
-    { emoji: '📊', titulo: 'Relatórios completos', desc: 'Acompanhe faturamento, desempenho de profissionais e reservas financeiras.' },
-    { emoji: '🔄', titulo: 'Atualizações automáticas', desc: 'Receba novas versões dos programas sem precisar reinstalar tudo.' },
-  ],
-  planos_titulo: 'Escolha seu Plano',
-  planos_subtitulo: 'Pagamento único mensal via PIX ou cartão',
-  // `landing_planos` saiu: a vitrine lê os planos da tabela `planos`.
-  afiliados_titulo: 'Trabalhe Conosco',
-  afiliados_subtitulo: 'Indique o NODRI para outros salões e ganhe 40% de comissão em cada venda realizada com seu cupom exclusivo.',
-  afiliados_botao: 'Quero ser Afiliado →',
-  afiliados_chips: [
-    { emoji: '🎫', texto: 'Cupom exclusivo' },
-    { emoji: '🔗', texto: 'Link personalizado' },
-    { emoji: '💰', texto: '40% por venda' },
-    { emoji: '📱', texto: 'Pix direto' },
-  ],
-  footer_logo: 'NODRI',
-  footer_texto: 'Sistema de Gestão para Salões de Beleza',
-  footer_email: 'contato@nodri.com.br',
-  footer_whatsapp: '5561982195214',
-}
+// Os textos moravam aqui numa cópia própria, que desencontrou da página e
+// passou a sobrescrever o site com texto de duas versões atrás. Agora vêm
+// de src/lib/landingDefaults.ts, junto com a página e o editor.
+const DEFAULT_CONFIG = LANDING_PADRAO
 
 export async function GET() {
   const { data } = await supabaseAdmin

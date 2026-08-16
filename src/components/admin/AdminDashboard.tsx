@@ -5,6 +5,7 @@ import { LogOut, Bell, Plus, Building, CreditCard, Puzzle, Users, BarChart3, Set
 import toast from 'react-hot-toast'
 import type { Salao, Modulo, Notificacao, Plano, Cupom } from '@/types'
 import Contatos from './Contatos'
+import { LANDING_PADRAO } from '@/lib/landingDefaults'
 import { MODULOS_NODRI, chaveDoModulo, planoMinimoPara } from '@/lib/planosModulos'
 
 interface Props {
@@ -26,38 +27,7 @@ const PLANO_CLASS: Record<string, string> = {
 }
 
 
-const DEFAULT_LANDING = {
-  hero_logo: 'NODRI',
-  hero_titulo: 'Sistema de Gestão para Salões de Beleza',
-  hero_subtitulo: 'Automatize confirmações, envio de mensagens, relatórios e muito mais. Tudo integrado diretamente ao seu WhatsApp.',
-  hero_botao: 'Ver Planos',
-  hero_cor_botao: '#5b4fcf',
-  beneficios_titulo: 'Por que escolher o NODRI?',
-  beneficios: [
-    { emoji: '', titulo: 'Abre com 1 clique', desc: 'Clique em Abrir no site e o programa abre instantaneamente no seu computador.' },
-    { emoji: '', titulo: 'Integrado ao WhatsApp', desc: 'Envie confirmações, feedbacks e listas direto pelo WhatsApp.' },
-    { emoji: '', titulo: 'Relatórios completos', desc: 'Acompanhe faturamento, desempenho de profissionais e reservas financeiras.' },
-    { emoji: '', titulo: 'Atualizações automáticas', desc: 'Receba novas versões dos programas sem precisar reinstalar tudo.' },
-  ],
-  planos_titulo: 'Escolha seu Plano',
-  planos_subtitulo: 'Mensal, sem fidelidade. Cada plano acrescenta ao anterior.',
-  // `landing_planos` não existe mais: a vitrine lê os planos da tabela.
-  // Os três antigos (Básico/Profissional/Premium) ficavam aqui e na landing,
-  // e desencontraram do sistema no dia em que os planos mudaram.
-  afiliados_titulo: 'Trabalhe Conosco',
-  afiliados_subtitulo: 'Indique o NODRI e ganhe 40% de comissão em cada venda com seu cupom exclusivo.',
-  afiliados_botao: 'Quero ser Afiliado →',
-  afiliados_chips: [
-    { emoji: '', texto: 'Cupom exclusivo' },
-    { emoji: '', texto: 'Link personalizado' },
-    { emoji: '', texto: '40% por venda' },
-    { emoji: '', texto: 'Pix direto' },
-  ],
-  footer_logo: 'NODRI',
-  footer_texto: 'Sistema de Gestão para Salões de Beleza',
-  footer_email: 'contato@nodri.com.br',
-  footer_whatsapp: '5561982195214',
-}
+const DEFAULT_LANDING = LANDING_PADRAO
 
 export default function AdminDashboard({ saloes: initialSaloes, modulos: initialModulos, notificacoes, planos: initialPlanos }: Props) {
   const [saloes, setSaloes] = useState(initialSaloes)
