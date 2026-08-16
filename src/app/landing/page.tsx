@@ -69,7 +69,7 @@ export default function LandingPage() {
         position: 'sticky', top: 0, zIndex: 50,
         background: 'rgba(255,255,255,.94)', backdropFilter: 'blur(10px)',
         borderBottom: '1px solid #e3e8f0',
-        padding: '14px clamp(16px,4vw,44px)',
+        padding: '5px clamp(16px,4vw,44px)',
         display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
       }}>
         <a href="/" style={{ display: 'flex', alignItems: 'center', marginRight: 'auto' }}>

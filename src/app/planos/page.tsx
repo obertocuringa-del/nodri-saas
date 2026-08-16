@@ -74,7 +74,7 @@ function PlanosInner() {
     <div style={{ fontFamily: 'Segoe UI, sans-serif', background: '#f5f4f0', minHeight: '100vh', color: '#1a1a1a' }}>
       <header style={{
         background: '#fff', borderBottom: '1px solid #e8e6e0',
-        padding: '12px clamp(16px,4vw,40px)', display: 'flex', alignItems: 'center', gap: 12,
+        padding: '5px clamp(16px,4vw,40px)', display: 'flex', alignItems: 'center', gap: 12,
       }}>
         <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginRight: 'auto' }}>
           <img src="/logo-nodri.png" alt="NODRI" style={{ height: 'clamp(44px, 5vw, 58px)', width: 'auto' }} />
