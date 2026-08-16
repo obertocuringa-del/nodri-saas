@@ -12,9 +12,13 @@ export async function GET() {
     // Busca salões ativos que pagam via PIX e vencem em 5 dias
     const { data: saloes } = await supabaseAdmin
       .from('saloes')
-      .select('id, nome, email, telefone, licenca_vencimento, plano:planos(nome, preco)')
+      .select('id, nome, email, telefone, licenca_vencimento, asaas_subscription_id, plano:planos(nome, preco)')
       .eq('status', 'ativo')
       .eq('licenca_vencimento', em5diasStr)
+      // Quem tem assinatura no Asaas NÃO recebe lembrete: o cartão dele é
+      // cobrado sozinho. Mandar "pague para não perder o acesso" para quem já
+      // paga automático assusta cliente adimplente e gera suporte à toa.
+      .is('asaas_subscription_id', null)
 
     if (!saloes || saloes.length === 0) {
       return NextResponse.json({ message: 'Nenhum vencimento em 5 dias', lembretes: 0 })

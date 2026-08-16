@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { nomesDeBancoDoPlano } from '@/lib/planosModulos'
 import { hashPassword } from '@/lib/auth'
 import { enviarEmailBoasVindas } from '@/lib/email'
+import { buscarAssinatura } from '@/lib/asaas'
 import { randomBytes } from 'crypto'
 import { ehChaveDoModelo, sanitizar, versaoDoModelo } from '@/lib/modeloSalao'
 import { copiarMoldesDeTabelas } from '@/lib/modeloTabelas'
@@ -97,10 +98,26 @@ export async function POST(req: NextRequest) {
 
     // ── Pagamento entrou ──────────────────────────────────────────────────
     if (evento === 'PAYMENT_RECEIVED' || evento === 'PAYMENT_CONFIRMED') {
-      // A data de vencimento vem do Asaas, não é calculada aqui: ele é quem
-      // sabe quando vai cobrar de novo, inclusive quando houve atraso ou
-      // proporcional na troca de plano.
-      const proxima = pagamento?.dueDate || null
+      // ── Até quando ele está pago ──────────────────────────────────────
+      //
+      // TEM que ser a PRÓXIMA cobrança da assinatura, não a data da cobrança
+      // que acabou de ser paga. `payment.dueDate` é a data DESTA cobrança —
+      // hoje, ou antes. Gravar isso em `licenca_vencimento` fazia o cron
+      // check-licencas (que bloqueia todo salão com vencimento anterior a
+      // hoje) derrubar, no dia seguinte, exatamente quem tinha acabado de
+      // pagar.
+      //
+      // Quem sabe a próxima data é o Asaas: ela já considera atraso e
+      // proporcional de troca de plano. Se a consulta falhar, somamos um mês
+      // à cobrança paga — errar para MAIS mantém o cliente dentro, e um dia a
+      // mais de acesso é infinitamente mais barato que bloquear quem pagou.
+      const assinatura = assinaturaId ? await buscarAssinatura(assinaturaId) : null
+      let proxima: string | null = assinatura?.nextDueDate || null
+      if (!proxima && pagamento?.dueDate) {
+        const d = new Date(`${pagamento.dueDate}T12:00:00`)
+        d.setMonth(d.getMonth() + 1)
+        proxima = d.toISOString().split('T')[0]
+      }
 
       await supabase.from('saloes').update({
         status: 'ativo',

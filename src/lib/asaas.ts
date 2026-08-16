@@ -121,6 +121,15 @@ export async function criarAssinatura(dados: {
   })
 }
 
+/** Assinatura como está hoje no Asaas — usada para saber a PRÓXIMA cobrança. */
+export async function buscarAssinatura(assinaturaId: string): Promise<AssinaturaAsaas | null> {
+  try {
+    return await chamar<AssinaturaAsaas>(`/subscriptions/${assinaturaId}`)
+  } catch {
+    return null
+  }
+}
+
 /** Link do checkout hospedado da primeira cobrança — é para onde o cliente vai. */
 export async function linkDePagamento(assinaturaId: string): Promise<string | null> {
   const cobrancas = await chamar<{ data: { invoiceUrl?: string }[] }>(
