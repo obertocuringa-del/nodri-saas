@@ -82,7 +82,7 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
         position: 'sticky', top: 0, zIndex: 50,
         background: 'rgba(255,255,255,.94)', backdropFilter: 'blur(10px)',
         borderBottom: '1px solid #e3e8f0',
-        padding: '5px clamp(16px,4vw,44px)',
+        padding: '2px clamp(16px,4vw,44px)',
         display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
       }}>
         <a href="/" style={{ display: 'flex', alignItems: 'center', marginRight: 'auto' }}>
@@ -90,7 +90,7 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
               marca e a primeira coisa que precisa ficar na memoria de quem
               chega pela primeira vez. */}
           <img src="/logo-nodri.png" alt="NODRI — Estilo & Beleza"
-            style={{ height: 'clamp(46px, 5vw, 64px)', width: 'auto' }} />
+            style={{ height: 'clamp(60px, 6.4vw, 84px)', width: 'auto', margin: '-12px 0' }} />
         </a>
         <MenuFuncionalidades />
         <a href="#contato" style={{
