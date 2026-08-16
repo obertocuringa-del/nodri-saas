@@ -69,11 +69,15 @@ export default function LandingPage() {
         position: 'sticky', top: 0, zIndex: 50,
         background: 'rgba(255,255,255,.94)', backdropFilter: 'blur(10px)',
         borderBottom: '1px solid #e3e8f0',
-        padding: '10px clamp(16px,4vw,44px)',
+        padding: '14px clamp(16px,4vw,44px)',
         display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
       }}>
         <a href="/" style={{ display: 'flex', alignItems: 'center', marginRight: 'auto' }}>
-          <img src="/logo-nodri.png" alt="NODRI — Estilo & Beleza" style={{ height: 42, width: 'auto' }} />
+          {/* Logo em destaque: era 42px e sumia ao lado dos dois botoes. A
+              marca e a primeira coisa que precisa ficar na memoria de quem
+              chega pela primeira vez. */}
+          <img src="/logo-nodri.png" alt="NODRI — Estilo & Beleza"
+            style={{ height: 'clamp(46px, 5vw, 64px)', width: 'auto' }} />
         </a>
         <MenuFuncionalidades />
         <a href="#contato" style={{

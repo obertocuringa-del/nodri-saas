@@ -77,12 +77,7 @@ function PlanosInner() {
         padding: '12px clamp(16px,4vw,40px)', display: 'flex', alignItems: 'center', gap: 12,
       }}>
         <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginRight: 'auto' }}>
-          <img src="/logo.png" alt="NODRI" style={{ width: 36, height: 36, borderRadius: 10 }} />
-          <span style={{
-            fontSize: 21, fontWeight: 900,
-            background: 'linear-gradient(135deg,#5b4fcf,#f43f8e)',
-            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-          }}>NODRI</span>
+          <img src="/logo-nodri.png" alt="NODRI" style={{ height: 'clamp(44px, 5vw, 58px)', width: 'auto' }} />
         </a>
         <a href="/login" style={{
           padding: '9px 20px', borderRadius: 999, textDecoration: 'none',

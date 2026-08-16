@@ -57,7 +57,7 @@ export default function FuncionalidadePage() {
         position: 'sticky', top: 0, zIndex: 50,
       }}>
         <a href="/" style={{ display: 'flex', alignItems: 'center', marginRight: 'auto' }}>
-          <img src="/logo-nodri.png" alt="NODRI" style={{ height: 42, width: 'auto' }} />
+          <img src="/logo-nodri.png" alt="NODRI" style={{ height: 'clamp(46px, 5vw, 64px)', width: 'auto' }} />
         </a>
         <a href="/#contato" style={{
           padding: '10px 22px', borderRadius: 10, textDecoration: 'none',
