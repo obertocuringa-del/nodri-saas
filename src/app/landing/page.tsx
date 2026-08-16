@@ -131,10 +131,27 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
           .hero-titulo { font-size: clamp(28px, 8.2vw, 40px) !important; letter-spacing: -.5px; }
           .hero-sub { font-size: 15.5px !important; line-height: 1.6 !important; }
           .hero-destaques { grid-template-columns: 1fr 1fr !important; gap: 16px !important; }
-          .hero-botoes { display: grid !important; grid-template-columns: 1fr; gap: 10px !important; }
-          .hero-botoes a { text-align: center; padding: 15px 18px !important; }
+          .hero-botoes { display: grid !important; grid-template-columns: 1fr 1fr; gap: 10px !important; }
+          .hero-botoes a { text-align: center; padding: 15px 8px !important; font-size: 14px !important; }
           .hero-rodape { text-align: center; }
           .nodri-painel-cards { grid-template-columns: 1fr !important; }
+
+          /* Cards em duas colunas tambem no celular: um embaixo do outro
+             deixava a pagina longa demais para rolar. Fonte e respiro
+             menores para o texto nao virar uma palavra por linha. */
+          .nodri-4col { gap: 12px !important; }
+          .nodri-4col > div { padding: 16px !important; }
+          .nodri-4col h3 { font-size: 14.5px !important; line-height: 1.3 !important; }
+          .nodri-4col p { font-size: 12.5px !important; line-height: 1.55 !important; }
+
+          /* Vantagens do afiliado: duas por linha, todas do mesmo tamanho. */
+          .nodri-chips { display: grid !important; grid-template-columns: 1fr 1fr; gap: 10px !important; margin: 18px 0 !important; }
+          .nodri-chips > div { font-size: 12px !important; padding: 11px 10px !important; justify-content: center; text-align: center; }
+
+          /* O respiro entre as ultimas secoes era de tela grande e no celular
+             virava faixa vazia. */
+          .nodri-afiliados { padding: 30px 16px !important; }
+          #contato { padding-bottom: 22px !important; }
         }
 
         /* Celular estreito: dois destaques lado a lado ficam com uma palavra
@@ -155,7 +172,7 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
           .nodri-menu-func { display: none !important; }
         }
         @media (max-width: 1000px) { .nodri-4col { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-        @media (max-width: 560px)  { .nodri-4col { grid-template-columns: 1fr; } }
+        @media (max-width: 560px)  { .nodri-4col { gap: 12px; } }
       `}</style>
 
       {/* ── BARRA DO TOPO ─────────────────────────────────────────────── */}
@@ -485,12 +502,12 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
       </section>
 
       {/* TRABALHE CONOSCO */}
-      <section style={{ background: '#f7fafc', padding: '54px 20px', textAlign: 'center', borderTop: '1px solid #e3e8f0' }}>
+      <section className="nodri-afiliados" style={{ background: '#f7fafc', padding: '54px 20px', textAlign: 'center', borderTop: '1px solid #e3e8f0' }}>
         <div style={{ maxWidth: 600, margin: '0 auto' }}>
           <div style={{ fontSize: 40, marginBottom: 16 }}></div>
           <h2 style={{ fontSize: 26, fontWeight: 900, color: MARINHO, marginBottom: 12 }}>{cfg.afiliados_titulo}</h2>
           <p style={{ color: '#767069', fontSize: 15, lineHeight: 1.7, marginBottom: 8 }}>{cfg.afiliados_subtitulo}</p>
-          <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', margin: '24px 0' }}>
+          <div className="nodri-chips" style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', margin: '24px 0' }}>
             {(cfg.afiliados_chips || []).map((b: any, i: number) => (
               <div key={i} style={{ background: '#ffffff', border: '1px solid #e8e6e0', borderRadius: 10, padding: '12px 20px', color: '#1a1a1a', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span>{b.emoji}</span> {b.texto}
