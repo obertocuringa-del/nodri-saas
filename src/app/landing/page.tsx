@@ -329,18 +329,13 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer style={{ textAlign: 'center', padding: '40px 20px', color: '#6b6860', borderTop: '1px solid #e0ddd8', background: '#ffffff' }}>
-        <img src="/logo-nodri.png" alt="NODRI" style={{ height: 40, width: 'auto', marginBottom: 12 }} />
-        <p>{cfg.footer_texto}</p>
-        <p style={{ marginTop: 8 }}>{cfg.footer_email}</p>
-        <div style={{ marginTop: 16, display: 'flex', gap: 20, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <a href="/trabalhe-conosco" style={{ color: MARINHO, fontSize: 12, textDecoration: 'none' }}>Trabalhe Conosco</a>
-          <a href="/afiliado" style={{ color: MARINHO, fontSize: 12, textDecoration: 'none' }}>Painel do Afiliado</a>
-          <a href={`https://wa.me/${cfg.footer_whatsapp}`} target="_blank" rel="noopener noreferrer" style={{ color: '#15803d', fontSize: 12, textDecoration: 'none' }}>WhatsApp</a>
-          <a href="/login" style={{ color: MARINHO, fontSize: 12, textDecoration: 'none' }}>Área do Cliente</a>
-        </div>
-      </footer>
+      {/* O rodape saiu a pedido: logo repetida, o mesmo texto de apresentacao
+          que ja esta no topo, e-mail e quatro links que duplicavam o que a
+          barra do topo e a secao de afiliados ja oferecem. Bloco branco no fim
+          da pagina sem nada novo so alonga a rolagem.
+
+          Nada de essencial se perdeu: "Ja sou cliente" continua no topo e
+          "Quero ser afiliado" na secao acima. */}
     </div>
   )
 }
