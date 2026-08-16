@@ -227,6 +227,13 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
              painel. A vitrine nao tem botao flutuante nenhum, entao aquilo
              virava uma faixa branca depois do "Quero ser Afiliado". */
           div.nodri-vitrine { padding-bottom: 0 !important; }
+
+          /* A comparacao nao pode ficar em duas colunas no celular: 167px de
+             largura quebram cada frase em quatro linhas. Uma embaixo da
+             outra, com metade do respiro que a versao de computador usa. */
+          div.nodri-comparacao[style] { grid-template-columns: 1fr !important; gap: 12px !important; }
+          div.nodri-comparacao > div { padding: 14px !important; }
+          div.nodri-comparacao > div > div { margin-bottom: 8px !important; }
         }
         @media (max-width: 1000px) { .nodri-4col { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         @media (max-width: 560px)  { .nodri-4col { gap: 12px; } }
@@ -451,14 +458,14 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
             {(cfg as any).comparacao_subtitulo}
           </p>
 
-          <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,280px),1fr))' }}>
+          <div className="nodri-comparacao" style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,280px),1fr))' }}>
             <div style={{ background: '#f7fafc', border: '1px solid #e3e8f0', borderRadius: 16, padding: 24 }}>
               <div style={{ fontSize: 12, fontWeight: 800, color: '#8b95a5', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 16 }}>
                 {(cfg as any).comparacao_col1_titulo}
               </div>
               {((cfg as any).comparacao_col1 || []).map((t: string) => (
-                <div key={t} style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 11, color: '#6b7280', fontSize: 14 }}>
-                  <span style={{ color: '#c3ccd8', fontWeight: 900 }}>•</span> {t}
+                <div key={t} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 11, color: '#6b7280', fontSize: 13.5, lineHeight: 1.5 }}>
+                  <span style={{ color: '#b6c2d1', fontWeight: 900 }}>✓</span> {t}
                 </div>
               ))}
             </div>
