@@ -44,6 +44,7 @@ const CATALOGO: PaginaCat[] = [
   { rota: '/salon/auditoria', label: 'LOG DE AUDITORIA', grupo: 'Página', chave: 'auditoria', palavras: 'historico quem alterou registro seguranca' },
   { rota: '/salon/perfil', label: 'MEU PERFIL', grupo: 'Página', chave: null, palavras: 'logo salao conta dados' },
   { rota: '/salon/notificacoes', label: 'NOTIFICAÇÕES', grupo: 'Página', chave: null, palavras: 'avisos alertas sino' },
+  { rota: '/salon/atualizacoes', label: 'ATUALIZAÇÕES DO SISTEMA', grupo: 'Página', chave: null, palavras: 'novidade modelo aplicar melhorias versao atualizar' },
   // ── Salão Administrativo (ferramentas) ──
   { rota: '/salon/administrativo?aba=listas&lista=realinhamento', label: 'LISTA DE REALINHAMENTO', grupo: 'Administrativo', chave: 'adm_listas', palavras: 'rodizio contagem progressiva' },
   { rota: '/salon/administrativo?aba=listas&lista=corte', label: 'LISTA DE CORTE', grupo: 'Administrativo', chave: 'adm_listas', palavras: 'rodizio contagem cabelo' },

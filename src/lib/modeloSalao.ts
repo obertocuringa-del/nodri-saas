@@ -42,6 +42,7 @@ export const CHAVES_MODELO: ChaveModelo[] = [
   { chave: 'checklist_manutencao', como: 'checklist', rotulo: 'Check list — Manutenção Predial' },
   { chave: 'checklist_processos', como: 'checklist', rotulo: 'Check list — Processos & Qualidade' },
   { chave: 'checklist_contabilidade', como: 'checklist', rotulo: 'Check list — Contabilidade' },
+  { chave: 'checklist_cafe', como: 'checklist', rotulo: 'Check list — Café' },
   { chave: 'demanda_checklist_administrativo', como: 'checklist', rotulo: 'Check list — Administrativo' },
 
   // Páginas de procedimento (manual_<setor>)

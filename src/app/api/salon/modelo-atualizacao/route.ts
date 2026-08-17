@@ -24,9 +24,15 @@ async function linhas(salaoId: string) {
 }
 
 // GET — tem novidade? o que muda?
-export async function GET() {
+//
+// `?tudo=1` responde MESMO quando a versão já foi vista. É o que sustenta a
+// tela "Atualizações do sistema": quem clicou no X sem querer (ou mudou de
+// ideia depois) precisa de um lugar para achar a atualização de novo — antes
+// ela sumia para sempre naquela versão.
+export async function GET(req: NextRequest) {
   const sess = await getSessao()
   if (!sess) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  const verTudo = new URL(req.url).searchParams.get('tudo') === '1'
 
   const { data: mod } = await supabaseAdmin.from('saloes').select('id, nome').eq('is_modelo', true).maybeSingle()
   if (!mod || (mod as any).id === sess.salaoId) return NextResponse.json({ temAtualizacao: false })
@@ -42,7 +48,7 @@ export async function GET() {
   // o que aconteceu com quem aplicou antes desta parte existir.
   const faltamSetores = (await totalSetores(sess.salaoId)) === 0 && (await totalSetores((mod as any).id)) > 0
 
-  if (versao === (meu as any)?.modelo_versao && !faltamSetores) {
+  if (versao === (meu as any)?.modelo_versao && !faltamSetores && !verTudo) {
     return NextResponse.json({ temAtualizacao: false, versao })
   }
 
@@ -53,6 +59,9 @@ export async function GET() {
   return NextResponse.json({
     temAtualizacao: novos.length > 0 || diferencas.length > 0,
     versao,
+    // `jaVista` distingue "novidade que acabou de sair" de "novidade que você
+    // já dispensou" — a tela de atualizações usa isso no texto.
+    jaVista: versao === (meu as any)?.modelo_versao,
     aplicadoEm: (meu as any)?.modelo_aplicado_em || null,
     novos,
     alterados: diferencas.filter(d => d.situacao === 'diferente'),

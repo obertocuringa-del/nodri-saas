@@ -55,6 +55,10 @@ export default function AvisoModelo() {
             {novos.length > 0 && alterados.length > 0 && ' · '}
             {alterados.length > 0 && `${alterados.length} atualização(ões) do que já existe`}
             {' — você decide o que aplicar. Nada muda sem o seu OK.'}
+            <br />
+            <a href="/salon/atualizacoes" style={{ color: '#fff', textDecoration: 'underline', fontWeight: 700 }}>
+              Dispensou sem querer? Fica guardado em Atualizações do sistema.
+            </a>
           </span>
         </div>
         <button onClick={() => setAberto(a => !a)} style={btnClaro}>
@@ -64,7 +68,7 @@ export default function AvisoModelo() {
           disabled={ocupado} style={btnBranco}>
           {ocupado ? <Loader2 size={14} className="animate-spin" /> : <>Aplicar</>}
         </button>
-        <button onClick={() => enviar({ acao: 'ignorar' }, 'Ok, não mostramos mais esta versão.')} title="Agora não"
+        <button onClick={() => enviar({ acao: 'ignorar' }, 'Ok — você acha isto depois em Atualizações do sistema.')} title="Agora não"
           disabled={ocupado} style={{ ...btnClaro, padding: '8px 10px' }}><X size={14} /></button>
       </div>
 

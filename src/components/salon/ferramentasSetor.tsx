@@ -125,6 +125,7 @@ export const CATALOGO: Record<string, Ferramenta> = {
   ck_manut_predial:{ id: 'ck_manut_predial',label: 'CHECK LIST — MANUTENÇÃO PREDIAL', perm: 'checklist' },
   ck_coordenacao:  { id: 'ck_coordenacao',  label: 'CHECK LIST — COORDENAÇÃO',     perm: 'checklist' },
   ck_processos:    { id: 'ck_processos',    label: 'CHECK LIST — PROCESSOS & QUALIDADE', perm: 'checklist' },
+  ck_cafe:         { id: 'ck_cafe',         label: 'CHECK LIST — CAFÉ',           perm: 'checklist' },
   // Procedimentos (como lidar com a demanda): abrem como sub-itens na sidebar
   man_coordenacao: { id: 'man_coordenacao', label: 'PROCEDIMENTOS — COORDENAÇÃO', perm: 'checklist', conteudoSlug: 'manual:coordenacao' },
   man_processos:   { id: 'man_processos',   label: 'PROCEDIMENTOS — PROCESSOS & QUALIDADE', perm: 'checklist', conteudoSlug: 'manual:processos' },
@@ -173,6 +174,7 @@ export const FERRAMENTAS_POR_SETOR: { chave: string[]; itens: string[] }[] = [
   { chave: ['RH', 'GESTAO DE PESSOAS', 'RECURSOS HUMANOS'], itens: ['pr_lista', 'pr_cadastrar', 'pj_cnpj', 'pj_contratacao', 'pj_desligamento', 'clt_profs', 'clt_contratacao', 'pr_acesso', 'pr_categorias', 'pr_entrevista', 'pr_perfil', 'pr_distrato', 'pr_contrato', 'pr_conduta', 'pr_certificados', 'pr_carreira'] },
   { chave: ['SERVICOS GERAIS', 'LIMPEZA'], itens: ['ck_manutencao'] },
   { chave: ['MANUTENCAO'], itens: ['ck_manut_predial'] },
+  { chave: ['CAFE', 'COPA'], itens: ['ck_cafe', 'compras_cafe'] },
   // O CHECK LIST — COORDENADO saiu da sidebar: quem cobre a rotina agora é o
   // CHECK LIST — COORDENAÇÃO (52 categorias). A categoria antiga segue no banco.
   { chave: ['COORDENADOR', 'COORDENACAO'], itens: ['pr_horarios', 'ck_coordenacao', 'man_coordenacao'] },
@@ -238,6 +240,9 @@ export function ConteudoFerramenta({ id, profsSalao, abaPop = 'cafe' }: { id: st
     case 'ck_manut_predial':    return <ChecklistPainel key="ck_manut_predial" chave="checklist_manutencao" defaultCategorias={CHECKLIST_MANUTENCAO} semGerencia embutido />
     case 'ck_coordenacao':      return <ChecklistPainel key="ck_coordenacao" chave="checklist_coordenacao" defaultCategorias={CHECKLIST_COORDENACAO} semGerencia embutido />
     case 'ck_processos':        return <ChecklistPainel key="ck_processos" chave="checklist_processos" defaultCategorias={CHECKLIST_PROCESSOS} semGerencia embutido />
+    // Nasce sem demanda nenhuma de propósito: a rotina da copa muda de salão
+    // para salão, e lista pronta de outro lugar viraria trabalho de apagar.
+    case 'ck_cafe':             return <ChecklistPainel key="ck_cafe" chave="checklist_cafe" defaultCategorias={[]} semGerencia embutido />
     case 'ck_gerente':          return <ChecklistPainel key="ck_gerente" categoriaFixa="Gerente" embutido />
     case 'ck_coordenado':       return <ChecklistPainel key="ck_coordenado" categoriaFixa="Coordenado" embutido />
     case 'ck_padrao':           return <ChecklistPainel key="ck_padrao" categoriaFixa="Padrão de Atendimento" embutido />
