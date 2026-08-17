@@ -104,9 +104,6 @@ export async function POST(req: NextRequest) {
   const diferencas = compararComModelo(doModelo, doSalao)
   const pedidas: string[] | null = Array.isArray(body?.chaves) && body.chaves.length ? body.chaves.map(String) : null
   const incluirAlterados = body?.incluirAlterados === true
-  // Chaves que o dono do salão mandou TROCAR pela versão do modelo. Fora
-  // desta lista, aplicar é sempre acrescentar — nunca apagar o que é dele.
-  const substituir: Set<string> = new Set(Array.isArray(body?.substituir) ? body.substituir.map(String) : [])
 
   const alvo = diferencas.filter(d => {
     if (pedidas) return pedidas.includes(d.chave)
@@ -133,14 +130,9 @@ export async function POST(req: NextRequest) {
     .map(chave => ({
       salao_id: sess.salaoId,
       chave,
-      // Página que já existe aqui é MESCLADA por padrão: entra o que é novo,
-      // fica o que é do salão. Só troca de verdade o que ele marcou para trocar.
-      valor: mesclarComExistente(
-        chave,
-        sanitizar(chave, mapaModelo.get(chave)),
-        mapaSalao.get(chave),
-        substituir.has(chave) ? 'substituir' : 'mesclar',
-      ),
+      // Página que já existe aqui é sempre MESCLADA: entra o que é novo, fica
+      // o que é do salão. Não há caminho que substitua — nem pedindo à mão.
+      valor: mesclarComExistente(chave, sanitizar(chave, mapaModelo.get(chave)), mapaSalao.get(chave)),
       atualizado_em: agora,
     }))
 

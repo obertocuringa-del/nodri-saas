@@ -425,15 +425,14 @@ function mesclarGenerico(doModelo: any, doSalao: any): any {
 /**
  * Como o valor do modelo entra numa chave que o salão JÁ TEM.
  *
- * `modo: 'substituir'` só chega aqui quando o dono do salão pediu para trocar
- * aquela página — e mesmo assim a versão anterior fica guardada para desfazer.
- * O padrão é sempre mesclar.
+ * NÃO EXISTE modo "substituir". Existiu por um dia, como opção do dono do
+ * salão, e foi retirada a pedido: uma opção que troca a página inteira é uma
+ * opção que um dia alguém clica sem querer, e aí o trabalho de meses vai
+ * embora. Atualização aqui só acrescenta — se o salão quiser a versão do
+ * modelo, ele apaga o que não quer e o modelo repõe o resto na próxima.
  */
-export function mesclarComExistente(
-  chave: string, doModelo: any, doSalao: any, modo: 'mesclar' | 'substituir' = 'mesclar',
-): any {
+export function mesclarComExistente(chave: string, doModelo: any, doSalao: any): any {
   if (doSalao === undefined) return marcarOrigem(doModelo)
-  if (modo === 'substituir') return marcarOrigem(doModelo)
 
   const r = regraDaChave(chave)
   if (!r) return marcarOrigem(doModelo)

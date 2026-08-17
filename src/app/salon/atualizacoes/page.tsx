@@ -35,9 +35,6 @@ export default function AtualizacoesPage() {
   // Aparece depois de uma aplicação que substituiu página do salão: o conteúdo
   // anterior fica guardado e volta com um clique.
   const [podeDesfazer, setPodeDesfazer] = useState(false)
-  // Chaves que o dono escolheu TROCAR (em vez de só acrescentar). Começa
-  // vazio: o padrão é sempre o modo que não apaga nada.
-  const [trocar, setTrocar] = useState<Set<string>>(new Set())
 
   const carregar = useCallback(() => {
     setCarregando(true)
@@ -65,7 +62,7 @@ export default function AtualizacoesPage() {
       const chaves = [...marcadas]
       const r = await fetch('/api/salon/modelo-atualizacao', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chaves, substituir: [...trocar].filter(c => marcadas.has(c)) }),
+        body: JSON.stringify({ chaves }),
       })
       const j = await r.json().catch(() => null)
       if (r.ok) {
@@ -147,37 +144,17 @@ export default function AtualizacoesPage() {
 
           {alterados.length > 0 && (
             <div style={bloco}>
-              <div style={rotulo}>JÁ EXISTEM AQUI — {alterados.length} {alterados.length === 1 ? 'item' : 'itens'}</div>
+              <div style={rotulo}>JÁ EXISTEM AQUI — {alterados.length} {alterados.length === 1 ? 'página' : 'páginas'} com novidade</div>
               <p style={{ fontSize: 11.5, color: '#8a8680', margin: '0 0 8px' }}>
-                Aplicar aqui <b>acrescenta o que falta</b> e mantém o que você escreveu.
-                Só troca pela versão do modelo se você pedir na segunda opção.
+                Aplicar aqui <b>só acrescenta o que falta</b>. O que você escreveu fica —
+                não existe opção que troque a sua página pela do modelo.
               </p>
               {alterados.map(a => (
-                <div key={a.chave} style={{ ...linha, display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 9, cursor: 'pointer', flex: 1, minWidth: 180 }}>
-                    <input type="checkbox" checked={marcadas.has(a.chave)} onChange={() => alterna(a.chave)} />
-                    <span>{a.rotulo}</span>
-                  </label>
-                  {marcadas.has(a.chave) && (
-                    <select value={trocar.has(a.chave) ? 'trocar' : 'juntar'}
-                      onChange={e => setTrocar(t => {
-                        const n = new Set(t)
-                        e.target.value === 'trocar' ? n.add(a.chave) : n.delete(a.chave)
-                        return n
-                      })}
-                      style={{ fontSize: 11.5, padding: '4px 8px', borderRadius: 8, border: '1px solid #e0ddd8', color: trocar.has(a.chave) ? '#b45309' : '#15803d', fontWeight: 700, background: '#fff' }}>
-                      <option value="juntar">Acrescentar o que falta</option>
-                      <option value="trocar">Trocar pela versão do modelo</option>
-                    </select>
-                  )}
-                </div>
+                <label key={a.chave} style={{ ...linha, display: 'flex', alignItems: 'center', gap: 9, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={marcadas.has(a.chave)} onChange={() => alterna(a.chave)} />
+                  <span>{a.rotulo}</span>
+                </label>
               ))}
-              {[...trocar].some(c => marcadas.has(c)) && (
-                <p style={{ fontSize: 11.5, color: '#b45309', marginTop: 8 }}>
-                  Você marcou {[...trocar].filter(c => marcadas.has(c)).length} página(s) para TROCAR: a sua versão sai e entra a do modelo.
-                  Dá para desfazer depois.
-                </p>
-              )}
             </div>
           )}
 
