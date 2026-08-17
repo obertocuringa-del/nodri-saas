@@ -39,6 +39,22 @@ function resumir(valor: any): { tipo: string; itens: number; vazia: boolean } {
   return { tipo: 'documento', itens: itens || (texto ? 1 : 0), vazia: itens === 0 && texto === 0 }
 }
 
+/**
+ * Quantos pedaços de texto escritos existem aí dentro, em qualquer formato.
+ *
+ * A contagem por campos conhecidos (itens, linhas, cards…) erra feio: página
+ * com formato próprio aparecia como VAZIA mesmo cheia de conteúdo, e um
+ * diagnóstico assim manda procurar perda onde não houve. Aqui a pergunta é
+ * outra e vale para tudo: há texto escrito neste JSON?
+ */
+function contarTextos(v: any): number {
+  if (v == null) return 0
+  if (typeof v === 'string') return v.trim() ? 1 : 0
+  if (typeof v === 'number' || typeof v === 'boolean') return 0
+  if (Array.isArray(v)) return v.reduce((t, x) => t + contarTextos(x), 0)
+  return Object.values(v).reduce((t: number, x) => t + contarTextos(x), 0)
+}
+
 export async function GET(req: NextRequest) {
   const token = cookies().get('nodri_token')?.value
   const payload = token ? await verifyJWT(token) : null
@@ -58,11 +74,13 @@ export async function GET(req: NextRequest) {
   const { data, error } = await q
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  const linhas = (data || []).map((l: any) => ({
-    chave: l.chave,
-    atualizado_em: l.atualizado_em,
-    ...resumir(l.valor),
-  })).sort((a, b) => String(b.atualizado_em).localeCompare(String(a.atualizado_em)))
+  const linhas = (data || []).map((l: any) => {
+    const r = resumir(l.valor)
+    const textos = contarTextos(l.valor)
+    const bytes = l.valor == null ? 0 : JSON.stringify(l.valor).length
+    // Vazia de verdade = sem nenhum texto escrito dentro, em qualquer formato.
+    return { chave: l.chave, atualizado_em: l.atualizado_em, ...r, textos, bytes, vazia: textos === 0 }
+  }).sort((a, b) => String(b.atualizado_em).localeCompare(String(a.atualizado_em)))
 
   return NextResponse.json({
     total: linhas.length,
