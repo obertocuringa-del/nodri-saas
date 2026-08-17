@@ -288,8 +288,14 @@ function PaginasComDados() {
               onChange={() => setMarcadas(m => {
                 const n = new Set(m); n.has(p.chave) ? n.delete(p.chave) : n.add(p.chave); return n
               })} />
-            <span style={{ flex: 1 }}>{p.rotulo}</span>
-            <span style={{ fontSize: 10.5, color: '#9ca3af' }}>
+            {/* A chave vai junto: várias páginas compartilham o mesmo rótulo
+                (as listas de compra, uma por setor) e sem ela não dá para
+                saber qual é qual na hora de marcar. */}
+            <span style={{ flex: 1, minWidth: 0 }}>
+              {p.rotulo}
+              <span style={{ color: '#b8b4ad', marginLeft: 6, fontSize: 11 }}>{p.chave}</span>
+            </span>
+            <span style={{ fontSize: 10.5, color: '#9ca3af', whiteSpace: 'nowrap' }}>
               {p.textos > 0 ? `${p.textos} textos` : 'vazia'}{p.sempreVaiCheia ? ' · sempre cheia' : ''}
             </span>
           </label>
