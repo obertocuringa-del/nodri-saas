@@ -119,6 +119,12 @@ export async function POST(req: NextRequest) {
   const mapaSalao = new Map(doSalao.map(l => [l.chave, l.valor]))
   const linhasNovas = alvo
     .filter(ehChaveDoModelo)
+    // Cinto e suspensório: mesmo que a chave chegue aqui pedida à mão, uma
+    // página "em branco" nunca é gravada por cima de uma que o salão já tem.
+    .filter(chave => {
+      const r = regraDaChave(chave)
+      return !(r?.como === 'gradeVazia' && mapaSalao.has(chave))
+    })
     .map(chave => ({
       salao_id: sess.salaoId,
       chave,

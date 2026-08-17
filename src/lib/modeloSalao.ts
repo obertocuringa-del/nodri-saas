@@ -299,6 +299,15 @@ export function compararComModelo(
     if (!r) continue
     const novo = sanitizar(l.chave, l.valor)
     if (!doSalao.has(l.chave)) { out.push({ chave: l.chave, rotulo: r.rotulo, situacao: 'novo' }); continue }
+
+    // ── Página que o salão JÁ TEM e que viaja EM BRANCO não é atualização ──
+    //
+    // `gradeVazia` existe para o salão novo receber a página montada e vazia.
+    // Oferecer isso como "atualização" a quem já usa a página é oferecer que
+    // ele apague o próprio conteúdo: foi assim que um salão perdeu as ações
+    // comerciais que tinha cadastrado. Estrutura só substitui estrutura.
+    if (r.como === 'gradeVazia') continue
+
     if (JSON.stringify(doSalao.get(l.chave)) !== JSON.stringify(novo)) {
       out.push({ chave: l.chave, rotulo: r.rotulo, situacao: 'diferente' })
     }

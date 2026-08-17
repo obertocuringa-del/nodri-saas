@@ -191,14 +191,24 @@ async function copiarFeedbackCliente(modeloId: string, destinoId: string, nomeDe
     supabaseAdmin.from('feedback_formularios').select('id, titulo, descricao').eq('salao_id', modeloId),
     supabaseAdmin.from('feedback_formularios').select('titulo').eq('salao_id', destinoId),
   ])
-  const novos = faltantes((mod || []) as any[], (dest || []) as any[])
+
+  // O formulário é criado no destino com o NOME DO SALÃO no lugar do nome do
+  // modelo ("Avaliação - Rouge" vira "Avaliação - Fulano"). Comparar o título
+  // cru do modelo com o título já renomeado do destino nunca dava igual, e
+  // cada aplicação criava mais um formulário. A comparação passa a ser feita
+  // com o título CONVERTIDO — o mesmo que seria gravado.
+  const doModeloComoFicaria = ((mod || []) as any[])
+    .map(f => ({ ...f, titulo: tituloDoDestino(f.titulo, nomeDestino) }))
+  const novos = faltantes(doModeloComoFicaria, (dest || []) as any[])
+    .map(f => ({ ...f, id: ((mod || []) as any[]).find(m => tituloDoDestino(m.titulo, nomeDestino) === f.titulo)?.id }))
   if (!novos.length) return []
 
   let perguntasCopiadas = 0
   for (const f of novos) {
     const { data: novo } = await supabaseAdmin
       .from('feedback_formularios')
-      .insert({ salao_id: destinoId, titulo: tituloDoDestino(f.titulo, nomeDestino), descricao: f.descricao })
+      // `f.titulo` já vem convertido da comparação acima.
+      .insert({ salao_id: destinoId, titulo: f.titulo, descricao: f.descricao })
       .select().single()
     if (!novo) continue
 

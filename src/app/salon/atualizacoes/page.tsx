@@ -29,13 +29,15 @@ export default function AtualizacoesPage() {
   const [info, setInfo] = useState<Info | null>(null)
   const [carregando, setCarregando] = useState(true)
   const [ocupado, setOcupado] = useState(false)
-  const [tambemAlterados, setTambemAlterados] = useState(false)
+  // Escolha item a item: o salão pode querer o check list novo e não querer a
+  // lista de compra. Novidades já vêm marcadas; o que ele já tem, não.
+  const [marcadas, setMarcadas] = useState<Set<string>>(new Set())
 
   const carregar = useCallback(() => {
     setCarregando(true)
     fetch('/api/salon/modelo-atualizacao?tudo=1', { credentials: 'include' })
       .then(r => (r.ok ? r.json() : null))
-      .then(d => setInfo(d))
+      .then(d => { setInfo(d); setMarcadas(new Set(((d?.novos || []) as Item[]).map(n => n.chave))) })
       .catch(() => setInfo(null))
       .finally(() => setCarregando(false))
   }, [])
@@ -45,10 +47,16 @@ export default function AtualizacoesPage() {
   const alterados = info?.alterados || []
   const nada = !novos.length && !alterados.length
 
+  const alterna = (chave: string) => setMarcadas(m => {
+    const n = new Set(m)
+    n.has(chave) ? n.delete(chave) : n.add(chave)
+    return n
+  })
+
   async function aplicar() {
     setOcupado(true)
     try {
-      const chaves = novos.map(n => n.chave).concat(tambemAlterados ? alterados.map(a => a.chave) : [])
+      const chaves = [...marcadas]
       const r = await fetch('/api/salon/modelo-atualizacao', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chaves }),
@@ -96,7 +104,12 @@ export default function AtualizacoesPage() {
             <div style={bloco}>
               <div style={rotulo}>NOVIDADES — {novos.length} {novos.length === 1 ? 'item' : 'itens'}</div>
               <p style={{ fontSize: 11.5, color: '#8a8680', margin: '0 0 8px' }}>Entram sem mexer no que você já tem.</p>
-              {novos.map(n => <div key={n.chave} style={linha}>• {n.rotulo}</div>)}
+              {novos.map(n => (
+                <label key={n.chave} style={{ ...linha, display: 'flex', alignItems: 'center', gap: 9, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={marcadas.has(n.chave)} onChange={() => alterna(n.chave)} />
+                  <span>{n.rotulo}</span>
+                </label>
+              ))}
             </div>
           )}
 
@@ -104,20 +117,21 @@ export default function AtualizacoesPage() {
             <div style={bloco}>
               <div style={rotulo}>JÁ EXISTEM AQUI — {alterados.length} {alterados.length === 1 ? 'item' : 'itens'}</div>
               <p style={{ fontSize: 11.5, color: '#8a8680', margin: '0 0 8px' }}>
-                Você já tem estes, com o seu preenchimento. Só mudam se marcar abaixo.
+                Você já tem estes, com o seu preenchimento. Marcar substitui a sua versão pela do modelo.
               </p>
-              {alterados.map(a => <div key={a.chave} style={linha}>• {a.rotulo}</div>)}
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, fontSize: 12.5, cursor: 'pointer', color: '#3f3a35' }}>
-                <input type="checkbox" checked={tambemAlterados} onChange={e => setTambemAlterados(e.target.checked)} />
-                Atualizar também estes — <strong>substitui a sua versão atual deles</strong>
-              </label>
+              {alterados.map(a => (
+                <label key={a.chave} style={{ ...linha, display: 'flex', alignItems: 'center', gap: 9, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={marcadas.has(a.chave)} onChange={() => alterna(a.chave)} />
+                  <span>{a.rotulo}</span>
+                </label>
+              ))}
             </div>
           )}
 
-          <button onClick={aplicar} disabled={ocupado}
+          <button onClick={aplicar} disabled={ocupado || marcadas.size === 0}
             style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#5b4fcf', color: '#fff', border: 'none', borderRadius: 11, padding: '12px 26px', fontSize: 13.5, fontWeight: 900, cursor: 'pointer', marginTop: 4 }}>
             {ocupado ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
-            Aplicar {tambemAlterados ? 'tudo' : 'as novidades'}
+            Quero atualizar ({marcadas.size})
           </button>
         </>
       )}
