@@ -16,7 +16,7 @@ function coletarTextos(v: any, acc: string[]) {
 function mapaChave(chave: string): { label: string; rota: string } {
   const c = chave.replace(/^grid_/, '')
   if (c === 'checklist') return { label: 'Check List', rota: '/salon/checklist' }
-  if (c === 'materiais_trabalho') return { label: 'Materiais para Trabalho', rota: '/salon/profissionais' }
+  if (c === 'materiais_trabalho') return { label: 'Materiais para Trabalho', rota: '/salon/profissionais?secao=materiais' }
   if (c === 'pop_cafe') return { label: 'POP · Preparo de Café', rota: '/salon/administrativo' }
   if (c === 'pop_salao') return { label: 'POP · Salão', rota: '/salon/administrativo' }
   if (c === 'senhas') return { label: 'Senhas', rota: '/salon/administrativo' }
