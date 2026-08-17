@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getSessao } from '@/lib/apiAuth'
-import { compararComModelo, ehChaveDoModelo, regraDaChave, sanitizar, versaoDoModelo } from '@/lib/modeloSalao'
+import { compararComModelo, ehChaveDoModelo, mesclarComExistente, regraDaChave, sanitizar, versaoDoModelo } from '@/lib/modeloSalao'
 import { copiarMoldesDeTabelas } from '@/lib/modeloTabelas'
 
 /** Setores são linhas de `profissionais` — conta para saber se faltam. */
@@ -116,9 +116,17 @@ export async function POST(req: NextRequest) {
   }
 
   const mapaModelo = new Map(doModelo.map(l => [l.chave, l.valor]))
+  const mapaSalao = new Map(doSalao.map(l => [l.chave, l.valor]))
   const linhasNovas = alvo
     .filter(ehChaveDoModelo)
-    .map(chave => ({ salao_id: sess.salaoId, chave, valor: sanitizar(chave, mapaModelo.get(chave)), atualizado_em: agora }))
+    .map(chave => ({
+      salao_id: sess.salaoId,
+      chave,
+      // Lista de compra que já existe aqui é MESCLADA, não trocada: os
+      // pedidos enviados e o estoque contado continuam. O resto substitui.
+      valor: mesclarComExistente(chave, sanitizar(chave, mapaModelo.get(chave)), mapaSalao.get(chave)),
+      atualizado_em: agora,
+    }))
 
   const { error } = await supabaseAdmin.from('salao_config').upsert(linhasNovas, { onConflict: 'salao_id,chave' })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

@@ -66,7 +66,7 @@ export default function AvisoModelo() {
         </button>
         <button onClick={() => enviar({ chaves: novos.map(n => n.chave).concat(tambemAlterados ? alterados.map(a => a.chave) : []) }, 'Aplicado!')}
           disabled={ocupado} style={btnBranco}>
-          {ocupado ? <Loader2 size={14} className="animate-spin" /> : <>Aplicar</>}
+          {ocupado ? <Loader2 size={14} className="animate-spin" /> : <>Quero atualizar</>}
         </button>
         <button onClick={() => enviar({ acao: 'ignorar' }, 'Ok — você acha isto depois em Atualizações do sistema.')} title="Agora não"
           disabled={ocupado} style={{ ...btnClaro, padding: '8px 10px' }}><X size={14} /></button>

@@ -258,6 +258,33 @@ export function versaoDoModelo(linhas: { chave: string; atualizado_em?: string |
   return `${h.toString(36)}.${partes.length.toString(36)}`
 }
 
+/**
+ * Como o valor do modelo entra numa chave que o salão JÁ TEM.
+ *
+ * Para quase tudo, aplicar é substituir — foi o que o dono do salão escolheu.
+ * A lista de compra é exceção: substituir apagaria os pedidos já enviados ao
+ * Financeiro e o estoque contado à mão. Aqui os itens novos são ACRESCENTADOS
+ * aos que ele tem (comparando pelo nome), e a operação dele fica intacta.
+ */
+export function mesclarComExistente(chave: string, doModelo: any, doSalao: any): any {
+  const r = regraDaChave(chave)
+  if (!r || r.como !== 'listaCompra' || !doSalao || typeof doSalao !== 'object') return doModelo
+
+  const norm = (t: string) => String(t || '').toUpperCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Z0-9]/g, '')
+
+  const meus = Array.isArray(doSalao.itens) ? doSalao.itens : []
+  const jaTem = new Set(meus.map((i: any) => norm(i?.nome)))
+  const novos = (Array.isArray(doModelo?.itens) ? doModelo.itens : [])
+    .filter((i: any) => i?.nome && !jaTem.has(norm(i.nome)))
+
+  return {
+    itens: [...meus, ...novos],
+    orcamento: doSalao.orcamento || '',
+    pedidos: Array.isArray(doSalao.pedidos) ? doSalao.pedidos : [],
+  }
+}
+
 /** O que mudaria no salão se ele aplicasse o modelo agora. */
 export interface Diferenca { chave: string; rotulo: string; situacao: 'novo' | 'diferente' }
 
