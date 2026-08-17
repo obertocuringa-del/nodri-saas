@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT, hashPassword } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
-import { ehChaveDoModelo, sanitizar, versaoDoModelo } from '@/lib/modeloSalao'
+import { ehChaveDoModelo, sanitizar, versaoDoModelo, marcarOrigem } from '@/lib/modeloSalao'
 import { copiarMoldesDeTabelas } from '@/lib/modeloTabelas'
 
 export async function GET() {
@@ -126,7 +126,7 @@ async function semearDoModelo(salaoId: string): Promise<number> {
     const agora = new Date().toISOString()
     const linhas = linhasModelo
       .filter(c => ehChaveDoModelo(c.chave))
-      .map(c => ({ salao_id: salaoId, chave: c.chave, valor: sanitizar(c.chave, c.valor), atualizado_em: agora }))
+      .map(c => ({ salao_id: salaoId, chave: c.chave, valor: marcarOrigem(sanitizar(c.chave, c.valor)), atualizado_em: agora }))
     if (!linhas.length) return 0
 
     const { error } = await supabaseAdmin.from('salao_config').upsert(linhas, { onConflict: 'salao_id,chave' })

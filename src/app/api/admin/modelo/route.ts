@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
-import { CHAVES_MODELO, NUNCA_COPIA, ehChaveDoModelo, regraDaChave, sanitizar, versaoDoModelo } from '@/lib/modeloSalao'
+import { CHAVES_MODELO, NUNCA_COPIA, ehChaveDoModelo, regraDaChave, sanitizar, versaoDoModelo, marcarOrigem } from '@/lib/modeloSalao'
 import { copiarMoldesDeTabelas } from '@/lib/modeloTabelas'
 
 // Painel master: define qual salão é o MODELO e alimenta ele a partir de um
@@ -171,7 +171,7 @@ async function copiarParaModelo(modeloId: string, origemId: string, pedidas: str
   const linhas = novas.map(c => ({
     salao_id: modeloId,
     chave: c.chave,
-    valor: sanitizar(c.chave, c.valor),   // estrutura sim, preenchimento não
+    valor: marcarOrigem(sanitizar(c.chave, c.valor)),   // estrutura sim, preenchimento não
     atualizado_em: agora,
   }))
   const { error } = await supabaseAdmin.from('salao_config').upsert(linhas, { onConflict: 'salao_id,chave' })

@@ -260,31 +260,110 @@ export function versaoDoModelo(linhas: { chave: string; atualizado_em?: string |
 
 // ── Mesclagem: o modelo acrescenta, nunca apaga ─────────────────────────────
 //
-// Regra da casa, e ela vale para TODA atualização: o que o salão escreveu é
-// dele. O modelo pode trazer coisa nova; não pode levar embora o que já estava
-// lá. Substituir de verdade só acontece quando o dono do salão pede item a
-// item ("trocar pela versão do modelo").
+// Regra da casa, e vale para TODA atualização: o que o salão escreveu é dele.
+// O modelo pode trazer coisa nova; não pode levar embora o que já estava lá.
+// Substituir de verdade só acontece quando o dono do salão pede item a item
+// ("trocar pela versão do modelo").
+//
+// ── A marca de origem ───────────────────────────────────────────────────────
+// Todo item que nasce no modelo viaja com duas etiquetas escondidas:
+//
+//   `_m` — de qual item do modelo ele veio;
+//   `_v` — como o texto estava quando foi entregue.
+//
+// É isso que permite distinguir três coisas que, sem elas, ficam iguais:
+//
+//   · item do modelo que o salão não mexeu  → dá para corrigir o texto no
+//     lugar quando você arruma o modelo, SEM criar um item repetido;
+//   · item do modelo que o salão editou (o texto atual difere de `_v`) → é
+//     dele agora, ninguém encosta;
+//   · item criado pelo salão (sem `_m`) → nunca é tocado, em hipótese alguma.
+//
+// Sem a marca, corrigir uma palavra no modelo fazia o salão ganhar uma segunda
+// demanda quase idêntica — e o check list ia enchendo de repetição.
 
 const chaveTexto = (t: any) => String(t ?? '').toUpperCase()
-  .normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Z0-9]/g, '')
+  .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Z0-9]/g, '')
+
+const CAMPOS_NOME = ['nome', 'titulo', 'texto', 'label', 'chave', 'codigo']
+
+/** Em que campo mora o nome deste item? Null quando não é um item nomeável. */
+function campoNome(item: any): string | null {
+  if (!item || typeof item !== 'object') return null
+  for (const c of CAMPOS_NOME) if (typeof item[c] === 'string' && item[c].trim()) return c
+  return null
+}
 
 /** Nome que identifica um item dentro de uma lista, seja qual for o formato. */
 function nomeDoItem(item: any): string {
   if (item == null) return ''
   if (typeof item !== 'object') return chaveTexto(item)
-  for (const campo of ['nome', 'titulo', 'texto', 'label', 'chave', 'codigo']) {
-    if ((item as any)[campo]) return chaveTexto((item as any)[campo])
+  const c = campoNome(item)
+  return c ? chaveTexto(item[c]) : ''
+}
+
+/** Carimba o item como vindo do modelo, guardando o texto entregue. */
+function comMarca(item: any): any {
+  if (!item || typeof item !== 'object' || Array.isArray(item)) return item
+  const nome = nomeDoItem(item)
+  if (!nome) return item
+  return { ...item, _m: item._m || item.id || nome, _v: nome }
+}
+
+/**
+ * Carimba tudo o que for lista de itens dentro de um documento.
+ *
+ * Usado quando a página é entregue pela primeira vez: sem carimbo agora, as
+ * atualizações seguintes não teriam como reconhecer o que veio daqui.
+ */
+export function marcarOrigem(valor: any): any {
+  if (Array.isArray(valor)) return valor.map(i => marcarOrigem(comMarca(i)))
+  if (!valor || typeof valor !== 'object') return valor
+  const saida: any = { ...valor }
+  for (const [campo, v] of Object.entries(valor)) {
+    if (Array.isArray(v) || (v && typeof v === 'object')) saida[campo] = marcarOrigem(v)
   }
-  return ''
+  return saida
+}
+
+/**
+ * Junta duas listas de itens.
+ *
+ * · o que o salão tem continua, na ordem dele;
+ * · item novo do modelo entra no fim, carimbado;
+ * · item do modelo que ele nunca editou tem o texto atualizado no lugar
+ *   (é assim que a sua correção chega sem duplicar).
+ */
+function mesclarLista(doModelo: any[], doSalao: any[]): any[] {
+  const meus = Array.isArray(doSalao) ? doSalao.map(i => ({ ...i })) : []
+  const porOrigem = new Map(meus.filter(i => i?._m).map(i => [String(i._m), i]))
+  const porNome = new Map(meus.map(i => [nomeDoItem(i), i]))
+
+  for (const doM of (Array.isArray(doModelo) ? doModelo : [])) {
+    const marcado = comMarca(doM)
+    const nome = nomeDoItem(doM)
+    if (!nome) continue
+
+    const meu = porOrigem.get(String(marcado?._m)) || porNome.get(nome)
+    if (!meu) { meus.push(marcado); porOrigem.set(String(marcado?._m), marcado); porNome.set(nome, marcado); continue }
+
+    // Já existe. Só encosta se veio do modelo E o salão não reescreveu.
+    const campo = campoNome(meu)
+    const intocado = meu._m && meu._v && nomeDoItem(meu) === String(meu._v)
+    if (campo && intocado && nome !== nomeDoItem(meu)) {
+      const campoM = campoNome(doM)
+      if (campoM) { meu[campo] = doM[campoM]; meu._v = nome }
+    }
+  }
+  return meus
 }
 
 /**
  * Check list: acrescenta categoria nova e demanda nova; não encosta no resto.
  *
  * É o caso que mais assusta o dono do salão — ele monta a rotina da casa ao
- * longo de meses, e uma atualização de estrutura poderia levar tudo. Aqui a
- * categoria dele fica onde está, com as marcações e o histórico; do modelo vem
- * só o que ele ainda não tem.
+ * longo de meses, e uma atualização de estrutura poderia levar tudo. A
+ * categoria dele fica onde está, com marcações e histórico.
  */
 function mesclarChecklist(doModelo: any, doSalao: any): any {
   const minhas: any[] = Array.isArray(doSalao?.categorias) ? doSalao.categorias : []
@@ -293,23 +372,18 @@ function mesclarChecklist(doModelo: any, doSalao: any): any {
 
   const saida: any[] = minhas.map(c => ({ ...c }))
   for (const cat of doM) {
-    const alvo = saida.find(c => chaveTexto(c?.nome) === chaveTexto(cat?.nome))
-    if (!alvo) { saida.push(cat); continue }
-    const jaTem = new Set((alvo.demandas || []).map((d: any) => nomeDoItem(d)))
-    const faltando = (cat.demandas || []).filter((d: any) => !jaTem.has(nomeDoItem(d)))
-    if (faltando.length) alvo.demandas = [...(alvo.demandas || []), ...faltando]
+    const alvo = saida.find(c => chaveTexto(c?.nome) === chaveTexto(cat?.nome)
+      || (c?._m && String(c._m) === String(comMarca(cat)?._m)))
+    if (!alvo) { saida.push(marcarOrigem(comMarca(cat))); continue }
+    alvo.demandas = mesclarLista(cat.demandas || [], alvo.demandas || [])
   }
   return { ...doSalao, categorias: saida }
 }
 
 /** Lista de compra: itens novos entram; pedidos e estoque continuam do salão. */
 function mesclarListaCompra(doModelo: any, doSalao: any): any {
-  const meus: any[] = Array.isArray(doSalao?.itens) ? doSalao.itens : []
-  const jaTem = new Set(meus.map(i => nomeDoItem(i)))
-  const novos = (Array.isArray(doModelo?.itens) ? doModelo.itens : [])
-    .filter((i: any) => i?.nome && !jaTem.has(nomeDoItem(i)))
   return {
-    itens: [...meus, ...novos],
+    itens: mesclarLista(doModelo?.itens || [], doSalao?.itens || []),
     orcamento: doSalao?.orcamento || '',
     pedidos: Array.isArray(doSalao?.pedidos) ? doSalao.pedidos : [],
   }
@@ -318,28 +392,22 @@ function mesclarListaCompra(doModelo: any, doSalao: any): any {
 /**
  * Qualquer outro formato: acrescenta o que falta e não troca o que existe.
  *
- * Lista de itens recebe os que o salão não tem, pelo nome. Campo escrito
- * (texto, título, configuração) PERMANECE o do salão — trocar isso é
- * justamente o que apagaria o trabalho dele. Campo que só existe no modelo
- * entra, porque aí não há o que perder.
+ * Campo escrito (texto, título, configuração) PERMANECE o do salão — trocar
+ * isso é justamente o que apagaria o trabalho dele. Campo que só existe no
+ * modelo entra, porque aí não há o que perder.
  */
 function mesclarGenerico(doModelo: any, doSalao: any): any {
-  if (doSalao == null) return doModelo
+  if (doSalao == null) return marcarOrigem(doModelo)
   if (doModelo == null) return doSalao
   if (typeof doModelo !== 'object' || typeof doSalao !== 'object') return doSalao
-
   if (Array.isArray(doModelo) || Array.isArray(doSalao)) {
-    const meus: any[] = Array.isArray(doSalao) ? doSalao : []
-    const jaTem = new Set(meus.map(nomeDoItem))
-    const novos = (Array.isArray(doModelo) ? doModelo : [])
-      .filter((i: any) => { const n = nomeDoItem(i); return n && !jaTem.has(n) })
-    return [...meus, ...novos]
+    return mesclarLista(Array.isArray(doModelo) ? doModelo : [], Array.isArray(doSalao) ? doSalao : [])
   }
 
   const saida: any = { ...doSalao }
   for (const [campo, valor] of Object.entries(doModelo)) {
     const meu = saida[campo]
-    if (meu === undefined || meu === null || meu === '') { saida[campo] = valor; continue }
+    if (meu === undefined || meu === null || meu === '') { saida[campo] = marcarOrigem(valor); continue }
     if (valor && typeof valor === 'object' && meu && typeof meu === 'object') {
       saida[campo] = mesclarGenerico(valor, meu)
     }
@@ -352,17 +420,17 @@ function mesclarGenerico(doModelo: any, doSalao: any): any {
  * Como o valor do modelo entra numa chave que o salão JÁ TEM.
  *
  * `modo: 'substituir'` só chega aqui quando o dono do salão pediu para trocar
- * aquele item — e mesmo assim a versão anterior fica guardada para desfazer.
+ * aquela página — e mesmo assim a versão anterior fica guardada para desfazer.
  * O padrão é sempre mesclar.
  */
 export function mesclarComExistente(
   chave: string, doModelo: any, doSalao: any, modo: 'mesclar' | 'substituir' = 'mesclar',
 ): any {
-  if (doSalao === undefined) return doModelo
-  if (modo === 'substituir') return doModelo
+  if (doSalao === undefined) return marcarOrigem(doModelo)
+  if (modo === 'substituir') return marcarOrigem(doModelo)
 
   const r = regraDaChave(chave)
-  if (!r) return doModelo
+  if (!r) return marcarOrigem(doModelo)
   if (r.como === 'listaCompra') return mesclarListaCompra(doModelo, doSalao)
   if (r.como === 'checklist') return mesclarChecklist(doModelo, doSalao)
   return mesclarGenerico(doModelo, doSalao)

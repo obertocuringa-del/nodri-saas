@@ -7,7 +7,7 @@ import { buscarAssinatura, atualizarAssinatura } from '@/lib/asaas'
 import { registrarComissao, assinaturaJaPagouComissao } from '@/lib/afiliados'
 import { sendEmailComissao } from '@/lib/email'
 import { randomBytes } from 'crypto'
-import { ehChaveDoModelo, sanitizar, versaoDoModelo } from '@/lib/modeloSalao'
+import { ehChaveDoModelo, sanitizar, versaoDoModelo, marcarOrigem } from '@/lib/modeloSalao'
 import { copiarMoldesDeTabelas } from '@/lib/modeloTabelas'
 
 export const dynamic = 'force-dynamic'
@@ -427,7 +427,7 @@ async function semearDoModelo(salaoId: string, nomeSalao: string): Promise<void>
     const agora = new Date().toISOString()
     const linhas = linhasModelo
       .filter(c => ehChaveDoModelo(c.chave))
-      .map(c => ({ salao_id: salaoId, chave: c.chave, valor: sanitizar(c.chave, c.valor), atualizado_em: agora }))
+      .map(c => ({ salao_id: salaoId, chave: c.chave, valor: marcarOrigem(sanitizar(c.chave, c.valor)), atualizado_em: agora }))
 
     if (linhas.length) {
       await supabase.from('salao_config').upsert(linhas, { onConflict: 'salao_id,chave' })
