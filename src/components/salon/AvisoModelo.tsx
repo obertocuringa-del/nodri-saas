@@ -105,7 +105,7 @@ export default function AvisoModelo() {
           {alterados.length > 0 && (
             <>
               <div style={{ ...rotuloBloco, marginTop: novos.length ? 12 : 0 }}>
-                JÁ EXISTEM AQUI — marcar substitui a sua versão
+                JÁ EXISTEM AQUI — entra o que falta, o seu conteúdo fica
               </div>
               {alterados.map(a => (
                 <label key={a.chave} style={linhaEscolha}>
