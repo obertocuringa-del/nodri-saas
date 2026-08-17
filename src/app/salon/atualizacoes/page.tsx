@@ -78,9 +78,7 @@ export default function AtualizacoesPage() {
   }
 
   async function desfazer() {
-    if (!confirm('Desfazer a última atualização?
-
-As páginas que foram substituídas voltam ao conteúdo anterior. O que era novidade continua aqui.')) return
+    if (!confirm('Desfazer a última atualização?\n\nAs páginas que foram substituídas voltam ao conteúdo anterior. O que era novidade continua aqui.')) return
     setOcupado(true)
     try {
       const r = await fetch('/api/salon/modelo-atualizacao', { method: 'DELETE' })

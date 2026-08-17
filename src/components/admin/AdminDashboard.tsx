@@ -2330,9 +2330,7 @@ function CopiaSeguranca({ saloes }: { saloes: any[] }) {
     if (!arquivo) return
     const destino = salaoId || arquivo.salao_id
     const nomeDestino = saloes.find(s => s.id === destino)?.nome || destino
-    if (!confirm(`Restaurar ${arquivo.linhas.length} páginas em "${nomeDestino}"?
-
-O que estiver no arquivo será gravado por cima. Páginas criadas depois não são apagadas.`)) return
+    if (!confirm(`Restaurar ${arquivo.linhas.length} páginas em "${nomeDestino}"?\n\nO que estiver no arquivo será gravado por cima. Páginas criadas depois não são apagadas.`)) return
     setOcupado('restaurar')
     try {
       const r = await fetch('/api/admin/copia-seguranca', {
