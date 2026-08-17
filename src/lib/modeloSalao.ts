@@ -63,6 +63,12 @@ export const CHAVES_MODELO: ChaveModelo[] = [
   { chave: 'lojistas_servicos', como: 'inteiro', rotulo: 'Serviços para lojistas' },
   { chave: 'planejamento_estrutura', como: 'inteiro', rotulo: 'Planejamento estratégico (estrutura)' },
 
+  // Lista do que cada profissional precisa levar para trabalhar. É catálogo
+  // do ramo (secador, alicate, esmalte), não dado de cliente — por isso viaja
+  // com o conteúdo. Sem esta linha ela ia em branco, e o salão recebia a
+  // tabela montada e vazia sem entender por quê.
+  { chave: 'materiais_trabalho', como: 'inteiro', rotulo: 'Materiais para Trabalho' },
+
   // Listas de compra de cada setor (compras_cafe, compras_dosagem, …).
   // O QUE se compra e o mínimo de cada item são molde — todo salão de beleza
   // precisa de papel toalha, luva e café. O que NÃO viaja é o estoque atual
