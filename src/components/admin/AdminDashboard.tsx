@@ -1803,6 +1803,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
 
               {/* TABELA SALÕES — só na própria seção */}
               {activeSection === 'saloes' && <div>
+                <CopiaSeguranca saloes={saloes} />
                 <h2 className="font-syne font-bold text-[12.5px] mb-3">Salões Cadastrados</h2>
                 <div className="nodri-card overflow-hidden">
                   <table className="w-full text-[11.5px]">
@@ -2277,3 +2278,110 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
   )
 }
 
+// ── Cópia de segurança das páginas de um salão ──────────────────────────────
+//
+// O plano gratuito do Supabase não faz backup. Aqui o dono do sistema baixa um
+// arquivo com todas as páginas de um salão (check lists, listas, documentos) e
+// restaura dele quando precisar. Baixar antes de aplicar atualização do modelo
+// é o hábito que evita a perda que já aconteceu uma vez.
+function CopiaSeguranca({ saloes }: { saloes: any[] }) {
+  const [salaoId, setSalaoId] = useState('')
+  const [ocupado, setOcupado] = useState('')
+  const [arquivo, setArquivo] = useState<any>(null)
+
+  async function baixar() {
+    if (!salaoId) { toast.error('Escolha o salão'); return }
+    setOcupado('baixar')
+    try {
+      const r = await fetch(`/api/admin/backup?salao=${salaoId}`)
+      const d = await r.json()
+      if (!r.ok) { toast.error(d?.error || 'Não deu para gerar'); setOcupado(''); return }
+      const blob = new Blob([JSON.stringify(d, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      const nome = String(d.salao_nome || 'salao').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 30)
+      a.href = url
+      a.download = `nodri-backup-${nome}-${new Date().toISOString().slice(0, 10)}.json`
+      a.click()
+      URL.revokeObjectURL(url)
+      toast.success(`Cópia baixada — ${d.total} páginas`)
+    } catch { toast.error('Erro de conexão') }
+    setOcupado('')
+  }
+
+  function escolherArquivo(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0]
+    if (!f) return
+    const leitor = new FileReader()
+    leitor.onload = () => {
+      try {
+        const d = JSON.parse(String(leitor.result))
+        if (d?.formato !== 'nodri-backup-1' || !Array.isArray(d.linhas)) {
+          toast.error('Este arquivo não é uma cópia do NODRI'); return
+        }
+        setArquivo(d)
+        toast.success(`Arquivo lido — ${d.linhas.length} páginas de ${d.salao_nome || 'salão'}`)
+      } catch { toast.error('Arquivo inválido') }
+    }
+    leitor.readAsText(f)
+  }
+
+  async function restaurar() {
+    if (!arquivo) return
+    const destino = salaoId || arquivo.salao_id
+    const nomeDestino = saloes.find(s => s.id === destino)?.nome || destino
+    if (!confirm(`Restaurar ${arquivo.linhas.length} páginas em "${nomeDestino}"?
+
+O que estiver no arquivo será gravado por cima. Páginas criadas depois não são apagadas.`)) return
+    setOcupado('restaurar')
+    try {
+      const r = await fetch('/api/admin/backup', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ salao_id: destino, linhas: arquivo.linhas }),
+      })
+      const d = await r.json()
+      if (r.ok) { toast.success(`${d.restauradas} páginas restauradas`); setArquivo(null) }
+      else toast.error(d?.error || 'Não deu para restaurar')
+    } catch { toast.error('Erro de conexão') }
+    setOcupado('')
+  }
+
+  return (
+    <div className="nodri-card p-4 mb-4">
+      <div className="font-syne font-bold text-[12.5px] text-nodri-cyan mb-1 flex items-center gap-2">
+        <Save size={14} /> Cópia de segurança das páginas
+      </div>
+      <p className="text-[11px] text-nodri-t3 mb-3">
+        O Supabase no plano gratuito não guarda backup. Baixe uma cópia antes de aplicar atualização do modelo — e restaure daqui se algo se perder.
+      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <select value={salaoId} onChange={e => setSalaoId(e.target.value)}
+          className="px-3 py-2 rounded-lg bg-nodri-surface border border-nodri-border text-[12px] text-nodri-t1 outline-none">
+          <option value="">Escolha o salão…</option>
+          {saloes.map(s => <option key={s.id} value={s.id}>{s.nome}</option>)}
+        </select>
+        <button onClick={baixar} disabled={ocupado === 'baixar'}
+          className="px-3 py-2 rounded-lg bg-nodri-cyan text-white text-[11.5px] font-bold flex items-center gap-1.5 disabled:opacity-50">
+          {ocupado === 'baixar' ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />} Baixar cópia
+        </button>
+        <label className="px-3 py-2 rounded-lg border border-nodri-border text-nodri-t2 text-[11.5px] font-bold cursor-pointer">
+          Escolher arquivo…
+          <input type="file" accept="application/json" onChange={escolherArquivo} className="hidden" />
+        </label>
+        {arquivo && (
+          <button onClick={restaurar} disabled={ocupado === 'restaurar'}
+            className="px-3 py-2 rounded-lg bg-nodri-amber/15 border border-nodri-amber/40 text-nodri-amber text-[11.5px] font-bold flex items-center gap-1.5 disabled:opacity-50">
+            {ocupado === 'restaurar' ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+            Restaurar {arquivo.linhas.length} páginas
+          </button>
+        )}
+      </div>
+      {arquivo && (
+        <p className="text-[10.5px] text-nodri-t3 mt-2">
+          Arquivo de <b>{arquivo.salao_nome}</b>, gerado em {new Date(arquivo.gerado_em).toLocaleString('pt-BR')}.
+          {salaoId && salaoId !== arquivo.salao_id && <span className="text-nodri-amber"> Atenção: vai ser restaurado em OUTRO salão.</span>}
+        </p>
+      )}
+    </div>
+  )
+}
