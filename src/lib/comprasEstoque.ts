@@ -89,6 +89,7 @@ export function textoWhatsPedido(p: Pedido, salao?: string): string {
       const qtd = num(i.comprar) || Math.max(0, num(i.minimo) - num(i.atual))
       linhas.push(`${n + 1}. ${i.nome} — *${qtd}*`)
     })
+    linhas.push('')
   } else if (p.descricao) {
     linhas.push(`*O QUE FOI PEDIDO*`)
     linhas.push(p.descricao)
@@ -101,7 +102,56 @@ export function textoWhatsPedido(p: Pedido, salao?: string): string {
   return linhas.join('\n')
 }
 
-/** Abre o WhatsApp com a mensagem pronta — sem número, quem envia escolhe. */
+/**
+ * Junta TODOS os pedidos numa mensagem só, separados por setor.
+ *
+ * É a compra da semana inteira indo de uma vez para quem vai ao mercado: um
+ * bloco por setor, e dentro dele um item por linha. Sem isso, o Financeiro
+ * tinha de mandar um pedido de cada vez e quem recebia perdia a conta.
+ */
+export function textoWhatsTodos(pedidos: Pedido[], salao?: string): string {
+  const linhas: string[] = ['*COMPRAS A FAZER*']
+  linhas.push(`_${salao ? `${salao} · ` : ''}${new Date().toLocaleDateString('pt-BR')}_`)
+
+  const porSetor = new Map<string, Pedido[]>()
+  for (const p of pedidos) {
+    const setor = p.areaTitulo || 'Sem setor'
+    porSetor.set(setor, [...(porSetor.get(setor) || []), p])
+  }
+
+  let totalItens = 0
+  for (const [setor, lista] of porSetor) {
+    linhas.push('')
+    linhas.push('━━━━━━━━━━━━━━')
+    linhas.push(`*${setor.toUpperCase()}*`)
+    for (const p of lista) {
+      const itens = (p.itens || []).filter(i => i.nome?.trim())
+      if (itens.length) {
+        itens.forEach(i => {
+          const qtd = num(i.comprar) || Math.max(0, num(i.minimo) - num(i.atual))
+          linhas.push(`• ${i.nome} — *${qtd}*`)
+          totalItens++
+        })
+      } else if (p.descricao) {
+        linhas.push(`• ${p.descricao}`)
+        totalItens++
+      }
+    }
+  }
+
+  linhas.push('')
+  linhas.push('━━━━━━━━━━━━━━')
+  linhas.push(`*TOTAL:* ${totalItens} ${totalItens === 1 ? 'item' : 'itens'} · ${porSetor.size} ${porSetor.size === 1 ? 'setor' : 'setores'}`)
+  return linhas.join('\n')
+}
+
+/**
+ * Abre o WhatsApp com a mensagem pronta — sem número, quem envia escolhe.
+ *
+ * `api.whatsapp.com/send` em vez de `wa.me`: no computador o wa.me às vezes
+ * entrega o texto sem as quebras de linha, e a lista chega com um item colado
+ * no outro. Este endereço preserva os %0A.
+ */
 export function abrirWhats(texto: string) {
-  window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank', 'noopener')
+  window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank', 'noopener')
 }

@@ -12,7 +12,7 @@ import { Loader2, Check, X, ShoppingCart, Clock, Inbox, AlertTriangle, CheckCirc
 import toast from 'react-hot-toast'
 import {
   AREAS_COMPRAS, STATUS_PEDIDO, chavePedidos, moeda, num,
-  textoWhatsPedido, abrirWhats,
+  textoWhatsPedido, textoWhatsTodos, abrirWhats,
   type Pedido, type StatusPedido,
 } from '@/lib/comprasEstoque'
 import { MESES, realPorMes, resumoDoMes, pct } from '@/lib/calcFinanceiro'
@@ -206,6 +206,15 @@ export default function PedidosCompraFinanceiro() {
             Pedidos enviados pelo Compras/Estoque esperando sua decisão.
           </p>
         </div>
+        {/* Uma mensagem só com a compra inteira: quem vai ao mercado recebe
+            tudo de uma vez, separado por setor, em vez de um zap por pedido. */}
+        {visiveis.length > 0 && (
+          <button onClick={() => abrirWhats(textoWhatsTodos(visiveis, nomeSalao))}
+            title="Junta todos os pedidos da tela numa mensagem só"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 14px', borderRadius: 10, border: 'none', background: '#25D366', color: '#fff', fontSize: 12.5, fontWeight: 800, cursor: 'pointer' }}>
+            <Share2 size={14} /> Compartilhar tudo ({visiveis.length})
+          </button>
+        )}
         <button onClick={() => setVerTodos(v => !v)}
           style={{ padding: '9px 14px', borderRadius: 10, border: '1.5px solid #e0ddd8', background: '#fff', color: '#4b5563', fontSize: 12.5, fontWeight: 800, cursor: 'pointer' }}>
           {verTodos ? 'Só os pendentes' : 'Ver todos'}
