@@ -306,7 +306,10 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
   // Conectores — as linhas de comando são só bordas
   // Altura dos conectores. Era 14/12 e as fileiras ficavam quase encostadas;
   // com mais respiro dá para ler cada nível como um andar do organograma.
-  const V = ({ h = 30 }: { h?: number }) => <div style={{ width: 2, height: h, background: LINHA }} />
+  // O padrão (48) vale para os degraus de cima — Direção › Gerência › áreas —,
+  // que são os que mais precisam de ar por causa das caixas de assessoria ao
+  // lado. Os ramos de baixo usam 26, passado na chamada.
+  const V = ({ h = 48 }: { h?: number }) => <div style={{ width: 2, height: h, background: LINHA }} />
   const Tracejo = ({ w = 30 }: { w?: number }) => <div style={{ width: w, borderTop: `2px dashed ${LINHA}` }} />
 
   /** Um ramo: a área do nível 2 e, abaixo, os setores que respondem a ela.
@@ -411,7 +414,7 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
           <div style={{ height: 2, background: LINHA, width: '100%' }} />
 
           {/* ── NÍVEL 2 e 3 — áreas e os setores que respondem a cada uma ── */}
-          <div className="flex items-start justify-center gap-6" style={{ paddingTop: 28 }}>
+          <div className="flex items-start justify-center gap-6" style={{ paddingTop: 40 }}>
             <Fragment key="r-adm">{Ramo({ areaChave: 'administrativo', filhos: ['financeiro', 'compras'], larguraArea: 280 })}</Fragment>
             <Fragment key="r-rh">{Ramo({ areaChave: 'rh', filhos: [], larguraArea: 168 })}</Fragment>
             <Fragment key="r-mkt">{Ramo({ areaChave: 'marketing', filhos: ['comercial'], larguraArea: 180 })}</Fragment>
