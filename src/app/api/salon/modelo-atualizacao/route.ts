@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getSessao } from '@/lib/apiAuth'
-import { compararComModelo, ehChaveDoModelo, mesclarComExistente, regraDaChave, sanitizar, temConteudo, versaoDoModelo } from '@/lib/modeloSalao'
+import { CHAVE_PAGINAS_COM_DADOS, compararComModelo, definirPaginasComDados, ehChaveDoModelo, mesclarComExistente, regraDaChave, sanitizar, temConteudo, versaoDoModelo } from '@/lib/modeloSalao'
 import { copiarMoldesDeTabelas } from '@/lib/modeloTabelas'
 
 /** Setores são linhas de `profissionais` — conta para saber se faltam. */
@@ -18,6 +18,17 @@ async function totalSetores(salaoId: string): Promise<number> {
 // da estrutura e, se quiser, aplica. Aplicar ACRESCENTA o que é novo e
 // atualiza o que ele nunca personalizou — nunca apaga o que ele criou.
 
+/**
+ * Lê do banco quais páginas o dono do sistema liberou para viajar COM o
+ * conteúdo e deixa a regra a par disso. Precisa rodar ANTES de comparar ou
+ * aplicar: sem ela, a página marcada continuaria indo em branco.
+ */
+async function carregarPaginasComDados() {
+  const { data } = await supabaseAdmin
+    .from('configuracoes').select('valor').eq('chave', CHAVE_PAGINAS_COM_DADOS).maybeSingle()
+  definirPaginasComDados(Array.isArray((data as any)?.valor?.chaves) ? (data as any).valor.chaves : [])
+}
+
 async function linhas(salaoId: string) {
   const { data } = await supabaseAdmin.from('salao_config').select('chave, valor, atualizado_em').eq('salao_id', salaoId)
   return (data || []) as { chave: string; valor: any; atualizado_em?: string | null }[]
@@ -32,6 +43,7 @@ async function linhas(salaoId: string) {
 export async function GET(req: NextRequest) {
   const sess = await getSessao()
   if (!sess) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  await carregarPaginasComDados()
   const verTudo = new URL(req.url).searchParams.get('tudo') === '1'
 
   const { data: mod } = await supabaseAdmin.from('saloes').select('id, nome').eq('is_modelo', true).maybeSingle()
@@ -78,6 +90,7 @@ export async function POST(req: NextRequest) {
   // Só o dono do salão decide (sub-usuário e profissional não aplicam).
   if (sess.role !== 'salon') return NextResponse.json({ error: 'Sem acesso' }, { status: 403 })
 
+  await carregarPaginasComDados()
   const body = await req.json().catch(() => null)
   const { data: mod } = await supabaseAdmin.from('saloes').select('id').eq('is_modelo', true).maybeSingle()
   if (!mod) return NextResponse.json({ error: 'Nenhum salão modelo definido' }, { status: 400 })

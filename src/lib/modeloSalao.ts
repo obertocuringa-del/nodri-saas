@@ -122,6 +122,22 @@ const ehMensal = (chave: string) => /_\d{4}-\d{2}(_q\d)?$/.test(chave)
 // o prefixo é retirado só na COMPARAÇÃO — a cópia mantém o nome original.
 const semNamespace = (chave: string) => chave.startsWith('grid_') ? chave.slice(5) : chave
 
+// ── Páginas que o dono do sistema liberou para viajar COM o conteúdo ────────
+//
+// O padrão continua sendo mandar a página vazia — é o que impede o conteúdo de
+// um salão de aparecer na tela de outro. Mas às vezes o conteúdo É o produto
+// (lista de materiais, catálogo de referência), e quem decide isso é o dono do
+// sistema, no painel do Salão Modelo. A lista vive em `configuracoes` e é
+// carregada em memória antes de cada operação do modelo.
+export const CHAVE_PAGINAS_COM_DADOS = 'modelo_paginas_com_dados'
+
+let paginasComDados = new Set<string>()
+
+/** Chamada pelas rotas do modelo, com a lista lida do banco. */
+export function definirPaginasComDados(chaves: string[]) {
+  paginasComDados = new Set((chaves || []).map(c => semNamespace(String(c))))
+}
+
 /** Nome legível para uma chave que não está no catálogo (vai em branco). */
 function rotuloGenerico(c: string): string {
   const limpo = c.replace(/_/g, ' ').trim()
@@ -152,7 +168,10 @@ export function regraDaChave(chave: string): ChaveModelo | null {
     if (r.prefixo ? c.startsWith(r.chave) : c === r.chave) return r
   }
 
-  // 3) Todo o resto — viaja EM BRANCO
+  // 3) Página que o dono marcou no painel: viaja com o conteúdo dentro
+  if (paginasComDados.has(c)) return { chave: c, como: 'inteiro', rotulo: rotuloGenerico(c) }
+
+  // 4) Todo o resto — viaja EM BRANCO
   return { chave: c, como: 'gradeVazia', rotulo: rotuloGenerico(c) }
 }
 export const ehChaveDoModelo = (chave: string) => !!regraDaChave(chave)

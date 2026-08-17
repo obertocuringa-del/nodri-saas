@@ -215,7 +215,90 @@ export default function ModeloSalaoPainel() {
             {d.nuncaCopia.map((n, i) => <div key={i} style={{ ...linha, color: '#6b6860' }}>{n}</div>)}
           </div>
         </div>
+        <PaginasComDados />
       </div>
+    </div>
+  )
+}
+
+// ── Quais páginas viajam COM o conteúdo ─────────────────────────────────────
+//
+// Por padrão o modelo manda a página montada e VAZIA — é o que impede o
+// conteúdo de um salão de aparecer no outro. Aqui o dono do sistema marca as
+// exceções: páginas em que o conteúdo É o produto (lista de materiais,
+// catálogo de referência) e que devem chegar preenchidas.
+function PaginasComDados() {
+  const [dados, setDados] = useState<{ paginas: any[] } | null>(null)
+  const [marcadas, setMarcadas] = useState<Set<string>>(new Set())
+  const [salvando, setSalvando] = useState(false)
+  const [busca, setBusca] = useState('')
+
+  const carregar = useCallback(() => {
+    fetch('/api/admin/modelo/paginas')
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => {
+        if (!d) return
+        setDados(d)
+        setMarcadas(new Set(d.paginas.filter((p: any) => p.marcada).map((p: any) => p.chave)))
+      })
+      .catch(() => { /* a seção some */ })
+  }, [])
+  useEffect(() => { carregar() }, [carregar])
+
+  if (!dados) return null
+
+  const lista = dados.paginas.filter((p: any) =>
+    !busca.trim() || (p.rotulo + ' ' + p.chave).toLowerCase().includes(busca.toLowerCase()))
+
+  async function salvar() {
+    setSalvando(true)
+    const r = await fetch('/api/admin/modelo/paginas', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chaves: [...marcadas] }),
+    })
+    setSalvando(false)
+    if (r.ok) { toast.success('Escolha salva — vale nas próximas atualizações'); carregar() }
+    else toast.error('Não deu para salvar')
+  }
+
+  return (
+    <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 18 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+        <Check size={17} color={COR} />
+        <h3 style={{ fontSize: 16, fontWeight: 800, margin: 0 }}>Páginas que chegam PREENCHIDAS nos salões</h3>
+      </div>
+      <p style={{ fontSize: 12.5, color: '#6b6860', margin: '0 0 12px' }}>
+        Por padrão a página vai montada e <strong>vazia</strong> — assim o conteúdo de um salão nunca aparece no outro.
+        Marque aqui as que devem levar o conteúdo junto (lista de materiais, catálogos de referência).
+        Quem já tem a página <strong>recebe só o que falta</strong>: nada é apagado.
+      </p>
+
+      <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Procurar página…"
+        style={{ ...inp, minWidth: 220, marginBottom: 10 }} />
+
+      <div style={{ maxHeight: 320, overflowY: 'auto', border: '1px solid #f0eee8', borderRadius: 10 }}>
+        {lista.map((p: any) => (
+          <label key={p.chave} style={{
+            display: 'flex', alignItems: 'center', gap: 9, padding: '7px 11px',
+            borderBottom: '1px solid #f7f6f3', fontSize: 12.5, cursor: p.sempreVaiCheia ? 'default' : 'pointer',
+            opacity: p.sempreVaiCheia ? .6 : 1,
+          }}>
+            <input type="checkbox" disabled={p.sempreVaiCheia}
+              checked={p.sempreVaiCheia || marcadas.has(p.chave)}
+              onChange={() => setMarcadas(m => {
+                const n = new Set(m); n.has(p.chave) ? n.delete(p.chave) : n.add(p.chave); return n
+              })} />
+            <span style={{ flex: 1 }}>{p.rotulo}</span>
+            <span style={{ fontSize: 10.5, color: '#9ca3af' }}>
+              {p.textos > 0 ? `${p.textos} textos` : 'vazia'}{p.sempreVaiCheia ? ' · sempre cheia' : ''}
+            </span>
+          </label>
+        ))}
+      </div>
+
+      <button onClick={salvar} disabled={salvando} style={{ ...btn(COR, '#fff', 'none'), marginTop: 12 }}>
+        {salvando ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />} Salvar escolha ({marcadas.size})
+      </button>
     </div>
   )
 }
