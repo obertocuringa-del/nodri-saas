@@ -14,10 +14,10 @@
 // como aprovado, negado ou assumido por eles.
 
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react'
-import { Loader2, Save, Plus, Trash2, Send, ShoppingCart, Check, Clock, X, CircleDollarSign, MessageSquare, CornerUpRight } from 'lucide-react'
+import { Loader2, Save, Plus, Trash2, Send, ShoppingCart, Check, Clock, X, CircleDollarSign, MessageSquare, CornerUpRight, Share2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useGuardaSalvar } from '@/lib/guardaSalvar'
-import { type Pedido, type ItemLista, rid, num, moeda, STATUS_PEDIDO, chavePedidos, AREAS_COMPRAS } from '@/lib/comprasEstoque'
+import { type Pedido, type ItemLista, rid, num, moeda, STATUS_PEDIDO, chavePedidos, AREAS_COMPRAS, textoWhatsPedido, abrirWhats } from '@/lib/comprasEstoque'
 
 interface Doc { itens: ItemLista[]; orcamento?: string; pedidos: Pedido[] }
 

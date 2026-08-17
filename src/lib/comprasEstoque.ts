@@ -62,3 +62,46 @@ export const AREAS_COMPRAS: { id: string; titulo: string }[] = [
 
 /** Chave no salao_config onde a lista e os pedidos daquele setor ficam. */
 export const chavePedidos = (area: string) => `compras_${area}`
+
+// ── Compartilhar no WhatsApp ────────────────────────────────────────────────
+//
+// Quem compra quase nunca é quem abriu o pedido: a lista vai para o dono, para
+// o marido, para o motoboy. Sem um texto pronto, essa passagem virava print de
+// tela — ilegível no celular e sem as quantidades.
+//
+// O WhatsApp formata com *negrito* e _itálico_. Nada de markdown de outro tipo:
+// o que ele não entende aparece como caractere solto na mensagem.
+
+/** Texto pronto do pedido, já formatado para colar no WhatsApp. */
+export function textoWhatsPedido(p: Pedido, salao?: string): string {
+  const linhas: string[] = []
+  const titulo = p.tipo === 'lista' ? 'LISTA DE COMPRA' : 'PEDIDO DE COMPRA'
+  linhas.push(`*${titulo}${p.areaTitulo ? ` — ${p.areaTitulo.toUpperCase()}` : ''}*`)
+
+  const data = new Date(p.enviadoEm || p.criadoEm || Date.now()).toLocaleDateString('pt-BR')
+  linhas.push(`_${salao ? `${salao} · ` : ''}${data}_`)
+  linhas.push('')
+
+  const itens = (p.itens || []).filter(i => i.nome?.trim())
+  if (itens.length) {
+    linhas.push(`*ITENS A COMPRAR (${itens.length})*`)
+    itens.forEach((i, n) => {
+      const qtd = num(i.comprar) || Math.max(0, num(i.minimo) - num(i.atual))
+      linhas.push(`${n + 1}. ${i.nome} — *${qtd}*`)
+    })
+  } else if (p.descricao) {
+    linhas.push(`*O QUE FOI PEDIDO*`)
+    linhas.push(p.descricao)
+  }
+
+  if (num(p.valor) > 0) {
+    linhas.push('')
+    linhas.push(`*Orçamento previsto:* ${moeda(num(p.valor))}`)
+  }
+  return linhas.join('\n')
+}
+
+/** Abre o WhatsApp com a mensagem pronta — sem número, quem envia escolhe. */
+export function abrirWhats(texto: string) {
+  window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank', 'noopener')
+}

@@ -8,10 +8,11 @@
 // de quem pediu, e o setor é avisado por uma pendência.
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Loader2, Check, X, ShoppingCart, Clock, Inbox, AlertTriangle, CheckCircle2, TrendingDown } from 'lucide-react'
+import { Loader2, Check, X, ShoppingCart, Clock, Inbox, AlertTriangle, CheckCircle2, TrendingDown, Share2, ChevronDown, ChevronUp } from 'lucide-react'
 import toast from 'react-hot-toast'
 import {
   AREAS_COMPRAS, STATUS_PEDIDO, chavePedidos, moeda, num,
+  textoWhatsPedido, abrirWhats,
   type Pedido, type StatusPedido,
 } from '@/lib/comprasEstoque'
 import { MESES, realPorMes, resumoDoMes, pct } from '@/lib/calcFinanceiro'
@@ -26,6 +27,18 @@ export default function PedidosCompraFinanceiro() {
   const [setorCompras, setSetorCompras] = useState<{ id: string } | null>(null)
   const [financeiro, setFinanceiro] = useState<{ historico: any[]; rel: any } | null>(null)
   const [decisao, setDecisao] = useState<{ pedido: PedidoComArea; status: StatusPedido } | null>(null)
+  // Lista de 28 itens aberta empurrava a decisão para fora da tela e escondia
+  // os outros pedidos. Fica fechada, mostrando só o começo, e abre no clique.
+  const [aberto, setAberto] = useState<Record<string, boolean>>({})
+
+  // Nome do salão só para assinar a mensagem do WhatsApp.
+  const [nomeSalao, setNomeSalao] = useState<string | undefined>(undefined)
+  useEffect(() => {
+    fetch('/api/salon/perfil', { credentials: 'include' })
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (d?.nome) setNomeSalao(d.nome) })
+      .catch(() => { /* a mensagem sai sem o nome */ })
+  }, [])
 
   const carregar = useCallback(async () => {
     setCarregando(true)
@@ -288,20 +301,48 @@ export default function PedidosCompraFinanceiro() {
                   )}
                 </div>
 
-                {/* Quando é a lista inteira, mostra item por item */}
-                {p.tipo === 'lista' && !!p.itens?.length && (
-                  <div style={{ background: '#fff', border: '1px solid #eceae4', borderRadius: 10, padding: '8px 11px', margin: '7px 0 2px' }}>
-                    {p.itens.map(i => (
-                      <div key={i.id} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '3px 0', fontSize: 12, borderBottom: '1px solid #f7f6f3' }}>
-                        <span style={{ flex: 1, fontWeight: 700, color: '#374151', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{i.nome}</span>
-                        <span style={{ fontSize: 10.5, color: '#a8a49d', whiteSpace: 'nowrap' }}>mín. {i.minimo || 0} · atual {i.atual || 0}</span>
-                        <span style={{ fontWeight: 900, color: '#5b4fcf', whiteSpace: 'nowrap' }}>comprar {i.comprar}</span>
+                {/* Quando é a lista inteira, mostra item por item — os
+                    primeiros seis, e o resto sob um clique. */}
+                {p.tipo === 'lista' && !!p.itens?.length && (() => {
+                  const itens = p.itens || []
+                  const mostrarTodos = aberto[p.id]
+                  const visiveis = mostrarTodos ? itens : itens.slice(0, 6)
+                  const unidades = itens.reduce((t, i) => t + (num(i.comprar) || 0), 0)
+                  return (
+                    <div style={{ background: '#fff', border: '1px solid #eceae4', borderRadius: 10, padding: '8px 11px', margin: '7px 0 2px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingBottom: 6, marginBottom: 4, borderBottom: '1px solid #f2f0ec' }}>
+                        <span style={{ fontSize: 11, fontWeight: 900, color: '#6b6860', letterSpacing: '.3px' }}>
+                          {itens.length} {itens.length === 1 ? 'ITEM' : 'ITENS'}
+                        </span>
+                        <span style={{ fontSize: 11, color: '#a8a49d' }}>· {unidades} unidades no total</span>
                       </div>
-                    ))}
-                  </div>
-                )}
+                      {visiveis.map(i => (
+                        <div key={i.id} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '3px 0', fontSize: 12, borderBottom: '1px solid #f7f6f3' }}>
+                          <span style={{ flex: 1, fontWeight: 700, color: '#374151', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{i.nome}</span>
+                          <span style={{ fontSize: 10.5, color: '#a8a49d', whiteSpace: 'nowrap' }}>mín. {i.minimo || 0} · atual {i.atual || 0}</span>
+                          <span style={{ fontWeight: 900, color: '#5b4fcf', whiteSpace: 'nowrap' }}>comprar {i.comprar}</span>
+                        </div>
+                      ))}
+                      {itens.length > 6 && (
+                        <button onClick={() => setAberto(a => ({ ...a, [p.id]: !mostrarTodos }))}
+                          style={{ marginTop: 6, border: 'none', background: 'transparent', color: '#5b4fcf', fontSize: 11.5, fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, padding: 0 }}>
+                          {mostrarTodos
+                            ? <><ChevronUp size={12} /> Mostrar menos</>
+                            : <><ChevronDown size={12} /> Ver os outros {itens.length - 6} itens</>}
+                        </button>
+                      )}
+                    </div>
+                  )
+                })()}
 
                 {p.motivo && <p style={{ fontSize: 11.5, color: '#b91c1c', margin: '2px 0 0' }}>Motivo: {p.motivo}</p>}
+
+                {/* Quem compra quase nunca é quem decide: a lista vai por
+                    WhatsApp com os itens e as quantidades já formatados. */}
+                <button onClick={() => abrirWhats(textoWhatsPedido(p, nomeSalao))}
+                  style={{ marginTop: 9, display: 'inline-flex', alignItems: 'center', gap: 6, background: '#25D366', color: '#fff', border: 'none', borderRadius: 9, padding: '7px 13px', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>
+                  <Share2 size={13} /> Enviar no WhatsApp
+                </button>
 
                 {p.status === 'enviado' && (
                   <div style={{ display: 'flex', gap: 8, marginTop: 11, flexWrap: 'wrap' }}>
