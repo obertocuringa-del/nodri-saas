@@ -45,7 +45,10 @@ export async function POST(req: NextRequest) {
         salao_id: salaoId,
         profissional_id: idPorNome.get(nome) || null,
         profissional_nome: nome,
-        tipo: o.tipo === 'positivo' ? 'positivo' : 'negativo',
+        // 'acompanhamento' é o terceiro tipo: registro de que a gestão
+        // conversou com a pessoa. Não é elogio nem ocorrência — não pesa em
+        // nenhum dos dois lados na hora de avaliar.
+        tipo: o.tipo === 'positivo' ? 'positivo' : o.tipo === 'acompanhamento' ? 'acompanhamento' : 'negativo',
         ocorrido_descricao: `LISTA DE ${String(lista_label || '').trim().toUpperCase()}`.trim(),
         descricao: String(o.descricao).trim(),
       }

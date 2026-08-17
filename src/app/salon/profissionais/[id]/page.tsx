@@ -730,7 +730,7 @@ function BlocoDiagnostico({ prof, form, metricas, p1, p2, fidel }: {
     ? {cor:'#ef4444', label:'CRÍTICO', score:1}
     : semaforo((checkOk/checkTotal)*100, [80, 55, 30])
 
-  const ocNeg = (metricas?.feedbacks||[]).filter(f=>f.tipo!=='positivo').length
+  const ocNeg = (metricas?.feedbacks||[]).filter(f=>f.tipo==='negativo').length
   const ocPos = (metricas?.feedbacks||[]).filter(f=>f.tipo==='positivo').length
   const sOc   = semaforo(ocNeg===0?100:(ocPos/(ocNeg+ocPos||1))*100, [80, 50, 20])
 
@@ -881,10 +881,16 @@ function BlocoDiagnostico({ prof, form, metricas, p1, p2, fidel }: {
           <div className="space-y-2 max-h-52 overflow-y-auto">
             {metricas.feedbacks.slice(0,6).map(fb=>{
               const pos = fb.tipo==='positivo'
+              // Acompanhamento tem cor própria (azul): não é elogio nem
+              // ocorrência — é a gestão registrando que conversou.
+              const acomp = fb.tipo==='acompanhamento'
+              const cor = acomp ? '#5b4fcf' : pos ? '#22c55e' : '#ef4444'
+              const fundo = acomp ? 'rgba(91,79,207,0.05)' : pos ? 'rgba(34,197,94,0.05)' : 'rgba(239,68,68,0.05)'
+              const borda = acomp ? 'rgba(91,79,207,0.15)' : pos ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)'
               return (
                 <div key={fb.id} className="p-2.5 rounded-xl border text-[11px]"
-                  style={{background:pos?'rgba(34,197,94,0.05)':'rgba(239,68,68,0.05)', borderColor:pos?'rgba(34,197,94,0.15)':'rgba(239,68,68,0.15)'}}>
-                  <span style={{color:pos?'#22c55e':'#ef4444',fontWeight:700}}>{pos?'':''} {fb.ocorrido_descricao}</span>
+                  style={{background:fundo, borderColor:borda}}>
+                  <span style={{color:cor,fontWeight:700}}>{acomp ? 'ACOMPANHAMENTO · ' : ''}{fb.ocorrido_descricao}</span>
                   {fb.descricao && <p className="text-nodri-t3 mt-0.5 italic text-[10px]">"{fb.descricao}"</p>}
                 </div>
               )
@@ -1580,7 +1586,7 @@ function BlocoDiagnosticoResumido({ prof, form, metricas, p1, p2, fidel }: {
     ? {cor:'#ef4444', label:'CRÍTICO', score:1}
     : semaforo((checkOk/checkTotal)*100, [80, 55, 30])
 
-  const ocNeg = (metricas?.feedbacks||[]).filter(f=>f.tipo!=='positivo').length
+  const ocNeg = (metricas?.feedbacks||[]).filter(f=>f.tipo==='negativo').length
   const ocPos = (metricas?.feedbacks||[]).filter(f=>f.tipo==='positivo').length
   const sOc   = semaforo(ocNeg===0?100:(ocPos/(ocNeg+ocPos||1))*100, [80, 50, 20])
 
@@ -2904,7 +2910,7 @@ export default function PerfilProfissionalPage() {
     if (metricas.feedbacks?.length) {
       listaHtml = `<div class="sec"><div class="sec-title">Registro de Ocorrências (P2)</div><table class="tbl">
         <tr><th>Data</th><th>Tipo</th><th>O que Houve</th><th>Comentário</th></tr>
-        ${metricas.feedbacks.filter((f:any)=>f.tipo!=='positivo').slice(0,40).map((f:any)=>`<tr><td style="white-space:nowrap">${f.data_feedback||f.criado_em?.slice(0,10)||'—'}</td><td>${f.tipo||'—'}</td><td>${f.oque_houve||f.ocorrido_descricao||'—'}</td><td style="font-size:8pt;color:#555">${f.comentario||f.descricao||''}</td></tr>`).join('')}
+        ${metricas.feedbacks.filter((f:any)=>f.tipo==='negativo').slice(0,40).map((f:any)=>`<tr><td style="white-space:nowrap">${f.data_feedback||f.criado_em?.slice(0,10)||'—'}</td><td>${f.tipo||'—'}</td><td>${f.oque_houve||f.ocorrido_descricao||'—'}</td><td style="font-size:8pt;color:#555">${f.comentario||f.descricao||''}</td></tr>`).join('')}
       </table></div>`
     }
 

@@ -92,12 +92,12 @@ export async function GET(req: NextRequest) {
 
     if (!cats[cargo]) cats[cargo] = { categoria: cargo, total: 0, positivos: 0, negativos: 0, profissionais: {}, ocorrenciasCat: {} }
     const cat = cats[cargo]
-    cat.total++; if (ehPos) cat.positivos++; else cat.negativos++
+    cat.total++; if (ehPos) cat.positivos++; else if (r.tipo === 'negativo') cat.negativos++
     cat.ocorrenciasCat[ocorr || '—'] = (cat.ocorrenciasCat[ocorr || '—'] || 0) + 1
 
     if (!cat.profissionais[nome]) cat.profissionais[nome] = { nome, total: 0, positivos: 0, negativos: 0, ocorrencias: {} }
     const pf = cat.profissionais[nome]
-    pf.total++; if (ehPos) pf.positivos++; else pf.negativos++
+    pf.total++; if (ehPos) pf.positivos++; else if (r.tipo === 'negativo') pf.negativos++
     pf.ocorrencias[ocorr || '—'] = (pf.ocorrencias[ocorr || '—'] || 0) + 1
   }
 

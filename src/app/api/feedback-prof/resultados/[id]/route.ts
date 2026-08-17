@@ -166,7 +166,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     if (!rankingMap[r.profissional_nome]) rankingMap[r.profissional_nome] = { nome: r.profissional_nome, positivo: 0, negativo: 0, total: 0, score: 0 }
     rankingMap[r.profissional_nome].total++
     if (r.tipo === 'positivo') rankingMap[r.profissional_nome].positivo++
-    else rankingMap[r.profissional_nome].negativo++
+    else if (r.tipo === 'negativo') rankingMap[r.profissional_nome].negativo++
   })
   Object.values(rankingMap).forEach(p => { p.score = p.total > 0 ? Math.round((p.positivo / p.total) * 100) : 0 })
   const ranking = Object.values(rankingMap).sort((a, b) => b.score - a.score)
@@ -178,7 +178,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     if (!ocorrMap[key]) ocorrMap[key] = { descricao: key, positivo: 0, negativo: 0, total: 0 }
     ocorrMap[key].total++
     if (r.tipo === 'positivo') ocorrMap[key].positivo++
-    else ocorrMap[key].negativo++
+    else if (r.tipo === 'negativo') ocorrMap[key].negativo++
   })
   const ocorrencias = Object.values(ocorrMap).sort((a, b) => b.total - a.total)
 
@@ -188,7 +188,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     const wk = getISOWeek(new Date(r.criado_em))
     if (!byWeek[wk]) byWeek[wk] = { positivo: 0, negativo: 0 }
     if (r.tipo === 'positivo') byWeek[wk].positivo++
-    else byWeek[wk].negativo++
+    else if (r.tipo === 'negativo') byWeek[wk].negativo++
   })
   const tendencia = Object.entries(byWeek)
     .sort(([a], [b]) => a.localeCompare(b))
@@ -271,7 +271,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     if (!catMap[cat]) catMap[cat] = { total: 0, positivo: 0, negativo: 0 }
     catMap[cat].total++
     if (r.tipo === 'positivo') catMap[cat].positivo++
-    else catMap[cat].negativo++
+    else if (r.tipo === 'negativo') catMap[cat].negativo++
   })
   const categorias = Object.entries(catMap)
     .map(([nome, d]) => ({
@@ -307,7 +307,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   lista.forEach(r => {
     const dia = new Date(r.criado_em).getDay()
     if (r.tipo === 'positivo') diasMap[dia].positivo++
-    else diasMap[dia].negativo++
+    else if (r.tipo === 'negativo') diasMap[dia].negativo++
   })
   const diasSemana = DIAS.map((nome, i) => ({
     dia: nome,
