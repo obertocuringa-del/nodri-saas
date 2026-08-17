@@ -192,8 +192,11 @@ export default function ListaServico({ servico, label, profsSalao, onMensagem }:
       // o número, procurou a pessoa e ofereceu ajuda. Na avaliação (e num
       // eventual desligamento) isso vale mais do que a lembrança de alguém.
       //
-      // POSITIVO quando ele está na média ou acima; NEGATIVO quando está
-      // abaixo — que é quando a mensagem é de orientação.
+      // Entra sempre como POSITIVO, por decisão do dono: a mensagem é
+      // acolhimento e orientação, não punição — atender abaixo da média não é
+      // falta cometida. E o texto gravado é exatamente o que a pessoa recebeu
+      // no WhatsApp, para não existir uma versão "de gaveta" diferente da que
+      // ela leu.
       await fetch('/api/salon/listas/observacoes', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -201,10 +204,8 @@ export default function ListaServico({ servico, label, profsSalao, onMensagem }:
           observacoes: [{
             profissional_id: msgProf.id,
             profissional_nome: msgProf.nome,
-            tipo: total >= media ? 'positivo' : 'negativo',
-            descricao: `Atendeu ${total} de ${label.toLowerCase()} no mês (média do salão: ${media}). A gestão conversou com o profissional.
-
-${msgTexto}`,
+            tipo: 'positivo',
+            descricao: msgTexto,
           }],
         }),
       }).catch(() => { /* o registro no relatório já foi feito */ })
@@ -397,7 +398,7 @@ ${msgTexto}`,
             <textarea value={msgTexto} onChange={e => setMsgTexto(e.target.value)} rows={8} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #d0cdc7', fontSize: 13, resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.5, marginBottom: 8 }} />
             {!telefoneDe(msgProf) && <p style={{ fontSize: 11, color: '#ef4444', margin: '0 0 8px' }}>⚠️ Sem telefone — o WhatsApp não abre, mas o registro é feito do mesmo jeito.</p>}
             <p style={{ fontSize: 11, color: '#6b6860', margin: '0 0 8px' }}>
-              Entra no <b>Feedback do Profissional</b> como {totalDe(msgProf.id) >= media ? 'elogio' : 'orientação'} — fica registrado que a gestão acompanhou.
+              Entra no <b>Feedback do Profissional</b> como registro positivo, com este mesmo texto — fica documentado que a gestão acompanhou e orientou.
             </p>
             <button onClick={enviarMsg} style={{ width: '100%', padding: '12px', borderRadius: 10, border: 'none', background: '#25D366', color: '#fff', fontSize: 15, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}><Send size={16} /> Enviar e registrar</button>
           </div>
