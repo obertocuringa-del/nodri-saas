@@ -414,6 +414,44 @@ function mesclarListaCompra(doModelo: any, doSalao: any): any {
   }
 }
 
+/** Texto de uma linha de grade, para saber se ela já existe do outro lado. */
+function textoDaLinha(linha: any[]): string {
+  return (linha || []).map((c: any) => chaveTexto(c?.t)).join('|')
+}
+
+/**
+ * Grades (planilhas): acrescenta as LINHAS que faltam dentro da mesma tabela.
+ *
+ * Sem isto, o modelo só conseguia entregar tabela INTEIRA nova: se o salão já
+ * tinha a tabela, as linhas acrescentadas no modelo não chegavam nunca — e a
+ * pessoa ficava editando o modelo achando que estava distribuindo.
+ *
+ * O que é do salão continua onde está, na ordem dele. As linhas novas entram
+ * DEPOIS da última linha escrita, não no fim absoluto: grade costuma terminar
+ * com uma dezena de linhas em branco, e jogar conteúdo depois delas esconderia
+ * o que acabou de chegar.
+ */
+function mesclarTabelas(doModelo: any[], doSalao: any[]): any[] {
+  const minhas = (Array.isArray(doSalao) ? doSalao : []).map(t => ({ ...t, linhas: [...(t.linhas || [])] }))
+
+  for (const tM of (Array.isArray(doModelo) ? doModelo : [])) {
+    const alvo = minhas.find(t => chaveTexto(t?.titulo) === chaveTexto(tM?.titulo))
+    if (!alvo) { minhas.push(tM); continue }
+
+    const jaTem = new Set((alvo.linhas || []).map(textoDaLinha))
+    const novas = (tM.linhas || []).filter((l: any[]) => {
+      const t = textoDaLinha(l)
+      return t.replace(/\|/g, '') && !jaTem.has(t)   // ignora linha em branco
+    })
+    if (!novas.length) continue
+
+    let corte = alvo.linhas.length
+    while (corte > 0 && !textoDaLinha(alvo.linhas[corte - 1]).replace(/\|/g, '')) corte--
+    alvo.linhas = [...alvo.linhas.slice(0, corte), ...novas, ...alvo.linhas.slice(corte)]
+  }
+  return minhas
+}
+
 /**
  * Qualquer outro formato: acrescenta o que falta e não troca o que existe.
  *
@@ -433,7 +471,10 @@ function mesclarGenerico(doModelo: any, doSalao: any): any {
   for (const [campo, valor] of Object.entries(doModelo)) {
     const meu = saida[campo]
     if (meu === undefined || meu === null || meu === '') { saida[campo] = marcarOrigem(valor); continue }
-    if (valor && typeof valor === 'object' && meu && typeof meu === 'object') {
+    // Planilha tem regra própria: junta linha por linha dentro de cada tabela.
+    if (campo === 'tabelas' && Array.isArray(valor) && Array.isArray(meu)) {
+      saida[campo] = mesclarTabelas(valor, meu)
+    } else if (valor && typeof valor === 'object' && meu && typeof meu === 'object') {
       saida[campo] = mesclarGenerico(valor, meu)
     }
     // escalares (texto, número): fica o do salão
