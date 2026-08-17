@@ -181,9 +181,35 @@ export default function ListaServico({ servico, label, profsSalao, onMensagem }:
     const fone = telefoneDe(msgProf).replace(/\D/g, '')
     if (fone) { const numero = fone.startsWith('55') ? fone : '55' + fone; window.open(`https://wa.me/${numero}?text=${encodeURIComponent(msgTexto)}`, '_blank') }
     else toast('Sem telefone no cadastro — mensagem só será registrada.', { icon: '⚠️' })
+
+    const total = totalDe(msgProf.id)
     try {
-      await fetch('/api/salon/listas', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mensagem: { servico: label, mes, prof: msgProf.nome, total: totalDe(msgProf.id), media, texto: msgTexto } }) })
-      toast.success('Mensagem registrada no relatório'); onMensagem?.()
+      await fetch('/api/salon/listas', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mensagem: { servico: label, mes, prof: msgProf.nome, total, media, texto: msgTexto } }) })
+
+      // ── Vai também para o Feedback do Profissional ────────────────────────
+      //
+      // Conversa de produção é ato de gestão: fica registrado que o salão viu
+      // o número, procurou a pessoa e ofereceu ajuda. Na avaliação (e num
+      // eventual desligamento) isso vale mais do que a lembrança de alguém.
+      //
+      // POSITIVO quando ele está na média ou acima; NEGATIVO quando está
+      // abaixo — que é quando a mensagem é de orientação.
+      await fetch('/api/salon/listas/observacoes', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lista_label: label,
+          observacoes: [{
+            profissional_id: msgProf.id,
+            profissional_nome: msgProf.nome,
+            tipo: total >= media ? 'positivo' : 'negativo',
+            descricao: `Atendeu ${total} de ${label.toLowerCase()} no mês (média do salão: ${media}). A gestão conversou com o profissional.
+
+${msgTexto}`,
+          }],
+        }),
+      }).catch(() => { /* o registro no relatório já foi feito */ })
+
+      toast.success('Registrado no relatório e no Feedback do Profissional'); onMensagem?.()
     } catch { /* */ }
     setMsgProf(null)
   }
@@ -369,7 +395,10 @@ export default function ListaServico({ servico, label, profsSalao, onMensagem }:
               <button onClick={() => setMsgProf(null)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#9ca3af' }}><X size={18} /></button>
             </div>
             <textarea value={msgTexto} onChange={e => setMsgTexto(e.target.value)} rows={8} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #d0cdc7', fontSize: 13, resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.5, marginBottom: 8 }} />
-            {!telefoneDe(msgProf) && <p style={{ fontSize: 11, color: '#ef4444', margin: '0 0 8px' }}>⚠️ Sem telefone — será só registrada no relatório.</p>}
+            {!telefoneDe(msgProf) && <p style={{ fontSize: 11, color: '#ef4444', margin: '0 0 8px' }}>⚠️ Sem telefone — o WhatsApp não abre, mas o registro é feito do mesmo jeito.</p>}
+            <p style={{ fontSize: 11, color: '#6b6860', margin: '0 0 8px' }}>
+              Entra no <b>Feedback do Profissional</b> como {totalDe(msgProf.id) >= media ? 'elogio' : 'orientação'} — fica registrado que a gestão acompanhou.
+            </p>
             <button onClick={enviarMsg} style={{ width: '100%', padding: '12px', borderRadius: 10, border: 'none', background: '#25D366', color: '#fff', fontSize: 15, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}><Send size={16} /> Enviar e registrar</button>
           </div>
         </div>
