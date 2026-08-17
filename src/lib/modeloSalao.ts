@@ -258,31 +258,114 @@ export function versaoDoModelo(linhas: { chave: string; atualizado_em?: string |
   return `${h.toString(36)}.${partes.length.toString(36)}`
 }
 
+// ── Mesclagem: o modelo acrescenta, nunca apaga ─────────────────────────────
+//
+// Regra da casa, e ela vale para TODA atualização: o que o salão escreveu é
+// dele. O modelo pode trazer coisa nova; não pode levar embora o que já estava
+// lá. Substituir de verdade só acontece quando o dono do salão pede item a
+// item ("trocar pela versão do modelo").
+
+const chaveTexto = (t: any) => String(t ?? '').toUpperCase()
+  .normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Z0-9]/g, '')
+
+/** Nome que identifica um item dentro de uma lista, seja qual for o formato. */
+function nomeDoItem(item: any): string {
+  if (item == null) return ''
+  if (typeof item !== 'object') return chaveTexto(item)
+  for (const campo of ['nome', 'titulo', 'texto', 'label', 'chave', 'codigo']) {
+    if ((item as any)[campo]) return chaveTexto((item as any)[campo])
+  }
+  return ''
+}
+
+/**
+ * Check list: acrescenta categoria nova e demanda nova; não encosta no resto.
+ *
+ * É o caso que mais assusta o dono do salão — ele monta a rotina da casa ao
+ * longo de meses, e uma atualização de estrutura poderia levar tudo. Aqui a
+ * categoria dele fica onde está, com as marcações e o histórico; do modelo vem
+ * só o que ele ainda não tem.
+ */
+function mesclarChecklist(doModelo: any, doSalao: any): any {
+  const minhas: any[] = Array.isArray(doSalao?.categorias) ? doSalao.categorias : []
+  const doM: any[] = Array.isArray(doModelo?.categorias) ? doModelo.categorias : []
+  if (!doM.length) return doSalao
+
+  const saida: any[] = minhas.map(c => ({ ...c }))
+  for (const cat of doM) {
+    const alvo = saida.find(c => chaveTexto(c?.nome) === chaveTexto(cat?.nome))
+    if (!alvo) { saida.push(cat); continue }
+    const jaTem = new Set((alvo.demandas || []).map((d: any) => nomeDoItem(d)))
+    const faltando = (cat.demandas || []).filter((d: any) => !jaTem.has(nomeDoItem(d)))
+    if (faltando.length) alvo.demandas = [...(alvo.demandas || []), ...faltando]
+  }
+  return { ...doSalao, categorias: saida }
+}
+
+/** Lista de compra: itens novos entram; pedidos e estoque continuam do salão. */
+function mesclarListaCompra(doModelo: any, doSalao: any): any {
+  const meus: any[] = Array.isArray(doSalao?.itens) ? doSalao.itens : []
+  const jaTem = new Set(meus.map(i => nomeDoItem(i)))
+  const novos = (Array.isArray(doModelo?.itens) ? doModelo.itens : [])
+    .filter((i: any) => i?.nome && !jaTem.has(nomeDoItem(i)))
+  return {
+    itens: [...meus, ...novos],
+    orcamento: doSalao?.orcamento || '',
+    pedidos: Array.isArray(doSalao?.pedidos) ? doSalao.pedidos : [],
+  }
+}
+
+/**
+ * Qualquer outro formato: acrescenta o que falta e não troca o que existe.
+ *
+ * Lista de itens recebe os que o salão não tem, pelo nome. Campo escrito
+ * (texto, título, configuração) PERMANECE o do salão — trocar isso é
+ * justamente o que apagaria o trabalho dele. Campo que só existe no modelo
+ * entra, porque aí não há o que perder.
+ */
+function mesclarGenerico(doModelo: any, doSalao: any): any {
+  if (doSalao == null) return doModelo
+  if (doModelo == null) return doSalao
+  if (typeof doModelo !== 'object' || typeof doSalao !== 'object') return doSalao
+
+  if (Array.isArray(doModelo) || Array.isArray(doSalao)) {
+    const meus: any[] = Array.isArray(doSalao) ? doSalao : []
+    const jaTem = new Set(meus.map(nomeDoItem))
+    const novos = (Array.isArray(doModelo) ? doModelo : [])
+      .filter((i: any) => { const n = nomeDoItem(i); return n && !jaTem.has(n) })
+    return [...meus, ...novos]
+  }
+
+  const saida: any = { ...doSalao }
+  for (const [campo, valor] of Object.entries(doModelo)) {
+    const meu = saida[campo]
+    if (meu === undefined || meu === null || meu === '') { saida[campo] = valor; continue }
+    if (valor && typeof valor === 'object' && meu && typeof meu === 'object') {
+      saida[campo] = mesclarGenerico(valor, meu)
+    }
+    // escalares (texto, número): fica o do salão
+  }
+  return saida
+}
+
 /**
  * Como o valor do modelo entra numa chave que o salão JÁ TEM.
  *
- * Para quase tudo, aplicar é substituir — foi o que o dono do salão escolheu.
- * A lista de compra é exceção: substituir apagaria os pedidos já enviados ao
- * Financeiro e o estoque contado à mão. Aqui os itens novos são ACRESCENTADOS
- * aos que ele tem (comparando pelo nome), e a operação dele fica intacta.
+ * `modo: 'substituir'` só chega aqui quando o dono do salão pediu para trocar
+ * aquele item — e mesmo assim a versão anterior fica guardada para desfazer.
+ * O padrão é sempre mesclar.
  */
-export function mesclarComExistente(chave: string, doModelo: any, doSalao: any): any {
+export function mesclarComExistente(
+  chave: string, doModelo: any, doSalao: any, modo: 'mesclar' | 'substituir' = 'mesclar',
+): any {
+  if (doSalao === undefined) return doModelo
+  if (modo === 'substituir') return doModelo
+
   const r = regraDaChave(chave)
-  if (!r || r.como !== 'listaCompra' || !doSalao || typeof doSalao !== 'object') return doModelo
-
-  const norm = (t: string) => String(t || '').toUpperCase()
-    .normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Z0-9]/g, '')
-
-  const meus = Array.isArray(doSalao.itens) ? doSalao.itens : []
-  const jaTem = new Set(meus.map((i: any) => norm(i?.nome)))
-  const novos = (Array.isArray(doModelo?.itens) ? doModelo.itens : [])
-    .filter((i: any) => i?.nome && !jaTem.has(norm(i.nome)))
-
-  return {
-    itens: [...meus, ...novos],
-    orcamento: doSalao.orcamento || '',
-    pedidos: Array.isArray(doSalao.pedidos) ? doSalao.pedidos : [],
-  }
+  if (!r) return doModelo
+  if (r.como === 'listaCompra') return mesclarListaCompra(doModelo, doSalao)
+  if (r.como === 'checklist') return mesclarChecklist(doModelo, doSalao)
+  return mesclarGenerico(doModelo, doSalao)
 }
 
 /** O que mudaria no salão se ele aplicasse o modelo agora. */
