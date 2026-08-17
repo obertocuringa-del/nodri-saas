@@ -155,7 +155,9 @@ export async function POST(req: NextRequest) {
       })
       ocorrProf.slice(0, 10).forEach((f: any) => {
         const data = f.criado_em ? new Date(f.criado_em).toLocaleDateString('pt-BR') : ''
-        linhas.push(`  [${f.tipo === 'negativo' ? '🚨' : '✅'}] ${data} — ${f.ocorrido_descricao || ''}${f.descricao ? ': ' + f.descricao : ''}`)
+        // Acompanhamento não é 🚨 nem ✅: é a gestão registrando que conversou.
+        const marca = f.tipo === 'negativo' ? '🚨' : f.tipo === 'acompanhamento' ? '📌' : '✅'
+        linhas.push(`  [${marca}] ${data} — ${f.ocorrido_descricao || ''}${f.descricao ? ': ' + f.descricao : ''}`)
       })
       linhas.push('')
     }
