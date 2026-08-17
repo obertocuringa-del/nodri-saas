@@ -60,6 +60,7 @@ const CHAVES: Record<string, string[]> = {
   gerais:        ['SERVICOS GERAIS', 'LIMPEZA'],
   manutencao:    ['MANUTENCAO'],
   dosagem:       ['DOSAGEM'],
+  cafe:          ['CAFE', 'COPA', 'CAFETERIA'],
 }
 
 // Descrições genéricas de cada função (só sugestão inicial — o salão edita).
@@ -80,6 +81,7 @@ const PADRAO: Record<string, { icone: string; linhas: string[] }> = {
   gerais:        { icone: '🧹', linhas: ['Limpeza e apoio', 'Ambientes e estrutura'] },
   manutencao:    { icone: '🔧', linhas: ['Predial e equipamentos', 'Preventiva e reparos'] },
   dosagem:       { icone: '🧪', linhas: ['Fórmulas e mistura', 'Controle técnico'] },
+  cafe:          { icone: '☕', linhas: ['Copa e cortesias', 'Bebidas e lanches'] },
 }
 
 // Alguns setores foram cadastrados com cor bem clara (ex.: um lilás quase
@@ -107,7 +109,7 @@ const CORES: Record<string, string> = {
   rh: '#7c3aed',
   marketing: '#db2777', comercial: '#db2777',
   coordenador: '#ea580c', recepcao: '#ea580c', profissionais: '#ea580c',
-  dosagem: '#ea580c', gerais: '#ea580c', manutencao: '#ea580c',
+  dosagem: '#ea580c', gerais: '#ea580c', manutencao: '#ea580c', cafe: '#ea580c',
 }
 
 const LINHA = '#cbd5e1'
@@ -302,7 +304,9 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
   const { mapa, sobra } = porChave
 
   // Conectores — as linhas de comando são só bordas
-  const V = ({ h = 14 }: { h?: number }) => <div style={{ width: 2, height: h, background: LINHA }} />
+  // Altura dos conectores. Era 14/12 e as fileiras ficavam quase encostadas;
+  // com mais respiro dá para ler cada nível como um andar do organograma.
+  const V = ({ h = 30 }: { h?: number }) => <div style={{ width: 2, height: h, background: LINHA }} />
   const Tracejo = ({ w = 30 }: { w?: number }) => <div style={{ width: w, borderTop: `2px dashed ${LINHA}` }} />
 
   /** Um ramo: a área do nível 2 e, abaixo, os setores que respondem a ela.
@@ -315,7 +319,7 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
       <div className="flex flex-col items-center">
         {area && Caixa({ chave: areaChave, dep: area, largura: larguraArea, variante: 'solida' })}
         {comFilhos.length > 0 && (<>
-          <V h={12} />
+          <V h={26} />
           <div className="flex items-start gap-2" style={{ position: 'relative' }}>
             {/* barra ligando os centros dos filhos das pontas */}
             {comFilhos.length > 1 && (
@@ -323,7 +327,7 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
             )}
             {comFilhos.map(f => (
               <div key={f} className="flex flex-col items-center">
-                <V h={12} />
+                <V h={26} />
                 {Caixa({ chave: f, dep: mapa[f] })}
               </div>
             ))}
@@ -407,11 +411,11 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
           <div style={{ height: 2, background: LINHA, width: '100%' }} />
 
           {/* ── NÍVEL 2 e 3 — áreas e os setores que respondem a cada uma ── */}
-          <div className="flex items-start justify-center gap-6" style={{ paddingTop: 12 }}>
+          <div className="flex items-start justify-center gap-6" style={{ paddingTop: 28 }}>
             <Fragment key="r-adm">{Ramo({ areaChave: 'administrativo', filhos: ['financeiro', 'compras'], larguraArea: 280 })}</Fragment>
             <Fragment key="r-rh">{Ramo({ areaChave: 'rh', filhos: [], larguraArea: 168 })}</Fragment>
             <Fragment key="r-mkt">{Ramo({ areaChave: 'marketing', filhos: ['comercial'], larguraArea: 180 })}</Fragment>
-            <Fragment key="r-op">{Ramo({ areaChave: 'coordenador', filhos: ['recepcao', 'profissionais', 'dosagem', 'gerais', 'manutencao'], larguraArea: 400 })}</Fragment>
+            <Fragment key="r-op">{Ramo({ areaChave: 'coordenador', filhos: ['recepcao', 'profissionais', 'dosagem', 'gerais', 'manutencao', 'cafe'], larguraArea: 400 })}</Fragment>
           </div>
 
           {/* Qualquer setor fora do modelo continua aparecendo aqui */}

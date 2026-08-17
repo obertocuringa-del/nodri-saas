@@ -20,6 +20,7 @@ export type Sanitizador =
   | 'inteiro'      // copia como está (é só estrutura)
   | 'checklist'    // tira marcações: feito / feito_em / historico
   | 'gradeVazia'   // mantém títulos e cabeçalhos, zera as linhas
+  | 'listaCompra'  // mantém o que comprar e o mínimo; zera estoque e pedidos
 
 export interface ChaveModelo {
   chave: string           // nome exato, ou prefixo quando `prefixo: true`
@@ -60,6 +61,13 @@ export const CHAVES_MODELO: ChaveModelo[] = [
   { chave: 'lojistas_segmentos', como: 'inteiro', rotulo: 'Segmentos de lojistas' },
   { chave: 'lojistas_servicos', como: 'inteiro', rotulo: 'Serviços para lojistas' },
   { chave: 'planejamento_estrutura', como: 'inteiro', rotulo: 'Planejamento estratégico (estrutura)' },
+
+  // Listas de compra de cada setor (compras_cafe, compras_dosagem, …).
+  // O QUE se compra e o mínimo de cada item são molde — todo salão de beleza
+  // precisa de papel toalha, luva e café. O que NÃO viaja é o estoque atual
+  // e o histórico de pedidos, que são a operação de cada casa. Sem esta linha
+  // a lista chegava vazia e cada salão teria de digitar tudo de novo.
+  { chave: 'compras_', prefixo: true, como: 'listaCompra', rotulo: 'Listas de compra dos setores' },
 ]
 
 // ── O QUE NUNCA VIAJA ───────────────────────────────────────────────────────
@@ -196,12 +204,31 @@ function limparGrade(valor: any): any {
   return out
 }
 
+/**
+ * Lista de compra: viaja o catálogo, não a operação.
+ *
+ * Ficam: nome do item e quantidade mínima. Saem: quanto tem hoje, quanto
+ * comprar, orçamento e todo o histórico de pedidos — isso é dinheiro e rotina
+ * de um salão só.
+ */
+function limparListaCompra(valor: any): any {
+  if (!valor || typeof valor !== 'object') return valor
+  return {
+    itens: (Array.isArray(valor.itens) ? valor.itens : []).map((i: any) => ({
+      id: i?.id, nome: i?.nome || '', minimo: i?.minimo || '', atual: '', comprar: '',
+    })),
+    orcamento: '',
+    pedidos: [],
+  }
+}
+
 /** Valor pronto para viajar: estrutura sim, preenchimento não. */
 export function sanitizar(chave: string, valor: any): any {
   const r = regraDaChave(chave)
   if (!r) return null
   const copia = JSON.parse(JSON.stringify(valor ?? null))
   if (r.como === 'checklist') return limparChecklist(copia)
+  if (r.como === 'listaCompra') return limparListaCompra(copia)
   if (r.como === 'gradeVazia') return limparGrade(copia)
   return copia
 }

@@ -14,10 +14,10 @@
 // como aprovado, negado ou assumido por eles.
 
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react'
-import { Loader2, Save, Plus, Trash2, Send, ShoppingCart, Check, Clock, X, CircleDollarSign, MessageSquare } from 'lucide-react'
+import { Loader2, Save, Plus, Trash2, Send, ShoppingCart, Check, Clock, X, CircleDollarSign, MessageSquare, CornerUpRight } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useGuardaSalvar } from '@/lib/guardaSalvar'
-import { type Pedido, type ItemLista, rid, num, moeda, STATUS_PEDIDO, chavePedidos } from '@/lib/comprasEstoque'
+import { type Pedido, type ItemLista, rid, num, moeda, STATUS_PEDIDO, chavePedidos, AREAS_COMPRAS } from '@/lib/comprasEstoque'
 
 interface Doc { itens: ItemLista[]; orcamento?: string; pedidos: Pedido[] }
 
@@ -29,6 +29,10 @@ export default function ListaCompras({ area, titulo }: { area: string; titulo: s
   const [expandido, setExpandido] = useState('')
   const [dirty, setDirty] = useState(false)
   const [setorFinanceiro, setSetorFinanceiro] = useState<{ id: string; nome: string } | null>(null)
+  // Item aberto para escolher outro setor. Produto cadastrado no lugar errado
+  // é rotina: antes só dava para apagar aqui e digitar tudo de novo lá.
+  const [movendo, setMovendo] = useState<ItemLista | null>(null)
+  const [enviandoMov, setEnviandoMov] = useState(false)
   useGuardaSalvar(dirty, titulo)
 
   const chave = chavePedidos(area)
@@ -64,6 +68,47 @@ export default function ListaCompras({ area, titulo }: { area: string; titulo: s
   }
   const addItem = () => { setDoc(d => ({ ...d, itens: [...d.itens, { id: rid(), nome: '', minimo: '', atual: '', comprar: '' }] })); setDirty(true) }
   const delItem = (id: string) => { setDoc(d => ({ ...d, itens: d.itens.filter(i => i.id !== id) })); setDirty(true) }
+
+  /**
+   * Manda o item para a lista de outro setor.
+   *
+   * Grava direto na chave do destino (compras_<area>) em vez de pedir para o
+   * usuário abrir a outra tela: o item sai daqui e aparece lá com o mesmo
+   * nome, mínimo e estoque atual. A gravação do destino vem PRIMEIRO — se
+   * falhar, o item continua aqui, e é melhor um item duplicado do que um item
+   * que sumiu dos dois lados.
+   */
+  async function moverParaSetor(item: ItemLista, destino: string) {
+    if (!destino || destino === area) { setMovendo(null); return }
+    const alvo = AREAS_COMPRAS.find(a => a.id === destino)
+    setEnviandoMov(true)
+    try {
+      const chaveDestino = chavePedidos(destino)
+      const atualDestino = await fetch(`/api/salon/grid?chave=${chaveDestino}`, { credentials: 'include' })
+        .then(r => (r.ok ? r.json() : null)).catch(() => null)
+
+      const docDestino = {
+        itens: [...((atualDestino?.itens as ItemLista[]) || []), { ...item, id: rid() }],
+        orcamento: atualDestino?.orcamento || '',
+        pedidos: atualDestino?.pedidos || [],
+      }
+
+      const r = await fetch('/api/salon/grid', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chave: chaveDestino, doc: docDestino }),
+      })
+      if (!r.ok) { toast.error('Não foi possível mover o item'); setEnviandoMov(false); return }
+
+      const novo: Doc = { ...doc, itens: doc.itens.filter(i => i.id !== item.id) }
+      setDoc(novo)
+      await salvar(novo)
+      toast.success(`“${item.nome}” foi para ${alvo?.titulo || destino}`)
+      setMovendo(null)
+    } catch {
+      toast.error('Erro de conexão')
+    }
+    setEnviandoMov(false)
+  }
 
   /** Sugestão de quanto comprar: o que falta para chegar no mínimo. */
   const sugestao = (i: ItemLista) => Math.max(0, num(i.minimo) - num(i.atual))
@@ -221,7 +266,11 @@ export default function ListaCompras({ area, titulo }: { area: string; titulo: s
                         </div>
                       )}
                     </td>
-                    <td style={{ textAlign: 'center' }}>
+                    <td style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
+                      <button onClick={() => setMovendo(i)} title="Encaminhar para outro setor"
+                        style={{ border: 'none', background: 'transparent', color: '#5b4fcf', cursor: 'pointer', padding: 3 }}>
+                        <CornerUpRight size={13} />
+                      </button>
                       <button onClick={() => delItem(i.id)} style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', padding: 3 }}><Trash2 size={13} /></button>
                     </td>
                   </tr>
@@ -230,6 +279,33 @@ export default function ListaCompras({ area, titulo }: { area: string; titulo: s
             </tbody>
           </table>
         </div>
+        {/* Escolha do setor de destino */}
+        {movendo && (
+          <div onClick={() => !enviandoMov && setMovendo(null)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(15,18,30,.45)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+            <div onClick={e => e.stopPropagation()}
+              style={{ background: '#fff', borderRadius: 14, padding: 18, width: 'min(420px, 100%)', maxHeight: '80vh', overflowY: 'auto' }}>
+              <p style={{ fontWeight: 900, fontSize: 13.5, marginBottom: 3 }}>Encaminhar item</p>
+              <p style={{ fontSize: 12, color: '#6b6860', marginBottom: 12 }}>
+                “{movendo.nome || 'sem nome'}” sai de <b>{titulo}</b> e vai para a lista do setor escolhido, com o mesmo mínimo e estoque.
+              </p>
+              <div style={{ display: 'grid', gap: 6 }}>
+                {AREAS_COMPRAS.filter(a => a.id !== area).map(a => (
+                  <button key={a.id} disabled={enviandoMov}
+                    onClick={() => moverParaSetor(movendo, a.id)}
+                    style={{ textAlign: 'left', padding: '9px 12px', borderRadius: 9, border: '1px solid #eceae4', background: '#fff', fontSize: 12.5, fontWeight: 700, color: '#3f3a35', cursor: 'pointer' }}>
+                    {a.titulo}
+                  </button>
+                ))}
+              </div>
+              <button onClick={() => setMovendo(null)} disabled={enviandoMov}
+                style={{ marginTop: 12, width: '100%', padding: '9px 12px', borderRadius: 9, border: '1px solid #eceae4', background: '#faf9f7', fontSize: 12, fontWeight: 800, color: '#6b6860', cursor: 'pointer' }}>
+                {enviandoMov ? 'Movendo…' : 'Cancelar'}
+              </button>
+            </div>
+          </div>
+        )}
+
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 15px', borderTop: '1px solid #f2f0ec', flexWrap: 'wrap' }}>
           <button onClick={addItem}
             style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: '1px dashed #5b4fcf', background: '#f0eefb', color: '#5b4fcf', fontSize: 12, fontWeight: 800, padding: '7px 13px', borderRadius: 9, cursor: 'pointer' }}>

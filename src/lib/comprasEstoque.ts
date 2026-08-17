@@ -47,6 +47,7 @@ export const AREAS_COMPRAS: { id: string; titulo: string }[] = [
   { id: 'recepcao',       titulo: 'Recepção' },
   { id: 'profissionais',  titulo: 'Profissionais' },
   { id: 'dosagem',        titulo: 'Dosagem' },
+  { id: 'cafe',           titulo: 'Café' },
   { id: 'servicos_gerais', titulo: 'Serviços Gerais' },
   { id: 'manutencao',     titulo: 'Manutenção' },
   { id: 'marketing',      titulo: 'Marketing' },
