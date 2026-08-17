@@ -14,7 +14,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
-import { Sparkles, Loader2, RefreshCw, CheckCircle2 } from 'lucide-react'
+import { Sparkles, Loader2, RefreshCw, CheckCircle2, Undo2 } from 'lucide-react'
 
 interface Item { chave: string; rotulo: string }
 interface Info {
@@ -32,6 +32,9 @@ export default function AtualizacoesPage() {
   // Escolha item a item: o salão pode querer o check list novo e não querer a
   // lista de compra. Novidades já vêm marcadas; o que ele já tem, não.
   const [marcadas, setMarcadas] = useState<Set<string>>(new Set())
+  // Aparece depois de uma aplicação que substituiu página do salão: o conteúdo
+  // anterior fica guardado e volta com um clique.
+  const [podeDesfazer, setPodeDesfazer] = useState(false)
 
   const carregar = useCallback(() => {
     setCarregando(true)
@@ -62,8 +65,30 @@ export default function AtualizacoesPage() {
         body: JSON.stringify({ chaves }),
       })
       const j = await r.json().catch(() => null)
-      if (r.ok) { toast.success('Atualização aplicada'); carregar() }
+      if (r.ok) {
+        toast.success(j?.substituidas
+          ? `Aplicado — ${j.substituidas} página(s) substituída(s). Dá para desfazer.`
+          : 'Atualização aplicada')
+        setPodeDesfazer(!!j?.substituidas)
+        carregar()
+      }
       else toast.error(j?.error || 'Não foi possível aplicar')
+    } catch { toast.error('Erro de conexão') }
+    setOcupado(false)
+  }
+
+  async function desfazer() {
+    if (!confirm('Desfazer a última atualização?
+
+As páginas que foram substituídas voltam ao conteúdo anterior. O que era novidade continua aqui.')) return
+    setOcupado(true)
+    try {
+      const r = await fetch('/api/salon/modelo-atualizacao', { method: 'DELETE' })
+      const j = await r.json().catch(() => null)
+      if (r.ok) {
+        toast.success(j?.restauradas ? `${j.restauradas} página(s) voltaram ao que eram` : (j?.aviso || 'Nada a desfazer'))
+        setPodeDesfazer(false); carregar()
+      } else toast.error(j?.error || 'Não foi possível desfazer')
     } catch { toast.error('Erro de conexão') }
     setOcupado(false)
   }
@@ -74,6 +99,12 @@ export default function AtualizacoesPage() {
         <Sparkles size={18} style={{ color: '#5b4fcf' }} />
         <h1 style={{ fontSize: 18, fontWeight: 900, color: '#1a1a2e', margin: 0 }}>Atualizações do sistema</h1>
         <div style={{ flex: 1 }} />
+        {podeDesfazer && (
+          <button onClick={desfazer} disabled={ocupado}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, border: '1px solid #fde68a', background: '#fffbeb', borderRadius: 9, padding: '7px 12px', fontSize: 12, fontWeight: 800, color: '#92400e', cursor: 'pointer' }}>
+            <Undo2 size={13} /> Desfazer a última atualização
+          </button>
+        )}
         <button onClick={carregar} disabled={carregando}
           style={{ display: 'inline-flex', alignItems: 'center', gap: 6, border: '1px solid #e0ddd8', background: '#fff', borderRadius: 9, padding: '7px 12px', fontSize: 12, fontWeight: 700, color: '#6b6860', cursor: 'pointer' }}>
           <RefreshCw size={13} className={carregando ? 'animate-spin' : ''} /> Conferir de novo

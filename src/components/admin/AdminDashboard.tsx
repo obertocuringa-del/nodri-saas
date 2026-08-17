@@ -2293,7 +2293,7 @@ function CopiaSeguranca({ saloes }: { saloes: any[] }) {
     if (!salaoId) { toast.error('Escolha o salão'); return }
     setOcupado('baixar')
     try {
-      const r = await fetch(`/api/admin/backup?salao=${salaoId}`)
+      const r = await fetch(`/api/admin/copia-seguranca?salao=${salaoId}`)
       const d = await r.json()
       if (!r.ok) { toast.error(d?.error || 'Não deu para gerar'); setOcupado(''); return }
       const blob = new Blob([JSON.stringify(d, null, 2)], { type: 'application/json' })
@@ -2335,7 +2335,7 @@ function CopiaSeguranca({ saloes }: { saloes: any[] }) {
 O que estiver no arquivo será gravado por cima. Páginas criadas depois não são apagadas.`)) return
     setOcupado('restaurar')
     try {
-      const r = await fetch('/api/admin/backup', {
+      const r = await fetch('/api/admin/copia-seguranca', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ salao_id: destino, linhas: arquivo.linhas }),
       })

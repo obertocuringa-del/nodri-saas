@@ -134,6 +134,25 @@ export async function POST(req: NextRequest) {
       atualizado_em: agora,
     }))
 
+  // ── Antes de gravar: guarda o que existe hoje ────────────────────────────
+  //
+  // Só das páginas que JÁ EXISTEM e vão ser substituídas — página nova não tem
+  // versão anterior para guardar. É esta cópia que permite desfazer depois; sem
+  // ela, "atualizar" era uma decisão sem volta.
+  const lote = `modelo-${Date.now()}`
+  const paraGuardar = linhasNovas
+    .filter(l => mapaSalao.has(l.chave))
+    .map(l => ({
+      salao_id: sess.salaoId, chave: l.chave, valor: mapaSalao.get(l.chave) ?? null,
+      lote, motivo: 'Substituída ao aplicar atualização do modelo',
+    }))
+  if (paraGuardar.length) {
+    // Falhar aqui NÃO impede a atualização (a tabela pode ainda não existir),
+    // mas fica registrado — sem isso, o desfazer sumiria em silêncio.
+    const { error: erroHist } = await supabaseAdmin.from('salao_config_historico').insert(paraGuardar)
+    if (erroHist) console.error('Histórico do modelo não gravou:', erroHist.message)
+  }
+
   const { error } = await supabaseAdmin.from('salao_config').upsert(linhasNovas, { onConflict: 'salao_id,chave' })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
@@ -143,7 +162,49 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     ok: true,
     aplicadas: linhasNovas.length,
+    substituidas: paraGuardar.length,
+    lote: paraGuardar.length ? lote : null,
     moldes,
     chaves: linhasNovas.map(l => ({ chave: l.chave, rotulo: regraDaChave(l.chave)?.rotulo || l.chave })),
   })
+}
+
+// DELETE — desfaz a última atualização (ou o lote informado).
+//
+// Devolve às páginas o conteúdo que elas tinham no instante anterior à
+// substituição. O que a atualização apenas ACRESCENTOU (página que o salão não
+// tinha) continua lá: desfazer não é apagar novidade, é recuperar o que era
+// seu e foi trocado.
+export async function DELETE(req: NextRequest) {
+  const sess = await getSessao()
+  if (!sess) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  if (sess.role !== 'salon') return NextResponse.json({ error: 'Sem acesso' }, { status: 403 })
+
+  const loteParam = new URL(req.url).searchParams.get('lote')
+
+  let q = supabaseAdmin.from('salao_config_historico')
+    .select('chave, valor, lote, criado_em')
+    .eq('salao_id', sess.salaoId)
+    .order('criado_em', { ascending: false })
+  if (loteParam) q = q.eq('lote', loteParam)
+
+  const { data, error } = await q.limit(200)
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (!data?.length) return NextResponse.json({ ok: true, restauradas: 0, aviso: 'Não há atualização para desfazer' })
+
+  const lote = loteParam || (data[0] as any).lote
+  const doLote = data.filter((l: any) => l.lote === lote)
+
+  const agora = new Date().toISOString()
+  const { error: erroVolta } = await supabaseAdmin.from('salao_config').upsert(
+    doLote.map((l: any) => ({ salao_id: sess.salaoId, chave: l.chave, valor: l.valor, atualizado_em: agora })),
+    { onConflict: 'salao_id,chave' },
+  )
+  if (erroVolta) return NextResponse.json({ error: erroVolta.message }, { status: 500 })
+
+  // Consumido o lote, ele sai do histórico — senão o botão "desfazer"
+  // continuaria oferecendo voltar para o mesmo ponto para sempre.
+  await supabaseAdmin.from('salao_config_historico').delete().eq('salao_id', sess.salaoId).eq('lote', lote)
+
+  return NextResponse.json({ ok: true, restauradas: doLote.length, lote })
 }
