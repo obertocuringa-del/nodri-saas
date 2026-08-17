@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Loader2, X, Printer, Coffee, Scissors, HandCoins, Wallet, Hand, Copy } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { quinzenaDeHoje, labelQuinzena, nomeQuinzena, dataNaQuinzena, type Quinzena } from '@/lib/quinzena'
+import { quinzenaDeHoje, labelQuinzena, nomeQuinzena, dataNaQuinzena, parcelaNoPeriodo, type Quinzena } from '@/lib/quinzena'
+import { valorParcelas } from '@/lib/kitsShared'
 
 interface Prof { id: string; nome: string }
 
@@ -13,10 +14,10 @@ interface Cel { t?: string }
 interface DocServ { tabelas?: { linhas?: Cel[][] }[] }
 interface DespItem { nome?: string; valor?: string; obs?: string; data?: string }
 interface DadosCalc { despInd?: DespItem[]; extrasDespInd?: DespItem[] }
-interface KitSol { profissionalNome?: string; valor?: number; status?: string; data?: string }
+interface KitSol { profissionalNome?: string; valor?: number; status?: string; data?: string; parcelas?: number }
 
 interface LinhaBebida { nome: string; valor: number }
-interface LinhaDesconto { nome: string; bebidas: LinhaBebida[]; bebidasTot: number; serv: number; emp: number; kits: number; total: number }
+interface LinhaDesconto { nome: string; bebidas: LinhaBebida[]; bebidasTot: number; serv: number; emp: number; kits: number; kitsNota: string[]; total: number }
 
 const COR = '#5b4fcf'
 function mesAtual() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` }
@@ -30,7 +31,7 @@ function partesDe(r: LinhaDesconto): string[] {
   const p: string[] = []
   r.bebidas.forEach(b => p.push(`${b.nome} R$ ${fmtBRL(b.valor)}`))
   if (r.serv > 0) p.push(`serviço interno R$ ${fmtBRL(r.serv)}`)
-  if (r.kits > 0) p.push(`kit pé e mão R$ ${fmtBRL(r.kits)}`)
+  if (r.kits > 0) p.push(`kit pé e mão R$ ${fmtBRL(r.kits)}${r.kitsNota.length ? ` (${r.kitsNota.join(', ')})` : ''}`)
   if (r.emp > 0) p.push(`empréstimo R$ ${fmtBRL(r.emp)}`)
   return p
 }
@@ -100,7 +101,7 @@ export default function ConsolidadoDescontos({ open, onClose, embutido = false }
       const acc = new Map<string, LinhaDesconto>()
       const pega = (nome: string): LinhaDesconto => {
         const k = norm(nome)
-        if (!acc.has(k)) acc.set(k, { nome, bebidas: [], bebidasTot: 0, serv: 0, emp: 0, kits: 0, total: 0 })
+        if (!acc.has(k)) acc.set(k, { nome, bebidas: [], bebidasTot: 0, serv: 0, emp: 0, kits: 0, kitsNota: [], total: 0 })
         return acc.get(k)!
       }
 
@@ -146,16 +147,33 @@ export default function ConsolidadoDescontos({ open, onClose, embutido = false }
         pega(profNome).emp += valor
       }
 
-      // 4) KITS PÉ E MÃO — só os já SEPARADOS pelo salão, na quinzena do PEDIDO;
-      //    várias solicitações no mesmo período vão somando no total da manicure
+      // 4) KITS PÉ E MÃO — só os já SEPARADOS pelo salão.
+      //
+      // PARCELADO desconta uma parcela POR QUINZENA, começando na quinzena do
+      // pedido: pedido de 2× feito na 2ª quinzena de agosto cobra metade em
+      // 16–31/08 e a outra metade em 01–15/09. Antes o valor inteiro caía na
+      // quinzena do pedido e a segunda parcela não aparecia em lugar nenhum —
+      // a manicure pagava tudo de uma vez sem ter combinado isso.
       const kitsList: KitSol[] = Array.isArray(kitsResp?.solicitacoes) ? kitsResp.solicitacoes : []
       for (const k of kitsList) {
         if (k.status !== 'separado') continue
         const valor = Number(k.valor) || 0
         const nome = (k.profissionalNome || '').trim()
         if (valor <= 0 || !nome) continue
-        if (!dataNaQuinzena(k.data || '', mes, quinzena)) continue
-        pega(nome).kits += valor
+
+        const nParc = Math.max(1, Math.floor(Number(k.parcelas) || 1))
+        if (nParc === 1) {
+          if (!dataNaQuinzena(k.data || '', mes, quinzena)) continue
+          pega(nome).kits += valor
+          continue
+        }
+
+        const qual = parcelaNoPeriodo(k.data || '', nParc, mes, quinzena)
+        if (!qual) continue
+        const valores = valorParcelas(valor, nParc)
+        const linha = pega(nome)
+        linha.kits += valores[qual.numero - 1] || 0
+        linha.kitsNota.push(`parcela ${qual.numero}/${qual.total}`)
       }
 
       const lista = Array.from(acc.values())
@@ -186,7 +204,7 @@ export default function ConsolidadoDescontos({ open, onClose, embutido = false }
       const partes: string[] = []
       r.bebidas.forEach(b => partes.push(`${esc(b.nome)} R$ ${fmtBRL(b.valor)}`))
       if (r.serv > 0) partes.push(`serviço interno R$ ${fmtBRL(r.serv)}`)
-      if (r.kits > 0) partes.push(`kit pé e mão R$ ${fmtBRL(r.kits)}`)
+      if (r.kits > 0) partes.push(`kit pé e mão R$ ${fmtBRL(r.kits)}${r.kitsNota.length ? ` (${r.kitsNota.join(', ')})` : ''}`)
       if (r.emp > 0) partes.push(`empréstimo R$ ${fmtBRL(r.emp)}`)
       return `<tr><td class="nm">${esc(r.nome)}</td><td class="det">${partes.join('  ·  ') || '—'}</td><td class="tot">R$ ${fmtBRL(r.total)}</td></tr>`
     }).join('')
@@ -251,7 +269,12 @@ export default function ConsolidadoDescontos({ open, onClose, embutido = false }
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                     {r.bebidas.map((b, i) => <Chip key={'b' + i} icon={<Coffee size={12} />} cor="#b45309" bg="#fff7ed" bd="#fed7aa">{b.nome} R$ {fmtBRL(b.valor)}</Chip>)}
                     {r.serv > 0 && <Chip icon={<Scissors size={12} />} cor="#0e7490" bg="#ecfeff" bd="#a5f3fc">serviço interno R$ {fmtBRL(r.serv)}</Chip>}
-                    {r.kits > 0 && <Chip icon={<Hand size={12} />} cor="#be185d" bg="#fdf2f8" bd="#fbcfe8">kit pé e mão R$ {fmtBRL(r.kits)}</Chip>}
+                    {r.kits > 0 && (
+                      <Chip icon={<Hand size={12} />} cor="#be185d" bg="#fdf2f8" bd="#fbcfe8">
+                        kit pé e mão R$ {fmtBRL(r.kits)}
+                        {r.kitsNota.length > 0 && ` · ${r.kitsNota.join(', ')}`}
+                      </Chip>
+                    )}
                     {r.emp > 0 && <Chip icon={<Wallet size={12} />} cor="#9333ea" bg="#faf5ff" bd="#e9d5ff">empréstimo R$ {fmtBRL(r.emp)}</Chip>}
                   </div>
                 </div>

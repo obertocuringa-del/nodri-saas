@@ -44,3 +44,63 @@ export function dataNaQuinzena(dataStr: string, mesStr: string, q: Quinzena): bo
   const [ini, fim] = diasQuinzena(ano, mes, q)
   return dia >= ini && dia <= fim
 }
+
+// ── Parcelamento por quinzena ───────────────────────────────────────────────
+//
+// Compra parcelada do profissional (kits, por exemplo) não desconta tudo de
+// uma vez: cada parcela cai numa quinzena, a partir da quinzena em que o
+// pedido foi feito. Pedido na 2ª quinzena de agosto em 2×: a 1ª parcela sai
+// no fechamento de 16–31/08 e a 2ª no de 01–15/09.
+//
+// Antes o desconto lançava o valor inteiro na quinzena do pedido, e a segunda
+// parcela simplesmente não existia em lugar nenhum — a manicure pagava tudo
+// no primeiro fechamento sem ter combinado isso.
+
+export interface PeriodoQuinzena { mes: string; q: 1 | 2 }
+
+/** A quinzena seguinte a esta. Depois da 2ª vem a 1ª do mês que vem. */
+export function quinzenaSeguinte(p: PeriodoQuinzena): PeriodoQuinzena {
+  if (p.q === 1) return { mes: p.mes, q: 2 }
+  const [ano, mes] = p.mes.split('-').map(Number)
+  const d = new Date(ano, mes, 1)   // mes é 1-based aqui: já aponta para o próximo
+  return { mes: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`, q: 1 }
+}
+
+/** Em que mês/quinzena caiu uma data ('dd/mm/aaaa' ou 'aaaa-mm-dd'). */
+export function periodoDaData(dataStr: string): PeriodoQuinzena | null {
+  const s = String(dataStr || '').trim()
+  const br = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/)
+  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/)
+  let dia: number, mes: number, ano: number
+  if (br) { dia = +br[1]; mes = +br[2]; ano = +br[3] }
+  else if (iso) { ano = +iso[1]; mes = +iso[2]; dia = +iso[3] }
+  else return null
+  return { mes: `${ano}-${String(mes).padStart(2, '0')}`, q: dia <= 15 ? 1 : 2 }
+}
+
+/**
+ * As quinzenas em que as N parcelas de um pedido vão cair, na ordem.
+ * A primeira é sempre a quinzena do próprio pedido.
+ */
+export function periodosDasParcelas(dataPedido: string, n: number): PeriodoQuinzena[] {
+  const inicio = periodoDaData(dataPedido)
+  if (!inicio) return []
+  const total = Math.max(1, Math.floor(Number(n) || 1))
+  const out: PeriodoQuinzena[] = [inicio]
+  for (let i = 1; i < total; i++) out.push(quinzenaSeguinte(out[i - 1]))
+  return out
+}
+
+/**
+ * Qual parcela deste pedido cai na quinzena consultada.
+ * Devolve o número (1-based) e o total, ou null quando não cai nenhuma.
+ * Com `q = 0` (mês inteiro) vale qualquer parcela daquele mês.
+ */
+export function parcelaNoPeriodo(
+  dataPedido: string, parcelas: number, mesStr: string, q: Quinzena,
+): { numero: number; total: number } | null {
+  const periodos = periodosDasParcelas(dataPedido, parcelas)
+  if (!periodos.length) return null
+  const i = periodos.findIndex(p => p.mes === mesStr && (q === 0 || p.q === q))
+  return i < 0 ? null : { numero: i + 1, total: periodos.length }
+}
