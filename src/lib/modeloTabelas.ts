@@ -186,21 +186,35 @@ function tituloDoDestino(titulo: string, nomeDestino: string): string {
   return `${m[1]} - ${nomeDestino}`
 }
 
+/**
+ * O nome do formulário SEM o salão: "Avaliação - Rouge Hair" vira "avaliacao".
+ *
+ * É por aqui que se reconhece "o mesmo formulário" nos dois lados. Comparar o
+ * título inteiro não serve para nada: o do modelo carrega o nome do modelo, o
+ * do salão carrega o nome do salão — e nem sempre o nome atual dele, porque o
+ * salão pode ter sido renomeado ou o dono ter editado o título à mão. Era
+ * assim que cada aplicação de atualização criava mais um formulário repetido.
+ */
+function baseDoTitulo(titulo: string): string {
+  const t = (titulo || '').trim()
+  const m = t.match(/^(.*?)\s+-\s+.+$/)
+  return norm(m ? m[1] : t)
+}
+
 async function copiarFeedbackCliente(modeloId: string, destinoId: string, nomeDestino: string): Promise<ResultadoCopia[]> {
   const [{ data: mod }, { data: dest }] = await Promise.all([
     supabaseAdmin.from('feedback_formularios').select('id, titulo, descricao').eq('salao_id', modeloId),
     supabaseAdmin.from('feedback_formularios').select('titulo').eq('salao_id', destinoId),
   ])
 
-  // O formulário é criado no destino com o NOME DO SALÃO no lugar do nome do
-  // modelo ("Avaliação - Rouge" vira "Avaliação - Fulano"). Comparar o título
-  // cru do modelo com o título já renomeado do destino nunca dava igual, e
-  // cada aplicação criava mais um formulário. A comparação passa a ser feita
-  // com o título CONVERTIDO — o mesmo que seria gravado.
-  const doModeloComoFicaria = ((mod || []) as any[])
+  // Compara pela BASE do nome (sem o sufixo do salão): é o único jeito de
+  // reconhecer que "Avaliação - Rouge Hair" no salão é o mesmo formulário que
+  // "Avaliação - MODELO" aqui. Comparar título inteiro duplicava a cada
+  // aplicação, e o dono tinha de sair apagando na mão.
+  const basesDoDestino = new Set(((dest || []) as any[]).map(f => baseDoTitulo(f.titulo)))
+  const novos = ((mod || []) as any[])
+    .filter(f => !basesDoDestino.has(baseDoTitulo(f.titulo)))
     .map(f => ({ ...f, titulo: tituloDoDestino(f.titulo, nomeDestino) }))
-  const novos = faltantes(doModeloComoFicaria, (dest || []) as any[])
-    .map(f => ({ ...f, id: ((mod || []) as any[]).find(m => tituloDoDestino(m.titulo, nomeDestino) === f.titulo)?.id }))
   if (!novos.length) return []
 
   let perguntasCopiadas = 0
@@ -250,7 +264,10 @@ async function copiarFeedbackProf(modeloId: string, destinoId: string): Promise<
     supabaseAdmin.from('feedback_prof_formularios').select('titulo').eq('salao_id', modeloId),
     supabaseAdmin.from('feedback_prof_formularios').select('titulo').eq('salao_id', destinoId),
   ])
-  const novos = faltantes((mod || []) as any[], (dest || []) as any[])
+  // Mesma regra do feedback de cliente: compara sem o sufixo do salão, senão
+  // cada atualização cria outro formulário igual.
+  const basesDoDestino = new Set(((dest || []) as any[]).map((f: any) => baseDoTitulo(f.titulo)))
+  const novos = ((mod || []) as any[]).filter((f: any) => !basesDoDestino.has(baseDoTitulo(f.titulo)))
   if (novos.length) {
     const { error } = await supabaseAdmin.from('feedback_prof_formularios')
       .insert(novos.map((f: any) => ({ salao_id: destinoId, titulo: f.titulo })))
