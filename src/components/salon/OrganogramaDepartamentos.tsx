@@ -309,7 +309,11 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
   // O padrão (48) vale para os degraus de cima — Direção › Gerência › áreas —,
   // que são os que mais precisam de ar por causa das caixas de assessoria ao
   // lado. Os ramos de baixo usam 26, passado na chamada.
-  const V = ({ h = 48 }: { h?: number }) => <div style={{ width: 2, height: h, background: LINHA }} />
+  // `flexShrink: 0` NÃO é detalhe: dentro de um flex column, o conector é um
+  // item flexível e o navegador o espremia até 0 para o desenho caber na
+  // altura do quadro. Aumentar a altura aqui não surtia efeito nenhum — as
+  // fileiras continuavam encostadas.
+  const V = ({ h = 48 }: { h?: number }) => <div style={{ width: 2, height: h, background: LINHA, flexShrink: 0 }} />
   const Tracejo = ({ w = 30 }: { w?: number }) => <div style={{ width: w, borderTop: `2px dashed ${LINHA}` }} />
 
   /** Um ramo: a área do nível 2 e, abaixo, os setores que respondem a ela.
