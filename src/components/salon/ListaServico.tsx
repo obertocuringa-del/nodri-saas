@@ -154,6 +154,19 @@ export default function ListaServico({ servico, label, profsSalao, onMensagem }:
     setSalvandoObs(false)
   }
 
+  /**
+   * Telefone ATUAL do profissional, não o que ficou salvo na coluna.
+   *
+   * A coluna guarda uma cópia de quando o profissional entrou na lista. Quem
+   * foi adicionado antes de ter telefone no cadastro ficava marcado como "sem
+   * telefone" para sempre — a mensagem não saía nunca, mesmo com o número já
+   * preenchido na ficha dele.
+   */
+  function telefoneDe(c: Coluna): string {
+    const noCadastro = profsSalao.find(p => p.id === c.id)?.telefone
+    return String(noCadastro || c.telefone || '').trim()
+  }
+
   function abrirMsg(c: Coluna) {
     const total = totalDe(c.id)
     const diff = media - total
@@ -165,7 +178,7 @@ export default function ListaServico({ servico, label, profsSalao, onMensagem }:
   }
   async function enviarMsg() {
     if (!msgProf) return
-    const fone = String(msgProf.telefone || '').replace(/\D/g, '')
+    const fone = telefoneDe(msgProf).replace(/\D/g, '')
     if (fone) { const numero = fone.startsWith('55') ? fone : '55' + fone; window.open(`https://wa.me/${numero}?text=${encodeURIComponent(msgTexto)}`, '_blank') }
     else toast('Sem telefone no cadastro — mensagem só será registrada.', { icon: '⚠️' })
     try {
@@ -201,7 +214,7 @@ export default function ListaServico({ servico, label, profsSalao, onMensagem }:
           {addOpen && (
             <div style={{ position: 'absolute', top: '110%', left: 0, zIndex: 30, background: '#fff', border: '1px solid #e0ddd8', borderRadius: 10, boxShadow: '0 10px 30px rgba(0,0,0,.15)', minWidth: 200, maxHeight: 260, overflowY: 'auto', padding: 6 }}>
               {disponiveis.length === 0 ? <div style={{ padding: 10, fontSize: 12, color: '#9ca3af' }}>Todos já adicionados.</div> :
-                disponiveis.map(p => <button key={p.id} onClick={() => addProf(p)} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 10px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13, borderRadius: 6 }} onMouseEnter={e => (e.currentTarget.style.background = '#f0eefb')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>{p.nome}{!p.telefone && <span style={{ color: '#f59e0b', fontSize: 10 }}> (sem tel)</span>}</button>)}
+                disponiveis.map(p => <button key={p.id} onClick={() => addProf(p)} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 10px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13, borderRadius: 6 }} onMouseEnter={e => (e.currentTarget.style.background = '#f0eefb')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>{p.nome}{!String(p.telefone || '').trim() && <span style={{ color: '#f59e0b', fontSize: 10 }}> (sem tel)</span>}</button>)}
             </div>
           )}
         </div>
@@ -356,7 +369,7 @@ export default function ListaServico({ servico, label, profsSalao, onMensagem }:
               <button onClick={() => setMsgProf(null)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#9ca3af' }}><X size={18} /></button>
             </div>
             <textarea value={msgTexto} onChange={e => setMsgTexto(e.target.value)} rows={8} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #d0cdc7', fontSize: 13, resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.5, marginBottom: 8 }} />
-            {!msgProf.telefone && <p style={{ fontSize: 11, color: '#ef4444', margin: '0 0 8px' }}>⚠️ Sem telefone — será só registrada no relatório.</p>}
+            {!telefoneDe(msgProf) && <p style={{ fontSize: 11, color: '#ef4444', margin: '0 0 8px' }}>⚠️ Sem telefone — será só registrada no relatório.</p>}
             <button onClick={enviarMsg} style={{ width: '100%', padding: '12px', borderRadius: 10, border: 'none', background: '#25D366', color: '#fff', fontSize: 15, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}><Send size={16} /> Enviar e registrar</button>
           </div>
         </div>
