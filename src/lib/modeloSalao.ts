@@ -436,6 +436,15 @@ export function mesclarComExistente(
   return mesclarGenerico(doModelo, doSalao)
 }
 
+/** Tem alguma coisa escrita aí dentro? Vale para qualquer formato de página. */
+export function temConteudo(valor: any): boolean {
+  if (valor == null) return false
+  if (typeof valor === 'string') return !!valor.trim()
+  if (typeof valor !== 'object') return false
+  if (Array.isArray(valor)) return valor.some(temConteudo)
+  return Object.values(valor).some(temConteudo)
+}
+
 /** O que mudaria no salão se ele aplicasse o modelo agora. */
 export interface Diferenca { chave: string; rotulo: string; situacao: 'novo' | 'diferente' }
 
@@ -451,13 +460,16 @@ export function compararComModelo(
     const novo = sanitizar(l.chave, l.valor)
     if (!doSalao.has(l.chave)) { out.push({ chave: l.chave, rotulo: r.rotulo, situacao: 'novo' }); continue }
 
-    // ── Página que o salão JÁ TEM e que viaja EM BRANCO não é atualização ──
+    // ── Página que o salão já tem: só interessa se o modelo TEM algo ──────
     //
-    // `gradeVazia` existe para o salão novo receber a página montada e vazia.
-    // Oferecer isso como "atualização" a quem já usa a página é oferecer que
-    // ele apague o próprio conteúdo: foi assim que um salão perdeu as ações
-    // comerciais que tinha cadastrado. Estrutura só substitui estrutura.
-    if (r.como === 'gradeVazia') continue
+    // Antes eu barrava toda página `gradeVazia` que o salão já tivesse — e com
+    // isso a lista de materiais, cheia no modelo, sumia do aviso porque o
+    // salão tinha a página (vazia). O que precisa ser barrado é o CONTRÁRIO:
+    // modelo sem nada tentando entrar por cima de página usada. Isso apagava.
+    //
+    // Com o valor do modelo cheio, aparecer é seguro: aplicar hoje MESCLA —
+    // entra o que falta e o que o salão escreveu permanece.
+    if (r.como === 'gradeVazia' && !temConteudo(novo)) continue
 
     if (JSON.stringify(doSalao.get(l.chave)) !== JSON.stringify(novo)) {
       out.push({ chave: l.chave, rotulo: r.rotulo, situacao: 'diferente' })

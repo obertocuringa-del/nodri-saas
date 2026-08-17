@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getSessao } from '@/lib/apiAuth'
-import { compararComModelo, ehChaveDoModelo, mesclarComExistente, regraDaChave, sanitizar, versaoDoModelo } from '@/lib/modeloSalao'
+import { compararComModelo, ehChaveDoModelo, mesclarComExistente, regraDaChave, sanitizar, temConteudo, versaoDoModelo } from '@/lib/modeloSalao'
 import { copiarMoldesDeTabelas } from '@/lib/modeloTabelas'
 
 /** Setores são linhas de `profissionais` — conta para saber se faltam. */
@@ -122,11 +122,13 @@ export async function POST(req: NextRequest) {
   const mapaSalao = new Map(doSalao.map(l => [l.chave, l.valor]))
   const linhasNovas = alvo
     .filter(ehChaveDoModelo)
-    // Cinto e suspensório: mesmo que a chave chegue aqui pedida à mão, uma
-    // página "em branco" nunca é gravada por cima de uma que o salão já tem.
+    // Cinto e suspensório: página VAZIA do modelo nunca é gravada por cima de
+    // uma que o salão já tem. Página do modelo COM conteúdo pode entrar — o
+    // que ela faz lá embaixo é mesclar, nunca apagar.
     .filter(chave => {
       const r = regraDaChave(chave)
-      return !(r?.como === 'gradeVazia' && mapaSalao.has(chave))
+      if (r?.como !== 'gradeVazia' || !mapaSalao.has(chave)) return true
+      return temConteudo(sanitizar(chave, mapaModelo.get(chave)))
     })
     .map(chave => ({
       salao_id: sess.salaoId,
