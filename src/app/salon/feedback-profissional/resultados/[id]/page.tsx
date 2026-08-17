@@ -785,8 +785,11 @@ export default function ResultadosProfPage() {
                       <div className="p-5 space-y-2">
                         {data.respostas_recentes.map(r => (
                           <div key={r.id} className="p-3 rounded-xl flex items-start gap-3" style={{ background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.05)' }}>
-                            <div className={`text-[9px] font-black px-2 py-1 rounded-full shrink-0 ${r.tipo === 'positivo' ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'}`}>
-                              {r.tipo === 'positivo' ? '+ POS' : '- NEG'}
+                            <div className={`text-[9px] font-black px-2 py-1 rounded-full shrink-0 ${
+                              r.tipo === 'positivo' ? 'bg-green-500/15 text-green-400'
+                              : r.tipo === 'acompanhamento' ? 'bg-indigo-500/15 text-indigo-400'
+                              : 'bg-red-500/15 text-red-400'}`}>
+                              {r.tipo === 'positivo' ? '+ POS' : r.tipo === 'acompanhamento' ? 'ACOMP.' : '- NEG'}
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-0.5">

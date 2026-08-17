@@ -452,8 +452,15 @@ export default function GerenciarFeedbacksPage() {
                           </td>
                           <td className="px-4 py-3 font-semibold text-nodri-t1">{r.profissional_nome}</td>
                           <td className="px-4 py-3 text-center">
-                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${r.tipo === 'positivo' ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'}`}>
-                              {r.tipo === 'positivo' ? '+ POS' : '- NEG'}
+                            {/* Três tipos, três selos. Antes o `else` pintava
+                                tudo de vermelho, e o acompanhamento — que é
+                                registro de conversa — aparecia como ocorrência
+                                negativa na ficha do profissional. */}
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
+                              r.tipo === 'positivo' ? 'bg-green-500/15 text-green-400'
+                              : r.tipo === 'acompanhamento' ? 'bg-indigo-500/15 text-indigo-400'
+                              : 'bg-red-500/15 text-red-400'}`}>
+                              {r.tipo === 'positivo' ? '+ POS' : r.tipo === 'acompanhamento' ? 'ACOMP.' : '- NEG'}
                             </span>
                           </td>
                           <td className="px-4 py-3 text-nodri-t2">{r.ocorrido_descricao}</td>
