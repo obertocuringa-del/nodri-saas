@@ -95,8 +95,7 @@ export default function PontosEbulicao({ chave = 'pontos_ebulicao' }: { chave?: 
    * Acrescenta ao que já existe: nada do que estava na tela é apagado.
    */
   function importarTexto() {
-    const linhas = textoColado.split(/?
-/).map(l => l.replace(/\s+/g, ' ').trim()).filter(Boolean)
+    const linhas = textoColado.split(/\r?\n/).map(l => l.replace(/\s+/g, ' ').trim()).filter(Boolean)
     if (!linhas.length) { toast.error('Cole o texto antes de importar'); return }
 
     const ehTitulo = (t: string) => {
