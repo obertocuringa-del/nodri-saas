@@ -8,11 +8,11 @@
 // de quem pediu, e o setor é avisado por uma pendência.
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Loader2, Check, X, ShoppingCart, Clock, Inbox, AlertTriangle, CheckCircle2, TrendingDown, Share2, ChevronDown, ChevronUp } from 'lucide-react'
+import { Loader2, Check, X, ShoppingCart, Clock, Inbox, AlertTriangle, CheckCircle2, TrendingDown, Share2, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react'
 import toast from 'react-hot-toast'
 import {
   AREAS_COMPRAS, STATUS_PEDIDO, chavePedidos, moeda, num,
-  textoWhatsPedido, textoWhatsTodos, abrirWhats,
+  textoWhatsPedido, textoWhatsTodos, abrirWhats, partirDescricao, siteDoLink,
   type Pedido, type StatusPedido,
 } from '@/lib/comprasEstoque'
 import { MESES, realPorMes, resumoDoMes, pct } from '@/lib/calcFinanceiro'
@@ -288,6 +288,7 @@ export default function PedidosCompraFinanceiro() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
           {visiveis.map(p => {
             const st = STATUS_PEDIDO[p.status]
+            const desc = partirDescricao(p.descricao)
             return (
               <div key={p.id} style={{ background: st.fundo, border: `1.5px solid ${st.borda}`, borderRadius: 13, padding: '13px 15px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap', marginBottom: 7 }}>
@@ -298,9 +299,9 @@ export default function PedidosCompraFinanceiro() {
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
-                  <span style={{ fontSize: 14.5, fontWeight: 800, color: '#1a1a2e', flex: 1, minWidth: 150 }}>
+                  <span style={{ fontSize: 14.5, fontWeight: 800, color: '#1a1a2e', flex: 1, minWidth: 0, overflowWrap: 'anywhere' }}>
                     {p.tipo === 'lista' && <span style={{ fontSize: 10, fontWeight: 900, color: '#5b4fcf', background: '#fff', border: '1px solid #ddd6f5', borderRadius: 99, padding: '2px 8px', marginRight: 7 }}>LISTA</span>}
-                    {p.descricao || 'Sem descrição'}
+                    {desc.texto || 'Sem descrição'}
                   </span>
                   {num(p.valor) > 0 && (
                     <span style={{ fontSize: 17, fontWeight: 900, color: '#15803d' }}>
@@ -343,6 +344,20 @@ export default function PedidosCompraFinanceiro() {
                     </div>
                   )
                 })()}
+
+                {/* O endereço do produto tem 300 caracteres quando vem do
+                    Mercado Livre. No meio da frase ele estourava o card e
+                    empurrava a tela para o lado; aqui vira um botão. */}
+                {desc.links.length > 0 && (
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', margin: '6px 0 0' }}>
+                    {desc.links.map((l, n) => (
+                      <a key={n} href={l} target="_blank" rel="noopener noreferrer"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11.5, fontWeight: 800, color: '#5b4fcf', background: '#f5f3ff', border: '1px solid #ddd6f5', borderRadius: 8, padding: '5px 10px', textDecoration: 'none', maxWidth: '100%' }}>
+                        <ExternalLink size={12} /> Ver no {siteDoLink(l)}
+                      </a>
+                    ))}
+                  </div>
+                )}
 
                 {p.motivo && <p style={{ fontSize: 11.5, color: '#b91c1c', margin: '2px 0 0' }}>Motivo: {p.motivo}</p>}
 

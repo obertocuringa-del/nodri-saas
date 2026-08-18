@@ -72,9 +72,35 @@ export const chavePedidos = (area: string) => `compras_${area}`
 // O WhatsApp formata com *negrito* e _itálico_. Nada de markdown de outro tipo:
 // o que ele não entende aparece como caractere solto na mensagem.
 
+/**
+ * Separa o texto do pedido dos links que vierem colados nele.
+ *
+ * Quem pede copia o endereço do Mercado Livre inteiro — com rastreamento,
+ * são 300 caracteres numa linha só. Colado no meio da frase, isso arrebenta
+ * o card na tela e vira um paredão de letras na mensagem do WhatsApp. Aqui o
+ * texto fica de um lado e o link do outro; o endereço nunca é alterado, para
+ * não arriscar perder o produto certo.
+ */
+export function partirDescricao(desc?: string): { texto: string; links: string[] } {
+  const bruto = String(desc || '')
+  const links = bruto.match(/https?:\/\/\S+/gi) || []
+  const texto = bruto
+    .replace(/https?:\/\/\S+/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/[\s\-–—:,]+$/, '')
+    .trim()
+  return { texto, links }
+}
+
+/** Só o site do link ("mercadolivre.com.br"), para caber num botão. */
+export function siteDoLink(url: string): string {
+  try { return new URL(url).hostname.replace(/^www\./, '') } catch { return 'link' }
+}
+
 /** Texto pronto do pedido, já formatado para colar no WhatsApp. */
 export function textoWhatsPedido(p: Pedido, salao?: string): string {
   const linhas: string[] = []
+  const links: string[] = []
   const titulo = p.tipo === 'lista' ? 'LISTA DE COMPRA' : 'PEDIDO DE COMPRA'
   linhas.push(`*${titulo}${p.areaTitulo ? ` — ${p.areaTitulo.toUpperCase()}` : ''}*`)
 
@@ -91,14 +117,21 @@ export function textoWhatsPedido(p: Pedido, salao?: string): string {
     })
     linhas.push('')
   } else if (p.descricao) {
+    const d = partirDescricao(p.descricao)
     linhas.push(`*O QUE FOI PEDIDO*`)
-    linhas.push(p.descricao)
+    if (d.texto) linhas.push(d.texto)
+    links.push(...d.links)
   }
 
   if (num(p.valor) > 0) {
     linhas.push('')
     linhas.push(`*Orçamento previsto:* ${moeda(num(p.valor))}`)
   }
+
+  // O link vai por último e sozinho na linha: a mensagem fica legível e o
+  // WhatsApp ainda monta a prévia do produto.
+  for (const l of links) { linhas.push(''); linhas.push(l) }
+
   return linhas.join('\n')
 }
 
@@ -133,7 +166,9 @@ export function textoWhatsTodos(pedidos: Pedido[], salao?: string): string {
           totalItens++
         })
       } else if (p.descricao) {
-        linhas.push(`• ${p.descricao}`)
+        const d = partirDescricao(p.descricao)
+        linhas.push(`• ${d.texto || p.descricao}`)
+        for (const l of d.links) linhas.push(`  ${l}`)
         totalItens++
       }
     }

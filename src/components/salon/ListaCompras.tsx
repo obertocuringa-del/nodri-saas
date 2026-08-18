@@ -17,7 +17,7 @@ import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'r
 import { Loader2, Save, Plus, Trash2, Send, ShoppingCart, Check, Clock, X, CircleDollarSign, MessageSquare, CornerUpRight, Share2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useGuardaSalvar } from '@/lib/guardaSalvar'
-import { type Pedido, type ItemLista, rid, num, moeda, STATUS_PEDIDO, chavePedidos, AREAS_COMPRAS, textoWhatsPedido, abrirWhats } from '@/lib/comprasEstoque'
+import { type Pedido, type ItemLista, rid, num, moeda, STATUS_PEDIDO, chavePedidos, AREAS_COMPRAS, textoWhatsPedido, abrirWhats, partirDescricao, siteDoLink } from '@/lib/comprasEstoque'
 
 interface Doc { itens: ItemLista[]; orcamento?: string; pedidos: Pedido[] }
 
@@ -370,9 +370,9 @@ export default function ListaCompras({ area, titulo }: { area: string; titulo: s
                   <>
                     <button onClick={() => setExpandido(x => x === p.id ? '' : p.id)}
                       style={{ display: 'flex', alignItems: 'center', gap: 9, width: '100%', textAlign: 'left', border: 'none', background: 'transparent', cursor: 'pointer', padding: 0 }}>
-                      <span style={{ flex: 1, fontSize: 14, fontWeight: 800, color: '#1a1a2e', minWidth: 0 }}>
+                      <span style={{ flex: 1, fontSize: 14, fontWeight: 800, color: '#1a1a2e', minWidth: 0, overflowWrap: 'anywhere' }}>
                         {p.tipo === 'lista' && <span style={{ fontSize: 9.5, fontWeight: 900, color: '#5b4fcf', background: '#fff', border: '1px solid #ddd6f5', borderRadius: 99, padding: '2px 7px', marginRight: 6 }}>LISTA</span>}
-                        {p.descricao || 'Sem descrição'}
+                        {partirDescricao(p.descricao).texto || 'Sem descrição'}
                       </span>
                       {num(p.valor) > 0 && <span style={{ fontSize: 15, fontWeight: 900, color: '#15803d', whiteSpace: 'nowrap' }}>{moeda(num(p.valor))}</span>}
                       <span style={{ fontSize: 11, color: '#8a8680', transform: aberto ? 'rotate(180deg)' : 'none' }}>▼</span>
@@ -392,9 +392,15 @@ export default function ListaCompras({ area, titulo }: { area: string; titulo: s
                             ))}
                           </>
                         ) : (
-                          <div style={{ fontSize: 12.5, color: '#374151' }}>
+                          <div style={{ fontSize: 12.5, color: '#374151', overflowWrap: 'anywhere' }}>
                             <span style={{ fontSize: 9.5, fontWeight: 900, color: '#8a8680', letterSpacing: '.5px', display: 'block', marginBottom: 3 }}>O QUE FOI PEDIDO</span>
-                            {p.descricao || '—'}
+                            {partirDescricao(p.descricao).texto || '—'}
+                            {partirDescricao(p.descricao).links.map((l, n) => (
+                              <a key={n} href={l} target="_blank" rel="noopener noreferrer"
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11.5, fontWeight: 800, color: '#5b4fcf', background: '#f5f3ff', border: '1px solid #ddd6f5', borderRadius: 8, padding: '4px 9px', textDecoration: 'none', marginTop: 6, marginRight: 6 }}>
+                                Ver no {siteDoLink(l)}
+                              </a>
+                            ))}
                           </div>
                         )}
                         <div style={{ fontSize: 10.5, color: '#a8a49d', marginTop: 7, lineHeight: 1.6 }}>
