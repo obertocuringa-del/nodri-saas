@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import toast from 'react-hot-toast'
 import { Loader2, Save, Plus, Trash2, Upload, Download, FileText } from 'lucide-react'
 import { useGuardaSalvar } from '@/lib/guardaSalvar'
+import { enviarArquivo } from '@/lib/enviarArquivo'
 
 interface Item { id: string; nome: string; data?: string; url?: string; filename?: string; obs?: string }
 const rid = () => Math.random().toString(36).slice(2, 8)
@@ -46,13 +47,10 @@ export default function AnexosLista({ chave, titulo, campoNome, comData = true, 
     if (!file) return
     setSubindo(id)
     try {
-      const fd = new FormData(); fd.append('arquivo', file)
-      const res = await fetch('/api/salon/upload', { method: 'POST', body: fd })
-      const d = await res.json().catch(() => ({}))
-      if (!res.ok) { toast.error(d?.error || 'Erro ao enviar arquivo'); setSubindo(null); return }
+      const d = await enviarArquivo(file)
       const lista = itens.map(i => i.id === id ? { ...i, url: d.url, filename: d.filename } : i)
       setItens(lista); salvar(lista); toast.success('Arquivo anexado!')
-    } catch { toast.error('Erro de conexão') }
+    } catch (e) { toast.error(e instanceof Error ? e.message : 'Erro de conexão') }
     setSubindo(null)
   }
 

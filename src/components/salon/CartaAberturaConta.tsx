@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import toast from 'react-hot-toast'
 import { Loader2, Save, Printer, X, Search, Upload } from 'lucide-react'
+import { enviarArquivo } from '@/lib/enviarArquivo'
 
 interface Prof { id: string; nome_completo?: string; apelido?: string; cpf?: string; rg?: string; endereco?: string; cargo?: string; data_admissao?: string }
 const CHAVE = 'carta_abertura_conta'
@@ -54,12 +55,9 @@ export default function CartaAberturaConta({ onClose }: { onClose: () => void })
     const f = e.target.files?.[0]; if (!f) return
     if (!f.type.startsWith('image/')) { toast.error('Selecione uma imagem'); return }
     try {
-      const fd = new FormData(); fd.append('arquivo', f)
-      const res = await fetch('/api/salon/upload', { method: 'POST', body: fd })
-      const d = await res.json().catch(() => ({}))
-      if (!res.ok) { toast.error(d?.error || 'Erro ao enviar logo'); return }
+      const d = await enviarArquivo(f)
       setLogo(d.url); toast.success('Logo anexada! Clique em Salvar dados para guardar.')
-    } catch { toast.error('Erro de conexão') }
+    } catch (e) { toast.error(e instanceof Error ? e.message : 'Erro de conexão') }
   }
 
   const sel = profs.find(p => p.id === selId)

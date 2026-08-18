@@ -13,6 +13,7 @@ import {
   FileText, FileSpreadsheet, FileVideo, FileImage, File as FileIcon, X,
 } from 'lucide-react'
 import { useGuardaSalvar } from '@/lib/guardaSalvar'
+import { enviarArquivo as subirArquivo } from '@/lib/enviarArquivo'
 
 interface Doc { id: string; titulo: string; obs?: string; url?: string; filename?: string; tipo?: string; data?: string }
 const rid = () => Math.random().toString(36).slice(2, 9)
@@ -73,13 +74,10 @@ export default function DocumentosCards({ chave, titulo, subtitulo, corTema = '#
     if (!file) return
     setSubindo(id)
     try {
-      const fd = new FormData(); fd.append('arquivo', file)
-      const res = await fetch('/api/salon/upload', { method: 'POST', body: fd })
-      const d = await res.json().catch(() => ({}))
-      if (!res.ok) { toast.error(d?.error || 'Erro ao enviar arquivo'); setSubindo(null); return }
+      const d = await subirArquivo(file)
       const lista = docs.map(x => x.id === id ? { ...x, url: d.url, filename: d.filename, tipo: d.type } : x)
       setDocs(lista); salvar(lista); toast.success('Arquivo anexado!')
-    } catch { toast.error('Erro de conexão') }
+    } catch (e) { toast.error(e instanceof Error ? e.message : 'Erro de conexão') }
     setSubindo(null)
   }
 
