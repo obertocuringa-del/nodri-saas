@@ -18,7 +18,7 @@ export const PONTOS_EBULICAO_BASE: { blocos: BlocoEbulicao[] } = {
      "titulo": "ROUPAS ERRADAS COR OU FORA DO PERMITIDO",
      "passos": [
       "Ao verificar que a roupa está fora do padrão, sendo de cores branca, preta, cinza, ou saias curtas, fendas acima do joelho, barriga de fora, blusa regata, a coordenadora chama o profissional em particular, informa sobre o que está incorreto e dá a oportunidade ao profissional de trocar. Se não houver outra opção disponível, é informado que terá que voltar para casa e a agenda é fechada naquele momento.",
-      "A recepção entra em contato com os clientes informando que o profissional teve um pequeno imprevisto e não conseguirá ficar no salão nesse dia. Eles perguntam se gostariam de remarcar para outro dia. Por exemplo: \"\"Boa Tarde, Ana. Meu nome é Maria, coordenadora do Salão Rouge Hair. Estou entrando em contato com a senhora pois a profissional Lúcia acabou de ter um imprevisto aqui no salão e teve que se ausentar. Verificamos que a senhora tem um horário com ela às 15:00. Gostaria de verificar se podemos remarcar com outra profissional no mesmo horário ou se podemos remarcá-la para amanhã com a Lúcia às 15:00."
+      "A recepção entra em contato com os clientes informando que o profissional teve um pequeno imprevisto e não conseguirá ficar no salão nesse dia. Eles perguntam se gostariam de remarcar para outro dia. Por exemplo: \"Boa Tarde, Ana. Meu nome é Maria, coordenadora do Salão Rouge Hair. Estou entrando em contato com a senhora pois a profissional Lúcia acabou de ter um imprevisto aqui no salão e teve que se ausentar. Verificamos que a senhora tem um horário com ela às 15:00. Gostaria de verificar se podemos remarcar com outra profissional no mesmo horário ou se podemos remarcá-la para amanhã com a Lúcia às 15:00.\""
      ]
     },
     {
@@ -26,7 +26,7 @@ export const PONTOS_EBULICAO_BASE: { blocos: BlocoEbulicao[] } = {
      "titulo": "ROUPAS ERRADAS COR OU FORA DO PERMITIDO - PROFISSIONAL SE RECUSOU IR EMBORA",
      "passos": [
       "Ao profissional recusar-se a sair, a coordenadora fecha a agenda do profissional.",
-      "A equipe entra em contato com os clientes para informar que o profissional teve um pequeno imprevisto e não poderá estar no salão naquele dia, oferecendo a opção de remarcar para outro dia. Por exemplo: \"\"Boa tarde, Ana. Meu nome é Maria, coordenadora do Salão Rouge Hair. Estou entrando em contato com a senhora pois a profissional Lúcia acabou de ter um imprevisto aqui no salão e teve que se ausentar. Verificamos que a senhora tem um horário com ela às 15:00. Gostaria de verificar se podemos remarcar com outra profissional no mesmo horário ou se podemos remarcar para amanhã com a Lúcia às 15:00.",
+      "A equipe entra em contato com os clientes para informar que o profissional teve um pequeno imprevisto e não poderá estar no salão naquele dia, oferecendo a opção de remarcar para outro dia. Por exemplo: \"Boa tarde, Ana. Meu nome é Maria, coordenadora do Salão Rouge Hair. Estou entrando em contato com a senhora pois a profissional Lúcia acabou de ter um imprevisto aqui no salão e teve que se ausentar. Verificamos que a senhora tem um horário com ela às 15:00. Gostaria de verificar se podemos remarcar com outra profissional no mesmo horário ou se podemos remarcar para amanhã com a Lúcia às 15:00.\"",
       "A situação é informada para o gerente, ou para Bruna e Vera, quem estiver disponível no momento."
      ]
     },
@@ -69,7 +69,7 @@ export const PONTOS_EBULICAO_BASE: { blocos: BlocoEbulicao[] } = {
      "passos": [
       "Recepção: Verifica se o cliente tem preferência por um outro profissional para o atendimento.",
       "Sem preferência: Mantém o atendimento como está e redistribui os clientes para não prejudicar o outro profissional.",
-      "Com preferência: Chama o profissional que errou em particular com uma desculpa, por exemplo: \"\"Ana, poderia me ajudar no computador rapidinho com base em um atendimento?\"\" Quando o profissional estiver fora do alcance do cliente, informa sobre o ocorrido e pede para ele mesmo falar com a cliente sobre o pequeno equívoco. Por exemplo",
+      "Com preferência: Chama o profissional que errou em particular com uma desculpa, por exemplo: \"Ana, poderia me ajudar no computador rapidinho com base em um atendimento?\" Quando o profissional estiver fora do alcance do cliente, informa sobre o ocorrido e pede para ele mesmo falar com a cliente sobre o pequeno equívoco. Por exemplo",
       "Oi Ana, tudo bem? Desculpa pelo transtorno, eu acabei me confundindo com a cliente que iria atender e acabei te atendendo. Já ajustamos e a profissional correta, Maria, já está vindo te atender. Mais uma vez, peço desculpas.",
       "Após resolver a situação: O coordenador chama o profissional que errou e passa o feedback, enfatizando a necessidade de prestar mais atenção e, em caso de dúvida, perguntar para a recepção."
      ]
@@ -116,7 +116,7 @@ export const PONTOS_EBULICAO_BASE: { blocos: BlocoEbulicao[] } = {
      "id": "pe12",
      "titulo": "ATRASO DE PROFISSIONAL NO SALÃO",
      "passos": [
-      "Todos os dias, a recepção envia uma mensagem para o profissional no horário de chegada, dizendo \"\"João, está chegando\"\", para que ele tenha parâmetro e tempo para ajustar qualquer coisa necessária.",
+      "Todos os dias, a recepção envia uma mensagem para o profissional no horário de chegada, dizendo \"João, está chegando\", para que ele tenha parâmetro e tempo para ajustar qualquer coisa necessária.",
       "A recepção repassa essa informação para o coordenador.",
       "Se os atrasos forem recorrentes, o coordenador chama o profissional para uma conversa. Durante essa conversa, o coordenador busca entender o motivo dos atrasos e trabalha junto com o profissional para encontrar uma solução que seja satisfatória para ambas as partes, podendo incluir ajustes nos horários, se necessário."
      ]
@@ -432,7 +432,7 @@ export const PONTOS_EBULICAO_BASE: { blocos: BlocoEbulicao[] } = {
       "Atenção à Expressão Facial",
       "A recepção deve sempre estar atenta à expressão facial do cliente para identificar qualquer sinal de insatisfação.",
       "Verificação da Satisfação",
-      "Como precaução, pergunte ao cliente diretamente, por exemplo: \"\"Ana, a senhora gostou dos procedimentos?",
+      "Como precaução, pergunte ao cliente diretamente, por exemplo: \"Ana, a senhora gostou dos procedimentos?",
       "Resposta Negativa da Cliente",
       "Se a cliente disser que não gostou, pergunte imediatamente se ela deseja que seja feita uma correção imediata e se prefere ser atendida por outro profissional.",
       "Ajustes com o Mesmo Profissional",
@@ -504,13 +504,13 @@ export const PONTOS_EBULICAO_BASE: { blocos: BlocoEbulicao[] } = {
       "Verificação do Agendamento",
       "Se a cliente afirmar que está agendada, procure pelo nome dela no sistema. Se não encontrar, peça o telefone para buscar o agendamento. Se ainda assim não encontrar, pergunte se o agendamento foi feito em outro nome.",
       "Acolhimento na Cadeira e Oferta de Bebidas",
-      "Se não localizar o agendamento, acomode a cliente na cadeira e ofereça água ou café discretamente. Enquanto serve a bebida, pergunte educadamente: \"\"A senhora poderia confirmar os procedimentos que irá realizar para que eu possa dar entrada no sistema? Também possui preferência por algum profissional?",
+      "Se não localizar o agendamento, acomode a cliente na cadeira e ofereça água ou café discretamente. Enquanto serve a bebida, pergunte educadamente: \"A senhora poderia confirmar os procedimentos que irá realizar para que eu possa dar entrada no sistema? Também possui preferência por algum profissional?",
       "Confirmação da Preferência por Profissional",
       "Após obter essas informações, se a cliente tiver preferência por um profissional específico, verifique se ela agendou diretamente com esse profissional. Também verifique as mensagens do WhatsApp para mais informações.",
       "Agendamento na Agenda Disponível",
       "Caso a cliente não tenha preferência ou haja um profissional disponível, agende na agenda e informe aos profissionais.",
       "Comunicação em Caso de Indisponibilidade",
-      "Se for constatado que a cliente não agendou e não há profissionais disponíveis, informe educadamente: \"\"Ana, verificamos que como a senhora não confirmou o agendamento, neste momento não temos disponibilidade de profissional, mas temos disponibilidade no horário X. A senhora consegue águardar?"
+      "Se for constatado que a cliente não agendou e não há profissionais disponíveis, informe educadamente: \"Ana, verificamos que como a senhora não confirmou o agendamento, neste momento não temos disponibilidade de profissional, mas temos disponibilidade no horário X. A senhora consegue águardar?"
      ]
     },
     {
@@ -688,11 +688,6 @@ export const PONTOS_EBULICAO_BASE: { blocos: BlocoEbulicao[] } = {
      ]
     }
    ]
-  },
-  {
-   "id": "pe66",
-   "nome": "SENHAS / LOGINS",
-   "pontos": []
   }
  ]
 }

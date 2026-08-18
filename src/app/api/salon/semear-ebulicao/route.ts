@@ -20,7 +20,10 @@ const SALOES: Record<string, string> = {
   modelo: '2b2c5cd6-99e6-46a0-b125-7a15d9c79b26',
 }
 
-export async function POST() {
+export async function POST(req: Request) {
+  // ?forcar=1 regrava por cima — usado logo depois da primeira carga, para
+  // corrigir o texto ainda antes de alguem ter editado alguma coisa.
+  const forcar = new URL(req.url).searchParams.get('forcar') === '1'
   const sess = await getSessao()
   if (!sess || (sess.role !== 'salon' && sess.role !== 'master')) {
     return NextResponse.json({ error: 'Sem acesso' }, { status: 403 })
@@ -34,7 +37,7 @@ export async function POST() {
 
     const jaTem = Array.isArray((atual?.valor as { blocos?: unknown[] })?.blocos)
       && ((atual!.valor as { blocos: unknown[] }).blocos.length > 0)
-    if (jaTem) { resultado[nome] = 'já tinha conteúdo — não mexi'; continue }
+    if (jaTem && !forcar) { resultado[nome] = 'já tinha conteúdo — não mexi'; continue }
 
     const { error } = await supabaseAdmin.from('salao_config').upsert({
       salao_id: salaoId,
