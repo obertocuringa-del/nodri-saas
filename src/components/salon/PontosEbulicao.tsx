@@ -17,7 +17,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
-import { Loader2, Save, Plus, Trash2, ChevronDown, ChevronRight, Search, Pencil, Check, Flame } from 'lucide-react'
+import { Loader2, Save, Plus, Trash2, ChevronDown, ChevronRight, Search, Pencil, Check, Flame, ClipboardPaste } from 'lucide-react'
 import { useGuardaSalvar } from '@/lib/guardaSalvar'
 
 interface Ponto { id: string; titulo: string; passos: string[] }
@@ -36,6 +36,8 @@ export default function PontosEbulicao({ chave = 'pontos_ebulicao' }: { chave?: 
   const [editando, setEditando] = useState(false)
   const [abertos, setAbertos] = useState<Set<string>>(new Set())
   const [busca, setBusca] = useState('')
+  const [importando, setImportando] = useState(false)
+  const [textoColado, setTextoColado] = useState('')
   useGuardaSalvar(dirty, 'Pontos de Ebulição')
 
   const carregar = useCallback(async () => {
@@ -82,6 +84,60 @@ export default function PontosEbulicao({ chave = 'pontos_ebulicao' }: { chave?: 
 
   const totalPontos = doc.blocos.reduce((t, b) => t + b.pontos.length, 0)
 
+  /**
+   * Importa de um texto colado do Word.
+   *
+   * O documento de origem não usa estilos de título — o que separa um caso do
+   * outro é a linha estar em MAIÚSCULAS. Então a regra é essa: linha toda em
+   * maiúscula vira TÍTULO; as linhas seguintes viram os passos dele. Linha em
+   * maiúscula sem passos até o próximo título é tratada como BLOCO (seção).
+   *
+   * Acrescenta ao que já existe: nada do que estava na tela é apagado.
+   */
+  function importarTexto() {
+    const linhas = textoColado.split(/?
+/).map(l => l.replace(/\s+/g, ' ').trim()).filter(Boolean)
+    if (!linhas.length) { toast.error('Cole o texto antes de importar'); return }
+
+    const ehTitulo = (t: string) => {
+      const letras = t.replace(/[^A-Za-zÀ-ÿ]/g, '')
+      if (letras.length < 4 || t.length > 130) return false
+      const maiusc = letras.split('').filter(c => c === c.toUpperCase()).length
+      return maiusc / letras.length > 0.85
+    }
+    const limpar = (t: string) => t.replace(/^["'\-–—•\s]+/, '').replace(/[\s\-–—:"]+$/, '').trim()
+
+    const novos: Bloco[] = []
+    let bloco: Bloco | null = null
+    let ponto: Ponto | null = null
+
+    for (const bruta of linhas) {
+      const linha = limpar(bruta)
+      if (!linha) continue
+      if (ehTitulo(linha)) {
+        // título anterior que ficou sem passo nenhum era, na verdade, seção
+        if (ponto && ponto.passos.length === 0 && bloco) {
+          bloco.pontos = bloco.pontos.filter(p => p.id !== ponto!.id)
+          bloco = { id: rid(), nome: ponto.titulo, pontos: [] }
+          novos.push(bloco)
+          ponto = null
+        }
+        if (!bloco) { bloco = { id: rid(), nome: 'GERAL', pontos: [] }; novos.push(bloco) }
+        ponto = { id: rid(), titulo: linha, passos: [] }
+        bloco.pontos.push(ponto)
+        continue
+      }
+      if (ponto) ponto.passos.push(linha.replace(/^\d+[ºª°]?\s*[-–—.)]?\s*/, '').trim())
+    }
+
+    const qtd = novos.reduce((t, b) => t + b.pontos.length, 0)
+    if (!qtd) { toast.error('Não encontrei títulos em maiúsculas no texto'); return }
+
+    mut(d => { d.blocos = [...d.blocos, ...novos.filter(b => b.pontos.length > 0)] })
+    setImportando(false); setTextoColado('')
+    toast.success(`${qtd} situações importadas — confira e clique em Salvar`)
+  }
+
   if (carregando) {
     return <div style={{ textAlign: 'center', padding: 40 }}><Loader2 size={20} className="animate-spin" style={{ color: '#a8a49d' }} /></div>
   }
@@ -97,6 +153,12 @@ export default function PontosEbulicao({ chave = 'pontos_ebulicao' }: { chave?: 
           </div>
         </div>
         <div style={{ flex: 1 }} />
+        {editando && (
+          <button onClick={() => setImportando(true)}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, border: '1px solid #e0ddd8', background: '#fff', borderRadius: 9, padding: '8px 13px', fontSize: 12, fontWeight: 800, color: '#6b6860', cursor: 'pointer' }}>
+            <ClipboardPaste size={13} /> Importar do Word
+          </button>
+        )}
         <button onClick={() => setEditando(e => !e)}
           style={{ display: 'inline-flex', alignItems: 'center', gap: 6, border: '1px solid #e0ddd8', background: editando ? '#f0eefb' : '#fff', borderRadius: 9, padding: '8px 13px', fontSize: 12, fontWeight: 800, color: editando ? '#5b4fcf' : '#6b6860', cursor: 'pointer' }}>
           {editando ? <><Check size={13} /> Concluir edição</> : <><Pencil size={13} /> Editar</>}
@@ -108,6 +170,34 @@ export default function PontosEbulicao({ chave = 'pontos_ebulicao' }: { chave?: 
           </button>
         )}
       </div>
+
+      {importando && (
+        <div onClick={() => setImportando(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(15,18,30,.45)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ background: '#fff', borderRadius: 14, padding: 18, width: 'min(680px, 100%)' }}>
+            <p style={{ fontWeight: 900, fontSize: 14, marginBottom: 4 }}>Importar do Word</p>
+            <p style={{ fontSize: 12.5, color: '#6b6860', marginBottom: 10 }}>
+              Abra o documento, selecione tudo (Ctrl+A), copie (Ctrl+C) e cole aqui.
+              As linhas <b>em maiúsculas</b> viram os títulos; as linhas abaixo de cada título viram os passos.
+              O que já está na página não é apagado.
+            </p>
+            <textarea value={textoColado} onChange={e => setTextoColado(e.target.value)} rows={10}
+              placeholder="Cole aqui o conteúdo do documento…"
+              style={{ width: '100%', padding: 11, borderRadius: 10, border: '1px solid #e0ddd8', fontSize: 12.5, lineHeight: 1.5, fontFamily: 'inherit', resize: 'vertical' }} />
+            <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+              <button onClick={importarTexto}
+                style={{ flex: 1, border: 'none', background: COR, color: '#fff', borderRadius: 10, padding: '10px 16px', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>
+                Importar
+              </button>
+              <button onClick={() => { setImportando(false); setTextoColado('') }}
+                style={{ border: '1px solid #e0ddd8', background: '#fff', borderRadius: 10, padding: '10px 16px', fontSize: 13, fontWeight: 800, color: '#6b6860', cursor: 'pointer' }}>
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div style={{ padding: '12px 16px', borderBottom: '1px solid #f7f6f3', position: 'relative' }}>
         <Search size={14} style={{ position: 'absolute', left: 27, top: '50%', transform: 'translateY(-50%)', color: '#a8a49d' }} />
