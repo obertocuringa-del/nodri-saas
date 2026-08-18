@@ -33,6 +33,7 @@ import PedidosCompraFinanceiro from '@/components/salon/PedidosCompraFinanceiro'
 import { AREAS_COMPRAS } from '@/lib/comprasEstoque'
 import ListaServico from '@/components/salon/ListaServico'
 import MensagensEnviadas from '@/components/salon/MensagensEnviadas'
+import PontosEbulicao from '@/components/salon/PontosEbulicao'
 import CheckProconPainel from '@/components/salon/CheckProconPainel'
 import ConteudoPopPainel from '@/components/salon/ConteudoPopPainel'
 import ChecklistPainel from '@/components/salon/ChecklistPainel'
@@ -128,6 +129,7 @@ export const CATALOGO: Record<string, Ferramenta> = {
   ck_processos:    { id: 'ck_processos',    label: 'CHECK LIST — PROCESSOS & QUALIDADE', perm: 'checklist' },
   ck_cafe:         { id: 'ck_cafe',         label: 'CHECK LIST — CAFÉ',           perm: 'checklist' },
   msgs_listas:     { id: 'msgs_listas',     label: 'MENSAGENS ENVIADAS',          perm: 'profissionais' },
+  pontos_ebulicao: { id: 'pontos_ebulicao', label: 'PONTOS DE EBULIÇÃO',          perm: 'checklist' },
   // Procedimentos (como lidar com a demanda): abrem como sub-itens na sidebar
   man_coordenacao: { id: 'man_coordenacao', label: 'PROCEDIMENTOS — COORDENAÇÃO', perm: 'checklist', conteudoSlug: 'manual:coordenacao' },
   man_processos:   { id: 'man_processos',   label: 'PROCEDIMENTOS — PROCESSOS & QUALIDADE', perm: 'checklist', conteudoSlug: 'manual:processos' },
@@ -162,14 +164,14 @@ export const CATALOGO: Record<string, Ferramenta> = {
 // normalizado (sem acento/maiúsculas) — casamos por "contém".
 export const FERRAMENTAS_POR_SETOR: { chave: string[]; itens: string[] }[] = [
   // "Arquivos para Envio" saiu da sidebar da Recepção. Segue no catálogo/banco.
-  { chave: ['RECEPCAO'], itens: ['ck_abertura', 'ck_intermediario', 'ck_fechamento', 'lista_realinhamento', 'lista_corte', 'lista_mechas', 'lista_pigmentacao', 'msgs_listas', 'bebidas', 'valores_pacotes'] },
+  { chave: ['RECEPCAO'], itens: ['ck_abertura', 'ck_intermediario', 'ck_fechamento', 'lista_realinhamento', 'lista_corte', 'lista_mechas', 'lista_pigmentacao', 'pontos_ebulicao', 'msgs_listas', 'bebidas', 'valores_pacotes'] },
   { chave: ['DOSAGEM'], itens: ['ck_dosagem', 'produtos', 'servinterno', 'servicos_valores', 'tratamentos', 'esterilizacao_fluxo', 'kits', 'enxovais'] },
   // Uma página por área de compra (lista de reposição + pedidos ao Financeiro)
   { chave: ['COMPRAS', 'ESTOQUE'], itens: AREAS_COMPRAS.map(a => `compras_${a.id}`) },
   // Etiquetas saiu daqui: virou sub-botão de "Organização das pastas" (SUBDEMANDAS).
-  { chave: ['ADMINISTRATIVO'], itens: ['ck_administrativo', 'licencas_contratos', 'escala', 'feriados', 'ata', 'senhas', 'telefones', 'calendario', 'msgs_listas', 'auditoria'] },
+  { chave: ['ADMINISTRATIVO'], itens: ['ck_administrativo', 'licencas_contratos', 'escala', 'feriados', 'ata', 'senhas', 'telefones', 'calendario', 'pontos_ebulicao', 'msgs_listas', 'auditoria'] },
   { chave: ['FINANCEIRO'], itens: ['pr_abertura', 'desconto_profissional', 'pagamento_va_vt', 'pedidos_compra'] },
-  { chave: ['GERENCIA', 'GERENTE'], itens: ['ck_gerente', 'corrida_interna', 'msgs_listas'] },
+  { chave: ['GERENCIA', 'GERENTE'], itens: ['ck_gerente', 'corrida_interna', 'pontos_ebulicao', 'msgs_listas'] },
   { chave: ['PROCESSO', 'QUALIDADE'], itens: ['ck_processos', 'man_processos', 'pr_ranking', 'ck_padrao', 'pop_cafe', 'pop_salao', 'checkprocon', 'pop_recepcao', 'pop_manicure', 'pop_cabelereiro'] },
   { chave: ['MARKETING'], itens: ['calendario_mkt'] },
   { chave: ['COMERCIAL', 'VENDAS'], itens: ['lojistas'] },
@@ -246,6 +248,7 @@ export function ConteudoFerramenta({ id, profsSalao, abaPop = 'cafe' }: { id: st
     // para salão, e lista pronta de outro lugar viraria trabalho de apagar.
     case 'ck_cafe':             return <ChecklistPainel key="ck_cafe" chave="checklist_cafe" defaultCategorias={[]} semGerencia embutido />
     case 'msgs_listas':         return <MensagensEnviadas key="msgs_listas" />
+    case 'pontos_ebulicao':     return <PontosEbulicao key="pontos_ebulicao" />
     case 'ck_gerente':          return <ChecklistPainel key="ck_gerente" categoriaFixa="Gerente" embutido />
     case 'ck_coordenado':       return <ChecklistPainel key="ck_coordenado" categoriaFixa="Coordenado" embutido />
     case 'ck_padrao':           return <ChecklistPainel key="ck_padrao" categoriaFixa="Padrão de Atendimento" embutido />
