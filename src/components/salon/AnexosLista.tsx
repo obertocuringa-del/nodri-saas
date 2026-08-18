@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import toast from 'react-hot-toast'
-import { Loader2, Save, Plus, Trash2, Upload, Download, FileText } from 'lucide-react'
+import { Loader2, Save, Plus, Trash2, Upload, Download, FileText, MessageCircle } from 'lucide-react'
+import { compartilharArquivoWhats } from '@/lib/compartilharArquivo'
 import { useGuardaSalvar } from '@/lib/guardaSalvar'
 import { enviarArquivo } from '@/lib/enviarArquivo'
 
@@ -17,6 +18,7 @@ export default function AnexosLista({ chave, titulo, campoNome, comData = true, 
   const [dirty, setDirty] = useState(false)
   useGuardaSalvar(dirty, 'Arquivos') // avisa "Deseja salvar?" antes de sair sem salvar
   const [subindo, setSubindo] = useState<string | null>(null)
+  const [enviandoWhats, setEnviandoWhats] = useState<string | null>(null)
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({})
 
   const carregar = useCallback(async () => {
@@ -54,13 +56,28 @@ export default function AnexosLista({ chave, titulo, campoNome, comData = true, 
     setSubindo(null)
   }
 
+  // Compartilha o ARQUIVO em si (não o link): quem recebe abre a planilha
+  // sem precisar entrar no sistema.
+  async function compartilhar(it: Item) {
+    if (!it.url) return
+    setEnviandoWhats(it.id)
+    try {
+      const legenda = [titulo, it.nome, it.data ? it.data.split('-').reverse().join('/') : '', it.obs]
+        .filter(Boolean).join(' — ')
+      const como = await compartilharArquivoWhats({ url: it.url, filename: it.filename, texto: `*${legenda}*` })
+      if (como === 'baixado') toast('Arquivo baixado — arraste ele para a conversa do WhatsApp.', { icon: '📎', duration: 6000 })
+      else if (como === 'link') toast('Enviando o link: o arquivo não pôde ser baixado agora.', { icon: '🔗', duration: 5000 })
+    } catch { toast.error('Não foi possível compartilhar') }
+    setEnviandoWhats(null)
+  }
+
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
         <h3 style={{ fontSize: 18, fontWeight: 800, color: corTema, margin: 0, flex: 1, minWidth: 160 }}>{titulo}</h3>
         <button onClick={() => salvar()} disabled={salvando} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 16px', borderRadius: 8, border: 'none', background: dirty ? '#16a34a' : '#a3b3a3', color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>{salvando ? '...' : <><Save size={14} /> Salvar</>}</button>
       </div>
-      <p style={{ fontSize: 12, color: '#6b6860', marginBottom: 12 }}>Preencha o {campoNome.toLowerCase()}{comData ? ', a data' : ''} e <strong>anexe o arquivo</strong> (qualquer formato — PDF, Word, Excel, imagem…). Depois use <strong>Baixar</strong> para visualizar. Clique em <strong>+</strong> para adicionar mais.</p>
+      <p style={{ fontSize: 12, color: '#6b6860', marginBottom: 12 }}>Preencha o {campoNome.toLowerCase()}{comData ? ', a data' : ''} e <strong>anexe o arquivo</strong> (qualquer formato — PDF, Word, Excel, imagem…). Depois use <strong>Baixar</strong> para visualizar ou <strong>WhatsApp</strong> para enviar o arquivo. Clique em <strong>+</strong> para adicionar mais.</p>
 
       {loading ? <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Loader2 size={24} className="animate-spin" style={{ color: corTema }} /></div> : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -86,6 +103,12 @@ export default function AnexosLista({ chave, titulo, campoNome, comData = true, 
                   <a href={`${it.url}?download=${encodeURIComponent(it.filename || 'arquivo')}`} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '9px 13px', borderRadius: 8, border: 'none', background: '#16a34a', color: '#fff', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
                     <Download size={14} /> Baixar
                   </a>
+                )}
+                {it.url && (
+                  <button onClick={() => compartilhar(it)} disabled={enviandoWhats === it.id} title="Enviar o arquivo pelo WhatsApp"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '9px 13px', borderRadius: 8, border: 'none', background: '#25d366', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                    {enviandoWhats === it.id ? <Loader2 size={14} className="animate-spin" /> : <MessageCircle size={14} />} WhatsApp
+                  </button>
                 )}
                 {it.url && <span style={{ fontSize: 11, color: '#6b6860', display: 'inline-flex', alignItems: 'center', gap: 4, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}><FileText size={12} /> {it.filename}</span>}
               </div>
