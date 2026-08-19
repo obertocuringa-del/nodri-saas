@@ -7,6 +7,7 @@ import { useIsMobile } from '@/lib/useIsMobile'
 import { haNaoSalvo, nomesNaoSalvos } from '@/lib/guardaSalvar'
 import TituloDaAba from './TituloDaAba'
 import { ROTAS_DESCOBERTAS } from '@/lib/rotasDescobertas'
+import { CATALOGO as FERRAMENTAS, FERRAMENTAS_POR_SETOR } from '@/lib/ferramentasCatalogo'
 
 // ── Navegação global (todas as páginas do painel do salão) ──
 // Canto inferior esquerdo: Voltar (histórico) · Início · Busca ultra inteligente.
@@ -73,89 +74,6 @@ const CATALOGO: PaginaCat[] = [
   { rota: '/salon/administrativo?aba=senhas', label: 'SENHAS', grupo: 'Administrativo', chave: 'adm_senhas', palavras: 'acesso login pix wifi conta' },
   { rota: '/salon/administrativo?aba=telefones', label: 'TELEFONES IMPORTANTES', grupo: 'Administrativo', chave: 'adm_telefones', palavras: 'contato numero whatsapp fornecedor' },
   { rota: '/salon/administrativo?aba=arquivos_envio', label: 'ARQUIVOS PARA ENVIO', grupo: 'Administrativo', chave: 'adm_arquivos_envio', palavras: 'anexo documento enviar' },
-  // ── Ferramentas que vivem DENTRO das páginas de setor ──
-  // Elas não têm rota própria: quem abre é a sidebar do setor, por estado da
-  // tela. Sem isso a busca não achava nenhuma — "chancela" não devolvia nada,
-  // e o mesmo valia para Contas a Pagar, DRE, Senhas, Licenças e as outras.
-  //
-  // Levam para /salon/pendencias, que é onde os setores são listados (não
-  // existe página de índice de setores). O ?ferramenta= é ignorado pela página
-  // e serve para dois fins: distinguir uma entrada da outra e garantir que
-  // nenhuma delas interfira no título das páginas, já que tituloDaRota só
-  // considera rotas sem "?".
-  //
-  // Lista escrita à mão a partir do catálogo de ferramentasSetor.tsx — ou seja,
-  // vai envelhecer. A correção de raiz é a busca ler o mesmo catálogo que monta
-  // as sidebars, em vez de manter uma cópia aqui.
-  { rota: '/salon/pendencias?ferramenta=ck_abertura', label: 'CHECK LIST — ABERTURA', grupo: 'Setor · Recepção', chave: 'pendencias', palavras: 'setor ferramenta recepção' },
-  { rota: '/salon/pendencias?ferramenta=ck_intermediario', label: 'CHECK LIST — INTERMEDIÁRIO', grupo: 'Setor · Recepção', chave: 'pendencias', palavras: 'setor ferramenta recepção' },
-  { rota: '/salon/pendencias?ferramenta=ck_fechamento', label: 'CHECK LIST — FECHAMENTO', grupo: 'Setor · Recepção', chave: 'pendencias', palavras: 'setor ferramenta recepção' },
-  { rota: '/salon/pendencias?ferramenta=lista_realinhamento', label: 'LISTA DE REALINHAMENTO', grupo: 'Setor · Recepção', chave: 'pendencias', palavras: 'setor ferramenta recepção' },
-  { rota: '/salon/pendencias?ferramenta=lista_corte', label: 'LISTA DE CORTE', grupo: 'Setor · Recepção', chave: 'pendencias', palavras: 'setor ferramenta recepção' },
-  { rota: '/salon/pendencias?ferramenta=lista_mechas', label: 'LISTA DE MECHAS', grupo: 'Setor · Recepção', chave: 'pendencias', palavras: 'setor ferramenta recepção' },
-  { rota: '/salon/pendencias?ferramenta=lista_pigmentacao', label: 'LISTA DE PIGMENTAÇÃO', grupo: 'Setor · Recepção', chave: 'pendencias', palavras: 'setor ferramenta recepção' },
-  { rota: '/salon/pendencias?ferramenta=pontos_ebulicao', label: 'PONTOS DE EBULIÇÃO', grupo: 'Setor · Recepção', chave: 'pendencias', palavras: 'setor ferramenta recepção' },
-  { rota: '/salon/pendencias?ferramenta=msgs_listas', label: 'MENSAGENS ENVIADAS', grupo: 'Setor · Recepção', chave: 'pendencias', palavras: 'setor ferramenta recepção' },
-  { rota: '/salon/pendencias?ferramenta=bebidas', label: 'BEBIDAS', grupo: 'Setor · Recepção', chave: 'pendencias', palavras: 'setor ferramenta recepção' },
-  { rota: '/salon/pendencias?ferramenta=valores_pacotes', label: 'VALORES DE PACOTES', grupo: 'Setor · Recepção', chave: 'pendencias', palavras: 'setor ferramenta recepção' },
-  { rota: '/salon/pendencias?ferramenta=ck_dosagem', label: 'CHECK LIST — DOSAGEM', grupo: 'Setor · Dosagem', chave: 'pendencias', palavras: 'setor ferramenta dosagem' },
-  { rota: '/salon/pendencias?ferramenta=produtos', label: 'CONSUMO DE PRODUTOS', grupo: 'Setor · Dosagem', chave: 'pendencias', palavras: 'setor ferramenta dosagem' },
-  { rota: '/salon/pendencias?ferramenta=servinterno', label: 'SERVIÇOS INTERNOS', grupo: 'Setor · Dosagem', chave: 'pendencias', palavras: 'setor ferramenta dosagem' },
-  { rota: '/salon/pendencias?ferramenta=servicos_valores', label: 'SERVIÇOS INTERNOS (VALORES)', grupo: 'Setor · Dosagem', chave: 'pendencias', palavras: 'setor ferramenta dosagem' },
-  { rota: '/salon/pendencias?ferramenta=tratamentos', label: 'TRATAMENTOS DOSAGEM', grupo: 'Setor · Dosagem', chave: 'pendencias', palavras: 'setor ferramenta dosagem' },
-  { rota: '/salon/pendencias?ferramenta=esterilizacao_fluxo', label: 'ESTERILIZAÇÃO', grupo: 'Setor · Dosagem', chave: 'pendencias', palavras: 'setor ferramenta dosagem' },
-  { rota: '/salon/pendencias?ferramenta=kits', label: 'KITS PÉ E MÃO', grupo: 'Setor · Dosagem', chave: 'pendencias', palavras: 'setor ferramenta dosagem' },
-  { rota: '/salon/pendencias?ferramenta=enxovais', label: 'CONTROLE DE ENXOVAIS', grupo: 'Setor · Dosagem', chave: 'pendencias', palavras: 'setor ferramenta dosagem' },
-  { rota: '/salon/pendencias?ferramenta=ck_administrativo', label: 'CHECK LIST — ADMINISTRATIVO', grupo: 'Setor · Administrativo', chave: 'pendencias', palavras: 'setor ferramenta administrativo' },
-  { rota: '/salon/pendencias?ferramenta=licencas_contratos', label: 'LICENÇAS E CONTRATOS ADMINISTRATIVOS', grupo: 'Setor · Administrativo', chave: 'pendencias', palavras: 'setor ferramenta administrativo' },
-  { rota: '/salon/pendencias?ferramenta=escala', label: 'ESCALA DE TRABALHO', grupo: 'Setor · Administrativo', chave: 'pendencias', palavras: 'setor ferramenta administrativo' },
-  { rota: '/salon/pendencias?ferramenta=feriados', label: 'ESCALA DE FERIADOS', grupo: 'Setor · Administrativo', chave: 'pendencias', palavras: 'setor ferramenta administrativo' },
-  { rota: '/salon/pendencias?ferramenta=ata', label: 'ATA DE REUNIÃO', grupo: 'Setor · Administrativo', chave: 'pendencias', palavras: 'setor ferramenta administrativo' },
-  { rota: '/salon/pendencias?ferramenta=senhas', label: 'SENHAS', grupo: 'Setor · Administrativo', chave: 'pendencias', palavras: 'setor ferramenta administrativo' },
-  { rota: '/salon/pendencias?ferramenta=telefones', label: 'TELEFONES IMPORTANTES', grupo: 'Setor · Administrativo', chave: 'pendencias', palavras: 'setor ferramenta administrativo' },
-  { rota: '/salon/pendencias?ferramenta=calendario', label: 'CALENDÁRIO', grupo: 'Setor · Administrativo', chave: 'pendencias', palavras: 'setor ferramenta administrativo' },
-  { rota: '/salon/pendencias?ferramenta=auditoria', label: 'LOG DE AUDITORIA', grupo: 'Setor · Administrativo', chave: 'pendencias', palavras: 'setor ferramenta administrativo' },
-  { rota: '/salon/pendencias?ferramenta=pr_abertura', label: 'CONTAS BANCÁRIAS E PIX', grupo: 'Setor · Financeiro', chave: 'pendencias', palavras: 'setor ferramenta financeiro' },
-  { rota: '/salon/pendencias?ferramenta=desconto_profissional', label: 'DESCONTO PROFISSIONAL', grupo: 'Setor · Financeiro', chave: 'pendencias', palavras: 'setor ferramenta financeiro' },
-  { rota: '/salon/pendencias?ferramenta=pagamento_va_vt', label: 'PAGAMENTO VA E VT', grupo: 'Setor · Financeiro', chave: 'pendencias', palavras: 'setor ferramenta financeiro' },
-  { rota: '/salon/pendencias?ferramenta=pedidos_compra', label: 'PEDIDOS DE COMPRA', grupo: 'Setor · Financeiro', chave: 'pendencias', palavras: 'setor ferramenta financeiro' },
-  { rota: '/salon/pendencias?ferramenta=ck_gerente', label: 'CHECK LIST — GERENTE', grupo: 'Setor · Gerência', chave: 'pendencias', palavras: 'setor ferramenta gerência' },
-  { rota: '/salon/pendencias?ferramenta=corrida_interna', label: 'CORRIDA INTERNA', grupo: 'Setor · Gerência', chave: 'pendencias', palavras: 'setor ferramenta gerência' },
-  { rota: '/salon/pendencias?ferramenta=ck_processos', label: 'CHECK LIST — PROCESSOS & QUALIDADE', grupo: 'Setor · Processos / Qualidade', chave: 'pendencias', palavras: 'setor ferramenta processos / qualidade' },
-  { rota: '/salon/pendencias?ferramenta=man_processos', label: 'PROCEDIMENTOS — PROCESSOS & QUALIDADE', grupo: 'Setor · Processos / Qualidade', chave: 'pendencias', palavras: 'setor ferramenta processos / qualidade' },
-  { rota: '/salon/pendencias?ferramenta=pr_ranking', label: 'RANKING DE AVALIAÇÕES', grupo: 'Setor · Processos / Qualidade', chave: 'pendencias', palavras: 'setor ferramenta processos / qualidade' },
-  { rota: '/salon/pendencias?ferramenta=ck_padrao', label: 'CHECK LIST — PADRÃO DE ATENDIMENTO', grupo: 'Setor · Processos / Qualidade', chave: 'pendencias', palavras: 'setor ferramenta processos / qualidade' },
-  { rota: '/salon/pendencias?ferramenta=pop_cafe', label: 'PREPARO DE CAFÉ', grupo: 'Setor · Processos / Qualidade', chave: 'pendencias', palavras: 'setor ferramenta processos / qualidade' },
-  { rota: '/salon/pendencias?ferramenta=pop_salao', label: 'POP SALÃO', grupo: 'Setor · Processos / Qualidade', chave: 'pendencias', palavras: 'setor ferramenta processos / qualidade' },
-  { rota: '/salon/pendencias?ferramenta=checkprocon', label: 'CHECK PROCON', grupo: 'Setor · Processos / Qualidade', chave: 'pendencias', palavras: 'setor ferramenta processos / qualidade' },
-  { rota: '/salon/pendencias?ferramenta=pop_recepcao', label: 'PROCESSOS DA RECEPÇÃO', grupo: 'Setor · Processos / Qualidade', chave: 'pendencias', palavras: 'setor ferramenta processos / qualidade' },
-  { rota: '/salon/pendencias?ferramenta=pop_manicure', label: 'PROCESSOS — MANICURE', grupo: 'Setor · Processos / Qualidade', chave: 'pendencias', palavras: 'setor ferramenta processos / qualidade' },
-  { rota: '/salon/pendencias?ferramenta=pop_cabelereiro', label: 'PROCESSOS — CABELEIREIRO', grupo: 'Setor · Processos / Qualidade', chave: 'pendencias', palavras: 'setor ferramenta processos / qualidade' },
-  { rota: '/salon/pendencias?ferramenta=calendario_mkt', label: 'CALENDÁRIO DE MARKETING', grupo: 'Setor · Marketing', chave: 'pendencias', palavras: 'setor ferramenta marketing' },
-  { rota: '/salon/pendencias?ferramenta=lojistas', label: 'LOJISTAS (PARCERIAS)', grupo: 'Setor · Comercial', chave: 'pendencias', palavras: 'setor ferramenta comercial' },
-  { rota: '/salon/pendencias?ferramenta=pr_lista', label: 'LISTA DE PROFISSIONAIS', grupo: 'Setor · RH', chave: 'pendencias', palavras: 'setor ferramenta rh' },
-  { rota: '/salon/pendencias?ferramenta=pr_cadastrar', label: 'CADASTRAR PROFISSIONAL', grupo: 'Setor · RH', chave: 'pendencias', palavras: 'setor ferramenta rh' },
-  { rota: '/salon/pendencias?ferramenta=pj_cnpj', label: 'PJ · CNPJ DOS PROFISSIONAIS', grupo: 'Setor · RH', chave: 'pendencias', palavras: 'setor ferramenta rh' },
-  { rota: '/salon/pendencias?ferramenta=pj_contratacao', label: 'PJ · PROCESSO DE CONTRATAÇÃO', grupo: 'Setor · RH', chave: 'pendencias', palavras: 'setor ferramenta rh' },
-  { rota: '/salon/pendencias?ferramenta=pj_desligamento', label: 'PJ · PROCESSO DE DESLIGAMENTO', grupo: 'Setor · RH', chave: 'pendencias', palavras: 'setor ferramenta rh' },
-  { rota: '/salon/pendencias?ferramenta=clt_profs', label: 'CLT · PROFISSIONAIS (FÉRIAS)', grupo: 'Setor · RH', chave: 'pendencias', palavras: 'setor ferramenta rh' },
-  { rota: '/salon/pendencias?ferramenta=clt_contratacao', label: 'CLT · PROCESSO DE CONTRATAÇÃO', grupo: 'Setor · RH', chave: 'pendencias', palavras: 'setor ferramenta rh' },
-  { rota: '/salon/pendencias?ferramenta=pr_acesso', label: 'ACESSO DOS PROFISSIONAIS', grupo: 'Setor · RH', chave: 'pendencias', palavras: 'setor ferramenta rh' },
-  { rota: '/salon/pendencias?ferramenta=pr_categorias', label: 'GERENCIAR CATEGORIAS', grupo: 'Setor · RH', chave: 'pendencias', palavras: 'setor ferramenta rh' },
-  { rota: '/salon/pendencias?ferramenta=pr_entrevista', label: 'FICHA PARA ENTREVISTA', grupo: 'Setor · RH', chave: 'pendencias', palavras: 'setor ferramenta rh' },
-  { rota: '/salon/pendencias?ferramenta=pr_perfil', label: 'PERFIL IDEAL DE PROFISSIONAL', grupo: 'Setor · RH', chave: 'pendencias', palavras: 'setor ferramenta rh' },
-  { rota: '/salon/pendencias?ferramenta=pr_materiais', label: 'MATERIAIS PARA TRABALHO', grupo: 'Setor · RH', chave: 'pendencias', palavras: 'setor ferramenta rh' },
-  { rota: '/salon/pendencias?ferramenta=pr_distrato', label: 'DISTRATO', grupo: 'Setor · RH', chave: 'pendencias', palavras: 'setor ferramenta rh' },
-  { rota: '/salon/pendencias?ferramenta=pr_contrato', label: 'CONTRATO DE TRABALHO', grupo: 'Setor · RH', chave: 'pendencias', palavras: 'setor ferramenta rh' },
-  { rota: '/salon/pendencias?ferramenta=pr_conduta', label: 'NORMA DE CONDUTA', grupo: 'Setor · RH', chave: 'pendencias', palavras: 'setor ferramenta rh' },
-  { rota: '/salon/pendencias?ferramenta=pr_certificados', label: 'CERTIFICADOS', grupo: 'Setor · RH', chave: 'pendencias', palavras: 'setor ferramenta rh' },
-  { rota: '/salon/pendencias?ferramenta=pr_carreira', label: 'PLANO DE CARREIRA', grupo: 'Setor · RH', chave: 'pendencias', palavras: 'setor ferramenta rh' },
-  { rota: '/salon/pendencias?ferramenta=ck_manutencao', label: 'CHECK LIST — MANUTENÇÃO / LIMPEZA', grupo: 'Setor · Serviços Gerais', chave: 'pendencias', palavras: 'setor ferramenta serviços gerais' },
-  { rota: '/salon/pendencias?ferramenta=ck_manut_predial', label: 'CHECK LIST — MANUTENÇÃO PREDIAL', grupo: 'Setor · Manutenção', chave: 'pendencias', palavras: 'setor ferramenta manutenção' },
-  { rota: '/salon/pendencias?ferramenta=ck_cafe', label: 'CHECK LIST — CAFÉ', grupo: 'Setor · Café / Copa', chave: 'pendencias', palavras: 'setor ferramenta café / copa' },
-  { rota: '/salon/pendencias?ferramenta=pr_horarios', label: 'HORÁRIOS E FOLGAS', grupo: 'Setor · Coordenação', chave: 'pendencias', palavras: 'setor ferramenta coordenação' },
-  { rota: '/salon/pendencias?ferramenta=ck_coordenacao', label: 'CHECK LIST — COORDENAÇÃO', grupo: 'Setor · Coordenação', chave: 'pendencias', palavras: 'setor ferramenta coordenação' },
-  { rota: '/salon/pendencias?ferramenta=man_coordenacao', label: 'PROCEDIMENTOS — COORDENAÇÃO', grupo: 'Setor · Coordenação', chave: 'pendencias', palavras: 'setor ferramenta coordenação' },
 ]
 
 // ── Páginas que ninguém cadastrou no CATALOGO acima ──
@@ -185,15 +103,70 @@ function chaveHerdada(rota: string): string | null {
   return seg ? seg.replace(/-/g, '_') : null
 }
 
+const norm = (s: string) => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+
+// ── Ferramentas que vivem DENTRO das páginas de setor ──
+// Elas não têm rota própria: quem abre é a sidebar do setor, por estado da
+// tela. Sem isto a busca não achava nenhuma — "chancela" não devolvia nada, e
+// o mesmo valia para Contas a Pagar, DRE, Senhas, Licenças e as outras.
+//
+// A lista sai do MESMO catálogo que monta a sidebar, então ferramenta nova
+// aparece aqui sozinha. Antes isto era uma cópia escrita à mão, que envelhecia
+// a cada ferramenta criada.
+//
+// Levam para /salon/pendencias, que é onde os setores são listados (não existe
+// página de índice de setores). O ?ferramenta= é ignorado pela página e serve
+// para separar uma entrada da outra e para mantê-las fora do título das
+// páginas, já que tituloDaRota só considera rota sem "?".
+const NOME_SETOR: Record<string, string> = {
+  RECEPCAO: 'Recepção', DOSAGEM: 'Dosagem', COMPRAS: 'Compras / Estoque',
+  ADMINISTRATIVO: 'Administrativo', FINANCEIRO: 'Financeiro', GERENCIA: 'Gerência',
+  PROCESSO: 'Processos / Qualidade', MARKETING: 'Marketing', COMERCIAL: 'Comercial',
+  RH: 'RH', 'SERVICOS GERAIS': 'Serviços Gerais', MANUTENCAO: 'Manutenção',
+  CAFE: 'Café / Copa', COORDENADOR: 'Coordenação',
+}
+
+const FERRAMENTAS_CAT: PaginaCat[] = (() => {
+  const out: PaginaCat[] = []
+  const vistos = new Set<string>()
+  // Boa parte das ferramentas também é aba do Salão Administrativo. Sem esta
+  // checagem, "escala" e "senhas" apareciam DUAS vezes na busca — a mesma
+  // ferramenta, dita de dois jeitos. Fica a entrada do Administrativo, que já
+  // tem sinônimos próprios e abre direto na ferramenta; a do setor só entra
+  // quando não existe equivalente.
+  //
+  // A comparação é pelo NOME EXIBIDO, não pelo id: é o nome que a pessoa vê
+  // repetido na lista, e nem sempre o id bate com o parâmetro da rota (a aba
+  // é `lista=bebidas`, a ferramenta é `bebidas`).
+  const chaveLabel = (t: string) => norm(t).replace(/[^a-z0-9]+/g, '')
+  const jaNoCatalogo = new Set(CATALOGO.map(p => chaveLabel(p.label)))
+  for (const grupo of FERRAMENTAS_POR_SETOR) {
+    const setor = NOME_SETOR[grupo.chave[0]] || grupo.chave[0]
+    for (const id of grupo.itens) {
+      const f = FERRAMENTAS[id]
+      if (!f || vistos.has(id) || jaNoCatalogo.has(chaveLabel(f.label))) continue
+      vistos.add(id)
+      out.push({
+        rota: `/salon/pendencias?ferramenta=${id}`,
+        label: f.label,
+        grupo: `Setor · ${setor}`,
+        // Mesma permissão que decide se ela aparece na sidebar do setor.
+        chave: f.perm || null,
+        palavras: `setor ferramenta ${setor.toLowerCase()}`,
+      })
+    }
+  }
+  return out
+})()
+
 const CATALOGO_COMPLETO: PaginaCat[] = (() => {
   const jaTem = new Set(CATALOGO.map(p => p.rota.split('?')[0]))
   const extras = ROTAS_DESCOBERTAS
     .filter(r => !jaTem.has(r.rota))
     .map(r => ({ rota: r.rota, label: r.label, grupo: 'Página', chave: chaveHerdada(r.rota), palavras: '' }))
-  return [...CATALOGO, ...extras]
+  return [...CATALOGO, ...FERRAMENTAS_CAT, ...extras]
 })()
 
-const norm = (s: string) => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
 
 // Match inteligente: cada palavra digitada precisa "encaixar" no começo de
 // alguma palavra do alvo OU aparecer dentro do texto. Pontua para ordenar.
