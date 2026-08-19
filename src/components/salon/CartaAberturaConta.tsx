@@ -35,7 +35,9 @@ export default function CartaAberturaConta({ onClose }: { onClose: () => void })
         fetch('/api/profissionais').then(r => r.ok ? r.json() : []).catch(() => []),
         fetch(`/api/salon/grid?chave=${CHAVE}`).then(r => r.ok ? r.json() : null).catch(() => null),
       ])
-      setProfs(Array.isArray(p) ? p : [])
+      // Setor mora na mesma tabela de profissionais — carta de abertura de conta
+      // é documento de pessoa, setor não entra.
+      setProfs((Array.isArray(p) ? p : []).filter((x: any) => !x.is_departamento))
       if (cfg) { setLogo(cfg.logo || ''); setEmpresa(cfg.empresa || ''); setCnpj(cfg.cnpj || ''); setBanco(cfg.banco || 'Bradesco'); setCidade(cfg.cidade || 'Brasília (DF)') }
     } catch { /* */ }
     setLoading(false)

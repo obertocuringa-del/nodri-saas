@@ -149,7 +149,9 @@ export default function SalaoAdministrativoPage() {
 
   useEffect(() => {
     fetch('/api/profissionais').then(r => r.ok ? r.json() : []).then((arr: any[]) => {
-      setProfsSalao((Array.isArray(arr) ? arr : []).map(p => {
+      // Setor mora na mesma tabela de profissionais e ia parar em todas as
+      // listas do Administrativo (esterilização, atas, bebidas, kits...).
+      setProfsSalao((Array.isArray(arr) ? arr : []).filter((p: any) => !p.is_departamento).map(p => {
         let tel = p.telefone || ''
         if (!tel) { try { tel = JSON.parse(p.contato_responsavel || '{}').tel || '' } catch { /* */ } }
         return { id: p.id, nome: p.apelido || p.nome_completo || '—', telefone: tel }

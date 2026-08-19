@@ -36,6 +36,12 @@ export const CHAVES_MODELO: ChaveModelo[] = [
   { chave: 'menu_links', como: 'inteiro', rotulo: 'Links do menu' },
   { chave: 'organograma', como: 'inteiro', rotulo: 'Organograma dos setores' },
 
+  // Preferências da emissão de guias do MEI (dia de pagamento, anos a olhar,
+  // nome do arquivo). É ajuste de operação, sem dado de ninguém — viaja inteiro
+  // para o salão novo já nascer configurado. O histórico, que tem nome e CNPJ,
+  // fica de fora pela regra acima.
+  { chave: 'emissao_guias_mei', como: 'inteiro', rotulo: 'Emissão de guias do MEI' },
+
   // Check lists — a estrutura vai, as marcações ficam
   { chave: 'checklist', como: 'checklist', rotulo: 'Check list do salão' },
   { chave: 'checklist_coordenacao', como: 'checklist', rotulo: 'Check list — Coordenação' },
@@ -100,6 +106,11 @@ const NUNCA: { chave: string; prefixo?: boolean; motivo: string }[] = [
   // arquivo/url, e a chave se chama `link`. Um salão novo sairia mandando os
   // clientes dele avaliarem o negócio de outra pessoa no Google.
   { chave: 'feedback_google', motivo: 'link do Google é de cada salão' },
+  // O histórico de guias do MEI guarda NOME e CNPJ de cada profissional. Cairia
+  // na regra 4 (viaja em branco), mas `limparGrade` só esvazia doc de planilha:
+  // um objeto `{ registros: [...] }` passaria inteiro, levando os dados das
+  // pessoas de um salão para o modelo e, dali, para todo salão novo.
+  { chave: 'emissao_guias_mei_hist', motivo: 'nomes e CNPJs dos profissionais' },
 ]
 const NUNCA_CONTEM: string[] = ['senhas']
 

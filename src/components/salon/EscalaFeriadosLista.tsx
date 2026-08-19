@@ -63,7 +63,9 @@ export default function EscalaFeriadosLista({ chave = 'feriados' }: { chave?: st
   useGuardaSalvar(dirty, 'Escala de Feriados') // avisa "Deseja salvar?" antes de sair sem salvar
 
   useEffect(() => {
-    fetch('/api/profissionais').then(r => r.ok ? r.json() : []).then((arr: any[]) => setProfissionais(Array.isArray(arr) ? arr : [])).catch(() => {})
+    // Setor mora na mesma tabela de profissionais: sem este filtro ele entra
+    // na escala como se fosse gente.
+    fetch('/api/profissionais').then(r => r.ok ? r.json() : []).then((arr: any[]) => setProfissionais((Array.isArray(arr) ? arr : []).filter((p: any) => !p.is_departamento))).catch(() => {})
   }, [])
 
   const carregar = useCallback(async () => {

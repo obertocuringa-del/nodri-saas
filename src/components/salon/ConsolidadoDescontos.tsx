@@ -95,7 +95,8 @@ export default function ConsolidadoDescontos({ open, onClose, embutido = false }
         fetch(`/api/salon/calculadora?ano=${ano}&mes=${mesNum}`, { credentials: 'include' }).then(r => r.ok ? r.json() : null).catch(() => null),
         fetch(`/api/kits/solicitacoes?mes=${mes}`).then(r => r.ok ? r.json() : null).catch(() => null),
       ])
-      const profs: Prof[] = (Array.isArray(profsRaw) ? profsRaw : []).map((p: any) => ({ id: p.id, nome: p.apelido || p.nome_completo || '—' }))
+      // Setor mora na mesma tabela de profissionais e não tem desconto a lançar.
+      const profs: Prof[] = (Array.isArray(profsRaw) ? profsRaw : []).filter((p: any) => !p.is_departamento).map((p: any) => ({ id: p.id, nome: p.apelido || p.nome_completo || '—' }))
       const nomePorId = new Map(profs.map(p => [p.id, p.nome]))
 
       const acc = new Map<string, LinhaDesconto>()

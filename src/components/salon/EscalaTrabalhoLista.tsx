@@ -208,7 +208,9 @@ export default function EscalaTrabalhoLista({ chave = 'escala', blocos = 'tudo' 
   const chaveMes = `${chave}_${mes}`
 
   useEffect(() => {
-    fetch('/api/profissionais').then(r => r.ok ? r.json() : []).then((arr: any[]) => setProfissionais(Array.isArray(arr) ? arr : [])).catch(() => {})
+    // Setor mora na mesma tabela de profissionais: sem este filtro ele entra
+    // na escala como se fosse gente.
+    fetch('/api/profissionais').then(r => r.ok ? r.json() : []).then((arr: any[]) => setProfissionais((Array.isArray(arr) ? arr : []).filter((p: any) => !p.is_departamento))).catch(() => {})
     fetch('/api/salon/grid?chave=feriados').then(r => r.ok ? r.json() : null).then(setFeriadosDoc).catch(() => {})
     fetch('/api/salon/grid?chave=escala_config').then(r => r.ok ? r.json() : null).then(d => { if (d && typeof d.ativo === 'boolean') setConfig({ ...CONFIG_PADRAO, ...d }) }).catch(() => {})
     fetch('/api/salon/grid?chave=escala_valores_padrao').then(r => r.ok ? r.json() : null).then(d => { if (d && d.alimentacaoPorDia) setValoresPadrao({ ...VALORES_PADRAO_INICIAL, ...d }) }).catch(() => {})

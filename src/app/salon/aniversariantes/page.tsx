@@ -40,7 +40,7 @@ export default function AniversariantesPage() {
     try {
       const profs = await fetch('/api/profissionais').then(r => r.ok ? r.json() : []).catch(() => [])
       const hoje = new Date()
-      const arr: Aniv[] = (Array.isArray(profs) ? profs : [])
+      const arr: Aniv[] = (Array.isArray(profs) ? profs : []).filter((p: any) => !p.is_departamento)
         .filter((p: any) => p.data_aniversario)
         .map((p: any) => {
           const s = String(p.data_aniversario).slice(0, 10)

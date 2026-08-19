@@ -18,7 +18,7 @@ export default function WhatsPendencia({ mensagem }: { mensagem: string }) {
     setCarregado(true)
     try {
       const arr = await fetch('/api/profissionais').then(r => r.ok ? r.json() : [])
-      const lista = (Array.isArray(arr) ? arr : []).map((p: any) => {
+      const lista = (Array.isArray(arr) ? arr : []).filter((p: any) => !p.is_departamento).map((p: any) => {
         let tel = p.telefone || ''
         if (!tel) { try { tel = JSON.parse(p.contato_responsavel || '{}').tel || '' } catch { /* */ } }
         return { id: p.id, nome: p.apelido || p.nome_completo || '—', telefone: tel }
