@@ -297,10 +297,23 @@ export default function EmissaoGuiasMEI({ profissionais }: { profissionais: Prof
       <button onClick={abrirFila} style={btn('#0ea5e9')}>
         📄 Emitir todas as guias
       </button>
-      {extStatus === 'ausente' && linkExtensao && (
+      {/* Sempre visível quando o admin cadastrou o link — mesmo lugar e mesmo
+          papel do "Baixar Programa" da tela inicial. Muda de cor conforme o
+          estado: âmbar chamando atenção quando falta instalar, discreto (o roxo
+          do sistema) quando já está instalada e o botão é só para reinstalar
+          noutra máquina ou pegar uma versão nova. */}
+      {linkExtensao && (
         <a href={linkExtensao} target="_blank" rel="noopener noreferrer"
-          title="A emissão em lote precisa da extensão do Chrome instalada neste navegador"
-          style={{ ...btn('#f59e0b'), textDecoration: 'none' }}>
+          title={extStatus === 'ausente'
+            ? 'A emissão em lote precisa da extensão do Chrome instalada neste navegador'
+            : 'Extensão já instalada — baixe se precisar instalar em outro computador ou atualizar'}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8,
+            fontSize: 13, fontWeight: 700, textDecoration: 'none',
+            ...(extStatus === 'ausente'
+              ? { background: '#f59e0b', border: '1px solid #f59e0b', color: '#fff' }
+              : { background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.35)', color: '#5b4fcf' }),
+          }}>
           ⬇️ Baixar extensão
         </a>
       )}
@@ -415,7 +428,7 @@ export default function EmissaoGuiasMEI({ profissionais }: { profissionais: Prof
         <div onClick={() => { if (!rodando) setFilaAberta(false) }}
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', zIndex: 9000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
           <div onClick={e => e.stopPropagation()}
-            style={{ background: '#fff', borderRadius: 14, width: '100%', maxWidth: 640, maxHeight: '85vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            style={{ background: '#fff', borderRadius: 14, width: '100%', maxWidth: 780, maxHeight: '92vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <div style={{ padding: '16px 18px', borderBottom: '1px solid #ece9e2' }}>
               <div style={{ fontSize: 16, fontWeight: 800, color: '#1a1a1a' }}>Emitir guias do MEI</div>
               <div style={{ fontSize: 12, color: '#6b6860', marginTop: 2 }}>
@@ -423,8 +436,9 @@ export default function EmissaoGuiasMEI({ profissionais }: { profissionais: Prof
               </div>
             </div>
 
+            <div style={{ flex: 1, overflowY: 'auto', padding: 14 }}>
             {extStatus === 'ausente' && (
-              <div style={{ margin: 14, padding: 14, background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, fontSize: 12, color: '#78350f' }}>
+              <div style={{ margin: '0 0 14px', padding: 14, background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, fontSize: 12, color: '#78350f' }}>
                 <div style={{ fontSize: 13, fontWeight: 800, color: '#92400e', marginBottom: 2 }}>
                   Falta instalar a extensão neste navegador
                 </div>
@@ -498,12 +512,10 @@ export default function EmissaoGuiasMEI({ profissionais }: { profissionais: Prof
               </div>
             )}
             {extStatus === 'ok' && (
-              <div style={{ margin: '14px 14px 0', fontSize: 11, color: '#16a34a', fontWeight: 700 }}>
+              <div style={{ margin: '0 0 10px', fontSize: 11, color: '#16a34a', fontWeight: 700 }}>
                 ✅ Extensão detectada{extVersao ? ` (v${extVersao})` : ''}
               </div>
             )}
-
-            <div style={{ flex: 1, overflowY: 'auto', padding: 14 }}>
               {fila.map((it, i) => (
                 <div key={it.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderBottom: '1px solid #f3f1ec' }}>
                   <span style={{ fontSize: 11, color: '#9ca3af', minWidth: 26 }}>{i + 1}</span>
