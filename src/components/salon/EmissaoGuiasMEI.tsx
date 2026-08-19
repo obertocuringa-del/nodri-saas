@@ -67,6 +67,25 @@ export function urlDaReceita(u: string): boolean {
   } catch { return false }
 }
 
+// O .zip da extensão viaja junto com o deploy (public/). Serve como padrão
+// quando o admin não cadastrou link nenhum — assim a instalação nunca fica
+// dependendo de hospedagem externa.
+export const LINK_EXTENSAO_PADRAO = '/extensao-guias-mei.zip'
+
+// Link do Google Drive de ARQUIVO abre a página do Drive, não baixa. A forma
+// que baixa direto é uc?export=download&id=<ID>. Converte quando dá; devolve
+// o original quando não é Drive (ou quando é link de PASTA, que não tem
+// download direto — nesse caso o admin precisa apontar para o .zip).
+export function linkDeDownload(u: string): string {
+  const s = String(u || '').trim()
+  if (!s) return s
+  const m = /drive\.google\.com\/file\/d\/([\w-]{10,})/.exec(s)
+    || /drive\.google\.com\/open\?id=([\w-]{10,})/.exec(s)
+    || /drive\.google\.com\/uc\?[^#]*\bid=([\w-]{10,})/.exec(s)
+  if (m) return `https://drive.google.com/uc?export=download&id=${m[1]}`
+  return s
+}
+
 type EtapaFila = 'espera' | 'andando' | 'captcha' | 'ok' | 'erro' | 'pulado'
 
 interface ItemFila {
@@ -106,11 +125,12 @@ export default function EmissaoGuiasMEI({ profissionais }: { profissionais: Prof
     return st === 'ok' && soDigitos(p.cnpj || '').length === 14
   })
 
-  // Link do .zip da extensão, publicado pelo admin (Programa Complementar)
+  // Link do .zip: o que o admin cadastrou (convertido para download direto se
+  // for Google Drive) ou, na falta dele, o arquivo que vem junto com o deploy.
   useEffect(() => {
     fetch('/api/config/programa').then(r => r.ok ? r.json() : null)
-      .then(d => setLinkExtensao(String(d?.link_extensao || '')))
-      .catch(() => { })
+      .then(d => setLinkExtensao(linkDeDownload(String(d?.link_extensao || '')) || LINK_EXTENSAO_PADRAO))
+      .catch(() => setLinkExtensao(LINK_EXTENSAO_PADRAO))
   }, [])
 
   useEffect(() => {
@@ -303,7 +323,7 @@ export default function EmissaoGuiasMEI({ profissionais }: { profissionais: Prof
           do sistema) quando já está instalada e o botão é só para reinstalar
           noutra máquina ou pegar uma versão nova. */}
       {linkExtensao && (
-        <a href={linkExtensao} target="_blank" rel="noopener noreferrer"
+        <a href={linkExtensao} download target="_blank" rel="noopener noreferrer"
           title={extStatus === 'ausente'
             ? 'A emissão em lote precisa da extensão do Chrome instalada neste navegador'
             : 'Extensão já instalada — baixe se precisar instalar em outro computador ou atualizar'}
@@ -452,7 +472,7 @@ export default function EmissaoGuiasMEI({ profissionais }: { profissionais: Prof
                     <strong>Baixe o arquivo da extensão.</strong>
                     <div style={{ marginTop: 5 }}>
                       {linkExtensao
-                        ? <a href={linkExtensao} target="_blank" rel="noopener noreferrer" style={{ ...btn('#f59e0b'), textDecoration: 'none' }}>⬇️ Baixar extensão (.zip)</a>
+                        ? <a href={linkExtensao} download target="_blank" rel="noopener noreferrer" style={{ ...btn('#f59e0b'), textDecoration: 'none' }}>⬇️ Baixar extensão (.zip)</a>
                         : <span style={{ color: '#b45309' }}>O link ainda não foi cadastrado. Peça ao suporte do NODRI o arquivo <code>extensao-guias-mei.zip</code>.</span>}
                     </div>
                   </li>

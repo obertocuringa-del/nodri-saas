@@ -1642,7 +1642,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                     <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Link — Baixar Extensão de Guias do MEI (.zip)</label>
                     <input value={configPrograma.link_extensao} onChange={e => setConfigPrograma(p => ({ ...p, link_extensao: e.target.value }))}
                       placeholder="https://..." className="nodri-input w-full" />
-                    <p className="text-[9px] text-nodri-t3 mt-1">Aparece como botão <strong>Baixar extensão</strong> na tela Profissionais → CNPJ, só quando o navegador do salão ainda não tem a extensão instalada.</p>
+                    <p className="text-[9px] text-nodri-t3 mt-1">Aparece como botão <strong>Baixar extensão</strong> na tela Profissionais → CNPJ. Deixe <strong>vazio</strong> para usar o arquivo que já vem com o sistema (<code>/extensao-guias-mei.zip</code>) — é o recomendado. Se preferir hospedar fora: aponte para o <strong>arquivo .zip</strong>, nunca para uma pasta. Link do Google Drive de arquivo é convertido em download direto automaticamente; link de pasta não baixa, abre o Drive.</p>
                   </div>
                   <div className="flex items-center gap-3 pt-1">
                     <button
