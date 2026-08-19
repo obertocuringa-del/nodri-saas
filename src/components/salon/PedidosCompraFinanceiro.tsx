@@ -362,12 +362,8 @@ export default function PedidosCompraFinanceiro() {
                 {p.motivo && <p style={{ fontSize: 11.5, color: '#b91c1c', margin: '2px 0 0' }}>Motivo: {p.motivo}</p>}
 
                 {/* Quem compra quase nunca é quem decide: a lista vai por
-                    WhatsApp com os itens e as quantidades já formatados. */}
-                <button onClick={() => abrirWhats(textoWhatsPedido(p, nomeSalao))}
-                  style={{ marginTop: 9, display: 'inline-flex', alignItems: 'center', gap: 6, background: '#25D366', color: '#fff', border: 'none', borderRadius: 9, padding: '7px 13px', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>
-                  <Share2 size={13} /> Enviar no WhatsApp
-                </button>
-
+                    WhatsApp com os itens e as quantidades já formatados. Fica
+                    junto das decisões — é uma ação do mesmo momento. */}
                 {p.status === 'enviado' && (
                   <div style={{ display: 'flex', gap: 8, marginTop: 11, flexWrap: 'wrap' }}>
                     <button onClick={() => setDecisao({ pedido: p, status: 'aprovado' })} disabled={agindo === p.id}
@@ -381,6 +377,19 @@ export default function PedidosCompraFinanceiro() {
                     <button onClick={() => setDecisao({ pedido: p, status: 'financeiro_compra' })} disabled={agindo === p.id}
                       style={btn('#fff', '#5b4fcf', '#ddd6f5')}>
                       <ShoppingCart size={14} /> Eu mesmo comprarei
+                    </button>
+                    <button onClick={() => abrirWhats(textoWhatsPedido(p, nomeSalao))}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#25D366', color: '#fff', border: 'none', borderRadius: 9, padding: '7px 13px', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>
+                      <Share2 size={13} /> Enviar no WhatsApp
+                    </button>
+                  </div>
+                )}
+
+                {p.status !== 'enviado' && (
+                  <div style={{ display: 'flex', gap: 8, marginTop: 11, flexWrap: 'wrap' }}>
+                    <button onClick={() => abrirWhats(textoWhatsPedido(p, nomeSalao))}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#25D366', color: '#fff', border: 'none', borderRadius: 9, padding: '7px 13px', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>
+                      <Share2 size={13} /> Enviar no WhatsApp
                     </button>
                   </div>
                 )}
