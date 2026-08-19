@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import { Plus, Trash2, Save, Loader2, ExternalLink, ChevronDown } from 'lucide-react'
+import CampoTextoRico from '@/components/admin/CampoTextoRico'
 
 // ── Editor de funcionalidades ───────────────────────────────────────────────
 //
@@ -119,8 +120,7 @@ export default function EditorFuncionalidades() {
                     onChange={e => set(f.id, 'titulo', e.target.value)} /></div>
 
                 <div><label className={lbl}>Descrição</label>
-                  <textarea className={inp + ' resize-none'} rows={4} value={f.descricao || ''}
-                    onChange={e => set(f.id, 'descricao', e.target.value)} /></div>
+                  <CampoTextoRico valor={f.descricao || ''} onChange={v => set(f.id, 'descricao', v)} /></div>
 
                 {/* Fotos e vídeos, na ordem em que aparecem. Um link por
                     linha; vídeo do YouTube é reconhecido sozinho pelo endereço. */}
