@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "NODRI — Emissão de Guias do MEI",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Preenche o PGMEI da Receita com os CNPJs dos profissionais do NODRI e baixa as guias DAS já renomeadas.",
   "permissions": ["downloads", "storage", "tabs"],
   "host_permissions": [
@@ -11,6 +11,10 @@
   "content_scripts": [
     {
       "matches": [
+        "https://www.nodri.com.br/*",
+        "https://nodri.com.br/*",
+        "https://*.nodri.com.br/*",
+        "https://nodri-saas.vercel.app/*",
         "https://nodri-saas-jsx4.vercel.app/*",
         "http://localhost:3000/*"
       ],

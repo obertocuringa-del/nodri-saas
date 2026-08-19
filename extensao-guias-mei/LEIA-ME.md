@@ -13,9 +13,19 @@ com a sua sessão**, e baixa os PDFs já renomeados.
 5. Volte ao NODRI, tela **Profissionais → CNPJ**, e clique em **Emitir todas as guias**.
    Deve aparecer *"✅ Extensão detectada"*.
 
-Se você acessa o NODRI por um endereço diferente de `nodri-saas-jsx4.vercel.app`,
-acrescente o seu domínio em `manifest.json`, no bloco `content_scripts` → primeiro
-`matches`, e recarregue a extensão.
+### O endereço TEM que estar na lista
+
+A extensão só se conecta nas páginas listadas em `manifest.json` → `content_scripts`
+→ primeiro `matches`. Hoje estão liberados `www.nodri.com.br`, `nodri.com.br`,
+`nodri-saas.vercel.app`, `nodri-saas-jsx4.vercel.app` e `localhost:3000`.
+
+Se você abrir o NODRI por qualquer outro endereço, o botão fica **laranja**
+("extensão não encontrada") mesmo com ela instalada e funcionando — o script
+simplesmente não entra naquela página. Nesse caso, acrescente o endereço nessa
+lista e recarregue a extensão.
+
+**A cor do botão é o diagnóstico:** laranja = a página não enxerga a extensão;
+roxo claro = conversando normalmente.
 
 ## Como usar
 
