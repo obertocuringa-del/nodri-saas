@@ -54,7 +54,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
   const [notifMsg, setNotifMsg] = useState('')
   const [notifTipo, setNotifTipo] = useState<'info'|'success'|'warning'|'danger'>('info')
   const [notifDestinatarios, setNotifDestinatarios] = useState<string[]>([])
-  const [configPrograma, setConfigPrograma] = useState({ link: '', link_atualizacao: '', atualizacao_ativa: false })
+  const [configPrograma, setConfigPrograma] = useState({ link: '', link_atualizacao: '', atualizacao_ativa: false, link_extensao: '' })
   const [savingPrograma, setSavingPrograma] = useState(false)
   const [showDestinatarios, setShowDestinatarios] = useState(false)
   const [sending, setSending] = useState(false)
@@ -364,7 +364,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
   // Carrega config do programa na inicialização
   useEffect(() => {
     fetch('/api/config/programa').then(r => r.json()).then(d => {
-      if (d) setConfigPrograma({ link: d.link || '', link_atualizacao: d.link_atualizacao || '', atualizacao_ativa: !!d.atualizacao_ativa })
+      if (d) setConfigPrograma({ link: d.link || '', link_atualizacao: d.link_atualizacao || '', atualizacao_ativa: !!d.atualizacao_ativa, link_extensao: d.link_extensao || '' })
     }).catch(() => {})
   }, [])
 
@@ -1637,6 +1637,12 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                     <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Link — Baixar Atualização (quando disponibilizada)</label>
                     <input value={configPrograma.link_atualizacao} onChange={e => setConfigPrograma(p => ({ ...p, link_atualizacao: e.target.value }))}
                       placeholder="https://..." className="nodri-input w-full" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Link — Baixar Extensão de Guias do MEI (.zip)</label>
+                    <input value={configPrograma.link_extensao} onChange={e => setConfigPrograma(p => ({ ...p, link_extensao: e.target.value }))}
+                      placeholder="https://..." className="nodri-input w-full" />
+                    <p className="text-[9px] text-nodri-t3 mt-1">Aparece como botão <strong>Baixar extensão</strong> na tela Profissionais → CNPJ, só quando o navegador do salão ainda não tem a extensão instalada.</p>
                   </div>
                   <div className="flex items-center gap-3 pt-1">
                     <button

@@ -92,6 +92,7 @@ export default function EmissaoGuiasMEI({ profissionais }: { profissionais: Prof
   const [rodando, setRodando] = useState(false)
   const [extStatus, setExtStatus] = useState<'checando' | 'ok' | 'ausente'>('checando')
   const [extVersao, setExtVersao] = useState('')
+  const [linkExtensao, setLinkExtensao] = useState('')
   const filaRef = useRef<ItemFila[]>([])
 
   const dirty = JSON.stringify(cfg) !== JSON.stringify(cfgSalva)
@@ -102,6 +103,13 @@ export default function EmissaoGuiasMEI({ profissionais }: { profissionais: Prof
     const st = p.cnpj_status ?? (p.cnpj ? 'ok' : 'pendente')
     return st === 'ok' && soDigitos(p.cnpj || '').length === 14
   })
+
+  // Link do .zip da extensão, publicado pelo admin (Programa Complementar)
+  useEffect(() => {
+    fetch('/api/config/programa').then(r => r.ok ? r.json() : null)
+      .then(d => setLinkExtensao(String(d?.link_extensao || '')))
+      .catch(() => { })
+  }, [])
 
   useEffect(() => {
     fetch('/api/auth/me').then(r => r.ok ? r.json() : null)
@@ -287,6 +295,13 @@ export default function EmissaoGuiasMEI({ profissionais }: { profissionais: Prof
       <button onClick={abrirFila} style={btn('#0ea5e9')}>
         📄 Emitir todas as guias
       </button>
+      {extStatus === 'ausente' && linkExtensao && (
+        <a href={linkExtensao} target="_blank" rel="noopener noreferrer"
+          title="A emissão em lote precisa da extensão do Chrome instalada neste navegador"
+          style={{ ...btn('#f59e0b'), textDecoration: 'none' }}>
+          ⬇️ Baixar extensão
+        </a>
+      )}
 
       {/* ── PAINEL DE CONFIGURAÇÃO ── */}
       {painel && (
@@ -403,7 +418,12 @@ export default function EmissaoGuiasMEI({ profissionais }: { profissionais: Prof
                 <strong>Extensão do Chrome não encontrada.</strong><br />
                 A emissão em lote precisa da extensão <em>NODRI — Emissão de Guias do MEI</em> instalada neste navegador
                 (pasta <code>extensao-guias-mei</code> do projeto, em <code>chrome://extensions</code> → Modo do desenvolvedor → Carregar sem compactação).
-                <div style={{ marginTop: 8 }}>
+                <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {linkExtensao && (
+                    <a href={linkExtensao} target="_blank" rel="noopener noreferrer" style={{ ...btn('#f59e0b'), textDecoration: 'none' }}>
+                      ⬇️ Baixar extensão
+                    </a>
+                  )}
                   <button onClick={pingar} style={{ ...btn('#fff'), color: '#991b1b', border: '1px solid #fca5a5' }}>Verificar de novo</button>
                 </div>
               </div>
