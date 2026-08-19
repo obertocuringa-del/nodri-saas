@@ -414,18 +414,77 @@ export default function EmissaoGuiasMEI({ profissionais }: { profissionais: Prof
             </div>
 
             {extStatus === 'ausente' && (
-              <div style={{ margin: 14, padding: 12, background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, fontSize: 12, color: '#991b1b' }}>
-                <strong>Extensão do Chrome não encontrada.</strong><br />
-                A emissão em lote precisa da extensão <em>NODRI — Emissão de Guias do MEI</em> instalada neste navegador
-                (pasta <code>extensao-guias-mei</code> do projeto, em <code>chrome://extensions</code> → Modo do desenvolvedor → Carregar sem compactação).
-                <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  {linkExtensao && (
-                    <a href={linkExtensao} target="_blank" rel="noopener noreferrer" style={{ ...btn('#f59e0b'), textDecoration: 'none' }}>
-                      ⬇️ Baixar extensão
-                    </a>
-                  )}
-                  <button onClick={pingar} style={{ ...btn('#fff'), color: '#991b1b', border: '1px solid #fca5a5' }}>Verificar de novo</button>
+              <div style={{ margin: 14, padding: 14, background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, fontSize: 12, color: '#78350f' }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: '#92400e', marginBottom: 2 }}>
+                  Falta instalar a extensão neste navegador
                 </div>
+                <p style={{ margin: '0 0 12px', lineHeight: 1.5 }}>
+                  A emissão em lote precisa da extensão <strong>NODRI — Emissão de Guias do MEI</strong>.
+                  É uma vez só, neste computador. Leva cerca de 1 minuto:
+                </p>
+
+                <ol style={{ margin: 0, paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <li>
+                    <strong>Baixe o arquivo da extensão.</strong>
+                    <div style={{ marginTop: 5 }}>
+                      {linkExtensao
+                        ? <a href={linkExtensao} target="_blank" rel="noopener noreferrer" style={{ ...btn('#f59e0b'), textDecoration: 'none' }}>⬇️ Baixar extensão (.zip)</a>
+                        : <span style={{ color: '#b45309' }}>O link ainda não foi cadastrado. Peça ao suporte do NODRI o arquivo <code>extensao-guias-mei.zip</code>.</span>}
+                    </div>
+                  </li>
+
+                  <li>
+                    <strong>Descompacte o .zip.</strong>
+                    <div style={{ color: '#92400e', marginTop: 3, lineHeight: 1.5 }}>
+                      Na pasta Downloads, clique com o botão direito no arquivo → <em>Extrair tudo</em> → <em>Extrair</em>.
+                      Vai virar uma pasta chamada <code>extensao-guias-mei</code>.
+                      <br /><strong>Não apague essa pasta depois</strong> — o Chrome lê a extensão dela o tempo todo.
+                      Guarde num lugar fixo (ex.: <code>Documentos</code>).
+                    </div>
+                  </li>
+
+                  <li>
+                    <strong>Abra a página de extensões do Chrome.</strong>
+                    <div style={{ color: '#92400e', marginTop: 3, lineHeight: 1.5 }}>
+                      Por segurança o Chrome não deixa um site abrir essa página — copie o endereço abaixo,
+                      cole numa aba nova e aperte Enter.
+                    </div>
+                    <div style={{ marginTop: 5, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                      <code style={{ background: '#fff', border: '1px solid #fde68a', borderRadius: 6, padding: '5px 10px', fontSize: 12 }}>chrome://extensions</code>
+                      <button
+                        onClick={() => {
+                          try { navigator.clipboard.writeText('chrome://extensions') } catch { /* sem permissão de área de transferência */ }
+                          toast.success('Endereço copiado! Cole numa aba nova.')
+                        }}
+                        style={{ ...btn('#fff'), color: '#92400e', border: '1px solid #fbbf24' }}>📋 Copiar</button>
+                    </div>
+                  </li>
+
+                  <li>
+                    <strong>Ligue o “Modo do desenvolvedor”.</strong>
+                    <div style={{ color: '#92400e', marginTop: 3 }}>É a chavinha no canto <em>superior direito</em> dessa página.</div>
+                  </li>
+
+                  <li>
+                    <strong>Clique em “Carregar sem compactação”.</strong>
+                    <div style={{ color: '#92400e', marginTop: 3 }}>
+                      O botão aparece no canto superior esquerdo depois que você liga o modo do desenvolvedor.
+                      Escolha a pasta <code>extensao-guias-mei</code> que você descompactou no passo 2 e confirme.
+                    </div>
+                  </li>
+
+                  <li>
+                    <strong>Volte aqui e confira.</strong>
+                    <div style={{ marginTop: 5 }}>
+                      <button onClick={pingar} style={btn('#16a34a')}>🔄 Verificar de novo</button>
+                    </div>
+                  </li>
+                </ol>
+
+                <p style={{ margin: '12px 0 0', paddingTop: 10, borderTop: '1px dashed #fde68a', fontSize: 11, color: '#92400e', lineHeight: 1.5 }}>
+                  A extensão só acessa o site da Receita e esta página do NODRI, e não envia nada para fora do seu computador.
+                  Enquanto você não instalar, o botão <strong>Emitir Guia do MEI</strong> de cada profissional continua funcionando normalmente.
+                </p>
               </div>
             )}
             {extStatus === 'ok' && (
