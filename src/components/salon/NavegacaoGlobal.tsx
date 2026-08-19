@@ -6,6 +6,7 @@ import { Home, ArrowLeft, Search, Loader2, FileText, User, Layers, AlertTriangle
 import { useIsMobile } from '@/lib/useIsMobile'
 import { haNaoSalvo, nomesNaoSalvos } from '@/lib/guardaSalvar'
 import TituloDaAba from './TituloDaAba'
+import { ROTAS_DESCOBERTAS } from '@/lib/rotasDescobertas'
 
 // ── Navegação global (todas as páginas do painel do salão) ──
 // Canto inferior esquerdo: Voltar (histórico) · Início · Busca ultra inteligente.
@@ -74,6 +75,41 @@ const CATALOGO: PaginaCat[] = [
   { rota: '/salon/administrativo?aba=arquivos_envio', label: 'ARQUIVOS PARA ENVIO', grupo: 'Administrativo', chave: 'adm_arquivos_envio', palavras: 'anexo documento enviar' },
 ]
 
+// ── Páginas que ninguém cadastrou no CATALOGO acima ──
+// O catálogo é escrito à mão porque cada linha carrega sinônimos e permissão —
+// isso vale a pena para as páginas principais, mas garantia de não esquecer
+// nenhuma não dá para deixar por conta da memória. ROTAS_DESCOBERTAS é gerado
+// no build varrendo src/app/salon, então uma página nova aparece na busca no
+// mesmo deploy em que nasce.
+//
+// Quem já está no CATALOGO manda: a versão descoberta é descartada.
+//
+// A permissão é HERDADA da página-mãe (ex.: /salon/lojistas/relatorio herda de
+// /salon/lojistas). Sem mãe conhecida, a chave vira o nome do primeiro trecho
+// da rota — se não for uma permissão real, o sub simplesmente não vê a página,
+// que é o lado seguro do erro. O dono vê tudo de qualquer forma.
+function chaveHerdada(rota: string): string | null {
+  let melhor: PaginaCat | null = null
+  for (const c of CATALOGO) {
+    const base = c.rota.split('?')[0]
+    if (base === '/salon') continue   // mãe de todas — herdar dela liberaria geral
+    if (rota === base || rota.startsWith(base + '/')) {
+      if (!melhor || base.length > melhor.rota.split('?')[0].length) melhor = c
+    }
+  }
+  if (melhor) return melhor.chave
+  const seg = rota.replace(/^\/salon\/?/, '').split('/')[0] || ''
+  return seg ? seg.replace(/-/g, '_') : null
+}
+
+const CATALOGO_COMPLETO: PaginaCat[] = (() => {
+  const jaTem = new Set(CATALOGO.map(p => p.rota.split('?')[0]))
+  const extras = ROTAS_DESCOBERTAS
+    .filter(r => !jaTem.has(r.rota))
+    .map(r => ({ rota: r.rota, label: r.label, grupo: 'Página', chave: chaveHerdada(r.rota), palavras: '' }))
+  return [...CATALOGO, ...extras]
+})()
+
 const norm = (s: string) => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
 
 // Match inteligente: cada palavra digitada precisa "encaixar" no começo de
@@ -110,7 +146,7 @@ function tituloDaRota(pathname: string): string {
   if (pathname.startsWith('/salon/academia/')) return 'ACADEMIA'
   if (pathname.startsWith('/salon/feedback-profissional/')) return 'FEEDBACK PROFISSIONAL'
   if (pathname.startsWith('/salon/feedback/')) return 'FEEDBACK DE CLIENTE'
-  const hit = CATALOGO.find(p => !p.rota.includes('?') && p.rota === pathname)
+  const hit = CATALOGO_COMPLETO.find(p => !p.rota.includes('?') && p.rota === pathname)
   return hit?.label || ''
 }
 
@@ -190,7 +226,7 @@ export default function NavegacaoGlobal() {
 
   // Páginas: filtro local instantâneo com pontuação
   const paginas = useMemo(() => {
-    const visiveis = CATALOGO.filter(p => pode(p.chave))
+    const visiveis = CATALOGO_COMPLETO.filter(p => pode(p.chave))
     if (!q.trim()) return visiveis.filter(p => ATALHOS.includes(p.rota))
     return visiveis
       .map(p => ({ p, s: pontuar(q, `${p.label} ${p.palavras}`) }))
