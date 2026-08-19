@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Carrossel, { type Midia } from '@/components/Carrossel'
+import TextoFormatado from '@/components/site/TextoFormatado'
 
 const MARINHO = '#0d2a56'
 const CIANO = '#00b5d8'
@@ -115,11 +116,7 @@ export default function FuncionalidadePage() {
               letterSpacing: '-1px', marginBottom: 18, color: MARINHO,
             }}>{f.titulo}</h1>
 
-            {f.descricao && (
-              <p style={{ fontSize: 'clamp(14.5px,1.6vw,16.5px)', lineHeight: 1.75, color: '#4b5563', marginBottom: 26 }}>
-                {f.descricao}
-              </p>
-            )}
+            {f.descricao && <TextoFormatado texto={f.descricao} centralizado={!temMidia} />}
 
             {!!(f.destaques || []).length && (
               <div className="func-destaques" style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', marginBottom: 28 }}>
