@@ -1815,11 +1815,13 @@ ${montarContratoHTML()}
           {/* ── PAINEL DE CNPJ DOS PROFISSIONAIS ── */}
           {secao === 'cnpj' && (
             <div style={{ maxWidth: '1000px' }}>
-              <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', borderBottom: '1px solid #ece9e2', paddingBottom: 12 }}>
-                {subFixa ? null : ([['cnpj', 'CNPJ'], ['contratacao', '📝 Processo de Contratação'], ['desligamento', '🚪 Processo de Desligamento']] as const).map(([k, l]) => (
-                  <button key={k} onClick={() => setCnpjSub(k)} style={{ padding: '8px 16px', borderRadius: 8, border: cnpjSub === k ? '1px solid #5b4fcf' : '1px solid #e0ddd8', background: cnpjSub === k ? '#5b4fcf' : '#fff', color: cnpjSub === k ? '#fff' : '#6b6860', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>{l}</button>
-                ))}
-              </div>
+              {/* As abas "Processo de Contratação" e "Processo de Desligamento" saíram
+                  desta tela a pedido do dono: aqui é o controle de CNPJ/MEI dos
+                  profissionais PJ, e os processos são outro assunto.
+                  Só a barra de abas foi retirada — o conteúdo abaixo e o que já está
+                  salvo em processo_contratacao_pj / processo_desligamento_pj continuam
+                  intactos. Para trazer as abas de volta é só restaurar esta barra, ou
+                  passar subFixa="contratacao" / "desligamento" ao componente. */}
               {cnpjSub === 'contratacao' ? (
                 <ProcessoContratacao chave="processo_contratacao_pj" modelo={PJ_CONTRATACAO} titulo="📝 Processo de Contratação (PJ/MEI)" pessoas={profissionais.map(p => ({ nome: p.apelido || p.nome_completo || '—', telefone: (p as any).telefone || (() => { try { return JSON.parse((p as any).contato_responsavel || '{}').tel || '' } catch { return '' } })() }))} />
               ) : cnpjSub === 'desligamento' ? (
