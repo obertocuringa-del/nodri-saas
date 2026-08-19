@@ -215,6 +215,10 @@ export default function NavegacaoGlobal() {
   const [buscaAberta, setBuscaAberta] = useState(false)
   const [q, setQ] = useState('')
   const [apiRes, setApiRes] = useState<ResultadoApi[]>([])
+  // Setores do salão (id + nome). Só carrega quando a busca abre, e uma vez:
+  // serve para transformar /salon/pendencias?ferramenta=X no link direto da
+  // ferramenta, que depende do id do setor — diferente em cada salão.
+  const [setores, setSetores] = useState<{ id: string; nome: string }[] | null>(null)
   const [apiLoading, setApiLoading] = useState(false)
   const [sel, setSel] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -281,8 +285,20 @@ export default function NavegacaoGlobal() {
   }, [perms])
 
   // Páginas: filtro local instantâneo com pontuação
+  // Os SETORES do salão entram como resultado próprio. Buscar "gerente" tem de
+  // abrir o setor Gerência, não o organograma: quem digita o nome de um setor
+  // quer o setor. Vem do banco, então setor novo aparece na busca sozinho —
+  // não há lista para manter.
+  const setoresCat = useMemo<PaginaCat[]>(() => (setores || []).map(st => ({
+    rota: `/salon/departamentos/${st.id}`,
+    label: (st.nome || '').toUpperCase(),
+    grupo: 'Setor',
+    chave: 'pendencias',
+    palavras: 'setor departamento demandas solicitacao area',
+  })), [setores])
+
   const paginas = useMemo(() => {
-    const visiveis = CATALOGO_COMPLETO.filter(p => pode(p.chave))
+    const visiveis = [...setoresCat, ...CATALOGO_COMPLETO].filter(p => pode(p.chave))
     if (!q.trim()) return visiveis.filter(p => ATALHOS.includes(p.rota))
     return visiveis
       .map(p => ({ p, s: pontuar(q, `${p.label} ${p.palavras}`) }))
@@ -290,7 +306,7 @@ export default function NavegacaoGlobal() {
       .sort((a, b) => b.s - a.s)
       .slice(0, 8)
       .map(x => x.p)
-  }, [q, pode])
+  }, [q, pode, setoresCat])
 
   // Conteúdo: API com debounce
   useEffect(() => {
@@ -318,7 +334,34 @@ export default function NavegacaoGlobal() {
     acao()
   }
 
-  function irPara(rota: string) {
+  useEffect(() => {
+    if (!buscaAberta || setores !== null) return
+    fetch('/api/profissionais?leve=1')
+      .then(r => r.ok ? r.json() : [])
+      .then(d => setSetores((Array.isArray(d) ? d : [])
+        .filter((p: any) => p.is_departamento)
+        .map((p: any) => ({ id: p.id, nome: p.nome_completo || '' }))))
+      .catch(() => setSetores([]))
+  }, [buscaAberta, setores])
+
+  // Ferramenta de setor não tem rota própria; o catálogo aponta para a lista de
+  // setores como reserva. Sabendo os setores deste salão, dá para mandar direto
+  // para a ferramenta — que é o que a pessoa quis ao buscar por ela.
+  function rotaReal(rota: string): string {
+    const m = /^\/salon\/pendencias\?ferramenta=(.+)$/.exec(rota)
+    if (!m || !setores?.length) return rota
+    const id = m[1]
+    const grupo = FERRAMENTAS_POR_SETOR.find(g => g.itens.includes(id))
+    if (!grupo) return rota
+    const alvo = setores.find(st => {
+      const n = norm(st.nome).toUpperCase()
+      return grupo.chave.some(k => n.includes(norm(k).toUpperCase()))
+    })
+    return alvo ? `/salon/departamentos/${alvo.id}?f=${id}` : rota
+  }
+
+  function irPara(rotaPedida: string) {
+    const rota = rotaReal(rotaPedida)
     setBuscaAberta(false)
     navegarComGuarda(() => {
       // Mesma página com outra aba (?aba=...): o Next não remonta o componente,

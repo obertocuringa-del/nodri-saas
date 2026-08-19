@@ -135,6 +135,16 @@ export default function DepartamentoPage() {
   const isMobileSetor = useIsMobile(900)
   const ferramentas = useMemo(() => ferramentasDoSetor(dep?.nome_completo || ''), [dep?.nome_completo])
   const [ferramentaAberta, setFerramentaAberta] = useState('')
+  // Link direto vindo da busca global: /salon/departamentos/<id>?f=chancela_dos_contratos
+  // Antes as ferramentas só abriam por clique na sidebar, então não havia como
+  // mandar alguém direto para uma delas — nem a busca, nem um link no WhatsApp.
+  // Só aceita ferramenta que pertence A ESTE setor; qualquer outra coisa no
+  // parâmetro é ignorada e a página abre normal.
+  useEffect(() => {
+    if (!ferramentas.length) return
+    const f = new URLSearchParams(window.location.search).get('f') || ''
+    if (f && ferramentas.some(x => x.id === f)) setFerramentaAberta(f)
+  }, [ferramentas])
   const [abaPopSetor, setAbaPopSetor] = useState('cafe')
   const [menuFerrOpen, setMenuFerrOpen] = useState(false)
   // Ferramentas com conteudoSlug abrem uma lista de POPs como sub-itens; a lista
