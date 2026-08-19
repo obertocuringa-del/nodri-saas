@@ -12,6 +12,7 @@ import DescricaoCargo from '@/components/salon/DescricaoCargo'
 import PlanoCarreiraPJ from '@/components/salon/PlanoCarreiraPJ'
 import NormaConduta from '@/components/salon/NormaConduta'
 import AcessoGlobalProfissionais from '@/components/salon/AcessoGlobalProfissionais'
+import EmissaoGuiasMEI from '@/components/salon/EmissaoGuiasMEI'
 import { confirmarSaidaSemSalvar } from '@/lib/guardaSalvar'
 import { urlPublica } from '@/lib/urlPublica'
 
@@ -1826,13 +1827,14 @@ ${montarContratoHTML()}
                   <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#1a1a1a', margin: '0 0 6px' }}>CNPJ dos Profissionais</h2>
                   <p style={{ fontSize: '13px', color: '#6b6860', margin: 0 }}>Veja o CNPJ, a categoria, a data de admissão. Marque o status e anote observações (ex: tem CNPJ mas não está emitindo guia).</p>
                 </div>
-                <div style={{ display: 'flex', gap: '8px' }} className="no-mobile">
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }} className="no-mobile">
                   {(() => {
                     const cols = ['Nome', 'Categoria', 'CNPJ', 'Admissão', 'Status', 'Observação']
                     const rows = () => profissionais.filter(p => !excluiCnpj(p)).sort((a, b) => (a.cargo || '').localeCompare(b.cargo || '')).map(p => [p.nome_completo || '', p.cargo || '', p.cnpj || 'PENDENTE DE CRIAÇÃO', fmtData((p as any).data_admissao), ((p as any).cnpj_status === 'pendente' || !p.cnpj) ? 'Pendente' : 'OK', (p as any).cnpj_observacao || ''])
                     return (<>
                       <button onClick={() => imprimirTabela('CNPJ dos Profissionais', cols, rows())} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: 'none', background: '#5b4fcf', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>🖨️ Imprimir</button>
                       <button onClick={() => exportarExcel('CNPJ_profissionais', cols, rows())} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: 'none', background: '#16a34a', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>📊 Excel</button>
+                      <EmissaoGuiasMEI profissionais={profissionais.filter(p => !excluiCnpj(p)).map(p => ({ id: p.id, nome_completo: p.nome_completo, apelido: p.apelido, cnpj: p.cnpj, cnpj_status: (cnpjEdits[p.id]?.status ?? (p as any).cnpj_status ?? (p.cnpj ? 'ok' : 'pendente')) }))} />
                     </>)
                   })()}
                 </div>
