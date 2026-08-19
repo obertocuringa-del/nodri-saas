@@ -69,14 +69,33 @@ export async function GET(req: NextRequest) {
   } catch { /* */ }
 
   // 2) Serviços
-  if (pode('servicos')) try {
-    const { data } = await supabaseAdmin.from('servicos').select('nome, categoria, preco').eq('salao_id', salaoId)
-    for (const s of (data || [])) {
-      if (norm(`${s.nome} ${s.categoria || ''}`).includes(q)) {
-        resultados.push({ tipo: 'Serviço', titulo: s.nome, trecho: `${s.categoria || ''}${s.preco ? ' · R$ ' + s.preco : ''}`, rota: '/salon/servicos' })
+  // Existem DUAS tabelas de serviço, e a busca olhava só a antiga: `servicos`
+  // guarda o catálogo (usado pelo salão modelo e pelas análises de retorno) e
+  // `salao_servicos` é a tabela de preços que alimenta /salon/servicos — a que
+  // o dono enxerga e edita. Procurar por um serviço não achava nada, e em
+  // silêncio, porque o try/catch engolia o erro. Agora as duas entram, sem
+  // repetir o mesmo nome.
+  if (pode('servicos')) {
+    const vistos = new Set<string>()
+    try {
+      const { data } = await supabaseAdmin
+        .from('salao_servicos').select('nome, categoria, preco_fixo, preco_min').eq('salao_id', salaoId)
+      for (const s of (data || [])) {
+        if (!norm(`${s.nome} ${s.categoria || ''}`).includes(q)) continue
+        vistos.add(norm(s.nome))
+        const preco = s.preco_fixo || s.preco_min
+        resultados.push({ tipo: 'Serviço', titulo: s.nome, trecho: `${s.categoria || ''}${preco ? ' · R$ ' + preco : ''}`, rota: '/salon/servicos' })
       }
-    }
-  } catch { /* */ }
+    } catch { /* */ }
+    try {
+      const { data } = await supabaseAdmin.from('servicos').select('nome, categoria').eq('salao_id', salaoId)
+      for (const s of (data || [])) {
+        if (!norm(`${s.nome} ${s.categoria || ''}`).includes(q)) continue
+        if (vistos.has(norm(s.nome))) continue
+        resultados.push({ tipo: 'Serviço', titulo: s.nome, trecho: s.categoria || '', rota: '/salon/servicos' })
+      }
+    } catch { /* */ }
+  }
 
   // 3) Profissionais
   if (pode('profissionais')) try {
