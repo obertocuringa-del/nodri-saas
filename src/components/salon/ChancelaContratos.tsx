@@ -136,8 +136,19 @@ tr:nth-child(even) td{background:#faf9ff}
         .ch-tab { width:100%; border-collapse:collapse; min-width:760px; }
         .ch-tab th { text-align:left; font-size:10px; font-weight:800; color:#8a8680; text-transform:uppercase;
           letter-spacing:.5px; padding:9px 11px; background:#fbfbfa; border-bottom:1px solid #eceae4; white-space:nowrap; }
-        .ch-tab td { padding:9px 11px; border-bottom:1px solid #f4f2ee; vertical-align:middle; }
-        .ch-tab tbody tr:hover td { background:#fcfcfb; }
+        /* Cada linha tem duas alturas de texto (nome + CNPJ de um lado, data +
+           "próxima em..." do outro). Com o risco antigo, quase invisível, e
+           pouco respiro, batia o olho e parecia um bloco só — dava para ler a
+           data de um profissional achando que era do de cima. Risco mais firme,
+           faixa alternada (a mesma que a impressão já usava) e mais ar entre as
+           linhas resolvem sem mexer na estrutura da tabela. */
+        .ch-tab td { padding:14px 11px; border-bottom:1px solid #e4e1d9; vertical-align:middle; }
+        .ch-tab tbody tr:nth-child(even) td { background:#fbfaf8; }
+        .ch-tab tbody tr:hover td { background:#f5f2ff; }
+        /* Âncora visual da linha: uma barra fina na coluna do nome, para o olho
+           saber onde cada profissional começa mesmo rolando na horizontal. */
+        .ch-tab tbody td:first-child { box-shadow: inset 3px 0 0 #ece9f7; }
+        .ch-tab tbody tr:hover td:first-child { box-shadow: inset 3px 0 0 #5b4fcf; }
       `}</style>
 
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 11, flexWrap: 'wrap', marginBottom: 13 }}>
