@@ -367,6 +367,9 @@ export default function ProfissionaisPainel({ secaoFixa = '', embutido = false, 
   const CATS_ADMIN = ['ADMINISTRATIVO', 'FINANCEIRO', 'GERENCIA']
   // Exclui do painel CNPJ: admin, recepção (é CLT) e quem é CLT
   const excluiCnpj = (p: Profissional) => {
+    // Setor não é pessoa: departamento mora na mesma tabela de profissionais,
+    // mas não tem CNPJ nem emite guia — só poluía a tela com card vazio.
+    if (p.is_departamento) return true
     const cg = norm(p.cargo || ''), nm = norm(p.nome_completo || '')
     return CATS_ADMIN.includes(cg) || CATS_ADMIN.includes(nm) || cg.startsWith('RECEP') || nm.startsWith('RECEP') || norm((p as any).vinculo || '') === 'CLT'
   }
