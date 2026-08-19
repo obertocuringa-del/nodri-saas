@@ -192,6 +192,7 @@ chrome.runtime.onMessage.addListener((msg, sender, resposta) => {
             acao: 'marcar-e-gerar',
             dataPagamento: dataPagamento(estado.config),
             confirmar: !!estado.config?.confirmar,
+            incluir: estado.config?.incluir || 'vencidos_e_mes',
           })
         } else {
           resposta({ acao: 'selecionar-ano', ano: estado.anoAtual })

@@ -37,6 +37,7 @@ interface Config {
   pagamentoModo: 'dia_fixo' | 'hoje'
   pagamentoDia: number
   guia: 'consolidada' | 'mensal'
+  incluir: 'vencidos_e_mes' | 'so_vencidos' | 'todos'
   nomeArquivo: string
   pasta: string
   intervalo: number       // segundos entre um profissional e outro
@@ -49,6 +50,7 @@ const CFG_PADRAO: Config = {
   pagamentoModo: 'dia_fixo',
   pagamentoDia: 20,
   guia: 'consolidada',
+  incluir: 'vencidos_e_mes',
   nomeArquivo: '{nome} - {mes}-{ano}.pdf',
   pasta: 'Guias MEI/{ano}-{mes}',
   intervalo: 3,
@@ -333,6 +335,14 @@ export default function EmissaoGuiasMEI({ profissionais }: { profissionais: Prof
                 <option value={1}>Só o ano atual</option>
                 <option value={2}>Ano atual + anterior</option>
                 <option value={3}>Ano atual + 2 anteriores</option>
+              </select>
+            </div>
+            <div>
+              <label style={lbl}>Quais meses emitir</label>
+              <select value={cfg.incluir} onChange={e => setCfg({ ...cfg, incluir: e.target.value as Config['incluir'] })} style={inp}>
+                <option value="vencidos_e_mes">Atrasados + o que vence neste mês (recomendado)</option>
+                <option value="so_vencidos">Somente os já vencidos</option>
+                <option value="todos">Todos em aberto, inclusive futuros (adianta o ano)</option>
               </select>
             </div>
             <div>

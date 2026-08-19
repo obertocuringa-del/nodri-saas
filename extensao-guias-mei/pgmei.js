@@ -126,12 +126,36 @@
       const cels = Array.from(tr.querySelectorAll('td')).map(txt)
       const reais = cels.filter(c => /^R\$\s*[\d.]+,\d{2}$/.test(c))
       if (reais.length === 0) continue
+      // Coluna "Situação": Liquidado / Devedor / A Vencer.
+      const situacao = (cels.find(c => /^(liquidado|devedor|a vencer|em aberto)$/i.test(c)) || '').toLowerCase()
+      if (situacao.includes('liquidado')) continue      // já pago — nunca marcar
       const periodo = cels.find(c => /^[A-Za-zÇçÃãÉé]+\/\d{4}$/.test(c)) || cels[1] || ''
       const total = reais[reais.length - 1]
-      const venc = cels.find(c => /^\d{2}\/\d{2}\/\d{4}$/.test(c)) || ''
-      out.push({ tr, chk, periodo, total, venc })
+      const datas = cels.filter(c => /^\d{2}\/\d{2}\/\d{4}$/.test(c))
+      const venc = datas[0] || ''                        // 1ª data = Vencimento; 2ª = Acolhimento
+      out.push({ tr, chk, periodo, total, venc, situacao })
     }
     return out
+  }
+
+  function dataBR(s) {
+    const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(String(s || ''))
+    return m ? new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1])) : null
+  }
+
+  // Sem esta regra o PGMEI entrega o ano inteiro: os meses "A Vencer" já vêm
+  // com o valor cheio na tabela, e marcar todos significaria pagar meses que
+  // ainda nem aconteceram.
+  function aplicarRegra(linhas, regra) {
+    const hoje = new Date(); hoje.setHours(0, 0, 0, 0)
+    const fimDoMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0, 23, 59, 59)
+    if (regra === 'todos') return linhas
+    return linhas.filter(l => {
+      const v = dataBR(l.venc)
+      if (!v) return l.situacao.includes('devedor')      // sem data legível: só o que está atrasado
+      if (regra === 'so_vencidos') return v < hoje
+      return v <= fimDoMes                               // padrão: atrasados + o que vence neste mês
+    })
   }
 
   function somaReais(lista) {
@@ -185,11 +209,11 @@
     ok.click()
   }
 
-  async function acaoMarcarEGerar(dataPagamento, confirmar) {
+  async function acaoMarcarEGerar(dataPagamento, confirmar, incluir) {
     const tab = await esperarPor(tabelaPeriodos, 12000)
     if (!tab) return erro('Tabela de períodos não carregou.')
 
-    const abertas = linhasEmAberto(tab)
+    const abertas = aplicarRegra(linhasEmAberto(tab), incluir || 'vencidos_e_mes')
     if (abertas.length === 0) {
       const r = await enviar({ tipo: 'pgmei-ano-sem-valor' })
       if (r?.acao === 'selecionar-ano') return acaoSelecionarAno(r.ano)
@@ -215,9 +239,10 @@
     })
 
     if (confirmar) {
+      const detalhe = abertas.map(l => `• ${l.periodo}  ${l.total}  (${l.situacao || 'em aberto'}, vence ${l.venc || '—'})`).join('\n')
       const ok = window.confirm(
         `NODRI — conferência antes de gerar\n\n` +
-        `Meses marcados (${periodos.length}):\n${periodos.join('\n')}\n\n` +
+        `Meses marcados (${periodos.length}):\n${detalhe}\n\n` +
         `Total: ${somaReais(abertas.map(l => l.total))}\n\n` +
         `OK para gerar a guia · Cancelar para PULAR este profissional.`
       )
@@ -261,7 +286,7 @@
       if (r.acao === 'preencher-cnpj') return await acaoPreencherCnpj(r.cnpj)
       if (r.acao === 'ir-emissao') return await acaoIrEmissao()
       if (r.acao === 'selecionar-ano') return await acaoSelecionarAno(r.ano)
-      if (r.acao === 'marcar-e-gerar') return await acaoMarcarEGerar(r.dataPagamento, r.confirmar)
+      if (r.acao === 'marcar-e-gerar') return await acaoMarcarEGerar(r.dataPagamento, r.confirmar, r.incluir)
       if (r.acao === 'baixar-pdf') return await acaoBaixarPdf()
     } catch (e) {
       await erro('Erro inesperado: ' + (e?.message || e))
