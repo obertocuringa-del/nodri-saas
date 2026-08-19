@@ -13,7 +13,11 @@ const norm = (s: string) => (s || '').toUpperCase().trim()
   .normalize('NFD').replace(/[̀-ͯ]/g, '')
   .replace(/[.·]/g, '').replace(/\s+/g, ' ')
 
-const MAPA: { chave: string[]; demandas: string[] }[] = [
+// Exportado para a busca global poder indexar as demandas: elas aparecem na
+// sidebar do setor, mas não têm rota própria, então sem esta lista a busca não
+// as enxerga — foi o caso da "Chancela dos Contratos", que é demanda e não
+// ferramenta.
+export const DEMANDAS_POR_SETOR: { chave: string[]; demandas: string[] }[] = [
   {
     chave: ['GERENCIA', 'GERENTE'], demandas: [
       'Planejamento estratégico geral da empresa',
@@ -132,7 +136,7 @@ const MAPA: { chave: string[]; demandas: string[] }[] = [
 /** Demandas do setor, já SEM as que existem como ferramenta dele (não duplica). */
 export function demandasDoSetor(nomeSetor: string, rotulosJaNaSidebar: string[] = []): string[] {
   const n = norm(nomeSetor)
-  const grupo = MAPA.find(g => g.chave.some(k => n.includes(k)))
+  const grupo = DEMANDAS_POR_SETOR.find(g => g.chave.some(k => n.includes(k)))
   if (!grupo) return []
   const jaTem = new Set(rotulosJaNaSidebar.map(r => norm(r.replace(/^(PJ|CLT)\s*/, ''))))
   return grupo.demandas.filter(d => !jaTem.has(norm(d)))

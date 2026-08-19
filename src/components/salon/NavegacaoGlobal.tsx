@@ -8,6 +8,7 @@ import { haNaoSalvo, nomesNaoSalvos } from '@/lib/guardaSalvar'
 import TituloDaAba from './TituloDaAba'
 import { ROTAS_DESCOBERTAS } from '@/lib/rotasDescobertas'
 import { CATALOGO as FERRAMENTAS, FERRAMENTAS_POR_SETOR } from '@/lib/ferramentasCatalogo'
+import { DEMANDAS_POR_SETOR, slugDemanda } from '@/components/salon/demandasSetor'
 
 // ── Navegação global (todas as páginas do painel do salão) ──
 // Canto inferior esquerdo: Voltar (histórico) · Início · Busca ultra inteligente.
@@ -159,12 +160,38 @@ const FERRAMENTAS_CAT: PaginaCat[] = (() => {
   return out
 })()
 
+// ── Demandas dos setores ──
+// Cada setor tem, além das ferramentas, a lista do que ele é responsável por
+// fazer. Algumas dessas demandas abrem tela própria — a Chancela dos Contratos
+// é uma delas. Também não têm rota, e por isso não apareciam na busca.
+const DEMANDAS_CAT: PaginaCat[] = (() => {
+  const jaTem = new Set([...CATALOGO, ...FERRAMENTAS_CAT].map(p => norm(p.label).replace(/[^a-z0-9]+/g, '')))
+  const out: PaginaCat[] = []
+  const vistos = new Set<string>()
+  for (const grupo of DEMANDAS_POR_SETOR) {
+    const setor = NOME_SETOR[grupo.chave[0]] || grupo.chave[0]
+    for (const nome of grupo.demandas) {
+      const k = norm(nome).replace(/[^a-z0-9]+/g, '')
+      if (!k || vistos.has(k) || jaTem.has(k)) continue   // não repete o que já existe
+      vistos.add(k)
+      out.push({
+        rota: `/salon/pendencias?demanda=${slugDemanda(nome)}`,
+        label: nome,
+        grupo: `Setor · ${setor}`,
+        chave: 'pendencias',
+        palavras: `setor demanda ${setor.toLowerCase()}`,
+      })
+    }
+  }
+  return out
+})()
+
 const CATALOGO_COMPLETO: PaginaCat[] = (() => {
   const jaTem = new Set(CATALOGO.map(p => p.rota.split('?')[0]))
   const extras = ROTAS_DESCOBERTAS
     .filter(r => !jaTem.has(r.rota))
     .map(r => ({ rota: r.rota, label: r.label, grupo: 'Página', chave: chaveHerdada(r.rota), palavras: '' }))
-  return [...CATALOGO, ...FERRAMENTAS_CAT, ...extras]
+  return [...CATALOGO, ...FERRAMENTAS_CAT, ...DEMANDAS_CAT, ...extras]
 })()
 
 
@@ -348,10 +375,15 @@ export default function NavegacaoGlobal() {
   // setores como reserva. Sabendo os setores deste salão, dá para mandar direto
   // para a ferramenta — que é o que a pessoa quis ao buscar por ela.
   function rotaReal(rota: string): string {
-    const m = /^\/salon\/pendencias\?ferramenta=(.+)$/.exec(rota)
-    if (!m || !setores?.length) return rota
-    const id = m[1]
-    const grupo = FERRAMENTAS_POR_SETOR.find(g => g.itens.includes(id))
+    const mf = /^\/salon\/pendencias\?ferramenta=(.+)$/.exec(rota)
+    const md = /^\/salon\/pendencias\?demanda=(.+)$/.exec(rota)
+    if ((!mf && !md) || !setores?.length) return rota
+    // Ferramenta abre pelo id; demanda abre com o prefixo demanda:<slug>, que é
+    // como a página do setor a identifica.
+    const id = mf ? mf[1] : `demanda:${md![1]}`
+    const grupo = mf
+      ? FERRAMENTAS_POR_SETOR.find(g => g.itens.includes(mf[1]))
+      : DEMANDAS_POR_SETOR.find(g => g.demandas.some(d => slugDemanda(d) === md![1]))
     if (!grupo) return rota
     const alvo = setores.find(st => {
       const n = norm(st.nome).toUpperCase()

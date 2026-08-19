@@ -135,16 +135,6 @@ export default function DepartamentoPage() {
   const isMobileSetor = useIsMobile(900)
   const ferramentas = useMemo(() => ferramentasDoSetor(dep?.nome_completo || ''), [dep?.nome_completo])
   const [ferramentaAberta, setFerramentaAberta] = useState('')
-  // Link direto vindo da busca global: /salon/departamentos/<id>?f=chancela_dos_contratos
-  // Antes as ferramentas só abriam por clique na sidebar, então não havia como
-  // mandar alguém direto para uma delas — nem a busca, nem um link no WhatsApp.
-  // Só aceita ferramenta que pertence A ESTE setor; qualquer outra coisa no
-  // parâmetro é ignorada e a página abre normal.
-  useEffect(() => {
-    if (!ferramentas.length) return
-    const f = new URLSearchParams(window.location.search).get('f') || ''
-    if (f && ferramentas.some(x => x.id === f)) setFerramentaAberta(f)
-  }, [ferramentas])
   const [abaPopSetor, setAbaPopSetor] = useState('cafe')
   const [menuFerrOpen, setMenuFerrOpen] = useState(false)
   // Ferramentas com conteudoSlug abrem uma lista de POPs como sub-itens; a lista
@@ -166,6 +156,22 @@ export default function DepartamentoPage() {
   const demandasSetor = useMemo(
     () => demandasDoSetor(dep?.nome_completo || '', ferramentas.map(f => f.label)),
     [dep?.nome_completo, ferramentas])
+
+  // Link direto vindo da busca global: ?f=<ferramenta> ou ?f=demanda:<slug>.
+  // Antes só abria por clique na sidebar, então não havia como mandar alguém
+  // direto para uma delas — nem a busca, nem um link no WhatsApp. Fica DEPOIS
+  // de ferramentas e demandasSetor porque confere o parâmetro contra as duas:
+  // só abre o que pertence A ESTE setor, e ignora qualquer outra coisa.
+  useEffect(() => {
+    const f = new URLSearchParams(window.location.search).get('f') || ''
+    if (!f) return
+    if (f.startsWith('demanda:')) {
+      const slug = f.slice('demanda:'.length)
+      if (demandasSetor.some(d => slugDemanda(d) === slug)) setFerramentaAberta(f)
+      return
+    }
+    if (ferramentas.some(x => x.id === f)) setFerramentaAberta(f)
+  }, [ferramentas, demandasSetor])
 
   const TITULO_GRUPO: Record<string, string> = {
     CLT: '👤 CLT — PROFISSIONAIS',
