@@ -10,6 +10,7 @@ const VAZIO = {
   rodando: false, fila: [], idx: 0, config: null,
   abaPgmei: null, abaNodri: null,
   anos: [], anoAtual: null, marcados: null, valor: '', vencimento: '', nomeAlvo: null,
+  geracoes: 0,   // quantas vezes ja mandamos gerar para o item atual (trava anti-loop)
 }
 
 async function ler() {
@@ -113,6 +114,7 @@ async function comecarItem() {
   estado.valor = ''
   estado.vencimento = ''
   estado.nomeAlvo = null
+  estado.geracoes = 0
   await gravar(estado)
 
   avisarPagina(estado, { tipo: 'progresso', profId: item.id, etapa: 'andando', msg: 'Abrindo o PGMEI…' })
@@ -188,6 +190,20 @@ chrome.runtime.onMessage.addListener((msg, sender, resposta) => {
       if (msg.pagina === 'inicio') { resposta({ acao: 'ir-emissao' }); return }
       if (msg.pagina === 'emissao') {
         if (msg.temTabela) {
+          // Rede de seguranca contra loop: cada ano configurado justifica UMA
+          // ordem de gerar. Passou disso, alguma coisa esta recusando de forma
+          // que nao sabemos ler — melhor abandonar este profissional do que
+          // ficar martelando a Receita para sempre.
+          const limite = Math.max(1, (estado.anos || []).length) + 1
+          const jaTentou = Number(estado.geracoes || 0)
+          if (jaTentou >= limite) {
+            resposta({ acao: 'nada' })
+            await concluirItem(false, { erro: 'A Receita recusou a geração e a página voltou ao início. Pulado para não repetir sem fim.' })
+            return
+          }
+          const e2 = await ler()
+          e2.geracoes = jaTentou + 1
+          await gravar(e2)
           resposta({
             acao: 'marcar-e-gerar',
             dataPagamento: dataPagamento(estado.config),

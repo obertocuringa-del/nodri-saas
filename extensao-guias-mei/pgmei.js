@@ -103,6 +103,21 @@
     return `${s.slice(0, 2)}.${s.slice(2, 5)}.${s.slice(5, 8)}/${s.slice(8, 12)}-${s.slice(12, 14)}`
   }
 
+  // Tarja de erro do PGMEI. As mensagens vêm no formato "23998 - Falha ao
+  // Gerar a Apuração, limite diário excedido!" — código, hífen e texto. Casar
+  // pelo formato, e não pela mensagem, cobre também os erros que ainda não
+  // conhecemos.
+  function erroDaReceita() {
+    const cand = Array.from(document.querySelectorAll('[class*=alert],[class*=erro],[class*=error],[role=alert],.msg,.mensagem'))
+    for (const el of cand) {
+      if (!vis(el)) continue
+      const t = txt(el)
+      if (!t || t.length > 260) continue
+      if (/^\d{3,6}\s*[-–]\s*\S/.test(t) || /limite di[áa]rio excedido|falha ao gerar/i.test(t)) return t
+    }
+    return null
+  }
+
   // Desafio visível do hCaptcha (o modo invisível não abre nada e passa direto)
   function desafioAberto() {
     return Array.from(document.querySelectorAll('iframe'))
@@ -252,6 +267,12 @@
     const gerar = botaoPorTexto('apurar/gerar das', 'apurar/gerar', 'gerar das')
     if (!gerar) return erro('Botão "Apurar/Gerar DAS" não encontrado.')
     gerar.click()
+
+    // A Receita recusa em cima da própria página, sem trocar de endereço. Se
+    // ninguém olhar essa tarja, a extensão fica esperando um PDF que nunca vem
+    // — e no recarregamento seguinte recomeça o ciclo no mesmo profissional.
+    const e = await esperarPor(erroDaReceita, 6000, 400)
+    if (e) return enviar({ tipo: 'pgmei-erro', msg: e })
   }
 
   async function acaoBaixarPdf() {

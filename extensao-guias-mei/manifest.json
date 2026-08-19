@@ -1,13 +1,19 @@
 {
   "manifest_version": 3,
   "name": "NODRI — Emissão de Guias do MEI",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Preenche o PGMEI da Receita com os CNPJs dos profissionais do NODRI e baixa as guias DAS já renomeadas.",
-  "permissions": ["downloads", "storage", "tabs"],
+  "permissions": [
+    "downloads",
+    "storage",
+    "tabs"
+  ],
   "host_permissions": [
     "https://*.receita.fazenda.gov.br/*"
   ],
-  "background": { "service_worker": "background.js" },
+  "background": {
+    "service_worker": "background.js"
+  },
   "content_scripts": [
     {
       "matches": [
@@ -18,12 +24,18 @@
         "https://nodri-saas-jsx4.vercel.app/*",
         "http://localhost:3000/*"
       ],
-      "js": ["ponte.js"],
+      "js": [
+        "ponte.js"
+      ],
       "run_at": "document_start"
     },
     {
-      "matches": ["https://*.receita.fazenda.gov.br/*"],
-      "js": ["pgmei.js"],
+      "matches": [
+        "https://*.receita.fazenda.gov.br/*"
+      ],
+      "js": [
+        "pgmei.js"
+      ],
       "run_at": "document_idle"
     }
   ]
