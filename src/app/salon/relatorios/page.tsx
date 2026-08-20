@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, Fragment } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Upload, TrendingUp, TrendingDown, Minus, Calendar, FileSpreadsheet, ChevronUp, ChevronDown, ChevronsUpDown, Target, BarChart2, Settings, ChevronRight, Users, AlertTriangle, Star, RefreshCw } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -8,6 +8,7 @@ import RankingUnificado from '@/components/salon/RankingUnificado'
 import BotaoRecuperacao from '@/components/salon/BotaoRecuperacao'
 import RecuperadosReport from '@/components/salon/RecuperadosReport'
 import DiaSemanaReport from '@/components/salon/DiaSemanaReport'
+import DetalheClienteRelatorio from '@/components/salon/DetalheClienteRelatorio'
 import { useIsMobile } from '@/lib/useIsMobile'
 import { usePermissoes } from '@/lib/usePermissoes'
 
@@ -281,6 +282,8 @@ export default function RelatoriosPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [permCarregado])
   const [subAnalise, setSubAnalise] = useState<'risco' | 'perdidos' | 'vip' | 'regular' | 'novo' | 'crosssell' | 'frequencia' | 'diasemana' | 'recuperados'>('risco')
+  // Linha aberta nos relatórios Em Risco / Perdidos (uma por vez).
+  const [clienteAberto, setClienteAberto] = useState<string>('')
   const [freqModal, setFreqModal] = useState<{ label: string; min: number; max: number } | null>(null)
   const [freqClientes, setFreqClientes] = useState<any[]>([])
   const [freqLoading, setFreqLoading] = useState(false)
@@ -2572,8 +2575,14 @@ ${lista.map((c:any,i:number)=>{
                             </thead>
                             <tbody>
                               {ordenarPor((analiseDetalhe as any[]).map(c => ({ ...c, _envios: enviosMap[c.cliente_nome] || 0 })).filter(c => !filtroPendente || c._envios === 0), sortLista.key, sortLista.dir).slice(0, verQtd).map((c: any, i: number) => (
-                                <tr key={i} style={{ borderBottom: '1px solid #e8e6e0', background: i % 2 === 0 ? 'transparent' : '#f5f4f008' }}>
-                                  <td style={{ padding: '9px 12px', fontSize: 12, color: '#1a1a1a', fontWeight: 600 }}>{c.cliente_nome}</td>
+                                <Fragment key={i}>
+                                <tr onClick={() => setClienteAberto(a => a === c.cliente_nome ? '' : c.cliente_nome)}
+                                  title="Clique para ver os profissionais e o histórico completo de serviços"
+                                  style={{ borderBottom: '1px solid #e8e6e0', background: clienteAberto === c.cliente_nome ? '#f5f3ff' : (i % 2 === 0 ? 'transparent' : '#f5f4f008'), cursor: 'pointer' }}>
+                                  <td style={{ padding: '9px 12px', fontSize: 12, color: '#1a1a1a', fontWeight: 600 }}>
+                                    <span style={{ color: '#5b4fcf', marginRight: 5, display: 'inline-block', width: 9 }}>{clienteAberto === c.cliente_nome ? '▾' : '▸'}</span>
+                                    {c.cliente_nome}
+                                  </td>
                                   <td style={{ padding: '9px 12px', fontSize: 11, color: '#5b4fcf' }}>{c.celular || '—'}</td>
                                   <td style={{ padding: '9px 12px', fontSize: 12, color: '#059669', fontWeight: 700 }}>{podePerm('rel_valores') ? moeda(c.ltv_total) : '•••'}</td>
                                   <td style={{ padding: '9px 12px', fontSize: 12, color: '#767069' }}>{c.total_visitas}x</td>
@@ -2581,8 +2590,17 @@ ${lista.map((c:any,i:number)=>{
                                   <td style={{ padding: '9px 12px', fontSize: 12, color: subAnalise === 'risco' ? '#f97316' : '#ef4444', fontWeight: 700 }}>{c.dias_desde_ultima_visita}d</td>
                                   <td style={{ padding: '9px 12px', fontSize: 11, color: '#767069' }}>{c.intervalo_medio_dias ? `${c.intervalo_medio_dias}d` : '—'}</td>
                                   <td style={{ padding: '9px 12px', fontSize: 10, color: '#6b6860', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{(c.servicos_feitos || []).slice(0, 3).join(', ') || '—'}</td>
-                                  <td style={{ padding: '9px 12px', whiteSpace: 'nowrap' }}><BotaoRecuperacao cliente={c} origem={subAnalise} /></td>
+                                  {/* stopPropagation: clicar no WhatsApp não pode abrir/fechar a linha */}
+                                  <td onClick={e => e.stopPropagation()} style={{ padding: '9px 12px', whiteSpace: 'nowrap' }}><BotaoRecuperacao cliente={c} origem={subAnalise} /></td>
                                 </tr>
+                                {clienteAberto === c.cliente_nome && (
+                                  <tr>
+                                    <td colSpan={9} style={{ padding: 0 }}>
+                                      <DetalheClienteRelatorio cliente={c.cliente_nome} celular={c.celular} mostrarValores={podePerm('rel_valores')} />
+                                    </td>
+                                  </tr>
+                                )}
+                                </Fragment>
                               ))}
                             </tbody>
                           </table>
