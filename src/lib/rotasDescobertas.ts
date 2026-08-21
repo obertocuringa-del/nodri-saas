@@ -14,7 +14,6 @@ export const ROTAS_DESCOBERTAS: RotaDescoberta[] = [
   { rota: '/salon/auditoria', label: "AUDITORIA" },
   { rota: '/salon/calculadora-custo', label: "CALCULADORA CUSTO" },
   { rota: '/salon/calendario', label: "CALENDARIO" },
-  { rota: '/salon/calendario-mkt', label: "CALENDARIO MKT" },
   { rota: '/salon/checklist', label: "CHECKLIST" },
   { rota: '/salon/checkprocon', label: "CHECKPROCON" },
   { rota: '/salon/consultoria', label: "CONSULTORIA" },

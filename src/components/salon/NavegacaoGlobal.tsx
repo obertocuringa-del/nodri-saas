@@ -39,7 +39,6 @@ const CATALOGO: PaginaCat[] = [
   { rota: '/salon/checklist', label: 'CHECK LIST DIÁRIO', grupo: 'Página', chave: 'checklist', palavras: 'demandas tarefas gerente dosagem abertura fechamento coordenado' },
   { rota: '/salon/curriculos', label: 'CURRÍCULOS', grupo: 'Página', chave: 'curriculos', palavras: 'vaga candidato contratacao trabalhe conosco recrutamento emprego' },
   { rota: '/salon/calendario', label: 'CALENDÁRIO', grupo: 'Página', chave: 'calendario', palavras: 'agenda datas eventos lembrete' },
-  { rota: '/salon/calendario-mkt', label: 'CALENDÁRIO DE MARKETING', grupo: 'Página', chave: 'calendario_mkt', palavras: 'mkt posts redes sociais divulgacao' },
   { rota: '/salon/consultoria', label: 'CONSULTORIA IA', grupo: 'Página', chave: 'ia', palavras: 'inteligencia artificial chat assistente pergunta' },
   { rota: '/salon/lojistas', label: 'LOJISTAS (PARCERIAS)', grupo: 'Página', chave: 'lojistas', palavras: 'crm parceiros revenda cadastro loja' },
   { rota: '/salon/checkprocon', label: 'CHECK PROCON', grupo: 'Página', chave: 'checkprocon', palavras: 'consumidor codigo defesa direito lista' },

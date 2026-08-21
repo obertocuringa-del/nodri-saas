@@ -8,8 +8,9 @@ import { getLogoSalao } from '@/lib/logoSalao'
 import { useGuardaSalvar } from '@/lib/guardaSalvar'
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CALENDÁRIO — serve as duas telas: /salon/calendario e /salon/calendario-mkt.
-// A diferença entre elas é só a chave onde grava, o título e a cor do tema.
+// CALENDÁRIO — a página /salon/calendario e a aba embutida na ficha da
+// profissional. O de marketing foi retirado em ago/2026; o componente segue
+// parametrizado por chave/título/cor porque a aba embutida usa outro tema.
 //
 // O documento no salao_config guarda { eventos, legenda }. A legenda é o que
 // dá sentido às cores: "azul = reunião de marketing" é escolha de cada salão,
@@ -74,6 +75,18 @@ export default function CalendarioEditavel({ chave, titulo, camposGrandes, corTe
   const [novaCor, setNovaCor] = useState(PALETA[0].id)
   const [lembreteAberto, setLembreteAberto] = useState(true)
   const [legendaAberta, setLegendaAberta] = useState(false)
+  // Tamanho do texto dentro do quadrado. Nada é cortado: quem tem dia cheio
+  // diminui a fonte até caber, em vez de o sistema decidir o que esconder.
+  // Fica por navegador (é preferência de quem olha, não dado do salão).
+  const [fonte, setFonte] = useState(11)
+  useEffect(() => {
+    try { const v = Number(localStorage.getItem(`nodri_cal_fonte_${chave}`)); if (v >= 7 && v <= 18) setFonte(v) } catch { /* */ }
+  }, [chave])
+  const mudarFonte = (d: number) => setFonte(f => {
+    const n = Math.min(18, Math.max(7, f + d))
+    try { localStorage.setItem(`nodri_cal_fonte_${chave}`, String(n)) } catch { /* */ }
+    return n
+  })
 
   const carregar = useCallback(async () => {
     try {
@@ -147,7 +160,11 @@ export default function CalendarioEditavel({ chave, titulo, camposGrandes, corTe
         const c = corDe(e.cor)
         return `<div class="ev" style="border-left-color:${c.hex};background:${c.fundo}"><b>${esc(e.texto)}</b>${e.responsavel ? `<span class="rp">${esc(e.responsavel)}</span>` : ''}</div>`
       }).join('')
-      return `<td${evs.length ? ' class="cheio"' : ''}><span class="dn">${d}</span>${chips}</td>`
+      // Mesma faixa da tela: as cores do dia lado a lado no topo da cela.
+      const cores = Array.from(new Set(evs.map(e => corDe(e.cor).id)))
+      const faixa = cores.length > 1
+        ? `<div class="fx">${cores.map(c => `<i style="background:${corDe(c).hex}"></i>`).join('')}</div>` : ''
+      return `<td${evs.length ? ' class="cheio"' : ''}>${faixa}<span class="dn">${d}</span>${chips}</td>`
     }).join('')}</tr>`).join('')
 
     const legendaHtml = coresUsadas.length
@@ -182,6 +199,8 @@ body{font-family:'Segoe UI',Arial,sans-serif;color:#1f2430;font-size:11px;-webki
 .cal td.vazio{background:#fafafa;border-color:#ececec}
 .cal td.cheio{background:#fffdfa}
 .dn{font-size:12.5px;font-weight:800;color:#454b57}
+.fx{display:flex;height:2mm;border-radius:1mm;overflow:hidden;margin-bottom:2px}
+.fx i{flex:1;display:block}
 .ev{margin-top:3px;font-size:8.8px;line-height:1.32;padding:3px 5px;border-radius:3px;border-left:3px solid;word-break:break-word}
 .ev b{font-weight:700;display:block}
 .ev .rp{display:block;font-style:italic;color:#5b6c85;margin-top:1px}
@@ -235,7 +254,7 @@ ${doMes.length
            pelo numero de semanas do mes. Assim o mes inteiro cabe numa tela
            so — com altura fixa, fevereiro cabia e um mes de 6 semanas nao. */
         .ncal-dia { min-height: max(76px, calc((100vh - 250px) / ${semanas.length})); }
-        .ncal-chip { font-size: 11px; }
+        .ncal-chip { font-size: ${fonte}px; }
         @media (max-width: 900px) { .ncal-dia { min-height: max(64px, calc((100vh - 300px) / ${semanas.length})); } }
         /* CELULAR — cela compacta com o texto dentro, cabendo na largura da
            tela sem rolar de lado. As bolinhas de cor saem: com o texto ali,
@@ -244,12 +263,10 @@ ${doMes.length
         @media (max-width: 640px) {
           .ncal-grid { gap: 3px !important; }
           .ncal-dia { min-height: 70px !important; padding: 4px 4px !important; }
-          .ncal-dia > span:first-child { font-size: 11.5px !important; }
+          .ncal-num { font-size: 11.5px !important; }
           .ncal-pontos { display: none !important; }
-          .ncal-chip { display: flex !important; font-size: 8.5px; margin-top: 3px !important; gap: 2px !important; }
+          .ncal-chip { display: flex !important; font-size: ${Math.max(7, fonte - 2)}px; margin-top: 3px !important; gap: 2px !important; }
           .ncal-chip > span { padding: 1px 3px !important; border-left-width: 2px !important; }
-          .ncal-chip em { display: none !important; }
-          .ncal-chip > span:nth-child(n+3) { display: none !important; }
           .ncal-vazio { min-height: 70px !important; }
           .ncal-legenda-grid { grid-template-columns: 1fr !important; }
           .ncal-topo-mes { gap: 8px !important; }
@@ -294,6 +311,13 @@ ${doMes.length
               {doMes.length} compromisso{doMes.length === 1 ? '' : 's'} no mês
             </span>
           )}
+          {/* Tamanho do texto dentro do quadrado — dia cheio nao esconde nada,
+              e quem quiser ver tudo de uma vez so diminui a letra. */}
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, border: '1px solid #e0ddd8', borderRadius: 8, background: '#fff', overflow: 'hidden' }} title="Tamanho do texto dentro dos dias">
+            <button onClick={() => mudarFonte(-1)} disabled={fonte <= 7} style={btnFonte}>A−</button>
+            <span style={{ fontSize: 11, color: '#9ca3af', minWidth: 26, textAlign: 'center' }}>{fonte}px</span>
+            <button onClick={() => mudarFonte(1)} disabled={fonte >= 18} style={{ ...btnFonte, fontSize: 15 }}>A+</button>
+          </span>
         </div>
 
         {/* Grade do mês */}
@@ -308,11 +332,21 @@ ${doMes.length
               const evs = eventosDoDia(data)
               const ehHoje = data === hojeStr()
               const sel = selDia === data
-              const fundo = evs.length ? corDe(evs[0].cor).fundo : '#fff'
+              // Cores distintas do dia: com compromissos de tipos diferentes,
+              // pintar a cela com a cor do primeiro escondia os outros.
+              const cores = Array.from(new Set(evs.map(e => corDe(e.cor).id)))
+              const fundo = cores.length === 1 ? corDe(cores[0]).fundo : evs.length ? '#fffdf9' : '#fff'
               return (
                 <button key={d} onClick={() => abrirDia(data)} className="ncal-dia"
-                  style={{ borderRadius: 9, border: sel ? `2px solid ${corTema}` : '1px solid #ece9e2', background: fundo, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'stretch', padding: '6px 7px', textAlign: 'left', overflow: 'hidden', transition: 'border-color .12s' }}>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: ehHoje ? '#fff' : '#374151', alignSelf: 'flex-start', flexShrink: 0, ...(ehHoje ? { background: corTema, borderRadius: '50%', width: 23, height: 23, display: 'flex', alignItems: 'center', justifyContent: 'center' } : {}) }}>{d}</span>
+                  style={{ borderRadius: 9, border: sel ? `2px solid ${corTema}` : '1px solid #ece9e2', background: fundo, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'stretch', padding: '6px 7px', textAlign: 'left', transition: 'border-color .12s' }}>
+                  {/* Faixa das cores do dia, lado a lado: tres compromissos de
+                      cores diferentes aparecem como tres faixas. */}
+                  {cores.length > 1 && (
+                    <span style={{ display: 'flex', height: 5, borderRadius: 3, overflow: 'hidden', marginBottom: 4, flexShrink: 0 }}>
+                      {cores.map(c => <i key={c} style={{ flex: 1, background: corDe(c).hex, display: 'block' }} />)}
+                    </span>
+                  )}
+                  <span className="ncal-num" style={{ fontSize: 13, fontWeight: 800, color: ehHoje ? '#fff' : '#374151', alignSelf: 'flex-start', flexShrink: 0, ...(ehHoje ? { background: corTema, borderRadius: '50%', width: 23, height: 23, display: 'flex', alignItems: 'center', justifyContent: 'center' } : {}) }}>{d}</span>
 
                   {/* Celular: só bolinhas de cor — o texto nao cabe e virava
                       um borrão. A descrição fica na lista do mês, abaixo. */}
@@ -321,16 +355,15 @@ ${doMes.length
                   </span>
 
                   <span className="ncal-chip" style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 3, overflow: 'hidden' }}>
-                    {evs.slice(0, 4).map(e => {
+                    {evs.map(e => {
                       const c = corDe(e.cor)
                       return (
-                        <span key={e.id} style={{ borderLeft: `3px solid ${c.hex}`, background: '#ffffffcc', borderRadius: 4, padding: '2px 5px', color: '#374151', fontWeight: 600, lineHeight: 1.25, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }}>
+                        <span key={e.id} style={{ borderLeft: `3px solid ${c.hex}`, background: '#ffffffcc', borderRadius: 4, padding: '2px 5px', color: '#374151', fontWeight: 600, lineHeight: 1.25, wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                           {e.texto}
                           {e.responsavel && <em style={{ display: 'block', fontStyle: 'normal', color: '#8b95a5', fontWeight: 500 }}>👤 {e.responsavel}</em>}
                         </span>
                       )
                     })}
-                    {evs.length > 4 && <span style={{ color: '#9ca3af', fontWeight: 700 }}>+{evs.length - 4} mais</span>}
                   </span>
                 </button>
               )
@@ -503,4 +536,5 @@ ${doMes.length
   )
 }
 
+const btnFonte: React.CSSProperties = { border: 'none', background: 'transparent', color: '#6b6860', cursor: 'pointer', fontWeight: 800, fontSize: 12.5, padding: '6px 9px', lineHeight: 1 }
 const navBtn: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 34, height: 34, borderRadius: 8, border: '1px solid #e0ddd8', background: '#fff', color: '#6b6860', cursor: 'pointer' }

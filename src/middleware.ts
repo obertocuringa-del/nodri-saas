@@ -191,7 +191,6 @@ export async function middleware(request: NextRequest) {
       ['/salon/feedback', 'feedback_cliente'],
       ['/salon/administrativo', 'administrativo'],
       ['/salon/checklist', 'checklist'],
-      ['/salon/calendario-mkt', 'calendario_mkt'],
       ['/salon/calendario', 'calendario'],
       ['/salon/consultoria', 'ia'],
       ['/salon/auditoria', 'cfg_auditoria'],

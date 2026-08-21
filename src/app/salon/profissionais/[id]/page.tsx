@@ -2696,7 +2696,7 @@ export default function PerfilProfissionalPage() {
   const [endCidade, setEndCidade] = useState('')
   const [endUf, setEndUf] = useState('')
   const [buscandoCep, setBuscandoCep] = useState(false)
-  const [tab, setTab] = useState<'inicio'|'cadastro'|'avaliar'|'pops'|'avaliacaopop'|'desempenho'|'faturamento'|'metas'|'ia'|'dependencia'|'oportunidades'|'bundle'|'clientes-perdidos'|'agendamentos'|'calendario'|'calendario_mkt'|'corrida'|'acoes'|'esterilizacao'|'kits'|'ester_fluxo'|'carreira'|'demandas'>('cadastro')
+  const [tab, setTab] = useState<'inicio'|'cadastro'|'avaliar'|'pops'|'avaliacaopop'|'desempenho'|'faturamento'|'metas'|'ia'|'dependencia'|'oportunidades'|'bundle'|'clientes-perdidos'|'agendamentos'|'calendario'|'corrida'|'acoes'|'esterilizacao'|'kits'|'ester_fluxo'|'carreira'|'demandas'>('cadastro')
   // ── Agendamentos ─────────────────────────────────────────────────────────────
   const [agendData, setAgendData] = useState<string>(() => { const h = new Date(); return `${String(h.getDate()).padStart(2,'0')}/${String(h.getMonth()+1).padStart(2,'0')}/${h.getFullYear()}` })
   const [agendamentos, setAgendamentos] = useState<any[]>([])
@@ -3514,7 +3514,6 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
           ['clientes-perdidos','PERDIDOS'],
           ['agendamentos','AGENDAMENTOS'],
           ['calendario','CALENDÁRIO GERAL'],
-          ['calendario_mkt','CALENDÁRIO MKT'],
           ['corrida','CORRIDA INTERNA'],
           ['acoes','AÇÕES COMERCIAIS'],
           ['ia','IA'],
@@ -3603,11 +3602,6 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
         {/*  CALENDÁRIO GERAL (central, compartilhado pelo salão)  */}
         {tab === 'calendario' && (
           <CalendarioEditavel chave="calendario" titulo="Calendário Geral" corTema="#0891b2" comResponsavel camposGrandes mostrarLembrete embutido />
-        )}
-
-        {/*  CALENDÁRIO DE MARKETING (o mesmo do menu, compartilhado pelo salão)  */}
-        {tab === 'calendario_mkt' && (
-          <CalendarioEditavel chave="calendario_mkt" titulo="Calendário de Marketing" corTema="#db2777" comResponsavel camposGrandes mostrarLembrete embutido />
         )}
 
         {/*  CORRIDA INTERNA — ranking automático das competições criadas no salão  */}

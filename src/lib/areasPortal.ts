@@ -26,7 +26,7 @@ export const AREAS_PORTAL: AreaPortal[] = [
   { chave: 'avaliar',           label: 'Avaliações' },
   { chave: 'pops',              label: 'POPs & Avaliação' },
   { chave: 'ia',                label: 'IA / Assistente' },
-  { chave: 'calendario_mkt',    label: 'Calendário' },
+  { chave: 'calendario',        label: 'Calendário' },
   { chave: 'cadastro',          label: 'Cadastro' },
   // Informações sensíveis dentro do resumo (não são cards, mas o salão pode ocultar)
   { chave: 'fat_acumulado',     label: 'Faturamento Acumulado (no resumo)' },

@@ -19,7 +19,6 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba }:
   const [ehProf, setEhProf] = useState(false) // logado como profissional → mostra Sair
   const [pendAbertas, setPendAbertas] = useState(0)     // demandas recebidas não resolvidas
   const [compromissos2d, setCompromissos2d] = useState(0) // datas dos calendários faltando ≤ 2 dias
-  const [escolherCal, setEscolherCal] = useState(false)  // seletor Geral / Marketing ao clicar no Calendário
 
   useEffect(() => { try { setDark(localStorage.getItem('mp_dark') === '1') } catch { } }, [])
   useEffect(() => { try { localStorage.setItem('mp_dark', dark ? '1' : '0') } catch { } }, [dark])
@@ -60,10 +59,8 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba }:
         const proximos = (eventos: any[]): number => (Array.isArray(eventos) ? eventos : [])
           .map((e: any) => { const [y, m, dd] = String(e.data).split('-').map(Number); return Math.round((new Date(y, m - 1, dd).getTime() - hoje.getTime()) / 86400000) })
           .filter(dias => dias >= 0 && dias <= 2).length
-        Promise.all([
-          fetch('/api/salon/grid?chave=calendario').then(r => r.ok ? r.json() : null).catch(() => null),
-          fetch('/api/salon/grid?chave=calendario_mkt').then(r => r.ok ? r.json() : null).catch(() => null),
-        ]).then(([cal, mkt]) => setCompromissos2d(proximos(cal?.eventos || []) + proximos(mkt?.eventos || [])))
+        fetch('/api/salon/grid?chave=calendario').then(r => r.ok ? r.json() : null).catch(() => null)
+          .then(cal => setCompromissos2d(proximos(cal?.eventos || [])))
       } catch { }
     })()
   }, [pid])
@@ -99,7 +96,7 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba }:
     { aba: 'avaliar', label: 'Avaliações', Ic: Star, ocult: 'avaliar' },
     { aba: 'pops', label: 'POPs & Avaliação', Ic: BookOpen, ocult: 'pops' },
     { aba: 'ia', label: 'IA / Assistente', Ic: Sparkles },
-    { aba: 'calendario_mkt', label: 'Calendário', Ic: CalendarRange },
+    { aba: 'calendario', label: 'Calendário', Ic: CalendarRange },
     { aba: 'cadastro', label: 'Cadastro', Ic: ClipboardList },
   ]
   // Esconde a área quando o acesso_oculto (já fundido com o padrão global do
@@ -210,11 +207,11 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba }:
           <div className="pr-areas">
             {areasVis.map(a => {
               const alertaPend = a.aba === 'demandas' && pendAbertas > 0
-              const alertaCal = a.aba === 'calendario_mkt' && compromissos2d > 0
+              const alertaCal = a.aba === 'calendario' && compromissos2d > 0
               const anim = alertaPend ? 'prPulseRed 1.4s ease-in-out infinite' : alertaCal ? 'prPulseCyan 1.4s ease-in-out infinite' : undefined
               const badge = alertaPend ? pendAbertas : alertaCal ? compromissos2d : 0
               return (
-                <div key={a.aba} className="pr-area" onClick={() => a.aba === 'calendario_mkt' ? setEscolherCal(true) : irAba(a.aba)}
+                <div key={a.aba} className="pr-area" onClick={() => irAba(a.aba)}
                   style={{ position: 'relative', ...(anim ? { animation: anim, borderColor: alertaPend ? '#ef4444' : '#0891b2' } : {}) }}>
                   <span className="pr-area-ic" style={alertaPend ? { background: '#fee2e2', color: '#dc2626' } : alertaCal ? { background: '#cffafe', color: '#0891b2' } : undefined}><a.Ic size={20} /></span>
                   <span style={{ fontWeight: 700, fontSize: 14 }}>{a.label}</span>
@@ -227,28 +224,6 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba }:
         </div>
       )}
 
-      {/* Seletor de calendário: Geral ou Marketing */}
-      {escolherCal && (
-        <div onClick={() => setEscolherCal(false)} style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: 'var(--card)', color: 'var(--txt)', border: '1px solid var(--bord)', borderRadius: 18, padding: 20, width: '100%', maxWidth: 380, boxShadow: '0 20px 50px rgba(0,0,0,.3)' }}>
-            <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 4 }}>Qual calendário?</div>
-            <div style={{ fontSize: 12.5, color: 'var(--txt2)', marginBottom: 16 }}>Escolha em qual calendário você quer entrar.</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <button onClick={() => { setEscolherCal(false); irAba('calendario') }}
-                style={{ display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left', background: 'var(--bg)', border: '1.5px solid #67e8f9', borderRadius: 14, padding: 14, cursor: 'pointer', color: 'var(--txt)' }}>
-                <span style={{ width: 40, height: 40, borderRadius: 12, background: '#cffafe', color: '#0891b2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Calendar size={20} /></span>
-                <div><div style={{ fontWeight: 800, fontSize: 14 }}>Calendário Geral</div><div style={{ fontSize: 11.5, color: 'var(--txt2)' }}>Compromissos gerais do salão</div></div>
-              </button>
-              <button onClick={() => { setEscolherCal(false); irAba('calendario_mkt') }}
-                style={{ display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left', background: 'var(--bg)', border: '1.5px solid #f9a8d4', borderRadius: 14, padding: 14, cursor: 'pointer', color: 'var(--txt)' }}>
-                <span style={{ width: 40, height: 40, borderRadius: 12, background: '#fce7f3', color: '#db2777', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><CalendarRange size={20} /></span>
-                <div><div style={{ fontWeight: 800, fontSize: 14 }}>Calendário de Marketing</div><div style={{ fontSize: 11.5, color: 'var(--txt2)' }}>Ações e campanhas</div></div>
-              </button>
-            </div>
-            <button onClick={() => setEscolherCal(false)} style={{ marginTop: 14, width: '100%', background: 'transparent', border: 'none', color: 'var(--txt3)', fontSize: 13, cursor: 'pointer' }}>Cancelar</button>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
