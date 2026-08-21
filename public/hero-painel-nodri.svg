@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 906" width="840" height="906" role="img"
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 984" width="840" height="984" role="img"
      aria-label="Painel do salão NODRI: faturamento, ticket médio, clientes, dinheiro parado em clientes inativos, ponto de equilíbrio, NPS e metas da equipe">
   <defs>
     <style>
@@ -18,7 +18,7 @@
     </filter>
   </defs>
 
-  <rect x="1" y="1" width="838" height="904" rx="18" fill="#f7fafc" stroke="#e3e8f0"/>
+  <rect x="1" y="1" width="838" height="982" rx="18" fill="#f7fafc" stroke="#e3e8f0"/>
 
   <!-- barra da janela -->
   <circle cx="28" cy="30" r="4.5" fill="#e2574c"/>
@@ -135,36 +135,50 @@
   <rect x="40" y="709" width="760" height="8" rx="4" fill="#eef2f7"/>
   <rect x="40" y="709" width="365" height="8" rx="4" fill="#e8a33d"/>
 
-  <!-- ─────────── O que so existe aqui ───────────
-       Metas, faturamento e ticket medio todo sistema de salao mostra. Estes
-       tres nao: guia do MEI da equipe, rotina que roda sem o dono presente e
-       margem por servico. E o que separa um sistema de agenda de um sistema
-       de gestao — e por isso ganham lugar na arte. -->
-  <line x1="20" y1="742" x2="820" y2="742" stroke="#e3e8f0" stroke-width="1"/>
-  <text class="f" x="20" y="770" font-size="11" font-weight="800" fill="#0b7f96" letter-spacing=".8">SÓ NO NODRI</text>
 
+  <!-- ─────────── O que só existe aqui ───────────
+       Faturamento, ticket médio e metas todo sistema de salão mostra; estes
+       oito não. Ficam em lista e não em cartões porque são muitos: cartão
+       para cada um empurraria a arte para quase o dobro da altura, e numa
+       peça de topo ninguém lê parágrafo — lê marca de conferido. -->
   <g filter="url(#sombra)">
-    <rect x="20" y="782" width="258" height="104" rx="12" fill="#fff" stroke="#e3e8f0"/>
-    <rect x="291" y="782" width="258" height="104" rx="12" fill="#fff" stroke="#e3e8f0"/>
-    <rect x="562" y="782" width="258" height="104" rx="12" fill="#fff" stroke="#e3e8f0"/>
+    <rect x="20" y="738" width="800" height="212" rx="14" fill="#fff" stroke="#e3e8f0"/>
   </g>
-  <rect x="20" y="782" width="258" height="4" rx="2" fill="#00b5d8"/>
-  <rect x="291" y="782" width="258" height="4" rx="2" fill="#00b5d8"/>
-  <rect x="562" y="782" width="258" height="4" rx="2" fill="#00b5d8"/>
+  <rect x="20" y="738" width="800" height="4" rx="2" fill="#00b5d8"/>
+  <text class="f" x="40" y="768" font-size="11.5" font-weight="800" fill="#0b7f96" letter-spacing=".9">SÓ NO NODRI</text>
 
-  <text class="f" x="38" y="812" font-size="13" font-weight="800" fill="#0d2a56">Guias do MEI da equipe</text>
-  <text class="f" x="38" y="833" font-size="11.5" fill="#5b6675">Emite as 14 guias de uma vez,</text>
-  <text class="f" x="38" y="850" font-size="11.5" fill="#5b6675">já renomeadas por profissional.</text>
-  <text class="f" x="38" y="872" font-size="11" font-weight="800" fill="#12a150">14 guias · 4 minutos</text>
+  <circle cx="44" cy="781" r="7.5" fill="#e6f8fb"/>
+  <path d="M40 781 l2.6 2.7 l5-5.4" fill="none" stroke="#0b7f96" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text class="f" x="59" y="785" font-size="12.5" font-weight="800" fill="#0d2a56">Guias do MEI da equipe</text>
+  <text class="f" x="59" y="802" font-size="11" fill="#6b7787">as 14 de uma vez, já renomeadas</text>
+  <circle cx="44" cy="825" r="7.5" fill="#e6f8fb"/>
+  <path d="M40 825 l2.6 2.7 l5-5.4" fill="none" stroke="#0b7f96" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text class="f" x="59" y="829" font-size="12.5" font-weight="800" fill="#0d2a56">Check list por turno</text>
+  <text class="f" x="59" y="846" font-size="11" fill="#6b7787">o salão roda sem você presente</text>
+  <circle cx="44" cy="869" r="7.5" fill="#e6f8fb"/>
+  <path d="M40 869 l2.6 2.7 l5-5.4" fill="none" stroke="#0b7f96" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text class="f" x="59" y="873" font-size="12.5" font-weight="800" fill="#0d2a56">Lucro de cada serviço</text>
+  <text class="f" x="59" y="890" font-size="11" fill="#6b7787">custo real, preço certo e margem</text>
+  <circle cx="44" cy="913" r="7.5" fill="#e6f8fb"/>
+  <path d="M40 913 l2.6 2.7 l5-5.4" fill="none" stroke="#0b7f96" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text class="f" x="59" y="917" font-size="12.5" font-weight="800" fill="#0d2a56">Chancela e contratos PJ</text>
+  <text class="f" x="59" y="934" font-size="11" fill="#6b7787">contrato e distrato em 1 minuto</text>
+  <circle cx="444" cy="781" r="7.5" fill="#e6f8fb"/>
+  <path d="M440 781 l2.6 2.7 l5-5.4" fill="none" stroke="#0b7f96" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text class="f" x="459" y="785" font-size="12.5" font-weight="800" fill="#0d2a56">DRE e fluxo de caixa</text>
+  <text class="f" x="459" y="802" font-size="11" fill="#6b7787">contas a pagar: ERP dentro do salão</text>
+  <circle cx="444" cy="825" r="7.5" fill="#e6f8fb"/>
+  <path d="M440 825 l2.6 2.7 l5-5.4" fill="none" stroke="#0b7f96" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text class="f" x="459" y="829" font-size="12.5" font-weight="800" fill="#0d2a56">Portal do profissional</text>
+  <text class="f" x="459" y="846" font-size="11" fill="#6b7787">vê a própria posição, não o dinheiro do colega</text>
+  <circle cx="444" cy="869" r="7.5" fill="#e6f8fb"/>
+  <path d="M440 869 l2.6 2.7 l5-5.4" fill="none" stroke="#0b7f96" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text class="f" x="459" y="873" font-size="12.5" font-weight="800" fill="#0d2a56">Consultoria IA</text>
+  <text class="f" x="459" y="890" font-size="11" fill="#6b7787">analisa os dados do seu próprio salão</text>
+  <circle cx="444" cy="913" r="7.5" fill="#e6f8fb"/>
+  <path d="M440 913 l2.6 2.7 l5-5.4" fill="none" stroke="#0b7f96" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text class="f" x="459" y="917" font-size="12.5" font-weight="800" fill="#0d2a56">Recuperação automática</text>
+  <text class="f" x="459" y="934" font-size="11" fill="#6b7787">cliente sumido vira mensagem pronta</text>
 
-  <text class="f" x="309" y="812" font-size="13" font-weight="800" fill="#0d2a56">O salão roda sem você</text>
-  <text class="f" x="309" y="833" font-size="11.5" fill="#5b6675">Check list por turno, com cobrança</text>
-  <text class="f" x="309" y="850" font-size="11.5" fill="#5b6675">automática de quem não fez.</text>
-  <text class="f" x="309" y="872" font-size="11" font-weight="800" fill="#12a150">38 de 40 tarefas hoje</text>
-
-  <text class="f" x="580" y="812" font-size="13" font-weight="800" fill="#0d2a56">Lucro de cada serviço</text>
-  <text class="f" x="580" y="833" font-size="11.5" fill="#5b6675">Custo real, preço certo e margem</text>
-  <text class="f" x="580" y="850" font-size="11.5" fill="#5b6675">calculados serviço a serviço.</text>
-  <text class="f" x="580" y="872" font-size="11" font-weight="800" fill="#12a150">Escova R$ 45 · margem 62%</text>
-
+  <text class="f" x="420" y="972" font-size="10.5" fill="#a0aab8" text-anchor="middle">Feito dentro de um salão em operação, não numa mesa de escritório.</text>
 </svg>

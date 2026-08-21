@@ -408,7 +408,7 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
                 clientes inativos, o ponto de equilibrio e as metas — sem inchar
                 a pagina. SVG escala sem borrar e pesa menos que o JSX que saiu. */}
             <img src="/hero-painel-nodri.svg" alt="Painel do salao no NODRI: faturamento, ticket medio, clientes atendidos e novos, faturamento de servicos e produtos, dinheiro parado em clientes inativos, ponto de equilibrio, satisfacao do cliente e metas da equipe"
-              width={840} height={906} loading="eager"
+              width={840} height={984} loading="eager"
               style={{ width: '100%', height: 'auto', display: 'block', borderRadius: 18, boxShadow: '0 18px 50px rgba(13,42,86,.09)' }} />
             <p style={{ fontSize: 10.5, color: '#a0aab8', textAlign: 'center', marginTop: 10 }}>
               Ilustração do painel. Os números do seu salão aparecem aqui.
