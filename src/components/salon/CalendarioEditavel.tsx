@@ -231,9 +231,12 @@ ${doMes.length
           No celular a grade encolhe para caber sem rolar de lado — o texto sai
           da cela e vira a lista do mês, logo abaixo. */}
       <style>{`
-        .ncal-dia { min-height: clamp(150px, 19vh, 210px); }
+        /* A cela nao tem altura fixa: ela e o que sobra da tela dividido
+           pelo numero de semanas do mes. Assim o mes inteiro cabe numa tela
+           so — com altura fixa, fevereiro cabia e um mes de 6 semanas nao. */
+        .ncal-dia { min-height: max(76px, calc((100vh - 250px) / ${semanas.length})); }
         .ncal-chip { font-size: 11px; }
-        @media (max-width: 900px) { .ncal-dia { min-height: 96px; } }
+        @media (max-width: 900px) { .ncal-dia { min-height: max(64px, calc((100vh - 300px) / ${semanas.length})); } }
         @media (max-width: 640px) {
           .ncal-dia { min-height: 46px; padding: 3px 3px !important; }
           .ncal-chip { display: none !important; }
@@ -308,16 +311,16 @@ ${doMes.length
                   </span>
 
                   <span className="ncal-chip" style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 3, overflow: 'hidden' }}>
-                    {evs.slice(0, 6).map(e => {
+                    {evs.slice(0, 4).map(e => {
                       const c = corDe(e.cor)
                       return (
-                        <span key={e.id} style={{ borderLeft: `3px solid ${c.hex}`, background: '#ffffffcc', borderRadius: 4, padding: '2px 5px', color: '#374151', fontWeight: 600, lineHeight: 1.25, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }}>
+                        <span key={e.id} style={{ borderLeft: `3px solid ${c.hex}`, background: '#ffffffcc', borderRadius: 4, padding: '2px 5px', color: '#374151', fontWeight: 600, lineHeight: 1.25, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }}>
                           {e.texto}
                           {e.responsavel && <em style={{ display: 'block', fontStyle: 'normal', color: '#8b95a5', fontWeight: 500 }}>👤 {e.responsavel}</em>}
                         </span>
                       )
                     })}
-                    {evs.length > 6 && <span style={{ color: '#9ca3af', fontWeight: 700 }}>+{evs.length - 6} mais</span>}
+                    {evs.length > 4 && <span style={{ color: '#9ca3af', fontWeight: 700 }}>+{evs.length - 4} mais</span>}
                   </span>
                 </button>
               )
