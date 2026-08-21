@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
-import { Plus, Trash2, Save, Loader2, ExternalLink } from 'lucide-react'
+import { Plus, Trash2, Save, Loader2, ExternalLink, ArrowUp, ArrowDown } from 'lucide-react'
 import { LANDING_PADRAO } from '@/lib/landingDefaults'
+import { urlDeImagem, idDoYoutube } from '@/components/Carrossel'
 
 // ── Editor da página inicial ────────────────────────────────────────────────
 //
@@ -43,6 +44,19 @@ export default function EditorVitrine() {
   const addItem = (chave: string, vazio: any) => setCfg((p: any) => ({ ...p, [chave]: [...(p[chave] || []), vazio] }))
   const delItem = (chave: string, i: number) => setCfg((p: any) => ({ ...p, [chave]: (p[chave] || []).filter((_: any, j: number) => j !== i) }))
 
+  // Sobe ou desce um item da lista. A ordem do array E a ordem que a pagina
+  // mostra, entao mexer aqui e a unica forma de escolher qual arte aparece
+  // primeiro no topo do site.
+  function moveItem(chave: string, i: number, passo: number) {
+    setCfg((p: any) => {
+      const arr = [...(p[chave] || [])]
+      const j = i + passo
+      if (j < 0 || j >= arr.length) return p
+      ;[arr[i], arr[j]] = [arr[j], arr[i]]
+      return { ...p, [chave]: arr }
+    })
+  }
+
   async function salvar() {
     setSalvando(true)
     const r = await fetch('/api/landing-config', {
@@ -79,8 +93,22 @@ export default function EditorVitrine() {
             <button onClick={() => addItem('hero_midias', { url: '' })}
               className="text-[10px] text-nodri-cyan font-bold">+ Adicionar</button>
           </div>
-          {(cfg.hero_midias || []).map((m: any, i: number) => (
-            <div key={i} className="flex gap-1.5 mb-1.5">
+          {(cfg.hero_midias || []).map((m: any, i: number) => {
+            const yt = idDoYoutube(m.url || '')
+            const total = (cfg.hero_midias || []).length
+            return (
+            <div key={i} className="flex gap-1.5 mb-1.5 items-center">
+              {/* A ordem aqui e a ordem no site. Sem o numero e a miniatura,
+                  escolher qual arte abre a pagina era abrir link por link. */}
+              <span className="shrink-0 w-5 h-5 rounded-full bg-nodri-cyan/15 text-nodri-cyan text-[10px] font-bold flex items-center justify-center">{i + 1}</span>
+              <div className="shrink-0 w-11 h-11 rounded-lg border border-nodri-border bg-nodri-surface overflow-hidden flex items-center justify-center">
+                {yt
+                  ? <img src={`https://img.youtube.com/vi/${yt}/default.jpg`} alt="" className="w-full h-full object-cover" />
+                  : m.url?.trim()
+                    ? <img src={urlDeImagem(m.url)} alt="" className="w-full h-full object-cover"
+                        onError={e => { (e.target as HTMLImageElement).style.visibility = 'hidden' }} />
+                    : <span className="text-[9px] text-nodri-t3">vazio</span>}
+              </div>
               <input className={inp} value={m.url} placeholder="Link da foto ou do vídeo do YouTube"
                 onChange={e => setItem('hero_midias', i, 'url', e.target.value)} />
               {/* Foto de salao fica bem preenchendo o quadro; arte, nao —
@@ -90,14 +118,20 @@ export default function EditorVitrine() {
                   onChange={e => setItem('hero_midias', i, 'inteira', e.target.checked)} />
                 inteira
               </label>
+              <button onClick={() => moveItem('hero_midias', i, -1)} disabled={i === 0}
+                title="Mostrar antes" className="text-nodri-t2 p-1 shrink-0 disabled:opacity-25"><ArrowUp size={12} /></button>
+              <button onClick={() => moveItem('hero_midias', i, 1)} disabled={i === total - 1}
+                title="Mostrar depois" className="text-nodri-t2 p-1 shrink-0 disabled:opacity-25"><ArrowDown size={12} /></button>
               <button onClick={() => delItem('hero_midias', i)}
                 className="text-nodri-red p-1 shrink-0"><Trash2 size={11} /></button>
             </div>
-          ))}
+            )
+          })}
           <p className="text-[10px] text-nodri-t3 mt-1">
             <strong>Imagem:</strong> <strong>1200 × 1100 px</strong> (quase quadrada), até 500 KB. A altura do espaço acompanha a altura da janela de quem visita — nessa proporção a arte se ajusta bem em qualquer tela.<br />
             <strong>Foto</strong> (deixe <strong>inteira</strong> desmarcada): preenche o espaço todo e as <strong>bordas são aparadas</strong> — deixe o que importa no centro. Nunca distorce.<br />
             <strong>Arte, infográfico ou print</strong> (marque <strong>inteira</strong>): aparece por completo, sem cortar nada. A moldura passa a ter o tamanho da arte, centralizada no espaço — em janela mais baixa ela encolhe junto, em vez de ter as pontas comidas. O layout da página não muda.<br />
+            <strong>Ordem:</strong> o número na frente é a ordem em que aparecem no site. Use as setas para subir e descer — a de número 1 é a que abre a página.<br />
             <strong>Vídeo do YouTube:</strong> 16:9, e entra alinhado com a primeira linha do texto do lado.<br />
             Sem nenhuma mídia, o topo mostra a ilustração do painel que já vem no sistema. Com mais de uma, vira carrossel.
           </p>
