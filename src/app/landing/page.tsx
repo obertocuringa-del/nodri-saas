@@ -401,50 +401,15 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
               intervalo={(cfg as any).hero_intervalo || 5}
               preencher recuo={recuoVideo} className="hero-midia" />
           ) : (
-          <div className="hero-midia" style={{
-            background: '#f7fafc', border: '1px solid #e3e8f0', borderRadius: 18,
-            padding: 18, boxShadow: '0 18px 50px rgba(13,42,86,.09)',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-              <div style={{ width: 9, height: 9, borderRadius: 99, background: '#e2574c' }} />
-              <div style={{ width: 9, height: 9, borderRadius: 99, background: '#f5c451' }} />
-              <div style={{ width: 9, height: 9, borderRadius: 99, background: '#5cb85c' }} />
-              <span style={{ marginLeft: 6, fontSize: 11.5, color: '#8b95a5' }}>Painel do salão</span>
-            </div>
-
-            <div className="nodri-painel-cards" style={{ display: 'grid', gap: 10, gridTemplateColumns: '1fr 1fr' }}>
-              {[
-                ['Faturamento do mês', 'R$ 128.750', '+18% vs. mês anterior', '#16a34a'],
-                ['Ticket médio', 'R$ 246,56', '+8% no período', '#16a34a'],
-                ['Clientes em risco', '14', 'sem voltar há 60 dias', '#dc2626'],
-                ['Meta da equipe', '85%', 'faltam 6 dias', MARINHO],
-              ].map(([t, v, d, c]) => (
-                <div key={t} style={{ background: '#fff', border: '1px solid #e3e8f0', borderRadius: 12, padding: 13 }}>
-                  <div style={{ fontSize: 10.5, color: '#8b95a5', marginBottom: 5 }}>{t}</div>
-                  <div style={{ fontSize: 19, fontWeight: 900, color: MARINHO, lineHeight: 1.1 }}>{v}</div>
-                  <div style={{ fontSize: 10, color: c as string, marginTop: 4, fontWeight: 700 }}>{d}</div>
-                </div>
-              ))}
-            </div>
-
-            <div style={{ background: '#fff', border: '1px solid #e3e8f0', borderRadius: 12, padding: 14, marginTop: 10 }}>
-              <div style={{ fontSize: 11.5, fontWeight: 800, color: MARINHO, marginBottom: 10 }}>Desempenho da equipe</div>
-              {[
-                ['Juliana', 92, '#16a34a'],
-                ['Fernanda', 74, CIANO],
-                ['Camila', 48, '#f59e0b'],
-              ].map(([n, pct, cor]) => (
-                <div key={n as string} style={{ marginBottom: 9 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#4b5563', marginBottom: 4 }}>
-                    <span>{n as string}</span><span style={{ fontWeight: 800 }}>{pct as number}% da meta</span>
-                  </div>
-                  <div style={{ height: 6, borderRadius: 99, background: '#eef2f7' }}>
-                    <div style={{ width: `${pct}%`, height: '100%', borderRadius: 99, background: cor as string }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-
+          <div className="hero-midia">
+            {/* Ilustracao do painel. Era um bloco de ~45 linhas de JSX; virou
+                uma imagem SVG (public/hero-painel-nodri.svg) para poder mostrar
+                mais coisa — os 6 indicadores numa tela so, o dinheiro parado em
+                clientes inativos, o ponto de equilibrio e as metas — sem inchar
+                a pagina. SVG escala sem borrar e pesa menos que o JSX que saiu. */}
+            <img src="/hero-painel-nodri.svg" alt="Painel do salao no NODRI: faturamento, ticket medio, clientes atendidos e novos, faturamento de servicos e produtos, dinheiro parado em clientes inativos, ponto de equilibrio, satisfacao do cliente e metas da equipe"
+              width={840} height={906} loading="eager"
+              style={{ width: '100%', height: 'auto', display: 'block', borderRadius: 18, boxShadow: '0 18px 50px rgba(13,42,86,.09)' }} />
             <p style={{ fontSize: 10.5, color: '#a0aab8', textAlign: 'center', marginTop: 10 }}>
               Ilustração do painel. Os números do seu salão aparecem aqui.
             </p>
