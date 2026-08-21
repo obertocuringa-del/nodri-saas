@@ -237,10 +237,20 @@ ${doMes.length
         .ncal-dia { min-height: max(76px, calc((100vh - 250px) / ${semanas.length})); }
         .ncal-chip { font-size: 11px; }
         @media (max-width: 900px) { .ncal-dia { min-height: max(64px, calc((100vh - 300px) / ${semanas.length})); } }
+        /* CELULAR — cela compacta com o texto dentro, cabendo na largura da
+           tela sem rolar de lado. As bolinhas de cor saem: com o texto ali,
+           elas so tiravam espaco. Responsavel e do 3o compromisso em diante
+           ficam para a lista do mes, logo abaixo. */
         @media (max-width: 640px) {
-          .ncal-dia { min-height: 46px; padding: 3px 3px !important; }
-          .ncal-chip { display: none !important; }
-          .ncal-pontos { display: flex !important; }
+          .ncal-grid { gap: 3px !important; }
+          .ncal-dia { min-height: 70px !important; padding: 4px 4px !important; }
+          .ncal-dia > span:first-child { font-size: 11.5px !important; }
+          .ncal-pontos { display: none !important; }
+          .ncal-chip { display: flex !important; font-size: 8.5px; margin-top: 3px !important; gap: 2px !important; }
+          .ncal-chip > span { padding: 1px 3px !important; border-left-width: 2px !important; }
+          .ncal-chip em { display: none !important; }
+          .ncal-chip > span:nth-child(n+3) { display: none !important; }
+          .ncal-vazio { min-height: 70px !important; }
           .ncal-legenda-grid { grid-template-columns: 1fr !important; }
           .ncal-topo-mes { gap: 8px !important; }
         }
@@ -288,12 +298,12 @@ ${doMes.length
 
         {/* Grade do mês */}
         <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 'clamp(6px,1vw,12px)' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 5, marginBottom: 5 }}>
+          <div className="ncal-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 5, marginBottom: 5 }}>
             {SEM.map((s, i) => <div key={s} style={{ textAlign: 'center', fontSize: 11, fontWeight: 800, color: i === 0 || i === 6 ? '#c0bab0' : '#9ca3af', padding: '5px 0', textTransform: 'uppercase', letterSpacing: '.6px' }}>{s}</div>)}
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 5 }}>
+          <div className="ncal-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 5 }}>
             {semanas.flat().map((d, idx) => {
-              if (!d) return <div key={'v' + idx} style={{ minHeight: 46, borderRadius: 9, background: '#fbfaf8' }} />
+              if (!d) return <div key={'v' + idx} className="ncal-vazio" style={{ minHeight: 46, borderRadius: 9, background: '#fbfaf8' }} />
               const data = mesStr(d)
               const evs = eventosDoDia(data)
               const ehHoje = data === hojeStr()
