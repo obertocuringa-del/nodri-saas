@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 1020" width="840" height="1020" role="img"
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1093" width="900" height="1093" role="img"
      aria-label="Painel do salão NODRI: faturamento, ticket médio, clientes, dinheiro parado em clientes inativos, ponto de equilíbrio, NPS e metas da equipe">
   <defs>
     <style>
@@ -18,11 +18,11 @@
     </filter>
   </defs>
 
-  <rect x="1" y="1" width="838" height="1018" rx="18" fill="#f7fafc" stroke="#e3e8f0"/>
+  <rect x="0" y="0" width="900" height="1093" fill="#f7fafc"/>
 
   <!-- Conteudo deslocado 18px: sobra a mesma folga em cima e embaixo, e um
        eventual corte por diferenca de proporcao come a margem, nao o painel. -->
-  <g transform="translate(0,18)">
+  <g transform="translate(30,50)">
   <!-- barra da janela -->
   <circle cx="28" cy="30" r="4.5" fill="#e2574c"/>
   <circle cx="44" cy="30" r="4.5" fill="#f5c451"/>
