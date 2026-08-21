@@ -119,24 +119,38 @@ export default function Carrossel({ midias, intervalo = 5, alturaMax, preencher,
       ) : (
         <img src={urlDeImagem(atual.url)} alt=""
           style={{
-            width: '100%', display: 'block', borderRadius: 18,
+            display: 'block', borderRadius: 18,
             border: '1px solid #e3e8f0', boxShadow: '0 18px 50px rgba(13,42,86,.12)',
             objectFit: atual.inteira ? 'contain' : 'cover',
-            maxHeight: alturaMax, margin: '0 auto',
             // Preenchendo, quem manda na altura e a coluna; senao volta a
             // proporcao de sempre.
             // Fora do fluxo de proposito: solta, a altura natural da foto
             // esticava a linha do grid e a abertura passava do fim da tela.
             // Assim quem manda na altura e a coluna do texto ao lado.
-            // `inteira` NAO tira a midia do fluxo: fazer isso deixaria a
-            // altura livre e a coluna cresceria junto, mudando o layout da
-            // abertura — o oposto do que se quer. O quadro continua o mesmo,
-            // muda so o encaixe: contain mostra a arte toda dentro dele.
+            //
+            // `inteira` continua fora do fluxo (a coluna nao cresce, o layout
+            // da abertura nao muda), mas a MOLDURA passa a ter o tamanho da
+            // arte em vez de a arte ser recortada para caber na moldura.
+            //
+            // O motivo: a altura desta caixa e a da coluna de texto ao lado,
+            // que acompanha a altura da janela. A proporcao dela vai de ~0,73
+            // (tela alta) a ~1,20 (tela baixa) — com `cover`, tela alta corta
+            // os lados e tela baixa corta em cima e embaixo. Nao existe
+            // tamanho de arte que sirva para as duas. Com inset+margin:auto a
+            // imagem fica no seu tamanho natural, centralizada, limitada aos
+            // 100% da caixa: usa a largura inteira quando cabe, encolhe junto
+            // quando a tela e baixa, e nunca corta.
             ...(preencher
-              ? { position: 'absolute' as const, inset: 0, height: '100%' }
+              ? atual.inteira
+                ? {
+                    position: 'absolute' as const, inset: 0, margin: 'auto',
+                    width: 'auto' as const, height: 'auto' as const,
+                    maxWidth: '100%', maxHeight: '100%',
+                  }
+                : { position: 'absolute' as const, inset: 0, height: '100%', width: '100%', maxHeight: alturaMax, margin: '0 auto' }
               : atual.inteira
-                ? { height: 'auto' as const }
-                : { aspectRatio: '16 / 10' }),
+                ? { height: 'auto' as const, width: '100%', maxHeight: alturaMax, margin: '0 auto' }
+                : { aspectRatio: '16 / 10', width: '100%', maxHeight: alturaMax, margin: '0 auto' }),
           }} />
       )}
 
