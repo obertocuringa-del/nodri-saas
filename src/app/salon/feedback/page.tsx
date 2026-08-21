@@ -286,7 +286,7 @@ export default function FeedbackPage() {
   return (
     <div className="nodri-salon-bg min-h-screen">
       {/* NAVBAR */}
-      <nav className="bg-nodri-surface border-b border-nodri-border px-3 lg:px-5 py-3 flex items-center gap-3 sticky top-0 z-50">
+      <nav className="bg-nodri-surface border-b border-nodri-border px-3 lg:px-5 py-3 flex items-center gap-3 sticky top-0 z-40 nodri-topo-pagina">
         <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-1.5 rounded-lg text-nodri-t2 hover:text-nodri-cyan transition-colors">
           <Menu size={18} />
         </button>

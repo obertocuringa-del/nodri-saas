@@ -185,7 +185,7 @@ export default function ResultadosPage() {
 
       <div className="nodri-salon-bg min-h-screen">
         {/* NAVBAR */}
-        <nav className="no-print bg-nodri-surface border-b border-nodri-border px-5 py-3 flex items-center gap-3 sticky top-0 z-50">
+        <nav className="no-print bg-nodri-surface border-b border-nodri-border px-5 py-3 flex items-center gap-3 sticky top-0 z-40 nodri-topo-pagina">
           <button onClick={() => router.push('/salon/feedback')} className="flex items-center gap-1.5 text-nodri-t2 hover:text-nodri-t1 transition-colors text-sm">
             <ArrowLeft size={15} /> Feedback
           </button>
