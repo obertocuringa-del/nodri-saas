@@ -5,7 +5,10 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 const MARINHO = '#0d2a56'
 
-export interface Midia { tipo?: 'imagem' | 'video'; url: string }
+// `inteira`: a midia aparece completa, sem corte. Foto de salao fica bem
+// preenchendo o quadro (o padrao), mas ARTE nao: preencher come as bordas,
+// e numa peca desenhada a borda e onde ficam o titulo e o rodape.
+export interface Midia { tipo?: 'imagem' | 'video'; url: string; inteira?: boolean }
 
 /** Link do Drive vira endereço direto: o que ele compartilha é uma página. */
 export function urlDeImagem(url: string): string {
@@ -118,16 +121,21 @@ export default function Carrossel({ midias, intervalo = 5, alturaMax, preencher,
           style={{
             width: '100%', display: 'block', borderRadius: 18,
             border: '1px solid #e3e8f0', boxShadow: '0 18px 50px rgba(13,42,86,.12)',
-            objectFit: 'cover',
+            objectFit: atual.inteira ? 'contain' : 'cover',
             maxHeight: alturaMax, margin: '0 auto',
             // Preenchendo, quem manda na altura e a coluna; senao volta a
             // proporcao de sempre.
             // Fora do fluxo de proposito: solta, a altura natural da foto
             // esticava a linha do grid e a abertura passava do fim da tela.
             // Assim quem manda na altura e a coluna do texto ao lado.
-            ...(preencher
-              ? { position: 'absolute' as const, inset: 0, height: '100%' }
-              : { aspectRatio: '16 / 10' }),
+            // Marcada como inteira, ela volta ao fluxo e a altura fica
+            // automatica: ajusta-se a largura da coluna sozinha e nao corta
+            // em tela nenhuma. Preenchendo, quem manda na altura e a coluna.
+            ...(atual.inteira
+              ? { height: 'auto' as const }
+              : preencher
+                ? { position: 'absolute' as const, inset: 0, height: '100%' }
+                : { aspectRatio: '16 / 10' }),
           }} />
       )}
 

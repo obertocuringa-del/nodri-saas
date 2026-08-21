@@ -83,12 +83,19 @@ export default function EditorVitrine() {
             <div key={i} className="flex gap-1.5 mb-1.5">
               <input className={inp} value={m.url} placeholder="Link da foto ou do vídeo do YouTube"
                 onChange={e => setItem('hero_midias', i, 'url', e.target.value)} />
+              {/* Foto de salao fica bem preenchendo o quadro; arte, nao —
+                  preencher come as bordas, que e onde ficam titulo e rodape. */}
+              <label className="flex items-center gap-1 text-[10px] text-nodri-t2 shrink-0 cursor-pointer" title="Marque para artes e infográficos: a imagem aparece completa, sem cortar as bordas">
+                <input type="checkbox" checked={!!m.inteira}
+                  onChange={e => setItem('hero_midias', i, 'inteira', e.target.checked)} />
+                inteira
+              </label>
               <button onClick={() => delItem('hero_midias', i)}
                 className="text-nodri-red p-1 shrink-0"><Trash2 size={11} /></button>
             </div>
           ))}
           <p className="text-[10px] text-nodri-t3 mt-1">
-            Foto: 1200 × 1100 px (quase quadrada), até 500 KB — medido na página, o espaço da foto é de 600×590 a 660×540 px conforme a altura da tela. Deixe o que importa no centro: a sobra é cortada nas bordas, nunca distorcida.<br />
+            Foto: 1200 × 1100 px (quase quadrada), até 500 KB — medido na página, o espaço da foto é de 600×590 a 660×540 px conforme a altura da tela. Deixe o que importa no centro: a sobra é cortada nas bordas, nunca distorcida. Para <strong>arte ou infográfico</strong>, marque <strong>inteira</strong> ao lado do link — aí a imagem aparece completa, sem corte, e se ajusta sozinha a qualquer tela.<br />
             Vídeo do YouTube: 16:9, e entra alinhado com a primeira linha do texto do lado.<br />
             Sem nenhuma, o topo mostra a ilustração do painel. Com mais de uma, vira carrossel.
           </p>
