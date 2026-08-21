@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Loader2, Plus, Trash2, X, CalendarDays, ChevronLeft, ChevronRight, Bell, Printer, Palette } from 'lucide-react'
+import { ArrowLeft, Loader2, Plus, Trash2, X, CalendarDays, ChevronLeft, ChevronRight, Bell, Printer, Palette, Pencil, Check } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { getLogoSalao } from '@/lib/logoSalao'
 import { useGuardaSalvar } from '@/lib/guardaSalvar'
@@ -73,6 +73,13 @@ export default function CalendarioEditavel({ chave, titulo, camposGrandes, corTe
   const [novoTexto, setNovoTexto] = useState('')
   const [novoResp, setNovoResp] = useState('')
   const [novaCor, setNovaCor] = useState(PALETA[0].id)
+  // Edicao de um compromisso ja gravado. Antes so dava para apagar e digitar
+  // de novo — e quem errava a data perdia o texto inteiro.
+  const [editando, setEditando] = useState<string | null>(null)
+  const [edTexto, setEdTexto] = useState('')
+  const [edResp, setEdResp] = useState('')
+  const [edCor, setEdCor] = useState(PALETA[0].id)
+  const [edData, setEdData] = useState('')
   const [lembreteAberto, setLembreteAberto] = useState(true)
   const [legendaAberta, setLegendaAberta] = useState(false)
   // Tamanho do texto dentro do quadrado. Nada é cortado: quem tem dia cheio
@@ -111,7 +118,7 @@ export default function CalendarioEditavel({ chave, titulo, camposGrandes, corTe
 
   function eventosDoDia(data: string) { return eventos.filter(e => e.data === data) }
   function abrirDia(data: string) {
-    setSelDia(data); setNovoTexto(''); setNovoResp(''); setNovaCor(PALETA[0].id)
+    setSelDia(data); setNovoTexto(''); setNovoResp(''); setNovaCor(PALETA[0].id); setEditando(null)
   }
   function addEvento() {
     if (!selDia || !novoTexto.trim()) { toast.error('Escreva o compromisso'); return }
@@ -122,6 +129,23 @@ export default function CalendarioEditavel({ chave, titulo, camposGrandes, corTe
   function removerEvento(id: string) {
     const lista = eventos.filter(e => e.id !== id)
     setEventos(lista); setDirty(true); salvar(lista)
+  }
+  function iniciarEdicao(e: Evento) {
+    setEditando(e.id); setEdTexto(e.texto); setEdResp(e.responsavel || '')
+    setEdCor(e.cor || PALETA[0].id); setEdData(e.data)
+  }
+  function salvarEdicao() {
+    if (!edTexto.trim()) { toast.error('Escreva o compromisso'); return }
+    const lista = eventos.map(x => x.id === editando
+      ? { ...x, data: edData || x.data, texto: edTexto.trim(), responsavel: edResp.trim() || undefined, cor: edCor }
+      : x)
+    setEditando(null); setEventos(lista); setDirty(true); salvar(lista)
+  }
+  function abrirParaEditar(e: Evento) {
+    const [y, m] = e.data.split('-').map(Number)
+    setRef({ ano: y, mes: m - 1 })
+    setSelDia(e.data); setNovoTexto(''); setNovoResp(''); setNovaCor(PALETA[0].id)
+    iniciarEdicao(e)
   }
   function trocarCor(id: string, cor: string) {
     const lista = eventos.map(e => e.id === id ? { ...e, cor } : e)
@@ -424,6 +448,39 @@ ${doMes.length
                 {eventosDoDia(selDia).length === 0 && <p style={{ fontSize: 13, color: '#9ca3af', margin: '0 0 10px' }}>Nenhum compromisso neste dia.</p>}
                 {eventosDoDia(selDia).map(e => {
                   const c = corDe(e.cor)
+
+                  // ── modo edicao: o proprio compromisso vira formulario ──
+                  if (editando === e.id) return (
+                    <div key={e.id} style={{ padding: 12, borderRadius: 9, background: '#fff', border: `2px solid ${corTema}`, marginBottom: 8 }}>
+                      <div style={{ fontSize: 11, fontWeight: 800, color: corTema, textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 4 }}>Editando</div>
+
+                      <label style={rotEd}>Data</label>
+                      <input type="date" value={edData} onChange={ev => setEdData(ev.target.value)} style={campoEd} />
+
+                      <label style={rotEd}>Responsavel</label>
+                      <input value={edResp} onChange={ev => setEdResp(ev.target.value)} placeholder="Responsavel" style={campoEd} />
+
+                      <label style={rotEd}>Compromisso</label>
+                      {camposGrandes
+                        ? <textarea value={edTexto} onChange={ev => setEdTexto(ev.target.value)} rows={4} style={{ ...campoEd, resize: 'vertical', fontFamily: 'inherit' }} />
+                        : <input value={edTexto} onChange={ev => setEdTexto(ev.target.value)} style={campoEd} />}
+
+                      <label style={rotEd}>Cor</label>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                        {PALETA.map(p => (
+                          <button key={p.id} onClick={() => setEdCor(p.id)} title={legenda[p.id] || p.nome}
+                            style={{ width: 22, height: 22, borderRadius: 6, background: p.hex, cursor: 'pointer', border: edCor === p.id ? '2.5px solid #1a1a1a' : '2.5px solid transparent' }} />
+                        ))}
+                        <span style={{ fontSize: 11.5, color: '#9ca3af' }}>{legenda[edCor] || corDe(edCor).nome}</span>
+                      </div>
+
+                      <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                        <button onClick={salvarEdicao} disabled={salvando} style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 14px', borderRadius: 8, border: 'none', background: corTema, color: '#fff', fontSize: 13.5, fontWeight: 800, cursor: 'pointer' }}><Check size={15} /> Salvar alteracoes</button>
+                        <button onClick={() => setEditando(null)} style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #d0cdc7', background: '#fff', color: '#6b6860', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Cancelar</button>
+                      </div>
+                    </div>
+                  )
+
                   return (
                     <div key={e.id} style={{ padding: '10px 12px', borderRadius: 9, background: c.fundo, borderLeft: `4px solid ${c.hex}`, marginBottom: 8 }}>
                       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
@@ -432,7 +489,12 @@ ${doMes.length
                           {e.responsavel && <div style={{ fontSize: 11.5, color: corTema, fontWeight: 700, marginTop: 3, wordBreak: 'break-word' }}>👤 {e.responsavel}</div>}
                           <div style={{ fontSize: 10.5, color: '#9ca3af', marginTop: 3 }}>{legenda[c.id] || c.nome}</div>
                         </div>
-                        {!somenteLeitura && <button onClick={() => removerEvento(e.id)} title="Remover" style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', flexShrink: 0 }}><Trash2 size={14} /></button>}
+                        {!somenteLeitura && (
+                          <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                            <button onClick={() => iniciarEdicao(e)} title="Editar" style={{ border: 'none', background: 'transparent', color: corTema, cursor: 'pointer' }}><Pencil size={14} /></button>
+                            <button onClick={() => removerEvento(e.id)} title="Remover" style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer' }}><Trash2 size={14} /></button>
+                          </div>
+                        )}
                       </div>
                       {!somenteLeitura && (
                         <div style={{ display: 'flex', gap: 5, marginTop: 8, flexWrap: 'wrap' }}>
@@ -490,7 +552,12 @@ ${doMes.length
                       <div style={{ fontSize: 13, color: '#1a1a1a', whiteSpace: 'pre-wrap', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{e.texto}</div>
                       {e.responsavel && <div style={{ fontSize: 11, color: corTema, fontWeight: 700, marginTop: 2, wordBreak: 'break-word' }}>👤 {e.responsavel}</div>}
                     </div>
-                    {!somenteLeitura && <button onClick={() => removerEvento(e.id)} title="Remover" style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', flexShrink: 0 }}><Trash2 size={14} /></button>}
+                    {!somenteLeitura && (
+                      <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                        <button onClick={() => abrirParaEditar(e)} title="Editar" style={{ border: 'none', background: 'transparent', color: corTema, cursor: 'pointer' }}><Pencil size={14} /></button>
+                        <button onClick={() => removerEvento(e.id)} title="Remover" style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer' }}><Trash2 size={14} /></button>
+                      </div>
+                    )}
                   </div>
                 )
               })}
@@ -524,17 +591,24 @@ ${doMes.length
                       <span style={{ fontSize: 11.5, color: '#8b95a5' }}>🏷️ {legenda[c.id] || c.nome}</span>
                     </div>
                   </div>
-                  {!somenteLeitura && <button onClick={() => removerEvento(e.id)} title="Remover" style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', flexShrink: 0 }}><Trash2 size={14} /></button>}
+                  {!somenteLeitura && (
+                    <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                      <button onClick={() => abrirParaEditar(e)} title="Editar" style={{ border: 'none', background: 'transparent', color: corTema, cursor: 'pointer' }}><Pencil size={14} /></button>
+                      <button onClick={() => removerEvento(e.id)} title="Remover" style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer' }}><Trash2 size={14} /></button>
+                    </div>
+                  )}
                 </div>
               )
             })}
         </div>
 
-        <p style={{ fontSize: 11, color: '#9ca3af', textAlign: 'center', marginTop: 14 }}>Clique numa data para adicionar, ver ou remover. A impressão sai em A4 deitado: a primeira folha é o mês, a segunda é a descrição. {salvando && '· salvando...'}</p>
+        <p style={{ fontSize: 11, color: '#9ca3af', textAlign: 'center', marginTop: 14 }}>Clique numa data para adicionar, ver, editar (✎) ou remover. A impressão sai em A4 deitado: a primeira folha é o mês, a segunda é a descrição. {salvando && '· salvando...'}</p>
       </div>
     </div>
   )
 }
 
+const rotEd: React.CSSProperties = { display: 'block', fontSize: 10.5, fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '.4px', margin: '9px 0 4px' }
+const campoEd: React.CSSProperties = { width: '100%', padding: '9px 11px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13 }
 const btnFonte: React.CSSProperties = { border: 'none', background: 'transparent', color: '#6b6860', cursor: 'pointer', fontWeight: 800, fontSize: 12.5, padding: '6px 9px', lineHeight: 1 }
 const navBtn: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 34, height: 34, borderRadius: 8, border: '1px solid #e0ddd8', background: '#fff', color: '#6b6860', cursor: 'pointer' }
