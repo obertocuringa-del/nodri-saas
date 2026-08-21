@@ -128,13 +128,14 @@ export default function Carrossel({ midias, intervalo = 5, alturaMax, preencher,
             // Fora do fluxo de proposito: solta, a altura natural da foto
             // esticava a linha do grid e a abertura passava do fim da tela.
             // Assim quem manda na altura e a coluna do texto ao lado.
-            // Marcada como inteira, ela volta ao fluxo e a altura fica
-            // automatica: ajusta-se a largura da coluna sozinha e nao corta
-            // em tela nenhuma. Preenchendo, quem manda na altura e a coluna.
-            ...(atual.inteira
-              ? { height: 'auto' as const }
-              : preencher
-                ? { position: 'absolute' as const, inset: 0, height: '100%' }
+            // `inteira` NAO tira a midia do fluxo: fazer isso deixaria a
+            // altura livre e a coluna cresceria junto, mudando o layout da
+            // abertura — o oposto do que se quer. O quadro continua o mesmo,
+            // muda so o encaixe: contain mostra a arte toda dentro dele.
+            ...(preencher
+              ? { position: 'absolute' as const, inset: 0, height: '100%' }
+              : atual.inteira
+                ? { height: 'auto' as const }
                 : { aspectRatio: '16 / 10' }),
           }} />
       )}

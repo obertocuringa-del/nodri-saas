@@ -98,7 +98,7 @@ export default function EditorVitrine() {
             <strong>Imagem:</strong> 840 × 1020 px — ou 1680 × 2040 para ficar nítida em tela grande. Até 500 KB.<br />
             Essa é a proporção exata do espaço (medido na página: 657 × 798 px), então nada é cortado.<br />
             Foto com outra proporção funciona, mas as <strong>bordas são aparadas</strong> para preencher — deixe o que importa no centro. A imagem nunca é distorcida.<br />
-            Arte, infográfico ou print que precise aparecer <strong>por inteiro</strong>: marque <strong>inteira</strong> ao lado do link. Ela aparece completa em qualquer tela, podendo sobrar uma faixa em branco.<br />
+            Arte, infográfico ou print que precise aparecer <strong>por inteiro</strong>: marque <strong>inteira</strong> ao lado do link. O espaço na página continua exatamente o mesmo (o layout não muda) e a imagem aparece completa dentro dele, podendo sobrar uma faixa em branco em cima e embaixo. Use quando o corte estiver comendo parte da arte.<br />
             <strong>Vídeo do YouTube:</strong> 16:9, e entra alinhado com a primeira linha do texto do lado.<br />
             Sem nenhuma mídia, o topo mostra a ilustração do painel que já vem no sistema. Com mais de uma, vira carrossel.
           </p>
