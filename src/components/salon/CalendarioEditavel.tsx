@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { voltar } from '@/lib/historicoNav'
-import { ArrowLeft, Loader2, Plus, Trash2, X, CalendarDays, ChevronLeft, ChevronRight, Bell, Printer, Palette, Pencil, Check } from 'lucide-react'
+import { ArrowLeft, Loader2, Plus, Trash2, X, CalendarDays, ChevronLeft, ChevronRight, Bell, Printer, Palette, Pencil, Check, FileDown, Copy } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { getLogoSalao } from '@/lib/logoSalao'
 import { useGuardaSalvar } from '@/lib/guardaSalvar'
@@ -83,6 +83,7 @@ export default function CalendarioEditavel({ chave, titulo, camposGrandes, corTe
   const [edData, setEdData] = useState('')
   const [lembreteAberto, setLembreteAberto] = useState(true)
   const [legendaAberta, setLegendaAberta] = useState(false)
+  const [copiarOpen, setCopiarOpen] = useState(false)
   // Tamanho do texto dentro do quadrado. Nada é cortado: quem tem dia cheio
   // diminui a fonte até caber, em vez de o sistema decidir o que esconder.
   // Fica por navegador (é preferência de quem olha, não dado do salão).
@@ -165,6 +166,61 @@ export default function CalendarioEditavel({ chave, titulo, camposGrandes, corTe
 
   // Próximos compromissos (faltam até 2 dias)
   const proximos = eventos.filter(e => { const n = diasAte(e.data); return n >= 0 && n <= 2 }).sort((a, b) => a.data.localeCompare(b.data))
+
+  // ── Agenda em texto, para colar no WhatsApp ───────────────────────────
+  //
+  // O WhatsApp so entende *negrito* e _italico_, e nao tem tabela: o que
+  // organiza a leitura ali e a quebra de linha. Por isso cada compromisso sai
+  // numerado, com um dado por linha — assim o recado chega igual no celular
+  // de quem le, sem depender de fonte nem de largura de tela.
+  const prazoEmPalavras = (n: number) => {
+    if (n === 0) return 'é HOJE'
+    if (n === 1) return 'é AMANHÃ'
+    if (n > 1) return `faltam ${n} dias`
+    if (n === -1) return 'foi ontem'
+    return `há ${Math.abs(n)} dias`
+  }
+
+  function montarTexto(lista: Evento[], cabecalho: string): string {
+    // Asterisco e sublinhado dentro do texto do compromisso virariam formatacao
+    // no WhatsApp e comeriam o resto da mensagem.
+    const limpo = (t: string) => (t || '').replace(/[*_~`]/g, '').replace(/\s*\n+\s*/g, ' ').trim()
+    const L: string[] = []
+    L.push(`*${cabecalho.toUpperCase()}*`)
+    L.push(`_${lista.length} compromisso${lista.length === 1 ? '' : 's'}_`)
+    L.push('')
+    lista.forEach((e, i) => {
+      const [y, m, d] = e.data.split('-').map(Number)
+      const sem = SEM_LONGO[new Date(y, m - 1, d).getDay()]
+      const c = corDe(e.cor)
+      L.push(`*${i + 1}) ${limpo(e.texto)}*`)
+      L.push(`Data: ${brData(e.data)} — ${sem}`)
+      L.push(`Prazo: ${prazoEmPalavras(diasAte(e.data))}`)
+      L.push(`Responsável: ${limpo(e.responsavel || '') || 'a definir'}`)
+      L.push(`Categoria: ${limpo(legenda[c.id] || c.nome)}`)
+      L.push('')
+    })
+    if (!lista.length) L.push('Nenhum compromisso neste período.', '')
+    L.push(`_Gerado em ${new Date().toLocaleDateString('pt-BR')}_`)
+    return L.join('\n')
+  }
+
+  async function copiarAgenda(quais: 'mes' | 'proximos') {
+    const lista = quais === 'mes'
+      ? doMes
+      : eventos.filter(e => diasAte(e.data) >= 0).sort((a, b) => a.data.localeCompare(b.data))
+    const cabecalho = quais === 'mes'
+      ? `${titulo} — ${MESES[ref.mes]} de ${ref.ano}`
+      : `${titulo} — próximos compromissos`
+    const texto = montarTexto(lista, cabecalho)
+    try {
+      await navigator.clipboard.writeText(texto)
+      toast.success(`${lista.length} compromisso${lista.length === 1 ? '' : 's'} copiado${lista.length === 1 ? '' : 's'} — é só colar no WhatsApp`)
+    } catch {
+      toast.error('O navegador não deixou copiar. Tente pelo computador.')
+    }
+    setCopiarOpen(false)
+  }
 
   async function imprimir() {
     const logoSalao = await getLogoSalao()
@@ -266,6 +322,50 @@ ${doMes.length
     const w = window.open('', '_blank', 'width=1100,height=760'); if (!w) return; w.document.write(html); w.document.close(); w.focus()
   }
 
+  // Imprimir, PDF e Copiar aparecem igual na pagina cheia e na aba embutida.
+  function BotoesCompartilhar() {
+    const bt: React.CSSProperties = {
+      display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 13px', borderRadius: 8,
+      border: '1px solid #d0cdc7', background: '#fff', color: '#374151', fontSize: 12.5,
+      fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
+    }
+    return (
+      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
+        <button onClick={imprimir} style={bt}><Printer size={14} /> Imprimir</button>
+
+        {/* Mesma folha da impressao. O navegador e quem grava o arquivo: por
+            isso o aviso — sem ele a pessoa procura um download que nao vem. */}
+        <button
+          onClick={() => { toast('Na janela que abrir, escolha "Salvar como PDF" no destino.', { duration: 5000 }); imprimir() }}
+          style={{ ...bt, borderColor: `${corTema}55`, color: corTema, background: `${corTema}0f` }}>
+          <FileDown size={14} /> PDF
+        </button>
+
+        <div style={{ position: 'relative' }}>
+          <button onClick={() => setCopiarOpen(v => !v)} style={{ ...bt, borderColor: '#bfe6cd', color: '#0f6b3c', background: '#e9f7ef' }}>
+            <Copy size={14} /> Copiar agenda
+          </button>
+          {copiarOpen && (
+            <>
+              <div onClick={() => setCopiarOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 59 }} />
+              <div style={{ position: 'absolute', top: '112%', right: 0, zIndex: 60, background: '#fff', border: '1px solid #e0ddd8', borderRadius: 10, boxShadow: '0 12px 32px rgba(0,0,0,.16)', minWidth: 250, padding: 6 }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: '#9ca3af', padding: '5px 9px' }}>Copiar para o WhatsApp</div>
+                <button onClick={() => copiarAgenda('mes')} style={itemMenu}>
+                  <span style={{ fontWeight: 700 }}>Este mês</span>
+                  <span style={{ fontSize: 11, color: '#9ca3af' }}>{MESES[ref.mes]} {ref.ano} - {doMes.length} compromisso{doMes.length === 1 ? '' : 's'}</span>
+                </button>
+                <button onClick={() => copiarAgenda('proximos')} style={itemMenu}>
+                  <span style={{ fontWeight: 700 }}>Tudo o que ainda vem</span>
+                  <span style={{ fontSize: 11, color: '#9ca3af' }}>de hoje em diante, sem limite de mês</span>
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   if (loading) return <div className={embutido ? '' : 'nodri-salon-bg'} style={{ minHeight: embutido ? 120 : '100vh', display: 'flex', justifyContent: 'center', paddingTop: embutido ? 30 : 80 }}><Loader2 size={26} className="animate-spin" style={{ color: corTema }} /></div>
 
   return (
@@ -311,11 +411,11 @@ ${doMes.length
         <span style={{ width: 1, height: 16, background: '#e0ddd8' }} />
         <span style={{ fontWeight: 800, fontSize: 15, color: '#1a1a1a' }}><CalendarDays size={15} style={{ display: 'inline', verticalAlign: -2, marginRight: 6, color: corTema }} />{titulo}</span>
         <div style={{ flex: 1 }} />
-        <button onClick={imprimir} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 13px', borderRadius: 8, border: '1px solid #d0cdc7', background: '#fff', color: '#374151', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}><Printer size={14} /> Imprimir</button>
+        <BotoesCompartilhar />
       </nav>
       ) : (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginBottom: 8 }}>
-          <button onClick={imprimir} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 8, border: '1px solid #d0cdc7', background: '#fff', color: '#374151', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}><Printer size={13} /> Imprimir</button>
+          <BotoesCompartilhar />
         </div>
       )}
 
@@ -616,6 +716,11 @@ ${doMes.length
   )
 }
 
+const itemMenu: React.CSSProperties = {
+  display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1, width: '100%',
+  textAlign: 'left', padding: '9px 10px', border: 'none', background: 'transparent',
+  cursor: 'pointer', fontSize: 13, borderRadius: 7, color: '#1a1a1a',
+}
 const rotEd: React.CSSProperties = { display: 'block', fontSize: 10.5, fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '.4px', margin: '9px 0 4px' }
 const campoEd: React.CSSProperties = { width: '100%', padding: '9px 11px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13 }
 const btnFonte: React.CSSProperties = { border: 'none', background: 'transparent', color: '#6b6860', cursor: 'pointer', fontWeight: 800, fontSize: 12.5, padding: '6px 9px', lineHeight: 1 }
