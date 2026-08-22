@@ -11,7 +11,7 @@ import { useIsMobile } from '@/lib/useIsMobile'
 import { useGuardaSalvar } from '@/lib/guardaSalvar'
 import { useAutoSalvar } from '@/lib/autoSalvar'
 import ConsolidadoDescontos from '@/components/salon/ConsolidadoDescontos'
-import { DESTINOS_CHECKLIST, CATEGORIA_RECEBIDOS, type DestinoChecklist } from '@/lib/checklistDestinos'
+import { DESTINOS_CHECKLIST, CATEGORIA_RECEBIDOS, type DestinoChecklist, type BlocoDestino } from '@/lib/checklistDestinos'
 
 interface Demanda { id: string; texto: string; freq: string; feito: boolean; dias?: string[]; feito_em?: string; historico?: string[]; fixa?: boolean; diaMes?: number }
 interface Categoria { id: string; nome: string; demandas: Demanda[] }
@@ -181,7 +181,40 @@ export default function ChecklistPainel({ categoriaFixa = '', embutido = false, 
     setSalvando(true)
     try {
       const r = await fetch(`/api/salon/grid?chave=${destino.chave}`)
-      let docDest: Doc | null = r.ok ? await r.json() : null
+      const bruto = r.ok ? await r.json() : null
+
+      // Destino em formato de blocos (hoje só o Administrativo): o período é
+      // do bloco, não do item. Cada período recebido vira um bloco próprio,
+      // senão a tarefa diária se perderia dentro de um bloco mensal.
+      if (destino.formato === 'blocos') {
+        let blocos: BlocoDestino[] = (bruto && Array.isArray(bruto.blocos) && bruto.blocos.length)
+          ? bruto.blocos
+          : (destino.carregarPadraoBlocos ? await destino.carregarPadraoBlocos() : [])
+        for (const it of itens) {
+          const titulo = `${CATEGORIA_RECEBIDOS} — ${it.freq}`
+          let bl = blocos.find(x => norm(x.titulo) === norm(titulo))
+          if (!bl) { bl = { id: rid(), titulo, freq: it.freq, itens: [] }; blocos.push(bl) }
+          bl.itens.push({ id: rid(), texto: it.texto })
+        }
+        const resB = await fetch('/api/salon/grid', {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chave: destino.chave, doc: { blocos } }),
+        })
+        if (!resB.ok) { toast.error('Nao consegui gravar no check list de ' + destino.label); setSalvando(false); return }
+        const meuDocB: Doc = JSON.parse(JSON.stringify(doc))
+        tirarDaqui(meuDocB)
+        setDoc(meuDocB)
+        const meuB = await fetch('/api/salon/grid', {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chave, doc: meuDocB }),
+        })
+        if (meuB.ok) setDirty(false)
+        toast.success(`${itens.length === 1 ? 'Item enviado' : itens.length + ' itens enviados'} para ${destino.label}`)
+        setTransferOpen(null); setEnviarCatOpen(false); setSalvando(false)
+        return
+      }
+
+      let docDest: Doc | null = bruto
 
       // Setor que nunca abriu o check list dele ainda nao tem documento. Criar
       // um documento so com o item recebido apagaria a lista-padrao que ele

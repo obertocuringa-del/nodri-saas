@@ -18,6 +18,14 @@ export type CatPadrao = { nome: string; itens: { texto: string; freq?: string }[
 
 export interface DestinoChecklist {
   id: string
+  /**
+   * Como o documento guarda os dados. 'categorias' e o formato do
+   * ChecklistPainel (item com periodo proprio e data de feito). 'blocos' e o
+   * do Administrativo: o periodo e do bloco, e o item tem data e observacao.
+   * Reescrever a tela dele so para uniformizar custaria os dados de quem ja
+   * usa, entao o envio fala os dois.
+   */
+  formato?: 'categorias' | 'blocos'
   /** Nome do setor como a pessoa conhece — é o que aparece no menu. */
   label: string
   /** Documento no salao_config. */
@@ -31,7 +39,12 @@ export interface DestinoChecklist {
    * receberia. Carregada sob demanda porque são arquivos grandes.
    */
   carregarPadrao?: () => Promise<CatPadrao[]>
+  /** Mesma ideia do `carregarPadrao`, para os destinos em formato de blocos. */
+  carregarPadraoBlocos?: () => Promise<BlocoDestino[]>
 }
+
+export interface ItemDestino { id: string; texto: string; feito?: boolean; data?: string; obs?: string }
+export interface BlocoDestino { id: string; titulo: string; freq: string; itens: ItemDestino[] }
 
 export const DESTINOS_CHECKLIST: DestinoChecklist[] = [
   // ── categorias de `checklist` ──
@@ -63,6 +76,11 @@ export const DESTINOS_CHECKLIST: DestinoChecklist[] = [
   },
   // A copa nasce vazia de propósito (a rotina muda de salão para salão).
   { id: 'ck_cafe', label: 'Café / Copa', chave: 'checklist_cafe', carregarPadrao: async () => [] },
+  {
+    id: 'ck_administrativo', label: 'Administrativo', chave: 'demanda_checklist_administrativo',
+    formato: 'blocos',
+    carregarPadraoBlocos: () => import('@/lib/checklistAdministrativoDefaults').then(m => m.CHECKLIST_ADMINISTRATIVO()),
+  },
 ]
 
 /** Categoria onde caem os itens recebidos num check list que é um documento

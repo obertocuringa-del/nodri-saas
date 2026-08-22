@@ -6,10 +6,13 @@
 // demanda_checklist_administrativo.
 
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react'
-import { Loader2, Save, Plus, Trash2, ChevronDown, Printer, Check } from 'lucide-react'
+import { Loader2, Save, Plus, Trash2, ChevronDown, Printer, Check, ArrowRightLeft } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useGuardaSalvar } from '@/lib/guardaSalvar'
 import { getLogoSalao } from '@/lib/logoSalao'
+import { CHECKLIST_ADMINISTRATIVO, b } from '@/lib/checklistAdministrativoDefaults'
+import { FREQUENCIAS } from '@/components/salon/checklistDefaults'
+import { DESTINOS_CHECKLIST, CATEGORIA_RECEBIDOS, type DestinoChecklist } from '@/lib/checklistDestinos'
 
 const rid = () => Math.random().toString(36).slice(2, 9)
 const esc = (v: any) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -25,133 +28,6 @@ const CORES_FREQ: Record<string, string> = {
 }
 const corFreq = (f: string) => CORES_FREQ[f] || '#5b4fcf'
 
-const b = (titulo: string, freq: string, itens: string[]): Bloco =>
-  ({ id: rid(), titulo, freq, itens: itens.map(t => ({ id: rid(), texto: t })) })
-
-const PADRAO = (): Bloco[] => [
-  b('1. Documentação da empresa e unidade', 'Mensal', [
-    'Pegar a pasta física ou digital da empresa',
-    'Abrir o arquivo "Documentos Societários"',
-    'Conferir se o nome empresarial no contrato social bate com o cartão CNPJ',
-    'Conferir se o CNPJ no contrato social bate com o cartão CNPJ',
-    'Conferir se o endereço no contrato social bate com o local atual',
-    'Conferir se a atividade econômica (CNAE) está compatível com o que o salão faz',
-    'Conferir se os sócios listados estão atualizados (nenhum saiu sem alteração)',
-    'Conferir se os representantes legais estão atualizados',
-    'Verificar se a última alteração contratual está arquivada e assinada',
-    'Verificar se todas as alterações anteriores estão na pasta (histórico completo)',
-    'Se for MEI, verificar se o certificado MEI está válido',
-    'Conferir o comprovante de endereço do estabelecimento (luz/água no nome da empresa ou sócio)',
-    'Conferir se o contrato de locação está vigente e assinado',
-    'Verificar se há aditivos de locação e se estão anexados',
-    'Anotar na planilha de controle a próxima renovação de locação',
-  ]),
-  b('2. Licenças, alvarás e autorizações', 'Semanal/Mensal', [
-    'Abrir a Matriz de Licenças (planilha)',
-    'Alvará de Funcionamento visível no salão e digitalizado',
-    'Licença Sanitária válida (se aplicável)',
-    'Certificado do Corpo de Bombeiros (AVCB/CLC) válido',
-    'Licença Ambiental (se aplicável, ex.: resíduos químicos)',
-    'Cadastro Municipal (ISS) ativo',
-    'Cadastro Estadual (ICMS) ativo, se aplicável',
-    'Para cada licença: anotar número do documento',
-    'Para cada licença: anotar órgão emissor',
-    'Para cada licença: programar alerta 30 dias antes do vencimento',
-    'Verificar protocolos de solicitação em andamento junto aos órgãos públicos',
-    'Verificar comunicações recebidas de órgãos públicos não abertas ou pendentes',
-  ]),
-  b('3. Contratos e vencimentos', 'Semanal', [
-    'Abrir a Pasta Central de Contratos (física ou drive)',
-    'Locação — vigente? vence em?',
-    'Prestação de serviços (contabilidade, assessoria)',
-    'Manutenção (ar-condicionado, máquinas, elevador)',
-    'Limpeza terceirizada',
-    'Segurança (se houver)',
-    'Telefonia e internet',
-    'Software / sistema de gestão',
-    'Máquinas e equipamentos (leasing ou aluguel)',
-    'Publicidade e marketing',
-    'Consultorias',
-    'Parcerias',
-    'Para cada contrato: verificar se há aditivos anexados',
-    'Para cada contrato: verificar anexos (escopos, tabelas de preço)',
-    'Para cada contrato: anotar o responsável interno (quem gerencia)',
-    'Para cada contrato: verificar índice de reajuste (se aplicável)',
-    'Programar revisão de cada contrato 60 dias antes do término',
-  ]),
-  b('4. Procurações e representações', 'Mensal', [
-    'Verificar se há procuração vigente para representantes legais',
-    'Procuração assinada e reconhecida em cartório (se necessário)',
-    'Procuração arquivada (físico + digital)',
-    'Procuração para contador ou advogado agir em nome da empresa',
-    'Representante comercial: verificar procuração ou contrato',
-    'Anotar a data de validade da procuração',
-    'Programar renovação 30 dias antes do vencimento',
-  ]),
-  b('5. Arquivo físico e digital', 'Diário/Semanal', [
-    'Todos os documentos recebidos no dia foram digitalizados',
-    'Documentos digitalizados nomeados corretamente (ex.: Contrato_Locacao_2026_ASSINADO.pdf)',
-    'Documentos salvos em pasta organizada (1_Societarios / 2_Licencas / 3_Contratos)',
-    'Backup em nuvem (Google Drive, OneDrive…)',
-    'Backup local (HD externo ou servidor)',
-    'Documentos físicos em pastas etiquetadas e organizadas',
-    'Nenhum documento solto na mesa ou gaveta sem arquivamento',
-    'Registrar no índice o local físico de cada documento',
-  ]),
-  b('6. Prazos e pendências administrativas', 'Diário', [
-    'Abrir a planilha de prazos e pendências',
-    'Listar todas as pendências abertas',
-    'Verificar se há prazo vencido hoje',
-    'Verificar se há prazo vencendo em 5 dias',
-    'Verificar documento pendente de assinatura (sócios, direção)',
-    'Verificar solicitação de órgão público sem resposta',
-    'Verificar notificação recebida não tratada',
-    'Atualizar o status de cada pendência (aberta / em andamento / concluída)',
-    'Definir a próxima ação para cada pendência',
-  ]),
-  b('7. Processos, POPs, políticas e formulários', 'Mensal/Trimestral', [
-    'Abrir a pasta "POPs e Políticas"',
-    'POP de Arquivo e Documentos atualizado',
-    'POP de Controle de Licenças atualizado',
-    'POP de Controle de Contratos atualizado',
-    'POP de Recebimento e Envio de Documentos atualizado',
-    'Política de Conservação de Documentos (prazos de guarda) definida',
-    'Formulários padronizados disponíveis (solicitação de compra, requisição)',
-    'Nenhum formulário desatualizado em uso',
-    'Registrar a data da próxima revisão dos POPs',
-  ]),
-  b('8. Atas, reuniões e decisões da direção', 'Conforme necessidade', [
-    'Ata da última reunião redigida',
-    'Ata assinada pelos participantes',
-    'Ata arquivada (físico + digital)',
-    'Decisões tomadas registradas e com responsável',
-    'Decisões sendo executadas (checklist de acompanhamento)',
-    'Decisão que exija alteração contratual: processo iniciado',
-    'Decisão que exija nova licença: processo iniciado',
-  ]),
-  b('9. Patrimônio administrativo', 'Mensal/Anual', [
-    'Abrir a planilha de patrimônio',
-    'Todos os equipamentos listados (móveis, computadores, máquinas)',
-    'Cada item com nota fiscal anexada',
-    'Cada item com número de patrimônio etiquetado',
-    'Itens sem localização (emprestados, perdidos)',
-    'Itens danificados que precisam de baixa ou reparo',
-    'Seguro para bens de alto valor',
-    'Inventário físico (conferir item por item)',
-  ]),
-  b('10. Auditoria e relatório administrativo', 'Mensal/Trimestral', [
-    'Revisar todos os checklists acima e marcar pendências',
-    'Gerar relatório de pendências administrativas para a direção',
-    'Gerar relatório de contratos vencendo nos próximos 90 dias',
-    'Gerar relatório de licenças vencendo nos próximos 90 dias',
-    'Gerar indicadores administrativos (% digitalizado, % de prazos cumpridos)',
-    'Identificar não conformidades (documento faltando, prazo perdido)',
-    'Registrar ações corretivas para cada não conformidade',
-    'Entregar o relatório consolidado para a direção',
-    'Arquivar o relatório na pasta "Auditoria e Relatórios"',
-  ]),
-]
-
 export default function ChecklistAdministrativo() {
   const [blocos, setBlocos] = useState<Bloco[]>([])
   const [abertos, setAbertos] = useState<Set<string>>(new Set())
@@ -159,12 +35,68 @@ export default function ChecklistAdministrativo() {
   const [salvando, setSalvando] = useState(false)
   const [dirty, setDirty] = useState(false)
   useGuardaSalvar(dirty, 'Check list administrativo')
+  const [enviarOpen, setEnviarOpen] = useState<string | null>(null)
+  const [popPos, setPopPos] = useState({ top: 0, left: 0 })
+
+  // Este check list guarda o periodo no BLOCO; os outros guardam no item.
+  // Ao enviar, o periodo do bloco vira o do item. Rotulos compostos
+  // ("Diario/Semanal") ficam com o primeiro; "Conforme necessidade" nao tem
+  // equivalente e vai como Mensal, para quem recebe ajustar.
+  const freqDoBloco = (f: string) => {
+    const primeiro = (f || '').split('/')[0].trim()
+    return FREQUENCIAS.includes(primeiro) ? primeiro : 'Mensal'
+  }
+
+  const destinosDeFora = DESTINOS_CHECKLIST.filter(d => d.chave !== 'demanda_checklist_administrativo')
+
+  /** Manda a acao para o check list de outro setor. Grava la primeiro; so
+   *  depois tira daqui, para que uma falha no meio nao apague nada. */
+  async function enviarItem(bloco: Bloco, item: Item, destino: DestinoChecklist) {
+    setSalvando(true)
+    try {
+      const r = await fetch(`/api/salon/grid?chave=${destino.chave}`)
+      const bruto = r.ok ? await r.json() : null
+      let categorias: any[] = (bruto && Array.isArray(bruto.categorias)) ? bruto.categorias : []
+
+      // Setor que nunca abriu o check list dele nao pode perder a lista-padrao
+      // por causa de um item recebido.
+      if (!categorias.length && destino.carregarPadrao) {
+        const padrao = await destino.carregarPadrao()
+        categorias = padrao.map(c => ({
+          id: rid(), nome: c.nome,
+          demandas: c.itens.map(it => ({ id: rid(), texto: it.texto, freq: it.freq || 'Diário', feito: false })),
+        }))
+      }
+
+      const nomeCat = destino.categoria || CATEGORIA_RECEBIDOS
+      const chaveNome = (t: string) => (t || '').toUpperCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      let alvo = categorias.find(c => chaveNome(c.nome) === chaveNome(nomeCat))
+      if (!alvo) { alvo = { id: rid(), nome: nomeCat, demandas: [] }; categorias.push(alvo) }
+      alvo.demandas.push({ id: rid(), texto: item.texto, freq: freqDoBloco(bloco.freq), feito: false })
+
+      const res = await fetch('/api/salon/grid', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chave: destino.chave, doc: { categorias } }),
+      })
+      if (!res.ok) { toast.error('Nao consegui gravar no check list de ' + destino.label); setSalvando(false); return }
+
+      const novos = blocos.map(x => x.id === bloco.id ? { ...x, itens: x.itens.filter(y => y.id !== item.id) } : x)
+      setBlocos(novos)
+      const meu = await fetch('/api/salon/grid', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chave: 'demanda_checklist_administrativo', doc: { blocos: novos } }),
+      })
+      if (meu.ok) setDirty(false)
+      toast.success('Enviado para ' + destino.label)
+    } catch { toast.error('Erro de conexao') }
+    setEnviarOpen(null); setSalvando(false)
+  }
 
   useEffect(() => {
     fetch('/api/salon/grid?chave=demanda_checklist_administrativo', { credentials: 'include' })
       .then(r => r.ok ? r.json() : null)
-      .then(d => setBlocos(d && Array.isArray(d.blocos) && d.blocos.length ? d.blocos : PADRAO()))
-      .catch(() => setBlocos(PADRAO()))
+      .then(d => setBlocos(d && Array.isArray(d.blocos) && d.blocos.length ? d.blocos : CHECKLIST_ADMINISTRATIVO()))
+      .catch(() => setBlocos(CHECKLIST_ADMINISTRATIVO()))
       .finally(() => setCarregando(false))
   }, [])
 
@@ -292,6 +224,27 @@ ${corpo}<script>window.onload=function(){window.print()}<\/script></body></html>
                     <input value={it.obs || ''} placeholder="Observação"
                       onChange={e => mapBloco(bl.id, x => ({ ...x, itens: x.itens.map(y => y.id === it.id ? { ...y, obs: e.target.value } : y) }))}
                       style={{ ...campo, flex: '1 1 140px' }} />
+                    <div style={{ position: 'relative', flexShrink: 0 }}>
+                      <button title="Enviar esta ação para o check list de outro setor"
+                        onClick={e => {
+                          const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
+                          setPopPos({ top: Math.min(r.bottom + 4, window.innerHeight - 300), left: Math.max(8, Math.min(r.left, window.innerWidth - 250)) })
+                          setEnviarOpen(enviarOpen === it.id ? null : it.id)
+                        }}
+                        style={{ border: '1px solid #d0cdc7', background: '#fff', color: '#6b6860', borderRadius: 6, padding: '4px 6px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}>
+                        <ArrowRightLeft size={12} />
+                      </button>
+                      {enviarOpen === it.id && (
+                        <div style={{ position: 'fixed', top: popPos.top, left: popPos.left, zIndex: 60, background: '#fff', border: '1px solid #e0ddd8', borderRadius: 10, boxShadow: '0 10px 30px rgba(0,0,0,.15)', minWidth: 240, maxHeight: 280, overflowY: 'auto', padding: 6 }}>
+                          <div style={{ fontSize: 11, fontWeight: 800, color: '#9ca3af', padding: '4px 8px' }}>Enviar para o check list de...</div>
+                          {destinosDeFora.map(d => (
+                            <button key={d.id} onClick={() => enviarItem(bl, it, d)}
+                              style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 10px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13, borderRadius: 6 }}
+                              onMouseEnter={ev => (ev.currentTarget.style.background = '#f0eefb')} onMouseLeave={ev => (ev.currentTarget.style.background = 'transparent')}>{d.label}</button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                     <button onClick={() => mapBloco(bl.id, x => ({ ...x, itens: x.itens.filter(y => y.id !== it.id) }))}
                       style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', padding: 2, flexShrink: 0 }}><Trash2 size={12} /></button>
                   </div>
