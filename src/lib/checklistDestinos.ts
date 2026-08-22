@@ -57,6 +57,10 @@ export const DESTINOS_CHECKLIST: DestinoChecklist[] = [
     id: 'ck_processos', label: 'Processos & Qualidade', chave: 'checklist_processos',
     carregarPadrao: () => import('@/lib/checklistProcessosDefaults').then(m => m.CHECKLIST_PROCESSOS as CatPadrao[]),
   },
+  {
+    id: 'ck_financeiro', label: 'Financeiro / Contabilidade', chave: 'checklist_financeiro',
+    carregarPadrao: () => import('@/lib/checklistFinanceiroDefaults').then(m => m.CHECKLIST_FINANCEIRO as CatPadrao[]),
+  },
   // A copa nasce vazia de propósito (a rotina muda de salão para salão).
   { id: 'ck_cafe', label: 'Café / Copa', chave: 'checklist_cafe', carregarPadrao: async () => [] },
 ]

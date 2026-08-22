@@ -42,6 +42,7 @@ import ConsumoProdutosDosagem from '@/components/salon/ConsumoProdutosDosagem'
 import { CHECKLIST_MANUTENCAO } from '@/lib/checklistManutencaoDefaults'
 import { CHECKLIST_COORDENACAO } from '@/lib/checklistCoordenacaoDefaults'
 import { CHECKLIST_PROCESSOS } from '@/lib/checklistProcessosDefaults'
+import { CHECKLIST_FINANCEIRO } from '@/lib/checklistFinanceiroDefaults'
 import ManualSetorPainel from '@/components/salon/ManualSetorPainel'
 import ContasBancariasLista from '@/components/salon/ContasBancariasLista'
 import ProfissionaisPainel from '@/components/salon/ProfissionaisPainel'
@@ -114,6 +115,7 @@ export function ConteudoFerramenta({ id, profsSalao, abaPop = 'cafe' }: { id: st
     case 'ck_manut_predial':    return <ChecklistPainel key="ck_manut_predial" chave="checklist_manutencao" defaultCategorias={CHECKLIST_MANUTENCAO} semGerencia embutido />
     case 'ck_coordenacao':      return <ChecklistPainel key="ck_coordenacao" chave="checklist_coordenacao" defaultCategorias={CHECKLIST_COORDENACAO} semGerencia embutido />
     case 'ck_processos':        return <ChecklistPainel key="ck_processos" chave="checklist_processos" defaultCategorias={CHECKLIST_PROCESSOS} semGerencia embutido />
+    case 'ck_financeiro':       return <ChecklistPainel key="ck_financeiro" chave="checklist_financeiro" defaultCategorias={CHECKLIST_FINANCEIRO} semGerencia embutido />
     // Nasce sem demanda nenhuma de propósito: a rotina da copa muda de salão
     // para salão, e lista pronta de outro lugar viraria trabalho de apagar.
     case 'ck_cafe':             return <ChecklistPainel key="ck_cafe" chave="checklist_cafe" defaultCategorias={[]} semGerencia embutido />

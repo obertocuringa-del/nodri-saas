@@ -80,6 +80,7 @@ export const CATALOGO: Record<string, Ferramenta> = {
   ck_manut_predial:{ id: 'ck_manut_predial',label: 'CHECK LIST — MANUTENÇÃO PREDIAL', perm: 'checklist' },
   ck_coordenacao:  { id: 'ck_coordenacao',  label: 'CHECK LIST — COORDENAÇÃO',     perm: 'checklist' },
   ck_processos:    { id: 'ck_processos',    label: 'CHECK LIST — PROCESSOS & QUALIDADE', perm: 'checklist' },
+  ck_financeiro:   { id: 'ck_financeiro',   label: 'CHECK LIST — FINANCEIRO',    perm: 'checklist' },
   ck_cafe:         { id: 'ck_cafe',         label: 'CHECK LIST — CAFÉ',           perm: 'checklist' },
   msgs_listas:     { id: 'msgs_listas',     label: 'MENSAGENS ENVIADAS',          perm: 'profissionais' },
   pontos_ebulicao: { id: 'pontos_ebulicao', label: 'PONTOS DE EBULIÇÃO',          perm: 'checklist' },
@@ -123,7 +124,9 @@ export const FERRAMENTAS_POR_SETOR: { chave: string[]; itens: string[] }[] = [
   { chave: ['COMPRAS', 'ESTOQUE'], itens: AREAS_COMPRAS.map(a => `compras_${a.id}`) },
   // Etiquetas saiu daqui: virou sub-botão de "Organização das pastas" (SUBDEMANDAS).
   { chave: ['ADMINISTRATIVO'], itens: ['ck_administrativo', 'licencas_contratos', 'escala', 'feriados', 'ata', 'senhas', 'telefones', 'calendario', 'pontos_ebulicao', 'msgs_listas', 'auditoria'] },
-  { chave: ['FINANCEIRO'], itens: ['pr_abertura', 'desconto_profissional', 'pagamento_va_vt', 'pedidos_compra'] },
+  // O Financeiro era o unico setor sem check list de tarefas — e sem ele nao
+  // dava para receber nem enviar demanda dos outros setores.
+  { chave: ['FINANCEIRO', 'CONTABILIDADE'], itens: ['ck_financeiro', 'pr_abertura', 'desconto_profissional', 'pagamento_va_vt', 'pedidos_compra'] },
   { chave: ['GERENCIA', 'GERENTE'], itens: ['ck_gerente', 'corrida_interna', 'pontos_ebulicao', 'msgs_listas'] },
   { chave: ['PROCESSO', 'QUALIDADE'], itens: ['ck_processos', 'man_processos', 'pr_ranking', 'ck_padrao', 'pop_cafe', 'pop_salao', 'checkprocon', 'pop_recepcao', 'pop_manicure', 'pop_cabelereiro'] },
   { chave: ['COMERCIAL', 'VENDAS'], itens: ['lojistas'] },
